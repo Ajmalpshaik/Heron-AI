@@ -171,6 +171,10 @@ compatibility-note: >
 #                                   it, and this fragment does not load one
 #   "change these to the 300"    -> CHANGE_ELEMENT_TYPE - swaps the type on
 #                                   elements that already exist
+#   "place sprinklers in these rooms" -> the revit_sprinkler_layout TOOL
+#                                   (docs/47): it works out WHERE, previews,
+#                                   and then calls this to place them. Added
+#                                   2026-10-06; this card's own sentences stand
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

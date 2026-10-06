@@ -1,0 +1,40 @@
+# D-30: the negative case is what catches "succeeded and read nothing real".
+
+positive:
+  - given: a project whose Area and Volume Computations show Areas only and At wall finish
+    expect: >
+      volumeComputation "Areas only", roomAreaComputation "At wall finish", and a
+      finding that rooms and spaces read no volume - with the counts showing
+      how many placed rooms and spaces have one (none, or only spaces if Revit
+      computes theirs without the switch). Checked against the dialog itself
+
+  - given: the same project after the modeller sets Areas and Volumes by hand
+    expect: >
+      volumeComputation "Areas and Volumes", and roomsWithVolume /
+      spacesWithVolume risen to the placed counts - the answer follows the
+      model, not a remembered value
+
+  - given: a project with the Gross Building and Rentable schemes, one of them with no areas
+    expect: >
+      BOTH schemes in areaSchemes - the empty one included, with 0 area(s) on
+      0 area plan(s) - Gross Building marked as the Gross Building scheme, and
+      each description as the Area Schemes tab shows it
+
+  - given: a project with Room Area Computation set to At wall core center
+    expect: roomAreaComputation "At wall core center", the dialog's words, not Revit's enum name
+
+negative:
+  - given: a family open in the Family Editor (run with --negative-in its title)
+    expect: >
+      notAProject true, volumeComputation and roomAreaComputation empty,
+      areaSchemes empty, and the one finding saying the settings belong to a
+      project. The family has no such dialog, so anything else would be a
+      value from somewhere it was not asked about
+
+  - given: a project with no area schemes at all
+    expect: areaSchemes empty and the finding saying so in words, never a blank list on its own
+
+second_route:
+  - >
+    The Area and Volume Computations dialog itself - the Computations tab's two
+    choices and the Area Schemes tab's rows read as the answer says

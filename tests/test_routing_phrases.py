@@ -98,11 +98,19 @@ CHANGES = [
      "5b-319: answered REPORT_SPACE_ENVELOPE"),
     ("put doors in the walls at these points", "PLACE_HOSTED_FAMILY",
      "5b-319: answered CREATE_WALL"),
+    ("create an area scheme", "SET_AREA_VOLUME_COMPUTATIONS",
+     "5b-337: before the Area and Volume Computations tools, answered APPLY_COLOR_FILL_SCHEME"),
+    ("rename the rentable area scheme to net lettable", "SET_AREA_VOLUME_COMPUTATIONS",
+     "5b-337: answered APPLY_COLOR_FILL_SCHEME"),
 ]
 
 QUESTIONS = [
     ("read the thermal U value of every floor type and roof type",
      "5b-319: asked by the same session, answered CREATE_ROOF"),
+    ("is volume computation switched on",
+     "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
+    ("check if volume calculation is enabled",
+     "5b-337: answered SET_SCHEDULE_FIELD_TOTALS"),
     # A REQUEST TO SELECT IS HELD TO THE SAME RULE - nothing in it asks for a
     # change. 5b-329: "select every wall of type Curtain Wall" reached
     # SET_CURTAIN_WALL_GRID, and these paraphrases, written before any card
