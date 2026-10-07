@@ -59,3 +59,9 @@ the wrong way on the trained model and are recorded, not tuned away** (row 5b-36
 spring* reaches this card, where it reached `LABEL_FAMILY_DIMENSION` - neither is that job, which is the
 chain of PR #440 - and *array the coil turn up the spring* reaches `ARRAY_ELEMENTS_RADIAL` where it reached
 `ARRAY_FAMILY_FORMS` (the card's first wording took it itself). `check-routing` lists no crossing for it.
+
+**Re-measured 2026-10-08 against main with #440 merged (`cdc16ab0`), both backends, the same 32
+sentences: neither moves any more** - *make a parametric spring* and *array the coil turn up the spring*
+land where they land without this card. The four gains above still hold. One sentence still moves, on the
+lexical backend only: *give the spring a steel material* goes from `SET_MATERIAL_COLOUR` to
+`SELECT_BY_MATERIAL` - neither is its job (`SET_FAMILY_FORM_MATERIAL`), and this card wins neither.
