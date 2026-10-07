@@ -1,49 +1,67 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-033
-semantic-identity: "save the model to disk"
+semantic-identity: "save another open document to its own file, and close its window"
 kind: action
 domain: revit.document
 capability: SAVE_DOCUMENT
-version: 1
+version: 2
 source: OFFICIAL
 risk: PUBLISH
 
 purpose: >
-  Saves the open document to its existing file.
+  Saves an open document - a family built in its own window, a tyre for a car -
+  to the file it was opened from, named by that file's path, and closes its
+  window when asked, so the family it belongs in can load it.
 
-  **NOTHING IN HERON COULD SAVE.** Measured 2026-09-18 across every fragment and
-  the whole add-in: `Document.Save` appears nowhere. Heron could modify a model
-  in twenty ways and every change waited for a hand on the keyboard.
+  **IT SAVES A DOCUMENT OTHER THAN THE ONE HERON IS WORKING IN.** Revit will not
+  save a document while Heron's Undo entry is open in it, and Heron's entry is
+  open in the document it works in for the whole run - so that one is refused
+  by name, with the reason. Version 1 saved exactly that one, and could never
+  have worked (row 5b-365).
 
-  **SAVING A WORKSHARED MODEL IS NOT SYNCING IT.** A local save writes the local
-  file and reaches nobody else on the job. That distinction is the one people get
-  wrong, so a workshared document is saved here AND told plainly that nothing has
-  gone to central - `SYNC_WITH_CENTRAL` is the other job.
+  **A LOCAL SAVE OF A WORKSHARED MODEL IS NOT A SYNC.** It reaches nobody
+  else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job.
 
-  **IT IS `PUBLISH` RISK AND IT IS NOT UNDOABLE.** A save commits whatever is in
-  the model right now, including a change somebody was about to undo. Phase 0 and
-  Phase 1 refuse `PUBLISH` unconditionally, so this is written and deliberately
-  unreachable until the register says otherwise.
+  **IT IS `PUBLISH` RISK AND IT IS NOT UNDOABLE.** It never chooses a file name:
+  a document with no file is not found here at all.
 
-  **IT NEVER CHOOSES A FILENAME.** `SaveAs` is a different and far more dangerous
-  operation - it can overwrite another model - and inventing a path is exactly
-  how that happens. A document with no path yet is refused rather than saved
-  somewhere invented.
-
-  OPENS NO TRANSACTION AND MUST NOT BE INSIDE ONE, the same as
-  `SYNC_WITH_CENTRAL`.
+  **ONLY A WINDOW THAT IS NOT IN FRONT CAN BE CLOSED.** Revit lets no tool close
+  the window in front, so that one is saved and left open for the modeller to
+  close, and nothing with unsaved changes is ever closed.
 
 contract:
   needs:
     - name: doc
       type: Document
+    - name: uidoc
+      type: UIDocument
+    # The full path of the OPEN document to save - the .rfa or .rvt it was
+    # opened from. Never the document Heron is working in: Revit refuses that.
+    - name: documentPath
+      type: string
+      source: request
+    # Off unless typed: after the save, close that document's window - only
+    # when it is NOT the window in front, which Revit lets no tool close.
+    - name: closeWindow
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: saved
+      # True only when something was WRITTEN. A document with no unsaved
+      # changes is left alone and says so in `findings`.
+      role: result
+      type: bool
+    - name: savedTo
+      role: result
+      type: string
+    - name: closed
+      # Read back: true only when the document is no longer open afterwards.
       role: result
       type: bool
     - name: refused
@@ -54,22 +72,62 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 2 PROVED 2026-10-07 on scratch families HeronNest_Car / HeronNest_Hub
+# (Revit 2024), signed by Ajmal PS on his word - NEEDS-CHECKING CS2. Version 1
+# was never run in Revit, and could not have saved (row 5b-365).
+
+proof:
+  date: '2026-10-07'
+  by: Ajmal PS
+  model: HeronNest_Car (1,730 elements), Revit 2024, session 9240
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned canonical Func`2, closeWindow true,
+    closed true, findings 2 item(s) ['HeronNest_Hub' saved to C:\Users\AjmalAlavudheen\AppData\Lo...,
+    'HeronNest_Hub' is closed.], found Document, openTitles 5 item(s) [ArrayAxisScratch, HeronNest_Hub,
+    Family1, ...], refused (null), saved true, savedTo C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Hub.rfa,
+    wanted C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Hub.rfa.
+    inputs came documentPath as given; closeWindow as given. on HeronNest_Car
+  negative_case: run with documentPath=C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Car.rfa
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    canonical Func`2, closeWindow false, closed false, findings 1 item(s) ['HeronNest_Car'
+    is the document Heron is working in, and Rev...], found Document, openTitles 4 item(s)
+    [ArrayAxisScratch, Family1, HeronNest_Car, ...], refused 'HeronNest_Car' is the document
+    Heron is working in, and Revit will not save a document while Heron's Undo entry is open
+    in it. Switch Heron to another open document and name this file again - or save it with
+    Ctrl+S, saved false, savedTo (null), wanted C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Car.rfa.
+    inputs came documentPath as given; closeWindow not given - false (optional). on HeronNest_Car
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 57f71ff4de3bf4df
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  `Document.Save(SaveOptions)`, `Document.PathName`, `Document.IsReadOnly` and
-  `Document.IsWorkshared` are present 2020 through 2027 - read off the reference
-  assemblies at both ends on 2026-09-18. `SaveAs` is deliberately not called here
-  at all.
+  `Document.Save(SaveOptions)`, `Document.PathName`, `Document.IsReadOnly`,
+  `Document.IsModified`, `Document.IsWorkshared`, `Document.IsLinked`,
+  `Document.Close(bool)`, `Application.Documents` and
+  `UIApplication.ActiveUIDocument` are present 2020 through 2027. Save's remark
+  that it "may not be called unless all transactions, sub-transactions, and
+  transaction groups that were opened by the API code were closed", and Close's
+  that "the currently active document may not be closed by this function", read
+  the same in the 2020, 2024 and 2027 reference XML (2026-10-07).
+  `PostableCommand.Close` exists on all three and is documented as "Close
+  Revit" - the application - which is why no posted command is used to close a
+  window. `SaveAs` is deliberately not called here at all.
 
-# ROUTING - repeated in SYNC_WITH_CENTRAL.
+# ROUTING - repeated in SYNC_WITH_CENTRAL and ACTIVATE_DOCUMENT.
 #
-#   "save the model"        -> here
+#   "save the tyre family and close it" -> here, with its file and closeWindow
+#   "save the model"        -> here only for a model Heron is NOT working in;
+#                              the one it works in is refused, with Ctrl+S named
 #   "sync to central"       -> SYNC_WITH_CENTRAL - and on a workshared model a
 #                              save is NOT that, which is the confusion worth
 #                              preventing
+#   "go back to the car"    -> ACTIVATE_DOCUMENT, with the car's file
 #   "save it somewhere else"-> NOT HERE, and nothing does it. SaveAs can
 #                              overwrite another model and no fragment invents a
 #                              path
@@ -78,3 +136,5 @@ utterances:
   - save the model
   - save this file
   - save my changes
+  - save the nested family and close it
+  - save that family and close its window

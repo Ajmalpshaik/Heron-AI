@@ -16,6 +16,14 @@ positive:
       wasAlready true, activated true, and NOTHING reopened. Reopening would
       be a real action with real risk taken for nothing
 
+  - given: >
+      run AIMED AT a family that is behind (--in, or the chat pinned to it)
+      while another family is in front, with the behind family's own path
+    expect: >
+      activated true, wasAlready FALSE, and the behind family now in front.
+      Version 1 compared the aimed-at document's title and said "already in
+      front" here, switching nothing (row 5b-359)
+
 negative:
   - given: a path with no file at it
     expect: >
