@@ -5,15 +5,43 @@ positive:
       which is what gets asked for next, since a family with one type and one
       with forty are placed very differently
 
-negative:
-  - given: a family of the same name already in the project
+  - given: >
+      a family already in the target, its file edited and SAVED since, with
+      reload=true
     expect: >
-      REFUSED, saying so and pointing at Revit's own Load Family. This cannot
-      overwrite: Revit needs a load-options object to decide about differing
-      parameter values, that object needs a class, and a fragment is a body of
-      statements with nowhere to define one. The refusal is also the safe
-      direction - overwriting replaces a colleague's edited type and takes its
-      values with it
+      reloaded as Revit's "Overwrite the existing version": `reloaded` says
+      "version", the edit reads back on the family in the target, `typesKept`
+      lists the types that were already there with the TARGET's values kept,
+      `typesAdded` any the file brought new, and every material the load moved
+      is in `materialsChanged` as "Name: before -> after"
+
+  - given: the same, with reload=true and overwriteValues=true
+    expect: >
+      `reloaded` says "version and values", and the types' parameter values
+      read back as the FILE's, not the target's
+
+  - given: a nested family's saved .rfa, loaded into the open HOST family with reload=true
+    expect: >
+      the nested copy in the host family is replaced - a family document is
+      a target like a project, and a shared nested family takes the file's
+      version (FamilySource.Family)
+
+negative:
+  - given: a family of the same name already in the target, with reload left off
+    expect: >
+      REFUSED by name, saying reload=true would overwrite it. Reloading is
+      never assumed: Constitution Article 7 lists family reloads among the
+      operations that need explicit confirmation, and overwriting silently is
+      how a colleague's edited type is replaced mid-job, values and all
+
+  - given: overwriteValues=true without reload=true
+    expect: refused, saying reload=true is needed as well - the stronger answer is never inferred
+
+  - given: reload=true on a family whose file is the same version as the one loaded
+    expect: >
+      refused, saying there was nothing to overwrite and that an edited family
+      must be SAVED first - Revit never reached its Family Already Exists
+      question
 
   - given: a path that does not exist
     expect: >
@@ -32,3 +60,4 @@ negative:
 
 second_route:
   - Revit's own Insert > Load Family with the same file, and the Project Browser's Families branch checked
+  - for a reload, Insert > Load Family > Overwrite the existing version, and the edited value read in Family Types

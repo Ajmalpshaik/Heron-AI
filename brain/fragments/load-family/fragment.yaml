@@ -1,40 +1,64 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 16
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-025
-semantic-identity: "load this family file into the project"
+semantic-identity: "load this family file into the project or a family, or reload it over the loaded one"
 kind: action
 domain: revit.families
 capability: LOAD_FAMILY
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Loads one `.rfa` family file into the open project and reports what arrived.
+  Loads one `.rfa` family file into the open project - or into a family
+  document, which is how a nested family gets in - and reports what arrived:
+  its types, and every material the load added or changed.
 
-  **It will not overwrite a family already in the project, and that is a
-  deliberate limit rather than a missing feature.** Revit only overwrites when
-  it is handed a load-options object saying what to do about parameter values
-  that differ - and the fragment format cannot supply one, because a fragment is
-  a body of statements and that object needs a class. So a family already
-  loaded is REFUSED with its name, and reloading it stays a job for Revit's own
-  Load Family button.
+  **Reloading a family that is already there is asked for, never assumed.**
+  With `reload` left off, a family of the same name is REFUSED by name, as
+  version 1 did. `reload=true` is Revit's "Overwrite the existing version" -
+  the file's family, with the types' parameter values already in the target
+  kept; `reload=true` with `overwriteValues=true` is "Overwrite the existing
+  version and its parameter values". A shared nested family inside the file
+  takes the file's version too. Use it after a family - a nested component
+  like a nut in a support - has been edited and SAVED: a reload reads the file
+  on disk, not the window it is open in.
 
-  **That refusal is the safe direction.** Overwriting silently is how a
-  colleague's edited type gets replaced by the office standard mid-job, and the
-  parameter values go with it.
+  **A reload can overwrite same-named materials in the target with no dialog
+  naming it**, so materials are read before and after and every one that moved
+  is listed, colour and all. Constitution Article 7 puts family reloads among
+  the operations that need explicit confirmation, so `reload=true` is never
+  defaulted and a caller should confirm it with the modeller first.
 
 contract:
   needs:
     - name: doc
       type: Document
+    # D-114. The answer to Revit's "Family Already Exists" dialog, supplied by
+    # the add-in: a fragment cannot declare the class IFamilyLoadOptions needs.
+    # Its bool is overwriteParameterValues. Used only when `reload` is true.
+    - name: familyLoadOptions
+      type: Func<bool, IFamilyLoadOptions>
+      source: ambient
     - name: familyPath
       type: string
       source: request
+    # Off unless typed. A family of the same name already in the target is
+    # refused while this is false - Article 7's explicit confirmation.
+    - name: reload
+      type: bool
+      source: request
+      optional: true
+    # Revit's stronger answer: the file's parameter values replace the
+    # target's. Refused unless `reload` is true as well.
+    - name: overwriteValues
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: created
       role: result
@@ -48,25 +72,32 @@ contract:
     - name: typeNames
       role: result
       type: IList<string>
+    - name: reloaded
+      # "version", "version and values", or "no - ... loaded new". A label for
+      # what was done, not a thing found.
+      role: accounting
+      type: string
+    - name: typesAdded
+      role: result
+      type: IList<string>
+    - name: typesKept
+      # Types that were already in the target and are still there - with
+      # `version` their values are the target's, with `version and values`
+      # the file's.
+      role: result
+      type: IList<string>
+    - name: materialsAdded
+      role: result
+      type: IList<string>
+    - name: materialsChanged
+      # "Name: before -> after" for every same-named material the load moved.
+      role: result
+      type: IList<string>
 
-proof:
-  date: '2026-09-08'
-  by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run - run inside a transaction and ROLLED BACK,
-    so the model was left exactly as it was. returned created ElementId, path C:\ProgramData\Autodesk\RVT
-    2024\Libraries\English\US\Route Analysis\M_People Content in Route Analysis.rfa, refused
-    (null), typeNames 2 item(s) [Physical Distance 2.4m, Physical Distance 2m]. inputs came
-    familyPath as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with familyPath=C:\nope\nosuchfamily.rfa instead - chosen because it
-    should not contain what this fragment reports - run inside a transaction and ROLLED BACK,
-    so the model was left exactly as it was. returned created (null), path C:\nope\nosuchfamily.rfa,
-    refused there is no file at "C:\nope\nosuchfamily.rfa", typeNames 0 item(s). inputs came
-    familyPath as given. on Snowdon-scratch_ajmal.al
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 51a6bc4161425db8
+# NO PROOF YET FOR VERSION 2. Version 1 (load, never overwrite) was PROVEN on
+# 2026-09-08 by Ajmal PS on Snowdon-scratch_ajmal.al, Revit 2024 - the record is
+# in git history. Version 2 changes impl/, so it is DRAFT until it is proved
+# again: needs the add-in carrying D-114's `familyLoadOptions` deployed first.
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -82,10 +113,17 @@ compatibility-note: >
   refusal below reports it as an unloadable file rather than claiming a defect
   here.
 
+  `Document.LoadFamily(string, IFamilyLoadOptions, out Family)`,
+  `IFamilyLoadOptions.OnFamilyFound/OnSharedFamilyFound` and `FamilySource`
+  are unchanged 2020 to 2027. `Material.Color`, `Transparency`, `Shininess`,
+  `Smoothness` and `AppearanceAssetId` likewise.
+
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and CHANGE_ELEMENT_TYPE.
 #
 #   "load a family"              -> here
 #   "load this rfa"              -> here
+#   "reload the family"          -> here, with reload=true - and confirmed
+#                                   first (Constitution Article 7)
 #   "place a diffuser"           -> PLACE_FAMILY_INSTANCES - it needs the family
 #                                   to be loaded ALREADY, which is what this does
 #   "change these to the 300 type" -> CHANGE_ELEMENT_TYPE
@@ -101,3 +139,7 @@ utterances:
   - bring in the family file
   - load the family into the project
   - import this family
+  - reload the family
+  - load it again and overwrite
+  - reload the nested family into the host family
+  - overwrite the existing version of the family

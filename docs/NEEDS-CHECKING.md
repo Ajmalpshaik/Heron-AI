@@ -519,6 +519,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cm.md`](needs-checking/group-cm.md)
 
+## Group CN - reload a family over the loaded one: LOAD_FAMILY version 2 (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cn.md`](needs-checking/group-cn.md)
+
 ## Group CO - family parameters renamed in place, formulas and labels read back with the new names (2026-10-06)
 
 **Its own file:** [`needs-checking/group-co.md`](needs-checking/group-co.md)
@@ -530,6 +534,10 @@ Step 6 is finished, and not before. At that point:
 ## Group CQ - deleting a family parameter that labels a dimension: the label taken off first, when asked (2026-10-06)
 
 **Its own file:** [`needs-checking/group-cq.md`](needs-checking/group-cq.md)
+
+## Group CR - a connector deleted from the family being edited (2026-10-07)
+
+**Its own file:** [`needs-checking/group-cr.md`](needs-checking/group-cr.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

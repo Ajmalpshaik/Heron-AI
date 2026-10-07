@@ -1,0 +1,124 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-061
+semantic-identity: "delete a connector from the family being edited - named by the plane its face lies on, its id, or all"
+
+# A NEW CAPABILITY, NOT A REMOVE MODE ON SET_FAMILY_CONNECTOR_ROLES, and why:
+# that card EDITS a connector that stays - its system, flow, size, primary,
+# links - and every setting is read back on the connector afterwards; a
+# delete has nothing to read back on, and putting it there would leave one
+# card answering both "set this connector to Global" and "delete this
+# connector". REPORT_FAMILY_CONNECTORS is a READ and stays one.
+# DELETE_ELEMENTS cannot be reached: its `elements` must come from a selection
+# or an earlier fragment, and FILTER_ELEMENTS_BY_CATEGORY refuses Connectors
+# and asks OST_ConnectorElem for a level a family connector has not got.
+# Asked for on 2026-10-07, when a pipe connector ADD_FAMILY_CONNECTOR had put
+# on "Air Outlet" in Family1 (Revit 2024) could not be taken off by any tool.
+kind: action
+domain: revit.families
+capability: REMOVE_FAMILY_CONNECTOR
+version: 1
+source: OFFICIAL
+# MODIFY, as every delete in this library declares (DELETE_ELEMENTS,
+# DELETE_FAMILY_PARAMETERS, REMOVE_VIEW_FILTER). Article 7 asks for the
+# owner's yes for THIS deletion - the connectors are named in the request,
+# no find chooses them, so the names ARE that yes.
+risk: MODIFY
+
+purpose: >
+  Deletes connectors from the family open in the Family Editor - a connector
+  ADD_FAMILY_CONNECTOR put on the wrong face, or one the family no longer
+  needs - the way selecting it and pressing Delete does.
+
+  **A CONNECTOR IS NAMED THE WAY SET_FAMILY_CONNECTOR_ROLES NAMES ONE** - by
+  the plane its face lies on, "Air Outlet", by the id
+  REPORT_FAMILY_CONNECTORS gives it, or "all"; commas between several. A plane
+  holding more than one connector is refused with their ids, so the wrong one
+  is never deleted, and a name that finds nothing is refused with the
+  family's connectors listed - never guessed.
+
+  **ALL OR NOTHING.** Every name is checked before the first connector goes.
+  Each is then deleted and read back gone; one that is still there, or a
+  connector that was NOT named going with them, fails the call with nothing
+  kept. Anything else Revit deleted along with them is listed by id.
+
+  **WHAT IS LEFT BEHIND IS SAID.** The family parameters that drove a
+  connector's size stay in the family (DELETE_FAMILY_PARAMETERS removes them);
+  a connector it was linked to is read back unlinked; a domain left with no
+  PRIMARY connector is named, with the SET_FAMILY_CONNECTOR_ROLES words that
+  set one. The connectors left are listed after.
+
+  **A PROJECT IN FRONT IS REFUSED** - a placed element's connectors belong to
+  its family, and are deleted there.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The connectors to delete: the planes their faces lie on, or ids from
+    # REPORT_FAMILY_CONNECTORS, commas between - "Air Outlet", "Port Left,
+    # 2955" - or "all".
+    - name: connectors
+      type: string
+      source: request
+  provides:
+    - name: removed
+      # Each connector deleted, as it read before it went - domain, id, the
+      # plane it lay on, system, pointing, position, primary, linked.
+      role: result
+      type: IList<string>
+    - name: connectorReport
+      # The connectors left in the family, read back after the deletion, on
+      # ONE line.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was deleted, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Delete(ElementId)` returning `ICollection<ElementId>` reads the
+  same 2020 through 2027 (api-surface, read 2026-10-07). The
+  `ConnectorElement` members - `Origin`, `Direction`, `Domain`,
+  `SystemClassification`, `IsPrimary`, `GetLinkedConnectorElement` - and
+  `FamilyManager.GetAssociatedFamilyParameter` are the ones
+  SET_FAMILY_CONNECTOR_ROLES and REPORT_FAMILY_CONNECTORS already read across
+  the range; CONNECTOR_RADIUS is the one CHECK_FAMILY_STANDARDS reads.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "delete the pipe connector from this family" -> here
+#   "remove the connector on Air Outlet"         -> here
+#   "put a connector on this face"               -> ADD_FAMILY_CONNECTOR - a
+#                                                   new connector
+#   "set this connector to Global", "flip it"    -> SET_FAMILY_CONNECTOR_ROLES -
+#                                                   one that stays
+#   "list this family's connectors"              -> REPORT_FAMILY_CONNECTORS,
+#                                                   a read - the ids it gives
+#                                                   are what this takes
+#   "disconnect this duct from the fan"          -> DISCONNECT_CONNECTORS -
+#                                                   placed elements in a project
+#   "delete these elements"                      -> DELETE_ELEMENTS - a selection
+#   "delete the Neck Diameter parameter"         -> DELETE_FAMILY_PARAMETERS
+
+utterances:
+  - delete the pipe connector from the family being edited
+  - remove the connector on Air Outlet from this family
+  - delete the duct connector I just added to the family
+  - remove all connectors from this family
