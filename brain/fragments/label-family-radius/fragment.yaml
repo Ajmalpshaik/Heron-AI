@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "tie the radius or diameter of a round family form to a lengt
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_RADIUS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -52,6 +52,18 @@ purpose: >
   and 60. When one value is more than one size of the revolve, the call is
   refused and the label is left for Edit Revolve.
 
+  **A SWEPT BLEND HAS THREE** (version 4, 2026-10-07, for a coil spring's
+  half-turns). Its PATH's arc radius, with the arc's centre locked to the
+  planes through it; every PROFILE circle's own radius or diameter, a half
+  circle's arc included; and a profile circle CENTRE's height off the path's
+  plane - a coil's rise - from the level or plane the path is on to a plane
+  through the centre, made and named after the parameter, the centre locked
+  to it. One parameter may label the same kind of size on several swept
+  blends; a rise reuses its plane. Measured on scratch families: radius 40 to
+  60 and 25, wire 5 to 8 and 3, rise 15 to 30 and 6, each followed.
+  Version 3's proof no longer describes the code and is kept below as a
+  record; DRAFT until proved again.
+
   **ONE FAMILY RESIZES WITH THE PIPE SIZE.** With the round sizes labelled,
   one body follows Nominal Diameter through formulas, instead of one shape set
   per size switched on and off.
@@ -89,8 +101,8 @@ contract:
       type: string
       source: request
     # true for a diameter dimension, false for a radius. A distance from a
-    # revolve's axis takes a radius only; a profile circle's own size takes
-    # either.
+    # revolve's axis, or a swept blend profile's height off its path, takes a
+    # radius only; a circle's own size or a swept blend's path takes either.
     - name: diameter
       type: bool
       source: request
@@ -168,7 +180,10 @@ compatibility-note: >
   `Reference.ConvertToStableRepresentation` / `ParseFromStableRepresentation`,
   `FamilyItemFactory.NewReferencePlane` and `Dimension.References` read the
   same 2020 through 2027 (the RevitAPI reference
-  assemblies, read 2026-10-01 and 2026-10-03). No `SketchEditScope` is used -
+  assemblies, read 2026-10-01 and 2026-10-03), and so do version 4's
+  `SweptBlend.PathSketch`, `BottomSketch` and `TopSketch`,
+  `Level.GetPlaneReference()` and `Dimension.DimensionShape` (read
+  2026-10-07). No `SketchEditScope` is used -
   it exists only from 2022 and refuses a family document. A parameter's kind is
   read by reflection, because it moved at 2022.
 
@@ -176,6 +191,8 @@ compatibility-note: >
 #
 #   "label the neck diameter with Neck Diameter"   -> here
 #   "drive the radius of this cylinder by Radius"  -> here
+#   "label the swept blend's path arc radius"      -> here, version 4
+#   "make Pitch drive the rise of the swept blend" -> here, version 4
 #   "label the width with the Width parameter"     -> LABEL_FAMILY_DIMENSION
 #   "put a radial dimension on this arc"           -> CREATE_RADIAL_DIMENSION,
 #                                                     a project annotation
@@ -190,3 +207,6 @@ utterances:
   - make this round family resize with the pipe size
   - label the tube diameter of this torus
   - make the rim ring radius follow a parameter
+  - label the swept blend's path arc radius
+  - label each profile circle's radius of the swept blend
+  - make Pitch drive the rise of the swept blend

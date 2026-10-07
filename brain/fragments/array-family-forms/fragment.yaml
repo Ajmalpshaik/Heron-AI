@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-048
-semantic-identity: "repeat one form in a row - a linear array - in the family being edited, its count driven by a parameter"
+semantic-identity: "repeat one form or one nested family in a row - a linear array - in the family being edited, its count driven by a parameter"
 kind: action
 domain: revit.families
 capability: ARRAY_FAMILY_FORMS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -24,6 +24,15 @@ purpose: >
 
   **ONE FORM PER ARRAY.** Several at once would make every member a group;
   a second form takes a second call, and both may follow one count.
+
+  **OR ONE NESTED FAMILY** (version 2, 2026-10-07) - a coil spring's turns
+  arrayed up. Measured on a scratch family: a level-based nested family
+  moved up, its Bottom locked to a plane, arrayed to its LAST member, and that
+  copy's Top locked to a second plane - the row re-spaced when the planes
+  moved and grew from 3 to 5 with its count. The copies come back IN ORDER
+  ALONG THE ROW, the last one last, for LOCK_NESTED_FAMILY_TO_PLANES.
+  Version 1's proof no longer describes the code and is kept below as a
+  record; DRAFT until proved again.
 
   **THE COUNT** is a whole number, or an Integer family parameter's name -
   its value in the current type is the count, and the label lets every type
@@ -47,8 +56,8 @@ contract:
       type: Document
     - name: uidoc
       type: UIDocument
-    # ONE form, by the id the form tools gave back - or `selected`, with it
-    # selected alone.
+    # ONE form or ONE nested family, by the id its tool gave back - or
+    # `selected`, with it selected alone.
     - name: form
       type: string
       source: request
@@ -70,8 +79,8 @@ contract:
       role: result
       type: string
     - name: members
-      # The copies' unique ids, commas between - the original form is not one
-      # of them.
+      # The copies' unique ids, commas between, in order along the row - the
+      # last is the far end. The original is not one of them.
       role: result
       type: string
     - name: labelled
@@ -147,6 +156,7 @@ compatibility-note: >
 #
 #   "array the blade along X with Blade Count"    -> here
 #   "repeat this fin along the width"             -> here
+#   "array the nested family up with the count"   -> here, version 2
 #   "array them along the corridor"               -> ARRAY_ELEMENTS, loose
 #                                                    copies in a project
 
@@ -155,3 +165,4 @@ utterances:
   - repeat this fin along the width
   - make a row of these slots with a count parameter
   - array this form so the types choose how many
+  - array the nested family up with its count on a parameter

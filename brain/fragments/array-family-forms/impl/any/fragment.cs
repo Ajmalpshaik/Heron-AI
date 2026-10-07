@@ -13,6 +13,16 @@
 // group, and a member that is a group is named by the group and not by the form
 // in it; a second form takes a second call, and both may follow one count.
 //
+// OR ONE NESTED FAMILY (version 2, 2026-10-07) - a coil spring's turns, a
+// rack's brackets: a family placed in this one, arrayed the same way. Measured
+// on SpringMainProbe (Revit 2024, rolled back): a level-based nested family
+// moved up, its Bottom locked to a plane, arrayed up to its LAST member, that
+// copy's Top locked to a second plane - the row re-spaced when the planes
+// moved and grew from 3 to 5 with its count. Every member, the original
+// included, becomes a model group; `members` gives the copies' groups IN ORDER
+// ALONG THE ROW, the last one last, which is the one LOCK_NESTED_FAMILY_TO_PLANES
+// locks.
+//
 // THE COUNT is a whole number from 2 to 200, or the name of an INTEGER family
 // parameter - then its value in the current type is the count, and the label
 // makes every type's own value the count. Revit's own remark: an array is
@@ -55,12 +65,20 @@ var revitAssembly = typeof(Document).Assembly;
 var dbNamespace = typeof(Document).Namespace;
 var axisLetters = new[] { "X", "Y", "Z" };
 
-Func<GenericForm, string> shapeOf = f => f is Extrusion ? "extrusion" : f is Revolution ? "revolve"
-    : f is Blend ? "blend" : f is SweptBlend ? "swept blend" : f is Sweep ? "sweep" : "form";
-Func<GenericForm, string> describe = f =>
+Func<Element, string> shapeOf = f => f is Extrusion ? "extrusion" : f is Revolution ? "revolve"
+    : f is Blend ? "blend" : f is SweptBlend ? "swept blend" : f is Sweep ? "sweep"
+    : f is FamilyInstance ? "nested family" : "form";
+Func<Element, string> describe = f =>
 {
+    var nested = f as FamilyInstance;
+    if (nested != null)
+    {
+        var type = "";
+        try { type = nested.Symbol.FamilyName + " : " + nested.Symbol.Name; } catch (Exception) { type = nested.Name; }
+        return "nested family \"" + type + "\" " + f.UniqueId;
+    }
     var solid = true;
-    try { solid = f.IsSolid; } catch (Exception) { solid = true; }
+    try { solid = ((GenericForm)f).IsSolid; } catch (Exception) { solid = true; }
     return (solid ? "solid " : "void ") + shapeOf(f) + " " + f.UniqueId;
 };
 
@@ -131,7 +149,9 @@ Func<GenericForm, SketchPlane> sketchPlaneOf = f =>
     return sketch == null ? null : sketch.SketchPlane;
 };
 
-GenericForm original = null;
+// The form, or the nested family, the row is made of.
+Element original = null;
+GenericForm originalForm = null;
 FamilyParameter driver = null;
 var n = 0;
 var axis = -1;
@@ -177,10 +197,11 @@ else
                 + "second call, and both may follow one count.");
         else
         {
-            original = named[0] as GenericForm;
+            originalForm = named[0] as GenericForm;
+            original = originalForm != null ? named[0] : named[0] as FamilyInstance;
             if (original == null)
-                problems.Add("\"" + (named[0].Name ?? named[0].UniqueId) + "\" (" + named[0].UniqueId + ") is not a "
-                    + "form - an extrusion, revolve, blend, sweep or swept blend.");
+                problems.Add("\"" + (named[0].Name ?? named[0].UniqueId) + "\" (" + named[0].UniqueId + ") is neither "
+                    + "a form - an extrusion, revolve, blend, sweep or swept blend - nor a nested family.");
         }
     }
 
@@ -292,8 +313,11 @@ else
         if (moved.HasValue && Math.Abs(moved.Value - spacing) > 0.5)
         {
             var movedMm = Math.Abs(moved.Value) < 0.005 ? 0.0 : moved.Value;
-            var plane = sketchPlaneOf(original);
+            var plane = originalForm == null ? null : sketchPlaneOf(originalForm);
             var planeName = plane == null ? "" : (plane.Name ?? "").Trim();
+            // A nested family hangs on the plane or level it was placed on.
+            var nestedHost = originalForm == null ? ((FamilyInstance)original).Host : null;
+            if (nestedHost != null && planeName.Length == 0) planeName = (nestedHost.Name ?? "").Trim();
             var staysIn = new List<string>();
             if (plane != null)
             {
@@ -303,15 +327,20 @@ else
             }
             var runsAlong = axis == 0 ? "Ref. Level or Center (Front/Back)"
                 : axis == 1 ? "Ref. Level or Center (Left/Right)" : "Center (Front/Back) or Center (Left/Right)";
-            problems.Add("A copy of this " + shapeOf(original) + " cannot leave the plane it is sketched on"
+            problems.Add("A copy of this " + shapeOf(original) + " cannot leave the plane it "
+                + (originalForm == null ? "is placed on" : "is sketched on")
                 + (planeName.Length > 0 ? ", " + planeName + "," : "") + " and a row along " + axisLetters[axis]
                 + " leaves it: a trial copy moved " + plain(movedMm) + " mm of the " + plain(spacing) + " mm asked, so "
                 + (Math.Abs(movedMm) <= 0.5 ? "every copy would sit on the original."
                     : "the copies would not sit " + plain(spacing) + " mm apart.")
                 + (staysIn.Count > 0 ? " A row along " + string.Join(" or ", staysIn) + " stays in that plane." : "")
-                + " For a row along " + axisLetters[axis] + ", sketch the form on a plane the row runs along - "
-                + runsAlong + " in Revit's own templates - or, with a fixed count, make each one its own form at "
-                + "its own place.");
+                + (originalForm == null
+                    ? " For a row along " + axisLetters[axis] + ", place the nested family on a plane the row runs "
+                        + "along - " + runsAlong + " in Revit's own templates - or nest a family that is not Work "
+                        + "Plane-Based: a level-based one, measured, made a row upward."
+                    : " For a row along " + axisLetters[axis] + ", sketch the form on a plane the row runs along - "
+                        + runsAlong + " in Revit's own templates - or, with a fixed count, make each one its own form "
+                        + "at its own place."));
         }
     }
 
@@ -389,17 +418,25 @@ if (refused == null)
     }
 
     arrayId = array.UniqueId;
-    members = string.Join(",", copies.Select(c => c.UniqueId));
+    // IN ORDER ALONG THE ROW, nearest the original first - Revit hands the
+    // copies back in no order, and the last one is the one a plane holds.
+    members = string.Join(",", copies
+        .OrderBy(c => ((lowest(c, axis) ?? 0) - (startAt ?? 0)) * Math.Sign(spacingMm))
+        .Select(c => c.UniqueId));
     labelled = driver != null;
 
     findings.Add("Arrayed the " + describe(original) + ": " + n + " in all, " + plain(spacingMm) + " mm apart along "
         + (spacingMm > 0 ? "+" : "-") + axisLetters[axis] + (toLast ? ", the last " + plain(stepMm) + " mm from the first"
             : "") + (labelled ? ", the count following \"" + driver.Definition.Name + "\" in each type" : "")
         + " - every copy read back. The array's id is " + arrayId + ".");
-    if (toLast)
+    if (toLast && originalForm != null)
         findings.Add("The last member anchors the spacing. LOCK_FORM_TO_PLANES can lock it to a plane, and FLEX_FAMILY "
             + "shows whether the members then re-space when that plane moves (NEEDS-CHECKING BQ5).");
-    if (!original.IsSolid)
+    if (toLast && originalForm == null)
+        findings.Add("The last member anchors the spacing. LOCK_NESTED_FAMILY_TO_PLANES locks the last copy - the last "
+            + "id in `members` - to a plane; measured, the row then re-spaced when that plane moved. FLEX_FAMILY "
+            + "shows it in this family.");
+    if (originalForm != null && !originalForm.IsSolid)
         findings.Add("The copies are voids, and cut nothing until COMBINE_FAMILY_FORMS combines each with its solid - "
             + "their ids are in `members`.");
     if (labelled)

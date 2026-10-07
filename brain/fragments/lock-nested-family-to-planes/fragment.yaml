@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "align and lock a nested family's own reference planes to the
 kind: action
 domain: revit.families
 capability: LOCK_NESTED_FAMILY_TO_PLANES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,6 +32,15 @@ purpose: >
   semicolons between. The nested component is named by its id, or SELECTED
   and called `selected`.
 
+  **AN ARRAY'S COPY TOO** (version 2, 2026-10-07): every array member is a
+  model group, and ARRAY_FAMILY_FORMS gives back the groups' ids; a group
+  holding exactly one nested family is locked through it. Measured on a
+  scratch family: the last copy of a row spread to its last member, its Top
+  locked to a plane, re-spaced the row when the plane moved; the second copy
+  of a row stepped member by member was refused by Revit. Version 1's proof
+  no longer describes the code and is kept below as a record; DRAFT until
+  proved again.
+
   **ALL OR NOTHING, READ BACK**: a lock never moves what it locks, so the
   nested family's extent is read before and after, and any move fails the
   call.
@@ -44,8 +53,8 @@ contract:
       type: Document
     - name: uidoc
       type: UIDocument
-    # The nested family, by the id PLACE_NESTED_FAMILY gave back, or
-    # `selected`.
+    # The nested family, by the id PLACE_NESTED_FAMILY gave back, an array
+    # copy's id from ARRAY_FAMILY_FORMS, or `selected`.
     - name: instance
       type: string
       source: request
@@ -118,6 +127,7 @@ compatibility-note: >
 #
 #   "lock the motor's centre to the centre planes" -> here
 #   "lock the nested family to the reference planes" -> here
+#   "lock the last copy of the array to the top plane" -> here, version 2
 #   "lock this extrusion to the planes"           -> LOCK_FORM_TO_PLANES, a form
 
 utterances:
@@ -125,3 +135,4 @@ utterances:
   - lock the nested family to the reference planes
   - align and lock this nested component to the planes
   - make the nested handle follow the front plane
+  - lock the last copy of the array to the top plane

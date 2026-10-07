@@ -23,6 +23,24 @@ positive:
       arrayed - the trial copy moves, so nothing is refused; four copies 40,
       80, 120 and 160 mm along +X, every one read back
 
+  - given: >
+      version 2, a NESTED FAMILY. A host family with planes "Pitch" at 30 and
+      "Top Turn Start" at 120; a level-based Generic Model family loaded,
+      placed at 0,0,0 on Ref. Level by PLACE_NESTED_FAMILY, moved up 30 by
+      MOVE_ELEMENTS, its Bottom locked to "Pitch"; form = its id, count "3",
+      step "Z 60 last"
+    expect: >
+      three in all, 30 mm apart up +Z, every copy read back; members two group
+      ids, the last the far one - LOCK_NESTED_FAMILY_TO_PLANES then locked its
+      Top to "Top Turn Start". Ran 2026-10-07, scratch SpringMainProbe, kept
+
+  - given: >
+      in TRG_Spring_Compression Spring, the one-turn spring family nested,
+      count "Active Coils" (4), step "Z 73.5 last"
+    expect: >
+      labelled true; FLEX through Active Coils 4, 5 and 8 re-made the copies,
+      each one Pitch apart, the last ending at Top Turn Start. Ran 2026-10-07
+
 negative:
   - given: >
       a vane sketched on Center (Left/Right), X -401 to -399 (5b-357); count
@@ -43,6 +61,9 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and nothing arrayed anywhere
+
+  - given: a reference plane's id as the form
+    expect: refused as neither a form nor a nested family, and nothing arrayed
 
 second_route:
   - >

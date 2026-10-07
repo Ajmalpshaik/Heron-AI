@@ -1,0 +1,78 @@
+# The proofs of the three fragments a parametric coil spring needed -
+# NEEDS-CHECKING Group CU, rows CU1, CU4 and CU5, FRAGMENT-ISSUES row 5b-366:
+#
+#   label-family-radius            LABEL_FAMILY_RADIUS v4             FRG-GEO-045
+#   array-family-forms             ARRAY_FAMILY_FORMS v2              FRG-GEO-048
+#   lock-nested-family-to-planes   LOCK_NESTED_FAMILY_TO_PLANES v2    FRG-GEO-049
+#
+#     python tools/batch-prove.py tools/jobs/spring-swept-blend-2026-10-07.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/spring-swept-blend-2026-10-07.yaml
+#
+# NEVER ON THE OWNER'S FAMILY1, where the request came from on 2026-10-07.
+# THE ARRANGEMENT IS THE SCRATCH FAMILY `SpringProof`, made once and KEPT -
+# its commands are in docs/needs-checking/group-cu.md. The ids below are the
+# ones it held on 2026-10-07 (Revit 2024, session 9240). An unsaved family
+# loses them when Revit closes: make the arrangement again and type the new
+# ids from the answers that made it - the dry run does not catch a stale id.
+#
+# LABEL_FAMILY_RADIUS - POSITIVE: "Mean Radius" (40) on the half-turn's path,
+# labelled with the arc's centre locked. NEGATIVE: "Odd Size" (22) - nothing in
+# the swept blend is 22 mm; refused, its sizes listed.
+#
+# ARRAY_FAMILY_FORMS - POSITIVE: the second nested family, three up +Z to the
+# last member 60 mm on. NEGATIVE: the array itself - neither a form nor a
+# nested family; refused.
+#
+# LOCK_NESTED_FAMILY_TO_PLANES - POSITIVE: the array's last copy, a group, its
+# nested family's Top to "Top Turn Start". NEGATIVE: the array itself - not a
+# nested family; refused.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# Run 2026-10-07 one at a time with `validate`, every leg ok; drafted in
+# brain/proof-drafts/, unsigned.
+
+model: SpringProof, a scratch family from Metric Generic Model.rft, Revit 2024
+
+defaults:
+  in: "SpringProof"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: label-family-radius
+    expect: labelled
+    set:
+      form: "337ead81-f16a-40e6-83ae-b97c6ded58ab-00000eb6"
+      parameterName: "Mean Radius"
+      diameter: false
+    negative-set:
+      form: "337ead81-f16a-40e6-83ae-b97c6ded58ab-00000eb6"
+      parameterName: "Odd Size"
+      diameter: false
+    note: >
+      The negative is a size the half-turn does not have, not an empty name.
+      The second route is FLEX_FAMILY with this as its setup (CU2), which shows
+      the form moving and not only the label reading.
+
+  - fragment: array-family-forms
+    expect: members
+    set:
+      form: "337ead81-f16a-40e6-83ae-b97c6ded58ab-00000eb4"
+      count: "3"
+      step: "Z 60 last"
+    negative-set:
+      form: "337ead81-f16a-40e6-83ae-b97c6ded58ab-00000ead"
+      count: "3"
+      step: "Z 60 last"
+
+  - fragment: lock-nested-family-to-planes
+    expect: locked
+    set:
+      instance: "337ead81-f16a-40e6-83ae-b97c6ded58ab-00000eac"
+      locks: "Top=Top Turn Start"
+    negative-set:
+      instance: "337ead81-f16a-40e6-83ae-b97c6ded58ab-00000ead"
+      locks: "Top=Top Turn Start"
+    note: >
+      The positive names the GROUP Revit made of the array's last copy - the id
+      ARRAY_FAMILY_FORMS gives back - not the nested family inside it.

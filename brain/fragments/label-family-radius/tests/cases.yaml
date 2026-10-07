@@ -54,6 +54,41 @@ positive:
       160. The ring had followed at those sizes before the lock as well. Ran
       2026-10-03, scratch Family8
 
+  - given: >
+      version 4, a SWEPT BLEND. A new metric Generic Model family; length type
+      parameters "Mean Radius" 40, "Wire Radius" 5, "Half Pitch" 15; a solid
+      swept blend on Ref. Level, path "40,0; arc 0,40 -40,0", bottom "circle
+      0,0 5", top "circle 0,15 5" - a coil's half-turn; form = its id,
+      "Mean Radius", diameter false
+    expect: >
+      a radial dimension on the path arc in the Ref. Level plan, labelled
+      "Mean Radius" reading 40, the arc's centre locked to Center (Left/Right)
+      and Center (Front/Back). Ran 2026-10-07, scratch SpringProbe, kept there;
+      a flex to 60 and 25 moved the arc's ends and both profiles with it
+
+  - given: the same half-turn, "Wire Radius", diameter false
+    expect: >
+      two radial dimensions, one on each profile's circle, both labelled
+      "Wire Radius" reading 5. Ran 2026-10-07, SpringProbe
+
+  - given: the same half-turn, "Half Pitch", diameter false
+    expect: >
+      a reference plane "Half Pitch" made through the top circle's centre,
+      parallel to Ref. Level, the centre locked to it, and a dimension from
+      Ref. Level to it labelled "Half Pitch" reading 15. FLEX_FAMILY "Mean
+      Radius=60; Wire Radius=8; Pitch=50 | Mean Radius=25; Wire Radius=3;
+      Pitch=12" (Half Pitch = Pitch / 2) MEASURED 136 x 68 x 41 and 56 x
+      26.63 x 12 mm. Ran 2026-10-07, SpringProbe, the flex rolled back
+
+  - given: >
+      a second half-turn, "-40,0; arc 0,-40 40,0", bottom "circle 0,15 5" top
+      "circle 0,30 5", with the first already labelled; "Half Pitch" again
+    expect: >
+      the plane "Half Pitch" and its dimension used as they are, the bottom
+      circle's centre locked to it - "already labelled ... used as it is";
+      "Mean Radius" and "Wire Radius" labelled on this one too, beside the
+      first's. Ran 2026-10-07 building TRG_Spring_One Turn
+
 negative:
   - given: a revolve about "1000,300 1000,500" - no reference plane runs through its axis
     expect: >
@@ -81,7 +116,23 @@ negative:
   - given: a torus whose circle's radius equals its centre's distance from the axis
     expect: refused as more than one size of the revolve, naming Edit Revolve, and nothing labelled
 
+  - given: the swept blend half-turn, a parameter holding 22 - no size of it is 22
+    expect: >
+      refused - its path radius 40, its circles' radii 5 and their centres 15
+      off the path's plane listed - and nothing labelled
+
+  - given: a half-turn whose top circle stands 5 off the path, "Wire Radius" holding 5
+    expect: refused as more than one size of the swept blend, and nothing labelled
+
+  - given: the parameter "Half Pitch" while it already labels a straight dimension between two other planes
+    expect: refused as already labelling another dimension, and nothing labelled
+
 second_route:
+  - >
+      A swept blend by hand: Edit Swept Blend, Edit Profile on each end shows
+      the radial dimensions and the locked centre; Family Types to another
+      Pitch and the half-turn measured with the Measure tool in the front
+      elevation
   - >
       By hand on the same family: Edit Extrusion shows the diameter dimension
       in the sketch, labelled "Pipe Diameter"; Family Types to 300 and the
