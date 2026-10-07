@@ -91,3 +91,49 @@ published there is nothing to download.
 something it should not have, and the only way to see it is to look in the Addins folder afterwards.
 
 ---
+
+## 2026-10-08 — THE INSTALLER WAS IN NO RELEASE, and a download could not have used it
+
+A new person searched the repository and its releases for `HeronInstaller.exe` and found it in
+neither. **Both were right**: `.gitignore` keeps the built exe out of the code on purpose, and
+`tools/build-release-assets.py` never built one, so no release could have carried it. Reading the
+route through found two more gaps behind it, all three in
+[row 5b-371](../fragment-issues/section-5b-rows-176-200.md):
+
+| | |
+|---|---|
+| **The installer was in no asset** | Now `HeronInstaller.exe` and `heron-install.exe` sit at the top of `heron-project.zip`, published **self-contained**, so a PC needs no .NET installed first |
+| **Alone, the exe cannot run** | It looks for `platform\heron-products.json` above itself and drives `tools\deploy-addin.ps1` and `tools\HeronRevit.ps1` from there. The zip now carries both scripts, so unzipped it is already that folder |
+| **A download was refused after its copy** | `deploy-addin.ps1 -FromFolder` read each `.addin` from `revit\<project>\`, which the zip leaves out. It now deploys the `.addin` the asset carries |
+
+**What this changes in the rows above.** `AC1`'s job now also builds the two installers, and its
+summary lists `heron-project.zip` among the checksums. **`AC2` is run from `heron-project.zip`
+unzipped into an empty folder** — that is what *"no build at all"* means for a person who
+downloaded it. **And `AC2` needs a PUBLISHED release**: the installer fetches from
+`releases/latest/download`, which GitHub serves only from the newest published, non-prerelease
+release. `AC1` makes a draft, so `AC2` cannot pass against the release `AC1` makes until somebody
+publishes it — the owner's decision.
+
+### What was run on the owner's PC, 2026-10-08
+
+| | |
+|---|---|
+| **PASS** | `python tools/build-release-assets.py` on Windows: **24 product zips and `heron-project.zip`, checksums over 26 files, exit 0**. Both installers at the top of the zip, each starting `MZ`; `tools/` in it holds the three named files and nothing else |
+| **PASS** | Unzipped into an empty folder, `heron-install.exe --from <the built folder> --list` found Revit 2020, 2024 and 2027 through the zip's own `tools\HeronRevit.ps1` and offered the AI Bridge |
+| **PASS** | **The defect, then the fix, in the same empty slot** (Revit 2021's add-in folder; no Revit 2021 on this PC). The OLD `deploy-addin.ps1` in that layout refused with *"...Heron.addin is missing ... The Heron files are incomplete"* **after copying the assemblies** - the half-install was removed by hand. The NEW one, same folder and same asset: exit 0, manifest naming `Heron\Heron.Revit.Addin.dll`. The slot was then put back exactly as it was |
+| **PASS** | **The real route**: `heron-install.exe --from ... --releases 2027 --products heron-bridge`, run from the unzipped download with Revit 2027 closed - *"1 installed, 0 failed"*, `Heron.addin` names `Heron\Heron.Revit.Addin.dll`. **The release build is what Revit 2027 loads now**; `tools\deploy-addin.ps1 -RevitVersion 2027 -Rollback` puts back the one it replaced |
+| **PASS** | `HeronInstaller.exe` opened from the unzipped folder titled *"Heron Installer   v0.1.0"* - the version is read from the product list, so it found it. **Alone in an empty folder** it said *"The Heron product list is not at ...\alone\platform\heron-products.json, so there is nothing to install"* - the reason it ships inside the zip |
+| **NOT RUN** | The release workflow on GitHub's runner with this change. A published release. Revit 2027 started with the installed build. `AC2` to `AC6` |
+
+**Two things seen, recorded and not changed here.** With Revit 2020 and 2024 open and only 2027
+ticked, `heron-install` printed *"Revit 2024 and 2020 is open right now. Close Revit before
+installing ... it waits for you"* - and then, correctly, did not wait, since neither was being
+installed into. And the lone exe's message says *"Reinstall Heron"* where the useful sentence is
+*"run it from the folder heron-project.zip unzipped into"*; it is the product list's own message,
+shared by every caller.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **AC6** | On a PC whose newest Revit is 2024 or older — so no .NET 8 came with it — download `heron-project.zip` from the published release, unzip it, double-click `HeronInstaller.exe` | SmartScreen warns that the publisher is unknown, and after *Run anyway* **the window opens with no request to install .NET**. A request to install a runtime is the FAIL this row exists for: the self-contained build is the whole of the fix for it |
+
+---
