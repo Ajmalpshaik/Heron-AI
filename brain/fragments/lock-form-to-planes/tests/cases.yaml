@@ -17,7 +17,26 @@ positive:
       two locks in the floor plan - the end face at X 600 and the long side at
       Y 0 - and the L's extent unchanged
 
+  - given: >
+      the owner's call on a scratch family (5b-372) - a box "rect -45,-152
+      45,-148" sketched on Center (Front/Back), Y -300 to 300, with planes
+      "Duct Left" / "Duct Right" at X -45 / 45, "Blade Front" / "Blade Back" at
+      Y -300 / 300 and "Blade 1 Bottom" / "Blade 1 Top" at Z -152 / -148
+    expect: >
+      six locks, the two horizontal faces in an elevation; then Blade Thickness
+      and Blade Drop labelled on the planes and flexed (10, 200, 100 and 25),
+      and the box read back at each size
+
 negative:
+  - given: >
+      the same box, planes "Blade Off Bottom" / "Blade Off Top" at Z -152.0167
+      / -147.9833 - 0.0167 mm off its faces, as a formula left them in the
+      owner's Family20
+    expect: >
+      refused before anything is locked, naming each face, its plane's position
+      and the 0.0167 mm gap - version 1 passed it to Revit and threw "not
+      geometrically aligned"
+
   - given: planes "Body Top" placed at 450 while the cylinder's top is at 500
     expect: refused as no flat face lying on "Body Top", naming the face at 500, and nothing locked
 

@@ -11,9 +11,17 @@
 // A FACE IS LOCKED ONLY WHERE IT ALREADY LIES. Revit's own remarks on the
 // alignment call: the two references "must be already geometrically aligned
 // (this function will not force them to become aligned)". So for each plane
-// named, the form's flat faces lying ON it are found - parallel to it and within
-// half a millimetre - and every one of them is locked. A plane with no face on
-// it refuses the whole call, naming where the form's faces facing that way are.
+// named, the form's flat faces lying ON it are found - parallel to it and
+// EXACTLY on it - and every one of them is locked. A plane with no face on it
+// refuses the whole call, naming where the form's faces facing that way are.
+//
+// EXACTLY MEANS EXACTLY. Revit took a face 0.0000003 mm off the plane and
+// refused one 0.000001 mm off, the same for a face from a sketch line and an
+// extrusion's end (measured 2026-10-08, Revit 2024, row 5b-372). Version 1 took
+// half a millimetre as "on", so a plane a labelled formula had put 0.0167 mm
+// off the face reached Revit, which refused it as "not geometrically aligned".
+// A face that near is now refused before anything is locked, with both
+// positions and the gap, so the plane or the form can be moved.
 //
 // A FACE FACING LEFT-RIGHT OR FRONT-BACK IS LOCKED IN A FLOOR PLAN, one facing
 // up or down in an elevation - the views in which each is seen edge on, the
@@ -32,7 +40,11 @@ string refused = null;
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 Func<double, string> mm = feet => Math.Round(feet * 304.8, 2).ToString(invariant);
+// To four places, for a gap too small for two to show.
+Func<double, string> fineMm = feet => Math.Round(feet * 304.8, 4).ToString(invariant);
 var halfMillimetre = 0.5 / 304.8;
+// The largest gap Revit was measured to accept, as above.
+var exactly = 3e-7 / 304.8;
 
 Func<XYZ, int> axisOf = n =>
     Math.Abs(n.X) > 0.9999 ? 0 : Math.Abs(n.Y) > 0.9999 ? 1 : Math.Abs(n.Z) > 0.9999 ? 2 : -1;
@@ -158,8 +170,21 @@ else
         foreach (var p in wantedPlanes)
         {
             var on = faces.Where(f => axisOf(f.FaceNormal) == p.Item3
-                                   && Math.Abs(along(f.Origin, p.Item3) - p.Item4) < halfMillimetre).ToList();
-            if (on.Count == 0)
+                                   && Math.Abs(along(f.Origin, p.Item3) - p.Item4) < exactly).ToList();
+            var near = faces.Where(f => axisOf(f.FaceNormal) == p.Item3
+                                     && Math.Abs(along(f.Origin, p.Item3) - p.Item4) < halfMillimetre).ToList();
+            if (on.Count == 0 && near.Count > 0)
+            {
+                var gap = near.Min(f => Math.Abs(along(f.Origin, p.Item3) - p.Item4));
+                var at = near.Select(f => fineMm(along(f.Origin, p.Item3))).Distinct().ToList();
+                problems.Add("The form's " + (at.Count == 1 ? "face" : "faces") + " at " + axisLetters[p.Item3] + " "
+                    + string.Join(" and ", at) + " mm " + (at.Count == 1 ? "is " : "are ")
+                    + (gap * 304.8 < 0.0001 ? "less than 0.0001" : fineMm(gap)) + " mm off \"" + p.Item5 + "\" ("
+                    + axisLetters[p.Item3] + " " + fineMm(p.Item4) + " mm). Revit locks a face only where it lies "
+                    + "exactly on the plane, and a lock never moves what it locks - move the plane, or the form, "
+                    + "onto the other first.");
+            }
+            else if (on.Count == 0)
             {
                 var facing = faces.Where(f => axisOf(f.FaceNormal) == p.Item3)
                     .Select(f => mm(along(f.Origin, p.Item3))).Distinct().ToList();
@@ -188,7 +213,7 @@ if (refused == null)
         // Fresh faces for every plane: a lock regenerates the form, and a face
         // read before it is a face of the form as it was.
         var on = flatFaces().Where(f => axisOf(f.FaceNormal) == p.Item3
-                                     && Math.Abs(along(f.Origin, p.Item3) - p.Item4) < halfMillimetre).ToList();
+                                     && Math.Abs(along(f.Origin, p.Item3) - p.Item4) < exactly).ToList();
         foreach (var face in on)
         {
             try
@@ -199,7 +224,8 @@ if (refused == null)
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Revit would not lock the form's face at " + axisLetters[p.Item3]
-                    + " " + mm(along(face.Origin, p.Item3)) + " mm to \"" + p.Item5 + "\": " + ex.Message
+                    + " " + fineMm(along(face.Origin, p.Item3)) + " mm to \"" + p.Item5 + "\" (" + axisLetters[p.Item3]
+                    + " " + fineMm(p.Item4) + " mm), in " + view.Name + ": " + ex.Message
                     + " NOTHING from this call was kept.");
             }
             locked.Add("the face at " + axisLetters[p.Item3] + " " + mm(along(face.Origin, p.Item3)) + " mm to \""

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "align and lock the flat faces of a family form to the named 
 kind: action
 domain: revit.families
 capability: LOCK_FORM_TO_PLANES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -23,10 +23,9 @@ purpose: >
 
   **A FACE IS LOCKED ONLY WHERE IT ALREADY LIES.** The alignment call's own
   remarks: the two references must already be aligned, and the call will not
-  force them. So for each plane named, every flat face of the form lying on it
-  - parallel and within half a millimetre - is locked, and a plane with no face
-  on it refuses the whole call, naming where the form's faces facing that way
-  do lie.
+  force them. So for each plane named, every flat face of the form lying
+  exactly on it is locked, and a plane with no face on it refuses the whole
+  call, naming where the faces facing that way lie, or how far off they are.
 
   **IN THE VIEW THAT SEES THE FACE EDGE ON**, as it is done by hand: a face
   facing left-right or front-back in a floor plan, one facing up or down in an
@@ -121,6 +120,27 @@ compatibility-note: >
   `Level.GetPlaneReference()` read the same 2020 through 2027 (the RevitAPI
   reference assemblies and their own XML remarks, read 2026-10-01).
 
+# VERSION 2, 2026-10-08 (row 5b-372) - ON THE PLANE MEANS EXACTLY ON IT.
+# Version 1 took a face within half a millimetre of a plane as lying on it.
+# Revit does not: measured on a scratch family (Revit 2024), it locked a face
+# 0.0000003 mm off the plane and refused one 0.000001 mm off - "The two
+# references are not geometrically aligned" - for a face from a sketch line and
+# an extrusion's end alike, in every elevation. In the owner's Family20 a
+# formula (Blade Offset = Blade Pitch / 2 - Blade Thickness / 2, with Blade
+# Thickness 4.0333) put "Blade 1 Bottom" at Z -152.0167 against a face at -152,
+# so version 1 passed it to Revit and threw. Version 2 refuses a face that near
+# before anything is locked, naming both positions and the gap. The view was
+# never the cause: the same faces lock in Front, Back, Left or Right.
+#
+# A FORM WITH NO LOCK CAN STILL FOLLOW A PLANE, and it is not to be relied on.
+# Measured the same day on the scratch family: an extrusion whose SKETCH LINE
+# lay exactly on a reference plane followed it when a labelled dimension moved
+# the plane (-152 to -200), with nothing locked; it did NOT follow when the
+# plane was moved by itself, and an extrusion's END (its start or end, set as
+# an offset from the sketch plane) did not follow at all. Revit shows no
+# padlock for it and nothing documents it - lock the faces, and FLEX_FAMILY
+# what was locked.
+#
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "lock the cylinder's top to Body Top"        -> here
