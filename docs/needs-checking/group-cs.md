@@ -11,7 +11,7 @@ The owner, 2026-10-07: *"this tire should be separate family ... it will automat
 that family 1 and it will place"*, and *"I can see the families that nested families that you are creating.
 So I can suggest that this is OK or not."* The `family-creation` skill's step 11 now makes such a part in
 its own window, stops for the modeller to look at it, and brings it back (a to g). Three tools were widened
-for it, each DRAFT:
+for it, each PROVEN on 2026-10-07 and signed by Ajmal PS (CS1 to CS3):
 
 - `SAVE_DOCUMENT` version 2 - saves ANOTHER open document named by its file, and closes it when it is not the
   window in front ([row 5b-365](../fragment-issues/section-5b-rows-176-200.md): version 1 could never save).
@@ -34,9 +34,9 @@ from a run aimed at another document - reported, not measured here.
 
 | # | Run | Look for |
 |---|---|---|
-| **CS1** | Read `brain/proof-drafts/activate-document.yaml`, then `python brain/heron_validate.py accept activate-document --by "Ajmal PS"` on the owner's word only | positive: aimed at `HeronNest_Car` with `HeronNest_Tyre` in front, `wasAlready false`, `activeAfter HeronNest_Car`; negative: a missing file, `activated false` |
-| **CS2** | The same for `save-document` | positive: `HeronNest_Hub` saved (file 21:29:43 to 21:30:24) and `closed true`; negative: `HeronNest_Car`, the document Heron works in, refused and its file untouched |
-| **CS3** | The same for `load-family` - **the owner's call whether to sign before Group CN**: the reload half of version 2 (CN1 to CN9) has not run | positive: a saved family not in the car loaded new; negative: `HeronNest_Hub` open with an unsaved form refused by name; both rolled back |
+| **CS1** | Read `brain/proof-drafts/activate-document.yaml`, then `python brain/heron_validate.py accept activate-document --by "Ajmal PS"` on the owner's word only | positive: aimed at `HeronNest_Car` with `HeronNest_Tyre` in front, `wasAlready false`, `activeAfter HeronNest_Car`; negative: a missing file, `activated false`. **DONE 2026-10-07 - signed by Ajmal PS on his word; PROVEN.** |
+| **CS2** | The same for `save-document` | positive: `HeronNest_Hub` saved (file 21:29:43 to 21:30:24) and `closed true`; negative: `HeronNest_Car`, the document Heron works in, refused and its file untouched. **DONE 2026-10-07 - signed by Ajmal PS on his word; PROVEN.** |
+| **CS3** | The same for `load-family` - **the owner's call whether to sign before Group CN**: the reload half of version 2 (CN1 to CN9) has not run | positive: a saved family not in the car loaded new; negative: `HeronNest_Hub` open with an unsaved form refused by name; both rolled back. **DONE 2026-10-07 - signed by Ajmal PS on his word; PROVEN.** The reload half stays Group CN's |
 | **CS4** | The whole chain through the CHAT, in the owner's words, on a real job - a car with its tyres - with the host SAVED once | The part opens in its own window; Heron STOPS and shows it before anything goes into the host; at the end the host is in front, the part's window closed, and the host's count of that category equals the number placed |
 | **CS5** | The same with a host NEVER SAVED - File > New > Family, nothing saved | Step e skipped and said so; the part saved; loaded and placed in the host BEHIND it; the part's window left open for the owner to close, and nothing lost when he does |
 | **CS6** | [Row 5b-361](../fragment-issues/section-5b-rows-176-200.md): open a saved scratch family with `ACTIVATE_DOCUMENT` five times with the Heron Companion page closed, and five times with it open; read the add-in log after each | **RECORD how many opens lose their reply** (`unknown_outcome`, or a second run answering `wasAlready true`) and whether *"A newer connection took the session"* appears within seconds of each. Name the process that connects if it can be told |

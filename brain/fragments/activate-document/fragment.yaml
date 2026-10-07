@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,10 +74,29 @@ contract:
     - name: findings
       type: IList<string>
 
-# NO PROOF FOR VERSION 2. Version 1 was PROVEN on 2026-09-16 by Ajmal PS on PIPE
-# (3,332 elements), Revit 2020 - the record is in git history. Version 2 changes
-# impl/ (row 5b-359: "already in front" judged by the window in front, by its
-# file), so it is DRAFT until proved again - NEEDS-CHECKING group CS.
+# VERSION 2 PROVED 2026-10-07 on scratch families HeronNest_Car / HeronNest_Tyre
+# (Revit 2024), signed by Ajmal PS on his word - NEEDS-CHECKING CS1. Version 1
+# was PROVEN on 2026-09-16 on PIPE, Revit 2020; that record is in git history.
+
+proof:
+  date: '2026-10-07'
+  by: Ajmal PS
+  model: HeronNest_Car, Revit 2024, session 9240 - the count is NOT recorded because 1,738
+    elements was measured on HeronNest_Tyre, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run as it would normally be run. returned activated true, activeAfter HeronNest_Car,
+    findings 2 item(s) [activated; in front now: HeronNest_Car, ''HeronNest_Car'' is now the
+    document in front (was ''HeronNest...], path C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Car.rfa,
+    problem , wasAlready false. inputs came documentPath as given. on HeronNest_Car'
+  negative_case: 'run with documentPath=C:\nope\missing.rfa instead - chosen because it should
+    not contain what this fragment reports. returned activated false, activeAfter , findings
+    2 item(s) [NOT activated; in front now: <unchanged>, There is no file at "C:\nope\missing.rfa".],
+    path C:\nope\missing.rfa, problem , wasAlready false. inputs came documentPath as given.
+    on HeronNest_Car'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4eefd6bf7d2c159d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
