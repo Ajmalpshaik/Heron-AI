@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "make a document on disk the window in front, project or fami
 kind: action
 domain: revit.document
 capability: ACTIVATE_DOCUMENT
-version: 1
+version: 2
 source: OFFICIAL
 risk: EXECUTE
 
@@ -74,23 +74,10 @@ contract:
     - name: findings
       type: IList<string>
 
-proof:
-  date: '2026-09-16'
-  by: Ajmal PS
-  model: PIPE (3,332 elements), Revit 2020, session 8084
-  positive_case: 'run as it would normally be run. returned activated true, activeAfter PIPE,
-    findings 2 item(s) [already in front; in front now: PIPE, ''PIPE'' was already the document
-    in front - nothing was chang...], path C:/Users/AjmalAlavudheen/Desktop/PIPE.rvt, problem
-    , wasAlready true. inputs came documentPath as given. on PIPE'
-  negative_case: 'run with documentPath=C:/nope/missing.rvt instead - chosen because it should
-    not contain what this fragment reports. returned activated false, activeAfter , findings
-    2 item(s) [NOT activated; in front now: <unchanged>, There is no file at "C:/nope/missing.rvt".],
-    path C:/nope/missing.rvt, problem , wasAlready false. inputs came documentPath as given.
-    on PIPE'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 1bd0f9d1ce575d92
+# NO PROOF FOR VERSION 2. Version 1 was PROVEN on 2026-09-16 by Ajmal PS on PIPE
+# (3,332 elements), Revit 2020 - the record is in git history. Version 2 changes
+# impl/ (row 5b-359: "already in front" judged by the window in front, by its
+# file), so it is DRAFT until proved again - NEEDS-CHECKING group CS.
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
