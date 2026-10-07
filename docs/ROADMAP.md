@@ -6,6 +6,11 @@
 > **Tier 1 is clear.** Every question that blocked Phase 0 has been answered ([D-01](DECISIONS.md) to
 > [D-10](DECISIONS.md)), and Phase 0 is complete. What remains open, and whether any of it gates a
 > phase, is in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) — derive it there rather than reading a count here.
+>
+> **Where each phase stands is not kept on this page.** The step-by-step state — Phase 0 complete,
+> Step 6 run once and still owed `D3`, Phase 2 built and barely proven — is the Status table in the
+> root [README](../README.md#status), and what is genuinely unfinished is `python tools/check-gaps.py`.
+> This page is the route, not the progress.
 
 ---
 
@@ -41,7 +46,7 @@ Those eight named components map onto the phases below:
 
 ---
 
-## Phase 0 — Prove the bridge *(the only phase that matters right now)*
+## Phase 0 — Prove the bridge *(complete — see the [README Status](../README.md#status); this heading said "the only phase that matters right now" when it was written)*
 
 **Goal:** one sentence typed by a human changes the selection in a running Revit.
 

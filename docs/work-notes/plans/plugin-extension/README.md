@@ -47,6 +47,7 @@ applies — and so that an AI picking this up **reads facts instead of inventing
 | [`06-porting-method.md`](06-porting-method.md) | **How one AJ Tools tool is brought across**, and why widening the fragment is the deliverable. Nothing taken yet |
 | [`07-debugging-engine.md`](07-debugging-engine.md) | **The debugging engine survey.** Two-thirds of it already exists; Heron repairs situations, not code, and that is the gap |
 | [`08-lessons-from-the-brain.md`](08-lessons-from-the-brain.md) | **What the earlier brain already learned.** Eight lessons; three Heron already has, and one answers an open question |
+| [`PROMPTS-remaining-work.md`](PROMPTS-remaining-work.md) | **The hand-out prompts for what was left.** A, B and C are done (merged as #253); its banner says D, the proving on the owner's Windows PC, is what remains |
 
 ## The three rules of this folder
 

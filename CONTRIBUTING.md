@@ -10,7 +10,9 @@ people who actually do BIM work are worth more than contributions from people wh
 >
 > **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are
 > `DRAFT`**, which is Heron's word for *not proven as it stands* - most of those have never met a
-> model, and some were proved before their code changed. **All twenty-four skills are still `DRAFT`.**
+> model, and some were proved before their code changed. **Every skill is still `DRAFT`** —
+> `grep -h '^heron-status:' brain/skills/*.yaml | sort | uniq -c`; this line said *"twenty-four"*
+> after a twenty-fifth was added.
 > No count is typed here, on purpose: every fragment pull request moved it and conflicted with the next.
 >
 > Derive it rather than believing this line —
@@ -106,14 +108,19 @@ If you commit any of these by accident, **report it privately** via
 4. **Never break a working version** (Golden Rule 4). If your change affects Revit version support,
    say which versions you tested and how.
 5. **Tests, written to fail before your fix.**
-6. **Run the checks.** These three need nothing but Python 3 — no Revit, no Windows, no .NET SDK —
-   and all three must exit 0:
+6. **Run the checks.** These four need nothing but Python 3 — no Revit, no Windows, no .NET SDK —
+   and all four must exit 0:
 
    ```
    python tools/check-structure.py    # parts in place, no layering violation
    python tools/check-docs.py         # every link and every stated count
    python tools/check-metadata.py     # headers, and the registry against the code
+   python tools/check-package.py      # the manifest Revit reads before anything else
    ```
+
+   They are not all of CI's checks: the `gates` job in
+   [`.github/workflows/gates.yml`](.github/workflows/gates.yml) runs more, and any one of them turns a
+   pull request red. [AGENTS.md](AGENTS.md) names them.
 
    `python tools/check-gaps.py` exits non-zero while real work is outstanding, which is its job — read
    it, but do not expect a 0. [tools/README.md](tools/README.md) explains the rest.
