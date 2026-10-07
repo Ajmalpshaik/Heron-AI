@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-048
-semantic-identity: "repeat one form in a row - a linear array - in the family being edited, its count driven by a parameter"
+semantic-identity: "repeat one form or one nested family in a row - a linear array - in the family being edited, its count driven by a parameter"
 kind: action
 domain: revit.families
 capability: ARRAY_FAMILY_FORMS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -24,6 +24,14 @@ purpose: >
 
   **ONE FORM PER ARRAY.** Several at once would make every member a group;
   a second form takes a second call, and both may follow one count.
+
+  **OR ONE NESTED FAMILY** (version 2, 2026-10-07) - a coil spring's turns
+  arrayed up. Measured on a scratch family: a level-based nested family
+  moved up, its Bottom locked to a plane, arrayed to its LAST member, and that
+  copy's Top locked to a second plane - the row re-spaced when the planes
+  moved and grew from 3 to 5 with its count. The copies come back IN ORDER
+  ALONG THE ROW, the last one last, for LOCK_NESTED_FAMILY_TO_PLANES.
+  Proved again 2026-10-07 on scratch SpringProof, signed by Ajmal PS.
 
   **THE COUNT** is a whole number, or an Integer family parameter's name -
   its value in the current type is the count, and the label lets every type
@@ -47,8 +55,8 @@ contract:
       type: Document
     - name: uidoc
       type: UIDocument
-    # ONE form, by the id the form tools gave back - or `selected`, with it
-    # selected alone.
+    # ONE form or ONE nested family, by the id its tool gave back - or
+    # `selected`, with it selected alone.
     - name: form
       type: string
       source: request
@@ -70,8 +78,8 @@ contract:
       role: result
       type: string
     - name: members
-      # The copies' unique ids, commas between - the original form is not one
-      # of them.
+      # The copies' unique ids, commas between, in order along the row - the
+      # last is the far end. The original is not one of them.
       role: result
       type: string
     - name: labelled
@@ -91,40 +99,40 @@ contract:
 proof:
   date: '2026-10-07'
   by: Ajmal PS
-  model: ArrayAxisScratch, Revit 2024, session 9240 - the count is NOT recorded because 2,534
-    elements was measured on Family1, the document in front, and this ran against another
-    one (row 15)
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned arrayId f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000fca,
-    arrayView Func`1, axis 1, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
-    describe Func`2, driver (null), findings 1 item(s) [Arrayed the solid extrusion f8c1d972-03e2-4c0b-b6f5-cae7c197...],
+  model: SpringProof (1,753 elements), Revit 2024, session 9240
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned arrayId 337ead81-f16a-40e6-83ae-b97c6ded58ab-00000f28,
+    arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
+    describe Func`2, driver (null), findings 2 item(s) [Arrayed the nested family "SpringProbe
+    : SpringProbe" 337ead..., The last member anchors the spacing. LOCK_NESTED_FAMILY_TO_P...],
     flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo, isInteger
-    Func`2, labelled false, lowest Func`3, members f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000fc9,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000fd5,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000fdd,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000fe5,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000fed,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000ff5,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000ffd,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00001005,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-0000100d,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00001015,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-0000101d,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00001025,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-0000102d,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00001035,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-0000103d,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00001045,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-0000104d,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00001055,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-0000105d,f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00001065,
-    n 21, notAFamily false, original Extrusion, plain Func`2, problems 0 item(s), refused
-    (null), revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2, sketchPlaneOf
-    Func`2, stepMm 40, toLast false, unitAlong Func`2. inputs came form as given; count as
-    given; step as given. on ArrayAxisScratch
-  negative_case: 'run with form=f8c1d972-03e2-4c0b-b6f5-cae7c1978c05-00000ae1, count=21, step=X
-    40 instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    arrayId , arrayView Func`1, axis 0, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
-    describe Func`2, driver (null), findings 1 item(s) [Nothing was arrayed. A copy of this
-    extrusion cannot leave t...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, isInteger Func`2, labelled false, lowest Func`3, members , n 21,
-    notAFamily false, original Extrusion, plain Func`2, problems 1 item(s) [A copy of this
-    extrusion cannot leave the plane it is sketch...], refused Nothing was arrayed. A copy
-    of this extrusion cannot leave the plane it is sketched on, Center (Left/Right), and a
-    row along X leaves it: a trial copy moved 0 mm of the 40 mm asked, so every copy would
-    sit on the original. A row along Y or Z stays in that plane. For a row along X, sketch
-    the form on a plane the row runs along - Ref. Level or Center (Front/Back) in Revit''s
-    own templates - or, with a fixed count, make each one its own form at its own place.,
-    revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2,
-    stepMm 40, toLast false, unitAlong Func`2. inputs came form as given; count as given;
-    step as given. on ArrayAxisScratch'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 8b8e410496a13295
+    Func`2, labelled false, lowest Func`3, members 337ead81-f16a-40e6-83ae-b97c6ded58ab-00000f2e,337ead81-f16a-40e6-83ae-b97c6ded58ab-00000f27,
+    n 3, notAFamily false, original FamilyInstance, originalForm (null), plain Func`2, problems
+    0 item(s), refused (null), revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2,
+    sketchPlaneOf Func`2, stepMm 60, toLast true, unitAlong Func`2. inputs came form as given;
+    count as given; step as given. on SpringProof'
+  negative_case: run against 'SpringProof' with form=337ead81-f16a-40e6-83ae-b97c6ded58ab-00000ead,
+    count=3, step=Z 60 last instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned arrayId , arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y,
+    Z], dbNamespace Autodesk.Revit.DB, describe Func`2, driver (null), findings 1 item(s)
+    [Nothing was arrayed. "Array" (337ead81-f16a-40e6-83ae-b97c6d...], flags BindingFlags,
+    halfMillimetre 0.00164041994750656, invariant CultureInfo, isInteger Func`2, labelled
+    false, lowest Func`3, members , n 3, notAFamily false, original (null), originalForm (null),
+    plain Func`2, problems 1 item(s) ["Array" (337ead81-f16a-40e6-83ae-b97c6ded58ab-00000ead)
+    is n...], refused Nothing was arrayed. "Array" (337ead81-f16a-40e6-83ae-b97c6ded58ab-00000ead)
+    is neither a form - an extrusion, revolve, blend, sweep or swept blend - nor a nested
+    family., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2, sketchPlaneOf
+    Func`2, stepMm 60, toLast true, unitAlong Func`2. inputs came form as given; count as
+    given; step as given. on SpringProof
+  second_route: 'The parametric spring TRG_Spring_Compression Spring, built 2026-10-07 (Revit
+    2024, session 9240): the one-turn family nested, Bottom locked to "Pitch", arrayed with
+    count "Active Coils" and step "Z 73.5 last", the last copy locked to "Top Turn Start".
+    Read back by a scratch probe (not a Heron fragment - FLEX_FAMILY does not read nested
+    families, row 5b-367), rolled back: Active Coils 4, 5, 5 and 8 at three sizes gave 4,
+    5, 5 and 8 turns, each one Pitch apart, the first at Pitch, the last ending at Free Height
+    - Pitch.'
+  fingerprint: d55056abd9b5cf1e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -147,6 +155,7 @@ compatibility-note: >
 #
 #   "array the blade along X with Blade Count"    -> here
 #   "repeat this fin along the width"             -> here
+#   "array the nested family up with the count"   -> here, version 2
 #   "array them along the corridor"               -> ARRAY_ELEMENTS, loose
 #                                                    copies in a project
 
@@ -155,3 +164,4 @@ utterances:
   - repeat this fin along the width
   - make a row of these slots with a count parameter
   - array this form so the types choose how many
+  - array the nested family up with its count on a parameter

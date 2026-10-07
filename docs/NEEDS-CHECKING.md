@@ -547,6 +547,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ct.md`](needs-checking/group-ct.md)
 
+## Group CU - a parametric coil spring: swept blend labels, a nested family arrayed up, its last copy locked (2026-10-07)
+
+**Its own file:** [`needs-checking/group-cu.md`](needs-checking/group-cu.md)
+
 ## Group CV - one smooth freeform form: a loft through sections, a sweep along a 3D path (2026-10-07)
 
 **Its own file:** [`needs-checking/group-cv.md`](needs-checking/group-cv.md)

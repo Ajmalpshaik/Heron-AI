@@ -9,7 +9,7 @@ semantic-identity: "tie the radius or diameter of a round family form to a lengt
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_RADIUS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -52,6 +52,17 @@ purpose: >
   and 60. When one value is more than one size of the revolve, the call is
   refused and the label is left for Edit Revolve.
 
+  **A SWEPT BLEND HAS THREE** (version 4, 2026-10-07, for a coil spring's
+  half-turns). Its PATH's arc radius, with the arc's centre locked to the
+  planes through it; every PROFILE circle's own radius or diameter, a half
+  circle's arc included; and a profile circle CENTRE's height off the path's
+  plane - a coil's rise - from the level or plane the path is on to a plane
+  through the centre, made and named after the parameter, the centre locked
+  to it. One parameter may label the same kind of size on several swept
+  blends; a rise reuses its plane. Measured on scratch families: radius 40 to
+  60 and 25, wire 5 to 8 and 3, rise 15 to 30 and 6, each followed.
+  Proved again 2026-10-07 on scratch SpringProof, signed by Ajmal PS.
+
   **ONE FAMILY RESIZES WITH THE PIPE SIZE.** With the round sizes labelled,
   one body follows Nominal Diameter through formulas, instead of one shape set
   per size switched on and off.
@@ -89,8 +100,8 @@ contract:
       type: string
       source: request
     # true for a diameter dimension, false for a radius. A distance from a
-    # revolve's axis takes a radius only; a profile circle's own size takes
-    # either.
+    # revolve's axis, or a swept blend profile's height off its path, takes a
+    # radius only; a circle's own size or a swept blend's path takes either.
     - name: diameter
       type: bool
       source: request
@@ -115,45 +126,52 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-04'
+  date: '2026-10-07'
   by: Ajmal PS
-  model: Family16, Revit 2024, session 8804 - the count is NOT recorded because 1,893 elements
-    was measured on TRG_PLMB_VLV_PPR Gate Valve_GV_R0, the document in front, and this ran
-    against another one (row 15)
+  model: SpringProof (1,753 elements), Revit 2024, session 9240
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Line, already (null), arc
-    (null), axisOf Func`2, axisPlane ReferencePlane, centreArc Arc, centrePlane ReferencePlane,
-    centreReference Reference, dbNamespace Autodesk.Revit.DB, diameter false, findings 2 item(s)
-    [The distance of the revolve's profile circle from its axis, ..., The dimension is in
-    the sketch, where Edit Revolve shows it....], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, isLength Func`2, joins Func`4, labelled The distance of the revolve's
-    profile circle from its axis, from "Center (Left/Right)" to a new reference plane through
-    the circle's centre, 200 mm out, labelled "Ring Radius" inside the form's sketch, reading
-    200 mm. Its axis is locked to "Center (Left/Right)". A reference plane "Ring Radius" was
-    made through the circle's centre. The circle's centre is locked to "Ring Radius"., mm
-    Func`2, notAFamily false, parameter FamilyParameter, problems 0 item(s), refused (null),
-    revitAssembly RuntimeAssembly, sameKind Func`3, sideLine (null), target Revolution, valueMm
-    200, view ViewSection, wanted 0.656167979002625. inputs came form as given; parameterName
-    as given; diameter as given. on Family16
-  negative_case: 'run with form=3a0dc021-0802-4ba3-8ef1-83ac6eaa4bff-00000b66, parameterName=Tube
-    Diameter, diameter=false instead - chosen because it should not contain what this fragment
-    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned along (null), already (null), arc (null), axisOf Func`2, axisPlane
-    (null), centreArc (null), centrePlane (null), centreReference (null), dbNamespace Autodesk.Revit.DB,
-    diameter false, findings 1 item(s) [Nothing was labelled. Nothing in the revolve''s profile
-    is 40...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo,
-    isLength Func`2, joins Func`4, labelled , mm Func`2, notAFamily false, parameter FamilyParameter,
-    problems 1 item(s) [Nothing in the revolve''s profile is 40 mm in size: no circle...],
-    refused Nothing was labelled. Nothing in the revolve''s profile is 40 mm in size: no circle
-    of that radius, no circle centred that far from the axis, no line alongside the axis that
-    far from it. In the profile, its circles have radii of 20 mm and centres 200 mm from the
-    axis - set the parameter to one of those first., revitAssembly RuntimeAssembly, sameKind
-    Func`3, sideLine (null), target Revolution, valueMm 0, view (null), wanted 0.131233595800525.
-    inputs came form as given; parameterName as given; diameter as given. on Family16'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 6d07e66111e6e4f5
+    the transaction group ROLLED BACK afterwards. returned along (null), already (null), arc
+    (null), axisOf Func`2, axisPlane (null), blend SweptBlend, centreArc (null), centrePlane
+    (null), centreReference (null), circles 0 item(s), dbNamespace Autodesk.Revit.DB, diameter
+    false, findings 2 item(s) [The radius of the swept blend's path arc, labelled "Mean Rad...,
+    The dimensions are in the sketches, where Edit Swept Blend s...], flags BindingFlags,
+    halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
+    joins Func`4, joinsIds Func`4, labelled The radius of the swept blend's path arc, labelled
+    "Mean Radius" inside the swept blend's sketches, reading 40 mm. Its centre is locked to
+    "Center (Front/Back)". Its centre is locked to "Center (Left/Right)"., labelledWith Func`2,
+    measures Func`3, mm Func`2, notAFamily false, parameter FamilyParameter, pathAlready (null),
+    pathArc Arc, pathDatum (null), pathDatumReference (null), pathNormal XYZ, pathView ViewPlan,
+    problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, riseAlready (null),
+    risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3, sideLine (null),
+    target SweptBlend, valueMm 40, view (null), wanted 0.131233595800525. inputs came form
+    as given; parameterName as given; diameter as given. on SpringProof
+  negative_case: 'run against ''SpringProof'' with form=337ead81-f16a-40e6-83ae-b97c6ded58ab-00000eb6,
+    parameterName=Odd Size, diameter=false instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned along (null), already (null), arc (null), axisOf
+    Func`2, axisPlane (null), blend SweptBlend, centreArc (null), centrePlane (null), centreReference
+    (null), circles 0 item(s), dbNamespace Autodesk.Revit.DB, diameter false, findings 1 item(s)
+    [Nothing was labelled. Nothing in the swept blend is 22 mm in...], flags BindingFlags,
+    halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
+    joins Func`4, joinsIds Func`4, labelled , labelledWith Func`2, measures Func`3, mm Func`2,
+    notAFamily false, parameter FamilyParameter, pathAlready (null), pathArc (null), pathDatum
+    (null), pathDatumReference (null), pathNormal XYZ, pathView (null), problems 1 item(s)
+    [Nothing in the swept blend is 22 mm in size: not its path''s ...], refused Nothing was
+    labelled. Nothing in the swept blend is 22 mm in size: not its path''s radius, no profile
+    circle''s radius, no profile circle centred that far off the path''s plane. In it, its
+    path is an arc of radius 40 mm; its profiles'' circles have radii of 5 mm; their centres
+    stand 15 mm off the path''s plane - set the parameter to one of those first., revitAssembly
+    RuntimeAssembly, riseAlready (null), risePlane (null), riseView (null), risers 0 item(s),
+    sameKind Func`3, sideLine (null), target SweptBlend, valueMm 0, view (null), wanted 0.0721784776902887.
+    inputs came form as given; parameterName as given; diameter as given. on SpringProof'
+  second_route: 'FLEX_FAMILY with this fragment as its setup, both legs rolled back, 2026-10-07
+    on SpringProof (Revit 2024, session 9240), record brain/proof-drafts/runs/label-family-radius-second-route.json:
+    with "Mean Radius" labelled on the half-turn''s path, trial Mean Radius=60 measured the
+    solid 130 x 65 x 25 mm and 25 measured 60 x 28.53 x 25 - the form followed the label (2
+    x (radius + wire 5)); the negative trial Odd Size=30 left it 90 x 45 x 25. The same evening
+    the whole spring was built with it: TRG_Spring_One Turn flexed 95, 114 and 127 mm across
+    at three sizes.'
+  fingerprint: 90c6543736410662
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -168,7 +186,10 @@ compatibility-note: >
   `Reference.ConvertToStableRepresentation` / `ParseFromStableRepresentation`,
   `FamilyItemFactory.NewReferencePlane` and `Dimension.References` read the
   same 2020 through 2027 (the RevitAPI reference
-  assemblies, read 2026-10-01 and 2026-10-03). No `SketchEditScope` is used -
+  assemblies, read 2026-10-01 and 2026-10-03), and so do version 4's
+  `SweptBlend.PathSketch`, `BottomSketch` and `TopSketch`,
+  `Level.GetPlaneReference()` and `Dimension.DimensionShape` (read
+  2026-10-07). No `SketchEditScope` is used -
   it exists only from 2022 and refuses a family document. A parameter's kind is
   read by reflection, because it moved at 2022.
 
@@ -176,6 +197,8 @@ compatibility-note: >
 #
 #   "label the neck diameter with Neck Diameter"   -> here
 #   "drive the radius of this cylinder by Radius"  -> here
+#   "label the swept blend's path arc radius"      -> here, version 4
+#   "make Pitch drive the rise of the swept blend" -> here, version 4
 #   "label the width with the Width parameter"     -> LABEL_FAMILY_DIMENSION
 #   "put a radial dimension on this arc"           -> CREATE_RADIAL_DIMENSION,
 #                                                     a project annotation
@@ -190,3 +213,6 @@ utterances:
   - make this round family resize with the pipe size
   - label the tube diameter of this torus
   - make the rim ring radius follow a parameter
+  - label the swept blend's path arc radius
+  - label each profile circle's radius of the swept blend
+  - make Pitch drive the rise of the swept blend
