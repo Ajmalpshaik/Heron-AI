@@ -11,6 +11,15 @@ positive:
   - given: a host plane "Box Left" moved by a labelled dimension after the box's Center (Left/Right) is locked to a plane on it, then FLEX_FAMILY
     expect: the nested box follows the plane it is locked to
 
+  - given: >
+      version 2, AN ARRAY'S COPY. The nested family arrayed up by
+      ARRAY_FAMILY_FORMS with step "Z 60 last"; instance = the LAST id in its
+      members (a group), locks "Top=Top Turn Start"
+    expect: >
+      the nested family inside the group found and its Top locked, in an
+      elevation; extent unchanged; a flex of the planes re-spaced the row.
+      Ran 2026-10-07, scratch SpringMainProbe, kept there
+
 negative:
   - given: locks "Left=Center (Left/Right)" where the nested family has no plane that is Left
     expect: refused, naming the sides it does show, and nothing locked
@@ -20,6 +29,9 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and nothing locked
+
+  - given: instance = the array itself (its arrayId), not a copy
+    expect: refused as not a nested family, naming ARRAY_FAMILY_FORMS' copies, and nothing locked
 
 second_route:
   - >

@@ -20,6 +20,13 @@
 // turned nested family - its Left facing front, say - is refused before
 // anything is locked, and Revit's own refusal names the rest.
 //
+// AN ARRAY'S COPY IS NAMED BY ITS GROUP (version 2, 2026-10-07). Every member
+// of an array is a model group, and ARRAY_FAMILY_FORMS gives back the groups'
+// ids; a group holding exactly one nested family is locked through it. The
+// last copy of a row spread to its last member, its Top locked to a plane,
+// re-spaced the whole row when that plane moved - the parametric array of a
+// coil spring's turns (SpringMainProbe, Revit 2024, rolled back).
+//
 // A SIDE FACING LEFT-RIGHT OR FRONT-BACK IS LOCKED IN A FLOOR PLAN, one facing
 // up or down in an elevation, as it is done by hand.
 //
@@ -116,9 +123,28 @@ else
     if (chosen != null)
     {
         nested = chosen as FamilyInstance;
-        if (nested == null)
+        // AN ARRAY'S COPY IS A GROUP holding the nested family - every member
+        // of an array is one (5b-358) - and ARRAY_FAMILY_FORMS gives back the
+        // groups' ids. The nested family inside is the one locked: on
+        // 2026-10-07 (SpringMainProbe, Revit 2024) the LAST copy's Top locked
+        // to a plane, and the copies re-spaced when that plane moved.
+        var group = chosen as Group;
+        if (nested == null && group != null)
+        {
+            var inside = group.GetMemberIds().Select(id => doc.GetElement(id)).OfType<FamilyInstance>().ToList();
+            if (inside.Count == 1)
+            {
+                nested = inside[0];
+                findings.Add("\"" + (chosen.Name ?? said) + "\" is a group - an array's copy - and the nested family "
+                    + "inside it, " + nested.UniqueId + ", is the one locked.");
+            }
+            else
+                problems.Add("\"" + (chosen.Name ?? said) + "\" is a group holding " + inside.Count + " nested families. "
+                    + "An array's copy holding exactly one is locked through its group; name any other by its own id.");
+        }
+        else if (nested == null)
             problems.Add("\"" + (chosen.Name ?? said) + "\" is not a nested family - PLACE_NESTED_FAMILY gives back "
-                + "the id of one it places.");
+                + "the id of one it places, and ARRAY_FAMILY_FORMS the ids of its copies.");
     }
 
     var transform = nested == null ? null : nested.GetTransform();
@@ -209,7 +235,9 @@ if (refused == null)
         {
             throw new InvalidOperationException("Revit would not lock the nested family's " + p.Item1.Item2 + " to \""
                 + p.Item3.Item4 + "\": " + ex.Message + " Revit locks only two that already lie on each other - move "
-                + "the nested family onto the plane first. The call failed, and Heron rolls the whole call back.");
+                + "the nested family onto the plane first. In an array, measured: the last copy of a row spread to "
+                + "its last member took a lock, and the second copy of a row stepped member by member was refused. "
+                + "The call failed, and Heron rolls the whole call back.");
         }
         locked.Add(p.Item1.Item2 + " to \"" + p.Item3.Item4 + "\" (in " + view.Name + ")");
         doc.Regenerate();
