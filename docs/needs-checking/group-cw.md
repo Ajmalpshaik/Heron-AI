@@ -9,7 +9,7 @@
 
 The form tools (`CREATE_FAMILY_EXTRUSION`, `_REVOLUTION`, `_BLEND`, `_SWEEP` and the rest) answer with each
 form's id as `formId`, and on 2026-10-08 the owner, building a family in Revit 2024, needed several of those
-forms SELECTED to delete or edit them - and Heron had no way ([row 5b-369](../fragment-issues/section-5b-rows-176-200.md)).
+forms SELECTED to delete or edit them - and Heron had no way ([row 5b-370](../fragment-issues/section-5b-rows-176-200.md)).
 `SELECT_BY_MATERIAL` with `categories=Generic Models` in a Generic Model family answered *0 of 0 scanned*;
 `SET_SELECTION` and `DELETE_ELEMENTS` take what is selected; `FILTER_ELEMENTS_BY_ID` refuses typed ids by
 design.
@@ -54,3 +54,5 @@ on every line.
 **Through the chat** (`revit_read` / `revit_change`) the new capability needs its row in the shared
 knowledge store, which the rebuild from main after merging gives it; until then `heron_resolve` answers
 *Nothing provides SELECT_FAMILY_FORMS*.
+
+**Routing, measured 2026-10-08 on scratch stores - not proof.** Against main's library, both search backends, 35 sentences: *select the forms with these ids in the family*, *select the voids in this family so I can delete them*, *select forms by their unique ids* and *delete the forms with these ids from the family* now reach it on both, where they reached `REPORT_FAMILY_FORMS`, `DELETE_ELEMENTS` or `SET_FAMILY_FORM_VISIBILITY`; no neighbour's own sentence moves. The first wording took *select by family name* from `SELECT_BY_FAMILY` and *how many forms are in this family* from `REPORT_FAMILY_FORMS`; reworded, both are back. **One moves the wrong way and is recorded, not tuned:** *get rid of these forms* - the sentence `DELETE_ELEMENTS` says to ASK about - reaches this card, where it reached `REPORT_FAMILY_FORMS` (trained) or `HIDE_ELEMENTS` (lexical); none of the three is that job, and this one changes nothing.
