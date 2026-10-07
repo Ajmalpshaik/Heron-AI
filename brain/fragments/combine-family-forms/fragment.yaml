@@ -36,8 +36,8 @@ purpose: >
   the combination's after: a void that took nothing away fails the call -
   it misses the solid, or Revit did not cut with it - and so does a join that
   came out bigger than its parts. Every solid named must be in the result, read
-  back point by point: one Revit leaves out ("Can't keep elements joined")
-  refuses the call, found by a trial combination taken back first.
+  back point by point: one Revit leaves out of the combination refuses the
+  call, found by a trial combination taken back first.
 
   **A SOLID ALREADY IN A COMBINATION IS NAMED BY ITS COMBINATION.** Revit's
   remarks: a solid belongs to at most one, so naming a member would quietly
