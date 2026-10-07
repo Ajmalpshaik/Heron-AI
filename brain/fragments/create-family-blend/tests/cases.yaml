@@ -16,6 +16,21 @@ positive:
       a frustum of a square pyramid: X and Y -200 to 200, Z 0 to 400 mm, volume
       about 28.0 L (0.4 x (0.16 + 0.01 + 0.04) / 3 m cubed)
 
+  - given: >
+      (5b-369) a plane made by CREATE_REFERENCE_PLANES axis=left-right,
+      "Divider Plane=-2230" - it faces -X; baseProfile "rect 1040,150 1160,450",
+      topProfile "rect 1090,60 1110,90", topMm -330, solid true
+    expect: >
+      X -2560 to -2230 mm - the base's 120 x 300 outline on the plane at -2230,
+      the top's 20 x 30 at -2560 - and the findings naming the first way Revit
+      was offered the loops as deleted for reading X -2890 to -2560. Version 1
+      refused this call with exactly that reading.
+
+  - given: >
+      the same, on a plane made axis=front-back (it faces +Y) and on a height
+      plane, with topMm 330 and -330 each
+    expect: the base on the plane and the top topMm along the axis every time
+
 negative:
   - given: baseProfile "rect -300,-200 300,200 | circle 0,0 50", a loop with a hole
     expect: refused as more than one loop, and no form made

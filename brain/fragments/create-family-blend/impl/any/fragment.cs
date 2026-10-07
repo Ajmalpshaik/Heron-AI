@@ -19,12 +19,15 @@
 // closed curve - Revit needs corners to pair across - so the loop reader splits
 // every circle before Revit sees it.
 //
-// WHICH PROFILE IS "FIRST" IS LEFT TO REVIT. Its remarks warn that which
-// profile ends up on the sketch plane, and which offset reads higher, depend on
-// how the loops and the plane are oriented - and the SDK's own sample passes the
-// top profile first. So the base is offered first and, if Revit refuses that,
-// the top first; the EXTENT is then read back along the axis, and a blend that
-// did not land from the plane to the top fails the call.
+// WHICH WAY THE BLEND RUNS IS REVIT'S CALL, and it does not follow the top.
+// Its remarks warn that which profile ends up on the sketch plane, and which
+// offset reads higher, depend on how the loops and the plane are oriented. Measured
+// (5b-369): the way the loops go round decides it - the wrong way puts the base
+// `topMm` off the plane, or the top on the wrong side. So the base is offered
+// first with the loops as written, then with both reversed, then the top first
+// each way; every try is READ BACK - from the plane to the top along the axis,
+// the base's outline on the plane and the top's at the top - and a wrong one is
+// deleted before the next. None right fails the call.
 //
 // THE CORNERS ARE PAIRED BY REVIT. A twist it chose can be undone by hand with
 // Edit Vertices; nothing here changes the pairing.
@@ -336,14 +339,17 @@ if (refused == null)
         return new XYZ(xyz[0], xyz[1], xyz[2]);
     };
 
+    // REVERSED, each loop runs the other way round - the same corners, every
+    // side's ends swapped and the sides taken in the opposite order.
     var curves = new List<Curve>();
-    Func<List<double[]>, double, CurveArray> arrayOf = (loop, offset) =>
+    Func<List<double[]>, double, bool, CurveArray> arrayOf = (loop, offset, reversed) =>
     {
         var array = new CurveArray();
-        foreach (var s in loop)
+        foreach (var s in reversed ? Enumerable.Reverse(loop) : loop)
         {
             var a = onPlane(s[1], s[2], offset);
             var b = onPlane(s[5], s[6], offset);
+            if (reversed) { var swap = a; a = b; b = swap; }
             Curve piece = s[0] == 0.0 ? (Curve)Line.CreateBound(a, b) : Arc.Create(a, b, onPlane(s[3], s[4], offset));
             array.Append(piece);
             curves.Add(piece);
@@ -351,33 +357,128 @@ if (refused == null)
         return array;
     };
 
+    // How far some points reach across the axis, {u low, v low, u high, v high}.
+    Func<IEnumerable<XYZ>, double[]> reachOf = points =>
+    {
+        var reach = new[] { double.MaxValue, double.MaxValue, double.MinValue, double.MinValue };
+        foreach (var point in points)
+        {
+            reach[0] = Math.Min(reach[0], along(point, u));
+            reach[1] = Math.Min(reach[1], along(point, v));
+            reach[2] = Math.Max(reach[2], along(point, u));
+            reach[3] = Math.Max(reach[3], along(point, v));
+        }
+        return reach;
+    };
+    Func<CurveArray, double[]> reachOfLoop = array =>
+        reachOf(array.Cast<Curve>().SelectMany(c => Enumerable.Range(0, 257).Select(k => c.Evaluate(k / 256.0, true))));
+
+    var low = at + Math.Min(0.0, topMm / 304.8);
+    var high = at + Math.Max(0.0, topMm / 304.8);
+
+    // WHERE A BLEND LANDED. Null when it runs from the plane to the top with the
+    // base's own outline on the plane and the top's at the top; otherwise what it
+    // reads. The ends are told apart by outline, so a blend standing on its top -
+    // which spans the same distance along the axis - is not taken for one on its
+    // base.
+    Func<Blend, CurveArray, CurveArray, string> landing = (candidate, baseArray, topArray) =>
+    {
+        var box = candidate.get_BoundingBox(null);
+        if (box == null) return "it has no extent to read back";
+        var reads = "it reads " + axisLetters[axis] + " " + mm(along(box.Min, axis)) + " to " + mm(along(box.Max, axis))
+            + " mm";
+        if (Math.Abs(along(box.Min, axis) - low) > halfMillimetre || Math.Abs(along(box.Max, axis) - high) > halfMillimetre)
+            return reads;
+
+        var ends = new List<PlanarFace>();
+        var shape = candidate.get_Geometry(new Options());
+        if (shape != null)
+            foreach (GeometryObject bit in shape)
+            {
+                var lump = bit as Solid;
+                if (lump == null) continue;
+                foreach (Face side in lump.Faces)
+                {
+                    var flat = side as PlanarFace;
+                    if (flat != null && axisOf(flat.FaceNormal) == axis) ends.Add(flat);
+                }
+            }
+
+        foreach (var end in new[] { Tuple.Create(at, baseArray, "base"), Tuple.Create(at + topMm / 304.8, topArray, "top") })
+        {
+            var face = ends.FirstOrDefault(f => Math.Abs(along(f.Origin, axis) - end.Item1) <= halfMillimetre);
+            if (face == null) return reads + ", with no flat end at " + mm(end.Item1) + " mm";
+            var wantReach = reachOfLoop(end.Item2);
+            var gotReach = reachOf(face.EdgeLoops.Cast<EdgeArray>().SelectMany(l => l.Cast<Edge>())
+                .SelectMany(e => e.Tessellate()));
+            for (var i = 0; i < 2; i++)
+            {
+                // The same allowance as across the axis below: a millimetre and half a
+                // percent, for an end read from its tessellation.
+                var allowance = 1.0 / 304.8 + 0.005 * (wantReach[i + 2] - wantReach[i]);
+                if (Math.Abs(gotReach[i] - wantReach[i]) > allowance
+                    || Math.Abs(gotReach[i + 2] - wantReach[i + 2]) > allowance)
+                    return reads + ", but its end at " + mm(end.Item1) + " mm is not the " + end.Item3
+                        + " profile's outline";
+            }
+        }
+        return null;
+    };
+
+    // REVIT TAKES A BLEND'S DIRECTION FROM THE WAY ITS LOOPS RUN, not from where
+    // the top lies (5b-369). Measured 2026-10-08, Revit 2024, 64 blends: for every
+    // plane, one way round lands base on the plane and top at `topMm`, whichever
+    // profile goes first; the other puts the base `topMm` off the plane or the top
+    // on the wrong side. Which way is right is not consistent enough to predict -
+    // round the plane's normal for planes facing +X, -X, +Y, -Y, +Z and a level,
+    // the other way for one facing -Z - so each way is BUILT AND READ BACK, and a
+    // wrong one deleted before the next. Its sketch plane goes with it, so each
+    // try makes its own.
+    var tries = new[] { "base first", "base first, both loops reversed", "top first", "top first, both loops reversed" };
+    var turnedDown = new List<string>();
     Blend form = null;
     var order = "";
+    CurveArray bottom = null, top = null;
 
     try
     {
-        var sketch = SketchPlane.Create(doc, plane.Item1.Id);
-        var surface = sketch.GetPlane();
-        if (axisOf(surface.Normal) != axis || Math.Abs(along(surface.Origin, axis) - at) > halfMillimetre)
-            throw new InvalidOperationException("the sketch plane made on \"" + plane.Item4 + "\" does not lie on it");
+        SketchPlane sketch = null;
+        for (var t = 0; t < tries.Length && form == null; t++)
+        {
+            if (sketch == null || !sketch.IsValidObject)
+            {
+                sketch = SketchPlane.Create(doc, plane.Item1.Id);
+                var surface = sketch.GetPlane();
+                if (axisOf(surface.Normal) != axis || Math.Abs(along(surface.Origin, axis) - at) > halfMillimetre)
+                    throw new InvalidOperationException("the sketch plane made on \"" + plane.Item4 + "\" does not lie on it");
+            }
 
-        var bottom = arrayOf(bottomLoop, 0.0);
-        var top = arrayOf(topLoop, topMm / 304.8);
-        try
-        {
-            form = doc.FamilyCreate.NewBlend(solid, bottom, top, sketch);
-            order = "base first";
-        }
-        catch (Exception first)
-        {
+            curves.Clear();
+            bottom = arrayOf(bottomLoop, 0.0, t % 2 == 1);
+            top = arrayOf(topLoop, topMm / 304.8, t % 2 == 1);
+            Blend made;
             try
             {
-                form = doc.FamilyCreate.NewBlend(solid, top, bottom, sketch);
-                order = "top first, after Revit refused the base first (" + first.Message + ")";
+                made = t < 2 ? doc.FamilyCreate.NewBlend(solid, bottom, top, sketch)
+                             : doc.FamilyCreate.NewBlend(solid, top, bottom, sketch);
             }
-            catch (Exception second)
+            catch (Exception refusal)
             {
-                throw new InvalidOperationException("base first: " + first.Message + " Top first: " + second.Message);
+                turnedDown.Add(tries[t] + ": Revit refused it (" + refusal.Message + ")");
+                continue;
+            }
+
+            doc.Regenerate();
+            var wrong = landing(made, bottom, top);
+            if (wrong == null)
+            {
+                form = made;
+                order = tries[t];
+            }
+            else
+            {
+                turnedDown.Add(tries[t] + ": " + wrong);
+                doc.Delete(made.Id);
             }
         }
     }
@@ -387,21 +488,12 @@ if (refused == null)
             + " NOTHING from this call was kept.");
     }
 
-    doc.Regenerate();
+    if (form == null)
+        throw new InvalidOperationException("The blend was asked to run from the plane at " + mm(at) + " mm to the top at "
+            + mm(at + topMm / 304.8) + " mm along " + axisLetters[axis] + ", and none of the four ways Revit was offered "
+            + "the profiles built that - " + string.Join("; ", turnedDown) + ". NOTHING from this call was kept.");
 
     var bounds = form.get_BoundingBox(null);
-    if (bounds == null)
-        throw new InvalidOperationException("The blend was built and has no extent to read back. NOTHING from "
-            + "this call was kept.");
-
-    var low = at + Math.Min(0.0, topMm / 304.8);
-    var high = at + Math.Max(0.0, topMm / 304.8);
-    if (Math.Abs(along(bounds.Min, axis) - low) > halfMillimetre
-        || Math.Abs(along(bounds.Max, axis) - high) > halfMillimetre)
-        throw new InvalidOperationException("The blend reads " + axisLetters[axis] + " " + mm(along(bounds.Min, axis))
-            + " to " + mm(along(bounds.Max, axis)) + " mm and was asked to run from the plane at " + mm(at)
-            + " mm to the top at " + mm(at + topMm / 304.8) + " mm. Revit chose the profiles' order itself ("
-            + order + "). NOTHING from this call was kept.");
 
     var spanMin = new[] { double.MaxValue, double.MaxValue, double.MaxValue };
     var spanMax = new[] { double.MinValue, double.MinValue, double.MinValue };
@@ -450,6 +542,9 @@ if (refused == null)
     findings.Add("Built: " + built + " Its id is " + formId + ".");
     findings.Add("Revit took the profiles " + order + ", and paired their corners itself - a twist it chose is "
         + "undone by hand with Edit Vertices.");
+    if (turnedDown.Count > 0)
+        findings.Add("Before that, and deleted at once: " + string.Join("; ", turnedDown) + ". Revit decides which "
+            + "way a blend runs from the way its loops go round, not from where the top lies.");
     findings.Add("Its base sketch is hosted on \"" + plane.Item4 + "\" and moves with it. Nothing else ties it to "
         + "the family's planes or parameters yet - LOCK_FORM_TO_PLANES locks its flat faces to planes.");
     if (!solid)

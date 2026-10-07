@@ -9,7 +9,7 @@ semantic-identity: "blend one closed shape into another parallel to it on a fami
 kind: action
 domain: revit.families
 capability: CREATE_FAMILY_BLEND
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -35,12 +35,12 @@ purpose: >
   circle is split before Revit sees it. Revit pairs the corners itself; a
   twist it chose is undone by hand with Edit Vertices.
 
-  **WHICH PROFILE IS "FIRST" IS REVIT'S CALL.** Its remarks warn that the
-  orientation of the loops and the plane decides which profile lands on the
-  sketch plane, and the SDK's own sample passes the top first - so the base is
-  offered first and, if Revit refuses, the top first, and the result says
-  which. Either way the extent is READ BACK, and a blend that does not run
-  from the plane to the top fails the call.
+  **WHICH WAY THE BLEND RUNS IS REVIT'S CALL, MADE FROM THE WAY THE LOOPS
+  GO ROUND (5b-369).** The wrong way puts the base `topMm` off the plane or
+  the top on the wrong side, so up to four ways are built - base first with
+  the loops as written, then reversed, then top first - and each is READ
+  BACK: plane to top along the axis, the base's outline on the plane and the
+  top's at the top. A wrong one is deleted; the findings say which.
 
   **A VOID CUTS NOTHING BY BEING MADE.** Through the API a void in an ordinary
   family cuts a solid only once the two are combined - Revit's Cut Geometry.
@@ -100,45 +100,49 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-08'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: BlendScratch, Revit 2024, session 9240 - the count is NOT recorded because 2,313
+    elements was measured on Family16, the document in front, and this ran against another
+    one (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s)
     [X, Y, Z], axisOf Func`2, bottomLoop 4 item(s) [System.Double[], System.Double[], System.Double[],
-    ...], built Solid blend on "Ref. Level" (horizontal, Z 0 mm), the top profile 300 mm along
-    Z. Reads X 1300 to 1900, Y -200 to 200, Z 0 to 300 mm; volume 38.682 L., datums 8 item(s)
-    [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane,
-    0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.ReferencePlane, 0, -0.984251968503937,
-    Bo..., ...], facing 3 item(s) [facing left or right, facing front or back, horizontal],
-    findings 3 item(s) [Built: Solid blend on "Ref. Level" (horizontal, Z 0 mm), the..., Revit
-    took the profiles base first, and paired their corners..., Its base sketch is hosted on
-    "Ref. Level" and moves with it....], formId bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000bab,
+    ...], built Solid blend on "Divider Plane" (facing left or right, X -2230 mm), the top
+    profile -330 mm along X. Reads X -2560 to -2230, Y 1040 to 1160, Z 60 to 450 mm; volume
+    4.554 L., datums 6 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)...,
+    (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.ReferencePlane,
+    0, -7.31627296587927, Div..., ...], facing 3 item(s) [facing left or right, facing front
+    or back, horizontal], findings 4 item(s) [Built: Solid blend on "Divider Plane" (facing
+    left or right,..., Revit took the profiles base first, both loops reversed, and..., Before
+    that, and deleted at once: base first: it reads X -28..., ...], formId 3272811a-d00d-437d-bb40-fe5e02a9b8d6-000010af,
     halfMillimetre 0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[],
     System.Int32[]], invariant CultureInfo, loopOf Func`3, mm Func`2, notAFamily false, number
     Func`2, ownName Func`2, pair Func`2, plain Func`2, plane Tuple`4, problems 0 item(s),
-    refused (null), shortest 0.7803686370625, solid true, topLoop 2 item(s) [System.Double[],
-    System.Double[]], topMm 300. inputs came workPlane as given; baseProfile as given; topProfile
-    as given; topMm as given; solid as given. on Family1'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    refused (null), shortest 0.7803686370625, solid true, topLoop 4 item(s) [System.Double[],
+    System.Double[], System.Double[], ...], topMm -330. inputs came workPlane as given; baseProfile
+    as given; topProfile as given; topMm as given; solid as given. on BlendScratch'
+  negative_case: run with workPlane=Divider Plane, baseProfile=rect 1040,150 1160,450, topProfile=rect
+    1090,60 1110,90, topMm=0, solid=true instead - chosen because it should not contain what
     this fragment reports - run inside a transaction, and Revit reported the transaction group
     ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s) [X, Y, Z], axisOf
-    Func`2, bottomLoop (null), built , datums 0 item(s), facing 3 item(s) [facing left or
-    right, facing front or back, horizontal], findings 1 item(s) [The document in front is
-    a project, not a family open in the...], formId , halfMillimetre 0.00164041994750656,
-    inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant CultureInfo,
-    loopOf Func`3, mm Func`2, notAFamily true, number Func`2, ownName Func`2, pair Func`2,
-    plain Func`2, plane (null), problems 0 item(s), refused The document in front is a project,
-    not a family open in the Family Editor. A family's forms are built inside the family -
-    open it first., shortest 0.7803686370625, solid true, topLoop (null), topMm 300. inputs
-    came workPlane as given; baseProfile as given; topProfile as given; topMm as given; solid
-    as given. on Project1
+    Func`2, bottomLoop 4 item(s) [System.Double[], System.Double[], System.Double[], ...],
+    built , datums 6 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)...,
+    (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.ReferencePlane,
+    0, -7.31627296587927, Div..., ...], facing 3 item(s) [facing left or right, facing front
+    or back, horizontal], findings 1 item(s) [Nothing was built. The top profile is 0 mm from
+    the base - a...], formId , halfMillimetre 0.00164041994750656, inPlane 3 item(s) [System.Int32[],
+    System.Int32[], System.Int32[]], invariant CultureInfo, loopOf Func`3, mm Func`2, notAFamily
+    false, number Func`2, ownName Func`2, pair Func`2, plain Func`2, plane Tuple`4, problems
+    1 item(s) [The top profile is 0 mm from the base - a blend needs a heig...], refused Nothing
+    was built. The top profile is 0 mm from the base - a blend needs a height., shortest 0.7803686370625,
+    solid true, topLoop 4 item(s) [System.Double[], System.Double[], System.Double[], ...],
+    topMm 0. inputs came workPlane as given; baseProfile as given; topProfile as given; topMm
+    as given; solid as given. on BlendScratch
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b16df73443e30bd0
-
+  fingerprint: 099badfdff7929a3
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -151,7 +155,10 @@ compatibility-note: >
   RevitAPI reference assemblies and their own XML remarks, read 2026-10-01).
   `Blend.TopOffset` and `BottomOffset` exist on every release too; they are not
   set here, because the remarks say their order depends on orientation - the
-  extent is read instead.
+  extent is read instead. Version 2 adds `Document.Delete(ElementId)`,
+  `Element.IsValidObject`, `PlanarFace.FaceNormal` and `Origin`,
+  `Face.EdgeLoops` and `Edge.Tessellate`, each in RevitAPI.xml for 2020, 2024
+  and 2027 alike (read 2026-10-08).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
