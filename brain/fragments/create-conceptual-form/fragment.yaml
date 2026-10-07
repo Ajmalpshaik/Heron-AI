@@ -160,6 +160,9 @@ compatibility-note: >
 #   "extrude a circle 300 diameter 500 high"      -> CREATE_FAMILY_EXTRUSION -
 #                                                    any other family
 #   "draw lines between the adaptive points"      -> DRAW_FAMILY_POINT_CURVES
+#   "loft through these sections in the family"   -> CREATE_FAMILY_FREEFORM_SOLID -
+#                                                    an ordinary family, sections
+#                                                    typed, a fixed shape
 
 utterances:
   - make a surface from these lines

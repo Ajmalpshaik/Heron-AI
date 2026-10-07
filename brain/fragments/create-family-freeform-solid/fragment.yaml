@@ -1,0 +1,155 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-058
+semantic-identity: "loft through sections or sweep along a 3D path as one smooth, fixed freeform form in a family, solid or void"
+kind: action
+domain: revit.families
+capability: CREATE_FAMILY_FREEFORM_SOLID
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes ONE SMOOTH FORM in the family open in the Family Editor where the
+  classic forms cannot: a LOFT through two or more sections placed anywhere
+  and facing any way - an animal's body, a hull, a horn - or a SWEEP of a
+  profile along a path that leaves the plane - a spring's wire, a hose, a
+  rail bent in three directions. One form where many stacked pieces would be slow
+  and heavy, as a SOLID or a VOID.
+
+  **NOT PARAMETRIC.** It is a FREEFORM form: a fixed shape, kept as it was
+  made. It has no sketch, no parameter drives it, it moves with no reference
+  plane, and a flex cannot change it. To change its size, delete it and make
+  it again. Where an extrusion, a revolve, a blend or a sweep in one plane can
+  make the shape, those are the better tool, because parameters can drive
+  them.
+
+  **EVERYTHING IS MILLIMETRES IN THE FAMILY'S OWN X,Y,Z FROM ITS ORIGIN**,
+  except a loop, written in its own two coordinates: the first runs level
+  across it, the second up it, and a level loop takes X and Y - so a section
+  facing X is written in Y,Z and one facing Y in X,Z, as the other form tools
+  write their planes. A loop is `circle CX,CY R`, `ellipse CX,CY RX RY`,
+  `rect X1,Y1 X2,Y2`, `polygon CX,CY R N`, a smooth `spline X,Y; X,Y; X,Y;
+  X,Y`, or corners and arcs `X,Y; X,Y; arc MX,MY X,Y`. A circle or an ellipse
+  may end with how many pieces it is cut into, 2 when left out.
+
+  **A LOFT** takes sections with `|` between, each `at X,Y,Z facing X:
+  <loop>` - facing X, Y, Z or a direction NX,NY,NZ - and runs through them in
+  the order written. Every section must be cut into the SAME NUMBER OF PIECES:
+  Revit pairs them piece by piece and builds unequal counts distorted
+  (measured), so they are refused. A circle or an ellipse is started level
+  with the section before it, so a rectangle lofted into a circle does not
+  twist.
+
+  **A SWEEP** takes a profile - one loop, or several with `|` between for a
+  hollow one - laid square to the path's start, and a path: `helix CX,CY,CZ R
+  PITCH TURNS` (round Z, or X or Y, and `left` for a left hand), `spline
+  X,Y,Z; X,Y,Z; X,Y,Z` through points, or pieces `X,Y,Z; X,Y,Z; arc MX,MY,MZ
+  X,Y,Z`. A path that would run into itself - crossing itself, turns closer
+  than the wire is thick, a bend tighter than the profile - is REFUSED BY NAME
+  before Revit sees it: Revit builds one without complaint, as a solid that
+  is not whole (measured).
+
+  **A VOID CUTS NOTHING BY BEING MADE** - COMBINE_FAMILY_FORMS cuts a solid
+  with it. Its material is SET_FAMILY_FORM_MATERIAL.
+
+  **READ BACK, ALL OR NOTHING.** The form must have an extent and a solid a
+  volume, both reported. Any refusal from Revit fails the call and nothing is
+  kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "loft" or "sweep".
+    - name: kind
+      type: string
+      source: request
+    # A loft: sections with | between, each "at X,Y,Z facing X: <loop>". A
+    # sweep: the profile's loop - or loops with | between, for a hollow one -
+    # in its own coordinates, 0,0 where the path starts.
+    - name: profiles
+      type: string
+      source: request
+    # A sweep's path in the family's X,Y,Z, millimetres - "helix 0,0,0 55 25
+    # 6", "spline X,Y,Z; ...", or "X,Y,Z; X,Y,Z; arc MX,MY,MZ X,Y,Z". Empty
+    # for a loft.
+    - name: path
+      type: string
+      source: request
+    # true for a solid, false for a void.
+    - name: solid
+      type: bool
+      source: request
+  provides:
+    - name: formId
+      # The new form's unique id - what a later step names it by.
+      role: result
+      type: string
+    - name: built
+      # The form as Revit now holds it: solid or void, loft or sweep, its
+      # sections or its profile and path, its extent on all three axes in
+      # millimetres and a solid's volume.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FreeFormElement.Create(Document, Solid)`,
+  `GeometryCreationUtilities.CreateLoftGeometry(IList<CurveLoop>,
+  SolidOptions)`, `CreateSweptGeometry(CurveLoop, int, double,
+  IList<CurveLoop>)`, `HermiteSpline.Create(IList<XYZ>, bool,
+  HermiteSplineTangents)`, `Ellipse.CreateCurve`, `GenericForm.IsSolid` (read
+  only) and `SolidOptions(ElementId, ElementId)` read the same 2020 through
+  2027 (tools/api-surface, read 2026-10-07). What Revit DOES with them was
+  measured on Revit 2024 only, on a scratch Generic Model family, rolled back,
+  2026-10-07: a freeform form is accepted in an ordinary family; its
+  Solid/Void field (`ELEMENT_IS_CUTTING`) is writable and makes it a void that
+  `Document.CombineElements` cuts a solid with; `CylindricalHelix` is refused
+  for a sweep ("a helical curve ... not supported"); a closed spline cut in two
+  is refused by the loft, two open splines with matching ends are not; a loft
+  takes tilted and warped sections; a sweep along a path that crosses itself
+  is built without complaint. Earlier releases are NEEDS-CHECKING CV.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "make a spring as one smooth sweep along a helix" -> here
+#   "loft a smooth body through elliptical sections"  -> here
+#   "sweep a profile along a path"               -> CREATE_FAMILY_SWEEP - a
+#                                                   path in one plane, and it
+#                                                   stays parametric
+#   "sweep one shape into another along a path"  -> CREATE_FAMILY_SWEPT_BLEND
+#   "blend a rectangle into a circle"            -> CREATE_FAMILY_BLEND - two
+#                                                   parallel shapes, parametric
+#   "loft a form through these two profiles"     -> CREATE_CONCEPTUAL_FORM - in
+#                                                   an adaptive or mass family
+#   "link the body material to Body Material"    -> SET_FAMILY_FORM_MATERIAL
+#   "cut the solid with the void"                -> COMBINE_FAMILY_FORMS
+
+utterances:
+  - make a spring as one smooth sweep along a helix
+  - sweep a circle along a helix
+  - sweep a profile along a 3D path
+  - loft a smooth body through elliptical sections
+  - loft through these sections in the family
+  - make a freeform solid in the family
+  - make one smooth form instead of many small pieces
+  - create a freeform void

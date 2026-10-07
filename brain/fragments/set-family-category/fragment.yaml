@@ -133,6 +133,9 @@ compatibility-note: >
 #   "blend a rectangle into a circle"         -> CREATE_FAMILY_BLEND
 #   "sweep a profile along a path"            -> CREATE_FAMILY_SWEEP
 #   "sweep one shape into another along a path" -> CREATE_FAMILY_SWEPT_BLEND
+#   "make a spring as one smooth sweep along a helix" -> CREATE_FAMILY_FREEFORM_SOLID -
+#                                                a fixed shape, not parametric
+#   "loft a smooth body through elliptical sections" -> CREATE_FAMILY_FREEFORM_SOLID
 #   "cut the solid with the void"             -> COMBINE_FAMILY_FORMS - a
 #                                                join too
 #   "align and lock this form to the planes"  -> LOCK_FORM_TO_PLANES - any

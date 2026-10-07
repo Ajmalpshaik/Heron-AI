@@ -539,6 +539,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cr.md`](needs-checking/group-cr.md)
 
+## Group CV - one smooth freeform form: a loft through sections, a sweep along a 3D path (2026-10-07)
+
+**Its own file:** [`needs-checking/group-cv.md`](needs-checking/group-cv.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
