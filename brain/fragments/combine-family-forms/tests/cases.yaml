@@ -16,9 +16,40 @@ positive:
       cut false; 32.000 L apart and 28.000 L joined - the 4.000 L overlap
       counted once - and no line between them in 3D
 
+  - given: >
+      a seat - a solid extrusion on Center (Front/Back), profile "-160,835;
+      -140,895; arc -100,925 -40,932; 500,905; arc 545,885 560,850; 560,790",
+      Y -185 to 185 - and a VOID on Ref. Level, Z 700 to 1000, an outer rect
+      "-300,-300 700,300" round a rounded rect 80 mm at the corners whose sides
+      lie on the seat's faces, its arcs typed exactly (536.5685,-161.5685 ...)
+    expect: >
+      cut true; 27.461 L before, 27.091 L after - the four corners rounded off;
+      every solid read back in the result (5b-370)
+
 negative:
   - given: the same solid with a VOID that misses it, "circle 1000,0 50"
     expect: refused as the void taking nothing away, cut false and no combination left in the family
+
+  - given: >
+      a coil: 24 solid revolves on Center (Front/Back) about "0,0 0,100", each
+      15 degrees (0-15, 15-30 ... 345-360) of six circles "circle 60,Z 8" a
+      pitch of 24 mm apart, each revolve's circles 1 mm higher than the last;
+      two VOIDS on Ref. Level, "rect -90,-90 90,90", Z -20 to 3.5 and 152.5 to
+      176; forms = all 26
+    expect: >
+      refused naming the 12 revolves Revit leaves out of the combination (every
+      other one) - "Can't keep elements joined" - cut false, no combinationId,
+      and no combination left in the family even when the call is kept. Before
+      5b-370 this reported "0.455 L before, 0.225 L after - 0.23 L taken away"
+      and kept a coil with every other segment gone
+
+  - given: >
+      the seat with the same void, its corner arcs typed to whole millimetres
+      ("arc 537,-162 560,-105" ...) - the sides still on the seat's faces
+    expect: >
+      refused naming the seat as left out - before 5b-370, "Revit made a
+      combination with no solid in it to measure". The same void with its sides
+      a millimetre past the faces cuts: 27.461 L before, 27.113 L after
 
   - given: forms = two voids and no solid
     expect: refused as every form a void, and nothing combined

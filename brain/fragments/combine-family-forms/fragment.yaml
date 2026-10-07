@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -35,7 +35,9 @@ purpose: >
   **THE CUT IS MEASURED, NOT ASSUMED.** The solids' volume is read before and
   the combination's after: a void that took nothing away fails the call -
   it misses the solid, or Revit did not cut with it - and so does a join that
-  came out bigger than its parts.
+  came out bigger than its parts. Every solid named must be in the result, read
+  back point by point: one Revit leaves out ("Can't keep elements joined")
+  refuses the call, found by a trial combination taken back first.
 
   **A SOLID ALREADY IN A COMBINATION IS NAMED BY ITS COMBINATION.** Revit's
   remarks: a solid belongs to at most one, so naming a member would quietly
@@ -119,7 +121,11 @@ compatibility-note: >
   2020 through 2027 (the RevitAPI reference assemblies and their own XML
   remarks, read 2026-10-01). The same remarks are the evidence that
   `SolidSolidCutUtils.AddCutBetweenSolids` and `JoinGeometryUtils.JoinGeometry`
-  refuse an ordinary family document on every release.
+  refuse an ordinary family document on every release. The read-back added
+  for 5b-370 - `SubTransaction`, `SolidUtils.Clone`, `Solid.IntersectWithCurve`,
+  `Face.Triangulate`, `Face.Project` and `Face.ComputeNormal` - compiles on
+  every release 2020 to 2027 (tools/check-fragments-compile.py, 2026-10-08);
+  how it behaves was measured on Revit 2024 only.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
