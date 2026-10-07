@@ -15,7 +15,8 @@ faces the loads were worked out from, each with what it counted as.
 WHAT IT PROVES
   On an L-shaped building of three offices with real outlines: every face is
   drawn and every opening sits on its wall at its own size; a wall between two
-  Spaces is drawn as no load; True North turns the facing colours; a Space
+  Spaces is drawn as no load; True North turns the facing colours, and the
+  compass leans the way Revit's Site tab says (FRAGMENT-ISSUES 5b-345); a Space
   refused for a missing U-value shows refused, on the face that caused it;
   the load colours come from the run; a face Revit gave no outline is counted
   and said, not drawn; glass by the way it faces is added up from the
@@ -206,8 +207,11 @@ def test_a_panel_cut_to_its_face_says_how_much_was_counted():
 def test_true_north_turns_the_facing_colours():
     south = faces_of(view(), "101S")[0]
     assert south["facing"] == "S" and south["facing_deg"] == 180.0
+    # True North 90 East of project north (Revit's stored +90) puts true north
+    # where project east is, so a face to project south faces true east - the
+    # sign measured 2026-10-06 (FRAGMENT-ISSUES 5b-345). This read W, 270, until then.
     turned = faces_of(view(l_building(true_north=90.0)), "101S")[0]
-    assert turned["facing"] == "W" and turned["facing_deg"] == 270.0
+    assert turned["facing"] == "E" and turned["facing_deg"] == 90.0
     assert turned["colours"]["facing"] != south["colours"]["facing"]
 
 
@@ -292,6 +296,19 @@ def test_the_compass_comes_from_the_same_rule_as_the_facing():
         assert abs(T.azimuth_deg([x, y, 0.0], north)) % 360.0 < 1e-6 or \
             abs(T.azimuth_deg([x, y, 0.0], north) - 360.0) < 1e-6, (north, v["north_xy"])
         assert abs(math.hypot(x, y) - 1.0) < 1e-9
+
+
+def test_the_compass_points_where_the_site_tab_says_true_north_is():
+    # The check above holds whichever way the sign runs. This one is the
+    # measurement (FRAGMENT-ISSUES 5b-345, 2026-10-06): Revit's stored +30 is
+    # "30.00 deg East", so the arrow leans 30 degrees toward project east; a
+    # stored -12.5, "12.5 West", leans it toward project west.
+    import math
+    for north, side in ((30.0, 1.0), (-12.5, -1.0)):
+        x, y = view(l_building(true_north=north))["north_xy"]
+        lean = math.radians(abs(north))
+        assert abs(x - side * math.sin(lean)) < 1e-6 and abs(y - math.cos(lean)) < 1e-6, \
+            (north, x, y)
 
 
 def test_glass_refused_only_where_it_is_counted():
