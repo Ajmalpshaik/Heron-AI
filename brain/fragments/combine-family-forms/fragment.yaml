@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -84,32 +84,41 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-08'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: CombineScratch, Revit 2024, session 9240 - the count is NOT recorded because 1,952
+    elements was measured on FreeformProof, the document in front, and this ran against another
+    one (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned combinationId bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000ba7,
-    combined Cut 1 solid(s) with 1 void(s): 120 L before, 116.073 L after - 3.927 L taken
-    away., crumb 3.53146667214886E-05, cut true, describe Func`2, findings 3 item(s) [Cut
-    1 solid(s) with 1 void(s): 120 L before, 116.073 L after..., Combined: solid extrusion
-    bfa50ce5-921a-49fe-86b2-5220cec4d3..., Undo, or Revit''s Unjoin Geometry and Uncut Geometry,
-    take it...], invariant CultureInfo, litres Func`2, members 2 item(s) [Extrusion, Void
-    Extrusion], notAFamily false, problems 0 item(s), refused (null), volumeOf Func`2. inputs
-    came forms as given. on Family1'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned combinationId , combined , crumb 3.53146667214886E-05,
-    cut false, describe Func`2, findings 1 item(s) [The document in front is a project, not
-    a family open in the...], invariant CultureInfo, litres Func`2, members 0 item(s), notAFamily
-    true, problems 0 item(s), refused The document in front is a project, not a family open
-    in the Family Editor. Forms are joined and cut inside the family - open it first., volumeOf
-    Func`2. inputs came forms as given. on Project1
+    the transaction group ROLLED BACK afterwards. returned combinationId dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000f1f,
+    combined Cut 1 solid(s) with 1 void(s): 27.461 L before, 27.091 L after - 0.371 L taken
+    away. Read back form by form: all 1 solid(s) are in the result - 8 point(s) inside them
+    that no void covers, every one found in it., crumb 3.53146667214886E-05, cut true, describe
+    Func`2, findings 3 item(s) [Cut 1 solid(s) with 1 void(s): 27.461 L before, 27.091 L aft...,
+    Combined: solid extrusion dffe7f2b-ed76-4ec7-afe6-d36b4eb9c3..., Undo, or Revit''s Unjoin
+    Geometry and Uncut Geometry, take it...], invariant CultureInfo, litres Func`2, members
+    2 item(s) [Extrusion, Void Extrusion], notAFamily false, problems 0 item(s), refused (null),
+    volumeOf Func`2. inputs came forms as given. on CombineScratch'
+  negative_case: 'run with forms=dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000b7d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000b8d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000b9d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bad,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bbd,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bcd,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bdd,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bed,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bfd,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c0d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c1d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c2d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c3d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c4d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c5d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c6d,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c87,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c97,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000ca7,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000cb7,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000cc7,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000cd7,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000ce7,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000cf7,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000d07,dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000d0e
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    combinationId , combined , crumb 3.53146667214886E-05, cut false, describe Func`2, findings
+    1 item(s) [Nothing was joined or cut. Revit could not take 12 of the 24...], invariant
+    CultureInfo, litres Func`2, members 26 item(s) [Revolve, Revolve, Revolve, ...], notAFamily
+    false, problems 0 item(s), refused Nothing was joined or cut. Revit could not take 12
+    of the 24 solid(s) named into the combination: solid revolve dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000b8d,
+    solid revolve dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bad, solid revolve dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bcd,
+    solid revolve dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000bed, solid revolve dffe7f2b-ed76-4ec7-afe6-d36b4eb9c37f-00000c0d
+    and 7 more. Their material went missing from what it made - it would vanish from the family
+    - while Revit still listed them in it; its own words are "Can''t keep elements joined".
+    Its join or cut fails like this where forms meet on faces that only partly line up: a
+    void whose sides lie exactly on a solid''s faces, which cuts once its sides are moved
+    a millimetre past them, or the stepped segments of a coil, where overlapping them by a
+    degree does not help., volumeOf Func`2. inputs came forms as given. on CombineScratch'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f35799e8151b6f0d
-
+  fingerprint: b29898ba6396b9b9
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
