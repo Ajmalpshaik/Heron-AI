@@ -1,27 +1,54 @@
+# D-30: the negative cases are what catch "succeeded and did nothing" - and,
+# here, "closed something it should not have". Every run on SCRATCH families
+# saved under a scratch folder, never on a modeller's own file.
+
 positive:
   - given: >
-      an ordinary single-user model with one unsaved change, on Revit 2024, run
-      OUTSIDE any transaction
+      Heron working in one scratch family (the HOST), a second scratch family
+      (the NESTED part) open BEHIND it with one form added since it was saved,
+      documentPath = the nested family's file
     expect: >
-      the file's timestamp on disk moving and the change surviving a close and
-      reopen - not read off the report. `saved` true
+      saved true, savedTo its file - and the proof is NOT read off the report:
+      the file's timestamp on disk moves, and the form survives a close and
+      reopen. The host is untouched
+
+  - given: the same, with closeWindow=true
+    expect: >
+      saved true AND closed true, the nested family gone from what is open
+      (REPORT_OPEN_DOCUMENTS), the host still open and in front
+
+  - given: the nested family IN FRONT, Heron working in the host behind it, closeWindow=true
+    expect: >
+      saved true, closed FALSE, and the finding saying Revit lets no tool close
+      the window in front and that the file is saved - the window still open,
+      Revit itself still running
 
 negative:
-  - given: a workshared local model
+  - given: documentPath = the file of the document Heron is working in
+    expect: >
+      refused, naming it and saying Revit will not save a document while
+      Heron's Undo entry is open in it; the file's timestamp unchanged. This is
+      what version 1 did every time (row 5b-365)
+
+  - given: a path no open document was opened from
+    expect: refused, the path said back and the open titles listed; nothing written, nothing closed
+
+  - given: >
+      a family open behind with NO unsaved changes, closeWindow=true
+    expect: >
+      saved false (nothing to write), closed true - a window with nothing
+      unsaved is closed without a save
+
+  - given: a workshared local model, not the one Heron works in
     expect: >
       saved, AND the finding saying IN WORDS that nothing went to central. A
-      second user reloading latest must NOT see the change - which is the case
-      that proves the warning is true rather than decorative
-
-  - given: a document that has never been saved, so has no path
-    expect: >
-      refused by name, nothing written. This is the case that matters: inventing
-      a filename here is how a model gets overwritten
+      second user reloading latest must NOT see the change
 
   - given: a document open read-only
     expect: refused by name
 
 second_route:
   - >
-      Ctrl+S by hand on the same model, and the file timestamps compared - then
-      the workshared case checked from a second user's session
+      Ctrl+S by hand on the same family and the file timestamps compared; the
+      family closed by hand with File > Close and Revit's own "save changes?"
+      question never appearing, which says the save took
