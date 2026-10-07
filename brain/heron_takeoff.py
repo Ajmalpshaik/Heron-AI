@@ -75,12 +75,19 @@ def read(raw):
 def azimuth_deg(normal, project_to_true_north_deg):
     """Compass bearing the face looks toward: 0 north, 90 east, clockwise, true north.
 
-    The ONE place the True North angle is applied - if a real model shows its
-    sign the other way round, it is fixed here and nowhere else.
+    The ONE place the True North angle is applied, and its sign is MEASURED
+    (FRAGMENT-ISSUES 5b-345, 2026-10-06, scratch Project2 on Revit 2024; the
+    same sign on a new Project1 on Revit 2020, NEEDS-CHECKING Group CJ):
+    Revit's stored angle +30 is what Manage > Location, Site tab, shows as
+    "Angle from Project North to True North: 30.00 deg East", and Revit's
+    shared position of two points along project north puts project north at
+    bearing 330 for it - at 12.5 for a stored -12.5, "12.5 West". So the angle
+    is TAKEN OFF the project bearing. It was added until then, which mirrored
+    every facade's sun about north on a turned project.
     """
     x, y = float(normal[0]), float(normal[1])
     project = math.degrees(math.atan2(x, y)) % 360.0
-    return round((project + float(project_to_true_north_deg or 0.0)) % 360.0, 6)
+    return round((project - float(project_to_true_north_deg or 0.0)) % 360.0, 6)
 
 
 def _name(t, type_id, element):

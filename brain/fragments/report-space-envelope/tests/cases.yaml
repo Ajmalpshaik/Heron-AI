@@ -37,12 +37,13 @@ negative:
       because Revit's internal unit for it is taken to be W/(m2.K). A window
       type with no SHGC set reads shgc null, never 0
 
-  - given: the project rotated 30 degrees (Manage > Position > Rotate True North)
+  - given: the project rotated 30 degrees East (Manage > Position > Rotate True North)
     expect: >
       a wall drawn to face project north reports a normal along project y, and
-      project_to_true_north_deg reads 30 or -30; heron_takeoff.azimuth_deg then
-      gives 30 or 330 - and which of the two is right on the drawing fixes the
-      sign, in azimuth_deg only
+      project_to_true_north_deg reads 30 - Revit's stored angle for the Site
+      tab's 30.00 deg East; heron_takeoff.azimuth_deg then gives 330. The sign
+      was measured 2026-10-06 on Project2 (FRAGMENT-ISSUES 5b-345) and is
+      applied in azimuth_deg only - this said 30 or 330 until then
 
   - given: a Space whose walls do not enclose it (Not Enclosed in the schedule)
     expect: >

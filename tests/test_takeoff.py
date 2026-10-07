@@ -14,8 +14,9 @@ and each Space's faces turned into the surfaces the room engine reads.
     python tests/test_takeoff.py
 
 WHAT IT PROVES
-  A wall nets out its window; every azimuth turns with True North; a window
-  type with no SHGC refuses its Space and is never defaulted; a Space not
+  A wall nets out its window; every azimuth turns with True North, the way
+  Revit measured it (FRAGMENT-ISSUES 5b-345); a window type with no SHGC
+  refuses its Space and is never defaulted; a Space not
   placed is listed and left out; an opening larger than its face is a FAIL;
   a wall to another conditioned Space carries no load; a model with no site
   location is a FAIL; the module imports the standard library only.
@@ -95,8 +96,17 @@ def test_true_north_turns_every_azimuth():
     assert T.azimuth_deg([0.0, 1.0, 0.0], 0.0) == 0.0
     assert T.azimuth_deg([1.0, 0.0, 0.0], 0.0) == 90.0
     assert T.azimuth_deg([-1.0, 0.0, 0.0], 0.0) == 270.0
-    # project north turned 30 degrees east of true north: a face to project north faces 30
-    assert abs(T.azimuth_deg([0.0, 1.0, 0.0], 30.0) - 30.0) < 1e-9
+    # MEASURED 2026-10-06 on scratch Project2, Revit 2024 - the same sign on a
+    # new Project1, Revit 2020 (FRAGMENT-ISSUES 5b-345, NEEDS-CHECKING Group CJ).
+    # Revit's stored angle +30 is what the Site tab shows as "Angle from
+    # Project North to True North: 30.00 deg East", and Revit's shared position
+    # of two points along project north puts project north at bearing 330; a
+    # stored -12.5 ("12.5 West") puts it at 12.5. This case said a face to
+    # project north faces 30 until then - the assumption, not a measurement.
+    assert abs(T.azimuth_deg([0.0, 1.0, 0.0], 30.0) - 330.0) < 1e-9
+    assert abs(T.azimuth_deg([0.0, 1.0, 0.0], -12.5) - 12.5) < 1e-9
+    # A face to project east turns the same way, so north is not mirrored: 90 - 30.
+    assert abs(T.azimuth_deg([1.0, 0.0, 0.0], 30.0) - 60.0) < 1e-9
 
 
 def test_missing_shgc_refuses_that_space_only():

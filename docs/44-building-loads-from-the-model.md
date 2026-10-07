@@ -178,7 +178,10 @@ existing `PLACE_ROOM_AT_POINT asSpace=true` route offered.
   - the bounding element and its type; gross and net area;
   - **what is on the other side**: outside, another Space (which one), an unconditioned Space, ground, roof;
   - **the way it faces**: the outward normal turned to true north by the project's True North angle -
-    reported as an azimuth in degrees and a compass word;
+    reported as an azimuth in degrees and a compass word. **The angle is taken OFF the project bearing**
+    (`heron_takeoff.azimuth_deg`): Revit's stored +30 is the Site tab's *30.00 deg East*, and a face to
+    project north then faces 330. Measured 2026-10-06 and fixed 2026-10-07 - the brain added the angle
+    until then ([FRAGMENT-ISSUES 5b-345](FRAGMENT-ISSUES.md));
   - its tilt (wall, roof, floor);
 - **every window, door and curtain-wall panel** in those faces: width, height, area, type;
 - per **type** used: the thermal values Revit holds - U (heat transfer coefficient), and for glazing SHGC
@@ -191,7 +194,8 @@ is reported missing.
 **What this needs proving on a real Revit** (it becomes a NEEDS-CHECKING group): where each release keeps
 a window type's U and SHGC; whether a curtain wall is returned as one bounding face or as panels; a Space
 bounded by a room separator line; a Space whose ceiling is not room-bounding; True North on a rotated
-project.
+project - its sign measured on Project2 (5b-345), the take-off run itself [Group CC](needs-checking/group-cc.md)
+row CC4.
 
 ### 4.3 What already exists and is reused
 
