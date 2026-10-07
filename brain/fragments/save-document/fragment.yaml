@@ -24,7 +24,7 @@ purpose: >
   by name, with the reason. Version 1 saved exactly that one, and could never
   have worked (row 5b-365).
 
-  **SAVING A WORKSHARED MODEL IS NOT SYNCING IT.** A local save reaches nobody
+  **A LOCAL SAVE OF A WORKSHARED MODEL IS NOT A SYNC.** It reaches nobody
   else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job.
 
   **IT IS `PUBLISH` RISK AND IT IS NOT UNDOABLE.** It never chooses a file name:

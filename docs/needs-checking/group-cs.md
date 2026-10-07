@@ -43,6 +43,15 @@ from a run aimed at another document - reported, not measured here.
 | **CS7** | CS1 to CS3 on **Revit 2020** and **2027** | The same answers. All three compile on 2020, 2024 and 2027 (2026-10-07); the members they call read the same in the 2020, 2024 and 2027 reference XML; not run there |
 | **CS8** | The second routes: the same part saved with Ctrl+S and closed with File > Close by hand | No "save changes?" question when closed after `SAVE_DOCUMENT` - the save took; `Manage > Load` of the same file into the host gives the same family and types |
 
+**Routing, measured 2026-10-07 on a private store, trained model - not proof.** Signing `SAVE_DOCUMENT` PROVEN
+tipped *"does this project use daylight saving"* onto it (a PUBLISH tool, `tests/test_routing_phrases.py`): a
+coin toss, words #5 and nearness #1 against `REPORT_LOCATION`'s words #1 and nearness #5, decided by the
+status nudge. Its card's "SAVING A WORKSHARED MODEL..." was reworded without the word, and the sentence
+reaches `REPORT_LOCATION` again; *"save the tyre family and close it"* and *"save my family"* still reach
+`SAVE_DOCUMENT` first. Not caused here and not fixed: `REPORT_LOCATION`'s own routing-table line *"is daylight
+saving on"* was served by `SAVE_DOCUMENT` on main and is served by `UPDATE_SAVED_SET` (MODIFY) now - a read's
+sentence reaching a write either way.
+
 **Scratch files left on the owner's PC:** `%TEMP%\heron-work\nest` holds the three families and Revit's
 own backups (`.0001.rfa`, `.0002.rfa`). `HeronNest_Car` and `HeronNest_Tyre` were left open in session 9240;
 both can be closed without saving and the folder deleted once CS1 to CS3 are signed.
