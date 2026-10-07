@@ -35,23 +35,12 @@ purpose: >
   circle is split before Revit sees it. Revit pairs the corners itself; a
   twist it chose is undone by hand with Edit Vertices.
 
-  **WHICH WAY THE BLEND RUNS IS REVIT'S CALL, AND IT DOES NOT FOLLOW THE
-  TOP.** NewBlend's remarks warn that the orientation of the loops and the
-  plane decides which profile lands on the sketch plane. Measured on 64
-  blends (5b-369, Revit 2024): the way the two loops go round decides it, and
-  the wrong way puts the base `topMm` off the plane or the top on the wrong
-  side. Version 1 passed the loops as written - right on a level, the
-  template's centre planes and a height plane, and wrong on every plane
-  CREATE_REFERENCE_PLANES makes facing left-right or front-back.
-
-  **VERSION 2 BUILDS IT AND READS IT BACK, UP TO FOUR WAYS.** The base first
-  with the loops as written, then with both reversed, then the top first each
-  way. Each try must run from the plane to the top along the axis, with the
-  base's outline on the plane and the top's at the top; a wrong one is
-  deleted at once and the next tried, and the findings say which ways were
-  turned down and what they read. Telling the ends apart by outline also
-  catches a blend standing on its top, which version 1's extent check would
-  have passed.
+  **WHICH WAY THE BLEND RUNS IS REVIT'S CALL, MADE FROM THE WAY THE LOOPS
+  GO ROUND (5b-369).** The wrong way puts the base `topMm` off the plane or
+  the top on the wrong side, so up to four ways are built - base first with
+  the loops as written, then reversed, then top first - and each is READ
+  BACK: plane to top along the axis, the base's outline on the plane and the
+  top's at the top. A wrong one is deleted; the findings say which.
 
   **A VOID CUTS NOTHING BY BEING MADE.** Through the API a void in an ordinary
   family cuts a solid only once the two are combined - Revit's Cut Geometry.
