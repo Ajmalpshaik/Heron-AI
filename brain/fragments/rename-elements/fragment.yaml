@@ -126,6 +126,11 @@ compatibility-note: >
 #   "rename this workset"                -> RENAME_WORKSET - a workset is NOT
 #                                        an element. It lives in the workset
 #                                        table, which nothing here reaches
+#   "rename the family parameter CC 1    -> ADD_FAMILY_PARAMETERS with
+#    to 2" (in the Family Editor)           renameExisting true - a family
+#                                           parameter is not an element and
+#                                           has no Name to set; it is renamed
+#                                           through the family's own manager
 #   "put a prefix on the mark or the     -> EDIT_PARAMETER_TEXT. A name is
 #    comments"                              not a parameter, and the two
 #                                           are written differently

@@ -37,7 +37,7 @@ caller passes `apply` ([D-55](../docs/DECISIONS.md)).
 | [`heron_fragment.py`](heron_fragment.py) | **Step 7.** What a fragment IS on disk, and the validator that will not let it lie. Identity is not the filename; the contract is data, not prose; a proof without a negative case is refused |
 | [`fragments/`](fragments/) | The library. **No count here** — this row carried *360, 193 `DRAFT`, 167 `PROVEN`* until 2026-09-21, the fourth copy of that pair to go stale, in a table headed *what is here now* ([row 5b-57](../docs/FRAGMENT-ISSUES.md)). Take them from the tools instead: `python brain/heron_fragment.py` counts and validates them from disk, and it is right where this line has gone stale. This row once said *thirty-two, every one DRAFT*, and stayed saying it for a week after neither half was true. Every one **compiles**, on all eight releases, via [`tools/check-fragments-compile.py`](../tools/check-fragments-compile.py). Its first run found one that never could have: `FRG-QA-001` had a value called `checked`, a reserved C# keyword |
 | [`heron_search.py`](heron_search.py) | **Step 9.** Finding a fragment by exact words. Three routes and it says which answered: `identity` (one lookup, no search), `cache` (this wording was resolved before), `keywords` (FTS5, ranked). Only a **PROVEN** fragment may run off an exact match without asking |
-| [`heron_skill.py`](heron_skill.py) · [`skills/`](skills/) | **Step 14.** What the user can *ask for*, in their own words. A skill names **capabilities, never fragments** — so a fragment can be replaced without editing a skill, and a skill can be written **before** the fragment that will serve it. Ten of them, all `DRAFT` |
+| [`heron_skill.py`](heron_skill.py) · [`skills/`](skills/) | **Step 14.** What the user can *ask for*, in their own words. A skill names **capabilities, never fragments** — so a fragment can be replaced without editing a skill, and a skill can be written **before** the fragment that will serve it. How many, and that every one is still `DRAFT`, is the last line of `python brain/heron_skill.py` - this row said *ten* long after the folder held more |
 | [`heron_graph.py`](heron_graph.py) | **Step 13.** *What breaks if this changes.* Every edge but one is **computed from the fragments on demand** (D-40) — the only stored edge is a skill's requirement, which no artifact underneath carries. Names the dangerous case out loud: a **sole provider**, because whatever asked for its capability never named it |
 | [`heron_capability.py`](heron_capability.py) | **Step 12.** Ask for *what you want done*, never for *who does it*. Add a provider, retire one, split one into three — **no call site changes**. Almost all of it is **derived** from the fragments (D-40), including risk, which already has two homes and must not gain a third |
 | [`heron_retrieve.py`](heron_retrieve.py) | **Step 11.** The whole lookup: a structured filter **first**, then keywords and nearness over the survivors, fused by reciprocal rank. **The Revit version filter is a wall** — an incompatible fragment is not demoted, it is absent — and what was excluded is reported with its reason |
@@ -55,6 +55,13 @@ caller passes `apply` ([D-55](../docs/DECISIONS.md)).
 | [`heron_conflict.py`](heron_conflict.py) | **Stage 8 of the RAG plan.** Two scopes answering one question with **different numbers** now say so — company `30mm` against project `40mm` at clause 3.1, the case Stage 4 left sitting. **It surfaces and settles nothing** (R-24): both clauses still come back under their own scopes, the [docs/20 §2](../docs/20-knowledge-trust-and-conflict.md) hierarchy is named and **explicitly not applied**, and a test asserts the module has no `winner` and no `resolve`. **What crosses the scope wall is a number and a clause number, never a clause** — one store open at a time (Golden Rule 5). It compares **units, not subjects**, so it cannot tell two clauses are the same requirement, and it inherits retrieval's missing floor — both said in the report rather than left to be found |
 | [`heron_research.py`](heron_research.py) | **Stage 9, the last one, and it never fetches.** The Research agent's name suggests reaching outside; what it actually does is say what Heron's own scopes did **not** answer, and what an outside answer must carry. [D-01](../docs/DECISIONS.md) puts every model call in the host because Heron is a per-user install with no admin rights and no server — **the network is the same boundary**, and the offline premise is explicit: *site visits, locked-down networks, a laptop on a plane*. A test asserts the **absence** of a fetch. The other half checks an external answer's **citations**: nothing cited is `UNCITED` ([05 §8](../docs/05-heron-brain.md) — a bug, not low confidence), a citation nobody could look up is `VAGUE` and says which of document / edition / locator is missing, and all three is `WELL_FORMED` — **still `UNVERIFIED`, because Heron has not read the source.** The only route out of `UNVERIFIED` is ingesting the document it cites, which is one command and is in every brief |
 | [`heron_audit.py`](heron_audit.py) | **Step 17.** The brain's half of the audit trail. The add-in records what reached the model; this records what the brain did, so a request answered entirely here still leaves a trace ([D-62](../docs/DECISIONS.md)) |
+| [`agents/`](agents/) | **One contract per agent** — inputs, outputs, allowed tools, timeout, declared refusals — validated by [`heron_contract.py`](heron_contract.py) and read by [`heron_agents.py`](heron_agents.py), the registry that stores nothing of its own. `python brain/heron_contract.py` validates them all; no count is typed here |
+| [`instructions/`](instructions/) | **Every instruction Heron gives**, versioned and carrying its own evaluation cases, run by [`heron_instructions.py`](heron_instructions.py). Constitution articles are declared by number and assembled, never copied |
+| [`agent-proof-drafts/`](agent-proof-drafts/) · [`agent-proofs/`](agent-proofs/) | The proof path for an **add-in agent**, written by [`tools/prove-agent.py`](../tools/prove-agent.py): drafts waiting for a person, and the proofs a person signed. Each folder's README says how to read one |
+| [`regression-matrix.json`](regression-matrix.json) | The recorded build matrix that [`heron_buildmatrix.py`](heron_buildmatrix.py) compares against — per release, per field. `--update` re-records it |
+
+**This table is not every module.** It names the Phase 2 steps and the RAG stages; `ls brain/*.py` lists
+the rest, and each file's own header and docstring say what it is and which agent it implements.
 
 ```bash
 python brain/heron_fragment.py                              # validate the library
@@ -66,12 +73,13 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **Most fragments are `PROVEN`; the rest and all twenty-four skills are `DRAFT`** — derive
-both with `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`; no count is typed here. **This line said 167 and 193
+**Proof, mostly.** **Most fragments are `PROVEN`; the rest and every skill are `DRAFT`** — derive
+the fragments with `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` and the skills with
+`python brain/heron_skill.py`; no count is typed here. **This line said 167 and 193
 until 2026-09-19**, which was wrong by 149 in one direction and 114 in the other and had been for weeks
 (and 306 and 120 until 2026-10-02, the same mistake a third time, and 273 and 192 until 2026-10-04, when it stopped typing them):
 the sentence telling its reader to derive the numbers was itself the reason nobody did. Phase 2's
-definition of done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is
+definition of done is *"ten real skills **work**"* — more than ten are written, and the word that needs a Revit is
 still the last one. The first 52 are what one night with a real model bought; the arithmetic on the rest has
 not changed, only the size of it - and the ten fragments added on 2026-09-08, four for
 switching project and view and six for the review's N01 to N06, arrived `DRAFT` like
@@ -90,7 +98,7 @@ than that.
 
 **The queue the skills produced has been worked.** Writing the skills first ordered it by real demand
 rather than by guessing, and on 2026-08-29 all seven were written — so `python brain/heron_skill.py` now
-prints **no gaps** and all twenty-four skills have every capability provided. What that bought is a shorter list
+prints **no gaps** and every skill has every capability provided. What that bought is a shorter list
 of *kinds* of outstanding work, not less of it: the seven are `DRAFT` like the rest, and every one is
 waiting on the same machine.
 

@@ -3,7 +3,7 @@
 # one home and this repository has been bitten by the alternative.
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 7
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -14,7 +14,12 @@ semantic-identity: "all elements of one category in the active document"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_CATEGORY
-version: 2
+# VERSION 3 (2026-10-06, FRAGMENT-ISSUES 5b-335): a level parameter that holds
+# no level is passed over and the next one asked, where version 2 answered
+# with the first one an element HAD. Three work plane-based diffusers with
+# FAMILY_LEVEL_PARAM empty and SCHEDULE_LEVEL_PARAM on Level 1 were on no
+# level ("matching 3", "elements 0"), so the loads' Finalize gave them no flow.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -42,8 +47,8 @@ purpose: >
   revives ids against this model, and a linked id that happens to be in
   use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
   nested inside a link are not read, and are counted in the answer. This
-  is version 2; version 1's proof no longer describes the code, and the
-  fragment is DRAFT until it is proved again.
+  is version 3 - version 2 read the links - and version 1's proof no longer
+  describes the code; version 3's does.
 
 contract:
   needs:
@@ -94,27 +99,39 @@ contract:
       role: accounting
       type: IList<string>
 proof:
-  date: '2026-09-13'
+  date: '2026-10-06'
   by: Ajmal PS
-  model: test projject (3,432 elements), Revit 2024, session 40932
+  model: Project2, Revit 2024, session 51820 - the count is NOT recorded because 1,790 elements
+    was measured on GM_PipeSupport_HexNut, the document in front, and this ran against another
+    one (row 15)
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values. returned category BuiltInCategory,
-    elements 9 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], levelOf Func`2,
-    levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM,
-    ...], matching 9 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], unresolvedLevel
-    0. inputs came category as given; levelId as given. on test projject
-  negative_case: run with minMm=-1000,-1000,-1000, maxMm=9000,7000,4000, exact=false, categories=Walls,
-    category=Walls, levelId=Level 2 instead - chosen because it should not contain what this
-    fragment reports - the arrangement was re-made first by running select-in-region, set-selection
-    with this phase's own values. returned category BuiltInCategory, elements 0 item(s), levelOf
-    Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM,
-    ...], matching 9 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], unresolvedLevel
-    0. inputs came category as given; levelId as given. on test projject
+    load-family, place-family-instances with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned category BuiltInCategory,
+    elements 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance], hostLevelName Level
+    1, includeLinks false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
+    SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, matching 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance],
+    nestedLinks 0, unresolvedLevel 0. inputs came category as given; levelId as given; includeLinks
+    not given - false (optional). on Project2
+  negative_case: 'run with familyPath=C:/ProgramData/Autodesk/RVT 2020/Libraries/US Metric/Mechanical/MEP/Air-Side
+    Components/Air Terminals/M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted.rfa,
+    symbol=M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted: 250 mm Face 125 mm
+    Neck, points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000, level=Level 1, category=Air
+    Terminals, levelId=Level 2 instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running load-family, place-family-instances
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned category BuiltInCategory, elements 0 item(s), hostLevelName
+    Level 2, includeLinks false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
+    SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, matching 3 item(s) [FamilyInstance, FamilyInstance, FamilyInstance],
+    nestedLinks 0, unresolvedLevel 0. inputs came category as given; levelId as given; includeLinks
+    not given - false (optional). on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: daa3a5fa00964859
-
+  fingerprint: 492d8e1fd3344327
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

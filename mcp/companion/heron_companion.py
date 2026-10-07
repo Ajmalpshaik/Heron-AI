@@ -663,13 +663,21 @@ class LoadsPanel(object):
     """
 
     GONE = "the chat that opened this is no longer connected - nothing was done"
+    #: What a Recalculate overtaken by a fresh read of the model answers.
+    OVERTAKEN = ("the model was read again while this was being worked out, so this Recalculate "
+                 "was not kept and not shown - the page shows that newer read now. Check your "
+                 "inputs on it and press Recalculate again")
 
     def __init__(self):
         self._lock = threading.Lock()
         self._held = None
         self._takeoff = None
-        #: Set by the MCP server. recalculate_hook(takeoff, inputs, identity)
-        #: -> brain answer; report_hook(panel) -> {"ok", "said", "html", "pdf",
+        #: How many times the chat has read the model afresh. A Recalculate
+        #: started before one is neither kept nor shown (FRAGMENT-ISSUES 5b-333).
+        self._reads = 0
+        #: Set by the MCP server. recalculate_hook(takeoff, inputs, identity,
+        #: keep) -> brain answer, where keep(save) saves only while no fresh
+        #: read has come since; report_hook(panel) -> {"ok", "said", "html", "pdf",
         #: "csv"}; finalize_hook(takeoff, result, identity) -> {"ok", "said",
         #: "finalized"}; runs_hook(document) -> [run]; run_hook(document, id)
         #: -> a kept run or None; confirm_hook(takeoff, result, identity) ->
@@ -684,41 +692,54 @@ class LoadsPanel(object):
         #: where the modeller wants the report (docs/44 s12.7).
         self.folder_hook = pick_folder
 
+    def reading(self):
+        """The chat has read the model again and is working its loads out: a Recalculate
+        still running on the take-off held now is out of date. Said BEFORE that read's run
+        is kept, so an overtaken Recalculate cannot keep its run after it."""
+        with self._lock:
+            self._reads += 1
+
     def open(self, document, answer, identity=None, read_at=None):
+        with self._lock:
+            self._show(document, answer, identity, read_at)
+
+    def _show(self, document, answer, identity, read_at):
+        """Hold an answer - called with the lock held."""
         result = answer.get("result") or {}
         inputs = answer.get("inputs") or {}
-        with self._lock:
-            self._takeoff = answer.get("takeoff")
-            self._held = {
-                "document": document, "at": time.strftime("%H:%M:%S"),
-                # When the MODEL was read - kept through a Recalculate, which
-                # works on the take-off already held and reads nothing.
-                "read_at": read_at or time.strftime("%H:%M:%S"),
-                "identity": list(identity) if identity else None,
-                "qa": list(answer.get("qa") or []), "asked": list(answer.get("asked") or []),
-                "project": dict(inputs.get("project") or {}),
-                "profiles": dict(inputs.get("profiles") or {}),
-                "overrides": dict(inputs.get("overrides") or {}),
-                # The hour-by-hour rows stay in the kept run; the page shows peaks.
-                "spaces": [{k: v for k, v in s.items() if k != "cooling"}
-                           for s in result.get("spaces") or []],
-                "peaks": {str(s.get("id")): (s.get("cooling") or {}).get("peak")
-                          for s in result.get("spaces") or []},
-                "components": {str(s.get("id")): (s.get("cooling") or {}).get("components")
-                               for s in result.get("spaces") or []},
-                "zones": list(result.get("zones") or []),
-                "building": result.get("building"), "notes": list(result.get("notes") or []),
-                "run_id": result.get("run_id"), "units": result.get("units"),
-                "said": answer.get("said"), "report": None, "finalized": None,
-                "confirmed": bool(answer.get("confirmed")),
-                # Where this project's last report went - the folder window opens there.
-                "report_folder": answer.get("report_folder"),
-                "summary": answer.get("summary"),
-                # The 3D view's data, served on its own route: it is the
-                # biggest thing the panel holds and the page asks for it only
-                # when the 3D view is opened or the run changed.
-                "view": answer.get("view"),
-                "result": answer.get("result")}
+        if answer.get("takeoff") is not self._takeoff:
+            self._reads += 1                        # another take-off: the page has moved on
+        self._takeoff = answer.get("takeoff")
+        self._held = {
+            "document": document, "at": time.strftime("%H:%M:%S"),
+            # When the MODEL was read - kept through a Recalculate, which
+            # works on the take-off already held and reads nothing.
+            "read_at": read_at or time.strftime("%H:%M:%S"),
+            "identity": list(identity) if identity else None,
+            "qa": list(answer.get("qa") or []), "asked": list(answer.get("asked") or []),
+            "project": dict(inputs.get("project") or {}),
+            "profiles": dict(inputs.get("profiles") or {}),
+            "overrides": dict(inputs.get("overrides") or {}),
+            # The hour-by-hour rows stay in the kept run; the page shows peaks.
+            "spaces": [{k: v for k, v in s.items() if k != "cooling"}
+                       for s in result.get("spaces") or []],
+            "peaks": {str(s.get("id")): (s.get("cooling") or {}).get("peak")
+                      for s in result.get("spaces") or []},
+            "components": {str(s.get("id")): (s.get("cooling") or {}).get("components")
+                           for s in result.get("spaces") or []},
+            "zones": list(result.get("zones") or []),
+            "building": result.get("building"), "notes": list(result.get("notes") or []),
+            "run_id": result.get("run_id"), "units": result.get("units"),
+            "said": answer.get("said"), "report": None, "finalized": None,
+            "confirmed": bool(answer.get("confirmed")),
+            # Where this project's last report went - the folder window opens there.
+            "report_folder": answer.get("report_folder"),
+            "summary": answer.get("summary"),
+            # The 3D view's data, served on its own route: it is the
+            # biggest thing the panel holds and the page asks for it only
+            # when the 3D view is opened or the run changed.
+            "view": answer.get("view"),
+            "result": answer.get("result")}
 
     def current(self):
         with self._lock:
@@ -765,19 +786,34 @@ class LoadsPanel(object):
         if not isinstance(body, dict) or not all(
                 isinstance(body.get(k, {}), dict) for k in ("project", "profiles", "overrides")):
             return {"ok": False, "said": "the inputs could not be read - nothing was calculated"}
-        takeoff, _result, identity = self._snapshot()
-        if takeoff is None:
-            return {"ok": False, "said": "no building is open on this page - ask the chat to "
-                                         "calculate the loads first"}
         with self._lock:
-            document = self._held["document"]
+            if not self._held or self._takeoff is None:
+                return {"ok": False, "said": "no building is open on this page - ask the chat "
+                                             "to calculate the loads first"}
+            takeoff, document = self._takeoff, self._held["document"]
             read_at = self._held.get("read_at")
+            identity = list(self._held["identity"]) if self._held.get("identity") else None
+            reads = self._reads
+
+        def keep(save):
+            """Save only while no fresh read of the model has come since this began -
+            checked and saved in one step, so a fresh read cannot come in between and
+            find this older run kept after its own (FRAGMENT-ISSUES 5b-333)."""
+            with self._lock:
+                if self._reads != reads:
+                    return False, None
+                return True, save()
         answer = hook(takeoff, {"project": body.get("project") or {},
                                 "profiles": body.get("profiles") or {},
-                                "overrides": body.get("overrides") or {}}, identity)
+                                "overrides": body.get("overrides") or {}}, identity, keep)
         if not isinstance(answer, dict) or answer.get("takeoff") is None:
             return {"ok": False, "said": (answer or {}).get("said") or self.GONE}
-        self.open(document, answer, identity, read_at)
+        with self._lock:
+            # SHOWN ONLY OVER WHAT IT STARTED FROM: a fresh read that came while
+            # this was worked out stays on the page.
+            if self._reads != reads:
+                return {"ok": False, "said": self.OVERTAKEN}
+            self._show(document, answer, identity, read_at)
         return {"ok": True, "said": answer.get("said"), "loads": self.current()}
 
     #: What the page may open of a report it wrote, and how - nothing else.

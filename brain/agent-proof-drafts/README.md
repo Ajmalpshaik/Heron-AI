@@ -15,6 +15,10 @@ answered, which numbers moved between them, and which held the same. It is arran
 [D-30](../../docs/DECISIONS.md) asks for and then it stops, because the last step is a judgement no
 machine can make — *is that answer right for this building?*
 
+`prove-agent.py vary` writes the other kind: one agent on **one** model across several values of one
+argument, where the input that has to be followed is the argument rather than the model
+([D-53](../../docs/DECISIONS.md)). It is read and accepted the same way.
+
 `by:` is empty in every draft, deliberately. The field is required, so a draft that reached a proof
 without a person's name on it would fail loudly instead of quietly counting as proven.
 

@@ -43,11 +43,14 @@ calls - on a PRIVATE store built from this checkout. Never the store every
 chat on the machine reads (row 5b-233).
 
     CHANGES    must reach the tool that makes that change
-    QUESTIONS  must not be answered by a tool that changes the model (D-86).
+    QUESTIONS  a question, or a request to select, must not be answered by a
+               tool that changes the model (D-86; 5b-329).
                The write line is read from the operation registry, never
                typed here (Golden Rule 19)
-    NO TOOL    nothing in Heron does it (5b-322); it must not be answered by
-               a tool that changes something else
+    NO TOOL    nothing in Heron does it; it must not be answered by a tool
+               that changes something else. Empty since 5b-322's sentence got
+               its tool on 2026-10-06 and moved to CHANGES
+    READS      a question about the project's own setup reaches its READ
     OWN        the take-off's own sentences must still reach it
 
 A sentence here is never declared word for word in any card - that would be
@@ -97,6 +100,14 @@ CHANGES = [
      "5b-319: answered REPORT_SPACE_ENVELOPE"),
     ("put doors in the walls at these points", "PLACE_HOSTED_FAMILY",
      "5b-319: answered CREATE_WALL"),
+    # 5b-322 was a NO TOOL row until SET_PROJECT_LOCATION was built
+    # (2026-10-06); the sentence it guarded now has a tool, and must reach it.
+    ("set the project location latitude and longitude to Doha", "SET_PROJECT_LOCATION",
+     "5b-322: asked by the loads session 2026-10-04, when nothing could"),
+    ("turn true north thirty degrees to the east", "SET_PROJECT_LOCATION",
+     "5b-322: Manage > Position, part of the same job"),
+    ("show cooling and heating loads in Btu/h and airflow in CFM", "SET_PROJECT_UNITS",
+     "5b-322: NEEDS-CHECKING CC12 needs a model in Btu/h and CFM"),
     ("place a skylight in the roof at a point", "PLACE_HOSTED_FAMILY",
      "5b-326: asked by a session 2026-10-06, answered CREATE_ROOF"),
     ("create an area scheme", "SET_AREA_VOLUME_COMPUTATIONS",
@@ -108,16 +119,47 @@ CHANGES = [
 QUESTIONS = [
     ("read the thermal U value of every floor type and roof type",
      "5b-319: asked by the same session, answered CREATE_ROOF"),
+    ("where is this project", "5b-322: a question about the site never reaches its setter"),
+    ("which units does this model show cooling load in",
+     "5b-322: a question about the units never reaches their setter"),
+    ("does this project use daylight saving",
+     "5b-346: answered SAVE_DOCUMENT before the site's read could say it"),
+    ("is project north rotated from true north",
+     "5b-346: answered ROTATE_ELEMENTS_ABOUT_AXIS before the site's read could say it"),
+    ("are the project units metric or imperial",
+     "5b-346: answered CREATE_PIPE_SEGMENT before the units' read existed"),
     ("is volume computation switched on",
      "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
     ("check if volume calculation is enabled",
      "5b-337: answered SET_SCHEDULE_FIELD_TOTALS"),
+    # A REQUEST TO SELECT IS HELD TO THE SAME RULE - nothing in it asks for a
+    # change. 5b-329: "select every wall of type Curtain Wall" reached
+    # SET_CURTAIN_WALL_GRID, and these paraphrases, written before any card
+    # was reworded, reached it or SET_CURTAIN_WALL_MULLIONS on 2026-10-06.
+    ("select all walls of type Curtain Wall",
+     "5b-329: answered SET_CURTAIN_WALL_MULLIONS"),
+    ("select all the curtain walls of type Storefront",
+     "5b-329: answered SET_CURTAIN_WALL_GRID"),
+    ("select all elements of type Curtain Wall",
+     "5b-329: answered SET_CURTAIN_WALL_GRID"),
+    ("select all instances of the Storefront curtain wall type",
+     "5b-329: answered SET_CURTAIN_WALL_GRID"),
+    # NOT HERE: "select every wall that uses the Curtain Wall type", the fifth
+    # paraphrase. SET_CURTAIN_WALL_GRID and REPORT_CURTAIN_WALL_TYPE fuse to the
+    # same score on it, and the PROVEN nudge hands the tie to the change - still
+    # OPEN in 5b-329. A guard that a status change flips is not a guard.
 ]
 
-NO_TOOL = [
-    ("set the project location latitude and longitude to Doha",
-     "5b-322: nothing in Heron sets the project location"),
+# A question about the project's own setup reaches the tool that READS it.
+# Three site questions still reach SET_PROJECT_LOCATION and are NOT here -
+# row 5b-346 records them, measured; this guards the ones the change moved.
+READS = [
+    ("where is this project", "REPORT_LOCATION"),
+    ("is project north rotated from true north", "REPORT_LOCATION"),
+    ("are the project units metric or imperial", "REPORT_PROJECT_UNITS"),
 ]
+
+NO_TOOL = []
 
 OWN = [
     ("read every space's envelope", "REPORT_SPACE_ENVELOPE"),
@@ -148,7 +190,7 @@ def write_line():
 
 def sentences():
     return ([t for t, _c, _w in CHANGES] + [t for t, _w in QUESTIONS]
-            + [t for t, _w in NO_TOOL] + [t for t, _c in OWN])
+            + [t for t, _c in READS] + [t for t, _w in NO_TOOL] + [t for t, _c in OWN])
 
 
 def main():
@@ -219,7 +261,7 @@ def main():
             check(answer.route != "identity",
                   "  and it was ranked, not matched word for word (%s)" % answer.route)
 
-        print("\n4. A QUESTION IS NOT ANSWERED BY A CHANGE")
+        print("\n4. A QUESTION OR A SELECTION IS NOT ANSWERED BY A CHANGE")
         for text, why in QUESTIONS:
             _answer, got, risk = ask(text)
             check(not writes(risk), "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))
@@ -233,6 +275,11 @@ def main():
         for text, want in OWN:
             _answer, got, _risk = ask(text)
             check(got == want, "%r -> %s" % (text, got))
+
+        print("\n7. A QUESTION ABOUT THE PROJECT'S SETUP REACHES ITS READER")
+        for text, want in READS:
+            _answer, got, risk = ask(text)
+            check(got == want and not writes(risk), "%r -> %s, %s" % (text, got, risk or "no risk"))
     finally:
         if store is not None:
             store.close()

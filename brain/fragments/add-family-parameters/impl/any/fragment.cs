@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `parameterNames`, `kind`, `instance`,
-// `parameterGroup` and `switchExisting` are in scope; leaves `added`,
-// `alreadyThere`, `switched`, `scopeReadBack`, `keptLinks`, `notAFamily`,
-// `refused` and `findings` behind.
+// `parameterGroup`, `switchExisting` and `renameExisting` are in scope; leaves
+// `added`, `alreadyThere`, `switched`, `scopeReadBack`, `keptLinks`, `renamed`,
+// `formulasReadBack`, `notAFamily`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -24,7 +24,11 @@
 //
 // SWITCHING, NOT ADDING, when `switchExisting` is true: the names are
 // parameters ALREADY in the family - or `all` - and `instance` is the scope
-// they are moved to. The SWITCH section at the end has its rules.
+// they are moved to. The SWITCH section has its rules.
+//
+// RENAMING, not adding, when `renameExisting` is true: each name is a pair,
+// Old=New, and the family's own parameters are renamed in place. The RENAME
+// section at the end has its rules.
 //
 // ALL OR NOTHING. Names, kind and group are checked before the first add. A
 // refusal from Revit after that THROWS, so the host rolls the whole call back:
@@ -40,6 +44,8 @@ string refused = null;
 var switched = new List<string>();
 var scopeReadBack = "";
 var keptLinks = "";
+var renamed = new List<string>();
+var formulasReadBack = "";
 
 var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
 var revitAssembly = typeof(Document).Assembly;
@@ -282,10 +288,15 @@ if (!doc.IsFamilyDocument)
         + "takes no family parameters. A project parameter is ADD_PROJECT_PARAMETER's job; to work on "
         + "a family, open it first.";
 }
-else if (switchExisting)
+else if (switchExisting && renameExisting)
 {
-    // Checked in the SWITCH section below: the kind and the group are not
-    // used, and the names are parameters the family already holds.
+    refused = "switchExisting and renameExisting were both true. A call either switches parameters "
+        + "between type and instance or renames them - make it two calls, so each reads back on its own.";
+}
+else if (switchExisting || renameExisting)
+{
+    // Checked in the SWITCH or RENAME section below: the kind and the group
+    // are not used, and the names are parameters the family already holds.
 }
 else if (addParameter == null)
 {
@@ -349,7 +360,7 @@ else
 // ADD
 // ---------------------------------------------------------------------------
 
-if (refused == null && !switchExisting)
+if (refused == null && !switchExisting && !renameExisting)
 {
     var fm = doc.FamilyManager;
     var toAdd = new List<string>();
@@ -411,6 +422,137 @@ if (refused == null && !switchExisting)
 }
 
 // ===========================================================================
+// WHAT SWITCHING AND RENAMING BOTH READ: built-in or not, what each formula
+// reads, what is tied to a parameter, and the type catalogue's columns
+// ===========================================================================
+
+Func<FamilyParameter, bool> isBuiltIn = p =>
+{
+    var internalDefinition = p.Definition as InternalDefinition;
+    return internalDefinition != null
+        && internalDefinition.BuiltInParameter != BuiltInParameter.INVALID;
+};
+
+// WHAT EACH FORMULA READS. Names are written bare in a Revit formula, spaces
+// and all, so each is looked for whole - longest first, and blanked once
+// found, so "Width" is not found a second time inside "Neck Width". Text in
+// quotes is blanked before anything: a word in quotes is a value.
+Func<string, List<string>, List<string>> namesReadFrom = (formula, namesLongestFirst) =>
+{
+    var found = new List<string>();
+    if (string.IsNullOrEmpty(formula)) return found;
+    var letters = formula.ToCharArray();
+    var inQuotes = false;
+    for (var i = 0; i < letters.Length; i++)
+    {
+        if (letters[i] == '"')
+        {
+            // AN INCH MARK IS NOT A QUOTE: 6" + Width. A quote right after a
+            // digit, outside quoted text, is the unit and toggles nothing.
+            var back = i - 1;
+            while (back >= 0 && letters[back] == ' ') back--;
+            var inchMark = !inQuotes && back >= 0 && char.IsDigit(letters[back]);
+            if (!inchMark) inQuotes = !inQuotes;
+            letters[i] = ' ';
+            continue;
+        }
+        if (inQuotes) letters[i] = ' ';
+    }
+    var work = new string(letters);
+    foreach (var name in namesLongestFirst)
+    {
+        var at = 0;
+        while (at < work.Length && (at = work.IndexOf(name, at, StringComparison.Ordinal)) >= 0)
+        {
+            var end = at + name.Length;
+            var before = at == 0 ? ' ' : work[at - 1];
+            var after = end >= work.Length ? ' ' : work[end];
+            var whole = !char.IsLetterOrDigit(before) && before != '_'
+                && !char.IsLetterOrDigit(after) && after != '_';
+            // A UNIT IS NOT A NAME: in 100 mm the mm follows a number, and a
+            // parameter is never written straight after one in a formula.
+            var look = at - 1;
+            while (look >= 0 && work[look] == ' ') look--;
+            var unitAfterNumber = look >= 0 && (char.IsDigit(work[look]) || work[look] == '.');
+            if (whole)
+            {
+                if (!unitAfterNumber && !found.Contains(name)) found.Add(name);
+                work = work.Substring(0, at) + new string(' ', name.Length) + work.Substring(end);
+            }
+            at = end;
+        }
+    }
+    return found;
+};
+
+// WHAT IS TIED TO A PARAMETER: everything associated with it - a connector's
+// size, a nested family's parameter - and the dimensions labelled with it.
+Func<Parameter, string> describeTied = tied =>
+{
+    var what = tied.Definition == null ? "a parameter" : tied.Definition.Name;
+    var element = tied.Element;
+    var connector = element as ConnectorElement;
+    if (connector != null) return connector.Domain.ToString().Replace("Domain", "") + " connector's " + what;
+    var nested = element as FamilyInstance;
+    if (nested != null)
+        return "nested " + (nested.Symbol != null ? nested.Symbol.Family.Name : nested.Name) + " (instance) " + what;
+    var nestedType = element as FamilySymbol;
+    if (nestedType != null) return "nested " + nestedType.Family.Name + " (TYPE) " + what;
+    return (element == null ? "an element" : element.Name) + "'s " + what;
+};
+
+Func<Dictionary<string, int>> countLabels = () =>
+{
+    var counted = new Dictionary<string, int>(StringComparer.Ordinal);
+    foreach (Dimension dimension in new FilteredElementCollector(doc).OfClass(typeof(Dimension)))
+    {
+        FamilyParameter label = null;
+        try { label = dimension.FamilyLabel; } catch (Exception) { }
+        if (label == null || label.Definition == null) continue;
+        var name = label.Definition.Name;
+        counted[name] = counted.ContainsKey(name) ? counted[name] + 1 : 1;
+    }
+    return counted;
+};
+
+Func<FamilyParameter, List<string>> tiedTo = p =>
+{
+    var list = new List<string>();
+    try
+    {
+        foreach (Parameter tied in p.AssociatedParameters) list.Add(describeTied(tied));
+    }
+    catch (Exception) { }
+    list.Sort(StringComparer.Ordinal);
+    return list;
+};
+
+// THE TYPE CATALOGUE, when the family is saved and has one beside it.
+var catalogueColumns = new List<string>();
+try
+{
+    if ((switchExisting || renameExisting) && doc.IsFamilyDocument && !string.IsNullOrEmpty(doc.PathName))
+    {
+        var cataloguePath = System.IO.Path.ChangeExtension(doc.PathName, ".txt");
+        if (System.IO.File.Exists(cataloguePath))
+        {
+            var header = System.IO.File.ReadLines(cataloguePath).FirstOrDefault() ?? "";
+            // THE FIRST CHARACTER DECLARES THE DELIMITER - a comma in nearly
+            // every catalogue, but the format allows another.
+            var delimiter = header.Length > 0 && !char.IsLetterOrDigit(header[0]) && header[0] != '"'
+                ? header[0] : ',';
+            foreach (var column in header.Split(delimiter))
+            {
+                var cut = column.IndexOf("##", StringComparison.Ordinal);
+                var columnName = (cut >= 0 ? column.Substring(0, cut) : column).Trim().Trim('"').Trim();
+                if (columnName.Length > 0) catalogueColumns.Add(columnName);
+            }
+        }
+    }
+}
+catch (Exception) { }
+
+// ===========================================================================
 // SWITCH - parameters already in the family, between TYPE and INSTANCE
 // ===========================================================================
 //
@@ -445,13 +587,6 @@ if (refused == null && switchExisting)
     Func<bool, string> scopeOf = isInstance => isInstance ? "instance" : "type";
     var scopeWord = scopeOf(wantInstance);
 
-    Func<FamilyParameter, bool> isBuiltIn = p =>
-    {
-        var internalDefinition = p.Definition as InternalDefinition;
-        return internalDefinition != null
-            && internalDefinition.BuiltInParameter != BuiltInParameter.INVALID;
-    };
-
     var everyParameter = new List<FamilyParameter>();
     foreach (FamilyParameter p in fm.Parameters)
         if (p.Definition != null) everyParameter.Add(p);
@@ -461,58 +596,8 @@ if (refused == null && switchExisting)
     foreach (var p in everyParameter.OrderBy(x => isBuiltIn(x) ? 1 : 0))
         if (!byName.ContainsKey(p.Definition.Name)) byName[p.Definition.Name] = p;
 
-    // WHAT EACH FORMULA READS. Names are written bare in a Revit formula, spaces
-    // and all, so each is looked for whole - longest first, and blanked once
-    // found, so "Width" is not found a second time inside "Neck Width". Text in
-    // quotes is blanked before anything: a word in quotes is a value.
     var namesLongestFirst = byName.Keys.OrderByDescending(n => n.Length).ToList();
-    Func<string, List<string>> namesRead = formula =>
-    {
-        var found = new List<string>();
-        if (string.IsNullOrEmpty(formula)) return found;
-        var letters = formula.ToCharArray();
-        var inQuotes = false;
-        for (var i = 0; i < letters.Length; i++)
-        {
-            if (letters[i] == '"')
-            {
-                // AN INCH MARK IS NOT A QUOTE: 6" + Width. A quote right after a
-                // digit, outside quoted text, is the unit and toggles nothing.
-                var back = i - 1;
-                while (back >= 0 && letters[back] == ' ') back--;
-                var inchMark = !inQuotes && back >= 0 && char.IsDigit(letters[back]);
-                if (!inchMark) inQuotes = !inQuotes;
-                letters[i] = ' ';
-                continue;
-            }
-            if (inQuotes) letters[i] = ' ';
-        }
-        var work = new string(letters);
-        foreach (var name in namesLongestFirst)
-        {
-            var at = 0;
-            while (at < work.Length && (at = work.IndexOf(name, at, StringComparison.Ordinal)) >= 0)
-            {
-                var end = at + name.Length;
-                var before = at == 0 ? ' ' : work[at - 1];
-                var after = end >= work.Length ? ' ' : work[end];
-                var whole = !char.IsLetterOrDigit(before) && before != '_'
-                    && !char.IsLetterOrDigit(after) && after != '_';
-                // A UNIT IS NOT A NAME: in 100 mm the mm follows a number, and a
-                // parameter is never written straight after one in a formula.
-                var look = at - 1;
-                while (look >= 0 && work[look] == ' ') look--;
-                var unitAfterNumber = look >= 0 && (char.IsDigit(work[look]) || work[look] == '.');
-                if (whole)
-                {
-                    if (!unitAfterNumber && !found.Contains(name)) found.Add(name);
-                    work = work.Substring(0, at) + new string(' ', name.Length) + work.Substring(end);
-                }
-                at = end;
-            }
-        }
-        return found;
-    };
+    Func<string, List<string>> namesRead = formula => namesReadFrom(formula, namesLongestFirst);
 
     var formulaBefore = new Dictionary<string, string>(StringComparer.Ordinal);
     var readsOf = new Dictionary<FamilyParameter, List<FamilyParameter>>();
@@ -527,48 +612,6 @@ if (refused == null && switchExisting)
         readsOf[p] = namesRead(formula).Select(n => byName[n]).Where(r => r != p).ToList();
     }
 
-    // WHAT IS TIED TO A PARAMETER: everything associated with it - a connector's
-    // size, a nested family's parameter - and the dimensions labelled with it.
-    Func<Parameter, string> describeTied = tied =>
-    {
-        var what = tied.Definition == null ? "a parameter" : tied.Definition.Name;
-        var element = tied.Element;
-        var connector = element as ConnectorElement;
-        if (connector != null) return connector.Domain.ToString().Replace("Domain", "") + " connector's " + what;
-        var nested = element as FamilyInstance;
-        if (nested != null)
-            return "nested " + (nested.Symbol != null ? nested.Symbol.Family.Name : nested.Name) + " (instance) " + what;
-        var nestedType = element as FamilySymbol;
-        if (nestedType != null) return "nested " + nestedType.Family.Name + " (TYPE) " + what;
-        return (element == null ? "an element" : element.Name) + "'s " + what;
-    };
-
-    Func<Dictionary<string, int>> countLabels = () =>
-    {
-        var counted = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (Dimension dimension in new FilteredElementCollector(doc).OfClass(typeof(Dimension)))
-        {
-            FamilyParameter label = null;
-            try { label = dimension.FamilyLabel; } catch (Exception) { }
-            if (label == null || label.Definition == null) continue;
-            var name = label.Definition.Name;
-            counted[name] = counted.ContainsKey(name) ? counted[name] + 1 : 1;
-        }
-        return counted;
-    };
-
-    Func<FamilyParameter, List<string>> tiedTo = p =>
-    {
-        var list = new List<string>();
-        try
-        {
-            foreach (Parameter tied in p.AssociatedParameters) list.Add(describeTied(tied));
-        }
-        catch (Exception) { }
-        list.Sort(StringComparer.Ordinal);
-        return list;
-    };
-
     Func<FamilyParameter, Dictionary<string, int>, string> linkLine = (p, labels) =>
     {
         var name = p.Definition.Name;
@@ -577,31 +620,6 @@ if (refused == null && switchExisting)
         if (labelCount > 0) parts.Add(labelCount + " labelled dimension(s)");
         return parts.Count == 0 ? "" : string.Join(", ", parts);
     };
-
-    // THE TYPE CATALOGUE, when the family is saved and has one beside it.
-    var catalogueColumns = new List<string>();
-    try
-    {
-        if (!string.IsNullOrEmpty(doc.PathName))
-        {
-            var cataloguePath = System.IO.Path.ChangeExtension(doc.PathName, ".txt");
-            if (System.IO.File.Exists(cataloguePath))
-            {
-                var header = System.IO.File.ReadLines(cataloguePath).FirstOrDefault() ?? "";
-                // THE FIRST CHARACTER DECLARES THE DELIMITER - a comma in nearly
-                // every catalogue, but the format allows another.
-                var delimiter = header.Length > 0 && !char.IsLetterOrDigit(header[0]) && header[0] != '"'
-                    ? header[0] : ',';
-                foreach (var column in header.Split(delimiter))
-                {
-                    var cut = column.IndexOf("##", StringComparison.Ordinal);
-                    var columnName = (cut >= 0 ? column.Substring(0, cut) : column).Trim().Trim('"').Trim();
-                    if (columnName.Length > 0) catalogueColumns.Add(columnName);
-                }
-            }
-        }
-    }
-    catch (Exception) { }
 
     // ----- WHICH PARAMETERS -----
     var asked = new List<FamilyParameter>();
@@ -791,6 +809,287 @@ if (refused == null && switchExisting)
         if (ordered.Count > 0 && leftAlone.Count > 0)
             findings.Add("Already " + scopeWord + ", left as they were: "
                 + string.Join(", ", leftAlone.Select(p => p.Definition.Name)) + ".");
+    }
+}
+
+// ===========================================================================
+// RENAME - parameters already in the family, each given as Old=New
+// ===========================================================================
+//
+// FamilyManager.RenameParameter, unchanged from 2020 to 2027. Revit itself
+// rewrites every formula that reads the old name, and keeps every dimension
+// label and every association - a connector's size, a nested family's
+// parameter - on the parameter it renamed. All of that is READ BACK here
+// rather than trusted.
+//
+// THE PAIRS. Old=New, separated by semicolons or commas: "CC 1 to 2=Pipe CC 1
+// to 2; CC 2 to 3=Pipe CC 2 to 3". A semicolon is safe to split on because
+// Revit refuses one in a name.
+//
+// REFUSED BY NAME, BEFORE ANYTHING CHANGES:
+//   - a piece that is not one Old=New, or an old name given twice;
+//   - an old name the family does not have - matched exactly, as Family Types
+//     shows it - or a built-in one, whose name is the category's;
+//   - a SHARED parameter: its name travels with its GUID from the shared
+//     parameter file, and a family that renamed it would no longer match the
+//     projects, schedules and tags that know it by that GUID;
+//   - a new name already in the family, matched case-insensitively - even one
+//     this call renames away, because a swap needs a name in between: two calls;
+//   - a new name given twice, or one with a character Revit refuses in a name;
+//   - a new name a formula would read as arithmetic: an operator anywhere in
+//     it (+ - * / ^ = ( ) or a quote), a digit or a point first, or a word a
+//     formula already means (if, and, or, not, pi, sqrt ...).
+// Anything else Revit refuses part-way THROWS with Revit's own words first,
+// and the host rolls the whole call back.
+//
+// READ BACK, ALL OR NOTHING. Each parameter is found again, by its id, under
+// its NEW name. Every formula in the family is read again: one that read an
+// old name must now read the new one and no longer the old, and every other
+// formula must be exactly what it was. Labelled dimensions and associations
+// are compared per parameter, before and after.
+
+if (refused == null && renameExisting)
+{
+    var fm = doc.FamilyManager;
+
+    var everyParameter = new List<FamilyParameter>();
+    foreach (FamilyParameter p in fm.Parameters)
+        if (p.Definition != null) everyParameter.Add(p);
+
+    // The family's own parameters win a name over a built-in of the same name.
+    var byName = new Dictionary<string, FamilyParameter>(StringComparer.Ordinal);
+    foreach (var p in everyParameter.OrderBy(x => isBuiltIn(x) ? 1 : 0))
+        if (!byName.ContainsKey(p.Definition.Name)) byName[p.Definition.Name] = p;
+
+    // ----- THE PAIRS -----
+    var pairs = new List<KeyValuePair<string, string>>();
+    var malformed = new List<string>();
+    foreach (var entry in names)
+        foreach (var piece in entry.Split(';'))
+        {
+            var text = piece.Trim();
+            if (text.Length == 0) continue;
+            var halves = text.Split('=');
+            if (halves.Length != 2 || halves[0].Trim().Length == 0 || halves[1].Trim().Length == 0)
+            {
+                malformed.Add(text);
+                continue;
+            }
+            pairs.Add(new KeyValuePair<string, string>(halves[0].Trim(), halves[1].Trim()));
+        }
+
+    // ----- REFUSE BY NAME, BEFORE ANYTHING CHANGES -----
+    const string notInAName = "\\:{}[]|;<>?`~";
+    const string arithmetic = "+-*/^=(),\"";
+    var formulaWords = new HashSet<string>(new[]
+    {
+        "if", "and", "or", "not", "pi", "abs", "sqrt", "exp", "ln", "log", "round", "roundup",
+        "rounddown", "sin", "cos", "tan", "asin", "acos", "atan", "size_lookup",
+    }, StringComparer.OrdinalIgnoreCase);
+
+    var reasons = new List<string>();
+    if (pairs.Count == 0 && malformed.Count == 0)
+        reasons.Add("No renames were given - each one as Old=New, separated by semicolons: "
+            + "\"CC 1 to 2=Pipe CC 1 to 2; CC 2 to 3=Pipe CC 2 to 3\".");
+    if (malformed.Count > 0)
+        reasons.Add("Not one Old=New each: " + string.Join("; ", malformed.Select(m => "'" + m + "'")) + ".");
+
+    foreach (var g in pairs.GroupBy(x => x.Key, StringComparer.Ordinal).Where(g => g.Count() > 1))
+        reasons.Add("'" + g.Key + "' is renamed twice in one call.");
+    foreach (var g in pairs.GroupBy(x => x.Value, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1))
+        reasons.Add("'" + g.Key + "' is asked for as the new name of " + g.Count() + " parameters - a family "
+            + "holds one parameter of a name.");
+
+    var plan = new List<Tuple<FamilyParameter, string, string>>();
+    foreach (var pair in pairs)
+    {
+        var oldName = pair.Key;
+        var newName = pair.Value;
+        FamilyParameter p;
+        if (!byName.TryGetValue(oldName, out p))
+        {
+            reasons.Add("'" + oldName + "' is not in this family. Names are matched exactly, as Family "
+                + "Types shows them.");
+            continue;
+        }
+        if (isBuiltIn(p))
+        {
+            reasons.Add("'" + oldName + "' is built in to the category, so its name is not the family's to change.");
+            continue;
+        }
+        if (p.IsShared)
+        {
+            reasons.Add("'" + oldName + "' is a SHARED parameter - its name comes with its GUID from the "
+                + "shared parameter file, and renaming it here would part it from every project, schedule "
+                + "and tag that knows it by that GUID. Replace it with another shared parameter instead.");
+            continue;
+        }
+        if (string.Equals(oldName, newName, StringComparison.Ordinal))
+        {
+            reasons.Add("'" + oldName + "' is already called that.");
+            continue;
+        }
+
+        var taken = everyParameter.FirstOrDefault(o => o.Id != p.Id
+            && string.Equals(o.Definition.Name, newName, StringComparison.OrdinalIgnoreCase));
+        if (taken != null)
+            reasons.Add("'" + newName + "' is already a parameter in this family"
+                + (taken.Definition.Name == newName ? "" : " (as '" + taken.Definition.Name + "')")
+                + " - names are told apart without regard to capitals. Choose another name"
+                + (pairs.Any(x => string.Equals(x.Key, taken.Definition.Name, StringComparison.Ordinal))
+                    ? ", or rename '" + taken.Definition.Name + "' away first in a call of its own." : "."));
+
+        var badLetters = newName.Where(c => notInAName.IndexOf(c) >= 0).Distinct().ToList();
+        if (badLetters.Count > 0)
+            reasons.Add("'" + newName + "' holds " + string.Join(" ", badLetters) + ", which Revit refuses in a "
+                + "parameter name.");
+
+        var operators = newName.Where(c => arithmetic.IndexOf(c) >= 0).Distinct().ToList();
+        if (operators.Count > 0)
+            reasons.Add("'" + newName + "' holds " + string.Join(" ", operators) + " - a formula reading it "
+                + "would see arithmetic, not a name.");
+        else if (char.IsDigit(newName[0]) || newName[0] == '.')
+            reasons.Add("'" + newName + "' starts with " + newName[0] + " - a formula reading it would see a "
+                + "number, not a name.");
+        else if (formulaWords.Contains(newName))
+            reasons.Add("'" + newName + "' is a word a formula already means.");
+
+        plan.Add(Tuple.Create(p, oldName, newName));
+    }
+
+    if (reasons.Count > 0)
+    {
+        refused = "Nothing was renamed. " + string.Join(" ", reasons);
+    }
+    else
+    {
+        // ----- BEFORE -----
+        var oldNames = plan.Select(x => x.Item2).ToList();
+        var namesBefore = byName.Keys.OrderByDescending(n => n.Length).ToList();
+        var formulaBefore = new Dictionary<ElementId, string>();
+        var readsBefore = new Dictionary<ElementId, List<string>>();
+        foreach (var p in everyParameter)
+        {
+            if (formulaBefore.ContainsKey(p.Id)) continue;
+            string formula = null;
+            try { formula = p.Formula; } catch (Exception) { }
+            formulaBefore[p.Id] = formula ?? "";
+            readsBefore[p.Id] = namesReadFrom(formula ?? "", namesBefore);
+        }
+        var labelsBefore = countLabels();
+        var tiedBefore = new Dictionary<ElementId, string>();
+        foreach (var step in plan) tiedBefore[step.Item1.Id] = string.Join(", ", tiedTo(step.Item1));
+
+        // ----- RENAME -----
+        foreach (var step in plan)
+        {
+            try
+            {
+                fm.RenameParameter(step.Item1, step.Item3);
+            }
+            catch (Exception ex)
+            {
+                var reason = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                throw new InvalidOperationException(reason + " - Revit, renaming '" + step.Item2 + "' to '"
+                    + step.Item3 + "'. NOTHING from this call was kept: the parameters in it are renamed "
+                    + "together or not at all.");
+            }
+        }
+
+        // ----- READ BACK, ALL OR NOTHING -----
+        var now = new Dictionary<ElementId, FamilyParameter>();
+        foreach (FamilyParameter p in fm.Parameters)
+            if (p.Definition != null && !now.ContainsKey(p.Id)) now[p.Id] = p;
+        var labelsAfter = countLabels();
+        var newFor = plan.ToDictionary(x => x.Item2, x => x.Item3, StringComparer.Ordinal);
+
+        // The old names are looked for too, longest first with the rest, so an
+        // old name inside a new one - CC 1 to 2 inside Pipe CC 1 to 2 - is not
+        // found there.
+        var namesAfter = now.Values.Select(p => p.Definition.Name).Concat(oldNames)
+            .Distinct(StringComparer.Ordinal).OrderByDescending(n => n.Length).ToList();
+
+        var wrong = new List<string>();
+        var kept = new List<string>();
+        foreach (var step in plan)
+        {
+            FamilyParameter after;
+            if (!now.TryGetValue(step.Item1.Id, out after))
+            {
+                wrong.Add("'" + step.Item2 + "' could not be found again");
+                continue;
+            }
+            if (after.Definition.Name != step.Item3)
+                wrong.Add("'" + step.Item2 + "' reads back as '" + after.Definition.Name + "', not '" + step.Item3 + "'");
+            if (now.Values.Any(o => !isBuiltIn(o) && o.Definition.Name == step.Item2))
+                wrong.Add("a parameter is still called '" + step.Item2 + "'");
+
+            var labelsWere = labelsBefore.ContainsKey(step.Item2) ? labelsBefore[step.Item2] : 0;
+            var labelsAre = labelsAfter.ContainsKey(step.Item3) ? labelsAfter[step.Item3] : 0;
+            if (labelsAre != labelsWere)
+                wrong.Add("'" + step.Item3 + "' labels " + labelsAre + " dimension(s), where '" + step.Item2
+                    + "' labelled " + labelsWere);
+
+            var tiedNow = string.Join(", ", tiedTo(after));
+            if (tiedNow != tiedBefore[step.Item1.Id])
+                wrong.Add("'" + step.Item2 + "' was tied to [" + tiedBefore[step.Item1.Id] + "] and '" + step.Item3
+                    + "' is tied to [" + tiedNow + "]");
+
+            var keptParts = new List<string>();
+            if (tiedNow.Length > 0) keptParts.Add(tiedNow);
+            if (labelsAre > 0) keptParts.Add(labelsAre + " labelled dimension(s)");
+            if (keptParts.Count > 0) kept.Add(step.Item3 + ": " + string.Join(", ", keptParts));
+            renamed.Add(step.Item2 + " -> " + step.Item3);
+        }
+
+        var formulaLines = new List<string>();
+        foreach (var entry in formulaBefore)
+        {
+            FamilyParameter after;
+            if (!now.TryGetValue(entry.Key, out after)) continue;
+            string formulaNow = null;
+            try { formulaNow = after.Formula; } catch (Exception) { }
+            formulaNow = formulaNow ?? "";
+            var oldRead = readsBefore[entry.Key].Where(n => newFor.ContainsKey(n)).ToList();
+            if (oldRead.Count == 0)
+            {
+                if (formulaNow != entry.Value)
+                    wrong.Add("'" + after.Definition.Name + "' formula changed from '" + entry.Value + "' to '"
+                        + formulaNow + "', though it read none of the names renamed");
+                continue;
+            }
+            var readNow = namesReadFrom(formulaNow, namesAfter);
+            foreach (var oldName in oldRead)
+            {
+                if (readNow.Contains(oldName))
+                    wrong.Add("'" + after.Definition.Name + "' formula '" + formulaNow + "' still reads '" + oldName + "'");
+                if (!readNow.Contains(newFor[oldName]))
+                    wrong.Add("'" + after.Definition.Name + "' formula '" + formulaNow + "' does not read '"
+                        + newFor[oldName] + "'");
+            }
+            formulaLines.Add(after.Definition.Name + " = " + formulaNow);
+        }
+
+        if (wrong.Count > 0)
+            throw new InvalidOperationException("Read back after renaming: " + string.Join("; ", wrong)
+                + ". NOTHING from this call was kept.");
+
+        formulasReadBack = formulaLines.Count == 0
+            ? "no formula in the family reads the parameters renamed"
+            : string.Join("; ", formulaLines);
+        keptLinks = kept.Count == 0 ? "none of them is associated with anything or labels a dimension"
+            : string.Join("; ", kept);
+
+        findings.Add("Renamed " + renamed.Count + " parameter(s), read back from the family by the new names: "
+            + string.Join("; ", renamed) + ".");
+        findings.Add("Formulas that read them, read back with the new names: " + formulasReadBack + ".");
+        findings.Add("Kept as they were: " + keptLinks + ".");
+
+        var inCatalogue = oldNames.Where(n => catalogueColumns.Contains(n)).ToList();
+        if (inCatalogue.Count > 0)
+            findings.Add("The type catalogue beside this family still names " + string.Join(", ", inCatalogue)
+                + " in its first line - rename those columns in the .txt by hand too, or the catalogue no "
+                + "longer fills them.");
     }
 }
 

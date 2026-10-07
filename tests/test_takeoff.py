@@ -234,6 +234,107 @@ def test_a_curtain_walls_frames_need_no_u_of_its_own():
     assert frames[0]["u_w_m2k"] == 2.0 and s["assumed"], s
 
 
+def curtain_office(panels, face_loop, height=3.775):
+    """One office behind a storey-high curtain wall, as REPORT_SPACE_ENVELOPE gives it: the
+    face stops at the Space's top, the panels run the storey. No `curtain` key on the face -
+    the fragment never writes one."""
+    d = copy()
+    d["types"]["cw"] = {"name": "Curtain Wall: Exterior Glazing", "category": "Walls",
+                        "u_w_m2k": None, "shgc": None, "absorptance": None}
+    d["types"]["pn"] = {"name": "System Panel: Glazed", "category": "Curtain Panels",
+                        "u_w_m2k": 6.7, "shgc": 0.86, "absorptance": None}
+    xs = [p[0] for p in face_loop]
+    zs = [p[2] for p in face_loop]
+    d["spaces"][0]["height_m"] = height
+    d["spaces"][0]["faces"][0] = {
+        "element": 60, "type": "cw", "side": "wall", "normal": [0.0, -1.0, 0.0],
+        "area_m2": round((max(xs) - min(xs)) * (max(zs) - min(zs)), 6),
+        "beyond": "outside", "beyond_space": None, "loops": [face_loop],
+        "openings": [{"element": 61 + i, "kind": "curtain_panel", "type": "pn",
+                      "area_m2": w * h, "centre": [x, 0.0, z], "width_m": w, "height_m": h}
+                     for i, (x, z, w, h) in enumerate(panels)]}
+    return d
+
+
+SOUTH = [[18.0, 0.0, 3.775], [12.062, 0.0, 3.775], [12.062, 0.0, 0.0], [18.0, 0.0, 0.0]]
+STOREY = [(13.25, 2.0, 2.5, 4.0), (15.75, 2.0, 2.5, 4.0), (17.5, 2.0, 1.0, 4.0)]
+
+
+def test_a_curtain_panel_counts_only_the_part_on_the_spaces_face():
+    # FRAGMENT-ISSUES 5b-330: the panels run the storey, 4.0 m, past the slab's
+    # underside where the Space stops (3.775 m), and the first runs 62 mm past
+    # the wall at its side - 24.00 m2 of panels on a 22.42 m2 face, and the
+    # Space was refused. Only the part of each panel on the face counts.
+    t = T.read(curtain_office(STOREY, SOUTH))
+    s = T.surfaces(t, t.spaces[0])
+    assert not s["refused"], s["refused"]
+    got = sorted(round(w["area_m2"], 4) for w in s["windows"])
+    assert got == [3.775, 9.2035, 9.4375], got           # 1.0, 2.438 and 2.5 m, 3.775 m high
+    assert abs(sum(got) - 22.41595) < 1e-3
+    assert not [w for w in s["windows"] if "frames" in w["name"]]   # all glass, nothing left
+    assert not [f for f in T.qa(t) if "larger than" in f["text"]], T.qa(t)
+
+
+def test_a_curtain_walls_mullions_are_its_frames_on_a_real_takeoff():
+    # The frames rule (second review N5) waited for a `curtain` key the
+    # fragment never writes, so on a real model a curtain wall WITH mullions
+    # left its mullions to the curtain wall type - which carries no U - and
+    # refused its Space. A face with curtain panels in it is a curtain wall's.
+    narrow = [(13.25, 2.0, 2.4, 3.9), (15.75, 2.0, 2.4, 3.9), (17.5, 2.0, 0.9, 3.9)]
+    t = T.read(curtain_office(narrow, SOUTH))
+    s = T.surfaces(t, t.spaces[0])
+    assert not s["refused"], s["refused"]
+    frames = [w for w in s["windows"] if "frames" in w["name"]]
+    glass = sum(w["area_m2"] for w in s["windows"] if "frames" not in w["name"])
+    assert frames and frames[0]["shgc"] == 0.0 and frames[0]["u_w_m2k"] == 6.7, frames
+    assert abs(frames[0]["area_m2"] + glass - 22.41595) < 1e-3, (frames, glass)
+
+
+def test_a_panel_across_two_spaces_counts_its_part_on_each():
+    # The take-off lists a panel once, under the face its middle is on; a
+    # panel across the partition between two Spaces lies on both faces, and
+    # each Space counts its own part of it - none counted twice, none lost.
+    d = curtain_office([(2.0, 1.5, 4.0, 3.0), (6.0, 1.5, 4.0, 3.0), (9.0, 1.5, 2.0, 3.0)],
+                       [[4.9, 0.0, 3.0], [0.0, 0.0, 3.0], [0.0, 0.0, 0.0], [4.9, 0.0, 0.0]],
+                       height=3.0)
+    other = _copy.deepcopy(d["spaces"][0])
+    other.update(id=2, unique_id="u2", number="2", name="Office 02")
+    other["faces"][0].update(area_m2=14.7, loops=[[[10.0, 0.0, 3.0], [5.1, 0.0, 3.0],
+                                                   [5.1, 0.0, 0.0], [10.0, 0.0, 0.0]]])
+    mine = d["spaces"][0]["faces"][0]["openings"]
+    d["spaces"][0]["faces"][0]["openings"] = mine[:1]               # its middle is on Office 01
+    other["faces"][0]["openings"] = mine[1:]                        # these two on Office 02
+    d["spaces"].append(other)
+    t = T.read(d)
+    first, second = (T.surfaces(t, sp) for sp in t.spaces)
+    assert not first["refused"] and not second["refused"], (first["refused"], second["refused"])
+    assert abs(sum(w["area_m2"] for w in first["windows"]) - 14.7) < 1e-6     # 12 + 0.9 x 3
+    assert abs(sum(w["area_m2"] for w in second["windows"]) - 14.7) < 1e-6    # 2.9 x 3 + 6
+    assert not [f for f in T.qa(t) if "larger than" in f["text"]]
+
+
+def test_a_window_is_counted_whole_and_too_big_still_refuses():
+    # Only a curtain panel's outline is exact. A window sits by the middle of
+    # its box, which a frame or a sill moves, so it is never cut - and one
+    # larger than its face is still a FAIL: the refusal for a real mismatch.
+    d = copy()
+    d["spaces"][0]["faces"][0]["loops"] = [[[0.0, 5.0, 2.7], [0.0, 0.0, 2.7],
+                                            [0.0, 0.0, 0.0], [0.0, 5.0, 0.0]]]
+    d["spaces"][0]["faces"][0]["openings"][0].update(centre=[0.0, 2.5, 2.6], width_m=1.0,
+                                                     height_m=2.0)
+    t = T.read(d)
+    assert T.surfaces(t, t.spaces[0])["windows"][0]["area_m2"] == 2.0
+    d["spaces"][0]["faces"][0]["openings"][0]["area_m2"] = 14.0
+    assert any(f["level"] == "FAIL" and "larger than" in f["text"] for f in T.qa(T.read(d)))
+
+
+def test_the_glass_by_facing_is_the_glass_on_the_faces():
+    t = T.read(curtain_office(STOREY, SOUTH))
+    south = T.summary(t)["glass_by_facing"]["S"]
+    assert abs(south["glass_m2"] - 22.41595) < 1e-3, south
+    assert south["glass_pct_of_wall"] <= 100.0 + 1e-6, south
+
+
 def test_the_answers_count_wherever_beyond_is_read():
     # Second review m5: a face answered "outside" is an outside face for the
     # INFO line and the glass by facing too.

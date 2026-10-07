@@ -2172,6 +2172,24 @@ namespace Heron.Revit.Addin
 
                 if (value == null)
                 {
+                    // AN ELEMENT LIST THE CARD MARKS OPTIONAL BINDS EMPTY - a
+                    // read of the whole project that can also be pointed at a
+                    // selection (REPORT_LOCATION v4, "where is this project"
+                    // with nothing selected). Asked only now, after the chain,
+                    // the selection and a creator's output, so it never wins
+                    // over a real value. See HeronBindingNote.EmptyWhenAbsent.
+                    string optionalWord;
+                    need.TryGetValue("optional", out optionalWord);
+                    var empty = HeronBindingNote.EmptyWhenAbsent(type, optionalWord);
+                    if (empty != null)
+                    {
+                        bound.Add(name);
+                        lines.Append(type).Append(" ").Append(name)
+                             .Append(" = ").Append(empty).Append(";\n");
+                        how.Add(name + " not given - none (optional)");
+                        continue;
+                    }
+
                     // SAY WHICH NAME WAS LOOKED FOR when it is not the need's
                     // own. "targets was never supplied" sends a reader hunting
                     // for a fragment that provides `targets`, and none does -

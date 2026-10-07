@@ -126,22 +126,20 @@ def _sub(a, b):
     return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 
 
-def _cross(a, b):
-    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
-
-
 def _unit(v):
     n = math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
     return [v[0] / n, v[1] / n, v[2] / n] if n > 1e-12 else None
 
 
 def rectangle(centre, normal, width, height):
-    """An opening's outline: width along the face, height up it, centred, drawn proud."""
+    """An opening's outline: width along the face, height up it, centred, drawn proud.
+    Across and up are the take-off's own (heron_takeoff.axes), so the rectangle drawn is the
+    one a curtain panel is cut to its face by."""
     n = _unit([float(x) for x in normal])
-    if n is None:
+    turned = TAKEOFF.axes(normal)
+    if n is None or turned is None:
         return None
-    across = _unit(_cross([0.0, 0.0, 1.0], n)) or [1.0, 0.0, 0.0]
-    up = _unit(_cross(n, across))
+    across, up = turned
     c = [float(centre[k]) + n[k] * PROUD_M for k in range(3)]
     w, h = float(width) / 2.0, float(height) / 2.0
     return [[c[k] + across[k] * sx * w + up[k] * sy * h for k in range(3)]
@@ -232,6 +230,9 @@ def build(takeoff, result=None, answers=None):
             every.extend(p for lp in loops for p in lp)
             if f.get("side") == "bottom":
                 floor_points.extend(p for lp in loops for p in lp)
+            # What the load counted of each opening - a curtain panel only its
+            # part on this face (FRAGMENT-ISSUES 5b-330); drawn whole, said here.
+            parts = dict((str(o.get("element")), area) for o, area in TAKEOFF.counted(t, f))
             for j, o in enumerate(f.get("openings") or []):
                 if not o.get("centre") or not o.get("width_m") or not o.get("height_m") \
                         or not f.get("normal"):
@@ -251,6 +252,11 @@ def build(takeoff, result=None, answers=None):
                 counted = used not in ("none", "unknown")
                 sunlit = used in ("wall", "roof", "exposed_floor")
                 refused = counted and (ou is None or (sunlit and glazed and okind.get("shgc") is None))
+                whole = float(o.get("area_m2") or 0.0)
+                part = parts.get(str(o.get("element")), whole)
+                cut = ("" if not counted or abs(part - whole) <= 1e-6 else
+                       " - %.2f m2 of its %.2f m2 is on this Space's face, and only that is "
+                       "counted here" % (part, whole))
                 faces.append({
                     "id": "%s-%d-%d" % (sid, i, j), "space": sid, "level": s.get("level"),
                     "element": o.get("element"), "type": okind.get("name"),
@@ -261,8 +267,8 @@ def build(takeoff, result=None, answers=None):
                     "used_as": ("REFUSED - its type has no %s in the model"
                                 % ("U-value" if ou is None else "SHGC")) if refused
                     else ("no load - conditioned on both sides" if used == "none"
-                          else "glass: conduction and sun through it" if glazed
-                          else "a door: conduction through it"),
+                          else "glass: conduction and sun through it" + cut if glazed
+                          else "a door: conduction through it" + cut),
                     "area_m2": o.get("area_m2"), "u_w_m2k": ou, "shgc": okind.get("shgc"),
                     "facing_deg": facing,
                     "facing": TAKEOFF.compass(facing) if facing is not None else None,

@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc` and `parameterNames` are in scope; leaves
-// `deleted`, `blocked`, `notFound`, `notAFamily`, `refused` and `findings`
-// behind.
+// NOT STANDALONE. Assumes `doc`, `parameterNames` and `unlabelFirst` are in
+// scope; leaves `deleted`, `unlabelled`, `blocked`, `notFound`, `notAFamily`,
+// `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -27,9 +27,29 @@
 // ALL OR NOTHING. One refused name refuses the whole call before the first
 // removal, and a removal Revit refuses afterwards THROWS so the host rolls the
 // call back: a list half-deleted is harder to see than one not touched.
+//
+// ===========================================================================
+// THE ONE THING IT WILL UNHOOK, AND ONLY WHEN ASKED: A DIMENSION'S LABEL
+// ===========================================================================
+//
+// Version 2. With `unlabelFirst` true, a dimension labelled with a parameter
+// being deleted does not block it: the label is taken off first - the
+// dimension's Label set to <None>, Dimension.FamilyLabel = null - and the
+// parameter then goes. The dimension stays, unlabelled, and the planes stay
+// exactly where they are: an unlabelled dimension drives nothing, so nothing
+// moves. Its reading is compared before and after to show it.
+//
+// ONLY dimension labels. A formula, an array's count, a form field, a nested
+// family's parameter and a connector still block exactly as before, and if
+// ANY name in the call is blocked by one of them, no label is taken off
+// either - the refusal comes before the first change.
+//
+// ABSENT, `unlabelFirst` is false, and the call is version 1 to the letter:
+// the label blocks, with the same words.
 
 var findings = new List<string>();
 var deleted = new List<string>();
+var unlabelled = new List<string>();
 var blocked = new List<string>();
 var notFound = new List<string>();
 var notAFamily = false;
@@ -117,6 +137,9 @@ else if (names.Count == 0)
 
 var fm = doc.IsFamilyDocument ? doc.FamilyManager : null;
 var targets = new Dictionary<string, FamilyParameter>(StringComparer.Ordinal);
+// The labelled dimensions themselves, by the label's name - version 2's
+// unlabelFirst takes the labels off these, and only these.
+var labelledBy = new Dictionary<string, List<Dimension>>(StringComparer.Ordinal);
 
 if (refused == null)
 {
@@ -166,6 +189,11 @@ if (refused == null)
         var labelName = label.Definition.Name;
         var counts = dimension != null ? dimensionsOf : arraysOf;
         counts[labelName] = (counts.ContainsKey(labelName) ? counts[labelName] : 0) + 1;
+        if (dimension != null)
+        {
+            if (!labelledBy.ContainsKey(labelName)) labelledBy[labelName] = new List<Dimension>();
+            labelledBy[labelName].Add(dimension);
+        }
     }
 
     foreach (var entry in targets)
@@ -189,7 +217,9 @@ if (refused == null)
             reasons.Add("another parameter's formula uses it: " + string.Join("; ", formulaUsers)
                 + " - change or clear that formula first (SET_FAMILY_FORMULA)");
 
-        if (dimensionsOf.ContainsKey(name))
+        // A dimension label blocks unless the caller asked for it to be taken
+        // off (version 2). Absent, unlabelFirst is false: version 1's words.
+        if (dimensionsOf.ContainsKey(name) && !unlabelFirst)
             reasons.Add("it labels " + dimensionsOf[name] + " dimension(s) - take the label off first "
                 + "(select the dimension, Label: <None>)");
 
@@ -263,6 +293,78 @@ if (refused == null)
         left.RemoveAll(n => free.Contains(n));
     }
 
+    // VERSION 2: TAKE THE LABELS OFF FIRST, WHEN ASKED, AND READ THEM BACK.
+    // Every check above has passed, so nothing else blocks any name in this
+    // call. Each dimension is described BEFORE its label goes - which two
+    // planes it measures, in which view, and what it reads - because after
+    // the parameter is gone nothing would say what it used to drive.
+    var unlabelledDimensions = new List<Tuple<Dimension, string, double?>>();
+    if (unlabelFirst)
+    {
+        Func<Reference, string> endName = reference =>
+        {
+            var end = reference == null ? null : doc.GetElement(reference.ElementId);
+            if (end == null) return "an edge";
+            var own = (end.Name ?? "").Trim();
+            if ((end is ReferencePlane || end is Level) && own.Length > 0) return "\"" + own + "\"";
+            var category = end.Category == null ? "an element" : end.Category.Name;
+            return own.Length > 0 ? category + " \"" + own + "\"" : "a face of " + category;
+        };
+
+        foreach (var name in order)
+        {
+            if (!labelledBy.ContainsKey(name)) continue;
+            foreach (var dimension in labelledBy[name])
+            {
+                var ends = new List<string>();
+                foreach (Reference reference in dimension.References) ends.Add(endName(reference));
+                var view = doc.GetElement(dimension.OwnerViewId) as View;
+                double? before = null;
+                try { before = dimension.Value; } catch (Exception) { before = null; }
+                var what = "the dimension " + (ends.Count == 0 ? "" : "from " + string.Join(" to ", ends) + " ")
+                    + (view == null ? "" : "in \"" + view.Name + "\" ")
+                    + (before.HasValue ? "reading " + Math.Round(before.Value * 304.8, 1).ToString(
+                        System.Globalization.CultureInfo.InvariantCulture) + " mm " : "")
+                    + "- was labelled \"" + name + "\"";
+                try
+                {
+                    dimension.FamilyLabel = null;
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Revit refused to take the label \"" + name
+                        + "\" off " + what + ": " + ex.Message + " NOTHING from this call was kept.");
+                }
+                unlabelledDimensions.Add(Tuple.Create(dimension, what, before));
+            }
+        }
+
+        if (unlabelledDimensions.Count > 0)
+        {
+            doc.Regenerate();
+            // READ BACK AFTER THE REGENERATION: no label left, and the same
+            // reading - an unlabelled dimension drives nothing, so a plane that
+            // moved means something else did, and nothing is kept.
+            foreach (var item in unlabelledDimensions)
+            {
+                FamilyParameter still = null;
+                try { still = item.Item1.FamilyLabel; } catch (Exception) { still = null; }
+                if (still != null)
+                    throw new InvalidOperationException("Revit was told to take the label off " + item.Item2
+                        + ", and it is still labelled \"" + still.Definition.Name + "\". NOTHING from this "
+                        + "call was kept.");
+                double? after = null;
+                try { after = item.Item1.Value; } catch (Exception) { after = null; }
+                if (item.Item3.HasValue && after.HasValue
+                    && Math.Abs(after.Value - item.Item3.Value) > 0.5 / 304.8)
+                    throw new InvalidOperationException("Taking the label off " + item.Item2 + " moved it to "
+                        + Math.Round(after.Value * 304.8, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        + " mm. Nothing should move when a label comes off, so NOTHING from this call was kept.");
+                unlabelled.Add(item.Item2 + "; now unlabelled, the planes where they were");
+            }
+        }
+    }
+
     foreach (var name in order)
     {
         var p = targets[name];
@@ -289,6 +391,26 @@ if (refused == null)
     if (stillThere.Count > 0)
         throw new InvalidOperationException("Revit said it deleted " + string.Join(", ", stillThere)
             + " and the family still has them, so nothing from this call was kept.");
+
+    // VERSION 2: THE UNLABELLED DIMENSIONS ARE STILL THERE, AND STILL BARE.
+    // Revit is free to tidy up after a parameter goes; a dimension that went
+    // with it, or picked up another label, is not what was reported.
+    foreach (var item in unlabelledDimensions)
+    {
+        var kept = doc.GetElement(item.Item1.Id) as Dimension;
+        FamilyParameter label = null;
+        if (kept != null) { try { label = kept.FamilyLabel; } catch (Exception) { label = null; } }
+        if (kept == null || label != null)
+            throw new InvalidOperationException("After the deletion, " + item.Item2
+                + (kept == null ? " was gone too" : " carried the label \"" + label.Definition.Name + "\"")
+                + " - not what this reports, so nothing from this call was kept.");
+    }
+    if (unlabelled.Count > 0)
+        findings.Add("Took the label off " + unlabelled.Count + " dimension(s) first, as asked: "
+            + string.Join("; ", unlabelled) + ". The dimensions stay; label them again with "
+            + "LABEL_FAMILY_DIMENSION if they should drive something.");
+    else if (unlabelFirst)
+        findings.Add("No dimension was labelled with these parameters, so no label was taken off.");
 
     findings.Add("Deleted " + deleted.Count + " parameter(s), and read back that the family no longer "
         + "has them: " + string.Join("; ", deleted) + ".");

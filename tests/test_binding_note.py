@@ -233,7 +233,31 @@ def main():
     asks = "HeronBindingNote.AbsentValue(type, optional)" in text
     print("  %s  the binder asks AbsentValue before refusing an absent "
           "request need" % ("ok  " if asks else "FAIL"))
-    return 0 if ok and asks else 1
+
+    # And row 5b-322's: the host proves what EmptyWhenAbsent answers, and only
+    # this can see that the binder asks it before refusing an unfilled list.
+    empties = "HeronBindingNote.EmptyWhenAbsent(type, optionalWord)" in text
+    print("  %s  the binder asks EmptyWhenAbsent before refusing an unfilled "
+          "element list" % ("ok  " if empties else "FAIL"))
+
+    # The Python half of the same rule, word for word on the same cases.
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_fragment as HF
+    mirror = [
+        ({"name": "elements", "type": "IList<Element>", "optional": "true"}, True),
+        ({"name": "elements", "type": "IList< Element >", "optional": " True "}, True),
+        ({"name": "elements", "type": "IEnumerable<Element>", "optional": "true"}, True),
+        ({"name": "elements", "type": "IList<Element>"}, False),
+        ({"name": "elements", "type": "IList<Element>", "optional": "false"}, False),
+        ({"name": "ids", "type": "IList<ElementId>", "optional": "true"}, False),
+        ({"name": "element", "type": "Element", "optional": "true"}, False),
+        ({"name": "elements", "type": "IList<Element>", "source": "request",
+          "optional": "true"}, False),
+    ]
+    agrees = all(HF.need_may_be_empty(need) == want for need, want in mirror)
+    print("  %s  heron_fragment.need_may_be_empty answers the %d cases the host "
+          "does" % ("ok  " if agrees else "FAIL", len(mirror)))
+    return 0 if ok and asks and empties and agrees else 1
 
 
 if __name__ == "__main__":

@@ -88,5 +88,50 @@ namespace Heron.Revit.Addin
 
             return (type ?? "").Trim() == "bool" ? "false" : null;
         }
+
+        /// <summary>
+        /// What an element list the MODEL would fill binds to when nothing
+        /// fills it - no chain, no selection, no creator's output - or null
+        /// to refuse it as needs_unbound, as before.
+        ///
+        /// ONE CASE: A READ OF THE WHOLE PROJECT THAT CAN ALSO BE POINTED AT A
+        /// SELECTION. REPORT_LOCATION version 4 answers "where is this
+        /// project" - the site, True North - and, for whatever is selected,
+        /// where each element is. Asked with nothing selected it was refused
+        /// before it ran, "elements was never supplied", which is right for a
+        /// tool whose whole answer is about the elements and wrong for one
+        /// whose answer is the project. The owner chose, on 2026-10-06, to
+        /// widen that tool rather than add a second reader of the site.
+        ///
+        /// ONLY AN ELEMENT LIST THE CARD MARKS `optional: true`, and only
+        /// once the chain, the selection and a creator's output have all been
+        /// asked - so it never wins over a real value. Every other unfilled
+        /// need still refuses: a fragment that had not said "nothing is a
+        /// fine answer" would report 0 results, which reads as "there was
+        /// nothing to find" rather than "nobody was asked". A list of
+        /// ElementId is not an element list here, as in IsElementList.
+        ///
+        /// Returns the C# expression to bind, which the caller writes into the
+        /// generated prologue. Nothing here touches an Autodesk type, so it is
+        /// proved without Revit in Heron.BindingNote.TestHost.
+        /// </summary>
+        internal static string EmptyWhenAbsent(string type, string optional)
+        {
+            if (!string.Equals((optional ?? "").Trim(), "true", System.StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var shape = (type ?? "").Replace(" ", "");
+            if (shape.IndexOf("ElementId", System.StringComparison.Ordinal) >= 0) return null;
+            switch (shape)
+            {
+                case "IList<Element>":
+                case "List<Element>":
+                case "ICollection<Element>":
+                case "IEnumerable<Element>":
+                    return "new List<Element>()";
+                default:
+                    return null;
+            }
+        }
     }
 }

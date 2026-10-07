@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-022
-semantic-identity: "add these family parameters to the family being edited, or switch existing ones to type or instance"
+semantic-identity: "add these family parameters to the family being edited, switch existing ones to type or instance, or rename them"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_PARAMETERS
@@ -86,6 +86,14 @@ contract:
       type: bool
       source: request
       optional: true
+    # true RENAMES parameters already in the family instead of adding new
+    # ones; each of parameterNames is then Old=New, and semicolons separate
+    # the pairs. kind, instance and parameterGroup are not used - give kind
+    # and parameterGroup empty and instance false. Absent is false.
+    - name: renameExisting
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: added
       # Each parameter added, read back from the family with the kind, scope
@@ -113,6 +121,16 @@ contract:
       # nested families' parameters, labelled dimensions.
       role: accounting
       type: string
+    - name: renamed
+      # Each parameter renamed, Old -> New, read back from the family by its
+      # new name.
+      role: result
+      type: IList<string>
+    - name: formulasReadBack
+      # Every formula that read an old name, read back after renaming - "Total
+      # = Pipe CC 1 to 2 + Pipe CC 2 to 3" - as one line.
+      role: accounting
+      type: string
     - name: notAFamily
       role: accounting
       type: bool
@@ -123,46 +141,59 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 3 (renaming) PROVED 2026-10-07 on scratch HeronRenameProof (Revit 2024), signed
+# by Ajmal PS on his word - NEEDS-CHECKING CO. The switching mode of version 2 shares
+# this implementation; its own runs are NEEDS-CHECKING CA.
 proof:
-  date: '2026-10-03'
+  date: '2026-10-07'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: HeronRenameProof, Revit 2024, session 51820 - the count is NOT recorded because 3,515
+    elements was measured on Project6, the document in front, and this ran against another
+    one (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
-    added 1 item(s) [Neck Width (Length, instance, under Dimensions)], alreadyThere 0 item(s),
-    dbNamespace Autodesk.Revit.DB, describe Func`2, findings 2 item(s) [Added 1 parameter(s),
-    read back from the family: Neck Width ..., They hold NO value yet - a new length reads
-    0 in every type....], flags BindingFlags, groupInternalNames 124 entry(ies), groupLabel
-    Func`2, groupNamed Func`3, groupType RuntimeType, groupValue ForgeTypeId, groups 124 item(s)
-    [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId], [Visibility, Autodesk.Revit.DB.ForgeTypeId],
-    [Extents, Autodesk.Revit.DB.ForgeTypeId], ...], idText Func`2, instance true, kindKey
-    length, kindLabel Func`2, kindNames 3 item(s) [Length, SpecTypeId, Length], kinds 10 entry(ies),
-    names 1 item(s) [Neck Width], notAFamily false, refused (null), repeated 0 item(s), revitAssembly
-    RuntimeAssembly, sameKind Func`3, specFor Func`2, specOf Func`2, specType RuntimeType,
-    specValue ForgeTypeId, squash Func`2, wantedGroup Dimensions. inputs came parameterNames
-    as given (1); kind as given; instance as given; parameterGroup as given. on Family1'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo, added 0 item(s), alreadyThere
-    0 item(s), dbNamespace Autodesk.Revit.DB, describe Func`2, findings 1 item(s) [The document
-    in front is a project, not a family open in the...], flags BindingFlags, groupInternalNames
-    124 entry(ies), groupLabel Func`2, groupNamed Func`3, groupType RuntimeType, groupValue
-    (null), groups 124 item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId],
+    added 0 item(s), alreadyThere 0 item(s), catalogueColumns 0 item(s), countLabels Func`1,
+    dbNamespace Autodesk.Revit.DB, describe Func`2, describeTied Func`2, findings 3 item(s)
+    [Renamed 2 parameter(s), read back from the family by the new..., Formulas that read them,
+    read back with the new names: Total..., Kept as they were: Pipe CC 1 to 2: 1 labelled
+    dimension(s).], flags BindingFlags, formulasReadBack Total = Pipe CC 1 to 2 + Pipe CC
+    2 to 3, groupInternalNames 124 entry(ies), groupLabel Func`2, groupNamed Func`3, groupType
+    RuntimeType, groupValue (null), groups 124 item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId],
     [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents, Autodesk.Revit.DB.ForgeTypeId],
-    ...], idText Func`2, instance true, kindKey length, kindLabel Func`2, kindNames 3 item(s)
-    [Length, SpecTypeId, Length], kinds 10 entry(ies), names 1 item(s) [Neck Width], notAFamily
-    true, refused The document in front is a project, not a family open in the Family Editor,
-    so it takes no family parameters. A project parameter is ADD_PROJECT_PARAMETER's job;
-    to work on a family, open it first., repeated 0 item(s), revitAssembly RuntimeAssembly,
-    sameKind Func`3, specFor Func`2, specOf Func`2, specType RuntimeType, specValue (null),
-    squash Func`2, wantedGroup Dimensions. inputs came parameterNames as given (1); kind as
-    given; instance as given; parameterGroup as given. on Project1
+    ...], idText Func`2, instance false, isBuiltIn Func`2, keptLinks Pipe CC 1 to 2: 1 labelled
+    dimension(s), kindKey , kindLabel Func`2, kindNames (null), kinds 10 entry(ies), names
+    1 item(s) [CC 1 to 2=Pipe CC 1 to 2; CC 2 to 3=Pipe CC 2 to 3], namesReadFrom Func`3,
+    notAFamily false, refused (null), renameExisting true, renamed 2 item(s) [CC 1 to 2 ->
+    Pipe CC 1 to 2, CC 2 to 3 -> Pipe CC 2 to 3], repeated 0 item(s), revitAssembly RuntimeAssembly,
+    sameKind Func`3, scopeReadBack , specFor Func`2, specOf Func`2, specType RuntimeType,
+    specValue (null), squash Func`2, switchExisting false, switched 0 item(s), tiedTo Func`2,
+    wantedGroup . inputs came parameterNames as given (1); kind as given; instance as given;
+    parameterGroup as given; switchExisting not given - false (optional); renameExisting as
+    given. on HeronRenameProof'
+  negative_case: run against 'HeronRenameProof' with renameExisting=true, parameterNames=CC
+    1 to 2=cc 2 to 3, kind=, parameterGroup=, instance=false instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
+    added 0 item(s), alreadyThere 0 item(s), catalogueColumns 0 item(s), countLabels Func`1,
+    dbNamespace Autodesk.Revit.DB, describe Func`2, describeTied Func`2, findings 1 item(s)
+    [Nothing was renamed. 'cc 2 to 3' is already a parameter in t...], flags BindingFlags,
+    formulasReadBack , groupInternalNames 124 entry(ies), groupLabel Func`2, groupNamed Func`3,
+    groupType RuntimeType, groupValue (null), groups 124 item(s) [[Cross-Section Definition,
+    Autodesk.Revit.DB.ForgeTypeId], [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents,
+    Autodesk.Revit.DB.ForgeTypeId], ...], idText Func`2, instance false, isBuiltIn Func`2,
+    keptLinks , kindKey , kindLabel Func`2, kindNames (null), kinds 10 entry(ies), names 1
+    item(s) [CC 1 to 2=cc 2 to 3], namesReadFrom Func`3, notAFamily false, refused Nothing
+    was renamed. 'cc 2 to 3' is already a parameter in this family (as 'CC 2 to 3') - names
+    are told apart without regard to capitals. Choose another name., renameExisting true,
+    renamed 0 item(s), repeated 0 item(s), revitAssembly RuntimeAssembly, sameKind Func`3,
+    scopeReadBack , specFor Func`2, specOf Func`2, specType RuntimeType, specValue (null),
+    squash Func`2, switchExisting false, switched 0 item(s), tiedTo Func`2, wantedGroup .
+    inputs came parameterNames as given (1); kind as given; instance as given; parameterGroup
+    as given; switchExisting not given - false (optional); renameExisting as given. on HeronRenameProof
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cd90fcf6f08df8aa
-
+  fingerprint: 0dde2ad244a2a319
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -194,10 +225,28 @@ compatibility-note: >
   associated parameters (connector sizes, nested families) and labelled
   dimensions before and after, and throws on any difference.
 
+  **RENAMING (version 3)** is `FamilyManager.RenameParameter(FamilyParameter,
+  string)` and `FamilyParameter.IsShared`, both unchanged from 2020 to 2027
+  (api-surface, read 2026-10-06). Revit rewrites formulas, keeps labels
+  (`Dimension.FamilyLabel` holds the parameter, not its name) and keeps
+  associations; the read-back finds each parameter again by its `Id`.
+  Every formula that read an old name is read back showing the new one, every
+  other formula is checked unchanged, and labelled dimensions and
+  associations are counted before and after. Refused by name before anything
+  changes: a SHARED parameter (its name comes with its GUID - replace it
+  instead), a built-in one, a name the family does not have, a new name
+  already in the family (capitals ignored), a character Revit refuses in a
+  name, and a new name a formula would read as arithmetic - an operator
+  anywhere in it, a digit first, or a word like if or pi.
+
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "add a Width parameter to this family"   -> here
 #   "make these family parameters instance"  -> here, switchExisting true
+#   "rename the family parameter CC 1 to 2"  -> here, renameExisting true
+#   "rename these walls / views / sheets"    -> RENAME_ELEMENTS (elements, not
+#                                               a family's parameters)
+#   "rename this family"                     -> RENAME_FAMILY
 #   "delete these family parameters"         -> DELETE_FAMILY_PARAMETERS
 #   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
 #   "put 600 into Width"                     -> SET_FAMILY_TYPE_VALUES
@@ -211,3 +260,7 @@ utterances:
   - switch these parameters between type and instance
   - make all these parameters instance
   - change these type parameters to instance parameters
+  - rename the parameter
+  - rename the family parameter CC 1 to 2
+  - rename these family parameters
+  - call the CC parameter Pipe CC

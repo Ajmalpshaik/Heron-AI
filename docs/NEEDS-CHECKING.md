@@ -503,13 +503,33 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ci.md`](needs-checking/group-ci.md)
 
+## Group CJ - the project's site, True North and units: set behind the Admin switch, and read (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cj.md`](needs-checking/group-cj.md)
+
 ## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
 
 **Its own file:** [`needs-checking/group-ck.md`](needs-checking/group-ck.md)
 
+## Group CL - family types renamed and deleted in the Family Editor (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cl.md`](needs-checking/group-cl.md)
+
+## Group CM - a new family or project from a template, saved where the caller says and opened in a window (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cm.md`](needs-checking/group-cm.md)
+
 ## Group CN - reload a family over the loaded one: LOAD_FAMILY version 2 (2026-10-06)
 
 **Its own file:** [`needs-checking/group-cn.md`](needs-checking/group-cn.md)
+
+## Group CO - family parameters renamed in place, formulas and labels read back with the new names (2026-10-06)
+
+**Its own file:** [`needs-checking/group-co.md`](needs-checking/group-co.md)
+
+## Group CQ - deleting a family parameter that labels a dimension: the label taken off first, when asked (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cq.md`](needs-checking/group-cq.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
