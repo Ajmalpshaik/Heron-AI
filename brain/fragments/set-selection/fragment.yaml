@@ -72,6 +72,9 @@ compatibility-note: >
 #   "move what I picked up 200"-> READ_SELECTION, then MOVE_ELEMENTS
 #   "how many ducts are there" -> COUNT_ELEMENTS. Nothing to do with what is
 #                                 picked on screen
+#   "select these forms" (by id)     -> SELECT_FAMILY_FORMS first, in a
+#                                       family; its forms then come here
+#                                       with expect_from select-family-forms
 #   "make a selection set"           -> CREATE_SELECTION_FILTER - a SAVED
 #                                       set that survives the model closing.
 #                                       This highlight is gone at the next

@@ -104,6 +104,9 @@ compatibility-note: >
 #   "delete these" / "remove these"  -> here
 #   "undo that"                      -> Revit's own Undo, never a delete written
 #                                       to reverse a create
+#   "delete these forms" (ids given) -> SELECT_FAMILY_FORMS first, in a
+#                                       family; its forms then come here
+#                                       with expect_from select-family-forms
 #
 # "GET RID OF THEM" IS THE DANGEROUS SENTENCE and it is genuinely ambiguous.
 # Hiding and deleting are one word apart in English and a world apart in the
