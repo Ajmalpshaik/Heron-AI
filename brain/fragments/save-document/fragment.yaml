@@ -22,7 +22,7 @@ purpose: >
   save a document while Heron's Undo entry is open in it, and Heron's entry is
   open in the document it works in for the whole run - so that one is refused
   by name, with the reason. Version 1 saved exactly that one, and could never
-  have worked (row 5b-358).
+  have worked (row 5b-365).
 
   **SAVING A WORKSHARED MODEL IS NOT SYNCING IT.** A local save reaches nobody
   else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job.

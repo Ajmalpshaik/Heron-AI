@@ -14,7 +14,7 @@ its own window, stops for the modeller to look at it, and brings it back (a to g
 for it, each DRAFT:
 
 - `SAVE_DOCUMENT` version 2 - saves ANOTHER open document named by its file, and closes it when it is not the
-  window in front ([row 5b-358](../fragment-issues/section-5b-rows-176-200.md): version 1 could never save).
+  window in front ([row 5b-365](../fragment-issues/section-5b-rows-176-200.md): version 1 could never save).
 - `ACTIVATE_DOCUMENT` version 2 - "already in front" judged by the window in front, by its file
   ([row 5b-359](../fragment-issues/section-5b-rows-176-200.md)).
 - `LOAD_FAMILY` version 3 - a family open with unsaved changes is refused
@@ -28,7 +28,9 @@ running), the car brought forward (`wasAlready false`), a load of the unsaved ty
 save refused, the tyre saved and closed from behind, loaded, and four placed at (+-800, +-1300, 0) mm.
 Read back: exactly 4 Generic Models in the car, 0.19362 m3 in all - 48.41 L each, the ring's 36.19 L and the
 hub's 12.22 L, so the hub added just before the save-and-close went in. Then one `validate` record each, the
-writes rolled back, drafted to `brain/proof-drafts/`.
+writes rolled back, drafted to `brain/proof-drafts/`. The same evening the session building a parametric
+spring REPORTED `SAVE_DOCUMENT` version 2, borrowed into its own tree, saving two of its scratch families
+from a run aimed at another document - reported, not measured here.
 
 | # | Run | Look for |
 |---|---|---|

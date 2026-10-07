@@ -28,7 +28,7 @@ negative:
     expect: >
       refused, naming it and saying Revit will not save a document while
       Heron's Undo entry is open in it; the file's timestamp unchanged. This is
-      what version 1 did every time (row 5b-358)
+      what version 1 did every time (row 5b-365)
 
   - given: a path no open document was opened from
     expect: refused, the path said back and the open titles listed; nothing written, nothing closed
