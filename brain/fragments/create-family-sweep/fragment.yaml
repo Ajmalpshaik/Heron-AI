@@ -148,6 +148,9 @@ compatibility-note: >
 #   "sweep a profile along a path"               -> here
 #   "make a handrail sweep in the family"        -> here
 #   "sweep one shape into another along a path"  -> CREATE_FAMILY_SWEPT_BLEND
+#   "make a spring as one smooth sweep along a helix" -> CREATE_FAMILY_FREEFORM_SOLID -
+#                                                   a path that leaves the plane, as
+#                                                   a fixed shape, not parametric
 #   "draw a duct along this route"               -> CREATE_DUCT, a project
 #                                                   duct, not a family form
 

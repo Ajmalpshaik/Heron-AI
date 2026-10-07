@@ -1,0 +1,53 @@
+# The proof of CREATE_FAMILY_FREEFORM_SOLID - one smooth freeform form, a loft
+# through sections or a sweep along a 3D path - NEEDS-CHECKING Group CV, rows
+# CV1 to CV14, FRAGMENT-ISSUES row 5b-368:
+#
+#   create-family-freeform-solid   CREATE_FAMILY_FREEFORM_SOLID   FRG-GEO-058
+#
+#     python tools/batch-prove.py tools/jobs/create-family-freeform-solid-2026-10-07.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-family-freeform-solid-2026-10-07.yaml
+#
+# NEVER ON THE OWNER'S FAMILY1. The arrangement is only a family: any new one
+# from Metric Generic Model - CREATE_FAMILY_DOCUMENT made `FreeformProof` for
+# this on 2026-10-07 - with nothing in it that the run needs. The spring sits
+# round the family's origin.
+#
+# POSITIVE: a spring 124 mm outside, wire 14, six turns at a 25 mm pitch, as
+# ONE form - X and Y -62 to 62, Z -6.98 to 156.94 mm, about 0.320 L.
+#
+# NEGATIVE: a path that crosses itself. Refused by name, both places named, no
+# form made. Revit itself builds this sweep without complaint when asked
+# directly (measured), so an empty answer here is the check, not Revit.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - REPORT_FAMILY_FORMS lists no new form:
+# rollback has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>` - batch-prove
+# cannot pin one; the single `validate` command in group-cv.md can.
+
+model: a scratch family from Metric Generic Model.rft, Revit 2024 (FreeformProof)
+
+defaults:
+  in: "FreeformProof"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: create-family-freeform-solid
+    expect: built
+    set:
+      kind: "sweep"
+      profiles: "circle 0,0 7"
+      path: "helix 0,0,0 55 25 6"
+      solid: "true"
+    negative-set:
+      kind: "sweep"
+      profiles: "circle 0,0 20"
+      path: "spline 0,0,0; 1000,1000,0; 1000,0,0; 0,1000,0"
+      solid: "true"
+    note: >
+      The negative is a real path that crosses itself, not an empty one - an
+      empty path is refused too, but proves less. CV3 to CV9 (the loft, the
+      refusals, the void, the second route) are run one by one from
+      group-cv.md.

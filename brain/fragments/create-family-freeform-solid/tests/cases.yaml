@@ -1,0 +1,66 @@
+positive:
+  - given: >
+      a scratch family from the metric Generic Model template, open in front;
+      kind "sweep", profiles "circle 0,0 7", path "helix 0,0,0 55 25 6",
+      solid true - a compression spring 124 mm outside, wire 14 mm, six turns
+      at a 25 mm pitch
+    expect: >
+      ONE form reading X and Y -62 to 62 and Z -7 to 157 mm, with a volume
+      about 0.320 L (pi x 7 x 7 mm x 2078.87 mm of wire, the helix's own
+      length) - measured 0.3197 L on the probe of the same geometry
+
+  - given: >
+      kind "loft", profiles "at 0,0,800 facing X: ellipse 0,0 60 50 | at
+      300,0,850 facing X: ellipse 0,0 220 250 | at 700,0,820 facing X:
+      ellipse 0,0 260 300 | at 1100,0,800 facing X: ellipse 0,0 200 240 | at
+      1400,0,900 facing X: ellipse 0,0 80 90", path "", solid true - an
+      animal-like body
+    expect: >
+      ONE form reading X 0 to 1400 mm, with a volume about 221.36 L - the
+      probe of the same five sections measured 221.3554 L, 4 faces, no seam
+
+  - given: >
+      kind "sweep", profiles "circle 0,0 20 | circle 0,0 15", path "0,0,0;
+      500,0,0; arc 641.42,0,58.58 700,0,200; 700,0,800", solid true - a hollow
+      tube bent upward
+    expect: >
+      ONE hollow form, X 0 to 720, Z -20 to 800 mm: its volume pi x (400 -
+      225) mm2 x 1414.16 mm of path, 0.777 L - measured 0.777 L on the
+      rolled-back run of 2026-10-07
+
+  - given: >
+      kind "loft", profiles "at 0,0,0 facing Z: rect -200,-150 200,150 | at
+      0,0,400 facing Z: ellipse 0,0 150 150 4", path "", solid true - a
+      rectangle lofted into a circle
+    expect: >
+      ONE form reading X -200 to 200, Y -150 to 150, Z 0 to 400 mm and NOT
+      twisted: about 37.9 L. The circle started on its + side instead gave
+      34.337 L, twisted - which is why a round section starts level with the
+      one before it
+
+negative:
+  - given: >
+      kind "sweep", profiles "circle 0,0 20", path "spline 0,0,0; 1000,1000,0;
+      1000,0,0; 0,1000,0" - a path that crosses itself
+    expect: >
+      refused BY NAME as a path that comes within some mm of itself, naming
+      both places, and no form made. Revit builds this one without complaint
+      when asked directly (measured), so the refusal must come from the check
+
+  - given: kind "sweep", profiles "circle 0,0 13", path "helix 0,0,0 55 25 6" - a 26 mm wire at a 25 mm pitch
+    expect: refused as coils closer than the wire is thick, and no form made
+
+  - given: >
+      kind "loft", the five sections above with the middle one "ellipse 0,0
+      260 300 4" - pieces 2/2/4/2/2
+    expect: refused naming the counts 2/2/4/2/2, and no form made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      The same spring by CREATE_FAMILY_SWEPT_BLEND, one half-turn per swept
+      blend (path "55,0; arc 0,55 -55,0" profiles raised half a pitch, twelve
+      of them), read side by side with this one form: extents equal and the
+      volumes within a few tenths of a percent - twelve forms against one
