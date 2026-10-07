@@ -16,7 +16,22 @@ positive:
       labelled false; three blades, the last 400 mm from the first, 200 mm
       apart
 
+  - given: >
+      a vane sketched on a FREE plane (not associated, normal +X), X -301 to
+      -299; count "5", step "X 40" - along the axis its plane faces
+    expect: >
+      arrayed - the trial copy moves, so nothing is refused; four copies 40,
+      80, 120 and 160 mm along +X, every one read back
+
 negative:
+  - given: >
+      a vane sketched on Center (Left/Right), X -401 to -399 (5b-357); count
+      "21", step "X 40" - or "X 800 last"
+    expect: >
+      refused before anything is kept - the plane named, the trial copy
+      moved 0 mm of the 40 mm asked, rows along Y or Z stay in that plane, and
+      the two ways round it; arrayId and members empty
+
   - given: count "Show_Handle", a Yes/No parameter
     expect: refused - not an Integer parameter - and nothing arrayed
 

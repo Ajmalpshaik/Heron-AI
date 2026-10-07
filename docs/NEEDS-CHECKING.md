@@ -8,7 +8,7 @@
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
 > | **Adding to it** | A row names the **command**, the **machine it needs**, and what **pass looks like** — including what a FAIL would prove, which is worth the same. **Its ID is bold, and used once in the register** — this page and every group's file — look for the letters in every form, bold, backticks and plain, before a new group takes them: `python tools/needs-checking-register.py | grep` searches all of it. **A results table names the row's ID in plain text, and a row that passed is struck at both ends** — the three readers of the register count by the bold ID, so anything else is a check the owner's queue cannot see, sees twice, or shows him again after it passed. FRAGMENT-ISSUES row 5b-156 |
 > | **Its numbers** | **Do not read the stated totals as today's.** Derive the Group A ids: `grep -oE '\*\*A[0-9]+\*\*|~~\*\*A[0-9]+\*\*~~' docs/needs-checking/group-a.md | grep -oE 'A[0-9]+' | sort -uV` |
-> | **Where each group lives** | Since 2026-09-23 **each group is its own file**, `needs-checking/group-x.md` — [Group A's](needs-checking/group-a.md), for one — and this page keeps the rules and, where each group was, its heading and a line naming its file. **A new row goes in its group's file.** A new group is written here in full, as always, and `python tools/split-needs-checking.py --write` moves it into its own file. Every tool reads this page and its groups as ONE text, exactly as it read the single file: `python tools/needs-checking-register.py` prints it |
+> | **Where each group lives** | Since 2026-09-23 **each group is its own file**, `needs-checking/group-x.md` — [Group A's](needs-checking/group-a.md), for one — and this page keeps the rules and, where each group was, its heading and a line naming its file. **A new row goes in its group's file.** A new group is written here in full, as always, and `python tools/split-needs-checking.py --write` moves it into its own file - write its links relative to `docs/`, and after the split put back any other group file it rewrote, which it can ([row 5b-363](fragment-issues/section-5b-rows-176-200.md)). Every tool reads this page and its groups as ONE text, exactly as it read the single file: `python tools/needs-checking-register.py` prints it |
 > | **Done checks** | A row whose ID is struck through at both ends keeps its line in the register — the struck ID, a title, the opening of its result — and its full text moves to [`needs-checking-archive/`](needs-checking-archive/README.md). **Nothing is deleted, and a struck row that says something is still owed stays in full.** `python tools/archive-needs-checking.py` says what would move |
 
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
@@ -538,6 +538,14 @@ Step 6 is finished, and not before. At that point:
 ## Group CR - a connector deleted from the family being edited (2026-10-07)
 
 **Its own file:** [`needs-checking/group-cr.md`](needs-checking/group-cr.md)
+
+## Group CS - a nested part made in its own window and brought back into the host family (2026-10-07)
+
+**Its own file:** [`needs-checking/group-cs.md`](needs-checking/group-cs.md)
+
+## Group CT - groups in the family being edited: GROUP_ELEMENTS version 2 (2026-10-07)
+
+**Its own file:** [`needs-checking/group-ct.md`](needs-checking/group-ct.md)
 
 ## Group CV - one smooth freeform form: a loft through sections, a sweep along a 3D path (2026-10-07)
 

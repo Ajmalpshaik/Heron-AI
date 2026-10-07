@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "load this family file into the project or a family, or reloa
 kind: action
 domain: revit.families
 capability: LOAD_FAMILY
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -33,6 +33,9 @@ purpose: >
   is listed, colour and all. Constitution Article 7 puts family reloads among
   the operations that need explicit confirmation, so `reload=true` is never
   defaulted and a caller should confirm it with the modeller first.
+
+  **A file open in Revit with unsaved changes is refused** - a load reads the
+  file, not the window, so it would bring in whatever the file last held.
 
 contract:
   needs:
@@ -94,10 +97,40 @@ contract:
       role: result
       type: IList<string>
 
-# NO PROOF YET FOR VERSION 2. Version 1 (load, never overwrite) was PROVEN on
-# 2026-09-08 by Ajmal PS on Snowdon-scratch_ajmal.al, Revit 2024 - the record is
-# in git history. Version 2 changes impl/, so it is DRAFT until it is proved
-# again: needs the add-in carrying D-114's `familyLoadOptions` deployed first.
+# VERSION 3 PROVED 2026-10-07 on scratch family HeronNest_Car (Revit 2024),
+# signed by Ajmal PS on his word - NEEDS-CHECKING CS3: a new load, and a file
+# open with unsaved changes refused (row 5b-360). THE RELOAD HALF IS NOT IN
+# THIS PROOF: reload=true and overwriteValues=true have never run in Revit -
+# NEEDS-CHECKING group CN. Version 1 was PROVEN on 2026-09-08 on
+# Snowdon-scratch_ajmal.al; that record is in git history.
+
+proof:
+  date: '2026-10-07'
+  by: Ajmal PS
+  model: HeronNest_Car (1,730 elements), Revit 2024, session 9240
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 1 item(s) [id 3749], materialsAdded
+    0 item(s), materialsChanged 0 item(s), overwriteValues false, path C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Tyre.0001.rfa,
+    refused (null), reload false, reloaded no - it was not in this family yet, so it was loaded
+    new, typeNames 1 item(s) [HeronNest_Tyre.0001], typesAdded 1 item(s) [HeronNest_Tyre.0001],
+    typesKept 0 item(s). inputs came familyLoadOptions - Heron's answer to Revit's Family
+    Already Exists dialog; familyPath as given; reload not given - false (optional); overwriteValues
+    not given - false (optional). on HeronNest_Car
+  negative_case: run with familyPath=C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Hub.rfa
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    created (null), materialsAdded 0 item(s), materialsChanged 0 item(s), overwriteValues
+    false, path C:\Users\AjmalAlavudheen\AppData\Local\Temp\heron-work\nest\HeronNest_Hub.rfa,
+    refused "HeronNest_Hub" is open in Revit with changes that are NOT SAVED, and a load reads
+    the file - which does not have them. Nothing was loaded. Save it first (SAVE_DOCUMENT
+    names it by this path), then load it, reload false, reloaded (null), typeNames 0 item(s),
+    typesAdded 0 item(s), typesKept 0 item(s). inputs came familyLoadOptions - Heron's answer
+    to Revit's Family Already Exists dialog; familyPath as given; reload not given - false
+    (optional); overwriteValues not given - false (optional). on HeronNest_Car
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c8b1a12395f8b156
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -114,6 +114,31 @@ purpose: >
       and LINK_FAMILY_PARAMETER for its instance's. A nested part whose TYPE
       the family's types choose - the 5 kW or the 7 kW motor - is
       ADD_FAMILY_TYPE_PARAMETER, which also swaps a sweep's loaded profile.
+      A NESTED PART THAT IS NOT A FAMILY YET - the tyre of a car, the motor of
+      a fan - is made in its own window and brought back, one call at a time:
+      a. The HOST needs a file for the way back to be automatic: Revit lets no
+         tool bring forward a window with no file. A host never saved is asked
+         to be saved once (Ctrl+S). Declined, b to g still run, with e skipped,
+         and the part's window is left for the modeller to close.
+      b. CREATE_FAMILY_DOCUMENT from the host - its template and the part's
+         file are asked for. Run from the host in front it is saved but not
+         opened and gives `openNext`: ACTIVATE_DOCUMENT with that path opens
+         it. An answer lost while a window opens is checked with
+         REPORT_OPEN_DOCUMENTS, never repeated (row 5b-361).
+      c. Steps 0 to 14 build the part in its own window, with
+         SET_FAMILY_SETTINGS "Work Plane-Based=yes" so it nests on every
+         release.
+      d. STOP AND SHOW THE MODELLER THE PART. Nothing goes into the host until
+         the modeller says it is right.
+      e. ACTIVATE_DOCUMENT aimed at the host, with the host's file - the host
+         in front again.
+      f. SAVE_DOCUMENT aimed at the host, documentPath the part's file,
+         closeWindow=true - saved, its window closed. LOAD_FAMILY refuses a
+         part still open with unsaved work: a load reads the file.
+      g. LOAD_FAMILY into the host, PLACE_NESTED_FAMILY at each point, then
+         count the host's elements of that category against the number
+         placed - a stray copy is found by the count (row 5b-350).
+      b needs the Admin switch and f the Publish switch, each with Changes.
   12. SET_FAMILY_FORM_MATERIAL for each form's material - linked to a family
       material parameter when a project must set it per type, the body and
       the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
@@ -137,7 +162,8 @@ purpose: >
       project loads only the types it picks.
 
   The family is saved by the modeller: Revit will not save the document open
-  in its window while Heron holds it.
+  in its window while Heron holds it. A nested part made in step 11 is the
+  exception - SAVE_DOCUMENT saves it while Heron works in the host.
 
   NOT YET: reference lines and angles - a part that swings or tilts about a
   pivot. A reference line can be made through the API, and an angle labelled,
@@ -163,6 +189,8 @@ utterances:
   - make a family from this photo
   - make a revit family that looks like this image
   - make a parametric family from my sketch
+  - make the tyre a separate nested family and put it in the car
+  - this part should be its own nested family
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
@@ -190,6 +218,11 @@ needs:
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
+  # Step 11's nested part that is not a family yet, a to g.
+  - CREATE_FAMILY_DOCUMENT
+  - ACTIVATE_DOCUMENT
+  - REPORT_OPEN_DOCUMENTS
+  - SAVE_DOCUMENT
   - LOAD_FAMILY
   - PLACE_NESTED_FAMILY
   - LOCK_NESTED_FAMILY_TO_PLANES
@@ -227,5 +260,10 @@ note: >
   the owner's word "line based, ceiling based, patterns, floor based, wall
   based ... all kind", with the template report as its first step, a Family
   Type parameter, filled regions, flip controls and a type catalog, and with
-  a skill of its own for each other kind of family (docs/43). Every step is
-  DRAFT until it has been run on a real family with a negative case (D-30).
+  a skill of its own for each other kind of family (docs/43). Widened on
+  2026-10-07, on the owner's word "this tire should be separate family ... it
+  will automatically open ... bring to that family 1 and it will place", with
+  step 11's nested part made in its own window and brought back, a to g -
+  shown to the modeller before it goes in, "so I can suggest that this is OK
+  or not". Every step is DRAFT until it has been run on a real family with a
+  negative case (D-30).

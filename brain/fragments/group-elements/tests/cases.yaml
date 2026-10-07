@@ -1,23 +1,49 @@
 positive:
-  - given: 14 elements of a typical toilet block
-    expect: groupId is a real group, grouped is 14, refused false, and one group appears in the Project Browser
+  - given: 14 elements of a typical toilet block in a project, name empty
+    expect: groupId is a real group, grouped is 14, groupName is Revit's own ("Group 1" or the next free one), refused false, and one group appears in the Project Browser
+
+  - given: two extrusions in a SCRATCH family open in the Family Editor, name "Bracket parts"
+    expect: >
+      groupId is a real group, grouped is read back from the group (2, or more
+      if Revit added a sketch or sketch plane - and findings says which kinds),
+      groupName is "Bracket parts", refused false, refusalReason empty, and
+      findings names the family and the lighter routes. Version 1 refused this
+      every time, silently, because Document.Create throws in a family
+
+  - given: two extrusions made earlier in the same chain, then grouped
+    expect: >
+      no "group changed outside group edit mode" warning - the model is
+      regenerated before grouping, as Revit's own remark on NewGroup advises
 
 negative:
   - given: a set Revit will not group - elements on different design options
     expect: >
-      refused is true, groupId stays invalid and NOTHING is grouped. There is no
-      partial group in Revit, so there is no partial success to report and the
-      bool is the honest shape
+      refused is true, groupId stays invalid and NOTHING is grouped.
+      refusalReason quotes Revit's own message. There is no partial group in
+      Revit, so there is no partial success to report and the bool is the
+      honest shape
 
   - given: a set where Revit absorbs or drops one element on grouping
     expect: >
-      grouped reports the GROUP'S member count, not the input count. The two can
-      differ, and the input count is the one that reads as a success
+      grouped reports the GROUP'S member count, not the input count, and
+      findings says what was added or left out. The two can differ, and the
+      input count is the one that reads as a success
 
-  - given: a single element, or none
+  - given: a single element, or none - in a project or a family
     expect: >
-      refused is true rather than an exception. A group of one is something
-      Revit will make and nobody wants
+      refused is true rather than an exception, and refusalReason says to
+      select two or more. A group of one is something Revit will make and
+      nobody wants
+
+  - given: two elements, and a name another group type in the document already has
+    expect: >
+      refused is true, refusalReason names the clash, and NOTHING is grouped -
+      no "Group 1" is left behind under Revit's own name
+
+  - given: two elements, and a name with a character Revit forbids, such as "Parts:A"
+    expect: >
+      refused is true before anything is made, and refusalReason lists the
+      characters Revit does not allow
 
   - given: 14 elements grouped, then a move requested on two of them
     expect: >
@@ -27,3 +53,4 @@ negative:
 
 second_route:
   - The Project Browser's Groups node, and selecting the group in the model to read its member count
+  - In a family, the Family Editor's Project Browser Groups node, and Edit Group to see the members

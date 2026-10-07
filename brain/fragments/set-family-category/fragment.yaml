@@ -154,6 +154,9 @@ compatibility-note: >
 #                                                2D lines, no 3D body
 #   "array the blade along X with Blade Count" -> ARRAY_FAMILY_FORMS - one form
 #                                                in a row, its count a parameter
+#   "group these forms in this family"        -> GROUP_ELEMENTS - a group, when
+#                                                asked; a nested family or an
+#                                                array is usually lighter
 #   "put the motor family into this air handler" -> PLACE_NESTED_FAMILY
 #   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES
 #   "link the motor type's width to Motor Width" -> LINK_NESTED_TYPE_PARAMETER -

@@ -42,6 +42,12 @@
 // missing path is indistinguishable from its failure for an already-loaded
 // family - both are a bare `false` - and those two need completely different
 // things done about them.
+//
+// VERSION 3, 2026-10-07 - A FILE OPEN IN REVIT WITH UNSAVED CHANGES IS REFUSED.
+// LoadFamily reads the FILE, never the window: a tyre family built in its own
+// window and not yet saved would load as whatever its file last held - an
+// empty template - and report success (row 5b-360). Open and saved is fine:
+// then the file and the window agree.
 
 ElementId created = null;
 string refused = null;
@@ -82,6 +88,36 @@ else if (overwriteValues && !reload)
         + " should be overwritten, values and all";
 }
 else
+{
+    // THE SAME FILE OPEN IN A WINDOW WITH CHANGES NOT SAVED - found by its
+    // path among what this Revit has open, links aside.
+    var wantedFile = path;
+    try { wantedFile = System.IO.Path.GetFullPath(path); }
+    catch (Exception) { wantedFile = path; }
+    foreach (Document open in doc.Application.Documents)
+    {
+        if (open == null || open.IsLinked || open.Equals(doc)) continue;
+        var openFile = "";
+        try { openFile = open.PathName; }
+        catch (Exception) { openFile = ""; }
+        if (openFile.Length == 0) continue;
+        try { openFile = System.IO.Path.GetFullPath(openFile); }
+        catch (Exception) { }
+        if (string.Equals(openFile, wantedFile, StringComparison.OrdinalIgnoreCase)
+            && open.IsModified)
+        {
+            refused = string.Format(
+                "\"{0}\" is open in Revit with changes that are NOT SAVED, and a load reads "
+                + "the file - which does not have them. Nothing was loaded. Save it first "
+                + "(SAVE_DOCUMENT names it by this path), then load it", open.Title);
+            break;
+        }
+    }
+}
+
+// Every check above that declines sets `refused`, so reaching here with none
+// set means the file is a .rfa that exists and is not open with unsaved work.
+if (refused == null)
 {
     // Revit names a loaded family after its file. Looked up FIRST, so a
     // family that is already here is refused by name - or, when a reload was
