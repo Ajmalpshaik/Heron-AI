@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,7 +57,10 @@ contract:
     - name: count
       type: string
       source: request
-    # An axis and millimetres - "X 150", or "X 900 last".
+    # An axis and millimetres - "X 150", or "X 900 last". A row whose copies
+    # cannot leave the plane the form is sketched on - a reference plane or
+    # level facing that axis - is refused before anything is kept, measured by
+    # a rolled-back trial row of two (5b-357).
     - name: step
       type: string
       source: request
@@ -126,7 +129,12 @@ compatibility-note: >
   RevitAPI reference assemblies and their XML remarks, read 2026-10-01). The
   label's own remark: only in a family, and only an Integer parameter. That
   kind is read by reflection: `SpecTypeId.Int.Integer` from 2022,
-  `ParameterType.Integer` before, gone from 2023.
+  `ParameterType.Integer` before, gone from 2023. The trial row runs in a
+  `SubTransaction` (`Start`, `HasStarted`, `HasEnded`, `RollBack`), and the
+  plane it names is read from `Extrusion.Sketch`, `Revolution.Sketch` or
+  `Blend.BottomSketch`, then `Sketch.SketchPlane` and `SketchPlane.GetPlane` -
+  all ten in every reference assembly 2020 through 2027, read 2026-10-07.
+  None says what a sketch plane is hosted on, which is why the trial measures.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

@@ -26,6 +26,15 @@
 // X from the first and spreads the rest evenly between, which is the one to
 // tie to a plane so the spacing follows a length.
 //
+// A COPY CANNOT LEAVE A PLANE ITS FORM HANGS ON. Each member carries its own
+// copy of the form's sketch plane, and one made from a reference plane or a
+// level stays on it - so a row along the axis that plane faces leaves every
+// copy on the original (5b-357: a vane sketched on Center (Left/Right), arrayed
+// along X). A free plane moves with its copy, and which kind a form hangs on
+// the API cannot say. So it is MEASURED before anything is kept: a trial row of
+// two, rolled back in a sub-transaction, and a copy that did not move the
+// spacing asked refuses the call in plain words, with the way round it.
+//
 // READ BACK, ALL OR NOTHING. The array's count, its label and every copy's
 // place are read again - each copy one step further along than the last - and
 // anything that does not read as asked fails the call; the host rolls the
@@ -102,6 +111,24 @@ Func<Element, int, double?> lowest = (e, index) =>
     var box = e.get_BoundingBox(null);
     if (box == null) return null;
     return index == 0 ? box.Min.X : index == 1 ? box.Min.Y : box.Min.Z;
+};
+
+Func<int, XYZ> unitAlong = index => new XYZ(index == 0 ? 1 : 0, index == 1 ? 1 : 0, index == 2 ? 1 : 0);
+
+// The view an array is made in: a 3D view of the family when it has one - the
+// array's view must see the form, and only a view-specific element needs the
+// step in that view's plane - or else the view open.
+Func<View> arrayView = () => (View)new FilteredElementCollector(doc).OfClass(typeof(View3D)).Cast<View3D>()
+    .FirstOrDefault(v => !v.IsTemplate) ?? doc.ActiveView;
+
+// The plane a form is sketched on, where it has one to name: an extrusion's or
+// a revolve's sketch, a blend's base. A sweep's path may be picked rather than
+// sketched, so it is not guessed at.
+Func<GenericForm, SketchPlane> sketchPlaneOf = f =>
+{
+    var sketch = f is Extrusion ? ((Extrusion)f).Sketch : f is Revolution ? ((Revolution)f).Sketch
+        : f is Blend ? ((Blend)f).BottomSketch : null;
+    return sketch == null ? null : sketch.SketchPlane;
 };
 
 GenericForm original = null;
@@ -230,6 +257,64 @@ else
         }
     }
 
+    // ---- will a copy leave the original? ----------------------------------
+    // MEASURED, not predicted - see the header and 5b-357. A trial row of two,
+    // one spacing apart, made and read inside a sub-transaction that is always
+    // rolled back. Where Revit cannot make even the trial, the array below
+    // fails in its own words; here only a copy that did not move is refused.
+    if (problems.Count == 0)
+    {
+        var spacing = toLast ? stepMm / (n - 1) : stepMm;
+        var before = lowest(original, axis);
+        var trialView = arrayView();
+        double? moved = null;
+        var trial = new SubTransaction(doc);
+        try
+        {
+            trial.Start();
+            if (trialView != null && before.HasValue)
+            {
+                var row = LinearArray.Create(doc, trialView, original.Id, 2, unitAlong(axis) * (spacing / 304.8),
+                    ArrayAnchorMember.Second);
+                doc.Regenerate();
+                var copy = row == null ? null
+                    : row.GetCopiedMemberIds().Select(id => doc.GetElement(id)).FirstOrDefault(e => e != null);
+                var at = copy == null ? null : lowest(copy, axis);
+                if (at.HasValue) moved = (at.Value - before.Value) * 304.8;
+            }
+        }
+        catch (Exception) { moved = null; }
+        finally
+        {
+            if (trial.HasStarted() && !trial.HasEnded()) trial.RollBack();
+        }
+
+        if (moved.HasValue && Math.Abs(moved.Value - spacing) > 0.5)
+        {
+            var movedMm = Math.Abs(moved.Value) < 0.005 ? 0.0 : moved.Value;
+            var plane = sketchPlaneOf(original);
+            var planeName = plane == null ? "" : (plane.Name ?? "").Trim();
+            var staysIn = new List<string>();
+            if (plane != null)
+            {
+                var normal = plane.GetPlane().Normal;
+                for (var i = 0; i < 3; i++)
+                    if (i != axis && Math.Abs(normal.DotProduct(unitAlong(i))) < 1e-6) staysIn.Add(axisLetters[i]);
+            }
+            var runsAlong = axis == 0 ? "Ref. Level or Center (Front/Back)"
+                : axis == 1 ? "Ref. Level or Center (Left/Right)" : "Center (Front/Back) or Center (Left/Right)";
+            problems.Add("A copy of this " + shapeOf(original) + " cannot leave the plane it is sketched on"
+                + (planeName.Length > 0 ? ", " + planeName + "," : "") + " and a row along " + axisLetters[axis]
+                + " leaves it: a trial copy moved " + plain(movedMm) + " mm of the " + plain(spacing) + " mm asked, so "
+                + (Math.Abs(movedMm) <= 0.5 ? "every copy would sit on the original."
+                    : "the copies would not sit " + plain(spacing) + " mm apart.")
+                + (staysIn.Count > 0 ? " A row along " + string.Join(" or ", staysIn) + " stays in that plane." : "")
+                + " For a row along " + axisLetters[axis] + ", sketch the form on a plane the row runs along - "
+                + runsAlong + " in Revit's own templates - or, with a fixed count, make each one its own form at "
+                + "its own place.");
+        }
+    }
+
     if (problems.Count > 0) refused = "Nothing was arrayed. " + string.Join(" ", problems);
 }
 
@@ -239,16 +324,12 @@ else
 
 if (refused == null)
 {
-    // A 3D view of the family when it has one: the array's view must see the
-    // form, and only a view-specific element needs the step in that view's plane.
-    View view = new FilteredElementCollector(doc).OfClass(typeof(View3D)).Cast<View3D>()
-        .FirstOrDefault(v => !v.IsTemplate);
-    if (view == null) view = doc.ActiveView;
+    View view = arrayView();
     if (view == null)
         throw new InvalidOperationException("This family has no 3D view and no view open, and an array is made in a "
             + "view. The call failed, and Heron rolls the whole call back.");
 
-    var direction = new XYZ(axis == 0 ? 1 : 0, axis == 1 ? 1 : 0, axis == 2 ? 1 : 0);
+    var direction = unitAlong(axis);
     var translation = direction * (stepMm / 304.8);
     var spacingMm = toLast ? stepMm / (n - 1) : stepMm;
     var startAt = lowest(original, axis);
