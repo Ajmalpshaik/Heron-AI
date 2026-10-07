@@ -62,7 +62,7 @@ can be done this morning or not at all.
 |---|---|
 | Fragments that are **`PROVEN`** and **`READ`** | **Yes.** A `READ` fragment cannot modify a model — that is enforced, not promised |
 | Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only.** The rollback fix has never been seen in front of a model |
-| `delete-elements` | **No. Do not run it.** It wiped a model twice; the second hung Revit hard enough to need a forced close |
+| `delete-elements` | **No. Do not run it** until the owner says otherwise. It wiped a model twice on 2026-09-09 and the second hung Revit hard enough to need a forced close ([section 1c](fragment-issues/section-1c.md)). It has since been proved on a test model with the elements counted before and after ([row 55](fragment-issues/section-5-rows-051-075.md)), and its `heron-status` now reads `PROVEN` — whether that lifts this rule is the owner's call, because a delete can take far more than it was handed, and nothing asks before it runs ([row 5b-161](fragment-issues/section-5b-rows-151-175.md), open) |
 
 Derive the counts rather than reading them here:
 

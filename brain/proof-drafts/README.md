@@ -15,6 +15,11 @@ have returned nothing, and whether a second route agreed. It is arranged into th
 [D-30](../../docs/DECISIONS.md) asks for, and then it stops — because the last step is a judgement no
 machine can make. **Is that answer right for this building?**
 
+**A fresh checkout holds only this README.** Drafts (`*.yaml`) and the raw run records under `runs/` - which
+[`tools/batch-prove.py`](../../tools/batch-prove.py) and [`tools/prove-tracking.py`](../../tools/prove-tracking.py)
+write, and [`tools/generate-jobs.py`](../../tools/generate-jobs.py) reads to skip what has already been run - are
+both gitignored, so an empty folder means nothing has been run *on this machine*, not that nothing was ever run.
+
 ## Why they live here and not in the fragment
 
 The agent has **no write path into `brain/fragments/`**. `write_draft` refuses a path under the library,
