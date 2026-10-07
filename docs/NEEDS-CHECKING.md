@@ -531,6 +531,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cq.md`](needs-checking/group-cq.md)
 
+## Group CR - a connector deleted from the family being edited (2026-10-07)
+
+**Its own file:** [`needs-checking/group-cr.md`](needs-checking/group-cr.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -159,6 +159,8 @@ compatibility-note: >
 #                                                   a read
 #   "put a supply air connector on the neck"     -> ADD_FAMILY_CONNECTOR - a
 #                                                   new connector
+#   "delete the connector on Port Left"          -> REMOVE_FAMILY_CONNECTOR -
+#                                                   named the same way, deleted
 #   "link the connector flow to a family parameter"
 #                                                -> LINK_FAMILY_PARAMETER - a
 #                                                   connector's VALUE to a
