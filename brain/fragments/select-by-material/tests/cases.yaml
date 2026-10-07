@@ -22,6 +22,17 @@ positive:
       the host's findings say it has no such material, and
       the link's line gives its count - the case a link exists for
 
+  # Version 3, added 2026-10-08. A family open in the Family Editor.
+  - given: >
+      a scratch Generic Model family with a solid extrusion set to "Glass", a
+      solid revolve and a void extrusion left at <By Category>; materialName
+      "Glass", categories "Generic Models"
+    expect: >
+      elements 1, the glass extrusion; the family finding says all 3 forms
+      were scanned whatever the category list says, and that 1 form takes its
+      material <By Category> - the revolve; the void shows nothing and is not
+      counted. Before version 3 this read "0 of 0 scanned"
+
 negative:
   - given: >
       a wall PAINTED with a material it is not made of, asked with includePaint
@@ -63,6 +74,19 @@ negative:
   - given: one linked file placed TWICE, with includeLinks true
     expect: >
       linksSearched 1, not 2 - it counts files, not placements
+
+  # Version 3, added 2026-10-08.
+  - given: >
+      the same scratch family, materialName "Default Wall" - a material the
+      family holds that no form is made of
+    expect: >
+      elements 0 with the same forms scanned - the honest zero inside a
+      family, not the "0 of 0" the category filter gave
+
+  - given: the same name and categories in a project
+    expect: >
+      the project answer exactly as before - no family finding, nothing
+      scanned beyond the categories
 
 second_route: >
   A material takeoff schedule filtered to the same material and counted, and
