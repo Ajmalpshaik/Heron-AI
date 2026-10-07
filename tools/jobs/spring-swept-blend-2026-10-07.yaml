@@ -29,7 +29,7 @@
 #
 # `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
 # Run 2026-10-07 one at a time with `validate`, every leg ok; drafted in
-# brain/proof-drafts/, unsigned.
+# brain/proof-drafts/ and signed by Ajmal PS on his word - all three PROVEN.
 
 model: SpringProof, a scratch family from Metric Generic Model.rft, Revit 2024
 

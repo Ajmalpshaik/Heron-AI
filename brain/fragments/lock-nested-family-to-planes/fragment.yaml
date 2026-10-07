@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -37,9 +37,8 @@ purpose: >
   holding exactly one nested family is locked through it. Measured on a
   scratch family: the last copy of a row spread to its last member, its Top
   locked to a plane, re-spaced the row when the plane moved; the second copy
-  of a row stepped member by member was refused by Revit. Version 1's proof
-  no longer describes the code and is kept below as a record; DRAFT until
-  proved again.
+  of a row stepped member by member was refused by Revit. Proved again
+  2026-10-07 on scratch SpringProof, signed by Ajmal PS.
 
   **ALL OR NOTHING, READ BACK**: a lock never moves what it locks, so the
   nested family's extent is read before and after, and any move fails the
@@ -79,39 +78,45 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-07'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family1,
-    Revit 2024, session 32340'
+  model: SpringProof (1,753 elements), Revit 2024, session 9240
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, axisWords
-    3 item(s) [left-right, front-back, up-down], datums 9 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    3 item(s) [left-right, front-back, up-down], datums 5 item(s) [(Autodesk.Revit.DB.ReferencePlane,
     Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
     (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], elevation ViewSection,
-    findings 2 item(s) [Locked 1 side(s) of the nested family bfa50ce5-921a-49fe-86b..., Locked
-    is not yet PROVED to follow the planes. FLEX_FAMILY c...], halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, locked 1 item(s) [Center (Left/Right) to "Center (Left/Right)"
-    (in Ref. Level)], mm Func`2, nested FamilyInstance, notAFamily false, ownName Func`2,
-    plan ViewPlan, plans 1 item(s) [((centerleftright, Center (Left/Right), CenterLeftRight,
-    0),...], problems 0 item(s), refused (null), sides 9 item(s) [(left, Left, Left, 0), (centerleftright,
-    Center (Left/Right), CenterLeftRight, 0), (right, Right, Right, 0), ...], squash Func`2.
-    inputs came instance as given; locks as given (1). on Family1
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, axisWords 3 item(s) [left-right,
-    front-back, up-down], datums 0 item(s), elevation (null), findings 1 item(s) [The document
-    in front is a project, not a family open in the...], halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, locked 0 item(s), mm Func`2, nested (null), notAFamily true, ownName
-    Func`2, plan (null), plans 0 item(s), problems 0 item(s), refused The document in front
-    is a project, not a family open in the Family Editor. A nested family is locked to its
-    planes inside the family - open it first., sides 9 item(s) [(left, Left, Left, 0), (centerleftright,
-    Center (Left/Right), CenterLeftRight, 0), (right, Right, Right, 0), ...], squash Func`2.
-    inputs came instance as given; locks as given (1). on Project1
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 9961a6363f82e2e7
-
+    findings 3 item(s) ["Array Group 1" is a group - an array's copy - and the neste..., Locked
+    1 side(s) of the nested family 337ead81-f16a-40e6-83a..., Locked is not yet PROVED to
+    follow the planes. FLEX_FAMILY c...], halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    locked 1 item(s) [Top to "Top Turn Start" (in Back)], mm Func`2, nested FamilyInstance,
+    notAFamily false, ownName Func`2, plan ViewPlan, plans 1 item(s) [((top, Top, Top, 2),
+    Autodesk.Revit.DB.Reference, (Autodesk....], problems 0 item(s), refused (null), sides
+    9 item(s) [(left, Left, Left, 0), (centerleftright, Center (Left/Right), CenterLeftRight,
+    0), (right, Right, Right, 0), ...], squash Func`2. inputs came instance as given; locks
+    as given (1). on SpringProof
+  negative_case: run against 'SpringProof' with instance=337ead81-f16a-40e6-83ae-b97c6ded58ab-00000ead,
+    locks=Top=Top Turn Start instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned along Func`3, axisOf Func`2, axisWords 3 item(s) [left-right, front-back,
+    up-down], datums 5 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], elevation ViewSection, findings 1 item(s) [Nothing
+    was locked. "Array" is not a nested family - PLACE_N...], halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, locked 0 item(s), mm Func`2, nested (null), notAFamily false, ownName
+    Func`2, plan ViewPlan, plans 0 item(s), problems 1 item(s) ["Array" is not a nested family
+    - PLACE_NESTED_FAMILY gives b...], refused Nothing was locked. "Array" is not a nested
+    family - PLACE_NESTED_FAMILY gives back the id of one it places, and ARRAY_FAMILY_FORMS
+    the ids of its copies., sides 9 item(s) [(left, Left, Left, 0), (centerleftright, Center
+    (Left/Right), CenterLeftRight, 0), (right, Right, Right, 0), ...], squash Func`2. inputs
+    came instance as given; locks as given (1). on SpringProof
+  second_route: 'The parametric spring TRG_Spring_Compression Spring, built 2026-10-07 (Revit
+    2024, session 9240): this fragment locked the nested turn''s Bottom to "Pitch" and the
+    array''s last copy''s Top to "Top Turn Start". Read back by a scratch probe (not a Heron
+    fragment - FLEX_FAMILY does not read nested families, row 5b-367), rolled back: at Free
+    Height 147, 181 and 191 and Active Coils 4, 5 and 8 the turns re-spaced exactly one Pitch
+    apart between the two planes.'
+  fingerprint: 44a4578e0c006726
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
