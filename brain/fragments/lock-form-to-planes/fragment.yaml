@@ -24,7 +24,7 @@ purpose: >
   **A FACE IS LOCKED ONLY WHERE IT ALREADY LIES.** The alignment call's own
   remarks: the two references must already be aligned, and the call will not
   force them. So for each plane named, every flat face of the form lying
-  exactly on it is locked, and a plane with no face on it refuses the whole
+  precisely on it is locked, and a plane with no face on it refuses the whole
   call, naming where the faces facing that way lie, or how far off they are.
 
   **IN THE VIEW THAT SEES THE FACE EDGE ON**, as it is done by hand: a face
