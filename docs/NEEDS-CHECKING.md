@@ -523,6 +523,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-co.md`](needs-checking/group-co.md)
 
+## Group CP - nested families: a read run that left an element, formula Yes/No values, hidden bodies in a box, and how a work-plane family stands (2026-10-07)
+
+**Its own file:** [`needs-checking/group-cp.md`](needs-checking/group-cp.md)
+
 ## Group CQ - deleting a family parameter that labels a dimension: the label taken off first, when asked (2026-10-06)
 
 **Its own file:** [`needs-checking/group-cq.md`](needs-checking/group-cq.md)

@@ -252,6 +252,8 @@ Revit renamed some unit words in 2021 and older catalogs stopped loading.
 from those calls and writes nothing; File > Export > Family Types is Revit's own way and the comparison its
 proof uses. How Revit reads Yes/No cells, quoted cells and the file's encoding are **UNSURE** (BV10).
 
+**Seen in Revit 2024, 2026-10-06/07, building Rejin's pipe support (`GM_PipeSupport_FloorType1`, its table `GM_PipeSupport_Schedule`).** (1) `size_lookup`'s FIRST argument must be a **Text parameter holding the table's name**, not the name itself: `size_lookup(GM_PipeSupport_Schedule, "Overall", 85.8 mm, Pipe 1 Size Used)` was refused *"It is an invalid formula string"*, and the same formula through a type parameter `Lookup Table Name` = `GM_PipeSupport_Schedule` was accepted. (2) The table's first column held row names (`ND25`, `ND32`, ...) with an empty header cell, the ND key in the second, and every lookup keyed on ND answered from the second column - the sources' reading of row 5b-281. That is the positive half only; an ND that sits ONLY in the first column was not tried, so **BV15's negative case is still owed** before `write-family-size-table`'s card is changed.
+
 ---
 
 ## 6. Forms: the classic Family Editor and the conceptual one
@@ -468,6 +470,8 @@ reference-line angles stay **NOT YET**, recorded in [row 5b-280](FRAGMENT-ISSUES
 bend whose angle the types choose is a REVOLVE whose end angle is linked to an Angle parameter
 (`LINK_FAMILY_FORM_PARAMETER`). **SOURCED:** since 2019 users report errors at angles below 0 or above 180
 degrees with the line's end locked.
+
+**A nested work-plane-based family on a vertical plane (seen in Revit 2024, 2026-10-06).** Building Rejin's pipe support, nested work-plane-based parts placed by `PLACE_NESTED_FAMILY` on a VERTICAL reference plane still came in upright - the nested family's Z along the world's Z - not turned onto the plane. The orientations the support needed (a C-channel upright, reversed, turned or lying flat) were therefore built INSIDE the nested family as separate bodies, each with `Visible` driven by a Yes/No formula, and the host picks one. Whether this is Revit's rule or the fragment's choice of direction is **NEEDS-CHECKING CP4**. Two reading traps came with it: a formula-driven Yes/No reads `<blank>` in `REPORT_FAMILY_PARAMETERS` (row 5b-351; read it through a temporary Length `if(flag, 1 mm, 0 mm)`), and `REPORT_BOUNDING_BOX` counts the hidden bodies too (row 5b-352). **Never probe whether a family is loaded with a placement run, even without `--write`** - it left a real instance behind twice (row 5b-350).
 
 ---
 
