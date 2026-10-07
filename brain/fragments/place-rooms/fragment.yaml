@@ -129,6 +129,10 @@ compatibility-note: >
 #   "rooms with no area"                 -> SELECT_UNENCLOSED_ROOMS
 #   "put a room here"                    -> PLACE_ROOM_AT_POINT, when the
 #                                           spot is chosen rather than found
+#   "how many MEP spaces are in the model" -> FILTER_ELEMENTS_BY_CATEGORY,
+#                                           category Spaces. It reached HERE
+#                                           until 2026-10-07, and most of its
+#                                           paraphrases still do (5b-355)
 
 utterances:
   - place the rooms

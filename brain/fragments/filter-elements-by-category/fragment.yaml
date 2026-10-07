@@ -151,6 +151,7 @@ compatibility-note: >
 # what a modeller pastes in, and they are exactly what a meaning-based search
 # handles worst.
 #   "find all elements of a category"    -> here
+#   "how many MEP spaces are in the model" -> here, category Spaces (5b-355)
 #   "find all the VCDs"                  -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
@@ -167,3 +168,18 @@ utterances:
   - OST_DuctCurves
   - all the pipes on level 2
   - which walls are on this level
+  # ADDED 2026-10-07, FRAGMENT-ISSUES 5b-355. A session asked heron_lookup
+  # "how many MEP spaces are in the model" with nothing selected and was
+  # answered PLACE_ROOMS - a change that PLACES spaces - words #2 and
+  # nearness #1, 6.2 ranks clear, with no count among the five. A Space is a
+  # category like any other, and counting a whole category with nothing
+  # selected is this filter: category Spaces - the name Visibility/Graphics
+  # shows - and levelId none. COUNT_ELEMENTS and REPORT_ROOM_SPACE_DATA both
+  # take a set of elements and refuse when nothing is selected.
+  #
+  # THIS FIXES THE SENTENCE AND NOT THE KIND. Most paraphrases of it still
+  # reach PLACE_ROOMS on the trained model, and two rewordings of that card
+  # each moved the crossing rather than removing it - the row names both.
+  - how many MEP spaces are in the model
+  - count the spaces on this level
+  - OST_MEPSpaces
