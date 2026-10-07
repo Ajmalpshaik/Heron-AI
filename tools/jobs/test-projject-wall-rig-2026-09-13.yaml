@@ -91,11 +91,15 @@ jobs:
     note: rotated 4 / blocked 0, then rotated 0 / blocked 2. The same rig as move.
 
   - fragment: group-elements
+    # `name` since version 2 (2026-10-07): the group type's name, empty for
+    # Revit's own "Group 1". Version 1 took no values; without it version 2 is
+    # refused before it runs, "name was never supplied".
     set:
       minMm: "-1000,-1000,-1000"
       maxMm: "9000,7000,4000"
       exact: "false"
       categories: Walls
+      name: ""
     # ONE WALL. `fragment.cs:35` is `if (ids.Count < 2) refused = true` - Revit
     # would make a group of one and nobody wants it, so the fragment refuses
     # first. The tight box catches the east wall only: the north and south
@@ -105,6 +109,7 @@ jobs:
       maxMm: "8500,4000,4000"
       exact: "false"
       categories: Walls
+      name: ""
     note: grouped 4 / refused false, then grouped 0 / groupId null / refused true.
 
   - fragment: ungroup-elements

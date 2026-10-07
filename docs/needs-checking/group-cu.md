@@ -70,6 +70,6 @@ identity. By ranking, three of the label's lose to `CREATE_FAMILY_SWEPT_BLEND` a
 the array to the top plane"* to `ARRAY_FAMILY_FORMS` - listed among the sentences two fragments both want,
 none a crossing. `check-intrusion` printed the same as before but for its utterance count.
 
-**Saving the one-turn family before it is loaded** needs `SAVE_DOCUMENT` version 2 (PR #438, not merged
-on 2026-10-07): version 1 saves the document Heron's own transaction group is open on, and Revit refuses.
-The spring was built with that branch's fragment run from a scratch copy.
+**Saving the one-turn family before it is loaded** needs `SAVE_DOCUMENT` version 2 (PR #438, merged
+2026-10-07, Group CS): version 1 saved the document Heron's own transaction group is open on, and Revit
+refused. The spring was built with that branch's fragment, run from a scratch copy before it merged.

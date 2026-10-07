@@ -16,6 +16,13 @@
 // activeAfter IS READ BACK FROM REVIT, NEVER ASSUMED FROM THE PATH. Believing
 // a switch happened when it did not is exactly how those five tables landed
 // in the wrong family, and an argument echoed back would have hidden it.
+//
+// VERSION 2, 2026-10-07 - "ALREADY IN FRONT" IS JUDGED BY THE WINDOW IN FRONT,
+// BY ITS FILE. Version 1 compared the title of `doc` - the document Heron was
+// pointed at, which need not be in front - with the file name asked for. Aimed
+// at a car family behind a tyre family and asked for the car's file, it said
+// "already in front" and switched nothing: the very failure this exists to
+// prevent (row 5b-359). Two files of one name in two folders matched as well.
 
 var findings = new List<string>();
 var activated = false;
@@ -38,14 +45,36 @@ else if (!System.IO.File.Exists(path))
 }
 else
 {
+    // THE WINDOW IN FRONT, asked of Revit - not `doc`, which is only the
+    // document this run was aimed at.
+    Document inFront = null;
+    try
+    {
+        var active = uidoc == null ? null : uidoc.Application.ActiveUIDocument;
+        inFront = active == null ? null : active.Document;
+    }
+    catch (Exception) { inFront = null; }
+
     var before = "";
-    try { before = doc == null ? "" : doc.Title; }
-    catch (Exception) { before = ""; }
+    var frontPath = "";
+    try
+    {
+        before = inFront == null ? "" : inFront.Title;
+        frontPath = inFront == null ? "" : inFront.PathName;
+    }
+    catch (Exception) { before = ""; frontPath = ""; }
+
+    Func<string, string> canonical = delegate (string p)
+    {
+        if (string.IsNullOrEmpty(p)) return "";
+        try { return System.IO.Path.GetFullPath(p).TrimEnd('\\', '/'); }
+        catch (Exception) { return p.Trim(); }
+    };
 
     // ALREADY IN FRONT IS NOT A FAILURE, and not a reason to reopen either -
     // reopening would be a real action with real risk, taken for nothing.
-    var leaf = System.IO.Path.GetFileNameWithoutExtension(path);
-    if (before.Length > 0 && string.Equals(before, leaf, StringComparison.OrdinalIgnoreCase))
+    if (frontPath.Length > 0
+        && string.Equals(canonical(frontPath), canonical(path), StringComparison.OrdinalIgnoreCase))
     {
         wasAlready = true;
         activated = true;

@@ -43,6 +43,15 @@ negative:
       must be SAVED first - Revit never reached its Family Already Exists
       question
 
+  - given: >
+      a nested family's .rfa that is OPEN in Revit, in its own window, with a
+      form added since it was last saved
+    expect: >
+      REFUSED, naming the open family and saying to save it first - and the
+      family count in the target unchanged. A load reads the file, not the
+      window, so it would have brought in the file's older contents and called
+      it a success (row 5b-360). The same family saved first loads normally
+
   - given: a path that does not exist
     expect: >
       refused, naming the path. LoadFamily returns a bare `false` for a missing
