@@ -193,9 +193,10 @@ def unpoint(text, name, folder, index_name):
 
     NAME is the file the text came from, or None for the index's own text.
     The inverse of what split-register.py does on the way out: a link one
-    folder deeper comes back up, a link to a heading in another of the
-    register's files comes back to an anchor on the page, and a link from the
-    index into one of its files does the same."""
+    folder deeper comes back up, a link to a file beside it goes down into
+    the folder, a link to a heading in another of the register's files comes
+    back to an anchor on the page, and a link from the index into one of its
+    files does the same."""
     def swap(match):
         label, href = match.group(1), match.group(2)
         if href.startswith(("http://", "https://", "mailto:")):
@@ -221,7 +222,14 @@ def unpoint(text, name, folder, index_name):
             return "[%s](%s%s)" % (label, mark, fragment)
         if target.startswith("../"):
             return "[%s](%s%s%s)" % (label, target[3:], mark, fragment)
-        return match.group(0)
+        # A FILE BESIDE IT. Written in one of the register's files, a link
+        # with no ../ reaches into the folder, so on the page it is one folder
+        # deeper. Left as it was, the way out read it as the page's own
+        # neighbour and wrote ../ in front - on 2026-10-08 every link from a
+        # re-banded row to another rows file came out one folder too high.
+        if target.startswith("./"):
+            target = target[2:]
+        return "[%s](%s/%s%s%s)" % (label, folder, target, mark, fragment)
     return LINK.sub(swap, text)
 
 

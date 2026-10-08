@@ -317,6 +317,16 @@ def header_of(text):
 
 # ------------------------------------------------------------------- split
 
+def _beside(text, folder_name):
+    """TEXT, going into one of the register's files, with every link into the
+    folder written as a link to the file beside it. The way out puts ../ in
+    front of a page link, so fragment-issues/x.md arrives as
+    ../fragment-issues/x.md: it reaches the right file, but nobody writes it
+    that way, and a file that read section-6.md before a run should read the
+    same after it. register-text.py reads both back to the same page link."""
+    return text.replace("](../" + folder_name + "/", "](")
+
+
 def split_by(text, layout, banded, config, headers, today, index):
     """(page text, {file: text}, trouble) - TEXT, the register as one text,
     with each section LAYOUT maps by its heading line moved to its file, and
@@ -347,7 +357,8 @@ def split_by(text, layout, banded, config, headers, today, index):
         if name:
             k = RT.last_filled(lines, start, end)
             out.append(NL.join([heading, "", RT.file_line(folder_name, name)] + lines[k:end]))
-            body = AH._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble, heading)
+            body = _beside(AH._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble,
+                                       heading), folder_name)
             files[name] = (headers.get(name) or _section_header(config["title"], page, heading, today)) + body + NL
             continue
         if not table:
@@ -361,8 +372,8 @@ def split_by(text, layout, banded, config, headers, today, index):
         kept = lines[start:top] + [RT.rows_line(folder_name, names, labels)] + lines[bottom:end]
         out.append(AH._repoint(NL.join(kept), None, moved, index, folder, trouble, heading))
         for (low, high, chunk), name in zip(chunks, names):
-            body = AH._repoint(NL.join(lines[top:top + 2] + chunk), name, moved, index, folder, trouble,
-                               "%s, rows %d to %d" % (heading, low, high))
+            body = _beside(AH._repoint(NL.join(lines[top:top + 2] + chunk), name, moved, index, folder,
+                                       trouble, "%s, rows %d to %d" % (heading, low, high)), folder_name)
             opening = headers.get(name) or _rows_header(config["title"], page, heading, low, high, today)
             files[name] = opening + body + NL
     return NL.join(out), files, trouble

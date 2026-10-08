@@ -57,6 +57,7 @@ import contextlib
 import importlib.util
 import io
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -327,6 +328,28 @@ def after_write(original, root, today):
     check(read(os.path.join(folder_of(root), "section-5-rows-001-025.md")) == kept_first,
           "every other file is kept as it was, its date included")
     check(whole(root).count("| **26** | **Twenty-six.**") == 1, "and the register reads the row once")
+
+    # A ROW WRITTEN IN A ROWS FILE LINKS THE WAY THAT FILE SEES THINGS: another
+    # band is a file beside it, the page is one folder up. Moved to its band, it
+    # must reach the same files. On 2026-10-08 the real register's rows 201 to
+    # 370 were re-banded and every link to a file beside them came out as
+    # ../section-5b-rows-051-075.md - one folder too high, read back byte for
+    # byte, and broken.
+    put(last, read(last) + "| **27** | **Twenty-seven.** See [row 5b-1](section-5b-rows-001-025.md), "
+        "[section 6](section-6.md) and [the page](../FRAGMENT-ISSUES.md). | OPEN - new. |" + NL)
+    linked = SPLIT.plan("fragment-issues", index_of(root), "2026-09-30", root)
+    check(not linked.problems, "a row with links beside it plans clean (%s)" % "; ".join(linked.problems))
+    SPLIT.write(linked)
+    band = read(os.path.join(folder_of(root), "section-5b-rows-026-050.md"))
+    check("| **27** |" in band, "row 27 is moved to its band")
+    for label, target in (("row 5b-1", "section-5b-rows-001-025.md"), ("section 6", "section-6.md"),
+                          ("the page", "../FRAGMENT-ISSUES.md")):
+        written = re.search(r"\[" + re.escape(label) + r"\]\(([^)#]*)", band)
+        reached = written and os.path.isfile(os.path.join(folder_of(root), written.group(1)))
+        check(written is not None and written.group(1) == target and reached,
+              "its link to %s still reaches %s (written %s)"
+              % (label, target, written.group(1) if written else "nowhere"))
+    check(whole(root).count("| **27** | **Twenty-seven.**") == 1, "and the register reads it once")
 
     print()
     print("7. A missing file is broken, never shorter")

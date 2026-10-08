@@ -947,7 +947,7 @@ cannot do, so R-58's *refuse a question nothing covers* is not reachable this wa
 
 ## 2026-09-28 — a colour sentence reached the tool that makes zones
 
-[Row 5b-236](../docs/fragment-issues/section-5b-rows-176-200.md). *"color hvac zones in this plan"*, which
+[Row 5b-236](../docs/fragment-issues/section-5b-rows-226-250.md). *"color hvac zones in this plan"*, which
 no card declares, resolved on the owner's backend to `CREATE_HVAC_ZONE` - a PROVEN write that makes HVAC
 zones and moves spaces into them - with `APPLY_COLOR_FILL_SCHEME`, the DRAFT colour tool, second.
 Measured on scratch stores, never the shared one, at **420 fragments** on `main` as it stood:

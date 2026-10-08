@@ -137,7 +137,7 @@ every reading. The compiler found it in seconds.
 UniqueId is *"created with the document"*. It is created with the TEMPLATE: two blank projects and an
 unrelated `PIPE.rvt` reported one id on 2026-09-15 (NEEDS-CHECKING E12), and on 2026-10-06 a new project
 was given another model's kept loads answers because both reported it
-([FRAGMENT-ISSUES 5b-324](../../../docs/fragment-issues/section-5b-rows-176-200.md)). The compiler cannot
+([FRAGMENT-ISSUES 5b-324](../../../docs/fragment-issues/section-5b-rows-301-325.md)). The compiler cannot
 catch that class: the substitute compiles everywhere and answers a different question.
 
 **Prefer a member that exists everywhere over a `#if` that hides one that does not — when it answers the

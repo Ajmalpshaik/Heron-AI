@@ -10,7 +10,7 @@
 **The owner's PC, Revit 2024, session 8804, on `TRG_PLMB_VLV_PPR Gate Valve_GV_R0` with his word in
 the chat** (*"you can change it but ... bring back to ... the global"*), every run ROLLED BACK. Read
 before and after: two pipe connectors, both Global, 32 mm driven by Nominal Diameter, Port Left primary,
-not linked - the same both times. Row [5b-307](../fragment-issues/section-5b-rows-176-200.md).
+not linked - the same both times. Row [5b-307](../fragment-issues/section-5b-rows-301-325.md).
 
 | # | Run | Look for |
 |---|---|---|
