@@ -100,3 +100,11 @@ utterances:
   - what are these made of
   - material takeoff for these
   - how much concrete
+  # ADDED 2026-10-09, row 5b-375. On the trained backend this card wins "what
+  # material is that" and "what material are these" on both routes, with
+  # CREATE_MATERIAL second on both. The sentence CREATE_MATERIAL gained that
+  # day lifted it to first by words; the two then swap ranks between the
+  # routes, which fuses to an exact tie (row 5b-236), and both questions went
+  # to the write. This sentence holds them here, measured: itself by its exact
+  # words, and "what material are these", which nothing declares, by ranking.
+  - what material is that
