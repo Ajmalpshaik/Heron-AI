@@ -22,6 +22,16 @@
 //
 // EACH TRIAL STARTS FROM THE ORIGINAL VALUES plus only what it names, so the
 // trials do not leak into one another.
+//
+// A SOLID IS FOLLOWED BY ITS OWN ID - except an ARRAY'S MEMBER THAT REVIT
+// REMADE (version 2, 5b-373). When an array's count changes, Revit remakes its
+// copies and their ids change with it, so a flex through a labelled count
+// came back with the same solids under new ids and was called "not back as it
+// was". Every solid whose id survived is still compared with itself; only the
+// array members whose ids did not survive are compared by shape - the same
+// boxes, matched one to one, at the same tolerance - and the findings say how
+// many were judged each way. A solid that is no array's member is never
+// matched by shape: its id changing is itself a change.
 
 var findings = new List<string>();
 var allHeld = false;
@@ -217,12 +227,34 @@ if (refused == null)
     //   Item4  tied connector sizes that disagree with their parameter
     //   Item5  how many labels and ties were checked
     //   Item6  each labelled dimension's reading, to see whether planes moved
-    Func<Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>>> measure = () =>
+    //   Item7  the unique ids of every array's members, and of the forms in
+    //          them - every member, the original too, is a model group (5b-358)
+    Func<Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>, HashSet<string>>> measure = () =>
     {
         double[] union = null;
         var boxes = new Dictionary<string, double[]>();
-        var forms = new FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()
-            .OfType<GenericForm>().Where(f => f.IsSolid).ToList();
+        var everything = new FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements();
+        var arrayed = new HashSet<string>();
+        foreach (var array in everything.OfType<BaseArray>())
+        {
+            var memberIds = new List<ElementId>();
+            try { memberIds.AddRange(array.GetOriginalMemberIds()); } catch (Exception) { }
+            try { memberIds.AddRange(array.GetCopiedMemberIds()); } catch (Exception) { }
+            foreach (var id in memberIds)
+            {
+                var member = doc.GetElement(id);
+                if (member == null) continue;
+                arrayed.Add(member.UniqueId);
+                var group = member as Group;
+                if (group == null) continue;
+                foreach (var inner in group.GetMemberIds())
+                {
+                    var held = doc.GetElement(inner);
+                    if (held != null) arrayed.Add(held.UniqueId);
+                }
+            }
+        }
+        var forms = everything.OfType<GenericForm>().Where(f => f.IsSolid).ToList();
         foreach (var form in forms)
         {
             var bounds = form.get_BoundingBox(null);
@@ -283,7 +315,7 @@ if (refused == null)
             }
         }
 
-        return Tuple.Create(union, boxes, dimensionMisses, portMisses, checks, labels);
+        return Tuple.Create(union, boxes, dimensionMisses, portMisses, checks, labels, arrayed);
     };
 
     Func<double[], string> describe = box => box == null
@@ -300,9 +332,48 @@ if (refused == null)
     };
 
     // Every solid where it was, form by form - and none appearing or vanishing.
-    Func<Dictionary<string, double[]>, Dictionary<string, double[]>, bool> sameForms = (first, second) =>
-        first.Count == second.Count
-        && first.All(entry => second.ContainsKey(entry.Key) && sameBox(entry.Value, second[entry.Key]));
+    // Answers: the same or not; how many were compared by their own id; how
+    // many array members Revit remade were matched by shape; and, when not the
+    // same, what differed in words.
+    Func<Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>, HashSet<string>>,
+         Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>, HashSet<string>>,
+         Tuple<bool, int, int, string>> compareForms = (before, after) =>
+    {
+        var first = before.Item2;
+        var second = after.Item2;
+        if (first.Count != second.Count)
+            return Tuple.Create(false, 0, 0, second.Count + " solid(s) where there were " + first.Count);
+
+        var byId = 0;
+        foreach (var entry in first)
+        {
+            if (!second.ContainsKey(entry.Key)) continue;
+            if (!sameBox(entry.Value, second[entry.Key]))
+                return Tuple.Create(false, byId, 0, "the solid " + entry.Key + " is not where it was");
+            byId++;
+        }
+
+        // THE IDS THAT DID NOT SURVIVE - matched by shape only when every one,
+        // before and after, is an array's member.
+        var gone = first.Keys.Where(k => !second.ContainsKey(k)).ToList();
+        var made = second.Keys.Where(k => !first.ContainsKey(k)).ToList();
+        if (gone.Count == 0) return Tuple.Create(true, byId, 0, "");
+        var loose = gone.Where(k => !before.Item7.Contains(k)).Concat(made.Where(k => !after.Item7.Contains(k))).ToList();
+        if (loose.Count > 0)
+            return Tuple.Create(false, byId, 0, loose.Count + " solid(s) that are no array's member came back under a "
+                + "different id - " + string.Join(", ", loose.Take(3)) + (loose.Count > 3 ? ", ..." : ""));
+
+        var unmatched = made.Select(k => second[k]).ToList();
+        foreach (var key in gone)
+        {
+            var match = unmatched.FirstOrDefault(box => sameBox(first[key], box));
+            if (match == null)
+                return Tuple.Create(false, byId, 0, "an array member Revit remade is not where one was: "
+                    + describe(first[key]) + " has no match among the " + made.Count + " remade");
+            unmatched.Remove(match);
+        }
+        return Tuple.Create(true, byId, gone.Count, "");
+    };
 
     // Writes every touched parameter: the trial's value where it names one,
     // the original everywhere else.
@@ -350,7 +421,7 @@ if (refused == null)
                 + "this flex was kept. " + (trialResults.Count > 0 ? "Before it: " + string.Join(" / ", trialResults) : ""));
 
         var misses = new List<string>(now.Item4);
-        var formsMoved = !sameForms(start.Item2, now.Item2);
+        var formsMoved = !compareForms(start, now).Item1;
 
         // PLANES MOVED AND NO SOLID DID: the failure a flex exists for.
         var planesMoved = now.Item6.Any(l => start.Item6.ContainsKey(l.Key)
@@ -395,18 +466,25 @@ if (refused == null)
         return whole.HasValue && whole.Value == (int)original;
     });
 
-    restored = valuesBack && sameForms(start.Item2, end.Item2);
+    var back = compareForms(start, end);
+    restored = valuesBack && back.Item1;
 
     if (!restored)
         throw new InvalidOperationException("After the flex the family did not come back as it was - "
-            + (valuesBack ? "" : "a value did not return; ") + "it started as " + describe(start.Item1)
-            + " and ended as " + describe(end.Item1) + " (every solid is compared, not only the whole). "
+            + (valuesBack ? "" : "a value did not return; ") + (back.Item1 ? "" : back.Item4 + "; ")
+            + "it started as " + describe(start.Item1) + " and ended as " + describe(end.Item1)
+            + " (every solid is compared, not only the whole). "
             + "NOTHING from this flex was kept. Trials: " + string.Join(" / ", trialResults));
 
     allHeld = every && start.Item5 > 0;
 
     findings.Add("Flexed " + planned.Count + " size(s) and put the family back: " + describe(end.Item1)
-        + ", every solid where it started, with every value read back.");
+        + ", every solid where it started"
+        + (back.Item3 > 0
+            ? " - " + back.Item2 + " compared by their own ids, and " + back.Item3 + " array member(s) Revit remade "
+              + "with new ids when the count changed compared by shape: the same boxes, matched one to one"
+            : ", each compared by its own id")
+        + ", with every value read back.");
     findings.AddRange(trialResults);
     findings.Add(allHeld
         ? "Every labelled dimension and every tied connector read its parameter in every trial, and the "
