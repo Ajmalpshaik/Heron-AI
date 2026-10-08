@@ -1,0 +1,52 @@
+# The proof of listing a document's materials - NEEDS-CHECKING Group CX,
+# rows CX1 to CX8, FRAGMENT-ISSUES row 5b-376:
+#
+#   list-materials   LIST_MATERIALS   FRG-ELE-077   new, version 1
+#
+#     python tools/batch-prove.py tools/jobs/list-materials-2026-10-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-materials-2026-10-09.yaml
+#
+# NEVER ON ONE OF THE OWNER'S WORKING MODELS. The arrangement is three scratch
+# documents, made by hand before the run, saved once under the titles below
+# so `in:` can name them, and left OPEN TOGETHER:
+#
+#   "Heron Materials Project"     a PROJECT, new from the metric template,
+#                                 with CREATE_MATERIAL having made ONE
+#                                 material in it first: "Heron List Probe",
+#                                 any colour. Nothing else is added
+#   "Heron Materials Annotation"  a FAMILY, new from Metric Generic
+#                                 Annotation.rft, nothing added - the
+#                                 negative below
+#   "Heron Materials Accessory"   a scratch copy of a Duct Accessories
+#                                 family - the kind of document row 5b-376
+#                                 was asked in - saved under this title (CX3)
+#
+# WHY THE NEGATIVE IS AN ANNOTATION FAMILY. LIST_MATERIALS has no input but
+# the document, and every model family and every project carries materials,
+# so in those it cannot come back empty. An annotation family is expected to
+# carry NONE - so a fragment that read the project open beside it, or every
+# open document, shows "Heron List Probe" there and the runner says NEG NOT
+# EMPTY. THAT THE TEMPLATE HOLDS NO MATERIAL IS NOT MEASURED: open its
+# Material Browser first (CX2). If it holds any, this job's verdict is NEG NOT
+# EMPTY whatever the fragment does, and the second leg falls to D-53 tracking
+# across the three documents, run by hand (CX4) - no tool varies the
+# DOCUMENT yet: prove-tracking.py and validate's own tracking vary a request
+# value, and this fragment has none.
+
+model: three scratch documents open together, Revit 2024 (Heron Materials Project, Heron Materials Annotation, Heron Materials Accessory)
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: list-materials
+    in: "Heron Materials Project"
+    negative-in: "Heron Materials Annotation"
+    write: false
+    expect: materialCount
+    note: >
+      Positive: materialCount equal to the project's Material Browser count
+      (Project Materials: All), and "Heron List Probe" in materialList with
+      its class and id. Negative: materialCount 0 and "No materials at all in
+      this family" - and above all NO "Heron List Probe", which only the
+      project holds.

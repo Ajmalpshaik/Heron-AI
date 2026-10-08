@@ -135,6 +135,11 @@ compatibility-note: >
 #                                             project
 #   "what material is this"                -> READ_ELEMENT_MATERIAL
 #   "which materials are unused"           -> FIND_UNUSED_MATERIALS
+#   "list the materials in this family"    -> LIST_MATERIALS, a read. It
+#                                             reached HERE, a write, until
+#                                             2026-10-09 (row 5b-376), and so
+#                                             did "show me all the materials
+#                                             in this project"
 #   "bring the line styles over"           -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
 #   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
 

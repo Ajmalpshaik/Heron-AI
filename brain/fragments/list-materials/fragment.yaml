@@ -1,0 +1,141 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-077
+semantic-identity: "every material this project or family holds, by name, with its class"
+kind: filter
+domain: revit.elements
+capability: LIST_MATERIALS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY THIS EXISTS. FRAGMENT-ISSUES row 5b-376, 2026-10-09: a modeller with a
+# Duct Accessories family open in Revit 2024 asked "list the materials in this
+# family" and was handed TRANSFER_MATERIALS_BETWEEN_DOCUMENTS - a write - on
+# the lexical backend; the trained backend gave FIND_UNUSED_MATERIALS, which
+# lists only the materials nothing uses. "show me all the materials in this
+# project" reached the transfer on both. Section 3d recorded the want on
+# 2026-09-08 ("There is no list of the materials that ARE used") and section
+# 3i asked for it as list-materials. Every tool that takes a material takes it
+# BY NAME, and nothing could tell anybody the names.
+#
+# THE PURPOSE IS SHORT ON PURPOSE. The nearness route embeds the card as one
+# averaged string (retrieval-history, 2026-09-28), and a purpose that names
+# selecting, colouring and transferring would pull those sentences here. The
+# tools this feeds are named in the routing block below instead.
+#
+# AND IT SAYS "MATERIAL" TWICE, ON MEASURED GROUNDS - 2026-10-09, scratch
+# stores, both search backends. The first wording said it six times. That
+# made this card first BY WORDS for "what material is that" and "what material
+# are these", READ_ELEMENT_MATERIAL's questions: on the trained backend the two
+# cards then swapped ranks between the routes, which fuses to an exact tie
+# (row 5b-236), and only READ_ELEMENT_MATERIAL being PROVEN kept the questions
+# there - a margin that would vanish the day this card is proved. Worded as
+# below, READ_ELEMENT_MATERIAL wins both on both routes, and this card is fifth
+# or absent.
+#
+# "HOW MANY THERE ARE" IS IN IT FOR THE COUNT QUESTION. Without it, "how many
+# materials are there" sat between the cards, and alongside row 5b-375's edits
+# to CREATE_MATERIAL and READ_ELEMENT_MATERIAL it went to the transfer - a
+# write - on the lexical backend. With it, this card answers it on both. It
+# costs one thing, recorded in row 5b-376 rather than tuned away: one more card
+# saying "how" tipped "how much space does this take up", which only a comment
+# on REPORT_BOUNDING_BOX claims, to REPORT_SPACE_AIRFLOW on the lexical backend
+# - two reads, 0.00003 apart. Worded "the number of them" instead, that
+# sentence stayed and the count question was lost again; the write mattered
+# more.
+#
+# "WHAT THE MATERIAL BROWSER SHOWS" IS THE INTENT, NOT A MEASUREMENT. The
+# collector returns every Material element in the document; whether the
+# browser lists exactly those, in this order, nobody has looked - that is
+# NEEDS-CHECKING CX5, and a difference is a finding about this card.
+
+purpose: >
+  Counts and lists everything the Material Browser shows for the document in
+  front - a project, or a family open in the Family Editor: how many there
+  are, and each one's name, class (Metal, Concrete, Plastic) and element id,
+  sorted by name.
+
+  **IT LISTS WHAT THE DOCUMENT HOLDS, NOT WHAT IS USED.** One read and nothing
+  else, so it is quick on any model. Whether anything uses an entry means
+  walking every element, every type and every painted face - the walk
+  FIND_UNUSED_MATERIALS makes, slow on a large model, and not repeated here.
+
+  **A FAMILY'S LIST IS THE FAMILY'S OWN.** In the Family Editor the answer is
+  what that family carries, never what a project it is loaded into holds, nor
+  another document open beside it.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: materialCount
+      # How many materials the document holds. A thing it FOUND, so a result
+      # (D-52) - and the number to compare with the Material Browser.
+      role: result
+      type: int
+    - name: materialList
+      # Every material on ONE line, sorted by name: "Name (class, id N)",
+      # with "  ||  " between. One string because a collection reaches the
+      # chat as its count and first three (RevitFragment.Describe), and a
+      # list of names somebody asked to READ is no use as three of them.
+      role: result
+      type: string
+    - name: materialIds
+      # The same materials as element ids, in the same order, for a next step
+      # in a chain. NOT named `materials` (READ_ELEMENT_MATERIAL provides that,
+      # as a dictionary) and NOT `materialNames` (CREATE_MATERIAL's request
+      # need - a carried list of names that already exist must never be bound
+      # into the tool that makes them).
+      role: result
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Material`, `Material.MaterialClass`
+  and `Element.Name` read the same 2020 to 2027 (tools/api-surface, measured
+  2026-10-09). The id is printed by `ElementId.ToString()` - never
+  `IntegerValue`, which is deprecated at 2024 and gone by 2026, and never a
+  constructor - so nothing meets the 2024 widening to 64-bit.
+
+# ROUTING - repeated in FIND_UNUSED_MATERIALS and
+# TRANSFER_MATERIALS_BETWEEN_DOCUMENTS, the two that were handed row 5b-376's
+# question before this existed.
+#
+#   "list the materials in this family"   -> here
+#   "what materials are in this project"  -> here
+#   "show me all the materials"           -> here - the list, used or not
+#   "how many materials are there"        -> here - materialCount
+#   "which materials is nobody using"     -> FIND_UNUSED_MATERIALS - the
+#                                            expensive walk this one does not do
+#   "what material is that"               -> READ_ELEMENT_MATERIAL - the
+#                                            material of an ELEMENT, a different
+#                                            question with the same word in it
+#   "everything in galvanised steel"      -> SELECT_BY_MATERIAL, which needs a
+#                                            material's name - found here
+#   "set the material colour"             -> SET_MATERIAL_COLOUR, by name
+#   "make this extrusion steel"           -> SET_FAMILY_FORM_MATERIAL, by name
+#   "make a new material"                 -> CREATE_MATERIAL
+#   "bring the materials over from the
+#    template"                            -> TRANSFER_MATERIALS_BETWEEN_DOCUMENTS,
+#                                            the write row 5b-376's question was
+#                                            handed before this existed
+#   "how much of each material is there"  -> REPORT_MATERIAL_TAKEOFF - quantities
+
+utterances:
+  - list the materials in this family
+  - show me all the materials in this project
+  - what materials are in this project
+  - show me all the materials

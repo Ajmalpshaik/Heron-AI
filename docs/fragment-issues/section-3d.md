@@ -25,7 +25,7 @@ instead — several times in one session.
 | `LIST_VIEW_TEMPLATES` | `select-view-templates` selects; nothing lists. Needed the names of all 18 before anything could be done with a template | 3 times |
 | `LIST_LINE_STYLES` | `remap-line-styles` takes two style names and there is no way to discover one | 1 |
 | `LIST_MEP_SYSTEM_TYPES` | `create-mep-system-type` takes `copyFromName` and nothing lists the 14 that exist | 1 |
-| `LIST_MATERIALS` | `find-unused-materials` reports only the unused ones. There is no list of the materials that ARE used | 1 |
+| `LIST_MATERIALS` | `find-unused-materials` reports only the unused ones. There is no list of the materials that ARE used. **Built 2026-10-09, DRAFT** - [row 5b-376](section-5b-rows-176-200.md), Group CX | 1 |
 | `LIST_DWG_EXPORT_SETUPS` | `export-views-to-dwg` refuses without a named setup — *"Revit's default is not used"* — and nothing lists the setups a project has. It could not be proved at all for want of one name | 1 |
 
 **The pattern is one sentence: every fragment that takes a NAME needs a way to discover the names.**
