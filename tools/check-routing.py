@@ -86,8 +86,9 @@ same of its dead links before they failed its run. Reading every comment line
 of every fragment.yaml on 2026-10-09 found those two and no other, so the gate
 starts without a false alarm to excuse.
 
-The two that were there when it was written are on KNOWN_DANGLING with the
-reason each is waiting. A listed row that stops dangling fails the run too,
+The two that were there when it was written went on KNOWN_DANGLING with the
+reason each was waiting, and select-by-material's came off when pull request
+#452 repaired it. A listed row that stops dangling fails the run too,
 until it comes off the list: a list that outlives its repair goes on excusing
 the row if it ever comes back. Row 5b-388.
 """
@@ -209,8 +210,6 @@ DECLARED = re.compile(r"^capability:\s*['\"]?([A-Z0-9_]+)", re.M)
 KNOWN_DANGLING = {
     ("add-schedule-combined-field", "SET_SCHEDULE_FIELD_FORMAT"):
         "row 5b-232 - pull request #459 points it at SET_SCHEDULE_APPEARANCE",
-    ("select-by-material", "PURGE_UNUSED_MATERIALS"):
-        "pull request #452 points it at FIND_UNUSED_MATERIALS",
 }
 
 
