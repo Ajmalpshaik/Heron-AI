@@ -410,6 +410,160 @@ def test_activity():
     check(server.count("_ended(_failure_ended(failure), explain(failure))") == 3,
           "and revit_read, revit_change and revit_apply_move label a failure from "
           "the add-in's reply, not from the words that explain it")
+    _single_purpose_endings(server)
+
+
+def _single_purpose_endings(server):
+    """
+    THE SINGLE-PURPOSE revit_* TOOLS SAY HOW THEY ENDED TOO (row 5b-389), read
+    as text because CI cannot run tests/test_mcp_serves.py, which calls
+    revit_levels, revit_select_by_category and revit_edit_table through a
+    real SDK. Before it they said nothing, and the list read their first
+    line: NotBound, with several Revits connected, opens "2 Revit sessions
+    are connected, so it is not safe to guess which one you mean:", so a
+    refusal was labelled ok.
+    """
+    doors = ("revit_read", "revit_change", "revit_apply_move")
+    bodies = {}
+    for found in re.finditer(r"\n@server\.tool\(\)\ndef (revit_\w+)\(", server):
+        rest = server[found.end():]
+        end = re.search(r"\n(?=\S)", rest)
+        bodies[found.group(1)] = rest[:end.start()] if end else rest
+    single = sorted(name for name in bodies if name not in doors)
+    silent = [name for name in single
+              if "_ended(" not in bodies[name] and "_ended_by_reply(" not in bodies[name]]
+    check(single and "revit_levels" in single and not silent,
+          "every single-purpose revit_* tool (%d read from the server) says how it ended "
+          "- silent: %s" % (len(single), silent))
+    bare = [name for name in single
+            if re.search(r"return str\((?:unbound|bad)\)", bodies[name])]
+    check(not bare, "a refusal before anything is sent - several Revits and none chosen, a "
+          "distance it cannot read - is 'refused': still bare in %s" % bare)
+    pin = [name for name in single if re.search(r"return wrong_model\b", bodies[name])]
+    check(not pin, "the pin's refusal is 'refused': still bare in %s" % pin)
+    unread = [name for name in single if "session.request(" in bodies[name]
+              and re.findall(r'_ended_by_reply\("(\w+)", reply\)', bodies[name]) != [name]]
+    check(not unread, "each that sends one request labels its ending from the add-in's "
+          "reply, once and under its own name: not so in %s" % unread)
+    passed = [name for name in single if "_through(revit_read" in bodies[name]
+              and '_ended(out.get("ended"), said)' not in bodies[name]]
+    check(not passed, "each that hands back revit_read's answer hands back the label "
+          "revit_read gave it: not so in %s" % passed)
+    helper = server[server.find("\ndef _ended_by_reply(") + 1:]
+    helper = helper[:helper.find("\ndef ")] if server.find("\ndef _ended_by_reply(") >= 0 else ""
+    check("analyse(reply, writes=tools.writes(tool))" in helper
+          and "_failure_ended(failure)" in helper,
+          "and the reply is labelled by heron_failure's classification through "
+          "_failure_ended, with the tool's declared risk, as the three doors label theirs")
+    through = server[server.find("\ndef _through("):]
+    through = through[:through.find("\ndef ", 1)]
+    check('reply_out["ended"] = getattr(_ctx, "outcome", None)' in through
+          and "_ctx.reply_out, _ctx.origin, _ctx.outcome = reply_out, origin, None" in through,
+          "and _through hands the body's own label to its caller, emptied first so it is "
+          "never the caller's word")
+    _single_purpose_labels(server, bodies, single, through)
+
+
+def _single_purpose_labels(server, bodies, single, through):
+    """
+    THE LABEL ITSELF, NOT ONLY THAT ONE IS SAID (the review of row 5b-389).
+    The checks above passed with revit_views' pin refusal labelled "ok", with
+    revit_rooms' NotBound labelled "ok", with revit_building_loads' Companion
+    switched off labelled nothing, and with revit_views' reply label said only
+    for a good reply - each a refusal or failure shown as OK again, which is
+    the defect the row names. So each kind of ending is read in the one form
+    that says it right, and every place it occurs in a single-purpose tool
+    must be in that form: one form for each, counted, never sampled.
+    """
+    forms = (
+        ("several Revits and none chosen (NotBound) is 'refused'",
+         r"except NotBound as unbound:\n",
+         r"except NotBound as unbound:\n        return _ended\(\"refused\", str\(unbound\)\)\n",
+         ()),
+        ("a distance it cannot read is 'refused'",
+         r"except BadDistance as bad:\n",
+         r"except BadDistance as bad:\n        return _ended\(\"refused\", str\(bad\)\)\n",
+         ()),
+        ("the pin's refusal is 'refused'",
+         r"return [^\n]*\bwrong_model\b",
+         r"return _ended\(\"refused\", wrong_model\)\n",
+         ()),
+        ("the Companion switched off is 'refused', said before its answer",
+         r"if not companion_page\.enabled\(\):\n",
+         r"if not companion_page\.enabled\(\):\n        _ended\(\"refused\"\)\n        return \(",
+         # Says "refused" once, before every early return - read below.
+         ("revit_offer_settings",)),
+        ("revit_read's answer, handed back, carries revit_read's own label",
+         r"if not isinstance\(reply, dict\) or not reply\.get\(\"ok\"\):\n",
+         r"if not isinstance\(reply, dict\) or not reply\.get\(\"ok\"\):\n"
+         r"        return _ended\(out\.get\(\"ended\"\), said\)\n",
+         ()),
+        ("the pin's refusal after revit_read is 'refused', and a good read 'ok'",
+         r"if pinned\.check\(reply\):\n",
+         r"if pinned\.check\(reply\):\n        return _ended\(\"refused\", said\)\n"
+         r"    _ended\(\"ok\"\)\n",
+         ()),
+        ("the brain not there is 'failed'",
+         r"except brain\.BrainUnavailable as why:\n",
+         r"except brain\.BrainUnavailable as why:\n"
+         r"        return _ended\(\"failed\", str\(why\)\)\n",
+         ()),
+        ("the brain's own 'Nothing was calculated / solved / laid out' is 'failed'",
+         r"is None:\n        return [^\n]*answer\[\"said\"\]",
+         r"is None:\n        return _ended\(\"failed\", answer\[\"said\"\]\)\n",
+         ()),
+    )
+    for what, anywhere, right, exempt in forms:
+        places = sum(len(re.findall(anywhere, bodies[name])) for name in single
+                     if name not in exempt)
+        wrong = [name for name in single if name not in exempt
+                 and len(re.findall(anywhere, bodies[name]))
+                 != len(re.findall(right, bodies[name]))]
+        check(places and not wrong,
+              "%s, in the one form that says so, at every place (%d read): not so in %s"
+              % (what, places, wrong))
+
+    # THE REPLY'S LABEL IS SAID WHATEVER THE REPLY - straight after the one
+    # request is closed, never under a condition that skips a lost answer or
+    # a refusal and leaves it to the guess.
+    loose = [name for name in single if "session.request(" in bodies[name]
+             and not re.search(r"\n    session\.close\(\)\n(?:    #[^\n]*\n)*"
+                               r"    _ended_by_reply\(\"%s\", reply\)\n" % name, bodies[name])]
+    check(not loose, "each reply is labelled unconditionally, straight after its request "
+          "is closed: not so in %s" % loose)
+
+    offer = bodies.get("revit_offer_settings", "")
+    first_return = offer.find("return ")
+    check(0 <= offer.find('\n    _ended("refused")\n') < first_return
+          and offer.count('_ended("ok")') == 1
+          and re.search(r'\n    _ended\("ok"\)\n    return \("Offered on the Heron Companion',
+                        offer) is not None,
+          "revit_offer_settings says 'refused' before its first early return, and 'ok' only "
+          "where the table is offered")
+
+    picked = bodies.get("revit_select_by_category", "")
+    check(re.search(r'if reply\.get\("selected"\):\n(?:            #[^\n]*\n)*'
+                    r'            _ended\("failed"\)\n            return \("Heron SELECTED',
+                    picked) is not None,
+          "revit_select_by_category: a selection the add-in already made in another model "
+          "is 'failed' - something happened, so it is not refused, and not ok")
+
+    health = bodies.get("revit_health", "")
+    check(re.search(r'\n        _ended\("failed"\)\n        return \("Heron could not read its '
+                    r'own session list', health) is not None
+          and 'return _ended("ok", "\\n".join(lines))' in health,
+          "revit_health: a session list it could not read is 'failed', a report it made 'ok'")
+
+    chose = bodies.get("revit_use_session", "")
+    check(re.search(r'\n    _ended\("ok"\)\n    return \("Now working with Revit', chose)
+          is not None,
+          "revit_use_session: the choice made is 'ok'")
+
+    ended_at = through.find('reply_out["ended"] = getattr(_ctx, "outcome", None)')
+    restored_at = through.find('_ctx.reply_out, _ctx.origin, _ctx.outcome = None, "chat", kept')
+    check(0 <= ended_at < restored_at,
+          "and _through reads the body's label BEFORE it puts the caller's back - read after, "
+          "it is the caller's own word, and a refusal handed back is left to the guess")
 
 
 def test_changes():

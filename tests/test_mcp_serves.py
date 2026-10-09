@@ -73,7 +73,12 @@ WHAT IT PROVES, when an SDK is installed
      words handed back are "handed_back", not refused; an add-in refusal
      whose first line never says so is "refused" on both doors; a good read
      is "ok"; and what a body run on another tool's behalf says never
-     labels that tool's line.
+     labels that tool's line. AND THE SINGLE-PURPOSE TOOLS (row 5b-389):
+     revit_levels and revit_select_by_category read back "refused" with
+     several Revits connected and for the add-in's no_document and the pin,
+     "failed" for a lost answer and revit_busy, and "ok" for a good reply
+     from a model whose very name says Failed; revit_edit_table hands back
+     the label revit_read gave the answer it hands back.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -809,6 +814,224 @@ async def exercise_activity(module):
                   "tool's line - found %r" % got[:1])
             check(got[1:] == [("revit_probe_says", "refused")],
                   "and a tool's own word wins over its first line - found %r" % got[1:])
+    finally:
+        del module.binding.resolve
+        module.pinned.forget()
+
+    await exercise_single_purpose(module, server, newest)
+
+
+async def exercise_single_purpose(module, server, newest):
+    """
+    Section 11, continued: the SINGLE-PURPOSE tools say how they ended too
+    (row 5b-389). Before it they said nothing, and the list guessed from the
+    first line - which NotBound, with several Revits connected, opens with
+    "2 Revit sessions are connected, so it is not safe to guess which one you
+    mean:", saying nothing was sent only on its last line. So it read ok.
+
+    EVERY TOOL, NOT TWO OF THEM. The review of the first version changed one
+    tool's label at a time - revit_views' pin refusal to "ok", revit_rooms'
+    NotBound to "ok", revit_building_loads' Companion switched off to nothing
+    - and checks that called only revit_levels and revit_select_by_category
+    stayed green. So each tool of the one shape (resolve, one request, the
+    pin) is called through the SDK for every ending, and one the server
+    labels that this list leaves out is a FAIL, so a new one is not missed.
+    """
+    activity = module._companion_module().ACTIVITY
+    print()
+    print("  how the single-purpose tools ended, on the same list (row 5b-389)")
+
+    async def told(tool, arguments):
+        """(the answer, the outcome of each line this call added for `tool`)."""
+        before = newest()
+        try:
+            said = text_of(await server.call_tool(tool, arguments)) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return ("(%s could not be called: %s: %s)" % (tool, type(exc).__name__, exc),
+                    [])
+        return said, [i.get("outcome") for i in activity.since(before)
+                      if i.get("tool") == tool]
+
+    tools = (("revit_select_by_category", {"category": "ducts"}), ("revit_levels", {}),
+             ("revit_links", {}), ("revit_preview_move", {"category": "ducts", "distance": "200"}),
+             ("revit_use_this_model", {}), ("revit_phases", {}), ("revit_worksets", {}),
+             ("revit_views", {}), ("revit_sheets", {}), ("revit_rooms", {}),
+             ("revit_schedules", {}), ("revit_families", {}), ("revit_export_check", {}),
+             ("revit_imports", {}), ("revit_annotation", {}), ("revit_systems", {}),
+             ("revit_parameters", {"category": "ducts"}), ("revit_groups", {}))
+    with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                 encoding="utf-8") as fh:
+        shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', fh.read()))
+    left_out = sorted(shaped - set(tool for tool, _arguments in tools))
+    check(not left_out, "every tool that labels its one reply is called here (%d listed): "
+          "left out %s" % (len(tools), left_out))
+
+    def wrong(results):
+        """The tools whose outcome was not the one expected, with what was found."""
+        return ["%s %r" % (tool, got) for tool, got, fine in results if not fine]
+
+    # SEVERAL REVITS, THROUGH THE REAL SessionBinding.resolve over two
+    # stand-ins, so the refusal is NotBound's own text and not a copy of it.
+    one, two = StandIn({"ok": True}), StandIn({"ok": True})
+    two.pid = 4343
+    module.binding.forget()
+    module.pinned.forget()
+    module.binding.sessions = lambda: ([one, two], [], [])
+    try:
+        results = []
+        for tool, arguments in tools:
+            one.asked[:], two.asked[:] = [], []
+            said, got = await told(tool, arguments)
+            sent = [op for op, _args, _idem in one.asked + two.asked if op != "info"]
+            results.append((tool, (got, sent, (said.splitlines() or [""])[0][:60]),
+                            said.startswith("2 Revit sessions are connected, so it is not "
+                                            "safe to guess")
+                            and got == ["refused"] and not sent))
+        check(not wrong(results),
+              "several Revits connected is 'refused' on all %d, and neither was sent "
+              "anything but the lease-exempt `info`: not so for %s"
+              % (len(results), wrong(results)))
+
+        # revit_use_session ANSWERS THAT REFUSAL: a session it cannot find is
+        # refused, and the choice made is ok.
+        said, got = await told("revit_use_session", {"session": "9"})
+        check(got == ["refused"] and said.startswith("There is no session 9"),
+              "revit_use_session: a session that is not there is 'refused' - found %r" % got)
+        two.reply = {"ok": True, "document": "Project2", "projectKey": "key-2", "count": 4}
+        said, got = await told("revit_use_session", {"session": "4343"})
+        check(got == ["ok"] and said.startswith("Now working with Revit"),
+              "revit_use_session: the choice made is 'ok' - found %r" % got)
+    finally:
+        del module.binding.sessions
+        module.binding.forget()
+        module.pinned.forget()
+
+    # revit_health MAKES A REPORT, which is ok whatever it reports, and fails
+    # only when it cannot read its own session list.
+    said, got = await told("revit_health", {})
+    check(got == ["ok"], "revit_health: a report made is 'ok' - found %r" % got)
+    real_discover = module.bridge.discover
+
+    def unreadable():
+        raise OSError("the session folder could not be read")
+
+    module.bridge.discover = unreadable
+    try:
+        said, got = await told("revit_health", {})
+    finally:
+        module.bridge.discover = real_discover
+    check(got == ["failed"] and said.startswith("Heron could not read its own session list"),
+          "revit_health: a session list it could not read is 'failed' - found %r" % got)
+
+    revit = StandIn(None)
+    module.binding.resolve = lambda: revit
+    module.pinned.forget()
+    busy = {"ok": False, "error": "revit_busy",
+            "message": "Revit is busy and did not take the request. A dialog may be open, "
+                       "or a command may be running. Finish what is open in Revit and ask "
+                       "again."}
+    no_model = {"ok": False, "error": "no_document",
+                "message": "No model is open in Revit. Open one and ask again."}
+    # A MODEL WHOSE OWN NAME CARRIES A WORD THE GUESS READS AS FAILURE: the
+    # answer's first line names the model, and a good answer is still ok.
+    plain = {"ok": True, "document": "Pump Failed Retrofit", "projectKey": "key-9"}
+    good = {"revit_levels": {"ok": True, "document": "Pump Failed Retrofit",
+                             "projectKey": "key-9", "grids": [],
+                             "levels": [{"name": "Level 1", "elevation": "0", "elements": 3}]},
+            "revit_select_by_category": {"ok": True, "document": "Pump Failed Retrofit",
+                                         "projectKey": "key-9", "selected": 3,
+                                         "category": "ducts", "categories": 1,
+                                         "scope": "the whole model"}}
+    try:
+        refused, failed, fine, pinned_out = [], [], [], []
+        for tool, arguments in tools:
+            module.pinned.forget()
+            revit.reply = no_model
+            _said, got = await told(tool, arguments)
+            refused.append((tool, got, got == ["refused"]))
+
+            revit.reply = None
+            _said, lost = await told(tool, arguments)
+            revit.reply = busy
+            _said, got = await told(tool, arguments)
+            failed.append((tool, lost + got, lost + got == ["failed", "failed"]))
+
+            revit.reply = good.get(tool, plain)
+            said, got = await told(tool, arguments)
+            fine.append((tool, got, got == ["ok"]
+                         and "Pump Failed Retrofit" in (said.splitlines() or [""])[0]))
+
+            # THE PIN'S REFUSAL, with the chat pinned to a model whose name
+            # the guess has no word in, so the label is the tool's alone.
+            module.pinned.forget()
+            module.pinned.check({"ok": True, "document": "Project1", "projectKey": "key-1"})
+            revit.reply = dict(good.get(tool, plain), document="Project2",
+                               projectKey="key-2", selected=0)
+            said, got = await told(tool, arguments)
+            if tool == "revit_use_this_model":
+                # MOVING THE PIN IS THIS TOOL'S WORK, so another model is ok.
+                pinned_out.append((tool, got, got == ["ok"] and said.startswith(
+                    "This chat is now working on Project2")))
+            else:
+                pinned_out.append((tool, got, got == ["refused"] and said.startswith(
+                    "This chat has been working on Project1, but Project2")))
+        check(not wrong(refused), "the add-in's no_document is 'refused' on all %d: not so "
+              "for %s" % (len(refused), wrong(refused)))
+        check(not wrong(failed), "a lost answer and the add-in's revit_busy are 'failed' on "
+              "all %d: not so for %s" % (len(failed), wrong(failed)))
+        check(not wrong(fine), "a good reply is 'ok' on all %d, though the model's name says "
+              "'Failed': not so for %s" % (len(fine), wrong(fine)))
+        check(not wrong(pinned_out), "another model, refused by the pin, is 'refused' on all "
+              "%d (and revit_use_this_model, whose work is to move the pin, 'ok'): not so "
+              "for %s" % (len(pinned_out), wrong(pinned_out)))
+
+        # A SELECTION ALREADY MADE in the other model is not a refusal. The
+        # chat is still pinned to Project1.
+        revit.reply = dict(good["revit_select_by_category"], document="Project2",
+                           projectKey="key-2", selected=12)
+        said, got = await told("revit_select_by_category", {"category": "ducts"})
+        check(got == ["failed"] and said.startswith("Heron SELECTED 12"),
+              "revit_select_by_category: a selection made in another model is 'failed', "
+              "not refused and not ok - found %r" % got)
+
+        # THE TOOLS THAT HAND BACK revit_read's ANSWER HAND BACK HOW IT ENDED,
+        # and the Companion switched off is refused by every Companion tool.
+        companion_tools = (("revit_edit_table", {"parameters": "Mark"}),
+                           ("revit_building_loads", {}),
+                           ("revit_sprinkler_hydraulics", {}),
+                           ("revit_sprinkler_layout", {}))
+        config = os.path.join(os.environ["HERON_KNOWLEDGE"], "heron.config")
+        had_config = os.environ.get("HERON_CONFIG")
+        os.environ["HERON_CONFIG"] = config
+        try:
+            with io.open(config, "w", encoding="utf-8") as fh:
+                fh.write(u"companion.enabled=false\n")
+            off = []
+            for tool, arguments in companion_tools + (
+                    ("revit_offer_settings", {"capability": "APPLY_VIEW_FILTER",
+                                              "values": "filterName=x"}),):
+                said, got = await told(tool, arguments)
+                off.append((tool, got, got == ["refused"] and "switched off" in said))
+            check(not wrong(off), "the Companion switched off is 'refused' on all %d: not "
+                  "so for %s" % (len(off), wrong(off)))
+            with io.open(config, "w", encoding="utf-8") as fh:
+                fh.write(u"companion.enabled=true\n")
+            handed = []
+            for tool, arguments in companion_tools:
+                module.pinned.forget()
+                revit.reply = no_model
+                _said, was_refused = await told(tool, arguments)
+                revit.reply = busy
+                _said, was_failed = await told(tool, arguments)
+                handed.append((tool, was_refused + was_failed,
+                               was_refused + was_failed == ["refused", "failed"]))
+            check(not wrong(handed), "revit_read's refusal and failure, handed back, keep "
+                  "their labels on all %d: not so for %s" % (len(handed), wrong(handed)))
+        finally:
+            if had_config is None:
+                os.environ.pop("HERON_CONFIG", None)
+            else:
+                os.environ["HERON_CONFIG"] = had_config
     finally:
         del module.binding.resolve
         module.pinned.forget()

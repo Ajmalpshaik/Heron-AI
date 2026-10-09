@@ -301,9 +301,15 @@ refused / failed / handed back · how long**. For example:
 - **How it ended is the tool's to say** ([FRAGMENT-ISSUES row 5b-274](FRAGMENT-ISSUES.md)):
   `revit_read`, `revit_change` and `revit_apply_move` pass it to `record(outcome=...)` - **OK** or
   **failed** from the add-in's reply, **refused** for a refusal on either side, and **handed back**
-  when the words path sends the candidates back to the chat and nothing to Revit. Only a call whose
-  tool said nothing is still read from its first line, as before; a tool run inside another never
-  labels the outer one's line.
+  when the words path sends the candidates back to the chat and nothing to Revit. Since
+  [row 5b-389](FRAGMENT-ISSUES.md) every other `revit_*` tool says it too: **refused** when it stopped
+  before anything was sent - several Revits connected and none chosen among them. Those that send
+  the add-in one request label its reply the way the three doors label theirs (`_ended_by_reply`),
+  except `revit_use_session`, which is **OK** once the choice is made (its count only names the model);
+  `revit_health` is **OK** for a report and **failed** when it cannot read its own session list, and
+  the four that hand back `revit_read`'s answer hand back its label too. Only a call whose tool
+  said nothing is still read from its first line, as before; a tool run inside another never labels
+  the outer one's line unless the outer tool hands that answer back as its own.
 - **What it does not show:** anything another chat or a command-line run did. The add-in's audit
   trail (`audit-YYYYMM.jsonl`, one line per request, all clients) has that, and a later step can show
   it read-only. **NEEDS_REVIEW** whether V1 should include it.
