@@ -1559,6 +1559,37 @@ backend believing they are on the better one.**
 **It does not install anything**, and it does not check that an installed version is the right one.
 Saying so is better than a tool that half-installs.
 
+## `heron-ready.py` — a new PC made as quick as the old one, before the first chat
+
+```bash
+python tools/heron-ready.py           # check, then build what a first chat would wait for
+python tools/heron-ready.py --check   # check only
+python tools/heron-ready.py --snapshot this-pc.json   # what this PC has, to set beside another's
+```
+
+**Written 2026-10-09, because a new laptop's first *"create a family"* took over seven minutes where
+the office PC took one or two.** Nothing in Heron was slower. The office PC already had the knowledge
+store built and the search model downloaded - both left for the first chat to do - and a package
+missing on the new one leaves Claude with no Heron tools, or tools answering *"needs PyYAML"*, after
+which Claude works the job out by reading this repository.
+
+It checks that the plain command `python` is a real Python and not the Microsoft Store shortcut
+(Claude Code starts Heron with `python`), that PyYAML and the MCP package import, and that the server
+loads; then it **builds the knowledge store** (only where a chat's own start-up would -
+`heron_brain._store_warm_allowed`), **downloads the search model once** if `model2vec` is installed,
+and compiles Heron's Python. It reads the Revit add-in folders and the Changes / Admin / Publish
+switches and changes neither. **It installs nothing**, for [Q-39](../docs/open-questions/answered.md)'s
+reason: a missing package is named with its command. Exits 1 while anything **required** is missing.
+Held by `tests/test_heron_ready.py`.
+
+**`--snapshot` is for comparing two PCs without sending either one's folders** - several of those hold
+the owner's Claude login, and Claude's memory holds his own words. It writes names, sizes, versions and
+yes/no: Python and the packages, the knowledge store and search model on disk, the add-in releases and
+the ribbon switches, the Heron tools Claude Code lets run unasked, its approvals for the Heron folder,
+how many lines Claude remembers about Heron, and three timed lookups. **No file's contents** - only the
+few settings keys `SETTINGS_KEYS` and `PROJECT_KEYS` name - which the suite holds by planting a key, an
+address, memory text and a chat and checking none comes out.
+
 ## `owner-queue.py` — what is waiting on the OWNER, derived rather than typed
 
 ```bash

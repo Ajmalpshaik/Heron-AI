@@ -1314,6 +1314,7 @@ def _by_words(request, door, values):
                      "so this is a ranked guess - and which one the user meant "
                      "is yours to decide, not Heron's (D-01).")
 
+    lines.extend(_method_lines(found))
     lines.append("")
     lines.append("  best match   %s   (%s)"
                  % (capability, found.get("risk") or "risk unread"))
@@ -3229,6 +3230,82 @@ def heron_capabilities() -> str:
     return "\n".join(lines)
 
 
+@server.tool()
+def heron_method(job: str = "") -> str:
+    """
+    The whole method for a job of several steps - building a family, laying
+    out terminals, a building shell - in the order the steps must happen,
+    what must be true first, and each capability it uses with its risk.
+
+    Call it ONCE, before the first step, when heron_lookup or a hand-back
+    names a job with a method, or the modeller asks for something that is
+    plainly more than one call. Empty `job` lists every job by id. This is
+    everything Heron holds about how the job is done: nothing in Heron's own
+    folder needs reading. Reads only files that shipped with Heron.
+    """
+    revit, _how = _revit_version()
+    try:
+        found = brain.method(job, revit=revit)
+    except brain.BrainUnavailable as why:
+        return str(why)
+
+    if found is None:
+        lines = ["Heron has no job called \"%s\". The jobs it has a method "
+                 "for:" % job]
+        jobs = brain.method("", revit=revit)["jobs"]
+    elif "jobs" in found:
+        lines = ["The jobs Heron has a method for - pass one as `job`:"]
+        jobs = found["jobs"]
+    else:
+        jobs = None
+    if jobs is not None:
+        for j in jobs:
+            lines.append("  %-34s uses %2d  %s" % (j["id"], j["uses"], j["name"]))
+        return "\n".join(lines)
+
+    lines = ["%s - %s" % (found["id"], found["name"]),
+             "  status   %s - the job as a whole has not been watched working "
+             "on a real model unless this says PROVEN; each step's own status "
+             "is below" % found["status"],
+             "  risk     %s at most" % found["risk"],
+             ""]
+    if found["preconditions"]:
+        lines.append("Before the first step:")
+        for p in found["preconditions"]:
+            lines.append("  - %s" % p)
+        lines.append("")
+    lines.append("The method, in order:")
+    lines.extend("  " + line for line in found["purpose"].rstrip().splitlines())
+    lines.append("")
+    lines.append("The capabilities it uses%s - READ and ANALYZE run through "
+                 "revit_read, the rest through revit_change:"
+                 % (" on Revit %s" % revit if revit else ""))
+    for s in found["uses"]:
+        lines.append("  %-32s %-8s %-9s %s"
+                     % (s["capability"], s["risk"] or "-", s["status"] or "-",
+                        s["missing"] or ""))
+    lines.append("")
+    lines.append("Each step's values: heron_resolve <capability>, or call it "
+                 "with request= and the hand-back says what to type.")
+    lines.append(_cannot_run())
+    return "\n".join(lines)
+
+
+def _method_lines(found):
+    """The jobs a lookup's answer is one step of - heron_brain.lookup's
+    `methods` - as the lines that send the host to heron_method instead of to
+    Heron's own files. Nothing when there are none."""
+    methods = found.get("methods") or []
+    if not methods:
+        return []
+    lines = ["", "  A JOB WITH A METHOD. This looks like one step of:"]
+    for m in methods:
+        lines.append("      %-32s uses %2d  %s" % (m["id"], m["uses"], m["name"]))
+    lines.append("  If it is, call heron_method(job=\"%s\") once for every step "
+                 "in order, before the first one." % methods[0]["id"])
+    return lines
+
+
 def _contract_lines(capability, separator=True):
     """
     What the CALLER has to type to run this capability, and how to write each.
@@ -3441,6 +3518,7 @@ def heron_lookup(request: str) -> str:
     # lookup, then resolve, then the run. One copy of the wording: the
     # function heron_resolve prints is called, not retyped.
     lines.extend(_contract_lines(found["capability"]))
+    lines.extend(_method_lines(found))
 
     # A QUESTION ANSWERED BY SOMETHING THAT WRITES.
     #

@@ -175,6 +175,9 @@ TOOLS = {
     "heron_capabilities":       (READ,    None),
     "heron_resolve":            (READ,    None),
     "heron_lookup":             (READ,    None),
+    # A job's whole method - a skill's ordered steps - so a chat is handed
+    # how a family is built instead of reading the skill file off disk.
+    "heron_method":             (READ,    None),
 
     # The Context Manager (docs/19 s1-s2). READ and no operation for the same
     # reason as the three above: it assembles what an agent would be GIVEN and
@@ -371,7 +374,12 @@ ALSO_REACHES = {
 # are the first-time checks a modeller's chat makes. Loading a tool's
 # description changes nothing about what it may do: its risk and labels above
 # are unchanged, and the host still asks before a tool it was told can write.
-ALWAYS_LOADED = ("heron_lookup", "revit_read", "revit_change",
+#
+# heron_method joined them on 2026-10-09: a lookup that names a job with a
+# method sends the host straight to it, and a deferred tool there costs the
+# search turn this list exists to save - on the one request, a family, where
+# a chat with no memory of Heron otherwise read the method off disk.
+ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
                  "revit_health", "revit_levels")
 
 
