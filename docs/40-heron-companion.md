@@ -289,7 +289,7 @@ When several Revits are live, the page shows the one this chat is bound to (`bin
 ## 7. Phase 2 — the activity log
 
 Every Heron tool call this chat makes appears as a line: **time · tool · one-line summary · OK /
-refused / failed · how long**. For example:
+refused / failed / handed back · how long**. For example:
 *14:02:11 · revit_change · OVERRIDE_GRAPHICS_IN_VIEW ran in heron ai bulding · OK · 1.8 s*.
 
 - **Where it comes from:** the `_Labelled` subclass that already wraps every `@server.tool()` in
@@ -298,6 +298,12 @@ refused / failed · how long**. For example:
   `functools.wraps`, so each tool's signature — which `tests/test_mcp_serves.py` reads back from the
   real SDK — is unchanged. A fault in the recorder is caught and dropped; it can never change a tool's
   answer.
+- **How it ended is the tool's to say** ([FRAGMENT-ISSUES row 5b-274](FRAGMENT-ISSUES.md)):
+  `revit_read`, `revit_change` and `revit_apply_move` pass it to `record(outcome=...)` - **OK** or
+  **failed** from the add-in's reply, **refused** for a refusal on either side, and **handed back**
+  when the words path sends the candidates back to the chat and nothing to Revit. Only a call whose
+  tool said nothing is still read from its first line, as before; a tool run inside another never
+  labels the outer one's line.
 - **What it does not show:** anything another chat or a command-line run did. The add-in's audit
   trail (`audit-YYYYMM.jsonl`, one line per request, all clients) has that, and a later step can show
   it read-only. **NEEDS_REVIEW** whether V1 should include it.

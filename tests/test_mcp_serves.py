@@ -68,6 +68,12 @@ WHAT IT PROVES, when an SDK is installed
      either; and EVERY candidate handed back carries what it needs typed
      (three findings from review on PR #369). The text served is the text
      the tool returned, read once (row 5b-263).
+ 11. HOW EACH CALL ENDED, READ BACK OFF THE COMPANION'S ACTIVITY LIST - as
+     the tool said it, never guessed from its first line (row 5b-274). The
+     words handed back are "handed_back", not refused; an add-in refusal
+     whose first line never says so is "refused" on both doors; a good read
+     is "ok"; and what a body run on another tool's behalf says never
+     labels that tool's line.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -699,6 +705,115 @@ async def exercise_words(module):
         module.pinned.forget()
 
 
+async def exercise_activity(module):
+    """Section 11: how each call ended, off the Companion's activity list."""
+    server = module.server
+
+    print()
+    print("  how each call ended, on the Companion's activity list (row 5b-274)")
+    try:
+        activity = module._companion_module().ACTIVITY
+    except Exception as exc:                                    # noqa: BLE001
+        check(False, "the Companion's activity list can be read: %s: %s"
+              % (type(exc).__name__, exc))
+        return
+
+    def newest():
+        items = activity.since(0)
+        return items[-1]["seq"] if items else 0
+
+    async def ended(tool, arguments):
+        """The outcome of each line this one call added for `tool`."""
+        before = newest()
+        try:
+            await server.call_tool(tool, arguments)
+        except Exception as exc:                                # noqa: BLE001
+            return ["(%s could not be called: %s: %s)" % (tool, type(exc).__name__, exc)]
+        return [i.get("outcome") for i in activity.since(before) if i.get("tool") == tool]
+
+    reply = {"ok": True, "ran": "x", "document": "Project1",
+             "documentPath": "C:/jobs/Project1.rvt", "projectKey": "key-1",
+             "wasActiveDocument": True, "bound": "all as given",
+             "provides": {"found": "2 item(s) [Level 1, Level 2]"},
+             "providesCount": 1}
+    revit = StandIn(reply)
+    module.binding.resolve = lambda: revit
+    module.pinned.forget()
+    try:
+        for door in ("revit_read", "revit_change"):
+            got = await ended(door, {"request": "what is the best food for a cat"})
+            check(got == ["handed_back"],
+                  "%s: the words handed back are 'handed_back', not a refusal - "
+                  "found %r" % (door, got))
+
+        capability, _folder = first_with("READ", "PROVEN")
+        got = await ended("revit_read", {"capability": capability})
+        check(got == ["ok"], "a read the add-in answered ok is 'ok' - found %r" % got)
+
+        # THE TWO THE A20 RUN READ AS OK: refusals the add-in wrote, whose
+        # first line never says "refused".
+        for code, message in (
+                ("chain_mismatch",
+                 "This request expects values left by 'find-views', but what is "
+                 "carried was left by 'select-by-categories'. Binding them anyway is "
+                 "how a job acts on elements nobody remembers collecting. NOTHING WAS "
+                 "BOUND and no fragment ran."),
+                ("needs_unbound",
+                 "Cannot run: 'elements' was never supplied. Nothing is selected in "
+                 "Revit, and no earlier fragment in this session left a value of that "
+                 "name.")):
+            revit.reply = {"ok": False, "error": code, "message": message}
+            got = await ended("revit_read", {"capability": capability,
+                                             "expect_from": "find-views"})
+            check(got == ["refused"],
+                  "revit_read: the add-in's %s is 'refused' - found %r" % (code, got))
+
+        revit.reply = {"ok": False, "error": "unknown_outcome",
+                       "message": "The request reached Revit but the answer was lost."}
+        got = await ended("revit_read", {"capability": capability,
+                                         "expect_from": "find-views"})
+        check(got == ["failed"], "a consuming read whose answer was lost is 'failed' - "
+              "found %r" % got)
+
+        writer, _folder = first_with("MODIFY", "PROVEN")
+        revit.reply = {"ok": False, "error": "chain_empty",
+                       "message": "This request expects values left by 'find-views', and "
+                                  "nothing is carried for this chat on 'Project1'. NOTHING "
+                                  "WAS BOUND and no fragment ran."}
+        got = await ended("revit_change", {"capability": writer,
+                                           "expect_from": "find-views"})
+        check(got == ["refused"],
+              "revit_change: the add-in's chain_empty is 'refused' - found %r" % got)
+
+        # A TOOL SPEAKS ONLY FOR ITSELF.
+        say = getattr(module, "_ended", None)
+        check(say is not None, "the server has a way for a tool to say how it ended")
+        if say is not None:
+            def revit_probe_inner():
+                return say("refused", "No.")
+
+            def revit_probe():
+                module._through(revit_probe_inner)()
+                module._recorded(revit_probe_inner)()
+                return "Done."
+
+            def revit_probe_says():
+                return say("refused", "All went as asked.")
+
+            before = newest()
+            module._recorded(revit_probe)()
+            module._recorded(revit_probe_says)()
+            got = [(i.get("tool"), i.get("outcome")) for i in activity.since(before)]
+            check(got[:1] == [("revit_probe", "ok")],
+                  "what a body run on another tool's behalf says never labels that "
+                  "tool's line - found %r" % got[:1])
+            check(got[1:] == [("revit_probe_says", "refused")],
+                  "and a tool's own word wins over its first line - found %r" % got[1:])
+    finally:
+        del module.binding.resolve
+        module.pinned.forget()
+
+
 async def exercise_earlier(module):
     """
     FRAGMENT-ISSUES 5b-324, through the SDK's own dispatch: a model made from
@@ -870,6 +985,7 @@ def main():
         asyncio.run(exercise(server))
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_words(server_module))
+        asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
 
         print()

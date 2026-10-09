@@ -104,6 +104,7 @@ from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
                          describe_vertical, parse_millimetres, skipped_sentence)
 from heron_failure import analyse, explain          # noqa: E402
+from heron_failure import REFUSED as FAILURE_REFUSED  # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
@@ -252,16 +253,45 @@ def _from_chat():
 
 def _through(tool, reply_out=None, origin="chat"):
     """Call a tool's own body - not its registered wrapper, so the activity
-    list is not given a second line for it - with the side channel set."""
+    list is not given a second line for it - with the side channel set.
+
+    What the body says of how it ended is its own and is dropped here: a
+    read run on another tool's behalf never labels that tool's line."""
     body = getattr(tool, "__wrapped__", tool)
 
     def call(*a, **k):
+        kept = getattr(_ctx, "outcome", None)
         _ctx.reply_out, _ctx.origin = reply_out, origin
         try:
             return body(*a, **k)
         finally:
-            _ctx.reply_out, _ctx.origin = None, "chat"
+            _ctx.reply_out, _ctx.origin, _ctx.outcome = None, "chat", kept
     return call
+
+
+def _ended(outcome, answer=None):
+    """
+    HOW THIS CALL ENDED, said by the code that knows - for the Companion's
+    activity list - and the answer handed back unchanged, so a tool writes
+    `return _ended("refused", text)` (row 5b-274).
+
+    The list used to guess it from the answer's first line, and got two
+    kinds of reply backwards: a words-path hand-back was labelled refused,
+    and an add-in refusal whose first line said nothing of refusing was
+    labelled OK. Say "ok", "refused", "failed" or "handed_back"
+    (heron_companion.Activity.OUTCOMES); a call that says nothing is still
+    guessed, as before. Display only: it never changes the answer.
+    """
+    _ctx.outcome = outcome
+    return answer
+
+
+def _failure_ended(failure):
+    """A classified bridge failure's label: a refusal only when Revit or the
+    add-in said no (heron_failure's REFUSED). Never ran, still running,
+    rolled back and an unknown outcome all mean the work was not done as
+    asked, which the list calls failed."""
+    return "refused" if failure.outcome == FAILURE_REFUSED else "failed"
 
 
 def _recorded(fn):
@@ -284,6 +314,10 @@ def _recorded(fn):
     def _run(*a, **k):
         outer = not getattr(_depth, "busy", False)
         _depth.busy = True
+        # HOW IT ENDED, AS THE TOOL SAID IT (_ended, row 5b-274). Emptied
+        # before the call and put back after, so a tool called inside
+        # another never speaks for the outer one's line.
+        kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
         started, clock = time.strftime("%H:%M:%S"), time.time()
         try:
             reply = fn(*a, **k)
@@ -292,10 +326,11 @@ def _recorded(fn):
                 _note(fn.__name__, started, time.time() - clock, error=error)
             raise
         finally:
+            said, _ctx.outcome = getattr(_ctx, "outcome", None), kept
             if outer:
                 _depth.busy = False
         if outer:
-            _note(fn.__name__, started, time.time() - clock, reply=reply)
+            _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
         return reply
     return run
 
@@ -843,13 +878,15 @@ def revit_apply_move() -> str:
     """
     token, summary = approval.take()
     if token is None:
-        return ("There is nothing waiting to be approved. Ask for the change and Heron "
-                "will show what it would do first. Nothing has been sent to Revit.")
+        return _ended("refused",
+                      "There is nothing waiting to be approved. Ask for the change and "
+                      "Heron will show what it would do first. Nothing has been sent "
+                      "to Revit.")
 
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     # idempotent=False, and this is the whole reason that flag exists. If the
     # answer is lost after the request left this machine, whether Revit ran it
@@ -876,7 +913,7 @@ def revit_apply_move() -> str:
     # happened.
     failure = analyse(reply, writes=tools.writes("revit_apply_move"))
     if failure is not None:
-        return explain(failure)
+        return _ended(_failure_ended(failure), explain(failure))
 
     moved = "{:,}".format(reply.get("moved", 0))
     lines = ["Moved %s %s %s in %s." % (moved, reply.get("category"),
@@ -922,7 +959,7 @@ def revit_apply_move() -> str:
     lines.append("One Ctrl+Z in Revit puts this back - it is a single undo step called "
                  "\"%s\"." % reply.get("undoEntry"))
 
-    return "\n".join(lines)
+    return _ended("ok", "\n".join(lines))
 
 
 def _fragment_for(capability):
@@ -1270,19 +1307,24 @@ def _by_words(request, door, values):
     fragment's author wrote down as meaning this. Every other case goes back
     to the host with the candidates AND what each needs typed, so the next
     call is the run itself rather than another lookup.
+
+    A REPLY HANDED BACK IS NOT A REFUSAL, and the activity list is told so
+    (_ended, row 5b-274): the words did not settle one capability, so the
+    choice went back to the host - with no candidates at all when nothing
+    is close. Only a brain that cannot be read is a failure.
     """
     revit, _how = _revit_version()
     try:
         found = brain.lookup(request, revit=revit)
     except brain.BrainUnavailable as why:
-        return None, str(why)
+        return None, _ended("failed", str(why))
 
     capability = found.get("capability")
     if not capability:
-        return None, "\n".join(
+        return None, _ended("handed_back", "\n".join(
             ["Heron has no way of doing \"%s\", so nothing has been sent to "
              "Revit. Run heron_capabilities to see what it does know." % request]
-            + _drift_lines(found, indent="", gap=False))
+            + _drift_lines(found, indent="", gap=False)))
 
     exact = found.get("route") == "identity" and found.get("autorun")
     missing, withheld = [], ""
@@ -1344,7 +1386,7 @@ def _by_words(request, door, values):
     lines.append("  If one of these is what the user meant, call %s again with "
                  "capability=<it> and its values. If none is, ask the user."
                  % door)
-    return None, "\n".join(lines)
+    return None, _ended("handed_back", "\n".join(lines))
 
 
 def _matched_line(request, capability):
@@ -1423,9 +1465,10 @@ def revit_change(capability: str = "", values: str = "",
 
     folder, status = _fragment_for(capability)
     if folder is None:
-        return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
-                "Ask heron_lookup in your own words and it will name the capability "
-                "Heron does have." % (capability or ""))
+        return _ended("refused",
+                      "Heron has nothing that does '%s', so nothing has been sent to "
+                      "Revit. Ask heron_lookup in your own words and it will name the "
+                      "capability Heron does have." % (capability or ""))
 
     root = _repo_root()
 
@@ -1453,17 +1496,20 @@ def revit_change(capability: str = "", values: str = "",
     # costs nothing and touches nothing.
     refusal = bridge.risk_refusal(root, folder, switched=True)
     if refusal:
+        _ended("refused")
         return refusal
     operation = bridge.write_operation(root, folder)
     if operation is None:
-        return ("'%s' does not say what risk it carries in a form Heron can read, so "
-                "nothing has been sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' does not say what risk it carries in a form Heron can read, "
+                      "so nothing has been sent to Revit." % capability)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
     if not os.path.isfile(source_path):
-        return ("'%s' is described but has no code behind it yet. Nothing has been "
-                "sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' is described but has no code behind it yet. Nothing has "
+                      "been sent to Revit." % capability)
 
     # THE SOURCE TRAVELS, NOT A NAME. Revit is told what to run rather than
     # where to find it: the add-in would otherwise need a path into somebody's
@@ -1474,8 +1520,9 @@ def revit_change(capability: str = "", values: str = "",
     needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
                                                folder, "fragment.yaml"))
     if needs is None:
-        return ("'%s' could not be read with certainty - its contract is unclear, "
-                "so nothing has been sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' could not be read with certainty - its contract is "
+                      "unclear, so nothing has been sent to Revit." % capability)
 
     # A NAME NOTHING DECLARES IS DROPPED, AND SAYING SO IS THE WHOLE FIX.
     #
@@ -1500,7 +1547,7 @@ def revit_change(capability: str = "", values: str = "",
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     args = {
         "name": folder,
@@ -1555,9 +1602,11 @@ def revit_change(capability: str = "", values: str = "",
 
     # `writes` comes from the registry rather than a literal True, so a write
     # can never be treated as a retryable read because two declarations drifted.
+    # HOW IT ENDED IS THE ADD-IN'S REPLY, NOT THE WORDS EXPLAIN WRAPS IT IN:
+    # a refusal whose message never says "refused" is still one (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_change"))
     if failure is not None:
-        return explain(failure)
+        return _ended(_failure_ended(failure), explain(failure))
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
@@ -1567,6 +1616,11 @@ def revit_change(capability: str = "", values: str = "",
     # opened. It is kept for the two cases it is still the only cover for: an
     # older add-in that does not read expectProject, and the FIRST call of a
     # chat, where there was no key to send and this is what pins one.
+    #
+    # HOW IT ENDED IS NOT SAID HERE, and that is deliberate (5b-274): the
+    # add-in answered ok, so behind an add-in too old to read expectProject
+    # the change may have been made in the other model. Neither "refused"
+    # nor "ok" is known, so the activity list keeps its guess.
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         return wrong_model
@@ -1629,7 +1683,7 @@ def revit_change(capability: str = "", values: str = "",
     if _from_chat() and _took(reply):
         _offer_change(capability, folder, values, reply.get("document"))
 
-    return "\n".join(lines)
+    return _ended("ok", "\n".join(lines))
 
 
 #: A need Revit fills itself, never the caller - the only kind an
@@ -2481,9 +2535,10 @@ def revit_read(capability: str = "", values: str = "",
 
     folder, _status = _fragment_for(capability)
     if folder is None:
-        return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
-                "Ask heron_lookup in your own words and it will name the capability "
-                "Heron does have." % (capability or ""))
+        return _ended("refused",
+                      "Heron has nothing that does '%s', so nothing has been sent to "
+                      "Revit. Ask heron_lookup in your own words and it will name the "
+                      "capability Heron does have." % (capability or ""))
 
     root = _repo_root()
 
@@ -2497,13 +2552,14 @@ def revit_read(capability: str = "", values: str = "",
     refusal = tools.door_refusal("revit_read", bridge.fragment_risk(card),
                                  capability)
     if refusal:
-        return refusal
+        return _ended("refused", refusal)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
     if not os.path.isfile(source_path):
-        return ("'%s' is described but has no code behind it yet. Nothing has been "
-                "sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' is described but has no code behind it yet. Nothing has "
+                      "been sent to Revit." % capability)
 
     # THE SOURCE TRAVELS, NOT A NAME - for revit_change's reason.
     with io.open(source_path, "r", encoding="utf-8") as fh:
@@ -2512,8 +2568,9 @@ def revit_read(capability: str = "", values: str = "",
     needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
                                                folder, "fragment.yaml"))
     if needs is None:
-        return ("'%s' could not be read with certainty - its contract is unclear, "
-                "so nothing has been sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' could not be read with certainty - its contract is "
+                      "unclear, so nothing has been sent to Revit." % capability)
 
     # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
     # called from the client exactly as revit_change calls it.
@@ -2522,7 +2579,7 @@ def revit_read(capability: str = "", values: str = "",
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
     # transaction, which is the whole of this door's guarantee. The chain
@@ -2558,21 +2615,25 @@ def revit_read(capability: str = "", values: str = "",
     # model cannot have changed - no transaction is open - but the chain may
     # have, so say that instead.
     if consumes and reply and reply.get("error") == "unknown_outcome":
-        return ("The read reached Revit but its answer was lost, so Heron cannot tell "
-                "whether %s ran. Nothing in the model was changed - a read opens no "
-                "transaction - but if it ran, the result %s left has been used up. "
-                "Run %s again, then this read." % (capability, consumes, consumes))
+        return _ended("failed",
+                      "The read reached Revit but its answer was lost, so Heron cannot "
+                      "tell whether %s ran. Nothing in the model was changed - a read "
+                      "opens no transaction - but if it ran, the result %s left has "
+                      "been used up. Run %s again, then this read."
+                      % (capability, consumes, consumes))
 
+    # THE ADD-IN'S REPLY SAYS HOW IT ENDED - an expect_from or binding refusal
+    # is one even when its first line names only the capability (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:
-        return explain(failure)
+        return _ended(_failure_ended(failure), explain(failure))
 
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
     # the cover for an add-in too old to read the key.
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     document = reply.get("document")
     lines = ["%s read %s." % (capability, document)]
@@ -2599,7 +2660,7 @@ def revit_read(capability: str = "", values: str = "",
     lines.append(_proof_line(capability, folder))
     lines.append("Nothing in the model was changed: this runs with no transaction "
                  "open, so Revit itself refuses any change.")
-    return "\n".join(lines)
+    return _ended("ok", "\n".join(lines))
 
 
 @server.tool()

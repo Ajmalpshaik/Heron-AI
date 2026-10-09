@@ -353,6 +353,38 @@ def test_activity():
           and hc.Activity.outcome("Filters read.\n'X' failed its check", tool="revit_read") == "ok"
           and hc.Activity.outcome("Revit 2024 did not answer.", tool="revit_read") == "failed",
           "only a Revit-facing tool's FIRST line decides failed - a report may quote the word")
+    # HOW IT ENDED IS THE TOOL'S TO SAY (row 5b-274). The words are read only
+    # when no tool said, and two kinds of reply read them backwards: a
+    # words-path hand-back says "Nothing has been sent to Revit" and is not a
+    # refusal; an add-in refusal can open with no word of refusing at all.
+    handed = getattr(hc.Activity, "HANDED_BACK", None)
+    check(handed is not None and handed in getattr(hc.Activity, "OUTCOMES", ()),
+          "the list has a word of its own for a words-path hand-back")
+    handed = handed or "handed_back"
+    told = hc.Activity()
+    told.record("revit_read", "10:01:00", 0.1, outcome=handed,
+                reply="Nothing has been sent to Revit: the words \"x\" did not settle one "
+                      "capability on their own.")
+    told.record("revit_read", "10:01:01", 0.3, outcome="refused",
+                reply="This request expects values left by 'find-views', but what is "
+                      "carried was left by 'x'. NOTHING WAS BOUND and no fragment ran.")
+    told.record("revit_read", "10:01:02", 0.2, outcome="maybe",
+                reply="Revit 2024 did not answer.")
+    told.record("revit_read", "10:01:03", 0.2, reply="Revit 2024 did not answer.")
+    got = [i["outcome"] for i in told.since(0)]
+    check(got[0] == handed,
+          "a hand-back the tool names is shown as one, though its first line says "
+          "nothing was sent")
+    check(got[1] == "refused",
+          "a refusal the tool names is shown as one, though its first line never says so")
+    check(got[2] == "failed",
+          "an outcome the page has no word for is not believed - the words decide "
+          "(found %r)" % got[2])
+    check(got[3] == "failed", "and an outcome nobody gave is still read from the words")
+    page = io.open(PAGE_JS, encoding="utf-8").read()
+    check(re.search(r'\b%s:\s*"handed back"' % handed, page) is not None,
+          "and the page says 'handed back' for it")
+
     check(items[0]["summary"] == "Ducts: 24 in Level 1",
           "only the first line of an answer is kept")
     check(len(act.since(2)) == 1 and act.since(2)[0]["tool"] == "revit_views",
@@ -367,6 +399,17 @@ def test_activity():
     check("register(*args, **options)(_recorded(fn))" in server
           and "@functools.wraps(fn)" in server,
           "every tool is recorded through one wrapper that keeps its signature")
+    # READ AS TEXT SO CI CHECKS IT; tests/test_mcp_serves.py calls the doors
+    # through a real SDK and reads the list back (row 5b-274).
+    check("reply=reply, outcome=said)" in server,
+          "and the wrapper passes on how the tool SAID it ended, not outcome=None")
+    words = server[server.find("\ndef _by_words("):]
+    words = words[:words.find("\ndef ", 1)]
+    check(words.count('_ended("handed_back"') == 2,
+          "the words path calls what it hands back 'handed_back', not a refusal")
+    check(server.count("_ended(_failure_ended(failure), explain(failure))") == 3,
+          "and revit_read, revit_change and revit_apply_move label a failure from "
+          "the add-in's reply, not from the words that explain it")
 
 
 def test_changes():
