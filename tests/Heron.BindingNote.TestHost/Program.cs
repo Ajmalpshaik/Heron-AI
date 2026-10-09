@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Heron.Revit.Addin;
 
 namespace Heron.BindingNote.TestHost
@@ -140,6 +141,8 @@ namespace Heron.BindingNote.TestHost
             Check(!HeronBindingNote.TypeNameMatches("", "Generic - 200mm", ": Generic - 200mm"),
                   "and an element with no family never matches");
 
+            Foreign();
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {
@@ -149,6 +152,87 @@ namespace Heron.BindingNote.TestHost
             Console.WriteLine("PASSED - " + _checks + " checks. A partial revival no longer");
             Console.WriteLine("reads like a deliberate narrowing.");
             return 0;
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES row 75: a linked element carried to the next
+        /// fragment is refused by name, not bound as a host element id.
+        ///
+        /// ASKED BY REFLECTION, NOT CALLED, and on purpose: against the code
+        /// as it stood these two rules did not exist, and a direct call would
+        /// stop the host COMPILING - one build error in place of every check
+        /// below. Looked up by name, a missing rule is one clean failure and
+        /// the rest still run and fail, which is what shows they test the fix.
+        /// </summary>
+        private static void Foreign()
+        {
+            const BindingFlags Rule = BindingFlags.NonPublic | BindingFlags.Static;
+            var otherRule = typeof(HeronBindingNote).GetMethod("OtherDocument", Rule);
+            var refuseRule = typeof(HeronBindingNote).GetMethod("CarriedFromElsewhere", Rule);
+
+            Check(otherRule != null,
+                  "the chain has a rule for WHICH document a carried element came from");
+            Check(refuseRule != null,
+                  "the binder has a rule for a carry that came from another document");
+
+            Func<bool, string, string> other = (same, title) =>
+                otherRule == null ? null : (string)otherRule.Invoke(null, new object[] { same, title });
+            Func<ICollection<string>, string> refuse = documents =>
+                refuseRule == null ? null : (string)refuseRule.Invoke(null, new object[]
+                {
+                    "elements", "IList<Element>", "from select-from-link", documents,
+                    "Snowdon-scratch_ajmal.al",
+                });
+
+            const string Link = "Snowdon Towers Sample Architectural";
+
+            // WHAT THE CARRY WRITES DOWN.
+            Check(other(true, "Snowdon-scratch_ajmal.al") == null,
+                  "an element of the document being read records nothing - it binds as before");
+            Check(other(false, Link) == Link,
+                  "an element of a LINK records the link's name");
+            Check(other(false, "  " + Link + " ") == Link,
+                  "trimmed, so one link is one name");
+            var unnamed = other(false, null);
+            Check(!string.IsNullOrEmpty(unnamed),
+                  "a document with no readable name is STILL recorded - dropping it would read as 'came from here'");
+            Check(!string.IsNullOrEmpty(other(false, "  ")),
+                  "and so is a blank one");
+
+            // WHAT THE BINDER DOES WITH IT. Nothing recorded binds as before.
+            Check(refuse(null) == null && refuseRule != null,
+                  "nothing recorded is not refused");
+            Check(refuse(new List<string>()) == null && refuseRule != null,
+                  "an empty record is not refused");
+
+            // THE ROW'S OWN CASE: walls from the Architectural link, carried
+            // into a fragment reading Snowdon-scratch.
+            var said = refuse(new List<string> { Link }) ?? "";
+            Check(said.Length > 0,
+                  "linked walls carried into the host are REFUSED, not looked up there");
+            Check(said.IndexOf("'" + Link + "'", StringComparison.Ordinal) >= 0,
+                  "the refusal names the linked document - got \"" + said + "\"");
+            Check(said.IndexOf("'elements'", StringComparison.Ordinal) >= 0,
+                  "and the need it would not fill");
+            Check(said.IndexOf("'Snowdon-scratch_ajmal.al'", StringComparison.Ordinal) >= 0,
+                  "and the model being read, so the two are told apart");
+            Check(said.IndexOf("from select-from-link", StringComparison.Ordinal) >= 0,
+                  "and which step left them");
+            Check(said.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
+                  "and says nothing was bound, as the chain's other refusals do");
+
+            // SEVERAL LINKS, in a fixed order, each named once.
+            var two = refuse(new List<string> { "Structural", Link, "Structural" }) ?? "";
+            var a = two.IndexOf("'" + Link + "'", StringComparison.Ordinal);
+            var s = two.IndexOf("'Structural'", StringComparison.Ordinal);
+            Check(a >= 0 && s >= 0 && a < s,
+                  "two links are both named, sorted, so one carry always refuses the same way");
+            Check(s >= 0 && two.IndexOf("'Structural'", s + 1, StringComparison.Ordinal) < 0,
+                  "and a link named twice is named once");
+
+            // A record that is there but blank still refuses - see above.
+            Check(!string.IsNullOrEmpty(refuse(new List<string> { "" })),
+                  "a recorded document with no name still refuses");
         }
     }
 }

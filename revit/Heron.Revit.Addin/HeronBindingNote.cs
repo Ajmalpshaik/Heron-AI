@@ -6,6 +6,7 @@
 // See docs/29-metadata-standard.md
 
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Heron.Revit.Addin
 {
@@ -34,9 +35,10 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// " (N)", or " (N of M)" when M were offered and N survived.
         ///
-        /// IT REPORTS AND DOES NOT REFUSE. The wrong elements are still bound;
-        /// stopping that needs the carried value to say which DOCUMENT it came
-        /// from, which is row 75's real repair. Naming the loss is the half
+        /// IT REPORTS AND DOES NOT REFUSE. Elements recorded as another
+        /// document's never reach it now - CarriedFromElsewhere refuses them
+        /// first - so what it still names is a loss within one document, an
+        /// element deleted between two fragments. Naming the loss is the half
         /// that cannot break a caller relying on today's behaviour.
         ///
         /// NO THRESHOLD, DELIBERATELY. "Refuse below some percentage" needs a
@@ -156,6 +158,87 @@ namespace Heron.Revit.Addin
             if (colon < 0) return false;
             return string.Equals(text.Substring(0, colon).Trim(), family, System.StringComparison.Ordinal)
                 && string.Equals(text.Substring(colon + 1).Trim(), typeName, System.StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// What the chain writes down about where one carried element came
+        /// from: its document's name when that is NOT the document the
+        /// fragment ran against, or null when it is.
+        ///
+        /// FRAGMENT-ISSUES ROW 75. An element is carried to the next fragment
+        /// as its id, and an id means something only inside its own document.
+        /// `select-from-link` hands back elements that live in a LINK, and
+        /// their ids were looked up in the HOST: on Snowdon-scratch 2 of 1128
+        /// linked wall ids happened to name real host elements, and those two
+        /// were bound in place of the linked walls. So the carry now records,
+        /// element by element, whether it is the target's own. Whether two
+        /// documents are one is Revit's question and the add-in asks it; this
+        /// says what is written down.
+        ///
+        /// A DOCUMENT WITH NO READABLE NAME IS STILL RECORDED, never dropped.
+        /// Dropping it would turn "came from somewhere else" back into "came
+        /// from here", which is the bind this exists to stop.
+        /// </summary>
+        internal static string OtherDocument(bool sameDocument, string title)
+        {
+            if (sameDocument) return null;
+            var name = (title ?? "").Trim();
+            return name.Length == 0 ? UnnamedDocument : name;
+        }
+
+        /// <summary>What a carried element's document is called when Revit gave it no name.</summary>
+        internal const string UnnamedDocument = "a model whose name could not be read";
+
+        /// <summary>
+        /// The refusal for a need the chain would fill with elements recorded
+        /// as ANOTHER document's, or null to bind it as before.
+        ///
+        /// ROW 75's SMALLEST HONEST STOP, NOT ITS WHOLE REPAIR. The repair the
+        /// row asks for is a carried value that can be read in the document it
+        /// came from, and nothing here can carry a link or hand one to a
+        /// fragment. What this does instead is refuse: a need whose carried
+        /// elements came from somewhere else is not bound at all, rather than
+        /// revived by id against the host - where the safe outcome ("nothing
+        /// usable survived") and the dangerous one (two unrelated host walls,
+        /// bound and reported like a narrowing) differed only by whether an id
+        /// number happened to be in use twice.
+        ///
+        /// THE WHOLE NEED, EVEN WHEN ONLY SOME OF ITS ELEMENTS ARE FOREIGN.
+        /// Binding the host's share and dropping the rest is the partial
+        /// revival this row is about, moved one step along.
+        ///
+        /// WHATEVER THE NEED'S TYPE. A list of ids is handed over as it was
+        /// carried rather than revived, and the fragment that reads it looks
+        /// the numbers up in its own document all the same.
+        ///
+        /// Names are sorted, so two identical carries refuse identically.
+        /// Nothing here touches an Autodesk type, so it is proved without
+        /// Revit in Heron.BindingNote.TestHost.
+        /// </summary>
+        internal static string CarriedFromElsewhere(string need, string type, string origin,
+                                                    ICollection<string> documents, string target)
+        {
+            if (documents == null || documents.Count == 0) return null;
+
+            var names = new List<string>();
+            foreach (var document in documents)
+            {
+                var name = string.IsNullOrEmpty(document) ? UnnamedDocument : document;
+                if (!names.Contains(name)) names.Add(name);
+            }
+            names.Sort(System.StringComparer.Ordinal);
+
+            var here = string.IsNullOrEmpty(target) ? "the model being read" : "'" + target + "'";
+
+            return "Cannot run: '" + need + "' (" + type + ") would be filled "
+                 + (string.IsNullOrEmpty(origin) ? "from the chain" : origin)
+                 + ", and those elements belong to '" + string.Join("', '", names.ToArray()) + "'"
+                 + ", not to " + here + ", which this fragment reads - a linked model, most "
+                 + "likely. They are carried as element ids, and an id means something only "
+                 + "inside its own model: looked up in " + here + " it finds nothing, or an "
+                 + "unrelated element that happens to share the number. NOTHING WAS BOUND and "
+                 + "no fragment ran. Read what is needed off the linked elements in the step "
+                 + "that found them; handing them on to another step is not built yet.";
         }
     }
 }

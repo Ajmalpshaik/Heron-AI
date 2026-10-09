@@ -1687,6 +1687,27 @@ namespace Heron.Revit.Addin
             public readonly Dictionary<string, object> Values =
                 new Dictionary<string, object>(StringComparer.Ordinal);
 
+            // FRAGMENT-ISSUES ROW 75: for a carried name whose elements came
+            // from ANOTHER document - a link - which documents those were.
+            // `Document` below is whose run this was; it cannot say that one
+            // list inside it belongs to a link. Written only through Keep, so
+            // a name never carries another value's record.
+            public readonly Dictionary<string, List<string>> Elsewhere =
+                new Dictionary<string, List<string>>(StringComparer.Ordinal);
+
+            public void Keep(string name, object value, List<string> elsewhere)
+            {
+                Values[name] = value;
+                if (elsewhere != null && elsewhere.Count > 0) Elsewhere[name] = elsewhere;
+                else Elsewhere.Remove(name);
+            }
+
+            public void Clear()
+            {
+                Values.Clear();
+                Elsewhere.Clear();
+            }
+
             public string Document;         // whose elements these are
             public string By;               // the fragment that left them
 
@@ -2106,6 +2127,7 @@ namespace Heron.Revit.Addin
 
                 object value = null;
                 string origin = null;
+                string carriedAs = null;    // the chain's key, when the chain filled it
 
                 // The name the CHAIN carries this by, which is not always the
                 // need's own - see Binds. Everything else below stays the
@@ -2117,6 +2139,7 @@ namespace Heron.Revit.Addin
                 if (carried != null && carried.ContainsKey(wanted))
                 {
                     value = carried[wanted];
+                    carriedAs = wanted;
                     origin = "from " + (chain.By ?? "the previous fragment");
                     // NAME THE ALIAS IN THE READ-BACK. A proof is judged on
                     // this line (fragment-proving rule 5), and "targets from
@@ -2166,6 +2189,7 @@ namespace Heron.Revit.Addin
                          && carried != null && carried.ContainsKey("created"))
                 {
                     value = carried["created"];
+                    carriedAs = "created";
                     origin = "from " + (chain.By ?? "the previous fragment")
                            + " as 'created'";
                 }
@@ -2199,6 +2223,20 @@ namespace Heron.Revit.Addin
                         ? name + " (" + type + ")"
                         : name + " (" + type + ", filled from '" + wanted + "')");
                     continue;
+                }
+
+                // ROW 75: ELEMENTS RECORDED AS ANOTHER DOCUMENT'S ARE REFUSED
+                // BY NAME, before Shape looks their ids up in this one. Asked
+                // first because Shape cannot tell a linked wall's id from a
+                // host wall's: 2 of 1128 linked walls once revived as two
+                // unrelated host elements. The whole need, whatever its type -
+                // see HeronBindingNote.CarriedFromElsewhere.
+                List<string> elsewhere;
+                if (carriedAs != null && chain.Elsewhere.TryGetValue(carriedAs, out elsewhere))
+                {
+                    var foreign = HeronBindingNote.CarriedFromElsewhere(name, type, origin,
+                                                                        elsewhere, target.Title);
+                    if (foreign != null) return Json.Error("needs_unbound", foreign);
                 }
 
                 var shaped = Shape(value, type, target);
@@ -2315,7 +2353,7 @@ namespace Heron.Revit.Addin
             var chain = ChainFor(client, true);
             if (chain == null) return;
 
-            if (chain.Document != target.Title) chain.Values.Clear();
+            if (chain.Document != target.Title) chain.Clear();
 
             chain.Document = target.Title;
             chain.By = name;
@@ -2336,18 +2374,61 @@ namespace Heron.Revit.Addin
                 // open document and goes stale - a regenerate, an undo, or
                 // another job deleting something leaves an object that throws
                 // on its next property read. An id can be checked.
+                //
+                // AND WHOSE EACH ONE IS, BESIDE IT - row 75. An id means
+                // something only inside its own document, and the next
+                // fragment looks it up in `target`. An element from a link
+                // (select-from-link) is written down as the link's, so the
+                // binder refuses it by name instead of binding whatever host
+                // element shares the number. See HeronBindingNote.OtherDocument.
                 var elements = value as IEnumerable<Element>;
                 if (elements != null)
                 {
                     var ids = new List<ElementId>();
-                    try { foreach (var e in elements) if (e != null) ids.Add(e.Id); }
+                    var elsewhere = new List<string>();
+                    try
+                    {
+                        foreach (var e in elements)
+                        {
+                            if (e == null) continue;
+                            ids.Add(e.Id);
+                            var same = InDocument(e, target);
+                            var other = HeronBindingNote.OtherDocument(same,
+                                                                       same ? null : DocumentTitle(e));
+                            if (other != null && !elsewhere.Contains(other)) elsewhere.Add(other);
+                        }
+                    }
                     catch { continue; }
-                    chain.Values[variable.Name] = ids;
+                    chain.Keep(variable.Name, ids, elsewhere);
                     continue;
                 }
 
-                chain.Values[variable.Name] = value;
+                chain.Keep(variable.Name, value, null);
             }
+        }
+
+        /// <summary>
+        /// Whether ELEMENT lives in TARGET. Document.Equals is Revit's own
+        /// answer - "the same document currently opened in the Revit
+        /// session", in every release 2020 to 2027 - and a title is not: two
+        /// files can share one. A document that cannot be read is not taken
+        /// to be the target, so its element is refused rather than looked up.
+        /// </summary>
+        private static bool InDocument(Element element, Document target)
+        {
+            try
+            {
+                var home = element.Document;
+                return home != null && home.Equals(target);
+            }
+            catch { return false; }
+        }
+
+        /// <summary>The name of the document ELEMENT lives in, or null when it cannot be read.</summary>
+        private static string DocumentTitle(Element element)
+        {
+            try { return element.Document == null ? null : element.Document.Title; }
+            catch { return null; }
         }
 
         /// <summary>
@@ -4808,6 +4889,13 @@ namespace Heron.Revit.Addin
         /// finds nothing - or worse, finds an unrelated host element that
         /// happens to share the number. Carrying an empty list there would say
         /// "there were none" about something nobody could look at.
+        ///
+        /// A CARRY THE CHAIN RECORDED AS A LINK'S NEVER GETS HERE. BindNeeds
+        /// refuses it by name first (row 75, HeronBindingNote.CarriedFromElsewhere),
+        /// because nothing below can tell a linked id from a host one. What
+        /// still reaches this is elements the chain saw were this document's -
+        /// some deleted since - and a list a fragment left as ids, whose
+        /// document nothing records.
         ///
         /// So: empty IN means empty OUT, and ids that all fail to resolve still
         /// mean null. The distinction Codex asked for in the dispatch on
