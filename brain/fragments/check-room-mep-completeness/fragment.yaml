@@ -195,7 +195,9 @@ compatibility-note: >
 #   "which rooms have no mep in them" -> here
 #   "check every toilet has extract"  -> here
 #   "what is missing from these rooms" -> here
-#   "which ducts are in room 5"       -> FILTER_ELEMENTS_IN_ROOM - the elements
+#   "which rooms are missing services" -> here. COUNT_BY_SPATIAL_CONTAINER's
+#                                        table said so already (5b-402)
+#   "which ducts are in room 5"      -> FILTER_ELEMENTS_IN_ROOM - the elements
 #                                        as a set to act on, with no rule
 #   "the rooms are missing"           -> PLACE_ROOMS. Nothing here can check a
 #                                        room that does not exist
@@ -206,3 +208,10 @@ utterances:
   - what is missing from these rooms
   - check the rooms have their devices
   - which rooms are missing a sprinkler
+  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-402. COUNT_BY_SPATIAL_CONTAINER's
+  # routing table sends this sentence here, and a comment is not indexed, so
+  # ranking decided: PLACE_ROOMS, a change that places rooms, on both
+  # backends. "Services" are the MEP a room should have; which ones is the
+  # rule set, and that comes from the request as it does for every sentence
+  # above.
+  - which rooms are missing services
