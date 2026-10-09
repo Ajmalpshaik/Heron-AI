@@ -139,6 +139,18 @@ CHANGES = [
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
     ("adjust the view scale", "SET_VIEW_SCALE",
      "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
+    # Row 146, 2026-10-09: the first draft of LIST_VIEWS_ON_SHEET named the
+    # write and said "placed" in its purpose and "on sheet a-101" in its
+    # utterances, and the read took these from the write on the model.
+    ("place these views on sheet A-101", "PLACE_VIEWS_ON_SHEET",
+     "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
+    ("place the views on this sheet", "PLACE_VIEWS_ON_SHEET",
+     "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
+    # And a later draft declared "list the viewports on this sheet", and the
+    # read took this one - claimed in ALIGN_VIEWPORTS_ACROSS_SHEETS' routing
+    # table, never declared - on the model.
+    ("line the viewports up", "ALIGN_VIEWPORTS_ACROSS_SHEETS",
+     "146: a later draft of LIST_VIEWS_ON_SHEET answered it"),
 ]
 
 QUESTIONS = [
@@ -184,6 +196,14 @@ QUESTIONS = [
     # paraphrase. SET_CURTAIN_WALL_GRID and REPORT_CURTAIN_WALL_TYPE fuse to the
     # same score on it, and the PROVEN nudge hands the tie to the change - still
     # OPEN in 5b-329. A guard that a status change flips is not a guard.
+    # Row 146: rewordings of LIST_VIEWS_ON_SHEET's question, written by its
+    # repair and its second review on 2026-10-09, before its purpose said
+    # "legends". Both reached CREATE_LEGEND_VIEW on the model while the card
+    # said only "a legend".
+    ("which legends are on this sheet",
+     "146: answered CREATE_LEGEND_VIEW"),
+    ("what legends are on this sheet",
+     "146: answered CREATE_LEGEND_VIEW"),
 ]
 
 # A question about the project's own setup reaches the tool that READS it.
@@ -217,6 +237,10 @@ DECLARED = [
      "146: answered SET_VIEW_SCALE on both"),
     ("what scale is this plan at", "READ_VIEW_SCALE",
      "146: answered CREATE_CALLOUT on the model"),
+    # Row 146's gap, not a mis-route: LIST_SHEETS only COUNTS a sheet's views,
+    # so no READ named them until LIST_VIEWS_ON_SHEET was written (2026-10-09).
+    ("what views are on this sheet", "LIST_VIEWS_ON_SHEET",
+     "146: answered PLACE_VIEWS_ON_SHEET on both"),
 ]
 
 OWN = [
