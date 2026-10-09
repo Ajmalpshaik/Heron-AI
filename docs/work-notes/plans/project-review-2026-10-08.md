@@ -125,6 +125,6 @@ is the schedule's view of it, on branch `claude/heron-project-review-aik7wy` (PR
 **Parallel work collides on the register.** Every other open PR appends its rows to
 `section-5b-rows-176-200.md`, which this branch re-banded; each merge of main here moved those rows to
 their band by hand and renumbered nothing of theirs. Once this merges, new rows go at the end of
-`section-5b-rows-376-400.md`.
+the last rows file, `section-5b-rows-401-425.md` since row 5b-402 was banded on 2026-10-09.
 
 This note is deleted once waves 1-6 are all either fixed or moved.
