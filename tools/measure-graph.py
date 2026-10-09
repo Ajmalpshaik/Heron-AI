@@ -106,6 +106,21 @@ FLAGS = {
 }
 
 
+def routing():
+    """tools/check-routing.py as a module - its filename has a hyphen in it.
+
+    Loaded for its store guard, store_for_this_tree(), so every tool that
+    measures over the knowledge store asks it the same three questions.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "heron_tool_check_routing",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-routing.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def settings_from(argv):
     """(weight, seeds, revit, sweep, why it was refused or None).
 
@@ -300,15 +315,18 @@ def main(argv):
         print("  it takes: %s" % ", ".join(sorted(FLAGS)))
         return 2
 
-    store = SCOPE.open_scope(SCOPE.GLOBAL)
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY - check-routing.py's guard,
+    # CALLED, NOT COPIED. Until 2026-10-09 this rebuilt an EMPTY store and
+    # nothing else: a store holding another checkout's cards, or rows older
+    # than their cards (row 5b-229), was measured as it stood, and the ONE
+    # store every chat on the PC reads, found empty, was rebuilt from
+    # whatever checkout this ran in (row 5b-233). A refusal is exit 2 - which
+    # here already meant "a setting refused, nothing measured", the same
+    # verdict: no number came out.
+    store = routing().store_for_this_tree("graph measurement")
+    if store is None:
+        return 2
     try:
-        if store.count() == 0:
-            built, problems = SCOPE.rebuild()
-            store.close()
-            store = SCOPE.open_scope(SCOPE.GLOBAL)
-            if problems:
-                for line in problems:
-                    print("  PROBLEM %s" % line)
         SEARCH.index(store)
         EMBED.index(store)
 

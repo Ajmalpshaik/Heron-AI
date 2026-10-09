@@ -637,6 +637,72 @@ def refreshes_from(root=None):
     return os.path.join(main, "brain", "fragments"), main
 
 
+def on_main_branch(root=None):
+    """True when `root` is a checkout of branch main, or has no git at all.
+
+    Read from .git/HEAD rather than by running git - the server asks this at
+    start-up, and a process per question is what start-up is short of. A
+    linked worktree has a .git FILE, and is never the main checkout. Moved
+    here from heron_brain on 2026-10-09 so that `rebuild_refusal()` below,
+    which the lookup and the store checkers both ask, can read it.
+    """
+    root = root or ROOT
+    dot_git = os.path.join(root, ".git")
+    if not os.path.exists(dot_git):
+        return True
+    if not os.path.isdir(dot_git):
+        return False
+    try:
+        with io.open(os.path.join(dot_git, "HEAD"), encoding="utf-8") as handle:
+            head = handle.read().strip()
+    except (IOError, OSError):
+        return False
+    return head == "ref: refs/heads/main"
+
+
+def rebuild_refusal(root=None):
+    """None when the store `knowledge_dir()` names may be rebuilt from this
+    checkout - or prepared before anybody asks - and otherwise why not, as a
+    phrase to follow "it is rebuilt only from the main checkout on branch
+    main - ".
+
+    ONE RULE, ASKED FROM TWO SIDES (row 5b-233). The lookup asked it to decide
+    whether to warm the store at start-up and whether to advise a rebuild
+    (heron_brain._store_warm_allowed). The store checkers asked a narrower one
+    of their own - tools/check-routing.py's store_for_this_tree(), which
+    tools/check-intrusion.py, score-routing.py and the measure-* tools call -
+    and it let the MAIN FOLDER on a feature branch rebuild the shared store,
+    because refreshes_from() names the main checkout there whatever its
+    branch. That branch's cards then reached every chat's answers, which is
+    the rebuild this exists to stop. Both sides call this now.
+
+    The order is the test's own. refreshes_from() is asked FIRST, because it
+    is the authority on whose cards the store follows and the suites plant it
+    (tests/test_check_routing.py section 6): a store it names as the shared
+    one, asked from somewhere that is not the main checkout, is refused
+    however its folder is spelt. Then a private store - HERON_KNOWLEDGE
+    pointing somewhere of its own, which is every suite and CI - is always
+    allowed, on any branch. Only the shared store, from the main checkout,
+    reads the branch.
+    """
+    base = knowledge_dir()
+    if not base:
+        return ("there is no knowledge folder here at all - no %APPDATA% and "
+                "no HERON_KNOWLEDGE")
+    source = refreshes_from(root)
+    if source is None:
+        return "this is a worktree whose main checkout cannot be found"
+    if source[1] is not None:
+        return "this is not the main checkout (%s is)" % source[1]
+    shared = shared_dir()
+    if not shared or not _same_folder(base, shared):
+        return None                       # a private store: nobody else reads it
+    if not on_main_branch(root or FRAG.ROOT):
+        return ("this is the main checkout, but on a branch that is not main - "
+                "its cards may be unmerged")
+    return None
+
+
 def refresh(store, root=None, walked=None):
     """Rewrite the rows whose card changed on disk. Returns the ids rewritten.
 

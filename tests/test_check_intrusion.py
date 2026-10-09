@@ -44,7 +44,10 @@ which check-routing stopped doing on 2026-10-08 (row 5b-233). It uses
 check-routing's guard now. Those sections run the tool's main() on a private
 scratch store and STOP IT at the first step of the measurement - the
 re-index is replaced by a raise - so they ask only what the guard did to the
-store, in seconds.
+store, in seconds. Sections 8-9, 2026-10-09: the MAIN folder with a feature
+branch checked out is refused the shared store too, as the lookup always
+refused it, while the main folder on main and CI's private store still
+rebuild.
 
 WHAT IT CANNOT DO: it does not say whether any intrusion is a defect. The
 tool says plainly that none of them is by itself, and exits 0 for that
@@ -135,6 +138,61 @@ def run_guard(tool, home, shared=False):
         SEARCH.index = was_index
         SCOPE.refreshes_from = was_from
     return code, said.getvalue()
+
+
+def run_in_main_folder(tool, top, on_main):
+    """(exit code, what it said, rows left) from the tool's main() on the
+    SHARED store, asked from the MAIN checkout - on branch main when ON_MAIN,
+    on a feature branch when not.
+
+    The store is the shared one by its own spelling: %APPDATA%\\Heron\\knowledge
+    under TOP, with HERON_KNOWLEDGE unset, as on the owner's PC. Planted:
+    refreshes_from() answers what it answers in the main checkout, this
+    checkout's own cards, and on_main_branch() answers ON_MAIN - the main
+    folder's HEAD, which a test cannot check a branch out in. The re-index
+    raises, as in run_guard().
+    """
+    import heron_fragment as FRAG
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+
+    appdata = os.path.join(top, "appdata")
+    shared = os.path.join(appdata, "Heron", "knowledge")
+    if not os.path.isdir(shared):
+        os.makedirs(shared)
+
+    def stop(*_args, **_kwargs):
+        raise _Measured()
+
+    env = dict((k, os.environ.get(k)) for k in ("APPDATA", "HERON_KNOWLEDGE"))
+    was_index, was_from = SEARCH.index, SCOPE.refreshes_from
+    was_branch = getattr(SCOPE, "on_main_branch", None)
+    SEARCH.index = stop
+    SCOPE.refreshes_from = lambda root=None: (FRAG.FRAGMENTS_DIR, None)
+    SCOPE.on_main_branch = lambda root=None: on_main
+    os.environ.pop("HERON_KNOWLEDGE", None)
+    os.environ["APPDATA"] = appdata
+    said = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(said):
+            with contextlib.redirect_stderr(said):
+                code = tool.main([])
+    except _Measured:
+        code = MEASURED
+    except BaseException as raised:                 # noqa: BLE001
+        code = "raised %s: %s" % (type(raised).__name__, raised)
+    finally:
+        SEARCH.index, SCOPE.refreshes_from = was_index, was_from
+        if was_branch is None:
+            del SCOPE.on_main_branch
+        else:
+            SCOPE.on_main_branch = was_branch
+        for key, value in env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    return code, said.getvalue(), len(held_in(shared))
 
 
 def held_in(home):
@@ -347,6 +405,58 @@ def main():
               "and it says the store is the shared one and to point "
               "HERON_KNOWLEDGE at a scratch folder")
     finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+    print()
+    print("8. NOR FROM THE MAIN FOLDER WITH A FEATURE BRANCH CHECKED OUT - row 5b-233")
+    # refreshes_from() names the main checkout there whatever its branch, so
+    # the guard let that branch's cards into the store every chat reads. The
+    # lookup never did: heron_brain only warms or advises a rebuild of the
+    # shared store from the main checkout ON main. One rule now, in
+    # heron_scope.rebuild_refusal(), and this guard asks it.
+    top = tempfile.mkdtemp(prefix="heron-ci-mainfolder-")
+    try:
+        code, said, held = run_in_main_folder(tool, top, on_main=False)
+        check(code == 2,
+              "the shared store, asked from the main folder on a feature "
+              "branch, exits 2 (got %r)" % (code,))
+        check(held == 0,
+              "and nothing is rebuilt into it (%d rows)" % held)
+        check("HERON_KNOWLEDGE" in said
+              and "a branch that is not main" in " ".join(said.split()),
+              "and it says the branch is why, and to point HERON_KNOWLEDGE "
+              "at a scratch folder")
+    finally:
+        shutil.rmtree(top, ignore_errors=True)
+    top = tempfile.mkdtemp(prefix="heron-ci-mainfolder-")
+    try:
+        code, said, held = run_in_main_folder(tool, top, on_main=True)
+        check(code == MEASURED and held > 0,
+              "the main folder ON main still rebuilds the shared store - it "
+              "is where that store comes from (got %r, %d rows)" % (code, held))
+    finally:
+        shutil.rmtree(top, ignore_errors=True)
+
+    print()
+    print("9. CI'S PRIVATE STORE IS NOT TOUCHED BY ANY OF THIS")
+    # gates.yml runs this on a fresh HERON_KNOWLEDGE, on a checkout whose HEAD
+    # is not main. A private store is rebuilt on any branch: nobody else
+    # reads it.
+    home = tempfile.mkdtemp(prefix="heron-ci-private-")
+    import heron_scope as SCOPE
+    was_branch = getattr(SCOPE, "on_main_branch", None)
+    SCOPE.on_main_branch = lambda root=None: False
+    try:
+        code, said = run_guard(tool, home)
+        held = held_in(home)
+        check(code == MEASURED and len(held) > 0,
+              "an empty private store, on a branch that is not main, is "
+              "rebuilt and measured (got %r, %d rows)" % (code, len(held)))
+    finally:
+        if was_branch is None:
+            del SCOPE.on_main_branch
+        else:
+            SCOPE.on_main_branch = was_branch
         shutil.rmtree(home, ignore_errors=True)
 
     print()

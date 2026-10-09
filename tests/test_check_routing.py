@@ -34,7 +34,7 @@ WHAT IT PROVES
      the tool would "say so rather than failing when there is none". That was
      fixed and nothing held it.
 
-  5. A ROUTING ROW THAT SENDS A SENTENCE TO A CAPABILITY NO FRAGMENT DECLARES
+  7. A ROUTING ROW THAT SENDS A SENTENCE TO A CAPABILITY NO FRAGMENT DECLARES
      FAILS THE RUN. Row 5b-388: `"rename the heading" -> SET_SCHEDULE_FIELD_FORMAT`
      (row 5b-232) and `"which materials are unused" -> PURGE_UNUSED_MATERIALS`
      both sat in the library from 2026-09-06 while this checker ran on every
@@ -43,12 +43,20 @@ WHAT IT PROVES
      on the comment line below a trailing arrow, after an arrow on a line of its
      own - and `here`, `NOT`, `ALL` and prose are not targets.
 
+  Sections 5, 6 and 8 to 10 hold the store guard, store_for_this_tree(): a stale row is
+  named, and the SHARED store is never rebuilt except from the main checkout
+  on branch main - section 8, added 2026-10-09, is the main folder with a
+  feature branch checked out, section 9 that the guard and the lookup ask
+  one rule, heron_scope.rebuild_refusal() (row 5b-233), and section 10 that
+  rule's two other refusals: no knowledge folder at all, and a worktree
+  whose main checkout cannot be found.
+
 WHAT IT DOES NOT PROVE
   Anything about the routing result itself. That part of the checker is a
   REPORT - it exits 0 whatever collisions it finds, because a collision is a
   judgement and not a defect - so there is no verdict here to test. What is
   testable is the two cases where it declines to produce one at all, and
-  section 5, the one part that is a verdict: a name either is a capability some
+  section 7, the one part that is a verdict: a name either is a capability some
   fragment declares or it is not.
 """
 
@@ -97,6 +105,135 @@ class _Captured(object):
 
     def text(self):
         return self.said.getvalue()
+
+
+# What the routing run's first step raises in sections 7-8, so a run the
+# store guard lets through stops there instead of asking every utterance.
+MEASURED = "went on to route"
+
+
+class _Measured(Exception):
+    """The store guard let the run through to the routing."""
+
+
+def _rows(home):
+    """How many rows the GLOBAL store in HOME holds, read through a private
+    HERON_KNOWLEDGE so nothing else is opened."""
+    import heron_scope as SCOPE
+    was = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = home
+    try:
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            return store.count()
+        finally:
+            store.close()
+    finally:
+        if was is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = was
+
+
+class _planted_env(object):
+    """ENV in os.environ for the length of a `with` - a variable mapped to
+    None is unset - and everything put back as it was afterwards."""
+
+    def __init__(self, env):
+        self.env = env
+        self.kept = {}
+
+    def __enter__(self):
+        self.kept = dict((k, os.environ.get(k)) for k in self.env)
+        for key, value in self.env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        return self
+
+    def __exit__(self, *_):
+        for key, value in self.kept.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        return False
+
+
+def _asked(fn):
+    """What FN() answers - or "raised ...", never the raise itself, so a
+    check that errors is a FAIL line and not the end of the suite."""
+    try:
+        return fn()
+    except BaseException as raised:              # noqa: BLE001 - that IS the check
+        return "raised %s: %s" % (type(raised).__name__, raised)
+
+
+# "Not planted", for an argument whose planted answer can itself be None.
+_UNSET = object()
+
+
+def _guarded_run(env, source=_UNSET, on_main=None, refusal=None):
+    """(exit code, what it said) from CR.main([]) in the environment ENV.
+
+    The re-index, the routing run's first step, raises - so the code is
+    MEASURED when the store guard let the run through. Planted where given:
+    SOURCE is what heron_scope.refreshes_from() answers - None included, a
+    worktree whose main checkout cannot be found - ON_MAIN what
+    heron_scope.on_main_branch() answers, REFUSAL what
+    heron_scope.rebuild_refusal() answers. ENV maps a variable to its value,
+    or to None to unset it. A raise of any other kind is recorded as the
+    code, never let out (heron-ship s2a).
+    """
+    import contextlib
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+
+    def stop(*_args, **_kwargs):
+        raise _Measured()
+
+    planted = {"refreshes_from": ((lambda root=None: source)
+                                  if source is not _UNSET else None),
+               "on_main_branch": ((lambda root=None: on_main)
+                                  if on_main is not None else None),
+               "rebuild_refusal": ((lambda root=None: refusal[0])
+                                   if refusal is not None else None)}
+    kept = dict((name, getattr(SCOPE, name, None)) for name in planted)
+    kept_env = dict((k, os.environ.get(k)) for k in env)
+    was_index = SEARCH.index
+    SEARCH.index = stop
+    for name, fn in planted.items():
+        if fn is not None:
+            setattr(SCOPE, name, fn)
+    for key, value in env.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+    said = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+            code = CR.main([])
+    except _Measured:
+        code = MEASURED
+    except BaseException as raised:              # noqa: BLE001 - that IS the check
+        code = "raised %s: %s" % (type(raised).__name__, raised)
+    finally:
+        SEARCH.index = was_index
+        for name, fn in planted.items():
+            if fn is None:
+                continue
+            if kept[name] is None:
+                delattr(SCOPE, name)
+            else:
+                setattr(SCOPE, name, kept[name])
+        for key, value in kept_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    return code, said.getvalue()
 
 
 def main():
@@ -401,6 +538,201 @@ def main():
     check("dangling_targets(" in body,
           "and main() reads targets through the function the checks above "
           "call, rather than a pattern of its own they never see")
+    print()
+
+    print("8. NOR FROM THE MAIN FOLDER WITH A FEATURE BRANCH CHECKED OUT")
+    # Row 5b-233's last hole in this guard. refreshes_from() names the main
+    # checkout there whatever its branch, and section 6's test asked only
+    # that - so a branch checked out in the main folder rebuilt the shared
+    # store from its own cards. The lookup never allowed it (heron_brain only
+    # warms or advises a rebuild of the shared store from the main checkout
+    # ON main). Planted: the store is the shared one by its own spelling -
+    # %APPDATA%\Heron\knowledge, HERON_KNOWLEDGE unset - refreshes_from()
+    # answers as it does in the main checkout, and the branch is planted,
+    # since a test cannot check a branch out in the main folder.
+    import heron_fragment as FRAG
+    here = (FRAG.FRAGMENTS_DIR, None)
+    for on_main in (False, True):
+        top = tempfile.mkdtemp(prefix="heron-cr-mainfolder-")
+        shared = os.path.join(top, "appdata", "Heron", "knowledge")
+        os.makedirs(shared)
+        try:
+            code, said = _guarded_run(
+                {"HERON_KNOWLEDGE": None,
+                 "APPDATA": os.path.join(top, "appdata")},
+                source=here, on_main=on_main)
+            held = _rows(shared)
+            if not on_main:
+                check(code == 2, "the shared store, asked from the main folder "
+                                 "on a feature branch, exits 2 (got %r)" % (code,))
+                check(held == 0, "and nothing is rebuilt into it (%d rows)" % held)
+                check("HERON_KNOWLEDGE" in said
+                      and "a branch that is not main" in " ".join(said.split()),
+                      "and it says the branch is why, and to point "
+                      "HERON_KNOWLEDGE at a scratch folder")
+            else:
+                check(code == MEASURED and held > 0,
+                      "the main folder ON main still rebuilds the shared store - "
+                      "it is where that store comes from (got %r, %d rows)"
+                      % (code, held))
+        finally:
+            shutil.rmtree(top, ignore_errors=True)
+    # THE SHARED FOLDER UNDER ANOTHER SPELLING is still the shared folder. A
+    # HERON_KNOWLEDGE that names it by another path - a link, a junction, or
+    # here a `.` in the middle, which needs no rights to make - must not pass
+    # for a private store. Found by review of this change, 2026-10-09, when
+    # comparing the folders by spelling left every suite green.
+    top = tempfile.mkdtemp(prefix="heron-cr-spelling-")
+    appdata = os.path.join(top, "appdata")
+    shared = os.path.join(appdata, "Heron", "knowledge")
+    os.makedirs(shared)
+    try:
+        code, said = _guarded_run(
+            {"HERON_KNOWLEDGE": os.path.join(appdata, ".", "Heron", "knowledge"),
+             "APPDATA": appdata},
+            source=here, on_main=False)
+        held = _rows(shared)
+        check(code == 2 and held == 0,
+              "the shared folder named by another path is still the shared one: "
+              "refused from the main folder on a feature branch (got %r, %d rows)"
+              % (code, held))
+    finally:
+        shutil.rmtree(top, ignore_errors=True)
+    # AND A STORE WHOSE IDS MATCH BUT WHOSE ROWS ARE STALE is refused the same
+    # way - the rule is asked before ANY rebuild, not only when an id is new.
+    # Every other case here plants an empty store, so the ids always differ;
+    # found by review of this change, 2026-10-09.
+    import heron_scope as SCOPE
+    top = tempfile.mkdtemp(prefix="heron-cr-stale-shared-")
+    appdata = os.path.join(top, "appdata")
+    shared = os.path.join(appdata, "Heron", "knowledge")
+    os.makedirs(shared)
+    try:
+        with _planted_env({"HERON_KNOWLEDGE": shared}):
+            SCOPE.rebuild()
+            store = SCOPE.open_scope(SCOPE.GLOBAL)
+            edited = store.fragments()[0]["id"]
+            store.db.execute("UPDATE fragments SET semantic_identity = ? WHERE id = ?",
+                             ("an identity the card no longer says", edited))
+            store.db.commit()
+            store.close()
+        code, said = _guarded_run({"HERON_KNOWLEDGE": None, "APPDATA": appdata},
+                                  source=here, on_main=False)
+        with _planted_env({"HERON_KNOWLEDGE": shared}):
+            store = SCOPE.open_scope(SCOPE.GLOBAL)
+            still = [row["semantic_identity"] for row in store.fragments() if row["id"] == edited]
+            store.close()
+        check(code == 2 and still == ["an identity the card no longer says"],
+              "a shared store holding this tree's ids with one row stale is refused "
+              "from the main folder on a feature branch, and the row left as it was "
+              "(got %r, %r)" % (code, still))
+    finally:
+        shutil.rmtree(top, ignore_errors=True)
+    # CI: gates.yml runs this on a fresh HERON_KNOWLEDGE, on a checkout whose
+    # HEAD is not main. A private store is rebuilt on any branch.
+    home = tempfile.mkdtemp(prefix="heron-cr-private-")
+    try:
+        code, said = _guarded_run({"HERON_KNOWLEDGE": home}, on_main=False)
+        held = _rows(home)
+        check(code == MEASURED and held > 0,
+              "CI's private store, on a branch that is not main, is still "
+              "rebuilt and routed over (got %r, %d rows)" % (code, held))
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+    print()
+
+    print("9. ONE RULE, ASKED FROM BOTH SIDES - heron_scope.rebuild_refusal()")
+    # The lookup's warm-up and its rebuild advice, and this guard, decided the
+    # same question with two different rules - which is how the branch case
+    # above was let through here and refused there. Planted both ways, and
+    # each side must follow the plant.
+    import heron_scope as SCOPE
+    check(callable(getattr(SCOPE, "rebuild_refusal", None)),
+          "heron_scope has the one rule, rebuild_refusal()")
+    home = tempfile.mkdtemp(prefix="heron-cr-rule-")
+    try:
+        code, said = _guarded_run({"HERON_KNOWLEDGE": home},
+                                  refusal=("a reason planted by the suite",))
+        held = _rows(home)
+        check(code == 2 and held == 0,
+              "the guard refuses whenever the rule does, even on a private "
+              "store (got %r, %d rows)" % (code, held))
+        check("a reason planted by the suite" in said,
+              "and it prints the rule's own reason")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    try:
+        import heron_brain as BRAIN
+    except BaseException as raised:              # noqa: BLE001 - that IS the check
+        BRAIN = None
+        check(False, "heron_brain imports (%s)" % type(raised).__name__)
+    if BRAIN is not None:
+        real = getattr(SCOPE, "rebuild_refusal", None)
+        answers = []
+        try:
+            for planted in ("a reason planted by the suite", None):
+                SCOPE.rebuild_refusal = lambda root=None, said=planted: said
+                answers.append(BRAIN._store_warm_allowed())
+        finally:
+            if real is None:
+                del SCOPE.rebuild_refusal
+            else:
+                SCOPE.rebuild_refusal = real
+        check(answers == [False, True],
+              "and the lookup's _store_warm_allowed() follows the same rule: "
+              "refused, then allowed (got %r)" % (answers,))
+    print()
+
+    print("10. THE TWO REFUSALS NO OTHER SECTION ASKS - NO KNOWLEDGE FOLDER, "
+          "AND NO MAIN CHECKOUT FOUND")
+    # Both moved into rebuild_refusal() from rules that held them with no
+    # check behind them - found by review of row 5b-233's change, 2026-10-09,
+    # when either answer turned to "allowed" left every suite green. The
+    # lookup refused to warm a store with no knowledge folder at all; this
+    # guard refused the SHARED store from a worktree whose main checkout
+    # cannot be found, which is refreshes_from() answering None - row
+    # 5b-233's own rebuild, from a moved or broken worktree.
+    import heron_scope as SCOPE
+    rule = getattr(SCOPE, "rebuild_refusal", None)
+    with _planted_env({"HERON_KNOWLEDGE": None, "APPDATA": None}):
+        nowhere = _asked(rule) if rule is not None else None
+        warm = _asked(BRAIN._store_warm_allowed) if BRAIN is not None else None
+    check(nowhere is not None and not str(nowhere).startswith("raised "),
+          "with no knowledge folder at all - no %%APPDATA%%, no "
+          "HERON_KNOWLEDGE - the rule refuses (got %r)" % (nowhere,))
+    check(warm is False,
+          "and the lookup's _store_warm_allowed() does not warm a store it "
+          "has nowhere to keep (got %r)" % (warm,))
+    top = tempfile.mkdtemp(prefix="heron-cr-nomain-")
+    appdata = os.path.join(top, "appdata")
+    shared = os.path.join(appdata, "Heron", "knowledge")
+    os.makedirs(shared)
+    try:
+        code, said = _guarded_run({"HERON_KNOWLEDGE": None, "APPDATA": appdata},
+                                  source=None)
+        held = _rows(shared)
+        check(code == 2,
+              "the shared store, asked from a worktree whose main checkout "
+              "cannot be found, exits 2 (got %r)" % (code,))
+        check(held == 0, "and nothing is rebuilt into it (%d rows)" % held)
+        check("HERON_KNOWLEDGE" in said
+              and "cannot be found" in " ".join(said.split()),
+              "and it says why, and to point HERON_KNOWLEDGE at a scratch "
+              "folder")
+        if BRAIN is not None:
+            real = SCOPE.refreshes_from
+            SCOPE.refreshes_from = lambda root=None: None
+            try:
+                with _planted_env({"HERON_KNOWLEDGE": None, "APPDATA": appdata}):
+                    warm = _asked(BRAIN._store_warm_allowed)
+            finally:
+                SCOPE.refreshes_from = real
+            check(warm is False,
+                  "and the lookup's _store_warm_allowed() refuses it too "
+                  "(got %r)" % (warm,))
+    finally:
+        shutil.rmtree(top, ignore_errors=True)
     print()
 
     if FAILURES:

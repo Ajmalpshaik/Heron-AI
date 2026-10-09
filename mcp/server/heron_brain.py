@@ -62,7 +62,6 @@ carries the `status` of what it found, and a reader who wants to know whether
 something works reads that rather than trusting this paragraph.
 """
 
-import io
 import os
 import sqlite3
 import sys
@@ -201,35 +200,22 @@ ENCODER_WAIT_S = 60
 def _on_main_branch(root):
     """True when `root` is a checkout of branch main, or has no git at all.
 
-    Read from .git/HEAD rather than by running git - this is asked at
-    start-up, and a process per question is what start-up is short of. A
-    linked worktree has a .git FILE, and is never the main checkout.
+    heron_scope.on_main_branch()'s answer. It was written here and moved
+    there on 2026-10-09, so that the rule below has one home the store
+    checkers in tools/ can reach too (row 5b-233).
     """
-    dot_git = os.path.join(root, ".git")
-    if not os.path.exists(dot_git):
-        return True
-    if not os.path.isdir(dot_git):
-        return False
-    try:
-        with io.open(os.path.join(dot_git, "HEAD"), encoding="utf-8") as handle:
-            head = handle.read().strip()
-    except (IOError, OSError):
-        return False
-    return head == "ref: refs/heads/main"
+    return _brain()[0].on_main_branch(root)
 
 
 def _store_warm_allowed():
-    """May the store be prepared before anybody asks? See _PREPARING above."""
-    SCOPE = _brain()[0]
-    import heron_fragment as FRAG
-    base, shared = SCOPE.knowledge_dir(), SCOPE.shared_dir()
-    if not base:
-        return False
-    if not shared or not SCOPE._same_folder(base, shared):
-        return True                       # a private store: nobody else reads it
-    if SCOPE.refreshes_from() != (FRAG.FRAGMENTS_DIR, None):
-        return False                      # a worktree, or main cannot be found
-    return _on_main_branch(FRAG.ROOT)
+    """May the store be prepared before anybody asks? See _PREPARING above.
+
+    heron_scope.rebuild_refusal() decides: a private store, or the shared one
+    from the main checkout on main. tools/check-routing.py's store guard asks
+    the same function before it rebuilds, so a branch checked out in the main
+    folder is refused there as it is here.
+    """
+    return _brain()[0].rebuild_refusal() is None
 
 
 def warm_store():
