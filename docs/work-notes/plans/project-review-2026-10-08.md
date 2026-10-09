@@ -16,7 +16,7 @@ register - the permanent home of every item is the row id it names in
 |---|---|
 | The eleven CI gates (`heron-ship` §1) | **all eleven PASS**, after `git fetch --unshallow` for `check-decision-titles` |
 | `git diff --check` | PASS |
-| `tools/check-gaps.py` | **NOT RUN to the end** - stopped at the container's background time limit while running the suites. Run it on its own; read its buckets, not its exit code |
+| `tools/check-gaps.py` | **NOT RUN to the end** - stopped at the container's background time limit while running the suites. **Run end to end 2026-10-09** (low priority, beside other work): UNFINISHED 3 - `test_retrieve.py` and `test_routing_phrases.py` fail on the trained model exactly as on main (rows 5b-348, 5b-322, 5b-346), and `test_mcp_serves.py` passed its 300 s ceiling (row 5b-402); WAITING 657, none of them work for this container |
 | `tools/open-defects.py` | read by id; every open row of sections 5 and 5b was triaged against the code on disk |
 | The register itself | **one defect found by running its own tool** - see wave 1 |
 
