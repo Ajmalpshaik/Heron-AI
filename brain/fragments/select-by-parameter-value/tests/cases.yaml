@@ -51,6 +51,19 @@ negative:
   - given: an empty parameter name
     expect: refused, with the reason
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      parameterName "Interior Type" over Walls with includeTypeParameters
+      true, on a model with a curtain wall whose type shows Interior Type
+      twice (under Vertical and Horizontal Mullions) - or any name a shared
+      or project parameter repeats beside a built-in one
+    expect: >
+      that wall counted in `ambiguous` and named in findings as carrying two
+      parameters by the name, NOT matched and NOT in withoutParameter - with
+      matchMode equals or notequals alike, because either answer would be
+      read from whichever parameter Revit returned first (row 5b-203)
+
   # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
   - given: includeLinks ABSENT, on a model that HAS loaded links
     expect: >
