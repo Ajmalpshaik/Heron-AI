@@ -167,6 +167,38 @@ def main():
           "quiet zero, so it can never out-rank READ")
     print()
 
+    print("5. A CARD EDITED SINCE THE STORE WAS BUILT IS A STALE STORE, NOT ONLY A NEW ID")
+    # Row 5b-229: the store was rebuilt only when the SET OF IDS differed, so a
+    # card whose identity, capability or domain was edited was searched under
+    # its old text - the search reads those from the store's row.
+    import tempfile
+    import shutil
+    home = tempfile.mkdtemp(prefix="heron-cr-")
+    was = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = home
+    try:
+        import heron_scope as SCOPE
+        SCOPE.rebuild()
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        stale = getattr(CR, "stale_rows", None)
+        check(stale is not None, "check-routing can say which rows differ from their cards")
+        if stale is not None:
+            check(stale(store) == [], "a store just rebuilt from this tree has no stale row")
+            some = store.fragments()[0]["id"]
+            store.db.execute("UPDATE fragments SET semantic_identity = ? WHERE id = ?",
+                             ("an identity the card no longer says", some))
+            store.db.commit()
+            check(stale(store) == [some],
+                  "a row whose identity is not its card's is named (%s)" % stale(store))
+        store.close()
+    finally:
+        if was is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = was
+        shutil.rmtree(home, ignore_errors=True)
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

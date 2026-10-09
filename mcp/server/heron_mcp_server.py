@@ -102,7 +102,7 @@ import heron_bridge_client as bridge          # noqa: E402
 import heron_session as session                      # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
-                         describe_vertical, parse_millimetres)
+                         describe_vertical, parse_millimetres, skipped_sentence)
 from heron_failure import analyse, explain          # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
@@ -821,8 +821,7 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
 
     skipped = reply.get("willSkip", 0)
     if skipped:
-        lines.append("%s would be skipped - pinned, or owned by another user."
-                     % "{:,}".format(skipped))
+        lines.append(skipped_sentence(skipped, reply.get("skipReasons"), False))
 
     lines.append("")
     lines.append("Nothing has been changed yet. Say yes and Heron will apply it, "
@@ -884,8 +883,7 @@ def revit_apply_move() -> str:
                                         reply.get("distance"), reply.get("document"))]
 
     if reply.get("skipped"):
-        lines.append("%s were skipped - pinned, or owned by another user."
-                     % "{:,}".format(reply.get("skipped")))
+        lines.append(skipped_sentence(reply.get("skipped"), reply.get("skipReasons"), True))
 
     # THE THREE THAT MUST NEVER BE FOLDED INTO "MOVED".
     #

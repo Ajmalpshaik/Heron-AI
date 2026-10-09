@@ -133,6 +133,27 @@ def describe_drift(store_ids, disk_ids, limit=4):
     return "; ".join(parts) if parts else "the same ids in a different order"
 
 
+def stale_rows(store):
+    """The ids whose row in STORE is not the row their card on disk would
+    write - a changed identity, capability, domain, status or risk.
+
+    Row 5b-229: the rebuild below fired only when the SET OF IDS differed, and
+    the search reads a card's identity, capability and domain from the store's
+    row, not the file. So an edited card was searched under its old words, and
+    a routing result was printed over a library the store did not hold - the
+    failure the comments in main() exist to prevent, one step quieter. The
+    rows are compared the way rebuild() writes them, from every card that
+    validates."""
+    import heron_fragment as FRAG
+    import heron_scope as SCOPE
+    found, _problems = FRAG.load_all()
+    wanted = dict((frag.id, SCOPE.row_of(frag)) for frag in found.values()
+                  if not FRAG.validate(frag))
+    held = dict((row["id"], tuple(row[f] for f in SCOPE.ROW_FIELDS))
+                for row in store.fragments())
+    return sorted(fid for fid in wanted if fid in held and held[fid] != wanted[fid])
+
+
 def utterances():
     """(fragment id, sentence) for every declared utterance."""
     try:
@@ -229,8 +250,12 @@ def main(argv):
     disk_ids = ids_on_disk()
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     store_ids = set(row["id"] for row in store.fragments())
-    if store_ids != disk_ids:
-        drift = describe_drift(store_ids, disk_ids)
+    # AND THE CONTENT, NOT ONLY THE IDS - row 5b-229.
+    edited = stale_rows(store) if store_ids == disk_ids else []
+    if store_ids != disk_ids or edited:
+        drift = (describe_drift(store_ids, disk_ids) if store_ids != disk_ids else
+                 "%d card(s) edited since their row was written (%s)"
+                 % (len(edited), ", ".join(edited[:4]) + (", and more" if len(edited) > 4 else "")))
         store.close()
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
