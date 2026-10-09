@@ -90,6 +90,15 @@ class CrossScopeRefused(Exception):
     """Raised when a statement tries to reach beyond its own scope file."""
 
 
+def _no_second_file(action, *_):
+    """SQLite's authorizer: ATTACH and DETACH are denied at the engine, so the
+    raw connection cannot open a second scope's file either. Everything else
+    is allowed - this is a wall in one place, not a policy."""
+    if action in (sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH):
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
+
 # The columns of a `fragments` row, in the order `row_of` fills them. ONE list,
 # because `put_fragment` writes a row and `refresh` compares one, and two
 # spellings of the same row are how a field gets written and never compared.
@@ -200,6 +209,11 @@ class Store(object):
 
         self.db = sqlite3.connect(self.path)
         self.db.row_factory = sqlite3.Row
+        # THE WALL, under the sentence. execute() refuses ATTACH by name so a
+        # person reads why; but `db` is public and the DDL sites use it
+        # directly, so the engine refuses too - every route, every statement
+        # (row 5b-108).
+        self.db.set_authorizer(_no_second_file)
         self._create()
 
     # -- the guard ----------------------------------------------------------

@@ -31,6 +31,7 @@ asked a live model what is open.
 
 import io
 import os
+import sqlite3
 import shutil
 import sys
 import tempfile
@@ -675,6 +676,30 @@ def main():
             except S.CrossScopeRefused:
                 detached = True
             check(detached, "so does DETACH - the other half of the same door")
+
+            # Row 5b-108: store.db is the raw connection, public, and eight DDL
+            # sites use it - so the regex in execute() was a convention, and
+            # store.db.execute("ATTACH ...") read the company store through
+            # the global one. The engine itself must refuse.
+            other = os.path.join(home, "other-scope.db")
+            sqlite3.connect(other).close()
+            for alias, route, call in (
+                    ("other1", "store.db.execute", lambda sql: store.db.execute(sql)),
+                    ("other2", "store.db.executescript", lambda sql: store.db.executescript(sql))):
+                try:
+                    call("ATTACH DATABASE '%s' AS %s" % (other, alias))
+                    got = "attached"
+                except S.CrossScopeRefused:
+                    got = "refused by the guard"
+                except sqlite3.DatabaseError as exc:
+                    got = "database said: %s" % exc
+                # Only a REFUSAL counts. Any other database error - "already
+                # in use" after an earlier attach got through - is not one.
+                check(got == "refused by the guard" or "not authorized" in got,
+                      "ATTACH through %s is refused too (%s)" % (route, got))
+            store.db.execute("CREATE TABLE IF NOT EXISTS scratch_ddl (x)")
+            store.db.execute("DROP TABLE scratch_ddl")
+            check(True, "and ordinary DDL through store.db still runs")
 
             ok_query = store.execute(
                 "SELECT COUNT(*) AS n FROM fragments").fetchone()["n"]

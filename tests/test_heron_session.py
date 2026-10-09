@@ -53,6 +53,7 @@ on the owner's PC - the same limit test_heron_guard.py states.
 import glob
 import io
 import json
+import ntpath
 import os
 import re
 import shutil
@@ -77,6 +78,18 @@ except AttributeError:
     pass
 
 FAILURES = []
+
+
+def outside(path, root, paths=os.path):
+    """True when PATH is neither ROOT nor under it. Two Windows drives share
+    no common path, and commonpath raises rather than answer - which is an
+    answer: a folder on another drive is outside. hook_log._inside says the
+    same thing the same way."""
+    full, base = paths.realpath(path), paths.realpath(root)
+    try:
+        return paths.commonpath([full, base]) != base
+    except ValueError:
+        return True
 
 
 def check(condition, what):
@@ -577,9 +590,15 @@ def run_all(home):
           and any(e.get("hook") == "heron-session-line"
                   and e.get("decision") == "silent" for e in entries),
           "the session line records both what it said and when it was silent")
-    check(os.path.commonpath([os.path.realpath(logs),
-                              os.path.realpath(ROOT)]) != os.path.realpath(ROOT),
-          "and the folder is outside this repository: %s" % logs)
+    check(outside(logs, ROOT), "and the folder is outside this repository: %s" % logs)
+    # Row 5b-186: on the owner's PC the temp folder is on C: and the checkout
+    # on D:, and commonpath RAISES for two drives - the suite died here with
+    # 19 checks unreported. Asked of Windows paths on any machine:
+    try:
+        across = outside(r"C:\Users\me\AppData\Local\Temp\logs", r"D:\Heron-AI", ntpath)
+    except ValueError as error:
+        across = "raised %s" % error
+    check(across is True, "a folder on another drive is outside it, and asking does not raise (%s)" % across)
 
     kb = os.path.join(home, "kb")
     os.makedirs(kb)

@@ -386,6 +386,49 @@ def main():
           "is still REVISE - a change with no evidence is not a pass")
 
     print()
+    print("What a child prints is read as UTF-8, whatever the machine's code page")
+    # Row 5b-196: on the owner's PC a reader thread died decoding a child's
+    # UTF-8 in cp1252, and run() kept an empty note. Linux CI decodes UTF-8
+    # either way, so this stands in for subprocess.run and decodes the way
+    # Windows does when the caller names no encoding.
+    # chr(0x2550) is a box-drawing line; its UTF-8 holds 0x90, a byte cp1252
+    # has no character for - the kind that killed the reader thread.
+    printed = (chr(0x2550) * 3 + u" checked " + chr(0x2192) + u" " + chr(0x2705) + u" done" + chr(10)).encode("utf-8")
+    calls = []
+
+    def windows_run(cmd, **kwargs):
+        calls.append(kwargs)
+        out = printed
+        if kwargs.get("text") or kwargs.get("encoding"):
+            out = printed.decode(kwargs.get("encoding") or "cp1252", kwargs.get("errors") or "strict")
+        return subprocess.CompletedProcess(cmd, 0, out, out)
+
+    real_run = EVIDENCE.subprocess.run
+    EVIDENCE.subprocess.run = windows_run
+    try:
+        try:
+            note = EVIDENCE.run(["a-gate"])[1]
+        except UnicodeDecodeError as error:
+            note = "raised %s" % error
+        check(note == printed.decode("utf-8").strip(),
+              "run() keeps a gate's last line intact (%r)" % note)
+        try:
+            said = EVIDENCE.git(["status"])
+        except UnicodeDecodeError as error:
+            said = "raised %s" % error
+        check(said == printed.decode("utf-8").strip(), "git() reads it intact (%r)" % said)
+        del calls[:]
+        try:
+            EVIDENCE.suite_results("test_change_gate.py")
+            raised = None
+        except UnicodeDecodeError as error:
+            raised = error
+        check(raised is None and calls and all(c.get("encoding") == "utf-8" for c in calls),
+              "and the suite loop decodes each suite as UTF-8 too")
+    finally:
+        EVIDENCE.subprocess.run = real_run
+
+    print()
     if FAILURES:
         print("FAILED")
         for f in FAILURES:

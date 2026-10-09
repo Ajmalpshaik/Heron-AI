@@ -113,8 +113,10 @@ def w(s):
 
 def run(cmd, timeout=1800):
     try:
-        out = subprocess.run(cmd, cwd=ROOT, capture_output=True,
-                             text=True, timeout=timeout)
+        # UTF-8, not the machine's code page: on Windows a child's output
+        # decoded as cp1252 killed a reader thread (row 5b-196).
+        out = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
+                             encoding="utf-8", errors="replace", timeout=timeout)
     except (OSError, subprocess.TimeoutExpired) as exc:
         return None, str(exc)
     lines = (out.stdout or "").strip().splitlines()
@@ -122,7 +124,8 @@ def run(cmd, timeout=1800):
 
 
 def git(args):
-    out = subprocess.run(["git", "-C", ROOT] + args, capture_output=True, text=True)
+    out = subprocess.run(["git", "-C", ROOT] + args, capture_output=True, text=True,
+                         encoding="utf-8", errors="replace")
     return out.stdout.strip() if out.returncode == 0 else None
 
 
@@ -239,8 +242,9 @@ def suite_results(which):
     for path in paths:
         name = os.path.basename(path)
         try:
-            out = subprocess.run(["python3", path], cwd=ROOT,
-                                 capture_output=True, text=True, timeout=600)
+            out = subprocess.run(["python3", path], cwd=ROOT, capture_output=True,
+                                 text=True, encoding="utf-8", errors="replace",
+                                 timeout=600)
             results[name] = out.returncode
         except (OSError, subprocess.TimeoutExpired):
             results[name] = None
