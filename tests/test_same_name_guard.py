@@ -34,12 +34,28 @@ WHAT IT CHECKS, AS TEXT
   4. THE COUNT IS ACCOUNTING. Where a reader reports the refused elements as a
      count of its own, the card declares it `role: accounting`: an element
      turned down is evidence it looked, never a thing it found (D-52).
+  5. THE REFUSAL ITSELF, in the readers whose fixed name is guarded inline.
+     Check 1 asks only that a name is counted somewhere; a review on
+     2026-10-09 deleted the refusal, kept the count, and check 1 stayed
+     green. So for each `R.LookupParameter(X)` here: `V = R.GetParameters(X)
+     .Count;` comes first, on the same receiver, as a statement of its own;
+     nothing changes V before `if (V > 1)`, which follows it, before the
+     lookup; that branch says NOT READ in a string, or adds the element to a
+     list whose own `if (L.Count > 0)` says it; it assigns no value; the
+     lookup is not inside it; and the lookup is reached only past it - the
+     branch returns or continues, or the lookup sits in its `else`. Comments
+     are removed first, string literals kept. A second review the same day
+     weakened the count, reassigned it, read the first match inside the
+     refusal and filled in a value there, and each passed until these rules.
 
 WHAT IT CANNOT DO
 Run a fragment. Whether Revit really hands back two parameters for a name, and
 which one LookupParameter would have picked, needs a model that carries a
 duplicated name - NEEDS-CHECKING Group AP arranges it. A green run here means
-the guard is written, not that it has been seen to work.
+the guard is written, not that it has been seen to work. Check 5 reads one
+shape of code, the inline one; the fragments that guard through a helper of
+their own are held by check 1 alone, so a refusal deleted there with its count
+kept would still pass.
 """
 
 import io
@@ -68,6 +84,41 @@ READERS = (
     "select-by-numeric-parameter",
     "check-family-standards",
     "check-sleeve-size",
+    # Fixed names that spread after the row's census, found by this suite's own
+    # rule run over the whole library and repaired 2026-10-09: a linked host's
+    # "Fire Rating", read the way check-sleeve-size reads it...
+    "audit-mep-openings",
+    "check-ceiling-coordination",
+    "check-equipment-clearance",
+    "check-minimum-clearance",
+    "check-surface-fit",
+    "check-valve-accessibility",
+    "find-clashes",
+    "probe-around-elements",
+    "propose-mep-openings",
+    "select-touching",
+    # ...a Space's "Space Type", and a fitting's "Angle".
+    "report-space-envelope",
+    "report-sprinkler-network",
+)
+
+# Readers whose guard is written inline around one fixed name, so check 5 can
+# read the refusal and not only the count. The others above guard a name that
+# arrives from outside through a helper of their own, a shape check 5 does not
+# parse; check 1 is what holds them.
+REFUSED = (
+    "audit-mep-openings",
+    "check-ceiling-coordination",
+    "check-equipment-clearance",
+    "check-minimum-clearance",
+    "check-surface-fit",
+    "check-valve-accessibility",
+    "find-clashes",
+    "probe-around-elements",
+    "propose-mep-openings",
+    "select-touching",
+    "report-space-envelope",
+    "report-sprinkler-network",
 )
 
 # Readers that report the refused elements as a count of their own.
@@ -171,11 +222,188 @@ def the_count():
               "%s: the code never counts `%s`" % (name, provide))
 
 
+def literal_end(code, i):
+    """The index just past the string or char literal starting at i, or None."""
+    n = len(code)
+    if code.startswith('@"', i):
+        j = i + 2
+        while j < n:
+            if code[j] == '"':
+                if code.startswith('""', j):
+                    j += 2
+                    continue
+                return j + 1
+            j += 1
+        return n
+    if code[i] in "\"'":
+        quote, j = code[i], i + 1
+        while j < n and code[j] != quote and code[j] != "\n":
+            j += 2 if code[j] == "\\" else 1
+        return min(j + 1, n)
+    return None
+
+
+def without_comments(code):
+    """Line and block comments out, string and char literals kept whole."""
+    out, i, n = [], 0, len(code)
+    while i < n:
+        if code.startswith("//", i):
+            j = code.find("\n", i)
+            i = n if j < 0 else j
+            continue
+        if code.startswith("/*", i):
+            j = code.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+            out.append(" ")
+            continue
+        end = literal_end(code, i)
+        if end is not None:
+            out.append(code[i:end])
+            i = end
+            continue
+        out.append(code[i])
+        i += 1
+    return "".join(out)
+
+
+def skip_space(code, i):
+    while i < len(code) and code[i].isspace():
+        i += 1
+    return i
+
+
+def statement_end(code, i):
+    """Just past the one statement at i: a braced block, or up to its `;`."""
+    depth, n, braced = 0, len(code), code.startswith("{", i)
+    while i < n:
+        end = literal_end(code, i)
+        if end is not None:
+            i = end
+            continue
+        c = code[i]
+        if c in "({[":
+            depth += 1
+        elif c in ")}]":
+            depth -= 1
+            if braced and depth == 0:
+                return i + 1
+        elif c == ";" and depth == 0 and not braced:
+            return i + 1
+        i += 1
+    return n
+
+
+LITERAL = re.compile(r'@"(?:[^"]|"")*"|"(?:[^"\\\n]|\\.)*"')
+SAYS_NOT_READ = re.compile(r"not read", re.IGNORECASE)
+LOOKUP_ON = re.compile(r"(\w+)\s*\.\s*LookupParameter\(\s*([^()]+?)\s*\)")
+
+
+def says_not_read(text):
+    return any(SAYS_NOT_READ.search(lit) for lit in LITERAL.findall(text))
+
+
+def refusal_problems(code):
+    """What check 5 finds wrong with each LookupParameter in comment-free code."""
+    problems = []
+    for lookup in LOOKUP_ON.finditer(code):
+        receiver, name = lookup.group(1), lookup.group(2)
+        where = "%s.LookupParameter(%s)" % (receiver, name)
+        # THE COUNT IS THE COUNT: the statement ends at `.Count;`, so neither
+        # `.Count - 1` nor `.Count > 1 ? 1 : 0` passes for it - a review on
+        # 2026-10-09 weakened it both ways and this check stayed green.
+        counts = list(re.finditer(
+            r"\b(\w+)\s*=\s*%s\s*\.\s*GetParameters\(\s*%s\s*\)\s*\.\s*Count\s*;"
+            % (re.escape(receiver), re.escape(name)), code[:lookup.start()]))
+        if not counts:
+            problems.append("%s is not preceded by `V = %s.GetParameters(%s).Count;` on the "
+                            "same receiver, the count and nothing else" % (where, receiver, name))
+            continue
+        var = counts[-1].group(1)
+        guard = re.compile(r"\bif\s*\(\s*%s\s*(?:>\s*1|>=\s*2)\s*\)" % re.escape(var)).search(
+            code, counts[-1].end(), lookup.start())
+        if guard is None:
+            problems.append("%s: nothing between the count and the lookup says `if (%s > 1)` - "
+                            "two parameters by that name would be read from whichever came "
+                            "first" % (where, var))
+            continue
+        # AND NOTHING CHANGES IT between the count and the `if`.
+        between = LITERAL.sub('""', code[counts[-1].end():guard.start()])
+        if re.search(r"\b%s\s*(?:[-+*/%%]?=(?![=>])|\+\+|--)|(?:\+\+|--)\s*%s\b"
+                     % (re.escape(var), re.escape(var)), between):
+            problems.append("%s: `%s` is changed between its count and `if (%s > 1)` - the "
+                            "branch would test something other than the count"
+                            % (where, var, var))
+            continue
+        start = skip_space(code, guard.end())
+        end = statement_end(code, start)
+        branch = code[start:end]
+
+        # THE LOOKUP IS NOT IN THE REFUSAL. A branch that returns the first
+        # match under a NOT READ label reads the name it refuses.
+        if start <= lookup.start() < end:
+            problems.append("%s sits inside the branch under `if (%s > 1)` - the refusal "
+                            "reads the first match it exists to refuse" % (where, var))
+            continue
+        # AND THE REFUSAL SETS NO VALUE: a doubled name is NOT READ, never a
+        # value put in its place (`angle = 0`, `spaceType = "Office"`).
+        plain = LITERAL.sub('""', branch)
+        if re.search(r"(?<![=!<>+\-*/%&|^])=(?![=>])|\+\+|--|[-+*/%]=", plain):
+            problems.append("%s: the branch under `if (%s > 1)` assigns a value - a refused "
+                            "name must be left unread, not filled in" % (where, var))
+
+        leaves = re.search(r"\b(?:return|continue)\b", branch) is not None
+        if not leaves:
+            after = skip_space(code, end)
+            inside_else = False
+            if re.match(r"else\b", code[after:after + 5]):
+                body = skip_space(code, after + 4)
+                inside_else = body <= lookup.start() < statement_end(code, body)
+            if not inside_else:
+                problems.append("%s is reached after `if (%s > 1)` - the branch neither "
+                                "returns nor continues, and the lookup is not in its `else`"
+                                % (where, var))
+
+        said = says_not_read(branch)
+        if not said:
+            for listed in re.findall(r"\b(\w+)\s*\.\s*Add\(", branch):
+                later = re.compile(r"\bif\s*\(\s*%s\s*\.\s*Count\s*(?:>\s*0|>=\s*1|!=\s*0)\s*\)"
+                                   % re.escape(listed)).search(code, end)
+                if later is not None:
+                    told = skip_space(code, later.end())
+                    if says_not_read(code[told:statement_end(code, told)]):
+                        said = True
+        if not said:
+            problems.append("%s: the branch under `if (%s > 1)` never says NOT READ - a "
+                            "doubled name would be shown as a missing one, or not at all"
+                            % (where, var))
+    return problems
+
+
+def the_refusal():
+    print("5. In the inline readers, the refusal itself: counted, branched on, said, and "
+          "the lookup only past it")
+    for name in REFUSED:
+        paths = impl_files(name)
+        check(len(paths) > 0, "%s: no impl/*/fragment.cs to read" % name)
+        for path in paths:
+            code = without_comments(read(path))
+            release = os.path.basename(os.path.dirname(path))
+            check(LOOKUP_ON.search(code) is not None,
+                  "%s (%s): no LookupParameter on a named receiver left to hold to the "
+                  "refusal - check 5 has nothing to read" % (name, release))
+            problems = refusal_problems(code)
+            for problem in problems:
+                check(False, "%s (%s): %s (D-54 s3, 5b-203)" % (name, release, problem))
+            if not problems:
+                check(True, "%s (%s): the refusal is in place" % (name, release))
+
+
 def main():
     the_guard()
     the_card()
     the_negative_case()
     the_count()
+    the_refusal()
     if failures:
         print("\n%d check(s) failed, %d passed" % (len(failures), passes[0]))
         return 1

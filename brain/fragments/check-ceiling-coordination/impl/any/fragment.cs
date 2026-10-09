@@ -93,6 +93,11 @@ if (includeLinks)
 // Fire Rating by the name Revit's own walls, floors and doors carry it under,
 // on the element first and then its type. Read as the palette shows it. A
 // family that calls it something else reads "not set" - said, never guessed.
+// TWO PARAMETERS BY THAT NAME where the lookup lands - a shared or project
+// "Fire Rating" bound beside the built-in one - read "NOT READ" with the
+// count, never either value: asked by name, Revit returns "the first one
+// encountered", which its own reference says "is determined at random"
+// (D-54 s3, FRAGMENT-ISSUES 5b-203). The guard check-sleeve-size carries.
 Func<Element, string> fireRatingOf = element =>
 {
     Element type = null;
@@ -100,6 +105,10 @@ Func<Element, string> fireRatingOf = element =>
     foreach (var source in new[] { element, type })
     {
         if (source == null) continue;
+        // Two by this name where the lookup lands: said, never read (5b-203).
+        var sharing = 0;
+        try { sharing = source.GetParameters("Fire Rating").Count; } catch (Exception) { }
+        if (sharing > 1) return "NOT READ - " + sharing + " parameters share that name";
         Parameter parameter = null;
         try { parameter = source.LookupParameter("Fire Rating"); } catch (Exception) { }
         if (parameter == null || !parameter.HasValue) continue;
