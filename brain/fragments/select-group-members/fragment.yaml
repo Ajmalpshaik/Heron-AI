@@ -72,7 +72,7 @@ compatibility-note: >
 # ROUTING - repeated in GROUP_ELEMENTS, UNGROUP_ELEMENTS and GROUP_BY_ASSEMBLY.
 #
 #   "what is in this group"          -> here
-#   "select the things inside it"    -> here
+#   "select the elements inside this group" -> here
 #   "group these"                    -> GROUP_ELEMENTS - the write
 #   "explode this group"             -> UNGROUP_ELEMENTS. That is what is
 #                                       really wanted when the next step is to

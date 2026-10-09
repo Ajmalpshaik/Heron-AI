@@ -1116,6 +1116,102 @@ here. *Space* in it is room taken up, not an MEP Space.
 
 ---
 
+## 2026-10-09 — every routing-table claim that did not reach its card, judged
+
+[Row 5b-387](../docs/fragment-issues/section-5b-rows-176-200.md). `check-routing.py` listed 56 claims not
+reached on **`lexical`** and 70 on **`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside
+the repository) - 89 sentences, a table saying *"-> here"* and ranking answering something else. Measured on
+scratch stores at **480 fragments**, no Revit filter, no re-ranker.
+
+**Judged before anything was written.** One agent per claim read the claiming card and the cards serving it
+against this file's rule; every proposed declaration or re-pointed row then faced three skeptics - a better
+card, a sentence too generic to own, a question reaching a write - and stood only with two of three.
+Declared here was only what all three let stand; 25 claims are left, named in the row, for the owner.
+
+**Then measured, and four declarations came out of it.** Each of the 46 edited cards was put back one at a
+time on both backends and the regressions asked again. Every cost had one card behind it:
+
+| Declared on | Cost | Kept? |
+|---|---|---|
+| `SET_SHEET_TITLE_BLOCK`, *"put the new border on the whole set"* | the question *"which sheets use the old border"* reached this write, both backends | no |
+| `REPORT_FAMILY_TABLES_IN_PROJECT`, *"check every fitting family's sizes"* | *"start a new family"* reached a read; the owner's *"Tag the ducts again using this tag family"* left the top five, lexical | no |
+| `COUNT_BY_SPATIAL_CONTAINER`, *"how many diffusers in each room"* | the owner's *"How many diffusers are there in the model?"* 4th to 5th, `model`; with *"count these by zone"*, *"how high are these rooms"* reached `PLACE_ROOMS`, lexical | no - *"count these by zone"* alone is clean |
+| `SELECT_HIDDEN_IN_VIEW`, *"what is not showing here"* | *"what is showing here"* reached the hidden-elements card, `model` - the encoder hears the words and not the *not* | yes, with the twin declared on `SELECT_VISIBLE_IN_VIEW` |
+| `SET_PROJECT_UNITS`, *"round lengths to 5 mm"* | *"show airflow in CFM"* moved from this ADMIN write to `REPORT_SPACE_AIRFLOW`, `model` | yes - the safe direction |
+
+| | before | after |
+|---|---|---|
+| claims not reached | 56 `lexical`, 70 `model` | **21**, **19** - the 25 left, less those each backend already reached, plus two wrapped rows the checker misreads (#453) |
+| one sentence claimed by two tables | 1 | 0 |
+| `check-routing.py` words #1 | 2226 of 2763 | 2280 of 2816 |
+| `check-routing.py` nearness #1 | 1471 `lexical`, 1503 `model` | 1493, 1521 |
+| Revit 2024 risk crossings, `test_routing_phrases.py` on `model` | | identical, both backends |
+| the owner's 79, `score-routing.py` | | none dropped; #62 3rd to 2nd `lexical`, #53 2nd to **1st** `model` |
+| 836 undeclared routing-table sentences through `find` | on their table's card: 544 `lexical`, 520 `model` | 546, 522; none moved off on `lexical`, one on `model` (*"show airflow in CFM"*, above); none a question moving onto a write |
+
+**And one measurement had to be thrown away.** The first after-probe on `model` reported 26 sentences
+moving onto their card and a crowd moving off. Its own record said `lexical`: a scratch script named
+`bisect.py`, written beside the probe, shadowed the standard library's `bisect`, model2vec failed to
+import, and the embedder fell back to lexical without a word. The probe now refuses to write a record
+whose backend is not the one it was asked for - and a backend label is checked on every record above.
+
+### What this does not establish
+
+- **The judges and skeptics are agents reading cards**, not the owner. Every verdict is recorded with its
+  reasons; the 25 left are his.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit**, and nothing was reworded or weakened to buy a rank.
+
+---
+
+## 2026-10-09 — questions about materials reach writes, and no card edit fixes it
+
+[Row 5b-396](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `17040842`, **480
+fragments**, no Revit filter, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
+from a venv outside the repository), no re-ranker, every run on its own scratch store.
+
+**The instrument is new and kept:** [`tests/data/material-questions.tsv`](../tests/data/material-questions.tsv),
+238 sentences no card declares. The first 44 were written before any fix was tried, and the rest by
+skeptics whose job was to break the candidate fixes. Of its 69 questions about what an element is made of:
+
+| | `lexical` | `model` |
+|---|---|---|
+| reach a card that writes | **29** | **20** |
+| of them, `CREATE_MATERIAL` | 15 | 12 |
+| of them, `REPLACE_MATERIAL` | 5 | 2 |
+
+**Eight card-only fixes were tried and none was kept.** Each was measured on both backends, with and
+without PR #450's `LIST_MATERIALS`, and the qualifying ones went to skeptics writing fresh sentences.
+Every one that took crossings away moved something else the wrong way: a negated question off
+`FIND_UNUSED_MATERIALS`, a request to make a material off `CREATE_MATERIAL`, a selection or an unrelated
+wall question onto a write. The row lists each with the sentence that broke it.
+
+**Why a card cannot settle it, from the measurements:**
+
+- **The words that decide these questions are incidental.** *what, which, does, this, are, that* are on
+  more than half the cards and score nothing in the words route. What is left is *material* (on every
+  material card) and *use* or *those*, which happen to be in the WRITE cards' purposes and identity and
+  not in `READ_ELEMENT_MATERIAL`'s.
+- **A short word matches only itself.** `_fts_query` makes a word of three letters or fewer an exact
+  term, so *use* never reaches *using*, *unused* or *used*. Give *use* to the read, and it takes the
+  negated questions from `FIND_UNUSED_MATERIALS`, which can only say *unused*.
+- **The material cards sit on ties.** On `model` a swap between the routes fuses to an exact tie
+  (2026-09-28 section), and dozens of these sentences are decided by under one rank. Almost any added
+  sentence flips one somewhere.
+
+**So the next measurement belongs to the retrieval layer** - the short-word rule, or the equal-weight tie
+the 2026-09-28 section left alone because changing it cost the owner's questions - measured on his 79
+first and on this file second, on both backends.
+
+### What this does not establish
+
+- **The sentences are agents' sentences**, written to measure and to break, not the owner's. His 79 did
+  not move under any candidate that met the constraints.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit**, and no card was changed.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:

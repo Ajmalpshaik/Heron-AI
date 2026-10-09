@@ -114,3 +114,9 @@ utterances:
   - what will this drawing actually show
   - find the elements visible in a view
   - count what is on this drawing
+  # ADDED 2026-10-09, row 5b-387, with its twin. SELECT_HIDDEN_IN_VIEW's table
+  # sends "what IS showing here" to this card, and that card now declares
+  # "what is not showing here", which its table claims. Declared alone, the
+  # twin took this sentence too on the trained backend - an encoder hears
+  # the words and not the "not" - so each half is fixed to its own card.
+  - what is showing here

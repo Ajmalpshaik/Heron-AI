@@ -100,7 +100,7 @@ compatibility-note: >
 # ROUTING - the neighbours this must not be confused with.
 #
 #   "draw all the ducts"            -> here
-#   "draw the mains and branches"   -> here
+#   "draw the mains and the branches" -> here
 #   "draw a duct from here to there" -> CREATE_DUCT - one run
 #   "change these ducts to 400x250" -> SET_MEP_SIZE - existing ducts
 #   "put the fittings in"           -> FIT_MEP_JOINTS, which follows this

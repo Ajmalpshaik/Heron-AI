@@ -123,3 +123,7 @@ utterances:
   - add a space at this point
   - place a room in that area
   - i need a space for the load calculation
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "add a space
+  # in that area": CREATE_HVAC_ZONE on lexical answered it.
+  - add a space in that area

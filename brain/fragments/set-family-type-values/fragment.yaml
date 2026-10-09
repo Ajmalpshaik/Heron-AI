@@ -212,3 +212,7 @@ utterances:
   - rename the family type
   - rename type Standard to HexNut - ISO 4032
   - delete this family type
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "set the nut
+  # material to galvanised": SELECT_BY_MATERIAL answered it on both backends.
+  - set the nut material to galvanised
