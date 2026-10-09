@@ -356,6 +356,10 @@ class _Open(object):
 
     def __init__(self):
         self.store = None
+        # The card folders refresh() stat-walked during THIS open, so a lookup
+        # can say what the store does not hold without walking them again
+        # (row 5b-233; heron_scope.drift). Per open, so never stale.
+        self.walked = {}
 
     def __enter__(self):
         # One preparation at a time, so a lookup that arrives while warm_store()
@@ -403,7 +407,7 @@ class _Open(object):
             # the MAIN checkout's card says, never to a worktree's unmerged
             # edit (row 131; heron_scope.refreshes_from). BEFORE the indexes,
             # because every one of them reads these rows.
-            SCOPE.refresh(self.store)
+            SCOPE.refresh(self.store, walked=self.walked)
             CAP.rebuild(self.store)
             SEARCH.index(self.store)
             EMBED.index(self.store)
@@ -605,6 +609,71 @@ def _risks(store):
     return dict((row["id"], row.get("risk")) for row in store.fragments())
 
 
+def _few(names, limit=3):
+    """Up to `limit` names, and how many more."""
+    shown = ", ".join(names[:limit])
+    return shown + (" and %d more" % (len(names) - limit)
+                    if len(names) > limit else "")
+
+
+def _store_drift(store, walked=None):
+    """One sentence when the store and this checkout's cards differ, else None.
+
+    FRAGMENT-ISSUES ROW 5b-233. A lookup answers from whatever the store
+    holds, and refresh() never adds or removes a row - so a card this checkout
+    has and the store has not cannot be found, and a row with no card here
+    names something revit_change will refuse, and neither was said. On
+    2026-09-27 a chat in a worktree was not offered the card it had just
+    written; once the shared store was rebuilt from that branch, every other
+    chat was offered one main did not hold.
+
+    THE REMEDY DEPENDS ON WHOSE STORE IT IS. Where a rebuild from here cannot
+    spread unmerged work - a private store, or the shared one from the main
+    checkout on main, which _store_warm_allowed() already decides - the
+    sentence says to rebuild. Anywhere else a rebuild from here is row 5b-233's
+    other half, so it says whose store it is and how to get one of this
+    checkout's own.
+
+    And a comparison that could not be made is SAID, as `risks_unreadable` is
+    (row 35): None would read as "they match".
+    """
+    SCOPE = _brain()[0]
+    try:
+        missing, extra = SCOPE.drift(store, walked=walked)
+    except Exception as exc:                           # noqa: BLE001 - said, not raised
+        return ("Heron could not compare its knowledge store with this "
+                "checkout's cards (%s: %s), so it cannot say whether every "
+                "card here can be found." % (type(exc).__name__, exc))
+    if not missing and not extra:
+        return None
+    parts = []
+    if missing:
+        parts.append("%d card(s) in this checkout are not in it, so no lookup "
+                     "can find them (%s)" % (len(missing), _few(missing)))
+    if extra:
+        parts.append("%d fragment(s) in it have no card here, so an answer "
+                     "naming one cannot run (%s)" % (len(extra), _few(extra)))
+    try:
+        here = _store_warm_allowed()
+        base, shared = SCOPE.knowledge_dir(), SCOPE.shared_dir()
+        private = not shared or not SCOPE._same_folder(base, shared)
+    except Exception:                                  # noqa: BLE001 - the safe answer
+        here, private = False, False
+    if here:
+        # A PRIVATE STORE IS NAMED, because `--rebuild` finds its store the
+        # same way this server did, and run from a shell without this
+        # server's HERON_KNOWLEDGE it would rebuild the shared one instead.
+        fix = ("a rebuild is needed: python brain/heron_scope.py --rebuild%s"
+               % (" with HERON_KNOWLEDGE=%s" % base if private else ""))
+    else:
+        fix = ("it is the store every chat on this machine shares, which "
+               "follows the main checkout, so rebuild it only from there - or "
+               "set HERON_KNOWLEDGE to an empty folder to look this checkout's "
+               "own cards up")
+    return ("The knowledge store does not match this checkout: %s - %s."
+            % ("; ".join(parts), fix))
+
+
 def lookup(request, revit=None):
     """
     What the user asked for, resolved to a CAPABILITY through retrieval.
@@ -620,10 +689,14 @@ def lookup(request, revit=None):
     given.
     """
     _S, _CAP, SKILL, _SE, _E, RETRIEVE = _brain()
-    with _Open() as store:
+    opened = _Open()
+    with opened as store:
         answer = RETRIEVE.find(store, request, revit=revit)
         capability = (_capability_of(store, answer.fragment_id)
                       if answer.fragment_id else None)
+        # WHETHER THE STORE HOLDS THIS CHECKOUT'S CARDS - row 5b-233. From the
+        # stat walk refresh() took a moment ago, so it opens no file.
+        store_drift = _store_drift(store, opened.walked)
 
         # THE DECLARED RISK OF EACH CANDIDATE, READ FROM THE STORE RATHER
         # THAN FROM DISK - the store is what retrieval actually ranked, so a
@@ -724,6 +797,9 @@ def lookup(request, revit=None):
             # risks could not be read, so a caller knows the risk fields
             # below are absent rather than READ.
             "risks_unreadable": risks_unreadable,
+            # None while the store holds exactly this checkout's cards. A
+            # sentence naming how many differ, and what to do, when not.
+            "store_drift": store_drift,
             "revit": revit,
             "methods": methods,
         }

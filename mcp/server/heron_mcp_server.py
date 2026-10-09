@@ -1279,9 +1279,10 @@ def _by_words(request, door, values):
 
     capability = found.get("capability")
     if not capability:
-        return None, ("Heron has no way of doing \"%s\", so nothing has been "
-                      "sent to Revit. Run heron_capabilities to see what it "
-                      "does know." % request)
+        return None, "\n".join(
+            ["Heron has no way of doing \"%s\", so nothing has been sent to "
+             "Revit. Run heron_capabilities to see what it does know." % request]
+            + _drift_lines(found, indent="", gap=False))
 
     exact = found.get("route") == "identity" and found.get("autorun")
     missing, withheld = [], ""
@@ -1312,6 +1313,7 @@ def _by_words(request, door, values):
                      "so this is a ranked guess - and which one the user meant "
                      "is yours to decide, not Heron's (D-01).")
 
+    lines.extend(_drift_lines(found))
     lines.extend(_method_lines(found))
     lines.append("")
     lines.append("  best match   %s   (%s)"
@@ -3304,6 +3306,16 @@ def _method_lines(found):
     return lines
 
 
+def _drift_lines(found, indent="  ", gap=True):
+    """The one line saying the store a lookup answered from is not this
+    checkout's library - heron_brain.lookup's `store_drift`, row 5b-233.
+    Nothing while they match."""
+    said = found.get("store_drift")
+    if not said:
+        return []
+    return ([""] if gap else []) + [indent + said]
+
+
 def _contract_lines(capability, separator=True):
     """
     What the CALLER has to type to run this capability, and how to write each.
@@ -3498,6 +3510,7 @@ def heron_lookup(request: str) -> str:
             lines.append("%d fragment(s) were excluded because they are not "
                          "declared for Revit %s. They exist - they are just "
                          "not for this release." % (len(blocked), revit))
+        lines.extend(_drift_lines(found, indent="", gap=False))
         lines.append("Run heron_capabilities to see what it does know.")
         return "\n".join(lines)
 
@@ -3510,6 +3523,9 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+    # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
+    # a store that is not this checkout's library - row 5b-233.
+    lines.extend(_drift_lines(found))
 
     # WHAT TO TYPE, IN THE SAME REPLY. This was heron_resolve's to say, and
     # asking for it cost the host a whole extra turn on every request -

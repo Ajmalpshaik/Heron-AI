@@ -38,7 +38,9 @@ WHAT IT PROVES, when an SDK is installed
   4. Each tool's ARGUMENTS are the ones declared. A renamed argument is
      invisible to a text read and fatal to a caller.
   5. The three brain tools ANSWER when called through the SDK's own dispatch,
-     not by importing the function underneath it.
+     not by importing the function underneath it - and heron_lookup's reply
+     says when the store holds a fragment with no card in this checkout
+     (row 5b-233).
   6. Both refusals survive that round trip: every brain answer still says it
      CANNOT RUN what it resolved, and that nothing underneath is PROVEN. Those
      two sentences are the whole reason the brain tools are safe to expose,
@@ -230,6 +232,46 @@ async def exercise(server):
             check(bool(answers[name].strip()), "%s answered" % name)
         except Exception as exc:
             check(False, "%s raised %s: %s" % (name, type(exc).__name__, exc))
+
+    # FRAGMENT-ISSUES ROW 5b-233, THROUGH THE DISPATCH A HOST USES. A lookup
+    # answers from whatever the store holds, and a store that is not this
+    # checkout's library - a row with no card here, a card here with no row -
+    # must say so in the reply, not only in heron_brain's dict.
+    print()
+    print("  a store that is not this checkout's library, said in the reply")
+    check("does not match this checkout" not in answers.get("heron_lookup", ""),
+          "a store built from this checkout's cards adds no line about them")
+    import heron_scope as SCOPE
+    planted = ("FRG-TEST-233", "NOTHING_PROVIDES_THIS_233", "a planted row",
+               "filter", "DRAFT", "test", "READ",
+               "brain/fragments/zz-no-such-card-233", "2024")
+    store = SCOPE.open_scope(SCOPE.GLOBAL)
+    try:
+        store.execute("INSERT OR REPLACE INTO fragments (%s) VALUES "
+                      "(?,?,?,?,?,?,?,?,?)" % ", ".join(SCOPE.ROW_FIELDS),
+                      planted)
+        store.db.commit()
+    finally:
+        store.close()
+    try:
+        drifted = text_of(await server.call_tool(
+            "heron_lookup", {"request": "select all the ducts"}))
+    except Exception as exc:                                    # noqa: BLE001
+        drifted = "(raised %s: %s)" % (type(exc).__name__, exc)
+    finally:
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            store.execute("DELETE FROM fragments WHERE id = ?", (planted[0],))
+            store.db.commit()
+        finally:
+            store.close()
+    check("The knowledge store does not match this checkout" in drifted
+          and "1 fragment(s) in it have no card here" in drifted
+          and "zz-no-such-card-233" in drifted,
+          "heron_lookup says the store holds a fragment with no card here, "
+          "and names it")
+    check("heron_scope.py --rebuild" in drifted,
+          "and that a rebuild is needed - this store is the suite's own")
 
     print()
     print("  the HVAC engine, called through the SDK's own dispatch")

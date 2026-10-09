@@ -433,7 +433,10 @@ def rebuild(scope=GLOBAL, project_key=None):
 # the bytes on disk now. Each of those is somebody else's write it would undo:
 # a suite that plants a DRAFT row in a throwaway store, or a session proving an
 # unmerged card with the one row it put into the shared store and will take
-# out again. A merged NEW card still needs a rebuild to be found.
+# out again. A merged NEW card still needs a rebuild to be found - and since
+# 2026-10-09 a lookup SAYS so: `drift()` below compares the store's rows with
+# the cards on disk by folder name, from the stat walk this already took
+# (row 5b-233).
 #
 # AND THE SHARED STORE FOLLOWS THE MAIN CHECKOUT - row 131's race, and the
 # reason for `refreshes_from()` below.
@@ -634,8 +637,12 @@ def refreshes_from(root=None):
     return os.path.join(main, "brain", "fragments"), main
 
 
-def refresh(store, root=None):
+def refresh(store, root=None, walked=None):
     """Rewrite the rows whose card changed on disk. Returns the ids rewritten.
+
+    `walked`, when given, is a dict this fills with the stat walk it took -
+    keyed as `_key(folder)` - so `drift()` can compare the same cards without
+    walking them a second time. Left empty when nothing was walked.
 
     Nothing is opened when no card's mark moved, which is every lookup between
     two merges. A card that loads and does not validate keeps the row it had:
@@ -675,6 +682,8 @@ def refresh(store, root=None):
     key = _key(cards)
 
     marks = cards_on_disk(cards)
+    if walked is not None:
+        walked[key] = marks
     seen = _meta(store, key)
     if seen == marks:
         return []
@@ -747,6 +756,45 @@ def refresh(store, root=None):
         if not done:
             store.db.rollback()
     return rewritten
+
+
+def drift(store, folder=None, walked=None):
+    """(missing, extra): where the store and one checkout's cards part company.
+
+    `missing` - the card folders in `folder` (this checkout's, by default) the
+    store holds no row for, so no lookup can find them. `extra` - the rows
+    whose card folder is not there, so an answer naming one cannot run from
+    this checkout. Each a sorted list of folder names; both empty when they
+    agree.
+
+    FRAGMENT-ISSUES ROW 5b-233. `refresh()` never adds a row and never removes
+    one, so a merged new card, a card this branch added, or a store rebuilt
+    from another checkout leaves the lookup answering from a library that is
+    not the one on disk - and until this, nothing in the lookup said so.
+    tools/check-routing.py makes the same comparison by PARSING every card for
+    its id, which a lookup cannot pay for (row 5b-271). This compares FOLDER
+    NAMES: the row keeps its card's folder, and the stat walk `refresh()`
+    already took names every card on disk - pass that walk in as `walked` and
+    nothing is walked, read or parsed a second time.
+
+    WHAT A FOLDER NAME CANNOT SEE: a card whose id changed inside its own
+    folder. Its row still names the old id and the folder still matches;
+    `check-routing` compares ids, and a rebuild puts it right. And a card
+    that does not validate is never given a row, so it is reported as
+    missing - which it is: no lookup can find it, and a rebuild names why.
+    """
+    folder = folder or FRAG.FRAGMENTS_DIR
+    marks = (walked or {}).get(_key(folder))
+    if marks is None:
+        marks = cards_on_disk(folder)
+    held = set()
+    for row in store.execute("SELECT folder FROM fragments").fetchall():
+        # The row's folder is written against its checkout's root, with that
+        # system's separator - so only its last part is compared.
+        held.add((row["folder"] or "").replace("\\", "/").rstrip("/")
+                 .rsplit("/", 1)[-1])
+    on_disk = set(marks)
+    return sorted(on_disk - held), sorted(held - on_disk)
 
 
 def existing():

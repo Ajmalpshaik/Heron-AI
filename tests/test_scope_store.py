@@ -23,6 +23,9 @@ WHAT IT PROVES
      worktree into the one shared store (FRAGMENT-ISSUES 5b-249, row 131).
      A card caught mid-checkout is looked at again, and two chats racing a
      fast-forward leave the row at the card on disk.
+  6. Where the store and the cards on disk part company - a card with no
+     row, a row with no card - it is named, from the walk refresh() took,
+     with no file opened (FRAGMENT-ISSUES 5b-233, 5b-271).
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
 resolver is handed the same facts the bridge would report; nothing here has
@@ -642,6 +645,132 @@ def racing_a_fast_forward(S, F, refresh, card):
           "records that describe another row (%r, rewrote %r)"
           % (_row(S, "FRG-ELE-001", "semantic_identity"), later))
 
+
+def drifting(S, F):
+    """FRAGMENT-ISSUES row 5b-233: where the store and the cards part company.
+
+    refresh() never adds or removes a row, so a card the store does not hold
+    cannot be found and a row with no card cannot run - and the lookup said
+    neither. drift() names both, by FOLDER, from the stat walk refresh()
+    already took: no card is opened and nothing is walked twice (row 5b-271).
+    Every new name is asked for with getattr, and a keyword the old refresh()
+    does not take is caught, so the code before the fix FAILS here rather
+    than raising (heron-ship 2a).
+    """
+    print()
+    print("6. Where the store and the cards on disk part company, it is said")
+    drift = getattr(S, "drift", None)
+    check(callable(drift), "heron_scope has a drift() at all")
+    if not callable(drift):
+        drift = lambda store, folder=None, walked=None: ([], [])   # noqa: E731
+
+    opened, listening = [], [False]
+
+    def heard(event, args):
+        if listening[0] and event == "open":
+            opened.append(str(args[0]))
+
+    if hasattr(sys, "addaudithook"):
+        sys.addaudithook(heard)
+
+    work = tempfile.mkdtemp(prefix="heron-drift-")
+    was_fragments_dir = F.FRAGMENTS_DIR
+    try:
+        write_valid_fragment(os.path.join(work, "do-a-test-thing"))
+        F.FRAGMENTS_DIR = work
+        S.rebuild()
+        store = S.open_scope(S.GLOBAL)
+        try:
+            check(drift(store) == ([], []),
+                  "a store rebuilt from these cards matches them (%r)"
+                  % (drift(store),))
+
+            # A NEW CARD - merged, or this branch's own. refresh() leaves it
+            # out on purpose; the lookup must not then answer as if it were
+            # the whole library.
+            other = write_valid_fragment(os.path.join(work, "do-another-thing"))
+            _rewrite_card(os.path.join(other, "fragment.yaml"),
+                          "FRG-ELE-001", "FRG-ELE-002")
+            _rewrite_card(os.path.join(other, "fragment.yaml"),
+                          "DO_A_TEST_THING", "DO_ANOTHER_THING")
+            walked = {}
+            try:
+                S.refresh(store, walked=walked)
+                handed = bool(walked)
+            except TypeError:
+                handed = False
+            check(handed, "refresh() hands back the stat walk it took")
+
+            walks = []
+            real_walk = S.cards_on_disk
+
+            def counting_walk(folder=None):
+                walks.append(folder)
+                return real_walk(folder)
+
+            S.cards_on_disk = counting_walk
+            del opened[:]
+            listening[0] = True
+            try:
+                got = drift(store, walked=walked)
+            finally:
+                listening[0] = False
+                S.cards_on_disk = real_walk
+            check(got == (["do-another-thing"], []),
+                  "a card the store does not hold is named as missing (%r)"
+                  % (got,))
+            check(not walks,
+                  "and it is found from refresh()'s walk - the cards are not "
+                  "walked a second time (%d walk(s))" % len(walks))
+            check(not opened,
+                  "and no file is opened to find it (%s)"
+                  % (", ".join(opened[:3]) or "none"))
+
+            # A WALK OF ANOTHER FOLDER - the main checkout's, which refresh()
+            # reads for the shared store from a worktree - is not this
+            # checkout's, so this checkout's cards are walked after all.
+            elsewhere = {}
+            if hasattr(S, "_key"):
+                elsewhere[S._key(os.path.join(work, "..", "elsewhere"))] = {}
+            del walks[:]
+            S.cards_on_disk = counting_walk
+            try:
+                got = drift(store, walked=elsewhere)
+            finally:
+                S.cards_on_disk = real_walk
+            check(got == (["do-another-thing"], []) and len(walks) == 1,
+                  "a walk of ANOTHER folder is not taken for this one's "
+                  "(%r, %d walk(s))" % (got, len(walks)))
+
+            # A CARD TAKEN AWAY: its row names something nothing here can run.
+            shutil.rmtree(os.path.join(work, "do-a-test-thing"))
+            got = drift(store)
+            check(got == (["do-another-thing"], ["do-a-test-thing"]),
+                  "a row whose card is gone is named as well (%r)" % (got,))
+        finally:
+            store.close()
+
+        S.rebuild()
+        store = S.open_scope(S.GLOBAL)
+        try:
+            check(drift(store) == ([], []),
+                  "and a rebuild brings them level (%r)" % (drift(store),))
+            # A ROW WRITTEN ON WINDOWS keeps its folder with backslashes, and
+            # is still its card.
+            store.execute("UPDATE fragments SET folder = ? WHERE id = ?",
+                          (u"brain\\fragments\\do-another-thing",
+                           "FRG-ELE-002"))
+            store.db.commit()
+            check(drift(store) == ([], []),
+                  "a folder written with the other separator is still its "
+                  "card (%r)" % (drift(store),))
+        finally:
+            store.close()
+    finally:
+        F.FRAGMENTS_DIR = was_fragments_dir
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-kn-")
     os.environ["HERON_KNOWLEDGE"] = home
@@ -842,6 +971,7 @@ def main():
             shutil.rmtree(work, ignore_errors=True)
 
         refreshing(S, F)
+        drifting(S, F)
 
         print()
         print("Unknown scopes are an error, never a guess")
