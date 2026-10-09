@@ -152,7 +152,10 @@ compatibility-note: >
 # handles worst.
 #   "find all elements of a category"    -> here
 #   "how many MEP spaces are in the model" -> here, category Spaces (5b-355)
-#   "find all the VCDs"                  -> SELECT_BY_FAMILY, when the FAMILY
+#   "list the rooms"                     -> here, category Rooms (5b-403)
+#   "show me all the rooms"              -> here, category Rooms (5b-403)
+#   "show me all the doors"              -> here, category Doors (5b-403)
+#   "find all the VCDs"                -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
 #   "all the ductwork"                   -> SELECT_BY_CATEGORIES. Ducts,
@@ -183,3 +186,25 @@ utterances:
   - how many MEP spaces are in the model
   - count the spaces on this level
   - OST_MEPSpaces
+  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-403. Both reached PLACE_ROOMS - a
+  # change that PLACES rooms - on both backends. Listing every room with
+  # nothing selected is this filter: category Rooms, levelId none; for "show
+  # me", the select-elements skill then puts them on screen.
+  # REPORT_ROOM_SPACE_DATA declares "list the rooms with their areas" and is
+  # the step after this one for number, name, level and area - but it takes
+  # a set of elements and refuses when nothing is selected, so it follows
+  # this filter through the chain rather than answering first.
+  #
+  # THE SENTENCES, NOT THE KIND, as for 5b-355: the row names the ways of
+  # listing rooms that still reach a change.
+  - list the rooms
+  - show me all the rooms
+  # ADDED WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-403. "show me all the
+  # rooms" lifted this card one place in the words ranking for "show me all
+  # the doors", and that broke a near-tie on the spelling backend: the answer
+  # went from ZOOM_TO_ELEMENTS, which moves the view, to PLACE_HOSTED_FAMILY,
+  # which PUTS A DOOR INTO A WALL. Declared on the card that answers it with
+  # nothing selected - category Doors, then the select-elements skill -
+  # rather than leaving a write the change had made. The other "show me all
+  # the ..." sentences that reach a change did so before; the row names them.
+  - show me all the doors
