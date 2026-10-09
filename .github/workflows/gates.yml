@@ -194,7 +194,7 @@ jobs:
       # exit 1 when a fragment's routing row sends a sentence to a capability
       # no fragment declares. That is a name, not a ranking, read from the
       # files before any store is opened, so a missing store cannot hide it
-      # (row 5b-386). Its collisions still only report.
+      # (row 5b-388). Its collisions still only report.
       - name: check-routing and check-intrusion
         env:
           HERON_KNOWLEDGE: ${{ runner.temp }}/heron-kb
