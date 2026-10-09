@@ -26,7 +26,7 @@ and the kind maps to exactly one folder. A name that is not a plain
 name is refused - never cleaned up and used anyway.
 
     kind        fragment   -> Fragments
-    name        anything with / \ or .. in it  -> NAME_IS_NOT_A_PLACE
+    name        anything with / \\ or .. in it  -> NAME_IS_NOT_A_PLACE
 
 THE EIGHT KINDS ARE docs/06 s2's DATA ROW, AND NOTHING ELSE
 -------------------------------------------------------------
