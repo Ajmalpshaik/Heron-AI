@@ -953,7 +953,9 @@ namespace Heron.Revit.Addin
             System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void WarmUpBody(Action<string> log, System.Diagnostics.Stopwatch clock)
         {
-            var guarded = HeronStackGuard.Apply(WarmUpSource);
+            // The release symbols as well, so the warm-up reads its source the
+            // way Compile reads a fragment's - see Compile.
+            var guarded = HeronStackGuard.Apply(HeronFragmentSymbols.Prepend(WarmUpSource));
             var script = CSharpScript.Create<object>(
                 guarded, BuildOptions(), typeof(HeronFragmentGlobals));
 
@@ -1042,7 +1044,22 @@ namespace Heron.Revit.Addin
             // the runtime fails fast and takes Revit with it. See
             // HeronStackGuard, which falls back to `source` untouched if it
             // cannot do its job.
-            var guarded = HeronStackGuard.Apply(source);
+            //
+            // THE RELEASE SYMBOLS GO IN FIRST, AND BEFORE THE GUARD READS IT.
+            // Until 2026-10-09 nothing told Roslyn which Revit this is, so a
+            // fragment's `#if REVIT2020` was false on Revit 2020 and its #else
+            // - which calls members 2020 has not got - was the code compiled,
+            // while tools/check-fragments-compile.py compiled the other branch
+            // and reported green (FRAGMENT-ISSUES row 5b-181). The symbols are
+            // this add-in's own, as text in front of the script, because the
+            // scripting API keeps its parse options internal; and in front of
+            // the GUARD as well, which parses the source too and would
+            // otherwise guard the branch that is not compiled. They end in
+            // `#line 1`, so every line number below - and the prologue offset
+            // the reader is told to subtract - is what it was.
+            // HeronFragmentSymbols says why each of those holds, and
+            // tests/test_fragment_symbols.py shows it on every release.
+            var guarded = HeronStackGuard.Apply(HeronFragmentSymbols.Prepend(source));
 
             var candidate = CSharpScript.Create<object>(guarded, options, typeof(HeronFragmentGlobals));
 

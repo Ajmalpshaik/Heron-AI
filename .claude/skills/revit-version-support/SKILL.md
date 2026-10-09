@@ -70,6 +70,14 @@ matters on a locked-down corporate machine — and is unaffected by the 2027 mov
 > the `#if` silently takes the wrong branch, with no warning. If you add a release to the table, add its
 > symbol in the same commit.
 
+**A fragment gets the same symbols, from the add-in that compiles it.**
+`revit/Heron.Revit.Addin/HeronFragmentSymbols.cs` reads them back from the add-in's own build and puts
+them in front of every fragment script. So a symbol added to `Directory.Build.props` is added there too,
+in the same commit - `tests/test_fragment_symbols.py` fails until it is. Until 2026-10-09 the add-in
+handed a fragment no symbols at all, and a fragment's `#if REVIT2020` was false on Revit 2020
+([row 5b-181](../../../docs/FRAGMENT-ISSUES.md)). A fragment `#if` may name release symbols only - the
+same suite fails on `DEBUG` or a framework symbol, which the fragment gate defines and the add-in does not.
+
 ## Breaking API changes
 
 | Release | What changed | Old | New |
