@@ -430,6 +430,9 @@ compatibility-note: >
 #
 #   "put a door in this wall"       -> here
 #   "add windows to this elevation" -> here
+#   "place doors and windows hosted in walls at points" -> here (5b-319)
+#   "add windows to the outside walls" -> here (5b-319)
+#   "put doors in the walls at these points" -> here (5b-319)
 #   "place a skylight into the roof at this point" -> here - ROOF-hosted
 #   "put floor boxes into the floors at these points" -> here - FLOOR-hosted
 #   "place ceiling-hosted fittings into the ceilings" -> here - CEILING-hosted
@@ -463,7 +466,7 @@ compatibility-note: >
 #
 # 2026-10-04 (5b-319): "place doors and windows hosted in walls at points",
 # "add windows to the outside walls" and "put doors in the walls at these
-# points" -> here. Each had gone to REPORT_SPACE_ENVELOPE, a READ, or to
+# points" go here. Each had gone to REPORT_SPACE_ENVELOPE, a READ, or to
 # CREATE_WALL. The plural phrasings below are there because the words route
 # matches a typed word as a PREFIX: "walls" never matches "wall", and every
 # phrasing here was singular. tests/test_routing_phrases.py asks them back.

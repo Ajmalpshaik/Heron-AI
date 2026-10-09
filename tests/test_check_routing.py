@@ -34,11 +34,38 @@ WHAT IT PROVES
      the tool would "say so rather than failing when there is none". That was
      fixed and nothing held it.
 
+  5. A ROUTING-TABLE CLAIM THAT WRAPS ONTO A SECOND COMMENT LINE IS READ AS ONE
+     SENTENCE. Row 5b-382: the claim was captured WITH the newline and the next
+     line's `#    `, so "which walls are fair faced block" - a declared
+     utterance - was searched with a `#` in it and listed as claimed and not
+     reached, and could never be seen to collide with the same sentence on
+     another table.
+
+  6. A CLAIM WHOSE `-> here` SITS ON THE NEXT COMMENT LINE IS STILL READ. Row
+     5b-383: after the closing quote the pattern's `\s*->` could not step over
+     the next line's `#`, so nine claims in the library were never checked for
+     reach or for a second table claiming them, and nothing said so.
+
+  7. THREE MORE LAYOUTS ARE READ - AND TWO LOOK-ALIKES ARE NOT. Row 5b-384:
+     an arrow on the line BEFORE the one that closes the quote, several quoted
+     sentences sharing one arrow (`"a" / "b"  -> here`), and `-> HERE` in
+     capitals. Text between the closing quote and the arrow is still not a
+     claim, because that is also how a measurement log reads (`"x"  REPORT ->
+     here`).
+
+  8. THE FIVE ROWS NO RULE COULD READ ARE NOW WRITTEN SO THE READER READS
+     THEM. Row 5b-392: three sentences in a dated paragraph, a bracket between
+     a quote and its arrow, two sentences stacked under another row's arrow, a
+     row naming its own capability, and `-> declared HERE`. Each was rewritten
+     in its fragment.yaml's comments - never an impl/ - rather than taught to
+     the reader, because each layout is also how prose or a log reads.
+
 WHAT IT DOES NOT PROVE
   Anything about the routing result itself. This checker is a REPORT - it exits
   0 whatever collisions it finds, because a collision is a judgement and not a
   defect - so there is no verdict here to test. What is testable is the two
-  cases where it declines to produce one at all.
+  cases where it declines to produce one at all, and what it READS as a claim
+  before it asks anything.
 """
 
 from __future__ import print_function
@@ -46,6 +73,7 @@ from __future__ import print_function
 import importlib.util
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -165,6 +193,278 @@ def main():
     check(CR.rung("nonsense") == -1,
           "and a level nobody declared is -1 rather than an exception or a "
           "quiet zero, so it can never out-rank READ")
+    print()
+
+    print("5. A CLAIM THAT WRAPS ONTO A SECOND COMMENT LINE IS ONE SENTENCE")
+    # Row 5b-382. ASKED BEFORE IT IS CALLED, so the checker as it stood -
+    # with the claim regex inline in main() - fails these checks rather than
+    # raising (.claude/skills/heron-ship/SKILL.md s2a). The fallback is what
+    # main() did inline until that row, so the red run shows the real defect.
+    claims_of = getattr(CR, "routing_claims", None)
+    check(claims_of is not None,
+          "the checker reads a table's claims in one place a suite can call")
+    if claims_of is None:
+        claims_of = lambda text: [                               # noqa: E731
+            m.group(1).strip() for m in re.finditer(
+                r'^#\s+"([^"]+)"\s*->\s*here\b', text, re.M)]
+
+    table = (
+        '# ROUTING\n'
+        '#   "select all ducts"                    -> here\n'
+        '#   "which walls are fair faced\n'
+        '#    block"                               -> here\n'
+        '#   "make the vertical grid fixed distance\n'
+        '#      1500 on every\n'
+        '#    wall"                                -> here\n'
+        '#   "delete these"                        -> DELETE_ELEMENTS\n'
+        '#   "half a sentence\n'
+        'not a comment"                            -> here\n'
+        'id: FRG-TEST-001\n')
+    said = claims_of(table)
+    check(said == ["select all ducts",
+                   "which walls are fair faced block",
+                   "make the vertical grid fixed distance 1500 on every wall"],
+          "a claim on one line, on two and on three come back as three "
+          "sentences, the `#` and the indentation of each continuation gone - "
+          "got %r" % (said,))
+    check(not any("\n" in s or "#" in s for s in said),
+          "no claim carries a newline or a `#` into the identity check or the "
+          "search")
+    check(claims_of('#   "which walls are fair faced block"  -> here\n')
+          == claims_of('#   "which walls are fair faced\n'
+                       '#    block"                         -> here\n'),
+          "the same sentence wrapped and unwrapped is ONE key, so two tables "
+          "claiming it can be seen to collide")
+    check(not any(s.startswith("half a sentence") for s in said),
+          "a quote that runs off the comment into YAML is not a claim - a "
+          "sentence wraps onto COMMENT lines only")
+
+    # THE TWO ROWS THE DEFECT WAS FOUND ON, read from the library itself.
+    import yaml
+    for folder, sentence, declared in (
+            ("select-by-material", "which walls are fair faced block", True),
+            ("set-curtain-wall-grid",
+             "make the vertical grid fixed distance 1500", False)):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        text = io.open(path, encoding="utf-8").read()
+        check(sentence in claims_of(text),
+              "%s's table claims %r as one sentence" % (folder, sentence))
+        if declared:
+            spoken = [(u or "").strip().lower()
+                      for u in (yaml.safe_load(text).get("utterances") or [])]
+            check(sentence in spoken,
+                  "and it is a declared utterance, so the checker answers it by "
+                  "identity and never searches it")
+
+    wrapped = []
+    for folder in sorted(os.listdir(os.path.join(ROOT, "brain", "fragments"))):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if os.path.exists(path):
+            wrapped += [(folder, s) for s in
+                        claims_of(io.open(path, encoding="utf-8").read())
+                        if "\n" in s]
+    check(not wrapped,
+          "no claim anywhere in the library reaches the checker with a line "
+          "break in it - %d did: %s"
+          % (len(wrapped), ", ".join(sorted(set(f for f, _ in wrapped)))))
+
+    check("routing_claims(" in body,
+          "and main() reads claims through it, rather than a regex of its own "
+          "that the checks above never see")
+    print()
+
+    print("6. A CLAIM WHOSE `-> here` SITS ON THE NEXT COMMENT LINE IS STILL READ")
+    # Row 5b-383. Same reader as section 5, so a checker without it has
+    # already failed there and the fallback above keeps this section running.
+    table = (
+        '#   "will this family connect when it is placed on a pipe"\n'
+        '#                                    -> here, in the Family Editor (v2)\n'
+        '#   "the duct is missing\n'
+        '#    from my schedule"\n'
+        '#                                    -> here FIRST to see what is there\n'
+        '#   "fix the names this found"\n'
+        '#                                    -> RENAME_ELEMENTS\n'
+        '#   "select all ducts"                -> here\n')
+    said = claims_of(table)
+    check(said == ["will this family connect when it is placed on a pipe",
+                   "the duct is missing from my schedule",
+                   "select all ducts"],
+          "a claim with its arrow on the next line - wrapped or not - is read, "
+          "in order, beside one with its arrow on the same line - got %r"
+          % (said,))
+    check("fix the names this found" not in said,
+          "and a sentence whose next-line arrow points ELSEWHERE is still not "
+          "a claim for this fragment")
+
+    # THE NINE ROWS THE DEFECT WAS FOUND ON, measured 2026-10-09.
+    unread = []
+    for folder, sentence in (
+            ("check-family-standards",
+             "will this family connect when it is placed on a pipe"),
+            ("check-model-standards",
+             "do the type names follow our naming standard"),
+            ("group-by-assembly", "which families are nested inside this one"),
+            ("group-elements", "group these forms in this family"),
+            ("list-revisions", "show me the sheet issues and revisions table"),
+            ("read-schedule-contents", "the duct is missing from my schedule"),
+            ("report-mep-pressure-drop", "how much resistance is in this pipe"),
+            ("select-types", "what are the mullion types in this model"),
+            ("set-schedule-sort-group",
+             "one line per size instead of every duct")):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if sentence not in claims_of(io.open(path, encoding="utf-8").read()):
+            unread.append(folder)
+    check(not unread,
+          "every next-line-arrow claim in the library is read - %d were not: %s"
+          % (len(unread), ", ".join(unread)))
+    print()
+
+    print("7. THREE MORE LAYOUTS ARE READ - AND TWO LOOK-ALIKES ARE NOT")
+    # Row 5b-384. Same reader again, so the fallback in section 5 keeps this
+    # running on a checker that has none.
+    table = (
+        '#   "one column with the type and the    -> here\n'
+        '#    mark together"\n'
+        '#   "the colours are not showing on      -> here when a filter is on\n'
+        '#    this drawing"                          and nothing draws;\n'
+        '#   "delete these" / "remove these"  -> here\n'
+        '#   "flip the door" / "the handing is\n'
+        '#    wrong, fix it"                       -> here. It CHANGES the model\n'
+        '#   "set the view template"            -> HERE, and it is declared here\n'
+        '#   "wash the walls light grey so it\n'
+        '#    prints"                          -> HERE. A colour with no pattern\n'
+        '#   "which doors are flipped" / "is this\n'
+        '#    door mirrored"                       -> REPORT_MIRRORED_INSTANCES\n'
+        '#   "a wrapped sentence going   -> SOMEWHERE_ELSE\n'
+        '#    elsewhere"\n'
+        '#   "change the global param"    REPORT -> here, by identity\n'
+        '#   "delete these forms" (ids given)            -> here, then DELETE\n'
+        '#   "-> here" is what a row in one of these tables says\n')
+    said = claims_of(table)
+    check(said == ["one column with the type and the mark together",
+                   "the colours are not showing on this drawing",
+                   "delete these", "remove these",
+                   "flip the door", "the handing is wrong, fix it",
+                   "set the view template",
+                   "wash the walls light grey so it prints"],
+          "an arrow before the closing quote, sentences sharing one arrow and "
+          "`-> HERE` are each read, in order, as whole sentences - got %r"
+          % (said,))
+    check(not any(s.startswith(("which doors", "is this door", "a wrapped",
+                                "change the global", "delete these forms"))
+                  for s in said),
+          "and rows routed ELSEWHERE, a measurement log with a word between "
+          "the quote and the arrow, and a parenthesis there are not claims")
+    check(not any(s.startswith("-> here") or "is what a row" in s
+                  for s in said),
+          "and prose that quotes the notation itself is not a claim")
+
+    # LOOK-ALIKES, each found by a reviewer set to break the reader on
+    # 2026-10-09. None is in the library; each was read by the first version
+    # of the 5b-384 reader, or by the 5b-382 pattern it grew from.
+    wrong = []
+    for text, want, what in (
+            ('#   "update the global parameter value  SET    -> here, kept\n'
+             '#    for the whole project"\n', [],
+             "a log column between the sentence and an arrow that comes "
+             "before the closing quote"),
+            ('#   "a wrapped sentence      NOT -> here\n'
+             '#    going on"\n', [], "a NOT before that arrow"),
+            ('#   "make the leaders     -> here\n'
+             '#    -> OTHER for this"\n', [],
+             "an arrow inside the continuation"),
+            ('#   "one column with the type and   -> here\n'
+             '#    mark together, see "x"\n', [],
+             "a continuation whose quote opens something else"),
+            ('#   "copy the legend          -> here\n'
+             '#                                REPORT_LEGENDS reads "the list"\n',
+             [], "right-hand-column prose under an unclosed quote"),
+            ('#   "make a legend"                     -> CREATE_LEGEND, which\n'
+             '#                                          "the legend list   -> here\n'
+             '#                                          stands"\n', [],
+             "a quote opening another row's right-hand column"),
+            ('#   "x"                                 -> OTHER; the pair\n'
+             '#                                          "a" / "b" -> here\n', [],
+             "a quoted pair in another row's right-hand column"),
+            ('utterances:\n#\n  "select all ducts"\n#   -> here\n', [],
+             "a quote on a YAML line under a bare `#`"),
+            ('#   "x" ->\nhere: 1\n', [], "`here` as the YAML key below"),
+            ('#   "x"                -> here-and-there\n', [],
+             "`here-and-there`"),
+            ('#   "a" / "   "       -> here\n', ["a"], "an all-space quote"),
+            ('#   "delete these" /\n'
+             '#   "remove these"                  -> here\n',
+             ["delete these", "remove these"],
+             "a group broken after its `/`"),
+            ('#   "delete these"\n'
+             '#   / "remove these"                -> here\n',
+             ["delete these", "remove these"],
+             "a group broken before its `/`"),
+            ('#   "x"\r\n#   -> here\r\n', ["x"],
+             "CRLF text with the arrow on the next line")):
+        got = claims_of(text)
+        if got != want:
+            wrong.append("%s: got %r" % (what, got))
+    check(not wrong,
+          "look-alikes read as what they are - a log column, a NOT, a stray "
+          "arrow or quote, another row's right-hand column and plain YAML are "
+          "not claims; a broken group and CRLF text are read whole - "
+          "%d wrong: %s" % (len(wrong), "; ".join(wrong)))
+
+    # ONE OF EACH LAYOUT FROM THE LIBRARY, measured 2026-10-09.
+    unread = []
+    for folder, sentence in (
+            ("add-schedule-combined-field",
+             "one column with the type and the mark together"),
+            ("audit-view-filters",
+             "the colours are not showing on this drawing"),
+            ("delete-elements", "remove these"),
+            ("flip-elements", "the handing is wrong, fix it"),
+            ("show-elements", "reset the view"),
+            ("apply-view-template", "set the view template"),
+            ("set-category-solid-fill",
+             "wash the walls light grey so it prints")):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if sentence not in claims_of(io.open(path, encoding="utf-8").read()):
+            unread.append("%s %r" % (folder, sentence))
+    check(not unread,
+          "one claim of each layout in the library is read - %d were not: %s"
+          % (len(unread), "; ".join(unread)))
+
+    leaked = []
+    for folder in sorted(os.listdir(os.path.join(ROOT, "brain", "fragments"))):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if os.path.exists(path):
+            leaked += ["%s %r" % (folder, s) for s in
+                       claims_of(io.open(path, encoding="utf-8").read())
+                       if "->" in s or '"' in s or "#" in s]
+    check(not leaked,
+          "no claim anywhere in the library carries an arrow, a quote or a `#` "
+          "into the sentence - %d did: %s" % (len(leaked), "; ".join(leaked[:4])))
+    print()
+
+    print("8. THE FIVE ROWS NO RULE COULD READ ARE NOW WRITTEN SO IT READS THEM")
+    # Row 5b-392. The rows were fixed in the fragments, not in the reader, so
+    # this asks the library - and fails, by name, on a table rewritten back.
+    unread = []
+    for folder, sentence in (
+            ("place-hosted-family",
+             "place doors and windows hosted in walls at points"),
+            ("place-hosted-family", "add windows to the outside walls"),
+            ("place-hosted-family", "put doors in the walls at these points"),
+            ("select-family-forms", "delete these forms"),
+            ("apply-color-fill-scheme", "colour the spaces by zone"),
+            ("apply-color-fill-scheme", "colour fill the zones"),
+            ("set-sheet-title-block",
+             "change the title block on these sheets"),
+            ("set-sheet-title-block", "swap the title block"),
+            ("list-worksets", "is this model workshared")):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if sentence not in claims_of(io.open(path, encoding="utf-8").read()):
+            unread.append("%s %r" % (folder, sentence))
+    check(not unread,
+          "every sentence of the five rows is read as a claim - %d were not: %s"
+          % (len(unread), "; ".join(unread)))
     print()
 
     if FAILURES:
