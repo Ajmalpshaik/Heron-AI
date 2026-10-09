@@ -1214,7 +1214,7 @@ first and on this file second, on both backends.
 
 ## 2026-10-09 — listing the rooms answered by a change that places them
 
-[Row 5b-402](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `661384f6` (**480
+[Row 5b-403](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `661384f6` (**480
 fragments**) and again on `36f02b54` (**481**, after PR #450's `LIST_MATERIALS`), behind the 2024 wall, through `heron_brain.lookup`, on **`lexical`** and **`model`**
 (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository, warmed before the first
 question), no re-ranker, every run on its own scratch store. Repeated with draft PR #463 - which

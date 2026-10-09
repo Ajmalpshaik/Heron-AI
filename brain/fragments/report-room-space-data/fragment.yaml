@@ -130,7 +130,7 @@ compatibility-note: >
 #                                          category Rooms. With nothing
 #                                          selected this one is refused, so
 #                                          the filter finds every room and
-#                                          this follows it (5b-402)
+#                                          this follows it (5b-403)
 #   "how big is this room"              -> MEASURE_ROOM_DIMENSIONS - the
 #                                          length and width of ONE room, for
 #                                          setting out

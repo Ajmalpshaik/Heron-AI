@@ -152,9 +152,9 @@ compatibility-note: >
 # handles worst.
 #   "find all elements of a category"    -> here
 #   "how many MEP spaces are in the model" -> here, category Spaces (5b-355)
-#   "list the rooms"                     -> here, category Rooms (5b-402)
-#   "show me all the rooms"              -> here, category Rooms (5b-402)
-#   "show me all the doors"              -> here, category Doors (5b-402)
+#   "list the rooms"                     -> here, category Rooms (5b-403)
+#   "show me all the rooms"              -> here, category Rooms (5b-403)
+#   "show me all the doors"              -> here, category Doors (5b-403)
 #   "find all the VCDs"                -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
@@ -186,7 +186,7 @@ utterances:
   - how many MEP spaces are in the model
   - count the spaces on this level
   - OST_MEPSpaces
-  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-402. Both reached PLACE_ROOMS - a
+  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-403. Both reached PLACE_ROOMS - a
   # change that PLACES rooms - on both backends. Listing every room with
   # nothing selected is this filter: category Rooms, levelId none; for "show
   # me", the select-elements skill then puts them on screen.
@@ -199,7 +199,7 @@ utterances:
   # listing rooms that still reach a change.
   - list the rooms
   - show me all the rooms
-  # ADDED WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-402. "show me all the
+  # ADDED WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-403. "show me all the
   # rooms" lifted this card one place in the words ranking for "show me all
   # the doors", and that broke a near-tie on the spelling backend: the answer
   # went from ZOOM_TO_ELEMENTS, which moves the view, to PLACE_HOSTED_FAMILY,
