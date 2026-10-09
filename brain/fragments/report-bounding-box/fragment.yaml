@@ -147,3 +147,12 @@ utterances:
   - will this fit through the opening
   - how deep is this services zone
   - what is the overall size of this set
+  # ADDED 2026-10-09, row 5b-385. The routing table above has sent this
+  # sentence here since the card was written, but a comment is not indexed,
+  # so it held on ranking alone: on lexical it led REPORT_SPACE_AIRFLOW by
+  # 0.000227 of fused score, and adding LIST_MATERIALS (row 5b-376) swapped
+  # a tie behind it on the words route and handed it over. It is the
+  # one-element form of "how much space do these take up" above, which the
+  # purpose's table sends here. "Space" in it is the room an element takes
+  # up, not an MEP Space.
+  - how much space does this take up
