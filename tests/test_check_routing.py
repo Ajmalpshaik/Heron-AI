@@ -35,7 +35,7 @@ WHAT IT PROVES
      fixed and nothing held it.
 
   5. A ROUTING ROW THAT SENDS A SENTENCE TO A CAPABILITY NO FRAGMENT DECLARES
-     FAILS THE RUN. Row 5b-384: `"rename the heading" -> SET_SCHEDULE_FIELD_FORMAT`
+     FAILS THE RUN. Row 5b-386: `"rename the heading" -> SET_SCHEDULE_FIELD_FORMAT`
      (row 5b-232) and `"which materials are unused" -> PURGE_UNUSED_MATERIALS`
      both sat in the library from 2026-09-06 while this checker ran on every
      pull request, because it read only the rows that say `-> here`. The target
@@ -182,7 +182,7 @@ def main():
     print()
 
     print("5. A ROUTING ROW'S `-> NAME` IS A CAPABILITY SOME FRAGMENT DECLARES")
-    # Row 5b-384. ASKED BEFORE IT IS CALLED, so the checker as it stood -
+    # Row 5b-386. ASKED BEFORE IT IS CALLED, so the checker as it stood -
     # which read no target at all - fails these checks rather than raising
     # (.claude/skills/heron-ship/SKILL.md s2a). The stand-ins find nothing and
     # rule nothing, which is exactly what the checker did.

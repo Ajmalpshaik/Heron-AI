@@ -324,7 +324,7 @@ are not. **Why a gate:** `-> PURGE_UNUSED_MATERIALS` and `-> SET_SCHEDULE_FIELD_
 2026-09-06 and sat there while this tool ran on every pull request; the second was found by a person and
 recorded as row 5b-232 twelve days before the gate existed. The rows that dangled when it was written
 are on `KNOWN_DANGLING` with their reasons, and one that is repaired fails the run until it comes off the
-list. [Row 5b-384](../docs/FRAGMENT-ISSUES.md).
+list. [Row 5b-386](../docs/FRAGMENT-ISSUES.md).
 
 Its first run over 169 sentences found sixteen contested ones. **Three were genuine errors** — a filter
 claiming two of `TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout

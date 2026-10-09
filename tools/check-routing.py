@@ -89,7 +89,7 @@ starts without a false alarm to excuse.
 The two that were there when it was written are on KNOWN_DANGLING with the
 reason each is waiting. A listed row that stops dangling fails the run too,
 until it comes off the list: a list that outlives its repair goes on excusing
-the row if it ever comes back. Row 5b-384.
+the row if it ever comes back. Row 5b-386.
 """
 
 import os
@@ -336,7 +336,7 @@ def main(argv):
     # THE GATE, READ BEFORE ANY STORE IS OPENED AND RULED ON AFTER THE REPORT.
     # It needs nothing but the files, so a missing or stale store cannot hide
     # it; and it prints last, so a failure is the final thing in a CI log and
-    # not a screen above the report. Row 5b-384.
+    # not a screen above the report. Row 5b-386.
     read, found = dangling_targets()
     if "--targets" in argv:
         return targets_verdict(found, KNOWN_DANGLING, read)
