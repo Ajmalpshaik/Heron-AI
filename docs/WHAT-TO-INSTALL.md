@@ -30,8 +30,9 @@
 | 5 | **The MCP package** (`mcp`) | It is the line between Claude Code and Heron | `pip install --user mcp` | the same command |
 | 6 | **Heron itself** | The Heron tab in Revit | **Close Revit first**, then run `HeronInstaller.exe` from the Heron download | The Heron tab appears the next time Revit opens |
 
-**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24), and
-Heron's setup check looks only for `mcp` ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
+**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24).
+Heron's setup check looked only for `mcp` until 2026-10-09 and asks for both since - changed in the
+script and **not yet run on Windows** ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
 still talks to Revit, but every question to its knowledge answers *"needs PyYAML"* until it is
 installed.
 
@@ -121,7 +122,7 @@ A modeller installing a release needs none of this.
 | **The .NET SDK — version 10, not 8** | To compile the Revit add-in for every release Heron supports | Revit 2027 runs on .NET 10, so only the 10 SDK builds every release — [30](30-compiling-away-from-windows.md) has the rest, and how on Linux |
 
 A developer deploys the add-in with `tools/setup.ps1` rather than the installer, which also checks
-Python and `mcp` first — [07](07-installation-and-update.md).
+Python, `mcp` and PyYAML first — [07](07-installation-and-update.md).
 
 ## 5. Check what you have
 
