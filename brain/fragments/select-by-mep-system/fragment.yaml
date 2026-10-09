@@ -169,3 +169,10 @@ utterances:
   - show me the chilled water pipes
   - select every duct on DXS 1
   - filter by mep system
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims these
+  # sentences, and a comment is not indexed, so ranking decided: "select
+  # everything on DXS 1": SELECT_BY_ELECTRICAL_CIRCUIT on lexical answered it;
+  # "show me the chilled water": AUTO_SIZE_PIPE on lexical and
+  # CHECK_INSULATION_CLEARANCE on the trained backend answered it.
+  - select everything on DXS 1
+  - show me the chilled water

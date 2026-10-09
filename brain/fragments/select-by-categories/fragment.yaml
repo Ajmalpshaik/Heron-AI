@@ -144,3 +144,8 @@ utterances:
   - ducts and fittings and accessories together
   - everything in these categories
   - all the mep in this view
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "all the
+  # pipework": PLACE_FLOW_ARROWS on lexical and TRACE_CONNECTIVITY on the
+  # trained backend answered it.
+  - all the pipework

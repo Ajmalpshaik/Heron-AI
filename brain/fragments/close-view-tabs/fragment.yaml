@@ -129,3 +129,7 @@ utterances:
   - tidy up my open tabs
   - close all the plans except this one
   - I have too many views open
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "tidy up my
+  # open views": FIND_UNPLACED_VIEWS on the trained backend answered it.
+  - tidy up my open views

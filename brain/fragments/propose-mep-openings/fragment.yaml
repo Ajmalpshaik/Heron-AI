@@ -169,7 +169,9 @@ compatibility-note: >
 #
 #   "where do I need holes"            -> here
 #   "propose the sleeves"              -> here
-#   "what penetrates this wall"        -> here
+#   "what penetrates this wall"        -> SELECT_TOUCHING - which elements
+#                                         pass through, and nothing more.
+#                                         "...and how big" is here
 #   "are the openings the right size"  -> CHECK_SLEEVE_SIZE. That inspects what
 #                                         EXISTS; this proposes what does not
 #   "audit the openings"               -> AUDIT_MEP_OPENINGS, same distinction
@@ -181,3 +183,7 @@ utterances:
   - propose openings for these ducts
   - what penetrates these walls and how big
   - list the sleeves needed
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "propose the
+  # sleeves": CHECK_SLEEVE_SIZE on lexical answered it.
+  - propose the sleeves

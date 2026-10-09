@@ -201,3 +201,11 @@ utterances:
   - which walls are thicker than 200
   - filter by a numeric parameter
   - show me everything with a diameter over 150
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims these
+  # sentences, and a comment is not indexed, so ranking decided: "ducts 500 mm
+  # high": SET_MEP_INSULATION answered it on both backends; "pipes larger than
+  # 100 mm": SET_MEP_SIZE on the trained backend answered it; "walls between
+  # 200 and 300": DIMENSION_ROOMS on the trained backend answered it.
+  - ducts 500 mm high
+  - pipes larger than 100 mm
+  - walls between 200 and 300

@@ -136,3 +136,12 @@ utterances:
   - what runs through this wall
   - find everything overlapping this
   - what is in the same place as this
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided:
+  # PLACE_LINE_BASED_FAMILY answered it on the trained backend.
+  - what is touching this beam
+  # ADDED 2026-10-09, row 5b-387. PROPOSE_MEP_OPENINGS's table claimed it,
+  # and SET_WALL_CONSTRAINTS answered it on the trained backend - a write
+  # answering a question. This card answers it on its own; that table now
+  # points here, and keeps "what penetrates these walls and how big".
+  - what penetrates this wall
