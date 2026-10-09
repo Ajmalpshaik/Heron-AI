@@ -131,7 +131,12 @@ compatibility-note: >
 
 # ROUTING
 #
-#   "why does the fitting not appear at this size" -> here, first
+#   "why does the fitting not appear at this size" -> a COMPOSITION, all
+#                                         reads: REPORT_ROUTING_PREFERENCES
+#                                         (is the size inside a rule's
+#                                         window), then this card on the
+#                                         family it names, then
+#                                         REPORT_PIPE_SEGMENTS
 #   "what sizes does this family know"             -> here
 #   "what fitting will this type insert"           -> REPORT_ROUTING_PREFERENCES
 #   "what sizes does the segment have"             -> REPORT_PIPE_SEGMENTS

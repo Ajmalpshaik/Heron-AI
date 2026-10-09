@@ -163,7 +163,14 @@ compatibility-note: >
 # ROUTING - repeated in SET_ROUTING_PREFERENCE.
 #
 #   "give it the same fittings as that type" -> here
-#   "use the copper tee family"              -> here, from a type that has it
+#   "use the copper tee family"              -> ASK WHICH, row 5b-387. For pipes
+#                                               drawn from now on: this card
+#                                               from a type that already has
+#                                               the tee, or SET_ROUTING_PREFERENCE
+#                                               once per tee rule (it matches
+#                                               a TYPE name, not the family).
+#                                               For tees already placed:
+#                                               CHANGE_ELEMENT_TYPE
 #   "make this type copper"                  -> SET_ROUTING_PREFERENCE, which
 #                                               changes the SEGMENT
 #   "what fitting will this insert"          -> REPORT_ROUTING_PREFERENCES

@@ -112,7 +112,7 @@ compatibility-note: >
 # ROUTING - repeated in MEASURE_ELEMENT_LENGTHS and TAG_ELEMENTS.
 #
 #   "add a dimension between these"  -> here
-#   "dimension the duct spacing"     -> here
+#   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS, which declares it
 #   "how far apart are they"         -> MEASURE_ELEMENT_LENGTHS reports it as a
 #                                       NUMBER and draws nothing. This fragment
 #                                       puts it on the drawing. Asking a

@@ -128,7 +128,7 @@ compatibility-note: >
 # ROUTING - repeated in CREATE_DIMENSION and DIMENSION_GRIDS_AND_LEVELS.
 #
 #   "dimension from this to that"    -> here
-#   "dimension the duct spacing"     -> CREATE_DIMENSION - centrelines of
+#   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS - centrelines of
 #                                       parallel MEP runs, and only that
 #   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
 #   "dimension the rooms"            -> DIMENSION_ROOMS
@@ -143,3 +143,7 @@ utterances:
   - dimension these references
   - add a linear dimension
   - dimension across these
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "dimension
+  # from this to that": CREATE_DIMENSION answered it on both backends.
+  - dimension from this to that

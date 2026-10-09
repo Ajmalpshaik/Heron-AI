@@ -170,3 +170,7 @@ utterances:
   - set the project length units to millimeters
   - change project units
   - display areas in square feet
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "round lengths
+  # to 5 mm": MEASURE_ELEMENT_LENGTHS answered it on both backends.
+  - round lengths to 5 mm

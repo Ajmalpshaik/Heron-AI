@@ -226,3 +226,7 @@ utterances:
   - copy this segment and rename the sizes
   - the nominal size should be the OD
   - add a segment with these sizes
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "the nominal
+  # should say the OD": MAXIMIZE_DATUM_EXTENTS on lexical answered it.
+  - the nominal should say the OD
