@@ -636,6 +636,8 @@ behaviour; `.claude/settings.json` and its hooks; the Revit version targets.
 | `check-fragments-compile.py`, `check-routing.py` | The two new fragments compile and do not steal routing from existing cards (compare `find` on a scratch store against main) |
 | `tools/check-change.py`, `tools/change-evidence.py` | The diff touched only the areas each phase declared; before/after evidence recorded — a change with no evidence is not a pass |
 
+**As built, the four `test_companion_*` files above are one suite** - [`tests/test_companion.py`](../tests/test_companion.py): `test_live_files` (the live file), `test_server` (the protection checks), `test_activity` (the activity list), `test_tables` (the element table) and `test_no_way_to_an_ai` (no outbound reach). The activity list is also exercised through the MCP SDK's own dispatch in [`tests/test_mcp_serves.py`](../tests/test_mcp_serves.py) section 11. None of the four names in the tables of sections 15 and 16.1 exists as a file; they were the plan (FRAGMENT-ISSUES row 5b-390).
+
 ### 16.2 Real Revit — a new NEEDS-CHECKING group, letter assigned when built
 
 Every row names the model and the release. **Everything here is NOT_VERIFIED until run.**
