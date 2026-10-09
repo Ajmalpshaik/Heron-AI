@@ -120,6 +120,26 @@ namespace Heron.BindingNote.TestHost
             Check(HeronBindingNote.EmptyWhenAbsent("bool", "true") == null,
                   "a bool is AbsentValue's case, not this one");
 
+            // FRAGMENT-ISSUES row 5b-292: the name SELECT_TYPES prints must be
+            // a name the binder takes.
+            Check(HeronBindingNote.TypeNameMatches("M_Single-Flush", "0915 x 2134mm",
+                      "M_Single-Flush : 0915 x 2134mm"),
+                  "\"Family : Type\", as SELECT_TYPES prints it, names the type");
+            Check(HeronBindingNote.TypeNameMatches("Basic Wall", "Generic - 200mm",
+                      "Basic Wall: Generic - 200mm"),
+                  "\"Family: Type\", as the Properties palette writes it, still does");
+            Check(HeronBindingNote.TypeNameMatches("Basic Wall", "Generic - 200mm",
+                      "Basic Wall:Generic - 200mm"),
+                  "and so does no space at all");
+            Check(!HeronBindingNote.TypeNameMatches("Basic Wall", "Generic - 200mm",
+                      "basic wall: Generic - 200mm"),
+                  "capitals still count");
+            Check(!HeronBindingNote.TypeNameMatches("Basic Wall", "Generic - 200mm",
+                      "Generic - 200mm"),
+                  "a type name alone is ElementsNamed's other spelling, not this one");
+            Check(!HeronBindingNote.TypeNameMatches("", "Generic - 200mm", ": Generic - 200mm"),
+                  "and an element with no family never matches");
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {

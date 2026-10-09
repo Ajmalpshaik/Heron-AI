@@ -133,5 +133,29 @@ namespace Heron.Revit.Addin
                     return null;
             }
         }
+
+        /// <summary>
+        /// Whether TEXT names a family type as "Family: Type".
+        ///
+        /// FRAGMENT-ISSUES ROW 5b-292: SELECT_TYPES prints a type as
+        /// "M_Single-Flush : 0915 x 2134mm", with a space each side of the
+        /// colon, and the binder matched only "Family: Type" exactly - so the
+        /// name one tool handed out was refused six times by the next. Revit
+        /// allows no colon in a family or type name, so the first colon is the
+        /// divider and the spaces round it carry nothing: either spelling, or
+        /// none, names the same type. Each half must still match exactly,
+        /// capitals included.
+        ///
+        /// Nothing here touches an Autodesk type, so it is proved without
+        /// Revit in Heron.BindingNote.TestHost.
+        /// </summary>
+        internal static bool TypeNameMatches(string family, string typeName, string text)
+        {
+            if (string.IsNullOrEmpty(family) || typeName == null || text == null) return false;
+            var colon = text.IndexOf(':');
+            if (colon < 0) return false;
+            return string.Equals(text.Substring(0, colon).Trim(), family, System.StringComparison.Ordinal)
+                && string.Equals(text.Substring(colon + 1).Trim(), typeName, System.StringComparison.Ordinal);
+        }
     }
 }

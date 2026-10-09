@@ -3477,8 +3477,9 @@ namespace Heron.Revit.Addin
                 if (type == null) continue;
                 string family;
                 try { family = type.FamilyName; } catch { continue; }
-                if (!string.IsNullOrEmpty(family)
-                    && string.Equals(family + ": " + readable, text, StringComparison.Ordinal))
+                // "Family: Type", or "Family : Type" as SELECT_TYPES prints it
+                // (row 5b-292) - one rule, proved in Heron.BindingNote.TestHost.
+                if (HeronBindingNote.TypeNameMatches(family, readable, text))
                     found.Add(element);
             }
             return found;
