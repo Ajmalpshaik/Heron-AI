@@ -34,11 +34,19 @@ WHAT IT PROVES
      the tool would "say so rather than failing when there is none". That was
      fixed and nothing held it.
 
+  5. A ROUTING-TABLE CLAIM THAT WRAPS ONTO A SECOND COMMENT LINE IS READ AS ONE
+     SENTENCE. Row 5b-382: the claim was captured WITH the newline and the next
+     line's `#    `, so "which walls are fair faced block" - a declared
+     utterance - was searched with a `#` in it and listed as claimed and not
+     reached, and could never be seen to collide with the same sentence on
+     another table.
+
 WHAT IT DOES NOT PROVE
   Anything about the routing result itself. This checker is a REPORT - it exits
   0 whatever collisions it finds, because a collision is a judgement and not a
   defect - so there is no verdict here to test. What is testable is the two
-  cases where it declines to produce one at all.
+  cases where it declines to produce one at all, and what it READS as a claim
+  before it asks anything.
 """
 
 from __future__ import print_function
@@ -46,6 +54,7 @@ from __future__ import print_function
 import importlib.util
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -165,6 +174,84 @@ def main():
     check(CR.rung("nonsense") == -1,
           "and a level nobody declared is -1 rather than an exception or a "
           "quiet zero, so it can never out-rank READ")
+    print()
+
+    print("5. A CLAIM THAT WRAPS ONTO A SECOND COMMENT LINE IS ONE SENTENCE")
+    # Row 5b-382. ASKED BEFORE IT IS CALLED, so the checker as it stood -
+    # with the claim regex inline in main() - fails these checks rather than
+    # raising (.claude/skills/heron-ship/SKILL.md s2a). The fallback is what
+    # main() did inline until that row, so the red run shows the real defect.
+    claims_of = getattr(CR, "routing_claims", None)
+    check(claims_of is not None,
+          "the checker reads a table's claims in one place a suite can call")
+    if claims_of is None:
+        claims_of = lambda text: [                               # noqa: E731
+            m.group(1).strip() for m in re.finditer(
+                r'^#\s+"([^"]+)"\s*->\s*here\b', text, re.M)]
+
+    table = (
+        '# ROUTING\n'
+        '#   "select all ducts"                    -> here\n'
+        '#   "which walls are fair faced\n'
+        '#    block"                               -> here\n'
+        '#   "make the vertical grid fixed distance\n'
+        '#      1500 on every\n'
+        '#    wall"                                -> here\n'
+        '#   "delete these"                        -> DELETE_ELEMENTS\n'
+        '#   "half a sentence\n'
+        'not a comment"                            -> here\n'
+        'id: FRG-TEST-001\n')
+    said = claims_of(table)
+    check(said == ["select all ducts",
+                   "which walls are fair faced block",
+                   "make the vertical grid fixed distance 1500 on every wall"],
+          "a claim on one line, on two and on three come back as three "
+          "sentences, the `#` and the indentation of each continuation gone - "
+          "got %r" % (said,))
+    check(not any("\n" in s or "#" in s for s in said),
+          "no claim carries a newline or a `#` into the identity check or the "
+          "search")
+    check(claims_of('#   "which walls are fair faced block"  -> here\n')
+          == claims_of('#   "which walls are fair faced\n'
+                       '#    block"                         -> here\n'),
+          "the same sentence wrapped and unwrapped is ONE key, so two tables "
+          "claiming it can be seen to collide")
+    check(not any(s.startswith("half a sentence") for s in said),
+          "a quote that runs off the comment into YAML is not a claim - a "
+          "sentence wraps onto COMMENT lines only")
+
+    # THE TWO ROWS THE DEFECT WAS FOUND ON, read from the library itself.
+    import yaml
+    for folder, sentence, declared in (
+            ("select-by-material", "which walls are fair faced block", True),
+            ("set-curtain-wall-grid",
+             "make the vertical grid fixed distance 1500", False)):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        text = io.open(path, encoding="utf-8").read()
+        check(sentence in claims_of(text),
+              "%s's table claims %r as one sentence" % (folder, sentence))
+        if declared:
+            spoken = [(u or "").strip().lower()
+                      for u in (yaml.safe_load(text).get("utterances") or [])]
+            check(sentence in spoken,
+                  "and it is a declared utterance, so the checker answers it by "
+                  "identity and never searches it")
+
+    wrapped = []
+    for folder in sorted(os.listdir(os.path.join(ROOT, "brain", "fragments"))):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if os.path.exists(path):
+            wrapped += [(folder, s) for s in
+                        claims_of(io.open(path, encoding="utf-8").read())
+                        if "\n" in s]
+    check(not wrapped,
+          "no claim anywhere in the library reaches the checker with a line "
+          "break in it - %d did: %s"
+          % (len(wrapped), ", ".join(sorted(set(f for f, _ in wrapped)))))
+
+    check("routing_claims(" in body,
+          "and main() reads claims through it, rather than a regex of its own "
+          "that the checks above never see")
     print()
 
     if FAILURES:

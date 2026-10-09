@@ -133,6 +133,25 @@ def describe_drift(store_ids, disk_ids, limit=4):
     return "; ".join(parts) if parts else "the same ids in a different order"
 
 
+# A routing-table claim: a quoted sentence opening a comment line, then
+# "-> here". The sentence may WRAP onto the comment lines below it, and onto
+# nothing else - a quote that runs off the comment into YAML is not a claim.
+CLAIMED = re.compile(r'^#\s+"((?:[^"\n]|\n[ \t]*#)+)"\s*->\s*here\b', re.M)
+
+
+def routing_claims(text):
+    """Every sentence a fragment.yaml's routing table claims, each on one line.
+
+    Row 5b-382: a claim wrapped over two comment lines was captured WITH the
+    newline and the next line's `#    `, so a declared utterance was searched
+    with a `#` in it and listed as claimed and not reached. Each continuation's
+    `#` and indentation go, and the whitespace collapses, before anything
+    compares or searches the sentence.
+    """
+    return [" ".join(re.sub(r"\n[ \t]*#", " ", m.group(1)).split())
+            for m in CLAIMED.finditer(text)]
+
+
 def utterances():
     """(fragment id, sentence) for every declared utterance."""
     try:
@@ -407,7 +426,6 @@ def main(argv):
         #
         # A claim on TWO tables is a different fault and is reported as one: two
         # comments disagreeing is invisible to every other check here.
-        claimed = re.compile(r'^#\s+"([^"]+)"\s*->\s*here\b', re.M)
         unheard = []
         claims = {}
 
@@ -423,8 +441,7 @@ def main(argv):
             fid = doc.get("id")
             spoken = set((u or "").strip().lower() for u in (doc.get("utterances") or []))
 
-            for match in claimed.finditer(text):
-                sentence = match.group(1).strip()
+            for sentence in routing_claims(text):
                 claims.setdefault(sentence.lower(), set()).add(fid)
 
                 if sentence.lower() in spoken:
