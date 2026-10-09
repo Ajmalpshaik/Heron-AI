@@ -136,7 +136,10 @@ def describe_drift(store_ids, disk_ids, limit=4):
 # A routing-table claim: a quoted sentence opening a comment line, then
 # "-> here". The sentence may WRAP onto the comment lines below it, and onto
 # nothing else - a quote that runs off the comment into YAML is not a claim.
-CLAIMED = re.compile(r'^#\s+"((?:[^"\n]|\n[ \t]*#)+)"\s*->\s*here\b', re.M)
+# The arrow may sit after the closing quote or at the start of the NEXT
+# comment line, never further down.
+CLAIMED = re.compile(r'^#\s+"((?:[^"\n]|\n[ \t]*#)+)"'
+                     r'[ \t]*(?:\n[ \t]*#[ \t]*)?->\s*here\b', re.M)
 
 
 def routing_claims(text):
@@ -147,6 +150,9 @@ def routing_claims(text):
     with a `#` in it and listed as claimed and not reached. Each continuation's
     `#` and indentation go, and the whitespace collapses, before anything
     compares or searches the sentence.
+
+    Row 5b-383: a claim whose `-> here` sat on the next comment line was not
+    read at all, so it was never checked for reach or for a second table.
     """
     return [" ".join(re.sub(r"\n[ \t]*#", " ", m.group(1)).split())
             for m in CLAIMED.finditer(text)]

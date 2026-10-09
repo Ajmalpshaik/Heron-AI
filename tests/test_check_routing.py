@@ -41,6 +41,11 @@ WHAT IT PROVES
      reached, and could never be seen to collide with the same sentence on
      another table.
 
+  6. A CLAIM WHOSE `-> here` SITS ON THE NEXT COMMENT LINE IS STILL READ. Row
+     5b-383: after the closing quote the pattern's `\s*->` could not step over
+     the next line's `#`, so nine claims in the library were never checked for
+     reach or for a second table claiming them, and nothing said so.
+
 WHAT IT DOES NOT PROVE
   Anything about the routing result itself. This checker is a REPORT - it exits
   0 whatever collisions it finds, because a collision is a judgement and not a
@@ -252,6 +257,52 @@ def main():
     check("routing_claims(" in body,
           "and main() reads claims through it, rather than a regex of its own "
           "that the checks above never see")
+    print()
+
+    print("6. A CLAIM WHOSE `-> here` SITS ON THE NEXT COMMENT LINE IS STILL READ")
+    # Row 5b-383. Same reader as section 5, so a checker without it has
+    # already failed there and the fallback above keeps this section running.
+    table = (
+        '#   "will this family connect when it is placed on a pipe"\n'
+        '#                                    -> here, in the Family Editor (v2)\n'
+        '#   "the duct is missing\n'
+        '#    from my schedule"\n'
+        '#                                    -> here FIRST to see what is there\n'
+        '#   "fix the names this found"\n'
+        '#                                    -> RENAME_ELEMENTS\n'
+        '#   "select all ducts"                -> here\n')
+    said = claims_of(table)
+    check(said == ["will this family connect when it is placed on a pipe",
+                   "the duct is missing from my schedule",
+                   "select all ducts"],
+          "a claim with its arrow on the next line - wrapped or not - is read, "
+          "in order, beside one with its arrow on the same line - got %r"
+          % (said,))
+    check("fix the names this found" not in said,
+          "and a sentence whose next-line arrow points ELSEWHERE is still not "
+          "a claim for this fragment")
+
+    # THE NINE ROWS THE DEFECT WAS FOUND ON, measured 2026-10-09.
+    unread = []
+    for folder, sentence in (
+            ("check-family-standards",
+             "will this family connect when it is placed on a pipe"),
+            ("check-model-standards",
+             "do the type names follow our naming standard"),
+            ("group-by-assembly", "which families are nested inside this one"),
+            ("group-elements", "group these forms in this family"),
+            ("list-revisions", "show me the sheet issues and revisions table"),
+            ("read-schedule-contents", "the duct is missing from my schedule"),
+            ("report-mep-pressure-drop", "how much resistance is in this pipe"),
+            ("select-types", "what are the mullion types in this model"),
+            ("set-schedule-sort-group",
+             "one line per size instead of every duct")):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if sentence not in claims_of(io.open(path, encoding="utf-8").read()):
+            unread.append(folder)
+    check(not unread,
+          "every next-line-arrow claim in the library is read - %d were not: %s"
+          % (len(unread), ", ".join(unread)))
     print()
 
     if FAILURES:
