@@ -123,6 +123,22 @@ CHANGES = [
      "5b-337: answered APPLY_COLOR_FILL_SCHEME"),
     ("change the area scheme name from rentable to lettable", "SET_AREA_VOLUME_COMPUTATIONS",
      "5b-337: still answered APPLY_COLOR_FILL_SCHEME, a different change, after the tools existed"),
+    # Row 146, 2026-10-09: the first draft of READ_VIEW_SCALE's purpose said
+    # "scale" and "view" more often than SET_VIEW_SCALE, and a review asked
+    # these back on private stores - the read took the first two from the
+    # write on the model and the first, third, fourth and fifth on spelling
+    # (where this suite cannot run; tests/test_read_view_scale.py asks them
+    # there).
+    ("update the view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on both backends"),
+    ("set the scale of these views", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on the model"),
+    ("set the view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
+    ("set view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
+    ("adjust the view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
 ]
 
 QUESTIONS = [
@@ -195,6 +211,12 @@ DECLARED = [
      "146: answered SET_MEP_INSULATION on both"),
     ("what is the sill height of these windows", "READ_ELEMENT_PARAMETERS",
      "5b-321: answered PLACE_HOSTED_FAMILY on the model"),
+    # 146's last READ gap: nothing read a view's scale until READ_VIEW_SCALE
+    # (2026-10-09), so the question could only land on the write.
+    ("what is the scale of this view", "READ_VIEW_SCALE",
+     "146: answered SET_VIEW_SCALE on both"),
+    ("what scale is this plan at", "READ_VIEW_SCALE",
+     "146: answered CREATE_CALLOUT on the model"),
 ]
 
 OWN = [
