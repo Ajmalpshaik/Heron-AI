@@ -46,6 +46,13 @@ WHAT IT PROVES
      the next line's `#`, so nine claims in the library were never checked for
      reach or for a second table claiming them, and nothing said so.
 
+  7. THREE MORE LAYOUTS ARE READ - AND TWO LOOK-ALIKES ARE NOT. Row 5b-384:
+     an arrow on the line BEFORE the one that closes the quote, several quoted
+     sentences sharing one arrow (`"a" / "b"  -> here`), and `-> HERE` in
+     capitals. Text between the closing quote and the arrow is still not a
+     claim, because that is also how a measurement log reads (`"x"  REPORT ->
+     here`).
+
 WHAT IT DOES NOT PROVE
   Anything about the routing result itself. This checker is a REPORT - it exits
   0 whatever collisions it finds, because a collision is a judgement and not a
@@ -303,6 +310,130 @@ def main():
     check(not unread,
           "every next-line-arrow claim in the library is read - %d were not: %s"
           % (len(unread), ", ".join(unread)))
+    print()
+
+    print("7. THREE MORE LAYOUTS ARE READ - AND TWO LOOK-ALIKES ARE NOT")
+    # Row 5b-384. Same reader again, so the fallback in section 5 keeps this
+    # running on a checker that has none.
+    table = (
+        '#   "one column with the type and the    -> here\n'
+        '#    mark together"\n'
+        '#   "the colours are not showing on      -> here when a filter is on\n'
+        '#    this drawing"                          and nothing draws;\n'
+        '#   "delete these" / "remove these"  -> here\n'
+        '#   "flip the door" / "the handing is\n'
+        '#    wrong, fix it"                       -> here. It CHANGES the model\n'
+        '#   "set the view template"            -> HERE, and it is declared here\n'
+        '#   "wash the walls light grey so it\n'
+        '#    prints"                          -> HERE. A colour with no pattern\n'
+        '#   "which doors are flipped" / "is this\n'
+        '#    door mirrored"                       -> REPORT_MIRRORED_INSTANCES\n'
+        '#   "a wrapped sentence going   -> SOMEWHERE_ELSE\n'
+        '#    elsewhere"\n'
+        '#   "change the global param"    REPORT -> here, by identity\n'
+        '#   "delete these forms" (ids given)            -> here, then DELETE\n'
+        '#   "-> here" is what a row in one of these tables says\n')
+    said = claims_of(table)
+    check(said == ["one column with the type and the mark together",
+                   "the colours are not showing on this drawing",
+                   "delete these", "remove these",
+                   "flip the door", "the handing is wrong, fix it",
+                   "set the view template",
+                   "wash the walls light grey so it prints"],
+          "an arrow before the closing quote, sentences sharing one arrow and "
+          "`-> HERE` are each read, in order, as whole sentences - got %r"
+          % (said,))
+    check(not any(s.startswith(("which doors", "is this door", "a wrapped",
+                                "change the global", "delete these forms"))
+                  for s in said),
+          "and rows routed ELSEWHERE, a measurement log with a word between "
+          "the quote and the arrow, and a parenthesis there are not claims")
+    check(not any(s.startswith("-> here") or "is what a row" in s
+                  for s in said),
+          "and prose that quotes the notation itself is not a claim")
+
+    # LOOK-ALIKES, each found by a reviewer set to break the reader on
+    # 2026-10-09. None is in the library; each was read by the first version
+    # of the 5b-384 reader, or by the 5b-382 pattern it grew from.
+    wrong = []
+    for text, want, what in (
+            ('#   "update the global parameter value  SET    -> here, kept\n'
+             '#    for the whole project"\n', [],
+             "a log column between the sentence and an arrow that comes "
+             "before the closing quote"),
+            ('#   "a wrapped sentence      NOT -> here\n'
+             '#    going on"\n', [], "a NOT before that arrow"),
+            ('#   "make the leaders     -> here\n'
+             '#    -> OTHER for this"\n', [],
+             "an arrow inside the continuation"),
+            ('#   "one column with the type and   -> here\n'
+             '#    mark together, see "x"\n', [],
+             "a continuation whose quote opens something else"),
+            ('#   "copy the legend          -> here\n'
+             '#                                REPORT_LEGENDS reads "the list"\n',
+             [], "right-hand-column prose under an unclosed quote"),
+            ('#   "make a legend"                     -> CREATE_LEGEND, which\n'
+             '#                                          "the legend list   -> here\n'
+             '#                                          stands"\n', [],
+             "a quote opening another row's right-hand column"),
+            ('#   "x"                                 -> OTHER; the pair\n'
+             '#                                          "a" / "b" -> here\n', [],
+             "a quoted pair in another row's right-hand column"),
+            ('utterances:\n#\n  "select all ducts"\n#   -> here\n', [],
+             "a quote on a YAML line under a bare `#`"),
+            ('#   "x" ->\nhere: 1\n', [], "`here` as the YAML key below"),
+            ('#   "x"                -> here-and-there\n', [],
+             "`here-and-there`"),
+            ('#   "a" / "   "       -> here\n', ["a"], "an all-space quote"),
+            ('#   "delete these" /\n'
+             '#   "remove these"                  -> here\n',
+             ["delete these", "remove these"],
+             "a group broken after its `/`"),
+            ('#   "delete these"\n'
+             '#   / "remove these"                -> here\n',
+             ["delete these", "remove these"],
+             "a group broken before its `/`"),
+            ('#   "x"\r\n#   -> here\r\n', ["x"],
+             "CRLF text with the arrow on the next line")):
+        got = claims_of(text)
+        if got != want:
+            wrong.append("%s: got %r" % (what, got))
+    check(not wrong,
+          "look-alikes read as what they are - a log column, a NOT, a stray "
+          "arrow or quote, another row's right-hand column and plain YAML are "
+          "not claims; a broken group and CRLF text are read whole - "
+          "%d wrong: %s" % (len(wrong), "; ".join(wrong)))
+
+    # ONE OF EACH LAYOUT FROM THE LIBRARY, measured 2026-10-09.
+    unread = []
+    for folder, sentence in (
+            ("add-schedule-combined-field",
+             "one column with the type and the mark together"),
+            ("audit-view-filters",
+             "the colours are not showing on this drawing"),
+            ("delete-elements", "remove these"),
+            ("flip-elements", "the handing is wrong, fix it"),
+            ("show-elements", "reset the view"),
+            ("apply-view-template", "set the view template"),
+            ("set-category-solid-fill",
+             "wash the walls light grey so it prints")):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if sentence not in claims_of(io.open(path, encoding="utf-8").read()):
+            unread.append("%s %r" % (folder, sentence))
+    check(not unread,
+          "one claim of each layout in the library is read - %d were not: %s"
+          % (len(unread), "; ".join(unread)))
+
+    leaked = []
+    for folder in sorted(os.listdir(os.path.join(ROOT, "brain", "fragments"))):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if os.path.exists(path):
+            leaked += ["%s %r" % (folder, s) for s in
+                       claims_of(io.open(path, encoding="utf-8").read())
+                       if "->" in s or '"' in s or "#" in s]
+    check(not leaked,
+          "no claim anywhere in the library carries an arrow, a quote or a `#` "
+          "into the sentence - %d did: %s" % (len(leaked), "; ".join(leaked[:4])))
     print()
 
     if FAILURES:

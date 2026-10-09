@@ -133,13 +133,42 @@ def describe_drift(store_ids, disk_ids, limit=4):
     return "; ".join(parts) if parts else "the same ids in a different order"
 
 
-# A routing-table claim: a quoted sentence opening a comment line, then
-# "-> here". The sentence may WRAP onto the comment lines below it, and onto
-# nothing else - a quote that runs off the comment into YAML is not a claim.
-# The arrow may sit after the closing quote or at the start of the NEXT
-# comment line, never further down.
-CLAIMED = re.compile(r'^#\s+"((?:[^"\n]|\n[ \t]*#)+)"'
-                     r'[ \t]*(?:\n[ \t]*#[ \t]*)?->\s*here\b', re.M)
+# A routing-table claim: a quoted sentence opening a comment line in the LEFT
+# column, then "-> here" in any case. A quote further in sits in another
+# row's right-hand column, and is prose. The sentence may WRAP onto the
+# comment lines below it, and onto nothing else - a quote that runs off the
+# comment into YAML is not a claim. Several sentences may share one arrow,
+# joined by " / ", and the group may break across a comment line. The arrow
+# may sit after the closing quote or at the start of the NEXT comment line,
+# never further down, and "here" follows it on the same line. A sentence
+# never holds an arrow, so a row whose arrow comes before its closing quote
+# is SPLIT_CLAIM's and never this one's. Anything else between the closing
+# quote and the arrow is not a claim: that is how a measurement log reads
+# ("x"  REPORT -> here).
+_ROW = r'^#([ \t]{1,6})'
+_SENTENCE = r'"(?:[^"\n-]|-(?!>)|\n[ \t]*#)+"'
+_SLASH = r'[ \t]*(?:\n#[ \t]+)?/[ \t]*(?:\n#[ \t]+)?'
+_HERE = r"->[ \t]*(?i:here)(?![\w'-])"
+CLAIMED = re.compile(_ROW + r'(' + _SENTENCE
+                     + r'(?:' + _SLASH + _SENTENCE + r')*)'
+                     r'[ \t]*(?:\n[ \t]*#[ \t]*)?' + _HERE, re.M)
+
+# A row whose arrow sits on the line BEFORE the one that closes its quote:
+#   #   "one column with the type and the    -> here
+#   #    mark together"
+# The right-hand column shares both lines, so the sentence is held to what a
+# table puts there: words one space apart with no arrow (a wider gap holds a
+# log column or a NOT), a continuation directly under the sentence's first
+# letter, and a closing quote that is that line's last, with no arrow after.
+_WORDS = r'(?:[^"\s-]|-(?!>))+(?: (?:[^"\s-]|-(?!>))+)*'
+SPLIT_CLAIM = re.compile(_ROW + r'"(' + _WORDS + r')[ \t]+' + _HERE
+                         + r'[^"\n]*\n#\1 (' + _WORDS + r')"'
+                         r'(?=[^"\n]*$)(?![^\n]*->)', re.M)
+
+
+def _one_line(said):
+    """A claimed sentence with each continuation's `#` and indentation gone."""
+    return " ".join(re.sub(r"\n[ \t]*#", " ", said).split())
 
 
 def routing_claims(text):
@@ -153,9 +182,18 @@ def routing_claims(text):
 
     Row 5b-383: a claim whose `-> here` sat on the next comment line was not
     read at all, so it was never checked for reach or for a second table.
+
+    Row 5b-384: nor were three more layouts - an arrow before the closing
+    quote, several sentences sharing one arrow, and `-> HERE`.
     """
-    return [" ".join(re.sub(r"\n[ \t]*#", " ", m.group(1)).split())
-            for m in CLAIMED.finditer(text)]
+    text = text.replace("\r\n", "\n")
+    found = [(m.start(), [_one_line(s)
+                          for s in re.findall(r'"([^"]+)"', m.group(2))])
+             for m in CLAIMED.finditer(text)]
+    found += [(m.start(), [_one_line(m.group(2) + " " + m.group(3))])
+              for m in SPLIT_CLAIM.finditer(text)]
+    return [sentence for _, group in sorted(found)
+            for sentence in group if sentence]
 
 
 def utterances():
