@@ -11,6 +11,9 @@ Get a new PC ready for Heron before the first chat, and say what is still missin
 
     python tools/heron-ready.py           check, then warm everything that can be warmed
     python tools/heron-ready.py --check   check only - build nothing, download nothing
+    python tools/heron-ready.py --snapshot this-pc.json
+                                          what this PC has, as facts to set beside
+                                          another PC's - see snapshot()
 
 Run it in the Heron folder with the plain command `python`: that is the command
 Claude Code starts Heron with, so that is the one that has to work.
@@ -320,11 +323,234 @@ def claude_side():
         print("  %-4s %s" % (NOTE if not line.startswith("  ") else "", line))
 
 
+# ---------------------------------------------------------------------------
+# --snapshot: what this PC has, as facts another PC's can be set beside
+# ---------------------------------------------------------------------------
+
+#: The packages whose presence or version can change how fast Heron answers.
+SNAPSHOT_PACKAGES = ("PyYAML", "mcp", "model2vec", "sentence-transformers",
+                     "torch", "numpy", "sqlite-vec", "pypdf", "huggingface_hub")
+
+#: The only keys ever copied out of a Claude Code settings file.
+SETTINGS_KEYS = ("enableAllProjectMcpServers", "enabledMcpjsonServers",
+                 "disabledMcpjsonServers", "autoMemoryEnabled")
+
+#: The only keys ever copied out of a project's entry in .claude.json.
+PROJECT_KEYS = ("hasTrustDialogAccepted", "enabledMcpjsonServers",
+                "disabledMcpjsonServers")
+
+
+def _version(name):
+    try:
+        from importlib import metadata
+        return metadata.version(name)
+    except Exception:                                   # noqa: BLE001 - absent is an answer
+        return None
+
+
+def _files(folder, pattern="*"):
+    """[{name, bytes, modified}] - sizes and dates, never contents."""
+    found = []
+    for path in sorted(glob.glob(os.path.join(folder, pattern))):
+        try:
+            stat = os.stat(path)
+        except OSError:
+            continue
+        found.append({"name": os.path.basename(path), "bytes": stat.st_size,
+                      "modified": time.strftime("%Y-%m-%d %H:%M",
+                                                time.localtime(stat.st_mtime))})
+    return found
+
+
+def _tree_bytes(folder):
+    total = 0
+    for here, _dirs, names in os.walk(folder):
+        for name in names:
+            try:
+                total += os.path.getsize(os.path.join(here, name))
+            except OSError:
+                continue
+    return total
+
+
+def _json_file(path):
+    import json
+    try:
+        with open(path, "rb") as handle:
+            return json.loads(handle.read().decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _settings_facts(path):
+    """What a Claude Code settings file says about Heron - its approvals and
+    the Heron tools it lets run unasked. Nothing else is copied out."""
+    data = _json_file(path)
+    if not isinstance(data, dict):
+        return {"exists": os.path.exists(path)}
+    allow = ((data.get("permissions") or {}).get("allow") or [])
+    facts = {"exists": True,
+             "heron_allow": sorted(str(a) for a in allow if "heron" in str(a).lower())}
+    for key in SETTINGS_KEYS:
+        if key in data:
+            facts[key] = data[key]
+    return facts
+
+
+def _claude_side_facts():
+    """Claude Code's own state for Heron: its version, approvals, and how much
+    it REMEMBERS - counted in lines and files, never read out."""
+    configured = os.environ.get("CLAUDE_CONFIG_DIR")
+    home = configured or os.path.join(os.path.expanduser("~"), ".claude")
+    state = (os.path.join(configured, ".claude.json") if configured
+             else os.path.join(os.path.expanduser("~"), ".claude.json"))
+    facts = {"config_folder": home, "version": None}
+    try:
+        import subprocess
+        done = subprocess.run(["claude", "--version"], stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL, timeout=15)
+        facts["version"] = done.stdout.decode("utf-8", "replace").strip() or None
+    except Exception:                                   # noqa: BLE001 - not on PATH is an answer
+        pass
+    facts["user_settings"] = _settings_facts(os.path.join(home, "settings.json"))
+    facts["folder_settings_local"] = _settings_facts(
+        os.path.join(ROOT, ".claude", "settings.local.json"))
+
+    remembered = []
+    for folder in sorted(glob.glob(os.path.join(home, "projects", "*"))):
+        if "heron" not in os.path.basename(folder).lower():
+            continue
+        memory = os.path.join(folder, "memory", "MEMORY.md")
+        lines = None
+        if os.path.exists(memory):
+            with open(memory, "rb") as handle:
+                lines = handle.read().count(b"\n")
+        remembered.append({
+            "project": os.path.basename(folder),
+            "memory_md_lines": lines,
+            "memory_topic_files": len([n for n in glob.glob(
+                os.path.join(folder, "memory", "*.md"))
+                if os.path.basename(n) != "MEMORY.md"]),
+            "chats_kept": len(glob.glob(os.path.join(folder, "*.jsonl")))})
+    facts["projects"] = remembered
+
+    approved = []
+    data = _json_file(state)
+    for path, entry in sorted(((data or {}).get("projects") or {}).items()):
+        if "heron" not in str(path).lower() or not isinstance(entry, dict):
+            continue
+        kept = {"path": path}
+        for key in PROJECT_KEYS:
+            if key in entry:
+                kept[key] = entry[key]
+        kept["heron_allowed_tools"] = sorted(
+            str(t) for t in (entry.get("allowedTools") or [])
+            if "heron" in str(t).lower())
+        approved.append(kept)
+    facts["approvals"] = approved
+    return facts
+
+
+def _lookup_seconds():
+    """Three lookups of one request, timed - the first may build the store.
+    None where the store is shared and this folder may not build it."""
+    import heron_brain as BRAIN
+    try:
+        if not BRAIN._store_warm_allowed():
+            return None
+    except Exception:                                   # noqa: BLE001 - not timed, and said so
+        return None
+    seconds = []
+    for _ in range(3):
+        started = time.time()
+        BRAIN.lookup("create a family")
+        seconds.append(round(time.time() - started, 3))
+    return seconds
+
+
+def snapshot(path):
+    """Write what this PC has - facts only - to `path` as JSON.
+
+    FOR SETTING TWO PCs SIDE BY SIDE. The owner offered to send the folders
+    from his fast office PC; several hold his Claude login, and the memory
+    files hold his own words. This writes NAMES, SIZES, VERSIONS and yes/no
+    instead - run it on both PCs and the two files say what differs. It reads
+    no file's contents except the few settings keys named above, and the
+    line count of Claude's memory index.
+    """
+    import json
+    print("Heron - writing what this PC has to %s" % path)
+    appdata = os.environ.get("APPDATA")
+    hub = os.path.join(os.environ.get("HF_HOME") or os.path.join(
+        os.path.expanduser("~"), ".cache", "huggingface"), "hub")
+    facts = {
+        "what_this_is": "heron-ready --snapshot: names, sizes, versions and "
+                        "yes/no only. No file contents, no keys, no tokens.",
+        "written": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "heron_folder": {
+            "path": ROOT,
+            "under_onedrive": "onedrive" in ROOT.lower(),
+            "git_head": None,
+        },
+        "python": {
+            "version": "%d.%d.%d" % sys.version_info[:3],
+            "executable": sys.executable,
+            "plain_python": shutil.which("python"),
+        },
+        "packages": dict((name, _version(name)) for name in SNAPSHOT_PACKAGES),
+        "search_model": [{"name": os.path.basename(m), "bytes": _tree_bytes(m)}
+                         for m in sorted(glob.glob(os.path.join(hub, "models--*")))],
+        "knowledge_store": None,
+        "revit": {"addin_releases": [], "switches": {}},
+        "claude_code": _claude_side_facts(),
+    }
+    head = os.path.join(ROOT, ".git", "HEAD")
+    if os.path.isfile(head):
+        with open(head) as handle:
+            facts["heron_folder"]["git_head"] = handle.read().strip()
+    try:
+        import heron_scope as SCOPE
+        where = SCOPE.knowledge_dir()
+        facts["knowledge_store"] = {"folder": where,
+                                    "files": _files(where) if where else []}
+    except Exception as exc:                            # noqa: BLE001 - recorded as the fact
+        facts["knowledge_store"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
+    if appdata:
+        facts["revit"]["addin_releases"] = sorted(
+            os.path.basename(os.path.dirname(p)) for p in glob.glob(os.path.join(
+                appdata, "Autodesk", "Revit", "Addins", "*", "Heron.addin")))
+    try:
+        import heron_config as CONFIG
+        values = CONFIG.load()
+        for key in ("write.enabled", "admin.enabled", "publish.enabled",
+                    "bridge.autoConnect", "fragments.warmUp"):
+            facts["revit"]["switches"][key] = CONFIG.truthy(values, key)
+    except Exception:                                   # noqa: BLE001 - a report, not a gate
+        pass
+    try:
+        facts["lookup_seconds"] = _lookup_seconds()
+    except Exception as exc:                            # noqa: BLE001 - recorded as the fact
+        facts["lookup_seconds"] = "%s: %s" % (type(exc).__name__, exc)
+
+    with open(path, "w") as handle:
+        json.dump(facts, handle, indent=2, sort_keys=True, default=str)
+    print("Written. Open it and read it before you send it to anyone: it holds")
+    print("folder names and versions, and nothing from inside your files.")
+    return 0
+
+
 def main(argv):
     check_only = "--check" in argv
     if "-h" in argv or "--help" in argv:
         print(__doc__)
         return 0
+    if "--snapshot" in argv:
+        at = argv.index("--snapshot")
+        if at + 1 >= len(argv):
+            print("--snapshot needs a file name: python tools/heron-ready.py "
+                  "--snapshot this-pc.json")
+            return 2
+        return snapshot(argv[at + 1])
     started = time.time()
     print("Heron - getting this PC ready%s" % (" (check only)" if check_only else ""))
     python_itself()

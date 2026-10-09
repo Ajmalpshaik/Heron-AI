@@ -22,6 +22,9 @@ PC starts where the old one is. This holds the three things it promises:
   2. Its exit code follows its own FIX lines: 0 exactly when none is printed.
   3. Without --check, the knowledge store is BUILT, so the first chat finds
      it built. With --check, nothing is.
+  4. --snapshot writes what a PC has as facts - the Heron tools Claude Code
+     lets run, how much it remembers, as counts - and NO secret: no memory
+     text, no key, no address, no chat, no unrelated permission.
 
 Every run points HERON_KNOWLEDGE at a scratch folder, so the shared store on
 the machine running this is never touched (row 5b-233).
@@ -31,6 +34,7 @@ shortcut, %APPDATA%, the add-in folders and Claude Code's own approvals are
 not here to look at.
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -101,6 +105,53 @@ def main():
         check(any(name.endswith(".db") for name in os.listdir(store)),
               "and the store is on disk in the folder it was given: %s"
               % ", ".join(sorted(os.listdir(store))))
+
+        print()
+        print("4. A snapshot says what a PC has - and carries no secret")
+        claude = os.path.join(work, "claude")
+        memory = os.path.join(claude, "projects", "D--Work-Heron-Ai", "memory")
+        os.makedirs(memory)
+        with open(os.path.join(memory, "MEMORY.md"), "w") as handle:
+            handle.write("SECRET MEMORY TEXT\nsecond line\n")
+        with open(os.path.join(claude, "settings.json"), "w") as handle:
+            json.dump({"permissions": {"allow": ["mcp__heron__heron_lookup",
+                                                 "Bash(git push:*)"]},
+                       "env": {"ANTHROPIC_API_KEY": "sk-not-for-sharing"}},
+                      handle)
+        with open(os.path.join(claude, ".claude.json"), "w") as handle:
+            json.dump({"primaryApiKey": "sk-not-for-sharing",
+                       "oauthAccount": {"emailAddress": "someone@example.com"},
+                       "projects": {"D:/Work/Heron-Ai": {
+                           "hasTrustDialogAccepted": True,
+                           "enabledMcpjsonServers": ["heron"],
+                           "allowedTools": ["mcp__heron__revit_read"],
+                           "history": [{"display": "SECRET CHAT TEXT"}]}}},
+                      handle)
+        out = os.path.join(work, "pc.json")
+        code, said = run(os.path.join(work, "full"), "--snapshot", out,
+                         CLAUDE_CONFIG_DIR=claude)
+        check(code == 0 and os.path.exists(out),
+              "it writes the file (exit %d)" % code)
+        text = open(out).read() if os.path.exists(out) else ""
+        got = json.loads(text) if text else {}
+        side = got.get("claude_code") or {}
+        check(side.get("user_settings", {}).get("heron_allow")
+              == ["mcp__heron__heron_lookup"],
+              "it names the Heron tools Claude Code lets run unasked")
+        check([p.get("memory_md_lines") for p in side.get("projects", [])] == [2],
+              "and how much Claude remembers of Heron, as a line count")
+        check([a.get("heron_allowed_tools") for a in side.get("approvals", [])]
+              == [["mcp__heron__revit_read"]],
+              "and the approvals kept for the Heron folder")
+        leaked = [s for s in ("SECRET MEMORY TEXT", "sk-not-for-sharing",
+                              "someone@example.com", "SECRET CHAT TEXT",
+                              "git push") if s in text]
+        check(not leaked, "and nothing else - no memory text, key, address, "
+                          "chat or other permission%s"
+              % ("" if not leaked else " - LEAKED: " + ", ".join(leaked)))
+        check(isinstance(got.get("lookup_seconds"), list),
+              "it times three lookups where the store is its own: %s"
+              % got.get("lookup_seconds"))
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
