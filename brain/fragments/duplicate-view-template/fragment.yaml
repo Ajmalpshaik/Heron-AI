@@ -112,3 +112,8 @@ utterances:
   - duplicate the view template
   - copy a template to make a new one
   - duplicate this template
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "make a
+  # variant of this template": CREATE_VIEW_TEMPLATE_FROM_VIEW on the trained
+  # backend answered it.
+  - make a variant of this template

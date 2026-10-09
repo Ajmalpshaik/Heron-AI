@@ -125,3 +125,9 @@ utterances:
   - switch to the section view
   - put the sheet on screen
   - open view by name
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims these
+  # sentences, and a comment is not indexed, so ranking decided: "go to the
+  # section": CREATE_SECTION_VIEW answered it on both backends; "show me that
+  # sheet": LIST_SHEETS answered it on both backends.
+  - go to the section
+  - show me that sheet

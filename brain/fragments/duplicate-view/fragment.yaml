@@ -87,7 +87,7 @@ compatibility-note: >
 # ROUTING - repeated in APPLY_VIEW_TEMPLATE.
 #
 #   "duplicate this view"          -> here
-#   "make a copy of this plan"     -> here
+#   "make a copy of this plan"     -> DUPLICATE_VIEWS, which declares it
 #   "make a new 3d view"           -> NOT here. Duplicating an existing view
 #                                     and creating one from scratch are
 #                                     different jobs and this does only the

@@ -188,3 +188,8 @@ utterances:
   - report the pressure loss per section
   - why is my pressure drop showing zero
   - what does the fan have to beat
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "why is the
+  # pressure drop zero": REPORT_CONNECTOR_LOADS on the trained backend
+  # answered it.
+  - why is the pressure drop zero

@@ -86,8 +86,13 @@ compatibility-note: >
 #   "how many ducts"                        -> COUNT_ELEMENTS
 #   "how many metres of duct" / "how long"  -> here
 #   "what sizes are the ducts"              -> READ_ELEMENT_PARAMETERS, grouped
-#   "how much 300x300 duct is there"        -> here + READ_ELEMENT_PARAMETERS
-#                                              + GROUP_AND_COUNT, composed
+#   "how much 300x300 duct is there"        -> a COMPOSITION:
+#                                              READ_ELEMENT_PARAMETERS for
+#                                              the size, this card for the
+#                                              lengths, SUM_BY_GROUP keyed on
+#                                              size. GROUP_AND_COUNT only
+#                                              counts, and "how much" is a
+#                                              length
 #   "how far apart are they"                -> here. A NUMBER in the reply
 #   "dimension these ducts"                 -> CREATE_DIMENSION - the same
 #                                              distance, put ON THE DRAWING.

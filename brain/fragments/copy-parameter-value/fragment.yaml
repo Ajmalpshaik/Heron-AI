@@ -132,3 +132,8 @@ utterances:
   - copy this parameter across
   - fill the shared parameter from the built-in one
   - move the value into another field
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "put the
+  # system name into Mark": REPOINT_VIEW_REFERENCE on the trained backend
+  # answered it.
+  - put the system name into Mark

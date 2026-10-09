@@ -164,3 +164,8 @@ utterances:
   - what comes with this file that is not mine
   - there is data on this element that is not a parameter
   - what add-in data does this model carry
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "which add-ins
+  # have touched this": EDIT_PARAMETER_TEXT on the trained backend answered
+  # it.
+  - which add-ins have touched this

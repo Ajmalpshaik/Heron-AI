@@ -30,6 +30,8 @@ WHAT IT PROVES
   5. NOTHING IS WRITTEN AND NOTHING IS LOOKED UP.
 
   6. EVERY FAILURE THE CONTRACT DECLARES IS NAMED BY THE CODE AND REACHED.
+
+  7. THE FILE COMPILES WITHOUT A WARNING - row 5b-379.
 """
 
 import io
@@ -202,6 +204,22 @@ def main():
     check(not spare,
           "and the code refuses nothing the contract does not declare%s"
           % ("" if not spare else ": %s" % ", ".join(spare)))
+
+    print()
+    print("7. The file compiles without a warning")
+    # Row 5b-379. A backslash before a space in an ordinary docstring is an
+    # invalid escape: a DeprecationWarning before Python 3.12, a
+    # SyntaxWarning from 3.12 printed every time the file is compiled, and an
+    # error in a later release. Compiled here rather than imported, because
+    # an import above has already used the cached bytecode and warns nothing.
+    import warnings
+    with warnings.catch_warnings(record=True) as heard:
+        warnings.simplefilter("always")
+        compile(whole, "heron_placement.py", "exec")
+    noise = ["%s: %s" % (w.category.__name__, w.message) for w in heard]
+    check(not noise,
+          "compiling it says nothing%s"
+          % ("" if not noise else " - it said: %s" % "; ".join(noise)))
 
     print()
     if FAILURES:
