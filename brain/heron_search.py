@@ -85,26 +85,36 @@ def _fts_query(text):
     dropped rather than escaped: it carries no meaning in a lookup and every
     one of these characters means something to FTS5.
     """
-    terms = []
-    for word in _FTS_UNSAFE.sub(" ", text or "").split():
-        if not word:
-            continue
-        # PREFIX MATCHING ONLY WHERE A PREFIX MEANS SOMETHING.
-        #
-        # The point of a prefix is to catch word endings - duct, ducts,
-        # ducting. A word of three characters or fewer has no stem worth
-        # matching: "in*" hits instance, internal, insulation; "me*" hits
-        # measure, member, metadata; "the*" hits there, these, thermal. Every
-        # one of those is a false hit, and enough of them together outrank the
-        # one word in the sentence that actually carried meaning.
-        #
-        # This was invisible with two fragments and wrong with seven: "show me
-        # every duct in the model" ranked the SELECTION fragment above the duct
-        # filter, because five stopword prefixes outvoted one real term. Found
-        # by the library growing, which is the only way this class of defect
-        # ever shows up.
-        terms.append('"%s"*' % word if len(word) > 3 else '"%s"' % word)
-    return " OR ".join(terms)
+    return " OR ".join(_term(word) for word in _words(text))
+
+
+def _words(text):
+    """The words of a sentence, punctuation dropped - what _fts_query and
+    _pairs both read, so the two can never split a sentence differently."""
+    return [word for word in _FTS_UNSAFE.sub(" ", text or "").split() if word]
+
+
+def _term(word):
+    """One word as an FTS5 term: a prefix where a prefix means something.
+
+    ONE PLACE FOR THIS RULE since row 5b-396, because _pairs() builds terms
+    too and a second copy of it is how the two would drift apart.
+    """
+    # PREFIX MATCHING ONLY WHERE A PREFIX MEANS SOMETHING.
+    #
+    # The point of a prefix is to catch word endings - duct, ducts,
+    # ducting. A word of three characters or fewer has no stem worth
+    # matching: "in*" hits instance, internal, insulation; "me*" hits
+    # measure, member, metadata; "the*" hits there, these, thermal. Every
+    # one of those is a false hit, and enough of them together outrank the
+    # one word in the sentence that actually carried meaning.
+    #
+    # This was invisible with two fragments and wrong with seven: "show me
+    # every duct in the model" ranked the SELECTION fragment above the duct
+    # filter, because five stopword prefixes outvoted one real term. Found
+    # by the library growing, which is the only way this class of defect
+    # ever shows up.
+    return '"%s"*' % word if len(word) > 3 else '"%s"' % word
 
 
 class Answer(object):
@@ -147,7 +157,16 @@ class Answer(object):
 # ---------------------------------------------------------------------------
 
 def ensure_tables(store):
-    """FTS5 over what the scope knows, plus the utterance cache."""
+    """FTS5 over what the scope knows, plus the utterance cache.
+
+    `fragment_said` holds what each card DECLARES - its semantic identity and
+    its utterances, the same text as `fragment_text.semantic_identity` - in a
+    table of its own, so that its words are counted, and its lengths
+    measured, over declared sentences alone. _pairs() reads it; row 5b-396.
+    A NEW table rather than a changed one, so CREATE IF NOT EXISTS is the
+    whole schema migration; INDEX_FORMAT 3 is what makes an existing store
+    fill it.
+    """
     store.db.executescript("""
         CREATE VIRTUAL TABLE IF NOT EXISTS fragment_text USING fts5(
             id UNINDEXED,
@@ -155,6 +174,10 @@ def ensure_tables(store):
             capability,
             domain,
             purpose
+        );
+        CREATE VIRTUAL TABLE IF NOT EXISTS fragment_said USING fts5(
+            id UNINDEXED,
+            said
         );
         CREATE TABLE IF NOT EXISTS utterances (
             utterance   TEXT PRIMARY KEY,
@@ -201,7 +224,13 @@ ROW_SEP = chr(30)
 # version wrote - and `_Open` never passes `force=True`, so the old tables
 # would be served until some unrelated fragment happened to change. Named by
 # review on PR #198.
-INDEX_FORMAT = 2
+#
+# 3, ROW 5b-396: `index()` also fills `fragment_said`. A store built at 2 has
+# that table only as the empty one ensure_tables() creates, and its digest
+# still matches its rows - so without this bump it would never be filled and
+# every word pair would quietly score nothing on every existing PC. The bump
+# moves the digest, the next lookup rebuilds, and the table is filled.
+INDEX_FORMAT = 3
 
 
 def library_digest(store):
@@ -346,14 +375,20 @@ def index(store, force=False):
         # rebuilding it - so every exact-phrase route stayed missing while the
         # declarations sat in the files, and even an explicit rebuild would not
         # have brought them back. Found by review on PR #198.
+        #
+        # AND THE THIRD SINCE ROW 5b-396, for the same reason: `fragment_said`
+        # is an independent output too, and an emptied one matching its digest
+        # would leave every word pair scoring nothing with no rebuild coming.
         if have and have["digest"] == want:
             rows = store.execute(
                 "SELECT (SELECT COUNT(*) FROM fragment_text) AS texts, "
-                "(SELECT COUNT(*) FROM identities) AS ids").fetchone()
-            if rows and rows["texts"] and rows["ids"]:
+                "(SELECT COUNT(*) FROM identities) AS ids, "
+                "(SELECT COUNT(*) FROM fragment_said) AS said").fetchone()
+            if rows and rows["texts"] and rows["ids"] and rows["said"]:
                 return 0, rows["texts"]
 
     store.execute("DELETE FROM fragment_text")
+    store.execute("DELETE FROM fragment_said")
     store.execute("DELETE FROM identities")
 
     on_disk, _ = FRAG.load_all()
@@ -385,6 +420,11 @@ def index(store, force=False):
             "domain, purpose) VALUES (?,?,?,?,?)",
             (row["id"], " ".join([row["semantic_identity"]] + said),
              row["capability"], row["domain"], purpose))
+        # The same declared text again, alone in its own table - see
+        # ensure_tables() and _pairs().
+        store.execute(
+            "INSERT INTO fragment_said (id, said) VALUES (?,?)",
+            (row["id"], " ".join([row["semantic_identity"]] + said)))
 
         for phrase in [row["semantic_identity"]] + said:
             key = normalise(phrase)
@@ -770,6 +810,112 @@ def forget_stale(store, on_disk=None):
     return dropped
 
 
+# WHAT A DECLARED WORD PAIR IS WORTH, against the whole sentence's bm25.
+#
+# MEASURED, NOT CHOSEN - row 5b-396, 480 fragments, both backends, scratch
+# stores. With the pair score divided by the sentence's number of pairs (see
+# _pairs), none of the owner's 79 questions went down at 0.3, 0.4 or 0.5 - on
+# `model` his "Which model did you create it in?" came into the top three at
+# each; at 0.6 his "How many VCDs are there, and what sizes are they?" went
+# 4th to 5th on `lexical`. On tests/data/material-questions.tsv, 0.5 moved
+# "what material does the wall use" off READ_ELEMENT_MATERIAL on `lexical`;
+# 0.3 and 0.4 moved nothing the wrong way on either backend, and of the 69
+# questions about what an element is made of 0.4 left 19 on a write on
+# `lexical` and 16 on `model` where 0.3 left 24 and 19 (29 and 20 before).
+# So 0.4: the stronger of the two that harmed nothing, one step inside the
+# weight that first did.
+PAIR_WEIGHT = 0.4
+
+
+def _pairs(store, text):
+    """(pair terms, how many pairs the sentence has). Row 5b-396.
+
+    WHAT BM25 THROWS AWAY, AND WHERE IT IS STILL EVIDENCE. A word in at least
+    half the cards - "what", "which", "does", "are" - gets an IDF of zero over
+    whole cards, because nearly every purpose uses it somewhere. So "what
+    material does this use" was ONE word to the words route, "material", which
+    every material card says about equally - and the order among them was
+    decided by whichever happened to say "use" or "those" in its prose.
+    CREATE_MATERIAL's purpose says "a name already in use" and "none of those
+    are touched", and 15 of 69 questions about what an element is made of went
+    to it on `lexical`, 12 on `model`.
+
+    Among what cards DECLARE, those words are not noise: "what" is in the
+    declared sentences of 145 cards of 480, "the" in 458. And beside a word
+    that does carry weight, a word bm25 drops is part of a phrase a card can
+    have said: READ_ELEMENT_MATERIAL declares "what material is this", and no
+    write card declares "what material".
+
+    SO A PAIR OF NEIGHBOURING WORDS COUNTS when, and only when:
+      * exactly ONE of the two is in at least half the cards - the word bm25
+        drops, beside a word it keeps. Two words it keeps are already counted
+        one by one; two it drops are noise either way;
+      * and that dropped word is in FEWER than half the cards' declared text,
+        so it still tells declared sentences apart. "the material" fails here,
+        and was measured to: it sent "what's the material here" to the card
+        that declares "bring the materials over", a write.
+    The pair is then ranked by bm25 over `fragment_said` - declared text only,
+    its own word counts and lengths - so a long purpose neither supplies the
+    phrase nor dilutes it. Half is bm25's own line, where its IDF reaches zero,
+    used on both counts. No word is named anywhere here; which words qualify is
+    read off the library on every call.
+
+    DIVIDED BY THE SENTENCE'S PAIRS, because a pair is a share of what was
+    said: one pair of four in a five-word question is a quarter of it, one of
+    fifteen in the owner's long sentences is little. Undivided, no weight tried
+    left everything alone - measured at 0.07, 0.1 and 0.15: the owner's "How
+    many VCDs are there, and what sizes are they?" 4th to 5th on `lexical` at
+    the first, "what material does the wall use" off READ_ELEMENT_MATERIAL at
+    the second, and at the third, on `model`, "select the pipes that use PPR"
+    onto CAP_OPEN_PIPE_ENDS, a write.
+
+    It never decides what a sentence means (D-01) and never reads a card's
+    risk. A command's pairs count exactly as a question's do - "select every",
+    "ducts in" - and they qualify by the library's statistics, not by any list.
+    """
+    words = _words(text)
+    if len(words) < 2:
+        return [], 0
+    pairs = len(words) - 1
+    declared = store.execute(
+        "SELECT COUNT(*) AS n FROM fragment_said").fetchone()["n"]
+    if not declared:
+        # A store indexed before INDEX_FORMAT 3, or one never indexed - a test
+        # store, or a lookup asked before index(). Nothing to read pairs from,
+        # so the words route is exactly what it was before row 5b-396.
+        return [], pairs
+    cards = store.execute(
+        "SELECT COUNT(*) AS n FROM fragment_text").fetchone()["n"]
+
+    seen = {}
+
+    def common(word):
+        """(in half the cards or more, in half the declared texts or more)."""
+        key = word.lower()
+        if key not in seen:
+            term = _term(word)
+            on_cards = store.execute(
+                "SELECT COUNT(*) AS n FROM fragment_text "
+                "WHERE fragment_text MATCH ?", (term,)).fetchone()["n"]
+            in_said = store.execute(
+                "SELECT COUNT(*) AS n FROM fragment_said "
+                "WHERE fragment_said MATCH ?", (term,)).fetchone()["n"]
+            seen[key] = (2 * on_cards >= cards, 2 * in_said >= declared)
+        return seen[key]
+
+    terms = []
+    for first, second in zip(words, words[1:]):
+        (dropped_a, said_a), (dropped_b, said_b) = common(first), common(second)
+        if dropped_a == dropped_b:
+            continue
+        if said_a if dropped_a else said_b:
+            continue
+        # The prefix rule of _term(), on the pair's last word.
+        terms.append('"%s %s"%s' % (first, second,
+                                    "*" if len(second) > 3 else ""))
+    return terms, pairs
+
+
 def keywords(store, text, limit=5):
     """Route 3. FTS5 over the scope, best first.
 
@@ -779,6 +925,13 @@ def keywords(store, text, limit=5):
     throws the strength away by design, so this column is the only place the
     words route's own opinion of how well it matched survives at all.
 
+    SINCE ROW 5b-396 THE SCORE ALSO CARRIES DECLARED WORD PAIRS - _pairs(),
+    weighted by PAIR_WEIGHT - added to the same bm25 and on the same side of
+    zero. A sentence with no qualifying pair is ranked exactly as before, by
+    the same query. MEASURED COST, 2026-10-09 at 480 fragments: 3.3 ms a call
+    against 1.2 ms without pairs, over the owner's 79 questions and the
+    material file - the two counts per distinct word _pairs() makes.
+
     Nothing ranks on it. It is reported (heron_retrieve.Contest) so that a
     floor can one day be derived from a measurement instead of invented.
     """
@@ -786,12 +939,31 @@ def keywords(store, text, limit=5):
     query = _fts_query(text)
     if not query:
         return []
-    rows = store.execute(
+    terms, pairs = _pairs(store, text)
+    if not terms:
+        rows = store.execute(
+            "SELECT t.id, t.rank AS score, f.capability, f.status, f.kind "
+            "FROM fragment_text t JOIN fragments f ON f.id = t.id "
+            "WHERE fragment_text MATCH ? ORDER BY rank LIMIT ?",
+            (query, limit)).fetchall()
+        return [dict(r) for r in rows]
+
+    # EVERY MATCH, NOT THE FIRST `limit`: a pair can lift a card from below
+    # the cut. One row per matching card, from the same query the limit was
+    # cutting.
+    rows = [dict(r) for r in store.execute(
         "SELECT t.id, t.rank AS score, f.capability, f.status, f.kind "
         "FROM fragment_text t JOIN fragments f ON f.id = t.id "
-        "WHERE fragment_text MATCH ? ORDER BY rank LIMIT ?",
-        (query, limit)).fetchall()
-    return [dict(r) for r in rows]
+        "WHERE fragment_text MATCH ? ORDER BY rank", (query,))]
+    said = dict((r["id"], r["score"]) for r in store.execute(
+        "SELECT id, rank AS score FROM fragment_said "
+        "WHERE fragment_said MATCH ?", (" OR ".join(terms),)))
+    share = PAIR_WEIGHT / pairs
+    for row in rows:
+        row["score"] += share * said.get(row["id"], 0.0)
+    # A STABLE sort, so two cards a pair did not separate keep FTS5's order.
+    rows.sort(key=lambda row: row["score"])
+    return rows[:limit]
 
 
 def ensure_chunk_table(store):
