@@ -94,9 +94,26 @@ card:
   *and the answer says which* sent *which family is the heavy one*, claimed by
   `REPORT_GEOMETRY_COMPLEXITY`, to `LOAD_FAMILY` - a write - on the lexical one. *and the answer says so*
   moves neither.
-- `check-risk-crossings` and `score-routing` give the same answers before and after on both backends;
-  `check-routing` and `check-intrusion` name FRG-ELE-077 nowhere, and with row 5b-385 merged no
-  routing-table claim is newly missed. `check-skill-routing`: on the lexical backend the
-  *find-blank-parameters* skill's *which ducts have no system name* goes from `SELECT_BY_MEP_SYSTEM` to
-  `READ_MEP_SYSTEM` - two reads, both marked a miss against the skill's steps - and nothing else changes
-  winner; on the trained backend nothing changes winner.
+- **Against row 5b-396's held-out set** ([`material-questions.tsv`](../../tests/data/material-questions.tsv),
+  238 sentences nobody tuned to), main `aebca7ad` against main with this card: its five listing sentences
+  reach this card 5 of 5 on the lexical backend and 4 of 5 on the trained one, where main sent two and one
+  of them to a write. Its 69 questions about what an element is made of reach a write 30 → 30 (lexical) and
+  21 → 22 (trained): **the one new is *what material was used when these were created*, which goes from
+  `SELECT_BY_MATERIAL` to `CREATE_PIPE_SEGMENT` - a write - on the trained backend**, two cards that sit
+  0.000001 apart on main. On the trained backend 2 of the 10 questions about UNUSED materials that reached
+  `FIND_UNUSED_MATERIALS` now reach this card, pulled by the purpose's *NOT WHAT IS USED*; on the lexical
+  one none is lost. **Three rewordings without "used" were measured on 420 sentences**: each settles the
+  trained crossing and the unused questions, and each sends a question to a write on the lexical backend
+  (*which family is the heavy one* to `LOAD_FAMILY` among them) - and the lexical backend is the one the
+  owner's PC answers on. So the wording stays: across the 420, on the lexical backend this card sends no
+  read to a write and turns 15 writes into reads.
+- **The house tools, main `aebca7ad` against main with this card:** `check-risk-crossings` gives the same
+  crossings on both backends; `check-routing` and `check-intrusion` name FRG-ELE-077 nowhere and newly
+  miss no routing-table claim. `score-routing` is the same on the trained backend; on the lexical one the
+  owner's question #2, *How many VCDs are there, and what sizes are they?*, keeps a read - its winner goes
+  from `COUNT_ELEMENTS` to `REPORT_NESTED_FAMILIES`, neither the answer key's - and the answer key's
+  `GROUP_AND_COUNT` moves from 4th to 3rd. `check-skill-routing` changes no winner on the trained backend;
+  on the lexical one two skill sentences change answer and both now reach a step of their skill where
+  they missed on main (*build a parametric family from this picture*, *create a face based family so it
+  hosts ...*). Measured on `e21a3f5e` earlier the same day, *which ducts have no system name* moved
+  between two reads instead; on `aebca7ad` it does not move.

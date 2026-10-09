@@ -62,7 +62,13 @@ risk: READ
 # answers them; before it they reached FIND_UNUSED_MATERIALS,
 # READ_ELEMENT_MATERIAL or the transfer, and "what uses this material"
 # reached SET_MATERIAL_COLOUR, a write. Without "used" and "uses" they go
-# back, including that write (measured by the review of PR #450).
+# back, including that write (measured by the review of PR #450). Against
+# row 5b-396's held-out set the same words pull 2 of 10 UNUSED-material
+# questions from FIND_UNUSED_MATERIALS on the trained backend, and tip "what
+# material was used when these were created" from a 0.000001 tie on main to
+# CREATE_PIPE_SEGMENT, a write. Three rewordings without them fixed both and
+# each sent a question to a write on the LEXICAL backend - the one the
+# owner's PC answers on - so they stay. Group CX has the numbers.
 #
 # THE CHAT READS THE PINNED MODEL. The add-in runs this on the document it is
 # handed, and a chat hands it the model that chat is pinned to - not always
