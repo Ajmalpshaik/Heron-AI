@@ -52,7 +52,7 @@ negative:
   - given: a material that exists but nothing uses
     expect: >
       0 elements and a scanned count in the thousands. That is the honest zero,
-      and it is the same answer PURGE_UNUSED_MATERIALS is built on
+      and it is the same answer FIND_UNUSED_MATERIALS is built on
 
   - given: an empty material name
     expect: refused, with the reason
