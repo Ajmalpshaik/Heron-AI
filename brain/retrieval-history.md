@@ -1203,12 +1203,43 @@ wall question onto a write. The row lists each with the sentence that broke it.
 the 2026-09-28 section left alone because changing it cost the owner's questions - measured on his 79
 first and on this file second, on both backends.
 
+### The retrieval layer, tried the same day - five changes, none kept
+
+Measured on `main` `aebca7ad`, before PR #450's `LIST_MATERIALS` merged; every change in
+`brain/heron_search.py` alone, with no question test and no ranking by risk (D-01, D-101). Each was held to
+the owner's 79 on both backends, this file, `check-routing`, `check-risk-crossings --revit 2024`,
+`check-intrusion` and thirteen ranking suites; the one that held went to three skeptics.
+
+| Change | Questions to a write, `lexical` / `model` (29 / 20 before) | Owner's 79 made worse | And |
+|---|---|---|---|
+| column filters - each field its own word rarity | 18 / 9 | 9 / 7 | 28 material sentences read to write |
+| porter stemming for short words | 25 / 12 | 1 / 1 | 7 read to write |
+| stemming and column weights | 27 / 13 | 7 / 8 | 23 read to write |
+| a purpose's first paragraph indexed, the rest at 0.4 | 20 / 7 | 7 / 7 | 24 read to write |
+| pairs of neighbouring words a card declares | 19 / 16 | **0 / 0** | skeptics: 4 reads sent to writes |
+
+- **Plain column weights cannot reach these questions at all.** bm25 counts a word's rarity over the whole
+  row and a weight only scales how often it occurs, so a word on more than half the cards scores nothing
+  at any weight. 34 weightings were measured; weighting the declared sentences up made it worse.
+- **The word pairs failed on a bias in the declarations, not in the code.** Requests say *these*, so
+  *these elements* is declared by 30 writes and 12 reads and *these views* by 13 writes and none - and a
+  question saying *these* was pushed toward a write: *"what size is this pipe"* reached `AUTO_SIZE_PIPE`
+  and *"what type are these elements"* `CHANGE_ELEMENT_TYPE`. On the skeptics' 180 sentences it made 13
+  more answers right and 8 fewer questions reach a write, against those 4 reads sent to writes and one
+  right answer lost.
+- **The fusion weights** were measured as well: 1.001 for nearness on `model` dropped owner question 3 out
+  of the top five, through an exact tie, and every other value cost one of his questions.
+
+**Whether a measured trade like the word pairs' is worth shipping is the owner's decision** - D-100 makes a
+drop on his questions something reported, never a gate - and so is D-101's proposed half, which waits on a
+test of what a question is.
+
 ### What this does not establish
 
 - **The sentences are agents' sentences**, written to measure and to break, not the owner's. His 79 did
   not move under any candidate that met the constraints.
 - **One encoder.** Every `model` number is `potion-base-8M`.
-- **Nothing here met Revit**, and no card was changed.
+- **Nothing here met Revit**, and no card was changed - and no ranking change was kept.
 
 ---
 
