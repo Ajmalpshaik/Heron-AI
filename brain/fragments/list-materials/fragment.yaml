@@ -46,13 +46,14 @@ risk: READ
 # it went to READ_ELEMENT_MATERIAL and FIND_UNUSED_MATERIALS - reads, neither
 # of them this job. With "how many there are" this card answers it on both
 # backends. ITS COST, recorded in row 5b-376 rather than tuned away, all on
-# the lexical backend and all between reads: "how much space does this take
-# up", which only a comment on REPORT_BOUNDING_BOX claims, goes to
-# REPORT_SPACE_AIRFLOW, 0.000029 apart; "how many rooms are there" goes from
-# COUNT_BY_SPATIAL_CONTAINER to REPORT_AREA_VOLUME_COMPUTATIONS; and "show me
-# all the families" - SELECT_SUBCOMPONENTS on main - comes HERE, a list of
+# the lexical backend and all between reads: "how many rooms are there" goes
+# from COUNT_BY_SPATIAL_CONTAINER to REPORT_AREA_VOLUME_COMPUTATIONS, and "show
+# me all the families" - SELECT_SUBCOMPONENTS on main - comes HERE, a list of
 # materials for a question about families (found by the review of PR #450,
-# which asked count and listing questions beyond materials).
+# which asked count and listing questions beyond materials). It also tipped
+# "how much space does this take up" to REPORT_SPACE_AIRFLOW, 0.000029 apart,
+# while only a comment on REPORT_BOUNDING_BOX claimed it; row 5b-385 declared
+# it there, and it now goes there by exact match.
 #
 # THE PURPOSE NAMES "USED" IN ORDER TO DISCLAIM IT, AND THAT PULLS QUESTIONS
 # ABOUT USE HERE - recorded, not tuned. "what is this material used on",

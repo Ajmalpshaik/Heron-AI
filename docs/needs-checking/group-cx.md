@@ -79,21 +79,24 @@ card:
 - **Still answered by a write, the same on main, not caused here and not fixed:** *which materials are in
   use* (`CREATE_MATERIAL`, lexical), *which elements use this material* (`REPLACE_MATERIAL` lexical,
   `CREATE_MATERIAL` trained), and row 375's *what material does this use* and *which material are those*.
-- **The count phrase costs three sentences, all on the lexical backend, all between reads - recorded, not
-  tuned:** *how much space does this take up*, claimed only in a comment on `REPORT_BOUNDING_BOX`, goes to
-  `REPORT_SPACE_AIRFLOW` (0.000029 apart); *how many rooms are there* goes from
-  `COUNT_BY_SPATIAL_CONTAINER` to `REPORT_AREA_VOLUME_COMPUTATIONS`; and *show me all the families* -
-  `SELECT_SUBCOMPONENTS` on main - comes to THIS card, a list of materials for a question about families.
-  Without *how many there are* all three go back, and *how many materials are there* goes to the transfer,
-  a write. No other of the 27 moves, and none moves on the trained backend.
+- **The count phrase costs two sentences, both on the lexical backend, both between reads - recorded, not
+  tuned:** *how many rooms are there* goes from `COUNT_BY_SPATIAL_CONTAINER` to
+  `REPORT_AREA_VOLUME_COMPUTATIONS`, and *show me all the families* - `SELECT_SUBCOMPONENTS` on main - comes
+  to THIS card, a list of materials for a question about families. It also tipped *how much space does
+  this take up* to `REPORT_SPACE_AIRFLOW` (0.000029 apart) while only a comment on `REPORT_BOUNDING_BOX`
+  claimed it; [row 5b-385](../fragment-issues/section-5b-rows-176-200.md) declared it there, and with
+  both merged it goes there by exact match on both backends. Without *how many there are* the two go back,
+  and *how many materials are there* goes to the transfer, a write. No other of the 27 moves, and none
+  moves on the trained backend - where *how many rooms are there* reaches `PLACE_ROOMS`, **a write, the
+  same on main**, found in passing and not this card's.
 - **The pin sentence was worded three times.** *which the answer names* and *the answer gives its title*
   put this card ahead of `DESCRIBE_ELEMENTS` for the owner's question #20 on the trained backend;
   *and the answer says which* sent *which family is the heavy one*, claimed by
   `REPORT_GEOMETRY_COMPLEXITY`, to `LOAD_FAMILY` - a write - on the lexical one. *and the answer says so*
   moves neither.
 - `check-risk-crossings` and `score-routing` give the same answers before and after on both backends;
-  `check-routing` and `check-intrusion` name FRG-ELE-077 nowhere, and the only routing-table claim they
-  newly miss is the space sentence above. `check-skill-routing`: on the lexical backend the
+  `check-routing` and `check-intrusion` name FRG-ELE-077 nowhere, and with row 5b-385 merged no
+  routing-table claim is newly missed. `check-skill-routing`: on the lexical backend the
   *find-blank-parameters* skill's *which ducts have no system name* goes from `SELECT_BY_MEP_SYSTEM` to
   `READ_MEP_SYSTEM` - two reads, both marked a miss against the skill's steps - and nothing else changes
   winner; on the trained backend nothing changes winner.
