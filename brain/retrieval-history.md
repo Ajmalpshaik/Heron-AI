@@ -1072,7 +1072,7 @@ steel material"*, which sent *"what is made of stainless steel"* there too. **Th
 
 ## 2026-10-09 — a sentence a routing table claimed, held by ranking alone
 
-[Row 5b-382](../docs/fragment-issues/section-5b-rows-176-200.md). `REPORT_BOUNDING_BOX` sent *"how much
+[Row 5b-385](../docs/fragment-issues/section-5b-rows-176-200.md). `REPORT_BOUNDING_BOX` sent *"how much
 space does this take up"* to itself in its `# ROUTING` comment and never declared it, so retrieval had
 only the ranking to go on. Measured on scratch stores, no Revit filter, on **`lexical`** and on
 **`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker, at
