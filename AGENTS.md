@@ -3,6 +3,14 @@
 **Read this first. It is short on purpose.** Everything below points at the file that owns the detail;
 none of it is repeated here, because two copies of a rule is how one of them goes stale.
 
+> **Serving a modeller's Revit request rather than changing Heron? Stop reading here.** *"Create a
+> family"*, *"select all ducts"* are answered through Heron's own tools — `heron_lookup`, and
+> `heron_method` for a job of several steps, a family above all — **never by reading this repository**.
+> The reading order below is for changing Heron. **If no `heron` tools are listed, Heron is not
+> connected:** say so in one line, ask the modeller to run `python tools/heron-ready.py` in this folder,
+> and stop. Working a job out from these files instead is what turned a one-minute family into seven
+> on a new laptop.
+
 ---
 
 ## What Heron AI is
