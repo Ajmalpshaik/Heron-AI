@@ -87,8 +87,10 @@ pointed at the file it had left, and a one-off script put them right
 
 A second run moves nothing. A file already written is left as it is, and a
 section written into the page later is moved by the next run.
-archive-fragment-issues.py writes through layout_split() below, so the rows
-it rewrites go back to the files they came from.
+archive-fragment-issues.py writes through layout_relinked() below, so the
+rows it rewrites go back to the files they came from - and a row its run
+re-bands, one appended past the last band, takes the links that name it
+along, by the same rule as a split (row 5b-381).
 
 NO BACKSLASH IS TYPED IN THIS FILE, as in archive-fragment-issues.py.
 """
@@ -779,6 +781,38 @@ def layout_split(index, joined, today=None, key=None):
     after, files, trouble = split_by(joined, layout, banded, config, _headers(files_before),
                                      today or datetime.date.today().isoformat(), index)
     return after.replace(NL, eol), dict((n, t.replace(NL, eol)) for n, t in files.items()), trouble
+
+
+def layout_relinked(index, joined, today=None, key=None, root=ROOT):
+    """layout_split(), with every link that names a row the new layout moves
+    to another rows file following it, by relink()'s rule - for a tool that
+    rewrote the register as one text, which is archive-fragment-issues.py.
+
+    Its run re-bands a row appended past the last band, as a split does, and
+    until 2026-10-09 left every link naming that row at the file it had left
+    (row 5b-381; check-docs.py section 12 is what found it). Inside the
+    register the links are re-pointed in JOINED, which is then cut again - so
+    the files read back as the text returned here, not as JOINED, and only in
+    the rows file a link names. Every other document under ROOT is re-pointed
+    in memory, for the caller to write AFTER the register, as write() does.
+
+    (page, files, trouble, joined as re-pointed, [(said, label, row, from,
+    to)], {path: (its text, its text re-pointed)}, the rows moved as
+    moved_rows() gives them - for a file the caller writes itself)."""
+    page = os.path.basename(index)
+    key = key or next(k for k, c in REGISTERS.items() if os.path.basename(c["index"]) == page)
+    config = REGISTERS[key]
+    folder = os.path.join(os.path.dirname(index), RT.folder_of(index))
+    after, files, trouble = layout_split(index, joined, today, key)
+    moved = moved_rows(config, _files_in(folder), files)
+    done = []
+    joined_after = relink(joined, os.path.dirname(index), folder, moved, "the register", done)
+    if done:
+        after, files, trouble = layout_split(index, joined_after, today, key)
+    others = {}
+    if any(moved.values()):
+        others, _ = elsewhere(root, index, folder, moved, done)
+    return after, files, trouble, joined_after, done, others, moved
 
 
 def report(p, writing):

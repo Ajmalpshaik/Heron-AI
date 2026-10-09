@@ -385,6 +385,7 @@ def after_write(original, root, today):
     AF = _load("archive_fragment_issues", "archive-fragment-issues.py")
     check(AF is not None, "the archive tool loads")
     if AF is not None:
+        archive_relinked_case(AF, root)
         archive = os.path.join(root, "docs", AF.ARCHIVE_NAME)
         plan = AF.plan(register=index_of(root), archive=archive, today="2026-09-23")
         check(plan.fatal is None and not plan.problems and sum(len(v) for v in plan.moves.values()) == 2,
@@ -398,6 +399,53 @@ def after_write(original, root, today):
         check("### Row 3" in read(os.path.join(archive, "proving-defects-001-025.md")),
               "and the full row is in the archive")
         check(whole(root) == plan.after, "read back, the register is what the archive tool planned")
+
+
+def archive_relinked_case(AF, root):
+    """Section 8, on a copy. The archive tool writes through the split's
+    layout, which re-bands a row appended past the last band - and until
+    2026-10-09 left every link naming that row at the file it had left
+    (FRAGMENT-ISSUES row 5b-381). It follows the row now: in another row, in
+    the archive file this run writes, and in a document outside the register."""
+    copy = os.path.join(os.path.dirname(root), "archive-relinked")
+    shutil.copytree(root, copy)
+    folder = folder_of(copy)
+    bands = sorted(n for n in os.listdir(folder) if re.match(r"^section-5b-rows-[0-9]{3}-[0-9]{3}[.]md$", n))
+    last = bands[-1]
+    high = int(last[len("section-5b-rows-"):-3].split("-")[1])
+    row = high + 2
+    beyond = "section-5b-rows-%03d-%03d.md" % (high + 1, high + 25)
+    held = RT.rows_held(read(os.path.join(folder, last)))
+    stays = next(n for n in range(high - 24, high + 1) if n not in held)
+    put(os.path.join(folder, last), read(os.path.join(folder, last))
+        + "| **%d** | **It names [row 5b-%d](%s).** Found 2026-10-09. | OPEN - new. |" % (stays, row, last) + NL
+        + "| **%d** | **Appended past the last band.** Found 2026-10-09. | OPEN - new. |" % row + NL)
+    first = os.path.join(folder, "section-5b-rows-001-025.md")
+    put(first, read(first).replace("| **2** | **Two.** |",
+                                   "| **2** | **Two.** It names [row 5b-%d](%s). |" % (row, last)))
+    outside = os.path.join(copy, "docs", "ARCHIVE-LINKS.md")
+    put(outside, "See [row 5b-%d](fragment-issues/%s)." % (row, last) + NL)
+
+    archive = os.path.join(copy, "docs", AF.ARCHIVE_NAME)
+    p = AF.plan(register=index_of(copy), archive=archive, today="2026-10-09")
+    check(p.fatal is None and not p.problems, "the archive run plans clean with a row past the last band (%s)"
+          % (p.fatal or "; ".join(p.problems) or "clean"))
+    check(AF.write(p) == AF.OK, "and writes")
+    check(os.path.exists(os.path.join(folder, beyond))
+          and ("| **%d** |" % row) in read(os.path.join(folder, beyond))
+          and ("| **%d** |" % row) not in read(os.path.join(folder, last)),
+          "row 5b-%d is moved to %s" % (row, beyond))
+    check("[row 5b-%d](%s)" % (row, beyond) in read(os.path.join(folder, last)),
+          "a link to it in another row follows it to its band")
+    check(read(outside) == "See [row 5b-%d](fragment-issues/%s)." % (row, beyond) + NL,
+          "and so does a document outside the register")
+    moved_to = [n for n in os.listdir(archive) if n.endswith(".md") and n != "README.md"
+                and "It names [row 5b-%d]" % row in read(os.path.join(archive, n))]
+    check(len(moved_to) == 1 and ("fragment-issues/%s)" % beyond) in read(os.path.join(archive, moved_to[0]))
+          and ("fragment-issues/%s)" % last) not in read(os.path.join(archive, moved_to[0])),
+          "and so does the link in the finished row the run moved to the archive (%s)"
+          % (", ".join(moved_to) or "no archive file holds it"))
+    check(whole(copy) == p.after, "read back, the register is what the archive tool planned, links and all")
 
 
 def relinked_case(root):
