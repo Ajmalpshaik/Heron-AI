@@ -1164,6 +1164,54 @@ whose backend is not the one it was asked for - and a backend label is checked o
 
 ---
 
+## 2026-10-09 — questions about materials reach writes, and no card edit fixes it
+
+[Row 5b-396](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `17040842`, **480
+fragments**, no Revit filter, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
+from a venv outside the repository), no re-ranker, every run on its own scratch store.
+
+**The instrument is new and kept:** [`tests/data/material-questions.tsv`](../tests/data/material-questions.tsv),
+238 sentences no card declares. The first 44 were written before any fix was tried, and the rest by
+skeptics whose job was to break the candidate fixes. Of its 69 questions about what an element is made of:
+
+| | `lexical` | `model` |
+|---|---|---|
+| reach a card that writes | **29** | **20** |
+| of them, `CREATE_MATERIAL` | 15 | 12 |
+| of them, `REPLACE_MATERIAL` | 5 | 2 |
+
+**Eight card-only fixes were tried and none was kept.** Each was measured on both backends, with and
+without PR #450's `LIST_MATERIALS`, and the qualifying ones went to skeptics writing fresh sentences.
+Every one that took crossings away moved something else the wrong way: a negated question off
+`FIND_UNUSED_MATERIALS`, a request to make a material off `CREATE_MATERIAL`, a selection or an unrelated
+wall question onto a write. The row lists each with the sentence that broke it.
+
+**Why a card cannot settle it, from the measurements:**
+
+- **The words that decide these questions are incidental.** *what, which, does, this, are, that* are on
+  more than half the cards and score nothing in the words route. What is left is *material* (on every
+  material card) and *use* or *those*, which happen to be in the WRITE cards' purposes and identity and
+  not in `READ_ELEMENT_MATERIAL`'s.
+- **A short word matches only itself.** `_fts_query` makes a word of three letters or fewer an exact
+  term, so *use* never reaches *using*, *unused* or *used*. Give *use* to the read, and it takes the
+  negated questions from `FIND_UNUSED_MATERIALS`, which can only say *unused*.
+- **The material cards sit on ties.** On `model` a swap between the routes fuses to an exact tie
+  (2026-09-28 section), and dozens of these sentences are decided by under one rank. Almost any added
+  sentence flips one somewhere.
+
+**So the next measurement belongs to the retrieval layer** - the short-word rule, or the equal-weight tie
+the 2026-09-28 section left alone because changing it cost the owner's questions - measured on his 79
+first and on this file second, on both backends.
+
+### What this does not establish
+
+- **The sentences are agents' sentences**, written to measure and to break, not the owner's. His 79 did
+  not move under any candidate that met the constraints.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit**, and no card was changed.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
