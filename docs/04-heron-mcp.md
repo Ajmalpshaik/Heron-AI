@@ -372,8 +372,44 @@ ordinary case.
   runs no git there ([`heron-session`](../.claude/skills/heron-session/SKILL.md)).
 
 **Not changed, and why:** every gate; the per-lookup check that the cards have not moved - it still
-costs about 2 s a lookup on this PC, not the 0.09 s §8.5 measured in a container, and fixing it reopens
-#369's content-not-mtime choice (row 5b-271); the owner's own plugins and settings, which are his.
+cost about 2 s a lookup on this PC, not the 0.09 s §8.5 measured in a container, and fixing it reopened
+#369's content-not-mtime choice (row 5b-271, **fixed 2026-10-09** - §8.7); the owner's own plugins and
+settings, which are his.
 
 **NEEDS REAL REVIT, IN A REAL CHAT:** the seconds from a modeller's first message to the first answer,
 which includes Claude's own turns - [A21](needs-checking/group-a.md).
+
+### 8.7 A new PC as quick as the old one — built 2026-10-09
+
+**What the owner reported, 2026-10-08:** on a new laptop the first *"create a family"* took more than
+seven minutes, where the office PC takes one or two, and the chat was seen reading `.md`, Python and C#
+files. Investigated in a container with no Windows PC and no Revit; [row 5b-378](FRAGMENT-ISSUES.md) has
+the whole of it.
+
+**The cause Heron owned:** no tool handed over a job's METHOD. `heron_lookup` answered *"create a
+family"* with one ranked capability, and the fifteen ordered steps of building a family lived only in
+`brain/skills/family-creation.yaml` and [43](43-building-revit-families.md). The office PC's Claude Code
+remembers Heron; a new one does not, so it read them off disk.
+
+- **`heron_method`** — a READ tool, given to every chat at start (`heron_tools.ALWAYS_LOADED`), that
+  hands over one job's whole method: what must be true first, the steps in order, and every capability
+  it uses with its risk and status on this Revit. Empty, it lists every job.
+- **`heron_lookup` and every `request=` hand-back name the jobs an answer is one step of**
+  (`heron_skill.methods_for`): a skill is named only when it NEEDS a capability retrieval returned, and
+  the words of the request only order those (D-01). Not for an exact declared phrasing that may run on
+  its own - that request is one step.
+- **The chat's rules say it** (`host.chat`): a job of several steps has its method in `heron_method`, and
+  Heron's own folder is never read to work out a Revit job. The top of [`AGENTS.md`](../AGENTS.md) - which
+  Claude Code reads when there is no `CLAUDE.md` - says the same, and what to do when no `heron` tool is
+  listed at all.
+- **`tools/heron-ready.py`** builds, once per PC, what a first chat would otherwise build while the
+  modeller waits - the knowledge store, the search model - and names every missing package with its
+  command ([WHAT-TO-INSTALL 1a](WHAT-TO-INSTALL.md)).
+- **A lookup opens no file when nothing moved** (row 5b-271): 1,440 opens to 0 per lookup, measured in a
+  container. On the owner's PC those opens were about 1 s of every 2 s lookup - derived, not measured.
+
+**Left for the owner:** a committed `.claude/settings.json` could approve the `heron` server and allow
+the read-only Heron tools without a prompt on every new PC. That widens Claude Code's own permissions,
+which is his decision and not an agent's.
+
+**NOT MEASURED:** the minutes a family takes on a new PC now. The test is in row 5b-378.

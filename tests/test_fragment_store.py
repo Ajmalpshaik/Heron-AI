@@ -202,6 +202,93 @@ def parse_cache():
         shutil.rmtree(base, ignore_errors=True)
 
 
+def _age(path, seconds=60):
+    """Put a file's mtime `seconds` in the past - older than RACY_NS."""
+    then = os.stat(path).st_mtime_ns - seconds * 1000 * 1000 * 1000
+    os.utime(path, ns=(then, then))
+
+
+class _NoRows(object):
+    """A store with no fragment rows, so library_digest is about files only."""
+    def fragments(self):
+        return []
+
+
+def file_marks():
+    """Row 5b-271: a lookup opened ~1,300 files to learn nothing had moved,
+    about 2 s on the owner's PC. file_mark() reads again only when the stat
+    moved, and library_digest() is built from it - still about CONTENT."""
+    import heron_search as S
+    print()
+    print("5. A file is read again only when it moved - and the answer is still its bytes")
+    if not hasattr(F, "file_mark"):
+        check(False, "heron_fragment.file_mark exists - without it every lookup "
+                     "reads every card and implementation again (row 5b-271)")
+        return
+    base, folder = scratch(well_formed())
+    card = os.path.join(folder, "fragment.yaml")
+    impl = os.path.join(folder, "impl", "any", "fragment.cs")
+    try:
+        _age(card)
+        mark, raw = F.file_mark(card)
+        check(raw is not None, "the first ask reads the file")
+        again, raw = F.file_mark(card)
+        check(raw is None and again == mark,
+              "an old file whose stat has not moved is not read again")
+
+        os.utime(card, None)
+        moved, raw = F.file_mark(card)
+        check(raw is not None and moved == mark,
+              "a touch re-reads it and finds the same content - a checkout "
+              "moving every mtime changes nothing")
+
+        young, raw = F.file_mark(card)
+        check(raw is not None,
+              "a file changed within the last RACY_NS is read every time, so a "
+              "same-size rewrite inside one mtime tick cannot be missed")
+
+        if os.name != "nt":
+            _age(card)
+            F.file_mark(card)
+            stat = os.stat(card)
+            text = io.open(card, encoding="utf-8").read()
+            io.open(card, "w", encoding="utf-8").write(text.swapcase())
+            os.utime(card, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+            hidden, raw = F.file_mark(card)
+            check(raw is not None and hidden != mark,
+                  "a same-size rewrite with its old mtime put back is seen - "
+                  "the change time moved")
+            io.open(card, "w", encoding="utf-8").write(text)
+
+        root = F.FRAGMENTS_DIR
+        F.FRAGMENTS_DIR = base
+        try:
+            _age(card)
+            _age(impl)
+            first = S.library_digest(_NoRows())
+            check(S.library_digest(_NoRows()) == first,
+                  "the library digest holds still while nothing moves")
+            os.utime(impl, None)
+            check(S.library_digest(_NoRows()) == first,
+                  "and still when an implementation is only touched")
+            io.open(impl, "w", encoding="utf-8").write("// other code")
+            changed = S.library_digest(_NoRows())
+            check(changed != first,
+                  "an implementation's CONTENT moving moves the digest - D-61 "
+                  "keys a fragment's evidence on it")
+            os.makedirs(os.path.join(folder, "impl", "2027"))
+            check(S.library_digest(_NoRows()) == changed,
+                  "a release folder with no fragment.cs is not an implementation")
+            io.open(os.path.join(folder, "impl", "2027", "fragment.cs"), "w",
+                    encoding="utf-8").write("// code")
+            check(S.library_digest(_NoRows()) != changed,
+                  "and one that gains a fragment.cs is")
+        finally:
+            F.FRAGMENTS_DIR = root
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+
 def main():
     print("The library on disk loads and is well-formed")
     found, problems = F.load_all()
@@ -434,6 +521,7 @@ def main():
 
     cases_gate()
     parse_cache()
+    file_marks()
 
     print()
     if FAILURES:
