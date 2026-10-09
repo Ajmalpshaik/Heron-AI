@@ -1070,6 +1070,52 @@ steel material"*, which sent *"what is made of stainless steel"* there too. **Th
 
 ---
 
+## 2026-10-09 — a sentence a routing table claimed, held by ranking alone
+
+[Row 5b-382](../docs/fragment-issues/section-5b-rows-176-200.md). `REPORT_BOUNDING_BOX` sent *"how much
+space does this take up"* to itself in its `# ROUTING` comment and never declared it, so retrieval had
+only the ranking to go on. Measured on scratch stores, no Revit filter, on **`lexical`** and on
+**`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker, at
+**480 fragments** on `main` and **481** with `LIST_MATERIALS` ([row 5b-376](../docs/fragment-issues/section-5b-rows-176-200.md))
+merged locally.
+
+| | `main`, lexical | with `LIST_MATERIALS`, lexical | `main`, `model` |
+|---|---|---|---|
+| this card | **1st**, 0.025624 | 2nd, 0.025624 | **1st**, 0.032266 |
+| runner-up | `REPORT_SPACE_AIRFLOW` 0.025397 | `REPORT_SPACE_AIRFLOW` **0.025653** | `READ_SPACE_LOADS` 0.032018 |
+
+**What tipped it was a tie for second place on the words route, not anything in this card.** There
+`REPORT_SPACE_AIRFLOW` sat 3rd at bm25 −7.7790 behind `MEASURE_CEILING_HEIGHT` at −7.7793; with one
+more card in the library the two swapped, −7.7826 against −7.7798, and moving from words #3 to #2
+lifted `REPORT_SPACE_AIRFLOW`'s fused score past this card's. `LIST_MATERIALS`' own comment names
+its *how* as the cause; the measurement shows only that adding the card swapped them. And the card's
+declared plural, *"how much space do these take up"*, is #2 on `lexical` and #5 on `model` by ranking
+alone: it has only ever been reached by identity.
+
+**Declared because it is what a modeller says to this card**, not to buy the rank: it is the
+one-element form of that plural, and the purpose's own table sends *"how much space does it take"*
+here. *Space* in it is room taken up, not an MEP Space.
+
+| | before | after |
+|---|---|---|
+| the sentence, both backends, with and without `LIST_MATERIALS` | ranked | **identity** |
+| `check-routing.py` claims not reached, with `LIST_MATERIALS` | 57 `lexical`, 70 `model` | **56**, 70 - the `main` lists |
+| `check-routing.py` contested sentences, both backends | *"how big is this room"* lost to this card by words | `MEASURE_ROOM_DIMENSIONS` #1, its own |
+| `check-routing.py` words #1, `main` | 2224 of 2762 | 2226 of 2763 |
+| `check-routing.py` nearness #1, `main` | 1469 `lexical`, 1501 `model` | 1471, 1503 |
+| Revit 2024 risk crossings, both backends | `check-risk-crossings.py` | identical |
+| the owner's 79 questions, both backends | `score-routing.py` | identical, question for question |
+| 15 other probe sentences, written before the edit | winners | 13 unchanged everywhere; 2 moved to this card - see the row |
+
+### What this does not establish
+
+- **The probe sentences are this session's**, not the owner's. *"how much space does it take"*, the
+  purpose table's own wording, still goes to `READ_SPACE_LOADS` on `lexical`.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit**, and nothing was reworded or weakened to buy a rank.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
