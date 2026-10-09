@@ -199,6 +199,36 @@ def main():
         shutil.rmtree(home, ignore_errors=True)
     print()
 
+    print("6. THE SHARED STORE IS NOT REBUILT FROM A CHECKOUT THAT IS NOT MAIN")
+    # Row 5b-233: one store serves every checkout and chat on the PC, and a run
+    # in a worktree found it stale and rebuilt it from that branch - from then
+    # on every session's heron_lookup named a capability main does not hold.
+    # Shown here by telling heron_scope the store is the shared one, asked from
+    # a worktree, and handing the tool an empty store that wants a rebuild.
+    home = tempfile.mkdtemp(prefix="heron-cr-shared-")
+    was = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = home
+    import heron_scope as SCOPE
+    real = SCOPE.refreshes_from
+    SCOPE.refreshes_from = lambda root=None: (os.path.join("main", "brain", "fragments"), "main")
+    try:
+        with _Captured() as out:
+            code = CR.main([])
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        held = store.count()
+        store.close()
+        check(code == 2, "a run that would rebuild the shared store from here exits 2 (got %s)" % code)
+        check(held == 0, "and the store is left as it was - nothing rebuilt into it (%d rows)" % held)
+        check("HERON_KNOWLEDGE" in out.text(), "and it says to point HERON_KNOWLEDGE at a scratch folder")
+    finally:
+        SCOPE.refreshes_from = real
+        if was is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = was
+        shutil.rmtree(home, ignore_errors=True)
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

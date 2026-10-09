@@ -341,6 +341,17 @@ foreach (var element in elements)
         try
         {
             var s = doc.GetSpaceAtPoint(at);
+            // A HEAD AT THE CEILING IS OFTEN ABOVE ITS SPACE'S UPPER LIMIT, and
+            // GetSpaceAtPoint tests height as well as plan - so it read "in no
+            // Space" and the spacing check left it out (row 5b-338). Asked
+            // again at its level, one foot up: the probe place-hosted-family
+            // uses for rooms. A head with no level of its own stays unplaced.
+            if (s == null && instance != null && instance.LevelId != ElementId.InvalidElementId)
+            {
+                var headLevel = doc.GetElement(instance.LevelId) as Level;
+                if (headLevel != null)
+                    s = doc.GetSpaceAtPoint(new XYZ(at.X, at.Y, headLevel.ProjectElevation + 1.0));
+            }
             if (s != null)
             {
                 space = (s.Number + " " + s.Name).Trim();

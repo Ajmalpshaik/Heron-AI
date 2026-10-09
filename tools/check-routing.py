@@ -257,6 +257,22 @@ def main(argv):
                  "%d card(s) edited since their row was written (%s)"
                  % (len(edited), ", ".join(edited[:4]) + (", and more" if len(edited) > 4 else "")))
         store.close()
+        # NOT THE SHARED STORE FROM A CHECKOUT THAT IS NOT MAIN - row 5b-233.
+        # One store serves every checkout and every chat on the PC; rebuilt
+        # from a worktree it put that branch's unmerged cards into every
+        # other session's heron_lookup. heron_scope.refreshes_from() already
+        # knows which store follows which checkout: None or a main checkout
+        # named means the store is shared and this is not where it comes from.
+        source = SCOPE.refreshes_from()
+        if source is None or source[1] is not None:
+            sys.stderr.write(
+                "NOT RUN: the knowledge store at %s is the SHARED one every chat on\n"
+                "this machine reads, it does not match this working tree (%s), and\n"
+                "this is not the main checkout - rebuilding it from here would put\n"
+                "this branch's cards into every other session's answers (row 5b-233).\n"
+                "Point HERON_KNOWLEDGE at a scratch folder - an empty one is enough -\n"
+                "and run this again.\n" % (SCOPE.knowledge_dir(), drift))
+            return 2
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         store_ids = set(row["id"] for row in store.fragments())

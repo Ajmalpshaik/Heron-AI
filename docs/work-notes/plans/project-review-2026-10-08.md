@@ -108,5 +108,21 @@ Justification*: they are the justification settings, not offsets, which fits "on
 
 ## 5. Progress
 
-Read the register, not this section: a row that is fixed says **FIXED** with its date and commit in
-its own state cell. This note is deleted once waves 1-6 are all either fixed or moved.
+**The register is the record** - each row's own state says FIXED, or OPEN with what is still owed. This
+is the schedule's view of it, on branch `claude/heron-project-review-aik7wy` (PR #449).
+
+| wave | done | still owed |
+|---|---|---|
+| 1 | 5b-380 (was numbered 5b-371 until a parallel PR took it), 5b-255, 5b-262, 5b-363 | **5b-381** - the splitter still does not re-point links that NAME a moved row; done by hand twice |
+| 2 | 133, 151, 178, 5b-217 closed | - |
+| 3 | 5b-196, 5b-186, 5b-153, 5b-108, 5b-158, 5b-199, 5b-229, 5b-242, 5b-160, 5b-198, 5b-228, 5b-150 | 5b-278 is half done - one check isolated, the rest is the planner owner's call |
+| 4 | 5b-162, 5b-232, 5b-193; card words for 5b-358 and 177; job files for 5b-204; row 101's dead entry | group I's counts are dated records - left as they are, legally |
+| 5 | 5b-292, 5b-134 | **fixed in source, the run owed:** 5b-197 (40 kernel runs on the owner's PC), 128 and 5b-338 (a model), row 10's move path. **Not started:** 5b-159 (a number reader in the bridge), 5b-203, row 120's `refused` |
+| 6 | 5b-339 | 75, 5b-233, 5b-274, 146, 5b-181, 5b-289, 5b-321, 5b-337 |
+
+**Parallel work collides on the register.** Every other open PR appends its rows to
+`section-5b-rows-176-200.md`, which this branch re-banded; each merge of main here moved those rows to
+their band by hand and renumbered nothing of theirs. Once this merges, new rows go at the end of
+`section-5b-rows-376-400.md`.
+
+This note is deleted once waves 1-6 are all either fixed or moved.
