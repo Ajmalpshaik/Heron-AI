@@ -2760,6 +2760,12 @@ def measure_heads(outline, points, ax, smax, amax, wmax, smin, wmin, tol,
             others = [math.hypot(x - q[1], y - q[2]) for q in points if q[0] != pid]
             near = min(others) if others else None
             bad = []
+            # A HEAD ON A WALL FAILS, whatever limits were given (row 5b-339).
+            # inside() counts an edge as inside and ray_to_wall ignores a wall
+            # met at 0, so with no least wall distance asked for, a head on a
+            # re-entrant wall read OK. Within a millimetre is on it.
+            if wall < 1.0:
+                bad.append("on a wall")
             if s > smax * 1000.0 + 1e-6:
                 bad.append("S %s m" % _f(s / 1000.0, 2))
             if l_ > smax * 1000.0 + 1e-6:
