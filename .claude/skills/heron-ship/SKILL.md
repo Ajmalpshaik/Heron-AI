@@ -112,9 +112,17 @@ python tools/check-licence.py          # a licence header, and what may not be r
 python tools/check-narrow-errors.py    # a bare except is a swallowed cause
 python tools/check-products.py         # the manifest the installer reads, which nothing compiles
 python tools/check-decision-titles.py  # a decision number that stopped meaning its decision
-HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable
+HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable, and every routing row names one
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-intrusion.py  # one fragment crowding out another
 ```
+
+**`check-routing` fails a build on its own since 2026-10-09, and needs no store to do it.** A routing
+row whose `-> NAME` no fragment's `capability:` line declares exits **1** - the one part of that tool
+that is not a ranking, so the rest stays a report. `python tools/check-routing.py --targets` gives that
+verdict alone, from the files: run it after editing any `fragment.yaml` comment, because it is not one
+of the four and CI would otherwise be first to say. The rows that dangled when it was written sit on
+`KNOWN_DANGLING` in the tool with their reasons; **repairing one means taking it off that list in the
+same change**, or the run fails on the entry that outlived its row. [Row 5b-384](../../../docs/FRAGMENT-ISSUES.md).
 
 **`check-products` was added on 2026-09-21 and had never run anywhere** — not in CI, not in
 `check-gaps` — while `platform/heron-products.json` said of itself *"Checked by

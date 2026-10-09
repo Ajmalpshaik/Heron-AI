@@ -10,6 +10,7 @@ Can each fragment still be found by its OWN declared words?
 
     python tools/check-routing.py
     python tools/check-routing.py --revit 2024
+    python tools/check-routing.py --targets     # the one verdict, no store
 
 WHAT THIS ASKS, AND WHY IT IS THE ONE RETRIEVAL QUESTION WORTH AUTOMATING
 ------------------------------------------------------------------------
@@ -61,6 +62,34 @@ background'" would be teaching people to weaken their own utterances to buy a
 number. That is the one response ruled out in brain/retrieval-history.md: taking
 "show me just these" away from the isolate fragment would make the isolate
 unfindable in order to protect a measurement.
+
+ONE PART OF IT IS A GATE: A ROUTING ROW THAT NAMES NOTHING
+----------------------------------------------------------
+Everything above is a ranking. This is not. A routing row that sends a
+sentence on - `"rename the heading" -> SET_SCHEDULE_FIELD_FORMAT` - names a
+capability, and either some fragment declares that capability or none does.
+No store is asked, nothing is ranked, and there is no utterance anybody could
+weaken to buy the answer back: the repair is to name the capability that does
+the job. So a row whose `-> NAME` no fragment declares FAILS the run - exit 1,
+whatever the report beside it says - and `--targets` gives that verdict alone,
+from the files, with no knowledge store and no index. Reading every
+fragment.yaml for it took 0.12 s in-process on the owner's PC on 2026-10-09.
+
+Why a gate and not one more report line. Two such rows went into the library on
+2026-09-06 - `-> PURGE_UNUSED_MATERIALS` in select-by-material and
+`-> SET_SCHEDULE_FIELD_FORMAT` in add-schedule-combined-field - and this tool ran
+on every pull request for the 33 days until a person noticed the first and
+pull request #452 corrected it on 2026-10-09. A person found the second on
+2026-09-27, recorded it as row 5b-232, and it was still there twelve days
+later. A finding printed into a green run is not read; check-docs said the
+same of its dead links before they failed its run. Reading every comment line
+of every fragment.yaml on 2026-10-09 found those two and no other, so the gate
+starts without a false alarm to excuse.
+
+The two that were there when it was written are on KNOWN_DANGLING with the
+reason each is waiting. A listed row that stops dangling fails the run too,
+until it comes off the list: a list that outlives its repair goes on excusing
+the row if it ever comes back. Row 5b-384.
 """
 
 import os
@@ -166,6 +195,129 @@ def rung(level):
     return LADDER.index(level) if level in LADDER else -1
 
 
+# A ROUTING ROW'S TARGET: the word right after `->`, when it is a capability's
+# shape - capitals, digits and at least one underscore. `here`, `HERE`, `NOT`,
+# `ALL`, `NOTHING` and `Net Lettable` are not that shape and are not targets;
+# neither is a mixed-case Revit name, nor a capability named later in the
+# prose that explains a target. A backtick either side is allowed.
+TARGET = re.compile(r"\s*`?([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)(?![A-Za-z0-9_])")
+DECLARED = re.compile(r"^capability:\s*['\"]?([A-Z0-9_]+)", re.M)
+
+# The rows that named no capability when the gate was written, each with the
+# reason it is waiting. One whose row is repaired FAILS the run until it comes
+# off this list - see targets_verdict.
+KNOWN_DANGLING = {
+    ("add-schedule-combined-field", "SET_SCHEDULE_FIELD_FORMAT"):
+        "row 5b-232 - the heading is SET_SCHEDULE_APPEARANCE's",
+    ("select-by-material", "PURGE_UNUSED_MATERIALS"):
+        "pull request #452 points it at FIND_UNUSED_MATERIALS",
+}
+
+
+def routing_targets(text):
+    """(line number, NAME) for every `-> NAME` in a fragment.yaml's comments.
+
+    Read wherever a row puts it, because the rows wrap: after a sentence that
+    is still open (`"what fields does this schedule  -> REPORT_SCHEDULE_...`
+    with `#    have"` below), on the comment line under an arrow that ends its
+    line, and after an arrow on a line of its own. Only comment lines - an
+    arrow in a YAML value is prose about something else.
+    """
+    lines = text.split("\n")
+    found = []
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith("#"):
+            continue
+        said = line.split("#", 1)[1]
+        for arrow in re.finditer(r"->", said):
+            rest, at = said[arrow.end():], i + 1
+            if not rest.strip() and i + 1 < len(lines) \
+                    and lines[i + 1].lstrip().startswith("#"):
+                rest, at = lines[i + 1].split("#", 1)[1], i + 2
+            name = TARGET.match(rest)
+            if name:
+                found.append((at, name.group(1)))
+    return found
+
+
+def dangling_targets(folder=None):
+    """(targets read, [(fragment folder, line, NAME)] no fragment declares).
+
+    The declared set is what `grep -h '^capability:'
+    brain/fragments/*/fragment.yaml` prints, read the same way.
+    """
+    folder = folder or FRAGMENTS
+    texts = {}
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name, "fragment.yaml")
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as fh:
+                texts[name] = fh.read()
+    declared = set()
+    for text in texts.values():
+        declared.update(DECLARED.findall(text))
+    read, found = 0, []
+    for name, text in sorted(texts.items()):
+        for line, target in routing_targets(text):
+            read += 1
+            if target not in declared:
+                found.append((name, line, target))
+    return read, found
+
+
+def targets_verdict(found, known, read=None):
+    """Print the rows that name no capability; 1 if any is new or a listed
+    one was repaired, else 0."""
+    listed = set(known)
+    new = [f for f in found if (f[0], f[2]) not in listed]
+    waiting = [f for f in found if (f[0], f[2]) in listed]
+    repaired = sorted(listed - set((f[0], f[2]) for f in found))
+
+    def where(folder, line):
+        return "brain/fragments/%s/fragment.yaml:%d" % (folder, line)
+
+    print()
+    counted = " - %d targets read" % read if read is not None else ""
+    if not new and not repaired and not waiting:
+        print("EVERY `-> NAME` IN A ROUTING ROW IS A CAPABILITY SOME FRAGMENT")
+        print("DECLARES%s." % counted)
+    elif not new and not repaired:
+        print("NO ROUTING ROW NAMES AN UNDECLARED CAPABILITY BEYOND THE %d KNOWN"
+              % len(waiting))
+        print("BELOW%s." % counted)
+    if new:
+        print("A ROUTING ROW NAMES A CAPABILITY NO FRAGMENT DECLARES (%d) - THIS"
+              % len(new))
+        print("FAILS THE RUN:")
+        print()
+        for folder, line, target in new:
+            print("  %-64s -> %s" % (where(folder, line), target))
+        print()
+        print("  A reader following the row finds nothing, and the next person")
+        print("  to build that job may take the name as reserved. Point the row")
+        print("  at the capability that does the job - `grep -h '^capability:'")
+        print("  brain/fragments/*/fragment.yaml` lists them - or say in words")
+        print("  that it is not built yet.")
+    if waiting:
+        print()
+        print("KNOWN AND WAITING (%d) - on KNOWN_DANGLING, not failing:" % len(waiting))
+        print()
+        for folder, line, target in waiting:
+            print("  %-64s -> %s" % (where(folder, line), target))
+            print("  %-64s    %s" % ("", known[(folder, target)]))
+    if repaired:
+        print()
+        print("ON KNOWN_DANGLING AND NO LONGER DANGLING (%d) - THIS FAILS THE RUN:"
+              % len(repaired))
+        print()
+        for folder, target in repaired:
+            print("  %s -> %s  (%s)" % (folder, target, known[(folder, target)]))
+        print()
+        print("  Take it off KNOWN_DANGLING in tools/check-routing.py. Left there,")
+        print("  it goes on excusing that row if it ever comes back.")
+    return 1 if new or repaired else 0
+
+
 def main(argv):
     revit = None
     if "--revit" in argv:
@@ -181,6 +333,19 @@ def main(argv):
             return 2
         revit = argv[i + 1]
 
+    # THE GATE, READ BEFORE ANY STORE IS OPENED AND RULED ON AFTER THE REPORT.
+    # It needs nothing but the files, so a missing or stale store cannot hide
+    # it; and it prints last, so a failure is the final thing in a CI log and
+    # not a screen above the report. Row 5b-384.
+    read, found = dangling_targets()
+    if "--targets" in argv:
+        return targets_verdict(found, KNOWN_DANGLING, read)
+    code = report(revit)
+    return targets_verdict(found, KNOWN_DANGLING, read) or code
+
+
+def report(revit):
+    """Every ranking above - the part that is a report, and needs a store."""
     import heron_scope as SCOPE
     import heron_search as SEARCH
     import heron_embed as EMBED

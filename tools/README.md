@@ -289,6 +289,7 @@ proof with a negative case, and it needs a real model.
 
 ```bash
 python tools/check-routing.py
+python tools/check-routing.py --targets     # only the part that fails a build - no store needed
 ```
 
 Asks **every fragment's own declared utterances** back to the search, and checks the fragment that
@@ -305,11 +306,25 @@ perfectly entitled to its own words.
 passing is close to circular. A **failure** is real information: a request phrased that way now lands
 somewhere else.
 
-**It never fails a build, on purpose.** A collision is a judgement, not a defect — the other fragment may
-genuinely be the better answer, or the sentence may name a **composition**, which no fragment can win
-and a skill should claim. A tool that failed here would teach people to weaken utterances to buy a rank,
-and that is the one response ruled out: taking *"show me just these"* away from the isolate fragment
-would make the isolate unfindable in order to protect a measurement.
+**A collision never fails a build, on purpose.** A collision is a judgement, not a defect — the other
+fragment may genuinely be the better answer, or the sentence may name a **composition**, which no
+fragment can win and a skill should claim. A tool that failed here would teach people to weaken
+utterances to buy a rank, and that is the one response ruled out: taking *"show me just these"* away
+from the isolate fragment would make the isolate unfindable in order to protect a measurement.
+
+**One thing it checks is not a ranking, and that one does fail the build.** A routing row that sends a
+sentence on — *"rename the heading" → `SET_SCHEDULE_FIELD_FORMAT`* — names a capability, and either a
+fragment's `capability:` line declares it or none does. There is nothing to weigh and no utterance to
+weaken; the repair is to name the capability that does the job. So a row whose `-> NAME` no fragment
+declares exits **1**, read from the files before any store is opened and printed last, and `--targets`
+gives that verdict alone. It reads the target wherever a row puts it — after a sentence still wrapping
+onto the next line, on the comment line under a trailing arrow, after an arrow on a line of its own — and
+only a capability-shaped word straight after the arrow is a target, so `here`, `NOT`, `ALL` and prose
+are not. **Why a gate:** `-> PURGE_UNUSED_MATERIALS` and `-> SET_SCHEDULE_FIELD_FORMAT` both went in on
+2026-09-06 and sat there while this tool ran on every pull request; the second was found by a person and
+recorded as row 5b-232 twelve days before the gate existed. The rows that dangled when it was written
+are on `KNOWN_DANGLING` with their reasons, and one that is repaired fails the run until it comes off the
+list. [Row 5b-384](../docs/FRAGMENT-ISSUES.md).
 
 Its first run over 169 sentences found sixteen contested ones. **Three were genuine errors** — a filter
 claiming two of `TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout
