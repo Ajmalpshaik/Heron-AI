@@ -47,6 +47,7 @@ import io
 import os
 import re
 import sys
+import time
 import hashlib
 
 try:
@@ -1056,15 +1057,22 @@ def load(folder, root=None):
     # old card: reading and hashing all 429 costs ~8 ms. A miss parses exactly
     # as before; a hit is handed a DEEP COPY, so no caller can change what the
     # next one reads.
+    #
+    # The mark comes from file_mark(), which reads the bytes again only when
+    # the file's stat has moved - row 5b-271: on the owner's PC every open cost
+    # ~0.8 ms, and a lookup opened every card twice. The parse is still keyed
+    # on the CONTENT; file_mark() says what stat may and may not decide.
     try:
-        with io.open(path, "rb") as handle:
-            raw = handle.read()
+        mark, raw = file_mark(path)
+        held = _PARSED.get(path)
+        if held is not None and held[0] == mark:
+            return Fragment(copy.deepcopy(held[1]), folder, root)
+        if raw is None:
+            with io.open(path, "rb") as handle:
+                raw = handle.read()
+            mark = hashlib.blake2b(raw, digest_size=16).digest()
     except (IOError, OSError) as exc:
         raise ValueError("%s: fragment.yaml could not be read - %s" % (folder, exc))
-    mark = hashlib.blake2b(raw, digest_size=16).digest()
-    held = _PARSED.get(path)
-    if held is not None and held[0] == mark:
-        return Fragment(copy.deepcopy(held[1]), folder, root)
 
     try:
         data = yaml.safe_load(raw.decode("utf-8"))
@@ -1081,6 +1089,66 @@ def load(folder, root=None):
 
 #: path -> (blake2b of the file's bytes, parsed mapping). See load().
 _PARSED = {}
+
+#: path -> (stat key, blake2b of the file's bytes). See file_mark().
+_MARKS = {}
+
+#: A file changed this recently is read again whatever its stat says - see
+#: file_mark(). Two seconds covers the coarsest clock a Windows disk keeps.
+RACY_NS = 2 * 1000 * 1000 * 1000
+
+
+def _stat_key(stat):
+    """What file_mark() compares. The change time only off Windows: there
+    `st_ctime` is the CREATION time and Python 3.12 deprecates reading it."""
+    key = (stat.st_size, stat.st_mtime_ns, stat.st_ino)
+    if os.name != "nt":
+        key += (stat.st_ctime_ns,)
+    return key
+
+
+def file_mark(path):
+    """(mark, raw): the blake2b of one file's BYTES, and the bytes themselves
+    when they had to be read - None when the mark was kept from last time.
+
+    FRAGMENT-ISSUES ROW 5b-271. Every heron_lookup asks whether any card or
+    implementation moved, and answering that by READING all of them cost about
+    2 s a lookup on the owner's PC - 1,321 opens at ~0.8 ms each - against
+    0.09 s in a container. A family takes a dozen lookups or more.
+
+    THE ANSWER IS STILL THE CONTENT. What is returned is always the hash of
+    bytes this process read; the stat only decides whether to read them AGAIN.
+    So a git checkout that moves every mtime and changes nothing re-reads and
+    re-hashes, and every caller still sees "unchanged" - docs/05 s7's reason
+    for never keying on time holds.
+
+    WHAT STAT CANNOT SEE, AND WHAT COVERS IT. A same-size rewrite inside one
+    mtime tick: a mark is only kept when the file was already RACY_NS old when
+    it was read, so a file still being written is read every time - git's
+    "racily clean" rule. Off Windows the change time is in the key too, so a
+    rewrite with its old mtime put back by hand is seen. What is left is that
+    trick on Windows, the gap heron_scope.cards_on_disk already accepts for the
+    rows; a fresh server process, or `heron_scope.py --rebuild`, reads
+    everything again.
+    """
+    stat = os.stat(path)
+    key = _stat_key(stat)
+    held = _MARKS.get(path)
+    if held is not None and held[0] == key:
+        return held[1], None
+    with io.open(path, "rb") as handle:
+        raw = handle.read()
+    mark = hashlib.blake2b(raw, digest_size=16).digest()
+    if _now_ns() - stat.st_mtime_ns > RACY_NS:
+        _MARKS[path] = (key, mark)
+    else:
+        _MARKS.pop(path, None)
+    return mark, raw
+
+
+def _now_ns():
+    """Wall-clock nanoseconds, the clock file mtimes are written in."""
+    return int(time.time() * 1000 * 1000 * 1000)
 
 
 def load_all(root=None):
