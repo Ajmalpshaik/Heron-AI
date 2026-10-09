@@ -1212,6 +1212,44 @@ first and on this file second, on both backends.
 
 ---
 
+## 2026-10-09 — a room count answered by a change that places rooms
+
+[Row 5b-397](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `aebca7ad`, **480
+fragments**, behind the 2024 wall, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
+from a venv outside the repository, warmed before the first question), no re-ranker, every run on its own
+scratch store. Repeated on `main` with PR #450's `LIST_MATERIALS` merged locally, **481**, with the same
+result.
+
+| *how many rooms are there* | `lexical` | `model` |
+|---|---|---|
+| `main` | `REPORT_AREA_VOLUME_COMPUTATIONS` (READ) | **`PLACE_ROOMS` (MODIFY)** |
+| this change | `FILTER_ELEMENTS_BY_CATEGORY`, by identity | `FILTER_ELEMENTS_BY_CATEGORY`, by identity |
+
+**Declared on the filter because that read is the one that answers it**: category `Rooms`, levelId none,
+as row 5b-355 chose for *how many MEP spaces are in the model*. The counting cards take a set of elements
+and refuse an empty selection, and `COUNT_BY_SPATIAL_CONTAINER` counts elements per room, not rooms.
+
+**A declared sentence still adds its words to the card's text.** It put the filter at words #2 for *how
+many rooms on each level*, which dropped two writes one rank each and broke their exact fused tie the
+other way on `model`: `SET_ROOM_LIMITS` to `PLACE_ROOMS`, a write to a write. On `lexical` the same words
+brought *how many spaces are there* and *how many spaces are in this model* to the filter, read to read.
+Nothing else moved in 65 sentences, nor in `check-risk-crossings`, `score-routing` or
+`check-skill-routing`.
+
+**The kind is not fixed.** Of 20 ways of asking for a room count, 6 still reach a change on each backend
+after this - `PLACE_ROOMS`, `SET_ROOM_LIMITS` or `CREATE_FROM_ROOM_BOUNDARIES`. That is row 5b-355's
+finding for spaces, met again for rooms, and its remedy is the same: a re-design of `PLACE_ROOMS`' card,
+or the owner reopening "warn, don't re-rank".
+
+### What this does not establish
+
+- **The 20 paraphrases are a session's**, not the owner's; the first ten were written before the card was
+  touched.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit.** The filter is PROVEN on its own proof; a room count through it was not run.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:

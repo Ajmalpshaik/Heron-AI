@@ -133,6 +133,10 @@ compatibility-note: >
 #                                           category Spaces. It reached HERE
 #                                           until 2026-10-07, and most of its
 #                                           paraphrases still do (5b-355)
+#   "how many rooms are there"           -> FILTER_ELEMENTS_BY_CATEGORY,
+#                                           category Rooms. It reached HERE
+#                                           on the trained backend until
+#                                           2026-10-09 (5b-397)
 
 utterances:
   - place the rooms
