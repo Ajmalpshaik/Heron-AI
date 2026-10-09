@@ -322,9 +322,9 @@ onto the next line, on the comment line under a trailing arrow, after an arrow o
 only a capability-shaped word straight after the arrow is a target, so `here`, `NOT`, `ALL` and prose
 are not. **Why a gate:** `-> PURGE_UNUSED_MATERIALS` and `-> SET_SCHEDULE_FIELD_FORMAT` both went in on
 2026-09-06 and sat there while this tool ran on every pull request; the second was found by a person and
-recorded as row 5b-232 twelve days before the gate existed. The rows that dangled when it was written
-are on `KNOWN_DANGLING` with their reasons, and one that is repaired fails the run until it comes off the
-list. [Row 5b-388](../docs/FRAGMENT-ISSUES.md).
+recorded as row 5b-232 twelve days before the gate existed. A row knowingly left dangling goes on
+`KNOWN_DANGLING` with its reason, and one that is repaired fails the run until it comes off the list - the
+two it found when it was written were both repaired the same day, and the list is empty. [Row 5b-388](../docs/FRAGMENT-ISSUES.md).
 
 Its first run over 169 sentences found sixteen contested ones. **Three were genuine errors** — a filter
 claiming two of `TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout

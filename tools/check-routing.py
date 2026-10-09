@@ -87,8 +87,8 @@ of every fragment.yaml on 2026-10-09 found those two and no other, so the gate
 starts without a false alarm to excuse.
 
 The two that were there when it was written went on KNOWN_DANGLING with the
-reason each was waiting, and select-by-material's came off when pull request
-#452 repaired it. A listed row that stops dangling fails the run too,
+reason each was waiting, and each came off when its row was repaired - by
+pull requests #452 and #459. A listed row that stops dangling fails the run too,
 until it comes off the list: a list that outlives its repair goes on excusing
 the row if it ever comes back. Row 5b-388.
 """
@@ -204,13 +204,12 @@ def rung(level):
 TARGET = re.compile(r"\s*`?([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)(?![A-Za-z0-9_])")
 DECLARED = re.compile(r"^capability:\s*['\"]?([A-Z0-9_]+)", re.M)
 
-# The rows that named no capability when the gate was written, each with the
-# reason it is waiting. One whose row is repaired FAILS the run until it comes
-# off this list - see targets_verdict.
-KNOWN_DANGLING = {
-    ("add-schedule-combined-field", "SET_SCHEDULE_FIELD_FORMAT"):
-        "row 5b-232 - pull request #459 points it at SET_SCHEDULE_APPEARANCE",
-}
+# A row knowingly left naming no capability, keyed (fragment folder, NAME),
+# with the reason it is waiting. EMPTY since 2026-10-09: the two the gate found
+# when it was written were repaired by pull requests #452 and #459. One whose
+# row is repaired FAILS the run until it comes off this list - see
+# targets_verdict.
+KNOWN_DANGLING = {}
 
 
 def routing_targets(text):

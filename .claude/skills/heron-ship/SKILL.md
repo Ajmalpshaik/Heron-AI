@@ -120,9 +120,9 @@ HERON_KNOWLEDGE=$(mktemp -d) python tools/check-intrusion.py  # one fragment cro
 row whose `-> NAME` no fragment's `capability:` line declares exits **1** - the one part of that tool
 that is not a ranking, so the rest stays a report. `python tools/check-routing.py --targets` gives that
 verdict alone, from the files: run it after editing any `fragment.yaml` comment, because it is not one
-of the four and CI would otherwise be first to say. The rows that dangled when it was written sit on
-`KNOWN_DANGLING` in the tool with their reasons; **repairing one means taking it off that list in the
-same change**, or the run fails on the entry that outlived its row. [Row 5b-388](../../../docs/FRAGMENT-ISSUES.md).
+of the four and CI would otherwise be first to say. A row knowingly left dangling sits on
+`KNOWN_DANGLING` in the tool with its reason - the list is empty today; **repairing one means taking it
+off that list in the same change**, or the run fails on the entry that outlived its row. [Row 5b-388](../../../docs/FRAGMENT-ISSUES.md).
 
 **`check-products` was added on 2026-09-21 and had never run anywhere** — not in CI, not in
 `check-gaps` — while `platform/heron-products.json` said of itself *"Checked by
