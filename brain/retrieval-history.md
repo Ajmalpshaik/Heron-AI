@@ -1214,11 +1214,11 @@ first and on this file second, on both backends.
 
 ## 2026-10-09 — listing the rooms answered by a change that places them
 
-[Row 5b-402](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `661384f6`, **480
-fragments**, behind the 2024 wall, through `heron_brain.lookup`, on **`lexical`** and **`model`**
+[Row 5b-402](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `661384f6` (**480
+fragments**) and again on `36f02b54` (**481**, after PR #450's `LIST_MATERIALS`), behind the 2024 wall, through `heron_brain.lookup`, on **`lexical`** and **`model`**
 (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository, warmed before the first
-question), no re-ranker, every run on its own scratch store. Repeated with `fc828172` - the unpushed
-change that declares *how many rooms are there* on the same filter - merged locally.
+question), no re-ranker, every run on its own scratch store. Repeated with draft PR #463 - which
+declares *how many rooms are there* on the same filter - merged locally.
 
 | | `lexical`, `main` | `model`, `main` | this change, both |
 |---|---|---|---|
@@ -1232,18 +1232,20 @@ elements and is refused with nothing selected, so it follows the filter rather t
 The missing-services question is `CHECK_ROOM_MEP_COMPLETENESS`'s own, and `COUNT_BY_SPATIAL_CONTAINER`'s
 routing table already sent it there - a comment, which ranking cannot read.
 
-**A declared sentence still adds its words to the card's text, and one of them made a write.** *show me
-all the rooms* lifted the filter one place in the words ranking for *show me all the doors*, and on
-`lexical` that broke a near-tie from `ZOOM_TO_ELEMENTS` (it moves the view) to `PLACE_HOSTED_FAMILY`
-(it puts a door into a wall). The filter declares that sentence too: it is what answers it. A candidate
+**A declared sentence still adds its words to the card's text.** On `661384f6`, *show me all the rooms*
+lifted the filter one place in the words ranking for *show me all the doors*, and on `lexical` that broke
+a near-tie from `ZOOM_TO_ELEMENTS` (it moves the view) to `PLACE_HOSTED_FAMILY` (it puts a door into a
+wall). On `36f02b54` `LIST_MATERIALS` had already tipped the same tie, so `main` answers it with the
+write. The filter declares that sentence too: it is what answers it. A candidate
 that also declared *the rooms are missing* on `PLACE_ROOMS` - where another card's table sends it - was
 measured and dropped: it sent *which rooms are missing mep* and *how high are these rooms* to that write.
 
 | 138 sentences, 93 written before any card was touched | `lexical` | `model` |
 |---|---|---|
-| answered by a write (MODIFY or above), `main` → this change | 47 → **40** | 48 → **42** |
-| any answer riskier than before | **none** | **none** |
-| with `fc828172` merged, that alone → with this | 46 → 40 | 47 → 41 |
+| answered by a write (MODIFY or above), `36f02b54` → this change | 47 → **39** | 48 → **42** |
+| the same on `661384f6` | 47 → 40 | 48 → 42 |
+| any answer riskier than before, at either commit | **none** | **none** |
+| with PR #463 merged, that alone → with this | 46 → 39 | 47 → 41 |
 | the owner's questions (`score-routing.py`), risk crossings | identical | identical |
 
 **The kind is not fixed.** Of 12 other ways of asking to list, show or select rooms or spaces, 9 still
