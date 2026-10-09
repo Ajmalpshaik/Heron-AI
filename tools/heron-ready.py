@@ -13,7 +13,7 @@ Get a new PC ready for Heron before the first chat, and say what is still missin
     python tools/heron-ready.py --check   check only - build nothing, download nothing
     python tools/heron-ready.py --snapshot this-pc.json
                                           what this PC has, as facts to set beside
-                                          another PC's - see snapshot()
+                                          another PC's - see write_snapshot()
 
 Run it in the Heron folder with the plain command `python`: that is the command
 Claude Code starts Heron with, so that is the one that has to work.
@@ -468,7 +468,7 @@ def _lookup_seconds():
     return seconds
 
 
-def snapshot(path):
+def write_snapshot(path):
     """Write what this PC has - facts only - to `path` as JSON.
 
     FOR SETTING TWO PCs SIDE BY SIDE. The owner offered to send the folders
@@ -550,7 +550,7 @@ def main(argv):
             print("--snapshot needs a file name: python tools/heron-ready.py "
                   "--snapshot this-pc.json")
             return 2
-        return snapshot(argv[at + 1])
+        return write_snapshot(argv[at + 1])
     started = time.time()
     print("Heron - getting this PC ready%s" % (" (check only)" if check_only else ""))
     python_itself()
