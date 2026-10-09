@@ -136,7 +136,7 @@ compatibility-note: >
 #   "how many rooms are there"           -> FILTER_ELEMENTS_BY_CATEGORY,
 #                                           category Rooms. It reached HERE
 #                                           on the trained backend until
-#                                           2026-10-09 (5b-397)
+#                                           2026-10-09 (5b-401)
 
 utterances:
   - place the rooms

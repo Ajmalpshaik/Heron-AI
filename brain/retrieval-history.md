@@ -1214,7 +1214,7 @@ first and on this file second, on both backends.
 
 ## 2026-10-09 — a room count answered by a change that places rooms
 
-[Row 5b-397](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `aebca7ad`, **480
+[Row 5b-401](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `aebca7ad`, **480
 fragments**, behind the 2024 wall, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
 from a venv outside the repository, warmed before the first question), no re-ranker, every run on its own
 scratch store. Repeated on `main` with PR #450's `LIST_MATERIALS` merged locally, **481**, with the same
