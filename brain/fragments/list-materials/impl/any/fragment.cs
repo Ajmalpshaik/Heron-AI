@@ -1,17 +1,19 @@
 // NOT STANDALONE. Assumes `doc` is in scope; leaves `materialCount`,
-// `materialList`, `materialIds` and `findings` behind.
+// `materialList`, `materialClasses`, `materialIds` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
-// ONE COLLECTOR OVER Material AND NOTHING ELSE. That is the whole cost, and
-// it is why this is quick on any model. Whether anything USES a material is
+// ONE COLLECTOR OVER Material AND NOTHING ELSE. That is the whole cost: no
+// element, type or face is read. Whether anything USES a material is
 // FIND_UNUSED_MATERIALS' question, and answering it means reading every
 // element, every type and every painted face - a walk this deliberately does
-// not make, so a quick list never quietly becomes a slow one.
+// not make, so a cheap list never quietly becomes a slow one. How long it
+// takes on a large model is not measured (NEEDS-CHECKING CX6).
 //
-// THE DOCUMENT IN FRONT, AND ONLY IT. In the Family Editor that is the
-// family's own materials - never the project it will be loaded into, and
-// never another document open beside it.
+// `doc` AND ONLY IT. Whatever document the add-in hands in - through a chat,
+// the model that chat is pinned to, which the answer names - and in a family
+// that is the family's own materials: never the project it will be loaded
+// into, and never another document open beside it.
 //
 // SORTED BY NAME, IGNORING CASE - meant to be the Material Browser's order,
 // so the two can be compared line by line. That they agree is not measured
@@ -20,14 +22,20 @@
 // THE ID IS PRINTED, NEVER READ AS A NUMBER. `ElementId.ToString()` is on
 // every release; `IntegerValue` is deprecated at 2024 and gone by 2026.
 //
+// WHAT A PERSON MUST READ GOES IN A STRING. The add-in reports a collection as
+// its count and its first three items, each cut at 60 characters
+// (RevitFragment.Describe and ShortName); a string arrives whole. So the list
+// and the count per class are strings, and each finding puts its words first.
+//
 // THE WORKING LISTS ARE INSIDE A BLOCK. The add-in reports every top-level
 // variable a fragment leaves (RevitFragment.Report), so a helper list or the
-// per-class tally declared out here would arrive on the answer beside the four
+// per-class tally declared out here would arrive on the answer beside the
 // names above - the tally as "N entry(ies)", which the server flags as content
 // NOT SENT.
 
 var materialCount = 0;
 var materialList = "";
+var materialClasses = "";
 var materialIds = new List<ElementId>();
 var findings = new List<string>();
 
@@ -68,21 +76,15 @@ var findings = new List<string>();
     materialCount = found.Count;
     materialList = string.Join("  ||  ", rows);
 
+    var classes = new List<string>();
+    foreach (var pair in byClass) classes.Add(pair.Key + " " + pair.Value);
+    materialClasses = string.Join(", ", classes);
+
     var kind = doc.IsFamilyDocument ? "family" : "project";
 
-    if (materialCount == 0)
-    {
-        findings.Add(string.Format("No materials at all in this {0}, '{1}'.", kind, doc.Title));
-    }
-    else
-    {
-        var classes = new List<string>();
-        foreach (var pair in byClass) classes.Add(pair.Key + " " + pair.Value);
+    findings.Add(materialCount == 0
+        ? string.Format("No materials at all in this {0} - '{1}'", kind, doc.Title)
+        : string.Format("{0} material(s) in this {1} - '{2}'", materialCount, kind, doc.Title));
 
-        findings.Add(string.Format("{0} material(s) in this {1}, '{2}'. By class: {3}.",
-            materialCount, kind, doc.Title, string.Join(", ", classes)));
-    }
-
-    findings.Add("Every material the " + kind + " holds, used or not. Which ones nothing uses is "
-        + "FIND_UNUSED_MATERIALS, which reads every element, type and painted face to say so.");
+    findings.Add("Listed used or not - unused ones: FIND_UNUSED_MATERIALS");
 }

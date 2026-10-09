@@ -35,19 +35,48 @@ risk: READ
 # cards then swapped ranks between the routes, which fuses to an exact tie
 # (row 5b-236), and only READ_ELEMENT_MATERIAL being PROVEN kept the questions
 # there - a margin that would vanish the day this card is proved. Worded as
-# below, READ_ELEMENT_MATERIAL wins both on both routes, and this card is fifth
-# or absent.
+# below, "what material are these" goes to READ_ELEMENT_MATERIAL by words #1
+# and nearness #1 on both backends, with this card not among the five shown;
+# "what material is that" is declared there since row 5b-375.
 #
-# "HOW MANY THERE ARE" IS IN IT FOR THE COUNT QUESTION. Without it, "how many
-# materials are there" sat between the cards, and alongside row 5b-375's edits
-# to CREATE_MATERIAL and READ_ELEMENT_MATERIAL it went to the transfer - a
-# write - on the lexical backend. With it, this card answers it on both. It
-# costs one thing, recorded in row 5b-376 rather than tuned away: one more card
-# saying "how" tipped "how much space does this take up", which only a comment
-# on REPORT_BOUNDING_BOX claims, to REPORT_SPACE_AIRFLOW on the lexical backend
-# - two reads, 0.00003 apart. Worded "the number of them" instead, that
-# sentence stayed and the count question was lost again; the write mattered
-# more.
+# "HOW MANY THERE ARE" IS IN IT FOR THE COUNT QUESTION. With no count phrase at
+# all, "how many materials are there" went - once row 5b-375's edits were in -
+# to TRANSFER_MATERIALS_BETWEEN_DOCUMENTS, a write, on the lexical backend.
+# Worded "the number of them" (measured on the base before row 5b-375 only),
+# it went to READ_ELEMENT_MATERIAL and FIND_UNUSED_MATERIALS - reads, neither
+# of them this job. With "how many there are" this card answers it on both
+# backends. ITS COST, recorded in row 5b-376 rather than tuned away, all on
+# the lexical backend and all between reads: "how much space does this take
+# up", which only a comment on REPORT_BOUNDING_BOX claims, goes to
+# REPORT_SPACE_AIRFLOW, 0.000029 apart; "how many rooms are there" goes from
+# COUNT_BY_SPATIAL_CONTAINER to REPORT_AREA_VOLUME_COMPUTATIONS; and "show me
+# all the families" - SELECT_SUBCOMPONENTS on main - comes HERE, a list of
+# materials for a question about families (found by the review of PR #450,
+# which asked count and listing questions beyond materials).
+#
+# THE PURPOSE NAMES "USED" IN ORDER TO DISCLAIM IT, AND THAT PULLS QUESTIONS
+# ABOUT USE HERE - recorded, not tuned. "what is this material used on",
+# "list the materials that are used", "which materials are used in this
+# project" and others now reach this card, a read whose answer says which tool
+# answers them; before it they reached FIND_UNUSED_MATERIALS,
+# READ_ELEMENT_MATERIAL or the transfer, and "what uses this material"
+# reached SET_MATERIAL_COLOUR, a write. Without "used" and "uses" they go
+# back, including that write (measured by the review of PR #450).
+#
+# THE CHAT READS THE PINNED MODEL. The add-in runs this on the document it is
+# handed, and a chat hands it the model that chat is pinned to - not always
+# the one in front. The purpose says so in one sentence; worded longer, the
+# card lost "what materials do we have" and "materials in this model" to
+# FIND_UNUSED_MATERIALS by BM25's length weighting, so "quick on any model"
+# (never measured) went instead. On the trained backend "materials in this
+# model" and "which materials are in this model" still go there; both had been
+# won by 0.000008. THE LAST CLAUSE IS "AND THE ANSWER SAYS SO" BECAUSE EVERY
+# OTHER WORDING TRIED MOVED SOMETHING: "which the answer names" and "the
+# answer gives its title" put this card ahead of DESCRIBE_ELEMENTS for the
+# owner's question #20, "Give me the family name and type name for all these
+# items" ("name" and "give" are prefixes of its words); "and the answer says
+# which" sent "which family is the heavy one", which REPORT_GEOMETRY_COMPLEXITY
+# claims, to LOAD_FAMILY - a write - on the lexical backend.
 #
 # "WHAT THE MATERIAL BROWSER SHOWS" IS THE INTENT, NOT A MEASUREMENT. The
 # collector returns every Material element in the document; whether the
@@ -55,19 +84,19 @@ risk: READ
 # NEEDS-CHECKING CX5, and a difference is a finding about this card.
 
 purpose: >
-  Counts and lists everything the Material Browser shows for the document in
-  front - a project, or a family open in the Family Editor: how many there
-  are, and each one's name, class (Metal, Concrete, Plastic) and element id,
-  sorted by name.
+  Counts and lists everything the Material Browser shows for the document
+  Heron is working on - a project, or a family open in the Family Editor: how
+  many there are, and each one's name, class (Metal, Concrete, Plastic) and
+  element id, sorted by name.
 
-  **IT LISTS WHAT THE DOCUMENT HOLDS, NOT WHAT IS USED.** One read and nothing
-  else, so it is quick on any model. Whether anything uses an entry means
-  walking every element, every type and every painted face - the walk
-  FIND_UNUSED_MATERIALS makes, slow on a large model, and not repeated here.
+  **IT LISTS WHAT THE DOCUMENT HOLDS, NOT WHAT IS USED.** One read, and nothing
+  else. Whether anything uses an entry means walking every element, every type
+  and every painted face - FIND_UNUSED_MATERIALS' walk, not repeated here.
 
   **A FAMILY'S LIST IS THE FAMILY'S OWN.** In the Family Editor the answer is
   what that family carries, never what a project it is loaded into holds, nor
-  another document open beside it.
+  another document open beside it. A chat reads the model it is pinned to,
+  and the answer says so.
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
@@ -84,16 +113,24 @@ contract:
     - name: materialList
       # Every material on ONE line, sorted by name: "Name (class, id N)",
       # with "  ||  " between. One string because a collection reaches the
-      # chat as its count and first three (RevitFragment.Describe), and a
-      # list of names somebody asked to READ is no use as three of them.
+      # chat as its count and its first three items, each cut at 60
+      # characters (RevitFragment.Describe and ShortName), and a list of names
+      # somebody asked to READ is no use as three of them. NOT CAPPED: a
+      # template holding a thousand materials sends one line of tens of
+      # kilobytes. Expected, not measured - NEEDS-CHECKING CX6 records it.
+      role: result
+      type: string
+    - name: materialClasses
+      # The count per class on one line - "Concrete 4, Metal 9, no class 1" -
+      # empty when there are no materials. A string for the same reason as the
+      # list. A thing it FOUND, so a result (D-52).
       role: result
       type: string
     - name: materialIds
       # The same materials as element ids, in the same order, for a next step
-      # in a chain. NOT named `materials` (READ_ELEMENT_MATERIAL provides that,
-      # as a dictionary) and NOT `materialNames` (CREATE_MATERIAL's request
-      # need - a carried list of names that already exist must never be bound
-      # into the tool that makes them).
+      # in a chain. Named for what it holds - ids, not names - and no
+      # fragment's need is called `materialIds`. NOT `materials`, which
+      # READ_ELEMENT_MATERIAL provides as a dictionary of a different type.
       role: result
       type: IList<ElementId>
     - name: findings
@@ -133,6 +170,13 @@ compatibility-note: >
 #                                            the write row 5b-376's question was
 #                                            handed before this existed
 #   "how much of each material is there"  -> REPORT_MATERIAL_TAKEOFF - quantities
+
+# WHERE EACH SENTENCE CAME FROM. "list the materials in this family" is the
+# modeller's own, typed 2026-10-09 with a Duct Accessories family open (row
+# 5b-376). "show me all the materials in this project" is the row's second
+# sentence, measured there the same day. "what materials are in this project"
+# and "show me all the materials" are the owner's, given with the request for
+# this card on 2026-10-09 as what a modeller says. Nothing else is declared.
 
 utterances:
   - list the materials in this family
