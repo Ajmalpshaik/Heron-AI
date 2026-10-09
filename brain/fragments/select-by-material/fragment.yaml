@@ -167,7 +167,7 @@ compatibility-note: >
 #    another"                        -> REPLACE_MATERIAL - this one only reads
 #   "how much of each material"      -> REPORT_MATERIAL_TAKEOFF - quantities,
 #                                       once the elements are chosen
-#   "which materials are unused"     -> PURGE_UNUSED_MATERIALS, which asks the
+#   "which materials are unused"     -> FIND_UNUSED_MATERIALS, which asks the
 #                                       same question of every material at once
 #                                       and is the right shape for that
 #   a family's forms by material     -> here - every form in a family is
