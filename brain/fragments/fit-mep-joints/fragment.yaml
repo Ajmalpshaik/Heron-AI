@@ -135,3 +135,7 @@ utterances:
   - join every duct end
   - fit the whole run
   - place fittings at every joint
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "put the
+  # elbows and tees in": MEASURE_FITTING_AREA answered it on both backends.
+  - put the elbows and tees in

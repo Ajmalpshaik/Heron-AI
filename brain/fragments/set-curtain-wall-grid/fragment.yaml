@@ -304,3 +304,7 @@ utterances:
   - change the curtain grid layout to fixed distance
   - space the vertical curtain grid lines at 1500
   - make the horizontal curtain grid maximum spacing
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "make the
+  # vertical grid fixed distance 1500": CREATE_GRID on lexical answered it.
+  - make the vertical grid fixed distance 1500

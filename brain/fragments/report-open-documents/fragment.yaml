@@ -97,3 +97,10 @@ utterances:
   - list the open Revit files
   - how many projects do I have open
   - which one is active
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims these
+  # sentences, and a comment is not indexed, so ranking decided: "how many
+  # Revit files are open": READ_MODEL_FILE_INFO answered it on both backends;
+  # "which models do I have open": COMPARE_MODELS on the trained backend
+  # answered it.
+  - how many Revit files are open
+  - which models do I have open

@@ -121,3 +121,8 @@ utterances:
   - refresh the linked models
   - reload the structural link
   - pull in the latest from the other team
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "get the
+  # latest architecture": CHECK_EQUIPMENT_CLEARANCE on lexical and
+  # OVERRIDE_GRAPHICS_IN_VIEW on the trained backend answered it.
+  - get the latest architecture

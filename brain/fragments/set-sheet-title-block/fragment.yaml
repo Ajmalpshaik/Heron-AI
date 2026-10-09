@@ -136,7 +136,12 @@ compatibility-note: >
 #   "put the new border on the whole set"    -> here, and READ the replaced
 #                                               list: a cross-family swap loses
 #                                               anything typed into the old
-#                                               title block instance
+#                                               title block instance. NOT an
+#                                               utterance, measured (row
+#                                               5b-387): declared, it sent the
+#                                               question "which sheets use the
+#                                               old border" to this write on
+#                                               both backends
 #   "what title block is on this sheet"      -> REPORT_SHEET_TITLE_BLOCKS, and
 #                                               it is the call to make FIRST -
 #                                               it says whether the change will
