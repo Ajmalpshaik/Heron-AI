@@ -113,14 +113,14 @@ is the schedule's view of it, on branch `claude/heron-project-review-aik7wy` (PR
 
 | wave | done | still owed |
 |---|---|---|
-| 1 | 5b-380 (was numbered 5b-371 until a parallel PR took it), 5b-255, 5b-262, 5b-363, 5b-381 | - |
+| 1 | 5b-380 (was numbered 5b-371 until a parallel PR took it), 5b-255, 5b-262, 5b-363, 5b-381 (its last gap, the archive tool's re-banding, closed the same day) | - |
 | 2 | 133, 151, 178, 5b-217 closed | - |
 | 3 | 5b-196, 5b-186, 5b-153, 5b-108, 5b-158, 5b-199, 5b-229, 5b-242, 5b-160, 5b-198, 5b-228, 5b-150, 5b-201 | 5b-278 is half done - one check isolated, the rest is the planner owner's call |
 | 4 | 5b-162, 5b-232, 5b-193; card words for 5b-358 and 177; job files for 5b-204; row 101's dead entry | group I's counts are dated records - left as they are, legally |
-| 5 | 5b-292, 5b-134 | **fixed in source, the run owed:** 5b-197 (40 kernel runs on the owner's PC), 128 and 5b-338 (a model), row 10's move path, 5b-159 (an audit line from a warned write), 5b-203 (a model with a doubled parameter name), row 120's `refused` |
-| 6 | 5b-339, 5b-274, 5b-391 (`check-intrusion`'s half of 5b-233) | **fixed in source, the run owed:** 75 (a stop - a linked element is refused by name, not yet carried), 5b-181 (a run on 2020-2022), 5b-289 (a new DRAFT fragment, its proof on Project2), the lookup half of 5b-233 (the owner's PC). **Measured, part left:** 146 (two questions need READ fragments nobody has written), 5b-321 and 5b-337 (fewer questions reach a write, not none) |
+| 5 | 5b-292, 5b-134 | **fixed in source, the run owed:** 5b-197 (40 kernel runs on the owner's PC), 128 and 5b-338 (a model), row 10's move path, 5b-159 (an audit line from a warned write), 5b-203 (sixteen DRAFT readers now; a model with a doubled parameter name, NEEDS-CHECKING AP11), row 120's `refused` |
+| 6 | 5b-339, 5b-274, 5b-391 (`check-intrusion`'s half of 5b-233, and the four measuring tools), 5b-389 (every single-purpose `revit_*` tool labels its ending), 5b-390 | **fixed in source, the run owed:** 75 (a stop - a linked element is refused by name, not yet carried), 5b-181 (a run on 2020-2022), 5b-289 (a new DRAFT fragment, its proof on Project2), 5b-233 (the lookup's drift sentence and the one rebuild rule, `heron_scope.rebuild_refusal()`; the owner's PC - two paths that still rebuild the shared store from anywhere are row 5b-404). **Measured, part left:** 146 (two questions need READ fragments nobody has written), 5b-321 and 5b-337 (fewer questions reach a write, not none) |
 
-**Found while fixing, recorded, not fixed:** 5b-389 (the other `revit_*` tools and the Companion's page actions still guess an outcome) and 5b-390 (docs/40 names a suite that does not exist).
+**Found while fixing, recorded, not fixed:** 5b-402 (`test_mcp_serves.py` runs past `check-gaps`' 300 s ceiling here, on main too), 5b-403 (the Companion's page actions still guess an outcome) and 5b-404 (the lookup's first open and `heron_scope.py --rebuild` rebuild the shared store from any checkout). **Row 146's two READs** (the views on a sheet, a view's scale) are built and in their third review; the scale one first pulled change requests away from `SET_VIEW_SCALE`, which is what that round is fixing.
 
 **Parallel work collides on the register.** Every other open PR appends its rows to
 `section-5b-rows-176-200.md`, which this branch re-banded; each merge of main here moved those rows to
