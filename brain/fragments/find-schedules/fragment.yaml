@@ -130,3 +130,7 @@ utterances:
   - show me the schedules
   - what schedules do we have
   - the equipment schedule
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "which
+  # schedules are there": REPORT_PIPE_SCHEDULES on lexical answered it.
+  - which schedules are there

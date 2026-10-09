@@ -131,7 +131,13 @@ compatibility-note: >
 
 # ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
 #
-#   "check every fitting family's sizes" -> here, from the project
+#   "check every fitting family's sizes" -> here, from the project. NOT an
+#                                           utterance, measured (row 5b-387):
+#                                           declared, it sent "start a new
+#                                           family" to REPORT_FAMILY_SIZE_TABLE
+#                                           and the owner's "Tag the ducts
+#                                           again using this tag family" out of
+#                                           the top five, on lexical
 #   "read THIS family's table"           -> REPORT_FAMILY_SIZE_TABLE, with the
 #                                           family open in front
 #   "write a table back"                 -> WRITE_FAMILY_SIZE_TABLE

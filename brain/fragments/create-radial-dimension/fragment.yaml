@@ -107,3 +107,10 @@ utterances:
   - dimension the diameter of this
   - put a radial dimension on this arc
   - show the radius on the drawing
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims these
+  # sentences, and a comment is not indexed, so ranking decided: "dimension
+  # the diameter": LABEL_FAMILY_RADIUS on the trained backend answered it;
+  # "dimension this radius": LABEL_FAMILY_RADIUS on the trained backend
+  # answered it.
+  - dimension the diameter
+  - dimension this radius

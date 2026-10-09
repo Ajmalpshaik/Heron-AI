@@ -113,3 +113,8 @@ utterances:
   - who last changed this
   - who created these
   - will Revit ask me to relinquish
+  # ADDED 2026-10-09, row 5b-387. READ_ELEMENT_OWNERSHIP's table claimed it;
+  # OPEN_FAMILY_FOR_EDITING answered it on the trained backend, a write
+  # answering a question. This card answers it; the claiming table now points
+  # here.
+  - can I edit this

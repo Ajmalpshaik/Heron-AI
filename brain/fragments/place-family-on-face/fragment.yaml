@@ -115,3 +115,7 @@ utterances:
   - place diffusers hosted on that ceiling
   - put this family on the wall face
   - place face-based families properly hosted
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "place these
+  # on the wall face": PLACE_HOSTED_FAMILY on the trained backend answered it.
+  - place these on the wall face
