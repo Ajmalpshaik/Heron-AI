@@ -386,6 +386,34 @@ def main():
           "is still REVISE - a change with no evidence is not a pass")
 
     print()
+    print("An entry added under a fragment's contract is a contract change")
+    # Row 5b-198: CONTRACT_LINE matched only a diff line that STARTS with one
+    # of six keys, so a provide added under `contract:` of an existing
+    # fragment - a result every caller can now see - raised no signal.
+    def full_diff(changed):
+        lines = ["diff --git a/brain/fragments/x/fragment.yaml b/brain/fragments/x/fragment.yaml",
+                 "--- a/brain/fragments/x/fragment.yaml", "+++ b/brain/fragments/x/fragment.yaml",
+                 "@@ -1,12 +1,13 @@", " id: FRG-X-001", " capability: REPORT_X", " purpose: >",
+                 "   what it does"]
+        lines += changed.get("purpose", ["   and more"])
+        lines += [" contract:", "   needs:", "     - name: elements", "   provides:",
+                  "     - name: count"]
+        lines += changed.get("provides", [])
+        lines += [" revit: [\"2024\"]", " utterances:", "   - how many x"]
+        return "\n".join(lines) + "\n"
+    added = full_diff({"provides": ["+    - name: connectorSummary", "+      role: result"]})
+    check(CHANGE.CONTRACT_LINE.search(added) is None,
+          "the old pattern does not see it - which is the defect")
+    judge = getattr(CHANGE, "contract_changed", None)
+    check(judge is not None, "check-change can read where a changed line sits")
+    if judge is not None:
+        check(judge(added), "a provide added under contract: is a contract change")
+        check(not judge(full_diff({"purpose": ["-   and more", "+   and more words"]})),
+              "a reworded purpose is not")
+        check(judge(full_diff({"purpose": ["-capability: REPORT_X", "+capability: REPORT_Y"]})),
+              "and a changed top-level capability: still is")
+
+    print()
     print("What a child prints is read as UTF-8, whatever the machine's code page")
     # Row 5b-196: on the owner's PC a reader thread died decoding a child's
     # UTF-8 in cp1252, and run() kept an empty note. Linux CI decodes UTF-8

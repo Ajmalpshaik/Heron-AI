@@ -1238,9 +1238,42 @@ def undeclared_values(values, needs):
     return undeclared, takeable
 
 
-def report_undeclared(fragment, values, needs):
-    """Say so, once, before Revit is touched. Never refuses; returns nothing."""
+def values_taken_by_setup(root, setup, writing):
+    """{value name: setup step} for the values a WRITING setup step takes.
+
+    A step at MODIFY or above travels inside the fragment's own request and
+    `RevitFragment.RunSetupSteps` binds it from the run's values - so a value
+    it declares is used, not dropped, even though the fragment does not
+    declare it (row 5b-228). A READ step runs apart, on `--setup-set`, and
+    takes none of them; and a read run defers nothing. The first step to
+    declare a name is the one named."""
+    taken = {}
+    if not writing:
+        return taken
+    for step in (setup or []):
+        path = os.path.join(root, "brain", "fragments", step, "fragment.yaml")
+        if fragment_risk(path) not in ("MODIFY", "PUBLISH", "ADMIN"):
+            continue
+        for need in fragment_needs(path) or []:
+            name = (need or {}).get("name")
+            if name and (need or {}).get("source") == "request":
+                taken.setdefault(name, step)
+    return taken
+
+
+def report_undeclared(fragment, values, needs, taken_by=None):
+    """Say so, once, before Revit is touched. Never refuses; returns nothing.
+
+    TAKEN_BY is values_taken_by_setup(): a value a writing setup step takes is
+    named with that step rather than called dropped."""
     undeclared, takeable = undeclared_values(values, needs)
+    if not undeclared:
+        return
+    taken_by = taken_by or {}
+    for name in [n for n in undeclared if n in taken_by]:
+        print("%-30s '%s' is not this fragment's - setup step %s takes it"
+              % (fragment, name, taken_by[name]))
+    undeclared = [n for n in undeclared if n not in taken_by]
     if not undeclared:
         return
     # THE NAME IN THE FIRST COLUMN, because `prove` prints a 30-wide column of
@@ -1842,9 +1875,10 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     # BOTH LEGS, because row 71's case was a value typed into the NEGATIVE that
     # the fragment never declared - `--set maxSteps=200` against
     # `--negative-set maxSteps=0`, and both legs came back identical.
-    report_undeclared(name, values, needs)
+    taken_by = values_taken_by_setup(root, setup, writing)
+    report_undeclared(name, values, needs, taken_by)
     if negative_values is not None and negative_values is not values:
-        report_undeclared(name, negative_values, needs)
+        report_undeclared(name, negative_values, needs, taken_by)
 
     live, starting, _, mismatched = discover()
     if not live and starting:
