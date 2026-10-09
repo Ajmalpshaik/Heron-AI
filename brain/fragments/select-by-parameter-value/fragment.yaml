@@ -192,3 +192,10 @@ utterances:
   # sit at 0.63 to 0.67 cosine against it where this card sits at 0.36 to
   # 0.46. Without it the sentence reached SET_CURTAIN_WALL_GRID, a change.
   - select every wall of type curtain wall
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims these
+  # sentences, and a comment is not indexed, so ranking decided: "comments
+  # contain revise": REPORT_ELEMENT_DEPENDENCIES on the trained backend
+  # answered it; "mark begins with ahu": REPOINT_VIEW_REFERENCE answered it on
+  # both backends.
+  - comments contain revise
+  - mark begins with ahu

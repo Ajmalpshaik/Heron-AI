@@ -125,3 +125,8 @@ utterances:
   - break the connection between them
   - unhook this fitting from the duct
   - separate these without deleting anything
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "unhook the
+  # terminal from the duct": CONNECT_AIR_TERMINALS answered it on both
+  # backends.
+  - unhook the terminal from the duct

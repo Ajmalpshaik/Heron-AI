@@ -111,3 +111,7 @@ utterances:
   - set the location of these
   - move to 0,0,0
   - place this at the survey point
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "put it at
+  # 12400, 8600": PLACE_VIEW_ON_SHEET on lexical answered it.
+  - put it at 12400, 8600

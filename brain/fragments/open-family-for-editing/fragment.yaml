@@ -129,3 +129,8 @@ utterances:
   - put the family in front
   - edit this family
   - open the fitting family so I can change it
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "open that
+  # family so we can fix it": REPORT_AREAS on lexical and UPGRADE_FAMILY_FILES
+  # on the trained backend answered it.
+  - open that family so we can fix it
