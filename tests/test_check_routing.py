@@ -53,6 +53,13 @@ WHAT IT PROVES
      claim, because that is also how a measurement log reads (`"x"  REPORT ->
      here`).
 
+  8. THE FIVE ROWS NO RULE COULD READ ARE NOW WRITTEN SO THE READER READS
+     THEM. Row 5b-392: three sentences in a dated paragraph, a bracket between
+     a quote and its arrow, two sentences stacked under another row's arrow, a
+     row naming its own capability, and `-> declared HERE`. Each was rewritten
+     in its fragment.yaml's comments - never an impl/ - rather than taught to
+     the reader, because each layout is also how prose or a log reads.
+
 WHAT IT DOES NOT PROVE
   Anything about the routing result itself. This checker is a REPORT - it exits
   0 whatever collisions it finds, because a collision is a judgement and not a
@@ -434,6 +441,30 @@ def main():
     check(not leaked,
           "no claim anywhere in the library carries an arrow, a quote or a `#` "
           "into the sentence - %d did: %s" % (len(leaked), "; ".join(leaked[:4])))
+    print()
+
+    print("8. THE FIVE ROWS NO RULE COULD READ ARE NOW WRITTEN SO IT READS THEM")
+    # Row 5b-392. The rows were fixed in the fragments, not in the reader, so
+    # this asks the library - and fails, by name, on a table rewritten back.
+    unread = []
+    for folder, sentence in (
+            ("place-hosted-family",
+             "place doors and windows hosted in walls at points"),
+            ("place-hosted-family", "add windows to the outside walls"),
+            ("place-hosted-family", "put doors in the walls at these points"),
+            ("select-family-forms", "delete these forms"),
+            ("apply-color-fill-scheme", "colour the spaces by zone"),
+            ("apply-color-fill-scheme", "colour fill the zones"),
+            ("set-sheet-title-block",
+             "change the title block on these sheets"),
+            ("set-sheet-title-block", "swap the title block"),
+            ("list-worksets", "is this model workshared")):
+        path = os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml")
+        if sentence not in claims_of(io.open(path, encoding="utf-8").read()):
+            unread.append("%s %r" % (folder, sentence))
+    check(not unread,
+          "every sentence of the five rows is read as a claim - %d were not: %s"
+          % (len(unread), "; ".join(unread)))
     print()
 
     if FAILURES:

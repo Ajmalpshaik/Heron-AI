@@ -116,7 +116,7 @@ compatibility-note: >
 #                                   workset - a question about an ELEMENT
 #   "put these on the MEP workset" -> SET_ELEMENT_WORKSET
 #   "who owns this"              -> READ_ELEMENT_OWNERSHIP
-#   "is this model workshared"   -> declared HERE and answered by
+#   "is this model workshared"   -> here (declared) and answered by
 #                                   READ_ELEMENT_OWNERSHIP, which is left alone
 #                                   deliberately: it PROVIDES `workshared`, so
 #                                   it genuinely answers the question. Both are
