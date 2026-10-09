@@ -1026,6 +1026,50 @@ own **Color Scheme** and **Color Fill Legend**. At 420 fragments, before and aft
 
 ---
 
+## 2026-10-09 — a sentence to make a material reached the tool that selects by one
+
+[Row 5b-375](../docs/fragment-issues/section-5b-rows-351-375.md). *"create a new material called
+Galvanised Steel"* resolved to `SELECT_BY_MATERIAL` on the owner's lexical backend. Measured on scratch
+stores at **480 fragments**, no Revit filter, on **`lexical`** and on **`model`**
+(`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker.
+
+**The name outvotes the verb.** In a sentence asking to make a material, the material's name is the
+rarest word, and `SELECT_BY_MATERIAL` is one of two cards that say *galvanised*. The words route ranked
+it 1st on both backends and the trained encoder agreed - nearness #1, with `CREATE_MATERIAL` 3rd: the
+2026-09-24 finding again, matching what a sentence is about and not what it asks for.
+
+**And a neighbouring tie decided what the fix could be.** On `model`, *"what material is that"* and
+*"what material are these"* go to `READ_ELEMENT_MATERIAL` first on both routes with `CREATE_MATERIAL`
+second on both. Any one more *material* sentence on `CREATE_MATERIAL` lifted it to first by words, the
+two swapped ranks between the routes, and the swap fused to the exact tie the 2026-09-28 section
+describes - which went to the write. So the fix is two cards: `CREATE_MATERIAL` declares the typed
+sentence, and `READ_ELEMENT_MATERIAL` declares *"what material is that"*, which holds both questions.
+
+| | before | after |
+|---|---|---|
+| 11 ways of asking to make a material, reaching `CREATE_MATERIAL` | 3 `lexical`, 2 `model` | **8 on both** - 7 of the 10 nobody declares |
+| 9 sentences selecting by a material; 10 undeclared questions about what something is made of | winners | the same winners, both backends |
+| the owner's 79 questions, both backends | `score-routing.py` | identical, question for question |
+| Revit 2024 risk crossings, both backends | `check-risk-crossings.py` | identical |
+| `check-routing.py` words #1 | 2222 of 2760 | 2224 of 2762 |
+| `check-routing.py` nearness #1 | 1464 `lexical`, 1502 `model` | 1469, 1501 |
+
+**Refused after measuring:** *"add a new material to this family"* and *"create a new material with a
+name and a colour"*, each of which tipped both questions to the write alone, and *"make a stainless
+steel material"*, which sent *"what is made of stainless steel"* there too. **The one cost:** on `model`,
+*"swap the material on these to galvanised steel"* moved from `SELECT_BY_MATERIAL` to
+`CREATE_MATERIAL` - both wrong; `REPLACE_MATERIAL` is the job.
+
+### What this does not establish
+
+- **The probe sentences are this session's**, written before each run and kept apart from what was
+  declared; they are not the owner's words, and his 79 are the set that did not move.
+- **One encoder**, and the tie is still there - the next *material* sentence on `CREATE_MATERIAL` is
+  measured against those two questions first, which both cards now say.
+- **Nothing here met Revit.**
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
