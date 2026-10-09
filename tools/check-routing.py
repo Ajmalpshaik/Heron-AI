@@ -208,7 +208,7 @@ DECLARED = re.compile(r"^capability:\s*['\"]?([A-Z0-9_]+)", re.M)
 # off this list - see targets_verdict.
 KNOWN_DANGLING = {
     ("add-schedule-combined-field", "SET_SCHEDULE_FIELD_FORMAT"):
-        "row 5b-232 - the heading is SET_SCHEDULE_APPEARANCE's",
+        "row 5b-232 - pull request #459 points it at SET_SCHEDULE_APPEARANCE",
     ("select-by-material", "PURGE_UNUSED_MATERIALS"):
         "pull request #452 points it at FIND_UNUSED_MATERIALS",
 }
