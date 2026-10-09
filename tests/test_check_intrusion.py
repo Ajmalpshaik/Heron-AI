@@ -36,6 +36,16 @@ re-indexes it and retrieves for every utterance in the library - measured
 what is asked here is the arithmetic, the two claims agreeing with each
 other, and the settings being refused before any of that starts.
 
+AND THE STORE IT MEASURES OVER (sections 5-7). Until 2026-10-09 the tool
+rebuilt its store when store.count() differed from the number of card
+folders - a COUNT, which check-routing.py stopped trusting on 2026-09-06 -
+and it rebuilt the ONE store every chat on the PC reads from any checkout,
+which check-routing stopped doing on 2026-10-08 (row 5b-233). It uses
+check-routing's guard now. Those sections run the tool's main() on a private
+scratch store and STOP IT at the first step of the measurement - the
+re-index is replaced by a raise - so they ask only what the guard did to the
+store, in seconds.
+
 WHAT IT CANNOT DO: it does not say whether any intrusion is a defect. The
 tool says plainly that none of them is by itself, and exits 0 for that
 reason - "a gate here would be a gate on how ordinary somebody's phrasing
@@ -51,16 +61,112 @@ import os
 import re
 import sys
 
+import shutil
+import tempfile
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "check-intrusion.py")
+sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 FAILURES = []
+
+# What the measurement's first step raises in sections 5-7, so a run the
+# guard lets through stops there instead of retrieving for every utterance.
+MEASURED = "went on to measure"
+
+
+class _Measured(Exception):
+    """The guard let the run through to the measurement."""
 
 
 def check(condition, what):
     print("  %-5s %s" % ("ok" if condition else "FAIL", what))
     if not condition:
         FAILURES.append(what)
+
+
+@contextlib.contextmanager
+def knowledge_at(home):
+    """HERON_KNOWLEDGE pointed at HOME for the block, and put back after."""
+    was = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = home
+    try:
+        yield
+    finally:
+        if was is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = was
+
+
+def run_guard(tool, home, shared=False):
+    """(exit code, what it said) from the tool's main() on the store in HOME.
+
+    The code is MEASURED when the guard let the run through - the re-index,
+    the measurement's first step, raises instead of running. SHARED tells
+    heron_scope the store is the one every chat on the PC reads, asked from
+    a checkout that is not main: check-routing's own section 6 arrangement.
+    A raise of any other kind is recorded as the code, never let out, so one
+    broken case cannot hide the sections after it (heron-ship s2a).
+    """
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+
+    def stop(*_args, **_kwargs):
+        raise _Measured()
+
+    was_index = SEARCH.index
+    was_from = SCOPE.refreshes_from
+    SEARCH.index = stop
+    if shared:
+        SCOPE.refreshes_from = lambda root=None: (
+            os.path.join("main", "brain", "fragments"), "main")
+    said = io.StringIO()
+    try:
+        with knowledge_at(home):
+            with contextlib.redirect_stdout(said):
+                with contextlib.redirect_stderr(said):
+                    code = tool.main([])
+    except _Measured:
+        code = MEASURED
+    except BaseException as raised:                 # noqa: BLE001
+        code = "raised %s: %s" % (type(raised).__name__, raised)
+    finally:
+        SEARCH.index = was_index
+        SCOPE.refreshes_from = was_from
+    return code, said.getvalue()
+
+
+def held_in(home):
+    """{id: row} the GLOBAL store in HOME holds, read without changing it."""
+    import heron_scope as SCOPE
+    with knowledge_at(home):
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            return dict((row["id"], row) for row in store.fragments())
+        finally:
+            store.close()
+
+
+def edit_store(home, sql, args):
+    """One statement against the GLOBAL store in HOME - a stale store, made."""
+    import heron_scope as SCOPE
+    with knowledge_at(home):
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            store.db.execute(sql, args)
+            store.db.commit()
+        finally:
+            store.close()
+
+
+def built_store():
+    """A private scratch folder holding a store rebuilt from this tree."""
+    import heron_scope as SCOPE
+    home = tempfile.mkdtemp(prefix="heron-ci-")
+    with knowledge_at(home):
+        SCOPE.rebuild()
+    return home
 
 
 def load():
@@ -166,14 +272,93 @@ def main():
           "not a traceback")
 
     print()
+    print("5. THE STORE IS CHECKED BY ITS IDS, NOT ITS COUNT")
+    # check-routing.py, 2026-09-06: three parallel sessions each had 226
+    # cards, the count matched, and the store held another session's library.
+    # Made here by renaming one row: as many rows as cards, not THESE cards.
+    home = built_store()
+    try:
+        held = held_in(home)
+        some = sorted(held)[0]
+        stranger = "FRG-NOT-ON-DISK-000"
+        edit_store(home, "UPDATE fragments SET id = ? WHERE id = ?",
+                   (stranger, some))
+        code, said = run_guard(tool, home)
+        now = held_in(home)
+        check(code == MEASURED,
+              "a stale private store is put right and the run goes on to "
+              "measure (got %r)" % (code,))
+        check(some in now and stranger not in now,
+              "a store holding as many rows as there are cards, but not THESE "
+              "cards, is rebuilt (%s back: %s; %s gone: %s)"
+              % (some, some in now, stranger, stranger not in now))
+        check(stranger in said,
+              "and the run names the id that did not match: %s"
+              % " ".join(said.split())[:160])
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+    print()
+    print("6. AND BY EVERY ROW'S CONTENT, NOT ONLY ITS IDS - row 5b-229")
+    # The search reads a card's identity, capability and domain from the
+    # store's ROW, so a row the card no longer matches is searched under
+    # words the card does not say. A store of its own, so a section 5 that
+    # failed to put its store right cannot take this one down with it.
+    home = built_store()
+    try:
+        some = sorted(held_in(home))[0]
+        code, said = run_guard(tool, home)
+        check(code == MEASURED and "did not match" not in said,
+              "a store that already matches this tree is left alone (got %r)"
+              % (code,))
+        wanted = held_in(home)[some]["semantic_identity"]
+        edit_store(home,
+                   "UPDATE fragments SET semantic_identity = ? WHERE id = ?",
+                   ("an identity the card no longer says", some))
+        code, said = run_guard(tool, home)
+        now = held_in(home).get(some) or {}
+        check(code == MEASURED,
+              "a store with one edited row goes on to measure once put right "
+              "(got %r)" % (code,))
+        check(now.get("semantic_identity") == wanted,
+              "the row whose identity is not its card's is put back from the "
+              "card - it reads %r" % (now.get("semantic_identity"),))
+        check("edited since" in said and some in said,
+              "and the run says which card's row was stale")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+    print()
+    print("7. THE SHARED STORE IS NOT REBUILT FROM A CHECKOUT THAT IS NOT MAIN - row 5b-233")
+    # One store serves every checkout and chat on the PC. Rebuilt from a
+    # worktree, every session's heron_lookup named that branch's cards.
+    # check-routing has refused since 2026-10-08; this tool did not.
+    home = tempfile.mkdtemp(prefix="heron-ci-shared-")
+    try:
+        code, said = run_guard(tool, home, shared=True)
+        held = held_in(home)
+        check(code == 2,
+              "a run that would rebuild the shared store from here exits 2 "
+              "(got %r)" % (code,))
+        check(len(held) == 0,
+              "and the store is left as it was - nothing rebuilt into it "
+              "(%d rows)" % len(held))
+        check("HERON_KNOWLEDGE" in said and "SHARED" in said,
+              "and it says the store is the shared one and to point "
+              "HERON_KNOWLEDGE at a scratch folder")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
             print("  %s" % line)
         return 1
 
-    print("PASSED - one number for one measurement, and a setting it does not")
-    print("have costs nothing.")
+    print("PASSED - one number for one measurement, a setting it does not")
+    print("have costs nothing, and the store it measures over holds this")
+    print("tree's cards - never rebuilt from here when it is the shared one.")
     return 0
 
 

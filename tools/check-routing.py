@@ -89,8 +89,8 @@ def risk_of(store, fragment_id):
 def ids_on_disk():
     """The id of every fragment in this working tree.
 
-    The IDS and not the COUNT - see the staleness check in main() for the run
-    that made the difference matter.
+    The IDS and not the COUNT - see the staleness check in
+    store_for_this_tree() for the run that made the difference matter.
     """
     try:
         import yaml
@@ -141,9 +141,9 @@ def stale_rows(store):
     the search reads a card's identity, capability and domain from the store's
     row, not the file. So an edited card was searched under its old words, and
     a routing result was printed over a library the store did not hold - the
-    failure the comments in main() exist to prevent, one step quieter. The
-    rows are compared the way rebuild() writes them, from every card that
-    validates."""
+    failure the comments in store_for_this_tree() exist to prevent, one step
+    quieter. The rows are compared the way rebuild() writes them, from
+    every card that validates."""
     import heron_fragment as FRAG
     import heron_scope as SCOPE
     found, _problems = FRAG.load_all()
@@ -187,41 +187,22 @@ def rung(level):
     return LADDER.index(level) if level in LADDER else -1
 
 
-def main(argv):
-    revit = None
-    if "--revit" in argv:
-        i = argv.index("--revit")
-        # EXIT 2 AND A SENTENCE, NOT A TRACEBACK - the same rule the comment
-        # below states for a missing knowledge store, applied to the flag
-        # above it. `--revit` last on the line read `argv[i + 1]` and came
-        # back as `IndexError: list index out of range`, which is exactly
-        # what row 5b-71 was written to stop one statement lower down.
-        if i + 1 >= len(argv) or argv[i + 1].startswith("-"):
-            sys.stderr.write("--revit needs a release, e.g. --revit 2024. "
-                             "Nothing was checked.\n")
-            return 2
-        revit = argv[i + 1]
+def store_for_this_tree(what):
+    """The GLOBAL store, holding exactly this working tree's library - or None,
+    having said why on stdout or stderr, and the caller exits 2.
 
+    `what` names the result a refusal is NOT ("routing result"), because the
+    caller's numbers are what would be wrong.
+
+    ONE HOME FOR THE THREE TESTS - the ids, the content and the shared store -
+    because `tools/check-intrusion.py` asks the same store the same question
+    and carried its own copy of it. That copy compared store.count() with the
+    number of card folders, which is the test this one stopped using on
+    2026-09-06 (see below), and it rebuilt the shared store from any checkout:
+    the two holes rows 5b-229 and 5b-233 closed here, left open one file over.
+    A second copy of a guard is how one of them stops being one.
+    """
     import heron_scope as SCOPE
-    import heron_search as SEARCH
-    import heron_embed as EMBED
-    import heron_retrieve as RETRIEVE
-
-    # NO STORE, NO CHECK - AND SAY SO IN ONE LINE RATHER THAN A TRACEBACK.
-    # With no %APPDATA% and no HERON_KNOWLEDGE there is nowhere to keep a
-    # knowledge store, and heron_scope raises ValueError from four frames
-    # down. Until 2026-09-21 that arrived as an unhandled traceback and exit
-    # 1, while .github/workflows/gates.yml said of this tool and its pair
-    # that they "say so rather than failing when there is none" - measured on
-    # Linux with the variable unset, they did not say so and they did fail.
-    # EXIT 2, which is the code this repository uses for "the tool could not
-    # do its job": nothing was checked, so it is NOT a pass. Row 5b-71.
-    if SCOPE.knowledge_dir() is None:
-        sys.stderr.write(
-            "COULD NOT RUN: no %APPDATA% and no HERON_KNOWLEDGE, so there is\n"
-            "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
-            "folder - an empty one is enough - and run this again.\n")
-        return 2
 
     # The stores are DERIVED (Golden Rule 11), so an empty one is a fresh machine
     # rather than damage, and a checker should run on a fresh machine without a
@@ -272,7 +253,7 @@ def main(argv):
                 "this branch's cards into every other session's answers (row 5b-233).\n"
                 "Point HERON_KNOWLEDGE at a scratch folder - an empty one is enough -\n"
                 "and run this again.\n" % (SCOPE.knowledge_dir(), drift))
-            return 2
+            return None
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         store_ids = set(row["id"] for row in store.fragments())
@@ -282,8 +263,8 @@ def main(argv):
         if store.count() == 0:
             store.close()
             print("  the store is STILL empty after a rebuild - nothing to route")
-            print("  against, and this is not a routing result. Check brain/fragments/.")
-            return 2
+            print("  against, and this is not a %s. Check brain/fragments/." % what)
+            return None
         if store_ids != disk_ids:
             # A rebuild that does not reconcile them means something is wrong
             # with the library itself - a fragment that will not load, most
@@ -292,9 +273,55 @@ def main(argv):
             # not hold, and they would look perfectly normal.
             print("  the store STILL does not match after a rebuild - %s."
                   % describe_drift(store_ids, disk_ids))
-            print("  This is not a routing result. Run `python brain/heron_fragment.py`.")
+            print("  This is not a %s. Run `python brain/heron_fragment.py`." % what)
             store.close()
+            return None
+    return store
+
+
+def main(argv):
+    revit = None
+    if "--revit" in argv:
+        i = argv.index("--revit")
+        # EXIT 2 AND A SENTENCE, NOT A TRACEBACK - the same rule the comment
+        # below states for a missing knowledge store, applied to the flag
+        # above it. `--revit` last on the line read `argv[i + 1]` and came
+        # back as `IndexError: list index out of range`, which is exactly
+        # what row 5b-71 was written to stop one statement lower down.
+        if i + 1 >= len(argv) or argv[i + 1].startswith("-"):
+            sys.stderr.write("--revit needs a release, e.g. --revit 2024. "
+                             "Nothing was checked.\n")
             return 2
+        revit = argv[i + 1]
+
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+    import heron_embed as EMBED
+    import heron_retrieve as RETRIEVE
+
+    # NO STORE, NO CHECK - AND SAY SO IN ONE LINE RATHER THAN A TRACEBACK.
+    # With no %APPDATA% and no HERON_KNOWLEDGE there is nowhere to keep a
+    # knowledge store, and heron_scope raises ValueError from four frames
+    # down. Until 2026-09-21 that arrived as an unhandled traceback and exit
+    # 1, while .github/workflows/gates.yml said of this tool and its pair
+    # that they "say so rather than failing when there is none" - measured on
+    # Linux with the variable unset, they did not say so and they did fail.
+    # EXIT 2, which is the code this repository uses for "the tool could not
+    # do its job": nothing was checked, so it is NOT a pass. Row 5b-71.
+    if SCOPE.knowledge_dir() is None:
+        sys.stderr.write(
+            "COULD NOT RUN: no %APPDATA% and no HERON_KNOWLEDGE, so there is\n"
+            "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
+            "folder - an empty one is enough - and run this again.\n")
+        return 2
+
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY - the ids, every row's content,
+    # and never by rebuilding the shared store from a checkout that is not
+    # main. All three live in store_for_this_tree() above, which
+    # check-intrusion.py calls too; it says why when it refuses.
+    store = store_for_this_tree("routing result")
+    if store is None:
+        return 2
 
     try:
         SEARCH.index(store)
