@@ -35,6 +35,14 @@ outside the repository. So `main()` is called only with argv it must REFUSE,
 which returns before the store is opened, and everything else here is the
 pure arithmetic: the query shapes, the rank, the tally, and the fusion.
 
+AND THE STORE IT MEASURES OVER, since 2026-10-09 (section 7). The tool
+rebuilt an EMPTY store and nothing else; it calls check-routing's
+store_for_this_tree() now, and section 7 plants the four stores that guard
+must catch - a renamed id, an edited row, and the SHARED store asked from a
+worktree or from the main folder on a feature branch (rows 5b-229 and
+5b-233). `main()` runs there on a private scratch store with the re-index
+replaced by a raise, so nothing is measured.
+
 WHAT IT CANNOT DO: it does not check whether the graph helps. That is what
 the tool itself is for, and its answer is in docs/33.
 
@@ -45,7 +53,9 @@ import contextlib
 import importlib.util
 import io
 import os
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "measure-graph.py")
@@ -82,6 +92,182 @@ class Hit(object):
     def __init__(self, ident, score):
         self.id = ident
         self.score = score
+
+
+# ---------------------------------------------------------------------------
+# The store it measures over - check-routing's guard (rows 5b-229, 5b-233)
+# ---------------------------------------------------------------------------
+
+# What the re-index, the measurement's first step, raises in the store
+# section, so a run the guard lets through stops there in seconds.
+MEASURED = "went on to measure"
+
+
+class _Measured(Exception):
+    """The store guard let the run through."""
+
+
+def _stop(*_args, **_kwargs):
+    raise _Measured()
+
+
+def _set_env(values):
+    """Set each variable in VALUES - None unsets it. Returns what was there."""
+    kept = dict((k, os.environ.get(k)) for k in values)
+    for key, value in values.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+    return kept
+
+
+def _store_rows(home):
+    """{id: row} the GLOBAL store in HOME holds, read without changing it."""
+    import heron_scope as SCOPE
+    kept = _set_env({"HERON_KNOWLEDGE": home})
+    try:
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            return dict((row["id"], row) for row in store.fragments())
+        finally:
+            store.close()
+    finally:
+        _set_env(kept)
+
+
+def _edit_store(home, sql, args):
+    """One statement against the GLOBAL store in HOME - a stale store, made."""
+    import heron_scope as SCOPE
+    kept = _set_env({"HERON_KNOWLEDGE": home})
+    try:
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            store.db.execute(sql, args)
+            store.db.commit()
+        finally:
+            store.close()
+    finally:
+        _set_env(kept)
+
+
+def _built_store():
+    """A private scratch folder holding a store rebuilt from this tree."""
+    import heron_scope as SCOPE
+    home = tempfile.mkdtemp(prefix="heron-graph-store-")
+    kept = _set_env({"HERON_KNOWLEDGE": home})
+    try:
+        SCOPE.rebuild()
+    finally:
+        _set_env(kept)
+    return home
+
+
+def _guarded(tool, env, source=None, on_main=None):
+    """(exit code, what it said) from the tool's main([]) in environment ENV.
+
+    The re-index raises instead of running, so the code is MEASURED when the
+    store guard let the run through. SOURCE plants what
+    heron_scope.refreshes_from() answers, ON_MAIN what
+    heron_scope.on_main_branch() answers: the main folder's HEAD, which a
+    test cannot check a branch out in. A raise of any other kind is
+    recorded as the code, never let out (heron-ship s2a).
+    """
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+    was = (SEARCH.index, SCOPE.refreshes_from,
+           getattr(SCOPE, "on_main_branch", None))
+    SEARCH.index = _stop
+    if source is not None:
+        SCOPE.refreshes_from = lambda root=None: source
+    if on_main is not None:
+        SCOPE.on_main_branch = lambda root=None: on_main
+    kept = _set_env(env)
+    said = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+            code = tool.main([])
+    except _Measured:
+        code = MEASURED
+    except BaseException as raised:                      # noqa: BLE001
+        code = "raised %s: %s" % (type(raised).__name__, raised)
+    finally:
+        _set_env(kept)
+        SEARCH.index, SCOPE.refreshes_from = was[0], was[1]
+        if on_main is not None:
+            if was[2] is None:
+                del SCOPE.on_main_branch
+            else:
+                SCOPE.on_main_branch = was[2]
+    return code, said.getvalue()
+
+
+def store_guard(tool, check):
+    """Until 2026-10-09 this tool kept its own copy of the store check - the
+    ids at most, no row's content, and a rebuild of the ONE store every chat
+    on the PC reads from whatever checkout it ran in. It calls
+    check-routing's store_for_this_tree() now, and these are the four
+    stores that guard must catch. CHECK is called as check(passed, what)."""
+    import heron_fragment as FRAG
+
+    home = _built_store()
+    try:
+        some = sorted(_store_rows(home))[0]
+        stranger = "FRG-NOT-ON-DISK-000"
+        _edit_store(home, "UPDATE fragments SET id = ? WHERE id = ?",
+                    (stranger, some))
+        code, said = _guarded(tool, {"HERON_KNOWLEDGE": home})
+        now = _store_rows(home)
+        check(code == MEASURED and some in now and stranger not in now,
+              "a store with one id renamed - as many rows as cards, not "
+              "THESE cards - is rebuilt before anything is measured (got %r)"
+              % (code,))
+        check(stranger in said, "and the run names the id that did not match")
+        wrong = "an identity the card no longer says"
+        _edit_store(home, "UPDATE fragments SET semantic_identity = ? "
+                          "WHERE id = ?", (wrong, some))
+        code, said = _guarded(tool, {"HERON_KNOWLEDGE": home})
+        now = _store_rows(home).get(some) or {}
+        check(code == MEASURED
+              and now.get("semantic_identity") not in (None, wrong),
+              "a store with one row's identity edited is rebuilt - every "
+              "row's content is compared, not only the ids (got %r)" % (code,))
+        check("edited since" in said and some in said,
+              "and the run names the card")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+    home = tempfile.mkdtemp(prefix="heron-graph-shared-")
+    try:
+        code, said = _guarded(
+            tool, {"HERON_KNOWLEDGE": home},
+            source=(os.path.join("main", "brain", "fragments"), "main"))
+        held = len(_store_rows(home))
+        check(code == 2 and held == 0,
+              "the SHARED store, asked from a checkout that is not main, is "
+              "exit 2 with nothing written (got %r, %d rows)" % (code, held))
+        check("SHARED" in said and "HERON_KNOWLEDGE" in said,
+              "and it says to point HERON_KNOWLEDGE at a scratch folder")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+    top = tempfile.mkdtemp(prefix="heron-graph-mainfolder-")
+    try:
+        appdata = os.path.join(top, "appdata")
+        shared = os.path.join(appdata, "Heron", "knowledge")
+        os.makedirs(shared)
+        code, said = _guarded(tool, {"HERON_KNOWLEDGE": None,
+                                     "APPDATA": appdata},
+                              source=(FRAG.FRAGMENTS_DIR, None), on_main=False)
+        held = len(_store_rows(shared))
+        check(code == 2 and held == 0,
+              "and from the MAIN folder with a feature branch checked out, "
+              "the same: exit 2, nothing written (got %r, %d rows)"
+              % (code, held))
+        check("a branch that is not main" in " ".join(said.split()),
+              "and it says the branch is why")
+    finally:
+        shutil.rmtree(top, ignore_errors=True)
 
 
 def main():
@@ -206,6 +392,12 @@ def main():
         good = settings_from(["--weight", "0.05", "--seeds", "3"])
         check(good[-1] is None,
               "and a setting it does have is accepted: %r" % (good,))
+
+    print()
+    print("7. THE STORE IT MEASURES OVER IS check-routing's GUARD - rows 5b-229 "
+          "and 5b-233")
+    # Until 2026-10-09 this tool rebuilt an EMPTY store and nothing else.
+    store_guard(tool, check)
 
     print()
     if FAILURES:

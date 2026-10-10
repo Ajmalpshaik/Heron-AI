@@ -74,5 +74,17 @@ negative:
       its line reads "inside nothing in any link" - never a wall picked
       because it was the nearest
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      an opening in this MEP model through a wall of the architectural link
+      whose type carries two parameters named Fire Rating - a shared "Fire
+      Rating" bound to Walls beside the built-in one - includeLinks true
+    expect: >
+      that opening's line in `linkedMatches` reads "Fire Rating NOT READ - 2
+      parameters share that name", never either rating, and `stale`,
+      `combined` and `unhosted` are unchanged from the host-only run (row
+      5b-203)
+
 second_route:
   - Open a 3D view, isolate the openings and the services, and look at one reported STALE hole

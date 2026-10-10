@@ -53,6 +53,18 @@ negative:
   - given: a between whose upper bound is below its lower bound
     expect: refused, with the reason - not an empty result
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      a project parameter named like a built-in numeric one on the same
+      category - "Width" added to Ducts beside the duct's own Width, holding
+      a different number - then Width gt 0 over Ducts
+    expect: >
+      every duct carrying both counted in `ambiguous` and named in findings,
+      NOT compared, NOT matched and NOT in withoutParameter or notNumeric.
+      A run that matches them has read whichever Width Revit returned first
+      (row 5b-203)
+
   # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
   - given: includeLinks ABSENT, on a model that HAS loaded links
     expect: >

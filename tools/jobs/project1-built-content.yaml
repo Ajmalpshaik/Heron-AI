@@ -83,18 +83,18 @@ jobs:
   # has 0 Air Terminals and 0 Mechanical Equipment, so `served` is 0 and
   # `capped` is 0 - the four open ends have nothing to excuse them.
   #
-  # UNITS: `stubLength` is a bare double, so INTERNAL FEET, not millimetres.
-  # 0.1 ft is about 30 mm - shorter than any duct here, so nothing counts as
-  # short and all four open ends land in `deadEnds` rather than `stubs`.
+  # UNITS: `stubLength` is MILLIMETRES (D-71). 30.48 is the 0.1 ft this job
+  # first used - shorter than any duct here, so nothing counts as short and all
+  # four open ends land in `deadEnds` rather than `stubs`.
   - fragment: find-dead-ends
     set:
       categoryName: Ducts
       inViewOnly:   "1 - Mech"
-      stubLength:   0.1
+      stubLength:   30.48
     negative-set:
       categoryName: "Duct Fittings"
       inViewOnly:   "1 - Mech"
-      stubLength:   0.1
+      stubLength:   30.48
     expect: deadEnds
 
   # THE DIFFERENCE HERE IS REAL MODELLING STATE, NOT A WRONG CATEGORY.

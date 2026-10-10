@@ -186,6 +186,95 @@ namespace Heron.Bridge
         }
 
         /// <summary>
+        /// Reads a top-level WHOLE NUMBER, or null if the key is absent, is
+        /// not a number, is a number with a fraction or an exponent, does not
+        /// fit a long, or the document does not parse as far as the key.
+        ///
+        /// ADDED 2026-10-09 FOR FRAGMENT-ISSUES section 5b, row 159. A fragment
+        /// write's reply carries `warnings` - how many warnings Revit raised
+        /// and Heron dismissed - as a number written by Num above, and
+        /// ReadString answers null for every number by design. So the audit
+        /// line, which reads its other fields off the reply with ReadString,
+        /// had no way to keep it: the trail that exists to answer "what
+        /// happened to my model" said a fragment ran and not that Revit warned.
+        ///
+        /// THE SAME WALK AS ReadString - outermost object only, first match
+        /// wins - so the two can never disagree about which key a document
+        /// holds. NULL RATHER THAN 0 for anything it cannot read: "Revit raised
+        /// none" and "the reply did not say" are different facts, and a reader
+        /// that answered 0 for the second would record the first.
+        /// </summary>
+        public static long? ReadLong(string json, string key)
+        {
+            if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(key)) return null;
+
+            var i = SkipWhitespace(json, 0);
+            if (i >= json.Length || json[i] != '{') return null;
+            i++;
+
+            while (true)
+            {
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] == '}') return null;
+
+                if (json[i] != '"') return null;          // a key must be a string
+                string name;
+                i = ReadStringToken(json, i, out name);
+                if (i < 0) return null;
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length || json[i] != ':') return null;
+                i = SkipWhitespace(json, i + 1);
+                if (i >= json.Length) return null;
+
+                var matched = string.Equals(name, key, StringComparison.Ordinal);
+
+                if (json[i] == '"')
+                {
+                    // A string, even one that spells a number, is not a
+                    // number. If this is the key we wanted, the answer is null.
+                    if (matched) return null;
+                    string ignored;
+                    i = ReadStringToken(json, i, out ignored);
+                    if (i < 0) return null;
+                }
+                else
+                {
+                    var start = i;
+                    i = SkipValue(json, i);
+                    if (i < 0) return null;
+                    if (matched) return WholeNumber(json.Substring(start, i - start));
+                }
+
+                i = SkipWhitespace(json, i);
+                if (i >= json.Length) return null;
+                if (json[i] == ',') { i++; continue; }
+                return null;                              // '}', or malformed
+            }
+        }
+
+        /// <summary>
+        /// One JSON integer - an optional minus sign and digits, nothing else -
+        /// as a long, or null. "3.0", "1e3", "+3", true, null, an object and
+        /// an array are all refused rather than rounded or guessed at.
+        /// </summary>
+        private static long? WholeNumber(string token)
+        {
+            token = token.Trim();
+            var first = token.Length > 0 && token[0] == '-' ? 1 : 0;
+            if (first >= token.Length) return null;
+            for (var k = first; k < token.Length; k++)
+            {
+                if (token[k] < '0' || token[k] > '9') return null;
+            }
+
+            long value;
+            if (!long.TryParse(token, NumberStyles.AllowLeadingSign,
+                               CultureInfo.InvariantCulture, out value)) return null;
+            return value;
+        }
+
+        /// <summary>
         /// Reads a top-level ARRAY OF FLAT OBJECTS, as a list of string maps.
         /// Returns null if the key is absent or is not such an array, and an
         /// EMPTY list if it is an array with nothing in it - the caller has to

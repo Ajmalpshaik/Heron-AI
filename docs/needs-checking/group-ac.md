@@ -98,7 +98,7 @@ A new person searched the repository and its releases for `HeronInstaller.exe` a
 neither. **Both were right**: `.gitignore` keeps the built exe out of the code on purpose, and
 `tools/build-release-assets.py` never built one, so no release could have carried it. Reading the
 route through found two more gaps behind it, all three in
-[row 5b-371](../fragment-issues/section-5b-rows-176-200.md):
+[row 5b-371](../fragment-issues/section-5b-rows-351-375.md):
 
 | | |
 |---|---|

@@ -24,7 +24,8 @@ Every prompt below begins by pointing here. This is the part that keeps Heron un
    access to the owner's PC**. The environment is the one [38](../../../38-the-cloud-environment.md)
    describes. If `HERON_KNOWLEDGE` is not set, run
    `export HERON_KNOWLEDGE="$HOME/heron-kb" && mkdir -p "$HERON_KNOWLEDGE"` before anything touches the
-   brain. The `revit_*` tools will say there is no session — that is correct here, not a fault.
+   brain. Heron's MCP server does not start here - it exits on anything but Windows - so the host
+   shows no `heron` tool at all; that is correct here, not a fault ([row 5b-162](../../../fragment-issues/section-5b-rows-151-175.md)).
 2. **Start from today's `main`.** `git fetch origin`, then read the titles of every commit on
    `origin/main` since 2026-09-23. **If your package's work has already landed, stop and say so.** (On
    2026-09-22 a whole pull request duplicated one merged an hour earlier.) If this plan folder is not on

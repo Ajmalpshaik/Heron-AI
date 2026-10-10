@@ -43,8 +43,9 @@ at the top of the zip, beside the files rows 2 and 4 use. The other zips on that
 itself, one per Revit release; the installer fetches those, so you do not need to. Nothing is signed
 yet, so Windows says *"Windows protected your PC"* the first time: *More info*, then *Run anyway*.
 
-**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24), and
-Heron's setup check looks only for `mcp` ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
+**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24).
+Heron's setup check looked only for `mcp` until 2026-10-09 and asks for both since - changed in the
+script and **not yet run on Windows** ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
 still talks to Revit, but every question to its knowledge answers *"needs PyYAML"* until it is
 installed.
 
@@ -134,7 +135,7 @@ A modeller installing a release needs none of this.
 | **The .NET SDK — version 10, not 8** | To compile the Revit add-in for every release Heron supports | Revit 2027 runs on .NET 10, so only the 10 SDK builds every release — [30](30-compiling-away-from-windows.md) has the rest, and how on Linux |
 
 A developer deploys the add-in with `tools/setup.ps1` rather than the installer, which also checks
-Python and `mcp` first — [07](07-installation-and-update.md).
+Python, `mcp` and PyYAML first — [07](07-installation-and-update.md).
 
 **To make the download itself**, installer included: `python tools/build-release-assets.py --out dist`
 builds every product for every release and puts `HeronInstaller.exe` at the top of

@@ -1,0 +1,81 @@
+# D-30: the negative case is what catches "answered, and about another sheet".
+# The proof plan is tools/jobs/list-views-on-sheet-project1-2026-10-09.yaml.
+
+positive:
+  - given: >
+      "heron ai bulding" (Project1), sheetNumber M-101 - a "Level 1 -" plan
+      sheet carrying one viewport (as measured for CENTER_VIEWPORTS_ON_SHEETS
+      on 2026-09-27; check it first, see the job)
+    expect: >
+      viewCount 1; viewsOnSheet names that view with its view type, its scale
+      as "1 : n" and its centre in millimetres; sheetRead "M-101 - ..." and
+      sheetProblem empty. Open M-101 and compare the view's name, its View
+      Scale in Properties, and where the viewport sits
+
+  - given: a sheet carrying a plan, a section and a legend
+    expect: >
+      viewCount 3, three rows sorted by detail number, the legend saying
+      Legend - a legend is a view on the sheet, placed through a viewport
+
+  - given: a sheet with a schedule split into two pieces (Revit 2022 or later)
+    expect: >
+      scheduleCount 1, and the schedule named once with "split into 2
+      pieces" - one schedule, not two
+
+  - given: sheetNumber typed in a different case, e.g. m-101 for M-101
+    expect: the same answer as M-101 - the number is matched ignoring case, as PLACE_VIEWS_ON_SHEET matches it
+
+  - given: >
+      the same model, sheetNumber M-105 - a schedule sheet with no viewport,
+      carrying the one schedule FRAGMENT-ISSUES 5b-238 records placed at
+      25 mm, 570 mm
+    expect: >
+      viewCount 0 and scheduleCount 1; schedulesOnSheet names that one
+      schedule, placed at about (25, 570) mm, and never the schedules on
+      M-106 or M-107 - a schedule is not a viewport, and both are read
+
+negative:
+  - given: >
+      the same model, sheetNumber M-108 - a sheet made on the test copy with
+      M-105's title block and NOTHING placed on it (NEEDS-CHECKING row AW2's
+      arrangement). A DIFFERENT sheet from the positive, not an empty value
+      - the reading the job file states, with its reason. Project1 has no
+      such sheet of its own: M-101 to M-107 each carry a
+      viewport or a schedule, and a negative that carries a schedule comes
+      back NEG NOT EMPTY, because every declared result is judged
+    expect: >
+      viewCount 0, scheduleCount 0, viewsOnSheet and schedulesOnSheet empty,
+      sheetRead "M-108 - ...". M-101's plan or M-105's schedule appearing is
+      what a read falling back to another sheet, or crediting a schedule to
+      the wrong sheet, would show. revisionSchedules counts the title block's
+      revision schedule, if it has one, and it is never listed
+
+  - given: sheetNumber ZZZ999, a number no sheet carries
+    expect: >
+      viewCount 0, scheduleCount 0, sheetProblem "no sheet numbered 'ZZZ999'"
+      - said by name, and nothing read from any other sheet
+
+  - given: sheetNumber left blank
+    expect: >
+      sheetProblem "no sheet number was given" and nothing read. Never the
+      sheet in front, never the first sheet in the list
+
+  - given: a placeholder sheet, by its number
+    expect: >
+      viewCount 0, sheetProblem saying it is a placeholder. Revit puts no
+      view on one, and the answer says why it is empty
+
+  - given: a sheet whose title block carries a revision schedule, and nothing else
+    expect: >
+      scheduleCount 0 and revisionSchedules 1 - the revision schedule belongs
+      to the title block family and is never listed as one somebody placed
+
+second_route:
+  - >
+    LIST_SHEETS on the same model: the "(n views)" beside each sheet should
+    equal viewCount here, sheet for sheet - two calls, two Revit methods
+    (placed views there, viewports here), one number. A difference is a
+    finding to record, not a rounding
+  - >
+    Revit itself: open the sheet, and expand it in the Project Browser - the
+    views and schedules listed under it are the rows here

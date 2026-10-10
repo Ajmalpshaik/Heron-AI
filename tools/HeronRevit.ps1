@@ -172,11 +172,17 @@ function Format-RunningRevit {
 function Get-PythonStatus {
     <#
     .SYNOPSIS
-        Is Python present, and does it have what Heron's MCP server needs?
+        Is Python present, and does it have the MCP package and PyYAML?
     .DESCRIPTION
         Heron's MCP server is Python (D-06, Q-39), so Python is a prerequisite
         and not an optional extra. It was never written down as one, which is
         how a prerequisite becomes a surprise on somebody else's machine.
+
+        Two packages are asked for, not one. The MCP package is what the
+        server is served by; PyYAML is the one package requirements.txt calls
+        REQUIRED, and installing mcp does not bring it (row 5b-201). Asking
+        for mcp alone passed a PC on which every question to Heron's
+        knowledge then answered "needs PyYAML".
 
         NONE OF THIS NEEDS ADMINISTRATOR RIGHTS, which is the part worth
         knowing on a locked-down company laptop: the Microsoft Store build and
@@ -191,6 +197,7 @@ function Get-PythonStatus {
         Command   = $null
         Version   = $null
         HasMcp    = $false
+        HasYaml   = $false
         PerUser   = $false
     }
 
@@ -216,6 +223,11 @@ function Get-PythonStatus {
             & $candidate -c "import mcp" 2>$null | Out-Null
             $result.HasMcp = ($LASTEXITCODE -eq 0)
         } catch { }
+
+        try {
+            & $candidate -c "import yaml" 2>$null | Out-Null
+            $result.HasYaml = ($LASTEXITCODE -eq 0)
+        } catch { }
         break
     }
 
@@ -238,10 +250,22 @@ function Write-PythonAdvice {
         return $false
     }
 
-    if (-not $Python.HasMcp) {
-        Write-Host "    Python is here ($($Python.Version)) but the MCP package is not." -ForegroundColor Yellow
-        Write-Host "    Install it into your own profile - no administrator rights required:"
-        Write-Host "        $($Python.Command) -m pip install --user mcp" -ForegroundColor White
+    # Both are named in one go: a PC missing both would otherwise be sent round
+    # twice. PyYAML's line is requirements.txt's own, so a package added there
+    # is installed by the same command (row 5b-201).
+    $missing = @()
+    if (-not $Python.HasYaml) { $missing += "PyYAML" }
+    if (-not $Python.HasMcp)  { $missing += "the MCP package" }
+    if ($missing.Count -gt 0) {
+        $verb = if ($missing.Count -gt 1) { "are" } else { "is" }
+        Write-Host "    Python is here ($($Python.Version)) but $($missing -join ' and ') $verb not." -ForegroundColor Yellow
+        Write-Host "    Install into your own profile, in the Heron folder - no administrator rights required:"
+        if (-not $Python.HasYaml) {
+            Write-Host "        $($Python.Command) -m pip install --user -r requirements.txt" -ForegroundColor White
+        }
+        if (-not $Python.HasMcp) {
+            Write-Host "        $($Python.Command) -m pip install --user mcp" -ForegroundColor White
+        }
         Write-Host "    Then run this again."
         return $false
     }

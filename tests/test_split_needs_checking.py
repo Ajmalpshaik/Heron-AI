@@ -241,15 +241,28 @@ def after_write(work, original, root, today):
     again = SPLIT.plan(index_of(root), folder_of(root), "2026-09-30", root)
     check(not again.moving and again.already == 4, "nothing to move, four moved before")
     header_a = read(os.path.join(folder_of(root), "group-a.md")).split("## Group A")[0]
+    # A GROUP FILE LINKS TO THE FILE BESIDE IT AS group-a.md, the way a person
+    # writes it there. Rows 5b-255, 5b-262 and 5b-363: every --write rewrote
+    # such a link, in groups it was not moving, to ../group-a.md - a file that
+    # is not there - and nine groups had to be put back by hand each time.
+    b_file = os.path.join(folder_of(root), "group-b.md")
+    with io.open(b_file, "a", encoding="utf-8", newline="") as handle:
+        handle.write("Built after [Group A](group-a.md), as [its file](../needs-checking/group-a.md) says." + NL)
+    b_before = read(b_file)
     with io.open(index_of(root), "a", encoding="utf-8", newline="") as handle:
         handle.write(NL.join(["## Group C " + DASH + " written after the split", "",
-                              "| **C1** | Gate it | open |", ""]))
+                              "| **C1** | Gate it, after [Group B](needs-checking/group-b.md) | open |", ""]))
     later = SPLIT.plan(index_of(root), folder_of(root), "2026-09-30", root)
     check([n for _, n in later.moving] == ["group-c.md"] and not later.problems, "the next run moves the new group")
     SPLIT.write(later)
     check(read(os.path.join(folder_of(root), "group-a.md")).split("## Group A")[0] == header_a,
           "and every existing file keeps its opening")
     check("| **C1** |" in NCR.register_text(root), "the new row is read back into the register")
+    check(read(b_file) == b_before,
+          "a group it was not moving is not rewritten - both ways of linking to group-a.md are kept as written")
+    c_text = read(os.path.join(folder_of(root), "group-c.md"))
+    check("[Group B](group-b.md)" in c_text,
+          "and the moved group's link to a group file is written as the file beside it")
 
     print()
     print("6. A missing group is broken, never shorter")
