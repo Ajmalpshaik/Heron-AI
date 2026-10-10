@@ -87,6 +87,7 @@ jobs:
       show: ""
       numbering: ""
       issueState: ""
+      confirmCount: ""
     set:
       description: ""
       revisionDate: ""
@@ -95,6 +96,7 @@ jobs:
       show: ""
       numbering: ""
       issueState: ""
+      confirmCount: ""
     # NEGATIVE: the setup ISSUES Seq. 1, then the same edit must be refused,
     # naming the revision and "issued by", with `changed` empty.
     negative-setup-set:
@@ -110,6 +112,7 @@ jobs:
       show: ""
       numbering: ""
       issueState: issue
+      confirmCount: ""
     negative-set:
       description: ""
       revisionDate: ""
@@ -118,6 +121,7 @@ jobs:
       show: ""
       numbering: ""
       issueState: ""
+      confirmCount: ""
 
   - fragment: delete-revision
     expect: deleted

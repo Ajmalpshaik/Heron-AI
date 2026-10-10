@@ -97,3 +97,37 @@ reads them there.
 | **BA4** | **Revit 2020, by eye then by run.** LIST_REVISIONS, then CREATE_REVISION with `numbering=alphanumeric` on a test project | The 2020/2021 route - `Revision.NumberType` and the project's two schemes, reached by name - has never run. The table's numbering column reads Numeric / Alphanumeric / None, and `numberingSequences` shows the two schemes |
 | **BA5** | `numbering=none` on Revit 2022 or later, on a test copy, through EDIT_REVISION | Unknown: the tool sets no sequence and reads back what Revit holds. Write down whether Revit accepts a revision with no numbering sequence, and correct the purpose if it does not |
 | **BA6** | Signing - **after BA2 and BA3, never before.** `accept` each draft in `brain/proof-drafts/` under the owner's own name | The four widened fragments go back to PROVEN and the six new ones join them. Until then all ten are DRAFT, and a chat says so on every run |
+
+**2026-10-10 - EDIT_REVISION version 3: several revisions in one call. DRAFT, compiled, never run.** On the
+owner's job `4355-BHVD-3D-50C10-BL001A` (Revit 2020) seven revisions "IFI - Issued for Information" were issued
+through version 2 - a find and an edit for each, Seq. 1 up to Seq. 7 - and later un-issued and moved to
+Alphanumeric, which version 2 refused for Seq. 1 first (*"would renumber Seq. 2 … Seq. 7 …, which are ISSUED"*)
+and took from Seq. 7 down. The owner asked why it went one by one. FRG-SHT-016 was widened, not a second tool
+written: the find now hands in the whole set, and the new value `confirmCount` must equal the number it found -
+blank is fine for one; several with it blank, or a count that disagrees, are refused with every one named and
+nothing changed. One call is one entry in Revit's undo list, all or nothing. The writes go un-issue (last
+sequence first), text columns, numbering (last first), show, issue (first sequence first) - the orders Revit
+took on the job - and the renumber check judges each revision by the state the set will be in when numbering
+is written. A lock or renumber refusal on any revision changes none of them. One revision answers exactly as
+version 2 did, but `confirmCount` must be SENT (blank) - the add-in refuses a request value that never arrives
+([row 5b-227](../FRAGMENT-ISSUES.md)) - so both job files above now send it. `tools/check-fragments-compile.py`
+compiled it on all eight releases. Row [5b-409](../FRAGMENT-ISSUES.md).
+
+**Version 2's Revit 2020 proof draft is of the code this replaces.** It was drafted on 2026-10-10 in the Revit
+2020 session's worktree (`brain/proof-drafts/edit-revision.yaml`, fingerprint `b928479162dc855d`, unsigned).
+Sign it BEFORE this change merges, or it can no longer be signed; version 3 needs BA10 and BA11 either way.
+
+**Routing, measured 2026-10-10** on scratch stores, before and after, trained backend: check-routing's own
+sentences - EDIT_REVISION's nine reach it by words, the new one *"mark all the revisions as issued"* first by
+words and nearness; *"change the revision description"* goes from second to third by nearness (REORDER_REVISION
+first in both); three other tools' READ sentences each move one rank. The questions answered by a write stay
+three, the routing-table claims not reached stay ninety-five. `heron_retrieve.find` on 26 held-out sentences -
+edits, questions about revisions, the other revision tools - answered identically before and after, Revit 2020
+and 2024. A first wording that opened the purpose with "several" cost the card its own *"change the revision
+date"* by nearness (first to fourth), so the purpose keeps version 2's opening and the history is in comments.
+
+| # | Check | Expected |
+|---|---|---|
+| **BA10** | **Revit 2020, the two legs ([D-30](../DECISIONS.md)) for version 3 - the count.** On "Project2", a scratch project, in front - NEVER the job model. Arrange first, kept, by chat: CREATE_REVISION three times, description *HERON PROOF several*, numbering numeric, not issued; LIST_REVISIONS shows exactly three such rows. Then `python tools/batch-prove.py tools/jobs/edit-revision-several-2026-10-10.yaml --dry-run`, then with `--session <the Revit 2020 pid>` and without `--dry-run` | `PASS`. The binding note reads *elements from select-by-parameter-value (3)*. Positive (`confirmCount=3`, issued by M.Sagheer, issued to A.Rahmani, issue): `changed` names all three, apart by " \|\| ", each ending *issued*; `nowIssued` true. Negative (`confirmCount=2`): `refused` names all three and both numbers, `changed` empty. Then LIST_REVISIONS: the three still unissued with issued by and to blank (both legs rolled back) |
+| **BA11** | **Revit 2020, version 3 - the order, and the issued-revision refusal.** On the same scratch project, after BA10's three: CREATE_REVISION three times more, *HERON PROOF several issued*, numbering numeric, ISSUED - they must be the LAST three sequences. Then `tools/jobs/edit-revision-several-issued-2026-10-10.yaml`, dry run first | `PASS`. Positive (`confirmCount=3`, unissue, numbering alphanumeric): `changed` *un-issued; numbering Numeric -> Alphanumeric* on all three, `refused` empty - the request version 2 refused for Seq. 1 first. Negative (issued by, no unissue): `refused` naming all three as ISSUED and *issued by*, none changed - the refusal BA2's job could not arrange. Then LIST_REVISIONS: all three still issued and Numeric |
+| **BA12** | **By eye, in Revit, once - the one undo entry.** After a KEPT run of version 3 on the scratch project (three revisions, one call), open Revit's Undo list | ONE entry for the call, named after it, and one Undo puts all three back. Then signing: `accept` BA10's draft under the owner's own name - BA11's draft is the second leg of the same fragment and goes in its proof notes |

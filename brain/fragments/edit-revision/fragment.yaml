@@ -17,10 +17,20 @@ semantic-identity: "change the revision description or date"
 # that names an issued revision instead of trying and failing. The 2026-09-09
 # proof's arrangement is still the one to re-prove from; its fingerprint no
 # longer matches.
+#
+# VERSION 3, 2026-10-10, STILL DRAFT: SEVERAL REVISIONS IN ONE CALL. Seven
+# "IFI - Issued for Information" revisions on a Revit 2020 job were issued,
+# then un-issued and renumbered, through version 2 - a find and an edit per
+# revision, fourteen calls a pass and seven undo entries - and the owner asked
+# why it went one by one. Now the find hands in the set, `confirmCount` must
+# equal the number it found, and the call is one undo entry, all or nothing,
+# with the writes ordered so one revision's state cannot refuse another's
+# (FRAGMENT-ISSUES row 5b-409). Version 2's unsigned Revit 2020 proof draft
+# (fingerprint b928479162dc855d, 2026-10-10) is of the code this replaces.
 kind: action
 domain: revit.sheets
 capability: EDIT_REVISION
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -31,7 +41,9 @@ purpose: >
 
   **ONE REVISION, HANDED IN BY A FIND.** Find it by Revision Sequence, the
   number the dialog shows, or by description; a find that brings back two is
-  refused with both named, because descriptions repeat across a job.
+  refused with both named, because descriptions repeat across a job - unless
+  `confirmCount` says how many were found, and then every one changes in one
+  call.
 
   **AN ISSUED REVISION IS LOCKED, AND THE REFUSAL NAMES IT.** Revit locks the
   description, date, issued to, issued by and numbering of an issued revision,
@@ -56,9 +68,18 @@ contract:
   needs:
     - name: doc
       type: Document
-    # THE revision, from the find before this - exactly one.
+    # THE revisions, from the find before this - one, or several with
+    # `confirmCount`.
     - name: elements
       type: IList<Element>
+    # How many revisions the find brought back, typed to say every one is
+    # meant. Blank is fine for ONE; for several it must equal the number found,
+    # or nothing changes - so a find that catches twenty when seven were meant
+    # edits none. SEND IT, BLANK OR NOT: the add-in refuses a request need
+    # that arrives with no value, `optional` or not (FRAGMENT-ISSUES 5b-227).
+    - name: confirmCount
+      type: string
+      source: request
     - name: description
       type: string
       source: request
@@ -87,25 +108,29 @@ contract:
   provides:
     - name: changed
       # Each column that moved, before -> after as READ BACK. A string, so
-      # the reply prints every one.
+      # the reply prints every one. With several revisions, each one's line
+      # starts "Seq. N 'description':" and the lines are apart by " || ".
       role: result
       type: string
     - name: alreadyThat
       # Columns that already held the value asked for, and were not written.
       # What a second identical run answers - the prior state, never a change
-      # (D-52).
+      # (D-52). Per revision, as `changed`.
       role: accounting
       type: string
     - name: nowIssued
-      # Whether the revision is issued after the call. State, not work.
+      # Whether the revision is issued after the call - with several, whether
+      # EVERY one is. State, not work.
       role: accounting
       type: bool
     - name: revisionName
-      # Which revision was edited, "Seq. N 'description'" as it stood.
+      # Which revision was edited, "Seq. N 'description'" as it stood; with
+      # several, "N revisions: " and each of them.
       role: accounting
       type: string
     - name: findings
-      # The whole row READ BACK after the call.
+      # The whole row of every revision READ BACK after the call, apart by
+      # " || ".
       type: string
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
@@ -152,12 +177,18 @@ compatibility-note: >
   THE NUMBERING PARTS AT 2022: `Revision.RevisionNumberingSequenceId` from
   2022, `Revision.NumberType` 2020 to 2022 and gone from 2023. Both are reached
   by name, because the add-in compiles fragments with no release symbol
-  defined. Only the 2022+ route has met a model.
+  defined. Both routes have met a model through version 2: 2024 in September,
+  and Revit 2020 on 2026-10-10 - Numeric to Alphanumeric, un-issued and
+  re-issued, read back on the scratch "Project2" and then on the owner's job.
+  Version 3, which takes several revisions in one call, has met none.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "change the revision date"           -> here
 #   "mark that revision as issued"       -> here
+#   "mark all the revisions as issued"   -> here, fed by a find that brings
+#                                           back all of them, with
+#                                           confirmCount = how many it found
 #   "set issued to"                      -> here, fed by
 #                                           SELECT_BY_PARAMETER_VALUE on the
 #                                           Revisions category
@@ -183,3 +214,6 @@ utterances:
   - set issued to
   - tick issued
   - show only the tag for revision 2
+  # The owner, 2026-10-10, of seven revisions at once: "all are revisions are
+  # issued".
+  - mark all the revisions as issued
