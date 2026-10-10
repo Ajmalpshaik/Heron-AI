@@ -1,51 +1,74 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `description`, `revisionDate`,
-// `issuedBy`, `issuedTo`, `show`, `numbering` and `issueState` are in scope,
-// and leaves `changed`, `alreadyThat`, `nowIssued`, `revisionName`,
-// `findings` and `refused` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `confirmCount`, `description`,
+// `revisionDate`, `issuedBy`, `issuedTo`, `show`, `numbering` and `issueState`
+// are in scope, and leaves `changed`, `alreadyThat`, `nowIssued`,
+// `revisionName`, `findings` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
-// ONE REVISION, HANDED IN BY A FIND - NEVER THE SELECTION, NEVER A GUESS.
+// THE REVISIONS ARE HANDED IN BY A FIND - NEVER THE SELECTION, NEVER A GUESS.
 //
-// The revision arrives from the fragment before this one -
-// SELECT_BY_PARAMETER_VALUE on the Revisions category, by `Revision Sequence`
-// (the number the Sheet Issues/Revisions dialog shows, unique by construction)
-// or by `Revision Description`. Descriptions repeat across a job - two issues called
-// "For Construction" is normal - so a find that brings back two is refused
-// with both named, rather than editing whichever came first on a document
-// about to go out.
+// They arrive from the fragment before this one - SELECT_BY_PARAMETER_VALUE on
+// the Revisions category, by `Revision Sequence` (the number the Sheet
+// Issues/Revisions dialog shows, unique by construction) or by `Revision
+// Description`. ONE revision needs nothing more. SEVERAL are changed only when
+// `confirmCount` says how many. Descriptions repeat across a job - two issues
+// called "For Construction" is normal - so a find that brings back more than
+// the caller said, or several with no `confirmCount` at all, is refused with
+// every one named, rather than editing whatever it caught on documents about
+// to go out.
+//
+// VERSION 3, 2026-10-10: SEVERAL REVISIONS IN ONE CALL. Seven "IFI - Issued
+// for Information" revisions on a Revit 2020 job had to be issued, and later
+// un-issued and renumbered. Version 2 took one per call - a find and an edit
+// for each, fourteen calls a pass and seven entries in the undo list. Now the
+// whole set is one call, one undo entry (the add-in's TransactionGroup), and
+// all or nothing.
+//
+// THE ORDER ACROSS THE SET IS FIXED, because one revision's write can be
+// refused for the state of another: un-issue every one asked, from the LAST
+// sequence to the first; then the text columns; then numbering, last to first;
+// then show; then issue every one asked, first to last. Those are the orders
+// Revit took on 2026-10-10 one revision per call (version 2, Revit 2020): issued
+// Seq. 1 up to Seq. 7, then un-issued and renumbered Seq. 7 down to Seq. 1 -
+// after un-issuing and renumbering Seq. 1 FIRST was refused because Seq. 2 to
+// Seq. 7 were still issued. So the renumbering check below judges each
+// revision against the state the set will be in when numbering is written - a
+// revision of the set asked to un-issue counts as un-issued.
 //
 // AN ISSUED REVISION IS LOCKED, AND THE REFUSAL NAMES IT. Revit refuses to
 // change the description, date, issued to, issued by or numbering of an
 // issued revision (its own API documentation says so, per property). Asked
-// for any of those on an issued one, this changes NOTHING and says which
-// revision and which fields. `issueState=unissue` in the same call un-issues
-// it first, because that is the explicit decision Revit's lock is asking for.
-// Show is the one column Revit leaves open on an issued revision, and so does
-// this.
+// for any of those on an issued one, this changes NOTHING - on any revision of
+// the set - and says which revisions and which fields. `issueState=unissue` in
+// the same call un-issues them first, because that is the explicit decision
+// Revit's lock is asking for. Show is the one column Revit leaves open on an
+// issued revision, and so does this.
 //
-// THE ISSUED TICK MOVES ONLY WHEN `issueState` SAYS SO. "issue" is applied
-// after every other column, "unissue" before them.
+// THE ISSUED TICK MOVES ONLY WHEN `issueState` SAYS SO.
 //
-// EMPTY MEANS LEAVE ALONE; THE WORD <blank> WRITES AN EMPTY VALUE.
+// EMPTY MEANS LEAVE ALONE; THE WORD <blank> WRITES AN EMPTY VALUE. The values
+// given go to every revision of the set alike.
 //
 // A NUMBERING CHANGE RENUMBERS THE REVISIONS AFTER IT. Revit numbers the
 // revisions on one numbering sequence one after another, in sequence order, so
 // moving a revision off a sequence (or onto one) changes the number every LATER
-// revision on either sequence prints. Where one of those is ISSUED, the change
-// is refused, naming it - the same rule REORDER_REVISION keeps. Found by review
-// before merge, 2026-09-28: Seq. 1 moved to 'Custom' made an issued Seq. 2
-// print 1 instead of 2, and nothing said so.
+// revision on either sequence prints. Where one of those is ISSUED when
+// numbering is written, the change is refused, naming it - the same rule
+// REORDER_REVISION keeps. Found by review before merge, 2026-09-28: Seq. 1 moved
+// to 'Custom' made an issued Seq. 2 print 1 instead of 2, and nothing said so.
 //
 // EVERY FIELD IS COMPARED BEFORE IT IS WRITTEN AND READ BACK AFTER. A field
 // already holding the wanted value is named in `alreadyThat` and not written,
 // so a second identical run changes nothing and says so. A write Revit took
 // but that reads back different THROWS, and so does any refusal after another
-// write went in - the add-in rolls the whole call back, never half an edit and
-// never a stored value under a reply saying nothing changed. Only when Revit
-// refused the very first write, so nothing was stored, is it a refusal carrying
-// Revit's own words and what the call would have done - which is what makes a
-// run with no transaction open a measurement.
+// write went in, on this revision or another - the add-in rolls the whole call
+// back, never half a set and never a stored value under a reply saying nothing
+// changed. Only when Revit refused the very first write, so nothing was stored,
+// is it a refusal carrying Revit's own words and what the call would have done
+// - which is what makes a run with no transaction open a measurement.
+//
+// ONE STRING PER RESULT, revisions apart by " || " as LIST_REVISIONS does: the
+// add-in's reply prints a string whole and cuts a list to its first three.
 
 var changed = "";
 var alreadyThat = "";
@@ -64,35 +87,59 @@ var refused = "";
     };
     Func<string, string> quoted = value => string.IsNullOrEmpty(value) ? "(blank)" : "'" + value + "'";
     Func<Exception, string> revitSaid = failure => (failure.InnerException ?? failure).Message.TrimEnd('.');
+    Func<Revision, string> nameOf = r => "Seq. " + r.SequenceNumber + " " + quoted(r.Description);
 
     var problems = new List<string>();
 
-    // ---- which revision --------------------------------------------------------
-    var handedIn = new List<Revision>();
+    // ---- which revisions -------------------------------------------------------
+    var targets = new List<Revision>();
     var notRevisions = 0;
     if (elements != null)
         foreach (var element in elements)
         {
             var candidate = element as Revision;
-            if (candidate != null) handedIn.Add(candidate);
-            else if (element != null) notRevisions++;
+            if (candidate == null)
+            {
+                if (element != null) notRevisions++;
+                continue;
+            }
+            // The same revision handed in twice is one revision.
+            if (!targets.Any(t => t.Id == candidate.Id)) targets.Add(candidate);
         }
+    // The dialog's order, which is the order Revit numbers them in.
+    targets.Sort((a, b) => a.SequenceNumber.CompareTo(b.SequenceNumber));
 
-    Revision target = null;
-    if (handedIn.Count == 1) target = handedIn[0];
-    else if (handedIn.Count == 0)
+    var labels = new List<string>();
+    foreach (var target in targets) labels.Add(nameOf(target));
+    var listed = string.Join(", ", labels.ToArray());
+
+    // ---- how many the caller said it means ---------------------------------------
+    var countWord = (confirmCount ?? "").Trim();
+    var confirmed = 0;
+    if (countWord.Length > 0)
+    {
+        int whole;
+        if (int.TryParse(countWord, System.Globalization.NumberStyles.Integer,
+                         System.Globalization.CultureInfo.InvariantCulture, out whole) && whole > 0)
+            confirmed = whole;
+        else
+            problems.Add("confirmCount takes how many revisions the find brought back, as a whole number, "
+                       + "to say every one of them is meant - not '" + confirmCount + "'");
+    }
+
+    if (targets.Count == 0)
         problems.Add("no revision was handed in" + (notRevisions > 0
             ? " - " + notRevisions + " element(s) came in and none of them is a revision" : "")
             + ". Find it first with SELECT_BY_PARAMETER_VALUE, categories=Revisions, "
             + "parameterName=Revision Sequence (the number the dialog shows) or Revision Description");
-    else
-    {
-        var labels = new List<string>();
-        foreach (var candidate in handedIn)
-            labels.Add("Seq. " + candidate.SequenceNumber + " " + quoted(candidate.Description));
-        problems.Add(handedIn.Count + " revisions were handed in (" + string.Join(", ", labels.ToArray())
-            + ") and this edits ONE. Find it by Revision Sequence, which is unique");
-    }
+    else if (confirmed > 0 && confirmed != targets.Count)
+        problems.Add("the find brought back " + targets.Count + " revision(s) (" + listed + ") and confirmCount says "
+                   + confirmed + ". Nothing is changed until the two agree - check the find caught exactly the "
+                   + "revisions meant");
+    else if (countWord.Length == 0 && targets.Count > 1)
+        problems.Add(targets.Count + " revisions were handed in (" + listed + "). More than one is changed only "
+                   + "when confirmCount says how many: check these are the ones meant, then give confirmCount="
+                   + targets.Count + " - or find one by Revision Sequence, which is unique");
 
     // ---- show ------------------------------------------------------------------
     RevisionVisibility? wantedShow = null;
@@ -202,203 +249,278 @@ var refused = "";
     }
     else
     {
-        revisionName = "Seq. " + target.SequenceNumber + " " + quoted(target.Description);
-
-        Func<string, string> readText = label =>
-            label == "description" ? target.Description
-            : label == "date" ? target.RevisionDate
-            : label == "issued by" ? target.IssuedBy
-            : target.IssuedTo;
-        Action<string, string> writeText = (label, value) =>
+        var many = targets.Count > 1;
+        revisionName = many ? targets.Count + " revisions: " + listed : labels[0];
+        // Whose line this is - said only when there is more than one.
+        Func<int, string> who = i => many ? labels[i] + ": " : "";
+        // One string for the whole set: a revision's items apart by "; ",
+        // revisions apart by " || ", a revision with nothing to say left out.
+        Func<List<List<string>>, string> perRevision = lists =>
         {
-            if (label == "description") target.Description = value;
-            else if (label == "date") target.RevisionDate = value;
-            else if (label == "issued by") target.IssuedBy = value;
-            else target.IssuedTo = value;
+            if (!many) return string.Join("; ", lists[0].ToArray());
+            var parts = new List<string>();
+            for (var i = 0; i < lists.Count; i++)
+                if (lists[i].Count > 0) parts.Add(labels[i] + ": " + string.Join("; ", lists[i].ToArray()));
+            return string.Join(" || ", parts.ToArray());
         };
 
-        // WHAT WOULD MOVE, worked out before anything does.
-        var plan = new List<string>();
-        var already = new List<string>();
-        var lockedAsked = new List<string>();
-        foreach (var field in textFields)
+        Func<Revision, string, string> readText = (r, label) =>
+            label == "description" ? r.Description
+            : label == "date" ? r.RevisionDate
+            : label == "issued by" ? r.IssuedBy
+            : r.IssuedTo;
+        Action<Revision, string, string> writeText = (r, label, value) =>
         {
-            if (field.Wanted == null) continue;
-            var now = readText(field.Label) ?? "";
-            if (now == field.Wanted) { already.Add(field.Label + " " + quoted(now)); continue; }
-            plan.Add(field.Label + " " + quoted(now) + " -> " + quoted(field.Wanted));
-            lockedAsked.Add(field.Label);
-        }
-        if (numberingValue != null)
+            if (label == "description") r.Description = value;
+            else if (label == "date") r.RevisionDate = value;
+            else if (label == "issued by") r.IssuedBy = value;
+            else r.IssuedTo = value;
+        };
+
+        // WHAT WOULD MOVE, revision by revision, worked out before anything does.
+        var plans = new List<List<string>>();
+        var alreadies = new List<List<string>>();
+        var lockedAsked = new List<List<string>>();
+        var wasIssued = new List<bool>();
+        foreach (var target in targets)
         {
-            var nowNumbering = currentNumbering(target);
-            if (nowNumbering != null && nowNumbering.Equals(numberingValue))
-                already.Add("numbering " + numberingName);
-            else
+            var plan = new List<string>();
+            var already = new List<string>();
+            var locked = new List<string>();
+            foreach (var field in textFields)
             {
-                plan.Add("numbering " + numberingLabel(nowNumbering) + " -> " + numberingName);
-                lockedAsked.Add("numbering");
+                if (field.Wanted == null) continue;
+                var now = readText(target, field.Label) ?? "";
+                if (now == field.Wanted) { already.Add(field.Label + " " + quoted(now)); continue; }
+                plan.Add(field.Label + " " + quoted(now) + " -> " + quoted(field.Wanted));
+                locked.Add(field.Label);
             }
-        }
-        if (wantedShow != null)
-        {
-            if (target.Visibility == wantedShow.Value) already.Add("show " + showName(target.Visibility));
-            else plan.Add("show " + showName(target.Visibility) + " -> " + showName(wantedShow.Value));
+            if (numberingValue != null)
+            {
+                var nowNumbering = currentNumbering(target);
+                if (nowNumbering != null && nowNumbering.Equals(numberingValue))
+                    already.Add("numbering " + numberingName);
+                else
+                {
+                    plan.Add("numbering " + numberingLabel(nowNumbering) + " -> " + numberingName);
+                    locked.Add("numbering");
+                }
+            }
+            if (wantedShow != null)
+            {
+                if (target.Visibility == wantedShow.Value) already.Add("show " + showName(target.Visibility));
+                else plan.Add("show " + showName(target.Visibility) + " -> " + showName(wantedShow.Value));
+            }
+            if (issueWord == "issue")
+            {
+                if (target.Issued) already.Add("issued");
+                else plan.Add("then issued");
+            }
+            else if (issueWord == "unissue")
+            {
+                if (!target.Issued) already.Add("not issued");
+                else plan.Insert(0, "un-issued first");
+            }
+            plans.Add(plan);
+            alreadies.Add(already);
+            lockedAsked.Add(locked);
+            wasIssued.Add(target.Issued);
         }
 
-        var wasIssued = target.Issued;
-        if (issueWord == "issue")
-        {
-            if (wasIssued) already.Add("issued");
-            else plan.Add("then issued");
-        }
-        else if (issueWord == "unissue")
-        {
-            if (!wasIssued) already.Add("not issued");
-            else plan.Insert(0, "un-issued first");
-        }
+        // HOW ISSUED A REVISION WILL BE WHEN NUMBERING IS WRITTEN: one of the set
+        // asked to un-issue is un-issued by then; one asked to issue is not yet.
+        Func<Revision, bool> issuedWhenNumbered = r =>
+            targets.Any(t => t.Id == r.Id) && issueWord == "unissue" ? false : r.Issued;
 
-        // THE ISSUED REVISIONS A NUMBERING CHANGE WOULD RENUMBER: every later
-        // issued revision on the sequence it leaves or the one it joins.
-        var renumberedIssued = new List<string>();
-        var numberingBefore = currentNumbering(target);
-        if (numberingValue != null && (numberingBefore == null || !numberingBefore.Equals(numberingValue)))
+        // WHY ANY REVISION OF THE SET CANNOT TAKE THIS - the lock first, then the
+        // issued revisions a numbering change would renumber: every later one on
+        // the sequence it leaves or the one it joins.
+        var reasons = new List<string>();
+        var anyLock = false;
+        IList<ElementId> inOrder = null;
+        for (var i = 0; i < targets.Count; i++)
         {
+            var target = targets[i];
+            if (wasIssued[i] && issueWord != "unissue" && lockedAsked[i].Count > 0)
+            {
+                anyLock = true;
+                reasons.Add(labels[i] + " is ISSUED, and Revit locks the "
+                          + string.Join(", ", lockedAsked[i].ToArray()) + " of an issued revision");
+                continue;
+            }
+            if (numberingValue == null) continue;
+            var numberingBefore = currentNumbering(target);
+            if (numberingBefore != null && numberingBefore.Equals(numberingValue)) continue;
+
+            if (inOrder == null) inOrder = Revision.GetAllRevisionIds(doc);
+            var renumberedIssued = new List<string>();
             var pastTarget = false;
-            foreach (var id in Revision.GetAllRevisionIds(doc))
+            foreach (var id in inOrder)
             {
                 if (id == target.Id) { pastTarget = true; continue; }
                 if (!pastTarget) continue;
                 var later = doc.GetElement(id) as Revision;
-                if (later == null || !later.Issued) continue;
+                if (later == null || !issuedWhenNumbered(later)) continue;
                 var scheme = currentNumbering(later);
                 if (scheme != null && (scheme.Equals(numberingBefore) || scheme.Equals(numberingValue)))
-                    renumberedIssued.Add("Seq. " + later.SequenceNumber + " " + quoted(later.Description)
-                                         + " (" + numberingLabel(scheme) + ")");
+                    renumberedIssued.Add(nameOf(later) + " (" + numberingLabel(scheme) + ")");
             }
+            if (renumberedIssued.Count > 0)
+                reasons.Add("Moving " + labels[i] + " from numbering " + numberingLabel(numberingBefore)
+                          + " to " + numberingName + " would renumber " + string.Join(", ", renumberedIssued.ToArray())
+                          + ", which " + (renumberedIssued.Count == 1 ? "is" : "are") + " ISSUED - that number is "
+                          + "printed on drawings already sent out");
         }
 
-        if (wasIssued && issueWord != "unissue" && lockedAsked.Count > 0)
+        if (reasons.Count > 0)
         {
-            // THE LOCK, NAMED. Nothing is attempted: Revit would refuse each of
-            // these on an issued revision, and a partial edit is worse than none.
-            refused = revisionName + " is ISSUED, and Revit locks the "
-                    + string.Join(", ", lockedAsked.ToArray()) + " of an issued revision. "
-                    + "Nothing was changed. Un-issuing it first (issueState=unissue) is the "
-                    + "owner's decision to take, because the issue it records has gone out.";
-        }
-        else if (renumberedIssued.Count > 0)
-        {
-            refused = "Moving " + revisionName + " from numbering " + numberingLabel(numberingBefore)
-                    + " to " + numberingName + " would renumber " + string.Join(", ", renumberedIssued.ToArray())
-                    + ", which " + (renumberedIssued.Count == 1 ? "is" : "are") + " ISSUED - that number is "
-                    + "printed on drawings already sent out. Nothing was changed.";
+            // NOTHING IS ATTEMPTED, on any revision: Revit would refuse the locked
+            // columns, and a set half changed is worse than none.
+            if (!many)
+                refused = reasons[0] + ". Nothing was changed."
+                        + (anyLock ? " Un-issuing it first (issueState=unissue) is the owner's decision to "
+                                   + "take, because the issue it records has gone out." : "");
+            else
+                refused = reasons.Count + " of the " + targets.Count + " revisions cannot take this, so none of "
+                        + "them was changed: " + string.Join("; ", reasons.ToArray()) + "."
+                        + (anyLock ? " Un-issuing them first (issueState=unissue) is the owner's decision to "
+                                   + "take, because the issues they record have gone out." : "");
         }
         else
         {
-            var done = new List<string>();
+            var done = new List<List<string>>();
+            foreach (var target in targets) done.Add(new List<string>());
             var missed = new List<string>();
             // A WRITE REVIT TOOK THAT READS BACK DIFFERENT. It is stored, so it
             // is never reported as "nothing changed" - it throws below.
             var storedWrong = false;
 
-            // 1. UN-ISSUE FIRST, when asked: every locked column needs it.
-            if (issueWord == "unissue" && wasIssued)
-            {
-                try
+            // 1. UN-ISSUE FIRST, every one asked, from the LAST sequence to the
+            //    first: every locked column needs it, and one still issued
+            //    blocks renumbering the revisions before it.
+            if (issueWord == "unissue")
+                for (var i = targets.Count - 1; i >= 0 && missed.Count == 0; i--)
                 {
-                    target.Issued = false;
-                    if (!target.Issued) done.Add("un-issued");
-                    else { storedWrong = true; missed.Add("un-issue (it still reads back as issued)"); }
+                    var target = targets[i];
+                    if (!wasIssued[i]) continue;
+                    try
+                    {
+                        target.Issued = false;
+                        if (!target.Issued) done[i].Add("un-issued");
+                        else { storedWrong = true; missed.Add(who(i) + "un-issue (it still reads back as issued)"); }
+                    }
+                    catch (Exception failure) { missed.Add(who(i) + "un-issue (" + revitSaid(failure) + ")"); }
                 }
-                catch (Exception failure) { missed.Add("un-issue (" + revitSaid(failure) + ")"); }
-            }
 
-            // 2. The text columns.
-            if (missed.Count == 0)
+            // 2. The text columns, every revision.
+            for (var i = 0; i < targets.Count && missed.Count == 0; i++)
+            {
+                var target = targets[i];
                 foreach (var field in textFields)
                 {
                     if (field.Wanted == null) continue;
-                    var before = readText(field.Label) ?? "";
+                    var before = readText(target, field.Label) ?? "";
                     if (before == field.Wanted) continue;
-                    try { writeText(field.Label, field.Wanted); }
-                    catch (Exception failure) { missed.Add(field.Label + " (" + revitSaid(failure) + ")"); break; }
-                    var after = readText(field.Label) ?? "";
-                    if (after == field.Wanted) done.Add(field.Label + " " + quoted(before) + " -> " + quoted(after));
-                    else { storedWrong = true; missed.Add(field.Label + " reads back " + quoted(after)); break; }
+                    try { writeText(target, field.Label, field.Wanted); }
+                    catch (Exception failure) { missed.Add(who(i) + field.Label + " (" + revitSaid(failure) + ")"); break; }
+                    var after = readText(target, field.Label) ?? "";
+                    if (after == field.Wanted) done[i].Add(field.Label + " " + quoted(before) + " -> " + quoted(after));
+                    else { storedWrong = true; missed.Add(who(i) + field.Label + " reads back " + quoted(after)); break; }
                 }
+            }
 
-            // 3. Numbering.
-            if (missed.Count == 0 && numberingValue != null)
-            {
-                var before = currentNumbering(target);
-                if (before == null || !before.Equals(numberingValue))
+            // 3. Numbering, from the LAST sequence to the first.
+            if (numberingValue != null)
+                for (var i = targets.Count - 1; i >= 0 && missed.Count == 0; i--)
                 {
+                    var target = targets[i];
+                    var before = currentNumbering(target);
+                    if (before != null && before.Equals(numberingValue)) continue;
                     try
                     {
                         if (sequenceIdProperty != null) sequenceIdProperty.SetValue(target, numberingValue, null);
                         else numberTypeProperty.SetValue(target, numberingValue, null);
                         var after = currentNumbering(target);
                         if (after != null && after.Equals(numberingValue))
-                            done.Add("numbering " + numberingLabel(before) + " -> " + numberingLabel(after));
-                        else { storedWrong = true; missed.Add("numbering reads back " + numberingLabel(after)); }
+                            done[i].Add("numbering " + numberingLabel(before) + " -> " + numberingLabel(after));
+                        else { storedWrong = true; missed.Add(who(i) + "numbering reads back " + numberingLabel(after)); }
                     }
-                    catch (Exception failure) { missed.Add("numbering " + numberingName + " (" + revitSaid(failure) + ")"); }
+                    catch (Exception failure) { missed.Add(who(i) + "numbering " + numberingName + " (" + revitSaid(failure) + ")"); }
                 }
-            }
 
             // 4. Show - the one column an issued revision still takes.
-            if (missed.Count == 0 && wantedShow != null && target.Visibility != wantedShow.Value)
-            {
-                var before = target.Visibility;
-                try
+            if (wantedShow != null)
+                for (var i = 0; i < targets.Count && missed.Count == 0; i++)
                 {
-                    target.Visibility = wantedShow.Value;
-                    if (target.Visibility == wantedShow.Value)
-                        done.Add("show " + showName(before) + " -> " + showName(target.Visibility));
-                    else { storedWrong = true; missed.Add("show reads back " + showName(target.Visibility)); }
+                    var target = targets[i];
+                    if (target.Visibility == wantedShow.Value) continue;
+                    var before = target.Visibility;
+                    try
+                    {
+                        target.Visibility = wantedShow.Value;
+                        if (target.Visibility == wantedShow.Value)
+                            done[i].Add("show " + showName(before) + " -> " + showName(target.Visibility));
+                        else { storedWrong = true; missed.Add(who(i) + "show reads back " + showName(target.Visibility)); }
+                    }
+                    catch (Exception failure) { missed.Add(who(i) + "show (" + revitSaid(failure) + ")"); }
                 }
-                catch (Exception failure) { missed.Add("show (" + revitSaid(failure) + ")"); }
-            }
 
-            // 5. ISSUE LAST, when asked: it locks everything above.
-            if (missed.Count == 0 && issueWord == "issue" && !target.Issued)
-            {
-                try
+            // 5. ISSUE LAST, every one asked: it locks everything above.
+            if (issueWord == "issue")
+                for (var i = 0; i < targets.Count && missed.Count == 0; i++)
                 {
-                    target.Issued = true;
-                    if (target.Issued) done.Add("issued");
-                    else { storedWrong = true; missed.Add("issue (it still reads back as not issued)"); }
+                    var target = targets[i];
+                    if (target.Issued) continue;
+                    try
+                    {
+                        target.Issued = true;
+                        if (target.Issued) done[i].Add("issued");
+                        else { storedWrong = true; missed.Add(who(i) + "issue (it still reads back as not issued)"); }
+                    }
+                    catch (Exception failure) { missed.Add(who(i) + "issue (" + revitSaid(failure) + ")"); }
                 }
-                catch (Exception failure) { missed.Add("issue (" + revitSaid(failure) + ")"); }
-            }
 
-            if (missed.Count > 0 && (done.Count > 0 || storedWrong))
+            var anyDone = done.Any(d => d.Count > 0);
+            if (missed.Count > 0 && (anyDone || storedWrong))
                 throw new InvalidOperationException(
                     "EDIT_REVISION on " + revisionName + " did not read back as asked, so nothing is "
-                    + "kept: " + (done.Count > 0 ? string.Join("; ", done.ToArray()) + " went in, then " : "")
+                    + "kept: " + (anyDone ? perRevision(done) + " went in, then " : "")
                     + string.Join("; ", missed.ToArray()) + ".");
 
             if (missed.Count > 0)
                 refused = "Revit would not change " + revisionName + ": "
                         + string.Join("; ", missed.ToArray()) + ". Nothing was changed. It would have: "
-                        + string.Join("; ", plan.ToArray()) + ".";
+                        + perRevision(plans) + ".";
 
-            changed = string.Join("; ", done.ToArray());
+            changed = perRevision(done);
         }
 
-        alreadyThat = string.Join("; ", already.ToArray());
+        alreadyThat = perRevision(alreadies);
 
-        try { nowIssued = target.Issued; } catch (Exception failure) { findings = "issued unreadable: " + revitSaid(failure) + ". "; }
-
-        findings += "Read back: Seq. " + target.SequenceNumber
-                  + ": numbering " + numberingLabel(currentNumbering(target))
-                  + ", date " + quoted(target.RevisionDate)
-                  + ", description " + quoted(target.Description)
-                  + ", " + (target.Issued ? "ISSUED" : "not issued")
-                  + ", issued to " + quoted(target.IssuedTo)
-                  + ", issued by " + quoted(target.IssuedBy)
-                  + ", show " + showName(target.Visibility)
-                  + " (id " + target.Id + ")";
+        // THE WHOLE ROW OF EVERY REVISION, READ BACK. `nowIssued` is true only
+        // when every one of them is issued.
+        var readBack = new List<string>();
+        var allIssued = true;
+        for (var i = 0; i < targets.Count; i++)
+        {
+            var target = targets[i];
+            try { if (!target.Issued) allIssued = false; }
+            catch (Exception failure)
+            {
+                allIssued = false;
+                findings += who(i) + "issued unreadable: " + revitSaid(failure) + ". ";
+            }
+            readBack.Add("Seq. " + target.SequenceNumber
+                       + ": numbering " + numberingLabel(currentNumbering(target))
+                       + ", date " + quoted(target.RevisionDate)
+                       + ", description " + quoted(target.Description)
+                       + ", " + (target.Issued ? "ISSUED" : "not issued")
+                       + ", issued to " + quoted(target.IssuedTo)
+                       + ", issued by " + quoted(target.IssuedBy)
+                       + ", show " + showName(target.Visibility)
+                       + " (id " + target.Id + ")");
+        }
+        nowIssued = allIssued;
+        findings += "Read back: " + string.Join(" || ", readBack.ToArray());
     }
 }
