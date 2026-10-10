@@ -414,12 +414,19 @@ def rebuild(scope=GLOBAL, project_key=None):
 # made from - so a reader with no marks of its own reads bytes rather than
 # parsing every card (seconds) to find they already match.
 #
-# WHAT IT NEVER DOES, AND WHY. It never ADDS a row and never REMOVES one - that
-# is what `rebuild()` is for - and it never rewrites a row that was made from
-# the bytes on disk now. Each of those is somebody else's write it would undo:
-# a suite that plants a DRAFT row in a throwaway store, or a session proving an
-# unmerged card with the one row it put into the shared store and will take
-# out again. A merged NEW card still needs a rebuild to be found.
+# WHAT IT NEVER DOES, AND WHY. It never rewrites a row that was made from the
+# bytes on disk now, and in a PRIVATE store it never ADDS a row and never
+# REMOVES one - that is what `rebuild()` is for. Each of those is somebody
+# else's write it would undo: a suite that plants a DRAFT row in a throwaway
+# store, or a session proving an unmerged card with the one row it put into
+# the shared store and will take out again.
+#
+# THE SHARED STORE GAINS AND LOSES WHAT MAIN GAINS AND LOSES - row 5b-405.
+# Until 2026-10-10 a merged NEW card needed `--rebuild` by hand on every PC,
+# and the owner's store sat at 480 rows beside 481 cards with LIST_MATERIALS
+# unreachable. `_library_moves()` below says which cards and rows part
+# company, by folder name; only the shared store does anything with it, and
+# only from a main checkout on branch main.
 #
 # AND THE SHARED STORE FOLLOWS THE MAIN CHECKOUT - row 131's race, and the
 # reason for `refreshes_from()` below.
@@ -620,14 +627,95 @@ def refreshes_from(root=None):
     return os.path.join(main, "brain", "fragments"), main
 
 
-def refresh(store, root=None):
-    """Rewrite the rows whose card changed on disk. Returns the ids rewritten.
+def on_main_branch(root=None):
+    """True when `root` is a checkout of branch main, or has no git at all.
 
-    Nothing is opened when no card's mark moved, which is every lookup between
-    two merges. A card that loads and does not validate keeps the row it had:
-    rebuild() would drop it, and a lookup that loses a working capability over
-    a card that fails a check is worse than one answering from the version
-    before.
+    Read from .git/HEAD rather than by running git - this is asked on every
+    lookup into the shared store. A linked worktree has a .git FILE, and is
+    never the main checkout. heron_brain._on_main_branch asks the same of the
+    store warm-up.
+    """
+    root = root or ROOT
+    dot_git = os.path.join(root, ".git")
+    if not os.path.exists(dot_git):
+        return True
+    if not os.path.isdir(dot_git):
+        return False
+    try:
+        with io.open(os.path.join(dot_git, "HEAD"), encoding="utf-8") as handle:
+            head = handle.read().strip()
+    except (IOError, OSError):
+        return False
+    return head == "ref: refs/heads/main"
+
+
+def _folder_name(folder):
+    """A row's card folder, as the name its card has on disk. The row writes
+    it against its checkout's root, with that system's separator - so only
+    the last part is compared."""
+    return (folder or "").replace("\\", "/").rstrip("/").rsplit("/", 1)[-1]
+
+
+def _library_moves(store, cards, checkout, marks):
+    """(missing, doomed): what `refresh()` adds to and takes from the store.
+
+    `missing` - the card folders in `marks` that no row names. `doomed` -
+    {folder name: [ids]} for the rows whose card folder has gone from `cards`
+    altogether. Both empty unless every one of these holds, because each is a
+    write somebody else would lose:
+
+      THE SHARED STORE. A private one is a suite's, a CI job's or a
+      measurement's, built with exactly the rows it wants.
+      A MAIN CHECKOUT ON BRANCH MAIN, or an installed Heron. On a feature
+      branch the main folder's cards are unmerged (row 5b-233), and a
+      worktree's never reach here at all (`refreshes_from`, row 131).
+      A LIBRARY THAT HOLDS A CARD. One that arrived empty is not one that
+      removed everything - _Open's own rule, an empty library is not an
+      empty answer - and would otherwise take every row with it.
+
+    And a row is doomed only when it was MADE FROM MAIN'S CARD - the folder
+    is in ROWS_FROM - and the folder itself has gone, not merely its
+    fragment.yaml, which git writes anew when it changes. A row a session
+    planted for its unmerged card was never made from main, and is left.
+
+    By FOLDER NAME, from the stat walk `refresh()` already took and one read
+    of the rows, so a lookup between two merges parses nothing. What a folder
+    name cannot see: a card whose id changed inside its own folder. Its folder
+    still has a row, so nothing is added, and `--rebuild` is still the answer.
+    """
+    if not marks:
+        return set(), {}
+    base, shared = knowledge_dir(), shared_dir()
+    if not base or not shared or not _same_folder(base, shared):
+        return set(), {}
+    if not on_main_branch(checkout or FRAG.ROOT):
+        return set(), {}
+    by_folder = {}
+    for row in store.execute("SELECT id, folder FROM fragments").fetchall():
+        by_folder.setdefault(_folder_name(row["folder"]), []).append(row["id"])
+    missing = set(name for name in marks if name not in by_folder)
+    doomed = {}
+    extra = [name for name in by_folder if name not in marks]
+    if extra:
+        made = _meta(store, ROWS_FROM) or {}
+        for name in extra:
+            if name in made and not os.path.isdir(os.path.join(cards, name)):
+                doomed[name] = by_folder[name]
+    return missing, doomed
+
+
+def refresh(store, root=None):
+    """Rewrite the rows whose card changed on disk - and in the shared store,
+    add the cards main gained and drop the rows of cards it lost (row 5b-405,
+    `_library_moves`). Returns the ids whose row it wrote or removed.
+
+    Nothing is opened when no card's mark moved and no card is missing a row,
+    which is every lookup between two merges. A card that loads and does not
+    validate keeps the row it had: rebuild() would drop it, and a lookup that
+    loses a working capability over a card that fails a check is worse than
+    one answering from the version before. A NEW one that does not validate
+    is not added - and in the shared store it is parsed again on each lookup
+    until it does, because the file that finishes it may not be fragment.yaml.
 
     A CARD IS MARKED AS LOOKED AT ONLY WHEN ITS BYTES HAVE BEEN DEALT WITH.
     One that could not be READ or PARSED - a Windows lock, a file caught
@@ -637,9 +725,10 @@ def refresh(store, root=None):
     that has written fragment.yaml but not yet tests/cases.yaml or the impl
     would otherwise never look again, because the files that finish the card
     do not move fragment.yaml's mark (second review on PR #353). A card the
-    store does NOT hold is marked either way. It is never added here, and
-    leaving it unmarked would parse every new card on every lookup until a
-    rebuild.
+    store does NOT hold is marked either way: in a private store it is never
+    added, and in the shared store a card with no row is looked at whatever
+    its mark says - which is also how a card an older lookup marked, before
+    adding existed, still gets in.
 
     ONE SHORT TRANSACTION, AND EVERYTHING SLOW OUTSIDE IT. The cards are read
     and parsed holding no lock. Then, under BEGIN IMMEDIATE, the records and
@@ -662,24 +751,29 @@ def refresh(store, root=None):
 
     marks = cards_on_disk(cards)
     seen = _meta(store, key)
-    if seen == marks:
+    missing, doomed = _library_moves(store, cards, checkout, marks)
+    if seen == marks and not missing and not doomed:
         return []
     rows_from = _meta(store, ROWS_FROM) or {}
+    # A row about to be dropped no longer holds its id: a card main moved to
+    # a new folder is added under it in the same transaction.
     held = set(row["id"] for row in store.execute(
-        "SELECT id FROM fragments").fetchall())
+        "SELECT id FROM fragments").fetchall()) - \
+        set(fid for ids in doomed.values() for fid in ids)
 
     # READ AND PARSE, HOLDING NO LOCK. A card worth recording is kept as its
     # name, the mark taken BEFORE its bytes were read, their digest, the card
     # (None when the row was made from these bytes) and whether it validates.
     looked = []
     for name, mark in sorted(marks.items()):
-        if seen is not None and seen.get(name) == mark:
+        moved = seen is None or seen.get(name) != mark
+        if not moved and name not in missing:
             continue
         raw = _card(cards, name)
         if raw is None:
             continue                  # not marked: tried again next lookup
         digest = _digest(raw)
-        if rows_from.get(name) == digest:
+        if name not in missing and rows_from.get(name) == digest:
             looked.append((name, mark, digest, None, True))
             continue
         try:
@@ -692,11 +786,14 @@ def refresh(store, root=None):
             # load() did not turn into a ValueError costs that card, never
             # the lookup this runs inside.
             continue
+        adding = name in missing and valid and frag.id and frag.id not in held
+        if not moved and not adding:
+            continue                  # marked already, and nothing to add
         if valid or not (frag.id and frag.id in held):
             looked.append((name, mark, digest, frag, valid))
 
     gone = seen is not None and any(name not in marks for name in seen)
-    if not looked and not gone:
+    if not looked and not gone and not doomed:
         return []
 
     rewritten = []
@@ -706,6 +803,17 @@ def refresh(store, root=None):
         kept = dict((name, mark) for name, mark in
                     (_meta(store, key) or {}).items() if name in marks)
         now_from = _meta(store, ROWS_FROM) or {}
+        for name, ids in sorted(doomed.items()):
+            # Asked again under the lock: still made from main, still gone.
+            if name not in now_from or os.path.isdir(os.path.join(cards, name)):
+                continue
+            for fid in ids:
+                row = store.execute("SELECT folder FROM fragments WHERE id = ?",
+                                    (fid,)).fetchone()
+                if row is not None and _folder_name(row["folder"]) == name:
+                    store.execute("DELETE FROM fragments WHERE id = ?", (fid,))
+                    rewritten.append(fid)
+            now_from.pop(name, None)
         now_held = dict((row["id"], tuple(row[f] for f in ROW_FIELDS))
                         for row in store.fragments())
         for name, mark, digest, frag, valid in looked:
@@ -717,7 +825,12 @@ def refresh(store, root=None):
                 continue
             row = now_held.get(frag.id) if frag.id else None
             if row is None:
-                kept[name] = mark     # not held, and never added here
+                if valid and name in missing:
+                    store.put_row(frag)           # main gained it: row 5b-405
+                    now_held[frag.id] = row_of(frag)
+                    now_from[name] = digest
+                    rewritten.append(frag.id)
+                kept[name] = mark
                 continue
             if not valid:
                 continue

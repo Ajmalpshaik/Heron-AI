@@ -23,6 +23,9 @@ WHAT IT PROVES
      worktree into the one shared store (FRAGMENT-ISSUES 5b-249, row 131).
      A card caught mid-checkout is looked at again, and two chats racing a
      fast-forward leave the row at the card on disk.
+  6. The SHARED store gains a card the main checkout gains and loses one it
+     loses (5b-405) - from main on branch main only, never a worktree's card,
+     never a planted row, never in a private store.
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
 resolver is handed the same facts the bridge would report; nothing here has
@@ -155,6 +158,12 @@ def refreshing(S, F):
 
     work = tempfile.mkdtemp(prefix="heron-refresh-")
     was_fragments_dir = F.FRAGMENTS_DIR
+    # AS IF ASKED FROM THE MAIN CHECKOUT ON MAIN - where the owner runs this
+    # suite. From a worktree the branch alone already stops the shared
+    # store's adds and removals, and would hide a private store that was
+    # being treated as shared (row 5b-405).
+    real_branch = getattr(S, "on_main_branch", None)
+    S.on_main_branch = lambda root=None: True
     try:
         card = os.path.join(write_valid_fragment(
             os.path.join(work, "do-a-test-thing")), "fragment.yaml")
@@ -218,8 +227,10 @@ def refreshing(S, F):
               "a checkout with no marks of its own trusts a row made from the "
               "same bytes (%r)" % (got,))
 
-        # A NEW CARD IS NOT ADDED. That is rebuild()'s job: adding would fill
-        # a store built with a subset on purpose.
+        # A NEW CARD IS NOT ADDED TO A PRIVATE STORE. That is rebuild()'s job
+        # there: adding would fill a store a suite built with a subset on
+        # purpose. The SHARED store adds one from the main checkout - see
+        # following_main() below (row 5b-405).
         other = write_valid_fragment(os.path.join(work, "do-another-thing"))
         _rewrite_card(os.path.join(other, "fragment.yaml"),
                       "FRG-ELE-001", "FRG-ELE-002")
@@ -368,9 +379,28 @@ def refreshing(S, F):
               and _row(S, "FRG-ELE-001", "capability") == "DO_A_TEST_THING",
               "a store with no record of what it saw is compared in full")
 
+        # AND A PRIVATE STORE NEVER LOSES A ROW EITHER, though the card it was
+        # made from is gone: a suite's store is the suite's (row 5b-405).
+        S.rebuild()
+        held_before = _row(S, "FRG-ELE-002", "id")
+        shutil.rmtree(other)
+        store = S.open_scope(S.GLOBAL)
+        try:
+            got = refresh(store)
+        finally:
+            store.close()
+        check(held_before == "FRG-ELE-002"
+              and _row(S, "FRG-ELE-002", "id") == "FRG-ELE-002",
+              "a PRIVATE store keeps a row whose card folder has gone (%r)"
+              % (got,))
+
         racing_a_fast_forward(S, F, refresh, card)
     finally:
         F.FRAGMENTS_DIR = was_fragments_dir
+        if real_branch is None:
+            del S.on_main_branch
+        else:
+            S.on_main_branch = real_branch
         shutil.rmtree(work, ignore_errors=True)
 
     print()
@@ -526,6 +556,8 @@ def refreshing(S, F):
                 os.environ[key] = value
         shutil.rmtree(fake, ignore_errors=True)
 
+    following_main(S, F, refresh)
+
     # THE WIRING. The rows are only as fresh as the path that serves a lookup,
     # and that path is heron_brain._Open - read as TEXT, as test_review_findings
     # reads it, because importing the server here would pull the search models
@@ -549,6 +581,254 @@ def refreshing(S, F):
         at = body.find("SCOPE.refresh(")
         check(0 <= at < body.find("index(store)"),
               "brain/%s refreshes the rows before it indexes" % name)
+
+
+def _new_card(cards, name, fid, capability, identity, cases=True):
+    """A valid card of its own at cards/name - its own id, capability,
+    identity and utterance, so it collides with nothing already held."""
+    folder = write_valid_fragment(os.path.join(cards, name))
+    path = os.path.join(folder, "fragment.yaml")
+    for old, new in (("FRG-ELE-001", fid), ("DO_A_TEST_THING", capability),
+                     ("a test fragment", identity),
+                     ("do the test thing", "do " + identity)):
+        _rewrite_card(path, old, new)
+    if not cases:
+        os.remove(os.path.join(folder, "tests", "cases.yaml"))
+    return folder
+
+
+def _ids(S):
+    store = S.open_scope(S.GLOBAL)
+    try:
+        return sorted(r["id"] for r in store.fragments())
+    finally:
+        store.close()
+
+
+def following_main(S, F, refresh):
+    """FRAGMENT-ISSUES row 5b-405: the SHARED store gains a card main gains,
+    and loses one main loses - from the main checkout on branch main, never
+    from a worktree, never a row somebody planted, never in a private store.
+
+    Measured on the owner's PC 2026-10-10: the shared store held 480 rows
+    while brain/fragments held 481, and the missing one - LIST_MATERIALS,
+    merged in #450 - could not be reached by "list the materials in this
+    family" until somebody ran --rebuild by hand. Every lookup's refresh() had
+    already looked at that card and marked it, so the store had stopped
+    looking. Only names the code before the fix also has are used here, so
+    it FAILS rather than raising (heron-ship 2a).
+    """
+    print()
+    print("  ..and the SHARED store gains a card the main checkout gains, and "
+          "loses one it loses (row 5b-405)")
+    saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE")}
+    was_fragments_dir = F.FRAGMENTS_DIR
+    fake = tempfile.mkdtemp(prefix="heron-follow-")
+    try:
+        main_tree = os.path.join(fake, "main")
+        worktree = os.path.join(fake, "wt")
+        pointer = os.path.join(main_tree, ".git", "worktrees", "wt")
+        os.makedirs(pointer)
+        io.open(os.path.join(pointer, "commondir"), "w",
+                encoding="utf-8").write(u"../..\n")
+        head = os.path.join(main_tree, ".git", "HEAD")
+
+        def on_branch(name):
+            io.open(head, "w", encoding="utf-8").write(
+                u"ref: refs/heads/%s\n" % name)
+
+        on_branch("main")
+        io.open(_made(os.path.join(worktree, ".git")), "w",
+                encoding="utf-8").write(
+            u"gitdir: %s\n" % pointer.replace(os.sep, "/"))
+        main_cards = os.path.join(main_tree, "brain", "fragments")
+        wt_cards = os.path.join(worktree, "brain", "fragments")
+        wt_card = os.path.join(write_valid_fragment(
+            os.path.join(wt_cards, "do-a-test-thing")), "fragment.yaml")
+        main_card = os.path.join(write_valid_fragment(
+            os.path.join(main_cards, "do-a-test-thing")), "fragment.yaml")
+        shutil.copyfile(wt_card, main_card)
+
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        os.environ["APPDATA"] = os.path.join(fake, "appdata")
+        F.FRAGMENTS_DIR = wt_cards
+        S.rebuild()
+
+        def ask():
+            store = S.open_scope(S.GLOBAL)
+            try:
+                return refresh(store, worktree)
+            finally:
+                store.close()
+
+        ask()
+        check(_ids(S) == ["FRG-ELE-001"],
+              "the shared store starts with the one card both trees hold (%s)"
+              % ", ".join(_ids(S)))
+
+        # A PR MERGES A NEW CARD: the main checkout gains it.
+        _new_card(main_cards, "do-a-new-thing", "FRG-ELE-010",
+                  "DO_A_NEW_THING", "a newly merged thing")
+        got = ask()
+        check("FRG-ELE-010" in _ids(S),
+              "a card NEW in the main checkout is added to the shared store "
+              "(%s; refresh said %r)" % (", ".join(_ids(S)), got))
+        check("FRG-ELE-010" in (got or []),
+              "and refresh() names the row it added (%r)" % (got,))
+        folder = _row(S, "FRG-ELE-010", "folder")
+        check(folder is not None and folder.replace(chr(92), "/")
+              == "brain/fragments/do-a-new-thing",
+              "with its folder written as the main checkout writes it (%r)"
+              % (folder,))
+
+        # IN THE SAME OPEN: every index _Open builds next reads the rows, so
+        # the row added above is found by its identity and its capability
+        # without another step. (The vectors are hashed per row the same way;
+        # this suite does not load an encoder.)
+        import heron_search as SEARCH
+        import heron_capability as CAP
+        store = S.open_scope(S.GLOBAL)
+        try:
+            CAP.rebuild(store)
+            SEARCH.index(store)
+            hit = SEARCH.short_circuit(store, "a newly merged thing")
+            caps = set(r["name"] for r in store.execute(
+                "SELECT name FROM capabilities").fetchall())
+        finally:
+            store.close()
+        check(hit[0] == "FRG-ELE-010" and "DO_A_NEW_THING" in caps,
+              "and the indexes built after it find the new card by identity "
+              "and by capability (%r)" % (hit,))
+
+        # THE OWNER'S CASE: an earlier lookup had already looked at the new
+        # card and marked it - the code before this did that to every new
+        # card - so the marks say there is nothing to do. It is added anyway.
+        _new_card(main_cards, "do-a-premarked-thing", "FRG-ELE-011",
+                  "DO_A_PREMARKED_THING", "a thing an older lookup saw")
+        store = S.open_scope(S.GLOBAL)
+        try:
+            S._record(store, S._key(main_cards), S.cards_on_disk(main_cards),
+                      S._meta(store, S.ROWS_FROM) or {})
+            store.db.commit()
+        finally:
+            store.close()
+        got = ask()
+        check("FRG-ELE-011" in _ids(S),
+              "a new card an older lookup had already MARKED is still added "
+              "(%s)" % ", ".join(_ids(S)))
+
+        # A WORKTREE'S UNMERGED NEW CARD IS NOT (row 131).
+        _new_card(wt_cards, "do-an-unmerged-thing", "FRG-ELE-012",
+                  "DO_AN_UNMERGED_THING", "an unmerged thing")
+        ask()
+        check("FRG-ELE-012" not in _ids(S),
+              "a card only a WORKTREE holds is never added (%s)"
+              % ", ".join(_ids(S)))
+
+        # A NEW CARD CAUGHT HALF-MERGED - fragment.yaml there, its cases not
+        # yet - is not added, costs nothing, and IS added once its cases
+        # land, though fragment.yaml's mark never moved.
+        half = _new_card(main_cards, "do-a-half-merged-thing", "FRG-ELE-013",
+                         "DO_A_HALF_MERGED_THING", "a half merged thing",
+                         cases=False)
+        raised = None
+        try:
+            ask()
+        except Exception as exc:                  # named by the check below
+            raised = exc
+        check(raised is None and "FRG-ELE-013" not in _ids(S),
+              "a new card that does not validate is not added, and the "
+              "lookup carries on (%r)" % (raised,))
+        io.open(os.path.join(half, "tests", "cases.yaml"), "w",
+                encoding="utf-8").write(CASES)
+        ask()
+        check("FRG-ELE-013" in _ids(S),
+              "and it is added the first lookup after it does validate (%s)"
+              % ", ".join(_ids(S)))
+
+        # A MAIN CHECKOUT ON ANOTHER BRANCH holds cards that are not merged.
+        on_branch("claude/a-feature")
+        _new_card(main_cards, "do-a-branch-thing", "FRG-ELE-014",
+                  "DO_A_BRANCH_THING", "a thing on a feature branch")
+        shutil.rmtree(os.path.join(main_cards, "do-a-half-merged-thing"))
+        ask()
+        check("FRG-ELE-014" not in _ids(S) and "FRG-ELE-013" in _ids(S),
+              "the main checkout on a branch that is not main adds nothing "
+              "and removes nothing (%s)" % ", ".join(_ids(S)))
+        on_branch("main")
+
+        # A CARD REMOVED FROM MAIN loses its row - the one main's own bytes
+        # made, and only that.
+        got = ask()
+        check("FRG-ELE-014" in _ids(S) and "FRG-ELE-013" not in _ids(S),
+              "back on main, the branch's card is added and the card main "
+              "removed loses its row (%s; refresh said %r)"
+              % (", ".join(_ids(S)), got))
+        shutil.rmtree(os.path.join(main_cards, "do-a-new-thing"))
+        got = ask()
+        check("FRG-ELE-010" not in _ids(S) and "FRG-ELE-010" in (got or []),
+              "a card deleted from main loses its row, and refresh() names it "
+              "(%r)" % (got,))
+
+        # A ROW SOMEBODY PLANTED - a session proving an unmerged card puts
+        # that card's row in by hand - is theirs, and stays.
+        store = S.open_scope(S.GLOBAL)
+        try:
+            store.put_fragment(F.load(os.path.join(wt_cards,
+                                                   "do-an-unmerged-thing")))
+        finally:
+            store.close()
+        ask()
+        check("FRG-ELE-012" in _ids(S),
+              "a row planted for an unmerged card is never removed (%s)"
+              % ", ".join(_ids(S)))
+
+        # A CARD WHOSE fragment.yaml IS MISSING BUT WHOSE FOLDER IS STILL
+        # THERE is mid-checkout - git writes a changed file anew - and keeps
+        # its row.
+        premarked = os.path.join(main_cards, "do-a-premarked-thing",
+                                 "fragment.yaml")
+        aside = premarked + ".aside"
+        os.rename(premarked, aside)
+        try:
+            ask()
+        finally:
+            os.rename(aside, premarked)
+        check("FRG-ELE-011" in _ids(S),
+              "a card whose folder is still there keeps its row while its "
+              "fragment.yaml is being rewritten (%s)" % ", ".join(_ids(S)))
+
+        # A MAIN LIBRARY THAT ARRIVED EMPTY removes nothing: an empty library
+        # is not an empty answer.
+        emptied = main_cards + "-aside"
+        os.rename(main_cards, emptied)
+        os.makedirs(main_cards)
+        try:
+            before = _ids(S)
+            ask()
+            after = _ids(S)
+        finally:
+            shutil.rmtree(main_cards)
+            os.rename(emptied, main_cards)
+        check(before == after and len(after) > 1,
+              "a main checkout holding no cards at all removes no row (%s)"
+              % ", ".join(after))
+    finally:
+        F.FRAGMENTS_DIR = was_fragments_dir
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        shutil.rmtree(fake, ignore_errors=True)
+
+
+def _made(path):
+    """`path`, with the folder it goes in made first."""
+    folder = os.path.dirname(path)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    return path
 
 
 def racing_a_fast_forward(S, F, refresh, card):

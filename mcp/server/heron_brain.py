@@ -398,11 +398,13 @@ class _Open(object):
             # domain and risk from its ROW, and nothing but the rebuild above
             # wrote rows - so a merged change to a card's identity was searched
             # under the old one, beside the new purpose, until somebody rebuilt
-            # by hand. This rewrites only the rows whose card changed on disk -
+            # by hand. This rewrites the rows whose card changed on disk -
             # and in the store every chat on the machine reads, only to what
             # the MAIN checkout's card says, never to a worktree's unmerged
-            # edit (row 131; heron_scope.refreshes_from). BEFORE the indexes,
-            # because every one of them reads these rows.
+            # edit (row 131; heron_scope.refreshes_from). There it also adds
+            # a card main gained and drops the row of one it lost, so a merged
+            # NEW card needs no rebuild by hand (row 5b-405). BEFORE the
+            # indexes, because every one of them reads these rows.
             SCOPE.refresh(self.store)
             CAP.rebuild(self.store)
             SEARCH.index(self.store)
