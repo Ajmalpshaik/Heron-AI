@@ -69,5 +69,18 @@ negative:
       OVERHANGING on its linked line - never "sits flat" because the centre
       ray alone reached the ceiling
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      air terminals in this MEP model under a ceiling that is only in the
+      architectural link, its type carrying two parameters named Fire Rating -
+      a shared or project one bound to Ceilings beside another of that name -
+      direction up, includeLinks true
+    expect: >
+      each terminal's line in `linkedMatches` names the linked ceiling with
+      "Fire Rating NOT READ - 2 parameters share that name", never either
+      rating, and `unsafeToMove` and `clean` are unchanged from the host-only
+      run (row 5b-203)
+
 second_route:
   - Cut a section through a reported element and look at whether its underside meets the surface

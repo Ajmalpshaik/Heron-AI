@@ -12,7 +12,11 @@
 // circuit is a drawing that passes review and is wrong.
 
 var memberIds = new List<ElementId>();
-var refused = new List<string>();
+// ONE STRING, not a list: a list reaches the reply cut to sixty characters an
+// item, and most refusals below are longer than that. Each one ends its own
+// branch, so at most one is ever set - a new refusal that could land beside
+// another must be joined on, never written over it.
+string refused = null;
 var findings = new List<string>();
 ElectricalSystem created = null;
 var circuitNumber = "";
@@ -41,14 +45,14 @@ foreach (var element in elements)
 
 if (!known)
 {
-    refused.Add("\"" + systemType + "\" is not a system type this understands, so NOTHING WAS "
+    refused = "\"" + systemType + "\" is not a system type this understands, so NOTHING WAS "
         + "CREATED. Use power, data, fire alarm, security, telephone, nurse call, controls or "
         + "communication. It is refused rather than treated as power, because a fire alarm device "
-        + "on a power circuit is a drawing that passes review and is wrong.");
+        + "on a power circuit is a drawing that passes review and is wrong.";
 }
 else if (ids.Count == 0)
 {
-    refused.Add("No devices were handed in, so NOTHING WAS CREATED. Run the selection first.");
+    refused = "No devices were handed in, so NOTHING WAS CREATED. Run the selection first.";
 }
 else
 {
@@ -61,7 +65,7 @@ else
 
         if (created == null)
         {
-            refused.Add("Revit returned no circuit and raised no error.");
+            refused = "Revit returned no circuit and raised no error.";
         }
         else
         {
@@ -99,8 +103,8 @@ else
                 }
                 catch (Exception ex)
                 {
-                    refused.Add("The circuit exists but Revit refused the panel: " + ex.Message
-                        + ". IT IS UNASSIGNED - it will not appear on any panel schedule.");
+                    refused = "The circuit exists but Revit refused the panel: " + ex.Message
+                        + ". IT IS UNASSIGNED - it will not appear on any panel schedule.";
                 }
             }
             else
@@ -113,10 +117,10 @@ else
     }
     catch (Exception ex)
     {
-        refused.Add("Revit refused to create the circuit: " + ex.Message + ". NOTHING WAS CREATED. "
+        refused = "Revit refused to create the circuit: " + ex.Message + ". NOTHING WAS CREATED. "
             + "Devices already on a circuit, and devices whose connectors do not suit the system "
-            + "type, are the usual reasons.");
+            + "type, are the usual reasons.";
     }
 }
 
-foreach (var reason in refused) findings.Add(reason);
+if (refused != null) findings.Add(refused);

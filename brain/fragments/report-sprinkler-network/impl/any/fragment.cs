@@ -32,6 +32,14 @@
 //
 // NOTHING IS DEFAULTED. A value Revit does not give is null, never 0.
 //
+// A NAME TWO PARAMETERS SHARE IS NOT READ. A fitting's angle is read by its
+// name, Angle. Where two parameters on one element carry that name - a shared
+// or project "Angle" bound beside the family's own - Revit asked by name
+// returns "the first one encountered", which its own reference says "is
+// determined at random". So the name is counted first, and a doubled one is
+// null, as for a family with none, and the element is named in one finding -
+// never either value (D-54 s3, FRAGMENT-ISSUES 5b-203).
+//
 // EVERY NUMBER CARRIES ITS UNIT IN ITS NAME: _m, _deg. Revit's internal feet
 // become metres here, at the edge (D-20): 1 ft = 0.3048 m exactly. Points are
 // metres in the model's own coordinates, to the millimetre.
@@ -240,6 +248,10 @@ Func<Element, string> kParameter = element =>
 // read once, after the elements, with its outline.
 var headSpaces = new Dictionary<string, Space>();
 
+// The elements whose Angle two parameters share - not read, named in one
+// finding after the loop. See the header.
+var angleShared = new List<string>();
+
 var body = new System.Text.StringBuilder();
 var first = true;
 foreach (var element in elements)
@@ -268,12 +280,19 @@ foreach (var element in elements)
             if (fitting != null) partType = fitting.PartType.ToString();
         }
         catch { }
-        try
+        // Counted before it is read - see the header (5b-203).
+        var angles = 0;
+        try { angles = element.GetParameters("Angle").Count; } catch { }
+        if (angles > 1) angleShared.Add(element.Id.ToString());
+        else
         {
-            var a = element.LookupParameter("Angle");
-            if (a != null && a.HasValue && a.StorageType == StorageType.Double) angle = a.AsDouble() * 180.0 / Math.PI;
+            try
+            {
+                var a = element.LookupParameter("Angle");
+                if (a != null && a.HasValue && a.StorageType == StorageType.Double) angle = a.AsDouble() * 180.0 / Math.PI;
+            }
+            catch { }
         }
-        catch { }
     }
     else
     {
@@ -341,6 +360,17 @@ foreach (var element in elements)
         try
         {
             var s = doc.GetSpaceAtPoint(at);
+            // A HEAD AT THE CEILING IS OFTEN ABOVE ITS SPACE'S UPPER LIMIT, and
+            // GetSpaceAtPoint tests height as well as plan - so it read "in no
+            // Space" and the spacing check left it out (row 5b-338). Asked
+            // again at its level, one foot up: the probe place-hosted-family
+            // uses for rooms. A head with no level of its own stays unplaced.
+            if (s == null && instance != null && instance.LevelId != ElementId.InvalidElementId)
+            {
+                var headLevel = doc.GetElement(instance.LevelId) as Level;
+                if (headLevel != null)
+                    s = doc.GetSpaceAtPoint(new XYZ(at.X, at.Y, headLevel.ProjectElevation + 1.0));
+            }
             if (s != null)
             {
                 space = (s.Number + " " + s.Name).Trim();
@@ -374,6 +404,12 @@ foreach (var element in elements)
         .Append("," + esc("at") + ":").Append(point(at))
         .Append("," + esc("connectors") + ":[").Append(connectors.ToString()).Append("]}");
 }
+
+if (angleShared.Count > 0)
+    findings.Add(angleShared.Count + " element(s) carry TWO OR MORE parameters named Angle - asked by "
+        + "name, Revit picks one of them at random, so their angle was NOT read and is null: "
+        + string.Join(", ", angleShared.GetRange(0, Math.Min(20, angleShared.Count)))
+        + (angleShared.Count > 20 ? " and " + (angleShared.Count - 20) + " more" : "") + ".");
 
 // ---- the whole network, format 1 -------------------------------------------
 

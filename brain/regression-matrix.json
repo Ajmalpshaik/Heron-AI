@@ -18,6 +18,9 @@
   ],
   "projects": [
     "platform/Heron.Core/Heron.Core.csproj",
+    "platform/Heron.Installer/Heron.Installer.csproj",
+    "platform/Heron.Installer.App/Heron.Installer.App.csproj",
+    "platform/Heron.Installer.Cli/Heron.Installer.Cli.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
     "revit/Heron.Doc/Heron.Doc.csproj",
@@ -25,6 +28,9 @@
     "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
     "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
+    "tests/Heron.FailureNote.TestHost/Heron.FailureNote.TestHost.csproj",
+    "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
+    "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj"
   ],
   "releases": {

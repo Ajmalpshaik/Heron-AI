@@ -83,8 +83,6 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
-FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
-
 
 # Every flag this tool has, and what it takes.
 FLAGS = {"--top": "a whole number - how many rows to print"}
@@ -117,6 +115,20 @@ def settings_from(argv):
                           % (FLAGS[word], rest[i + 1]))
         i += 2
     return top, None
+
+
+def routing():
+    """tools/check-routing.py as a module - its filename has a hyphen in it.
+
+    Loaded for its store guard, store_for_this_tree(), so the two CI gates
+    that share one knowledge store ask it the same three questions.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "heron_tool_check_routing", os.path.join(ROOT, "tools", "check-routing.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def correlation(xs, ys):
@@ -161,21 +173,19 @@ def main(argv):
             "folder - an empty one is enough - and run this again.\n")
         return 2
 
-    on_disk = len([
-        name for name in os.listdir(FRAGMENTS)
-        if os.path.exists(os.path.join(FRAGMENTS, name, "fragment.yaml"))
-    ])
-    store = SCOPE.open_scope(SCOPE.GLOBAL)
-    # Same guard check-routing.py carries, and for the same reason: a stale
-    # store reports a library it does not hold, and the numbers below would be
-    # about a smaller library than the one on disk.
-    if store.count() != on_disk:
-        was = store.count()
-        store.close()
-        SCOPE.rebuild()
-        store = SCOPE.open_scope(SCOPE.GLOBAL)
-        print("  (store held %d of %d fragment(s) on disk - rebuilt)"
-              % (was, on_disk))
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY, or every count below is about
+    # somebody else's - and it is check-routing.py's guard, IMPORTED, NOT
+    # COPIED. This file carried its own until 2026-10-09: it rebuilt when
+    # store.count() differed from the number of card folders. A COUNT IS NOT
+    # AN IDENTITY - check-routing learned that on 2026-09-06, when three
+    # parallel sessions each had 226 cards and the store held another one's -
+    # and a set of ids is not the content either (row 5b-229). And it rebuilt
+    # the ONE store every chat on the PC reads from whatever checkout it ran
+    # in, which check-routing stopped doing on 2026-10-08 (row 5b-233). Both
+    # holes stayed open here because the guard had two homes; it has one now.
+    store = routing().store_for_this_tree("count of intrusions")
+    if store is None:
+        return 2
 
     try:
         SEARCH.index(store)

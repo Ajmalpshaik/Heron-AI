@@ -117,6 +117,14 @@ compatibility-note: >
 #                                           fragment reports for what it placed
 #   "list the rooms and their areas"     -> REPORT_ROOM_SPACE_DATA
 #   "how big is this room"               -> MEASURE_ROOM_DIMENSIONS
+#   "draw a room separation line across an opening"
+#                                        -> CREATE_ROOM_SEPARATION_LINES. Two
+#                                           areas joined by an opening with no
+#                                           wall are ONE room to Revit, and a
+#                                           point in either places one room
+#                                           over both (row 5b-289). Draw the
+#                                           line there first, then place the
+#                                           room for the half without one here
 
 utterances:
   - put a room here

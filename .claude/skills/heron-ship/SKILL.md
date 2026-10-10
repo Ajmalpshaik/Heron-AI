@@ -140,11 +140,18 @@ caught it.
 **The two with `HERON_KNOWLEDGE` need somewhere to put a knowledge store** and exit **2** saying so
 when there is none — an empty folder is enough, and CI makes one. **Set it on Windows too.**
 `%APPDATA%` answers there, but it answers with the ONE store every checkout and every live Heron chat
-on the machine reads: when `check-routing` finds that store does not hold your branch's fragments it
-rebuilds it from your branch, and from then on every other session's `heron_lookup` names your
-unmerged fragments ([row 5b-233](../../../docs/FRAGMENT-ISSUES.md)). Measured 2026-09-27. Point both at
-a scratch folder, and if you ran one without it, put the shared store back from the main checkout with
-`python brain/heron_scope.py --rebuild`.
+on the machine reads: until 2026-10-08, when `check-routing` found that store did not hold your
+branch's fragments it rebuilt it from your branch, and from then on every other session's
+`heron_lookup` named your unmerged fragments ([row 5b-233](../../../docs/FRAGMENT-ISSUES.md), measured
+2026-09-27). **From a worktree, or from the MAIN folder with any branch but `main` checked out, both
+now refuse, exit 2**, and say to set `HERON_KNOWLEDGE` - so a 2 there is this, not your change. The
+rule is `heron_scope.rebuild_refusal()`, the one the lookup asks before it warms that store; the
+main folder on a branch was let through until 2026-10-09. (`check-intrusion` had no guard of its own
+until 2026-10-09, and rebuilt on a COUNT; it calls `check-routing`'s guard now, and so do
+`score-routing`, `measure-brain`, `measure-routes` and `measure-graph`.) Point both at a scratch
+folder anyway: from the main folder on `main` they still rebuild the shared store, which every live
+chat reads. If a store was rebuilt from a branch before this, put it back from the main checkout on
+`main` with `python brain/heron_scope.py --rebuild`.
 
 **`check-decision-titles` needs the whole git history** and exits **2** in a shallow clone, saying so:
 it reads what each decision was FIRST written as, and a clone cut short cannot show that. A cloud

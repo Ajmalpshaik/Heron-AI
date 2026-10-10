@@ -112,6 +112,25 @@ def levels(found, level):
     return [f["text"] for f in found if f["level"] == level]
 
 
+def test_a_head_above_its_space_is_asked_again_at_its_level():
+    # Row 5b-338: GetSpaceAtPoint tests a Space's height as well as its plan,
+    # and a head at the ceiling is often above the Space's upper limit, so it
+    # read "in no Space" and the spacing check left it out. The read asks
+    # again at the head's level, one foot up. The C# cannot run off Revit, so
+    # this reads the source - the order is what matters: the level probe runs
+    # only when the first ask found nothing.
+    path = os.path.join(ROOT, "brain", "fragments", "report-sprinkler-network",
+                        "impl", "any", "fragment.cs")
+    with open(path, encoding="utf-8") as fh:
+        code = fh.read()
+    first = code.find("doc.GetSpaceAtPoint(at)")
+    retry = code.find("headLevel.ProjectElevation + 1.0")
+    guard = code.find("if (s == null && instance != null")
+    assert first >= 0, "the head's own point is still asked first"
+    assert retry > first, "and its level, one foot up, is asked after it"
+    assert first < guard < retry, "only when the first ask found no Space"
+
+
 def test_read_refuses_whole():
     assert "format" in raises(T.read, {"format": 2})
     assert "JSON" in raises(T.read, "{not json")

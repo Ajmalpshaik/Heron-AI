@@ -119,8 +119,8 @@ def risk_of(store, fragment_id):
 def ids_on_disk():
     """The id of every fragment in this working tree.
 
-    The IDS and not the COUNT - see the staleness check in main() for the run
-    that made the difference matter.
+    The IDS and not the COUNT - see the staleness check in
+    store_for_this_tree() for the run that made the difference matter.
     """
     try:
         import yaml
@@ -163,6 +163,27 @@ def describe_drift(store_ids, disk_ids, limit=4):
     return "; ".join(parts) if parts else "the same ids in a different order"
 
 
+def stale_rows(store):
+    """The ids whose row in STORE is not the row their card on disk would
+    write - a changed identity, capability, domain, status or risk.
+
+    Row 5b-229: the rebuild below fired only when the SET OF IDS differed, and
+    the search reads a card's identity, capability and domain from the store's
+    row, not the file. So an edited card was searched under its old words, and
+    a routing result was printed over a library the store did not hold - the
+    failure the comments in store_for_this_tree() exist to prevent, one step
+    quieter. The rows are compared the way rebuild() writes them, from
+    every card that validates."""
+    import heron_fragment as FRAG
+    import heron_scope as SCOPE
+    found, _problems = FRAG.load_all()
+    wanted = dict((frag.id, SCOPE.row_of(frag)) for frag in found.values()
+                  if not FRAG.validate(frag))
+    held = dict((row["id"], tuple(row[f] for f in SCOPE.ROW_FIELDS))
+                for row in store.fragments())
+    return sorted(fid for fid in wanted if fid in held and held[fid] != wanted[fid])
+
+
 def utterances():
     """(fragment id, sentence) for every declared utterance."""
     try:
@@ -194,6 +215,111 @@ LADDER = ["READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH", "ADMIN"]
 def rung(level):
     """Where a risk level sits on the ladder; -1 for anything unrecognised."""
     return LADDER.index(level) if level in LADDER else -1
+
+
+def store_for_this_tree(what):
+    """The GLOBAL store, holding exactly this working tree's library - or None,
+    having said why on stdout or stderr, and the caller exits 2.
+
+    `what` names the result a refusal is NOT ("routing result"), because the
+    caller's numbers are what would be wrong.
+
+    ONE HOME FOR THE THREE TESTS - the ids, the content and the shared store -
+    because `tools/check-intrusion.py` asks the same store the same question
+    and carried its own copy of it. That copy compared store.count() with the
+    number of card folders, which is the test this one stopped using on
+    2026-09-06 (see below), and it rebuilt the shared store from any checkout:
+    the two holes rows 5b-229 and 5b-233 closed here, left open one file over.
+    A second copy of a guard is how one of them stops being one.
+
+    The same was true of score-routing.py, measure-brain.py and
+    measure-routes.py, which rebuilt on an id mismatch with no content check
+    and no shared-store refusal, and of measure-graph.py, which rebuilt only
+    an EMPTY store with neither. All four call this since 2026-10-09. And the
+    shared-store rule is not this file's either: it is
+    heron_scope.rebuild_refusal(), which the lookup asks before it warms or
+    advises a rebuild of the same store.
+    """
+    import heron_scope as SCOPE
+
+    # The stores are DERIVED (Golden Rule 11), so an empty one is a fresh machine
+    # rather than damage, and a checker should run on a fresh machine without a
+    # setup step. Rebuild rather than refuse - but rebuild EXPLICITLY, because
+    # the one thing this must never do is print a routing result computed over
+    # an empty library.
+    # STALE counts as empty here, and that distinction cost a real run. A store
+    # that simply has not seen the fragments added since it was last built
+    # reports every one of them as rank #None - not "ranked badly", ABSENT - and
+    # that reads as a routing catastrophe when nothing is wrong at all. It is
+    # the same failure the empty case guards against, one step milder, and the
+    # comment above already states the principle: never print a routing result
+    # computed over a library this store does not actually hold.
+    #
+    # THE TEST IS THE IDS AND NOT THE COUNT, and that cost a run too. This
+    # compared store.count() to the number of folders on disk until 2026-09-06.
+    # One store at %APPDATA%\Heron\knowledge serves every checkout on the
+    # machine, and three sessions building fragments in parallel (HANDOVER 9b)
+    # each had a working tree of exactly 226 - so the count MATCHED while the
+    # store held another session's library, no rebuild was triggered, and the
+    # tool reported confidently on fragments that were not the ones on disk. It
+    # printed "claimed and not reached: 14" on one run and "7 questions answered
+    # by a writer" on another. Both were artefacts of the wrong library, and
+    # both look exactly like a real result - which is the whole danger. A COUNT
+    # IS NOT AN IDENTITY.
+    disk_ids = ids_on_disk()
+    store = SCOPE.open_scope(SCOPE.GLOBAL)
+    store_ids = set(row["id"] for row in store.fragments())
+    # AND THE CONTENT, NOT ONLY THE IDS - row 5b-229.
+    edited = stale_rows(store) if store_ids == disk_ids else []
+    if store_ids != disk_ids or edited:
+        drift = (describe_drift(store_ids, disk_ids) if store_ids != disk_ids else
+                 "%d card(s) edited since their row was written (%s)"
+                 % (len(edited), ", ".join(edited[:4]) + (", and more" if len(edited) > 4 else "")))
+        store.close()
+        # NOT THE SHARED STORE, EXCEPT FROM THE MAIN CHECKOUT ON MAIN - row
+        # 5b-233. One store serves every checkout and every chat on the PC;
+        # rebuilt from a worktree it put that branch's unmerged cards into
+        # every other session's heron_lookup. heron_scope.rebuild_refusal()
+        # is the rule, and the lookup asks it too (heron_brain's
+        # _store_warm_allowed): a private store always, the shared one only
+        # from the main checkout on branch main. Until 2026-10-09 this asked
+        # refreshes_from() alone, which names the main checkout whatever its
+        # branch - so a feature branch checked out in the main folder rebuilt
+        # the shared store from its own cards.
+        refused = SCOPE.rebuild_refusal()
+        if refused is not None:
+            sys.stderr.write(
+                "NOT RUN: the knowledge store at %s is the SHARED one every chat on\n"
+                "this machine reads, and it does not match this working tree (%s).\n"
+                "It is rebuilt only from the main checkout on branch main - %s.\n"
+                "Rebuilding it from here would put this branch's cards into every\n"
+                "other session's answers (row 5b-233).\n"
+                "Point HERON_KNOWLEDGE at a scratch folder - an empty one is enough -\n"
+                "and run this again.\n" % (SCOPE.knowledge_dir(), drift, refused))
+            return None
+        built, problems = SCOPE.rebuild()
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        store_ids = set(row["id"] for row in store.fragments())
+        print("  (store did not match this working tree - %s; rebuilt %d%s)"
+              % (drift, built,
+                 "; %d problem(s)" % len(problems) if problems else ""))
+        if store.count() == 0:
+            store.close()
+            print("  the store is STILL empty after a rebuild - nothing to route")
+            print("  against, and this is not a %s. Check brain/fragments/." % what)
+            return None
+        if store_ids != disk_ids:
+            # A rebuild that does not reconcile them means something is wrong
+            # with the library itself - a fragment that will not load, most
+            # likely. Refusing is the same principle as the empty case: the
+            # numbers below would be computed over a library this store does
+            # not hold, and they would look perfectly normal.
+            print("  the store STILL does not match after a rebuild - %s."
+                  % describe_drift(store_ids, disk_ids))
+            print("  This is not a %s. Run `python brain/heron_fragment.py`." % what)
+            store.close()
+            return None
+    return store
 
 
 # A ROUTING ROW'S TARGET: the word right after `->`, when it is a capability's
@@ -365,58 +491,13 @@ def report(revit):
             "folder - an empty one is enough - and run this again.\n")
         return 2
 
-    # The stores are DERIVED (Golden Rule 11), so an empty one is a fresh machine
-    # rather than damage, and a checker should run on a fresh machine without a
-    # setup step. Rebuild rather than refuse - but rebuild EXPLICITLY, because
-    # the one thing this must never do is print a routing result computed over
-    # an empty library.
-    # STALE counts as empty here, and that distinction cost a real run. A store
-    # that simply has not seen the fragments added since it was last built
-    # reports every one of them as rank #None - not "ranked badly", ABSENT - and
-    # that reads as a routing catastrophe when nothing is wrong at all. It is
-    # the same failure the empty case guards against, one step milder, and the
-    # comment above already states the principle: never print a routing result
-    # computed over a library this store does not actually hold.
-    #
-    # THE TEST IS THE IDS AND NOT THE COUNT, and that cost a run too. This
-    # compared store.count() to the number of folders on disk until 2026-09-06.
-    # One store at %APPDATA%\Heron\knowledge serves every checkout on the
-    # machine, and three sessions building fragments in parallel (HANDOVER 9b)
-    # each had a working tree of exactly 226 - so the count MATCHED while the
-    # store held another session's library, no rebuild was triggered, and the
-    # tool reported confidently on fragments that were not the ones on disk. It
-    # printed "claimed and not reached: 14" on one run and "7 questions answered
-    # by a writer" on another. Both were artefacts of the wrong library, and
-    # both look exactly like a real result - which is the whole danger. A COUNT
-    # IS NOT AN IDENTITY.
-    disk_ids = ids_on_disk()
-    store = SCOPE.open_scope(SCOPE.GLOBAL)
-    store_ids = set(row["id"] for row in store.fragments())
-    if store_ids != disk_ids:
-        drift = describe_drift(store_ids, disk_ids)
-        store.close()
-        built, problems = SCOPE.rebuild()
-        store = SCOPE.open_scope(SCOPE.GLOBAL)
-        store_ids = set(row["id"] for row in store.fragments())
-        print("  (store did not match this working tree - %s; rebuilt %d%s)"
-              % (drift, built,
-                 "; %d problem(s)" % len(problems) if problems else ""))
-        if store.count() == 0:
-            store.close()
-            print("  the store is STILL empty after a rebuild - nothing to route")
-            print("  against, and this is not a routing result. Check brain/fragments/.")
-            return 2
-        if store_ids != disk_ids:
-            # A rebuild that does not reconcile them means something is wrong
-            # with the library itself - a fragment that will not load, most
-            # likely. Refusing is the same principle as the empty case: the
-            # numbers below would be computed over a library this store does
-            # not hold, and they would look perfectly normal.
-            print("  the store STILL does not match after a rebuild - %s."
-                  % describe_drift(store_ids, disk_ids))
-            print("  This is not a routing result. Run `python brain/heron_fragment.py`.")
-            store.close()
-            return 2
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY - the ids, every row's content,
+    # and never by rebuilding the shared store from a checkout that is not
+    # main. All three live in store_for_this_tree() above, which
+    # check-intrusion.py calls too; it says why when it refuses.
+    store = store_for_this_tree("routing result")
+    if store is None:
+        return 2
 
     try:
         SEARCH.index(store)

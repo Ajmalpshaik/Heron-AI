@@ -364,6 +364,7 @@ h2 .ico { color: var(--primary); }
 .chip.ok { color: var(--ok); background: var(--ok-bg); }
 .chip.refused { color: var(--warn); background: var(--warn-bg); }
 .chip.failed { color: var(--bad); background: var(--bad-bg); }
+.chip.handed_back { color: var(--muted); background: var(--surface-2); }
 
 /* ------------------------------------------------------------ footer and closed state */
 .foot {

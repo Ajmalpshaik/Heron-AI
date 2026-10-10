@@ -947,7 +947,7 @@ cannot do, so R-58's *refuse a question nothing covers* is not reachable this wa
 
 ## 2026-09-28 — a colour sentence reached the tool that makes zones
 
-[Row 5b-236](../docs/fragment-issues/section-5b-rows-176-200.md). *"color hvac zones in this plan"*, which
+[Row 5b-236](../docs/fragment-issues/section-5b-rows-226-250.md). *"color hvac zones in this plan"*, which
 no card declares, resolved on the owner's backend to `CREATE_HVAC_ZONE` - a PROVEN write that makes HVAC
 zones and moves spaces into them - with `APPLY_COLOR_FILL_SCHEME`, the DRAFT colour tool, second.
 Measured on scratch stores, never the shared one, at **420 fragments** on `main` as it stood:
@@ -1028,7 +1028,7 @@ own **Color Scheme** and **Color Fill Legend**. At 420 fragments, before and aft
 
 ## 2026-10-09 — a sentence to make a material reached the tool that selects by one
 
-[Row 5b-375](../docs/fragment-issues/section-5b-rows-176-200.md). *"create a new material called
+[Row 5b-375](../docs/fragment-issues/section-5b-rows-351-375.md). *"create a new material called
 Galvanised Steel"* resolved to `SELECT_BY_MATERIAL` on the owner's lexical backend. Measured on scratch
 stores at **480 fragments**, no Revit filter, on **`lexical`** and on **`model`**
 (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker.
@@ -1072,11 +1072,11 @@ steel material"*, which sent *"what is made of stainless steel"* there too. **Th
 
 ## 2026-10-09 — a sentence a routing table claimed, held by ranking alone
 
-[Row 5b-385](../docs/fragment-issues/section-5b-rows-176-200.md). `REPORT_BOUNDING_BOX` sent *"how much
+[Row 5b-385](../docs/fragment-issues/section-5b-rows-376-400.md). `REPORT_BOUNDING_BOX` sent *"how much
 space does this take up"* to itself in its `# ROUTING` comment and never declared it, so retrieval had
 only the ranking to go on. Measured on scratch stores, no Revit filter, on **`lexical`** and on
 **`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker, at
-**480 fragments** on `main` and **481** with `LIST_MATERIALS` ([row 5b-376](../docs/fragment-issues/section-5b-rows-176-200.md))
+**480 fragments** on `main` and **481** with `LIST_MATERIALS` ([row 5b-376](../docs/fragment-issues/section-5b-rows-376-400.md))
 merged locally.
 
 | | `main`, lexical | with `LIST_MATERIALS`, lexical | `main`, `model` |
@@ -1118,7 +1118,7 @@ here. *Space* in it is room taken up, not an MEP Space.
 
 ## 2026-10-09 — every routing-table claim that did not reach its card, judged
 
-[Row 5b-387](../docs/fragment-issues/section-5b-rows-176-200.md). `check-routing.py` listed 56 claims not
+[Row 5b-387](../docs/fragment-issues/section-5b-rows-376-400.md). `check-routing.py` listed 56 claims not
 reached on **`lexical`** and 70 on **`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside
 the repository) - 89 sentences, a table saying *"-> here"* and ranking answering something else. Measured on
 scratch stores at **480 fragments**, no Revit filter, no re-ranker.
@@ -1166,7 +1166,7 @@ whose backend is not the one it was asked for - and a backend label is checked o
 
 ## 2026-10-09 — questions about materials reach writes, and no card edit fixes it
 
-[Row 5b-396](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `17040842`, **480
+[Row 5b-396](../docs/fragment-issues/section-5b-rows-376-400.md). Measured on `main` `17040842`, **480
 fragments**, no Revit filter, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
 from a venv outside the repository), no re-ranker, every run on its own scratch store.
 

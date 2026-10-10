@@ -7,6 +7,7 @@
 
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace Heron.Core
 {
@@ -80,13 +81,46 @@ namespace Heron.Core
                 // Atomic on NTFS: a reader sees the whole old file or the
                 // whole new one, never an absence. Passing null for the backup
                 // is what asks for no third file to be left behind.
-                File.Replace(tmp, path, null);
+                ReplaceWithRetry(tmp, path);
             }
             else
             {
                 // Nothing to replace. A rename onto a free name is itself
                 // atomic, so the first write is as safe as every later one.
                 File.Move(tmp, path);
+            }
+        }
+
+        /// <summary>
+        /// File.Replace, tried again a few times when Windows says the file
+        /// to be replaced is held.
+        ///
+        /// FRAGMENT-ISSUES ROW 5b-197: on the owner's PC 3 runs in 40 of the
+        /// kernel test host died on "Unable to remove the file to be
+        /// replaced" - File.Replace's known race with a process that holds
+        /// the file for a moment after it was written, an antivirus or an
+        /// indexer. It fails rather than waits, and the same call writes the
+        /// discovery file a chat finds Revit by and the settings save. So a
+        /// held file is waited for, briefly and a bounded number of times;
+        /// anything else - and the last attempt - throws as it always did.
+        /// A file that is not there is not a held file, so it is not retried.
+        /// </summary>
+        private static void ReplaceWithRetry(string tmp, string path)
+        {
+            const int attempts = 5;
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    File.Replace(tmp, path, null);
+                    return;
+                }
+                catch (IOException held) when (attempt < attempts
+                                               && !(held is FileNotFoundException)
+                                               && !(held is DirectoryNotFoundException))
+                {
+                    Thread.Sleep(25 * attempt);
+                }
             }
         }
     }

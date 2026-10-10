@@ -129,6 +129,12 @@ compatibility-note: >
 #   "nothing shows in this view"       -> DIAGNOSE_VISIBILITY. A template can be
 #                                         the reason, but so can six other
 #                                         things, and that fragment walks them
+#   "what scale is this plan at"       -> READ_VIEW_SCALE, which declares it
+#                                         (row 146, 2026-10-09). It reached
+#                                         HERE on spelling. That one reads
+#                                         the scale and says whether the
+#                                         template holds it; this one names
+#                                         everything the template holds
 
 utterances:
   - why is this view setting greyed out

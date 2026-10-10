@@ -53,6 +53,12 @@ Verifies that:
 - **no sentence states an MCP tool total other than `len(heron_tools.TOOLS)`** — in section 7, added
   2026-09-23, **fails the run**. Another project's count (*"their 314 MCP tools"*) and a quotation are
   left alone; the better sentence types no number and points at `python mcp/server/heron_tools.py`
+- **a link whose words name one 5b row and whose target is a rows file reaches a file that holds that
+  row** — section 12, added 2026-10-09, **fails the run**, naming the file that does hold it. The file
+  is there, so section 1 cannot see this: it is what a re-band left behind on 2026-10-08
+  ([row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md)). Read from the file's table, not its
+  name, so a row appended to the last file is rightly linked there until the split moves it; a link in
+  code is an example, and one naming two rows is not judged
 
 Run it after any edit that moves or renames a document. It is how the Golden Rule renumbering
 (ten rules to fifteen, [D-12](../docs/DECISIONS.md)) was verified across 31 files.
@@ -1980,6 +1986,14 @@ heading that would leave the page.
 number belongs to. A new section written on the page is moved by the next run, and a run with nothing new moves
 nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register, never the real one.
 
+**A link that names a row it moves follows the row** - since 2026-10-09, [row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md).
+A link whose words name one 5b row and whose target is the rows file that row is leaving is pointed at the file it
+goes to; only the file's name in the link changes. Inside the register that is done to the register as one text
+before it is cut, so the read-back compares the files with that text byte for byte, and the text with the register
+as it stood with every rows file's name left out. Every other `.md`, `.yaml`, `.yml` and `.py` git tracks is
+re-pointed as its own pass, written after the register. A link in fenced code or an inline code span, and one naming
+two rows, is left as written. The report says how many links follow and in which documents.
+
 **PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
 [`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a
 section headed only by a date takes its first five words as well, so two written on one day get two files.
@@ -2007,7 +2021,9 @@ its heading, and each band of rows back where the table was, with the links as t
 Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
 file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than
 returning a shorter register. A page that names no file is returned as it is, which is how a suite's own register
-is read.
+is read. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
+(`rows_held`), so `split-register.py`, which re-points such a link, and `check-docs.py` section 12, which fails on
+one at the wrong file, cannot read a link two ways.
 
 ---
 

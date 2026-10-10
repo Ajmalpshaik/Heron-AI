@@ -1,0 +1,52 @@
+# The proof plan for CREATE_ROOM_SEPARATION_LINES (FRG-GEO-059), FRAGMENT-ISSUES
+# row 5b-289. Written 2026-10-09 and NOT RUN as a proof - the owner runs it, on a
+# TEST COPY.
+#
+#     python tools/batch-prove.py tools/jobs/create-room-separation-lines-project2-2026-10-09.yaml --dry-run
+#
+# PROJECT2 IS WHERE THE ROW WAS FOUND: the shop-and-flat plan whose kitchen and
+# living room are joined by a 900 mm opening, and PLACE_ROOM_AT_POINT made one
+# room of both.
+#
+# THE POINTS BELOW ARE NOT THAT OPENING. Nobody has read the archway's jambs off
+# Project2 yet, so this job draws a 900 mm line at the project origin on Level 1
+# instead: enough to show a line is made, filed as Room Separation Lines, on the
+# plan's level, and read back - and the whole run is rolled back. It shows
+# NOTHING about splitting a room. That is the hand check in the job's note, on
+# the real opening, with its two points read off the model.
+#
+# CHECK THE TWO VIEW NAMES IN THE PROJECT BROWSER FIRST. "FloorPlan: Level 1"
+# assumes a floor plan called Level 1. The negative names "{3D}", the default
+# 3D view - if Project2 has none, open it once (View, 3D View) and save the test
+# copy, or name any section or elevation instead. A name that is not there
+# stops the run with "No view called ...", which says nothing about the fragment.
+
+model: Project2 (the shop-and-flat plan), Revit 2024 - a SAVED TEST COPY
+
+defaults:
+  in: Project2
+  write: true
+  set:
+    view: "FloorPlan: Level 1"
+    # Millimetres, a point per semicolon (D-67).
+    points: "0,0,0; 900,0,0"
+  negative-set:
+    # THE SAME TWO POINTS AND A VIEW WITH NO LEVEL. Not an empty request: the
+    # refusal must name the view and say it has no level, and nothing may be
+    # drawn anywhere.
+    view: "{3D}"
+    points: "0,0,0; 900,0,0"
+
+jobs:
+  - fragment: create-room-separation-lines
+    expect: created
+    note: >
+      Positive: created 1, tooShort 0, refused empty; findings say 1 line drawn
+      in 'Level 1' on level 'Level 1', 900 mm in all, 1 read back as room
+      separation lines, ends (0, 0) to (900, 0). Negative: created 0, refused
+      names '{3D}' as a view with no level of its own. THEN BY HAND, on the
+      test copy and NOT through this file: read the archway's two jamb points
+      off the plan, run the fragment with them, and look at the rooms - the
+      kitchen and the living room must now be bounded apart, and the half with
+      no room is PLACE_ROOM_AT_POINT's. Run it once more with asSpace true and
+      check the room schedule did NOT change. Undo after each.

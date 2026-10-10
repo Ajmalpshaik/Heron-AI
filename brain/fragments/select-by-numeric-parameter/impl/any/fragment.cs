@@ -1,7 +1,8 @@
 // NOT STANDALONE. Assumes `doc`, `parameterName`, `comparison`, `compareValue`,
 // `compareValueMax`, `tolerance`, `includeTypeParameters`, `categories` and
 // `includeLinks` are in scope; leaves `elements`, `withoutParameter`,
-// `notNumeric`, `findings`, `linksSearched` and `linkedMatches` behind.
+// `notNumeric`, `ambiguous`, `findings`, `linksSearched` and `linkedMatches`
+// behind.
 //
 // THE VALUE ARRIVES IN REVIT'S INTERNAL UNIT, AND THAT IS A REFUSAL TO GUESS. A
 // length is decimal feet, so 500 mm is handed in as 500 / 304.8. An airflow, a
@@ -23,6 +24,15 @@
 // are not the same double, and == finds almost nothing while looking like a
 // filter that ran.
 //
+// A NAME TWO PARAMETERS SHARE IS NOT READ, AND THE ELEMENT IS NEVER MATCHED.
+// A shared or project parameter can be bound beside a built-in one of the same
+// name, and asked by name Revit then returns "the first one encountered",
+// which its own reference says "is determined at random" - so a comparison on
+// such an element would test a number nobody chose. It is counted in
+// `ambiguous` instead, where the lookup would land: on the element, or on its
+// type when the element has none and type parameters were asked for (D-54 s3,
+// FRAGMENT-ISSUES 5b-203).
+//
 // LINKS ARE READ ONLY WHEN ASKED FOR, AND THEY ARE COUNTED, NEVER SELECTED -
 // D-59. Absent `includeLinks` means host only, which is what this did before
 // and what its proof measured. When it is set, each loaded link is read with
@@ -42,6 +52,7 @@
 var elements = new List<Element>();
 var withoutParameter = 0;
 var notNumeric = 0;
+var ambiguous = 0;
 var findings = new List<string>();
 
 const double MillimetresPerFoot = 304.8;
@@ -122,6 +133,20 @@ else
         return p;
     };
 
+    // TWO PARAMETERS BY THIS NAME WHERE parameterOf WOULD LOOK - see the header.
+    // Asked first, so a shared name is never read at all.
+    Func<Element, bool> nameIsShared = element =>
+    {
+        var onElement = element.GetParameters(wantName).Count;
+        if (onElement > 1) return true;
+        if (onElement > 0 || !includeTypeParameters) return false;
+        var instance = element as FamilyInstance;
+        ElementType type = instance != null && instance.Symbol != null
+            ? instance.Symbol
+            : element.Document.GetElement(element.GetTypeId()) as ElementType;
+        return type != null && type.GetParameters(wantName).Count > 1;
+    };
+
     Func<double, bool> passes = value =>
     {
         if (how == "gt") return value > compareValue;
@@ -141,6 +166,15 @@ else
     foreach (var element in collector)
     {
         scanned++;
+
+        var shared = false;
+        try { shared = nameIsShared(element); }
+        catch (Exception) { shared = false; }
+        if (shared)
+        {
+            ambiguous++;
+            continue;
+        }
 
         Parameter p = null;
         try { p = parameterOf(element); }
@@ -184,6 +218,12 @@ else
         findings.Add(string.Format("{0} element(s) carry '{1}' as text rather than a number - "
             + "SELECT_BY_PARAMETER_VALUE is the one that matches those", notNumeric, wantName));
 
+    if (ambiguous > 0)
+        findings.Add(string.Format("{0} element(s) carry TWO OR MORE parameters named '{1}' and were "
+            + "NOT compared - asked by name, Revit picks one of them at random, so a match or a miss "
+            + "there would be a guess. Select one and look in Properties to see both",
+            ambiguous, wantName));
+
     if (withoutParameter == scanned && scanned > 0)
         findings.Add(string.Format("NOTHING carries '{0}' as a value. That is a parameter name that "
             + "does not exist on these elements, not a model with no matches", wantName));
@@ -205,10 +245,16 @@ else
         var linkMatched = 0;
         var linkWithout = 0;
         var linkNotNumeric = 0;
+        var linkShared = 0;
 
         foreach (var element in linkedCollector)
         {
             linkScanned++;
+
+            var shared = false;
+            try { shared = nameIsShared(element); }
+            catch (Exception) { shared = false; }
+            if (shared) { linkShared++; continue; }
 
             Parameter p = null;
             try { p = parameterOf(element); }
@@ -226,8 +272,11 @@ else
 
         linksSearched++;
         linkedTotal += linkMatched;
-        linkedMatches.Add(string.Format("{0}: {1} of {2} match; {3} lack '{4}', {5} hold it as text",
-            linked.Title, linkMatched, linkScanned, linkWithout, wantName, linkNotNumeric));
+        linkedMatches.Add(string.Format("{0}: {1} of {2} match; {3} lack '{4}', {5} hold it as text{6}",
+            linked.Title, linkMatched, linkScanned, linkWithout, wantName, linkNotNumeric,
+            linkShared > 0
+                ? string.Format(", {0} carry it twice and were NOT compared", linkShared)
+                : ""));
     }
 }
 

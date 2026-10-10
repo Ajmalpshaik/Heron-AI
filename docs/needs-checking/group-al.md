@@ -44,4 +44,4 @@ negative case, and neither fragment has a fingerprint. Both are `DRAFT` until th
 session 27288: 14 offices, 126 ducts and 126 fittings - 70 elbows, 28 taps, 28 transitions, 14 of them
 straight onto a unit's outlet - then `select-by-connection-status` found 0 of 258 duct pieces open. The
 owner's Duct Sizing on Offices 01 and 02 left both joined. Why the check exists:
-[FRAGMENT-ISSUES 5b-250](../fragment-issues/section-5b-rows-176-200.md).
+[FRAGMENT-ISSUES 5b-250](../fragment-issues/section-5b-rows-226-250.md).
