@@ -91,17 +91,26 @@ FAST = ["check-docs", "check-metadata", "check-structure"]
 # why it was left out - but check-gaps is slower still and has been here all
 # along, and --gate is opt-in, so nothing gets slower by default. What changes
 # is that it becomes POSSIBLE to record what the other tool requires.
+#
+# EVERY CHILD RUNS ON THE PYTHON RUNNING THIS, NEVER ON A NAME. This table and
+# suite_results() spelled "python3", and on the owner's PC that name is the
+# Microsoft Store's stub: it exists, so no OSError reached the "could not run"
+# path, and it exits 9009 - so a capture listed every suite as FAILED in 22
+# seconds, and two such records compared would rule NO CHANGE MEASURED on
+# nothing. FRAGMENT-ISSUES row 5b-377, 2026-10-09.
+PYTHON = sys.executable or "python3"
+
 RUNNABLE = {
-    "check-docs":      ["python3", "tools/check-docs.py"],
-    "check-metadata":  ["python3", "tools/check-metadata.py"],
-    "check-structure": ["python3", "tools/check-structure.py"],
-    "check-gaps":      ["python3", "tools/check-gaps.py"],
-    "check-licence":   ["python3", "tools/check-licence.py"],
-    "check-package":   ["python3", "tools/check-package.py"],
-    "check-routing":   ["python3", "tools/check-routing.py"],
-    "check-intrusion": ["python3", "tools/check-intrusion.py"],
-    "check-compile":      ["python3", "tools/check-compile.py"],
-    "check-api-surface":  ["python3", "tools/check-api-surface.py"],
+    "check-docs":      [PYTHON, "tools/check-docs.py"],
+    "check-metadata":  [PYTHON, "tools/check-metadata.py"],
+    "check-structure": [PYTHON, "tools/check-structure.py"],
+    "check-gaps":      [PYTHON, "tools/check-gaps.py"],
+    "check-licence":   [PYTHON, "tools/check-licence.py"],
+    "check-package":   [PYTHON, "tools/check-package.py"],
+    "check-routing":   [PYTHON, "tools/check-routing.py"],
+    "check-intrusion": [PYTHON, "tools/check-intrusion.py"],
+    "check-compile":      [PYTHON, "tools/check-compile.py"],
+    "check-api-surface":  [PYTHON, "tools/check-api-surface.py"],
 }
 
 PASS, FAIL, NOT_RUN = "PASS", "FAIL", "NOT RUN"
@@ -111,10 +120,18 @@ def w(s):
     sys.stdout.write(s.encode("ascii", "replace").decode("ascii"))
 
 
+# A CHILD'S OUTPUT IS READ AS UTF-8. `text=True` alone decodes in the ANSI code
+# page on Windows - cp1252 on the owner's PC - which has no character for the
+# byte 0x8F: the reader thread dies, stdout comes back None, and a gate's last
+# line is lost while its exit code is kept. Measured on that PC, row 5b-377.
+# `errors="replace"` is for the one thing UTF-8 cannot hold.
+TEXT = {"text": True, "encoding": "utf-8", "errors": "replace"}
+
+
 def run(cmd, timeout=1800):
     try:
         out = subprocess.run(cmd, cwd=ROOT, capture_output=True,
-                             text=True, timeout=timeout)
+                             timeout=timeout, **TEXT)
     except (OSError, subprocess.TimeoutExpired) as exc:
         return None, str(exc)
     lines = (out.stdout or "").strip().splitlines()
@@ -122,7 +139,7 @@ def run(cmd, timeout=1800):
 
 
 def git(args):
-    out = subprocess.run(["git", "-C", ROOT] + args, capture_output=True, text=True)
+    out = subprocess.run(["git", "-C", ROOT] + args, capture_output=True, **TEXT)
     return out.stdout.strip() if out.returncode == 0 else None
 
 
@@ -166,8 +183,10 @@ def gate_results(wanted):
                                        "with --stated if it ran elsewhere"}
             continue
         code, tail = run(cmd)
+        # EXIT 3 IS "COULD NOT RUN" for a gate as for a suite (tests/README.md):
+        # check-api-surface with no dotnet, check-fragments-compile with no SDK.
         results[name] = {
-            "result": NOT_RUN if code is None else (PASS if code == 0 else FAIL),
+            "result": (NOT_RUN if code in (None, 3) else (PASS if code == 0 else FAIL)),
             "exit": code,
             "source": "derived",
             "detail": (tail or "").strip()[:120],
@@ -239,8 +258,8 @@ def suite_results(which):
     for path in paths:
         name = os.path.basename(path)
         try:
-            out = subprocess.run(["python3", path], cwd=ROOT,
-                                 capture_output=True, text=True, timeout=600)
+            out = subprocess.run([PYTHON, path], cwd=ROOT,
+                                 capture_output=True, timeout=600, **TEXT)
             results[name] = out.returncode
         except (OSError, subprocess.TimeoutExpired):
             results[name] = None

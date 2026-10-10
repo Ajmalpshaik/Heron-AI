@@ -59,9 +59,9 @@ Write-Step 1 "Checking the environment"
 # Checked and named here rather than discovered later by a user wondering why
 # nothing happens when they ask Claude a question.
 $python = Get-PythonStatus
-if ($python.Found -and $python.HasMcp) {
+if ($python.Found -and $python.HasMcp -and $python.HasYaml) {
     $scope = if ($python.PerUser) { ", per-user" } else { "" }
-    Write-Ok "$($python.Version)$scope, with the MCP package"
+    Write-Ok "$($python.Version)$scope, with the MCP package and PyYAML"
 } else {
     Write-Host ""
     [void](Write-PythonAdvice $python)
@@ -69,6 +69,12 @@ if ($python.Found -and $python.HasMcp) {
     Write-Warn "The Revit add-in below will still install and work."
     Write-Warn "Only asking Claude questions needs Python."
     Write-Host ""
+}
+# Claude Code starts Heron with the plain command `python` (.mcp.json), so a PC
+# where only `py` answers installs cleanly here and then never connects.
+if ($python.Found -and $python.Command -ne "python") {
+    Write-Warn "Only '$($python.Command)' answered, not 'python' - and Claude Code starts Heron with 'python'."
+    Write-Warn "Turn off the python.exe App execution alias in Windows Settings, or install Python for your user."
 }
 
 $dotnet = Get-Command dotnet -ErrorAction SilentlyContinue
@@ -177,6 +183,9 @@ if ($succeeded.Count -gt 0) {
     Write-Host "    It starts a Revit-free bridge host and checks the pipe and the session"
     Write-Host "    lease. If something is wrong there, it is much easier to find here than"
     Write-Host "    three steps later with Revit open."
+    Write-Host ""
+    Write-Host "  Then, once on every PC - it builds what a first chat would otherwise wait for:"
+    Write-Host "         python tools\heron-ready.py" -ForegroundColor White
     Write-Host ""
     Write-Host "  Then:"
     Write-Host "    1. Start Revit"

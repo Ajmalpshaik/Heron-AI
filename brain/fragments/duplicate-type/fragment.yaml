@@ -119,7 +119,9 @@ compatibility-note: >
 #                                        system a run belongs to. This one
 #                                        duplicates the type behind ELEMENTS -
 #                                        a duct type, its size and shape
-#   "change the grid on just this curtain wall" -> here FIRST, then
+#   "change the grid on just this curtain wall" -> a COMPOSITION, the
+#                                        curtain-wall skill: this card first,
+#                                        then
 #                                        CHANGE_ELEMENT_TYPE to put that wall on
 #                                        the copy, then SET_CURTAIN_WALL_GRID or
 #                                        SET_CURTAIN_WALL_MULLIONS on the copy.

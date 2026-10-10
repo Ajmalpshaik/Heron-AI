@@ -1,0 +1,272 @@
+# QUESTIONS AND REQUESTS ABOUT MATERIALS, AND THE CARD EACH ONE SHOULD REACH.
+#
+# A HELD-OUT SET, kept so that a change to retrieval - or to any material card -
+# can be measured against sentences nobody tuned anything to. Written 2026-10-09
+# for FRAGMENT-ISSUES row 5b-396, in two parts:
+#   - the first 44 lines below were written BEFORE any fix was tried;
+#   - the rest were written by skeptics hired to BREAK candidate fixes, each
+#     reading a candidate and inventing sentences it might get wrong.
+# They are a session's sentences, not the owner's: tests/data/owner-questions.yaml
+# is his set, and it stays the one that decides.
+#
+# FORMAT: TAG <TAB> sentence. '#' lines are comments. No line is a phrase any
+# card declares (checked against main 17040842), so every answer is ranked.
+#   Q  a question about what an element is made of  -> READ_ELEMENT_MATERIAL
+#      (a question about UNUSED materials           -> FIND_UNUSED_MATERIALS)
+#   C  asking to make a material                    -> CREATE_MATERIAL
+#   S  selecting by a material                      -> SELECT_BY_MATERIAL
+#   W  swapping a material                          -> REPLACE_MATERIAL
+#   L  listing a document's materials               -> LIST_MATERIALS, once it exists
+#   X  anything else near these cards - judge each one by reading it
+# Ask each sentence through heron_brain.lookup (mcp/server/heron_brain.py), the
+# function heron_lookup calls, on a SCRATCH store (HERON_KNOWLEDGE set; never
+# %APPDATA%, row 5b-233), on both backends where possible.
+#
+# MEASURED ON main 17040842, 480 fragments, no Revit filter: of the 69 Q lines,
+# 29 reach a card that WRITES on the lexical backend and 20 on the trained one
+# (model2vec potion-base-8M) - nearly all of them CREATE_MATERIAL or
+# REPLACE_MATERIAL. Row 5b-396 says why, and what ten card-only fixes cost.
+#
+# NEVER DECLARE A SENTENCE FROM THIS FILE ON A CARD. It would win by its exact
+# words and the file would stop measuring anything - the same rule
+# brain/retrieval-history.md keeps for the owner's questions.
+#
+Q	what material does this use
+Q	which material are those
+Q	what material are these
+Q	what material is this pipe
+Q	what is the material of that duct
+Q	which material are those ducts
+Q	what material does this duct use
+Q	what material does the wall use
+Q	what's this made of
+Q	what material is on these
+Q	what material is it
+Q	what materials do these elements use
+Q	which materials does this pipe use
+Q	tell me the material of these elements
+Q	what material are those pipes made of
+Q	what's the material here
+Q	which material is assigned to this
+Q	what material has this element got
+C	create a material called Copper
+C	make a new material named Stainless Steel
+C	add a new material called Concrete C40
+C	new material called Galvanised Steel
+C	create a galvanised steel material
+C	I need a new material called Brass
+C	make a material for the galvanised steel ductwork
+C	create material Galvanised Steel
+C	add a material called Aluminium
+C	can you create a new material called Galvanised Steel with a grey colour
+S	select everything made of galvanised steel
+S	which elements use galvanised steel
+S	show me the ducts in galvanised steel
+S	find all the galvanised steel elements
+S	what is made of stainless steel
+S	select elements with material copper
+W	swap the material on these to galvanised steel
+W	change these to galvanised steel
+W	replace the material on these with copper
+W	change the material of these ducts to galvanised steel
+W	make these galvanised steel instead
+L	list the materials in this family
+L	what materials are in this family
+L	show me all the materials in this project
+L	which materials does this model have
+L	list every material
+# --- written by the skeptics, 2026-10-09
+C	create a material those ducts can use called Galvanised Steel
+C	make a new material these pipes can use
+C	create a material that those walls can use
+C	add a material called Brick that these walls can use
+C	create a new material which those ducts will use
+C	make a material those can use
+C	create a material those can use called Zinc
+W	change the material these use to copper
+W	swap the material these pipes use to stainless steel
+W	replace what material those use with aluminium
+S	select the elements that use copper
+S	which of these use stainless steel
+S	select all those that use galvanised steel
+X	which materials do none of the elements use
+X	set the colour of the material these pipes use
+X	which materials are unused
+X	which materials does nothing use
+X	what materials are not used
+X	which materials are not used anywhere
+X	materials not in use
+X	which materials do we not use
+X	find the materials nothing uses
+X	which materials can I delete because nothing uses them
+S	which elements use copper
+S	which pipes use copper
+S	what uses galvanised steel
+S	which of those use copper
+S	which ones use stainless steel
+W	make those use copper
+W	those should use galvanised steel
+C	create a material those ducts can use
+Q	which material do the walls use
+Q	what materials do those use
+Q	which material do these use
+Q	what material do those ducts use
+Q	what are those made of
+Q	what material is assigned to those beams
+Q	what finish does this wall use
+Q	does this pipe use copper
+Q	is that duct galvanised steel
+Q	what material type is this
+Q	what's that made from
+Q	which material does it use
+Q	tell me what material those use
+X	which materials are not in use
+X	which material does this extrusion use
+X	what colour is the copper material
+X	material takeoff of those walls
+X	purge the materials nobody uses
+X	which materials does this family use
+S	which ducts use stainless steel
+S	select those that use copper
+S	where is concrete C40 used
+C	create a material for those pipes to use
+C	make a copper material that these can use
+W	change the material those use to copper
+W	those should use stainless steel instead
+C	create a new material for those ducts to use
+C	make a material called Zinc for those to use
+C	add a new copper material that those pipes will use
+C	create a material those pipes can use called PPR
+C	we need a new material called Weathering Steel
+W	change the material those use to galvanised steel
+W	swap the material those ducts use for copper
+W	replace the material those walls use with brick
+W	make those use stainless steel instead
+W	those should use galvanised steel not aluminium
+S	which of those use galvanised steel
+S	select the ones that use stainless steel
+S	which ducts use galvanised steel
+S	which of those pipes use copper
+S	find which elements use concrete
+X	which materials are not used by anything
+X	set the colour of the material those use to red
+X	how much of each material do those use
+X	set the material those forms use to steel
+X	bring over the materials those use from the other project
+Q	what materials do those ducts use
+Q	which material does that pipe use
+Q	what material does it use
+Q	which materials do these use
+Q	what are those pipes made of
+Q	what material is assigned to those ducts
+Q	is this duct galvanised steel
+Q	are those pipes copper
+Q	what finish is on that wall
+Q	which material type do these pipes use
+X	how much copper do those pipes use
+X	which pipe segments use copper
+X	what material does this extrusion use
+X	list the materials those elements use
+S	select the pipes that use copper
+C	make a new material for those pipes to use
+W	change the material those ducts use to copper
+W	swap whatever material those use for stainless steel
+X	which materials do we not need any more
+X	what materials do we have that are never used
+X	which materials do those old families leave lying around
+S	which pipes do use PPR
+S	which walls do use facing brick
+W	change which material those ducts use to stainless steel
+C	create the materials those walls will use
+C	make the materials those pipes need
+C	create the two materials those pipes need, copper and PPR
+C	make new materials for those walls called render and blockwork
+C	add a material called Zinc so those roofs can use it
+C	we do not have a brass material yet, make one
+C	set up a new material called Polished Concrete
+W	change the materials those walls use to facing brick
+W	those use the wrong material, swap it for copper
+W	replace galvanised steel with stainless steel on those ducts
+W	swap the materials on those pipes for PPR
+W	use copper on those instead of steel
+S	which of these do use copper
+S	select the pipes that use PPR
+S	which ducts are stainless steel
+S	which elements do use concrete C40
+S	select every element that uses aluminium
+X	which materials do we never use
+X	which materials can be purged from those templates
+X	change the colour of the materials those pipes use to orange
+X	what area of each material do those floors use
+X	set the material of this extrusion to aluminium
+X	copy across the materials those other projects use
+X	the materials those ducts use all draw grey, fix the colours
+Q	which materials do the ducts use
+Q	what materials do those walls use
+Q	what material was this duct created with
+Q	what material were these created in
+Q	what were these walls created with
+Q	which material were those pipes created from
+Q	what material were these made with
+Q	what material was used when these were created
+Q	what material has replaced the old one on these
+Q	what material are they set to
+Q	which material is each of them
+Q	can you tell me what these are made of
+Q	which material is used on them
+Q	is the material on these copper
+Q	what material does this one have, copper or brass
+X	has the galvanised steel material been created yet
+X	which materials were created today
+X	check whether a material called Brass already exists
+X	which materials exist in this project
+C	create the materials if they do not exist yet
+C	create brass and copper materials
+W	replace copper with brass on these
+W	swap these pipes from copper to stainless steel
+Q	can you check what material these are
+Q	what material were these created with
+Q	what material have all of them got
+Q	is this pipe copper or stainless steel
+Q	are the ducts in this view galvanised steel
+Q	what material is assigned to it
+Q	what's the finish material on this wall
+Q	which material type does that beam use
+Q	what are these pipes made from, copper?
+Q	does this duct use the galvanised steel material or a different one
+Q	tell me which material each of them uses
+X	does a material called Copper already exist in this model
+X	give the stainless steel material a grey colour
+X	copy the copper material in from the template
+X	is the brass material used anywhere
+X	how much galvanised steel is in those ducts
+X	set this extrusion's material to copper
+S	select the pipes made of copper
+S	which ducts are made of stainless steel
+S	highlight everything that uses brass
+W	replace the copper on these pipes with stainless steel
+W	change these ducts from galvanised steel to aluminium
+C	create a copper material
+C	create a material called Zinc if it doesn't already exist
+Q	what material did they use on these walls
+Q	what material are they using on those risers
+C	create two new materials, Copper and Brass
+C	set up a new material for the stainless steel ducts
+C	create a copper material for the pipes
+C	I want a material called Galvanised Steel to use on the ducts
+C	add a material named Timber Cladding if it doesn't already exist
+W	swap copper for stainless steel on these pipes
+W	replace copper with galvanised steel on the selected elements
+W	change those ducts from galvanised steel to stainless steel
+W	these should be stainless steel, not copper
+W	swap the material these use for brass
+W	replace the concrete on these walls with brick
+S	select all the copper pipes
+S	show me everything that uses copper
+S	find the elements made of stainless steel
+S	pick everything with galvanised steel as its material
+S	which of those are copper
+X	change the colour of the copper material to orange
+X	set the material of this extrusion to stainless steel
+X	copy the copper and stainless steel materials from the template project
+X	does a material called Galvanised Steel already exist

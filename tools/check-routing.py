@@ -10,6 +10,7 @@ Can each fragment still be found by its OWN declared words?
 
     python tools/check-routing.py
     python tools/check-routing.py --revit 2024
+    python tools/check-routing.py --targets     # the one verdict, no store
 
 WHAT THIS ASKS, AND WHY IT IS THE ONE RETRIEVAL QUESTION WORTH AUTOMATING
 ------------------------------------------------------------------------
@@ -61,6 +62,35 @@ background'" would be teaching people to weaken their own utterances to buy a
 number. That is the one response ruled out in brain/retrieval-history.md: taking
 "show me just these" away from the isolate fragment would make the isolate
 unfindable in order to protect a measurement.
+
+ONE PART OF IT IS A GATE: A ROUTING ROW THAT NAMES NOTHING
+----------------------------------------------------------
+Everything above is a ranking. This is not. A routing row that sends a
+sentence on - `"rename the heading" -> SET_SCHEDULE_FIELD_FORMAT` - names a
+capability, and either some fragment declares that capability or none does.
+No store is asked, nothing is ranked, and there is no utterance anybody could
+weaken to buy the answer back: the repair is to name the capability that does
+the job. So a row whose `-> NAME` no fragment declares FAILS the run - exit 1,
+whatever the report beside it says - and `--targets` gives that verdict alone,
+from the files, with no knowledge store and no index. Reading every
+fragment.yaml for it took 0.12 s in-process on the owner's PC on 2026-10-09.
+
+Why a gate and not one more report line. Two such rows went into the library on
+2026-09-06 - `-> PURGE_UNUSED_MATERIALS` in select-by-material and
+`-> SET_SCHEDULE_FIELD_FORMAT` in add-schedule-combined-field - and this tool ran
+on every pull request for the 33 days until a person noticed the first and
+pull request #452 corrected it on 2026-10-09. A person found the second on
+2026-09-27, recorded it as row 5b-232, and it was still there twelve days
+later. A finding printed into a green run is not read; check-docs said the
+same of its dead links before they failed its run. Reading every comment line
+of every fragment.yaml on 2026-10-09 found those two and no other, so the gate
+starts without a false alarm to excuse.
+
+The two that were there when it was written went on KNOWN_DANGLING with the
+reason each was waiting, and each came off when its row was repaired - by
+pull requests #452 and #459. A listed row that stops dangling fails the run too,
+until it comes off the list: a list that outlives its repair goes on excusing
+the row if it ever comes back. Row 5b-388.
 """
 
 import os
@@ -89,8 +119,8 @@ def risk_of(store, fragment_id):
 def ids_on_disk():
     """The id of every fragment in this working tree.
 
-    The IDS and not the COUNT - see the staleness check in main() for the run
-    that made the difference matter.
+    The IDS and not the COUNT - see the staleness check in
+    store_for_this_tree() for the run that made the difference matter.
     """
     try:
         import yaml
@@ -133,6 +163,27 @@ def describe_drift(store_ids, disk_ids, limit=4):
     return "; ".join(parts) if parts else "the same ids in a different order"
 
 
+def stale_rows(store):
+    """The ids whose row in STORE is not the row their card on disk would
+    write - a changed identity, capability, domain, status or risk.
+
+    Row 5b-229: the rebuild below fired only when the SET OF IDS differed, and
+    the search reads a card's identity, capability and domain from the store's
+    row, not the file. So an edited card was searched under its old words, and
+    a routing result was printed over a library the store did not hold - the
+    failure the comments in store_for_this_tree() exist to prevent, one step
+    quieter. The rows are compared the way rebuild() writes them, from
+    every card that validates."""
+    import heron_fragment as FRAG
+    import heron_scope as SCOPE
+    found, _problems = FRAG.load_all()
+    wanted = dict((frag.id, SCOPE.row_of(frag)) for frag in found.values()
+                  if not FRAG.validate(frag))
+    held = dict((row["id"], tuple(row[f] for f in SCOPE.ROW_FIELDS))
+                for row in store.fragments())
+    return sorted(fid for fid in wanted if fid in held and held[fid] != wanted[fid])
+
+
 def utterances():
     """(fragment id, sentence) for every declared utterance."""
     try:
@@ -166,41 +217,30 @@ def rung(level):
     return LADDER.index(level) if level in LADDER else -1
 
 
-def main(argv):
-    revit = None
-    if "--revit" in argv:
-        i = argv.index("--revit")
-        # EXIT 2 AND A SENTENCE, NOT A TRACEBACK - the same rule the comment
-        # below states for a missing knowledge store, applied to the flag
-        # above it. `--revit` last on the line read `argv[i + 1]` and came
-        # back as `IndexError: list index out of range`, which is exactly
-        # what row 5b-71 was written to stop one statement lower down.
-        if i + 1 >= len(argv) or argv[i + 1].startswith("-"):
-            sys.stderr.write("--revit needs a release, e.g. --revit 2024. "
-                             "Nothing was checked.\n")
-            return 2
-        revit = argv[i + 1]
+def store_for_this_tree(what):
+    """The GLOBAL store, holding exactly this working tree's library - or None,
+    having said why on stdout or stderr, and the caller exits 2.
 
+    `what` names the result a refusal is NOT ("routing result"), because the
+    caller's numbers are what would be wrong.
+
+    ONE HOME FOR THE THREE TESTS - the ids, the content and the shared store -
+    because `tools/check-intrusion.py` asks the same store the same question
+    and carried its own copy of it. That copy compared store.count() with the
+    number of card folders, which is the test this one stopped using on
+    2026-09-06 (see below), and it rebuilt the shared store from any checkout:
+    the two holes rows 5b-229 and 5b-233 closed here, left open one file over.
+    A second copy of a guard is how one of them stops being one.
+
+    The same was true of score-routing.py, measure-brain.py and
+    measure-routes.py, which rebuilt on an id mismatch with no content check
+    and no shared-store refusal, and of measure-graph.py, which rebuilt only
+    an EMPTY store with neither. All four call this since 2026-10-09. And the
+    shared-store rule is not this file's either: it is
+    heron_scope.rebuild_refusal(), which the lookup asks before it warms or
+    advises a rebuild of the same store.
+    """
     import heron_scope as SCOPE
-    import heron_search as SEARCH
-    import heron_embed as EMBED
-    import heron_retrieve as RETRIEVE
-
-    # NO STORE, NO CHECK - AND SAY SO IN ONE LINE RATHER THAN A TRACEBACK.
-    # With no %APPDATA% and no HERON_KNOWLEDGE there is nowhere to keep a
-    # knowledge store, and heron_scope raises ValueError from four frames
-    # down. Until 2026-09-21 that arrived as an unhandled traceback and exit
-    # 1, while .github/workflows/gates.yml said of this tool and its pair
-    # that they "say so rather than failing when there is none" - measured on
-    # Linux with the variable unset, they did not say so and they did fail.
-    # EXIT 2, which is the code this repository uses for "the tool could not
-    # do its job": nothing was checked, so it is NOT a pass. Row 5b-71.
-    if SCOPE.knowledge_dir() is None:
-        sys.stderr.write(
-            "COULD NOT RUN: no %APPDATA% and no HERON_KNOWLEDGE, so there is\n"
-            "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
-            "folder - an empty one is enough - and run this again.\n")
-        return 2
 
     # The stores are DERIVED (Golden Rule 11), so an empty one is a fresh machine
     # rather than damage, and a checker should run on a fresh machine without a
@@ -229,9 +269,34 @@ def main(argv):
     disk_ids = ids_on_disk()
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     store_ids = set(row["id"] for row in store.fragments())
-    if store_ids != disk_ids:
-        drift = describe_drift(store_ids, disk_ids)
+    # AND THE CONTENT, NOT ONLY THE IDS - row 5b-229.
+    edited = stale_rows(store) if store_ids == disk_ids else []
+    if store_ids != disk_ids or edited:
+        drift = (describe_drift(store_ids, disk_ids) if store_ids != disk_ids else
+                 "%d card(s) edited since their row was written (%s)"
+                 % (len(edited), ", ".join(edited[:4]) + (", and more" if len(edited) > 4 else "")))
         store.close()
+        # NOT THE SHARED STORE, EXCEPT FROM THE MAIN CHECKOUT ON MAIN - row
+        # 5b-233. One store serves every checkout and every chat on the PC;
+        # rebuilt from a worktree it put that branch's unmerged cards into
+        # every other session's heron_lookup. heron_scope.rebuild_refusal()
+        # is the rule, and the lookup asks it too (heron_brain's
+        # _store_warm_allowed): a private store always, the shared one only
+        # from the main checkout on branch main. Until 2026-10-09 this asked
+        # refreshes_from() alone, which names the main checkout whatever its
+        # branch - so a feature branch checked out in the main folder rebuilt
+        # the shared store from its own cards.
+        refused = SCOPE.rebuild_refusal()
+        if refused is not None:
+            sys.stderr.write(
+                "NOT RUN: the knowledge store at %s is the SHARED one every chat on\n"
+                "this machine reads, and it does not match this working tree (%s).\n"
+                "It is rebuilt only from the main checkout on branch main - %s.\n"
+                "Rebuilding it from here would put this branch's cards into every\n"
+                "other session's answers (row 5b-233).\n"
+                "Point HERON_KNOWLEDGE at a scratch folder - an empty one is enough -\n"
+                "and run this again.\n" % (SCOPE.knowledge_dir(), drift, refused))
+            return None
         built, problems = SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         store_ids = set(row["id"] for row in store.fragments())
@@ -241,8 +306,8 @@ def main(argv):
         if store.count() == 0:
             store.close()
             print("  the store is STILL empty after a rebuild - nothing to route")
-            print("  against, and this is not a routing result. Check brain/fragments/.")
-            return 2
+            print("  against, and this is not a %s. Check brain/fragments/." % what)
+            return None
         if store_ids != disk_ids:
             # A rebuild that does not reconcile them means something is wrong
             # with the library itself - a fragment that will not load, most
@@ -251,9 +316,188 @@ def main(argv):
             # not hold, and they would look perfectly normal.
             print("  the store STILL does not match after a rebuild - %s."
                   % describe_drift(store_ids, disk_ids))
-            print("  This is not a routing result. Run `python brain/heron_fragment.py`.")
+            print("  This is not a %s. Run `python brain/heron_fragment.py`." % what)
             store.close()
+            return None
+    return store
+
+
+# A ROUTING ROW'S TARGET: the word right after `->`, when it is a capability's
+# shape - capitals, digits and at least one underscore. `here`, `HERE`, `NOT`,
+# `ALL`, `NOTHING` and `Net Lettable` are not that shape and are not targets;
+# neither is a mixed-case Revit name, nor a capability named later in the
+# prose that explains a target. A backtick either side is allowed.
+TARGET = re.compile(r"\s*`?([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)(?![A-Za-z0-9_])")
+DECLARED = re.compile(r"^capability:\s*['\"]?([A-Z0-9_]+)", re.M)
+
+# A row knowingly left naming no capability, keyed (fragment folder, NAME),
+# with the reason it is waiting. EMPTY since 2026-10-09: the two the gate found
+# when it was written were repaired by pull requests #452 and #459. One whose
+# row is repaired FAILS the run until it comes off this list - see
+# targets_verdict.
+KNOWN_DANGLING = {}
+
+
+def routing_targets(text):
+    """(line number, NAME) for every `-> NAME` in a fragment.yaml's comments.
+
+    Read wherever a row puts it, because the rows wrap: after a sentence that
+    is still open (`"what fields does this schedule  -> REPORT_SCHEDULE_...`
+    with `#    have"` below), on the comment line under an arrow that ends its
+    line, and after an arrow on a line of its own. Only comment lines - an
+    arrow in a YAML value is prose about something else.
+    """
+    lines = text.split("\n")
+    found = []
+    for i, line in enumerate(lines):
+        if not line.lstrip().startswith("#"):
+            continue
+        said = line.split("#", 1)[1]
+        for arrow in re.finditer(r"->", said):
+            rest, at = said[arrow.end():], i + 1
+            if not rest.strip() and i + 1 < len(lines) \
+                    and lines[i + 1].lstrip().startswith("#"):
+                rest, at = lines[i + 1].split("#", 1)[1], i + 2
+            name = TARGET.match(rest)
+            if name:
+                found.append((at, name.group(1)))
+    return found
+
+
+def dangling_targets(folder=None):
+    """(targets read, [(fragment folder, line, NAME)] no fragment declares).
+
+    The declared set is what `grep -h '^capability:'
+    brain/fragments/*/fragment.yaml` prints, read the same way.
+    """
+    folder = folder or FRAGMENTS
+    texts = {}
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name, "fragment.yaml")
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as fh:
+                texts[name] = fh.read()
+    declared = set()
+    for text in texts.values():
+        declared.update(DECLARED.findall(text))
+    read, found = 0, []
+    for name, text in sorted(texts.items()):
+        for line, target in routing_targets(text):
+            read += 1
+            if target not in declared:
+                found.append((name, line, target))
+    return read, found
+
+
+def targets_verdict(found, known, read=None):
+    """Print the rows that name no capability; 1 if any is new or a listed
+    one was repaired, else 0."""
+    listed = set(known)
+    new = [f for f in found if (f[0], f[2]) not in listed]
+    waiting = [f for f in found if (f[0], f[2]) in listed]
+    repaired = sorted(listed - set((f[0], f[2]) for f in found))
+
+    def where(folder, line):
+        return "brain/fragments/%s/fragment.yaml:%d" % (folder, line)
+
+    print()
+    counted = " - %d targets read" % read if read is not None else ""
+    if not new and not repaired and not waiting:
+        print("EVERY `-> NAME` IN A ROUTING ROW IS A CAPABILITY SOME FRAGMENT")
+        print("DECLARES%s." % counted)
+    elif not new and not repaired:
+        print("NO ROUTING ROW NAMES AN UNDECLARED CAPABILITY BEYOND THE %d KNOWN"
+              % len(waiting))
+        print("BELOW%s." % counted)
+    if new:
+        print("A ROUTING ROW NAMES A CAPABILITY NO FRAGMENT DECLARES (%d) - THIS"
+              % len(new))
+        print("FAILS THE RUN:")
+        print()
+        for folder, line, target in new:
+            print("  %-64s -> %s" % (where(folder, line), target))
+        print()
+        print("  A reader following the row finds nothing, and the next person")
+        print("  to build that job may take the name as reserved. Point the row")
+        print("  at the capability that does the job - `grep -h '^capability:'")
+        print("  brain/fragments/*/fragment.yaml` lists them - or say in words")
+        print("  that it is not built yet.")
+    if waiting:
+        print()
+        print("KNOWN AND WAITING (%d) - on KNOWN_DANGLING, not failing:" % len(waiting))
+        print()
+        for folder, line, target in waiting:
+            print("  %-64s -> %s" % (where(folder, line), target))
+            print("  %-64s    %s" % ("", known[(folder, target)]))
+    if repaired:
+        print()
+        print("ON KNOWN_DANGLING AND NO LONGER DANGLING (%d) - THIS FAILS THE RUN:"
+              % len(repaired))
+        print()
+        for folder, target in repaired:
+            print("  %s -> %s  (%s)" % (folder, target, known[(folder, target)]))
+        print()
+        print("  Take it off KNOWN_DANGLING in tools/check-routing.py. Left there,")
+        print("  it goes on excusing that row if it ever comes back.")
+    return 1 if new or repaired else 0
+
+
+def main(argv):
+    revit = None
+    if "--revit" in argv:
+        i = argv.index("--revit")
+        # EXIT 2 AND A SENTENCE, NOT A TRACEBACK - the same rule the comment
+        # below states for a missing knowledge store, applied to the flag
+        # above it. `--revit` last on the line read `argv[i + 1]` and came
+        # back as `IndexError: list index out of range`, which is exactly
+        # what row 5b-71 was written to stop one statement lower down.
+        if i + 1 >= len(argv) or argv[i + 1].startswith("-"):
+            sys.stderr.write("--revit needs a release, e.g. --revit 2024. "
+                             "Nothing was checked.\n")
             return 2
+        revit = argv[i + 1]
+
+    # THE GATE, READ BEFORE ANY STORE IS OPENED AND RULED ON AFTER THE REPORT.
+    # It needs nothing but the files, so a missing or stale store cannot hide
+    # it; and it prints last, so a failure is the final thing in a CI log and
+    # not a screen above the report. Row 5b-388.
+    read, found = dangling_targets()
+    if "--targets" in argv:
+        return targets_verdict(found, KNOWN_DANGLING, read)
+    code = report(revit)
+    return targets_verdict(found, KNOWN_DANGLING, read) or code
+
+
+def report(revit):
+    """Every ranking above - the part that is a report, and needs a store."""
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+    import heron_embed as EMBED
+    import heron_retrieve as RETRIEVE
+
+    # NO STORE, NO CHECK - AND SAY SO IN ONE LINE RATHER THAN A TRACEBACK.
+    # With no %APPDATA% and no HERON_KNOWLEDGE there is nowhere to keep a
+    # knowledge store, and heron_scope raises ValueError from four frames
+    # down. Until 2026-09-21 that arrived as an unhandled traceback and exit
+    # 1, while .github/workflows/gates.yml said of this tool and its pair
+    # that they "say so rather than failing when there is none" - measured on
+    # Linux with the variable unset, they did not say so and they did fail.
+    # EXIT 2, which is the code this repository uses for "the tool could not
+    # do its job": nothing was checked, so it is NOT a pass. Row 5b-71.
+    if SCOPE.knowledge_dir() is None:
+        sys.stderr.write(
+            "COULD NOT RUN: no %APPDATA% and no HERON_KNOWLEDGE, so there is\n"
+            "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
+            "folder - an empty one is enough - and run this again.\n")
+        return 2
+
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY - the ids, every row's content,
+    # and never by rebuilding the shared store from a checkout that is not
+    # main. All three live in store_for_this_tree() above, which
+    # check-intrusion.py calls too; it says why when it refuses.
+    store = store_for_this_tree("routing result")
+    if store is None:
+        return 2
 
     try:
         SEARCH.index(store)

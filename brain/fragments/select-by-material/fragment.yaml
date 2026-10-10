@@ -9,7 +9,7 @@ semantic-identity: "the elements made of one material"
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_MATERIAL
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -55,6 +55,16 @@ purpose: >
   nested inside a link are not read, and are counted in the answer. This
   is version 2; version 1's proof no longer describes the code, and the
   fragment is DRAFT until it is proved again.
+
+  **IN A FAMILY OPEN IN THE FAMILY EDITOR, EVERY FORM IS SCANNED (version
+  3).** A form there carries no category of its own - measured 2026-10-08 in
+  Revit 2024, its category is empty, or is its subcategory - so a category
+  list never reached one, and "Generic Models" in a Generic Model family
+  scanned 0 of 0. Now every extrusion, revolve, blend, sweep, swept blend and
+  freeform solid is asked what it is made of whatever the list says, and the
+  list still bounds the rest of the family. A form whose material is <By
+  Category> names none, and the answer counts those. The forms found go on to
+  SET_SELECTION or DELETE_ELEMENTS like any other.
 
 contract:
   needs:
@@ -141,7 +151,9 @@ compatibility-note: >
   One implementation for every release. `Material` and
   `Element.GetMaterialIds(bool)` are present 2020 through 2027, compiled at
   both ends. The returned ids are compared to the material's ElementId
-  directly, never read as numbers.
+  directly, never read as numbers. `GenericForm` and
+  `BuiltInParameter.MATERIAL_ID_PARAM`, read in a family (version 3), are the
+  same 2020 through 2027 (tools/api-surface, 2026-10-08).
 
 # ROUTING - repeated in READ_ELEMENT_MATERIAL, REPLACE_MATERIAL and
 # REPORT_MATERIAL_TAKEOFF.
@@ -155,9 +167,12 @@ compatibility-note: >
 #    another"                        -> REPLACE_MATERIAL - this one only reads
 #   "how much of each material"      -> REPORT_MATERIAL_TAKEOFF - quantities,
 #                                       once the elements are chosen
-#   "which materials are unused"     -> PURGE_UNUSED_MATERIALS, which asks the
+#   "which materials are unused"     -> FIND_UNUSED_MATERIALS, which asks the
 #                                       same question of every material at once
 #                                       and is the right shape for that
+#   a family's forms by material     -> here - every form in a family is
+#                                       scanned (version 3)
+#   "select the forms with these ids" -> SELECT_FAMILY_FORMS
 #   "make this one wall different"   -> DUPLICATE_TYPE first. Material lives on
 #                                       the type, so changing one instance
 #                                       without a new type changes them all

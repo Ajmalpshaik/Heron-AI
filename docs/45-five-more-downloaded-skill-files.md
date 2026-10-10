@@ -24,7 +24,7 @@ tool name, no sentence, no file name, no code.
 
 | What it produced | Where it lives now |
 |---|---|
-| **Three defects in Heron, found by reading Heron's code against a lesson in the files** - a Yes/No column Heron exports that Heron cannot import back; a blank spreadsheet cell that silently wiped a text value; and two fragments that left Revit's own shared parameter file setting pointed at Heron's path, where Undo never reaches | Rows [5b-315, 5b-316, 5b-317](fragment-issues/section-5b-rows-176-200.md) - each fixed in a DRAFT fragment, §5 |
+| **Three defects in Heron, found by reading Heron's code against a lesson in the files** - a Yes/No column Heron exports that Heron cannot import back; a blank spreadsheet cell that silently wiped a text value; and two fragments that left Revit's own shared parameter file setting pointed at Heron's path, where Undo never reaches | Rows [5b-315, 5b-316, 5b-317](fragment-issues/section-5b-rows-301-325.md) - each fixed in a DRAFT fragment, §5 |
 | **Eight fragments widened, one added**, all DRAFT, compiled for every release Heron supports | §5, and [Group CD](needs-checking/group-cd.md) to prove them |
 | **A method, written down:** what to read in the model before it goes out as IFC | [`ifc-export-readiness`](../brain/skills/ifc-export-readiness.yaml), DRAFT |
 | **What is worth building but touches a PROVEN fragment**, so waits for the owner's word | §6 |
@@ -149,7 +149,7 @@ most were **already held** - checked in Heron's code, not its documents:
 - **The floor, unit and filter-rule APIs changed between releases.** Held - each fragment picks its call by
   release, or finds the overload at run time.
 - **A clash test on the first solid only, or by box.** Held - every solid, and an untested element counted.
-- **A name two parameters share.** Held for writes since [5b-203](fragment-issues/section-5b-rows-176-200.md).
+- **A name two parameters share.** Held for writes since [5b-203](fragment-issues/section-5b-rows-201-225.md).
 - **A link read without its transform; a link's *loaded* flag taken as stored.** Held.
 - **Overwriting a view filter of the same name strips it from every view.** Held - a name in use is skipped.
 - **A zero-area room treated as one fault.** Held - unplaced and unenclosed are kept apart.
@@ -157,7 +157,7 @@ most were **already held** - checked in Heron's code, not its documents:
 - **Stairs refused inside an open transaction.** Held, and isolated independently in `CREATE_STAIRS` - their
   diagnosis and Heron's agree.
 
-**Three were broken in Heron, and are fixed at DRAFT** - rows [5b-315 to 5b-317](fragment-issues/section-5b-rows-176-200.md):
+**Three were broken in Heron, and are fixed at DRAFT** - rows [5b-315 to 5b-317](fragment-issues/section-5b-rows-301-325.md):
 
 1. **A Yes/No round trip.** The export writes a tick box as *Yes* or *No*; the import took only a whole
    number, so every tick box came back refused. Safe, and useless.

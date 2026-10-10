@@ -261,3 +261,13 @@ utterances:
   - how many fittings are in each room
   - how many of these in each hvac zone
   - count the elements in each zone
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided:
+  # CREATE_HVAC_ZONE, a write, answered it on lexical.
+  #
+  # "how many diffusers in each room", which the same table claims, is NOT
+  # declared, measured: beside this sentence it sent "how high are these
+  # rooms" to PLACE_ROOMS on lexical, and alone it moved the owner's "How
+  # many diffusers are there in the model?" from 4th to 5th on the trained
+  # backend. FILTER_ELEMENTS_IN_ROOM, a read, answers it today.
+  - count these by zone

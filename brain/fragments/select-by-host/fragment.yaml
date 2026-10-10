@@ -13,30 +13,47 @@ version: 1
 source: OFFICIAL
 risk: READ
 
+# DOORS AND WINDOWS FIRST, AND THE COUNT BESIDE THE SELECTION (FRAGMENT-ISSUES
+# 5b-321, 2026-10-09). Until then this purpose was mostly duct insulation and
+# MEP fittings, so the trained search model put this card 10th to 20th for
+# questions about the doors and windows already in a wall, and those questions
+# went to PLACE_HOSTED_FAMILY - a change. The opening now says what a modeller
+# asks it for. The wording was chosen on phrasings written before it and
+# checked on a second set nobody chose it by. Two things it must not do, both
+# measured on a margin of one rank: say "doors" and "windows" so often that
+# "place doors and windows hosted in walls at points" (a change, 5b-319) ties
+# here and wins on words - so later mentions say "a door", "each door" - and
+# name the tool that places them, whose name is made of the words of a request
+# to place. And it keeps "cut into": without it the routing table's "what is
+# cut into this wall" left this card on spelling.
 purpose: >
-  Narrows the model to the elements that Revit records as HOSTED ON one given
-  element - the doors and windows cut into a wall, the skylights in a roof,
-  the face-hosted sensors on a ceiling, the insulation and lining wrapped
-  around a duct.
+  Finds the doors and windows already cut into a wall - selects them, and counts
+  them - and everything else Revit records as HOSTED ON one given element:
+  the skylights in a roof, the face-hosted fixtures on a ceiling, the
+  insulation and lining wrapped around a duct or pipe. The answer is the
+  selection, with a count beside it of every door, window and other family
+  found on it and of the insulation wraps, narrowed to Doors or Windows when
+  the category is given. One host per call.
+
+  **A read, never a change.** It finds each door and window a wall already
+  has; adding a new one is a different tool, and nothing here edits the wall.
 
   **This is the recorded parent relationship, not proximity.** Two elements
-  touching, overlapping or sharing a face are not hosted on each other, and
+  touching, overlapping or sharing a face do not host one another, and
   nothing here will find them. That is the point: a host relationship is what
   makes the child move when the parent moves, and it is the only one worth
   filtering on when the question is "what depends on this".
 
   Two mechanisms are covered, because Revit uses two and neither one alone is
-  enough: `FamilyInstance.Host` for host-based families, and
-  `InsulationLiningBase.HostElementId` for duct and pipe insulation and lining.
-  A filter that reads only the first finds no insulation at all and says so
-  with a confident zero.
+  enough: `FamilyInstance.Host` for a door, a window and every other
+  host-based family, and `InsulationLiningBase.HostElementId` for insulation
+  and lining. A filter that reads only the first finds no insulation at all
+  and says so with a confident zero.
 
-  **MEP FITTINGS ARE NOT HOSTED ON THEIR RUN - THEY ARE CONNECTED TO IT.** An
-  elbow, a tee and a valve in a duct run each have connectors joining them to
-  their neighbours and NO host, so "what is on this pipe" answered here comes
-  back empty and correct and useless. TRACE_CONNECTIVITY follows connectors and
-  is the fragment that answers it. This is the single most likely way to misuse
-  this filter, which is why the empty result says so in words.
+  **MEP FITTINGS ARE CONNECTED TO THEIR RUN, AND THE RUN IS NOT THEIR HOST.**
+  An elbow, a tee or a valve has connectors and NO host, so "what is on this
+  pipe" comes back empty here - correct, and useless. TRACE_CONNECTIVITY
+  follows connectors and answers it, and the empty result says so in words.
 
   **A level is not a host in this sense either.** Almost every element records a
   level, so "everything on Level 2" is a different question -
@@ -119,3 +136,8 @@ utterances:
   - how many doors are hosted in these walls
   - list the skylights in this roof
   - which skylights does this roof have
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "what is cut
+  # into this wall": CREATE_FAMILY_HOST_OPENING on the trained backend
+  # answered it.
+  - what is cut into this wall

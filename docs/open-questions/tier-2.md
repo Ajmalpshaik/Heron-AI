@@ -257,7 +257,7 @@ than closed whichever way makes a task easier.
 Since [D-113](../decisions/D-113.md) a project's kept answers - its governing standards, its load runs, its
 sprinkler runs - are filed under the model's own id, `Document.CreationGUID`, which arrived at **Revit 2024**.
 On 2020 to 2023 nothing read-only tells two models made from one template apart: the Project Information
-id is the TEMPLATE's ([FRAGMENT-ISSUES 5b-324](../fragment-issues/section-5b-rows-176-200.md)), the path
+id is the TEMPLATE's ([FRAGMENT-ISSUES 5b-324](../fragment-issues/section-5b-rows-301-325.md)), the path
 changes on Save As, and the document's version id changes on every save. So Heron keeps **nothing** for
 such a model, and every answer says so: the standards and the load questions are asked each time.
 

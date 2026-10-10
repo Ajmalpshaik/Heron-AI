@@ -131,7 +131,7 @@ compatibility-note: >
   remarks, read 2026-10-01). The same remarks are the evidence that
   `SolidSolidCutUtils.AddCutBetweenSolids` and `JoinGeometryUtils.JoinGeometry`
   refuse an ordinary family document on every release. The read-back added
-  for 5b-370 - `SubTransaction`, `SolidUtils.Clone`, `Solid.IntersectWithCurve`,
+  for 5b-405 - `SubTransaction`, `SolidUtils.Clone`, `Solid.IntersectWithCurve`,
   `Face.Triangulate`, `Face.Project` and `Face.ComputeNormal` - compiles on
   every release 2020 to 2027 (tools/check-fragments-compile.py, 2026-10-08);
   how it behaves was measured on Revit 2024 only.

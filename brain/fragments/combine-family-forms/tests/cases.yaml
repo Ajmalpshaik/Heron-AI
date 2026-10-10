@@ -24,7 +24,7 @@ positive:
       lie on the seat's faces, its arcs typed exactly (536.5685,-161.5685 ...)
     expect: >
       cut true; 27.461 L before, 27.091 L after - the four corners rounded off;
-      every solid read back in the result (5b-370)
+      every solid read back in the result (5b-405)
 
 negative:
   - given: the same solid with a VOID that misses it, "circle 1000,0 50"
@@ -40,14 +40,14 @@ negative:
       refused naming the 12 revolves Revit leaves out of the combination (every
       other one) - "Can't keep elements joined" - cut false, no combinationId,
       and no combination left in the family even when the call is kept. Before
-      5b-370 this reported "0.455 L before, 0.225 L after - 0.23 L taken away"
+      5b-405 this reported "0.455 L before, 0.225 L after - 0.23 L taken away"
       and kept a coil with every other segment gone
 
   - given: >
       the seat with the same void, its corner arcs typed to whole millimetres
       ("arc 537,-162 560,-105" ...) - the sides still on the seat's faces
     expect: >
-      refused naming the seat as left out - before 5b-370, "Revit made a
+      refused naming the seat as left out - before 5b-405, "Revit made a
       combination with no solid in it to measure". The same void with its sides
       a millimetre past the faces cuts: 27.461 L before, 27.113 L after
 

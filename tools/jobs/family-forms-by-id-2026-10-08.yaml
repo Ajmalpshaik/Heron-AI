@@ -1,0 +1,62 @@
+# The proof of picking a family's forms by id, kind or material - NEEDS-CHECKING
+# Group CW, rows CW1 to CW11, FRAGMENT-ISSUES row 5b-370:
+#
+#   select-family-forms   SELECT_FAMILY_FORMS   FRG-SEL-034   new, version 1
+#   select-by-material    SELECT_BY_MATERIAL    FRG-SEL-015   version 3
+#
+#     python tools/batch-prove.py tools/jobs/family-forms-by-id-2026-10-08.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-forms-by-id-2026-10-08.yaml
+#
+# NEVER ON ONE OF THE OWNER'S OPEN FAMILIES. The arrangement is a scratch family:
+# CREATE_FAMILY_DOCUMENT made `FormSelectProof` from Metric Generic Model on
+# 2026-10-08 (saved under %TEMP%\heron-work\form-select-18b06da1), and the form
+# tools built three forms in it, which were KEPT:
+#
+#   solid extrusion  rect -300,-200 300,200 on Ref. Level, 0 to 500 mm,
+#                    material Glass        ...-00000b64
+#   void extrusion   circle 0,0 50 on Ref. Level, -10 to 510 mm
+#                                          ...-00000b6b
+#   solid revolve    1000..1100 x 0..300 about X 1000 on Center (Front/Back),
+#                    subcategory Ring      ...-00000b70
+#
+# Every id starts f1a0a03f-f7c5-41b6-ac99-cf8e6dd840de. In a family made again
+# from scratch the ids differ: read them from the form tools' answers, or from
+# REPORT_FAMILY_FORMS, and put them in below.
+#
+# The reference plane Center (Left/Right) has the SAME id in every family made
+# from that template (da0cea1e-82fa-11d3-a7db-00105aa73639-00000030, measured),
+# which is what makes it a negative that needs no edit.
+
+model: a scratch family from Metric Generic Model.rft, Revit 2024 (FormSelectProof)
+
+defaults:
+  in: "FormSelectProof"
+
+jobs:
+  - fragment: select-family-forms
+    expect: elements
+    set:
+      forms: "f1a0a03f-f7c5-41b6-ac99-cf8e6dd840de-00000b64, f1a0a03f-f7c5-41b6-ac99-cf8e6dd840de-00000b70"
+    negative-set:
+      forms: "f1a0a03f-f7c5-41b6-ac99-cf8e6dd840de-00000b64, da0cea1e-82fa-11d3-a7db-00105aa73639-00000030"
+    note: >
+      The negative names one GOOD form beside a reference plane. All or
+      nothing: the plane is refused by name and the good form is not carried
+      either, so a delete chained after it cannot reach part of a list. The
+      kinds, the mixed call and the project refusal are CW3 to CW6.
+
+  - fragment: select-by-material
+    expect: elements
+    set:
+      materialName: "Glass"
+      includePaint: "false"
+      categories: "Generic Models"
+    negative-set:
+      materialName: "Default Wall"
+      includePaint: "false"
+      categories: "Generic Models"
+    note: >
+      Version 3. "Generic Models" is the list the owner gave on 2026-10-08,
+      when version 2 answered 0 of 0 scanned in a Generic Model family. The
+      negative is a material the family holds that no form is made of - the
+      same three forms scanned, none matching.

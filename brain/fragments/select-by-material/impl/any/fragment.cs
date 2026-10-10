@@ -34,10 +34,21 @@
 // architect's materials are usually in the architectural link and nowhere in
 // the host, so a link is read even when this model has no material of that
 // name - and a link without one says so on its own line.
+//
+// IN A FAMILY, EVERY FORM IS SCANNED WHATEVER THE CATEGORY LIST SAYS (version
+// 3). A form in the Family Editor carries no category of its own - measured
+// 2026-10-08, Revit 2024: Category is null on a form with no subcategory, and
+// is the subcategory itself ("Ring", under Generic Models) on one that has
+// one - so neither passes a filter for the family's category, and "Generic
+// Models" in a Generic Model family scanned 0 of 0. The list still bounds
+// everything else in the family - nested families, lines. A solid form whose
+// material is <By Category> reports none, and the answer counts those.
 
 var elements = new List<Element>();
 var scanned = 0;
 var findings = new List<string>();
+var formsScanned = 0;
+var formsByCategory = 0;
 
 var wanted = string.IsNullOrEmpty(materialName) ? "" : materialName.Trim();
 
@@ -75,12 +86,27 @@ else
         if (categories != null && categories.Count > 0)
             collector = collector.WherePasses(new ElementMulticategoryFilter(categories));
 
-        foreach (var element in collector)
+        var inScope = collector.ToList();
+        if (doc.IsFamilyDocument)
+        {
+            var seen = new HashSet<ElementId>(inScope.Select(e => e.Id));
+            foreach (var form in new FilteredElementCollector(doc).OfClass(typeof(GenericForm)))
+                if (seen.Add(form.Id)) inScope.Add(form);
+        }
+
+        foreach (var element in inScope)
         {
             scanned++;
+            if (element is GenericForm) formsScanned++;
             try
             {
                 var ids = element.GetMaterialIds(includePaint);
+                // A void shows nothing, so its empty material is not news.
+                if ((ids == null || ids.Count == 0) && element is GenericForm && ((GenericForm)element).IsSolid)
+                {
+                    var field = element.get_Parameter(BuiltInParameter.MATERIAL_ID_PARAM);
+                    if (field != null && field.AsElementId() == ElementId.InvalidElementId) formsByCategory++;
+                }
                 if (ids == null) continue;
 
                 foreach (var id in ids)
@@ -108,6 +134,15 @@ else
         if (!bounded)
             findings.Add("This asked every element in the model what it is made of. A category list "
                 + "bounds the scan and makes the count mean something narrower");
+
+        if (doc.IsFamilyDocument)
+            findings.Add(string.Format("This is a family: all {0} form(s) in it were scanned whatever the "
+                + "category list says - a form carries no category of its own, or only its subcategory, so a "
+                + "category would miss it.{1}", formsScanned,
+                formsByCategory > 0
+                    ? string.Format(" {0} form(s) take their material <By Category> and report none - set one "
+                        + "with SET_FAMILY_FORM_MATERIAL to have it found", formsByCategory)
+                    : ""));
     }
 }
 

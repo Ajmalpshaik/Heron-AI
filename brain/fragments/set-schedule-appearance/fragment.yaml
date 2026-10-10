@@ -201,3 +201,7 @@ utterances:
   - the heading text should say something else
   - hide that column
   - hide this column on the schedule
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "turn the
+  # heading sideways": OFFSET_ELEMENTS on the trained backend answered it.
+  - turn the heading sideways

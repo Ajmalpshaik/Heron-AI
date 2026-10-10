@@ -159,3 +159,7 @@ utterances:
   - where are all the fire dampers
   - find the family by name
   - which elements use this family
+  # ADDED 2026-10-09 (FRAGMENT-ISSUES 146). Declared nowhere, and measured
+  # reaching PLACE_ACCESSORY_ON_RUN, a change, on spelling. "where are all the
+  # fire dampers" above is the same question.
+  - find the fire dampers

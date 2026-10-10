@@ -1,0 +1,67 @@
+# NONE OF THESE HAS BEEN RUN. Written 2026-10-09 with version 1, for
+# NEEDS-CHECKING Group CX - row 5b-376. The arrangement is the three scratch
+# documents in tools/jobs/list-materials-2026-10-09.yaml, open together.
+#
+# THE MATERIAL BROWSER SHOWS NO TOTAL (Revit knowledge, not measured), so
+# "its count" below means the rows of Project Materials: All, counted by hand.
+# The scratch project is started with no template so that list stays short.
+
+positive:
+  - given: >
+      "Heron Materials Project", a scratch project in which CREATE_MATERIAL
+      made one material, "Heron List Probe", before the run
+    expect: >
+      materialCount equals the hand count of its Material Browser, and
+      materialList holds "Heron List Probe" with its class and id among the
+      rest, sorted by name ignoring case; materialClasses gives the count per
+      class and adds up to materialCount
+
+  - given: >
+      "Heron Materials Accessory", a scratch copy of a Duct Accessories family
+      open in the Family Editor - the kind of document row 5b-376 was asked in
+    expect: >
+      the family's own materials, the count equal to that family's own hand
+      count. A family carries few, and every one is listed whether or not a
+      form uses it
+
+  - given: >
+      a material whose class is empty in the Identity tab - "Heron List Probe"
+      if CREATE_MATERIAL left it empty, otherwise one material whose class was
+      cleared by hand in the scratch project before the run (CX5)
+    expect: >
+      it is listed as "(no class, id N)" and counted under "no class" in
+      materialClasses - never left out for having no class
+
+negative:
+  - given: >
+      "Heron Materials Annotation", a family new from Metric Generic
+      Annotation.rft with every material in it deleted and saved (CX2), run
+      while the project holding "Heron List Probe" is open beside it
+    expect: >
+      materialCount 0, materialList and materialClasses empty, and the first
+      finding "No materials at all in this family" - above all no "Heron List
+      Probe". A version that read the project, or every open document, shows
+      it here
+
+  - given: >
+      Revit will not let every material in the annotation family go, so no
+      document is empty - then the three documents of the job file, one after
+      another
+    expect: >
+      each count equal to its own document's hand count, and "Heron List Probe"
+      in the project's list alone (D-53 tracking). Evidence for a person, NOT a
+      signature: no tool records tracking across documents yet, and
+      heron_validate will not accept a record whose negative came back full
+
+  - given: somebody reading the list as the materials in USE
+    expect: >
+      a material nothing uses is listed exactly like one that is used, and the
+      second finding says "Listed used or not - unused ones:
+      FIND_UNUSED_MATERIALS". Which are unused is that tool's walk over every
+      element, type and painted face, which this does not make
+
+second_route:
+  - >
+    Revit's own Material Browser (Manage > Materials), Project Materials: All,
+    compared name by name with materialList in each document, and the class
+    read off the Identity tab of two or three of them

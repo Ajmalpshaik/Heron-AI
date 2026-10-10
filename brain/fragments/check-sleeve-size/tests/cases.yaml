@@ -46,6 +46,17 @@ negative:
   - given: a sleeve with no readable geometry
     expect: counted in unreadable, not silently passed
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      a sleeve carrying TWO parameters named Diameter - an instance project
+      parameter "Diameter" bound to the sleeve's category beside the
+      family's own - with a pipe through it
+    expect: >
+      counted in unreadable, its row naming Diameter and saying two
+      parameters share it - NOT a size read from either, and NOT a size
+      read from Sleeve Diameter or any later name instead (row 5b-203)
+
   - given: an empty sleeves list
     expect: a plain zero, not silence
 
@@ -71,6 +82,15 @@ negative:
     expect: >
       "Fire Rating not set" on its line - never a rating borrowed from
       another wall, and never the line left out
+
+  # Row 5b-203, added 2026-10-09. NOT RUN.
+  - given: >
+      a sleeve in a linked wall whose type carries Fire Rating twice - a
+      shared "Fire Rating" bound to Walls beside the built-in one - with
+      includeLinks true
+    expect: >
+      "Fire Rating NOT READ - 2 parameters share that name" on its line,
+      never either rating (row 5b-203)
 
 second_route:
   - Cut a section through one sleeve and dimension the annular gap by hand

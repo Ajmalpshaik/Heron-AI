@@ -947,7 +947,7 @@ cannot do, so R-58's *refuse a question nothing covers* is not reachable this wa
 
 ## 2026-09-28 — a colour sentence reached the tool that makes zones
 
-[Row 5b-236](../docs/fragment-issues/section-5b-rows-176-200.md). *"color hvac zones in this plan"*, which
+[Row 5b-236](../docs/fragment-issues/section-5b-rows-226-250.md). *"color hvac zones in this plan"*, which
 no card declares, resolved on the owner's backend to `CREATE_HVAC_ZONE` - a PROVEN write that makes HVAC
 zones and moves spaces into them - with `APPLY_COLOR_FILL_SCHEME`, the DRAFT colour tool, second.
 Measured on scratch stores, never the shared one, at **420 fragments** on `main` as it stood:
@@ -1023,6 +1023,192 @@ own **Color Scheme** and **Color Fill Legend**. At 420 fragments, before and aft
   hand it back, and the card says so beside it.
 - **One encoder.** Every `model` number is `potion-base-8M`. Another encoder answers differently.
 - **Nothing here met Revit**, and nothing was declared, reworded or weakened to buy a rank.
+
+---
+
+## 2026-10-09 — a sentence to make a material reached the tool that selects by one
+
+[Row 5b-375](../docs/fragment-issues/section-5b-rows-351-375.md). *"create a new material called
+Galvanised Steel"* resolved to `SELECT_BY_MATERIAL` on the owner's lexical backend. Measured on scratch
+stores at **480 fragments**, no Revit filter, on **`lexical`** and on **`model`**
+(`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker.
+
+**The name outvotes the verb.** In a sentence asking to make a material, the material's name is the
+rarest word, and `SELECT_BY_MATERIAL` is one of two cards that say *galvanised*. The words route ranked
+it 1st on both backends and the trained encoder agreed - nearness #1, with `CREATE_MATERIAL` 3rd: the
+2026-09-24 finding again, matching what a sentence is about and not what it asks for.
+
+**And a neighbouring tie decided what the fix could be.** On `model`, *"what material is that"* and
+*"what material are these"* go to `READ_ELEMENT_MATERIAL` first on both routes with `CREATE_MATERIAL`
+second on both. Any one more *material* sentence on `CREATE_MATERIAL` lifted it to first by words, the
+two swapped ranks between the routes, and the swap fused to the exact tie the 2026-09-28 section
+describes - which went to the write. So the fix is two cards: `CREATE_MATERIAL` declares the typed
+sentence, and `READ_ELEMENT_MATERIAL` declares *"what material is that"*, which holds both questions.
+
+| | before | after |
+|---|---|---|
+| 11 ways of asking to make a material, reaching `CREATE_MATERIAL` | 3 `lexical`, 2 `model` | **8 on both** - 7 of the 10 nobody declares |
+| 9 sentences selecting by a material; 10 undeclared questions about what something is made of | winners | the same winners, both backends |
+| the owner's 79 questions, both backends | `score-routing.py` | identical, question for question |
+| Revit 2024 risk crossings, both backends | `check-risk-crossings.py` | identical |
+| `check-routing.py` words #1 | 2222 of 2760 | 2224 of 2762 |
+| `check-routing.py` nearness #1 | 1464 `lexical`, 1502 `model` | 1469, 1501 |
+
+**Refused after measuring:** *"add a new material to this family"* and *"create a new material with a
+name and a colour"*, each of which tipped both questions to the write alone, and *"make a stainless
+steel material"*, which sent *"what is made of stainless steel"* there too. **The one cost:** on `model`,
+*"swap the material on these to galvanised steel"* moved from `SELECT_BY_MATERIAL` to
+`CREATE_MATERIAL` - both wrong; `REPLACE_MATERIAL` is the job.
+
+### What this does not establish
+
+- **The probe sentences are this session's**, written before each run and kept apart from what was
+  declared; they are not the owner's words, and his 79 are the set that did not move.
+- **One encoder**, and the tie is still there - the next *material* sentence on `CREATE_MATERIAL` is
+  measured against those two questions first, which both cards now say.
+- **Nothing here met Revit.**
+
+---
+
+## 2026-10-09 — a sentence a routing table claimed, held by ranking alone
+
+[Row 5b-385](../docs/fragment-issues/section-5b-rows-376-400.md). `REPORT_BOUNDING_BOX` sent *"how much
+space does this take up"* to itself in its `# ROUTING` comment and never declared it, so retrieval had
+only the ranking to go on. Measured on scratch stores, no Revit filter, on **`lexical`** and on
+**`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker, at
+**480 fragments** on `main` and **481** with `LIST_MATERIALS` ([row 5b-376](../docs/fragment-issues/section-5b-rows-376-400.md))
+merged locally.
+
+| | `main`, lexical | with `LIST_MATERIALS`, lexical | `main`, `model` |
+|---|---|---|---|
+| this card | **1st**, 0.025624 | 2nd, 0.025624 | **1st**, 0.032266 |
+| runner-up | `REPORT_SPACE_AIRFLOW` 0.025397 | `REPORT_SPACE_AIRFLOW` **0.025653** | `READ_SPACE_LOADS` 0.032018 |
+
+**What tipped it was a tie for second place on the words route, not anything in this card.** There
+`REPORT_SPACE_AIRFLOW` sat 3rd at bm25 −7.7790 behind `MEASURE_CEILING_HEIGHT` at −7.7793; with one
+more card in the library the two swapped, −7.7826 against −7.7798, and moving from words #3 to #2
+lifted `REPORT_SPACE_AIRFLOW`'s fused score past this card's. `LIST_MATERIALS`' own comment names
+its *how* as the cause; the measurement shows only that adding the card swapped them. And the card's
+declared plural, *"how much space do these take up"*, is #2 on `lexical` and #5 on `model` by ranking
+alone: it has only ever been reached by identity.
+
+**Declared because it is what a modeller says to this card**, not to buy the rank: it is the
+one-element form of that plural, and the purpose's own table sends *"how much space does it take"*
+here. *Space* in it is room taken up, not an MEP Space.
+
+| | before | after |
+|---|---|---|
+| the sentence, both backends, with and without `LIST_MATERIALS` | ranked | **identity** |
+| `check-routing.py` claims not reached, with `LIST_MATERIALS` | 57 `lexical`, 70 `model` | **56**, 70 - the `main` lists |
+| `check-routing.py` contested sentences, both backends | *"how big is this room"* lost to this card by words | `MEASURE_ROOM_DIMENSIONS` #1, its own |
+| `check-routing.py` words #1, `main` | 2224 of 2762 | 2226 of 2763 |
+| `check-routing.py` nearness #1, `main` | 1469 `lexical`, 1501 `model` | 1471, 1503 |
+| Revit 2024 risk crossings, both backends | `check-risk-crossings.py` | identical |
+| the owner's 79 questions, both backends | `score-routing.py` | identical, question for question |
+| 15 other probe sentences, written before the edit | winners | 13 unchanged everywhere; 2 moved to this card - see the row |
+
+### What this does not establish
+
+- **The probe sentences are this session's**, not the owner's. *"how much space does it take"*, the
+  purpose table's own wording, still goes to `READ_SPACE_LOADS` on `lexical`.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit**, and nothing was reworded or weakened to buy a rank.
+
+---
+
+## 2026-10-09 — every routing-table claim that did not reach its card, judged
+
+[Row 5b-387](../docs/fragment-issues/section-5b-rows-376-400.md). `check-routing.py` listed 56 claims not
+reached on **`lexical`** and 70 on **`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside
+the repository) - 89 sentences, a table saying *"-> here"* and ranking answering something else. Measured on
+scratch stores at **480 fragments**, no Revit filter, no re-ranker.
+
+**Judged before anything was written.** One agent per claim read the claiming card and the cards serving it
+against this file's rule; every proposed declaration or re-pointed row then faced three skeptics - a better
+card, a sentence too generic to own, a question reaching a write - and stood only with two of three.
+Declared here was only what all three let stand; 25 claims are left, named in the row, for the owner.
+
+**Then measured, and four declarations came out of it.** Each of the 46 edited cards was put back one at a
+time on both backends and the regressions asked again. Every cost had one card behind it:
+
+| Declared on | Cost | Kept? |
+|---|---|---|
+| `SET_SHEET_TITLE_BLOCK`, *"put the new border on the whole set"* | the question *"which sheets use the old border"* reached this write, both backends | no |
+| `REPORT_FAMILY_TABLES_IN_PROJECT`, *"check every fitting family's sizes"* | *"start a new family"* reached a read; the owner's *"Tag the ducts again using this tag family"* left the top five, lexical | no |
+| `COUNT_BY_SPATIAL_CONTAINER`, *"how many diffusers in each room"* | the owner's *"How many diffusers are there in the model?"* 4th to 5th, `model`; with *"count these by zone"*, *"how high are these rooms"* reached `PLACE_ROOMS`, lexical | no - *"count these by zone"* alone is clean |
+| `SELECT_HIDDEN_IN_VIEW`, *"what is not showing here"* | *"what is showing here"* reached the hidden-elements card, `model` - the encoder hears the words and not the *not* | yes, with the twin declared on `SELECT_VISIBLE_IN_VIEW` |
+| `SET_PROJECT_UNITS`, *"round lengths to 5 mm"* | *"show airflow in CFM"* moved from this ADMIN write to `REPORT_SPACE_AIRFLOW`, `model` | yes - the safe direction |
+
+| | before | after |
+|---|---|---|
+| claims not reached | 56 `lexical`, 70 `model` | **21**, **19** - the 25 left, less those each backend already reached, plus two wrapped rows the checker misreads (#453) |
+| one sentence claimed by two tables | 1 | 0 |
+| `check-routing.py` words #1 | 2226 of 2763 | 2280 of 2816 |
+| `check-routing.py` nearness #1 | 1471 `lexical`, 1503 `model` | 1493, 1521 |
+| Revit 2024 risk crossings, `test_routing_phrases.py` on `model` | | identical, both backends |
+| the owner's 79, `score-routing.py` | | none dropped; #62 3rd to 2nd `lexical`, #53 2nd to **1st** `model` |
+| 836 undeclared routing-table sentences through `find` | on their table's card: 544 `lexical`, 520 `model` | 546, 522; none moved off on `lexical`, one on `model` (*"show airflow in CFM"*, above); none a question moving onto a write |
+
+**And one measurement had to be thrown away.** The first after-probe on `model` reported 26 sentences
+moving onto their card and a crowd moving off. Its own record said `lexical`: a scratch script named
+`bisect.py`, written beside the probe, shadowed the standard library's `bisect`, model2vec failed to
+import, and the embedder fell back to lexical without a word. The probe now refuses to write a record
+whose backend is not the one it was asked for - and a backend label is checked on every record above.
+
+### What this does not establish
+
+- **The judges and skeptics are agents reading cards**, not the owner. Every verdict is recorded with its
+  reasons; the 25 left are his.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit**, and nothing was reworded or weakened to buy a rank.
+
+---
+
+## 2026-10-09 — questions about materials reach writes, and no card edit fixes it
+
+[Row 5b-396](../docs/fragment-issues/section-5b-rows-376-400.md). Measured on `main` `17040842`, **480
+fragments**, no Revit filter, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
+from a venv outside the repository), no re-ranker, every run on its own scratch store.
+
+**The instrument is new and kept:** [`tests/data/material-questions.tsv`](../tests/data/material-questions.tsv),
+238 sentences no card declares. The first 44 were written before any fix was tried, and the rest by
+skeptics whose job was to break the candidate fixes. Of its 69 questions about what an element is made of:
+
+| | `lexical` | `model` |
+|---|---|---|
+| reach a card that writes | **29** | **20** |
+| of them, `CREATE_MATERIAL` | 15 | 12 |
+| of them, `REPLACE_MATERIAL` | 5 | 2 |
+
+**Eight card-only fixes were tried and none was kept.** Each was measured on both backends, with and
+without PR #450's `LIST_MATERIALS`, and the qualifying ones went to skeptics writing fresh sentences.
+Every one that took crossings away moved something else the wrong way: a negated question off
+`FIND_UNUSED_MATERIALS`, a request to make a material off `CREATE_MATERIAL`, a selection or an unrelated
+wall question onto a write. The row lists each with the sentence that broke it.
+
+**Why a card cannot settle it, from the measurements:**
+
+- **The words that decide these questions are incidental.** *what, which, does, this, are, that* are on
+  more than half the cards and score nothing in the words route. What is left is *material* (on every
+  material card) and *use* or *those*, which happen to be in the WRITE cards' purposes and identity and
+  not in `READ_ELEMENT_MATERIAL`'s.
+- **A short word matches only itself.** `_fts_query` makes a word of three letters or fewer an exact
+  term, so *use* never reaches *using*, *unused* or *used*. Give *use* to the read, and it takes the
+  negated questions from `FIND_UNUSED_MATERIALS`, which can only say *unused*.
+- **The material cards sit on ties.** On `model` a swap between the routes fuses to an exact tie
+  (2026-09-28 section), and dozens of these sentences are decided by under one rank. Almost any added
+  sentence flips one somewhere.
+
+**So the next measurement belongs to the retrieval layer** - the short-word rule, or the equal-weight tie
+the 2026-09-28 section left alone because changing it cost the owner's questions - measured on his 79
+first and on this file second, on both backends.
+
+### What this does not establish
+
+- **The sentences are agents' sentences**, written to measure and to break, not the owner's. His 79 did
+  not move under any candidate that met the constraints.
+- **One encoder.** Every `model` number is `potion-base-8M`.
+- **Nothing here met Revit**, and no card was changed.
 
 ---
 

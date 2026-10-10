@@ -54,6 +54,16 @@ purpose: >
   its views or sheets. Links nested inside a link are not read, and are
   counted in the answer. This is version 2, and DRAFT until proved.
 
+# A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
+# two parameters carry - a shared or project "Fire Rating" bound beside the
+# built-in one, on the element or on the type the lookup falls through to -
+# reads "Fire Rating NOT READ - N parameters share that name" in
+# `linkedMatches`, never either value (D-54 s3, FRAGMENT-ISSUES 5b-203; added
+# 2026-10-09). Written here and not in `purpose`, as on check-sleeve-size's
+# card: the purpose is embedded for routing, and on that card's change a
+# purpose sentence about this moved other cards' utterances in check-routing,
+# measured against d9b27f03 (row 5b-203's 2026-10-09 note). Not measured for
+# this card.
 contract:
   needs:
     - name: doc
@@ -90,7 +100,9 @@ contract:
       # What was found in the links, as TEXT - the first line says which of
       # D-59's three cases this is, then the links' own lines. Text on
       # purpose: a linked element or id carried to the next step is looked
-      # up in THIS model (FRAGMENT-ISSUES row 75).
+      # up in THIS model (FRAGMENT-ISSUES row 75). Since 2026-10-09 a Fire
+      # Rating two parameters share reads NOT READ there, never either
+      # value (D-54 s3, FRAGMENT-ISSUES 5b-203).
       role: accounting
       type: IList<string>
 
@@ -136,3 +148,12 @@ utterances:
   - what runs through this wall
   - find everything overlapping this
   - what is in the same place as this
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided:
+  # PLACE_LINE_BASED_FAMILY answered it on the trained backend.
+  - what is touching this beam
+  # ADDED 2026-10-09, row 5b-387. PROPOSE_MEP_OPENINGS's table claimed it,
+  # and SET_WALL_CONSTRAINTS answered it on the trained backend - a write
+  # answering a question. This card answers it on its own; that table now
+  # points here, and keeps "what penetrates these walls and how big".
+  - what penetrates this wall

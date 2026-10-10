@@ -50,7 +50,6 @@ it may never be the reason an answer is right.
 """
 
 import io
-import glob
 import os
 import re
 import hashlib
@@ -220,6 +219,12 @@ def library_digest(store):
     parse must not itself cost a parse. Bytes rather than mtime, for the reason
     docs/05 s7 and `heron_embed.index` both give: a git checkout moves every
     file's mtime without changing a character.
+
+    AND SINCE ROW 5b-271 THEY ARE NOT EVEN READ WHEN NOTHING MOVED. Each file
+    goes in as `heron_fragment.file_mark()` - the hash of its bytes, re-read
+    only when its stat has changed - so the digest is still about content and
+    a quiet lookup opens no file at all. On the owner's PC this function was
+    1.08 s of a 2.1 s lookup.
     """
     digest = hashlib.blake2b(digest_size=16)
     digest.update(("search-index/%d" % INDEX_FORMAT + ROW_SEP).encode("utf-8"))
@@ -238,8 +243,8 @@ def library_digest(store):
                 continue
             digest.update((name + FIELD_SEP).encode("utf-8"))
             try:
-                with open(os.path.join(folder, "fragment.yaml"), "rb") as handle:
-                    digest.update(handle.read())
+                digest.update(FRAG.file_mark(
+                    os.path.join(folder, "fragment.yaml"))[0])
                 # THE IMPLEMENTATION COUNTS, AND LEAVING IT OUT BROKE SOMETHING
                 # THIS FUNCTION DOES NOT OWN. Found by review on PR #198.
                 # `index()` also calls `forget_stale()`, which drops cached
@@ -251,12 +256,9 @@ def library_digest(store):
                 # ran, and the cache kept answering from wordings confirmed
                 # against code that no longer exists. A fragment .cs is LIVE -
                 # it is sent on every call - so that window had no end.
-                for impl in sorted(glob.glob(os.path.join(
-                        folder, "impl", "*", "fragment.cs"))):
-                    digest.update(os.path.basename(
-                        os.path.dirname(impl)).encode("utf-8"))
-                    with open(impl, "rb") as handle:
-                        digest.update(handle.read())
+                for release, mark in _impl_marks(folder):
+                    digest.update(release.encode("utf-8"))
+                    digest.update(mark)
             except (IOError, OSError):
                 # A folder with no readable fragment.yaml is a REAL state -
                 # load_all() records it as a problem and carries on - so it has
@@ -265,6 +267,28 @@ def library_digest(store):
                 digest.update(b"unreadable")
             digest.update(ROW_SEP.encode("utf-8"))
     return digest.hexdigest()
+
+
+def _impl_marks(folder):
+    """[(release folder, file_mark)] for each `impl/*/fragment.cs`, in name
+    order - what `glob` matched before row 5b-271, without its per-folder cost.
+    A release folder with no fragment.cs is skipped, as the glob skipped it; a
+    file that is there and cannot be read raises, as reading it did."""
+    impl = os.path.join(folder, "impl")
+    try:
+        releases = sorted(os.listdir(impl))
+    except OSError:
+        return []
+    marks = []
+    for release in releases:
+        if release.startswith("."):
+            continue                    # glob's "*" never matched a dot-name
+        try:
+            mark = FRAG.file_mark(os.path.join(impl, release, "fragment.cs"))[0]
+        except (FileNotFoundError, NotADirectoryError):
+            continue
+        marks.append((release, mark))
+    return marks
 
 
 def index(store, force=False):

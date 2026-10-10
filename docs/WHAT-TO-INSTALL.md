@@ -30,13 +30,42 @@
 | 5 | **The MCP package** (`mcp`) | It is the line between Claude Code and Heron | `pip install --user mcp` | the same command |
 | 6 | **Heron itself** | The Heron tab in Revit | **Close Revit first**, then run `HeronInstaller.exe` from the Heron download | The Heron tab appears the next time Revit opens |
 
-**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24), and
-Heron's setup check looks only for `mcp` ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
+**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24).
+Heron's setup check looked only for `mcp` until 2026-10-09 and asks for both since - changed in the
+script and **not yet run on Windows** ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
 still talks to Revit, but every question to its knowledge answers *"needs PyYAML"* until it is
 installed.
 
 **Why `mcp` is on the optional list:** Heron's own tools and tests run without it. You need it the
 moment you want to ask Heron something from Claude.
+
+## 1a. Every new PC — one command before the first chat
+
+Once on every PC, after the list above, in the Heron folder:
+
+```bash
+python tools/heron-ready.py
+```
+
+It checks the list above and **builds what a first chat would otherwise build while you wait** —
+Heron's knowledge store, and the search model if you installed it. It installs nothing; anything
+missing is named with the command that fixes it. **On the owner's new laptop, 2026-10-08, the first
+*"create a family"* took over seven minutes where the office PC took one or two** — his report, not a
+measurement — and this is the part of that gap Heron can close for you.
+
+Then, the three things only you can do:
+
+1. **Open the Heron folder in Claude Code, answer Yes to trusting it, and approve the `heron` server**
+   when Claude Code asks. The old PC remembers both answers; a new one asks once.
+2. **Type `/mcp` — `heron` must say connected.** If it does not, Claude has no Heron tools and will try
+   to do the job by reading Heron's files, which is the slow way. Run `python tools/heron-ready.py`
+   again; it names what is missing.
+3. **Switch on what the job needs on the Heron ribbon, before you ask.** They start off on every new
+   PC: **Changes** for any change, **Admin** for a new family file, **Publish** to save it. A refusal
+   costs a turn.
+
+Claude Code's own memory of your old PC does not come across. It does not need to: Heron hands Claude
+a job's whole method — every step of building a family, in order — through its `heron_method` tool.
 
 ## 2. Optional — the two search add-ons
 
@@ -93,7 +122,7 @@ A modeller installing a release needs none of this.
 | **The .NET SDK — version 10, not 8** | To compile the Revit add-in for every release Heron supports | Revit 2027 runs on .NET 10, so only the 10 SDK builds every release — [30](30-compiling-away-from-windows.md) has the rest, and how on Linux |
 
 A developer deploys the add-in with `tools/setup.ps1` rather than the installer, which also checks
-Python and `mcp` first — [07](07-installation-and-update.md).
+Python, `mcp` and PyYAML first — [07](07-installation-and-update.md).
 
 ## 5. Check what you have
 
