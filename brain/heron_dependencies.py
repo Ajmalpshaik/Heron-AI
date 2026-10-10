@@ -25,7 +25,7 @@ gives every entry three fields:
 
     # <import name> | <what Heron uses it for> | <what happens without it>
 
-and all five entries fill in all three. So the sentence a person needs
+and every entry fills in all three. So the sentence a person needs
 already exists, written down, for every optional dependency. What has gone
 wrong (PROPOSALS F7) is that the sentence never reaches them: `sqlite_vec`
 falls back to comparing vectors in Python and nothing says so, so Heron
@@ -35,7 +35,7 @@ install.
 That is why this agent will not accept an optional dependency that does
 not say what is LOST without it. Not because the field might be missing -
 it is not, today - but because an optional dependency with no stated cost
-is the exact shape the failure takes, and the day somebody adds the sixth
+is the exact shape the failure takes, and the day somebody adds the next
 entry in a hurry is the day it comes back.
 
 REQUIRED OR OPTIONAL IS DECLARED, NEVER GUESSED
