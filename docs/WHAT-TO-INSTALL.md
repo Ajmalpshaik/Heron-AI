@@ -7,14 +7,16 @@
 > | **Authority** | None of its own. [`requirements.txt`](../requirements.txt) and [`requirements-optional.txt`](../requirements-optional.txt) are the lists, [Q-39](open-questions/answered.md) settled what a user must install, [07](07-installation-and-update.md) is how Heron is installed, and [`brain/retrieval-history.md`](../brain/retrieval-history.md) holds every measurement. Where this page disagrees with them, **they win** |
 > | **Opened** | 2026-09-24, with the first measurement of the search add-ons on the owner's own questions |
 
-> **Heron is not released yet.** No release has been published, and the [main README](../README.md) asks
-> modellers not to install it until it is announced. This page is the list for that day — and for the
-> owner's PC now.
+> **The first release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), was
+> published on 2026-10-08**, on the owner's word, so a new teammate could install Heron. It is an early,
+> **unsigned** build, and the [main README](../README.md) still asks modellers not to install Heron until
+> it is announced.
 >
-> **Until that day there is no installer to download, and searching the code will not find one.**
-> `HeronInstaller.exe` is built, never stored in the code ([`.gitignore`](../.gitignore) says so on
-> purpose), and a release is where it is put. With a copy of the code, `.\tools\setup.ps1` builds and
-> installs Heron with no installer at all — [section 4](#4-only-to-build-heron-yourself).
+> **The installer is in that release, never in the code.** Searching the code will not find
+> `HeronInstaller.exe` — it is built, and [`.gitignore`](../.gitignore) keeps it out on purpose. It sits
+> at the top of `heron-project.zip` on the release page: row 6 below. With a copy of the code,
+> `.\tools\setup.ps1` builds and installs Heron with no installer at all —
+> [section 4](#4-only-to-build-heron-yourself).
 
 ## The short answer
 

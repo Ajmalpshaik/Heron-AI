@@ -81,7 +81,7 @@ published there is nothing to download.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **AC1** | Push a tag — `git tag v0.1.0 && git push origin v0.1.0` — and watch the **Release** workflow | It builds **24 assets**, writes `checksums.txt`, and creates a **draft** release carrying all of them plus `heron-products.json`. The job summary lists every checksum. **A draft is deliberate**: nothing is signed yet, so nobody should be able to find and install it by accident |
+| ~~**AC1**~~ | ~~Push a tag and watch the **Release** workflow~~ | **DONE 2026-10-08.** `v0.1.0` pushed at `a88b0bc2`, every CI gate green on that commit; [the Release run](https://github.com/Ajmalpshaik/Heron-AI/actions/runs/37700010195) built a **draft** carrying **27 files** - 24 product zips, `heron-project.zip` with both installers, `heron-products.json` and `checksums.txt` - and the draft's `heron-project.zip` and product list matched their checksums once downloaded. Then **published on the owner's word** - see 2026-10-10 below |
 | **AC2** | On a PC or folder with **no build at all**, run `HeronInstaller.exe`, tick a Revit, press Install | It **downloads** rather than refusing, and the tab appears in that Revit after a restart. This is the first time anything has ever been fetched from a release. Watch for: the window freezing while it downloads — it should not, the engine runs off the window's thread |
 | **AC3** | Corrupt one asset in the release — re-upload a truncated zip — and install again | It **refuses**, says the file *"did not arrive whole"*, and `%APPDATA%\Autodesk\Revit\Addins\<ver>\` is **untouched**. Check the folder afterwards rather than trusting the message |
 | **AC4** | Turn networking **off**, then install | It says it **could not reach the internet**, not "error". Then block `github.com` at the firewall instead and check the message changes to the one about IT and the proxy |
@@ -138,5 +138,23 @@ shared by every caller.
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **AC6** | On a PC whose newest Revit is 2024 or older — so no .NET 8 came with it — download `heron-project.zip` from the published release, unzip it, double-click `HeronInstaller.exe` | SmartScreen warns that the publisher is unknown, and after *Run anyway* **the window opens with no request to install .NET**. A request to install a runtime is the FAIL this row exists for: the self-contained build is the whole of the fix for it |
+
+---
+
+## 2026-10-10 — v0.1.0 IS PUBLISHED, and the installer has fetched from it
+
+**The owner chose to publish** on 2026-10-08, when asked whether the new teammate should get Heron from a
+public release: *"Publish v0.1.0 now"*. **Two written rules said a release is SIGNED** -
+[docs/07](../07-installation-and-update.md) section 1a, and `brain/heron_tag.py`, which refuses an unsigned
+artefact rather than warning. Both still say so and neither was edited: this release is the owner's
+exception, made knowingly, and Stage 8 - signing - is still what closes it. The release notes say it is
+unsigned and that the README's *please do not install this yet* still stands.
+
+| | |
+|---|---|
+| **PASS** | `releases/latest/download/` answers 200 for the product list, `checksums.txt` and a product zip - the address the installer builds |
+| **PASS** | **The download route, for the first time**: the published `heron-project.zip` unzipped into an empty folder, `heron-install.exe --releases 2027 --products heron-bridge` with no `--from` - *"Files come from Heron's published release"*, *"1 installed, 0 failed"*, and *"This is the newest published version (0.1.0)"* |
+| **NOT SEEN** | Revit 2027 loading the PUBLISHED bytes. Started twice; both times it stopped at Autodesk licensing - licensing agents started, no window, no CPU - before any add-in loads, very likely because the earlier test runs closed it by force. The rehearsal build of the same code had loaded (above). Closed again by its process id |
+| **NOT RUN** | `AC2` as written - the window's own Install, then the tab seen - and `AC3` to `AC6` |
 
 ---
