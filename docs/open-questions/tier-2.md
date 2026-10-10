@@ -273,3 +273,44 @@ found in a model made from a template would have to be replaced on first use, no
 answers. Until he does, they keep nothing.
 
 ---
+
+### 🟡 Q-61 — Which model, effort level and fast-mode setting should a modeller's chat run, and are the office PC and the new laptop set the same today? *(found 2026-10-10)*
+
+[FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) timed two family builds on the
+new laptop on 2026-10-09: 367 s and 792 s, of which Revit's own time was 17.2 s in all and the model's
+own turns about 93% - extended thinking alone about 609 s. That chat ran `claude-opus-5-5` at effort
+*xhigh* on every request. **The search for why the office PC is quicker never asked what the office
+PC's chat runs.** A search of [docs/04 §8.7](../04-heron-mcp.md), [WHAT-TO-INSTALL](../WHAT-TO-INSTALL.md)
+and [`tools/heron-ready.py`](../../tools/heron-ready.py) for *effort*, *xhigh* and *fast mode* finds
+nothing, and `heron-ready --snapshot` records none of them, so setting the two snapshots side by side
+cannot show this difference. It is the largest difference between the two PCs that nobody has examined.
+
+**A fact first, then a decision.** The fact: note the model, effort level and fast-mode setting of a chat
+on each PC, and time the same family on both. The decision, if they differ and it matters: whether
+Heron's install notes recommend a setting for modelling work, and whether `--snapshot` should record what
+it can see of one - a change to the snapshot code, agreed on its own and not made here.
+
+**The owner decides**, after the comparison. Until it is made, the minutes on the two PCs can be neither
+blamed on Heron nor cleared of it.
+
+---
+
+### 🔵 Q-62 — Should one `revit_change` call build many family forms? *(found 2026-10-10)*
+
+Today one call builds one form, or several loops that share one plane and one depth. The pump set timed
+in [FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) had 107 forms: they went in as
+about 11 batches of calls, and the chat spent 11 more turns, about 53 s, carrying the new forms' ids
+forward so that the cuts, materials and visibility could name them. Each of those calls also brought
+back a hand-back of its own ([5b-407](../fragment-issues/section-5b-rows-401-425.md)).
+
+**A proposal, not a decision.** One shape: a write that takes a list of forms - each with its plane,
+profile, extent and solid or void - builds them in one call, and hands back their ids as one list a later
+step can name. What it would change: the undo - one call is one undo entry (Article 8), so 107 forms
+would undo as one, which a modeller may or may not want of a family build; a refusal part way through,
+which stays all or nothing; and the library - widening `CREATE_FAMILY_EXTRUSION` and
+`CREATE_FAMILY_REVOLUTION` to take several forms is the first thing to weigh, before any new fragment.
+
+**The owner decides**: build a several-forms entry point, and in what shape, or keep one form per call
+and accept the turns.
+
+---
