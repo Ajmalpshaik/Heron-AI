@@ -1,0 +1,64 @@
+# The proof plan for READ_VIEW_SCALE (read-view-scale, FRG-VIEW-120),
+# FRAGMENT-ISSUES row 146. Written 2026-10-09 and NOT RUN - the owner runs it.
+#
+#     python tools/batch-prove.py tools/jobs/read-view-scale-project1-2026-10-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/read-view-scale-project1-2026-10-09.yaml
+#
+# READ ONLY. No transaction is opened and nothing is written, so it may run on
+# the working file. ZERO SETUP: `views` is typed; nothing is selected or chained.
+#
+# POSITIVE: "1 - Mech" and "{3D}", two views every recent Project1 job has
+# named, and both are drawn at a scale - a floor plan and the default 3D view,
+# which is not a perspective. `scaled` must be 2 and `viewScales` must hold two
+# "1 : N" rows. CHECK EACH N against the View Scale row in that view's
+# Properties palette: the number is the whole answer and the runner cannot
+# judge it. If "1 - Mech" follows a view template, its row says whether the
+# template holds the scale - run REPORT_VIEW_TEMPLATE_CONTROL on "1 - Mech" too
+# and look for View Scale in its HOLDS list. The two must agree.
+#
+# NEGATIVE: A SCHEDULE, which is a table and has no scale. `viewScales` must
+# come back EMPTY, `scaled` 0, `noScale` 1, and `findings` must name it a
+# Schedule with no scale - never a number. That is the case this fragment
+# exists for, and the second negative in its tests/cases.yaml.
+#
+# WHY A SCHEDULE AND NOT A SHEET. A view is found by its NAME, as the Project
+# Browser shows it (Element.Name), and a sheet's name is its title, not its
+# number. Project1's sheets M-101 to M-107 are known only by number in this
+# repository, so a sheet named here would stop the negative at "No view called"
+# before the fragment ran - which proves nothing. "Air Terminal Schedule" is a
+# schedule this model is recorded as holding: FIND_SCHEDULES with nameContains
+# "Air Terminal Schedule" found that one schedule on 2026-09-27 (NEEDS-CHECKING
+# Group AT; tools/jobs/set-schedule-field-totals-project1-2026-09-27.yaml).
+# That search matched part of a name, so if this run stops with "No view
+# called", read the schedule's exact name off the Project Browser and put it
+# here - the dry run below cannot tell (it checks a negative is arranged, not
+# that it binds, the gap of FRAGMENT-ISSUES row 5b-242).
+#
+# THE SHEET IS A CASE BY HAND, by its sheet NAME (Sheets in the Project Browser
+# shows "M-105 - <name>"; the part after the number is what to type). It must
+# also come back with no scale and the reason, never a number.
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front. With two
+# Revits connected to Heron, add `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding", Revit 2024 - READ ONLY, working file is fine
+
+jobs:
+  - fragment: read-view-scale
+    expect: viewScales
+    set:
+      views: "1 - Mech, {3D}"
+    negative-set:
+      views: "Air Terminal Schedule"
+    note: >
+      Positive: scaled 2, viewScales two rows "'1 - Mech' (FloorPlan) 1 : N -
+      ..." and "'{3D}' (ThreeD) 1 : N - ...", each N equal to that view's View
+      Scale in Properties. Negative: viewScales empty, scaled 0, noScale 1,
+      findings "'Air Terminal Schedule' (Schedule): no scale - a schedule is a
+      table, not a drawing, and has none.". THEN BY HAND, not through this
+      file: ask for a sheet by its sheet name - no scale, with the reason. And
+      on a TEST COPY, because it makes a view: place a camera (View > 3D View >
+      Camera) and ask for the new view by name - it must be reported with no
+      scale, never a number. Revit's API documentation calls a perspective
+      view's scale meaningless, and what Revit returns for one is exactly what
+      the card does not trust.

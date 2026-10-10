@@ -183,8 +183,10 @@ def gate_results(wanted):
                                        "with --stated if it ran elsewhere"}
             continue
         code, tail = run(cmd)
+        # EXIT 3 IS "COULD NOT RUN" for a gate as for a suite (tests/README.md):
+        # check-api-surface with no dotnet, check-fragments-compile with no SDK.
         results[name] = {
-            "result": NOT_RUN if code is None else (PASS if code == 0 else FAIL),
+            "result": (NOT_RUN if code in (None, 3) else (PASS if code == 0 else FAIL)),
             "exit": code,
             "source": "derived",
             "detail": (tail or "").strip()[:120],

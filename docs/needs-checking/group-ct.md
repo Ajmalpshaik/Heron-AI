@@ -11,7 +11,7 @@
 
 `GROUP_ELEMENTS` (FRG-ELE-012) version 2 groups the selected elements in a project, as version 1 did, OR in
 the family open in the Family Editor, where version 1 was refused every time and never said why
-([row 5b-362](../fragment-issues/section-5b-rows-176-200.md)). New in it: a `name` value - the group type's
+([row 5b-362](../fragment-issues/section-5b-rows-351-375.md)). New in it: a `name` value - the group type's
 name, EMPTY for Revit's own "Group 1"; a name another group type already has, or one with a character Revit
 forbids, refused before anything is made; `refusalReason` in plain words, Revit's own message quoted;
 `groupName`; and `findings` saying where it grouped and what Revit added. The group and its name are one

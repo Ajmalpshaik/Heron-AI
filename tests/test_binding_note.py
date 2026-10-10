@@ -52,6 +52,17 @@ rather than a description: built against a copy of `Size` as it stood before
 the fix - one that ignored what was offered - **3 of the 7 checks fail and
 the host exits 1**. The four that still pass are the ones that must not move:
 equal counts, no carried value, and a scalar.
+
+AND ROW 75's STOP, 2026-10-09. Counting the loss was the half that could not
+break a caller; the other half is that a carry from a LINK is not looked up
+in the host at all. The chain records, element by element, which document
+each came from (`HeronBindingNote.OtherDocument`), and the binder refuses a
+need whose carry came from somewhere else, naming the link
+(`HeronBindingNote.CarriedFromElsewhere`). The host asks both by reflection,
+so on the code as it stood they fail as checks rather than as a build error;
+`linked_carry_is_refused` below reads that RevitFragment.cs writes the record
+and asks before `Shape`. Neither has been seen in a real Revit - that needs a
+link, and is owed.
 """
 
 import io
@@ -173,6 +184,61 @@ def crosses_the_seam():
                    % (loose or "no call at all"))
 
 
+def linked_carry_is_refused(text):
+    """Does the chain RECORD a linked carry, and the binder REFUSE it first?
+
+    FRAGMENT-ISSUES row 75, the half the host cannot see. The host proves
+    what OtherDocument writes down and what CarriedFromElsewhere says; only
+    RevitFragment.cs shows that `Remember` writes the record at all, that
+    nothing writes the chain around it, and that `BindNeeds` asks before
+    `Shape` revives the ids against the HOST - after it is too late, which is
+    the 2-of-1128 bind the row measured.
+
+    Each answer is (ok, what was checked). Every position is checked for -1
+    before it is compared, because `str.find` returns -1 for an absent string
+    and a bare `a < b` then passes loudest when the guard has been deleted
+    (heron-ship 2a).
+    """
+    found = []
+
+    records = "HeronBindingNote.OtherDocument(" in text
+    found.append((records, "Remember records which document each carried "
+                           "element came from"))
+
+    kept = "chain.Keep(variable.Name, ids, elsewhere)" in text
+    found.append((kept, "and keeps that record beside the ids it carried"))
+
+    # A write to Values that bypasses Keep leaves a record describing a value
+    # that is no longer there - a host list refused as a link's, or a link's
+    # list bound because the record was cleared without it.
+    around = re.findall(r"chain\.Values\.Clear\(\)|chain\.Values\[[^\]]*\]\s*=(?!=)",
+                        text)
+    found.append((not around, "nothing writes or clears the chain's values "
+                              "around that record%s"
+                  % ("" if not around else " - found: %s" % ", ".join(around))))
+
+    asks = text.find("HeronBindingNote.CarriedFromElsewhere(")
+    shapes = text.find("var shaped = Shape(value, type, target);")
+    found.append((asks >= 0 and shapes >= 0 and asks < shapes,
+                  "BindNeeds asks CarriedFromElsewhere BEFORE Shape looks the "
+                  "ids up in the host (asked at %d, Shape at %d)" % (asks, shapes)))
+
+    refused = re.search(r'if \(foreign != null\) return Json\.Error\("needs_unbound", '
+                        r'foreign\);', text)
+    found.append((refused is not None,
+                  "and returns its refusal instead of binding"))
+
+    # The chain must look the record up under the key it READ, which is
+    # `created` when a creator's output filled `elements`.
+    both = (re.search(r"value = carried\[wanted\];\s*carriedAs = wanted;", text)
+            is not None
+            and re.search(r'value = carried\["created"\];\s*carriedAs = "created";',
+                          text) is not None)
+    found.append((both, "under the key the chain was read by - the need's, or "
+                        "'created'"))
+    return found
+
+
 def main():
     tfm = _tfm()
     if tfm is None:
@@ -240,6 +306,11 @@ def main():
     print("  %s  the binder asks EmptyWhenAbsent before refusing an unfilled "
           "element list" % ("ok  " if empties else "FAIL"))
 
+    linked = linked_carry_is_refused(text)
+    for ok_here, said_here in linked:
+        print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
+    linked_ok = all(ok_here for ok_here, _ in linked)
+
     # The Python half of the same rule, word for word on the same cases.
     sys.path.insert(0, os.path.join(ROOT, "brain"))
     import heron_fragment as HF
@@ -257,7 +328,7 @@ def main():
     agrees = all(HF.need_may_be_empty(need) == want for need, want in mirror)
     print("  %s  heron_fragment.need_may_be_empty answers the %d cases the host "
           "does" % ("ok  " if agrees else "FAIL", len(mirror)))
-    return 0 if ok and asks and empties and agrees else 1
+    return 0 if ok and asks and empties and linked_ok and agrees else 1
 
 
 if __name__ == "__main__":

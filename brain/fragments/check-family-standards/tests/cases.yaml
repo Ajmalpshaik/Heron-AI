@@ -80,6 +80,18 @@ negative:
       only the name, required-parameter and tidiness checks, and a finding that
       says so - not a single connector FAIL
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a project that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      in a PROJECT, requiredParameters naming a parameter a family type
+      carries twice - a TYPE project parameter bound to the category beside
+      the family's own type parameter of the same name
+    expect: >
+      that type's row saying WARN, the name and "2 times", and `warned`
+      counting it - NOT a silent pass, and NOT "no such parameter" either.
+      It is present; which of the two a lookup by that name shows is Revit's
+      pick (row 5b-203)
+
 second_route:
   - Project Browser, Families branch - and Manage, Purge Unused to see which are placed at all
   - "In the Family Editor: Family Category and Parameters for Work Plane-Based and Part Type; select each connector for its direction arrow, System Classification and the small associate button beside Diameter; Family Types for Instance or Type"

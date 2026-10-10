@@ -9,7 +9,7 @@
 
 **Built 2026-10-04 from the study in [docs/45](../45-five-more-downloaded-skill-files.md). Every one was
 DRAFT before it was touched, is DRAFT now, and compiles on 2020 to 2027. Nothing below has run in
-Revit.** Three of them repair rows [5b-315 to 5b-317](../fragment-issues/section-5b-rows-176-200.md).
+Revit.** Three of them repair rows [5b-315 to 5b-317](../fragment-issues/section-5b-rows-301-325.md).
 The arrangements, inputs and expected answers are in four job files, each read back with
 `python tools/batch-prove.py <file> --dry-run`:
 [`study-45-import-and-shared-params`](../../tools/jobs/study-45-import-and-shared-params.yaml),

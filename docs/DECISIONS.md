@@ -960,7 +960,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-113 — A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about
 
-**Status:** Proposed · **Date:** 2026-10-06 · **Source:** [FRAGMENT-ISSUES 5b-324](fragment-issues/section-5b-rows-176-200.md), measured on the owner's PC the same day
+**Status:** Proposed · **Date:** 2026-10-06 · **Source:** [FRAGMENT-ISSUES 5b-324](fragment-issues/section-5b-rows-301-325.md), measured on the owner's PC the same day
 **Supersedes:** the KEY in [D-111](#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project) item 4 - a new project inherits its Project Information UniqueId from its template, so every model made from one template shared one record
 **Affects:** [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`heron_write.py`](../mcp/server/heron_write.py), [`heron_earlier.py`](../brain/heron_earlier.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_earlier_answers`)
 
@@ -968,7 +968,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-114 — A fragment that reloads a family is handed Revit's load options by the add-in
 
-**Status:** Proposed · **Date:** 2026-10-06 · **Source:** [FRAGMENT-ISSUES 5b-347](fragment-issues/section-5b-rows-176-200.md) - a nested nut edited and saved could not be reloaded into the families that hold it
+**Status:** Proposed · **Date:** 2026-10-06 · **Source:** [FRAGMENT-ISSUES 5b-347](fragment-issues/section-5b-rows-326-350.md) - a nested nut edited and saved could not be reloaded into the families that hold it
 **Keeps:** [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) - a fragment never declares a type · [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group)'s ambient-need pattern · Constitution Article 7 - a family reload is confirmed for that operation
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (`FamilyReload`, `FamilyLoadNeed`), [`heron_fragment.py`](../brain/heron_fragment.py) (`AMBIENT`), `load-family`
 

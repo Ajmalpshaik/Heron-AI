@@ -13,7 +13,7 @@ Editor, named the way `SET_FAMILY_CONNECTOR_ROLES` names them - the plane the fa
 a connector NOT named going with them fails the call. It says what is left behind: the family parameters
 that drove the size, a partner read back unlinked, a domain left with no primary. A project in front is
 refused. Before it, a pipe connector made on `Air Outlet` in the owner's Family1 (Revit 2024) could not be
-taken off by any tool ([row 5b-354](../fragment-issues/section-5b-rows-176-200.md)).
+taken off by any tool ([row 5b-354](../fragment-issues/section-5b-rows-351-375.md)).
 
 A new card rather than a mode on `SET_FAMILY_CONNECTOR_ROLES`: that card edits a connector that stays and
 reads every setting back on it; its header and this card's say why. Compiled for Revit 2020 to 2027 on

@@ -102,8 +102,9 @@ import heron_bridge_client as bridge          # noqa: E402
 import heron_session as session                      # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
-                         describe_vertical, parse_millimetres)
+                         describe_vertical, parse_millimetres, skipped_sentence)
 from heron_failure import analyse, explain          # noqa: E402
+from heron_failure import REFUSED as FAILURE_REFUSED  # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
@@ -252,16 +253,70 @@ def _from_chat():
 
 def _through(tool, reply_out=None, origin="chat"):
     """Call a tool's own body - not its registered wrapper, so the activity
-    list is not given a second line for it - with the side channel set."""
+    list is not given a second line for it - with the side channel set.
+
+    What the body says of how it ended is its own and never labels the
+    calling tool's line by itself: a read run on another tool's behalf
+    leaves that line as it was. A caller that hands its answer back
+    unchanged may adopt it - it is put in reply_out["ended"], and
+    revit_edit_table returns `_ended(out.get("ended"), said)` (row 5b-389)."""
     body = getattr(tool, "__wrapped__", tool)
 
     def call(*a, **k):
-        _ctx.reply_out, _ctx.origin = reply_out, origin
+        kept = getattr(_ctx, "outcome", None)
+        # EMPTIED FOR THE BODY, so "ended" is what THIS body said - never
+        # the caller's own word, still standing from before the call.
+        _ctx.reply_out, _ctx.origin, _ctx.outcome = reply_out, origin, None
         try:
             return body(*a, **k)
         finally:
-            _ctx.reply_out, _ctx.origin = None, "chat"
+            if reply_out is not None:
+                reply_out["ended"] = getattr(_ctx, "outcome", None)
+            _ctx.reply_out, _ctx.origin, _ctx.outcome = None, "chat", kept
     return call
+
+
+def _ended(outcome, answer=None):
+    """
+    HOW THIS CALL ENDED, said by the code that knows - for the Companion's
+    activity list - and the answer handed back unchanged, so a tool writes
+    `return _ended("refused", text)` (row 5b-274).
+
+    The list used to guess it from the answer's first line, and got two
+    kinds of reply backwards: a words-path hand-back was labelled refused,
+    and an add-in refusal whose first line said nothing of refusing was
+    labelled OK. Say "ok", "refused", "failed" or "handed_back"
+    (heron_companion.Activity.OUTCOMES); a call that says nothing is still
+    guessed, as before. Display only: it never changes the answer.
+    """
+    _ctx.outcome = outcome
+    return answer
+
+
+def _failure_ended(failure):
+    """A classified bridge failure's label: a refusal only when Revit or the
+    add-in said no (heron_failure's REFUSED). Never ran, still running,
+    rolled back and an unknown outcome all mean the work was not done as
+    asked, which the list calls failed."""
+    return "refused" if failure.outcome == FAILURE_REFUSED else "failed"
+
+
+def _ended_by_reply(tool, reply):
+    """
+    HOW A SINGLE-PURPOSE TOOL'S CALL ENDED, said from the add-in's reply the
+    moment it arrives (row 5b-389). revit_levels, revit_views and the rest
+    send one operation and answer from it, so the reply is what knows: a
+    good one is "ok", and a missing or failed one is labelled by
+    heron_failure's own classification through _failure_ended, exactly as
+    the three doors label theirs. `writes` is the tool's declared risk
+    (heron_tools.writes), never a flag typed here.
+
+    The lines after it still speak last: the pin's refusal is
+    `return _ended("refused", wrong_model)`. Display only, like _ended - the
+    answer each branch returns is untouched.
+    """
+    failure = analyse(reply, writes=tools.writes(tool))
+    _ended("ok" if failure is None else _failure_ended(failure))
 
 
 def _recorded(fn):
@@ -284,6 +339,10 @@ def _recorded(fn):
     def _run(*a, **k):
         outer = not getattr(_depth, "busy", False)
         _depth.busy = True
+        # HOW IT ENDED, AS THE TOOL SAID IT (_ended, row 5b-274). Emptied
+        # before the call and put back after, so a tool called inside
+        # another never speaks for the outer one's line.
+        kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
         started, clock = time.strftime("%H:%M:%S"), time.time()
         try:
             reply = fn(*a, **k)
@@ -292,10 +351,11 @@ def _recorded(fn):
                 _note(fn.__name__, started, time.time() - clock, error=error)
             raise
         finally:
+            said, _ctx.outcome = getattr(_ctx, "outcome", None), kept
             if outer:
                 _depth.busy = False
         if outer:
-            _note(fn.__name__, started, time.time() - clock, reply=reply)
+            _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
         return reply
     return run
 
@@ -359,6 +419,7 @@ def revit_health() -> str:
     try:
         live, starting, stale, mismatched = bridge.discover()
     except Exception as exc:                      # never let the tool itself fail
+        _ended("failed")
         return ("Heron could not read its own session list: %s: %s\n"
                 "Run  python mcp/client/heron_bridge_client.py doctor  for the full picture."
                 % (type(exc).__name__, exc))
@@ -444,7 +505,9 @@ def revit_health() -> str:
         lines.append("  (cleared %d stale entry(ies) from a Revit that did not shut down cleanly)"
                      % len(stale))
 
-    return "\n".join(lines)
+    # A REPORT THAT WAS MADE ENDED OK, whatever it reports - "No Revit is
+    # connected" is this tool answering, not this tool failing (row 5b-389).
+    return _ended("ok", "\n".join(lines))
 
 
 @server.tool()
@@ -475,7 +538,7 @@ def revit_select_by_category(category: str = "ducts") -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     # THE PIN TRAVELS WITH THE REQUEST, because checking it on the reply is
     # checking it too late. SelectByCategory calls SetElementIds before it
@@ -491,6 +554,11 @@ def revit_select_by_category(category: str = "ducts") -> str:
                             op_args={"category": category,
                                      "expectProject": pinned.project_information_id or ""})
     session.close()
+    # HOW THIS CALL ENDED, FROM THE ADD-IN'S REPLY (row 5b-389): a refusal
+    # such as unknown_category is "refused" though its first line never says
+    # so, revit_busy and a lost answer are "failed", a good reply "ok". Every
+    # single-purpose tool below carries this line after its one request.
+    _ended_by_reply("revit_select_by_category", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -530,6 +598,10 @@ def revit_select_by_category(category: str = "ducts") -> str:
         # which is false after a selection - so say what happened instead.
         # Found by the review of the 5b-324 change, 2026-10-06.
         if reply.get("selected"):
+            # FAILED, NOT REFUSED, on the activity list (row 5b-389): a
+            # refusal means nothing happened, and here a selection did - in
+            # a model this chat does not work on.
+            _ended("failed")
             return ("Heron SELECTED %s %s in %s before it could tell that %s is not the "
                     "model this chat works on (%s) - the add-in's own check compares an id "
                     "every model made from one template shares, so it let the selection "
@@ -539,7 +611,7 @@ def revit_select_by_category(category: str = "ducts") -> str:
                     % ("{:,}".format(reply.get("selected")), reply.get("category"),
                        reply.get("document"), reply.get("document"), pinned.title,
                        reply.get("document")))
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     # Naming the document is not enough on its own. Two Revit sessions can
     # both have a model called Project1 open - it happened on the very first
@@ -586,10 +658,11 @@ def revit_links() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_links")
     session.close()
+    _ended_by_reply("revit_links", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -599,7 +672,7 @@ def revit_links() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -720,7 +793,7 @@ def revit_use_session(session: str) -> str:
     try:
         chosen = binding.choose(session)
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     document = "the open model"
     reply = chosen.request("count_elements")
@@ -750,6 +823,9 @@ def revit_use_session(session: str) -> str:
             document += " - moved from %s" % was
     chosen.close()
 
+    # THE CHOICE IS THE WORK, so it ended ok whether or not the count above
+    # answered - that only names the model (row 5b-389).
+    _ended("ok")
     return ("Now working with Revit %s (session %s) - %s.\n"
             "Every request goes there until you say otherwise. If it closes, Heron will stop "
             "rather than switch to another model."
@@ -776,12 +852,12 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
     try:
         millimetres = parse_millimetres(distance)
     except BadDistance as bad:
-        return str(bad)
+        return _ended("refused", str(bad))
 
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("preview_move", op_args={
         "category": category,
@@ -790,6 +866,7 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
         "millimetres": repr(millimetres),
     })
     session.close()
+    _ended_by_reply("revit_preview_move", reply)
 
     if reply is None:
         approval.clear()
@@ -807,7 +884,7 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         approval.clear()
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     summary = "%s %s in %s" % (
         "{:,}".format(reply.get("willMove", 0)) + " " + str(reply.get("category")),
@@ -821,8 +898,7 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
 
     skipped = reply.get("willSkip", 0)
     if skipped:
-        lines.append("%s would be skipped - pinned, or owned by another user."
-                     % "{:,}".format(skipped))
+        lines.append(skipped_sentence(skipped, reply.get("skipReasons"), False))
 
     lines.append("")
     lines.append("Nothing has been changed yet. Say yes and Heron will apply it, "
@@ -844,13 +920,15 @@ def revit_apply_move() -> str:
     """
     token, summary = approval.take()
     if token is None:
-        return ("There is nothing waiting to be approved. Ask for the change and Heron "
-                "will show what it would do first. Nothing has been sent to Revit.")
+        return _ended("refused",
+                      "There is nothing waiting to be approved. Ask for the change and "
+                      "Heron will show what it would do first. Nothing has been sent "
+                      "to Revit.")
 
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     # idempotent=False, and this is the whole reason that flag exists. If the
     # answer is lost after the request left this machine, whether Revit ran it
@@ -877,15 +955,14 @@ def revit_apply_move() -> str:
     # happened.
     failure = analyse(reply, writes=tools.writes("revit_apply_move"))
     if failure is not None:
-        return explain(failure)
+        return _ended(_failure_ended(failure), explain(failure))
 
     moved = "{:,}".format(reply.get("moved", 0))
     lines = ["Moved %s %s %s in %s." % (moved, reply.get("category"),
                                         reply.get("distance"), reply.get("document"))]
 
     if reply.get("skipped"):
-        lines.append("%s were skipped - pinned, or owned by another user."
-                     % "{:,}".format(reply.get("skipped")))
+        lines.append(skipped_sentence(reply.get("skipped"), reply.get("skipReasons"), True))
 
     # THE THREE THAT MUST NEVER BE FOLDED INTO "MOVED".
     #
@@ -924,7 +1001,7 @@ def revit_apply_move() -> str:
     lines.append("One Ctrl+Z in Revit puts this back - it is a single undo step called "
                  "\"%s\"." % reply.get("undoEntry"))
 
-    return "\n".join(lines)
+    return _ended("ok", "\n".join(lines))
 
 
 def _fragment_for(capability):
@@ -1272,18 +1349,24 @@ def _by_words(request, door, values):
     fragment's author wrote down as meaning this. Every other case goes back
     to the host with the candidates AND what each needs typed, so the next
     call is the run itself rather than another lookup.
+
+    A REPLY HANDED BACK IS NOT A REFUSAL, and the activity list is told so
+    (_ended, row 5b-274): the words did not settle one capability, so the
+    choice went back to the host - with no candidates at all when nothing
+    is close. Only a brain that cannot be read is a failure.
     """
     revit, _how = _revit_version()
     try:
         found = brain.lookup(request, revit=revit)
     except brain.BrainUnavailable as why:
-        return None, str(why)
+        return None, _ended("failed", str(why))
 
     capability = found.get("capability")
     if not capability:
-        return None, ("Heron has no way of doing \"%s\", so nothing has been "
-                      "sent to Revit. Run heron_capabilities to see what it "
-                      "does know." % request)
+        return None, _ended("handed_back", "\n".join(
+            ["Heron has no way of doing \"%s\", so nothing has been sent to "
+             "Revit. Run heron_capabilities to see what it does know." % request]
+            + _drift_lines(found, indent="", gap=False)))
 
     exact = found.get("route") == "identity" and found.get("autorun")
     missing, withheld = [], ""
@@ -1314,6 +1397,7 @@ def _by_words(request, door, values):
                      "so this is a ranked guess - and which one the user meant "
                      "is yours to decide, not Heron's (D-01).")
 
+    lines.extend(_drift_lines(found))
     lines.extend(_method_lines(found))
     lines.append("")
     lines.append("  best match   %s   (%s)"
@@ -1344,7 +1428,7 @@ def _by_words(request, door, values):
     lines.append("  If one of these is what the user meant, call %s again with "
                  "capability=<it> and its values. If none is, ask the user."
                  % door)
-    return None, "\n".join(lines)
+    return None, _ended("handed_back", "\n".join(lines))
 
 
 def _matched_line(request, capability):
@@ -1423,9 +1507,10 @@ def revit_change(capability: str = "", values: str = "",
 
     folder, status = _fragment_for(capability)
     if folder is None:
-        return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
-                "Ask heron_lookup in your own words and it will name the capability "
-                "Heron does have." % (capability or ""))
+        return _ended("refused",
+                      "Heron has nothing that does '%s', so nothing has been sent to "
+                      "Revit. Ask heron_lookup in your own words and it will name the "
+                      "capability Heron does have." % (capability or ""))
 
     root = _repo_root()
 
@@ -1453,17 +1538,20 @@ def revit_change(capability: str = "", values: str = "",
     # costs nothing and touches nothing.
     refusal = bridge.risk_refusal(root, folder, switched=True)
     if refusal:
+        _ended("refused")
         return refusal
     operation = bridge.write_operation(root, folder)
     if operation is None:
-        return ("'%s' does not say what risk it carries in a form Heron can read, so "
-                "nothing has been sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' does not say what risk it carries in a form Heron can read, "
+                      "so nothing has been sent to Revit." % capability)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
     if not os.path.isfile(source_path):
-        return ("'%s' is described but has no code behind it yet. Nothing has been "
-                "sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' is described but has no code behind it yet. Nothing has "
+                      "been sent to Revit." % capability)
 
     # THE SOURCE TRAVELS, NOT A NAME. Revit is told what to run rather than
     # where to find it: the add-in would otherwise need a path into somebody's
@@ -1474,8 +1562,9 @@ def revit_change(capability: str = "", values: str = "",
     needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
                                                folder, "fragment.yaml"))
     if needs is None:
-        return ("'%s' could not be read with certainty - its contract is unclear, "
-                "so nothing has been sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' could not be read with certainty - its contract is "
+                      "unclear, so nothing has been sent to Revit." % capability)
 
     # A NAME NOTHING DECLARES IS DROPPED, AND SAYING SO IS THE WHOLE FIX.
     #
@@ -1500,7 +1589,7 @@ def revit_change(capability: str = "", values: str = "",
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     args = {
         "name": folder,
@@ -1555,9 +1644,11 @@ def revit_change(capability: str = "", values: str = "",
 
     # `writes` comes from the registry rather than a literal True, so a write
     # can never be treated as a retryable read because two declarations drifted.
+    # HOW IT ENDED IS THE ADD-IN'S REPLY, NOT THE WORDS EXPLAIN WRAPS IT IN:
+    # a refusal whose message never says "refused" is still one (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_change"))
     if failure is not None:
-        return explain(failure)
+        return _ended(_failure_ended(failure), explain(failure))
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
@@ -1567,6 +1658,11 @@ def revit_change(capability: str = "", values: str = "",
     # opened. It is kept for the two cases it is still the only cover for: an
     # older add-in that does not read expectProject, and the FIRST call of a
     # chat, where there was no key to send and this is what pins one.
+    #
+    # HOW IT ENDED IS NOT SAID HERE, and that is deliberate (5b-274): the
+    # add-in answered ok, so behind an add-in too old to read expectProject
+    # the change may have been made in the other model. Neither "refused"
+    # nor "ok" is known, so the activity list keeps its guess.
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         return wrong_model
@@ -1629,7 +1725,7 @@ def revit_change(capability: str = "", values: str = "",
     if _from_chat() and _took(reply):
         _offer_change(capability, folder, values, reply.get("document"))
 
-    return "\n".join(lines)
+    return _ended("ok", "\n".join(lines))
 
 
 #: A need Revit fills itself, never the caller - the only kind an
@@ -2481,9 +2577,10 @@ def revit_read(capability: str = "", values: str = "",
 
     folder, _status = _fragment_for(capability)
     if folder is None:
-        return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
-                "Ask heron_lookup in your own words and it will name the capability "
-                "Heron does have." % (capability or ""))
+        return _ended("refused",
+                      "Heron has nothing that does '%s', so nothing has been sent to "
+                      "Revit. Ask heron_lookup in your own words and it will name the "
+                      "capability Heron does have." % (capability or ""))
 
     root = _repo_root()
 
@@ -2497,13 +2594,14 @@ def revit_read(capability: str = "", values: str = "",
     refusal = tools.door_refusal("revit_read", bridge.fragment_risk(card),
                                  capability)
     if refusal:
-        return refusal
+        return _ended("refused", refusal)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
     if not os.path.isfile(source_path):
-        return ("'%s' is described but has no code behind it yet. Nothing has been "
-                "sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' is described but has no code behind it yet. Nothing has "
+                      "been sent to Revit." % capability)
 
     # THE SOURCE TRAVELS, NOT A NAME - for revit_change's reason.
     with io.open(source_path, "r", encoding="utf-8") as fh:
@@ -2512,8 +2610,9 @@ def revit_read(capability: str = "", values: str = "",
     needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
                                                folder, "fragment.yaml"))
     if needs is None:
-        return ("'%s' could not be read with certainty - its contract is unclear, "
-                "so nothing has been sent to Revit." % capability)
+        return _ended("refused",
+                      "'%s' could not be read with certainty - its contract is "
+                      "unclear, so nothing has been sent to Revit." % capability)
 
     # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
     # called from the client exactly as revit_change calls it.
@@ -2522,7 +2621,7 @@ def revit_read(capability: str = "", values: str = "",
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
     # transaction, which is the whole of this door's guarantee. The chain
@@ -2558,21 +2657,25 @@ def revit_read(capability: str = "", values: str = "",
     # model cannot have changed - no transaction is open - but the chain may
     # have, so say that instead.
     if consumes and reply and reply.get("error") == "unknown_outcome":
-        return ("The read reached Revit but its answer was lost, so Heron cannot tell "
-                "whether %s ran. Nothing in the model was changed - a read opens no "
-                "transaction - but if it ran, the result %s left has been used up. "
-                "Run %s again, then this read." % (capability, consumes, consumes))
+        return _ended("failed",
+                      "The read reached Revit but its answer was lost, so Heron cannot "
+                      "tell whether %s ran. Nothing in the model was changed - a read "
+                      "opens no transaction - but if it ran, the result %s left has "
+                      "been used up. Run %s again, then this read."
+                      % (capability, consumes, consumes))
 
+    # THE ADD-IN'S REPLY SAYS HOW IT ENDED - an expect_from or binding refusal
+    # is one even when its first line names only the capability (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:
-        return explain(failure)
+        return _ended(_failure_ended(failure), explain(failure))
 
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
     # the cover for an add-in too old to read the key.
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     document = reply.get("document")
     lines = ["%s read %s." % (capability, document)]
@@ -2599,7 +2702,7 @@ def revit_read(capability: str = "", values: str = "",
     lines.append(_proof_line(capability, folder))
     lines.append("Nothing in the model was changed: this runs with no transaction "
                  "open, so Revit itself refuses any change.")
-    return "\n".join(lines)
+    return _ended("ok", "\n".join(lines))
 
 
 @server.tool()
@@ -2622,6 +2725,10 @@ def revit_offer_settings(capability: str, values: str) -> str:
     Apply on the page runs the capability through revit_change's own path:
     the Changes switch, the pin, one undo entry.
     """
+    # EVERY RETURN BEFORE THE OFFER IS A REFUSAL, and nothing here is sent
+    # to Revit - so it is said once, and "ok" is said where the table is
+    # offered (row 5b-389).
+    _ended("refused")
     companion_page = _companion_module()
     if not companion_page.SHOW_CHANGES:
         # The owner switched the page's Changes tables off (2026-10-04, docs/40
@@ -2669,6 +2776,7 @@ def revit_offer_settings(capability: str, values: str) -> str:
             webbrowser.open(companion.pairing_address(), new=2)
         except Exception:                            # noqa: BLE001 - the button still works
             pass
+    _ended("ok")
     return ("Offered on the Heron Companion page: %s, %d value(s), to adjust and apply "
             "there. Nothing in the model was changed." % (capability, len(supplied)))
 
@@ -2698,6 +2806,7 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     """
     companion_page = _companion_module()
     if not companion_page.enabled():
+        _ended("refused")
         return ("The Heron Companion is switched off in Revit, so no table was opened. "
                 "To turn it on, click the arrow under the Companion button on the "
                 "Heron tab.")
@@ -2707,14 +2816,16 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     said = _through(revit_read, reply_out=out)("READ_ELEMENT_TABLE", values, expect_from)
     reply = out.get("reply")
     # revit_read has already refused, classified any failure and checked the
-    # pin; when it did not get a good reply, its own sentence is the answer.
+    # pin; when it did not get a good reply, its own sentence is the answer -
+    # and how it said that ended is this call's ending too (row 5b-389).
     if not isinstance(reply, dict) or not reply.get("ok"):
-        return said
+        return _ended(out.get("ended"), said)
     # THE PIN'S REFUSAL STANDS: revit_read hands over the raw reply before it
     # checks the model, so a good reply from ANOTHER model would otherwise
     # open a table whose Apply targets the pinned one (Codex review of #362).
     if pinned.check(reply):
-        return said
+        return _ended("refused", said)
+    _ended("ok")
 
     import json
     provides = reply.get("provides") or {}
@@ -2723,6 +2834,8 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     except ValueError:
         table = None
     if not isinstance(table, dict) or not table.get("rows"):
+        # STILL "ok" (row 5b-389): Revit answered and there was nothing to
+        # put in a table - an answer, as "Nothing was selected" is.
         found = provides.get("findings")
         return ("No table was opened: nothing came back to put in it%s. Nothing in the "
                 "model was changed." % (" - %s" % found if found else ""))
@@ -2798,6 +2911,7 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
     """
     companion_page = _companion_module()
     if not companion_page.enabled():
+        _ended("refused")
         return ("The Heron Companion is switched off in Revit, so no loads were calculated. "
                 "To turn it on, click the arrow under the Companion button on the "
                 "Heron tab.")
@@ -2806,26 +2920,32 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
         "REPORT_SPACE_ENVELOPE", "includeLinks=true" if include_links else "", expect_from)
     reply = out.get("reply")
     # revit_read has already refused, classified any failure and checked the
-    # pin; when it did not get a good reply, its own sentence is the answer.
+    # pin; when it did not get a good reply, its own sentence is the answer,
+    # and how it said that ended, as in revit_edit_table (row 5b-389).
     if not isinstance(reply, dict) or not reply.get("ok"):
-        return said
+        return _ended(out.get("ended"), said)
     # THE PIN'S REFUSAL STANDS, as in revit_edit_table: a good reply from
     # ANOTHER model must never open a panel whose Finalize targets this one.
     if pinned.check(reply):
-        return said
+        return _ended("refused", said)
+    _ended("ok")
     provides = reply.get("provides") or {}
     # A FRESH READ OVERTAKES ANY RECALCULATE still working on the take-off the
     # page holds - said before this run is kept, so that one cannot be kept
     # after it, or shown over it (FRAGMENT-ISSUES 5b-333).
     companion_page.LOADS_PANEL.reading()
+    # THE BRAIN'S OWN "Nothing was calculated: <why>", after a good read, is
+    # "failed": what Revit sent could not be worked on (row 5b-389). Only
+    # that, and the brain not being there - an answer that the model held
+    # nothing to work on stays ok, as "Nothing was selected" does.
     try:
         answer = brain.building_loads(provides.get("takeoffJson") or "", inputs,
                                       project=pinned.project_key, project_name=pinned.title,
                                       include_links=include_links)
     except brain.BrainUnavailable as why:
-        return str(why)
+        return _ended("failed", str(why))
     if answer.get("takeoff") is None:
-        return answer["said"]
+        return _ended("failed", answer["said"])
     # EARLIER ANSWERS ARE A QUESTION, IN THE CHAT (5b-324): answers kept under
     # the id this model shares with every model made from its template were
     # NOT used, and the modeller is asked about them first. The page does not
@@ -2880,6 +3000,7 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
     """
     companion_page = _companion_module()
     if not companion_page.enabled():
+        _ended("refused")
         return ("The Heron Companion is switched off in Revit, so the sprinkler system was not "
                 "read. To turn it on, click the arrow under the Companion button on the "
                 "Heron tab.")
@@ -2889,20 +3010,22 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
         expect_from)
     reply = out.get("reply")
     if not isinstance(reply, dict) or not reply.get("ok"):
-        return said
-    # THE PIN'S REFUSAL STANDS, as in revit_building_loads.
+        return _ended(out.get("ended"), said)
+    # THE PIN'S REFUSAL STANDS, as in revit_building_loads - and the endings
+    # are labelled as they are there (row 5b-389).
     if pinned.check(reply):
-        return said
+        return _ended("refused", said)
+    _ended("ok")
     provides = reply.get("provides") or {}
     try:
         answer = brain.sprinkler_hydraulics(provides.get("networkJson") or "", inputs,
                                             project=pinned.project_key,
                                             project_name=pinned.title)
     except brain.BrainUnavailable as why:
-        return str(why)
+        return _ended("failed", str(why))
     network = answer.get("network")
     if network is None:
-        return answer["said"]
+        return _ended("failed", answer["said"])
     if network.system is None:
         names = [s.get("name") for s in network.systems if s.get("name")]
         return ("No sprinkler system was chosen. %s Ask the modeller which, then call again "
@@ -2955,25 +3078,30 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "") -> str:
     """
     companion_page = _companion_module()
     if not companion_page.enabled():
+        _ended("refused")
         return ("The Heron Companion is switched off in Revit, so the rooms were not read. "
                 "To turn it on, click the arrow under the Companion button on the Heron tab.")
     out = {}
     said = _through(revit_read, reply_out=out)(
         "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + ((spaces or "").strip() or "*"))
     reply = out.get("reply")
+    # Labelled as revit_building_loads labels its endings (row 5b-389).
     if not isinstance(reply, dict) or not reply.get("ok"):
-        return said
+        return _ended(out.get("ended"), said)
     if pinned.check(reply):
-        return said
+        return _ended("refused", said)
+    _ended("ok")
     provides = reply.get("provides") or {}
     try:
         answer = brain.sprinkler_layout(provides.get("layoutJson") or "", inputs,
                                         project=pinned.project_key, project_name=pinned.title)
     except brain.BrainUnavailable as why:
-        return str(why)
+        return _ended("failed", str(why))
     if answer.get("data") is None:
-        return answer["said"]
+        return _ended("failed", answer["said"])
     if not answer["result"]["rooms"]:
+        # STILL "ok", as revit_edit_table's empty table is: the brain read what
+        # Revit sent, and it held no room (row 5b-389).
         return ("No room was read. %s" % " ".join(answer["data"].get("findings") or [])).strip()
     # The layout reads the project's FIRE standards too, so it asks about
     # answers kept under the shared id the way the hydraulics do (5b-324).
@@ -2995,10 +3123,11 @@ def revit_use_this_model() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("count_elements")
     session.close()
+    _ended_by_reply("revit_use_this_model", reply)
 
     if reply is None:
         return ("Revit %s (session %s) did not answer, so the pin has not moved."
@@ -3306,6 +3435,16 @@ def _method_lines(found):
     return lines
 
 
+def _drift_lines(found, indent="  ", gap=True):
+    """The one line saying the store a lookup answered from is not this
+    checkout's library - heron_brain.lookup's `store_drift`, row 5b-233.
+    Nothing while they match."""
+    said = found.get("store_drift")
+    if not said:
+        return []
+    return ([""] if gap else []) + [indent + said]
+
+
 def _contract_lines(capability, separator=True):
     """
     What the CALLER has to type to run this capability, and how to write each.
@@ -3500,6 +3639,7 @@ def heron_lookup(request: str) -> str:
             lines.append("%d fragment(s) were excluded because they are not "
                          "declared for Revit %s. They exist - they are just "
                          "not for this release." % (len(blocked), revit))
+        lines.extend(_drift_lines(found, indent="", gap=False))
         lines.append("Run heron_capabilities to see what it does know.")
         return "\n".join(lines)
 
@@ -3512,6 +3652,9 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+    # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
+    # a store that is not this checkout's library - row 5b-233.
+    lines.extend(_drift_lines(found))
 
     # WHAT TO TYPE, IN THE SAME REPLY. This was heron_resolve's to say, and
     # asking for it cost the host a whole extra turn on every request -
@@ -4376,10 +4519,11 @@ def revit_phases() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_phases")
     session.close()
+    _ended_by_reply("revit_phases", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -4389,7 +4533,7 @@ def revit_phases() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -4464,10 +4608,11 @@ def revit_levels() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_levels")
     session.close()
+    _ended_by_reply("revit_levels", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -4477,7 +4622,7 @@ def revit_levels() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -4576,10 +4721,11 @@ def revit_worksets() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_worksets")
     session.close()
+    _ended_by_reply("revit_worksets", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -4589,7 +4735,7 @@ def revit_worksets() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -4704,10 +4850,11 @@ def revit_views() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_views")
     session.close()
+    _ended_by_reply("revit_views", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -4717,7 +4864,7 @@ def revit_views() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -4860,10 +5007,11 @@ def revit_sheets() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_sheets")
     session.close()
+    _ended_by_reply("revit_sheets", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -4873,7 +5021,7 @@ def revit_sheets() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -4975,10 +5123,11 @@ def revit_rooms() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_rooms")
     session.close()
+    _ended_by_reply("revit_rooms", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -4987,7 +5136,7 @@ def revit_rooms() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5063,10 +5212,11 @@ def revit_schedules() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_schedules")
     session.close()
+    _ended_by_reply("revit_schedules", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5075,7 +5225,7 @@ def revit_schedules() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5145,10 +5295,11 @@ def revit_families() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_families")
     session.close()
+    _ended_by_reply("revit_families", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5157,7 +5308,7 @@ def revit_families() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5278,10 +5429,11 @@ def revit_export_check() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("check_export")
     session.close()
+    _ended_by_reply("revit_export_check", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5290,7 +5442,7 @@ def revit_export_check() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5348,10 +5500,11 @@ def revit_imports() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_imports")
     session.close()
+    _ended_by_reply("revit_imports", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5360,7 +5513,7 @@ def revit_imports() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5422,10 +5575,11 @@ def revit_annotation() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_annotation")
     session.close()
+    _ended_by_reply("revit_annotation", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5434,7 +5588,7 @@ def revit_annotation() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5580,10 +5734,11 @@ def revit_systems() -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_systems")
     session.close()
+    _ended_by_reply("revit_systems", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5593,7 +5748,7 @@ def revit_systems() -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5628,7 +5783,7 @@ def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     # THE PIN TRAVELS WITH THE REQUEST, for the reason revit_select_by_category
     # gives at length: a guard checked on the reply is checked too late. This
@@ -5640,6 +5795,7 @@ def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
                                      "parameter": parameter or "",
                                      "expectProject": pinned.project_information_id or ""})
     session.close()
+    _ended_by_reply("revit_parameters", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5649,7 +5805,7 @@ def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
@@ -5832,12 +5988,13 @@ def revit_groups(category: str = "") -> str:
     try:
         session = binding.resolve()
     except NotBound as unbound:
-        return str(unbound)
+        return _ended("refused", str(unbound))
 
     reply = session.request("list_groups",
                             op_args={"category": category or "",
                                      "expectProject": pinned.project_information_id or ""})
     session.close()
+    _ended_by_reply("revit_groups", reply)
 
     if reply is None:
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
@@ -5847,7 +6004,7 @@ def revit_groups(category: str = "") -> str:
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)

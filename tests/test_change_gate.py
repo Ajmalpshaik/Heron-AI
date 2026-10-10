@@ -396,6 +396,77 @@ def main():
           "is still REVISE - a change with no evidence is not a pass")
 
     print()
+    print("An entry added under a fragment's contract is a contract change")
+    # Row 5b-198: CONTRACT_LINE matched only a diff line that STARTS with one
+    # of six keys, so a provide added under `contract:` of an existing
+    # fragment - a result every caller can now see - raised no signal.
+    def full_diff(changed):
+        lines = ["diff --git a/brain/fragments/x/fragment.yaml b/brain/fragments/x/fragment.yaml",
+                 "--- a/brain/fragments/x/fragment.yaml", "+++ b/brain/fragments/x/fragment.yaml",
+                 "@@ -1,12 +1,13 @@", " id: FRG-X-001", " capability: REPORT_X", " purpose: >",
+                 "   what it does"]
+        lines += changed.get("purpose", ["   and more"])
+        lines += [" contract:", "   needs:", "     - name: elements", "   provides:",
+                  "     - name: count"]
+        lines += changed.get("provides", [])
+        lines += [" revit: [\"2024\"]", " utterances:", "   - how many x"]
+        return "\n".join(lines) + "\n"
+    added = full_diff({"provides": ["+    - name: connectorSummary", "+      role: result"]})
+    check(CHANGE.CONTRACT_LINE.search(added) is None,
+          "the old pattern does not see it - which is the defect")
+    judge = getattr(CHANGE, "contract_changed", None)
+    check(judge is not None, "check-change can read where a changed line sits")
+    if judge is not None:
+        check(judge(added), "a provide added under contract: is a contract change")
+        check(not judge(full_diff({"purpose": ["-   and more", "+   and more words"]})),
+              "a reworded purpose is not")
+        check(judge(full_diff({"purpose": ["-capability: REPORT_X", "+capability: REPORT_Y"]})),
+              "and a changed top-level capability: still is")
+
+    print()
+    print("What a child prints is read as UTF-8, whatever the machine's code page")
+    # Row 5b-196: on the owner's PC a reader thread died decoding a child's
+    # UTF-8 in cp1252, and run() kept an empty note. Linux CI decodes UTF-8
+    # either way, so this stands in for subprocess.run and decodes the way
+    # Windows does when the caller names no encoding.
+    # chr(0x2550) is a box-drawing line; its UTF-8 holds 0x90, a byte cp1252
+    # has no character for - the kind that killed the reader thread.
+    printed = (chr(0x2550) * 3 + u" checked " + chr(0x2192) + u" " + chr(0x2705) + u" done" + chr(10)).encode("utf-8")
+    calls = []
+
+    def windows_run(cmd, **kwargs):
+        calls.append(kwargs)
+        out = printed
+        if kwargs.get("text") or kwargs.get("encoding"):
+            out = printed.decode(kwargs.get("encoding") or "cp1252", kwargs.get("errors") or "strict")
+        return subprocess.CompletedProcess(cmd, 0, out, out)
+
+    real_run = EVIDENCE.subprocess.run
+    EVIDENCE.subprocess.run = windows_run
+    try:
+        try:
+            note = EVIDENCE.run(["a-gate"])[1]
+        except UnicodeDecodeError as error:
+            note = "raised %s" % error
+        check(note == printed.decode("utf-8").strip(),
+              "run() keeps a gate's last line intact (%r)" % note)
+        try:
+            said = EVIDENCE.git(["status"])
+        except UnicodeDecodeError as error:
+            said = "raised %s" % error
+        check(said == printed.decode("utf-8").strip(), "git() reads it intact (%r)" % said)
+        del calls[:]
+        try:
+            EVIDENCE.suite_results("test_change_gate.py")
+            raised = None
+        except UnicodeDecodeError as error:
+            raised = error
+        check(raised is None and calls and all(c.get("encoding") == "utf-8" for c in calls),
+              "and the suite loop decodes each suite as UTF-8 too")
+    finally:
+        EVIDENCE.subprocess.run = real_run
+
+    print()
     print("change-evidence runs a child with the Python running it, and reads it as UTF-8")
     # ROW 5b-377. Every gate and every suite was spawned as "python3", and on
     # the owner's PC that name is the Microsoft Store's stub: it exists, so no

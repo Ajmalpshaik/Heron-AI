@@ -13,17 +13,23 @@ version: 1
 source: OFFICIAL
 risk: ADMIN
 
+# THE OPENING SAYS WHAT A RENAME IS (FRAGMENT-ISSUES 5b-337, 2026-10-09).
+# "change the area scheme name from rentable to lettable" went to
+# APPLY_COLOR_FILL_SCHEME, a different change, while this card said only
+# "renames". Rentable is the scheme Revit's templates ship with. No question
+# is quoted here: a first draft that quoted one answered it, a write (5b-337).
 purpose: >
   Switches Revit's Volume Computations between Areas only and Areas and
   Volumes, changes where every room's area is measured, and makes, renames or
-  re-describes area schemes - Area and Volume Computations (Architecture >
-  Room & Area), both tabs, set in the words the dialog shows. COMPUTATIONS:
-  Volume Computations to Areas only or Areas and Volumes; Room Area
-  Computation to At wall finish, At wall center, At wall core layer or At
-  wall core center. AREA SCHEMES: a new scheme, a new name for one, or a new
-  description. Built on 2026-10-06: the model "Heron loads test" needed Areas
-  and Volumes before its Spaces had volumes, nothing in Heron could change
-  it, and the modeller did it by hand (FRAGMENT-ISSUES row 5b-327).
+  re-describes area schemes - a new one, a new name for one, Rentable
+  say, or a new description - in Area and Volume Computations
+  (Architecture > Room & Area), both tabs, set in the words the dialog shows.
+  COMPUTATIONS: Volume Computations to Areas only or Areas and Volumes; Room
+  Area Computation to At wall finish, At wall center, At wall core layer or
+  At wall core center. AREA SCHEMES: a new scheme, a new name for one, or a
+  new description. Built on 2026-10-06: the model "Heron loads test" needed
+  Areas and Volumes before its Spaces had volumes, nothing in Heron could
+  change it, and the modeller did it by hand (FRAGMENT-ISSUES row 5b-327).
 
   **ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106).** These are how the project
   is set up, not an edit to an element. Room Area Computation re-measures

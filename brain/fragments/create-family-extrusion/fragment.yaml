@@ -37,11 +37,15 @@ purpose: >
   same numbers mean the same place whichever plane is named. A plane at an
   angle is refused.
 
-  **START AND END RUN ALONG THE AXIS THE PLANE FACES** - up (+Z), back (+Y)
-  or right (+X), negative the other way - in millimetres from the plane, as
-  Extrusion Start and Extrusion End do. Revit measures along the plane's own
-  normal, which can point the other way, so both are turned onto it, and the
-  extent is READ BACK along the model axis to prove the turn was right.
+  **START AND END RUN ALONG THE MODEL AXIS THE PLANE FACES** - up (+Z), back
+  (+Y) or right (+X), negative the other way - in millimetres from the plane.
+  That is NOT how Revit's own Extrusion Start and Extrusion End run: those are
+  measured along the plane's own normal, which can point the other way, so
+  both are turned onto it here, and the extent is READ BACK along the model
+  axis to prove the turn was right. **So on a plane facing -X, -Y or -Z the
+  same number means the opposite side in the two:** a raw Extrusion End later
+  linked to a parameter (LINK_FAMILY_FORM_PARAMETER) of +1 sits where a build
+  `endMm` of -1 does (row 177, Family12).
 
   **SKETCHED ON THE PLANE ITSELF**, from its element id, so the shape moves
   with the plane. Nothing else ties it to the family's planes or parameters:

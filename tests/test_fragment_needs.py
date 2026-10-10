@@ -97,17 +97,11 @@ IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # ACCOUNTED FOR at the executor - read by it, or named below as knowingly not
 # implemented. A key nobody reads and nobody has written down is the case that
 # passes every gate and answers about the wrong elements.
-UNREAD_KEYS = {
-    "optional": (
-        "declared on 3 needs (copy-view-filters, create-line, create-sheet-list) "
-        "and read by NOTHING - not the executor, not heron_fragment.py. All three "
-        "are `source: request`, so BindNeeds reports them as values the caller "
-        "must supply and the fragment cannot run without one. Found 2026-09-15 "
-        "alongside `binds`, by the same sweep. Listed rather than implemented "
-        "because 'a need that may be absent' is a decision about refusals, and "
-        "this library refuses rather than quietly supplying an empty value on "
-        "purpose - see docs/FRAGMENT-ISSUES.md"),
-}
+# `optional` was listed here until 2026-10-08 as "read by NOTHING". The binder
+# has read it since rows 5b-252 and 5b-322 - for a bool and an element list -
+# and what is still not honoured, `optional` on a View or a string, is row
+# 5b-227's question for the owner, not a key nobody reads.
+UNREAD_KEYS = {}
 
 
 def executor_reads_need_keys(library):
@@ -302,6 +296,18 @@ def run():
         for key in accounted:
             notes.append("`%s` is declared and not implemented: %s"
                          % (key, UNREAD_KEYS[key]))
+        # AND AN ENTRY THAT HAS STOPPED BEING TRUE. `optional` sat here saying
+        # "read by NOTHING" for weeks after the binder began reading it for a
+        # bool and an element list (row 101; FRAGMENT-ISSUES 5b-252, 5b-322) -
+        # never consulted, because a key the executor reads is skipped before
+        # this list is asked. A sentence nobody can reach still gets read.
+        executor_text = io.open(EXECUTOR, encoding="utf-8").read()
+        for key in sorted(UNREAD_KEYS):
+            if '"%s"' % key in executor_text:
+                failures.append(
+                    "UNREAD_KEYS says `%s` is read by nothing, and RevitFragment.cs "
+                    "now reads it - take the entry out, or say what is still not "
+                    "read" % key)
 
     print("Fragment needs - executor against contracts")
     print("  %d fragment(s), %d declared need(s)" % (len(readable), total_needs))
