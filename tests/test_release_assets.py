@@ -24,6 +24,9 @@ WHAT THIS PROVES
     the manifest travels with the assets, so the installer reads the release
     the workflow calls the tool rather than repeating any of its rules
     the workflow publishes a DRAFT, because nothing is signed yet
+    the download carries the installers, self-contained, at its root, with
+      the scripts they drive and the files the install guide runs - 5b-371
+    a downloaded asset's own .addin is the one deployed - 5b-371
 
 WHAT IT CANNOT PROVE
 --------------------
@@ -52,6 +55,7 @@ WORKFLOW = os.path.join(ROOT, ".github", "workflows", "release.yml")
 DEPLOY = os.path.join(ROOT, "tools", "deploy-addin.ps1")
 ADAPTERS = os.path.join(ROOT, "platform", "Heron.Installer", "WindowsAdapters.cs")
 MANIFEST = os.path.join(ROOT, "platform", "heron-products.json")
+WORKSPACE_ZIP = "heron-project.zip"
 
 FAILURES = []
 
@@ -311,14 +315,33 @@ def main():
                 check(any(n.startswith(folder) for n in names),
                       "it carries %s" % folder)
 
+            # WHAT A NEW PERSON IS TOLD TO RUN FROM IT - row 5b-371. The
+            # installers drive two scripts from the folder they sit in, and
+            # docs/WHAT-TO-INSTALL.md says to install from requirements.txt
+            # and check with check-dependencies.py. A download missing any of
+            # them is an instruction that cannot be followed on the PC it was
+            # written for.
+            for needed in ("tools/deploy-addin.ps1",
+                           "tools/HeronRevit.ps1",
+                           "tools/check-dependencies.py",
+                           "requirements.txt",
+                           "requirements-optional.txt"):
+                check(needed in names, "it carries %s" % needed)
+
             # AND WHAT IT MUST NOT CARRY. tests/ is 171 MB and revit/ is 315 MB
             # of source; .git is every file ever deleted; __pycache__ differs
             # between machines. None of it does anything on a modeller's PC.
+            # tools/ is how Heron is developed: only the three files above may
+            # come from it, each named, never the folder.
+            allowed = ("tools/deploy-addin.ps1", "tools/HeronRevit.ps1",
+                       "tools/check-dependencies.py")
             for never in ("tests/", "revit/", "tools/", ".git/"):
-                offenders = [n for n in names if n.startswith(never)]
+                offenders = [n for n in names
+                             if n.startswith(never) and n not in allowed]
                 check(not offenders,
-                      "and nothing from %s%s" % (never, "" if not offenders
-                                                 else " - found %d" % len(offenders)))
+                      "and nothing else from %s%s" % (never, "" if not offenders
+                                                      else " - found %d: %s"
+                                                      % (len(offenders), offenders[:3])))
             junk = [n for n in names if "__pycache__" in n or n.endswith(".pyc")]
             check(not junk, "and no __pycache__ or .pyc%s"
                   % ("" if not junk else " - found %d" % len(junk)))
@@ -351,6 +374,102 @@ def main():
     check("if not failed" in tool,
           "it is packed only when every product built - a workspace beside a "
           "half-built release is a download that installs nothing")
+
+    print()
+    print("THE INSTALLER IS IN THE DOWNLOAD - row 5b-371")
+    # .gitignore keeps the built HeronInstaller.exe out of the repository and
+    # said a downloader gets it from the release. No release asset ever held
+    # it, so a new person who searched both on 2026-10-08 found it in neither.
+    #
+    # ASKED BEFORE CALLED. A builder without these names must fail here, one
+    # clean line each, rather than raise and lose every check below.
+    installers = getattr(BRA, "INSTALLERS", None)
+    name_of = getattr(BRA, "installer_name", None)
+    build_them = getattr(BRA, "build_installers", None)
+    check(installers is not None, "the builder has a list of installers")
+    check(name_of is not None, "and reads each one's executable name")
+    check(build_them is not None, "and can build them")
+
+    names_built = []
+    if installers is not None and name_of is not None:
+        for csproj in installers:
+            check(os.path.exists(os.path.join(ROOT, csproj)),
+                  "the installer project %s exists" % csproj)
+        try:
+            names_built = [name_of(p) for p in installers]
+        except (IOError, OSError) as e:
+            check(False, "every installer project names its executable: %s" % e)
+
+    # WHAT THE INSTALL GUIDE PROMISES IS WHAT IS BUILT. The page a new person
+    # follows names HeronInstaller.exe; a rename that does not reach the page
+    # sends them hunting for a file that is not there - again.
+    guide = read(os.path.join(ROOT, "docs", "WHAT-TO-INSTALL.md"))
+    check("HeronInstaller.exe" in guide and WORKSPACE_ZIP in guide,
+          "the install guide names the installer and the download it is in")
+    check("HeronInstaller.exe" in names_built,
+          "the window is among them, as HeronInstaller.exe: %s"
+          % (", ".join(names_built) or "none"))
+
+    # Q-PE-7: "an installer with a prerequisite is not an installer". A
+    # framework-dependent window asks a modeller whose newest Revit is 2024 to
+    # install the .NET Desktop Runtime before anything else happens.
+    check('"--self-contained", "true"' in tool_code,
+          "each is published self-contained, needing nothing installed first")
+    check("PublishSingleFile=true" in tool_code,
+          "as one file each, so the folder holds what a person double-clicks")
+
+    # AT THE ROOT OF THE WORKSPACE. Each walks up from its own folder to
+    # platform\heron-products.json and runs tools\*.ps1 from there - so the
+    # root is the only place it works from. Run for real with stand-ins,
+    # because the zip's contents are the whole claim.
+    if workspace is not None and names_built:
+        stage = tempfile.mkdtemp(prefix="heron-installers-")
+        made = tempfile.mkdtemp(prefix="heron-workspace-")
+        try:
+            for exe in names_built:
+                io.open(os.path.join(stage, exe), "wb").write(b"MZ stand-in")
+            try:
+                path = workspace(made, stage)
+            except TypeError:
+                path = None
+            check(path is not None,
+                  "the workspace takes a folder of installers to pack")
+            if path:
+                with zipfile.ZipFile(path) as zf:
+                    names = zf.namelist()
+                for exe in names_built:
+                    check(exe in names,
+                          "%s is at the root of %s" % (exe, os.path.basename(path)))
+        finally:
+            shutil.rmtree(stage, ignore_errors=True)
+            shutil.rmtree(made, ignore_errors=True)
+
+    # BUILT AFTER THE PRODUCTS, PACKED BEFORE THE CHECKSUMS. Positions asserted
+    # first: str.find gives -1 for what is not there (row 5b-79).
+    built = tool_code.find("build_installers(installers_dir)")
+    packed_ws = tool_code.find("workspace(out_dir, installers_dir)")
+    check(built > 0, "main() builds the installers")
+    check(packed_ws > 0, "and hands them to the workspace")
+    check(built > 0 and packed_ws > 0 and built < packed_ws < wrote,
+          "in that order, before checksums.txt marks the folder finished")
+    check(built > 0 and packed > 0 and packed < built,
+          "and only after every product was packed")
+
+    print()
+    print("A DOWNLOADED ASSET BRINGS ITS OWN .addin - row 5b-371")
+    # deploy-addin.ps1 read the manifest from revit\<project>\ even when it was
+    # handed a downloaded folder - and a PC that unzipped heron-project.zip has
+    # no revit\ at all, so every download would have been refused after its
+    # assemblies were copied.
+    from_folder = deploy.find("$handedIn = Join-Path $buildOut $productAddin")
+    source_tree = deploy.find('$manifestSource = Join-Path $repoRoot "revit\\')
+    check(from_folder > 0,
+          "in folder mode the manifest is looked for beside the assembly")
+    check(source_tree > 0 and from_folder > source_tree,
+          "and it replaces the source tree's copy only after that is chosen")
+    check(from_folder > 0 and
+          deploy.rfind("if ($FromFolder) {", 0, from_folder) > source_tree,
+          "and only when a folder was handed in - a local build is unchanged")
 
     print()
     if FAILURES:

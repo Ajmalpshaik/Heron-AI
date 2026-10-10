@@ -7,9 +7,16 @@
 > | **Authority** | None of its own. [`requirements.txt`](../requirements.txt) and [`requirements-optional.txt`](../requirements-optional.txt) are the lists, [Q-39](open-questions/answered.md) settled what a user must install, [07](07-installation-and-update.md) is how Heron is installed, and [`brain/retrieval-history.md`](../brain/retrieval-history.md) holds every measurement. Where this page disagrees with them, **they win** |
 > | **Opened** | 2026-09-24, with the first measurement of the search add-ons on the owner's own questions |
 
-> **Heron is not released yet.** No release has been published, and the [main README](../README.md) asks
-> modellers not to install it until it is announced. This page is the list for that day — and for the
-> owner's PC now.
+> **The first release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), was
+> published on 2026-10-08**, on the owner's word, so a new teammate could install Heron. It is an early,
+> **unsigned** build, and the [main README](../README.md) still asks modellers not to install Heron until
+> it is announced.
+>
+> **The installer is in that release, never in the code.** Searching the code will not find
+> `HeronInstaller.exe` — it is built, and [`.gitignore`](../.gitignore) keeps it out on purpose. It sits
+> at the top of `heron-project.zip` on the release page: row 6 below. With a copy of the code,
+> `.\tools\setup.ps1` builds and installs Heron with no installer at all —
+> [section 4](#4-only-to-build-heron-yourself).
 
 ## The short answer
 
@@ -28,7 +35,13 @@
 | 3 | **Python** | Heron's brain, and its connection to Claude, are written in Python | `winget install Python.Python.3.12 --scope user`, or Python from the Microsoft Store | `python --version` in a new terminal. Claude Code starts Heron with the plain command `python`, so that command has to answer |
 | 4 | **PyYAML** — Heron's only *required* Python package | Every Heron tool is described in a file Heron reads with it | In the Heron folder: `pip install --user -r requirements.txt` | `python tools/check-dependencies.py` |
 | 5 | **The MCP package** (`mcp`) | It is the line between Claude Code and Heron | `pip install --user mcp` | the same command |
-| 6 | **Heron itself** | The Heron tab in Revit | **Close Revit first**, then run `HeronInstaller.exe` from the Heron download | The Heron tab appears the next time Revit opens |
+| 6 | **Heron itself** | The Heron tab in Revit | **Close Revit first**, then double-click `HeronInstaller.exe` in the Heron folder | The Heron tab appears the next time Revit opens |
+
+**The Heron folder is the download.** On the [Releases page](https://github.com/Ajmalpshaik/Heron-AI/releases),
+download `heron-project.zip` and unzip it where you want to keep Heron — **the installer is inside it**,
+at the top of the zip, beside the files rows 2 and 4 use. The other zips on that page are the plugin
+itself, one per Revit release; the installer fetches those, so you do not need to. Nothing is signed
+yet, so Windows says *"Windows protected your PC"* the first time: *More info*, then *Run anyway*.
 
 **Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24).
 Heron's setup check looked only for `mcp` until 2026-10-09 and asks for both since - changed in the
@@ -123,6 +136,10 @@ A modeller installing a release needs none of this.
 
 A developer deploys the add-in with `tools/setup.ps1` rather than the installer, which also checks
 Python, `mcp` and PyYAML first — [07](07-installation-and-update.md).
+
+**To make the download itself**, installer included: `python tools/build-release-assets.py --out dist`
+builds every product for every release and puts `HeronInstaller.exe` at the top of
+`dist\heron-project.zip` — [`tools/README.md`](../tools/README.md).
 
 ## 5. Check what you have
 

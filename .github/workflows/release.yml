@@ -110,22 +110,44 @@ jobs:
         shell: bash
         run: |
           # A DRAFT, AND THAT IS THE POINT. Stage 8 has not happened: nothing
-          # here is signed, and the window it installs cannot yet download
-          # anything. A draft is visible to the owner and to nobody else, so a
-          # release can be built and inspected long before it is one somebody
-          # could find and install. Publishing it is a person's decision.
+          # here is signed. A draft is visible to the owner and to nobody else,
+          # so a release can be built and inspected long before it is one
+          # somebody could find and install. Publishing it is a person's
+          # decision.
+          #
+          # THE NOTES SAY WHERE THE INSTALLER IS, because a person looking for
+          # it searched for "installer" and the file that holds it is called
+          # heron-project.zip - row 5b-371. The installer fetches the plugin
+          # from the newest PUBLISHED release, so while this is a draft it has
+          # nothing to fetch; the last paragraph says so to the one person who
+          # can see a draft.
           gh release create "$TAG" \
             --draft \
             --title "$TAG" \
             --notes "Built by .github/workflows/release.yml from ${GITHUB_SHA}.
 
+          ## To install Heron
+
+          1. Download **heron-project.zip** below. **The installer is inside it** -
+             HeronInstaller.exe, at the top of the zip.
+          2. Unzip it into the folder where you want to keep Heron. That folder
+             is also the one you open in Claude Code afterwards.
+          3. **Close Revit.**
+          4. Double-click **HeronInstaller.exe**, tick your Revit versions, press
+             Install. It downloads the plugin for each one from this release.
+
+          The other zips are the plugin itself, one per product per Revit
+          release - the installer fetches them; you do not need to.
+          docs/WHAT-TO-INSTALL.md in the zip lists what else the PC needs.
+
+          **Not signed.** Stage 8 is code signing and is deliberately last, so
+          Windows SmartScreen has no publisher to show and says *Windows
+          protected your PC*. *More info*, then *Run anyway*.
+
           Every deployable product, every Revit release Heron supports, built in
           Release configuration. \`checksums.txt\` covers every file and is
           written last, so a release carrying it is one whose build finished.
 
-          **Not signed.** Stage 8 is code signing and is deliberately last, so
-          Windows SmartScreen has no publisher to show. **Not yet installable
-          from here either** - the installer cannot download anything until
-          Stage 5 lands. This release exists so Stage 5 has something real to
-          be written against." \
+          **While this is a draft the installer cannot download anything** - it
+          fetches from the newest published release, and a draft is not one." \
             dist/*
