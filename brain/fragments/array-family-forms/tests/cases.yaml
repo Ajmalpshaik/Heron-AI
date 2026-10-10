@@ -41,6 +41,14 @@ positive:
       labelled true; FLEX through Active Coils 4, 5 and 8 re-made the copies,
       each one Pitch apart, the last ending at Top Turn Start. Ran 2026-10-07
 
+  - given: >
+      version 3 - the same blade with no lock on its top, Extrusion Start
+      and End linked to parameters and its X faces locked; count "Blade
+      Count", step "Y 450 last"
+    expect: >
+      arrayed - the trial row of three spaced as asked - and FLEX_FAMILY
+      through a count change comes back restored (5b-373)
+
 negative:
   - given: >
       a vane sketched on Center (Left/Right), X -401 to -399 (5b-357); count
@@ -49,6 +57,18 @@ negative:
       refused before anything is kept - the plane named, the trial copy
       moved 0 mm of the 40 mm asked, rows along Y or Z stay in that plane, and
       the two ways round it; arrayId and members empty
+
+  - given: >
+      version 3 (5b-374) - a blade sketched on Ref. Level, its top face
+      LOCKED to a height plane (as the Family21 damper's was); count
+      "Blade Count" (4), step "Y 450 last"
+    expect: >
+      refused before anything is kept - the trial row of three moved its
+      middle copy 0 mm of the 150 asked; the lock listed (its top face
+      locked to the plane, by name); the way round: Ref. Level, Extrusion
+      Start and End linked, faces across the row locked before, the first
+      and last copy's along it after. Version 2's trial of two passed this
+      and the real call threw "one reads 0 mm"
 
   - given: count "Show_Handle", a Yes/No parameter
     expect: refused - not an Integer parameter - and nothing arrayed

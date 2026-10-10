@@ -10,6 +10,16 @@ positive:
       afterwards Family Types showing Width 600 and Depth 600 again, LOOKED AT,
       with the undo list holding one entry for the flex
 
+  - given: >
+      version 2 (5b-373) - a scratch family with a solid blade arrayed by
+      ARRAY_FAMILY_FORMS, its count labelled to an Integer parameter driven
+      by a formula of a width; trials that change the count, as the damper
+      in Family21 did - Width 100, 600 and 1500
+    expect: >
+      restored true, the findings saying how many solids were compared by
+      their own ids and how many array copies Revit remade were compared by
+      shape; version 1 failed this with "did not come back as it was"
+
 negative:
   - given: >
       a box extruded at the planes' coordinates WITHOUT locks, its planes
@@ -29,6 +39,14 @@ negative:
     expect: >
       the call refused with Revit's words and the family exactly as it was
       before - nothing kept
+
+  - given: >
+      version 2 - the same arrayed family with a solid that is no array's
+      member left NOT locked to the planes a trial moves, so it ends where
+      the planes took it
+    expect: >
+      the call fails, nothing kept, naming the solid that is not where it
+      was - a shape match is only ever made for an array's remade copies
 
   - given: a family with no type yet
     expect: refused naming SET_FAMILY_TYPE_VALUES
