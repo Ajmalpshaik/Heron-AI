@@ -15,7 +15,7 @@
 
 | **Every PC needs** | **Optional** | **Only to build Heron yourself** |
 |---|---|---|
-| Revit · Claude Code · Python · two Python packages · Heron itself | the two search add-ons, and two more Python packages | Git · the .NET SDK |
+| Revit · Claude Code · Python · two Python packages · Heron itself | the two search add-ons, and more Python packages | Git · the .NET SDK |
 
 **None of it needs administrator rights.** Everything installs for your own Windows user.
 
@@ -104,10 +104,12 @@ it: `pip install --user sentence-transformers`, then `python brain/heron_rerank.
 **To take either one away:** `pip uninstall` the same package. Heron goes back to the level below and
 says so on every answer.
 
-## 3. Optional — two more Python packages
+## 3. Optional — more Python packages
 
 [`requirements-optional.txt`](../requirements-optional.txt) lists the rest — on the day this page was
-written, a faster vector search and a PDF reader for standards documents. **Do not install that file in
+written, a faster vector search and a PDF reader for standards documents. It also names
+`huggingface_hub`, which either search add-on brings with it, so it never needs installing on its own:
+Heron imports it by name to load the search model from your PC. **Do not install that file in
 one command:** it holds the re-ranker too. `python tools/check-dependencies.py` says what each one buys
 and whether you have it.
 

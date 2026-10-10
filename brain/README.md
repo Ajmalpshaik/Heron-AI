@@ -139,7 +139,7 @@ download owns it: `heron_rerank.announcement()` prints the size before any netwo
 during, and `check-dependencies.py` above reads it from there. A size copied into a README is a size
 that goes stale in the one place it had to be right.
 
-Every optional package degrades rather than breaks: Heron answers without all five and names the one
+Every optional package degrades rather than breaks: Heron answers without any of them and names the one
 that did not run.
 
 **In plain words** — everything a PC needs for Heron, Python first, what is optional, where each

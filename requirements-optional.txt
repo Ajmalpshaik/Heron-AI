@@ -25,6 +25,9 @@
 # model2vec | the trained embedding backend, so retrieval matches on meaning | retrieval falls back to character n-grams, which heron_embed's own docstring calls NOT MEANING
 model2vec
 
+# huggingface_hub | finding the embedding model already downloaded to this PC, so a start loads it from disk with no request (heron_embed._on_disk) | the model is loaded by name, which asks huggingface.co for the latest revision on every start - 13.8-14.0 s when that request waited out its timeout. model2vec and sentence-transformers both pull it in; it is listed because heron_embed imports it by name
+huggingface-hub
+
 # sqlite_vec | vector search inside SQLite instead of in Python | vectors are compared in Python - slower, same answers. Also absent on a hardened build with extension loading compiled out
 sqlite-vec
 
