@@ -24,7 +24,7 @@ WHAT IT PROVES
      A card caught mid-checkout is looked at again, and two chats racing a
      fast-forward leave the row at the card on disk.
   6. The SHARED store gains a card the main checkout gains and loses one it
-     loses (5b-405) - from main on branch main only, never a worktree's card,
+     loses (5b-406) - from main on branch main only, never a worktree's card,
      never a planted row, never in a private store.
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
@@ -161,7 +161,7 @@ def refreshing(S, F):
     # AS IF ASKED FROM THE MAIN CHECKOUT ON MAIN - where the owner runs this
     # suite. From a worktree the branch alone already stops the shared
     # store's adds and removals, and would hide a private store that was
-    # being treated as shared (row 5b-405).
+    # being treated as shared (row 5b-406).
     real_branch = getattr(S, "on_main_branch", None)
     S.on_main_branch = lambda root=None: True
     try:
@@ -230,7 +230,7 @@ def refreshing(S, F):
         # A NEW CARD IS NOT ADDED TO A PRIVATE STORE. That is rebuild()'s job
         # there: adding would fill a store a suite built with a subset on
         # purpose. The SHARED store adds one from the main checkout - see
-        # following_main() below (row 5b-405).
+        # following_main() below (row 5b-406).
         other = write_valid_fragment(os.path.join(work, "do-another-thing"))
         _rewrite_card(os.path.join(other, "fragment.yaml"),
                       "FRG-ELE-001", "FRG-ELE-002")
@@ -380,7 +380,7 @@ def refreshing(S, F):
               "a store with no record of what it saw is compared in full")
 
         # AND A PRIVATE STORE NEVER LOSES A ROW EITHER, though the card it was
-        # made from is gone: a suite's store is the suite's (row 5b-405).
+        # made from is gone: a suite's store is the suite's (row 5b-406).
         S.rebuild()
         held_before = _row(S, "FRG-ELE-002", "id")
         shutil.rmtree(other)
@@ -606,7 +606,7 @@ def _ids(S):
 
 
 def following_main(S, F, refresh):
-    """FRAGMENT-ISSUES row 5b-405: the SHARED store gains a card main gains,
+    """FRAGMENT-ISSUES row 5b-406: the SHARED store gains a card main gains,
     and loses one main loses - from the main checkout on branch main, never
     from a worktree, never a row somebody planted, never in a private store.
 
@@ -620,7 +620,7 @@ def following_main(S, F, refresh):
     """
     print()
     print("  ..and the SHARED store gains a card the main checkout gains, and "
-          "loses one it loses (row 5b-405)")
+          "loses one it loses (row 5b-406)")
     saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE")}
     was_fragments_dir = F.FRAGMENTS_DIR
     fake = tempfile.mkdtemp(prefix="heron-follow-")

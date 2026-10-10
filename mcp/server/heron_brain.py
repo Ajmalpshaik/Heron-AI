@@ -403,7 +403,7 @@ class _Open(object):
             # the MAIN checkout's card says, never to a worktree's unmerged
             # edit (row 131; heron_scope.refreshes_from). There it also adds
             # a card main gained and drops the row of one it lost, so a merged
-            # NEW card needs no rebuild by hand (row 5b-405). BEFORE the
+            # NEW card needs no rebuild by hand (row 5b-406). BEFORE the
             # indexes, because every one of them reads these rows.
             SCOPE.refresh(self.store)
             CAP.rebuild(self.store)

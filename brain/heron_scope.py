@@ -421,7 +421,7 @@ def rebuild(scope=GLOBAL, project_key=None):
 # store, or a session proving an unmerged card with the one row it put into
 # the shared store and will take out again.
 #
-# THE SHARED STORE GAINS AND LOSES WHAT MAIN GAINS AND LOSES - row 5b-405.
+# THE SHARED STORE GAINS AND LOSES WHAT MAIN GAINS AND LOSES - row 5b-406.
 # Until 2026-10-10 a merged NEW card needed `--rebuild` by hand on every PC,
 # and the owner's store sat at 480 rows beside 481 cards with LIST_MATERIALS
 # unreachable. `_library_moves()` below says which cards and rows part
@@ -706,7 +706,7 @@ def _library_moves(store, cards, checkout, marks):
 
 def refresh(store, root=None):
     """Rewrite the rows whose card changed on disk - and in the shared store,
-    add the cards main gained and drop the rows of cards it lost (row 5b-405,
+    add the cards main gained and drop the rows of cards it lost (row 5b-406,
     `_library_moves`). Returns the ids whose row it wrote or removed.
 
     Nothing is opened when no card's mark moved and no card is missing a row,
@@ -826,7 +826,7 @@ def refresh(store, root=None):
             row = now_held.get(frag.id) if frag.id else None
             if row is None:
                 if valid and name in missing:
-                    store.put_row(frag)           # main gained it: row 5b-405
+                    store.put_row(frag)           # main gained it: row 5b-406
                     now_held[frag.id] = row_of(frag)
                     now_from[name] = digest
                     rewritten.append(frag.id)
