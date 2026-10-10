@@ -116,6 +116,7 @@ var refused = "";
     // ---- how many the caller said it means ---------------------------------------
     var countWord = (confirmCount ?? "").Trim();
     var confirmed = 0;
+    var countUnreadable = false;
     if (countWord.Length > 0)
     {
         int whole;
@@ -123,8 +124,7 @@ var refused = "";
                          System.Globalization.CultureInfo.InvariantCulture, out whole) && whole > 0)
             confirmed = whole;
         else
-            problems.Add("confirmCount takes how many revisions the find brought back, as a whole number, "
-                       + "to say every one of them is meant - not '" + confirmCount + "'");
+            countUnreadable = true;
     }
 
     if (targets.Count == 0)
@@ -132,10 +132,14 @@ var refused = "";
             ? " - " + notRevisions + " element(s) came in and none of them is a revision" : "")
             + ". Find it first with SELECT_BY_PARAMETER_VALUE, categories=Revisions, "
             + "parameterName=Revision Sequence (the number the dialog shows) or Revision Description");
+    else if (countUnreadable)
+        problems.Add("confirmCount takes how many revisions the find brought back, as a whole number, not '"
+                   + confirmCount + "'. It brought back " + targets.Count + " (" + listed + "): check these are "
+                   + "the ones meant, then give confirmCount=" + targets.Count);
     else if (confirmed > 0 && confirmed != targets.Count)
         problems.Add("the find brought back " + targets.Count + " revision(s) (" + listed + ") and confirmCount says "
-                   + confirmed + ". Nothing is changed until the two agree - check the find caught exactly the "
-                   + "revisions meant");
+                   + confirmed + " - check the find caught exactly the revisions meant, and give the number it "
+                   + "brought back");
     else if (countWord.Length == 0 && targets.Count > 1)
         problems.Add(targets.Count + " revisions were handed in (" + listed + "). More than one is changed only "
                    + "when confirmCount says how many: check these are the ones meant, then give confirmCount="
@@ -251,6 +255,10 @@ var refused = "";
     {
         var many = targets.Count > 1;
         revisionName = many ? targets.Count + " revisions: " + listed : labels[0];
+        // `confirmCount` counts REVISIONS, so anything else the find caught is
+        // said rather than dropped without a word.
+        if (many && notRevisions > 0)
+            findings = notRevisions + " element(s) that are not revisions came in and were left alone. ";
         // Whose line this is - said only when there is more than one.
         Func<int, string> who = i => many ? labels[i] + ": " : "";
         // One string for the whole set: a revision's items apart by "; ",
@@ -392,7 +400,10 @@ var refused = "";
             foreach (var target in targets) done.Add(new List<string>());
             var missed = new List<string>();
             // A WRITE REVIT TOOK THAT READS BACK DIFFERENT. It is stored, so it
-            // is never reported as "nothing changed" - it throws below.
+            // is never reported as "nothing changed" - it throws below. Only the
+            // WRITE sits in each try: a read-back that throws after Revit took the
+            // value is not caught here, so it ends the call and the add-in rolls
+            // everything back, rather than reporting a stored value as refused.
             var storedWrong = false;
 
             // 1. UN-ISSUE FIRST, every one asked, from the LAST sequence to the
@@ -403,13 +414,10 @@ var refused = "";
                 {
                     var target = targets[i];
                     if (!wasIssued[i]) continue;
-                    try
-                    {
-                        target.Issued = false;
-                        if (!target.Issued) done[i].Add("un-issued");
-                        else { storedWrong = true; missed.Add(who(i) + "un-issue (it still reads back as issued)"); }
-                    }
-                    catch (Exception failure) { missed.Add(who(i) + "un-issue (" + revitSaid(failure) + ")"); }
+                    try { target.Issued = false; }
+                    catch (Exception failure) { missed.Add(who(i) + "un-issue (" + revitSaid(failure) + ")"); continue; }
+                    if (!target.Issued) done[i].Add("un-issued");
+                    else { storedWrong = true; missed.Add(who(i) + "un-issue (it still reads back as issued)"); }
                 }
 
             // 2. The text columns, every revision.
@@ -440,12 +448,12 @@ var refused = "";
                     {
                         if (sequenceIdProperty != null) sequenceIdProperty.SetValue(target, numberingValue, null);
                         else numberTypeProperty.SetValue(target, numberingValue, null);
-                        var after = currentNumbering(target);
-                        if (after != null && after.Equals(numberingValue))
-                            done[i].Add("numbering " + numberingLabel(before) + " -> " + numberingLabel(after));
-                        else { storedWrong = true; missed.Add(who(i) + "numbering reads back " + numberingLabel(after)); }
                     }
-                    catch (Exception failure) { missed.Add(who(i) + "numbering " + numberingName + " (" + revitSaid(failure) + ")"); }
+                    catch (Exception failure) { missed.Add(who(i) + "numbering " + numberingName + " (" + revitSaid(failure) + ")"); continue; }
+                    var after = currentNumbering(target);
+                    if (after != null && after.Equals(numberingValue))
+                        done[i].Add("numbering " + numberingLabel(before) + " -> " + numberingLabel(after));
+                    else { storedWrong = true; missed.Add(who(i) + "numbering reads back " + numberingLabel(after)); }
                 }
 
             // 4. Show - the one column an issued revision still takes.
@@ -455,14 +463,11 @@ var refused = "";
                     var target = targets[i];
                     if (target.Visibility == wantedShow.Value) continue;
                     var before = target.Visibility;
-                    try
-                    {
-                        target.Visibility = wantedShow.Value;
-                        if (target.Visibility == wantedShow.Value)
-                            done[i].Add("show " + showName(before) + " -> " + showName(target.Visibility));
-                        else { storedWrong = true; missed.Add(who(i) + "show reads back " + showName(target.Visibility)); }
-                    }
-                    catch (Exception failure) { missed.Add(who(i) + "show (" + revitSaid(failure) + ")"); }
+                    try { target.Visibility = wantedShow.Value; }
+                    catch (Exception failure) { missed.Add(who(i) + "show (" + revitSaid(failure) + ")"); continue; }
+                    if (target.Visibility == wantedShow.Value)
+                        done[i].Add("show " + showName(before) + " -> " + showName(target.Visibility));
+                    else { storedWrong = true; missed.Add(who(i) + "show reads back " + showName(target.Visibility)); }
                 }
 
             // 5. ISSUE LAST, every one asked: it locks everything above.
@@ -471,13 +476,10 @@ var refused = "";
                 {
                     var target = targets[i];
                     if (target.Issued) continue;
-                    try
-                    {
-                        target.Issued = true;
-                        if (target.Issued) done[i].Add("issued");
-                        else { storedWrong = true; missed.Add(who(i) + "issue (it still reads back as not issued)"); }
-                    }
-                    catch (Exception failure) { missed.Add(who(i) + "issue (" + revitSaid(failure) + ")"); }
+                    try { target.Issued = true; }
+                    catch (Exception failure) { missed.Add(who(i) + "issue (" + revitSaid(failure) + ")"); continue; }
+                    if (target.Issued) done[i].Add("issued");
+                    else { storedWrong = true; missed.Add(who(i) + "issue (it still reads back as not issued)"); }
                 }
 
             var anyDone = done.Any(d => d.Count > 0);

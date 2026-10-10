@@ -87,6 +87,12 @@ negative:
 
   - given: >
       version 3 - the find brought back three revisions and confirmCount is
+      "three", not a number
+    expect: >
+      `refused` naming all three and saying confirmCount=3; nothing changed
+
+  - given: >
+      version 3 - the find brought back three revisions and confirmCount is
       blank
     expect: >
       `refused` naming all three and saying confirmCount=3 is what changes
