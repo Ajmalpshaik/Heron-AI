@@ -41,9 +41,22 @@
 // level stays on it - so a row along the axis that plane faces leaves every
 // copy on the original (5b-357: a vane sketched on Center (Left/Right), arrayed
 // along X). A free plane moves with its copy, and which kind a form hangs on
-// the API cannot say. So it is MEASURED before anything is kept: a trial row of
-// two, rolled back in a sub-transaction, and a copy that did not move the
-// spacing asked refuses the call in plain words, with the way round it.
+// the API cannot say. So it is MEASURED before anything is kept: a trial row,
+// rolled back in a sub-transaction, and a copy that did not move the spacing
+// asked refuses the call in plain words, with the way round it.
+//
+// THE TRIAL ROW IS THREE, so a MIDDLE copy is measured (version 3, 5b-374). A
+// row of two has one copy, and it is the anchor, which moves. A form with a
+// face locked to a plane in the row's direction, or its top locked to a plane,
+// leaves the middle copies on the original while the anchor moves - measured
+// on a damper's blade in Family21, where the trial of two passed and the real
+// row threw "one reads 0 mm". The trial uses the real row's anchor, and is two
+// only for a fixed count of two, where there is no middle copy. A refusal lists
+// the form's own locks and alignments - the planes and the faces they hold -
+// and the way round, measured there: sketch on a level that does not move,
+// link Extrusion Start and End to parameters instead of locking the top, lock
+// before the array only the faces across the row, and after it the first and
+// last copy's faces along it.
 //
 // READ BACK, ALL OR NOTHING. The array's count, its label and every copy's
 // place are read again - each copy one step further along than the last - and
@@ -147,6 +160,66 @@ Func<GenericForm, SketchPlane> sketchPlaneOf = f =>
     var sketch = f is Extrusion ? ((Extrusion)f).Sketch : f is Revolution ? ((Revolution)f).Sketch
         : f is Blend ? ((Blend)f).BottomSketch : null;
     return sketch == null ? null : sketch.SketchPlane;
+};
+
+// Which face of an element a reference names, in words - "top face", "+Y face".
+Func<Element, Reference, string> faceWord = (e, r) =>
+{
+    try
+    {
+        var nested = e as FamilyInstance;
+        if (nested != null)
+        {
+            var name = nested.GetReferenceName(r);
+            return string.IsNullOrEmpty(name) ? "a reference" : "\"" + name + "\"";
+        }
+        var face = e.GetGeometryObjectFromReference(r) as PlanarFace;
+        if (face == null) return "a face";
+        for (var i = 0; i < 3; i++)
+        {
+            var dot = face.FaceNormal.DotProduct(unitAlong(i));
+            if (Math.Abs(Math.Abs(dot) - 1) < 1e-6)
+                return i == 2 ? (dot > 0 ? "top face" : "bottom face") : (dot > 0 ? "+" : "-") + axisLetters[i] + " face";
+        }
+        return "a sloping face";
+    }
+    catch (Exception)
+    {
+        return "a face";
+    }
+};
+
+// WHAT HOLDS AN ELEMENT: every locked alignment or dimension, and every
+// labelled one, that names one of its faces - the face, how it is held, and to
+// what. A plain dimension that is neither locked nor labelled holds nothing.
+Func<Element, List<string>> heldBy = e =>
+{
+    var said = new List<string>();
+    foreach (var dimension in new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>())
+    {
+        ReferenceArray refs = null;
+        try { refs = dimension.References; } catch (Exception) { refs = null; }
+        if (refs == null) continue;
+        var faces = new List<string>();
+        var others = new List<string>();
+        foreach (Reference r in refs)
+        {
+            if (r == null) continue;
+            if (r.ElementId == e.Id) { faces.Add(faceWord(e, r)); continue; }
+            var other = doc.GetElement(r.ElementId);
+            if (other != null) others.Add("\"" + (string.IsNullOrEmpty(other.Name) ? other.UniqueId : other.Name) + "\"");
+        }
+        if (faces.Count == 0) continue;
+        FamilyParameter label = null;
+        try { label = dimension.FamilyLabel; } catch (Exception) { label = null; }
+        var locked = false;
+        try { locked = dimension.IsLocked; } catch (Exception) { locked = false; }
+        if (label == null && !locked) continue;
+        said.Add("its " + string.Join(" and ", faces.Distinct()) + (label != null ? " dimensioned, labelled \""
+                + label.Definition.Name + "\", to " : " locked to ")
+            + (others.Count == 0 ? "another of its own faces" : string.Join(" and ", others.Distinct())));
+    }
+    return said;
 };
 
 // The form, or the nested family, the row is made of.
@@ -278,30 +351,39 @@ else
         }
     }
 
-    // ---- will a copy leave the original? ----------------------------------
-    // MEASURED, not predicted - see the header and 5b-357. A trial row of two,
-    // one spacing apart, made and read inside a sub-transaction that is always
-    // rolled back. Where Revit cannot make even the trial, the array below
-    // fails in its own words; here only a copy that did not move is refused.
+    // ---- will every copy leave the original? -----------------------------
+    // MEASURED, not predicted - see the header, 5b-357 and 5b-374. A trial row
+    // of three, with the real row's anchor, made and read inside a
+    // sub-transaction that is always rolled back. Where Revit cannot make even
+    // the trial, the array below fails in its own words; here only copies that
+    // did not land a spacing apart are refused.
     if (problems.Count == 0)
     {
         var spacing = toLast ? stepMm / (n - 1) : stepMm;
+        var trialCount = n >= 3 || driver != null ? 3 : 2;
         var before = lowest(original, axis);
         var trialView = arrayView();
-        double? moved = null;
+        // Each trial copy's distance from the original along the axis, in mm,
+        // nearest first. Null when the trial could not be made or read.
+        List<double> moved = null;
         var trial = new SubTransaction(doc);
         try
         {
             trial.Start();
             if (trialView != null && before.HasValue)
             {
-                var row = LinearArray.Create(doc, trialView, original.Id, 2, unitAlong(axis) * (spacing / 304.8),
-                    ArrayAnchorMember.Second);
+                var row = toLast
+                    ? LinearArray.Create(doc, trialView, original.Id, trialCount,
+                        unitAlong(axis) * ((trialCount - 1) * spacing / 304.8), ArrayAnchorMember.Last)
+                    : LinearArray.Create(doc, trialView, original.Id, trialCount,
+                        unitAlong(axis) * (spacing / 304.8), ArrayAnchorMember.Second);
                 doc.Regenerate();
-                var copy = row == null ? null
-                    : row.GetCopiedMemberIds().Select(id => doc.GetElement(id)).FirstOrDefault(e => e != null);
-                var at = copy == null ? null : lowest(copy, axis);
-                if (at.HasValue) moved = (at.Value - before.Value) * 304.8;
+                var at = row == null ? new List<double?>()
+                    : row.GetCopiedMemberIds().Select(id => doc.GetElement(id)).Where(e => e != null)
+                        .Select(e => lowest(e, axis)).ToList();
+                if (at.Count == trialCount - 1 && at.All(a => a.HasValue))
+                    moved = at.Select(a => (a.Value - before.Value) * 304.8)
+                        .OrderBy(d => d * Math.Sign(spacing)).ToList();
             }
         }
         catch (Exception) { moved = null; }
@@ -310,9 +392,16 @@ else
             if (trial.HasStarted() && !trial.HasEnded()) trial.RollBack();
         }
 
-        if (moved.HasValue && Math.Abs(moved.Value - spacing) > 0.5)
+        if (moved != null && moved.Where((d, i) => Math.Abs(d - (i + 1) * spacing) > 0.5).Any())
         {
-            var movedMm = Math.Abs(moved.Value) < 0.005 ? 0.0 : moved.Value;
+            var shown = moved.Select(d => Math.Abs(d) < 0.005 ? 0.0 : d).ToList();
+            var asked = Enumerable.Range(1, shown.Count).Select(i => i * spacing).ToList();
+            var measured = "a trial row of " + trialCount + ", rolled back, moved its " + (shown.Count == 1 ? "copy " : "copies ")
+                + string.Join(" and ", shown.Select(plain)) + " mm of the " + string.Join(" and ", asked.Select(plain))
+                + " mm asked, so " + (shown.All(d => Math.Abs(d) <= 0.5) ? "every copy would sit on the original."
+                    : shown.Any(d => Math.Abs(d) <= 0.5) ? "the middle copies would sit on the original."
+                    : "the copies would not sit " + plain(spacing) + " mm apart.");
+            var holds = heldBy(original);
             var plane = originalForm == null ? null : sketchPlaneOf(originalForm);
             var planeName = plane == null ? "" : (plane.Name ?? "").Trim();
             // A nested family hangs on the plane or level it was placed on.
@@ -327,20 +416,41 @@ else
             }
             var runsAlong = axis == 0 ? "Ref. Level or Center (Front/Back)"
                 : axis == 1 ? "Ref. Level or Center (Left/Right)" : "Center (Front/Back) or Center (Left/Right)";
-            problems.Add("A copy of this " + shapeOf(original) + " cannot leave the plane it "
-                + (originalForm == null ? "is placed on" : "is sketched on")
-                + (planeName.Length > 0 ? ", " + planeName + "," : "") + " and a row along " + axisLetters[axis]
-                + " leaves it: a trial copy moved " + plain(movedMm) + " mm of the " + plain(spacing) + " mm asked, so "
-                + (Math.Abs(movedMm) <= 0.5 ? "every copy would sit on the original."
-                    : "the copies would not sit " + plain(spacing) + " mm apart.")
-                + (staysIn.Count > 0 ? " A row along " + string.Join(" or ", staysIn) + " stays in that plane." : "")
-                + (originalForm == null
-                    ? " For a row along " + axisLetters[axis] + ", place the nested family on a plane the row runs "
-                        + "along - " + runsAlong + " in Revit's own templates - or nest a family that is not Work "
-                        + "Plane-Based: a level-based one, measured, made a row upward."
-                    : " For a row along " + axisLetters[axis] + ", sketch the form on a plane the row runs along - "
-                        + runsAlong + " in Revit's own templates - or, with a fixed count, make each one its own form "
-                        + "at its own place."));
+            // Does the row leave the plane the form hangs on (5b-357)? A form's
+            // sketch plane is read; a nested family's host is not measured, so
+            // its plane is named as before.
+            var leavesPlane = originalForm == null
+                || (plane != null && Math.Abs(Math.Abs(plane.GetPlane().Normal.DotProduct(unitAlong(axis))) - 1) < 1e-6);
+            var across = axis == 0 ? "Y" : axis == 1 ? "X" : "X and Y";
+            if (leavesPlane)
+                problems.Add("A copy of this " + shapeOf(original) + " cannot leave the plane it "
+                    + (originalForm == null ? "is placed on" : "is sketched on")
+                    + (planeName.Length > 0 ? ", " + planeName + "," : "") + " and a row along " + axisLetters[axis]
+                    + " leaves it: " + measured
+                    + (staysIn.Count > 0 ? " A row along " + string.Join(" or ", staysIn) + " stays in that plane." : "")
+                    + (holds.Count > 0 ? " It is also held - " + string.Join("; ", holds) + "." : "")
+                    + (originalForm == null
+                        ? " For a row along " + axisLetters[axis] + ", place the nested family on a plane the row runs "
+                            + "along - " + runsAlong + " in Revit's own templates - or nest a family that is not Work "
+                            + "Plane-Based: a level-based one, measured, made a row upward."
+                        : " For a row along " + axisLetters[axis] + ", sketch the form on a plane the row runs along - "
+                            + runsAlong + " in Revit's own templates - or, with a fixed count, make each one its own form "
+                            + "at its own place."));
+            else
+                problems.Add("The copies of this " + shapeOf(original) + " do not follow a row along " + axisLetters[axis]
+                    + ": " + measured
+                    + (holds.Count > 0
+                        ? " It is held - " + string.Join("; ", holds) + ". Measured on a damper's blade (5b-374): a form "
+                            + "with a face locked to a plane along the row, or its top locked to a plane, keeps the middle "
+                            + "copies on the original while the last one moves."
+                        : " No lock or labelled dimension holds its faces, and a row along " + axisLetters[axis] + " stays "
+                            + "in the plane it is sketched on" + (planeName.Length > 0 ? ", " + planeName : "")
+                            + ", so what held the copies was not found.")
+                    + " The way round, measured on that damper: sketch the form on a level that does not move - Ref. "
+                    + "Level - and link its Extrusion Start and End to parameters (LINK_FAMILY_FORM_PARAMETER) instead "
+                    + "of locking its top; before the array, lock only its faces looking along " + across + "; after it, "
+                    + "lock the first form's and the last copy's faces along " + axisLetters[axis] + " (LOCK_FORM_TO_PLANES "
+                    + "- the last copy is the last id in `members`).");
         }
     }
 

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "flex the family through these sizes, read the geometry back,
 kind: action
 domain: revit.families
 capability: FLEX_FAMILY
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -69,7 +69,10 @@ contract:
       type: IList<string>
     - name: restored
       # Every value put back and the solid measured the same as before the
-      # first trial.
+      # first trial - each solid by its own id, and an array's copies that
+      # Revit remade with new ids when a trial changed the count by shape:
+      # the same boxes, matched one to one (version 2, 5b-373). The findings
+      # say how many were judged each way.
       role: result
       type: bool
     - name: notAFamily
@@ -125,7 +128,10 @@ compatibility-note: >
   `Dimension.FamilyLabel / Value`, `Element.get_BoundingBox(null)` and
   `GenericForm.IsSolid` read the same 2020 through 2027 (api-surface, read
   2026-09-24). A parameter's kind moved at 2022 and is read by reflection, the
-  same way SET_FAMILY_TYPE_VALUES reads it.
+  same way SET_FAMILY_TYPE_VALUES reads it. Version 2 also reads
+  `BaseArray.GetOriginalMemberIds / GetCopiedMemberIds` and
+  `Group.GetMemberIds`, present in every reference assembly 2020 through
+  2027 (read 2026-10-08).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
