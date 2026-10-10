@@ -125,3 +125,7 @@ utterances:
   - add a conduit between these points
   - draw the containment
   - put a cable tray in here
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "run the
+  # containment across": OFFSET_ELEMENTS on the trained backend answered it.
+  - run the containment across

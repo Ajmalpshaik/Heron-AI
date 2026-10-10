@@ -105,3 +105,20 @@ utterances:
   - add a material for the ductwork
   - i need a material in this colour
   - set up the materials for this model
+  # DECLARED 2026-10-09, row 5b-375 - the sentence a modeller typed, which
+  # reached SELECT_BY_MATERIAL on both search backends. A material's NAME is
+  # the rarest word in a sentence asking to make one, and SELECT_BY_MATERIAL
+  # is one of the two cards that say "galvanised" at all.
+  #
+  # ONE SENTENCE, AND EVERY OTHER WAS MEASURED AND REFUSED. On the trained
+  # backend READ_ELEMENT_MATERIAL wins "what material is that" and "what
+  # material are these" on both routes, with this card second on both. ANY
+  # more "material" here lifts this card to first by words; the two then swap
+  # ranks between the routes, which fuses to an exact tie (row 5b-236), and
+  # both questions went to this write. "add a new material to this family"
+  # and "create a new material with a name and a colour" each did it alone;
+  # "make a stainless steel material" also sent "what is made of stainless
+  # steel" here. READ_ELEMENT_MATERIAL declares "what material is that"
+  # beside this, and that is what holds both questions there. A new sentence
+  # on this card is measured against those two questions first.
+  - create a new material called galvanised steel

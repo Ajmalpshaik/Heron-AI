@@ -121,3 +121,8 @@ utterances:
   - what is the flow on each diffuser
   - what flow does each air terminal have
   - which diffusers have no flow
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "what flow
+  # does this connector carry": SET_FAMILY_CONNECTOR_ROLES on the trained
+  # backend answered it.
+  - what flow does this connector carry

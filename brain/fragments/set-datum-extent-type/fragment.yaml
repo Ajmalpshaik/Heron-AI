@@ -124,3 +124,7 @@ utterances:
   - set this level back to 3d
   - is this grid 2d or 3d here
   - make the grid view specific
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "make this
+  # grid 2d here": CREATE_GRID on the trained backend answered it.
+  - make this grid 2d here

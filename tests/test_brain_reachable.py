@@ -475,6 +475,57 @@ def main():
             os.environ["HERON_KNOWLEDGE"] = kept
             shutil.rmtree(fresh, ignore_errors=True)
 
+        # --- 9. a job's METHOD is served, not left on disk -----------------
+        # A new laptop's first "create a family" took 7+ minutes where the old
+        # PC took 1-2: no tool named the method, so a chat with no memory of
+        # Heron read brain/skills/family-creation.yaml and docs/43 off disk.
+        print()
+        print("A job with several steps hands over its method")
+        if not hasattr(BRAIN, "method"):
+            check(False, "heron_brain.method exists - without it a family's "
+                         "method can only be read off disk")
+        else:
+            import heron_skill as SKILL
+
+            def skill(sid, needs, said):
+                return SKILL.Skill({"id": sid, "name": sid, "needs": needs,
+                                    "utterances": said}, sid + ".yaml")
+            jobs = [skill("box-job", ["MAKE_BOX", "LABEL_BOX"],
+                          ["build a box family", "make a box"]),
+                    skill("pipe-job", ["MAKE_PIPE"], ["route a pipe"])]
+            picked = SKILL.methods_for(jobs, "create a box family",
+                                       ["LABEL_BOX"])
+            check([s.id for s in picked] == ["box-job"],
+                  "a job is offered when it NEEDS a capability the lookup "
+                  "returned and shares a word with the request")
+            check(SKILL.methods_for(jobs, "route a pipe", ["LABEL_BOX"]) == [],
+                  "shared words alone offer nothing - the link is the "
+                  "capability, which is data, not a guess (D-01)")
+            check(SKILL.methods_for(jobs, "paint the walls", ["MAKE_PIPE"]) == [],
+                  "and a linked capability alone offers nothing either")
+
+            got = BRAIN.method("family-creation")
+            needs = SKILL.load_all()[0]["family-creation"].needs()
+            check(got is not None and "REPORT_FAMILY_TEMPLATE" in got["purpose"]
+                  and got["preconditions"],
+                  "the family method arrives whole - its steps and what must "
+                  "be true first")
+            check(got is not None and [u["capability"] for u in got["uses"]]
+                  == needs,
+                  "with every capability it uses, in the skill's own order")
+            listed = BRAIN.method("")
+            check("family-creation" in [j["id"] for j in listed["jobs"]],
+                  "an empty job lists every job by id")
+            check(BRAIN.method("no-such-job") is None,
+                  "and a job Heron does not have is None, not an empty method")
+
+            asked = BRAIN.lookup("create a family")
+            check([m["id"] for m in asked.get("methods") or []][:1]
+                  == ["family-creation"],
+                  "\"create a family\" names the family method first, beside "
+                  "its one ranked capability - %s"
+                  % [m["id"] for m in asked.get("methods") or []])
+
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to
         # do nothing" and "Heron cannot read what it knows" send a user in

@@ -113,3 +113,7 @@ utterances:
   - which ducts are not showing on this plan
   - what is missing from this drawing
   - find elements not visible here
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "what is not
+  # showing here": SELECT_VISIBLE_IN_VIEW answered it on both backends.
+  - what is not showing here

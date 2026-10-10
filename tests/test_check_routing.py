@@ -34,19 +34,33 @@ WHAT IT PROVES
      the tool would "say so rather than failing when there is none". That was
      fixed and nothing held it.
 
+  5. A ROUTING ROW THAT SENDS A SENTENCE TO A CAPABILITY NO FRAGMENT DECLARES
+     FAILS THE RUN. Row 5b-388: `"rename the heading" -> SET_SCHEDULE_FIELD_FORMAT`
+     (row 5b-232) and `"which materials are unused" -> PURGE_UNUSED_MATERIALS`
+     both sat in the library from 2026-09-06 while this checker ran on every
+     pull request, because it read only the rows that say `-> here`. The target
+     is read wherever the row puts it - after a sentence that is still wrapping,
+     on the comment line below a trailing arrow, after an arrow on a line of its
+     own - and `here`, `NOT`, `ALL` and prose are not targets.
+
 WHAT IT DOES NOT PROVE
-  Anything about the routing result itself. This checker is a REPORT - it exits
-  0 whatever collisions it finds, because a collision is a judgement and not a
-  defect - so there is no verdict here to test. What is testable is the two
-  cases where it declines to produce one at all.
+  Anything about the routing result itself. That part of the checker is a
+  REPORT - it exits 0 whatever collisions it finds, because a collision is a
+  judgement and not a defect - so there is no verdict here to test. What is
+  testable is the two cases where it declines to produce one at all, and
+  section 5, the one part that is a verdict: a name either is a capability some
+  fragment declares or it is not.
 """
 
 from __future__ import print_function
 
+import contextlib
 import importlib.util
 import io
 import os
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -167,6 +181,168 @@ def main():
           "quiet zero, so it can never out-rank READ")
     print()
 
+    print("5. A ROUTING ROW'S `-> NAME` IS A CAPABILITY SOME FRAGMENT DECLARES")
+    # Row 5b-388. ASKED BEFORE IT IS CALLED, so the checker as it stood -
+    # which read no target at all - fails these checks rather than raising
+    # (.claude/skills/heron-ship/SKILL.md s2a). The stand-ins find nothing and
+    # rule nothing, which is exactly what the checker did.
+    targets_of = getattr(CR, "routing_targets", None)
+    dangling_in = getattr(CR, "dangling_targets", None)
+    verdict_of = getattr(CR, "targets_verdict", None)
+    known = getattr(CR, "KNOWN_DANGLING", None)
+    check(None not in (targets_of, dangling_in, verdict_of, known),
+          "the checker reads a row's target, lists the ones no fragment "
+          "declares, keeps a list of the known ones, and rules on them")
+    if targets_of is None:
+        targets_of = lambda text: []                           # noqa: E731
+    if dangling_in is None:
+        dangling_in = lambda folder=None: (0, [])              # noqa: E731
+    if verdict_of is None:
+        verdict_of = lambda found, known: 0                    # noqa: E731
+    if known is None:
+        known = {}
+
+    def ruled(found, listed):
+        """The verdict, and what it printed - a ruling nobody can read is
+        half a ruling."""
+        said = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(said):
+                code = verdict_of(found, listed)
+        except BaseException as raised:          # noqa: BLE001 - that IS the check
+            return "raised %s" % type(raised).__name__, said.getvalue()
+        return code, said.getvalue()
+
+    # ROW 5b-232'S OWN TABLE, as add-schedule-combined-field carried it on
+    # 2026-10-09. Copied rather than read from the fragment, so the day that
+    # row is repaired this still proves the checker sees its shape: a target
+    # after a wrapped sentence that has not closed yet, and a target whose
+    # explanation wraps onto the lines below it.
+    row_232 = (
+        '# ROUTING - the same rows are in the fragments named here.\n'
+        '#\n'
+        '#   "one column with the type and the    -> here\n'
+        '#    mark together"\n'
+        '#   "join these two columns"             -> here\n'
+        '#   "a column that calculates something" -> NOT here. A combined field joins\n'
+        '#                                           text; arithmetic is a calculated\n'
+        '#                                           value, a different mechanism with\n'
+        '#                                           no public API across this whole\n'
+        '#                                           release range\n'
+        '#   "add a column"                       -> ADD_SCHEDULE_FIELDS, for a plain\n'
+        '#                                           parameter\n'
+        '#   "rename the heading"                 -> SET_SCHEDULE_FIELD_FORMAT\n'
+        '#   "what fields does this schedule      -> REPORT_SCHEDULE_DEFINITION, which\n'
+        '#    have"                                  is where the exact names come from\n')
+    check([n for _line, n in targets_of(row_232)]
+          == ["ADD_SCHEDULE_FIELDS", "SET_SCHEDULE_FIELD_FORMAT",
+              "REPORT_SCHEDULE_DEFINITION"],
+          "row 5b-232's table gives three targets - the one after a sentence "
+          "still wrapping included, and `here` and `NOT here` not - got %r"
+          % (targets_of(row_232),))
+    check((13, "SET_SCHEDULE_FIELD_FORMAT") in targets_of(row_232),
+          "and the dangling one is named at the line it sits on, so the "
+          "failure points at it")
+
+    shapes = (
+        '#   "on one line"                -> SET_ONE_LINE (MODIFY)\n'
+        '#   "a target on the line below" ->\n'
+        '#                                   SET_NEXT_LINE, which\n'
+        '#   "an arrow on a line of its own"\n'
+        '#   -> SET_ARROW_BELOW\n'
+        '#   "in backticks"               -> `SET_IN_TICKS`\n'
+        '  #   "an indented comment"      -> SET_INDENTED\n'
+        '#   "mine"                       -> here\n'
+        '#   "not mine"                   -> NOT here, see SET_IN_PROSE\n'
+        '#   "every one"                  -> ALL of them, HERE or NOTHING\n'
+        '#   Rename Scheme=Rentable       -> Net Lettable\n'
+        '#   "a Revit name"               -> OST_DuctCurves\n'
+        '#   "an arrow, then YAML"        ->\n'
+        'purpose: a value, not a comment -> SET_IN_YAML\n'
+        '#    continuation prose naming SET_IN_CONTINUATION\n')
+    check(targets_of(shapes)
+          == [(1, "SET_ONE_LINE"), (3, "SET_NEXT_LINE"), (5, "SET_ARROW_BELOW"),
+              (6, "SET_IN_TICKS"), (7, "SET_INDENTED")],
+          "every place a row puts its target is read, and nothing else is: "
+          "not `here`, `NOT`, `ALL`, `HERE` or `NOTHING`, not a mixed-case "
+          "name, not a name in the prose after a target, not an arrow in a "
+          "YAML value - got %r" % (targets_of(shapes),))
+
+    # A LIBRARY OF TWO, so the comparison is seen against a declared set.
+    lib = tempfile.mkdtemp(prefix="heron-routing-targets-")
+    try:
+        for folder, text in (
+                ("set-real", 'capability: SET_REAL\n'
+                             '# ROUTING\n'
+                             '#   "this one"     -> here\n'
+                             '#   "that one"     -> READ_OTHER\n'
+                             '#   "a ghost"      -> SET_GHOST\n'),
+                ("read-other", 'capability: READ_OTHER\n'
+                               '#   "the writer" -> SET_REAL\n')):
+            os.makedirs(os.path.join(lib, folder))
+            with io.open(os.path.join(lib, folder, "fragment.yaml"), "w",
+                         encoding="utf-8") as fh:
+                fh.write(text)
+        read, found = dangling_in(lib)
+        check(read == 3 and found == [("set-real", 5, "SET_GHOST")],
+              "of three targets read, the one no fragment declares is the one "
+              "listed, by fragment and line - got %r of %r" % (found, read))
+
+        code, said = ruled(found, {})
+        check(code == 1 and "set-real/fragment.yaml:5" in said
+              and "SET_GHOST" in said,
+              "a target no fragment declares FAILS the run, naming the file, "
+              "the line and the name - got %r" % (code,))
+        code, said = ruled(found, {("set-real", "SET_GHOST"): "row 5b-0"})
+        check(code == 0 and "row 5b-0" in said,
+              "the same target on the known list is printed with its reason "
+              "and does not fail - got %r" % (code,))
+        code, said = ruled([], {("set-real", "SET_GHOST"): "row 5b-0"})
+        check(code == 1 and "SET_GHOST" in said,
+              "a known entry whose row was repaired FAILS until it comes off "
+              "the list, or the list goes on excusing that row if it comes "
+              "back - got %r" % (code,))
+        code, _said = ruled([], {})
+        check(code == 0, "nothing dangling and nothing listed passes - got %r"
+              % (code,))
+
+        # THROUGH main(), the way CI runs it, and with no store: --targets is
+        # the verdict alone. NOT CALLED on a checker that has no such verdict:
+        # that one ignores the flag and runs the whole report, which rebuilds
+        # whichever knowledge store it finds from this branch (row 5b-233).
+        if getattr(CR, "dangling_targets", None) is None:
+            code = "not called - the checker has no --targets verdict"
+        else:
+            was = CR.FRAGMENTS, CR.KNOWN_DANGLING
+            CR.FRAGMENTS, CR.KNOWN_DANGLING = lib, {}
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    code = CR.main(["--targets"])
+            except BaseException as raised:      # noqa: BLE001 - that IS the check
+                code = "raised %s" % type(raised).__name__
+            finally:
+                CR.FRAGMENTS, CR.KNOWN_DANGLING = was
+        check(code == 1,
+              "and main() fails on it, with no knowledge store asked for - "
+              "got %r" % (code,))
+    finally:
+        shutil.rmtree(lib, ignore_errors=True)
+
+    # THE LIBRARY AS IT STANDS.
+    read, found = dangling_in()
+    code, said = ruled(found, known)
+    check(read > 0 and code == 0,
+          "every target in this library is a declared capability or on the "
+          "known list with its reason, and every known entry still dangles - "
+          "got %r over %r targets%s"
+          % (code, read, "" if code == 0 else ":\n" + said))
+    check(all(reason.strip() for reason in known.values()),
+          "every known entry says why it is waiting")
+    check("dangling_targets(" in body,
+          "and main() reads targets through the function the checks above "
+          "call, rather than a pattern of its own they never see")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -174,11 +350,14 @@ def main():
         return 1
 
     print("PASSED - the routing checker refuses a typo and a missing store by")
-    print("name, and it refuses before it loads anything.")
+    print("name, and it refuses before it loads anything. A routing row that")
+    print("names a capability no fragment declares fails it, wherever the row")
+    print("puts the name.")
     print()
     print("It proves NOTHING about the routing result. That is a report and a")
     print("finding in it is a question for a person, so there is no verdict")
-    print("here to test - only the two cases where it declines to give one.")
+    print("here to test - only the two cases where it declines to give one,")
+    print("and the one part that is not a ranking.")
     return 0
 
 

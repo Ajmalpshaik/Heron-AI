@@ -118,3 +118,7 @@ utterances:
   - write the schedule to a text file
   - i need this schedule in excel
   - export the quantities out
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "give me the
+  # schedule as a csv": FIND_SCHEDULES on the trained backend answered it.
+  - give me the schedule as a csv

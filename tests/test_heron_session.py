@@ -56,6 +56,7 @@ import json
 import os
 import re
 import shutil
+import site
 import subprocess
 import sys
 import tempfile
@@ -90,11 +91,19 @@ def clean_env(**extra):
 
     APPDATA goes too: on Windows the knowledge folder is found through it, so
     leaving it would make "no folder at all" impossible to set up there.
+
+    PYTHON'S OWN USER FOLDER STAYS WHERE IT WAS. On Windows Python finds a
+    `pip install --user` package through APPDATA as well, so a child started
+    without it had no PyYAML on a PC that installed it that way - the
+    knowledge folder "could not be asked (ModuleNotFoundError)" and section 4
+    failed on the import, not on the hook (row 5b-386). PYTHONUSERBASE names
+    that folder directly, and no Heron path is resolved through it.
     """
     env = dict(os.environ)
     for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE",
                  "CLAUDE_PROJECT_DIR"):
         env.pop(name, None)
+    env.setdefault("PYTHONUSERBASE", site.getuserbase())
     env.update(extra)
     return env
 

@@ -162,7 +162,7 @@ compatibility-note: >
 # DIMENSION_ROOMS.
 #
 #   "dimension the grids"                 -> here
-#   "put the setting out dimensions on"   -> here
+#   "put the setting out dimensions on this plan" -> here
 #   "dimension between the levels"        -> here, in a section or elevation
 #   "grid to grid dimension"              -> here
 #   "dimension between the ducts"         -> DIMENSION_MEP_RUNS - a centreline

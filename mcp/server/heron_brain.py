@@ -619,7 +619,7 @@ def lookup(request, revit=None):
     guess, and a reader shown only the answer cannot tell which they were
     given.
     """
-    _S, _CAP, _SK, _SE, _E, RETRIEVE = _brain()
+    _S, _CAP, SKILL, _SE, _E, RETRIEVE = _brain()
     with _Open() as store:
         answer = RETRIEVE.find(store, request, revit=revit)
         capability = (_capability_of(store, answer.fragment_id)
@@ -668,6 +668,19 @@ def lookup(request, revit=None):
 
         _rows, excluded = RETRIEVE.eligible(store, revit)
 
+        # THE JOBS THIS IS ONE STEP OF - see heron_skill.methods_for. Not for
+        # an exact declared phrasing that may run on its own: that request IS
+        # one step, and naming a longer job beside it is noise.
+        methods = []
+        if capability and not (answer.route == "identity"
+                               and getattr(answer, "autorun", False)):
+            skills, _problems = SKILL.load_all()
+            for skill in SKILL.methods_for(
+                    skills.values(), request,
+                    [capability] + [c["capability"] for c in candidates]):
+                methods.append({"id": skill.id, "name": skill.name,
+                                "uses": len(skill.needs())})
+
         # D-62. The trail only ever knew what reached Revit, so a request the
         # brain answered on its own left no record and the LIVE route share was
         # unmeasurable. THE SENTENCE IS NOT RECORDED - the route is what the
@@ -711,6 +724,65 @@ def lookup(request, revit=None):
             # risks could not be read, so a caller knows the risk fields
             # below are absent rather than READ.
             "risks_unreadable": risks_unreadable,
+            "revit": revit,
+            "methods": methods,
+        }
+
+
+def method(skill_id, revit=None):
+    """
+    One job's whole method - the steps in order, what must be true first, and
+    every capability it uses with its risk and status - or the list of jobs
+    when `skill_id` is empty. None when no job has that id.
+
+    WHY IT IS A TOOL AND NOT A FILE TO READ. The method of building a family
+    is fifteen ordered steps in brain/skills/family-creation.yaml, and before
+    this nothing served it: a chat learned it by reading that file and the
+    58 KB of docs/43 off disk, which is the "it reads lots of files the first
+    time" a modeller saw on a new laptop. The skill IS the method, so it is
+    handed over whole, and the capabilities beside it are resolved against
+    this Revit the same way heron_resolve resolves one.
+    """
+    _S, CAP, SKILL, _SE, _E, _R = _brain()
+    with _Open() as store:
+        found, problems = SKILL.load_all()
+        if not skill_id:
+            return {"jobs": [{"id": s.id, "name": s.name,
+                              "uses": len(s.needs())}
+                             for s in sorted(found.values(), key=lambda s: s.id)],
+                    "problems": problems}
+        wanted = skill_id.strip().lower()
+        skill = found.get(wanted) or next(
+            (s for s in found.values() if (s.name or "").lower() == wanted),
+            None)
+        if skill is None:
+            return None
+
+        uses = []
+        for name in skill.needs():
+            got = CAP.resolve(store, name, revit=revit)
+            anywhere = got or (CAP.resolve(store, name) if revit else None)
+            uses.append({
+                "capability": name,
+                "risk": got.risk if got else None,
+                "status": got.status if got else None,
+                # None = provided here; else why it cannot run on this Revit.
+                "missing": (None if got else
+                            "not declared for Revit %s" % revit if anywhere
+                            else "nothing provides it yet"),
+            })
+        # D-62: a brain answer leaves a trace. One job's catalogue, so the
+        # same line as heron_capabilities with skills=1.
+        _audit().catalogue(skills=1, capabilities=len(uses),
+                           gaps=len([u for u in uses if u["missing"]]))
+        return {
+            "id": skill.id,
+            "name": skill.name,
+            "status": skill.status,
+            "risk": skill.risk,
+            "preconditions": skill.preconditions(),
+            "purpose": skill.purpose,
+            "uses": uses,
             "revit": revit,
         }
 

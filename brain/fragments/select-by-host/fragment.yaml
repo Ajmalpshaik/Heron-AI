@@ -119,3 +119,8 @@ utterances:
   - how many doors are hosted in these walls
   - list the skylights in this roof
   - which skylights does this roof have
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "what is cut
+  # into this wall": CREATE_FAMILY_HOST_OPENING on the trained backend
+  # answered it.
+  - what is cut into this wall

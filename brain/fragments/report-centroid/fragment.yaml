@@ -104,3 +104,7 @@ utterances:
   - find the centre of mass
   - what is the middle of these by volume
   - centroid of this element
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "where is the
+  # middle of this": CENTER_ROOM_TAGS answered it on both backends.
+  - where is the middle of this
