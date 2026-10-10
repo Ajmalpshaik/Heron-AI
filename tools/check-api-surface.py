@@ -55,6 +55,7 @@ place, and it is worth repeating after any change to it.
 
 import io
 import os
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -143,6 +144,17 @@ def main():
         print("Heron does not know these releases: %s" % ", ".join(unknown))
         return 2
 
+    # NOT RUN IS EXIT 3, NOT 1 - row 5b-150. With no `dotnet` this raised a
+    # FileNotFoundError traceback and exited 1, the code a missing member
+    # uses, so "Heron calls an API Revit 2020 does not have" and "this machine
+    # has no .NET" read the same. Asked after the argument question, as
+    # api-changes.py and check-fragments-compile.py ask theirs.
+    if shutil.which("dotnet") is None:
+        print("NOT RUN - there is no `dotnet` on PATH, so the add-in cannot be "
+              "built or read and nothing is claimed about any release.")
+        print("          apt-get install -y dotnet-sdk-10.0 (heron-ship section 5)")
+        return 3
+
     # BUILD THE ADD-IN FIRST, AND ALWAYS FOR THE SAME RELEASE.
     #
     # This tool reads ONE compiled binary and checks its Revit references against
@@ -198,8 +210,9 @@ def main():
             print("   Revit %s: no assemblies found" % year)
 
     if not dirs:
-        print("FAIL  no reference assemblies - is the network reachable?")
-        return 1
+        print("NOT RUN - no reference assemblies could be fetched or found in")
+        print("          %s - is the network reachable? Nothing was checked." % CACHE)
+        return 3
 
     print()
     run = subprocess.run(["dotnet", "run", "--project", TOOL_DIR, "--no-build",

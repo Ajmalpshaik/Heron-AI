@@ -13,11 +13,23 @@ version: 1
 source: OFFICIAL
 risk: READ
 
+# THE OPENING NAMES THE WALL FACES (FRAGMENT-ISSUES 5b-337, 2026-10-09). It
+# said only "how its room areas are measured", and questions about where - the
+# wall finish, the centre, the core - went to PLACE_ROOM_AT_POINT and
+# DIMENSION_ROOMS, both changes. The faces are spelled as the dialog spells
+# them, "center": "centre" here, measured, pulled "switch room area
+# measurement to wall centre" - a change - from SET_AREA_VOLUME_COMPUTATIONS
+# to this read. Volume stays first: an opening that led with the faces sent
+# "turn volume calculation on" to SET_SCHEDULE_FIELD_TOTALS, a change to
+# something else. Repaired by these words, never by declaring the sentences
+# that failed.
 purpose: >
   Answers whether this project computes volumes - Revit's volume calculation
-  for rooms and spaces - how its room areas are measured, and which area
-  schemes it has, read from Revit's Area and Volume Computations dialog
-  (Architecture > Room & Area), both tabs, in the words the dialog shows. COMPUTATIONS: Volume Computations - Areas only or Areas
+  for rooms and spaces - where its room areas are measured, the room boundary
+  taken at the wall finish, the wall center, the core layer or the core
+  center, and which area schemes it has, read from Revit's Area and Volume
+  Computations dialog (Architecture > Room & Area), both tabs, in the words
+  the dialog shows. COMPUTATIONS: Volume Computations - Areas only or Areas
   and Volumes - and Room Area Computation - At wall finish, At wall center,
   At wall core layer or At wall core center. AREA SCHEMES: every scheme, with
   its description, whether it is the Gross Building one, and how many areas

@@ -26,11 +26,14 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
 ---------------------------------------------------
   THE RULE      what is dismissed, what rolls back, and what the modeller is
                 told - HeronFailureNote.cs, which names no Autodesk type and is
-                linked by source into tests/Heron.FailureNote.TestHost. Built
-                and RUN here, so its checks are real behaviour.
+                linked by source into tests/Heron.FailureNote.TestHost - and
+                Json.ReadLong, the bridge's reader that carries the count to
+                the audit line, linked beside it. Built and RUN here, so its
+                checks are real behaviour.
   THE WIRING    that every transaction the write path opens is put under the
-                rule before anything runs in it, and that the answers carry
-                what Revit said. That half calls the Revit API and cannot run
+                rule before anything runs in it, that the answers carry
+                what Revit said, and that the dispatcher's audit line keeps
+                the count. That half calls the Revit API and cannot run
                 off a Revit, so it is read as TEXT - a weak test of behaviour
                 and a strong one of the defect, which was a missing line.
 
@@ -41,6 +44,15 @@ MEASURED AGAINST THE CODE AS IT STOOD, which is what makes this a test: with
 RevitFragment.cs from before the change and no HeronFailureNote.cs, the
 wiring checks fail and the host does not build - and this suite says so and
 exits 1 rather than raising.
+
+FRAGMENT-ISSUES 5b ROW 159 ADDED THE AUDIT LINE, measured the same way on
+2026-10-09: with RevitDispatcher.cs and Json.cs as they stood, the five
+dispatcher checks in section 3 fail and the host does not build for want of
+Json.ReadLong - exit 1. With only the dispatcher as it stood, those five
+fail and the host passes. Each of three narrower breaks - the count added to
+a list the audit line is not written from, a 0 written for a reply that
+carried none, the verdict writing the count as text - fails one check. A reader that took any numeric text, quoted or
+not, and rounded it fails six of the host's checks.
 
 IT EXITS 3 WHEN .NET IS ABSENT AND THE WIRING PASSED, and that is NOT a pass:
 the rule was not run.
@@ -55,6 +67,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
+DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
 NOTE = os.path.join(ADDIN, "HeronFailureNote.cs")
 HOST = os.path.join(ROOT, "tests", "Heron.FailureNote.TestHost")
 COULD_NOT_RUN = 3
@@ -224,6 +237,46 @@ def wiring():
           "the verdict - the sentence the chat prints whole - says what was dismissed")
     check('"warnings"' in raw and '"warningsDismissed"' in raw,
           "and the reply carries the count and every dismissed kind")
+    # Json.ReadLong reads a NUMBER and answers null for "3" - so the count
+    # reaches the audit line only while the verdict writes it with Json.Num.
+    # Read in RAW: the code-only text has every string emptied.
+    check(re.search(r'Json\.Num\(\s*"warnings"\s*,', raw or "") is not None
+          and re.search(r'Json\.Str\(\s*"warnings"\s*,', raw or "") is None,
+          "and writes the count as a number, the only kind the audit line's reader takes")
+
+    # AND THE AUDIT LINE CARRIES THE COUNT TOO - FRAGMENT-ISSUES 5b row 159.
+    # The dispatcher writes one line per request from the reply, and read its
+    # fields with ReadString, which answers null for a number: the chat heard
+    # what Revit raised and the trail did not. Read as TEXT, with whole-line
+    # comments dropped - the dispatcher's own comments name the field - and
+    # string contents kept, because the field name IS a string. What
+    # Json.ReadLong does with the reply is the host's to prove, in section 5.
+    told = "\n".join(line for line in (read(DISPATCHER) or "").splitlines()
+                     if not line.lstrip().startswith("//"))
+    reads = r'Json\.ReadLong\(\s*response\s*,\s*"warnings"\s*\)'
+    check(re.search(reads, told) is not None,
+          "the dispatcher reads the reply's `warnings` as a number")
+    check(re.search(r'KeyValuePair<string,\s*long>\(\s*"warnings"\s*,', told) is not None,
+          "and records it among the audit line's numbers")
+    # THE LIST IT GOES INTO IS THE ONE THE LINE IS WRITTEN FROM - a list built
+    # with the count and a Record call still handed a fresh one would drop it.
+    listed = re.search(r'var\s+(\w+)\s*=\s*new\s+List<KeyValuePair<string,\s*long>>', told)
+    check(listed is not None
+          and re.search(r'\b%s\.Add\(\s*new\s+KeyValuePair<string,\s*long>\(\s*"warnings"'
+                        % listed.group(1), told) is not None
+          and re.search(r'HeronAudit\.Record\([^;]*,\s*%s\s*\)\s*;' % listed.group(1), told) is not None,
+          "and that list is the one the audit line is written from")
+    # ABSENT IS LEFT ABSENT: a read or a refusal carries no count, and a 0
+    # written for it would be a claim nothing made.
+    check(re.search(r'if\s*\(\s*(\w+)\.HasValue\s*\)\s*\w+\.Add\(\s*new\s+KeyValuePair<string,\s*long>\('
+                    r'\s*"warnings"\s*,\s*\1\.Value\s*\)', told) is not None
+          and re.search(r'"warnings"\s*,\s*\w+\s*\?\?', told) is None,
+          "and only when the reply carried one - never a 0 for a reply that said nothing")
+    named = re.search(r'"fragment"\s*,\s*(\w+)\s*\?', told)
+    check(named is not None
+          and re.search(r"\b%s\s*\?\s*%s" % (re.escape(named.group(1)), reads), told) is not None,
+          "for the fragment operations only, decided by the same test that names "
+          "the fragment - the move path keeps its own record")
 
     print("\n4. no writer in revit/ opens a transaction without a preprocessor")
     for folder, _, names in os.walk(os.path.join(ROOT, "revit")):

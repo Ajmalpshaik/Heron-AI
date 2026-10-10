@@ -139,3 +139,6 @@ utterances:
   - show me the levels
   - what are the floor levels
   - level heights
+  # ADDED 2026-10-09 (FRAGMENT-ISSUES 146). Declared nowhere, and measured
+  # reaching CREATE_LEVELS, a change, on spelling.
+  - what levels are in this model

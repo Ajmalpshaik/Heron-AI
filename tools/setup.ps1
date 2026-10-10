@@ -59,9 +59,9 @@ Write-Step 1 "Checking the environment"
 # Checked and named here rather than discovered later by a user wondering why
 # nothing happens when they ask Claude a question.
 $python = Get-PythonStatus
-if ($python.Found -and $python.HasMcp) {
+if ($python.Found -and $python.HasMcp -and $python.HasYaml) {
     $scope = if ($python.PerUser) { ", per-user" } else { "" }
-    Write-Ok "$($python.Version)$scope, with the MCP package"
+    Write-Ok "$($python.Version)$scope, with the MCP package and PyYAML"
 } else {
     Write-Host ""
     [void](Write-PythonAdvice $python)

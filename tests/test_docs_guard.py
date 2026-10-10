@@ -63,6 +63,13 @@ WHAT IT PROVES
      ITS NUMBER. It read exactly two digits, so from D-100 on a mistyped
      number passed unread (row 5b-184).
 
+ 10. A LINK THAT NAMES ONE 5b ROW REACHES THE ROWS FILE THAT HOLDS IT. A
+     link at a rows file that is there but does not hold its row fails the
+     run and is named, with the file that does, a link whose words a line
+     break wraps as well; the right link beside it, an example in code and a
+     link naming two rows are not (row 5b-381). That
+     the whole tree passes is 2.
+
 WHAT IT DOES NOT PROVE
   That the README is WRITTEN by anybody. Nothing generates it, and after
   D-77 nothing is scheduled to. The rows are closed on the guarding half
@@ -344,6 +351,52 @@ def main():
         check("'D-98'" not in said,
               "and D-98 beside it, which the log does define, is not")
         io.open(arch, "w", encoding="utf-8").write(kept)
+
+        print("\n10. a link that names a 5b row reaches the rows file that "
+              "holds it")
+        # The file is there, so section 1 says nothing - the defect that
+        # left every link to a re-banded row at the file its row had left
+        # (FRAGMENT-ISSUES row 5b-381). The rows are read from the copy, not
+        # typed: the first row of the first rows file, linked at the last.
+        rows_dir = os.path.join(tree, "docs", "fragment-issues")
+        band = re.compile(r"^section-5b-rows-[0-9]{3}-[0-9]{3}\.md$")
+        names = sorted(n for n in os.listdir(rows_dir)
+                       if band.match(n)) if os.path.isdir(rows_dir) else []
+        check(len(names) > 1,
+              "section 5b's rows are in more than one file, so a link can "
+              "reach the wrong one")
+        if len(names) > 1:
+            first, last = names[0], names[-1]
+            held = re.search(r"^\|\s*\**([0-9]+)\**\s*\|",
+                             io.open(os.path.join(rows_dir, first),
+                                     encoding="utf-8").read(), re.M)
+            row = int(held.group(1))
+            kept = io.open(arch, encoding="utf-8").read()
+            io.open(arch, "w", encoding="utf-8").write(
+                kept + "\n\nSee [row 5b-%d](fragment-issues/%s), and "
+                       "[row 5b-%d](fragment-issues/%s) beside it.\n\n"
+                       "`[row 5b-%d](fragment-issues/%s)` is an example, and "
+                       "[rows 5b-%d and 5b-%d](fragment-issues/%s) names two.\n\n"
+                       "A wrapped one, ([row\n5b-%d](fragment-issues/%s)), "
+                       "is a link as well.\n"
+                % (row, last, row, first, row, last, row, row + 1, last,
+                   row, last))
+            code, out = run_guard(tree)
+            astray = [line for line in section(
+                out, "12. A LINK THAT NAMES A 5b ROW").split("\n")
+                if "ASTRAY" in line]
+            check(code != 0, "the guard fails on a link naming row 5b-%d "
+                             "that points at %s" % (row, last))
+            check(len(astray) == 2
+                  and all("06-heron-platform.md" in one and "5b-%d" % row in one
+                          and last in one for one in astray),
+                  "and names those two links, the one whose words a line "
+                  "break wraps among them - not the right one beside them, "
+                  "the example in code, or the link naming two rows (%s)"
+                  % (" / ".join(astray) or "none named"))
+            check(bool(astray) and "%s does" % first in astray[0],
+                  "and says which file does hold the row")
+            io.open(arch, "w", encoding="utf-8").write(kept)
 
         code, _out = run_guard(tree)
         check(code == 0,

@@ -68,6 +68,18 @@ negative:
       no linked line at all - the ray obeys the view - and the summary still
       counting the loaded links, so the zero is visibly a view setting
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      an AHU in this MEP model 400 mm from a wall of the architectural link
+      whose type carries two parameters named Fire Rating - a shared "Fire
+      Rating" bound to Walls beside the built-in one - directions the four
+      horizontals, maxDistance 1000, includeLinks true
+    expect: >
+      the line for the direction facing the wall names it with "Fire Rating
+      NOT READ - 2 parameters share that name", never either rating, and
+      `hits` is unchanged from the host-only run (row 5b-203)
+
 second_route:
   - >
     measure it in Revit with the Measure tool, from the element's insertion

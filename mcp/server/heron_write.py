@@ -197,6 +197,23 @@ def describe_vertical(millimetres):
     return "up " + describe(millimetres)
 
 
+def skipped_sentence(count, reasons, done):
+    """
+    What a move left alone, under the reasons it was left alone for.
+
+    REASONS is the reply's `skipReasons` - RevitWrite's Skips.Why(), which
+    names only the reasons that happened: pinned, owned by someone else,
+    changed in central since this copy reloaded, deleted in central. The chat
+    used to print "pinned, or owned by another user" for all four, so an
+    element skipped because central had moved on was reported under two
+    reasons it did not have (row 5b-158). An add-in not yet redeployed sends
+    no reasons, and keeps the sentence it always had.
+    """
+    verb = "were" if done else "would be"
+    why = reasons or "pinned, or owned by another user"
+    return "%s %s skipped - %s." % ("{:,}".format(count), verb, why)
+
+
 # ----------------------------------------------------------- document pinning
 
 

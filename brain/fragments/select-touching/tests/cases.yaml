@@ -71,6 +71,18 @@ negative:
       "Links NOT read: the element given has no solid to test against them" -
       never a count of 0 that reads as clear
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      one pipe in this MEP model that runs through a wall of the architectural
+      link whose type carries two parameters named Fire Rating - a shared
+      "Fire Rating" bound to Walls beside the built-in one - target that pipe,
+      includeLinks true
+    expect: >
+      the line naming the wall reads "Fire Rating NOT READ - 2 parameters
+      share that name", never either rating, and `elements` is unchanged from
+      the host-only run (row 5b-203)
+
 second_route: >
   Revit's own Interference Check between the target and the candidate category,
   and the two lists compared - and for the connected-ducts case, looking at the

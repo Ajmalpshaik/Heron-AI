@@ -356,7 +356,7 @@ field short:
 2. **`list-worksets` needs the id**, not only the name.
 3. **`list-materials`** — the names, and whether anything uses them. *Built 2026-10-09 as `LIST_MATERIALS`, DRAFT -
    the names, classes and ids; whether anything uses them stays `find-unused-materials`' walk
-   ([row 5b-376](section-5b-rows-176-200.md)).*
+   ([row 5b-376](section-5b-rows-376-400.md)).*
 4. **`list-sections`**, or any route to a section mark.
 
 Ranked against §3h, this now sits above everything except making silence illegal. §3h.3 asked for one

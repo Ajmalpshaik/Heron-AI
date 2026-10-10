@@ -102,8 +102,11 @@ section's heading; sections 5 and 5b keep their own words there too, and
 their rows are in files of 25 under docs/fragment-issues/. This reads the
 register as one text through tools/register-text.py, plans on that text
 exactly as before, and writes each changed file back through
-tools/split-register.py's layout_split() - once the files it would write have
-been read back as the new register.
+tools/split-register.py's layout_relinked() - once the files it would write
+have been read back as the new register. A row the run re-bands (one appended
+past the last band) takes every link that names it along, in the register, in
+the archive files this run writes and in every other document, by the split's
+own rule (row 5b-381).
 
 NO BACKSLASH IS TYPED IN THIS FILE. The one regular expression it needs, and
 the escaped pipe a table cell needs, are built from chr(92): a typed backslash
@@ -370,6 +373,9 @@ class Plan(object):
         self.split = False     # the page names files, so it is written through them
         self.index_after = ""  # the page as written, when it is split
         self.files_after = {}  # each of its files as written, when it is split
+        self.moved = {}        # rows the layout moves to another rows file, by label
+        self.relinked = []     # (where, label, row, from, to) - each link that follows one
+        self.others = {}       # path -> (text, text re-pointed): written after the register
 
 
 def _read(path):
@@ -570,12 +576,24 @@ def plan(register=REGISTER, archive=ARCHIVE, today=None):
         _prove_parity(p)
     if p.moves and not p.problems and p.split:
         split = _split_tool()
-        p.index_after, p.files_after, trouble = split.layout_split(register, p.after, p.today)
+        root = os.path.dirname(os.path.dirname(os.path.abspath(register)))
+        (p.index_after, p.files_after, trouble, joined, p.relinked, p.others,
+         p.moved) = split.layout_relinked(register, p.after, p.today, root=root)
         p.problems.extend(trouble)
+        # The archive files this run writes are written by write() below, from
+        # the rows it moves - re-pointed there - never from what is on disk now.
+        writing = [os.path.join(p.archive, name) for name in p.moves]
+        p.others = dict((path, pair) for path, pair in p.others.items()
+                        if not any(_same(path, one) for one in writing))
         back = RT.register_text(register, read=split._served(register, p.index_after, p.files_after))
-        if back != p.after:
+        if back != joined:
             p.problems.append("the register's files, written the way it is laid out, would not "
                               "read back as the new register")
+        config = split.REGISTERS["fragment-issues"]
+        if split._band_blind(back or "", config) != split._band_blind(p.after, config):
+            p.problems.append("the register's files differ from the new register in more than the "
+                              "rows file a link names")
+        p.after = joined
     return p
 
 
@@ -720,10 +738,15 @@ def write(p):
         return OK
     if not os.path.isdir(p.archive):
         os.makedirs(p.archive)
+    split = _split_tool() if any(p.moved.values()) else None
+    folder = os.path.join(os.path.dirname(p.register), RT.folder_of(p.register))
     for name in sorted(p.moves):
         path = os.path.join(p.archive, name)
         was = _read(path) if os.path.exists(path) else None
-        _put(path, _archive_file(p, name, was))
+        text = _archive_file(p, name, was)
+        if split is not None:
+            text = split.relink(text, p.archive, folder, p.moved, None, [])
+        _put(path, text)
     _put(os.path.join(p.archive, "README.md"), _readme(p))
     if not p.split:
         _put(p.register, p.after)
@@ -736,6 +759,10 @@ def write(p):
         if not os.path.exists(path) or _read(path) != p.files_after[name]:
             _put(path, p.files_after[name])
     _put(p.register, p.index_after)
+    # The other documents last, as the split writes them: each changes only in
+    # the rows file its links name, and a run cut short leaves the register whole.
+    for path in sorted(p.others):
+        _put(path, p.others[path][1])
     return OK
 
 
@@ -788,6 +815,10 @@ def report(p, writing):
         print("")
         print("  open-defects.py reads the rewritten register the same way: %d row(s), %d open."
               % (len(p.parity), sum(1 for one in p.parity if one[2])))
+    if p.relinked:
+        print("  links that follow a re-banded row: %d, %d of them in %d other document(s)"
+              % (len(p.relinked), sum(1 for one in p.relinked if one[0] != "the register"),
+                 len(p.others)))
     print("")
     if not p.moves:
         print("Nothing to move.")

@@ -7,7 +7,7 @@
 
 ## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
 
-**Built 2026-10-06 for [FRAGMENT-ISSUES 5b-324](../fragment-issues/section-5b-rows-176-200.md) under
+**Built 2026-10-06 for [FRAGMENT-ISSUES 5b-324](../fragment-issues/section-5b-rows-301-325.md) under
 [D-113](../decisions/D-113.md). Tested without Revit - [`test_document_pin.py`](../../tests/test_document_pin.py),
 [`test_earlier_answers.py`](../../tests/test_earlier_answers.py) and the 5b-324 section of
 [`test_mcp_serves.py`](../../tests/test_mcp_serves.py) - and NOT YET RUN IN REVIT.** What was measured in
