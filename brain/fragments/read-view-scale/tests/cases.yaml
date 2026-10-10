@@ -1,0 +1,48 @@
+# D-30. A READ: the positive is views that ARE drawn at a scale, the negative
+# a view that is not - a sheet - so `viewScales` must come back EMPTY with the
+# sheet named in `findings`, never given a number. Nothing selected, nothing
+# chained: `views` is typed.
+
+positive:
+  - given: a floor plan and the default 3D view, named "1 - Mech, {3D}"
+    expect: >
+      `scaled` 2 and two rows in `viewScales`, each "1 : N" with the view's
+      name and type. Each N is the View Scale row in that view's Properties
+      palette - Revit's own number, not a remembered one
+
+  - given: a floor plan following a view template that includes View Scale
+    expect: >
+      its row says "held by its view template '<name>'", `heldByTemplate` 1,
+      and the View Scale row is greyed out in that view's Properties palette.
+      REPORT_VIEW_TEMPLATE_CONTROL on the same view lists View Scale in the
+      template's HOLDS list. THE THREE MUST AGREE
+
+  - given: the same floor plan with no template, or a template that leaves View Scale free
+    expect: >
+      its row says "its own", `heldByTemplate` 0, and View Scale is editable
+      in Properties
+
+negative:
+  - given: a sheet, named by its sheet NAME (not its number)
+    expect: >
+      `viewScales` empty, `scaled` 0, `noScale` 1, and `findings` naming the
+      sheet as a DrawingSheet with no scale of its own - NOT a number. A
+      reader that printed View.Scale for every view would put a number here,
+      and that is the confident wrong answer this case exists to catch
+
+  - given: a schedule, named as the Project Browser shows it
+    expect: >
+      `viewScales` empty and `noScale` 1, the schedule named as a table with
+      no scale
+
+  - given: a perspective camera view (View > 3D View > Camera)
+    expect: >
+      reported with no scale and the reason, never a number - Revit's API
+      documentation calls a perspective view's scale meaningless
+
+second_route:
+  - >
+    The View Scale row in each view's Properties palette, and View Templates >
+    Manage View Templates, where the include tick beside View Scale says
+    whether the template holds it. A sheet and a schedule show no View Scale
+    row at all.

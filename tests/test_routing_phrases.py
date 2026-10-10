@@ -52,9 +52,13 @@ chat on the machine reads (row 5b-233).
                its tool on 2026-10-06 and moved to CHANGES
     READS      a question about the project's own setup reaches its READ
     OWN        the take-off's own sentences must still reach it
+    DECLARED   a question that reached a write, declared on the READ that
+               answers it (row 146's repair: declaring, not demoting) - it
+               must be that card's own, that card must read, and the search
+               must answer it by identity
 
-A sentence here is never declared word for word in any card - that would be
-answered by identity and test nothing - and that is checked too.
+A sentence in any other table is never declared word for word in any card -
+that would be answered by identity and test nothing - and that is checked too.
 
 ONLY ON THE TRAINED MODEL, AND IT SAYS SO
 -----------------------------------------
@@ -72,7 +76,10 @@ NOT A SCORE
 A handful of sentences that once went wrong, each with its row. It is not the
 owner's answer key (tests/data/owner-questions.yaml, which only he changes),
 and it is not a target to tune cards against: the cards were checked on
-phrasings written before any wording was chosen, and those are not here.
+phrasings written before any wording was chosen, and those are not here -
+but for the few of 5b-321's and 5b-337's that moved off a write by more than
+a rank, kept as guards once the wording was chosen. The rest of those sets,
+and the ones that did not move, are in the register rows.
 """
 
 import importlib.util
@@ -114,6 +121,36 @@ CHANGES = [
      "5b-337: before the Area and Volume Computations tools, answered APPLY_COLOR_FILL_SCHEME"),
     ("rename the rentable area scheme to net lettable", "SET_AREA_VOLUME_COMPUTATIONS",
      "5b-337: answered APPLY_COLOR_FILL_SCHEME"),
+    ("change the area scheme name from rentable to lettable", "SET_AREA_VOLUME_COMPUTATIONS",
+     "5b-337: still answered APPLY_COLOR_FILL_SCHEME, a different change, after the tools existed"),
+    # Row 146, 2026-10-09: the first draft of READ_VIEW_SCALE's purpose said
+    # "scale" and "view" more often than SET_VIEW_SCALE, and a review asked
+    # these back on private stores - the read took the first two from the
+    # write on the model and the first, third, fourth and fifth on spelling
+    # (where this suite cannot run; tests/test_read_view_scale.py asks them
+    # there).
+    ("update the view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on both backends"),
+    ("set the scale of these views", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on the model"),
+    ("set the view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
+    ("set view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
+    ("adjust the view scale", "SET_VIEW_SCALE",
+     "146: a first draft of READ_VIEW_SCALE answered it on spelling"),
+    # Row 146, 2026-10-09: the first draft of LIST_VIEWS_ON_SHEET named the
+    # write and said "placed" in its purpose and "on sheet a-101" in its
+    # utterances, and the read took these from the write on the model.
+    ("place these views on sheet A-101", "PLACE_VIEWS_ON_SHEET",
+     "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
+    ("place the views on this sheet", "PLACE_VIEWS_ON_SHEET",
+     "146: a first draft of LIST_VIEWS_ON_SHEET answered it"),
+    # And a later draft declared "list the viewports on this sheet", and the
+    # read took this one - claimed in ALIGN_VIEWPORTS_ACROSS_SHEETS' routing
+    # table, never declared - on the model.
+    ("line the viewports up", "ALIGN_VIEWPORTS_ACROSS_SHEETS",
+     "146: a later draft of LIST_VIEWS_ON_SHEET answered it"),
 ]
 
 QUESTIONS = [
@@ -132,6 +169,17 @@ QUESTIONS = [
      "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
     ("check if volume calculation is enabled",
      "5b-337: answered SET_SCHEDULE_FIELD_TOTALS"),
+    ("are room areas taken to the wall finish",
+     "5b-337: answered PLACE_ROOM_AT_POINT until the read's opening named the wall faces"),
+    # 5b-321: questions about the doors and windows already in a wall, written
+    # 2026-10-09 before SELECT_BY_HOST's opening was reworded. Each answered
+    # PLACE_HOSTED_FAMILY, a change, on the cards as they stood.
+    ("count the doors in these walls",
+     "5b-321: answered PLACE_HOSTED_FAMILY"),
+    ("select every window in this wall",
+     "5b-321: answered PLACE_HOSTED_FAMILY"),
+    ("find the doors in the selected walls",
+     "5b-321: answered PLACE_HOSTED_FAMILY"),
     # A REQUEST TO SELECT IS HELD TO THE SAME RULE - nothing in it asks for a
     # change. 5b-329: "select every wall of type Curtain Wall" reached
     # SET_CURTAIN_WALL_GRID, and these paraphrases, written before any card
@@ -148,6 +196,14 @@ QUESTIONS = [
     # paraphrase. SET_CURTAIN_WALL_GRID and REPORT_CURTAIN_WALL_TYPE fuse to the
     # same score on it, and the PROVEN nudge hands the tie to the change - still
     # OPEN in 5b-329. A guard that a status change flips is not a guard.
+    # Row 146: rewordings of LIST_VIEWS_ON_SHEET's question, written by its
+    # repair and its second review on 2026-10-09, before its purpose said
+    # "legends". Both reached CREATE_LEGEND_VIEW on the model while the card
+    # said only "a legend".
+    ("which legends are on this sheet",
+     "146: answered CREATE_LEGEND_VIEW"),
+    ("what legends are on this sheet",
+     "146: answered CREATE_LEGEND_VIEW"),
 ]
 
 # A question about the project's own setup reaches the tool that READS it.
@@ -160,6 +216,32 @@ READS = [
 ]
 
 NO_TOOL = []
+
+# A question measured reaching a write, with a READ that truly answers it -
+# so the repair is one line in that READ's utterances, and identity answers it
+# before ranking runs (rows 116 and 146). (sentence, the READ, why)
+DECLARED = [
+    ("how high is this off the floor", "READ_ELEMENT_LEVEL",
+     "146: answered SET_ROOM_LIMITS on the model, MOVE_TO_RAY_HIT on spelling"),
+    ("find the fire dampers", "SELECT_BY_FAMILY",
+     "146: answered PLACE_ACCESSORY_ON_RUN on spelling"),
+    ("what levels are in this model", "LIST_LEVELS",
+     "146: answered CREATE_LEVELS on spelling"),
+    ("what is the insulation thickness", "READ_ELEMENT_PARAMETERS",
+     "146: answered SET_MEP_INSULATION on both"),
+    ("what is the sill height of these windows", "READ_ELEMENT_PARAMETERS",
+     "5b-321: answered PLACE_HOSTED_FAMILY on the model"),
+    # 146's last READ gap: nothing read a view's scale until READ_VIEW_SCALE
+    # (2026-10-09), so the question could only land on the write.
+    ("what is the scale of this view", "READ_VIEW_SCALE",
+     "146: answered SET_VIEW_SCALE on both"),
+    ("what scale is this plan at", "READ_VIEW_SCALE",
+     "146: answered CREATE_CALLOUT on the model"),
+    # Row 146's gap, not a mis-route: LIST_SHEETS only COUNTS a sheet's views,
+    # so no READ named them until LIST_VIEWS_ON_SHEET was written (2026-10-09).
+    ("what views are on this sheet", "LIST_VIEWS_ON_SHEET",
+     "146: answered PLACE_VIEWS_ON_SHEET on both"),
+]
 
 OWN = [
     ("read every space's envelope", "REPORT_SPACE_ENVELOPE"),
@@ -280,6 +362,23 @@ def main():
         for text, want in READS:
             _answer, got, risk = ask(text)
             check(got == want and not writes(risk), "%r -> %s, %s" % (text, got, risk or "no risk"))
+
+        print("\n8. A QUESTION THAT REACHED A WRITE IS DECLARED ON THE READ THAT ANSWERS IT")
+        owners = {}
+        for frag in on_disk.values():
+            for said in [frag.data.get("semantic-identity") or ""] + frag.utterances():
+                owners.setdefault(SEARCH.normalise(said), set()).add(frag.data.get("capability"))
+        risk_of = dict((frag.data.get("capability"), (frag.data.get("risk") or "").upper())
+                       for frag in on_disk.values())
+        for text, want, why in DECLARED:
+            claimed = sorted(owners.get(SEARCH.normalise(text), set()))
+            check(claimed == [want], "%r is declared by %s alone (%s) - declared by %s"
+                  % (text, want, why, ", ".join(claimed) or "nobody"))
+            check(want in risk_of and not writes(risk_of.get(want)),
+                  "  and %s reads: %s" % (want, risk_of.get(want) or "no such card"))
+            answer, got, _risk = ask(text)
+            check(answer.route == "identity" and got == want,
+                  "  and the search answers it by identity: %s, %s" % (got, answer.route))
     finally:
         if store is not None:
             store.close()

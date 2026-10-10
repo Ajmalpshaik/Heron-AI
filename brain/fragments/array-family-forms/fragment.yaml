@@ -22,8 +22,10 @@ purpose: >
   **A LINKED REVIT ARRAY, the kind ARRAY_ELEMENTS leaves out on purpose** -
   that tool's loose copies cannot follow a count a type chooses.
 
-  **ONE FORM PER ARRAY.** Several at once would make every member a group;
-  a second form takes a second call, and both may follow one count.
+  **ONE FORM PER ARRAY** - a second form takes a second call, and both may
+  follow one count. Every member becomes a model group, the original included,
+  even for one form (measured 2026-10-07, row 5b-358), and `members` names
+  those groups.
 
   **OR ONE NESTED FAMILY** (version 2, 2026-10-07) - a coil spring's turns
   arrayed up. Measured on a scratch family: a level-based nested family
@@ -82,8 +84,9 @@ contract:
       role: result
       type: string
     - name: members
-      # The copies' unique ids, commas between, in order along the row - the
-      # last is the far end. The original is not one of them.
+      # The copies' model GROUPS' unique ids - each copy is a group, even
+      # for one form (row 5b-358) - commas between, in order along the row;
+      # the last is the far end. The original is not one of them.
       role: result
       type: string
     - name: labelled

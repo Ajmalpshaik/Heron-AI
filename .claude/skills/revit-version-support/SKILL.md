@@ -70,6 +70,14 @@ matters on a locked-down corporate machine — and is unaffected by the 2027 mov
 > the `#if` silently takes the wrong branch, with no warning. If you add a release to the table, add its
 > symbol in the same commit.
 
+**A fragment gets the same symbols, from the add-in that compiles it.**
+`revit/Heron.Revit.Addin/HeronFragmentSymbols.cs` reads them back from the add-in's own build and puts
+them in front of every fragment script. So a symbol added to `Directory.Build.props` is added there too,
+in the same commit - `tests/test_fragment_symbols.py` fails until it is. Until 2026-10-09 the add-in
+handed a fragment no symbols at all, and a fragment's `#if REVIT2020` was false on Revit 2020
+([row 5b-181](../../../docs/FRAGMENT-ISSUES.md)). A fragment `#if` may name release symbols only - the
+same suite fails on `DEBUG` or a framework symbol, which the fragment gate defines and the add-in does not.
+
 ## Breaking API changes
 
 | Release | What changed | Old | New |
@@ -137,7 +145,7 @@ every reading. The compiler found it in seconds.
 UniqueId is *"created with the document"*. It is created with the TEMPLATE: two blank projects and an
 unrelated `PIPE.rvt` reported one id on 2026-09-15 (NEEDS-CHECKING E12), and on 2026-10-06 a new project
 was given another model's kept loads answers because both reported it
-([FRAGMENT-ISSUES 5b-324](../../../docs/fragment-issues/section-5b-rows-176-200.md)). The compiler cannot
+([FRAGMENT-ISSUES 5b-324](../../../docs/fragment-issues/section-5b-rows-301-325.md)). The compiler cannot
 catch that class: the substitute compiles everywhere and answers a different question.
 
 **Prefer a member that exists everywhere over a `#if` that hides one that does not — when it answers the

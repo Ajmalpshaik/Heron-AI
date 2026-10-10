@@ -24,7 +24,9 @@ negative:
     expect: >
       REFUSED by name and NOTHING CREATED. THIS IS THE CASE THAT MATTERS. Falling
       back to "power" would put a fire alarm device on a power circuit, and that
-      is a drawing that passes review and is wrong
+      is a drawing that passes review and is wrong. `refused` is ONE string and
+      reaches the reply WHOLE, the list of words it does understand included -
+      not cut at sixty characters, as a list item would be
 
   - given: devices that are ALREADY on a circuit
     expect: >

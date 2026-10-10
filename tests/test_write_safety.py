@@ -50,6 +50,7 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 from heron_write import (                                  # noqa: E402
     BadDistance, DocumentPin, PendingApproval, describe, describe_vertical,
     parse_millimetres)
+import heron_write                                         # noqa: E402
 
 FAILURES = []
 
@@ -226,6 +227,29 @@ def main():
     check(describe(50) in describe_vertical(-50)
           and describe(50) in describe_vertical(50),
           "and the distance itself reads identically in both directions")
+
+    print()
+    print("A skipped element is reported under the reason it was skipped for")
+    # Row 5b-158: the add-in sends `skipReasons` - pinned, owned, changed in
+    # central, deleted in central - and the chat printed "pinned, or owned by
+    # another user" for all four. An element skipped because central moved
+    # on was reported under two reasons it did not have.
+    said = getattr(heron_write, "skipped_sentence", None)
+    check(said is not None, "heron_write has a sentence for what was skipped")
+    if said is None:
+        def said(count, reasons, done):
+            return "%s %s skipped - pinned, or owned by another user." % (count, "were" if done else "would be")
+    central = ("2 changed in central since this model last reloaded (Reload Latest, "
+               "then ask again, to include them)")
+    line = said(2, central, False)
+    check(central in line and "pinned" not in line,
+          "the preview names the central reason, and not the two it was not (%r)" % line)
+    line = said(3, "1 pinned and 2 deleted in central", True)
+    check(line.startswith("3 were skipped") and "1 pinned and 2 deleted in central" in line,
+          "the move names each reason that happened (%r)" % line)
+    check(said(4, None, False) == "4 would be skipped - pinned, or owned by another user.",
+          "and an add-in not yet redeployed, which sends no reasons, keeps today's sentence")
+    check(said(1234, None, True).startswith("1,234 were skipped"), "a count is written with its thousands")
 
     print()
     if FAILURES:

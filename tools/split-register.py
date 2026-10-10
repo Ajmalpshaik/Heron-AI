@@ -68,10 +68,29 @@ written. Nothing here writes a byte unless:
      (archive-handover.py's own function, which proves each one), and no other
      document links into a heading that would leave the page.
 
+A LINK THAT NAMES A ROW THIS RUN MOVES FOLLOWS IT. A link whose words name
+one row of section 5b - [row 5b-307](...) - and whose target is the rows
+file the row is leaving is pointed at the file it goes to; only the file's
+name in the link changes. Inside the register that is done to the register
+as one text, before it is cut into files, so the read-back in 1 compares
+the files with that text byte for byte - and the text with the register as
+it stood, with every rows file's name left out, so nothing but those names
+changed. The readers in 2 read the old layout with the same links
+re-pointed. Every other document git tracks - .md, .yaml, .yml and .py,
+or every one under the folder when there is no git to ask - is re-pointed
+as a separate pass, written after the register. A link in fenced code or
+an inline code span is an example and is left as it is, and so is one whose
+words name two rows. Until 2026-10-09 neither half was done: when the rows
+after 200 were re-banded on 2026-10-08, every link naming one of them still
+pointed at the file it had left, and a one-off script put them right
+(FRAGMENT-ISSUES row 5b-381). check-docs.py fails on a link left that way.
+
 A second run moves nothing. A file already written is left as it is, and a
 section written into the page later is moved by the next run.
-archive-fragment-issues.py writes through layout_split() below, so the rows
-it rewrites go back to the files they came from.
+archive-fragment-issues.py writes through layout_relinked() below, so the
+rows it rewrites go back to the files they came from - and a row its run
+re-bands, one appended past the last band, takes the links that name it
+along, by the same rule as a split (row 5b-381).
 
 NO BACKSLASH IS TYPED IN THIS FILE, as in archive-fragment-issues.py.
 """
@@ -175,14 +194,17 @@ def _open_questions_readers(docs):
 
 # Each register this splits: its page, the words its files are titled with,
 # the sections that are the page's own rules, the sections whose rows are
-# banded and the name each band's file starts with, the folders its readers
-# also read, and the readers themselves.
+# banded and the name each band's file starts with, the sections whose rows
+# a link names by label - '5b-307' - with their bands' names, the folders its
+# readers also read, and the readers themselves. Section 5's rows are called
+# by their bare number, which no link's words can be read for.
 REGISTERS = {
     "fragment-issues": {
         "index": os.path.join("docs", "FRAGMENT-ISSUES.md"),
         "title": "Fragment issues",
         "stays": ("## Add to this file, do not start another",),
         "rows": (("## 5. ", "section-5-rows"), ("## 5b. ", "section-5b-rows")),
+        "named": (("5b", "section-5b-rows"),),
         "beside": ("fragment-issues-archive",),
         "readers": _fragment_issues_readers,
     },
@@ -191,6 +213,7 @@ REGISTERS = {
         "title": "Proposals",
         "stays": (),
         "rows": (),
+        "named": (),
         "beside": (),
         "readers": _proposals_readers,
     },
@@ -199,10 +222,16 @@ REGISTERS = {
         "title": "Open questions",
         "stays": (),
         "rows": (),
+        "named": (),
         "beside": (),
         "readers": _open_questions_readers,
     },
 }
+
+# The documents whose links follow a row that moved, and the folders a walk
+# of a tree with no git leaves out because git would never track them.
+RELINKED = (".md", ".yaml", ".yml", ".py")
+UNWALKED = (".git", "worktrees", "bin", "obj", "node_modules", "__pycache__")
 
 
 # ------------------------------------------------------------------ names
@@ -317,6 +346,16 @@ def header_of(text):
 
 # ------------------------------------------------------------------- split
 
+def _beside(text, folder_name):
+    """TEXT, going into one of the register's files, with every link into the
+    folder written as a link to the file beside it. The way out puts ../ in
+    front of a page link, so fragment-issues/x.md arrives as
+    ../fragment-issues/x.md: it reaches the right file, but nobody writes it
+    that way, and a file that read section-6.md before a run should read the
+    same after it. register-text.py reads both back to the same page link."""
+    return text.replace("](../" + folder_name + "/", "](")
+
+
 def split_by(text, layout, banded, config, headers, today, index):
     """(page text, {file: text}, trouble) - TEXT, the register as one text,
     with each section LAYOUT maps by its heading line moved to its file, and
@@ -347,7 +386,8 @@ def split_by(text, layout, banded, config, headers, today, index):
         if name:
             k = RT.last_filled(lines, start, end)
             out.append(NL.join([heading, "", RT.file_line(folder_name, name)] + lines[k:end]))
-            body = AH._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble, heading)
+            body = _beside(AH._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble,
+                                       heading), folder_name)
             files[name] = (headers.get(name) or _section_header(config["title"], page, heading, today)) + body + NL
             continue
         if not table:
@@ -361,11 +401,111 @@ def split_by(text, layout, banded, config, headers, today, index):
         kept = lines[start:top] + [RT.rows_line(folder_name, names, labels)] + lines[bottom:end]
         out.append(AH._repoint(NL.join(kept), None, moved, index, folder, trouble, heading))
         for (low, high, chunk), name in zip(chunks, names):
-            body = AH._repoint(NL.join(lines[top:top + 2] + chunk), name, moved, index, folder, trouble,
-                               "%s, rows %d to %d" % (heading, low, high))
+            body = _beside(AH._repoint(NL.join(lines[top:top + 2] + chunk), name, moved, index, folder,
+                                       trouble, "%s, rows %d to %d" % (heading, low, high)), folder_name)
             opening = headers.get(name) or _rows_header(config["title"], page, heading, low, high, today)
             files[name] = opening + body + NL
     return NL.join(out), files, trouble
+
+
+# --------------------------------------------------- a link that names a row
+
+def _holders(files, stem):
+    """{row: file} for every rows file in FILES whose name starts with STEM."""
+    held = {}
+    for name in sorted(files):
+        if name.startswith(stem + "-"):
+            for number in RT.rows_held(files[name]):
+                held[number] = name
+    return held
+
+
+def moved_rows(config, files_before, files_after):
+    """{label: {row: (the file it is in, the file it goes to)}} - each row
+    this run moves to another rows file, for each section whose rows a link
+    names by label."""
+    out = {}
+    for label, stem in config.get("named", ()):
+        was, now = _holders(files_before, stem), _holders(files_after, stem)
+        out[label] = dict((n, (was[n], now[n])) for n in sorted(was) if n in now and was[n] != now[n])
+    return out
+
+
+def relink(text, where, folder, moved, said, done):
+    """TEXT, sitting in the folder WHERE, with every link that names one row
+    MOVED moves and points at the file that row is leaving pointed at the
+    file it goes to. Only the file's name in the link changes - the folders
+    in front of it, its anchor and its words stay as written - so one rule
+    serves a rows file, the page, the register as one text and any other
+    document. DONE gets (SAID, label, row, from, to) for each link changed."""
+    for label in sorted(moved):
+        rows = moved[label]
+        if not rows:
+            continue
+        edits = []
+        for number, start, end in RT.row_links(text, label):
+            if number not in rows:
+                continue
+            left, went = rows[number]
+            target, mark, fragment = text[start:end].partition("#")
+            name = target.rsplit("/", 1)[-1]
+            if name != left or not AF._same(os.path.join(where, target), os.path.join(folder, left)):
+                continue
+            edits.append((start, end, target[:len(target) - len(name)] + went + mark + fragment))
+            done.append((said, label, number, left, went))
+        for start, end, new in reversed(edits):
+            text = text[:start] + new + text[end:]
+    return text
+
+
+def _band_blind(text, config):
+    """TEXT with the name of every rows file a link may name written alike."""
+    for _, stem in config.get("named", ()):
+        text = re.sub(re.escape(stem) + "-[0-9]{3}-[0-9]{3}[.]md", stem + "-NNN-NNN.md", text)
+    return text
+
+
+def _documents(root):
+    """([path], how they were listed) - every file under ROOT whose links
+    follow a moved row: what git tracks when git answers, and otherwise a
+    walk of the folder that leaves out what git would never track."""
+    try:
+        run = subprocess.run(["git", "ls-files", "-z"], cwd=root,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        run = None
+    if run is not None and run.returncode == 0:
+        names = [n for n in run.stdout.decode("utf-8", "surrogateescape").split(chr(0)) if n]
+        return ([os.path.join(root, *n.split("/")) for n in names if n.endswith(RELINKED)],
+                "what git tracks")
+    found = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(d for d in dirnames if d not in UNWALKED)
+        found.extend(os.path.join(dirpath, f) for f in sorted(filenames) if f.endswith(RELINKED))
+    return found, "every file in the folder - there is no git here to ask what it tracks"
+
+
+def elsewhere(root, index, folder, moved, done):
+    """({path: (its text, its text re-pointed)}, how they were listed) - each
+    document outside the register with a link that names a row MOVED moves,
+    pointing at the file the row is leaving."""
+    paths, how = _documents(root)
+    labels = [label + "-" for label in moved if moved[label]]
+    out = {}
+    for path in paths:
+        if AF._same(path, index) or AF._same(os.path.dirname(path), folder):
+            continue
+        try:
+            text = AF._read(path)
+        except (IOError, OSError, UnicodeDecodeError):
+            continue
+        if not any(label in text for label in labels):
+            continue
+        new = relink(text, os.path.dirname(path), folder, moved,
+                     os.path.relpath(path, root).replace(os.sep, "/"), done)
+        if new != text:
+            out[path] = (text, new)
+    return out, how
 
 
 def _served(index, index_text, files):
@@ -449,6 +589,12 @@ class Plan(object):
         self.before = ""            # the page as it stands
         self.files_before = {}      # its files as they stand
         self.joined = ""            # the register as one text
+        self.joined_after = ""      # the same, with each link that names a moved row following it
+        self.moved = {}             # {label: {row: (from, to)}} rows moved to another rows file
+        self.relinked = []          # (where, label, row, from, to) re-pointed inside the register
+        self.others = {}            # {path: (text, text re-pointed)} documents outside it
+        self.others_relinked = []   # (path, label, row, from, to) re-pointed in them
+        self.others_listed = ""     # how those documents were listed
         self.after = ""
         self.files_after = {}
         self.moving = []            # (heading, file) moved by this run
@@ -544,6 +690,14 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
 
     after, files, trouble = split_by(p.joined, layout, banded | wanted, config,
                                      _headers(p.files_before), p.today, index)
+    # A link that names a row this split moves follows it: re-pointed in the
+    # register as one text, which is then cut again - re-pointing changes no
+    # row's place, so the files differ only in those links.
+    p.moved = moved_rows(config, p.files_before, files)
+    p.joined_after = relink(p.joined, os.path.dirname(index), folder, p.moved, "the register", p.relinked)
+    if p.relinked:
+        after, files, trouble = split_by(p.joined_after, layout, banded | wanted, config,
+                                         _headers(p.files_before), p.today, index)
     p.problems.extend(trouble)
     p.after = after.replace(NL, p.eol)
     p.files_after = dict((n, t.replace(NL, p.eol)) for n, t in files.items())
@@ -559,13 +713,24 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
         p.problems.append("the folder holds %s, which the new layout does not name - look at %s by "
                           "hand before running this again" % (", ".join(stale), "it" if len(stale) == 1 else "them"))
 
-    back = RT.register_text(index, read=_served(index, p.after, p.files_after)) or ""
-    if back.replace(CR + NL, NL) != p.joined:
+    back = (RT.register_text(index, read=_served(index, p.after, p.files_after)) or "").replace(CR + NL, NL)
+    if back != p.joined_after:
         p.problems.append("the new files, read back, are not the register byte for byte")
-    before, now = readers(config, index, [(p.before, p.files_before), (p.after, p.files_after)])
+    if _band_blind(back, config) != _band_blind(p.joined, config):
+        p.problems.append("the new files, read back, differ from the register in more than the rows "
+                          "file a link names")
+    # The readers are asked whether the move changed anything else, so the
+    # old layout they read has the same links re-pointed in place.
+    was = (p.before, p.files_before)
+    if p.relinked:
+        was = (relink(p.before, os.path.dirname(index), folder, p.moved, None, []),
+               dict((n, relink(t, folder, folder, p.moved, None, [])) for n, t in p.files_before.items()))
+    before, now = readers(config, index, [was, (p.after, p.files_after)])
     for name in before:
         if before[name] != now.get(name):
             p.problems.append("%s would read the register differently" % name)
+    if any(p.moved.values()):
+        p.others, p.others_listed = elsewhere(root, index, folder, p.moved, p.others_relinked)
     if check_others:
         # A section's own '## ' heading stays on the page, so a link to it
         # still lands. Only the headings under it leave.
@@ -592,6 +757,10 @@ def write(p):
             AF._put(os.path.join(p.folder, name), p.files_after[name])
     if p.after != p.before:
         AF._put(p.index, p.after)
+    # The other documents last, as their own pass: each changes only in the
+    # rows file its links name, and a run cut short leaves the register whole.
+    for path in sorted(p.others):
+        AF._put(path, p.others[path][1])
     return OK
 
 
@@ -614,6 +783,38 @@ def layout_split(index, joined, today=None, key=None):
     return after.replace(NL, eol), dict((n, t.replace(NL, eol)) for n, t in files.items()), trouble
 
 
+def layout_relinked(index, joined, today=None, key=None, root=ROOT):
+    """layout_split(), with every link that names a row the new layout moves
+    to another rows file following it, by relink()'s rule - for a tool that
+    rewrote the register as one text, which is archive-fragment-issues.py.
+
+    Its run re-bands a row appended past the last band, as a split does, and
+    until 2026-10-09 left every link naming that row at the file it had left
+    (row 5b-381; check-docs.py section 12 is what found it). Inside the
+    register the links are re-pointed in JOINED, which is then cut again - so
+    the files read back as the text returned here, not as JOINED, and only in
+    the rows file a link names. Every other document under ROOT is re-pointed
+    in memory, for the caller to write AFTER the register, as write() does.
+
+    (page, files, trouble, joined as re-pointed, [(said, label, row, from,
+    to)], {path: (its text, its text re-pointed)}, the rows moved as
+    moved_rows() gives them - for a file the caller writes itself)."""
+    page = os.path.basename(index)
+    key = key or next(k for k, c in REGISTERS.items() if os.path.basename(c["index"]) == page)
+    config = REGISTERS[key]
+    folder = os.path.join(os.path.dirname(index), RT.folder_of(index))
+    after, files, trouble = layout_split(index, joined, today, key)
+    moved = moved_rows(config, _files_in(folder), files)
+    done = []
+    joined_after = relink(joined, os.path.dirname(index), folder, moved, "the register", done)
+    if done:
+        after, files, trouble = layout_split(index, joined_after, today, key)
+    others = {}
+    if any(moved.values()):
+        others, _ = elsewhere(root, index, folder, moved, done)
+    return after, files, trouble, joined_after, done, others, moved
+
+
 def report(p, writing):
     page = os.path.basename(p.index)
     print("%s - one file per section" % page)
@@ -631,6 +832,12 @@ def report(p, writing):
     print("  %-26s: %d" % ("staying on the page", len(p.staying)))
     for heading, why in p.staying:
         print("    %-58s %s" % (heading[3:61], why))
+    if p.relinked or p.others:
+        print("  %-26s: %d in the register, %d in %d other document(s), read from %s"
+              % ("links that follow a row" if done else "links to follow a row", len(p.relinked),
+                 len(p.others_relinked), len(p.others), p.others_listed or "nowhere"))
+        for path in sorted(set(one[0] for one in p.others_relinked))[:20]:
+            print("    %s" % path)
     b, a = len(p.before.encode("utf-8")), len(p.after.encode("utf-8"))
     if b:
         print("  %-26s: %s -> %s bytes (%d%%)" % (page, format(b, ","), format(a, ","), a * 100 // b))

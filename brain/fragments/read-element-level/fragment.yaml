@@ -125,3 +125,8 @@ utterances:
 # the library - which is the check worth making before writing anything.
   - how high is it
   - how high is this
+# ADDED 2026-10-09 (FRAGMENT-ISSUES 146). Declared nowhere, and measured
+# reaching a write on both backends - SET_ROOM_LIMITS on the trained model,
+# MOVE_TO_RAY_HIT on spelling. The offset above the level is this fragment's
+# answer, and "how high is this above the floor" above is the same question.
+  - how high is this off the floor

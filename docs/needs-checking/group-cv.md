@@ -14,7 +14,7 @@ straight pieces and arcs in X,Y,Z. It is built as a solid (`GeometryCreationUtil
 FREEFORM form (`FreeFormElement.Create`), solid or void. **It is not parametric** - a fixed shape, no
 sketch, no parameter, no plane moves it. Asked for by the owner on 2026-10-07 after a coil spring of 144
 stacked revolves was rejected as slow and heavy and an elephant of ellipsoid revolves showed seams
-([row 5b-368](../fragment-issues/section-5b-rows-176-200.md)).
+([row 5b-368](../fragment-issues/section-5b-rows-351-375.md)).
 
 Compiled for Revit 2020 to 2027 on 2026-10-07. **Every run below was on Revit 2024, session 9240, never on
 the owner's Family1.** The API probes ran rolled back in `SpringProbe` (a scratch Generic Model family of

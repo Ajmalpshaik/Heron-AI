@@ -6,7 +6,8 @@
 //
 // TWO DOCUMENTS, TWO AUDITS, ONE QUESTION - IS THIS FAMILY BUILT RIGHT?
 //
-// IN A PROJECT it audits the family TYPES loaded there (version 1, unchanged).
+// IN A PROJECT it audits the family TYPES loaded there (version 1's audit, with
+// one change since: a required name the type carries twice is a WARN, 5b-203).
 // IN A FAMILY OPEN IN THE FAMILY EDITOR (version 2, 2026-10-04) it audits that
 // family itself, BEFORE it is loaded anywhere: will it join its run, and will
 // it follow the size of the pipe or duct it is put on? Each check answers
@@ -29,6 +30,14 @@
 //
 // SYSTEM FAMILIES HAVE NO FAMILY FILE - duct types, wall types, pipe types.
 // Counted and excluded, never silently skipped.
+//
+// A REQUIRED NAME THE TYPE CARRIES TWICE IS A WARN, NOT A PASS. A shared or
+// project parameter can be bound beside a family's own one of the same name,
+// and asked by name Revit then returns "the first one encountered", which its
+// own reference says "is determined at random". So the parameters are COUNTED
+// by name, never looked up: none is a FAIL, one is a pass, and two or more is
+// the family document's WARN - present, but which one a schedule, a tag or a
+// lookup by that name shows is Revit's pick (D-54 s3, FRAGMENT-ISSUES 5b-203).
 //
 // ---------------------------------------------------------------------------
 // IN A FAMILY
@@ -624,6 +633,7 @@ else
 
         var placed = countByType.ContainsKey(symbol.Id) ? countByType[symbol.Id] : 0;
         var faults = new List<string>();
+        var cautions = new List<string>();
 
         // ---- name
         if (!string.IsNullOrEmpty(namePattern)
@@ -632,12 +642,16 @@ else
             faults.Add(string.Format("name does not contain '{0}'", namePattern));
         }
 
-        // ---- required parameters, on the TYPE
+        // ---- required parameters, on the TYPE - counted, never looked up (see
+        // the header: two by one name is a WARN, not a pass)
         foreach (var wanted in requiredParameters)
         {
             if (string.IsNullOrEmpty(wanted)) continue;
-            var parameter = symbol.LookupParameter(wanted);
-            if (parameter == null) faults.Add(string.Format("no '{0}' parameter", wanted));
+            var carried = symbol.GetParameters(wanted).Count;
+            if (carried == 0) faults.Add(string.Format("no '{0}' parameter", wanted));
+            else if (carried > 1)
+                cautions.Add(string.Format("WARN '{0}' is on this type {1} times - asked for by that "
+                    + "name, Revit picks one of them at random; keep one", wanted, carried));
         }
 
         // ---- connectors, through a placed instance only
@@ -669,16 +683,20 @@ else
             }
         }
 
-        if (faults.Count > 0)
+        if (faults.Count > 0) offStandard++;
+        if (cautions.Count > 0) warned++;
+        if (faults.Count > 0 || cautions.Count > 0)
         {
-            offStandard++;
             findings.Add(string.Format("{0} : {1}  ({2} placed{3})  - {4}",
                 family.Name, symbol.Name, placed, inPlace ? ", IN-PLACE" : "",
-                string.Join("; ", faults)));
+                string.Join("; ", faults.Concat(cautions))));
         }
     }
 
-    findings.Insert(0, string.Format("{0} family type(s) off standard, {1} not checked for connectors. "
-        + "{2} system family type(s) excluded - a duct type or a wall type has no family file and cannot "
-        + "be audited this way", offStandard, notChecked, systemFamilies));
+    findings.Insert(0, string.Format("{0} family type(s) off standard, {1} not checked for connectors"
+        + "{3}. {2} system family type(s) excluded - a duct type or a wall type has no family file and "
+        + "cannot be audited this way", offStandard, notChecked, systemFamilies,
+        warned > 0
+            ? string.Format(", {0} WARNED for carrying a required parameter's name more than once", warned)
+            : ""));
 }

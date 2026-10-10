@@ -183,14 +183,25 @@ class Activity(object):
     only, the last 500. Nothing new reaches disk: the add-in's audit trail
     already records every request that reached Revit (Golden Rule 14).
 
-    HOW IT ENDED IS READ FROM THE ANSWER'S OWN WORDS, and only for display:
-    an exception is "failed"; an answer saying nothing was sent to Revit, or
-    that it refused, is "refused"; anything else is "ok". The chat reads the
-    full answer; this is a label on a list.
+    HOW IT ENDED IS SAID BY THE TOOL THAT KNOWS, through record(outcome=...)
+    (row 5b-274): the bridge reply's ok or error, a refusal before anything
+    was sent, or a words-path hand-back - the candidate list, nothing sent to
+    Revit, the system working as designed - which is "handed_back", not a
+    refusal. Only when no tool said is it READ FROM THE ANSWER'S OWN WORDS,
+    and that guess is display only: an exception is "failed"; a first line
+    saying nothing was sent to Revit, or that it refused, is "refused";
+    anything else is "ok". The chat reads the full answer; this is a label
+    on a list.
     """
 
     LIMIT = 500
     FIRST_LINE = 200
+    #: The words-path hand-back: nothing was sent, and nothing was refused -
+    #: the host was given the candidates to choose from (D-01).
+    HANDED_BACK = "handed_back"
+    #: Every label the page has a word for. An outcome passed in that is not
+    #: one of these is not believed; the answer's words decide instead.
+    OUTCOMES = ("ok", "refused", "failed", HANDED_BACK)
     REFUSED = ("nothing has been sent to revit", "nothing was sent to revit",
                "has refused", "is refused", "was refused", "refused rather")
     # An answer that says the work did not happen - most tools say so in a
@@ -210,6 +221,8 @@ class Activity(object):
 
     @classmethod
     def outcome(cls, reply, error=None, tool=None):
+        """THE FALLBACK: how a call ended, guessed from its first line, for a
+        call whose tool did not say. Never consulted when one did."""
         if error is not None:
             return "failed"
         if tool is not None and not str(tool).startswith(cls.REVIT_FACING):
@@ -229,10 +242,12 @@ class Activity(object):
         line = first[0] if first else ""
         if len(line) > self.FIRST_LINE:
             line = line[:self.FIRST_LINE - 1] + "…"
+        if outcome not in self.OUTCOMES:
+            outcome = self.outcome(reply, error, tool)
         with self._lock:
             self._seq += 1
             self._items.append({"seq": self._seq, "at": started, "tool": tool,
-                                "summary": line, "outcome": outcome or self.outcome(reply, error, tool),
+                                "summary": line, "outcome": outcome,
                                 "seconds": round(seconds, 1)})
             del self._items[:-self.LIMIT]
 

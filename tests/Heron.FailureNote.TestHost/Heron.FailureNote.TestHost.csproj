@@ -34,9 +34,22 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <!--
+    AND THE BRIDGE'S JSON READER, linked the same way, for FRAGMENT-ISSUES
+    section 5b row 159. The dismissed count the rule above produces goes out
+    on the reply as `warnings`, and reaches the audit line only through
+    Json.ReadLong - so the reader is checked here, against a reply written
+    by the same writers the executor uses. Json.cs is in Heron.Bridge, which
+    never references Revit, and names nothing outside System. Linked by
+    source rather than by a reference to Heron.Bridge so this host still
+    builds itself and nothing else: a reference would build Heron.Bridge and
+    Heron.Core for this host's framework too, into their own folders.
+  -->
   <ItemGroup>
     <Compile Include="..\..\revit\Heron.Revit.Addin\HeronFailureNote.cs"
              Link="HeronFailureNote.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
+             Link="Json.cs" />
   </ItemGroup>
 
 </Project>

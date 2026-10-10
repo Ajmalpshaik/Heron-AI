@@ -34,6 +34,12 @@ This is only the READER. It imports nothing but the standard library, so a
 tool that reads a register never breaks because the tool that WRITES it
 changed.
 
+IT ALSO SAYS WHICH LINKS NAME A ROW, AND WHICH ROWS A FILE HOLDS -
+row_links() and rows_held(). split-register.py re-points a link that names
+a row it moved, and check-docs.py fails on one that reaches a rows file not
+holding its row, so the writer and the gate read a link by one rule here
+rather than two that drift apart (FRAGMENT-ISSUES row 5b-381).
+
 A FILE THAT IS MISSING IS NOT SKIPPED. A register that quietly drops a
 section is the failure a register exists to prevent, so a line naming a file
 that is not there, a section's file that does not open with the heading that
@@ -50,6 +56,7 @@ NO BACKSLASH IS TYPED IN THIS FILE. The patterns are built from chr(92) and
 character classes, as archive-fragment-issues.py's are.
 """
 
+import bisect
 import io
 import os
 import re
@@ -73,6 +80,8 @@ LINK = re.compile(BS + "[([^" + BS + "]]*)" + BS + "]" + BS + "(([^)]+)" + BS + 
 ROW = re.compile("^[|]" + BS + "s*[*]{0,2}([0-9]+)[*]{0,2}" + BS + "s*[|]")
 # The line under a table's header.
 RULE = re.compile("^[|](" + BS + "s*:?-+:?" + BS + "s*[|])+" + BS + "s*$")
+# A run of backticks: the edge of an inline code span, or a backtick.
+TICKS = re.compile("`+")
 
 
 class RegisterBroken(Exception):
@@ -147,6 +156,72 @@ def fenced_lines(lines):
     return out
 
 
+def code_spans(line):
+    """[(start, end)] of the inline code spans in LINE: a run of backticks to
+    the next run of the same length. A run with no partner on the line is a
+    backtick, not code. A span carried on to the next line is not seen, and
+    a link inside one is read as prose."""
+    runs = [m.span() for m in TICKS.finditer(line)]
+    spans, i = [], 0
+    while i < len(runs):
+        width = runs[i][1] - runs[i][0]
+        partner = next((k for k in range(i + 1, len(runs))
+                        if runs[k][1] - runs[k][0] == width), None)
+        if partner is None:
+            i += 1
+            continue
+        spans.append((runs[i][0], runs[partner][1]))
+        i = partner + 1
+    return spans
+
+
+def row_links(text, label):
+    """[(row, start, end)] for every link in TEXT whose words name exactly one
+    row of section LABEL - '[row 5b-307](...)' - with TEXT[start:end] its
+    target as written. A link in fenced code or in an inline code span is an
+    example, not a link, and is left out; so is one whose words name two
+    rows, or none - which row it means is not for a tool to choose.
+
+    THE LINKS ARE FOUND IN THE WHOLE TEXT, NOT LINE BY LINE, so a link whose
+    words a line break wraps - '[row' at the end of one line and '5b-322](...)'
+    at the start of the next - is read as check-docs.py's section 1 reads it.
+    Where it starts decides whether it is in fenced code or a code span."""
+    named = re.compile("(?<![0-9A-Za-z-])" + re.escape(label) + "-([0-9]+)(?![0-9])")
+    lines = text.split(NL)
+    fenced = fenced_lines(lines)
+    starts, at = [], 0
+    for line in lines:
+        starts.append(at)
+        at += len(line) + 1
+    spans, found = {}, []
+    for m in LINK.finditer(text):
+        rows = set(int(n) for n in named.findall(m.group(1)))
+        if len(rows) != 1:
+            continue
+        i = bisect.bisect_right(starts, m.start()) - 1
+        if i in fenced:
+            continue
+        if i not in spans:
+            spans[i] = code_spans(lines[i])
+        column = m.start() - starts[i]
+        if any(start <= column < end for start, end in spans[i]):
+            continue
+        found.append((rows.pop(), m.start(2), m.end(2)))
+    return found
+
+
+def rows_held(text):
+    """The numbers of the rows TEXT's tables hold - what a rows file holds."""
+    lines = _lines(text)
+    fenced = fenced_lines(lines)
+    held = set()
+    for i, line in enumerate(lines):
+        m = None if i in fenced else ROW.match(line)
+        if m:
+            held.add(int(m.group(1)))
+    return held
+
+
 def sections(lines):
     """([(start, end)] of every '## ' section, index of the first one)."""
     fenced = fenced_lines(lines)
@@ -193,9 +268,10 @@ def unpoint(text, name, folder, index_name):
 
     NAME is the file the text came from, or None for the index's own text.
     The inverse of what split-register.py does on the way out: a link one
-    folder deeper comes back up, a link to a heading in another of the
-    register's files comes back to an anchor on the page, and a link from the
-    index into one of its files does the same."""
+    folder deeper comes back up, a link to a file beside it goes down into
+    the folder, a link to a heading in another of the register's files comes
+    back to an anchor on the page, and a link from the index into one of its
+    files does the same."""
     def swap(match):
         label, href = match.group(1), match.group(2)
         if href.startswith(("http://", "https://", "mailto:")):
@@ -221,7 +297,14 @@ def unpoint(text, name, folder, index_name):
             return "[%s](%s%s)" % (label, mark, fragment)
         if target.startswith("../"):
             return "[%s](%s%s%s)" % (label, target[3:], mark, fragment)
-        return match.group(0)
+        # A FILE BESIDE IT. Written in one of the register's files, a link
+        # with no ../ reaches into the folder, so on the page it is one folder
+        # deeper. Left as it was, the way out read it as the page's own
+        # neighbour and wrote ../ in front - on 2026-10-08 every link from a
+        # re-banded row to another rows file came out one folder too high.
+        if target.startswith("./"):
+            target = target[2:]
+        return "[%s](%s/%s%s%s)" % (label, folder, target, mark, fragment)
     return LINK.sub(swap, text)
 
 

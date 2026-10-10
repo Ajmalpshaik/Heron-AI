@@ -1,0 +1,206 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-027
+semantic-identity: "what one sheet already carries - its viewports and schedules, each with its type and scale"
+kind: action
+domain: revit.sheets
+capability: LIST_VIEWS_ON_SHEET
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WRITTEN 2026-10-09 FOR FRAGMENT-ISSUES ROW 146. "what views are on this
+# sheet" reached PLACE_VIEWS_ON_SHEET - a write - on both the trained model
+# and spelling, because no READ named a sheet's views: LIST_SHEETS only
+# COUNTS them. A gap, not a mis-route, so declaring the sentence on an
+# existing card could not repair it.
+#
+# THE WRITE'S WORDS ARE KEPT OUT OF THE INDEXED TEXT ON PURPOSE - identity,
+# utterances and purpose. Measured the same day: a first version whose
+# purpose named PLACE_VIEWS_ON_SHEET and said "placed", and whose utterances
+# named "sheet a-101" as that write's do, took "place these views on sheet
+# A-101" and "place the views on this sheet" from the write on the trained
+# model - a change request answered by a read. So the sheet is matched the
+# way PLACE_VIEWS_ON_SHEET matches it, and that is said here, in a comment
+# the index does not read. A later draft declared "list the viewports on
+# this sheet" and took "line the viewports up" from
+# ALIGN_VIEWPORTS_ACROSS_SHEETS on the model the same way, so it is not
+# declared. tests/test_routing_phrases.py guards all three change requests.
+#
+# LEGENDS, PLURAL, ON PURPOSE (row 146's second review, 2026-10-09). The
+# words route matches a typed word as a prefix, so "legends" never matched
+# this card's "a legend", and "which legends are on this sheet" reached
+# CREATE_LEGEND_VIEW - a write - on the trained model. The purpose says
+# "legends" now, and nothing else changed; measured on private stores, both
+# backends, against every change request the card's earlier drafts took and
+# "add a legend to this sheet", none of which moved. Two kinds of rewording
+# still reach a write and stay open. "what is placed on this sheet":
+# PLACE_VIEWS_ON_SHEET still answered it on both backends in every wording
+# tried with "placed" in this card's identity or purpose, and three of those
+# wordings moved a change request from one write to another ("add these
+# views to the sheet" on the model; "add this view to the sheet" and "move
+# the viewport on this sheet" on spelling). A sheet named by its number, on
+# spelling ("what is on sheet M-101"): an example number in the purpose
+# brought it here, and took "place the plans on sheet M-101" (model) and
+# "put this schedule on sheet M-105" (spelling) from their writes.
+purpose: >
+  Answers what a sheet carries - which viewports and which schedules the
+  sheet with this number already holds: each viewport's view name, view
+  type and scale ("1 : 100"), its detail number and where it sits on the
+  sheet in millimetres, and, apart from them, each schedule on that sheet. A
+  question, read and never changed - it opens no transaction.
+
+  **THE SHEET IS NAMED BY ITS NUMBER**, matched whole and ignoring case. A
+  number that matches no sheet is said by name and nothing is read; a blank
+  one is refused rather than answered from the sheet in front or the first
+  sheet in the list, which would be a confident answer about a sheet nobody
+  asked about. To find a sheet by its title first, FIND_SHEETS takes part of
+  a number or a title.
+
+  **A SCHEDULE ON A SHEET IS NOT A VIEWPORT, SO IT IS GIVEN APART.** Revit
+  shows a view on a sheet through a viewport and a schedule through a
+  schedule instance, and the views Revit gives for a sheet leave the
+  schedules out. Both are read here, and counted separately. A schedule split
+  into pieces across the sheet is one schedule, named once with how many
+  pieces. A revision schedule built into the title block belongs to the title
+  block family, not to the sheet, and is counted apart rather than named.
+
+  **LEGENDS ARE VIEWS ON THE SHEET**, shown through a viewport like a plan,
+  so the legends on it come with the views and say Legend. A
+  perspective 3D view has no scale and says so, rather than reporting a
+  number Revit itself calls meaningless.
+
+  **A PLACEHOLDER SHEET HOLDS NOTHING AND IS SAID TO BE ONE.** It is a number and
+  a name with no title block, and it can hold no view.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The sheet NUMBER, as PLACE_VIEWS_ON_SHEET takes it - matched whole and
+    # ignoring case, never as part of a number. Send it, blank or not: the
+    # add-in refuses a `source: request` need that arrives with no value
+    # (FRAGMENT-ISSUES 5b-227). A blank one is refused here, by name.
+    - name: sheetNumber
+      type: string
+      source: request
+  provides:
+    - name: viewsOnSheet
+      # The answer, ONE string with " || " between rows, because a list
+      # reaches the reply cut to three entries of sixty characters. Each row:
+      # detail number, view name, view type, scale, and the viewport's centre
+      # on the sheet in millimetres. Sorted by detail number: numbers first,
+      # in number order, then detail numbers that are text, in text order.
+      role: result
+      type: string
+    - name: viewCount
+      # How many viewports are on the sheet - views and legends, not
+      # schedules. The number LIST_SHEETS shows beside the sheet.
+      role: result
+      type: int
+    - name: schedulesOnSheet
+      # The schedules placed on the sheet, ONE string with " || " between
+      # rows: the schedule's name and where it was placed, in millimetres.
+      # Listed apart because a schedule is not a viewport.
+      role: result
+      type: string
+    - name: scheduleCount
+      # How many different schedules are placed on the sheet. A schedule split
+      # into pieces counts once.
+      role: result
+      type: int
+    - name: sheetRead
+      # Which sheet was read, as "number - name". Context for the answer,
+      # never a thing found on it (D-52).
+      role: accounting
+      type: string
+    - name: revisionSchedules
+      # Revision schedules built into the title block. They belong to the
+      # title block family, so they are counted apart and never listed as a
+      # schedule somebody placed (D-52).
+      role: accounting
+      type: int
+    - name: sheetProblem
+      # Why nothing was read - no number given, no sheet with that number, or
+      # a placeholder sheet. A refusal, never a thing found (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet.GetAllViewports()`,
+  `ViewSheet.SheetNumber`, `ViewSheet.IsPlaceholder`, `View.IsTemplate`,
+  `View.ViewType`, `View3D.IsPerspective`, `Viewport.ViewId`,
+  `Viewport.GetBoxCenter()`, `ScheduleSheetInstance.ScheduleId`,
+  `ScheduleSheetInstance.IsTitleblockRevisionSchedule`,
+  `ScheduleSheetInstance.Point`, `Element.OwnerViewId`, `Element.Name`,
+  `Document.GetElement(ElementId)`, `Document.Title`, the
+  `BuiltInParameter` values `VIEW_SCALE` and `VIEWPORT_DETAIL_NUMBER`,
+  `Parameter.HasValue`, `AsInteger()` and `AsString()`, and every
+  `ViewType` value named in the code are present with the same signatures
+  2020 through 2027 - each looked up with tools/api-surface --members on
+  every release on 2026-10-09. `Viewport.ViewId` gained a setter at 2023;
+  only the getter is used. Split schedules (2022 and later) are several
+  `ScheduleSheetInstance`s of one `ScheduleId`; they are grouped by that id,
+  so no 2022-only member is called and 2020 and 2021 read the same way.
+  RevitAPI.xml says on every release that `GetAllViewports()` leaves the
+  schedules out and that `ScheduleSheetInstance.OwnerViewId` finds them,
+  which is the route taken. ElementIds are compared as ElementIds and never
+  read as numbers, so 2024's 64-bit ids do not reach this code. Lengths on
+  the sheet are Revit's internal feet, turned into millimetres by * 304.8.
+
+# ROUTING - the first row is also in LIST_SHEETS and PLACE_VIEWS_ON_SHEET.
+#
+#   "what views are on this sheet"       -> here. A QUESTION, and before
+#                                           2026-10-09 it reached
+#                                           PLACE_VIEWS_ON_SHEET, a write, on
+#                                           both search backends (row 146)
+#   "which drawings are on this sheet"   -> here
+#   "what schedules are on this sheet"   -> here - listed apart from the views
+#   "which legends are on this sheet"    -> here - with the views, saying
+#                                           Legend. Before the purpose said
+#                                           "legends" it reached
+#                                           CREATE_LEGEND_VIEW, a write, on
+#                                           the trained model (2026-10-09)
+#   "list the sheets" / "which sheets are empty"
+#                                        -> LIST_SHEETS - every sheet, with how
+#                                           many views each holds, and no names
+#   "put these views on a sheet"         -> PLACE_VIEWS_ON_SHEET. A CHANGE
+#   "put the schedule on the sheet"      -> PLACE_SCHEDULE_ON_SHEET. A CHANGE
+#   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS
+#   "which sheet is this view on"        -> NOT here: this names what is on
+#                                           ONE sheet, and that asks the other
+#                                           way round. FIND_VIEWS_SHOWING_ELEMENT
+#                                           is the wrong way round too;
+#                                           LIST_SHEETS' counts are the sheet
+#                                           side. Measured through find on
+#                                           2026-10-09: before this card it
+#                                           reached PLACE_VIEWS_ON_SHEET, a
+#                                           write, on both backends; with it,
+#                                           it reaches here - a read, and not
+#                                           the answer
+#   "what title block is on this sheet"  -> REPORT_SHEET_TITLE_BLOCKS
+#   "centre the views on the sheets"     -> CENTER_VIEWPORTS_ON_SHEETS, a
+#                                           CHANGE, and NOT REACHED. Measured
+#                                           through find on 2026-10-09: before
+#                                           this card it reached
+#                                           ALIGN_VIEWPORTS_ACROSS_SHEETS on
+#                                           both backends; with it, still that
+#                                           on spelling, and PLACE_VIEWS_ON_SHEET
+#                                           on the trained model - one wrong
+#                                           write for another, moved by this
+#                                           card shifting the ranks
+
+utterances:
+  - what views are on this sheet
+  - which drawings are on this sheet
+  - what schedules are on this sheet

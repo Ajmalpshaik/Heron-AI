@@ -137,3 +137,8 @@ utterances:
   - how much sheet metal is in this duct
   - how much lagging do I need
   - what volume of concrete is this
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "what is the
+  # volume": REPORT_AREA_VOLUME_COMPUTATIONS on the trained backend answered
+  # it.
+  - what is the volume

@@ -20,6 +20,19 @@
         Run it with `dotnet run`, pointed at this folder, passing
         -p:RevitVersion=2024. (XML comments cannot carry a double
         hyphen, so the flag is spelled out rather than shown.)
+
+    IT ALSO HOLDS THE RELEASE SYMBOLS a fragment is compiled with
+    (FRAGMENT-ISSUES row 5b-181), when run with the word "symbols" after a
+    double hyphen. HeronFragmentSymbols.cs is linked by source for the same
+    reason as the guard - it names no Revit type - and it reads its list
+    back from the DefineConstants THIS build was given, so the host built
+    for a release answers for that release. The guard belongs here because
+    the two meet: the symbols must reach the guard's parse as well as
+    Roslyn's, and only a host that has both can show it. The scripting
+    package is the add-in's own, at the add-in's version, so a one-line
+    `#if` script can be RUN with and without the symbols and seen to
+    answer differently. tests/test_fragment_symbols.py builds this host
+    once per release and reads the answer.
   -->
 
   <PropertyGroup>
@@ -33,10 +46,13 @@
   <ItemGroup>
     <Compile Include="..\..\revit\Heron.Revit.Addin\HeronStackGuard.cs"
              Link="HeronStackGuard.cs" />
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronFragmentSymbols.cs"
+             Link="HeronFragmentSymbols.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.8.0" />
   </ItemGroup>
 
 </Project>

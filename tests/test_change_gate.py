@@ -37,6 +37,16 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# A REDIRECTED RUN ON WINDOWS PRINTS IN cp1252 and dies on the first character
+# it has no slot for - the heron-ship skill's trap, which this suite's own
+# reading-side check walked into on 2026-10-09 by printing what a child said.
+# UTF-8 is what stops the crash; errors="replace" is for a lone surrogate.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass  # already unicode-safe, or redirected to something that cannot
+
 FAILURES = []
 
 
@@ -384,6 +394,142 @@ def main():
     check(out.returncode == 1 and "no evidence record" in out.stdout,
           "with every part declared, so nothing can be out of scope, the verdict "
           "is still REVISE - a change with no evidence is not a pass")
+
+    print()
+    print("An entry added under a fragment's contract is a contract change")
+    # Row 5b-198: CONTRACT_LINE matched only a diff line that STARTS with one
+    # of six keys, so a provide added under `contract:` of an existing
+    # fragment - a result every caller can now see - raised no signal.
+    def full_diff(changed):
+        lines = ["diff --git a/brain/fragments/x/fragment.yaml b/brain/fragments/x/fragment.yaml",
+                 "--- a/brain/fragments/x/fragment.yaml", "+++ b/brain/fragments/x/fragment.yaml",
+                 "@@ -1,12 +1,13 @@", " id: FRG-X-001", " capability: REPORT_X", " purpose: >",
+                 "   what it does"]
+        lines += changed.get("purpose", ["   and more"])
+        lines += [" contract:", "   needs:", "     - name: elements", "   provides:",
+                  "     - name: count"]
+        lines += changed.get("provides", [])
+        lines += [" revit: [\"2024\"]", " utterances:", "   - how many x"]
+        return "\n".join(lines) + "\n"
+    added = full_diff({"provides": ["+    - name: connectorSummary", "+      role: result"]})
+    check(CHANGE.CONTRACT_LINE.search(added) is None,
+          "the old pattern does not see it - which is the defect")
+    judge = getattr(CHANGE, "contract_changed", None)
+    check(judge is not None, "check-change can read where a changed line sits")
+    if judge is not None:
+        check(judge(added), "a provide added under contract: is a contract change")
+        check(not judge(full_diff({"purpose": ["-   and more", "+   and more words"]})),
+              "a reworded purpose is not")
+        check(judge(full_diff({"purpose": ["-capability: REPORT_X", "+capability: REPORT_Y"]})),
+              "and a changed top-level capability: still is")
+
+    print()
+    print("What a child prints is read as UTF-8, whatever the machine's code page")
+    # Row 5b-196: on the owner's PC a reader thread died decoding a child's
+    # UTF-8 in cp1252, and run() kept an empty note. Linux CI decodes UTF-8
+    # either way, so this stands in for subprocess.run and decodes the way
+    # Windows does when the caller names no encoding.
+    # chr(0x2550) is a box-drawing line; its UTF-8 holds 0x90, a byte cp1252
+    # has no character for - the kind that killed the reader thread.
+    printed = (chr(0x2550) * 3 + u" checked " + chr(0x2192) + u" " + chr(0x2705) + u" done" + chr(10)).encode("utf-8")
+    calls = []
+
+    def windows_run(cmd, **kwargs):
+        calls.append(kwargs)
+        out = printed
+        if kwargs.get("text") or kwargs.get("encoding"):
+            out = printed.decode(kwargs.get("encoding") or "cp1252", kwargs.get("errors") or "strict")
+        return subprocess.CompletedProcess(cmd, 0, out, out)
+
+    real_run = EVIDENCE.subprocess.run
+    EVIDENCE.subprocess.run = windows_run
+    try:
+        try:
+            note = EVIDENCE.run(["a-gate"])[1]
+        except UnicodeDecodeError as error:
+            note = "raised %s" % error
+        check(note == printed.decode("utf-8").strip(),
+              "run() keeps a gate's last line intact (%r)" % note)
+        try:
+            said = EVIDENCE.git(["status"])
+        except UnicodeDecodeError as error:
+            said = "raised %s" % error
+        check(said == printed.decode("utf-8").strip(), "git() reads it intact (%r)" % said)
+        del calls[:]
+        try:
+            EVIDENCE.suite_results("test_change_gate.py")
+            raised = None
+        except UnicodeDecodeError as error:
+            raised = error
+        check(raised is None and calls and all(c.get("encoding") == "utf-8" for c in calls),
+              "and the suite loop decodes each suite as UTF-8 too")
+    finally:
+        EVIDENCE.subprocess.run = real_run
+
+    print()
+    print("change-evidence runs a child with the Python running it, and reads it as UTF-8")
+    # ROW 5b-377. Every gate and every suite was spawned as "python3", and on
+    # the owner's PC that name is the Microsoft Store's stub: it exists, so no
+    # OSError, and it exits 9009 - so a capture listed all 287 suites as
+    # FAILED in 22 seconds, and two such records compared would have ruled NO
+    # CHANGE MEASURED on nothing. Linux CI has a real python3, so only the
+    # spelling can be checked here; the stub needs the PC.
+    spelled = [name for name, cmd in sorted(EVIDENCE.RUNNABLE.items())
+               if cmd[-1].endswith(".py") and cmd[0] != sys.executable]
+    check(not spelled,
+          "every gate that is a Python script starts with the interpreter "
+          "running the tool, never a name the PATH resolves (%s)"
+          % (", ".join(spelled) or "none spelled otherwise"))
+
+    calls = []
+
+    class Done(object):
+        returncode, stdout, stderr = 0, "", ""
+
+    def recording(*args, **kwargs):
+        calls.append((args, kwargs))
+        return Done()
+
+    real = EVIDENCE.subprocess
+    EVIDENCE.subprocess = type("Recording", (), {
+        "run": staticmethod(recording),
+        "TimeoutExpired": real.TimeoutExpired})
+    try:
+        EVIDENCE.suite_results("test_change_gate.py")
+        suite_call = calls[-1] if calls else ((), {})
+        EVIDENCE.run(EVIDENCE.RUNNABLE["check-docs"])
+        gate_call = calls[-1] if len(calls) > 1 else ((), {})
+        EVIDENCE.git(["rev-parse", "HEAD"])
+        git_call = calls[-1] if len(calls) > 2 else ((), {})
+    finally:
+        EVIDENCE.subprocess = real
+    first = (suite_call[0][0][0] if suite_call[0] and suite_call[0][0] else None)
+    check(first == sys.executable,
+          "a suite is spawned with the same interpreter, not \"python3\" "
+          "(got %r)" % (first,))
+    for what, (_, kwargs) in (("a suite", suite_call), ("a gate", gate_call),
+                              ("git", git_call)):
+        check(kwargs.get("encoding") == "utf-8",
+              "%s's output is read as UTF-8, never the ANSI code page "
+              "(encoding=%r)" % (what, kwargs.get("encoding")))
+
+    # THE READING SIDE, RUN FOR REAL. On Windows `text=True` with no encoding
+    # decodes in cp1252, which has no character for the byte 0x8F: the reader
+    # thread dies, stdout comes back None, and the gate's last line is lost
+    # with its exit code kept - measured on the owner's PC the same day. On a
+    # UTF-8 machine this passes either way; on Windows it is the check.
+    folder = tempfile.mkdtemp(prefix="heron-evidence-")
+    try:
+        child = os.path.join(folder, "child.py")
+        io.open(child, "w", encoding="utf-8").write(
+            u"import sys\n"
+            u"sys.stdout.buffer.write(u'\\u010f done\\n'.encode('utf-8'))\n")
+        code, last = EVIDENCE.run([sys.executable, child])
+        check(code == 0 and last == u"ď done",
+              "a gate printing a byte cp1252 cannot decode keeps its last line "
+              "(got %r, %a)" % (code, last))
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
 
     print()
     if FAILURES:

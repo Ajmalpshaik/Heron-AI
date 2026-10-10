@@ -157,6 +157,9 @@ def split_by(text, layout, headers, today, index, folder):
         k = NCR.last_filled(lines, start, end)
         out.append(NL.join([lines[start], "", NCR.stub_line(name)] + lines[k:end]))
         body = AH._repoint(NL.join(lines[start:k]), name, moved, index, folder, trouble, lines[start])
+        # A link into the folder comes out as ../needs-checking/group-x.md;
+        # from a group file it is the file beside it, and is written so.
+        body = body.replace("](../" + NCR.FOLDER_NAME + "/", "](")
         files[name] = (headers.get(name) or _header(name, today)) + body + NL
     return NL.join(out), files, trouble
 
@@ -307,6 +310,14 @@ def plan(index=INDEX, folder=FOLDER, today=None, root=ROOT, check_others=True):
     p.problems.extend(trouble)
     p.after = after.replace(NL, p.eol)
     p.files_after = dict((n, t.replace(NL, p.eol)) for n, t in files.items())
+    # A GROUP THIS RUN IS NOT MOVING IS LEFT EXACTLY AS IT WAS. Rows 5b-255,
+    # 5b-262 and 5b-363: every --write rewrote links in groups it was never
+    # asked to touch, and each time they were put back by hand. If keeping one
+    # ever changed what the register says, the read-back below refuses the run.
+    arriving = set(n for _, n in p.moving)
+    for name, text in p.files_before.items():
+        if name not in arriving and name in p.files_after:
+            p.files_after[name] = text
 
     back = NCR.register_text(read=_served(p.after, p.files_after)) or ""
     if back.replace(CR + NL, NL) != p.joined:

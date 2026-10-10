@@ -111,8 +111,13 @@ def main():
 
     print()
     print("5. One composable operation is a fragment")
+    # NO REGISTER HERE, ON PURPOSE. This checks D-29's shape rule, and the
+    # planner compares against every agent first - so one new row worded
+    # "works out ... pipe sizing" turned it red over an agent it does not test
+    # (row 5b-278). Measured: with that wording planted, the live register
+    # answers ALREADY_AN_AGENT and this one THIS_IS_A_FRAGMENT.
     answer = ask("Sleeve Sizer", "work out the sleeve size for a pipe",
-                 capability="SIZE_SLEEVE_FOR_PIPE")
+                 capability="SIZE_SLEEVE_FOR_PIPE", agents={})
     check(answer["verdict"] == WFP.THIS_IS_A_FRAGMENT,
           "a named capability in an operation's shape is a fragment")
     check("D-29" in answer["why"], "and the decision that settles it is cited")

@@ -68,5 +68,17 @@ negative:
     expect: >
       no ROOM line for it from the link - a room is space, not an obstruction
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      valves in this MEP model above a ceiling that is only in the
+      architectural link, its type carrying two parameters named Fire Rating -
+      a shared or project one bound to Ceilings beside another of that name -
+      envelope 300, includeLinks true
+    expect: >
+      each valve's line in `linkedMatches` names the linked ceiling with "Fire
+      Rating NOT READ - 2 parameters share that name", never either rating,
+      and `needAccessPanel` is unchanged from the host-only run (row 5b-203)
+
 second_route:
   - Cut a section at one valve and measure to the ceiling and the floor by hand
