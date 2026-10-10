@@ -128,3 +128,7 @@ utterances:
   - copy these into the design option
   - assign these elements to an option set
   - i need these in the other option
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "put these in
+  # design option B": SELECT_BY_DESIGN_OPTION answered it on both backends.
+  - put these in design option B

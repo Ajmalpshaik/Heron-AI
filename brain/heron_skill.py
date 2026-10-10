@@ -37,8 +37,11 @@ D-30 sets for fragments, for the same reason. `python tools/check-gaps.py`
 counts them honestly.
 """
 
+import copy
+import hashlib
 import io
 import os
+import re
 import sys
 
 try:
@@ -89,6 +92,19 @@ class Skill(object):
         """The capabilities this skill requires. Never fragment ids."""
         return list(self.data.get("needs", []) or [])
 
+    @property
+    def purpose(self):
+        """The method, in the skill's own words - for a family, every step in
+        the order it has to happen."""
+        return self.data.get("purpose") or ""
+
+    @property
+    def risk(self):
+        return self.data.get("risk")
+
+    def preconditions(self):
+        return list(self.data.get("preconditions", []) or [])
+
     def __repr__(self):
         return "<Skill %s %s>" % (self.id, self.status)
 
@@ -102,16 +118,37 @@ def load(path):
     2026-09-06 with a DIRECTORY named `x.yaml`, which load_all happily passed
     to io.open because it filtered on the extension and never asked whether the
     entry was a file. Two skills beside it, and it returned neither.
+
+    THE PARSE IS KEPT WHILE THE BYTES ARE THE SAME, as heron_fragment.load()
+    keeps a card's: heron_lookup asks which skills a request belongs to on
+    every call, and parsing every skill each time is pure-Python YAML for
+    nothing. The mark is heron_fragment.file_mark()'s, so an unchanged file is
+    not even opened; a hit is a deep copy, so no caller changes the next read.
     """
     try:
-        data = yaml.safe_load(io.open(path, encoding="utf-8").read())
+        mark, raw = FRAG.file_mark(path)
+        held = _PARSED.get(path)
+        if held is not None and held[0] == mark:
+            return Skill(copy.deepcopy(held[1]), path)
+        if raw is None:
+            with io.open(path, "rb") as handle:
+                raw = handle.read()
+            mark = hashlib.blake2b(raw, digest_size=16).digest()
+        data = yaml.safe_load(raw.decode("utf-8"))
     except yaml.YAMLError as exc:
         raise ValueError("could not be parsed - %s" % " ".join(str(exc).split()))
+    except UnicodeDecodeError as exc:
+        raise ValueError("could not be read - %s" % " ".join(str(exc).split()))
     except (IOError, OSError) as exc:
         raise ValueError("could not be read - %s" % " ".join(str(exc).split()))
     if not isinstance(data, dict):
         raise ValueError("%s is not a mapping" % path)
+    _PARSED[path] = (mark, copy.deepcopy(data))
     return Skill(data, path)
+
+
+#: path -> (blake2b of the file's bytes, parsed mapping). See load().
+_PARSED = {}
 
 
 def load_all(root=None):
@@ -209,6 +246,76 @@ def validate(skill):
         problems.append("%s: revit names releases Heron does not know: %s"
                         % (where, ", ".join(str(u) for u in unknown)))
     return problems
+
+
+# ---------------------------------------------------------------------------
+# Which jobs a request is one step of
+# ---------------------------------------------------------------------------
+
+# Words every request has and no job is told apart by. Asking to MAKE or
+# CREATE something is the request, not the subject of it.
+_PLAIN = frozenset((
+    "a an the this that these those it its my our your me i we you to of for "
+    "in on at with from and or all please can could would will be is are do "
+    "does make create build new add put get one two three four five six "
+    "seven eight nine ten").split())
+
+
+def _words(text):
+    """The words of `text` that can tell one job from another, lower case and
+    singular - "families" is "family", "ducts" is "duct", "glass" stays."""
+    found = []
+    for word in re.findall(r"[a-z0-9]+", (text or "").lower()):
+        if len(word) > 4 and word.endswith("ies"):
+            word = word[:-3] + "y"
+        elif len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+            word = word[:-1]
+        if word not in _PLAIN:
+            found.append(word)
+    return found
+
+
+def methods_for(skills, request, capabilities, limit=2):
+    """The skills `request` is one step of, best first - at most `limit`.
+
+    WHY THIS EXISTS. A family is not one capability, it is a method of fifteen
+    steps in an order that matters, and that method lives in a skill's
+    `purpose`. heron_lookup answered "create a family" with ONE capability -
+    CREATE_FAMILY_SWEPT_BLEND, a ranked guess - and nothing a tool returned
+    named the method. A chat with no memory of Heron then read the skill file
+    and docs/43 off disk to work it out: minutes on a new PC, where the old one
+    remembered.
+
+    WHAT LINKS A SKILL TO A REQUEST IS DATA, NOT A GUESS ABOUT MEANING. A
+    skill is offered only when it NEEDS one of `capabilities` - what retrieval
+    already returned - and shares at least one word with the request in its
+    name or its utterances. The words only ORDER what that link allows: the
+    most shared words first, then how often they recur in the skill's own
+    phrasing - which puts the general family method ahead of the special ones
+    it sends to - then the most of the request's capabilities it uses. That
+    last is the weakest sign, because a ranked guess's runners-up are where
+    retrieval is noisiest. The host still decides what the user meant (D-01);
+    this names the methods so it does not have to read them off disk.
+    """
+    asked = set(_words(request))
+    wanted = [c for c in capabilities if c]
+    if not asked or not wanted:
+        return []
+    ranked = []
+    for skill in skills:
+        needs = set(skill.needs())
+        linked = len([c for c in set(wanted) if c in needs])
+        if not linked:
+            continue
+        said = _words(" ".join([skill.name or "", (skill.id or "").replace(
+            "-", " ")] + [str(u) for u in skill.utterances()]))
+        shared = asked.intersection(said)
+        if not shared:
+            continue
+        recur = len([w for w in said if w in shared])
+        ranked.append(((-len(shared), -recur, -linked, skill.id or ""), skill))
+    ranked.sort(key=lambda pair: pair[0])
+    return [skill for _key, skill in ranked[:limit]]
 
 
 def main():

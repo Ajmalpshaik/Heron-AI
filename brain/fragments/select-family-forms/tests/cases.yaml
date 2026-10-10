@@ -1,0 +1,44 @@
+positive:
+  - given: >
+      a scratch family holding a solid extrusion, a void extrusion and a solid
+      revolve, each made by its form tool, which gave back its id; forms "<the
+      solid extrusion's id>, <the revolve's id>"
+    expect: >
+      elements 2, those two forms in that order; formList names "solid
+      extrusion <id>" and "solid revolve <id>"; scanned 3; refused empty
+
+  - given: the same family, forms "void"
+    expect: elements 1, the void extrusion alone; scanned still 3
+
+  - given: >
+      the first run's two forms carried into SET_SELECTION (expect_from
+      select-family-forms), then READ_SELECTION
+    expect: >
+      the family's window shows exactly those two highlighted, and
+      READ_SELECTION reads back the same two ids - the job the tool exists for
+
+negative:
+  - given: >
+      the same family, forms "<the solid extrusion's id>, <the UniqueId of the
+      reference plane Center (Left/Right)>"
+    expect: >
+      refused, naming the reference plane as not a form; elements 0 - the good
+      id is NOT carried either, all or nothing
+
+  - given: the same family, forms "revolve, void"
+    expect: elements 0 and refused empty - looked at all 3, none is a void revolve
+
+  - given: forms "cylinder"
+    expect: refused as neither an id in this family nor a kind or side; elements 0
+
+  - given: forms "void, <the void's id>"
+    expect: refused - ids and words are not mixed; elements 0
+
+  - given: a project in front, forms "all"
+    expect: notAFamily true, refused, elements 0
+
+second_route:
+  - >
+      Manage > Select by ID in the family's window with each form's element
+      number, compared form for form with what SET_SELECTION highlighted from
+      this tool's answer

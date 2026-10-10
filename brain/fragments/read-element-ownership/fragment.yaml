@@ -101,7 +101,10 @@ compatibility-note: >
 # ROUTING - repeated in LIST_WORKSETS and SET_ELEMENT_WORKSET.
 #
 #   "who owns this"                -> here
-#   "can I edit this"              -> here
+#   "can I edit this"              -> REPORT_ELEMENT_OWNERSHIP, with "can I
+#                                     edit these" - row 116 gave it the
+#                                     editing question; row 5b-387 the one
+#                                     -element form
 #   "list the worksets"            -> LIST_WORKSETS - the model's worksets
 #                                     and which are open, rather than one
 #                                     element's owner

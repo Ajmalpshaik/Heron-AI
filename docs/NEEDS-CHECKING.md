@@ -555,6 +555,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cv.md`](needs-checking/group-cv.md)
 
+## Group CW - a family's forms picked by id, kind or material, to select or delete (2026-10-08)
+
+**Its own file:** [`needs-checking/group-cw.md`](needs-checking/group-cw.md)
+
+## Group CX - every material a project or family holds, listed by name, class and id (2026-10-09)
+
+**Its own file:** [`needs-checking/group-cx.md`](needs-checking/group-cx.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

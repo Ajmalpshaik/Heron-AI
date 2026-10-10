@@ -136,7 +136,11 @@ compatibility-note: >
 #
 #   "select the 230 by 230 ones"       -> here
 #   "which have a 200 dia connector"   -> here
-#   "find equipment with that spigot"  -> here
+#   "find equipment with that spigot"  -> a COMPOSITION: REPORT_CONNECTORS
+#                                         reads that spigot's size,
+#                                         FILTER_ELEMENTS_BY_CATEGORY gathers
+#                                         the equipment, then this card
+#                                         filters it by that size
 #   "what connectors does this have"   -> REPORT_CONNECTORS, which DESCRIBES
 #                                         rather than filters
 #   "select by size parameter"         -> SELECT_BY_PARAMETER_VALUE. That reads

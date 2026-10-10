@@ -102,7 +102,12 @@ compatibility-note: >
 
 # ROUTING - repeated in REPORT_COMPOUND_STRUCTURE and DUPLICATE_TYPE.
 #
-#   "make the insulation thicker"   -> here, with the index that one gives you
+#   "make the insulation thicker"   -> SET_MEP_INSULATION. Said with no
+#                                      subject a modeller means the pipe or
+#                                      duct (row 134); the wall layer is
+#                                      "change the insulation layer in this
+#                                      wall type", here, with the index that
+#                                      one gives you
 #   "what is this wall made of"     -> REPORT_COMPOUND_STRUCTURE - and it is
 #                                      where the layer INDEX comes from
 #   "just for this wall"            -> DUPLICATE_TYPE first. There is no such

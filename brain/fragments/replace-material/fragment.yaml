@@ -198,3 +198,8 @@ utterances:
   - replace the finish on these walls
   - the client changed the material
   - change the material everywhere it is used
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "swap this
+  # finish for that one": CHANGE_ELEMENT_TYPE on the trained backend answered
+  # it.
+  - swap this finish for that one

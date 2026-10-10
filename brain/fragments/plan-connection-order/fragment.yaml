@@ -209,3 +209,8 @@ utterances:
   - chain these terminals together
   - how much cable to connect all of these
   - plan the run order for these fixtures
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "how much
+  # cable to connect these": CREATE_ELECTRICAL_RUN on the trained backend
+  # answered it.
+  - how much cable to connect these

@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-034
+semantic-identity: "these solids and voids, picked by the ids the form tools gave back or by kind and side, ready to select or delete"
+kind: filter
+domain: revit.selection
+capability: SELECT_FAMILY_FORMS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Picks out the solids and voids being modelled in the Family Editor - by the
+  ids the form tools gave back, or by kind and side - and hands them on:
+  SET_SELECTION highlights them, DELETE_ELEMENTS deletes them, and any tool
+  that takes elements works on them.
+
+  **THE IDS ARE THE ONES THE FORM TOOLS ANSWER WITH** as `formId`, commas
+  between; REPORT_FAMILY_FORMS lists the same ids for one drawn by hand. The
+  short number Select by ID shows is not taken - it is the file's bookkeeping,
+  and turning typed text into one is what breaks between releases.
+
+  **ONE ID THAT IS NOT A FORM HERE REFUSES THE WHOLE CALL**, each one named -
+  an id from elsewhere, a reference plane, a typing slip. Nothing is handed
+  on, so a delete after it can never reach part of a list.
+
+  **KIND AND SIDE NARROW IT AS THE REPORT DOES** - "all", "void", "solid,
+  revolve", "swept blend", "freeform". A form is kept when it matches every
+  word; a word that is neither refuses, and ids and words are not mixed.
+
+  **A PROJECT IS REFUSED.** It reads only, and highlights nothing itself.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The forms, by the ids the form tools gave back with commas between - or
+    # kinds and sides: "all", "void", "solid, revolve", "swept blend",
+    # "freeform".
+    - name: forms
+      type: string
+      source: request
+  provides:
+    - name: elements
+      # The forms named, in the order named, each once. Empty when the call
+      # refused - all or nothing.
+      role: result
+      type: IList<Element>
+    - name: formList
+      # The same forms on ONE line - solid or void, kind, id - because a list
+      # is cut to three entries before anyone reads it.
+      role: result
+      type: string
+    - name: scanned
+      # How many forms the family holds. Work done, never a thing found (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      # That the document is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was picked, in plain words, every bad id named. Empty when
+      # the call ran - and a kind that matched nothing is an answer, not a
+      # refusal.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.GetElement(string)` takes the UniqueId the form tools return, and
+  `GenericForm` with `IsSolid` and its kinds - `Extrusion`, `Revolution`,
+  `Blend`, `Sweep`, `SweptBlend`, `FreeFormElement` - read the same 2020
+  through 2027 (tools/api-surface over the reference assemblies, 2026-10-08).
+  No ElementId is built from typed text, so 2024's 64-bit ids do not reach it.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "select these forms"                        -> here, then SET_SELECTION
+#   "select the forms with these ids"           -> here, then SET_SELECTION
+#   "select the void forms"                     -> here, then SET_SELECTION
+#   "delete these forms" (ids given)            -> here, then DELETE_ELEMENTS
+#   "delete the ones I selected"                -> DELETE_ELEMENTS - the
+#                                                  selection is already there
+#   "what forms are in this family"             -> REPORT_FAMILY_FORMS, which
+#                                                  reads them; this picks them
+#   "which forms are made of steel"             -> SELECT_BY_MATERIAL, which
+#                                                  scans every form in a family
+#   "the elements with these ids" (a project)   -> FILTER_ELEMENTS_BY_ID
+
+utterances:
+  - select these forms
+  - select the forms with these ids
+  - select the void forms
+  - get the forms with these ids

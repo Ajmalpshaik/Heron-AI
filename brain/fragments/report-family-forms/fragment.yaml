@@ -116,6 +116,10 @@ compatibility-note: >
 #   "what parameters does this family have"      -> REPORT_FAMILY_PARAMETERS
 #   "what is inside this family"                 -> REPORT_NESTED_FAMILIES,
 #                                                   the families nested in it
+#   "select the void forms"                      -> SELECT_FAMILY_FORMS, which
+#                                                   PICKS them for SET_SELECTION
+#                                                   or DELETE_ELEMENTS; this
+#                                                   only reads
 
 utterances:
   - what forms are in this family

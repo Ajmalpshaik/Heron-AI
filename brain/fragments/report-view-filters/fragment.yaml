@@ -135,3 +135,7 @@ utterances:
   - list the view filters
   - what are the filter settings on this view
   - show the filter overrides on this view
+  # ADDED 2026-10-09, row 5b-387. The routing table above claims this
+  # sentence, and a comment is not indexed, so ranking decided: "read the
+  # filter settings back": COPY_VIEW_FILTERS on lexical answered it.
+  - read the filter settings back
