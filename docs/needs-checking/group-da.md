@@ -48,6 +48,7 @@ on a scratch family made for it, never on a family somebody is building; with `H
 | **DA4** | the second route: the same ten built one call at a time with the single-form tools on a second scratch family | the two families' `REPORT_FAMILY_FORMS` read the same kinds, extents and volumes; ten undo entries there, one here |
 | **DA5** | a list the size of the pump set - about 100 rows | the time the call takes inside Revit (the audit log's `ms`), against the 11 batches it replaces |
 | **DA6** | DA1 to DA3 on **Revit 2020** and **2027** | the same answers - what Revit DOES has been measured on 2024 only, if at all |
+| **DA8** | [5b-430](../fragment-issues/section-5b-rows-401-425.md): on a PC where Revit's temporary folder is a GUID-named sub-folder of the user's (the owner's laptop - `%TEMP%` in a Revit-side read shows `...\Temp\<guid>\`), DA2 with the file under the chat's own `%TEMP%\heron-work`; negative the same rows in `%TEMP%\elsewhere\rows.txt` and in `%TEMP%\heron-workshop\rows.txt` | positive: built on the FIRST call, no copy into Revit's folder; negative: refused naming both folders read, `formCount` 0, nothing read. On the office PC, where the two folders are one, DA2 is the whole check |
 | **DA7** | the signature | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's record, on the owner's word only |
 
 **Through the chat** (`revit_change`) the new capability needs its row in the shared knowledge store,

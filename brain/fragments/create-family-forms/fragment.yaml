@@ -31,7 +31,8 @@ purpose: >
   **THE LIST IS GIVEN IN THE VALUE, OR AS A FILE** - the full path of a text
   file in the temporary folder, one row per line, lines starting # ignored.
   A long list is written to the file once, under %TEMP%\heron-work, rather
-  than typed into every call.
+  than typed into every call. That folder is read even where Revit keeps
+  its own temporary folder in a sub-folder of the user's (5b-430).
 
   **ALL OR NOTHING.** Every row is checked before anything is built, each
   problem named with its row. Each form is then read back as the single-form
@@ -107,8 +108,9 @@ compatibility-note: >
   `FamilyManager.AssociateElementParameterToFamilyParameter`,
   `GenericForm.SetVisibility` and `Element.UniqueId` - with the material
   parameter's kind read by reflection as SET_FAMILY_FORM_MATERIAL reads it,
-  because its type moved in 2022 and 2023. `System.IO.Path.GetTempPath` and
-  `File.ReadAllText` are the framework's own. Compiles on every release
+  because its type moved in 2022 and 2023. `System.IO.Path.GetTempPath`,
+  `Guid.TryParse` and `File.ReadAllText` are the framework's own (.NET 4.0
+  and later). Compiles on every release
   (tools/check-fragments-compile.py, 2026-10-11); how it behaves has not yet
   been run in Revit.
 
