@@ -1,0 +1,83 @@
+# The proof of making a revision for each date typed on the sheets and putting
+# each on its own sheets - NEEDS-CHECKING Group CZ, rows CZ1 to CZ7:
+#
+#   create-revisions-from-sheet-dates   CREATE_REVISIONS_FROM_SHEET_DATES   FRG-SHT-029   new, version 1
+#
+#     python tools/batch-prove.py tools/jobs/create-revisions-from-sheet-dates-2026-10-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-revisions-from-sheet-dates-2026-10-11.yaml
+#
+# NEVER ON ONE OF THE OWNER'S WORKING MODELS, and never on
+# 4355-BHVD-3D-50C10-BL001A, where the job that asked for this was done by hand.
+#
+# THE ARRANGEMENT IS GROUP CY'S - the two scratch projects LIST_DATES_ON_SHEETS
+# is proved on (tools/jobs/list-dates-on-sheets-2026-10-10.yaml), open
+# together, with ONE thing added by hand to the first (CZ1):
+#
+#   "Heron Sheet Dates"        S-01 to S-04 with the dates typed ON the sheets
+#                              (22-JUL-2025 on S-01 and S-02, 15-MAY-2026 on S-02
+#                              and S-03, 09-SEP-2026 on S-01; S-04 only
+#                              "09-09-2026", "31 SEP 2026" and "2 OFF 300", and
+#                              "01 JAN 2026" INSIDE a plan placed on it). ADD in
+#                              View > Revisions: one revision, description
+#                              "IFI - Issued for Information", date
+#                              "15 May 2026", on no sheet - so it is Seq. 2,
+#                              after Revit's own Seq. 1, which stays on no sheet
+#                              and in no cloud: the unused revision
+#                              SET_SHEET_REVISIONS warns Revit can purge
+#   "Heron Sheet Dates Empty"  the same dates typed everywhere EXCEPT on a
+#                              sheet: inside a plan placed on S-01, in a
+#                              drafting view on no sheet, in S-02's Sheet Issue
+#                              Date parameter
+#
+# `write: true` runs both legs in a transaction group and ROLLS THEM BACK, so
+# neither project keeps a revision from the proof. Run LIST_REVISIONS afterwards
+# rather than assuming it.
+#
+# WHY THE NEGATIVE IS A DIFFERENT DOCUMENT - LIST_DATES_ON_SHEETS' reason. This
+# reads the document, not a selection, so the only thing a negative leg can
+# vary is the document - and the empty project holds the SAME dates in the
+# places this must not read. A version that read every view makes 09-SEP-2026
+# and 22-JUL-2025 there; one that read the parameter makes 15-MAY-2026.
+#
+# EVERY VALUE IS SENT, BLANK OR NOT - the add-in refuses a request value that
+# never arrives (5b-227).
+
+model: two scratch projects open together, Revit 2024 (Heron Sheet Dates, Heron Sheet Dates Empty)
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: create-revisions-from-sheet-dates
+    in: "Heron Sheet Dates"
+    negative-in: "Heron Sheet Dates Empty"
+    write: true
+    expect: [revisionsCreated, revisionsAddedToSheets]
+    set:
+      description: IFI - Issued for Information
+      dateFormat: ""
+      onlyDates: ""
+      issuedBy: ""
+      issuedTo: ""
+      numbering: ""
+      issueState: ""
+    negative-set:
+      description: IFI - Issued for Information
+      dateFormat: ""
+      onlyDates: ""
+      issuedBy: ""
+      issuedTo: ""
+      numbering: ""
+      issueState: ""
+    note: >
+      Positive: datesFound 3, revisionsCreated 2, revisionsReused 1,
+      revisionsAddedToSheets 5, sheetsChanged 3; dateRevisions, oldest first,
+      "22-JUL-2025 -> Seq. 3 ... CREATED: added to 2 sheet(s) (S-01, S-02)  ||
+      15-MAY-2026 -> Seq. 2 ... dated '15 May 2026', REUSED as it was: added to
+      2 sheet(s) (S-02, S-03)  ||  09-SEP-2026 -> Seq. 4 ... CREATED: added to
+      1 sheet(s) (S-01)"; sheetsWithNoDate "S-04"; revisionsRemaining 4 with
+      the summary saying the project had 2, so Seq. 1 was NOT purged; the
+      summary naming the sequence out of date order and REORDER_REVISION; no
+      revision for 01-JAN-2026. Negative: refused, "3 sheet(s) read and 6 text
+      note(s) typed on them, and none carries a date with a written month";
+      every count 0, dateRevisions empty, all three sheets in sheetsWithNoDate.

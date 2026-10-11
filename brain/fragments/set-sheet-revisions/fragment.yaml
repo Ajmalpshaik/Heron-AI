@@ -126,6 +126,9 @@ compatibility-note: >
 #   "make a new revision"                -> CREATE_REVISION
 #   "which sheets carry this revision"   -> LIST_REVISIONS
 #   "delete the revision itself"         -> DELETE_REVISION
+#   "create revisions for the dates on the sheets" -> CREATE_REVISIONS_FROM_SHEET_DATES -
+#                                         makes a revision per date typed on the
+#                                         sheets and adds each to its own sheets
 
 utterances:
   - put that revision on these sheets
