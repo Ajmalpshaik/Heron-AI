@@ -51,6 +51,15 @@ store, an install with no git, or the main checkout on branch main
 (heron_brain._store_warm_allowed, rows 131 and 136). From a branch or a
 worktree it says so and leaves the shared store alone.
 
+A MICROSOFT STORE CLAUDE KEEPS ITS OWN COPY OF APPDATA (row 5b-417). When the
+Claude app is the Store (MSIX) build, Windows sends every write Claude's
+children make under %APPDATA% and %LOCALAPPDATA% - Claude's own shell, and
+Heron's server - into the app's LocalCache, and shows only them the two laid
+over each other. A package Claude installed is then invisible to the person's
+own terminal and to Revit: on the owner's laptop, 2026-10-10, this said READY
+from Claude's shell and NOT READY from his terminal. Section 2a says so, with a
+pip line pinned to the versions in the copy. It only WARNS: no exit code moves.
+
 Exit 0 when everything Heron REQUIRES is here, 1 when something is missing.
 An optional extra being absent is not a failure - Heron degrades and says so.
 """
@@ -59,6 +68,7 @@ import compileall
 import glob
 import importlib
 import os
+import re
 import shutil
 import sys
 import time
@@ -161,6 +171,116 @@ def packages():
         say(FIX, "the MCP package is missing",
             ["Without it Heron cannot start, and Claude has no Heron tools at",
              "all. Install it: pip install --user mcp"])
+
+
+# ---------------------------------------------------------------------------
+# A Microsoft Store Claude and its private copy of AppData (row 5b-417)
+# ---------------------------------------------------------------------------
+
+#: The Claude desktop app's folder under %LOCALAPPDATA%\Packages when it is the
+#: Microsoft Store (MSIX) build; the letters after the underscore are Windows'.
+CLAUDE_PACKAGES = "AnthropicPBC.Claude_*"
+
+
+def _key(name):
+    """A package name the way pip compares them: case, '-', '_' and '.' alike."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def claude_app_copies(environ=None):
+    """The LocalCache folder of every Store-built Claude app for this user -
+    where Windows keeps what Claude's children wrote under AppData."""
+    environ = os.environ if environ is None else environ
+    local = environ.get("LOCALAPPDATA")
+    if not local:
+        return []
+    return sorted(p for p in glob.glob(os.path.join(
+        local, "Packages", CLAUDE_PACKAGES, "LocalCache")) if os.path.isdir(p))
+
+
+def copy_packages(cache, wanted=None):
+    """{name: version} of Heron's packages pip put in the copy for this Python
+    (Python312 for 3.12), read off the .dist-info folder names - nothing runs."""
+    keys = dict((_key(name), name) for name in (wanted or SNAPSHOT_PACKAGES))
+    site = os.path.join(cache, "Roaming", "Python",
+                        "Python%d%d" % sys.version_info[:2], "site-packages")
+    found = {}
+    for path in glob.glob(os.path.join(site, "*.dist-info")):
+        name, _, version = os.path.basename(path)[:-len(".dist-info")].partition("-")
+        if version and _key(name) in keys:
+            found[keys[_key(name)]] = version
+    return found
+
+
+def inside_claude_app(cache, environ=None):
+    """True when this run's %APPDATA% and %LOCALAPPDATA% ARE the app's copy.
+
+    Read-only. Inside the app a folder in the copy and the same name under
+    %APPDATA% open as ONE folder on disk; outside it they are two folders, or
+    the second is not there. A packaged app's child has no package identity
+    to ask for - GetCurrentPackageFullName answered 15700, no package, from
+    inside Claude on the owner's laptop on 2026-10-10 - so this is the test.
+    """
+    environ = os.environ if environ is None else environ
+    for side, variable in (("Roaming", "APPDATA"), ("Local", "LOCALAPPDATA")):
+        real, mine = environ.get(variable), os.path.join(cache, side)
+        if not real or not os.path.isdir(mine):
+            continue
+        for name in os.listdir(mine):
+            try:
+                if os.path.samefile(os.path.join(real, name),
+                                    os.path.join(mine, name)):
+                    return True
+            except OSError:
+                continue
+    return False
+
+
+def claude_app():
+    """2a - said only on a PC whose Claude app is the Microsoft Store build.
+    Every line is a NOTE or an ok: it warns, and moves no exit code."""
+    copies = claude_app_copies()
+    if not copies:
+        return
+    head("2a. The Claude app keeps its own copy of AppData (Microsoft Store build)")
+    for cache in copies:
+        held = copy_packages(cache)
+        if inside_claude_app(cache):
+            say(NOTE, "this run is INSIDE the Claude app, and sees its private "
+                      "copy laid over your AppData",
+                ["So READY here says nothing about your own terminal or about "
+                 "Revit.",
+                 "Run this again from your own terminal, opened outside Claude.",
+                 "Never install packages from inside Claude: they land only in "
+                 "its copy."])
+            pinned = held
+        else:
+            say(NOTE, "the Claude app on this PC keeps its own copy of AppData, "
+                      "in %s" % cache,
+                ["Packages installed from inside Claude are only there - this "
+                 "terminal and",
+                 "Revit cannot see them. What you install here, Claude sees "
+                 "too."])
+            pinned = dict((name, version) for name, version in held.items()
+                          if _version(name) != version)
+            if held and not pinned:
+                say(OK, "this Python has the same versions of Heron's packages "
+                        "as Claude's copy")
+        if pinned:
+            say(NOTE, "install from your own terminal, pinned to the versions in "
+                      "Claude's copy",
+                ["A different version leaves two copies of one package mixed in",
+                 "Claude's view. Use this in place of any pip line above:",
+                 "pip install --user " + " ".join(
+                     "%s==%s" % item for item in sorted(
+                         pinned.items(), key=lambda item: item[0].lower())),
+                 "Leave out any you do not want - only a DIFFERENT version is a",
+                 "problem. sentence-transformers and torch are the re-ranker."])
+        say(NOTE, "a Reset or uninstall of the Claude app deletes that copy",
+            ["The packages Claude installed, Heron's knowledge store, the "
+             "projects' memory",
+             "and the brain's audit go with it - docs/WHAT-TO-INSTALL.md "
+             "section 1b."])
 
 
 def server_starts():
@@ -555,6 +675,7 @@ def main(argv):
     print("Heron - getting this PC ready%s" % (" (check only)" if check_only else ""))
     python_itself()
     packages()
+    claude_app()
     server_starts()
     search_model(check_only)
     knowledge_store(check_only)

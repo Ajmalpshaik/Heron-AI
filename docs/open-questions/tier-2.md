@@ -273,3 +273,94 @@ found in a model made from a template would have to be replaced on first use, no
 answers. Until he does, they keep nothing.
 
 ---
+
+### 🟡 Q-61 — Which model, effort level and fast-mode setting should a modeller's chat run, and are the office PC and the new laptop set the same today? *(found 2026-10-10)*
+
+[FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) timed two family builds on the
+new laptop on 2026-10-09: 367 s and 792 s, of which Revit's own time was 17.2 s in all and the model's
+own turns about 93% - extended thinking alone about 609 s. That chat ran `claude-opus-5-5` at effort
+*xhigh* on every request. **The search for why the office PC is quicker never asked what the office
+PC's chat runs.** A search of [docs/04 §8.7](../04-heron-mcp.md), [WHAT-TO-INSTALL](../WHAT-TO-INSTALL.md)
+and [`tools/heron-ready.py`](../../tools/heron-ready.py) for *effort*, *xhigh* and *fast mode* finds
+nothing, and `heron-ready --snapshot` records none of them, so setting the two snapshots side by side
+cannot show this difference. It is the largest difference between the two PCs that nobody has examined.
+
+**A fact first, then a decision.** The fact: note the model, effort level and fast-mode setting of a chat
+on each PC, and time the same family on both. The decision, if they differ and it matters: whether
+Heron's install notes recommend a setting for modelling work, and whether `--snapshot` should record what
+it can see of one - a change to the snapshot code, agreed on its own and not made here.
+
+**The owner decides**, after the comparison. Until it is made, the minutes on the two PCs can be neither
+blamed on Heron nor cleared of it.
+
+---
+
+### 🔵 Q-62 — Should one `revit_change` call build many family forms? *(found 2026-10-10)*
+
+Today one call builds one form, or several loops that share one plane and one depth. The pump set timed
+in [FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) had 107 forms: they went in as
+about 11 batches of calls, and the chat spent 11 more turns, about 53 s, carrying the new forms' ids
+forward so that the cuts, materials and visibility could name them. Each of those calls also brought
+back a hand-back of its own ([5b-407](../fragment-issues/section-5b-rows-401-425.md)).
+
+**A proposal, not a decision.** One shape: a write that takes a list of forms - each with its plane,
+profile, extent and solid or void - builds them in one call, and hands back their ids as one list a later
+step can name. What it would change: the undo - one call is one undo entry (Article 8), so 107 forms
+would undo as one, which a modeller may or may not want of a family build; a refusal part way through,
+which stays all or nothing; and the library - widening `CREATE_FAMILY_EXTRUSION` and
+`CREATE_FAMILY_REVOLUTION` to take several forms is the first thing to weigh, before any new fragment.
+
+**The owner decides**: build a several-forms entry point, and in what shape, or keep one form per call
+and accept the turns.
+
+---
+
+### 🟡 Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? *(found 2026-10-10)*
+
+**What was found**, on the owner's laptop on 2026-10-10, from his own Terminal panel beside Claude's tool
+shell. The Claude desktop app there is the Microsoft Store (MSIX) build, `AnthropicPBC.Claude_fnn82j28hfe8t`.
+Windows sends every write its child processes make under `%APPDATA%` and `%LOCALAPPDATA%` to the app's own
+`%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_fnn82j28hfe8t\LocalCache`, and shows only those processes the
+two laid over each other. Claude's shell and every heron MCP server are such children; Revit and the
+person's own terminal are not. Four rows record what follows:
+[5b-416](../fragment-issues/section-5b-rows-401-425.md) - Revit's Companion button reads the real
+folder and each chat writes its note into the copy;
+[5b-417](../fragment-issues/section-5b-rows-401-425.md) - every package Claude installed is in the copy
+only, so `heron-ready` said READY inside Claude and NOT READY in his terminal;
+[5b-418](../fragment-issues/section-5b-rows-401-425.md) - the knowledge store, project memory, brain audit
+and anything else the Python side writes under AppData is in the copy only;
+[5b-419](../fragment-issues/section-5b-rows-401-425.md) - a Reset or uninstall of the Claude app deletes
+the copy, DATA that `HeronPaths` says must survive.
+
+**What is proposed and not merged:** a warning only - `tools/heron-ready.py` section 2a and
+[WHAT-TO-INSTALL §1b](../WHAT-TO-INSTALL.md) tell the person to install from their own terminal, pinned to
+the copy's versions. It changes nothing Heron does at runtime and settles none of the four rows.
+
+**The shapes the owner chooses between:**
+
+1. **Leave Heron as it is, and warn.** The cheapest. All four rows stay true on such a PC.
+2. **Run the MCP server from a virtual environment outside AppData** - for example a `.venv` on `D:` beside
+   the Heron folder, named in `.mcp.json` - so one copy of the packages serves Claude, the person's
+   terminal and every check alike. **What it settles and what it does not - reasoned, NOT tried:** a folder
+   on `D:` is not redirected, so the packages are in one place and survive a Reset (row 5b-417, half of
+   5b-419). It does **not** move what the server WRITES: the server is still a child of the packaged app,
+   so the store, the project memory, the audit and the Companion notes still land in the copy, wherever
+   its Python lives (rows 5b-416, 5b-418, the rest of 5b-419). Those need their own folders outside AppData
+   as well. `HERON_KNOWLEDGE` already moves the store and the project memory (set in `.mcp.json`'s
+   `env`). `HERON_AUDIT` moves the brain's audit, but `brain/heron_gaps.py` reads the ADD-IN's trail from
+   the same folder, so pointing it away from `%APPDATA%\Heron\audit` would also blind the gaps report.
+   The Companion note has no switch at all, and the add-in reads it only from `HeronPaths.Companion`
+   ([D-109](../decisions/D-109.md)), so moving it is a change on both sides.
+3. **Keep Heron's DATA where an app reset cannot reach it, as a rule** - `HeronPaths` says DATA must survive
+   every update, uninstall and reinstall, and on such a PC another program's Reset deletes it. This would
+   be a decision about the platform boundary rather than a fix to one tool.
+
+**Measure before deciding** - each is cheap: [NEEDS-CHECKING BK14](../needs-checking/group-bk.md) presses
+the Companion button on the laptop, and row 5b-418 names the test for a load report written to the
+knowledge folder. **Not checked:** whether Claude is offered for Windows in a form that is not
+packaged; and how the merged view behaves when one file name is in both places.
+
+**Ajmal PS decides.** Until he does, nothing Heron does at runtime changes, and the warning - if merged -
+is the whole of the response.
+
+---
