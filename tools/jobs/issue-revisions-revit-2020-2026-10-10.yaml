@@ -75,6 +75,7 @@ jobs:
       show: ""
       numbering: ""
       issueState: issue
+      confirmCount: ""
     # NEGATIVE: the same revision, asked for the description and date it
     # already holds. `changed` empty, both in `alreadyThat`.
     negative-set:
@@ -85,6 +86,7 @@ jobs:
       show: ""
       numbering: ""
       issueState: ""
+      confirmCount: ""
     # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the runner
     # hands the chain the negative-set instead (row 5b-242).
     negative-setup-set:

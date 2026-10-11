@@ -1,0 +1,82 @@
+# EDIT_REVISION version 3 - several revisions in one call, 2026-10-10.
+# NEEDS-CHECKING Group BA, row BA7.
+#
+#     python tools/batch-prove.py tools/jobs/edit-revision-several-2026-10-10.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-revision-several-2026-10-10.yaml
+#
+# RUN ON A SCRATCH PROJECT, NEVER A WORKING FILE - "Project2", Revit 2020, is the
+# one version 2 met on 2026-10-10. Bring it to the front. `write: true` runs
+# both legs inside a transaction group and ROLLS THEM BACK; run LIST_REVISIONS
+# afterwards rather than assuming it: rollback has failed before on this PC.
+#
+# THE ARRANGEMENT IS MADE FIRST, BY HAND OR BY CHAT, AND KEPT - ON THE SCRATCH
+# PROJECT ONLY. The runner will not hand setup values to a setup step that
+# changes the model (heron_bridge_client validate, measured 2026-10-10), so the
+# revisions cannot be made here. CREATE_REVISION three times, each with
+# description "HERON PROOF several", numbering numeric, NOT issued, issued by
+# and issued to left blank. They land as the last three sequences. Then
+# LIST_REVISIONS: exactly three rows carry that description, and no other row
+# does. tools/jobs/edit-revision-several-issued-2026-10-10.yaml needs a second
+# three, made AFTER these.
+#
+# THE FIND IS THE SETUP: SELECT_BY_PARAMETER_VALUE, Revision Description equals
+# HERON PROOF several, and the reply's binding note must read "elements from
+# select-by-parameter-value (3)" - any other number and the arrangement is wrong,
+# not the tool.
+#
+# POSITIVE: the find brings back the three, `confirmCount` says 3, and the one
+# call fills issued by and issued to on all three and then issues them -
+# `changed` names all three apart by " || ", `nowIssued` true. Rolled back.
+#
+# NEGATIVE: THE SAME THREE, `confirmCount` 2. The count disagrees with what the
+# find brought back, so `refused` names all three and both numbers and
+# `changed` is empty - nothing changed on any of them. A tool that edited what
+# it was handed without counting would report three changed.
+
+model: '"Project2" (a scratch project), Revit 2020'
+
+jobs:
+  # ---- the edit ------------------------------------------------------------------
+
+  - fragment: edit-revision
+    write: true
+    expect: changed
+    setup:
+      - select-by-parameter-value
+    keep-chain: true
+    setup-set:
+      parameterName: Revision Description
+      matchText: HERON PROOF several
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"
+    # POSITIVE: all three, in one call.
+    set:
+      confirmCount: "3"
+      description: ""
+      revisionDate: ""
+      issuedBy: M.Sagheer
+      issuedTo: A.Rahmani
+      show: ""
+      numbering: ""
+      issueState: issue
+    # NEGATIVE: the same three, a count that disagrees.
+    negative-set:
+      confirmCount: "2"
+      description: ""
+      revisionDate: ""
+      issuedBy: M.Sagheer
+      issuedTo: A.Rahmani
+      show: ""
+      numbering: ""
+      issueState: issue
+    # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the runner
+    # hands the chain the negative-set instead (row 5b-242).
+    negative-setup-set:
+      parameterName: Revision Description
+      matchText: HERON PROOF several
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"

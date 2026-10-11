@@ -1,0 +1,85 @@
+# EDIT_REVISION version 3 - several ISSUED revisions un-issued and renumbered in
+# one call, 2026-10-10. NEEDS-CHECKING Group BA, row BA8. A file of its own
+# because batch-prove keys its run record by fragment name, and
+# edit-revision-several-2026-10-10.yaml already proves the count.
+#
+#     python tools/batch-prove.py tools/jobs/edit-revision-several-issued-2026-10-10.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-revision-several-issued-2026-10-10.yaml
+#
+# RUN ON THE SAME SCRATCH PROJECT as edit-revision-several-2026-10-10.yaml -
+# "Project2", Revit 2020 - never a working file. `write: true` rolls both legs
+# back; run LIST_REVISIONS afterwards rather than assuming it.
+#
+# THE CASE THIS IS FOR. On 2026-10-10 seven issued "IFI - Issued for
+# Information" revisions on the owner's job had to be un-issued and moved from
+# Numeric to Alphanumeric. Version 2, one revision per call, REFUSED Seq. 1
+# first - moving it would renumber Seq. 2 to Seq. 7, still issued - and took
+# them only from Seq. 7 down. Version 3 un-issues the whole set before it writes
+# any numbering, so the same request in one call goes through.
+#
+# THE ARRANGEMENT IS MADE FIRST AND KEPT - ON THE SCRATCH PROJECT ONLY, AFTER
+# the three of edit-revision-several-2026-10-10.yaml, so these are the LAST
+# three sequences and no issued revision follows them. CREATE_REVISION three
+# times, each with description "HERON PROOF several issued", numbering
+# numeric, ISSUED (issueState=issue), issued by and issued to blank. Then
+# LIST_REVISIONS: exactly three rows carry that description, all issued, all
+# Numeric, and they are the last three.
+#
+# POSITIVE: the three, `confirmCount` 3, issueState unissue and numbering
+# alphanumeric - `changed` "un-issued; numbering Numeric -> Alphanumeric" on all
+# three and `refused` empty. Rolled back.
+#
+# NEGATIVE: THE SAME THREE, asked for a new issued by with NO un-issue. Revit
+# locks issued by on an issued revision, so `refused` names all three as ISSUED
+# and "issued by", and `changed` is empty - none of them changed. The refusal
+# of an edit to an issued revision has never been measured on any model
+# (Group BA, BA2): this is it.
+#
+# REVIT 2022 OR LATER: `numbering` takes a sequence's NAME there ("Numeric",
+# "Alphanumeric" or the project's own), not the kind - change both values to
+# names LIST_REVISIONS shows on that model.
+
+model: '"Project2" (a scratch project), Revit 2020'
+
+jobs:
+  - fragment: edit-revision
+    write: true
+    expect: changed
+    setup:
+      - select-by-parameter-value
+    keep-chain: true
+    setup-set:
+      parameterName: Revision Description
+      matchText: HERON PROOF several issued
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"
+    # POSITIVE: un-issued and renumbered, all three, in one call.
+    set:
+      confirmCount: "3"
+      description: ""
+      revisionDate: ""
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: alphanumeric
+      issueState: unissue
+    # NEGATIVE: the same three, a locked column and no un-issue.
+    negative-set:
+      confirmCount: "3"
+      description: ""
+      revisionDate: ""
+      issuedBy: HERON PROOF
+      issuedTo: ""
+      show: ""
+      numbering: ""
+      issueState: ""
+    # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT (row 5b-242).
+    negative-setup-set:
+      parameterName: Revision Description
+      matchText: HERON PROOF several issued
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"

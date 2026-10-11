@@ -28,6 +28,28 @@ positive:
     expect: >
       the date, issued-by and issued-to untouched
 
+  - given: >
+      version 3 - three revisions described "HERON PROOF multi" on a scratch
+      project, found by SELECT_BY_PARAMETER_VALUE (Revision Description equals
+      HERON PROOF multi, 3 found), confirmCount "3", issuedBy "M.Sagheer",
+      issuedTo "A.Rahmani", issueState "issue"
+    expect: >
+      `changed` names all three, each "Seq. N 'HERON PROOF multi': issued by
+      (blank) -> 'M.Sagheer'; issued to (blank) -> 'A.Rahmani'; issued", apart
+      by " || "; `nowIssued` true; ONE entry in Revit's undo list for the
+      three. A second identical run: `changed` empty, all three in
+      `alreadyThat`
+
+  - given: >
+      version 3 - the same three, ISSUED and numbered numeric, with
+      issueState "unissue", numbering "alphanumeric" (2020/2021; a sequence
+      name from 2022) and confirmCount "3" - the order that version 2 refused
+      when Seq. 1 went first
+    expect: >
+      `changed` "un-issued; numbering Numeric -> Alphanumeric" on all three
+      and `refused` empty: the set is un-issued before any numbering is
+      written, so no revision of it blocks another
+
 negative:
   - given: a find by description that brought back two revisions both described "For Construction"
     expect: >
@@ -55,6 +77,33 @@ negative:
     expect: >
       nothing changed and `refused` saying nothing was asked for - not a silent
       success
+
+  - given: >
+      version 3 - the find brought back three revisions and confirmCount says
+      "2"
+    expect: >
+      `refused` naming all three and both numbers, `changed` empty, nothing
+      changed on any of them
+
+  - given: >
+      version 3 - the find brought back three revisions and confirmCount is
+      "three", not a number
+    expect: >
+      `refused` naming all three and saying confirmCount=3; nothing changed
+
+  - given: >
+      version 3 - the find brought back three revisions and confirmCount is
+      blank
+    expect: >
+      `refused` naming all three and saying confirmCount=3 is what changes
+      them all; nothing changed
+
+  - given: >
+      version 3 - three revisions, one of them ISSUED, issuedBy given and no
+      issueState, confirmCount "3"
+    expect: >
+      `refused` naming the issued one and "issued by", and that none of the
+      three was changed - the two unissued ones are NOT edited on their own
 
 second_route:
   - >
