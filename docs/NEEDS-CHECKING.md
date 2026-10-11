@@ -567,6 +567,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cy.md`](needs-checking/group-cy.md)
 
+## Group CZ - a revision for each date typed on the sheets, put on the sheets that carry it, in one call (2026-10-11)
+
+**Its own file:** [`needs-checking/group-cz.md`](needs-checking/group-cz.md)
+
 ## Group DA - many extrusions and revolves in one call, one undo entry (2026-10-11)
 
 **Its own file:** [`needs-checking/group-da.md`](needs-checking/group-da.md)

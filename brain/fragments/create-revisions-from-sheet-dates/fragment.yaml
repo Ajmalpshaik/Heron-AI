@@ -1,0 +1,222 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-029
+semantic-identity: "create revisions for every date typed on the sheets"
+kind: action
+domain: revit.sheets
+capability: CREATE_REVISIONS_FROM_SHEET_DATES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY THIS EXISTS. 2026-10-10, Revit 2020, model 4355-BHVD-3D-50C10-BL001A (19
+# sheets). LIST_DATES_ON_SHEETS found 7 dates on 15 sheets, and the modeller
+# said: "now do one thing with this date - create revisions, the revision
+# description is IFI - issued for information", then asked "in all the sheet you
+# set the revisions, am I right?". Doing it took CREATE_REVISION seven times and
+# FIND_SHEETS + SET_SHEET_REVISIONS once per sheet - eleven sheets, two calls
+# each - every one its own Undo entry, with each revision named "Seq. N - IFI -
+# Issued for Information" from an earlier read. The owner deleted Seq. 1 part
+# way, Revit renumbered the rest, and Seq. 8 vanished from under a name typed
+# minutes before. Row 5b-421 in docs/fragment-issues.
+#
+# NEW, NOT WIDENED, AND THAT WAS WEIGHED - the three nearest each do one step:
+#
+#   LIST_DATES_ON_SHEETS (DRAFT, READ) finds the dates. Making it write would
+#   raise a read to MODIFY, so "what dates are on the sheets" would need the
+#   Changes switch and land in the Undo list.
+#   CREATE_REVISION (DRAFT) makes ONE revision from typed values, and its
+#   contract - one `created`, one `sequence` - is what ADD_REVISION_CLOUD and
+#   two job files read.
+#   SET_SHEET_REVISIONS (PROVEN) puts revisions it is HANDED on sheets it is
+#   HANDED. Teaching it to find both would change code under a proof, and its
+#   question is a different one: this revision, these sheets.
+#
+# A chain of the three cannot do it either: a chain cannot loop over dates, and
+# every revision name it carries between steps goes stale when Revit renumbers.
+# So this reuses each one's code rather than calling it: LIST_DATES_ON_SHEETS'
+# parser character for character (tests/test_sheet_date_parser.py holds the
+# copies equal), CREATE_REVISION's checks and its numbering route, and
+# SET_SHEET_REVISIONS' add-never-replace and its purge read-back. EDIT_REVISION
+# (version 3, PR #469, many revisions in one call) issues and edits them
+# afterwards; nothing here duplicates it.
+#
+# THE PURPOSE IS SHORT ON PURPOSE - LIST_MATERIALS' and LIST_DATES_ON_SHEETS'
+# lesson: the nearness route embeds the card as one averaged string, and every
+# word in it pulls sentences here.
+
+purpose: >
+  Makes one revision for each distinct date typed in a text note on a sheet,
+  and adds it to every sheet where that date is typed - one call, one Undo. A
+  revision already holding that date and the same description is reused,
+  never made twice. Only text typed on the sheet itself is read, exactly as
+  LIST_DATES_ON_SHEETS reads it; a numeric month is refused.
+
+  **ADDED, NEVER REPLACED.** A sheet keeps every revision it already lists.
+
+  **REFUSED WITH NOTHING CHANGED** when no date is typed on a sheet, when the
+  description is empty, or when two revisions already stand for one date.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+# NOT IN THE PURPOSE, ON PURPOSE - measured 2026-10-11 through
+# heron_retrieve.find, Revit 2020, trained backend (NEEDS-CHECKING Group CZ).
+# Three earlier wordings each took a sentence another card claims:
+#   - a paragraph saying nothing is issued unless asked took "mark that
+#     revision as issued" from EDIT_REVISION;
+#   - an identity ending "put on the sheets that carry it" took "put that
+#     revision on the sheets that carry its date" from SET_SHEET_REVISIONS;
+#   - an identity opening "make a revision" took "make the revisions
+#     alphanumeric" from EDIT_REVISION_NUMBERING_SEQUENCE.
+# The last two were the re-ranker, which reads only the identity, the
+# capability and the domain - so the identity is the words that decide. The
+# rule stands: NOTHING IS ISSUED unless `issueState` says `issue`, and then only
+# the revisions this call makes, last - said in the contract and the code.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The revision schedule's line, for every revision made. Also how an
+    # existing revision for a date is recognised. Required.
+    - name: description
+      type: string
+      source: request
+    # How each date is written in the revision. Blank writes DD-MMM-YYYY, the
+    # spelling LIST_DATES_ON_SHEETS prints (07-APR-2025). D or DD day, M or MM
+    # month number, MMM / Mmm / mmm or MMMM month name in that case, YY or
+    # YYYY year; anything that is not a letter is kept as typed.
+    - name: dateFormat
+      type: string
+      source: request
+    # Blank acts on every date on the sheets. Otherwise only these, between ;
+    # or , - each one date with a written month, each one on a sheet.
+    - name: onlyDates
+      type: string
+      source: request
+    # Written on the revisions this call MAKES; a reused one is left as it
+    # was. Empty leaves Revit's default; <blank> writes an empty value.
+    - name: issuedBy
+      type: string
+      source: request
+    - name: issuedTo
+      type: string
+      source: request
+    # 2022 on, a numbering sequence's name ("Numeric", "Custom"); 2020 and
+    # 2021, "numeric", "alphanumeric" or "none". Empty leaves Revit's default.
+    - name: numbering
+      type: string
+      source: request
+    # "issue" issues the revisions this call makes, after every sheet has
+    # taken them. Empty does not.
+    - name: issueState
+      type: string
+      source: request
+  provides:
+    - name: datesFound
+      # Distinct dates typed on sheets - before onlyDates narrows them. A thing
+      # it FOUND, so a result (D-52).
+      role: result
+      type: int
+    - name: revisionsCreated
+      role: result
+      type: int
+    - name: revisionsReused
+      # Existing revisions it FOUND for a date and put on sheets. Found, so a
+      # result - and the number a second run answers in place of
+      # revisionsCreated.
+      role: result
+      type: int
+    - name: revisionsAddedToSheets
+      # Each revision added to each sheet, counted once per pair.
+      role: result
+      type: int
+    - name: sheetsChanged
+      role: result
+      type: int
+    - name: dateRevisions
+      # Every date on ONE line, oldest first, "  ||  " between them:
+      # "07-APR-2025 -> Seq. 3 - IFI - Issued for Information, dated
+      # '07-APR-2025', CREATED: added to 5 sheet(s) (A-101, ...)". READ BACK
+      # after the last write, so the Seq. numbers are Revit's final ones. A
+      # STRING because a list reaches the chat as its count and first three
+      # items (RevitFragment.Describe).
+      role: result
+      type: string
+    - name: sheetsWithNoDate
+      # Sheet numbers carrying no date, "(placeholder)" marked - what was read
+      # and left alone, never a change.
+      role: accounting
+      type: string
+    - name: revisionsRemaining
+      # Revisions in the project afterwards. State, not work: it reads the same
+      # on a run that changed nothing (SET_SHEET_REVISIONS' reasoning). The
+      # summary sets it beside the count before.
+      role: accounting
+      type: int
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and said
+      # no. Never a thing it FOUND (D-52). Empty when it ran.
+      role: accounting
+      type: string
+    - name: summary
+      # What was read, what was made, reused and added, what was not read and
+      # why - said every time.
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Revision.Create`,
+  `Revision.GetAllRevisionIds`, `Revision.SequenceNumber`, `Description`,
+  `RevisionDate`, `IssuedBy`, `IssuedTo`, `Issued`,
+  `ViewSheet.GetAllRevisionIds`, `ViewSheet.GetAdditionalRevisionIds`,
+  `ViewSheet.SetAdditionalRevisionIds` and `Document.Regenerate` are in the
+  RevitAPI.xml of every release 2020 to 2027 (read 2026-10-11 from the
+  reference packages the compile uses; tools/api-surface had no cache on this
+  PC). The text-note reading is LIST_DATES_ON_SHEETS', with the members its
+  card lists.
+
+  THE NUMBERING PARTS AT 2022, as in CREATE_REVISION:
+  `Revision.RevisionNumberingSequenceId` from 2022, `Revision.NumberType` 2020
+  to 2022, reached by name because the add-in compiles fragments with no
+  release symbol defined.
+
+  No ElementId is read as a number, so 2024's 64-bit ids do not reach this.
+
+# ROUTING - the revisions-from-dates row is repeated in LIST_DATES_ON_SHEETS,
+# CREATE_REVISION and SET_SHEET_REVISIONS. Each sentence on one line, so
+# tools/check-routing.py reads the claim.
+#
+#   "create revisions for the dates on the sheets" -> here - every date, its own
+#                                                     revision, onto its sheets
+#   "take the dates in that text from all sheets"  -> LIST_DATES_ON_SHEETS -
+#                                                     reads them, changes
+#                                                     nothing. Run it first to
+#                                                     see what this will make
+#   "create a revision"                            -> CREATE_REVISION - one, from
+#                                                     typed values
+#   "put that revision on these sheets"            -> SET_SHEET_REVISIONS - a
+#                                                     revision and sheets the
+#                                                     caller names
+#   "mark that revision as issued"                 -> EDIT_REVISION
+#   "list the revisions"                           -> LIST_REVISIONS
+#
+# Measured 2026-10-11 through heron_retrieve.find, Revit 2020, trained backend:
+# each sentence above reaches the card it names. NEEDS-CHECKING Group CZ.
+
+# WHERE THE SENTENCE CAME FROM. The modeller's own, dictated 2026-10-10 in
+# Revit 2020 with model 4355-BHVD-3D-50C10-BL001A open, straight after
+# LIST_DATES_ON_SHEETS had listed the dates ("IFI Dash" is how dictation wrote
+# the hyphen). His follow-up question is not declared: answering it does not
+# need this write (D-86).
+
+utterances:
+  - now do one thing with this date - create revisions, the revision description is IFI - issued for information
