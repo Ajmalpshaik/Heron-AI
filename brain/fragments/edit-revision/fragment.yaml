@@ -164,6 +164,11 @@ compatibility-note: >
 #   "tick issued"                        -> here, issueState=issue; unissue
 #                                           takes the tick off
 #   "show only the tag for revision 2"   -> here, show=tag
+#   "change the alphabetic revision list to AA, BB, CC, DD"
+#                                        -> EDIT_REVISION_NUMBERING_SEQUENCE -
+#                                           the numbering's own list, on every
+#                                           release 2020 on; `numbering` here
+#                                           is only which one a revision uses
 #   "move revision 2 up"                 -> REORDER_REVISION
 #   "merge revision 2 down"              -> MERGE_REVISION
 #   "make a new revision"                -> CREATE_REVISION
