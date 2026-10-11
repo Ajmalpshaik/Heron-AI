@@ -58,6 +58,10 @@ WHAT IT PROVES
      RevitFragment.cs - checked for every such need in the library, through
      heron_resolve's own contract block and generate-jobs' job lines, the two
      places the hint is printed. FRAGMENT-ISSUES row 5b-190.
+ 10. The note a card's author wrote above a need reaches the caller - under
+     its row in heron_resolve's block, and under a refusal for values left
+     out - so a `string` like an extrusion's profile is never just "string".
+     FRAGMENT-ISSUES 5b-397.
   9. An `ElementId` need is told what the add-in accepts for its NAME: a name
      only where OneIdNamed has a rule for it, and otherwise CANNOT BE TYPED BY
      NAME and what binds anyway - a blank or `none` for one id, `selected` or
@@ -646,6 +650,99 @@ def main():
         check(lines and all(says_right(line, name, kind) for line in lines),
               "generate-jobs writes `%s` (%s) as the add-in reads it: %s"
               % (name, "a rule" if name in table else "no rule", lines))
+
+    # --- 10. what the CARD says about a value reaches the caller -------------
+    #
+    # FRAGMENT-ISSUES 5b-397. A type cannot carry a syntax: on 2026-10-09 a
+    # chat building a fire alarm panel was shown `profile  string`, called the
+    # capability empty, was refused with the value's name and nothing else, and
+    # read brain/fragments/*/fragment.yaml to learn the loop syntax that sits in
+    # the comment above that need. So the comment is lifted and printed under
+    # the row, by heron_resolve's block and under a needs_request_values refusal.
+    print()
+    print("What the card says above a value reaches whoever must type it")
+
+    notes_of = getattr(HF, "need_notes", None)
+    check(notes_of is not None, "heron_fragment reads the notes above each need")
+    extrusion = os.path.join(ROOT, "brain", "fragments", "create-family-extrusion",
+                             "fragment.yaml")
+    said = notes_of(extrusion) if notes_of is not None else {}
+    profile = said.get("profile", "")
+    check(all(part in profile for part in ("circle CX,CY R", "rect X1,Y1 X2,Y2",
+                                           "polygon CX,CY R N", "arc MX,MY",
+                                           "X,Z on a plane facing front")),
+          "CREATE_FAMILY_EXTRUSION's `profile` note names every loop form and "
+          "which two coordinates a plane uses: %r" % profile)
+    check("doc" not in said,
+          "a need with no comment above it has no note, rather than a borrowed one")
+
+    import tempfile
+    made = os.path.join(tempfile.mkdtemp(prefix="heron-need-notes-"),
+                        "fragment.yaml")
+    with io.open(made, "w", encoding="utf-8") as handle:
+        handle.write("# top of file, not a need's\n"
+                     "contract:\n"
+                     "  # about the block, not a need\n"
+                     "  needs:\n"
+                     "    # first need, line one\n"
+                     "    # and line two\n"
+                     "    - name: first\n"
+                     "      type: string\n"
+                     "    - name: second\n"
+                     "      type: string\n"
+                     "    # third's own\n"
+                     "    - name: third\n"
+                     "      type: double\n"
+                     "  provides:\n"
+                     "    # a provide's note is not a need's\n"
+                     "    - name: answer\n"
+                     "      type: string\n")
+    got = notes_of(made) if notes_of is not None else {}
+    check(got == {"first": "first need, line one and line two",
+                  "third": "third's own"},
+          "notes belong to the need directly below them, a need with none has "
+          "none, and nothing outside `needs` is read: %r" % (got,))
+    check((notes_of(made + ".missing") if notes_of is not None else None) == {},
+          "a card that cannot be read gives no notes, never a wrong one")
+
+    if space is not None:
+        block = contract_lines(space, "CREATE_FAMILY_EXTRUSION")
+        joined = "\n".join(block)
+        at = joined.find("profile ")
+        check(at >= 0 and "polygon CX,CY R N" in joined[at:],
+              "heron_resolve prints the profile note under the profile row")
+        try:
+            bare = space["_contract_lines"]("CREATE_FAMILY_EXTRUSION",
+                                            separator=False, notes=False)
+        except Exception as exc:                            # noqa: BLE001
+            bare = ["(it raised %s: %s)" % (type(exc).__name__, exc)]
+        check(bare and not any("polygon CX,CY R N" in line for line in bare),
+              "and a runner-up in a candidate list is listed without notes")
+
+    for door in ("revit_change", "revit_read"):
+        body = re.search(r"\ndef %s\(.*?\n(?=\S)" % door, server, re.S)
+        check(body is not None
+              and "_ended(_failure_ended(failure), explain(failure))"
+              in body.group(0)
+              and "+ _what_to_type(failure, capability)" in body.group(0),
+              "%s adds what to type under a refusal it hands back, after the "
+              "label the add-in's reply decides" % door)
+    told = lift(server, ["_what_to_type"],
+                {"_contract_lines": lambda capability: ["", "  BLOCK FOR " +
+                                                        capability]})
+    if told is not None:
+        class Refusal(object):
+            def __init__(self, code):
+                self.code = code
+        check("BLOCK FOR CREATE_FAMILY_EXTRUSION" in
+              told["_what_to_type"](Refusal("needs_request_values"),
+                                    "CREATE_FAMILY_EXTRUSION"),
+              "a refusal for values the caller left out carries the block")
+        check(told["_what_to_type"](Refusal("compile_failed"), "X") == ""
+              and told["_what_to_type"](None, "X") == "",
+              "and no other failure does")
+    else:
+        check(False, "_what_to_type can be lifted out of the server")
 
     print()
     if FAILURES:
