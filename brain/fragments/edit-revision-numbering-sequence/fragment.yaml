@@ -11,19 +11,36 @@ semantic-identity: "rename a revision numbering sequence or change its digits, s
 # On 2026-09-28 the owner checked the Edit Numbering Sequence dialog field by
 # field in Revit 2024 (Name, Type, Minimum number of digits, Starting Number,
 # Prefix, Suffix, Custom Sequence) and asked for every one from chat.
+#
+# VERSION 2, 2026-10-10: WIDENED TO REVIT 2020 AND 2021. The modeller works in
+# Revit 2020 and asked to "change the alphabetic revision list to AA, BB, CC,
+# DD"; heron_lookup filtered to 2020 offered nothing, and NEEDS-CHECKING group
+# BA said editing the 2020/2021 Numbering Options was not built. Widened here
+# rather than written as a second fragment (08 B9, one job one fragment): the
+# Numbering Options dialog edits the same fields - custom sequence, prefix,
+# suffix, starting number - that 2022 moved onto named sequences. Version 1 was
+# DRAFT with no proof, so no proof went stale. The custom-list checks (empty,
+# repeated, ellipsis) are new on every release.
 kind: action
 domain: revit.sheets
 capability: EDIT_REVISION_NUMBERING_SEQUENCE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Changes one revision numbering sequence - the Edit button in Sheet
-  Issues/Revisions > Customize Numbering: its name, and for a numeric
-  sequence its minimum number of digits, starting number, prefix and suffix,
-  or for an alphanumeric one its custom sequence, prefix and suffix. Empty
-  leaves a field alone; <blank> writes an empty prefix or suffix.
+  Issues/Revisions > Customize Numbering, or Numbering Options on Revit 2020
+  and 2021: its name, and for a numeric sequence its minimum number of
+  digits, starting number, prefix and suffix, or for an alphanumeric one its
+  custom sequence, prefix and suffix. Empty leaves a field alone; <blank>
+  writes an empty prefix or suffix.
+
+  **THE CUSTOM SEQUENCE IS TAKEN WHOLE**, commas between the values; an empty
+  or repeated value, or an ellipsis, is refused.
+
+  **REVIT 2020 AND 2021 HAVE JUST TWO**, Numeric and Alphanumeric, with no
+  rename and no minimum digits.
 
   **THE TYPE IS FIXED ONCE MADE**, so a value belonging to the other type is
   refused by name.
@@ -34,7 +51,6 @@ purpose: >
 
   A field already at the value asked is named in `alreadyThat` and not
   written; every write is read back, and a half-done edit is rolled back.
-  Revit 2022 on - earlier releases have no named sequences.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -42,15 +58,19 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The sequence to change, by its current name.
+    # The sequence to change, by its current name. On Revit 2020 and 2021,
+    # Numeric or Alphanumeric - the two words LIST_REVISIONS prints there - and
+    # empty is allowed there when the values say which: a custom list belongs
+    # only to Alphanumeric, minimum digits or a starting number only to Numeric.
     - name: name
       type: string
       source: request
-    # Its new name; empty keeps the name.
+    # Its new name; empty keeps the name. Refused on 2020 and 2021, which have
+    # no names to change.
     - name: newName
       type: string
       source: request
-    # Numeric only: a whole number, 1 or more.
+    # Numeric only: a whole number, 1 or more. Revit 2022 on.
     - name: minimumDigits
       type: string
       source: request
@@ -64,7 +84,10 @@ contract:
     - name: suffix
       type: string
       source: request
-    # Alphanumeric only: the values in order, commas between - "A, B, C".
+    # Alphanumeric only: the WHOLE list, in order, commas between - "AA, BB,
+    # CC". Spaces round a value are dropped; an empty value (two commas
+    # together, or one at an end), a value twice (capitals ignored), an
+    # ellipsis or <blank> is refused and nothing is changed.
     - name: customSequence
       type: string
       source: request
@@ -88,33 +111,66 @@ contract:
       role: accounting
       type: string
 
-revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
-runtime: [net48, net8.0-windows, net10.0-windows]
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  2022 TO 2027, AND 2020 AND 2021 ARE LEFT OUT ON PURPOSE. `RevisionNumberingSequence`
-  with its `SequenceName` (settable), `NumberType`, `Get/SetNumericRevisionSettings`
-  and `Get/SetAlphanumericRevisionSettings`, `NumericRevisionSettings.MinimumDigits`
-  and `Revision.RevisionNumberingSequenceId` exist from 2022 - read with
-  tools/api-surface --members on every release's RevitAPI.dll. Revit 2020 and
-  2021 keep ONE numeric and ONE alphanumeric scheme on `RevisionSettings`
-  (`Get/SetNumericRevisionSettings`, gone from 2023), with no names and no
-  minimum digits. Editing those two is NOT built; LIST_REVISIONS reads them.
+  2020 TO 2027, BY TWO ROUTES, BECAUSE THE RELEASES KEEP THE NUMBERING IN TWO
+  PLACES. From 2022: named `RevisionNumberingSequence` elements -
+  `GetAllRevisionNumberingSequences(Document)`, `SequenceName` (settable),
+  `NumberType`, `Get/SetNumericRevisionSettings` and
+  `Get/SetAlphanumericRevisionSettings` - with `Revision.RevisionNumberingSequenceId`
+  and `NumericRevisionSettings.MinimumDigits`. On 2020 and 2021: ONE numeric and
+  ONE alphanumeric scheme on `RevisionSettings` (`Get/SetNumericRevisionSettings`,
+  `Get/SetAlphanumericRevisionSettings`), each revision choosing one by
+  `Revision.NumberType` - all five removed in 2023. 2022 ships both and takes
+  the named route, as LIST_REVISIONS does.
+
+  EVERY ONE OF THOSE IS REACHED BY NAME, as in LIST_REVISIONS, CREATE_REVISION
+  and EDIT_REVISION, so one file serves every release whether or not the
+  add-in hands the compiler a release symbol (row 5b-181). The code names only
+  members all eight releases ship: the copy constructors, `GetSequence`,
+  `SetSequence`, `Prefix`, `Suffix`, `StartNumber`, `IsValid` and `IsEqual` of
+  `NumericRevisionSettings` / `AlphanumericRevisionSettings`,
+  `RevisionSettings.GetRevisionSettings`, `Revision.GetAllRevisionIds`,
+  `Issued`, `SequenceNumber` and `Description`, and the `RevisionNumberType`
+  enum.
+
+  HOW THAT WAS READ, 2026-10-10. tools/api-surface --members is blocked on the
+  owner's PC by its App Control policy (the freshly built ApiSurface.dll will
+  not load). Instead, every member above was looked up in the RevitAPI.xml of
+  each release's reference package (Nice3point 2020.2.90 to 2027.3.0): the
+  named-sequence set is documented 2022 to 2027 and absent 2020 and 2021; the
+  four RevisionSettings members and `Revision.NumberType` 2020 to 2022 only;
+  the rest on all eight. 2020 to 2024 were also read off the cached
+  RevitAPI.dll by a reflection-only load in Windows PowerShell, with the same
+  answer, and tools/api-surface/changes.json records the same 2023 removals.
+  ONLY THE 2022+ ROUTE HAS MET A REVIT (2024, without --write, 2026-09-28);
+  the 2020/2021 route is compiled, not run.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "rename the numbering"               -> here, newName=
 #   "change the revision numbering prefix" -> here
 #   "edit the numbering sequence"        -> here
+#   "change the alphabetic revision list to AA, BB, CC, DD"
+#                                        -> here, customSequence=AA, BB, CC, DD
+#                                           and name=Alphanumeric on 2020/2021
+#                                           - the numbering's own list, not one
+#                                           revision's row (EDIT_REVISION)
 #   "make an alphabetic sequence"        -> CREATE_REVISION_NUMBERING_SEQUENCE
 #   "delete the numbering sequence"      -> DELETE_REVISION_NUMBERING_SEQUENCE
 #   "use the Custom numbering on revision 2"
 #                                        -> EDIT_REVISION, numbering=Custom -
 #                                           which sequence a REVISION uses
+#   "show me the revision numbering sequences"
+#                                        -> LIST_REVISIONS - a question, which
+#                                           reads what this changes
 
 utterances:
   - rename the numbering
   - change the revision numbering prefix
   - edit the numbering sequence
   - start the numeric revision numbering at 0 with 2 digits
+  - change the alphabetic revision list to AA, BB, CC, DD
