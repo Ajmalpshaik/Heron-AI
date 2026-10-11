@@ -144,8 +144,12 @@ should answer `Backend: model`.
 
 **The re-ranker — read before you agree.** `python brain/heron_rerank.py` says what it is and how big,
 before anything downloads. The size it prints is a field reading, and a Linux machine downloaded more
-than it says ([row 5b-200](FRAGMENT-ISSUES.md)); it has not been measured on Windows. If you still want
-it: `pip install --user sentence-transformers`, then `python brain/heron_rerank.py --fetch --yes`.
+than it says ([row 5b-200](FRAGMENT-ISSUES.md)); it has not been measured on Windows. **It also costs
+memory for as long as a chat is open:** measured 2026-10-11 on the owner's laptop (15.8 GB), with the
+trained model and the re-ranker installed, each open chat's Heron held 2.0 to 2.3 GB, and seven chats open
+at once left 492 MB free - there is no reading from before the install, so the re-ranker's own share of
+that is not known. If you still want it: `pip install --user sentence-transformers`, then
+`python brain/heron_rerank.py --fetch --yes`.
 
 **To take either one away:** `pip uninstall` the same package. Heron goes back to the level below and
 says so on every answer.

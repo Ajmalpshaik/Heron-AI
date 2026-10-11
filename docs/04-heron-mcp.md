@@ -427,3 +427,32 @@ hand-back, 322,725 characters across the two builds and about 70% of it helpers 
 **NOT MEASURED:** the office PC's minutes for the same family, and the model, effort level and fast-mode
 setting its chat runs - which this section never considered and `heron-ready --snapshot` does not record
 ([Q-61](OPEN-QUESTIONS.md)).
+
+**MEASURED 2026-10-11 on the same laptop** - a 165-form generator (156 extrusions, 5 sweeps, 4 revolves)
+built in one chat, `claude-opus-5-5` at effort *xhigh* on every request. 1,423 s from request to finish,
+and the model's own turns were 95% of it; one planning turn before the first form took 617 s and 60,600
+thinking tokens. Revit's own time over the 198 fragment runs of 2026-10-11 was 23.5 s, two-thirds of it
+seven fragments compiling on their first run. Heron's server added a median 24 ms to each call outside Revit (38 to 75 ms
+measured from the transcript, which adds Claude Code's handling). The search index ran in one call, a
+`heron_lookup` of about 0.44 s: every `revit_change` named its capability, which skips retrieval. **The
+trained model and re-ranker installed on 2026-10-10 did not measurably slow family builds** - four builds
+on each side of the install, 9.47 s a form before and 9.90 after, well inside either side's spread (7.28 to
+16.03 s before, 8.62 to 16.45 after), the model's share 93% both times. Their cost is memory
+([WHAT-TO-INSTALL §2](WHAT-TO-INSTALL.md)).
+
+**Calls sent together run one at a time, and that is on purpose.** Every tool call holds the server's one
+`_revit_lock` (taken in `_recorded`; its comment reads *ONE CONVERSATION WITH REVIT AT A TIME*), so a batch
+of ten `revit_change` calls sent in parallel queues in the server: in 173 back-to-back pairs none overlapped,
+and the gaps between them came to about 7.2 s over the whole build. Revit would line them up anyway - the
+add-in has one ExternalEvent and one queue (`RevitDispatcher.cs`) - so taking the lock away could save at
+most those seconds, and would lose what it guards: a second pipe connection displacing the first and losing
+its answer ([40 §4](40-heron-companion.md)). One case costs more, read from the code and not seen in this
+build: a `heron_resolve`, `heron_method` or `heron_lookup` that arrives while the knowledge store is still
+being prepared waits for it inside the lock (`_PREPARING`, `mcp/server/heron_brain.py`), and every other
+tool call waits behind it. The lever Heron has is fewer calls, not parallel ones: `CREATE_FAMILY_FORMS`
+(DRAFT, [Q-62](OPEN-QUESTIONS.md)) builds many forms in one. Two small per-call costs the measurement found
+are rows [5b-427 and 5b-428](fragment-issues/section-5b-rows-401-425.md); the sweep's shape note that #472
+left short is [5b-429](fragment-issues/section-5b-rows-401-425.md).
+
+**NOT MEASURED:** what the 617 s turn spent its thinking on - the thinking text is not stored - and the
+office PC ([Q-61](OPEN-QUESTIONS.md)).
