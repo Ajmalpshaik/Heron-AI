@@ -45,6 +45,12 @@ negative:
   - given: startMm 200 and endMm 200
     expect: refused as having no depth, and no form made
 
+  - given: startMm -148.5 and endMm -148, 0.5 mm deep (5b-400)
+    expect: >
+      refused saying it is 0.5 mm deep, less than Revit's shortest line, and
+      to make it at least 0.79 mm deep - the least depth, rounded up - and no
+      form made
+
   - given: a project in front
     expect: notAFamily true and nothing built anywhere
 
