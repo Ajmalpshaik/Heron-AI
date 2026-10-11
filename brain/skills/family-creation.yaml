@@ -32,6 +32,23 @@ purpose: >
   modeller wants typical proportions, they go in that list as proposals to
   accept, marked typical rather than a maker's figures (D-33).
 
+  BUILD IT PART BY PART, NEVER IN ONE CLICK AT THE END (the owner's rule,
+  2026-10-11). Step 0's list splits the thing into 4 to 6 GROUPS, biggest
+  first - a desk's top, then its frame, then its drawers, then its handles;
+  a fan coil unit's casing, fans, coil and drain, air side, electrics. Then,
+  for each group in turn: work out only that group's parts, build them in
+  ONE CREATE_FAMILY_FORMS call with their materials named on the rows (step
+  7 is one call PER GROUP, not one for the whole family), tell the modeller
+  in one line what is now in Revit, and move to the next group. Never work
+  out every part of the family silently and build it all at the end: the
+  thinking takes the same time either way, Revit takes about a second per
+  call, but the modeller sees nothing for many minutes and a wrong part is
+  found only when everything is built. Group by group, the first part is on
+  screen within about a minute and a mistake costs only its own group.
+  Measured 2026-10-11 on a fixed fan coil unit: 87 parts and 6 connectors in
+  5 groups, 4 min 50 s from request to built; a 186-part transformer built
+  in one call took 9 min 40 s, 27 s of it Revit and Heron.
+
   0. REPORT_FAMILY_TEMPLATE, then READ THE THING. The report says which KIND
      of family the modeller opened - and a family that is not level-based or
      work-plane-based has a skill of its own: HOSTED-FAMILY-CREATION for a
