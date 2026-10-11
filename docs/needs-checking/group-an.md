@@ -48,3 +48,50 @@ saved nowhere until AN9 has passed.
 
 **Not in this group, because not built:** void cuts, round shapes, materials, subcategories and Is
 Reference - the skill says so in its own words.
+
+### 2026-10-11 - `add-family-connector` version 3: a connector on a face of joined or cut forms (row 5b-410)
+
+**DRAFT, compiled for Revit 2020 to 2027 on 2026-10-11, NOT RUN - no Revit was connected.** On 2026-10-10
+(Revit 2020, session 36948) the owner's gate valve, Family1, had its two flanges cut by a bore void and two
+bolt-hole voids through `COMBINE_FAMILY_FORMS`, all in one combination, and `ADD_FAMILY_CONNECTOR` on the
+plane `Flange Face Left` answered *"No solid face lies on "Flange Face Left""* with the flange's face exactly
+on it (row 5b-410, recorded by PR #470 and not yet on main when this was written - it goes in `docs/fragment-issues/section-5b-rows-401-425.md`). Read in the source:
+the tool looked for the face in each form's own geometry, and once a form is joined or cut Revit keeps its
+faces in the combination's - `REPORT_FAMILY_FORMS` reads such a form at 0 L.
+
+**Version 3** also reads every combination's geometry, as `COMBINE_FAMILY_FORMS` reads one, and uses its
+faces when no form's own face lies on the plane - exactly one, or refused with the count. A form's own face
+still wins, so the way round the row used (a thin ring joined to nothing on the flange face) keeps working,
+and when it wins with joined faces on the same plane the result says how many. **What Revit's reference to a
+joined face names, and whether Revit takes a connector on it at all, is not known: it is reported as Revit
+answers.** If Revit refuses, the refusal carries its own words and the way round; nothing is faked.
+
+**THE ARRANGEMENT - made KEPT, once, in a new scratch family**, never Family1 and never one of the owner's
+saved families. `CREATE_FAMILY_DOCUMENT` from *Metric Generic Model* gives a family; with it in front, and
+`HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` and `< /dev/null` on every line:
+
+```
+python mcp/client/heron_bridge_client.py fragment create-reference-planes --write --apply --set "planes=Port Left=-150; Port Right=150" --set axis=left-right
+python mcp/client/heron_bridge_client.py fragment create-reference-planes --write --apply --set "planes=Box Top=100" --set axis=height
+python mcp/client/heron_bridge_client.py fragment create-family-extrusion --write --apply --set "workPlane=Ref. Level" --set "profile=rect -150,-50 -50,50" --set startMm=0 --set endMm=100 --set solid=true
+python mcp/client/heron_bridge_client.py fragment create-family-extrusion --write --apply --set "workPlane=Ref. Level" --set "profile=rect 50,-50 150,50" --set startMm=0 --set endMm=100 --set solid=true
+python mcp/client/heron_bridge_client.py fragment create-family-extrusion --write --apply --set "workPlane=Center (Left/Right)" --set "profile=circle 0,50 20" --set startMm=-160 --set endMm=160 --set solid=false
+python mcp/client/heron_bridge_client.py fragment combine-family-forms --write --apply --set "forms=<box A id>, <box B id>, <void id>"
+python mcp/client/heron_bridge_client.py fragment add-family-parameters --write --apply --set "parameterNames=Port Dia" --set kind=Length --set instance=false --set parameterGroup=Dimensions
+python mcp/client/heron_bridge_client.py fragment set-family-type-values --write --apply --set typeName=T1 --set "values=Port Dia=40"
+python mcp/client/heron_bridge_client.py fragment report-family-forms
+```
+
+The three ids are the `formId`s the extrusions gave back. Before the rows: `REPORT_FAMILY_FORMS` reads both
+boxes at 0 L and "in" the one combination, the void too. Every run below is rolled back (`validate --write`)
+unless it says KEPT.
+
+| # | Run | Look for |
+|---|---|---|
+| **AN12** | `validate --in "<family>" --negative-in "<family>" --write --set "facePlane=Port Left" --set "system=Domestic Cold Water" --set "sizeParameters=Port Dia" --negative-set "facePlane=Box Top" --negative-set "system=Domestic Cold Water" --negative-set "sizeParameters=Port Dia" add-family-connector` - or the job file [`add-family-connector-joined-face-2026-10-11.yaml`](../../tools/jobs/add-family-connector-joined-face-2026-10-11.yaml) | a pipe connector, round 40 mm, at X -150, Y 0, Z 50, pointing left (-X); `sizedBy` "connector diameter <- Port Dia"; `connector` naming the combination and **what Revit's reference to the face names - write that sentence down whole**: it is the measurement the change was asked for. **If Revit refuses instead**, record its words; the card's purpose then says so in place of "found too", and row 5b-410 stays open with the way round as the answer |
+| **AN13** | the negative half of AN12: `Box Top`, where both boxes' tops lie | refused, *"2 faces of joined or cut forms lie on "Box Top" (facing up, up)"*, `sizedBy` EMPTY |
+| **AN14** | the way round kept: a ring joined to nothing on box B's right face, `create-family-extrusion` on `Center (Left/Right)`, `circle 0,50 35 \| circle 0,50 20`, 149 to 150, solid, made KEPT after AN12 and AN13 (it touches neither `Port Left` nor `Box Top`), then `facePlane=Port Right` | the connector on the RING's face - a form's own face first - at X 150, pointing right (+X), and `connector` ending *"1 face(s) of joined or cut forms lie on the same plane too"* |
+| **AN15** | a duct connector on the joined face: `system=Supply Air`, `sizeParameters=Port W, Port H` on `Port Left` - two type lengths added KEPT, holding 100 and 100 | Revit's answer recorded. A rectangular port is measured against the face's outer edges - box A's left face is 100 x 100 with the bore inside - so it either reads 100 x 100 and fits, or refuses naming both sizes. Either is an answer; write which |
+| **AN16** | the family after AN12 to AN15 | `REPORT_FAMILY_CONNECTORS`: no connector; `REPORT_FAMILY_FORMS`: the same one combination, and AN14's ring joined to nothing. Look: rollback has failed on this PC before (BD1) |
+| **AN17** | the signature | `python brain/heron_validate.py accept add-family-connector --by "Ajmal PS"` on the AN12/AN13 record, on the owner's word only |
+| **AN18** | AN12 and AN13 on **Revit 2020** (where row 5b-410 was seen) and on **2024** | The same answers. Every member version 3 adds reads the same 2020 to 2027 (RevitAPI.xml, 2026-10-11) and compiles on all eight releases; not run on any |

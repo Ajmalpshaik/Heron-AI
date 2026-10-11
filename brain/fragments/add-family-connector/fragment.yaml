@@ -9,7 +9,7 @@ semantic-identity: "put a duct, pipe or electrical connector on this face of the
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -33,6 +33,19 @@ purpose: >
   Exactly one solid face must lie on the plane named; none, or more than one,
   is refused with the count, because a connector on the wrong face points the
   wrong way and nothing about it looks wrong in plan.
+
+  **A JOINED OR CUT FORM'S FACE IS FOUND TOO (version 3, row 5b-410).** Once a
+  form is joined or cut by COMBINE_FAMILY_FORMS - a flange cut by a bore void -
+  Revit keeps its faces in the combination's geometry and the form's own reads
+  empty, so a flange face exactly on its plane came back "no solid face". Every
+  combination's faces are now searched when no form's own face lies on the
+  plane, under the same rule: exactly one, or refused with the count. A form's
+  own face is still used first, so a thin solid joined to nothing, laid on a
+  cut face, takes the connector wherever Revit will not take it on the joined
+  face - and where a form's own face wins with joined faces on the same plane
+  too, the result says how many. What Revit's reference to a joined face names,
+  and whether Revit takes a connector on it, is reported as Revit answers; a
+  refusal names that way round.
 
   **THE SYSTEM DECIDES THE KIND.** "Supply Air" makes a duct connector,
   "Domestic Cold Water" a pipe one, "Power Balanced" an electrical one - matched
@@ -162,7 +175,9 @@ compatibility-note: >
   `new ElementId(BuiltInCategory)` is on every release (api-surface,
   2026-10-04). The three system enums are read
   by name at run time, so a system added in a later release is offered there
-  without a change here.
+  without a change here. Version 3 also reads
+  a `GeomCombination`'s geometry and `Reference.ElementId`, present in every
+  reference assembly 2020 through 2027 (RevitAPI.xml, read 2026-10-11).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
