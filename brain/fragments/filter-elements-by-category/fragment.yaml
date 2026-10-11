@@ -152,7 +152,8 @@ compatibility-note: >
 # handles worst.
 #   "find all elements of a category"    -> here
 #   "how many MEP spaces are in the model" -> here, category Spaces (5b-355)
-#   "find all the VCDs"                  -> SELECT_BY_FAMILY, when the FAMILY
+#   "how many rooms are there"           -> here, category Rooms (5b-401)
+#   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
 #   "all the ductwork"                   -> SELECT_BY_CATEGORIES. Ducts,
@@ -183,3 +184,14 @@ utterances:
   - how many MEP spaces are in the model
   - count the spaces on this level
   - OST_MEPSpaces
+  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-401. The same question about rooms
+  # was answered by PLACE_ROOMS - a change that PLACES rooms - on the trained
+  # backend, and by REPORT_AREA_VOLUME_COMPUTATIONS, a read of one setting
+  # that counts nothing, on the spelling one. Category Rooms, levelId none.
+  # Every Room element is counted, placed or not: the collector above has no
+  # test that would leave an unplaced one out. REPORT_ROOM_SPACE_DATA, handed
+  # the same rooms, names which are unplaced and which unenclosed.
+  #
+  # THE SENTENCE, NOT THE KIND, as for 5b-355: the row names the room
+  # counts that still reach a change.
+  - how many rooms are there
