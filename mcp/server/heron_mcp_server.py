@@ -1139,16 +1139,59 @@ def _provides_lines(provides):
     a change there costs a rebuild and a Revit restart on every release. It
     is recognised by its exact shape, a whole number and that one word, so a
     fragment's own sentence that happens to say "entry(ies)" is left alone.
+
+    A VALUE THAT IS CODE, NOT DATA, IS NAMED AND NOT PRINTED. `Report` hands
+    over every variable a fragment's script declared, and many hold a helper:
+    a lambda (`Func`2`), `CultureInfo`, `BindingFlags`, a namespace string, or
+    a list whose items print as `System.Int32[]`. None says anything about the
+    model. Measured on a 107-form family on 2026-10-09: 29% of the 322,725
+    characters revit_change returned were such lines - context every later
+    turn carried (5b-407). They are recognised by shape and listed by NAME on
+    one line, so nothing disappears unannounced. Only these go: a value the
+    card does not declare is still printed when it holds data - 317 fragments'
+    proofs show undeclared values that are real results (ids, counts, members),
+    so "declared only" would have hidden answers.
     """
     if not isinstance(provides, dict) or not provides:
         return []
-    width = max(len(str(name)) for name in provides)
-    lines = [""] + ["  %-*s  %s" % (width, name, provides[name])
-                    for name in sorted(provides)]
+
+    def is_code(value):
+        text = str(value).strip()
+        head = text.split(" ", 1)[0]
+        if head.isdigit() and text[len(head):].startswith(" item(s) ["):
+            shown = text.split("[", 1)[1]
+            return shown.startswith(("System.", "Autodesk.", "(System.",
+                                     "(Autodesk.", "[System.", "[Autodesk."))
+        if not text or " " in text:
+            return False
+        if "`" in text and text.split("`", 1)[0] in (
+                "Func", "Action", "Predicate", "Comparison", "Converter",
+                "Tuple", "ValueTuple", "KeyValuePair", "Lazy", "List",
+                "HashSet", "Dictionary", "IEnumerable", "IList"):
+            return True
+        if text.startswith(("System.", "Autodesk.")):
+            return True
+        return text in ("CultureInfo", "BindingFlags", "RuntimeAssembly",
+                        "RuntimeMethodInfo", "RuntimeType", "RuntimePropertyInfo",
+                        "RuntimeFieldInfo", "RuntimeConstructorInfo", "Regex",
+                        "StringBuilder", "StringComparer", "Stopwatch", "Random")
+
+    code = sorted(str(name) for name in provides if is_code(provides[name]))
+    data = dict((name, provides[name]) for name in provides
+                if str(name) not in code)
+
+    lines = [""]
+    if data:
+        width = max(len(str(name)) for name in data)
+        lines += ["  %-*s  %s" % (width, name, data[name])
+                  for name in sorted(data)]
+    if code:
+        lines.append("  NOT PRINTED, holding code rather than data: %s."
+                     % ", ".join(code))
 
     held = []
-    for name in sorted(provides):
-        words = str(provides[name]).strip().split(" ")
+    for name in sorted(data):
+        words = str(data[name]).strip().split(" ")
         if (len(words) == 2 and words[1] == "entry(ies)"
                 and words[0].isdigit() and int(words[0]) > 0):
             held.append(str(name))
@@ -1419,7 +1462,8 @@ def _by_words(request, door, values):
         lines.append("  also close   %s   (%s)   %s"
                      % (c["capability"], c.get("risk") or "risk unread", c["why"]))
         lines.extend("  " + line if line else line
-                     for line in _contract_lines(c["capability"], separator=False))
+                     for line in _contract_lines(c["capability"], separator=False,
+                                                 notes=False))
 
     lines.append("")
     lines.append("  A NEWLINE separates one value from the next. A SEMICOLON "
@@ -1648,7 +1692,8 @@ def revit_change(capability: str = "", values: str = "",
     # a refusal whose message never says "refused" is still one (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_change"))
     if failure is not None:
-        return _ended(_failure_ended(failure), explain(failure))
+        return _ended(_failure_ended(failure),
+                      explain(failure) + _what_to_type(failure, capability))
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
@@ -2668,7 +2713,8 @@ def revit_read(capability: str = "", values: str = "",
     # is one even when its first line names only the capability (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:
-        return _ended(_failure_ended(failure), explain(failure))
+        return _ended(_failure_ended(failure),
+                      explain(failure) + _what_to_type(failure, capability))
 
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
@@ -3445,7 +3491,7 @@ def _drift_lines(found, indent="  ", gap=True):
     return ([""] if gap else []) + [indent + said]
 
 
-def _contract_lines(capability, separator=True):
+def _contract_lines(capability, separator=True, notes=True):
     """
     What the CALLER has to type to run this capability, and how to write each.
 
@@ -3468,14 +3514,21 @@ def _contract_lines(capability, separator=True):
     with certainty. A short needs list is worse than none: the caller fills in
     what they were shown, and the one that was missing reads afterwards as a
     fragment that ignored them.
+
+    AND UNDER EACH VALUE, WHAT ITS CARD SAYS ABOUT IT (`notes`). A type cannot
+    carry a syntax - `profile  string` was all a chat building a family was
+    shown, and the loop syntax it needed sat in the comment above that need,
+    so it read the card off disk (5b-397). heron_fragment.need_notes lifts
+    those comments. `notes=False` only for the runners-up in a candidate list,
+    where every card's notes at once would bury the one that was picked.
     """
     folder, _status = _fragment_for(capability)
     if folder is None:
         return []
 
-    needs = bridge.fragment_needs(os.path.join(_repo_root(), "brain",
-                                               "fragments", folder,
-                                               "fragment.yaml"))
+    card = os.path.join(_repo_root(), "brain", "fragments", folder,
+                        "fragment.yaml")
+    needs = bridge.fragment_needs(card)
     if needs is None:
         return ["", "  Its contract could not be read with certainty, so what "
                     "it needs is not listed here rather than listed short."]
@@ -3510,12 +3563,18 @@ def _contract_lines(capability, separator=True):
 
     wide = max(len(n) for n, _k, _h in asked)
     wide_kind = max(len(k) for _n, k, _h in asked)
+    said = HF.need_notes(card) if notes else {}
 
     out = ["", '  YOU SUPPLY THESE %d value(s), one "name=value" per LINE:'
                 % len(asked)]
     for name, kind, hint in asked:
         row = "    %-*s  %-*s" % (wide, name, wide_kind, kind)
         out.append(row + ("   " + hint if hint else ""))
+        # ONE LINE, NEVER WRAPPED: a wrap splits a syntax mid-example -
+        # "polygon" at one line's end, "CX,CY R N" at the next - and the
+        # example is the part that gets copied.
+        if said.get(name):
+            out.append("        " + said[name])
 
     # THE SEPARATOR, SAID ONCE AND HERE. A semicolon inside a value belongs to
     # that value. Walls asked to go red stayed white through four writes on
@@ -3533,6 +3592,26 @@ def _contract_lines(capability, separator=True):
                    "the fragment before it. You do not supply those."
                    % elsewhere)
     return out
+
+
+def _what_to_type(failure, capability):
+    """
+    The contract block, under a refusal for values the caller left out - or "".
+
+    THE REFUSAL NAMED THE VALUES AND STOPPED. The add-in's needs_request_values
+    answer lists `'profile (string)'` and says to supply it, and nothing on that
+    path said how a profile is written. A chat that called the capability
+    without heron_resolve first - the turn the short path exists to save - got
+    the name and had to go and find the syntax: on 2026-10-09 that was a read
+    of the fragment's card off disk (5b-397). The block heron_resolve prints,
+    notes and all, is what the refusal was missing, so it is added here, and
+    only for this one refusal: every other failure is about something other
+    than what to type.
+    """
+    if failure is None or getattr(failure, "code", None) != "needs_request_values":
+        return ""
+    block = _contract_lines(capability)
+    return ("\n" + "\n".join(block)) if block else ""
 
 
 @server.tool()
