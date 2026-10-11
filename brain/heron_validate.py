@@ -633,6 +633,7 @@ def draft_from_record(frag, record):
         # as a plain list, and a record can be drafted for a fragment whose
         # contract cannot be read at all - in which case judge everything,
         # which is the stricter behaviour and the right default.
+        strings = None
         try:
             declaration = frag.provides() if callable(frag.provides) else frag.provides
             # ONLY WHAT THE FRAGMENT ACTUALLY WROTE DOWN, which is now every
@@ -655,9 +656,11 @@ def draft_from_record(frag, record):
                             if isinstance(d, dict) and d.get("name") and d.get("role"))
             declared_names = set(d.get("name") for d in (declaration or [])
                                  if isinstance(d, dict) and d.get("name"))
+            # A sentence result read as `positive_worked` reads it (5b-411).
+            strings = string_results(frag)
         except Exception:
             declared = None
-        if not looks_empty(negative, declared, declared_names):
+        if not looks_empty(negative, declared, declared_names, strings):
             negative_text += ("\n\nWARNING: this did NOT come back empty. A "
                               "negative case that returns content is a "
                               "FINDING, not a proof - the fragment may be "
@@ -861,6 +864,50 @@ def contract_of(frag):
     return roles, names
 
 
+def string_results(frag):
+    """The names a fragment declares `type: string` AND `role: result`.
+
+    A FRAGMENT WHOSE RESULT IS A SENTENCE COULD NOT BE BATCH-PROVED. Every
+    reading in this module asks for a count moving off zero, and a sentence is
+    not one, so `_as_count` answers None and the positive reads UNREADABLE
+    however well both legs held. Found 2026-10-10 re-proving `edit-revision`
+    on Project2 (Revit 2020): `changed` came back "issued by (blank) ->
+    'M.Sagheer'; issued to (blank) -> 'A.Rahmani'; issued" in the positive and
+    empty in the negative - the contrast D-30 asks for - and `batch-prove` said
+    POSITIVE UNREADABLE. Row 5b-411.
+
+    BOTH KEYS, NEVER ONE. The type says the value is text rather than an object
+    rendered as its type name; the role says the text is what the fragment
+    FOUND. A sentence declared `role: accounting` - what was already there,
+    what was refused, which revision was handed in - says the fragment looked,
+    never that it found (D-52), and stays out. So does a string with no role,
+    which `heron_fragment.py` would not have passed.
+
+    `provides` may be a plain list on a test stub, as `draft_from_record`
+    already allows.
+    """
+    declaration = frag.provides() if callable(frag.provides) else frag.provides
+    return set(d.get("name") for d in (declaration or [])
+               if isinstance(d, dict) and d.get("name")
+               and d.get("role") == "result"
+               and str(d.get("type") or "").strip().lower() == "string")
+
+
+def _as_found(value):
+    """What a declared STRING result found: 0 for nothing, otherwise not 0.
+
+    Empty, blank and "(null)" are nothing, exactly as `_as_count` reads them.
+    A value `_as_count` CAN read - "0", "3 item(s)", "true" - keeps that
+    reading, so nothing that was readable before reads differently now. Only
+    what `_as_count` gives up on, which for a declared string is a sentence,
+    counts as one thing found.
+    """
+    if value is None:
+        return 0
+    count = _as_count(value)
+    return 1 if count is None else count
+
+
 
 def _result_appeared(positive, negative, frag):
     """Is a declared result PRESENT in the positive and GONE in the negative?
@@ -970,9 +1017,18 @@ def positive_worked(phase, frag, expect=None):
         `bothOut` were 0 in both legs.
       * **Unreadable is not work.** An `OverrideGraphicSettings` object is not a
         count that could have been zero.
+
+    AND ONE READING THAT IS NOT A COUNT: a result declared `type: string` is
+    found when it says something and nothing when it is empty - see
+    `string_results`. It is never taken for a helper object, because a
+    declared string arrives as its own text, and a one-word answer such as
+    `SupplyAir` has the same shape as a bare type name. `looks_empty` reads the
+    negative the same way, so the same word in both legs is content there and
+    cannot pass.
     """
     provides = phase.get("provides") or {}
     roles, names = contract_of(frag)
+    strings = string_results(frag)
 
     if expect:
         judged = [(k, provides.get(k)) for k in expect]
@@ -990,7 +1046,7 @@ def positive_worked(phase, frag, expect=None):
                 continue                        # declared as bookkeeping
             if key in NOTE_KEYS:
                 continue                        # prose, never a quantity
-            if _is_helper_object(value):
+            if key not in strings and _is_helper_object(value):
                 continue                        # a type name, not a quantity
             judged.append((key, value))
 
@@ -1001,7 +1057,7 @@ def positive_worked(phase, frag, expect=None):
 
     unreadable, zeros = [], []
     for key, value in judged:
-        count = _as_count(value)
+        count = _as_found(value) if key in strings else _as_count(value)
         if count is None:
             unreadable.append("%s %s" % (key, value))
         elif count != 0:
@@ -1020,7 +1076,7 @@ def positive_worked(phase, frag, expect=None):
             "every declared result came back zero (%s)" % ", ".join(sorted(zeros)))
 
 
-def looks_empty(phase, declared=None, declared_names=None):
+def looks_empty(phase, declared=None, declared_names=None, strings=None):
     """Whether a phase's numbers really do read as nothing.
 
     THE COUNTS DECIDE (D-51), AND ONLY THE COUNTS OF WHAT WAS FOUND (D-52).
@@ -1043,10 +1099,16 @@ def looks_empty(phase, declared=None, declared_names=None):
     in the positive AND the negative case, because the document permits globals
     either way, and counting that as content would make an empty answer
     impossible for it to demonstrate.
+
+    `strings` is `string_results(frag)`: those names are read as text, found
+    or nothing, the same reading `positive_worked` gives them. Left out, the
+    negative is read as it was before 2026-10-11 - and a one-word result in
+    it is skipped as a helper object, which is the hole that reading closes.
     """
     provides = phase.get("provides") or {}
     if not provides:
         return False
+    strings = strings or ()
 
     # JUDGE ONLY WHAT THE FRAGMENT SAID IT WOULD PROVIDE. The executor reports
     # every variable left in scope, which includes the fragment's own working
@@ -1080,9 +1142,9 @@ def looks_empty(phase, declared=None, declared_names=None):
             continue
         if key in NOTE_KEYS:
             continue
-        if _is_helper_object(value):
+        if key not in strings and _is_helper_object(value):
             continue
-        count = _as_count(value)
+        count = _as_found(value) if key in strings else _as_count(value)
         if count is None:
             return False              # unreadable shape - say so, do not assume
         if count != 0:
@@ -1386,7 +1448,7 @@ def _evidence_refusal(slug, frag, proof):
     if negative is None:
         return "the run record has no negative phase in it"
     roles, names = contract_of(frag)
-    if not looks_empty(negative, roles, names):
+    if not looks_empty(negative, roles, names, string_results(frag)):
         return ("the negative case came back with content, so it is a FINDING "
                 "rather than a proof. The leg that must find nothing found "
                 "something - read the draft and the run record before signing.")

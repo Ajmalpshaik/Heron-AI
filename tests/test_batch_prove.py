@@ -187,6 +187,133 @@ def test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not():
           "an accounting flag flipping proves nothing (%s)" % verdict)
 
 
+def test_a_sentence_result_is_read_as_found_or_nothing():
+    print("A result declared as a STRING is found when it says something")
+
+    # EDIT_REVISION version 2, as declared: `changed` is ONE joined string so
+    # the reply prints every column, and it is the only result. Row 5b-411:
+    # on 2026-10-10 (Project2 scratch, Revit 2020) both legs held and the
+    # runner said POSITIVE UNREADABLE, because it could only read a count.
+    # `changed` below is the positive's own value from that row. The
+    # negative's `alreadyThat` and the `revisionName` are stand-ins: the row
+    # records only that the negative named the description and the date.
+    frag = FakeFragment("edit-revision", [
+        {"name": "changed", "type": "string", "role": "result"},
+        {"name": "alreadyThat", "type": "string", "role": "accounting"},
+        {"name": "nowIssued", "type": "bool", "role": "accounting"},
+        {"name": "revisionName", "type": "string", "role": "accounting"},
+        {"name": "findings", "type": "string"},
+        {"name": "refused", "type": "string", "role": "accounting"},
+    ])
+    positive = {"changed": "issued by (blank) -> 'M.Sagheer'; issued to "
+                           "(blank) -> 'A.Rahmani'; issued",
+                "alreadyThat": "", "nowIssued": "true",
+                "revisionName": "Seq. 2 'For review'",
+                "findings": "Seq. 2 'For review' is issued", "refused": ""}
+    negative = {"changed": "",
+                "alreadyThat": "description 'For review'; date '2026-10-10'",
+                "nowIssued": "true", "revisionName": "Seq. 2 'For review'",
+                "findings": "Seq. 2 'For review' is issued", "refused": ""}
+
+    verdict, why = BP.judge(record(positive=positive, negative=negative), frag)
+    check(verdict == BP.PASS,
+          "a sentence in the positive and nothing in the negative is a PASS (%s)"
+          % verdict)
+    check((why or "").startswith("positive: changed issued by"),
+          "and the verdict names it: %r" % why)
+    check(BP.positive_worked({"provides": positive}, frag)[0] is None,
+          "the signing gate's own question agrees: the positive found something")
+
+    # EMPTY IS NOTHING, however it arrives.
+    for nothing in ("", "  ", "(null)"):
+        quiet = dict(positive, changed=nothing)
+        verdict, _ = BP.judge(record(positive=quiet, negative=negative), frag)
+        check(verdict == BP.POSITIVE_EMPTY,
+              "`changed %r` found nothing (%s)" % (nothing, verdict))
+
+    # ACCOUNTING IS NEVER EVIDENCE, sentence or not. `alreadyThat` filled and
+    # `changed` empty is exactly what a second identical run answers (D-52).
+    repeat = dict(negative, refused="")
+    verdict, _ = BP.judge(record(positive=repeat, negative=negative), frag)
+    check(verdict == BP.POSITIVE_EMPTY,
+          "an accounting sentence is not a result (%s)" % verdict)
+
+    # ONLY A DECLARED `role: result`. A string the contract never called a
+    # result - no role at all - stays unreadable rather than counting.
+    unsaid = FakeFragment("sample", [{"name": "summary", "type": "string"}])
+    verdict, _ = BP.judge(record(positive={"summary": "three ducts sized"},
+                                 negative={"summary": ""}), unsaid)
+    check(verdict == BP.POSITIVE_UNREADABLE,
+          "a string with no `role: result` is still not read as found (%s)"
+          % verdict)
+
+    # A SENTENCE IN BOTH LEGS IS A FINDING, NOT A PASS - the negative is
+    # judged by the same reading as the positive.
+    verdict, why = BP.judge(record(positive=positive,
+                                   negative=dict(negative, changed="issued")),
+                            frag)
+    check(verdict == BP.NEG_NOT_EMPTY,
+          "a result string in the negative is content (%s)" % verdict)
+    check(why == "the negative returned changed issued",
+          "and it says what came back, even one word: %r" % why)
+
+    # THE HOLE A ONE-SIDED FIX WOULD OPEN. A one-word string such as
+    # `SupplyAir` matches the shape of a bare type name, which the negative
+    # used to skip as a helper object. Read as found in the positive and
+    # skipped in the negative, the same word in both legs would have PASSED.
+    kind = FakeFragment("create-mep-system-type", [
+        {"name": "classification", "type": "string", "role": "result"}])
+    same = {"classification": "SupplyAir"}
+    verdict, _ = BP.judge(record(positive=same, negative=same), kind)
+    check(verdict != BP.PASS,
+          "the same word in both legs is never a pass (%s)" % verdict)
+    verdict, _ = BP.judge(record(positive=same,
+                                 negative={"classification": ""}), kind)
+    check(verdict == BP.PASS,
+          "a word in the positive and nothing in the negative is (%s)" % verdict)
+
+    # `expect:` STILL DECIDES WHAT IS JUDGED. Naming the result reads it as a
+    # sentence; naming an accounting string does not make it evidence.
+    verdict, _ = BP.judge(record(positive=positive, negative=negative), frag,
+                          expect=["changed"])
+    check(verdict == BP.PASS, "`expect: changed` passes (%s)" % verdict)
+    verdict, _ = BP.judge(record(positive=negative, negative=negative), frag,
+                          expect=["alreadyThat"])
+    check(verdict == BP.POSITIVE_UNREADABLE,
+          "`expect: alreadyThat` is still accounting, still unreadable (%s)"
+          % verdict)
+
+
+def test_counts_and_ids_read_as_they_did():
+    print("ElementIds, item counts and (null) are read exactly as before")
+
+    # An ElementId arrives as its number, a creator that declined as "(null)".
+    made = FakeFragment("create-level", [
+        {"name": "created", "type": "ElementId", "role": "result"}])
+    verdict, _ = BP.judge(record(positive={"created": "312345"},
+                                 negative={"created": "(null)"}), made)
+    check(verdict == BP.PASS, "an id against (null) passes (%s)" % verdict)
+    verdict, _ = BP.judge(record(positive={"created": "(null)"},
+                                 negative={"created": "(null)"}), made)
+    check(verdict == BP.POSITIVE_EMPTY, "(null) in both is EMPTY (%s)" % verdict)
+
+    # A collection arrives as "N item(s) [...]".
+    found = FakeFragment("sample", [
+        {"name": "found", "type": "IList<ElementId>", "role": "result"}])
+    verdict, _ = BP.judge(record(positive={"found": "3 item(s) [1, 2, 3]"},
+                                 negative={"found": "0 item(s)"}), found)
+    check(verdict == BP.PASS, "3 item(s) against 0 item(s) passes (%s)" % verdict)
+    verdict, _ = BP.judge(record(positive={"found": "0 item(s)"},
+                                 negative={"found": "0 item(s)"}), found)
+    check(verdict == BP.POSITIVE_EMPTY, "0 item(s) in both is EMPTY (%s)" % verdict)
+
+    # A sentence that is not declared a string is still not a quantity.
+    verdict, _ = BP.judge(record(positive={"found": "three ducts"},
+                                 negative={"found": "0 item(s)"}), found)
+    check(verdict == BP.POSITIVE_UNREADABLE,
+          "a sentence where a list was declared is UNREADABLE (%s)" % verdict)
+
+
 def test_a_work_counter_is_not_a_finding():
     print("A count of what was looked at is not a count of what was found")
 
@@ -574,6 +701,8 @@ def test_a_value_with_a_space_is_quoted_when_printed():
 def main():
     for test in (test_unreadable_is_not_evidence_of_work,
                  test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not,
+                 test_a_sentence_result_is_read_as_found_or_nothing,
+                 test_counts_and_ids_read_as_they_did,
                  test_a_work_counter_is_not_a_finding,
                  test_a_working_positive_passes_and_a_full_one_is_named,
                  test_expect_beats_the_patterns,
