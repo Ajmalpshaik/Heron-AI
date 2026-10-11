@@ -232,11 +232,56 @@ def test_a_sentence_result_is_read_as_found_or_nothing():
               "`changed %r` found nothing (%s)" % (nothing, verdict))
 
     # ACCOUNTING IS NEVER EVIDENCE, sentence or not. `alreadyThat` filled and
-    # `changed` empty is exactly what a second identical run answers (D-52).
-    repeat = dict(negative, refused="")
-    verdict, _ = BP.judge(record(positive=repeat, negative=negative), frag)
+    # `changed` empty is exactly what a second identical run answers (D-52) -
+    # so a positive that IS the negative's answer must not pass.
+    verdict, _ = BP.judge(record(positive=dict(negative), negative=negative), frag)
     check(verdict == BP.POSITIVE_EMPTY,
           "an accounting sentence is not a result (%s)" % verdict)
+
+    # THE COUNTS DECIDE (D-51), and a sentence never outranks them. Found by
+    # review before merging: set-material-colour declares `changed: int`
+    # beside `wasColour` and `nowColour`, which read back the colour whether
+    # or not anything changed. Asked for the colour a material already has,
+    # it changes nothing, `changed` is 0 - and with both colours filled the
+    # sentence reading alone would have PASSED it.
+    colour = FakeFragment("set-material-colour", [
+        {"name": "changed", "type": "int", "role": "result"},
+        {"name": "wasColour", "type": "string", "role": "result"},
+        {"name": "nowColour", "type": "string", "role": "result"},
+        {"name": "alreadyThat", "type": "bool", "role": "accounting"},
+    ])
+    same_colour = {"changed": "0", "wasColour": "200,120,60",
+                   "nowColour": "200,120,60", "alreadyThat": "true"}
+    not_found = {"changed": "0", "wasColour": "", "nowColour": "",
+                 "alreadyThat": "false"}
+    verdict, why = BP.judge(record(positive=same_colour, negative=not_found),
+                            colour)
+    check(verdict == BP.POSITIVE_EMPTY,
+          "a zero count beside a filled sentence is EMPTY (%s: %s)"
+          % (verdict, why))
+    check(BP.positive_worked({"provides": same_colour}, colour)[0]
+          == BP.POSITIVE_EMPTY,
+          "and the signing gate's question says the same")
+    verdict, _ = BP.judge(record(positive=dict(same_colour, changed="1"),
+                                 negative=not_found), colour)
+    check(verdict == BP.PASS, "a count that moved still passes (%s)" % verdict)
+    # A flag is the fragment saying whether it worked, so it decides too: a
+    # refused request with `changed false` and the category read back filled.
+    category = FakeFragment("set-family-category", [
+        {"name": "changed", "type": "bool", "role": "result"},
+        {"name": "category", "type": "string", "role": "result"},
+    ])
+    verdict, _ = BP.judge(record(
+        positive={"changed": "false", "category": "Generic Models"},
+        negative={"changed": "false", "category": ""}), category)
+    check(verdict == BP.POSITIVE_EMPTY,
+          "a false flag beside a filled sentence is EMPTY (%s)" % verdict)
+    # And `expect:` naming the sentence alone is a person saying it is the
+    # result - the escape hatch for a fragment whose count means something else.
+    verdict, _ = BP.judge(record(positive=same_colour, negative=not_found),
+                          colour, expect=["nowColour"])
+    check(verdict == BP.PASS,
+          "`expect: nowColour` judges the sentence alone (%s)" % verdict)
 
     # ONLY A DECLARED `role: result`. A string the contract never called a
     # result - no role at all - stays unreadable rather than counting.

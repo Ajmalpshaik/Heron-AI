@@ -343,6 +343,81 @@ def test_accept_records_a_proof_and_leaves_the_status_alone():
         shutil.rmtree(workspace)
 
 
+def test_a_sentence_result_at_the_signing_gate():
+    print("accept and draft read a sentence result the way batch-prove does")
+
+    # Row 5b-411. A contract whose result is a sentence, beside a count that
+    # says whether anything changed - the shape of set-material-colour.
+    text = SAMPLE.replace(
+        "    - name: elements\n      type: IList<Element>\n",
+        "    - name: changed\n      type: int\n      role: result\n"
+        "    - name: nowColour\n      type: string\n      role: result\n")
+    words = SAMPLE.replace(
+        "    - name: elements\n      type: IList<Element>\n",
+        "    - name: changed\n      type: string\n      role: result\n"
+        "    - name: alreadyThat\n      type: string\n      role: accounting\n")
+
+    def signed(folder_text, positive, negative):
+        workspace = tempfile.mkdtemp()
+        original = HV.DRAFTS_DIR
+        try:
+            frag = make_fragment(os.path.join(workspace, "sample"), folder_text)
+            HV.DRAFTS_DIR = os.path.join(workspace, "drafts")
+            HV.write_draft("sample", {"fragment": "sample", "proof-draft": {
+                "date": "2026-10-11", "by": "", "model": "a test model",
+                "positive_case": "returned something",
+                "negative_case": "returned nothing",
+                "second_route": "none exists",
+                "fingerprint": frag.fingerprint()}})
+            write_run_record(workspace, "sample", positive=positive,
+                             negative=negative)
+            return HV.accept("sample", "A Person", library=[frag])
+        finally:
+            HV.DRAFTS_DIR = original
+            shutil.rmtree(workspace)
+
+    code, message = signed(words, {"changed": "issued by (blank) -> 'M.Sagheer'",
+                                   "alreadyThat": ""},
+                           {"changed": "", "alreadyThat": "description 'IFI'"})
+    check(code == 0, "a sentence found against nothing is signable: %s" % message)
+
+    # A ONE-WORD SENTENCE IN THE NEGATIVE IS CONTENT, even beside a zero
+    # count. `Red` has the shape of a bare type name; read without the
+    # contract's string results it is skipped as a helper object, `changed 0`
+    # is all that is left, and the negative reads empty.
+    code, message = signed(text, {"changed": "1", "nowColour": "Red"},
+                           {"changed": "0", "nowColour": "Red"})
+    check(code != 0, "a one-word sentence in the negative is refused: %s"
+          % message)
+
+    # THE HOLE REVIEW FOUND. Before 2026-10-11 the gate's own comparison
+    # rescue signed this: `nowColour` present in the positive, gone in the
+    # negative - while `changed` 0 said nothing had changed at all.
+    code, message = signed(text, {"changed": "0", "nowColour": "200,120,60"},
+                           {"changed": "0", "nowColour": ""})
+    check(code != 0, "a zero count beside a filled sentence is refused: %s"
+          % message)
+
+    # The draft's own warning reads a one-word sentence in the negative too.
+    workspace = tempfile.mkdtemp()
+    try:
+        frag = make_fragment(os.path.join(workspace, "sample"), text)
+        positive = {"phase": "positive", "ok": True,
+                    "provides": {"changed": "1", "nowColour": "Red"}}
+        draft = HV.draft_from_record(frag, {"date": "d", "model": "m", "phases": [
+            positive, {"phase": "negative", "ok": True,
+                       "provides": {"changed": "0", "nowColour": "Red"}}]})
+        check("WARNING" in draft["proof-draft"]["negative_case"],
+              "a one-word sentence in the negative is flagged in the draft")
+        draft = HV.draft_from_record(frag, {"date": "d", "model": "m", "phases": [
+            positive, {"phase": "negative", "ok": True,
+                       "provides": {"changed": "0", "nowColour": ""}}]})
+        check("WARNING" not in draft["proof-draft"]["negative_case"],
+              "and an empty one is not")
+    finally:
+        shutil.rmtree(workspace)
+
+
 def test_an_unsigned_draft_cannot_pass_validation():
     print("The last line of defence")
     workspace = tempfile.mkdtemp()
@@ -483,6 +558,7 @@ def main():
                  test_a_missing_phase_is_never_filled_in,
                  test_the_write_refusals,
                  test_accept_records_a_proof_and_leaves_the_status_alone,
+                 test_a_sentence_result_at_the_signing_gate,
                  test_an_unsigned_draft_cannot_pass_validation,
                  test_restamp_refuses_a_genuinely_stale_proof,
                  test_the_fingerprint_is_about_content_only,

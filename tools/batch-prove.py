@@ -57,9 +57,11 @@ by one rule: **a declared result has to have moved off zero.**
     **A sentence is the one result that is not a count.** A provide declared
     `type: string` AND `role: result` is found when it says something and
     nothing when it is empty or `(null)`, in BOTH legs, so the same words in
-    each are content in the negative and cannot pass. `edit-revision`'s
-    `changed` was POSITIVE UNREADABLE with both legs held (row 5b-411); see
-    `string_results` in heron_validate.
+    each are content in the negative and cannot pass. Beside a count or a
+    flag the count decides, because a sentence that reads back the state is
+    filled whether or not anything changed. `edit-revision`'s `changed` was
+    POSITIVE UNREADABLE with both legs held (row 5b-411); see
+    `string_results` and `positive_worked` in heron_validate.
 
 WHERE THE JUDGING COMES FROM
 ----------------------------

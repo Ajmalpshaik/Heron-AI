@@ -177,8 +177,13 @@ replaced by the `role:` every provide now declares.
 something, nothing when it is empty or `(null)`, and read the same way in the negative - so the same words
 in both legs are `NEG NOT EMPTY`, never a pass. Until 2026-10-11 a sentence was `POSITIVE UNREADABLE`
 however well both legs held - `edit-revision`'s `changed`, [row 5b-411](../../../docs/fragment-issues/section-5b-rows-401-425.md).
-A sentence the fragment always writes - a report that says *"nothing was checked"* - is therefore never
-empty; give it `role: accounting`, or prove the fragment by tracking (below).
+**Beside a count or a flag, the count decides** (D-51): a sentence that reads back the state -
+`set-material-colour`'s `wasColour` - is filled whether or not anything changed, so with `changed 0`
+the positive is `POSITIVE EMPTY` however full the sentence. Name the sentence alone in `expect:` when it
+really is the result. A sentence the fragment always writes - a report that says *"nothing was
+checked"* - is never empty in the negative; give it `role: accounting`, or prove the fragment by
+tracking (below). **The runner cannot read what a sentence says**: `<none>` or *"no other revision was
+renumbered"* counts as found, so read the value the verdict quotes before signing.
 
 Two shapes get past the count, and both were met on real runs:
 

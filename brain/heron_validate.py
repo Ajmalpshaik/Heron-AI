@@ -1055,6 +1055,22 @@ def positive_worked(phase, frag, expect=None):
                 "nothing it returned is a declared result that can be read as a "
                 "quantity, so there is no evidence it did anything")
 
+    # THE COUNTS DECIDE (D-51), AND A SENTENCE NEVER OUTRANKS ONE. A string
+    # result often READS BACK the state - `set-material-colour`'s `wasColour`
+    # and `nowColour` are filled whenever the material exists - so beside a
+    # count or a flag that says whether anything changed, a filled sentence
+    # is not evidence that it did. Asked for the colour a material already
+    # had, that fragment answers `changed 0` with both colours filled, and
+    # reading the sentences would have passed it. Found by review before
+    # 5b-411 merged. A sentence decides only where no declared result can be
+    # read as a count - `edit-revision`, whose one result is `changed` - or
+    # where `expect:` names it alone.
+    aside = []
+    if strings and any(k not in strings and _as_count(v) is not None
+                       for k, v in judged):
+        aside = sorted(k for k, v in judged if k in strings)
+        judged = [(k, v) for k, v in judged if k not in strings]
+
     unreadable, zeros = [], []
     for key, value in judged:
         count = _as_found(value) if key in strings else _as_count(value)
@@ -1073,7 +1089,10 @@ def positive_worked(phase, frag, expect=None):
                    if zeros else ""))
 
     return ("POSITIVE EMPTY",
-            "every declared result came back zero (%s)" % ", ".join(sorted(zeros)))
+            "every declared result came back zero (%s)%s"
+            % (", ".join(sorted(zeros)),
+               "; beside a count, a sentence is not counted (%s)"
+               % ", ".join(aside) if aside else ""))
 
 
 def looks_empty(phase, declared=None, declared_names=None, strings=None):
