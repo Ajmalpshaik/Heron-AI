@@ -130,6 +130,9 @@ compatibility-note: >
 #   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_EXTRUSION -
 #                                                any other shape, solid or void
 #   "make a revolve in the family"            -> CREATE_FAMILY_REVOLUTION
+#   "build all these forms in one go"         -> CREATE_FAMILY_FORMS - many
+#                                                extrusions and revolves, a
+#                                                row each, one undo
 #   "blend a rectangle into a circle"         -> CREATE_FAMILY_BLEND
 #   "sweep a profile along a path"            -> CREATE_FAMILY_SWEEP
 #   "sweep one shape into another along a path" -> CREATE_FAMILY_SWEPT_BLEND
