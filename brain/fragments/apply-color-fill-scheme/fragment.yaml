@@ -189,9 +189,10 @@ compatibility-note: >
 #                                        what a colour SCHEME is for
 #   "colour fill the spaces"          -> here
 #   "colour the HVAC zones by name"   -> here
-#   "color the hvac zones"            -> here, NOT CREATE_HVAC_ZONE. That one
-#   "colour the spaces by zone"          MAKES zones and moves spaces into
-#   "colour fill the zones"              them; a request to colour must never
+#   "color the hvac zones" / "colour the spaces by zone" /
+#   "colour fill the zones"           -> here, NOT CREATE_HVAC_ZONE. That one
+#                                        MAKES zones and moves spaces into
+#                                        them; a request to colour must never
 #                                        reach a write that changes what the
 #                                        model holds (FRAGMENT-ISSUES 5b-236)
 #   "color hvac zones in this plan"   -> here, by the RANKED route. Declared
