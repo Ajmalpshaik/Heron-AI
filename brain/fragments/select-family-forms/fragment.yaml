@@ -88,7 +88,8 @@ compatibility-note: >
 #   "select these forms"                        -> here, then SET_SELECTION
 #   "select the forms with these ids"           -> here, then SET_SELECTION
 #   "select the void forms"                     -> here, then SET_SELECTION
-#   "delete these forms" (ids given)            -> here, then DELETE_ELEMENTS
+#   "delete these forms"                        -> here when their ids are
+#                                                  given, then DELETE_ELEMENTS
 #   "delete the ones I selected"                -> DELETE_ELEMENTS - the
 #                                                  selection is already there
 #   "what forms are in this family"             -> REPORT_FAMILY_FORMS, which
