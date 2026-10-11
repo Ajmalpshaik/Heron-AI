@@ -33,10 +33,14 @@ purpose: >
   accept, marked typical rather than a maker's figures (D-33).
 
   BUILD IT PART BY PART, NEVER IN ONE CLICK AT THE END (the owner's rule,
-  2026-10-11). Step 0's list splits the thing into 4 to 6 GROUPS, biggest
-  first - a desk's top, then its frame, then its drawers, then its handles;
-  a fan coil unit's casing, fans, coil and drain, air side, electrics. Then,
-  for each group in turn: work out only that group's parts, build them in
+  2026-10-11). Step 0's list splits the thing into GROUPS, and the family
+  decides them: how many groups, what goes in each and in what order is
+  whatever is easiest for THIS family - there is no set number and no set
+  order. Many small parts of one kind may be one group; one big body may be
+  a group on its own. Seen: a desk as top, frame, drawers, handles; a fan
+  coil unit as casing, fans, coil and drain, air side, electrics; a fire
+  pump as baseplate, pump, coupling, motor, trim, connectors. Then, for each
+  group in turn: work out only that group's parts, build them in
   ONE CREATE_FAMILY_FORMS call with their materials named on the rows (step
   7 is one call PER GROUP, not one for the whole family), tell the modeller
   in one line what is now in Revit, and move to the next group. Never work
