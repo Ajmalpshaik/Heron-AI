@@ -313,6 +313,15 @@ which stays all or nothing; and the library - widening `CREATE_FAMILY_EXTRUSION`
 **The owner decides**: build a several-forms entry point, and in what shape, or keep one form per call
 and accept the turns.
 
+**Built 2026-10-11 as one shape for him to judge - the question stays open until he has.** On 2026-10-11,
+in the session that built the pump set, the owner said to make part of Heron what that session showed it
+needs. `CREATE_FAMILY_FORMS` (FRG-GEO-060, DRAFT) takes a list of extrusions and revolves, one row each,
+in the value or in a file under `%TEMP%\heron-work`, builds them in one call and one undo entry, reads
+every form back, keeps none if one row fails, and hands back every id in row order. It is new rather than
+a widening of the two single-form tools, for the reasons in
+[NEEDS-CHECKING Group DA](../needs-checking/group-da.md), which also holds its proof plan. Left for him:
+whether a whole list should undo as one, and whether cuts belong in the same call.
+
 ---
 
 ### 🟡 Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? *(found 2026-10-10)*

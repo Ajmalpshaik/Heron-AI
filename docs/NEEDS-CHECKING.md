@@ -567,6 +567,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cy.md`](needs-checking/group-cy.md)
 
+## Group DA - many extrusions and revolves in one call, one undo entry (2026-10-11)
+
+**Its own file:** [`needs-checking/group-da.md`](needs-checking/group-da.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

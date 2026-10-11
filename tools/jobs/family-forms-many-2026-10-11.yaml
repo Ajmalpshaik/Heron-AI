@@ -1,0 +1,62 @@
+# The proof of CREATE_FAMILY_FORMS (create-family-forms, FRG-GEO-060) - many
+# extrusions and revolves in one call - NEEDS-CHECKING Group DA.
+#
+#     python tools/batch-prove.py tools/jobs/family-forms-many-2026-10-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-forms-many-2026-10-11.yaml
+#
+# THE ARRANGEMENT IS ONE EMPTY SCRATCH FAMILY, never a family somebody is
+# building: the metric Generic Model template, saved once as "Heron Forms
+# Scratch" so it has that title, and left OPEN. `in:` names it, so no run can
+# land on another document. Nothing in it is needed beyond the template's Ref.
+# Level, Center (Left/Right) and Center (Front/Back).
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so the family stays empty between legs - count its forms after the run
+# anyway (REPORT_FAMILY_FORMS): rollback has failed before on a PC (BD1).
+#
+# POSITIVE: ten rows, five extrusions and five revolves on all three of the
+# template's planes, two of them voids, one with a material and one with its
+# detail levels - formCount 10 and every one read back.
+#
+# NEGATIVE: the same ten with row 7's plane misnamed - refused naming row 7,
+# formCount 0, nothing built. The other refusals in its cases.yaml (a 0.5 mm
+# extrusion, a blend row, a file outside the temporary folder) are run by
+# hand with `--set`.
+#
+# With two Revits connected to Heron, add `--session <process id>` to both
+# commands.
+
+model: Heron Forms Scratch (a new family, metric Generic Model template), Revit 2024
+
+defaults:
+  in: "Heron Forms Scratch"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: create-family-forms
+    expect: formCount
+    set:
+      forms: >-
+        kind=extrusion workPlane=Ref. Level profile=circle 0,0 150 startMm=0 endMm=500 solid=true material=by category
+        kind=extrusion workPlane=Ref. Level profile=rect -300,-200 300,200 | circle 0,0 50 startMm=-20 endMm=0 solid=true
+        kind=extrusion workPlane=Center (Front/Back) profile=0,0; 600,0; 600,100; 100,100; 100,400; 0,400 startMm=-50 endMm=50 solid=true detailLevels=medium, fine
+        kind=extrusion workPlane=Center (Left/Right) profile=polygon 0,250 60 6 startMm=-100 endMm=100 solid=true
+        kind=extrusion workPlane=Ref. Level profile=rect -20,-20 20,20 startMm=100 endMm=400 solid=false
+        kind=revolve workPlane=Center (Front/Back) profile=0,600; 150,600; 0,800 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+        kind=revolve workPlane=Center (Front/Back) profile=0,0; 40,0; 40,80; 0,80 axisLine=0,0 0,100 startDegrees=0 endDegrees=360 solid=false
+        kind=revolve workPlane=Center (Left/Right) profile=circle 300,100 20 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+        kind=revolve workPlane=Center (Front/Back) profile=0,900; arc 50,950 0,1000 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+        kind=revolve workPlane=Center (Front/Back) profile=200,0; 260,0; 260,40; 200,40 axisLine=0,0 0,1000 startDegrees=0 endDegrees=180 solid=true
+    negative-set:
+      forms: >-
+        kind=extrusion workPlane=Ref. Level profile=circle 0,0 150 startMm=0 endMm=500 solid=true material=by category
+        kind=extrusion workPlane=Ref. Level profile=rect -300,-200 300,200 | circle 0,0 50 startMm=-20 endMm=0 solid=true
+        kind=extrusion workPlane=Center (Front/Back) profile=0,0; 600,0; 600,100; 100,100; 100,400; 0,400 startMm=-50 endMm=50 solid=true detailLevels=medium, fine
+        kind=extrusion workPlane=Center (Left/Right) profile=polygon 0,250 60 6 startMm=-100 endMm=100 solid=true
+        kind=extrusion workPlane=Ref. Level profile=rect -20,-20 20,20 startMm=100 endMm=400 solid=false
+        kind=revolve workPlane=Center (Front/Back) profile=0,600; 150,600; 0,800 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+        kind=revolve workPlane=Ref Lvl profile=0,0; 40,0; 40,80; 0,80 axisLine=0,0 0,100 startDegrees=0 endDegrees=360 solid=false
+        kind=revolve workPlane=Center (Left/Right) profile=circle 300,100 20 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+        kind=revolve workPlane=Center (Front/Back) profile=0,900; arc 50,950 0,1000 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+        kind=revolve workPlane=Center (Front/Back) profile=200,0; 260,0; 260,40; 200,40 axisLine=0,0 0,1000 startDegrees=0 endDegrees=180 solid=true

@@ -1,0 +1,46 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template, open as a scratch
+      family of its own; forms a list of ten rows given in the value - five
+      extrusions and five revolves, two of them voids, on "Ref. Level",
+      "Center (Front/Back)" and "Center (Left/Right)", one extrusion with
+      material "by category" and one with detailLevels "medium, fine"
+    expect: >
+      formCount 10, formIds ten ids in the order listed, each read back -
+      the extrusions' extents along and across their planes, each full
+      revolve's extent about its axis, a volume for every solid - and ONE
+      entry in the undo list; REPORT_FAMILY_FORMS lists the ten with the same
+      ids, and one Undo takes all ten away
+
+  - given: >
+      the same ten rows written to a file under %TEMP%\heron-work, one row per
+      line with a # comment line, and forms the file's full path
+    expect: >
+      the same ten forms built and read back, the comment line ignored
+
+negative:
+  - given: >
+      the ten rows with row 7's workPlane "Ref Lvl", a name the family does
+      not have
+    expect: >
+      refused naming row 7 and listing the family's planes and levels; formCount
+      0, no form made - the family's form count read back unchanged
+
+  - given: the ten rows with row 3's startMm -148.5 and endMm -148, 0.5 mm deep
+    expect: refused naming row 3, 0.5 mm deep and the least depth that builds, and no form made
+
+  - given: a row whose kind is "blend"
+    expect: refused naming the row, saying a row is an extrusion or a revolve, and no form made
+
+  - given: forms the full path of a file outside the temporary folder
+    expect: refused naming the temporary folder, and nothing read or made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      The same ten forms built one call at a time with CREATE_FAMILY_EXTRUSION
+      and CREATE_FAMILY_REVOLUTION on a second scratch family; the two
+      families' REPORT_FAMILY_FORMS read side by side - the same kinds,
+      extents and volumes - and the undo list read: ten entries there, one here
