@@ -66,8 +66,9 @@ jobs:
       sizeParameters: "Port Dia"
     note: >
       The negative changes only the plane: same family, same system, same
-      size, and a plane two faces of one combination lie on. `connector` is a
-      sentence, which the runner cannot judge (row 5b-411), so the
-      verdict is read off `sizedBy` - one tie, or none - and the `connector`
-      sentence is read by eye. AN14 (a ring joined to nothing on Port Right)
+      size, and a plane two faces of one combination lie on. The verdict is
+      read off `sizedBy` - one tie, or none. Since row 5b-411 (#481) the
+      runner reads a sentence result too, but the `connector` sentence is
+      still read by eye: what the reference names is the measurement, and
+      no runner judges that. AN14 (a ring joined to nothing on Port Right)
       and AN15 (a duct connector on the joined face) are run by hand.
