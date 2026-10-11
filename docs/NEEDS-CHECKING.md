@@ -567,6 +567,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cy.md`](needs-checking/group-cy.md)
 
+## Group DA - many extrusions and revolves in one call, one undo entry (2026-10-11)
+
+**Its own file:** [`needs-checking/group-da.md`](needs-checking/group-da.md)
+
 ## Group DB - a family's OmniClass Number read, set, cleared and checked against Revit's own list (2026-10-11)
 
 **Its own file:** [`needs-checking/group-db.md`](needs-checking/group-db.md)

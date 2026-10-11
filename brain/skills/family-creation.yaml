@@ -92,9 +92,12 @@ purpose: >
      CREATE_FAMILY_EXTRUSION for any other shape pushed straight;
      CREATE_FAMILY_REVOLUTION, CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
      CREATE_FAMILY_SWEPT_BLEND for the rest. Every one gives back its form's
-     id, which every later step names it by. Shapes are typed in millimetres
-     in the work plane's own two model coordinates. A smooth shape none of
-     these makes in one piece - a coil, an organic body - is
+     id, which every later step names it by. MANY extrusions and revolves -
+     a family of dozens of parts - go in ONE call of CREATE_FAMILY_FORMS, a
+     row per form written once to a file under %TEMP%\heron-work: one undo
+     entry, every id given back in the order listed. Shapes are typed in
+     millimetres in the work plane's own two model coordinates. A smooth
+     shape none of these makes in one piece - a coil, an organic body - is
      CREATE_FAMILY_FREEFORM_SOLID: a FIXED shape that no plane or parameter
      moves and no lock or label reaches, so say that before using it.
   8. LOCK_FORM_TO_PLANES for every form that is not a box from step 7 - each
@@ -220,6 +223,8 @@ needs:
   - CREATE_FAMILY_BLEND
   - CREATE_FAMILY_SWEEP
   - CREATE_FAMILY_SWEPT_BLEND
+  # Step 7's many forms at once - extrusions and revolves, one row each.
+  - CREATE_FAMILY_FORMS
   - CREATE_FAMILY_FREEFORM_SOLID
   - LOCK_FORM_TO_PLANES
   - LINK_FAMILY_FORM_PARAMETER
