@@ -155,7 +155,7 @@ compatibility-note: >
 #   "how many rooms are there"           -> here, category Rooms (5b-401)
 #   "list the rooms"                     -> here, category Rooms (5b-426)
 #   "show me all the rooms"              -> here, category Rooms (5b-426)
-#   "show me all the doors"              -> here, category Doors (5b-426)
+#   "show me all the walls"              -> here, category Walls (5b-426)
 #   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
@@ -211,12 +211,14 @@ utterances:
   # listing rooms that still reach a change.
   - list the rooms
   - show me all the rooms
-  # ADDED WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-426. "show me all the
-  # rooms" lifted this card one place in the words ranking for "show me all
-  # the doors", and that broke a near-tie on the spelling backend: the answer
-  # went from ZOOM_TO_ELEMENTS, which moves the view, to PLACE_HOSTED_FAMILY,
-  # which PUTS A DOOR INTO A WALL. Declared on the card that answers it with
-  # nothing selected - category Doors, then the select-elements skill -
-  # rather than leaving a write the change had made. The other "show me all
-  # the ..." sentences that reach a change did so before; the row names them.
-  - show me all the doors
+  # ADDED 2026-10-11 WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-426. On
+  # main 6b3bd57d "show me all the rooms" tipped this sentence on the
+  # trained backend from REPORT_COMPOUND_STRUCTURE, a read, to
+  # SET_WALL_CONSTRAINTS, a write - a near-tie of one rank - and on lexical
+  # main already answered it with that write. Category Walls, then the
+  # select-elements skill. "show me all the doors" was declared here too
+  # on 2026-10-09, when it reached a write; on 6b3bd57d it reaches a read,
+  # and declared it sent PLACE_HOSTED_FAMILY's "put doors in the walls at
+  # these points" to CREATE_WALL on lexical, so it is not. The row names
+  # the other "show me all the ..." sentences that reach a change.
+  - show me all the walls

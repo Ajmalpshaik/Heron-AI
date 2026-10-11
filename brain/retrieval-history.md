@@ -1325,6 +1325,22 @@ spaces, met again for listing, with the same remedy: a re-design of `PLACE_ROOMS
 backends, or the owner reopening "warn, don't re-rank". The same shape sits outside rooms: *show me all
 the walls*, *list the pipes*, *list the windows* and the others the row names reach writes on `main`.
 
+### Re-measured 2026-10-11 on `6b3bd57d`
+
+Twenty-eight commits on, with PR #463 merged, in clean venvs (lexical with no model; `model` without the
+re-ranker the live laptop now runs). *show me all the doors* now reaches a read on `main`, and declared on
+the filter it sent `PLACE_HOSTED_FAMILY`'s routing-table claim *put doors in the walls at these points* to
+`CREATE_WALL` on `lexical`, so that declaration is withdrawn. *show me all the rooms* tipped *show me all the
+walls* to `SET_WALL_CONSTRAINTS` on `model`, a near-tie of one rank, so the filter declares that sentence
+instead.
+
+| 138 sentences, `6b3bd57d` → this change | `lexical` | `model` |
+|---|---|---|
+| answered by a write | 46 → **39** | 46 → **40** |
+| any answer riskier than before | **none** | **none** |
+| `check-routing` claims not reached | 30 → 30 | 33 → 33 |
+| the owner's questions, risk crossings | identical | identical |
+
 ### What this does not establish
 
 - **The sentences are a session's**, not the owner's. The 49 written after the first measurement were
