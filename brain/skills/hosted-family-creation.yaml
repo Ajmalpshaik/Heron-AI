@@ -36,6 +36,13 @@ purpose: >
   2. SET_FAMILY_CATEGORY when the template's category is not the one wanted -
      a face-based Generic Model made a Lighting Fixture or an Air Terminal is
      the usual route where a category has no face-based template of its own.
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   3. The parameters, values, formulas, planes and labels as FAMILY-CREATION
      steps 2 to 6 - each size measured from the template's host face or its
      centre planes, never from the edge of a form.

@@ -43,6 +43,13 @@ purpose: >
      (the glass); a depth is a panel that THICK along its normal.
   4. SET_FAMILY_FORM_MATERIAL on the form - a family material parameter when
      the types must choose it.
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   5. REPORT_FAMILY_FORMS, then the flex a pattern-based panel takes: in the
      Family Editor the modeller drags one point and the form must bend with it
      (FLEX_FAMILY changes parameters, not points); then LOAD_FAMILY puts the
@@ -64,6 +71,7 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  - SET_FAMILY_SETTINGS
   - PLACE_ADAPTIVE_POINTS
   - DRAW_FAMILY_POINT_CURVES
   - CREATE_CONCEPTUAL_FORM

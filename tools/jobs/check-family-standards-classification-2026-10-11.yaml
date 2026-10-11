@@ -1,0 +1,73 @@
+# The proof of check-family-standards version 3 (CHECK_FAMILY_STANDARDS,
+# FRG-QA-021) - the classification checks, in a PROJECT: each loaded family
+# type's OmniClass Number against the classification file, its Assembly Code
+# against the Assembly Code table, its Keynote against the keynote table.
+# The tool is DRAFT since version 2; this is its first run on version 3's code.
+#
+#     python tools/batch-prove.py tools/jobs/check-family-standards-classification-2026-10-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/check-family-standards-classification-2026-10-11.yaml
+#
+# THE ARRANGEMENT, made by hand before the run, on Revit 2024 (whose per-user
+# OmniClassTaxonomy.txt files 23.65.55.14.14 under Pipe Accessories and
+# 23.30.10.00 under Doors):
+#
+#   "Heron OmniClass Wrong Valve"  a new family from the metric Pipe Accessory
+#                                  template, its OmniClass Number set BY HAND
+#                                  to 23.30.10.00 (a Doors code) in Family
+#                                  Category and Parameters, saved
+#   "Heron OmniClass Valve Test"   the same template, OmniClass Number
+#                                  23.65.55.14.14 - right for its category
+#   "Heron OmniClass Project"      a PROJECT, new from the metric
+#                                  Architectural template, with "Heron
+#                                  OmniClass Wrong Valve" LOADED (Insert, Load
+#                                  Family) - the positive
+#   "Heron OmniClass Clean Project"  the same template, with only "Heron
+#                                  OmniClass Valve Test" loaded - the negative
+#
+# ARRANGE FIRST: run CHECK_FAMILY_STANDARDS through revit_read on the clean
+# project with the values below and read offStandard. The template's own
+# families must come back 0 off standard - a template family whose Assembly
+# Code is not in the project's Assembly Code table would make it non-zero, and
+# then the negative is not clean and the case must be re-arranged before the
+# run, never judged.
+#
+# POSITIVE: offStandard 1 or more, the wrong valve's row saying "filed under
+# Doors in the classification file, not Pipe Accessories" with the fix
+# OPEN_FAMILY_FOR_EDITING, SET_FAMILY_SETTINGS, LOAD_FAMILY back; and
+# classificationReport counting it and naming the file read. IF THE ROW SAYS
+# "not checked - no value to read" INSTEAD, a loaded family's type does not
+# expose the OmniClass Number - that is the answer to a NEEDS-CHECKING
+# question, not a fragment that failed.
+#
+# NEGATIVE: the clean project - offStandard 0. A correct code for its category
+# must NOT be flagged (D-30). Blank codes there are COUNTED in
+# classificationReport and are NOT off standard, since requiredParameters is
+# empty (D-33).
+#
+# BY HAND AFTERWARDS, through revit_read with each family open in the Family
+# Editor: the wrong valve - FAIL "filed under Doors"; the right valve - PASS on
+# the OmniClass Number; a Detail Item family with it blank - NOT CHECKED, not
+# judged; and whether a family document holds an Assembly Code table at all
+# (a type's Assembly Code reads NOT CHECKED if it does not).
+
+model: Heron OmniClass Project (Pipe Accessory family filed under a Doors code, loaded) and Heron OmniClass Clean Project, Revit 2024
+
+defaults:
+  set:
+    namePattern: ""
+    requiredParameters: ""
+    mustHaveConnectors: false
+  negative-set:
+    namePattern: ""
+    requiredParameters: ""
+    mustHaveConnectors: false
+
+jobs:
+  - fragment: check-family-standards
+    in: "Heron OmniClass Project"
+    negative-in: "Heron OmniClass Clean Project"
+    expect: offStandard
+    note: >
+      No name pattern, no required parameters and no connector test, so the
+      only thing that can put a type off standard is classification. Read the
+      clean project's offStandard BEFORE the run - it must be 0.

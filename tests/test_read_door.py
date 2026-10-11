@@ -365,6 +365,41 @@ def main():
               "and a fragment's own sentence that says entry(ies) is not "
               "taken for a dictionary")
 
+        # WHAT CREATE_FAMILY_EXTRUSION LEFT on 2026-10-09, cut to one of each
+        # shape: 29% of a 107-form family's replies were helpers like these,
+        # carried by every later turn. 5b-407. The values beside them are
+        # real ones that hold data, a single word and an empty list among
+        # them, and must still print.
+        vendor = "Auto" + "desk"
+        mixed = provides_lines({
+            "along": "Func`3", "plane": "Tuple`4", "invariant": "CultureInfo",
+            "flags": "BindingFlags", "dbNamespace": vendor + ".Revit.DB",
+            "inPlane": "3 item(s) [System.Int32[], System.Int32[], System.Int32[]]",
+            "datums": "3 item(s) [(%s.Revit.DB.ReferencePlane, 1, 0, ...)]" % vendor,
+            "formId": "b753cb5a-f4f9-4171-9428-41eb2f7129c0-00000b89",
+            "built": "Solid extrusion on \"Ref. Level\": Z 0 to 40 mm",
+            "label": "SPACE", "chosen": "Material", "problems": "0 item(s)",
+            "axisLetters": "3 item(s) [X, Y, Z]", "note": "uses Func`2 inside"})
+        hidden = [line for line in mixed if "NOT PRINTED" in line]
+        code = ("along", "plane", "invariant", "flags", "dbNamespace",
+                "inPlane", "datums")
+        check(len(hidden) == 1 and all(name in hidden[0] for name in code),
+              "values that hold code - a lambda, CultureInfo, a namespace, a "
+              "list of System types - are named on ONE line, not printed: %s"
+              % hidden)
+        printed = [line for line in mixed if "NOT PRINTED" not in line]
+        check(not any(value in line for line in printed for value in
+                      ("Func`3", "CultureInfo", "System.Int32[]", "Tuple`4")),
+              "and none of their values reaches the reply")
+        check(all(any(line.split()[:1] == [name] for line in printed)
+                  for name in ("formId", "built", "label", "chosen", "problems",
+                               "axisLetters", "note")),
+              "while every value that holds data still prints - a single word, "
+              "an empty list, a list of letters, a sentence that mentions code")
+        only_code = provides_lines({"mm": "Func`2"})
+        check(len(only_code) == 2 and "NOT PRINTED" in only_code[1],
+              "a reply of helpers alone still says what it left out")
+
     print()
     print("8. The words path runs only what was matched, and only while proven")
     # Read as TEXT so CI checks it; tests/test_mcp_serves.py section 10 calls
