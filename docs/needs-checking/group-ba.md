@@ -23,7 +23,7 @@ six were added:
 | Merge Up / Merge Down, with `confirm` | [`merge-revision`](../../brain/fragments/merge-revision/fragment.yaml) MERGE_REVISION, FRG-SHT-022 |
 | Numbering Per Project / Per Sheet, and Arc length | [`set-revision-settings`](../../brain/fragments/set-revision-settings/fragment.yaml) SET_REVISION_SETTINGS, FRG-SHT-023 |
 | Customize Numbering: New and Duplicate | [`create-revision-numbering-sequence`](../../brain/fragments/create-revision-numbering-sequence/fragment.yaml) FRG-SHT-024 |
-| Customize Numbering: Edit, rename included | [`edit-revision-numbering-sequence`](../../brain/fragments/edit-revision-numbering-sequence/fragment.yaml) FRG-SHT-025 |
+| Customize Numbering: Edit, rename included - and since 2026-10-10 (version 2) the Revit 2020/2021 Numbering Options | [`edit-revision-numbering-sequence`](../../brain/fragments/edit-revision-numbering-sequence/fragment.yaml) FRG-SHT-025 |
 | Customize Numbering: Delete, with `confirm` | [`delete-revision-numbering-sequence`](../../brain/fragments/delete-revision-numbering-sequence/fragment.yaml) FRG-SHT-026 |
 
 **The rules they share.** The per-revision tools are handed ONE revision by a find - SELECT_BY_PARAMETER_VALUE
@@ -47,9 +47,11 @@ These fixed paths are compiled on every release and NOT yet run: Revit was not c
 were made. BA2 and the renumber job cover them.
 
 **Revit releases.** The seven revision tools compile and are written for 2020 to 2027. The three sequence tools
-are 2022 to 2027 only: `RevisionNumberingSequence` arrived in 2022, and 2020/2021 have one numeric and one
-alphanumeric scheme with no names. Where the numbering API parts at 2022, the 2020-2027 tools reach both
-spellings by name, because the add-in compiles fragments with no release symbol ([row 5b-181](../FRAGMENT-ISSUES.md)).
+were 2022 to 2027 only: `RevisionNumberingSequence` arrived in 2022, and 2020/2021 have one numeric and one
+alphanumeric scheme with no names. Since 2026-10-10 EDIT_REVISION_NUMBERING_SEQUENCE spans 2020 to 2027 (below,
+and BA7 to BA9); New, Duplicate and Delete stay 2022 on, because 2020/2021 always have exactly those two.
+Where the numbering API parts at 2022, the 2020-2027 tools reach both spellings by name, because the add-in
+compiles fragments with no release symbol ([row 5b-181](../FRAGMENT-ISSUES.md)).
 Every member was read with `tools/api-surface --members` on all eight reference assemblies. **Only Revit 2024
 has run any of it.**
 
@@ -86,8 +88,8 @@ Against main's own check-routing, the words ranking moved for one sentence of an
 suffix"* now leans to EDIT_REVISION_NUMBERING_SEQUENCE, where main already sent it to a wrong tool.
 
 **Not covered, and why.** The revision cloud's own shape is drawn with ADD_REVISION_CLOUD, not in this
-dialog. Editing the 2020/2021 project numbering schemes (their "Numbering Options") is not built - LIST_REVISIONS
-reads them there.
+dialog. Editing the 2020/2021 project numbering schemes (their "Numbering Options") was not built until
+2026-10-10 - now EDIT_REVISION_NUMBERING_SEQUENCE version 2, below; LIST_REVISIONS reads them there.
 
 | # | Check | Expected |
 |---|---|---|
@@ -97,3 +99,43 @@ reads them there.
 | **BA4** | **Revit 2020, by eye then by run.** LIST_REVISIONS, then CREATE_REVISION with `numbering=alphanumeric` on a test project | The 2020/2021 route - `Revision.NumberType` and the project's two schemes, reached by name - has never run. The table's numbering column reads Numeric / Alphanumeric / None, and `numberingSequences` shows the two schemes |
 | **BA5** | `numbering=none` on Revit 2022 or later, on a test copy, through EDIT_REVISION | Unknown: the tool sets no sequence and reads back what Revit holds. Write down whether Revit accepts a revision with no numbering sequence, and correct the purpose if it does not |
 | **BA6** | Signing - **after BA2 and BA3, never before.** `accept` each draft in `brain/proof-drafts/` under the owner's own name | The four widened fragments go back to PROVEN and the six new ones join them. Until then all ten are DRAFT, and a chat says so on every run |
+
+**2026-10-10 - EDIT_REVISION_NUMBERING_SEQUENCE version 2: the Revit 2020/2021 Numbering Options. DRAFT, compiled,
+never run.** The modeller works in Revit 2020 (Heron session 36948) and asked to *"change the alphabetic revision
+list to AA, BB, CC, DD"* - his project standard is the doubled letters AA to ZZ. `heron_lookup` filtered to 2020
+offered nothing. FRG-SHT-025 was widened rather than a second tool written (one job, one fragment): it was DRAFT
+with no proof, so no proof went stale. On 2020/2021 `name=Alphanumeric` or `name=Numeric` picks one of the
+project's two schemes (empty is allowed when the values say which); a rename and minimum digits are refused there.
+On every release the custom list is now taken whole - an empty value, a value twice (capitals ignored), an ellipsis,
+`<blank>` or a list of nothing is refused by name. Every member that exists on only part of 2020-2027 is reached by
+name, as LIST_REVISIONS does - each looked up in the `RevitAPI.xml` of all eight reference packages, because
+`tools/api-surface` cannot run on this PC (Application Control blocks the freshly built `ApiSurface.dll`, as group
+CY found) - and `tools/check-fragments-compile.py` compiled it on all eight releases (2020 and 2021 on net472). The issued-revision rule is unchanged and now applies on 2020 too: a settings change is refused while any
+ISSUED revision is numbered by that scheme. **On the modeller's working model that may well refuse** - its list read
+*AA, BB, CC, D, E, F, …* on 2026-10-10, so revisions AA to CC may be issued - even though AA to ZZ would leave AA,
+BB and CC printing what they print now. Whether the rule should refuse only when an issued revision's PRINTED
+number would move is the owner's decision, not made here.
+
+**Routing, measured 2026-10-10** on private scratch stores, before and after, on the trained-model backend with the
+re-ranker (as the live Heron answers) and on the lexical one (as CI does). `check-routing` - unfiltered, `--revit
+2020`, and lexical - moved only by the new sentence, found first by both routes, and by *"write on the drawing"*
+rising #3 to #2 under the same winner; no new question answered by a writer and no new unreached routing claim.
+`check-risk-crossings` (2020 and 2024), `check-intrusion` and `check-skill-routing`: no winner moved. Thirty nearby
+sentences through `RETRIEVE.find`: unfiltered and on 2024 none moved. **On Revit 2020 twelve now reach this tool**,
+and the version-1 purpose with only the releases widened gives the same twelve, so it is the tool being offered
+on 2020 that moves them, not the wording. Seven are its own (the modeller's sentence, which went to EDIT_REVISION;
+*numbering options*, *double letters*, *alphanumeric revision sequence*, *numbering prefix*, *edit the numbering
+sequence*, *rename the numbering*). Four are writes that went to another write before - *make an alphabetic
+sequence* (was RENUMBER_SEQUENTIAL), *delete the numbering sequence* (was DELETE_ELEMENTS; 2020 has none to delete),
+*use alphanumeric numbering on revision 2* (was SET_REVISION_SETTINGS; EDIT_REVISION is right) and *change the
+sheet numbers to start at 100* (was CREATE_SHEET; 2024 already sent it here). **One is a question:** *"what letters
+does the alphanumeric revision numbering use"* went to LIST_REVISIONS on 2020 and now reaches this write - on 2022
+and later it already reached CREATE_REVISION_NUMBERING_SEQUENCE, a write. Guarded, as row 5b-246's two are: a
+question carries no values, and with every value empty this tool refuses *"nothing was asked for"*. Not
+declared by anybody, so not tuned here; a register row is owed.
+
+| # | Check | Expected |
+|---|---|---|
+| **BA7** | **Revit 2020, the two legs ([D-30](../DECISIONS.md)) for version 2.** On "Project2", a scratch project, in front: LIST_REVISIONS first - the alphanumeric list must read A, B, C … Z and no ISSUED revision may be numbered alphanumeric. Then `python tools/batch-prove.py tools/jobs/edit-revision-numbering-revit-2020-2026-10-10.yaml --dry-run`, then with `--session <the Revit 2020 pid>` and without `--dry-run` | `PASS`: the positive `changed` *custom sequence A, B, C … Z (26 values) -> AA, BB, CC … ZZ (26 values)*, read back in `findings`; the negative (`AA, BB, CC, AA`) `refused` naming 'AA' 2 times with `changed` empty. Then LIST_REVISIONS: still A … Z (both legs rolled back), and every revision's numbering column as before |
+| **BA8** | Revit 2020, the refusals - `fragment` runs on Project2 WITHOUT `--write`, so nothing can change: `name=Numeric customSequence=A, B`; `name=Alphanumeric newName=Letters`; `name=Numeric minimumDigits=2`; `customSequence=AA, , CC`; `customSequence=AA, BB, ..., ZZ`; `customSequence=<blank>`; `name=Nonesuch` | Each `refused` by name, ending "Nothing was changed." - the last one naming Numeric and Alphanumeric. A valid call without `--write` reports Revit's own missing-transaction words instead, which is the measurement |
+| **BA9** | Revit 2020, the issued-revision refusal: on Project2, one revision numbered alphanumeric and ticked Issued BY HAND in the dialog (a setup step may not change the model), then BA7's positive values without `--write`. Un-tick it afterwards | `refused` *"'Alphanumeric' numbers ISSUED revision(s) Seq. N …"*, nothing changed |
