@@ -153,6 +153,9 @@ compatibility-note: >
 #   "find all elements of a category"    -> here
 #   "how many MEP spaces are in the model" -> here, category Spaces (5b-355)
 #   "how many rooms are there"           -> here, category Rooms (5b-401)
+#   "list the rooms"                     -> here, category Rooms (5b-426)
+#   "show me all the rooms"              -> here, category Rooms (5b-426)
+#   "show me all the walls"              -> here, category Walls (5b-426)
 #   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
@@ -195,3 +198,27 @@ utterances:
   # THE SENTENCE, NOT THE KIND, as for 5b-355: the row names the room
   # counts that still reach a change.
   - how many rooms are there
+  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-426. Both reached PLACE_ROOMS - a
+  # change that PLACES rooms - on both backends. Listing every room with
+  # nothing selected is this filter: category Rooms, levelId none; for "show
+  # me", the select-elements skill then puts them on screen.
+  # REPORT_ROOM_SPACE_DATA declares "list the rooms with their areas" and is
+  # the step after this one for number, name, level and area - but it takes
+  # a set of elements and refuses when nothing is selected, so it follows
+  # this filter through the chain rather than answering first.
+  #
+  # THE SENTENCES, NOT THE KIND, as for 5b-355: the row names the ways of
+  # listing rooms that still reach a change.
+  - list the rooms
+  - show me all the rooms
+  # ADDED 2026-10-11 WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-426. On
+  # main 6b3bd57d "show me all the rooms" tipped this sentence on the
+  # trained backend from REPORT_COMPOUND_STRUCTURE, a read, to
+  # SET_WALL_CONSTRAINTS, a write - a near-tie of one rank - and on lexical
+  # main already answered it with that write. Category Walls, then the
+  # select-elements skill. "show me all the doors" was declared here too
+  # on 2026-10-09, when it reached a write; on 6b3bd57d it reaches a read,
+  # and declared it sent PLACE_HOSTED_FAMILY's "put doors in the walls at
+  # these points" to CREATE_WALL on lexical, so it is not. The row names
+  # the other "show me all the ..." sentences that reach a change.
+  - show me all the walls

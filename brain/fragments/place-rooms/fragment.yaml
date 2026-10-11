@@ -137,6 +137,15 @@ compatibility-note: >
 #                                           category Rooms. It reached HERE
 #                                           on the trained backend until
 #                                           2026-10-09 (5b-401)
+#   "list the rooms"                     -> FILTER_ELEMENTS_BY_CATEGORY,
+#                                           category Rooms. It reached HERE
+#                                           on both backends until
+#                                           2026-10-09 (5b-426)
+#   "show me all the rooms"              -> FILTER_ELEMENTS_BY_CATEGORY, the
+#                                           same, and the same date (5b-426)
+#   "which rooms are missing services"   -> CHECK_ROOM_MEP_COMPLETENESS. It
+#                                           reached HERE on both backends
+#                                           until 2026-10-09 (5b-426)
 
 utterances:
   - place the rooms
