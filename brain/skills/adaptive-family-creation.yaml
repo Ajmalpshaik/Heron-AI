@@ -41,6 +41,13 @@ purpose: >
      mid-point bracing, an inset.
   5. SET_FAMILY_FORM_MATERIAL; ADD_FAMILY_PARAMETERS for what the types
      choose.
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   6. REPORT_FAMILY_FORMS, then the flex an adaptive family takes: the modeller
      drags each point in the Family Editor and the form must follow, then
      LOAD_FAMILY into a test project, where the modeller places it by clicking
@@ -60,6 +67,7 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  - SET_FAMILY_SETTINGS
   - PLACE_ADAPTIVE_POINTS
   - DRAW_FAMILY_POINT_CURVES
   - CREATE_CONCEPTUAL_FORM

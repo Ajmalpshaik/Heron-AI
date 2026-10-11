@@ -54,7 +54,16 @@ purpose: >
   1. SET_FAMILY_CATEGORY first, when the template's category is not the one
      wanted - a Generic Model that should be an Air Terminal. The category
      brings its own built-in parameters, and everything after it builds on
-     them. Then SET_FAMILY_SETTINGS when the family will be nested in another
+     them. CLASSIFY IT FROM THAT CATEGORY NEXT: REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's own taxonomy file gives the
+     category - run it again when the category was just changed. Propose the
+     one that fits the thing; the modeller confirms it, and picks where more
+     than one could fit - never guessed (D-33). SET_FAMILY_SETTINGS "OmniClass
+     Number=<code>" writes it and reads the title back. No file, or no code
+     for the category - Revit 2026 and later ship only a sample file - is
+     said, and the step is left out.
+     Then SET_FAMILY_SETTINGS when the family will be nested in another
      one: Work Plane-Based, so it is placed on a plane and moves with it, and
      Shared when a project must schedule or tag it on its own.
   2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
