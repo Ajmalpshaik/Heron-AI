@@ -26,6 +26,13 @@ purpose: >
      does NOT get them, so a column always starts from the column template.
   1. READ THE THING: the section and its sizes - usually a manufacturer's
      table - and the material. A picture gives shape, never size (D-33).
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   2. Section parameters as TYPE lengths (depth, width, web and flange
      thickness) with ADD_FAMILY_PARAMETERS and their values with
      SET_FAMILY_TYPE_VALUES; a whole steel range is WRITE_FAMILY_SIZE_TABLE

@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-036
-semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical, Room Calculation Point, Cut with Voids When Loaded, Part Type, Profile Usage, Material for Model Behavior or Section Shape in the family being edited"
+semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical, Room Calculation Point, Cut with Voids When Loaded, Part Type, Profile Usage, Material for Model Behavior, Section Shape or OmniClass Number in the family being edited"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_SETTINGS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -46,6 +46,13 @@ purpose: >
   write. Copies already placed elsewhere take a change when the family is
   loaded there again.
 
+  **VERSION 2 (2026-10-11): THE OMNICLASS NUMBER** - Classification Number
+  from Revit 2026 - the one setting that takes text. Only a code the
+  classification file files under this family's category is written, and any
+  other is refused with the codes that file gives the category; blank, none or
+  clear empties it. Version 1's proof no longer describes the code and is kept
+  below as a record; the fragment is DRAFT until it is proved again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -58,7 +65,12 @@ contract:
     # Voids When Loaded, Maintain Annotation Orientation, Rotate with Component,
     # Keep Text Readable and Enable Cutting in Views; a name from Revit's own
     # list for Part Type, Profile Usage, Material for Model Behavior and
-    # Section Shape.
+    # Section Shape. VERSION 2: "OmniClass Number=23.65.55.14.14" (also
+    # "OmniClass", "Classification Number", "Classification Code" or
+    # "Classification") - a code the classification file files under this
+    # family's category, written with its title; "OmniClass Number=",
+    # "=none" or "=clear" empties it. The add-in's NamedValues keeps an empty
+    # value as "" (RevitFragment.cs), and none and clear are taken either way.
     - name: settings
       type: IDictionary<string, string>
       source: request
@@ -140,6 +152,37 @@ compatibility-note: >
   `Family.StructuralSectionShape` carries - read from that property, because
   its namespace is not one the executor imports (the RevitAPI XML and
   assemblies, read 2026-10-02; BV23).
+  VERSION 2, THE OMNICLASS NUMBER (read 2026-10-11 with `tools/api-surface
+  --members BuiltInParameter` over the 2020 to 2027 reference assemblies):
+  its built-in parameters were RENAMED at 2026 and kept their numbers -
+  `OMNICLASS_CODE` (-1002502) and `OMNICLASS_DESCRIPTION` (-1002503) on 2020
+  to 2025, `CLASSIFICATION_CODE` and `CLASSIFICATION_DESCRIPTION` on 2026 and
+  2027, and the old names do not exist there (tools/api-surface/changes.json
+  records the removal at 2025 to 2026). Naming either in code fails the build
+  on the other releases, so the one the running Revit has is found by NAME
+  (`Enum.IsDefined`, `Enum.Parse`), one implementation and no #if, and shown
+  with `LabelUtils.GetLabelFor(BuiltInParameter)` (2020-2027) - "OmniClass
+  Number" up to 2025, "Classification Number" from 2026. The classification
+  file is read as a plain file, since no API reads it: only the per-user copy
+  Revit itself reads, at `Application.CurrentUsersDataFolderPath`
+  (2020-2027), "OmniClassTaxonomy.txt" to 2025 and
+  "Classification_Taxonomy.txt" from 2026, the one matching the parameter's
+  name first. Revit refills that copy from its cache under ProgramData at
+  start-up; the cache is not read here, because only HeronPaths may resolve
+  a Windows special folder (tools/check-structure.py, docs/06 section 2). The 2020 to 2025 file holds Windows-1252 bytes, so it is
+  decoded strict UTF-8, then code page 1252, then Latin-1 (28591), which .NET
+  8 and 10 have without a code-page provider; titles are trimmed of every
+  char.IsWhiteSpace character, a non-breaking space among them. Revit 2026
+  and 2027 ship only a sample file filed under no category, so out of the
+  box no code is valid there, and the refusal says so. The file's category
+  column is compared as `new ElementId(BuiltInCategory)` with
+  `Family.FamilyCategory.Id` after `Enum.IsDefined` - never an ElementId read
+  as a number, and not `Category.BuiltInCategory`, which is 2023 and later;
+  another category is named with `Category.GetCategory(Document,
+  BuiltInCategory)`, else `LabelUtils.GetLabelFor(BuiltInCategory)`, both
+  2020-2027. Whether an API write of the number fills OmniClass Title is
+  Revit's - the title is read after the write and the answer reported
+  (NEEDS-CHECKING).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -148,6 +191,19 @@ compatibility-note: >
 #   "set the part type of this fitting to elbow"  -> here
 #   "turn on cut with voids when loaded"          -> here
 #   "set the family category to air terminal"     -> SET_FAMILY_CATEGORY
+#   "set the omniclass number of this family"     -> here (version 2)
+#   "set the omniclass number to 23.65.55.14.14"  -> here
+#   "clear the omniclass number"                  -> here
+#   "what is the omniclass number of this family" -> REPORT_FAMILY_TEMPLATE -
+#                                                    a READ; this writes
+#   "which omniclass codes fit this family"       -> REPORT_FAMILY_TEMPLATE
+#   "which families have no omniclass number"     -> CHECK_FAMILY_STANDARDS -
+#                                                    a READ, the audit
+#   "set the omniclass number" in a PROJECT       -> refused here (notAFamily):
+#                                                    OPEN_FAMILY_FOR_EDITING,
+#                                                    set it, then LOAD_FAMILY
+#                                                    back - a reload, asked for
+#                                                    by name (Article 7)
 
 utterances:
   - make this family work plane based
@@ -157,3 +213,6 @@ utterances:
   - set the part type of this fitting to elbow
   - turn on cut with voids when loaded
   - set the profile usage to mullion
+  - set the omniclass number of this family
+  - set the omniclass number to 23.65.55.14.14
+  - clear the omniclass number

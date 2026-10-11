@@ -26,6 +26,13 @@ purpose: >
      Transition, Cross, Cap, Union, Wye...). PART TYPE DECIDES WHICH ROUTING
      PREFERENCE GROUP OFFERS THE FITTING, and its connectors must match it -
      an elbow two, a tee three, a cross four, a cap one.
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   3. Parameters: the nominal size as an INSTANCE length (it comes from the run),
      an elbow's ANGLE as an instance angle; their values first.
   4. THE SIZE TABLE: WRITE_FAMILY_SIZE_TABLE imports the CSV - headers
