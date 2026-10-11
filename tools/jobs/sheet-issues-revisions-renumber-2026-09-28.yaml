@@ -52,6 +52,7 @@ jobs:
       show: ""
       numbering: Custom
       issueState: ""
+      confirmCount: ""
     negative-setup-set:
       description: HERON PROOF later
       revisionDate: ""
@@ -73,3 +74,4 @@ jobs:
       show: ""
       numbering: Custom
       issueState: ""
+      confirmCount: ""
