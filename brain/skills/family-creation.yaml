@@ -146,10 +146,11 @@ purpose: >
   11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
       parameters so the port follows the neck - for MEP families. Exactly one
       SOLID face may lie on the plane it is named by, so each connector face
-      gets a plane of its own, never one it shares with another flange. Until
-      row 5b-410 is fixed it cannot see a face on a form in a combination:
-      keep a connector's flange out of every combination in step 10, or put a
-      thin uncut pad on its face. A pipe or duct port is sized by a length
+      gets a plane of its own, never one it shares with another flange. Since
+      version 3 (row 5b-410) it also looks for the face in a combination, but
+      whether Revit takes a connector there is not yet proved in Revit: until
+      it is, keep a connector's flange out of every combination in step 10, or
+      put a thin uncut pad on its face - a form's own face is used first. A pipe or duct port is sized by a length
       parameter even in a fixed family - add it and its value (steps 2 and 3)
       first. A part that is a family of its own, loaded in with LOAD_FAMILY:
       PLACE_NESTED_FAMILY on the plane it sits on - a Work Plane-Based family

@@ -35,6 +35,35 @@ positive:
       Fire Protection Wet in Properties, and the report naming it Fire
       Protection Wet (row 5b-297)
 
+  - given: >
+      VERSION 3, row 5b-410. A scratch Metric Generic Model: boxes A (rect
+      -150,-50 -50,50) and B (rect 50,-50 150,50), both Ref. Level 0 to 100,
+      and a void cylinder (circle 0,50 20 on Center (Left/Right), X -160 to
+      160) through both, all three combined by COMBINE_FAMILY_FORMS into one
+      combination. facePlane "Port Left" (X -150), system "Domestic Cold
+      Water", sizeParameters "Port Dia" holding 40
+    expect: >
+      a pipe connector, round 40 mm, at X -150, Y 0, Z 50, pointing left
+      (-X), sizedBy "connector diameter <- Port Dia", and `connector` saying
+      the face is one of joined or cut forms, naming the combination and WHAT
+      REVIT'S REFERENCE TO THE FACE NAMES - record that. Before version 3 the
+      same call refused "No solid face lies on "Port Left"". IF REVIT REFUSES
+      the connector on the joined face instead, the refusal must carry
+      Revit's own words, what the reference names and the way round (a thin
+      solid joined to nothing) - record it, and the card says so in place of
+      this case
+
+  - given: >
+      the same scratch family with a ring joined to nothing on box B's right
+      face - circle 0,50 35 | circle 0,50 20 on Center (Left/Right), X 149 to
+      150, solid - and facePlane "Port Right", system "Domestic Cold Water",
+      sizeParameters "Port Dia"
+    expect: >
+      the connector on the RING's face, as before version 3 - a form's own
+      face is used before a joined one - pointing right (+X) at X 150, and
+      `connector` ending "1 face(s) of joined or cut forms lie on the same
+      plane too". This is the way round row 5b-410 used, kept working
+
 negative:
   - given: system "Global" in a Generic Models family
     expect: refused - Global is a duct and a pipe system both; "Global pipe" or "Global duct" asked for
@@ -77,6 +106,14 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and nothing made
+
+  - given: >
+      VERSION 3, row 5b-410, the scratch family of the joined-face positive:
+      facePlane "Box Top" (Z 100), where the tops of boxes A and B both lie -
+      two faces of ONE combination, neither a form's own
+    expect: >
+      refused, "2 faces of joined or cut forms lie on "Box Top" (facing up,
+      up)", sizedBy empty, and no connector in the family
 
 second_route:
   - >

@@ -1,0 +1,74 @@
+# The proof of ADD_FAMILY_CONNECTOR version 3 - a connector on a face of joined
+# or cut forms - NEEDS-CHECKING Group AN, rows AN12 to AN18, FRAGMENT-ISSUES
+# row 5b-410:
+#
+#   add-family-connector      ADD_FAMILY_CONNECTOR      FRG-MEP-053
+#
+#     python tools/batch-prove.py tools/jobs/add-family-connector-joined-face-2026-10-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/add-family-connector-joined-face-2026-10-11.yaml
+#
+# NEVER ON THE OWNER'S FAMILY1, the gate valve the row came from on 2026-10-10.
+# THE ARRANGEMENT IS MADE ONCE, KEPT, IN A NEW SCRATCH FAMILY - never one of the
+# owner's saved families. CREATE_FAMILY_DOCUMENT from Metric Generic Model gives
+# a family; type its title where `in:` says FAMILY-TITLE. Then, in it, with the
+# Heron tools (the commands are in docs/needs-checking/group-an.md):
+#
+#   planes "Port Left" -150 and "Port Right" 150 (left-right), "Box Top" 100 (height)
+#   box A: solid extrusion on Ref. Level, rect -150,-50 -50,50, 0 to 100 mm
+#   box B: solid extrusion on Ref. Level, rect 50,-50 150,50, 0 to 100 mm
+#   a void cylinder on Center (Left/Right), circle 0,50 20, X -160 to 160 -
+#     a bore through both boxes
+#   COMBINE_FAMILY_FORMS on the three ids - ONE combination; REPORT_FAMILY_FORMS
+#     then reads both boxes at 0 L, "in" that combination
+#   a type length "Port Dia" holding 40
+#
+# So box A's left face, with the bore through it, lies on "Port Left" and is
+# held only in the combination's geometry - the case row 5b-410 refused - and
+# the tops of A and B both lie on "Box Top".
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
+#
+# POSITIVE: "Port Left" - a pipe connector, round 40 mm, at X -150, Y 0, Z 50,
+# pointing left (-X); `sizedBy` holds "connector diameter <- Port Dia", and
+# `connector` names the combination and WHAT REVIT'S REFERENCE TO THE FACE
+# NAMES. Record that sentence whole. If Revit refuses the connector on the
+# joined face instead, the call throws with Revit's words and the way round -
+# record those, and row 5b-410 stays open.
+#
+# NEGATIVE: "Box Top" - two faces of the ONE combination lie on it. Refused
+# with the count, "2 faces of joined or cut forms ... (facing up, up)",
+# `sizedBy` EMPTY.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - no connector in it
+# (REPORT_FAMILY_CONNECTORS): rollback has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>` - batch-prove
+# cannot pin one; the single `validate` commands in group-an.md can.
+
+model: a scratch family from Metric Generic Model.rft, Revit 2020 first, then 2024
+
+defaults:
+  in: "FAMILY-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: add-family-connector
+    expect: sizedBy
+    set:
+      facePlane: "Port Left"
+      system: "Domestic Cold Water"
+      sizeParameters: "Port Dia"
+    negative-set:
+      facePlane: "Box Top"
+      system: "Domestic Cold Water"
+      sizeParameters: "Port Dia"
+    note: >
+      The negative changes only the plane: same family, same system, same
+      size, and a plane two faces of one combination lie on. The verdict is
+      read off `sizedBy` - one tie, or none. Since row 5b-411 (#481) the
+      runner reads a sentence result too, but the `connector` sentence is
+      still read by eye: what the reference names is the measurement, and
+      no runner judges that. AN14 (a ring joined to nothing on Port Right)
+      and AN15 (a duct connector on the joined face) are run by hand.

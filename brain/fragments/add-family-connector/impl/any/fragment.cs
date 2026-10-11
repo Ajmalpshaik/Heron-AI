@@ -14,6 +14,12 @@
 // the plane named; the connector goes at that face's centre and points out of
 // it, as Revit places it.
 //
+// A JOINED OR CUT FORM'S FACE IS FOUND IN ITS COMBINATION (version 3, row
+// 5b-410). Revit keeps such a form's faces in the GeomCombination's geometry,
+// so those are searched when no form's own face lies on the plane, under the
+// same exactly-one rule. Whether Revit takes a connector on that face, and what
+// its reference names, is reported as Revit answers it - never assumed.
+//
 // THE SYSTEM NAME DECIDES DUCT, PIPE OR ELECTRICAL, matched to Revit's own enum
 // names with the spaces taken out, AND to the name Revit's System
 // Classification list shows where that differs - "Fire Protection Wet" for
@@ -147,8 +153,24 @@ foreach (var value in Enum.GetValues(typeof(PipeSystemType)))
 foreach (var value in Enum.GetValues(typeof(ElectricalSystemType)))
     if (!notOffered.Contains(value.ToString())) systems.Add(Tuple.Create("electrical", value.ToString(), value));
 
+Func<Element, string> kindOf = element =>
+    element is Extrusion ? "an extrusion" : element is Revolution ? "a revolve" : element is Blend ? "a blend"
+    : element is SweptBlend ? "a swept blend" : element is Sweep ? "a sweep" : element is GenericForm ? "a form"
+    : "the element";
+
+// THE WAY ROUND A JOIN OR CUT, when Revit will not take a connector on its face
+// (row 5b-410): a thin solid on that face, in no combination, takes one - a
+// form's own face is looked for before a combination's.
+var sideStep = "The way round it: a thin solid joined or cut with nothing - 1 mm deep, sized to the flange or "
+    + "port, one face on the plane and the rest inside the body - takes the connector, because a form's own "
+    + "face is used before a joined one. EXTRUDE_BETWEEN_PLANES makes one.";
+
 Tuple<string, string, object> chosen = null;
 PlanarFace face = null;
+// The combination the face belongs to, when it is a joined or cut face.
+GeomCombination faceIn = null;
+// Faces of joined or cut forms on the same plane, when a form's own face won.
+var alsoJoined = 0;
 var sizes = new List<FamilyParameter>();
 var faceName = (facePlane ?? "").Trim();
 
@@ -251,9 +273,15 @@ else
         else
         {
             var datum = datums[0];
+            Func<Face, bool> onDatum = each =>
+            {
+                var flat = each as PlanarFace;
+                return flat != null && axisOf(flat.FaceNormal) == datum.Item1
+                    && Math.Abs(along(flat.Origin, datum.Item1) - datum.Item2) < halfMillimetre;
+            };
             var candidates = new List<PlanarFace>();
-            var forms = new FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()
-                .OfType<GenericForm>().Where(f => f.IsSolid).ToList();
+            var everything = new FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements();
+            var forms = everything.OfType<GenericForm>().Where(f => f.IsSolid).ToList();
             foreach (var form in forms)
             {
                 var geometry = form.get_Geometry(new Options { ComputeReferences = true });
@@ -263,16 +291,42 @@ else
                     var solid = piece as Solid;
                     if (solid == null) continue;
                     foreach (Face each in solid.Faces)
-                    {
-                        var flat = each as PlanarFace;
-                        if (flat != null && flat.Reference != null && axisOf(flat.FaceNormal) == datum.Item1
-                            && Math.Abs(along(flat.Origin, datum.Item1) - datum.Item2) < halfMillimetre)
-                            candidates.Add(flat);
-                    }
+                        if (onDatum(each) && each.Reference != null) candidates.Add((PlanarFace)each);
                 }
             }
 
-            if (candidates.Count == 0)
+            // A FORM THAT IS JOINED OR CUT HAS NO FACES OF ITS OWN: Revit keeps
+            // them in the COMBINATION's geometry (row 5b-410 - a flange cut by a
+            // bore void, its face exactly on the plane, came back "no solid
+            // face"). So every combination is read too, as COMBINE_FAMILY_FORMS
+            // reads one, and its faces are used only when no form's own face
+            // lies on the plane - a form in no join keeps winning, as it always
+            // has, which is what lets a thin solid on a cut face take the
+            // connector where Revit will not. Every face on the plane counts
+            // here, referenced or not, so exactly one must lie there.
+            var combined = new List<PlanarFace>();
+            var combinedIn = new List<GeomCombination>();
+            foreach (var join in everything.OfType<GeomCombination>())
+            {
+                var geometry = join.get_Geometry(new Options { ComputeReferences = true });
+                if (geometry == null) continue;
+                foreach (GeometryObject piece in geometry)
+                {
+                    // Only a piece holding volume, as COMBINE_FAMILY_FORMS
+                    // measures one - a void's own geometry is inside out, of
+                    // negative volume, and a join of voids is no solid face.
+                    var solid = piece as Solid;
+                    if (solid == null || solid.Volume <= 0) continue;
+                    foreach (Face each in solid.Faces)
+                        if (onDatum(each))
+                        {
+                            combined.Add((PlanarFace)each);
+                            combinedIn.Add(join);
+                        }
+                }
+            }
+
+            if (candidates.Count == 0 && combined.Count == 0)
                 problems.Add("No solid face lies on \"" + datum.Item3 + "\". Build the geometry to it first - "
                     + "EXTRUDE_BETWEEN_PLANES locks a box to named planes.");
             else if (candidates.Count > 1)
@@ -280,7 +334,26 @@ else
                     + string.Join(", ", candidates.Select(c => pointing(c.FaceNormal))) + "), so which one "
                     + "the connector goes on is not clear. Name a plane only one face lies on - the top of a "
                     + "neck, not the plane a neck stands on.");
-            else face = candidates[0];
+            else if (candidates.Count == 1)
+            {
+                face = candidates[0];
+                alsoJoined = combined.Count;
+            }
+            else if (combined.Count > 1)
+                problems.Add(combined.Count + " faces of joined or cut forms lie on \"" + datum.Item3 + "\" (facing "
+                    + string.Join(", ", combined.Select(c => pointing(c.FaceNormal))) + "), so which one the "
+                    + "connector goes on is not clear. Name a plane only one face lies on - the outer face of a "
+                    + "flange, not a plane two bodies share.");
+            // A FACE REVIT GIVES NO REFERENCE TO cannot take a connector - said
+            // plainly, with the way round it, never left as "no face".
+            else if (combined[0].Reference == null)
+                problems.Add("A face of joined or cut forms lies on \"" + datum.Item3 + "\", but Revit gives no "
+                    + "reference to it, so a connector cannot be put on it. " + sideStep);
+            else
+            {
+                face = combined[0];
+                faceIn = combinedIn[0];
+            }
         }
     }
 
@@ -291,7 +364,22 @@ if (refused == null)
 {
     var fm = doc.FamilyManager;
     var round = chosen.Item1 != "electrical" && sizes.Count == 1;
-    ConnectorElement made;
+    ConnectorElement made = null;
+
+    // WHAT A JOINED FACE'S REFERENCE NAMES is measured on every run, not
+    // assumed: the form that made the face, or the combination itself.
+    var joinedFace = "";
+    if (faceIn != null)
+    {
+        var named = doc.GetElement(face.Reference.ElementId);
+        joinedFace = "The face is one of joined or cut forms (the combination " + faceIn.UniqueId + "); Revit's "
+            + "reference to it names " + (named == null ? "no element"
+                : named is GeomCombination ? "the combination itself" : kindOf(named) + " " + named.UniqueId) + ".";
+    }
+    var refusedHere = " NOTHING from this call was kept." + (faceIn == null ? "" : " " + joinedFace + " " + sideStep);
+    // A refusal after the connector was made still says what the joined face's
+    // reference named - the measurement a proof of version 3 records.
+    var joinedNote = faceIn == null ? "" : " " + joinedFace;
 
     try
     {
@@ -306,8 +394,11 @@ if (refused == null)
     catch (Exception ex)
     {
         throw new InvalidOperationException("Revit refused the " + spaced(chosen.Item2) + " connector on the "
-            + "face lying on \"" + faceName + "\": " + ex.Message + " NOTHING from this call was kept.");
+            + "face lying on \"" + faceName + "\": " + ex.Message + refusedHere);
     }
+    if (made == null)
+        throw new InvalidOperationException("Revit made no " + spaced(chosen.Item2) + " connector on the face lying "
+            + "on \"" + faceName + "\", and gave no reason." + refusedHere);
 
     Action<BuiltInParameter, FamilyParameter, string> tie = (own, driver, role) =>
     {
@@ -315,7 +406,7 @@ if (refused == null)
         if (ownParameter == null || !fm.CanElementParameterBeAssociated(ownParameter))
             throw new InvalidOperationException("The connector's " + role + " cannot be tied to \""
                 + driver.Definition.Name + "\" in this Revit, so it would have stayed at one foot. NOTHING "
-                + "from this call was kept.");
+                + "from this call was kept." + joinedNote);
         try
         {
             fm.AssociateElementParameterToFamilyParameter(ownParameter, driver);
@@ -323,7 +414,7 @@ if (refused == null)
         catch (Exception ex)
         {
             throw new InvalidOperationException("Revit would not tie the connector's " + role + " to \""
-                + driver.Definition.Name + "\": " + ex.Message + " NOTHING from this call was kept.");
+                + driver.Definition.Name + "\": " + ex.Message + " NOTHING from this call was kept." + joinedNote);
         }
         sizedBy.Add("connector " + role + " <- " + driver.Definition.Name);
     };
@@ -365,7 +456,7 @@ if (refused == null)
                 + mm(faceAlongY) + " mm, and \"" + sizes[0].Definition.Name + "\" and \"" + sizes[1].Definition.Name
                 + "\" hold " + (first.HasValue ? mm(first.Value) : "nothing") + " and "
                 + (second.HasValue ? mm(second.Value) : "nothing") + " mm - a port sized by them would not fit "
-                + "the face it sits on. NOTHING from this call was kept.");
+                + "the face it sits on. NOTHING from this call was kept." + joinedNote);
 
         swapped = !asGiven;
     }
@@ -397,7 +488,7 @@ if (refused == null)
             throw new InvalidOperationException("The connector's diameter reads "
                 + (diameter.HasValue ? mm(diameter.Value) + " mm" : "nothing") + " and \"" + sizes[0].Definition.Name
                 + "\" holds " + (wanted.HasValue ? mm(wanted.Value) + " mm" : "nothing")
-                + ". NOTHING from this call was kept.");
+                + ". NOTHING from this call was kept." + joinedNote);
     }
     else
     {
@@ -409,7 +500,7 @@ if (refused == null)
             || Math.Abs(width.Value - faceAlongX) > halfMillimetre || Math.Abs(height.Value - faceAlongY) > halfMillimetre)
             throw new InvalidOperationException("The connector reads " + shape + " on a face "
                 + mm(faceAlongX) + " x " + mm(faceAlongY) + " mm along the same axes - it does not fit the face. "
-                + "NOTHING from this call was kept.");
+                + "NOTHING from this call was kept." + joinedNote);
 
         if (swapped)
             findings.Add("Revit runs this connector's width along the face's other side, so \""
@@ -418,9 +509,14 @@ if (refused == null)
     }
 
     var origin = made.Origin;
+    // Said in the result itself, a string, because a reply cuts a list to its
+    // first three items and each to sixty characters.
     connector = chosen.Item1 + " connector, " + spaced(chosen.Item2) + ", " + shape + ", at X " + mm(origin.X)
         + ", Y " + mm(origin.Y) + ", Z " + mm(origin.Z) + ", pointing " + pointing(made.Direction)
-        + ", on the face lying on \"" + faceName + "\"";
+        + ", on the face lying on \"" + faceName + "\""
+        + (faceIn != null ? ". " + joinedFace : "")
+        + (alsoJoined > 0 ? ". It is a form's own face, which is used before a joined one; " + alsoJoined
+            + " face(s) of joined or cut forms lie on the same plane too - check it is the face meant" : "");
 
     findings.Add("Made a " + connector + " - read back from the connector." + (sizedBy.Count > 0
         ? " Its size follows the family: " + string.Join("; ", sizedBy) + "."
