@@ -95,14 +95,32 @@ REGISTER = NL.join([
 ])
 
 
-def reader(filename):
+# Row 5b-199: every open row check-gaps did not name was filed under "needs a
+# real Revit" - including A15 and K3, whose own check cells say they need only
+# a machine that reaches huggingface.co or a network, and AK1, which is the
+# cloud environment's settings. Each row already says what it needs.
+NEEDS = NL.join([
+    "## Group AZ " + DASH + " rows that say what they need",
+    "",
+    "| # | Check | Result |",
+    "|---|---|---|",
+    "| **AZ1** | On the machine that can reach `huggingface.co`: run the embedder | not yet |",
+    "| **AZ2** | On a machine with a network, **once one adapter exists**: run the budget | not yet |",
+    "| **AZ3** | Replace the text in the Heron environment's Setup script box, then start a fresh cloud session | not yet |",
+    "| **AZ4** | Place three ducts in the open model and read them back | not yet |",
+    "",
+])
+
+
+def reader(filename, register=None):
     """The tool, loaded from tools/, reading REGISTER instead of the real file."""
+    register = REGISTER if register is None else register
     spec = importlib.util.spec_from_file_location(filename.replace("-", "_")[:-3],
                                                   os.path.join(ROOT, "tools", filename))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     original = module.read
-    module.read = lambda path, _o=original: (REGISTER if path.replace(os.sep, "/").endswith("docs/NEEDS-CHECKING.md")
+    module.read = lambda path, _o=original: (register if path.replace(os.sep, "/").endswith("docs/NEEDS-CHECKING.md")
                                              else _o(path))
     return module
 
@@ -131,6 +149,18 @@ def main():
     check(filed.get("R1") == "the owner" and filed.get("RA1") != "the owner",
           "a row's group is ALL its letters: R1 is Group R, RA1 is not (%s / %s)"
           % (filed.get("R1"), filed.get("RA1")))
+
+    print("")
+    print("2a. check-gaps files a row under what the row itself says it needs")
+    gaps = reader("check-gaps.py", NEEDS)
+    with contextlib.redirect_stdout(io.StringIO()):
+        gaps.check_register()
+    filed = dict((what.split(" ")[0], needs) for what, needs in gaps.WAITING)
+    check("Revit" not in filed.get("AZ1", "Revit") and "network" in filed.get("AZ1", ""),
+          "a row that needs only huggingface.co waits on a network, not on Revit (%s)" % filed.get("AZ1"))
+    check("network" in filed.get("AZ2", ""), "so does one that asks for a machine with a network (%s)" % filed.get("AZ2"))
+    check("cloud" in filed.get("AZ3", ""), "a row about the cloud environment waits on that (%s)" % filed.get("AZ3"))
+    check(filed.get("AZ4") == "a real Revit", "and a row that names nothing else still waits on Revit (%s)" % filed.get("AZ4"))
 
     print("")
     print("3. balance-of-work")

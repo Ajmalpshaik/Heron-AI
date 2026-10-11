@@ -37,11 +37,15 @@ purpose: >
   same numbers mean the same place whichever plane is named. A plane at an
   angle is refused.
 
-  **START AND END RUN ALONG THE AXIS THE PLANE FACES** - up (+Z), back (+Y)
-  or right (+X), negative the other way - in millimetres from the plane, as
-  Extrusion Start and Extrusion End do. Revit measures along the plane's own
-  normal, which can point the other way, so both are turned onto it, and the
-  extent is READ BACK along the model axis to prove the turn was right.
+  **START AND END RUN ALONG THE MODEL AXIS THE PLANE FACES** - up (+Z), back
+  (+Y) or right (+X), negative the other way - in millimetres from the plane.
+  That is NOT how Revit's own Extrusion Start and Extrusion End run: those are
+  measured along the plane's own normal, which can point the other way, so
+  both are turned onto it here, and the extent is READ BACK along the model
+  axis to prove the turn was right. **So on a plane facing -X, -Y or -Z the
+  same number means the opposite side in the two:** a raw Extrusion End later
+  linked to a parameter (LINK_FAMILY_FORM_PARAMETER) of +1 sits where a build
+  `endMm` of -1 does (row 177, Family12).
 
   **SKETCHED ON THE PLANE ITSELF**, from its element id, so the shape moves
   with the plane. Nothing else ties it to the family's planes or parameters:
@@ -70,14 +74,18 @@ contract:
     - name: workPlane
       type: string
       source: request
-    # The shape, as loops with `|` between - "circle 0,0 150",
-    # "rect -300,-200 300,200 | circle 0,0 50", "0,0; 600,0; 600,100; 100,100;
-    # 100,400; 0,400". Millimetres, in the plane's two model coordinates.
+    # The shape, as loops with `|` between, each "circle CX,CY R",
+    # "rect X1,Y1 X2,Y2", "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY
+    # X,Y" closed back to the first - "rect -300,-200 300,200 | circle 0,0 50".
+    # A loop inside another is a hole. Millimetres from the family origin, in
+    # the plane's two model coordinates: X,Y on a level or horizontal plane,
+    # X,Z on a plane facing front or back, Y,Z on one facing left or right.
     - name: profile
       type: string
       source: request
-    # Extrusion Start: millimetres from the plane along the axis it faces. 0
-    # starts on the plane.
+    # Extrusion Start: millimetres from the plane along the axis it faces -
+    # up (+Z), back (+Y) or right (+X), negative the other way. 0 starts on
+    # the plane.
     - name: startMm
       type: double
       source: request

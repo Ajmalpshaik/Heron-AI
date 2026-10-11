@@ -175,6 +175,18 @@ def main():
     check("UniqueIds(doc, skipped.All())" in raw,
           "and the audit still lists every skipped element, whatever the reason")
 
+    print("\n4a. a failed move says it was rolled back only when Revit confirms it")
+    # FRAGMENT-ISSUES row 10: SafeRollBack was void, so a group that was not
+    # Started, or a RollBack() that threw, still left the reply saying "rolled
+    # back completely". Read as text, like the sections above.
+    rollback = body_of(code, "private static bool SafeRollBack(")
+    check(bool(rollback) and "TransactionStatus.RolledBack" in rollback,
+          "SafeRollBack answers whether Revit reports the group ROLLED BACK")
+    check("rolled back completely" in raw and "RollbackNotConfirmed" in code
+          and re.search(r"rolledBack\s*\?\s*\"The move failed and was rolled back completely",
+                        raw) is not None,
+          "and \"rolled back completely\" is said only on that answer, never on its own")
+
     print("\n5. the four statuses exist, under those names, on every cached release")
     cached = sorted(name for name in (os.listdir(CACHE) if os.path.isdir(CACHE) else [])
                     if name.isdigit())

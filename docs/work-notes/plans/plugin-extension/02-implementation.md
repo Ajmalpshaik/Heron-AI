@@ -699,6 +699,17 @@ Whether a particular contractor's firewall allows it. That is found on site, and
 [Q-PE-5](03-open-questions.md) stays open. The installer now at least **says** it is the firewall
 rather than saying "error", which is the part that can be built.
 
+### 2026-10-08 — the installer itself was in no release
+
+**Everything above fetches the plugin. Nothing put the installer that does the fetching into a
+release**, and a new person who searched for it found it nowhere. Behind that were two more gaps: the
+exe cannot run alone (it needs `platform\heron-products.json` and two `tools\` scripts above it), and
+`-FromFolder` read each `.addin` from a `revit\` folder no download has. All three are fixed —
+`HeronInstaller.exe` and `heron-install.exe`, **self-contained**, at the top of `heron-project.zip`
+with the scripts they drive. **Not proven**: [row 5b-371](../../../FRAGMENT-ISSUES.md) and
+[NEEDS-CHECKING `AC6`](../../../needs-checking/group-ac.md) carry what is owed, and the first of it is a
+**published** release, because the installer downloads only from one.
+
 ---
 
 ## Stage 6 — Routes 1 and 2, onto the same engine

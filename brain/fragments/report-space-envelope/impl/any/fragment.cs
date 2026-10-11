@@ -18,6 +18,14 @@
 // as null, never 0 - a window read as SHGC 0 loses its sun without a word. The
 // brain refuses that Space and names the type.
 //
+// A NAME TWO PARAMETERS SHARE IS NOT READ. A Space's type is read by its name,
+// Space Type. Where two parameters on one Space carry that name - a shared or
+// project "Space Type" bound beside Revit's own - Revit asked by name returns
+// "the first one encountered", which its own reference says "is determined at
+// random". So the name is counted first, and a doubled one is null, as for a
+// Space with none, and said in a finding naming the Space - never either value
+// (D-54 s3, FRAGMENT-ISSUES 5b-203).
+//
 // LINKED WALLS ONLY WHEN ASKED FOR - D-59. In a federated MEP model the walls
 // a Space is bounded by are usually in the architect's link. Absent
 // `includeLinks` means host only, and such a face reads beyond "unknown" with a
@@ -331,12 +339,21 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
 
     string zone = null, spaceType = null;
     try { if (space.Zone != null) zone = space.Zone.Name; } catch { }
-    try
+    // Counted before it is read - see the header (5b-203).
+    var spaceTypes = 0;
+    try { spaceTypes = space.GetParameters("Space Type").Count; } catch { }
+    if (spaceTypes > 1)
+        findings.Add("Space " + label + ": " + spaceTypes + " parameters are named Space Type - asked by "
+            + "name, Revit picks one of them at random, so its space type was NOT read and is null.");
+    else
     {
-        var st = space.LookupParameter("Space Type");
-        if (st != null && st.HasValue) spaceType = st.AsValueString();
+        try
+        {
+            var st = space.LookupParameter("Space Type");
+            if (st != null && st.HasValue) spaceType = st.AsValueString();
+        }
+        catch { }
     }
-    catch { }
     if (spaceType == "<Building>" || spaceType == "") spaceType = null;
 
     var current = new List<string>();

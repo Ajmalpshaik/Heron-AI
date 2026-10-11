@@ -121,6 +121,32 @@ else if (topName.Length > 0)
     }
 }
 
+// VERSION 3: A STRUCTURAL FAMILY IS PLACED ONLY AS ITS OWN KIND (row 128).
+// Revit takes StructuralType.Beam for a column family and places it: on
+// 2026-09-19 a 305x305x97UC went in as a beam on Project1, and this code
+// passes the type straight through, so the cause was Revit accepting it. A
+// family in one of the three structural categories is refused when the type
+// asked does not fit it; any other family, or one asked as non-structural, is
+// left to Revit as before.
+string kindRefusal = null;
+if (understood && symbol != null && symbol.Category != null
+    && wanted != StructuralType.NonStructural)
+{
+    var category = symbol.Category.Id;
+    var isColumn = category.Equals(new ElementId(BuiltInCategory.OST_StructuralColumns));
+    var isFraming = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFraming));
+    var isFoundation = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFoundation));
+    var fits = isColumn ? "column" : isFraming ? "beam or brace" : isFoundation ? "footing" : null;
+    var fitsWanted = fits == null
+        || (isColumn && wanted == StructuralType.Column)
+        || (isFraming && (wanted == StructuralType.Beam || wanted == StructuralType.Brace))
+        || (isFoundation && wanted == StructuralType.Footing);
+    if (!fitsWanted)
+        kindRefusal = string.Format("'{0}: {1}' is a {2} family and was asked to go in as '{3}', "
+            + "which Revit would accept and place anyway. Ask for it as {4}. Nothing was placed",
+            symbol.FamilyName, symbol.Name, symbol.Category.Name, structuralType, fits);
+}
+
 if (!understood)
 {
     findings.Add(string.Format(
@@ -138,6 +164,10 @@ else if (points == null || points.Count == 0)
 else if (symbol == null)
 {
     findings.Add("No family type was given");
+}
+else if (kindRefusal != null)
+{
+    findings.Add(kindRefusal);
 }
 else
 {

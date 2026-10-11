@@ -79,6 +79,18 @@ negative:
       each link's line reads "0 pair(s) too close" with a checked count
       beside it - a zero that was looked for
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      a duct 30 mm from a wall of the architectural link whose type carries
+      two parameters named Fire Rating - a shared "Fire Rating" bound to Walls
+      beside the built-in one - defaultClearance 50, rules "Walls=100",
+      includeLinks true
+    expect: >
+      the duct's line in `linkedMatches` names the wall with "Fire Rating NOT
+      READ - 2 parameters share that name", never either rating, and
+      `tooClose` is unchanged from the host-only run (row 5b-203)
+
 second_route:
   - >
     measure the pair in Revit with the Measure tool, then check the insulation

@@ -947,7 +947,7 @@ cannot do, so R-58's *refuse a question nothing covers* is not reachable this wa
 
 ## 2026-09-28 — a colour sentence reached the tool that makes zones
 
-[Row 5b-236](../docs/fragment-issues/section-5b-rows-176-200.md). *"color hvac zones in this plan"*, which
+[Row 5b-236](../docs/fragment-issues/section-5b-rows-226-250.md). *"color hvac zones in this plan"*, which
 no card declares, resolved on the owner's backend to `CREATE_HVAC_ZONE` - a PROVEN write that makes HVAC
 zones and moves spaces into them - with `APPLY_COLOR_FILL_SCHEME`, the DRAFT colour tool, second.
 Measured on scratch stores, never the shared one, at **420 fragments** on `main` as it stood:
@@ -1028,7 +1028,7 @@ own **Color Scheme** and **Color Fill Legend**. At 420 fragments, before and aft
 
 ## 2026-10-09 — a sentence to make a material reached the tool that selects by one
 
-[Row 5b-375](../docs/fragment-issues/section-5b-rows-176-200.md). *"create a new material called
+[Row 5b-375](../docs/fragment-issues/section-5b-rows-351-375.md). *"create a new material called
 Galvanised Steel"* resolved to `SELECT_BY_MATERIAL` on the owner's lexical backend. Measured on scratch
 stores at **480 fragments**, no Revit filter, on **`lexical`** and on **`model`**
 (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker.
@@ -1072,11 +1072,11 @@ steel material"*, which sent *"what is made of stainless steel"* there too. **Th
 
 ## 2026-10-09 — a sentence a routing table claimed, held by ranking alone
 
-[Row 5b-385](../docs/fragment-issues/section-5b-rows-176-200.md). `REPORT_BOUNDING_BOX` sent *"how much
+[Row 5b-385](../docs/fragment-issues/section-5b-rows-376-400.md). `REPORT_BOUNDING_BOX` sent *"how much
 space does this take up"* to itself in its `# ROUTING` comment and never declared it, so retrieval had
 only the ranking to go on. Measured on scratch stores, no Revit filter, on **`lexical`** and on
 **`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository), no re-ranker, at
-**480 fragments** on `main` and **481** with `LIST_MATERIALS` ([row 5b-376](../docs/fragment-issues/section-5b-rows-176-200.md))
+**480 fragments** on `main` and **481** with `LIST_MATERIALS` ([row 5b-376](../docs/fragment-issues/section-5b-rows-376-400.md))
 merged locally.
 
 | | `main`, lexical | with `LIST_MATERIALS`, lexical | `main`, `model` |
@@ -1118,7 +1118,7 @@ here. *Space* in it is room taken up, not an MEP Space.
 
 ## 2026-10-09 — every routing-table claim that did not reach its card, judged
 
-[Row 5b-387](../docs/fragment-issues/section-5b-rows-176-200.md). `check-routing.py` listed 56 claims not
+[Row 5b-387](../docs/fragment-issues/section-5b-rows-376-400.md). `check-routing.py` listed 56 claims not
 reached on **`lexical`** and 70 on **`model`** (`model2vec:minishlab/potion-base-8M`, from a venv outside
 the repository) - 89 sentences, a table saying *"-> here"* and ranking answering something else. Measured on
 scratch stores at **480 fragments**, no Revit filter, no re-ranker.
@@ -1166,7 +1166,7 @@ whose backend is not the one it was asked for - and a backend label is checked o
 
 ## 2026-10-09 — questions about materials reach writes, and no card edit fixes it
 
-[Row 5b-396](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `17040842`, **480
+[Row 5b-396](../docs/fragment-issues/section-5b-rows-376-400.md). Measured on `main` `17040842`, **480
 fragments**, no Revit filter, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
 from a venv outside the repository), no re-ranker, every run on its own scratch store.
 
@@ -1203,18 +1203,49 @@ wall question onto a write. The row lists each with the sentence that broke it.
 the 2026-09-28 section left alone because changing it cost the owner's questions - measured on his 79
 first and on this file second, on both backends.
 
+### The retrieval layer, tried the same day - five changes, none kept
+
+Measured on `main` `aebca7ad`, before PR #450's `LIST_MATERIALS` merged; every change in
+`brain/heron_search.py` alone, with no question test and no ranking by risk (D-01, D-101). Each was held to
+the owner's 79 on both backends, this file, `check-routing`, `check-risk-crossings --revit 2024`,
+`check-intrusion` and thirteen ranking suites; the one that held went to three skeptics.
+
+| Change | Questions to a write, `lexical` / `model` (29 / 20 before) | Owner's 79 made worse | And |
+|---|---|---|---|
+| column filters - each field its own word rarity | 18 / 9 | 9 / 7 | 28 material sentences read to write |
+| porter stemming for short words | 25 / 12 | 1 / 1 | 7 read to write |
+| stemming and column weights | 27 / 13 | 7 / 8 | 23 read to write |
+| a purpose's first paragraph indexed, the rest at 0.4 | 20 / 7 | 7 / 7 | 24 read to write |
+| pairs of neighbouring words a card declares | 19 / 16 | **0 / 0** | skeptics: 4 reads sent to writes |
+
+- **Plain column weights cannot reach these questions at all.** bm25 counts a word's rarity over the whole
+  row and a weight only scales how often it occurs, so a word on more than half the cards scores nothing
+  at any weight. 34 weightings were measured; weighting the declared sentences up made it worse.
+- **The word pairs failed on a bias in the declarations, not in the code.** Requests say *these*, so
+  *these elements* is declared by 30 writes and 12 reads and *these views* by 13 writes and none - and a
+  question saying *these* was pushed toward a write: *"what size is this pipe"* reached `AUTO_SIZE_PIPE`
+  and *"what type are these elements"* `CHANGE_ELEMENT_TYPE`. On the skeptics' 180 sentences it made 13
+  more answers right and 8 fewer questions reach a write, against those 4 reads sent to writes and one
+  right answer lost.
+- **The fusion weights** were measured as well: 1.001 for nearness on `model` dropped owner question 3 out
+  of the top five, through an exact tie, and every other value cost one of his questions.
+
+**Whether a measured trade like the word pairs' is worth shipping is the owner's decision** - D-100 makes a
+drop on his questions something reported, never a gate - and so is D-101's proposed half, which waits on a
+test of what a question is.
+
 ### What this does not establish
 
 - **The sentences are agents' sentences**, written to measure and to break, not the owner's. His 79 did
   not move under any candidate that met the constraints.
 - **One encoder.** Every `model` number is `potion-base-8M`.
-- **Nothing here met Revit**, and no card was changed.
+- **Nothing here met Revit**, and no card was changed - and no ranking change was kept.
 
 ---
 
 ## 2026-10-09 — a room count answered by a change that places rooms
 
-[Row 5b-401](../docs/fragment-issues/section-5b-rows-176-200.md). Measured on `main` `aebca7ad`, **480
+[Row 5b-401](../docs/fragment-issues/section-5b-rows-401-425.md). Measured on `main` `aebca7ad`, **480
 fragments**, behind the 2024 wall, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
 from a venv outside the repository, warmed before the first question), no re-ranker, every run on its own
 scratch store. Repeated on `main` with PR #450's `LIST_MATERIALS` merged locally, **481**, and again on

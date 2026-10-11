@@ -22,6 +22,10 @@ WHAT IT PROVES
   4. THE ACCEPTANCE TEST: add a better provider and the call site does not
      change; delete the original and the same call still answers. That is
      Step 12's own test, re-run one layer up, where the host actually sits.
+  4b. A STORE THAT IS NOT THIS CHECKOUT'S LIBRARY SAYS SO: a card with no
+     row and a row with no card are counted and named on the lookup, with a
+     rebuild only where one cannot spread unmerged work (row 5b-233) - and a
+     warm lookup still opens no card file and walks the cards once (5b-271).
   5. Every brain tool is declared READ and reaches no bridge operation, so
      none of them can touch a model.
   6. Every tool the server declares is in the registry, and every brain tool
@@ -58,6 +62,7 @@ import re
 import shutil
 import sys
 import tempfile
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
@@ -153,6 +158,58 @@ def main():
               "phrasing and a ranked guess are not the same claim" % ok["route"])
         check(ok.get("risks_unreadable") is None,
               "and on an ordinary answer nothing is reported unreadable")
+        check("store_drift" in ok and ok["store_drift"] is None,
+              "and a store holding exactly this checkout's cards says nothing "
+              "about them (%r)" % (ok.get("store_drift", "no such field"),))
+
+        # --- A WARM LOOKUP READS NO FILE, AND THE COMPARISON COSTS NO WALK ---
+        # Row 5b-271 took a lookup on the owner's PC from 1,321 file opens to
+        # none; row 5b-233's comparison must not bring any back. Every file a
+        # lookup opens is heard through the interpreter's own audit hook, and
+        # every stat walk of the cards through the one function that takes
+        # it. A file younger than RACY_NS is read on purpose - git's "racily
+        # clean" rule - so one just written is not counted against this.
+        warm_walks, warm_opened, warm_on = [], [], [False]
+
+        def warm_heard(event, args):
+            if warm_on[0] and event == "open":
+                warm_opened.append(str(args[0]))
+
+        listened = hasattr(sys, "addaudithook")
+        if listened:
+            sys.addaudithook(warm_heard)
+        real_walk = SCOPE.cards_on_disk
+
+        def warm_walk(folder=None):
+            warm_walks.append(folder)
+            return real_walk(folder)
+
+        BRAIN.lookup("select all ducts", revit="2024")
+        SCOPE.cards_on_disk = warm_walk
+        warm_on[0] = True
+        try:
+            BRAIN.lookup("select all ducts", revit="2024")
+        finally:
+            warm_on[0] = False
+            SCOPE.cards_on_disk = real_walk
+        import heron_fragment as FRAG
+        racy = getattr(FRAG, "RACY_NS", 2 * 10 ** 9) / 1e9
+        cards = os.path.normcase(os.path.abspath(FRAG.FRAGMENTS_DIR))
+        settled = [p for p in warm_opened
+                   if os.path.normcase(os.path.abspath(p)).startswith(cards)
+                   and os.path.exists(p)
+                   and time.time() - os.path.getmtime(p) > racy]
+        if listened:
+            check(not settled,
+                  "a warm lookup with nothing moved opens no card or "
+                  "implementation file (%d: %s)"
+                  % (len(settled), ", ".join(settled[:3])))
+        else:
+            print("  (not run: this Python has no audit hook to hear opens)")
+        check(len(warm_walks) == 1,
+              "and stat-walks the cards ONCE - saying what the store does not "
+              "hold reuses the walk refresh() took (%d walk(s))"
+              % len(warm_walks))
 
         # --- A RISK COLUMN NOBODY COULD READ IS NOT A CLEAN ANSWER ----------
         # The block that fills these risks used to end `except Exception:
@@ -336,6 +393,45 @@ def main():
         check(third["providers"] and third["providers"][0]["id"] == "FRG-TEST-002",
               "delete the original and the same call still answers - nothing "
               "above ever knew which fragment it was getting")
+
+        # --- 4b. A STORE THAT IS NOT THIS CHECKOUT'S LIBRARY SAYS SO ---------
+        # FRAGMENT-ISSUES row 5b-233. The store now lacks FRG-ELE-001, whose
+        # card is on disk, and holds FRG-TEST-002, whose "folder" is x - one
+        # of each way a store and its checkout part company, and the shape
+        # of 2026-09-27: a worktree's new card not offered to its own chat,
+        # then - the shared store rebuilt from that branch - every chat
+        # offered one main did not hold. refresh() puts neither right, on
+        # purpose, so the lookup has to say it.
+        print()
+        print("A store that does not hold this checkout's cards says so")
+        said = BRAIN.lookup("select all ducts", revit="2024").get(
+            "store_drift") or ""
+        check("1 card(s) in this checkout are not in it" in said
+              and "filter-elements-by-category" in said,
+              "a card on disk with no row is counted and named (%r)" % said)
+        check("1 fragment(s) in it have no card here" in said and "(x)" in said,
+              "and a row with no card on disk is counted and named")
+        check("python brain/heron_scope.py --rebuild" in said,
+              "and, the store being this checkout's own, it says a rebuild is "
+              "needed and how")
+        check(("HERON_KNOWLEDGE=%s" % home) in said,
+              "naming the private store it means - run from a shell without "
+              "this HERON_KNOWLEDGE, --rebuild would rebuild the shared one")
+
+        # FROM WHERE A REBUILD WOULD SPREAD THIS CHECKOUT'S CARDS - a worktree,
+        # or a branch, on the store every chat shares - rebuilding is row
+        # 5b-233's other half, so the sentence must not tell anybody to.
+        real_allowed = BRAIN._store_warm_allowed
+        BRAIN._store_warm_allowed = lambda: False
+        try:
+            shared = BRAIN.lookup("select all ducts", revit="2024").get(
+                "store_drift") or ""
+        finally:
+            BRAIN._store_warm_allowed = real_allowed
+        check("HERON_KNOWLEDGE" in shared and "--rebuild" not in shared,
+              "on the shared store from a checkout that is not main it says "
+              "whose store it is and how to get one of this checkout's own - "
+              "never to rebuild it from here (%r)" % shared)
 
         # --- 5. the tools cannot touch a model ------------------------------
         print()

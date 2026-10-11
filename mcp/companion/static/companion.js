@@ -104,7 +104,9 @@ function showSelection(r) {
 }
 
 let lastSeq = 0;
-const WORDS = { ok: "OK", refused: "refused", failed: "failed" };
+// handed_back: the chat's words settled no one capability, so the candidates
+// went back to the chat and nothing was sent to Revit - not a refusal (5b-274).
+const WORDS = { ok: "OK", refused: "refused", failed: "failed", handed_back: "handed back" };
 
 // The activity list sits in a small button in the corner, like a chat
 // bubble, and opens into the full list when clicked (the owner's idea,

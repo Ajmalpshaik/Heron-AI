@@ -843,23 +843,15 @@ def main(argv=None):
         return ladder.get((risk or "").upper(), -1)
 
     # THE STORE MUST HOLD THIS TREE'S LIBRARY, or every number below is about
-    # somebody else's - check-routing.py's own rule, and its own functions.
-    disk = routing.ids_on_disk()
-    store = SCOPE.open_scope(SCOPE.GLOBAL)
-    held = set(r["id"] for r in store.fragments())
-    if held != disk:
-        drift = routing.describe_drift(held, disk)
-        store.close()
-        built, _problems = SCOPE.rebuild()
-        store = SCOPE.open_scope(SCOPE.GLOBAL)
-        held = set(r["id"] for r in store.fragments())
-        print("  (store did not match this working tree - %s; rebuilt %d)"
-              % (drift, built))
-        if held != disk:
-            print("  the store STILL does not match after a rebuild - %s. "
-                  "Nothing was scored." % routing.describe_drift(held, disk))
-            store.close()
-            return 2
+    # somebody else's - check-routing.py's own guard, CALLED, NOT COPIED. Until
+    # 2026-10-09 this file carried the ids half of it: no row's content was
+    # compared with its card (row 5b-229), and the ONE store every chat on the
+    # PC reads was rebuilt from whatever checkout this ran in (row 5b-233).
+    # store_for_this_tree() asks all three and says why when it refuses; a
+    # refusal is exit 2, which this tool already meant as "nothing was scored".
+    store = routing.store_for_this_tree("score")
+    if store is None:
+        return 2
 
     capabilities = {}
     for r in store.fragments():

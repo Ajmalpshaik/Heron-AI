@@ -89,6 +89,23 @@ THINKING = ("hybrid", "keywords")
 NEITHER = ("nothing",)
 
 
+def routing():
+    """tools/check-routing.py as a module - its filename has a hyphen in it.
+
+    Loaded for its store guard, store_for_this_tree(), so every tool that
+    measures over the knowledge store asks it the same three questions.
+    Found beside THIS file rather than under ROOT, which
+    tests/test_measure_routes.py points at a scratch tree.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "heron_tool_check_routing",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-routing.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def utterances():
     """((fragment id, declared phrasing) pairs, problems) for the whole library.
 
@@ -181,7 +198,6 @@ def main(argv):
     if "--revit" in argv:
         revit = argv[argv.index("--revit") + 1]
 
-    import heron_scope as SCOPE
     import heron_search as SEARCH
     import heron_retrieve as RETRIEVE
 
@@ -196,22 +212,15 @@ def main(argv):
         print("No fragment declares an utterance, so there is nothing to ask.")
         return 0
 
-    disk_ids = set(fid for fid, _ in said)
-    store = SCOPE.open_scope(SCOPE.GLOBAL)
-    store_ids = set(row["id"] for row in store.fragments())
-    if store_ids != disk_ids:
-        store.close()
-        built, problems = SCOPE.rebuild()
-        store = SCOPE.open_scope(SCOPE.GLOBAL)
-        store_ids = set(row["id"] for row in store.fragments())
-        print("  (store did not match this working tree; rebuilt %d%s)"
-              % (built, "; %d problem(s)" % len(problems) if problems else ""))
-        if store_ids != disk_ids:
-            print("  the store STILL does not match this working tree. These")
-            print("  shares would be over a library that is not on disk, which")
-            print("  is not a measurement. Run `python brain/heron_fragment.py`.")
-            store.close()
-            return 2
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY - check-routing.py's guard,
+    # CALLED, NOT COPIED. Until 2026-10-09 this file kept its own ids-only
+    # copy: no row's content was compared with its card (row 5b-229), and the
+    # ONE store every chat on the PC reads was rebuilt from whatever checkout
+    # this ran in (row 5b-233). A refusal is exit 2, which this tool already
+    # meant as "these shares would not be a measurement".
+    store = routing().store_for_this_tree("route share")
+    if store is None:
+        return 2
 
     try:
         SEARCH.index(store)

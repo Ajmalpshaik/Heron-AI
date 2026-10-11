@@ -124,9 +124,10 @@ def unpoint(text, name):
 
     NAME is the group file the text came from, or None for the index's own
     text. The inverse of what split-needs-checking.py does on the way out: a
-    link one folder deeper comes back up, a link to a heading in another group
-    file comes back to an anchor on the page, and a link from the index into a
-    group file does the same."""
+    link one folder deeper comes back up, a link to a file beside it goes down
+    into the folder, a link to a heading in another group file comes back to
+    an anchor on the page, and a link from the index into a group file does
+    the same."""
     def swap(match):
         label, href = match.group(1), match.group(2)
         if href.startswith(("http://", "https://", "mailto:")):
@@ -148,7 +149,13 @@ def unpoint(text, name):
             return "[%s](%s%s)" % (label, mark, fragment)
         if target.startswith("../"):
             return "[%s](%s%s%s)" % (label, target[3:], mark, fragment)
-        return match.group(0)
+        # A FILE BESIDE IT - group-p.md, written in group-ap.md. On the page it
+        # is one folder deeper. Left as it was, the way out read it as the
+        # page's own neighbour and wrote ../ in front, in groups the run was
+        # not even moving (rows 5b-255, 5b-262, 5b-363).
+        if target.startswith("./"):
+            target = target[2:]
+        return "[%s](%s/%s%s%s)" % (label, FOLDER_NAME, target, mark, fragment)
     return LINK.sub(swap, text)
 
 

@@ -25,15 +25,22 @@ PC starts where the old one is. This holds the three things it promises:
   4. --snapshot writes what a PC has as facts - the Heron tools Claude Code
      lets run, how much it remembers, as counts - and NO secret: no memory
      text, no key, no address, no chat, no unrelated permission.
+  5. A Microsoft Store Claude's private copy of AppData is found, its
+     packages read off their folder names, a run inside it told from a run
+     outside it, and a pip line pinned to its versions - as a WARNING that
+     moves no exit code (row 5b-417). Faked in folders here: the real
+     redirection is Windows', and only the owner's laptop has it.
 
 Every run points HERON_KNOWLEDGE at a scratch folder, so the shared store on
 the machine running this is never touched (row 5b-233).
 
 WHAT IT CANNOT DO: say anything about a real Windows PC - the Microsoft Store
 shortcut, %APPDATA%, the add-in folders and Claude Code's own approvals are
-not here to look at.
+not here to look at, and Windows' redirection of a Store app's AppData is
+faked with a junction, not seen.
 """
 
+import importlib.util
 import json
 import os
 import shutil
@@ -63,6 +70,100 @@ def run(knowledge, *args, **env):
     return done.returncode, done.stdout.decode("utf-8", "replace")
 
 
+def load_tool():
+    """The tool as a module, for the checks that call its parts directly."""
+    spec = importlib.util.spec_from_file_location("heron_ready_under_test", TOOL)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def link_folder(link, target):
+    """Make `link` open as `target` - the merged view a packaged app's child
+    sees. A junction on Windows, which needs no administrator; a symlink
+    elsewhere. False when neither can be made here."""
+    try:
+        if os.name == "nt":
+            import _winapi
+            _winapi.CreateJunction(target, link)
+        else:
+            os.symlink(target, link)
+        return True
+    except (OSError, ImportError, AttributeError):
+        return False
+
+
+def store_claude(work, plain_code):
+    """Section 5 - a Microsoft Store Claude, faked in folders (row 5b-417)."""
+    local = os.path.join(work, "local")
+    roaming = os.path.join(work, "roaming")
+    nothing = os.path.join(work, "local-without-claude")
+    cache = os.path.join(local, "Packages", "AnthropicPBC.Claude_test1234",
+                         "LocalCache")
+    site = os.path.join(cache, "Roaming", "Python",
+                        "Python%d%d" % sys.version_info[:2], "site-packages")
+    for name in ("PyYAML-0.0.1.dist-info", "mcp-0.0.2.dist-info",
+                 "sqlite_vec-0.0.3.dist-info", "requests-9.9.dist-info"):
+        os.makedirs(os.path.join(site, name))
+    os.makedirs(roaming)
+    os.makedirs(nothing)
+
+    tool = load_tool()
+    found = getattr(tool, "claude_app_copies", None)
+    held = getattr(tool, "copy_packages", None)
+    inside = getattr(tool, "inside_claude_app", None)
+    check(None not in (found, held, inside),
+          "the tool can find the copy, read its packages, and tell a run "
+          "inside the app from one outside it")
+    if None not in (found, held, inside):
+        check(found({"LOCALAPPDATA": local}) == [cache],
+              "it finds the copy under %LOCALAPPDATA%/Packages")
+        check(found({"LOCALAPPDATA": nothing}) == [] and found({}) == [],
+              "and none where there is no Store Claude, or no %LOCALAPPDATA%")
+        got = held(cache)
+        check(got == {"PyYAML": "0.0.1", "mcp": "0.0.2", "sqlite-vec": "0.0.3"},
+              "it reads Heron's packages off the copy's folder names, and only "
+              "Heron's: %s" % got)
+        environ = {"APPDATA": roaming, "LOCALAPPDATA": local}
+        check(inside(cache, environ) is False,
+              "a run whose %APPDATA% has no Python folder is OUTSIDE the app")
+        own = os.path.join(roaming, "Python")
+        os.makedirs(own)
+        check(inside(cache, environ) is False,
+              "and so is one whose %APPDATA% has a Python folder of its own")
+        os.rmdir(own)
+        if link_folder(own, os.path.join(cache, "Roaming", "Python")):
+            try:
+                check(inside(cache, environ) is True,
+                      "a run whose %APPDATA% Python folder IS the copy's is "
+                      "INSIDE the app")
+            finally:
+                if os.name == "nt":
+                    os.rmdir(own)
+                else:
+                    os.unlink(own)
+        else:
+            print("  --    NOT RUN: no junction or symlink could be made here, "
+                  "so the inside case is unchecked")
+
+    store = os.path.join(work, "store-claude")
+    os.makedirs(store)
+    code, out = run(store, "--check", LOCALAPPDATA=local)
+    part = out.split("2a.", 1)[-1].split("\n3. ", 1)[0] if "2a." in out else ""
+    check(bool(part), "the whole tool says 2a when %LOCALAPPDATA% holds a "
+                      "Store Claude's copy")
+    check("pip install --user mcp==0.0.2 PyYAML==0.0.1 sqlite-vec==0.0.3" in part,
+          "with a pip line pinned to the copy's versions")
+    check("Reset or uninstall" in part,
+          "and says a Reset or uninstall of the app deletes the copy")
+    check("FIX " not in part and code == plain_code,
+          "as a warning only: no FIX line, and the exit code is a plain "
+          "--check's (%d, plain %d)" % (code, plain_code))
+    code, out = run(store, "--check", LOCALAPPDATA=nothing)
+    check("2a." not in out,
+          "and says nothing of it where there is no Store Claude")
+
+
 def main():
     if not os.path.exists(TOOL):
         check(False, "tools/heron-ready.py exists")
@@ -88,6 +189,7 @@ def main():
         store = os.path.join(work, "check")
         os.makedirs(store)
         code, out = run(store, "--check")
+        code_check = code
         fixes = [line for line in out.splitlines()
                  if line.strip().startswith("FIX ")]
         check((code == 0) == (not fixes),
@@ -152,6 +254,10 @@ def main():
         check(isinstance(got.get("lookup_seconds"), list),
               "it times three lookups where the store is its own: %s"
               % got.get("lookup_seconds"))
+
+        print()
+        print("5. A Microsoft Store Claude's own copy of AppData is named, as a warning")
+        store_claude(work, plain_code=code_check)
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
@@ -162,7 +268,8 @@ def main():
             print("  - %s" % line)
         return 1
     print("PASSED - a missing package is named with its command, the exit code")
-    print("follows what is printed, and the store is built before a chat asks.")
+    print("follows what is printed, the store is built before a chat asks, and a")
+    print("Store Claude's own copy of AppData is named as a warning.")
     print("It says nothing about a real Windows PC.")
     return 0
 

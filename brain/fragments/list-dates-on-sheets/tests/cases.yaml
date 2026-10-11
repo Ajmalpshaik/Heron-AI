@@ -1,0 +1,79 @@
+# NONE OF THESE HAS BEEN RUN. Written 2026-10-10 with version 1, for
+# NEEDS-CHECKING Group CY. The arrangement is the two scratch projects in
+# tools/jobs/list-dates-on-sheets-2026-10-10.yaml, open together; it is never
+# made in one of the owner's working models.
+#
+# D-30: the negative case is what catches "succeeded and did nothing" - and
+# here, above all, "read every view when it was asked for the sheets", which
+# is the one way this fragment could look right and be wrong.
+
+positive:
+  - given: >
+      "Heron Sheet Dates", a scratch project with four sheets. Typed ON the
+      sheets, each while that sheet is the open view: S-01 "ISSUED 09 SEP 2026"
+      and "REV A 22 Jul 2025"; S-02 "22/JUL/25" and "15 MAY 2026"; S-03
+      "15 May 2026"; S-04 "09-09-2026", "31 SEP 2026" and "2 OFF 300". A floor
+      plan is placed on S-04 with "01 JAN 2026" typed INSIDE the plan. Nothing
+      selected
+    expect: >
+      uniqueDateCount 3 and dateList, oldest first,
+      "22-JUL-2025 - 2 note(s) on 2 sheet(s): S-01, S-02  ||
+      15-MAY-2026 - 2 note(s) on 2 sheet(s): S-02, S-03  ||
+      09-SEP-2026 - 1 note(s) on 1 sheet(s): S-01". sheetsWithDateCount 3,
+      sheetsRead 4, notesOnSheets 8, sheetsWithNoDate "S-04", and
+      notesInViewsNotRead at least 1. 01-JAN-2026 is NOT in the list - it is
+      inside a plan. Separators, a two-digit year and MAY against May are one
+      date each, not two
+
+  - given: >
+      the same project with S-01 selected in the project browser
+    expect: >
+      the same answer as with nothing selected. The selection is not an input;
+      every sheet is read whatever is picked
+
+  - given: >
+      the modeller's own model, 4355-BHVD-3D-50C10-BL001A, Revit 2020 -
+      READ ONLY, through revit_read, as the observation that asked for this
+      card, not as its proof
+    expect: >
+      sheetsRead 19, and every date in dateList is one of the seven
+      FIND_DATES_IN_VIEWS reported on 2026-10-10. A date here that it did not
+      report is a finding against one of the two
+
+negative:
+  - given: >
+      "Heron Sheet Dates Empty", a second scratch project open beside the
+      first, with three sheets carrying only "GENERAL NOTES" and "09-09-2026"
+      typed on them. The dates are elsewhere: "09 SEP 2026" typed inside a
+      floor plan placed on S-01, "22 JUL 2025" in a drafting view placed on no
+      sheet, and "15 May 2026" in S-02's Sheet Issue Date parameter
+    expect: >
+      uniqueDateCount 0, dateList empty, sheetsWithDateCount 0, sheetsRead 3,
+      notesOnSheets 6, notesInViewsNotRead at least 2, and all three sheet
+      numbers in sheetsWithNoDate. A version that read every view - the scope
+      FIND_DATES_IN_VIEWS has on purpose - shows 09-SEP-2026 and 22-JUL-2025
+      here; one that read the open document beside it shows all three
+
+  - given: >
+      a note on a sheet reading "31 SEP 2026", "2 OFF 300" or "09-09-2026"
+    expect: >
+      no date from it - S-04 in the positive project. There is no 31st of
+      September, a three-letter word between two numbers is not a month, and
+      a numeric month is refused, as in EXTRACT_DATES_FROM_TEXT
+
+  - given: >
+      a view template for sheets in the project, on a release that lets one
+      be made (which release first does is NOT MEASURED here)
+    expect: >
+      not counted in sheetsRead and not listed in sheetsWithNoDate - it is not
+      a sheet, the rule LIST_SHEETS keeps
+
+second_route:
+  - >
+    EXTRACT_DATES_FROM_TEXT, PROVEN, on the same project with ALL its sheets
+    selected in the project browser: its datesFound entry count equals
+    uniqueDateCount and its sheetsWithNoDate count equals the sheets named
+    here. It finds a sheet's notes with a collector scoped to that sheet; this
+    one with each note's owner view - two mechanisms, one answer
+  - >
+    by eye: open each sheet and read the notes typed on it

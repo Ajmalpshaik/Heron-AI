@@ -1,0 +1,63 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for this fragment, "drew the wrong kind of line and called it done".
+#
+# Arranged per .claude/skills/fragment-proving/SKILL.md: a TEST COPY of the
+# model, a floor plan that has a level, and two rooms' worth of floor joined by
+# an opening with no wall across it - the case row 5b-289 was found on.
+
+positive:
+  - given: >
+      a floor plan, and two points across an open archway between two areas
+      that Revit currently reads as ONE room (asSpace not given)
+    expect: >
+      one line in `created`, read back as Room Separation Lines, its ends in
+      the findings matching the two points to the millimetre, lying on the
+      plan's level. Then, by eye: Revit's room boundary now stops at the line -
+      the existing room shrinks to its own side or warns, and the other side is
+      left with no room until PLACE_ROOM_AT_POINT places one. Record which
+
+  - given: the same two points with asSpace true, in a plan where Spaces are placed
+    expect: >
+      one line read back as Space Separation Lines - NOT Room Separation. The
+      category in the findings is the evidence; the two look alike on screen
+
+  - given: five points with the last repeating the first
+    expect: >
+      four lines, one per consecutive pair, a closed loop. Not five
+
+negative:
+  - given: >
+      the SAME two points, but the view named is a 3D view or a section - a
+      view with no level of its own
+    expect: >
+      refused naming the view and saying it has no level; `created` empty, and
+      the model's count of room separation lines unchanged. THIS IS THE FIRST
+      CASE TO RUN - a version that drew on some default plane anyway would put
+      a line where no plan shows it
+
+  - given: >
+      asSpace true across an opening between two ROOMS
+    expect: >
+      the line read back as Space Separation Lines, and the rooms NOT split -
+      the room schedule unchanged. A space separation line bounds spaces only,
+      and a fragment that drew the room kind instead would split the
+      architect's rooms while reporting success
+
+  - given: two points at the same coordinates
+    expect: >
+      `tooShort` 1, nothing drawn, and the reason in `refused`. Not a throw
+
+  - given: a run of three points where the middle pair is the same point twice
+    expect: >
+      the two good lines still drawn and `tooShort` 1 - one bad pair does not
+      lose the run
+
+  - given: a family document open
+    expect: refused before anything is made - the lines belong to a project
+
+second_route:
+  - >
+    Architecture tab, Room Separator (Analyze tab, Space Separator for the
+    space kind), drawn by hand across the same opening on a second test copy:
+    the line's category in Properties, its length, and the rooms either side
+    in a room schedule compared with what this fragment's line gave

@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using Heron.Bridge;
 using Heron.Revit.Addin;
 
 namespace Heron.FailureNote.TestHost
@@ -27,6 +29,11 @@ namespace Heron.FailureNote.TestHost
     /// None=0, Warning=1, Error=2, DocumentCorruption=3, on all eight. The
     /// production call passes `(int)FailureSeverity.Warning` itself, so these
     /// are the values the checks have to be about, not a copy the code uses.
+    ///
+    /// AND THE COUNT'S WAY TO THE AUDIT LINE (FRAGMENT-ISSUES section 5b, row
+    /// 159): the dismissed count leaves on the reply as `warnings`, and the
+    /// dispatcher keeps it only through Json.ReadLong - linked here by source
+    /// from Heron.Bridge, which never references Revit. Section 11.
     /// </summary>
     internal static class Program
     {
@@ -53,6 +60,41 @@ namespace Heron.FailureNote.TestHost
         private static HeronFailureNote.Posted Said(int severity, string text, int elements)
         {
             return new HeronFailureNote.Posted(severity, text, elements);
+        }
+
+        /// <summary>
+        /// A fragment write's reply, in the shape RevitFragment writes it: a
+        /// Report answer, then WithVerdict's fields spliced on before the
+        /// closing brace. The fragment output named `warnings` is deliberate.
+        /// </summary>
+        private static string Reply(HeronFailureNote said)
+        {
+            var answer = Json.Ok(
+                Json.Str("ran", "duct-offset"),
+                Json.Str("document", "Project1"),
+                "\"provides\":{" + Json.Str("warnings", "7") + "}",
+                Json.Num("providesCount", 1));
+
+            var listed = new List<string>();
+            foreach (var one in said.Dismissed)
+            {
+                listed.Add(Json.Obj(Json.Str("text", one.Text),
+                                    Json.Num("times", one.Times),
+                                    Json.Num("elements", one.Elements),
+                                    Json.Str("step", one.Step)));
+            }
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Bool("applied", true)
+                 + "," + Json.Bool("rolledBack", false)
+                 + "," + Json.Num("warnings", said.DismissedCount)
+                 + "," + Json.Arr("warningsDismissed", listed)
+                 + "," + Json.Str("verdict", "Applied. " + said.DismissedSentence()) + "}";
+        }
+
+        private static string Shown(long? value)
+        {
+            return value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "null";
         }
 
         private static int Main()
@@ -189,6 +231,60 @@ namespace Heron.FailureNote.TestHost
             Check(sentence.StartsWith("Revit raised 1 warning while", StringComparison.Ordinal)
                   && sentence.Contains("dismissed it rather"),
                   "one warning reads as one: \"" + sentence + "\"");
+
+            // 11. WHAT REVIT RAISED REACHES THE AUDIT LINE - FRAGMENT-ISSUES
+            // section 5b row 159. The dispatcher reads `warnings` off the
+            // reply with Json.ReadLong; ReadString answers null for a number,
+            // which is why the trail never had it. The reply is built here by
+            // the same writers, in the same order, as RevitFragment's
+            // WithVerdict - including a fragment output that happens to be
+            // called `warnings`, which is nested under `provides` and must not
+            // be what the audit line reads.
+            note = new HeronFailureNote();
+            note.RollsBack(null, Batch(
+                Said(Warning, "Duct is slightly off axis and may cause inaccuracies.", 1),
+                Said(Warning, "Duct is slightly off axis and may cause inaccuracies.", 2),
+                Said(Warning, "Elements have duplicate 'Mark' values.", 2)), Warning);
+            var reply = Reply(note);
+            Check(Json.ReadLong(reply, "warnings") == 3,
+                  "the audit reader takes the reply's own warning count, 3 - got "
+                  + Shown(Json.ReadLong(reply, "warnings")));
+            Check(Json.ReadString(reply, "warnings") == null,
+                  "which ReadString cannot: a number is not a string to it, the gap the row names");
+            Check(Json.ReadLong(Reply(new HeronFailureNote()), "warnings") == 0,
+                  "a clean write reads 0, a fact - not null");
+            Check(Json.ReadLong(Json.Error("operation_failed", "Revit would not let it through."),
+                                "warnings") == null,
+                  "a refusal carries no count, and none is invented for it");
+            Check(Json.ReadLong(Json.Ok(Json.Str("ran", "x")), "warnings") == null,
+                  "nor is one for a reply that never had the field - a read");
+
+            // The reader's own edges, so a count is never rounded, guessed or
+            // found somewhere it is not.
+            Check(Json.ReadLong("{\"warnings\": \"3\"}", "warnings") == null,
+                  "a string that spells a number is not a number");
+            foreach (var notWhole in new[] { "3.0", "3.5", "1e3", "+3", "-", "true", "null", "[3]", "{\"n\": 3}", "3 4" })
+            {
+                Check(Json.ReadLong("{\"warnings\": " + notWhole + "}", "warnings") == null,
+                      "`" + notWhole + "` is not read as a whole number");
+            }
+            Check(Json.ReadLong("{\"warnings\": 9223372036854775808}", "warnings") == null,
+                  "one past the largest long is refused, not wrapped");
+            Check(Json.ReadLong("{" + Json.Num("warnings", long.MaxValue) + "}", "warnings") == long.MaxValue,
+                  "the largest long Num writes reads back whole");
+            Check(Json.ReadLong("{\"warnings\": -2}", "warnings") == -2,
+                  "a minus sign is kept");
+            Check(Json.ReadLong("{ \"a\" : [1, {\"warnings\": 5}] , \"warnings\" :\t4 }", "warnings") == 4,
+                  "whitespace is stepped over, and a key nested in an earlier value is not a match");
+            Check(Json.ReadLong("{\"a\": {\"warnings\": 5}}", "warnings") == null,
+                  "a key found only inside a nested value is absent at the top");
+            Check(Json.ReadLong("{\"warnings\": 1, \"warnings\": 2}", "warnings") == 1,
+                  "the first match wins, as it does for ReadString");
+            Check(Json.ReadLong("[{\"warnings\": 1}]", "warnings") == null
+                  && Json.ReadLong("", "warnings") == null
+                  && Json.ReadLong(null, "warnings") == null
+                  && Json.ReadLong("{\"warnings\": 1}", null) == null,
+                  "no object, no document or no key reads as null");
 
             Console.WriteLine();
             if (Failures.Count > 0)

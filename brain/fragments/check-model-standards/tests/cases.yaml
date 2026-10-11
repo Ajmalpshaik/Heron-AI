@@ -114,6 +114,8 @@ negative:
       the blank ducts counted BLANK only, never also as not matching - a value
       pattern is applied to a filled value, so blank and wrong form stay apart
 
+  # Row 5b-203. NOT RUN - it needs a model that carries a duplicated name,
+  # and none has been arranged yet (NEEDS-CHECKING Group AP).
   - given: >
       requiredOn Walls, a curtain wall type, requiredParameters
       "Interior Type" (shown twice on the type, under Vertical and Horizontal

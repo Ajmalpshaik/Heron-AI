@@ -53,6 +53,12 @@ Verifies that:
 - **no sentence states an MCP tool total other than `len(heron_tools.TOOLS)`** — in section 7, added
   2026-09-23, **fails the run**. Another project's count (*"their 314 MCP tools"*) and a quotation are
   left alone; the better sentence types no number and points at `python mcp/server/heron_tools.py`
+- **a link whose words name one 5b row and whose target is a rows file reaches a file that holds that
+  row** — section 12, added 2026-10-09, **fails the run**, naming the file that does hold it. The file
+  is there, so section 1 cannot see this: it is what a re-band left behind on 2026-10-08
+  ([row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md)). Read from the file's table, not its
+  name, so a row appended to the last file is rightly linked there until the split moves it; a link in
+  code is an example, and one naming two rows is not judged
 
 Run it after any edit that moves or renames a document. It is how the Golden Rule renumbering
 (ten rules to fifteen, [D-12](../docs/DECISIONS.md)) was verified across 31 files.
@@ -289,6 +295,7 @@ proof with a negative case, and it needs a real model.
 
 ```bash
 python tools/check-routing.py
+python tools/check-routing.py --targets     # only the part that fails a build - no store needed
 ```
 
 Asks **every fragment's own declared utterances** back to the search, and checks the fragment that
@@ -305,11 +312,25 @@ perfectly entitled to its own words.
 passing is close to circular. A **failure** is real information: a request phrased that way now lands
 somewhere else.
 
-**It never fails a build, on purpose.** A collision is a judgement, not a defect — the other fragment may
-genuinely be the better answer, or the sentence may name a **composition**, which no fragment can win
-and a skill should claim. A tool that failed here would teach people to weaken utterances to buy a rank,
-and that is the one response ruled out: taking *"show me just these"* away from the isolate fragment
-would make the isolate unfindable in order to protect a measurement.
+**A collision never fails a build, on purpose.** A collision is a judgement, not a defect — the other
+fragment may genuinely be the better answer, or the sentence may name a **composition**, which no
+fragment can win and a skill should claim. A tool that failed here would teach people to weaken
+utterances to buy a rank, and that is the one response ruled out: taking *"show me just these"* away
+from the isolate fragment would make the isolate unfindable in order to protect a measurement.
+
+**One thing it checks is not a ranking, and that one does fail the build.** A routing row that sends a
+sentence on — *"rename the heading" → `SET_SCHEDULE_FIELD_FORMAT`* — names a capability, and either a
+fragment's `capability:` line declares it or none does. There is nothing to weigh and no utterance to
+weaken; the repair is to name the capability that does the job. So a row whose `-> NAME` no fragment
+declares exits **1**, read from the files before any store is opened and printed last, and `--targets`
+gives that verdict alone. It reads the target wherever a row puts it — after a sentence still wrapping
+onto the next line, on the comment line under a trailing arrow, after an arrow on a line of its own — and
+only a capability-shaped word straight after the arrow is a target, so `here`, `NOT`, `ALL` and prose
+are not. **Why a gate:** `-> PURGE_UNUSED_MATERIALS` and `-> SET_SCHEDULE_FIELD_FORMAT` both went in on
+2026-09-06 and sat there while this tool ran on every pull request; the second was found by a person and
+recorded as row 5b-232 twelve days before the gate existed. A row knowingly left dangling goes on
+`KNOWN_DANGLING` with its reason, and one that is repaired fails the run until it comes off the list - the
+two it found when it was written were both repaired the same day, and the list is empty. [Row 5b-388](../docs/FRAGMENT-ISSUES.md).
 
 Its first run over 169 sentences found sixteen contested ones. **Three were genuine errors** — a filter
 claiming two of `TRACE_CONNECTIVITY`'s sentences, and an override fragment claiming the grayout
@@ -1582,6 +1603,15 @@ switches and changes neither. **It installs nothing**, for [Q-39](../docs/open-q
 reason: a missing package is named with its command. Exits 1 while anything **required** is missing.
 Held by `tests/test_heron_ready.py`.
 
+**Section 2a appears only when the Claude app is the Microsoft Store (MSIX) build** - a
+`%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_*` folder. Windows then keeps everything Claude's children
+write under AppData in that app's own copy, so a package Claude installed is invisible to the person's
+terminal and to Revit ([row 5b-417](../docs/fragment-issues/section-5b-rows-401-425.md)). It says whether
+this run is inside the app (`inside_claude_app` - read-only: a folder in the copy and the same name under
+`%APPDATA%` are one folder on disk only from inside), prints a `pip install --user` line pinned to the
+versions the copy holds, and says a Reset or uninstall of the app deletes the copy. **Warnings only - no
+exit code moves.** [`docs/WHAT-TO-INSTALL.md` §1b](../docs/WHAT-TO-INSTALL.md) is the same in plain words.
+
 **`--snapshot` is for comparing two PCs without sending either one's folders** - several of those hold
 the owner's Claude login, and Claude's memory holds his own words. It writes names, sizes, versions and
 yes/no: Python and the packages, the knowledge store and search model on disk, the add-in releases and
@@ -1699,7 +1729,7 @@ passing, in another tool's section. Each tool's own header says more - this is w
 |---|---|
 | [`HeronRevit.ps1`](HeronRevit.ps1) | Dot-sourced by the install scripts rather than run: which Revit releases are installed, which are open, and where each one's add-ins go - asked **per release**. **It never closes Revit**: an open Revit is named and the install stops, because an open model almost certainly holds unsaved work |
 | [`balance-of-work.py`](balance-of-work.py) | What is left to do, in one place - read back from the tools that each know part of it (`check-gaps`, `owner-queue`, `open-defects`, `agent-count`), every figure beside the command that derives it. `--write` regenerates the note. A report: always exits 0 |
-| [`build-release-assets.py`](build-release-assets.py) | Builds every product for every Revit release, in **Release** configuration only, and lays the results out as a GitHub release's assets - one zip per product per release, named from the manifest. **Nothing in it names a product**: the list is read from `platform/heron-products.json` |
+| [`build-release-assets.py`](build-release-assets.py) | Builds every product for every Revit release, in **Release** configuration only, and lays the results out as a GitHub release's assets - one zip per product per release, named from the manifest. **Nothing in it names a product**: the list is read from `platform/heron-products.json`. Beside them, `heron-project.zip` - the folder a person keeps, with **`HeronInstaller.exe` and `heron-install.exe` at its top**, self-contained, and the scripts they drive. **No release carried an installer until 2026-10-08** ([row 5b-371](../docs/FRAGMENT-ISSUES.md)) |
 | [`check-products.py`](check-products.py) | **One of the gates CI decides on.** The product manifest nothing compiles: a duplicate `addInId` (a load failure, not a warning), a `partOf` typo (a tick vanishes from the installer with no error), and a Revit release the repository does not build |
 | [`cloud-setup.sh`](cloud-setup.sh) | Not run from a checkout: **pasted into a Claude Code cloud environment's setup box**. Installs the .NET 10 SDK, `python-is-python3` and the Python packages, gives the session somewhere to keep knowledge, and warms the store and the NuGet cache. It must exit 0, so its last lines name whatever did not arrive; [`test_cloud_setup.py`](../tests/test_cloud_setup.py) runs it in a sandbox against the refusals of 2026-09-22 (row 5b-167). [38](../docs/38-the-cloud-environment.md) says what goes in the other boxes |
 | [`deploy-addin.ps1`](deploy-addin.ps1) | Copies the built add-in and its manifest into the current user's Revit add-ins folder - **no administrator rights** - and refuses an assembly built for another release's runtime. `-Remove` uninstalls, `-Rollback` puts back the install it last replaced. Revit must be closed |
@@ -1965,6 +1995,14 @@ heading that would leave the page.
 number belongs to. A new section written on the page is moved by the next run, and a run with nothing new moves
 nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register, never the real one.
 
+**A link that names a row it moves follows the row** - since 2026-10-09, [row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md).
+A link whose words name one 5b row and whose target is the rows file that row is leaving is pointed at the file it
+goes to; only the file's name in the link changes. Inside the register that is done to the register as one text
+before it is cut, so the read-back compares the files with that text byte for byte, and the text with the register
+as it stood with every rows file's name left out. Every other `.md`, `.yaml`, `.yml` and `.py` git tracks is
+re-pointed as its own pass, written after the register. A link in fenced code or an inline code span, and one naming
+two rows, is left as written. The report says how many links follow and in which documents.
+
 **PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
 [`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a
 section headed only by a date takes its first five words as well, so two written on one day get two files.
@@ -1992,7 +2030,9 @@ its heading, and each band of rows back where the table was, with the links as t
 Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
 file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than
 returning a shorter register. A page that names no file is returned as it is, which is how a suite's own register
-is read.
+is read. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
+(`rows_held`), so `split-register.py`, which re-points such a link, and `check-docs.py` section 12, which fails on
+one at the wrong file, cannot read a link two ways.
 
 ---
 

@@ -14,7 +14,7 @@ parameter is deleted - one call, one Undo. Formulas, arrays, form fields, nested
 block exactly as before, and any one of them refuses the whole call before a label comes off. Absent, the
 switch is false and version 1's call is unchanged, refusal wording included. Before it, `Half Frame Flange
 2` and `Frame Thickness 2` were refused in a family with *"it labels 1 dimension(s) - take the label off
-first"*, and no tool could take a label off ([row 5b-353](../fragment-issues/section-5b-rows-176-200.md)).
+first"*, and no tool could take a label off ([row 5b-353](../fragment-issues/section-5b-rows-351-375.md)).
 
 Widened rather than a second tool, and widened HERE rather than in `LABEL_FAMILY_DIMENSION`: that card
 only ever adds a label, as `ADD_FAMILY_PARAMETERS` only ever adds a parameter - this card's own header

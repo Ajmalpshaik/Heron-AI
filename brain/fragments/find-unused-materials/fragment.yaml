@@ -106,6 +106,12 @@ compatibility-note: >
 # FIND_UNUSED_GROUP_TYPES.
 #
 #   "which materials is nobody using"     -> here
+#   "list the materials in this family"   -> LIST_MATERIALS - every material,
+#                                            used or not, from one quick read.
+#                                            It reached HERE on the trained
+#                                            backend until 2026-10-09 (row
+#                                            5b-376), and this answers a
+#                                            different, slower question
 #   "clean up the materials"              -> here for the list. The deleting is
 #                                            Revit's own Purge Unused, on
 #                                            purpose

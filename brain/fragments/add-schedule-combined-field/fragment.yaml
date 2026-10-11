@@ -131,7 +131,7 @@ compatibility-note: >
 #                                           release range
 #   "add a column"                       -> ADD_SCHEDULE_FIELDS, for a plain
 #                                           parameter
-#   "rename the heading"                 -> SET_SCHEDULE_FIELD_FORMAT
+#   "rename the heading"                 -> SET_SCHEDULE_APPEARANCE
 #   "what fields does this schedule      -> REPORT_SCHEDULE_DEFINITION, which
 #    have"                                  is where the exact names come from
 
