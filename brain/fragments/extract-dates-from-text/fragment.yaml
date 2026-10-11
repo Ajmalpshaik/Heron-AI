@@ -97,6 +97,11 @@ compatibility-note: >
 #
 #   "what dates are on these sheets"     -> here
 #   "which sheets carry this date"       -> here
+#   "take the dates in that text from    -> LIST_DATES_ON_SHEETS - EVERY sheet,
+#    all sheets"                            nothing selected, each date once in
+#                                           one readable answer. This one reads
+#                                           the sheets SELECTED, per sheet
+#                                           (2026-10-10)
 #   "put that revision on the sheets     -> SET_SHEET_REVISIONS, fed by this.
 #    that carry its date"                   Reading the dates and attaching the
 #                                           revision are two decisions
