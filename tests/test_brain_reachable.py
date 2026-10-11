@@ -622,6 +622,25 @@ def main():
                   "its one ranked capability - %s"
                   % [m["id"] for m in asked.get("methods") or []])
 
+            # THE OWNER'S FIXED-SIZE ASK. "A detailed generator, no
+            # parameters" shared only "family" with the family method and
+            # "family" and "parameters" with the profile one, so the profile
+            # method came first and the chat was sent to build a sweep
+            # profile. The capabilities are the ones the live lookup returned
+            # for these words on 2026-10-11 - only the skills decide here.
+            fixed = SKILL.methods_for(
+                SKILL.load_all()[0].values(),
+                "make a detailed diesel generator family, no parameters",
+                ["ADD_FAMILY_PARAMETERS", "ADD_FAMILY_SHARED_PARAMETERS",
+                 "REPORT_FAMILY_PARAMETERS", "REPORT_PARAMETER_INVENTORY",
+                 "REPORT_GLOBAL_PARAMETERS"])
+            check([s.id for s in fixed][:1] == ["family-creation"],
+                  "a fixed-size family asked for as \"no parameters\" names "
+                  "the family method first, not the profile one - %s"
+                  % [s.id for s in fixed])
+            check(got is not None and "FIXED-SIZE FAMILY" in got["purpose"],
+                  "and the family method it names carries the fixed-size path")
+
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to
         # do nothing" and "Heron cannot read what it knows" send a user in
