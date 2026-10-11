@@ -367,6 +367,36 @@ namespace Heron.Revit.Addin
                     // operation carrying its own identity adds its own line
                     // here rather than borrowing this one, which is how a
                     // field ends up meaning two things.
+                    //
+                    // The two operations above Modify run the same executor
+                    // (D-106), and a trail that named the fragment for a
+                    // Modify run and not for an Admin one would lose exactly
+                    // the runs worth finding. One test, so the fragment name
+                    // and the warning count below can never disagree about
+                    // which runs are fragment runs.
+                    var fragmentRun =
+                        op == "run_fragment_read" || op == "run_fragment_write"
+                        || op == "run_fragment_publish" || op == "run_fragment_admin";
+
+                    // AND WHAT REVIT RAISED, read off the reply as a NUMBER.
+                    // A fragment write's reply carries `warnings` - how many
+                    // Revit raised and Heron dismissed - and this line carried
+                    // the error and not that, so the trail recorded that a
+                    // fragment ran and not that Revit warned about what it did.
+                    // The chat heard it; the trail did not. FRAGMENT-ISSUES
+                    // section 5b, row 159.
+                    //
+                    // ABSENT IS LEFT ABSENT, never written as 0. A read opens
+                    // no transaction and a refusal carries no count, and "Revit
+                    // raised none" is a claim only a reply that said 0 makes.
+                    var numbers = new List<KeyValuePair<string, long>>
+                    {
+                        new KeyValuePair<string, long>("ms", clock.ElapsedMilliseconds),
+                    };
+                    var warnings = fragmentRun ? Json.ReadLong(response, "warnings") : null;
+                    if (warnings.HasValue)
+                        numbers.Add(new KeyValuePair<string, long>("warnings", warnings.Value));
+
                     HeronAudit.Record(job.WorkflowId, op,
                         failure == null,
                         new[]
@@ -374,19 +404,10 @@ namespace Heron.Revit.Addin
                             new KeyValuePair<string, string>("session", _session),
                             new KeyValuePair<string, string>("document", document),
                             new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
-                            // The two operations above Modify run the same
-                            // executor (D-106), and a trail that named the
-                            // fragment for a Modify run and not for an Admin
-                            // one would lose exactly the runs worth finding.
                             new KeyValuePair<string, string>("fragment",
-                                op == "run_fragment_read" || op == "run_fragment_write"
-                                || op == "run_fragment_publish" || op == "run_fragment_admin"
-                                    ? Json.ReadString(job.Request, "name") : null),
+                                fragmentRun ? Json.ReadString(job.Request, "name") : null),
                         },
-                        new[]
-                        {
-                            new KeyValuePair<string, long>("ms", clock.ElapsedMilliseconds),
-                        });
+                        numbers);
                 }
                 finally
                 {

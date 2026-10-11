@@ -47,6 +47,15 @@ purpose: >
   three names (FRAGMENT-ISSUES 5b-195), and a network needs every element. So
   it crosses as one JSON string, `networkJson`, format 1.
 
+# A NAME TWO PARAMETERS SHARE IS NEVER READ: an element carrying two parameters
+# named Angle - a shared or project one bound beside the family's own - has its
+# angle_deg written as null, as for a family with none, and is named in one
+# line of `findings` - the first 20 found, then how many more - never either
+# value (D-54 s3, FRAGMENT-ISSUES 5b-203; added 2026-10-09).
+# Written here and not in `purpose`, as on check-sleeve-size's card: the
+# purpose is embedded for routing, and on that card's change a purpose sentence
+# about this moved other cards' utterances in check-routing, measured against
+# d9b27f03 (row 5b-203's 2026-10-09 note). Not measured for this card.
 contract:
   needs:
     - name: doc
@@ -70,7 +79,9 @@ contract:
     - name: elementCount
       role: result
       type: int
-    # Which route chose the system, and what could not be read.
+    # Which route chose the system, and what could not be read - since
+    # 2026-10-09 that includes the elements whose Angle two parameters
+    # share (D-54 s3, FRAGMENT-ISSUES 5b-203).
     - name: findings
       role: accounting
       type: IList<string>

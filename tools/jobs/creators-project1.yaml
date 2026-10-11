@@ -7,12 +7,13 @@
 # far: section 1c's rollback has failed three times, and in a throwaway project
 # a rollback that does not hold costs nothing.
 #
-# UNITS - THE THING TO GET RIGHT (rule 4). The two are NOT the same:
-#   XYZ / IList<XYZ>  MILLIMETRES. OnePoint converts to feet in the resolver.
-#   a bare double     INTERNAL FEET, raw. Every creator header says so:
-#                     "Lengths are internal FEET."
-# The name carries it: a `...Mm` suffix means millimetres, a plain name means
-# feet. So `points` are mm and `height` is feet, in the same fragment.
+# UNITS - THE THING TO GET RIGHT (rule 4). Since D-71 (2026-09-13) EVERY
+# length typed here is MILLIMETRES:
+#   XYZ / IList<XYZ>  millimetres - OnePoint converts to feet in the resolver.
+#   a bare double     millimetres too - each creator divides by 304.8 itself.
+# The impl headers that still say "Lengths are internal FEET" were written
+# before D-71 and are sealed by their proofs (FRAGMENT-ISSUES row 5b-204).
+# This file typed feet until 2026-10-08 - a 10 here now asks for a 10 mm wall.
 #
 # THE NEGATIVE IS DEGENERATE GEOMETRY, and it is the honest one for a creator.
 # A wall between two identical points has no length; a floor needs three points
@@ -42,32 +43,31 @@ defaults:
 
 jobs:
   # A 6 m x 4 m room, closed. Five points because the run returns to its start.
-  # height 10 is FEET (~3048 mm) - typing 3000 here would ask for a wall three
-  # thousand feet tall.
+  # height is millimetres (D-71): 3048 is the 10 ft this job first used.
   - fragment: create-wall
     setup: []
     set:
       level:      "Level 1"
       wallType:   "Generic - 200mm"
       points:     "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0"
-      height:     10
+      height:     3048
       structural: false
     negative-set:
       level:      "Level 1"
       wallType:   "Generic - 200mm"
       points:     "0,0,0; 0,0,0"
-      height:     10
+      height:     3048
       structural: false
     expect: created
 
-  # SPACINGS ARE GAPS, NOT POSITIONS - two spacings make three grids. In feet,
-  # so 20 is a ~6 m bay. The model has NO grids at all, so nothing can collide.
+  # SPACINGS ARE GAPS, NOT POSITIONS - two spacings make three grids. In
+  # millimetres (D-71), so 6096 is the ~6 m bay this job first used. The model has NO grids at all, so nothing can collide.
   - fragment: create-grids
     setup: []
     set:
       origin:         "0,0,0"
-      spacingsAcross: "20,20"
-      spacingsUp:     "20,20"
+      spacingsAcross: "6096,6096"
+      spacingsUp:     "6096,6096"
       firstLetter:    "A"
       firstNumber:    1
     negative-set:
@@ -105,17 +105,17 @@ jobs:
       boundary:  "0,0,0; 6000,0,0"
     expect: created
 
-  # heightAboveLevel is a bare double, so FEET - 9 is about 2743 mm.
+  # heightAboveLevel is millimetres (D-71): 2743.2 is the 9 ft this job first used.
   - fragment: create-ceiling
     setup: []
     set:
       level:            "Level 1"
       ceilingType:      "Generic"
       boundary:         "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0"
-      heightAboveLevel: 9
+      heightAboveLevel: 2743.2
     negative-set:
       level:            "Level 1"
       ceilingType:      "Generic"
       boundary:         "0,0,0; 6000,0,0"
-      heightAboveLevel: 9
+      heightAboveLevel: 2743.2
     expect: created

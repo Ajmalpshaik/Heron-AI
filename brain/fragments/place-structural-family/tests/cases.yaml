@@ -34,6 +34,15 @@ positive:
 
 negative:
   - given: >
+      VERSION 3, row 128's own case: the model's structural column type
+      (305x305x97UC on Project1) at one point on Level 1 with structuralType
+      "beam"
+    expect: >
+      nothing placed, `placed` empty, and one finding naming the family as a
+      Structural Columns family and saying to ask for it as a column. Before
+      version 3 Revit placed it as a beam
+
+  - given: >
       the same call with `topLevelName` "Level 1" - the base level itself -
       after the positive was KEPT
     expect: >

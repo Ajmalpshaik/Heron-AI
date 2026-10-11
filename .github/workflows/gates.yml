@@ -189,6 +189,12 @@ jobs:
       # none". Measured on Linux with the variable unset on 2026-09-21: they
       # raised an unhandled ValueError and exited 1. They now print one line
       # and exit 2, the code for "could not do its job" (row 5b-71).
+      #
+      # AND check-routing FAILS ON ONE FINDING OF ITS OWN since 2026-10-09:
+      # exit 1 when a fragment's routing row sends a sentence to a capability
+      # no fragment declares. That is a name, not a ranking, read from the
+      # files before any store is opened, so a missing store cannot hide it
+      # (row 5b-388). Its collisions still only report.
       - name: check-routing and check-intrusion
         env:
           HERON_KNOWLEDGE: ${{ runner.temp }}/heron-kb

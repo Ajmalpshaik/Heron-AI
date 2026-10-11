@@ -12,7 +12,7 @@ existing file), closes the windowless copy the API makes, and opens the saved fi
 `CREATE_PROJECT_DOCUMENT` (new, FRG-DOC-039) does the same from a project template; its body is the
 family one word for word, held level by `tests/test_new_document_twins.py`. Version 1 left the family in
 memory - seen by no window and savable by nothing, because `SAVE_DOCUMENT` never invents a path - so the
-parts of Rejin's pipe support were each started by hand ([row 5b-344](../fragment-issues/section-5b-rows-176-200.md)).
+parts of Rejin's pipe support were each started by hand ([row 5b-344](../fragment-issues/section-5b-rows-326-350.md)).
 `CREATE_FAMILY_DOCUMENT` version 2 is **PROVEN - signed by Ajmal PS on 2026-10-06** on the CM5 record, on his word. `CREATE_PROJECT_DOCUMENT` is **DRAFT**: it has never run on a model.
 
 **Run on 2026-10-06 on Revit 2024 (session 51820)** through `fragment --write` (rolled back - the group

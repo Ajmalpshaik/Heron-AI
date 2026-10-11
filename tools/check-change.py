@@ -209,8 +209,9 @@ def changed_files(base=None, staged=False, rev_range=None):
     return sorted(files, key=lambda f: f["path"])
 
 
-def diff_text(base=None, staged=False, rev_range=None, paths=None):
-    """The diff body, with no context lines - only what actually changed."""
+def diff_text(base=None, staged=False, rev_range=None, paths=None, context=0):
+    """The diff body, with no context lines - only what actually changed -
+    unless CONTEXT asks for some."""
     if rev_range:
         spec = [rev_range]
     elif base:
@@ -219,7 +220,7 @@ def diff_text(base=None, staged=False, rev_range=None, paths=None):
         spec = ["--cached"]
     else:
         spec = ["HEAD"]
-    args = ["diff", "-U0", "--find-renames"] + spec
+    args = ["diff", "-U%d" % context, "--find-renames"] + spec
     if paths:
         args += ["--"] + list(paths)
     return git(args) or ""
@@ -312,6 +313,34 @@ GENERATED_FILES = ("docs/28-agent-registry.md",)
 
 REVIT_SYMBOL = re.compile(r"^[+-].*#if\s+.*REVIT", re.M)
 CONTRACT_LINE = re.compile(r"^[+-]\s*(capability|contract|needs|provides|revit|runtime):", re.M)
+CONTRACT_KEYS = ("capability", "contract", "needs", "provides", "revit", "runtime")
+TOP_KEY = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):")
+
+
+def contract_changed(diff):
+    """True when a changed line of a fragment.yaml diff sits inside one of the
+    contract's top-level blocks, or is one of their keys.
+
+    DIFF must carry the whole file as context (`-U` large), so every changed
+    line can be placed under the top-level key above it. Row 5b-198: matching
+    only a line that STARTS with a key saw a new fragment and missed nearly
+    every edit to an existing one - a provide added, removed or retyped, a
+    need renamed - because those land beneath `contract:`, not on it."""
+    top = None
+    for line in diff.splitlines():
+        if line.startswith(("diff --git", "+++", "---", "@@")):
+            if line.startswith("diff --git"):
+                top = None
+            continue
+        if not line:
+            continue
+        mark, text = line[0], line[1:]
+        key = TOP_KEY.match(text)
+        if key:
+            top = key.group(1)
+        if mark in "+-" and top in CONTRACT_KEYS:
+            return True
+    return False
 PACKAGE_REF = re.compile(r'^\+.*<PackageReference\s', re.M)
 REQ_LINE = re.compile(r"^\+(?!#)\s*[A-Za-z0-9]", re.M)
 
@@ -376,8 +405,10 @@ def signals(files, base, staged, rev_range):
     yamls = [p for p in paths if p.endswith("fragment.yaml")]
     tools_py = [p for p in paths if p == "mcp/server/heron_tools.py"]
     contract_paths = yamls + tools_py
-    if contract_paths and CONTRACT_LINE.search(
-            diff_text(base, staged, rev_range, contract_paths)):
+    if contract_paths and (
+            (tools_py and CONTRACT_LINE.search(diff_text(base, staged, rev_range, tools_py)))
+            or (yamls and contract_changed(
+                diff_text(base, staged, rev_range, yamls, context=100000)))):
         raise_signal("public-contract",
                      "a declared contract changed, not only an implementation - "
                      "callers depend on this and cannot see the change",

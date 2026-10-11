@@ -44,12 +44,21 @@ So this check is written to hold for the NEXT rename as well: it compares the
 script against the constants, and a tab renamed in the add-in fails here
 until the script follows.
 
+ITS PYTHON CHECK ASKS FOR EVERY REQUIRED PACKAGE, NOT ONLY `mcp` (row
+5b-201). Until 2026-10-09 `Get-PythonStatus` ran `import mcp` and nothing
+else, and setup printed a pass line on that alone - while `requirements.txt`
+calls PyYAML the one REQUIRED package and installing `mcp` does not bring it
+(measured 2026-09-24). The required list is read out of `requirements.txt`
+by `tools/check-dependencies.py`'s own reader, never typed here, so a package
+added there fails this suite until the setup check asks for it too.
+
 WHAT IT DOES NOT ASK. Whether the script WORKS - that needs Windows, a .NET
 SDK and a Revit, and it is `Z1` and its neighbours in `NEEDS-CHECKING.md`.
 `test_ribbon_tab_sharing.py` owns whether the three add-ins may share one
 tab; this owns only what the installer tells a person to do.
 """
 
+import importlib.util
 import io
 import os
 import re
@@ -59,6 +68,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETUP = os.path.join(ROOT, "tools", "setup.ps1")
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronApplication.cs")
 HELPERS = os.path.join(ROOT, "tools", "HeronRevit.ps1")
+REQUIREMENTS = os.path.join(ROOT, "requirements.txt")
+DEPENDENCIES = os.path.join(ROOT, "tools", "check-dependencies.py")
 
 FAILURES = []
 
@@ -96,6 +107,58 @@ def supported():
         return [str(r) for r in heron_dotnet.RELEASES]
     except BaseException:                                    # noqa: BLE001
         return None
+
+
+def required_imports():
+    """The import names requirements.txt calls REQUIRED, or None.
+
+    Read by tools/check-dependencies.py's own manifest reader - the file's
+    format has one reader, and the list is never typed here (row 5b-201).
+    """
+    try:
+        spec = importlib.util.spec_from_file_location("check_dependencies",
+                                                      DEPENDENCIES)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        packages, problems = module.read_manifest(module.REQUIRED)
+    except BaseException:                                    # noqa: BLE001
+        return None
+    if problems or not packages:
+        return None
+    return [p.module for p in packages]
+
+
+def function_body(body, name):
+    """The text of `function <name>` up to the next function, or None."""
+    m = re.search(r"(?ms)^function\s+%s\b(.*?)(?=^function\s|\Z)"
+                  % re.escape(name), body or "")
+    return m.group(1) if m else None
+
+
+# One import the setup check runs and the flag it records the answer in:
+#     & $candidate -c "import mcp" 2>$null | Out-Null
+#     $result.HasMcp = ($LASTEXITCODE -eq 0)
+PROBE = re.compile(r'-c\s+"import\s+([\w.]+)"[^\n]*\n\s*'
+                   r'\$result\.(Has\w+)\s*=\s*\(\$LASTEXITCODE\s+-eq\s+0\)')
+
+
+def pass_condition(body):
+    """The `if (...)` guarding setup's Python pass line, or None.
+
+    The pass line is the `Write-Ok` that prints the Python version; its
+    guard is the nearest `if` STATEMENT above it - not the `$scope = if`
+    expression that sits between them.
+    """
+    lines = body.splitlines()
+    at = next((i for i, line in enumerate(lines)
+               if "Write-Ok" in line and "$python.Version" in line), None)
+    if at is None:
+        return None
+    for line in reversed(lines[:at]):
+        stripped = line.strip()
+        if stripped.startswith(("if ", "if(")) and "$python." in stripped:
+            return stripped
+    return None
 
 
 def called(body):
@@ -225,7 +288,53 @@ def main():
           "and nothing installed because every release was open exits non-zero")
 
     print()
-    print("6. It carries the five-field header docs/29 asks of every source file")
+    print("6. Its Python check asks for every REQUIRED package, not only mcp")
+    print("   Row 5b-201: installing mcp does not bring PyYAML, and setup passed")
+    print("   a PC that had mcp alone.")
+    required = required_imports()
+    check(required is not None,
+          "the required packages are read from requirements.txt by "
+          "check-dependencies' own reader, not typed here: %r" % (required,))
+    required = required or []
+    status = function_body(helpers, "Get-PythonStatus")
+    advice = function_body(helpers, "Write-PythonAdvice")
+    check(status is not None and advice is not None,
+          "HeronRevit.ps1 defines Get-PythonStatus and Write-PythonAdvice")
+    status = status or ""
+    advice = advice or ""
+    probes = dict(PROBE.findall(status))
+    check("mcp" in probes,
+          "Get-PythonStatus still asks for the MCP package the server runs on, "
+          "and it asks for %r" % (sorted(probes),))
+    guard = pass_condition(body) or ""
+    check(bool(guard), "setup.ps1 guards its Python pass line with one `if`")
+    for name in sorted(set(required) | {"mcp"}):
+        flag = probes.get(name)
+        if name in required:
+            check(flag is not None,
+                  "Get-PythonStatus imports %r, which requirements.txt calls "
+                  "required, and records the answer - it imports %r"
+                  % (name, sorted(probes)))
+        check(flag is not None and ("$python.%s" % flag) in guard,
+              "setup.ps1 prints its pass line only when %r imports too - "
+              "the guard is %r" % (name, guard))
+        check(flag is not None and ("-not $Python.%s" % flag) in advice,
+              "Write-PythonAdvice speaks up when %r is missing rather than "
+              "passing it" % name)
+    # The install line is the one requirements.txt prints at its own head,
+    # read from there - so the two cannot drift apart.
+    manifest = text(REQUIREMENTS) or ""
+    found = re.search(r"pip install[^\n]*-r\s+requirements\.txt", manifest)
+    check(found is not None,
+          "requirements.txt names its own install line at its head")
+    line = found.group(0) if found else "pip install --user -r requirements.txt"
+    check(line in advice,
+          "Write-PythonAdvice hands the user that same line, %r" % line)
+    check("pip install --user mcp" in advice,
+          "and still hands the user the MCP package's line")
+
+    print()
+    print("7. It carries the five-field header docs/29 asks of every source file")
     head = body.splitlines()[:8]
     for field in ("Heron-Agent", "Heron-Step", "Heron-Status", "Heron-Since",
                   "Heron-Layer"):

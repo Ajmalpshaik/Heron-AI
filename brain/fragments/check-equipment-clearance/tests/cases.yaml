@@ -75,5 +75,17 @@ negative:
     expect: >
       no line for that unit - a room is space, not an obstruction
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      an AHU in this MEP model with a linked structural column inside its
+      front clearance, the column's type carrying two parameters named Fire
+      Rating - a shared or project one bound to Structural Columns beside
+      another of that name - includeLinks true
+    expect: >
+      the AHU's line in `linkedMatches` names the column with "Fire Rating NOT
+      READ - 2 parameters share that name", never either rating, and `blocked`
+      is unchanged from the host-only run (row 5b-203)
+
 second_route:
   - Draw the clearance as a generic model box in the plant room and run Revit's own Interference Check against it

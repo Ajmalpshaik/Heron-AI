@@ -1,0 +1,64 @@
+# The proof of listing a document's materials - NEEDS-CHECKING Group CX,
+# rows CX1 to CX9, FRAGMENT-ISSUES row 5b-376:
+#
+#   list-materials   LIST_MATERIALS   FRG-ELE-077   new, version 1
+#
+#     python tools/batch-prove.py tools/jobs/list-materials-2026-10-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-materials-2026-10-09.yaml
+#
+# NEVER ON ONE OF THE OWNER'S WORKING MODELS. The arrangement is three scratch
+# documents, made by hand before the run, saved once under the titles below
+# so `in:` can name them, and left OPEN TOGETHER (NEEDS-CHECKING CX1, CX2):
+#
+#   "Heron Materials Project"     a PROJECT, File > New > Project with the
+#                                 template set to <None>, so its material
+#                                 list is short enough to count by hand. Then,
+#                                 with Changes on in the Heron ribbon, ONE
+#                                 material made in it and kept:
+#                                   fragment --in "Heron Materials Project"
+#                                     create-material --write --apply
+#                                     --set "materialNames=Heron List Probe"
+#                                     --set "colours=128,128,128"
+#                                     --set transparencies=0
+#                                 Nothing else is added
+#   "Heron Materials Annotation"  a FAMILY, new from Metric Generic
+#                                 Annotation.rft. If its Material Browser
+#                                 lists any material, every one is deleted
+#                                 there and the family saved (CX2) - the
+#                                 negative below must be a true empty
+#   "Heron Materials Accessory"   a scratch copy of a Duct Accessories family
+#                                 - the kind of document row 5b-376 was asked
+#                                 in - saved under this title (CX1; used in
+#                                 CX4 and CX7)
+#
+# WHY THE NEGATIVE IS AN EMPTIED ANNOTATION FAMILY. LIST_MATERIALS has no
+# input but the document, and every model family and every project carries
+# materials, so in those it cannot come back empty. A family holding none -
+# NOT MEASURED whether the template already holds none, or whether Revit lets
+# every one be deleted - shows "Heron List Probe" only if the fragment read
+# the project open beside it, or every open document, and then the runner
+# says NEG NOT EMPTY. If no document can be emptied, this job's verdict is
+# NEG NOT EMPTY whatever the fragment does, CX4's tracking across the three
+# documents is evidence for a person, and nothing can be signed yet: no tool
+# varies the DOCUMENT (prove-tracking.py and validate's own tracking vary a
+# request value, and this fragment has none), and heron_validate refuses a
+# record whose negative came back full without a tracking set.
+
+model: three scratch documents open together, Revit 2024 (Heron Materials Project, Heron Materials Annotation, Heron Materials Accessory)
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: list-materials
+    in: "Heron Materials Project"
+    negative-in: "Heron Materials Annotation"
+    write: false
+    expect: materialCount
+    note: >
+      Positive: materialCount equal to the hand count of the project's
+      Material Browser (Project Materials: All - it shows no total), and
+      "Heron List Probe" in materialList with its class and id. Negative:
+      materialCount 0, materialClasses empty and "No materials at all in this
+      family" - and above all NO "Heron List Probe", which only the project
+      holds.

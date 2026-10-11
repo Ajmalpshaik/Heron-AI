@@ -20,7 +20,7 @@ the installer. The price of that is a file nothing compiles: a typo in it
 reaches a modeller's machine untouched by every other gate in this folder.
 
 A TRAILING NEWLINE WALKED PAST ALL THREE FORMAT PATTERNS until 2026-09-22,
-because in Python `$` also matches just before a final newline. `\Z` matches
+because in Python `$` also matches just before a final newline. `\\Z` matches
 the end and nothing else. The GUID was caught downstream anyway - the .addin
 comparison is exact - and the id and the folder were not.
 

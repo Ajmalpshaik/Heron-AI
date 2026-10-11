@@ -197,6 +197,13 @@ brain/proof-drafts/runs/
 # platform/Heron.Installer.App/bin/x64/Debug/ is not somewhere anybody should
 # have to dig to find an installer. It sits beside the add-in projects it
 # installs, which is where the owner asked for it on 2026-09-21. It is BUILD
-# OUTPUT and is never committed - what a downloader gets is the release asset,
-# which is Stage 5.
+# OUTPUT and is never committed.
+#
+# WHERE A NEW PERSON FINDS IT: inside heron-project.zip on the GitHub Releases
+# page, at the top of the zip. tools/build-release-assets.py puts it there. Until
+# 2026-10-08 nothing did - this line said "the release asset" and no release
+# asset held it, so a new person searching the repository and its releases for
+# the installer found it in neither (docs/FRAGMENT-ISSUES row 5b-371). With a
+# copy of the code and no release, `.\tools\setup.ps1` builds and installs
+# Heron with no installer at all.
 /revit/HeronInstaller.exe

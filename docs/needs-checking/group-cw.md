@@ -9,7 +9,7 @@
 
 The form tools (`CREATE_FAMILY_EXTRUSION`, `_REVOLUTION`, `_BLEND`, `_SWEEP` and the rest) answer with each
 form's id as `formId`, and on 2026-10-08 the owner, building a family in Revit 2024, needed several of those
-forms SELECTED to delete or edit them - and Heron had no way ([row 5b-370](../fragment-issues/section-5b-rows-176-200.md)).
+forms SELECTED to delete or edit them - and Heron had no way ([row 5b-370](../fragment-issues/section-5b-rows-351-375.md)).
 `SELECT_BY_MATERIAL` with `categories=Generic Models` in a Generic Model family answered *0 of 0 scanned*;
 `SET_SELECTION` and `DELETE_ELEMENTS` take what is selected; `FILTER_ELEMENTS_BY_ID` refuses typed ids by
 design.

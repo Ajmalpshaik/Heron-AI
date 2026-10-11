@@ -186,10 +186,14 @@ A count typed into a sentence is a count that goes stale, so derive it:
 ls tests/test_*.py | wc -l
 ```
 
-**The trap worth naming.** In a cloud session the `revit_*` MCP tools are still listed —
-`revit_sheets`, `revit_rooms` and the rest. They are there because the MCP server is there. There is no
-Revit behind them, so every call reports no session. **That is correct, and it looks like a fault the
-first time it is seen.**
+**The trap worth naming.** In a cloud session **Heron's MCP server does not start**, so the host lists
+no `heron` tool at all and reports the server as failed to connect (`CONNECTION_CLOSED`). That is
+deliberate: the server's `__main__` exits **2** on anything but Windows - *"Heron's bridge uses Windows
+named pipes. Revit is Windows-only."* - before it serves a tool. **It looks like a broken setup the
+first time it is seen, and it is not one.** The server's own code is still tested here, in-process:
+`tests/test_mcp_serves.py` and `tests/test_served_claims.py` import it and call its tools directly.
+Measured 2026-09-23 and again 2026-10-08, both in cloud sessions
+([row 5b-162](fragment-issues/section-5b-rows-151-175.md)).
 
 ---
 

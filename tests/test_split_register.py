@@ -34,6 +34,11 @@ WHAT IS PROVED
      register as on the one file;
   6. a second run moves nothing; a row written after the last file's band is
      moved to its own band by the next run, every other file kept as it was;
+     and a link whose words name a row it moves, at the file the row left,
+     follows the row - on the page, in a section's file, in another row, and
+     in each .md, .yaml and .py elsewhere, kept CRLF - while an example in
+     code, a link naming two rows, a row that stays, a file of that name in
+     another folder and a document git does not track are left as they were;
   7. a missing file, a section's file that no longer opens with its heading,
      or a rows file with no table is RegisterBroken - never a shorter
      register - and open-defects.py says so;
@@ -57,7 +62,9 @@ import contextlib
 import importlib.util
 import io
 import os
+import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -239,6 +246,11 @@ def readers_at(root):
     return out
 
 
+def _writable(func, path, _info):
+    os.chmod(path, stat.S_IWRITE)       # git marks its objects read-only on Windows
+    func(path)
+
+
 def raises(call):
     try:
         call()
@@ -252,7 +264,7 @@ def main():
     try:
         run(work)
     finally:
-        shutil.rmtree(work)
+        shutil.rmtree(work, onerror=_writable)
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
@@ -328,6 +340,29 @@ def after_write(original, root, today):
           "every other file is kept as it was, its date included")
     check(whole(root).count("| **26** | **Twenty-six.**") == 1, "and the register reads the row once")
 
+    # A ROW WRITTEN IN A ROWS FILE LINKS THE WAY THAT FILE SEES THINGS: another
+    # band is a file beside it, the page is one folder up. Moved to its band, it
+    # must reach the same files. On 2026-10-08 the real register's rows 201 to
+    # 370 were re-banded and every link to a file beside them came out as
+    # ../section-5b-rows-051-075.md - one folder too high, read back byte for
+    # byte, and broken.
+    put(last, read(last) + "| **27** | **Twenty-seven.** See [row 5b-1](section-5b-rows-001-025.md), "
+        "[section 6](section-6.md) and [the page](../FRAGMENT-ISSUES.md). | OPEN - new. |" + NL)
+    linked = SPLIT.plan("fragment-issues", index_of(root), "2026-09-30", root)
+    check(not linked.problems, "a row with links beside it plans clean (%s)" % "; ".join(linked.problems))
+    SPLIT.write(linked)
+    band = read(os.path.join(folder_of(root), "section-5b-rows-026-050.md"))
+    check("| **27** |" in band, "row 27 is moved to its band")
+    for label, target in (("row 5b-1", "section-5b-rows-001-025.md"), ("section 6", "section-6.md"),
+                          ("the page", "../FRAGMENT-ISSUES.md")):
+        written = re.search(r"\[" + re.escape(label) + r"\]\(([^)#]*)", band)
+        reached = written and os.path.isfile(os.path.join(folder_of(root), written.group(1)))
+        check(written is not None and written.group(1) == target and reached,
+              "its link to %s still reaches %s (written %s)"
+              % (label, target, written.group(1) if written else "nowhere"))
+    check(whole(root).count("| **27** | **Twenty-seven.**") == 1, "and the register reads it once")
+    relinked_case(root)
+
     print()
     print("7. A missing file is broken, never shorter")
     gone = os.path.join(folder_of(root), "section-3.md")
@@ -350,6 +385,7 @@ def after_write(original, root, today):
     AF = _load("archive_fragment_issues", "archive-fragment-issues.py")
     check(AF is not None, "the archive tool loads")
     if AF is not None:
+        archive_relinked_case(AF, root)
         archive = os.path.join(root, "docs", AF.ARCHIVE_NAME)
         plan = AF.plan(register=index_of(root), archive=archive, today="2026-09-23")
         check(plan.fatal is None and not plan.problems and sum(len(v) for v in plan.moves.values()) == 2,
@@ -363,6 +399,171 @@ def after_write(original, root, today):
         check("### Row 3" in read(os.path.join(archive, "proving-defects-001-025.md")),
               "and the full row is in the archive")
         check(whole(root) == plan.after, "read back, the register is what the archive tool planned")
+
+
+def archive_relinked_case(AF, root):
+    """Section 8, on a copy. The archive tool writes through the split's
+    layout, which re-bands a row appended past the last band - and until
+    2026-10-09 left every link naming that row at the file it had left
+    (FRAGMENT-ISSUES row 5b-381). It follows the row now: in another row, in
+    the archive file this run writes, and in a document outside the register."""
+    copy = os.path.join(os.path.dirname(root), "archive-relinked")
+    shutil.copytree(root, copy)
+    folder = folder_of(copy)
+    bands = sorted(n for n in os.listdir(folder) if re.match(r"^section-5b-rows-[0-9]{3}-[0-9]{3}[.]md$", n))
+    last = bands[-1]
+    high = int(last[len("section-5b-rows-"):-3].split("-")[1])
+    row = high + 2
+    beyond = "section-5b-rows-%03d-%03d.md" % (high + 1, high + 25)
+    held = RT.rows_held(read(os.path.join(folder, last)))
+    stays = next(n for n in range(high - 24, high + 1) if n not in held)
+    put(os.path.join(folder, last), read(os.path.join(folder, last))
+        + "| **%d** | **It names [row 5b-%d](%s).** Found 2026-10-09. | OPEN - new. |" % (stays, row, last) + NL
+        + "| **%d** | **Appended past the last band.** Found 2026-10-09. | OPEN - new. |" % row + NL)
+    first = os.path.join(folder, "section-5b-rows-001-025.md")
+    put(first, read(first).replace("| **2** | **Two.** |",
+                                   "| **2** | **Two.** It names [row 5b-%d](%s). |" % (row, last)))
+    outside = os.path.join(copy, "docs", "ARCHIVE-LINKS.md")
+    put(outside, "See [row 5b-%d](fragment-issues/%s)." % (row, last) + NL)
+
+    archive = os.path.join(copy, "docs", AF.ARCHIVE_NAME)
+    p = AF.plan(register=index_of(copy), archive=archive, today="2026-10-09")
+    check(p.fatal is None and not p.problems, "the archive run plans clean with a row past the last band (%s)"
+          % (p.fatal or "; ".join(p.problems) or "clean"))
+    check(AF.write(p) == AF.OK, "and writes")
+    check(os.path.exists(os.path.join(folder, beyond))
+          and ("| **%d** |" % row) in read(os.path.join(folder, beyond))
+          and ("| **%d** |" % row) not in read(os.path.join(folder, last)),
+          "row 5b-%d is moved to %s" % (row, beyond))
+    check("[row 5b-%d](%s)" % (row, beyond) in read(os.path.join(folder, last)),
+          "a link to it in another row follows it to its band")
+    check(read(outside) == "See [row 5b-%d](fragment-issues/%s)." % (row, beyond) + NL,
+          "and so does a document outside the register")
+    moved_to = [n for n in os.listdir(archive) if n.endswith(".md") and n != "README.md"
+                and "It names [row 5b-%d]" % row in read(os.path.join(archive, n))]
+    check(len(moved_to) == 1 and ("fragment-issues/%s)" % beyond) in read(os.path.join(archive, moved_to[0]))
+          and ("fragment-issues/%s)" % last) not in read(os.path.join(archive, moved_to[0])),
+          "and so does the link in the finished row the run moved to the archive (%s)"
+          % (", ".join(moved_to) or "no archive file holds it"))
+    check(whole(copy) == p.after, "read back, the register is what the archive tool planned, links and all")
+
+
+def relinked_case(root):
+    """Section 6, continued. A link whose words name one row the split moves,
+    pointing at the file the row is leaving, follows the row: inside the
+    register - on the page, in a section's file, in another row - and in every
+    other document, as its own pass. On 2026-10-08 rows after 200 were
+    re-banded and every such link was left at the file its row had left; a
+    one-off script put them right (FRAGMENT-ISSUES row 5b-381)."""
+    print()
+    print("6b. A link naming a row the split moves follows the row, wherever it is written")
+    folder = folder_of(root)
+    old, new = "section-5b-rows-026-050.md", "section-5b-rows-051-075.md"
+    last = os.path.join(folder, old)
+    example = "`[row 5b-51](%s)`" % old
+    put(last, read(last)
+        + "| **28** | **Twenty-eight.** It names [row 5b-51](%s), and %s is an example. | OPEN - new. |" % (old, example)
+        + NL + "| **51** | **Fifty-one.** Found 2026-10-09. | OPEN - new. |" + NL)
+    six = os.path.join(folder, "section-6.md")
+    put(six, read(six) + "See [row 5b-51](%s)." % old + NL)
+    index = index_of(root)
+    put(index, read(index).replace("> Intro for section 5b.",
+                                   "> Intro for section 5b. See [row 5b-51](fragment-issues/%s)." % old))
+    row_links = os.path.join(root, "docs", "ROW-LINKS.md")
+    kept_lines = ["Not [rows 5b-51 and 5b-1](fragment-issues/%s), which names two rows." % old,
+                  "Not `[row 5b-51](fragment-issues/%s)`, an example." % old,
+                  FENCE + "text", "[row 5b-51](fragment-issues/%s)" % old, FENCE,
+                  "And [row 5b-26](fragment-issues/%s), whose row stays." % old]
+    wrapped = "A wrapped one, ([row" + NL + "5b-51](fragment-issues/%s)), follows as well."
+    put(row_links, NL.join(["See [row 5b-51](fragment-issues/%s) and [5b-51 again](./fragment-issues/%s#top)."
+                            % (old, old), wrapped % old] + kept_lines) + NL)
+    a_py = os.path.join(root, "tools", "y.py")
+    put(a_py, "# See [row 5b-51](../docs/fragment-issues/%s)." % old + NL)
+    a_yaml = os.path.join(root, "docs", "notes.yaml")
+    put(a_yaml, 'note: "[row 5b-51](fragment-issues/%s)"' % old + NL)
+    elsewhere = os.path.join(root, "tools", "z.py")
+    put(elsewhere, "# [row 5b-51](%s) is a file beside this one, not the register's." % old + NL)
+    crlf = os.path.join(root, "docs", "CRLF.md")
+    put(crlf, "See [row 5b-51](fragment-issues/%s).%sEnd.%s" % (old, CR + NL, CR + NL))
+
+    p = SPLIT.plan("fragment-issues", index, "2026-10-09", root)
+    check(not p.problems, "it plans clean (%s)" % ("; ".join(p.problems) or "no problem"))
+    check(new in dict(p.banding).get(S5B, []), "row 51 is to move to %s" % new)
+    inside = getattr(p, "relinked", None) or []
+    outside = getattr(p, "others_relinked", None) or []
+    check(len(inside) == 3, "three links inside the register follow it - on the page, in a section's file "
+                            "and in another row - and the example does not (%d)" % len(inside))
+    check(sorted(set(one[0] for one in outside)) == ["docs/CRLF.md", "docs/ROW-LINKS.md", "docs/notes.yaml",
+                                                     "tools/y.py"],
+          "and four documents outside it are to follow it (%s)"
+          % (", ".join(sorted(set(one[0] for one in outside))) or "none"))
+    check(SPLIT.write(p) == SPLIT.OK, "it writes")
+
+    band = read(os.path.join(folder, new))
+    check("| **51** |" in band and "| **51** |" not in read(last), "row 51 is in its band, and gone from %s" % old)
+    rows = read(last)
+    check("[row 5b-51](%s)" % new in rows, "a link to it in another row follows it to the file beside")
+    check(example in rows, "an example in an inline code span is left as it was")
+    check("See [row 5b-51](%s)." % new in read(six), "and in a section's file")
+    check("See [row 5b-51](fragment-issues/%s)." % new in read(index), "and on the page")
+    check(whole(root).count("| **51** | **Fifty-one.**") == 1, "the register reads row 51 once")
+    linked = read(row_links)
+    check("See [row 5b-51](fragment-issues/%s) and [5b-51 again](./fragment-issues/%s#top)." % (new, new) in linked,
+          "a document elsewhere follows it, its ./ and its anchor kept")
+    check(wrapped % new in linked, "and so does a link whose words a line break wraps")
+    check(linked.endswith(NL.join(kept_lines) + NL),
+          "and in it a link naming two rows, an example in code, fenced code and a row that stays are left")
+    check(read(a_py) == "# See [row 5b-51](../docs/fragment-issues/%s)." % new + NL, "so does a .py")
+    check(read(a_yaml) == 'note: "[row 5b-51](fragment-issues/%s)"' % new + NL, "and a .yaml")
+    check(old in read(elsewhere), "a link that reaches a file of that name in another folder is left")
+    check(read(crlf) == "See [row 5b-51](fragment-issues/%s).%sEnd.%s" % (new, CR + NL, CR + NL),
+          "and a CRLF document follows it with its line endings kept")
+    again = SPLIT.plan("fragment-issues", index, "2026-10-09", root)
+    check(not again.banding and not (getattr(again, "relinked", None) or getattr(again, "others", None))
+          and not again.problems, "a second run moves nothing and re-points nothing")
+
+    # WHAT GIT TRACKS: a document git does not track is not the repository's,
+    # and is left as it is. A copy, so the rest of this suite reads no git.
+    gitted = os.path.join(os.path.dirname(root), "relinked-git")
+    shutil.copytree(root, gitted)
+    made = subprocess.run(["git", "init", "-q"], cwd=gitted, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    added = subprocess.run(["git", "add", "-A"], cwd=gitted, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    check(made.returncode == 0 and added.returncode == 0, "a copy is made a git tree")
+    glast = os.path.join(folder_of(gitted), new)
+    put(glast, read(glast) + "| **52** | **Fifty-two.** It names [row 5b-76](%s). | OPEN - new. |" % new + NL
+        + "| **76** | **Seventy-six.** Found 2026-10-09. | OPEN - new. |" + NL)
+    link = "[row 5b-76](fragment-issues/%s)" % new
+    tracked = os.path.join(gitted, "docs", "ROW-LINKS.md")
+    put(tracked, read(tracked) + link + NL)
+    untracked = os.path.join(gitted, "docs", "UNTRACKED.md")
+    put(untracked, link + NL)
+
+    # THE READ-BACK STILL GUARDS. The register is compared with the text the
+    # links were re-pointed in, so a re-pointing that changed anything else
+    # would read back "byte for byte" - and is caught by the second half: the
+    # text with every rows file's name left out must be the register as it was.
+    real = getattr(SPLIT, "relink", None)
+    check(real is not None, "the split tool has relink(), the one rule every link follows by")
+    if real is not None:
+        def careless(text, where, folder, moved, said, done):
+            out = real(text, where, folder, moved, said, done)
+            return out.replace("Fifty-two", "Fifty-TWO") if said == "the register" else out
+        SPLIT.relink = careless
+        try:
+            bad = SPLIT.plan("fragment-issues", index_of(gitted), "2026-10-09", gitted)
+        finally:
+            SPLIT.relink = real
+        check(any("more than the rows file a link names" in x for x in bad.problems)
+              and SPLIT.write(bad) == SPLIT.REFUSED and "| **76** |" in read(glast),
+              "a re-pointing that changes anything else is refused, and nothing is written (%s)"
+              % ("; ".join(bad.problems) or "no problem"))
+    q = SPLIT.plan("fragment-issues", index_of(gitted), "2026-10-09", gitted)
+    check(not q.problems and SPLIT.write(q) == SPLIT.OK, "row 76 plans clean and is written (%s)"
+          % ("; ".join(q.problems) or "no problem"))
+    check("[row 5b-76](section-5b-rows-076-100.md)" in read(glast), "row 52's link follows row 76 to its band")
+    check(read(tracked).endswith("[row 5b-76](fragment-issues/section-5b-rows-076-100.md)" + NL),
+          "a document git tracks follows row 76 to its band")
+    check(read(untracked) == link + NL, "one git does not track is left as it was")
 
 
 def readers_at_safe(root):

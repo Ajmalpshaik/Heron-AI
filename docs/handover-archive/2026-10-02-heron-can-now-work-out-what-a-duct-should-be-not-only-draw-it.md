@@ -46,7 +46,7 @@ airflow, duct sizing, diffuser sizing, all kind of things."*
 - **`tests/test_workforce.py` went red over the new row's wording.** It asks the Workforce Planner its
   questions against the live register, and *"Works out ... pipe sizing"* matched its sleeve-sizing
   proposal on three words. The row says *"Calculates"* now and the test is untouched; the coupling is
-  [row 5b-278](../fragment-issues/section-5b-rows-176-200.md), recorded, not fixed.
+  [row 5b-278](../fragment-issues/section-5b-rows-276-300.md), recorded, not fixed.
 - **The psychrometrics research came back last** and agreed with the module on every state-point vector
   it produced. The suite now carries ASHRAE's Examples 1 and 4 and water against IAPWS, and docs/41
   says plainly that 1.23 / 3010 / 1.20 were checked by unit conversion, never against the Handbook's page.

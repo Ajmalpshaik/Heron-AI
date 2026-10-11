@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `parameterName`, `matchText`, `matchMode`,
 // `includeTypeParameters`, `categories` and `includeLinks` are in scope; leaves
-// `elements`, `withoutParameter`, `findings`, `linksSearched` and
+// `elements`, `withoutParameter`, `ambiguous`, `findings`, `linksSearched` and
 // `linkedMatches` behind.
 //
 // A MISSING PARAMETER IS NOT AN EMPTY STRING, AND THE DIFFERENCE ONLY SHOWS UP
@@ -10,6 +10,17 @@
 // parameter is COUNTED in withoutParameter and never matched, whatever the
 // mode. The same count is what turns a mistyped parameter name into
 // "0 matched, 4,812 do not carry it" instead of a plausible zero.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT READ, AND THE ELEMENT IS NEVER MATCHED.
+// A shared or project parameter can be bound beside a built-in one of the same
+// name, and a curtain wall type shows its mullion settings twice. Asked by
+// name, Revit then returns "the first one encountered", which its own
+// reference says "is determined at random" - so a match or a miss on such an
+// element would be a coin toss reported as a fact. It is counted in
+// `ambiguous` instead, where the lookup would land: on the element, or on its
+// type when the element has none and type parameters were asked for (D-54 s3,
+// FRAGMENT-ISSUES 5b-203). Family, Type and Family and Type are not looked up
+// by name, so they are never shared.
 //
 // THIS MATCHES TEXT. A double only becomes "500" after Revit formats it in the
 // project's display units, so searching for a number here is a coin toss -
@@ -38,6 +49,7 @@
 
 var elements = new List<Element>();
 var withoutParameter = 0;
+var ambiguous = 0;
 var findings = new List<string>();
 
 var wantName = string.IsNullOrEmpty(parameterName) ? "" : parameterName.Trim();
@@ -166,6 +178,22 @@ else
         return textOf(p) ?? "";   // present but empty is "", not null
     };
 
+    // TWO PARAMETERS BY THIS NAME WHERE valueOf WOULD LOOK - see the header.
+    // Asked first, so a shared name is never read at all.
+    var byName = !string.Equals(wantName, "Family and Type", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(wantName, "Family", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(wantName, "Type", StringComparison.OrdinalIgnoreCase);
+
+    Func<Element, bool> nameIsShared = element =>
+    {
+        if (!byName) return false;
+        var onElement = element.GetParameters(wantName).Count;
+        if (onElement > 1) return true;
+        if (onElement > 0 || !includeTypeParameters) return false;
+        var type = typeOf(element);
+        return type != null && type.GetParameters(wantName).Count > 1;
+    };
+
     Func<string, bool> matchesNeedle = value =>
     {
         if (mode == "equals") return string.Equals(value, needle, StringComparison.OrdinalIgnoreCase);
@@ -184,6 +212,16 @@ else
     foreach (var element in collector)
     {
         scanned++;
+
+        var shared = false;
+        try { shared = nameIsShared(element); }
+        catch (Exception) { shared = false; }
+        if (shared)
+        {
+            ambiguous++;
+            continue;
+        }
+
         string value = null;
         try { value = valueOf(element); }
         catch { value = null; }
@@ -200,6 +238,12 @@ else
     findings.Add(string.Format("{0} of {1} scanned element(s) match {2} {3} '{4}'. {5} do not carry "
         + "'{2}' at all and were never tested",
         elements.Count, scanned, wantName, mode, needle, withoutParameter));
+
+    if (ambiguous > 0)
+        findings.Add(string.Format("{0} element(s) carry TWO OR MORE parameters named '{1}' and were "
+            + "NOT tested - asked by name, Revit picks one of them at random, so a match or a miss "
+            + "there would be a guess. Select one and look in Properties to see both",
+            ambiguous, wantName));
 
     if (withoutParameter == scanned && scanned > 0)
         findings.Add(string.Format("NOTHING carries '{0}'. That is a parameter name that does not "
@@ -221,10 +265,17 @@ else
         var linkScanned = 0;
         var linkMatched = 0;
         var linkWithout = 0;
+        var linkShared = 0;
 
         foreach (var element in linkedCollector)
         {
             linkScanned++;
+
+            var shared = false;
+            try { shared = nameIsShared(element); }
+            catch (Exception) { shared = false; }
+            if (shared) { linkShared++; continue; }
+
             string value = null;
             try { value = valueOf(element); }
             catch (Exception) { value = null; }
@@ -235,8 +286,11 @@ else
 
         linksSearched++;
         linkedTotal += linkMatched;
-        linkedMatches.Add(string.Format("{0}: {1} of {2} match; {3} do not carry '{4}'",
-            linked.Title, linkMatched, linkScanned, linkWithout, wantName));
+        linkedMatches.Add(string.Format("{0}: {1} of {2} match; {3} do not carry '{4}'{5}",
+            linked.Title, linkMatched, linkScanned, linkWithout, wantName,
+            linkShared > 0
+                ? string.Format("; {0} carry it twice and were NOT tested", linkShared)
+                : ""));
     }
 }
 

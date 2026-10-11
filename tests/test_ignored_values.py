@@ -130,6 +130,35 @@ def main():
           "the server did not reimplement the rule")
 
     print()
+    print("3. A value a writing setup step takes is not called dropped")
+    # Row 5b-228: a setup step at MODIFY or above runs inside the fragment's
+    # request and is bound from the run's values, so `level` for create-wall
+    # builds the wall - and validate printed it as IGNORED, "will be dropped".
+    taken_by = getattr(CLIENT, "values_taken_by_setup", None)
+    check(taken_by is not None, "the client can say which setup step takes a value")
+    takes = taken_by(ROOT, ["create-wall"], True) if taken_by else {}
+    check(takes.get("level") == "create-wall" and takes.get("points") == "create-wall",
+          "a writing step's needs are taken by that step (%r)" % sorted(takes.items())[:3])
+    check(not (taken_by and taken_by(ROOT, ["find-schedules"], True)),
+          "a READ step takes none of them - it runs apart, on --setup-set")
+    check(not (taken_by and taken_by(ROOT, ["create-wall"], False)),
+          "and on a read run nothing is deferred, so nothing is taken")
+    said = io.StringIO()
+    stdout, sys.stdout = sys.stdout, said
+    try:
+        try:
+            CLIENT.report_undeclared("set-curtain-wall-grid", values("level", "levle"),
+                                     NEEDS, takes)
+        except TypeError as why:
+            print("raised %s" % why)
+    finally:
+        sys.stdout = stdout
+    out = said.getvalue()
+    check("IGNORED 'level'" not in out and "create-wall" in out,
+          "the run names the step that takes it instead (%r)" % out[:160])
+    check("IGNORED 'levle'" in out, "and a value nobody declares is still called IGNORED")
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for f in FAILURES:

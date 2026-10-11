@@ -48,6 +48,10 @@ second one (R-31).
 
 Beside them:
 
+    heron-project.zip      what a person downloads and keeps - the brain,
+                           skills, MCP and docs (R-51), and at its root the
+                           two installers, HeronInstaller.exe and
+                           heron-install.exe, with the two scripts they drive
     heron-products.json    the manifest, so the installer reads the product
                            list from the release rather than from a branch
     checksums.txt          SHA-256 of every file above - R-12, verified
@@ -78,8 +82,10 @@ import io
 import json
 import os
 import shutil
+import re
 import subprocess
 import sys
+import tempfile
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -245,6 +251,14 @@ def pack(product, release, out_dir):
 # rather than anything Heron does for a modeller - brain/skills/ is that, and
 # it is included.
 #
+# EXCEPT THREE FILES OF tools/, NAMED ONE BY ONE - row 5b-371. The installers
+# drive deploy-addin.ps1 and HeronRevit.ps1 from the folder they sit in, and
+# docs/WHAT-TO-INSTALL.md tells a new person to run check-dependencies.py
+# against the requirements files beside it. Without them the download held an
+# installer step and a check step that could not run on the PC they were
+# written for. A file named here, never the folder: the rest of tools/ is
+# still how Heron is developed.
+#
 # The first cut errs WIDE on purpose: docs/ is 5.8 MB and the AI reads it.
 # Shipping more than needed is recoverable; shipping less is a user whose
 # question has no answer on their disk.
@@ -254,8 +268,46 @@ WORKSPACE_KEEP = [
     "docs",                         # what the AI reads to answer
     ".mcp.json",                    # Claude Code reads this from the folder it opens
     "README.md",
+    "requirements.txt",             # WHAT-TO-INSTALL step 4 installs from it
+    "requirements-optional.txt",    # and check-dependencies reads both
     os.path.join("platform", "heron-products.json"),   # the installer's own list
+    os.path.join("tools", "deploy-addin.ps1"),         # what an installer drives
+    os.path.join("tools", "HeronRevit.ps1"),           # and what that dot-sources
+    os.path.join("tools", "check-dependencies.py"),    # WHAT-TO-INSTALL section 5
 ]
+
+# THE INSTALLERS RIDE IN THE DOWNLOAD - row 5b-371.
+#
+# NO RELEASE EVER CARRIED ONE. .gitignore keeps the built HeronInstaller.exe
+# out of the repository on purpose, saying a downloader gets the release
+# asset - and nothing made that asset. A new person who searched the
+# repository and its releases for the installer, on 2026-10-08, found it in
+# neither.
+#
+# BOTH DOORS, BECAUSE docs/WHAT-TO-INSTALL.md NAMES BOTH: the window for a
+# person, `heron-install` for the AI (Stage 6). The executable each makes is
+# read from its project's <AssemblyName>, never typed here.
+#
+# AT THE ROOT OF heron-project.zip, NOT BESIDE IT AS AN ASSET OF ITS OWN. Each
+# finds the product list by walking up from its own folder to
+# platform\heron-products.json, and runs the two scripts above from that same
+# folder - so alone in a Downloads folder it could only say the product list
+# is missing. Unzipped with the workspace, it is already at that root.
+#
+# SELF-CONTAINED, which Q-PE-7 recommends in so many words: "an installer
+# with a prerequisite is not an installer". The framework-dependent build is
+# a quarter of a megabyte and asks a modeller whose newest Revit is 2024 -
+# which brings no .NET 8 - to install the .NET Desktop Runtime first.
+# Measured 2026-10-08: 72 MB for the window and 35 MB for the command,
+# compressed, one file each.
+INSTALLERS = [
+    os.path.join("platform", "Heron.Installer.App", "Heron.Installer.App.csproj"),
+    os.path.join("platform", "Heron.Installer.Cli", "Heron.Installer.Cli.csproj"),
+]
+
+# Windows on x64 is the only machine Revit runs on, so it is the only one an
+# installer for it is built for.
+INSTALLER_RUNTIME = "win-x64"
 
 # NEVER, wherever they appear. __pycache__ is a build artefact that differs
 # between machines, and .git is the whole history - neither belongs in a
@@ -265,9 +317,70 @@ WORKSPACE_NEVER = ("__pycache__", ".git", "bin", "obj")
 WORKSPACE_NAME = "heron-project.zip"
 
 
-def workspace(out_dir):
+def installer_name(csproj):
+    """
+    The executable a project publishes, from its own <AssemblyName>.
+
+    READ, NOT TYPED. The window's project says why it is HeronInstaller and
+    not Heron.Installer; a second spelling here is the one that goes stale.
+    """
+    text = io.open(os.path.join(ROOT, csproj), encoding="utf-8-sig").read()
+    found = re.search(r"<AssemblyName>\s*([^<\s]+)\s*</AssemblyName>", text)
+    if not found:
+        raise IOError("%s names no <AssemblyName>, so there is no way to say "
+                      "which executable it publishes" % csproj)
+    return found.group(1) + ".exe"
+
+
+def build_installers(stage_dir):
+    """
+    Publish every installer into stage_dir. Returns [(project, why)] for each
+    that failed - empty when all of them built.
+
+    -p:EnableWindowsTargeting=true for the same reason build() passes it: the
+    release is built on Linux, and the window is a Windows window.
+    """
+    failed = []
+    for csproj in INSTALLERS:
+        if not os.path.exists(os.path.join(ROOT, csproj)):
+            failed.append((csproj, "%s does not exist, so the release would "
+                                   "carry no installer" % csproj))
+            continue
+
+        proc = subprocess.Popen(
+            ["dotnet", "publish", csproj, "-c", CONFIGURATION,
+             "-r", INSTALLER_RUNTIME,
+             "--self-contained", "true",
+             "-p:PublishSingleFile=true",
+             "-p:IncludeNativeLibrariesForSelfExtract=true",
+             "-p:EnableCompressionInSingleFile=true",
+             "-p:DebugType=none",
+             "-p:EnableWindowsTargeting=true",
+             "-o", stage_dir,
+             "--nologo", "-v", "quiet"],
+            cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out = proc.communicate()[0].decode("utf-8", "replace")
+
+        if proc.returncode != 0:
+            failed.append((csproj, out.strip() or
+                           "dotnet publish exited %d and said nothing" % proc.returncode))
+            continue
+
+        exe = installer_name(csproj)
+        if not os.path.exists(os.path.join(stage_dir, exe)):
+            failed.append((csproj, "the publish reported success but %s is "
+                                   "not in what it wrote" % exe))
+    return failed
+
+
+def workspace(out_dir, installers_dir=None):
     """
     Zip what the user keeps beside the plugin. Returns the asset's path.
+
+    `installers_dir` holds what build_installers() published; every file in it
+    goes at the ROOT of the zip, the folder the installers look for their
+    product list from. None packs the workspace alone, which is what a test
+    with no dotnet asks for - main() always passes one.
 
     NAMED heron-project.zip BECAUSE docs/07 AND Q-PE-14 ALREADY CALL IT THE
     PROJECT FOLDER, and a second word for one thing is how two words drift
@@ -278,6 +391,10 @@ def workspace(out_dir):
     path = os.path.join(out_dir, WORKSPACE_NAME)
 
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        if installers_dir:
+            for name in sorted(os.listdir(installers_dir)):
+                zf.write(os.path.join(installers_dir, name), name)
+
         for keep in WORKSPACE_KEEP:
             full = os.path.join(ROOT, keep)
 
@@ -382,11 +499,14 @@ def main():
     for product in planned:
         print("    %-16s not built yet - it is in the plan, and revit/%s/ does "
               "not exist" % (product["id"], project_of(product)))
+    print("    and in %s, the installers: %s"
+          % (WORKSPACE_NAME, ", ".join(installer_name(p) for p in INSTALLERS)))
     print()
 
     if args.list:
         for product, release in pairs:
             print("    %s" % asset_name(product, release))
+        print("    %s" % WORKSPACE_NAME)
         return 0
 
     if shutil.which("dotnet") is None:
@@ -419,20 +539,38 @@ def main():
         path = pack(product, release, out_dir)
         print("    %s  %d bytes" % (os.path.basename(path), os.path.getsize(path)))
 
+    # THE INSTALLERS, ONCE - row 5b-371. Release-independent like the brain,
+    # and built only when every product did: an installer beside a half-built
+    # release is one that offers a Revit it then cannot fill.
+    installers_dir = None
+    if not failed:
+        installers_dir = tempfile.mkdtemp(prefix="heron-installers-")
+        print("  building the installers - the window and the command")
+        for csproj, why in build_installers(installers_dir):
+            print("    FAILED")
+            failed.append((csproj, None, why))
+
     # THE BRAIN, ONCE, BESIDE THE EIGHT RELEASES OF PLUGIN - R-51. It follows
     # no Revit release, so it is packed once rather than eight times, and it is
     # packed BEFORE the checksums because checksums.txt is the completion mark
     # for the whole folder.
-    if not failed:
-        print("  packing the workspace - brain, skills, MCP and docs")
-        made = workspace(out_dir)
-        print("    %s  %d bytes" % (os.path.basename(made), os.path.getsize(made)))
+    try:
+        if not failed:
+            print("  packing the workspace - brain, skills, MCP, docs and the installers")
+            made = workspace(out_dir, installers_dir)
+            print("    %s  %d bytes" % (os.path.basename(made), os.path.getsize(made)))
+    finally:
+        if installers_dir:
+            shutil.rmtree(installers_dir, ignore_errors=True)
 
     if failed:
         print()
         print("FAILED (%d)" % len(failed))
         for product_id, release, why in failed:
-            print("  - %s for Revit %s:" % (product_id, release))
+            if release:
+                print("  - %s for Revit %s:" % (product_id, release))
+            else:
+                print("  - %s:" % product_id)
             for line in why.strip().split("\n")[-6:]:
                 print("      %s" % line)
         print()

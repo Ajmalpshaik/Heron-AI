@@ -83,6 +83,12 @@ purpose: >
   Version 1's proof no longer describes the code and is kept below as a record;
   the fragment is DRAFT until it is proved again (NEEDS-CHECKING Group CB).
 
+# IN A PROJECT, A REQUIRED NAME THE TYPE CARRIES TWICE IS A WARN, NOT A PASS -
+# counted by name, never looked up, and counted in `warned` (D-54 s3,
+# FRAGMENT-ISSUES 5b-203; added 2026-10-09, see that provide) - the WARN the
+# family document already gave. Written here and not in `purpose` on purpose:
+# the purpose is embedded for routing, and a sentence about this in it moved
+# other cards' utterances in check-routing, measured against the base commit.
 contract:
   needs:
     - name: doc
@@ -106,8 +112,11 @@ contract:
       role: result
       type: string
     - name: warned
-      # In a family document, the WARNs - things that may be meant. Zero in a
-      # project.
+      # In a family document, the WARNs - things that may be meant. In a
+      # project, the family types carrying a required parameter's name more
+      # than once: present, but a lookup by that name picks one at random
+      # (D-54 s3, FRAGMENT-ISSUES 5b-203) - the same WARN the family document
+      # gives a required name it holds twice.
       role: result
       type: int
     - name: offStandard
@@ -148,7 +157,9 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. Version 2's family checks use
   `ConnectorElement`, `FamilyManager.GetAssociatedFamilyParameter`,
-  `GenericForm.GetVisibility` and `Options.DetailLevel`, all on 2020; part types
+  `GenericForm.GetVisibility` and `Options.DetailLevel`, all on 2020, and the
+  project audit counts a required name with `Element.GetParameters(string)`,
+  on 2020 too; part types
   and categories are matched by their enum NAMES read on the running Revit, so
   one a release has not got (OST_PlumbingEquipment before 2025) is never this
   family's. `Family`, `FamilySymbol`,

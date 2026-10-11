@@ -63,14 +63,14 @@ jobs:
   # model and NOT a defect in the fragment - and it should then be recorded and
   # left rather than retried a third time.
   #
-  # UNITS: `stubLength` is a bare double, so INTERNAL FEET. 10 is about 3 m.
-  # A `...Mm` suffix would have meant millimetres; a plain name means feet.
+  # UNITS: `stubLength` is MILLIMETRES (D-71). 3048 is the 10 ft (about 3 m)
+  # this job first used.
   - fragment: find-dead-ends
     set:
       categoryName: Ducts
       inViewOnly: "FloorPlan: L3"
-      stubLength: 10
+      stubLength: 3048
     negative-set:
       categoryName: Duct Tags
       inViewOnly: "FloorPlan: M1"
-      stubLength: 10
+      stubLength: 3048
