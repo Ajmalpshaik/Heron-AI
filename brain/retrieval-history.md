@@ -1234,6 +1234,11 @@ the owner's 79 on both backends, this file, `check-routing`, `check-risk-crossin
 drop on his questions something reported, never a gate - and so is D-101's proposed half, which waits on a
 test of what a question is.
 
+**Decided 2026-10-11: the word pairs are not shipped.** The owner chose not to use them, on the
+advice that a new crossing on an everyday read (*"what size is this pipe"*) costs more than the
+material questions it saves; the candidate commit left GitHub the same day. D-101's half is still
+open - [Row 5b-396](../docs/fragment-issues/section-5b-rows-376-400.md) holds both.
+
 ### What this does not establish
 
 - **The sentences are agents' sentences**, written to measure and to break, not the owner's. His 79 did
