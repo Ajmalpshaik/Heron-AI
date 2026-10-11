@@ -67,7 +67,7 @@ jobs:
     note: >
       The negative changes only the plane: same family, same system, same
       size, and a plane two faces of one combination lie on. `connector` is a
-      sentence, which the runner cannot judge (row 5b-411 in PR #470), so the
+      sentence, which the runner cannot judge (row 5b-411), so the
       verdict is read off `sizedBy` - one tie, or none - and the `connector`
       sentence is read by eye. AN14 (a ring joined to nothing on Port Right)
       and AN15 (a duct connector on the joined face) are run by hand.

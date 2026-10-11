@@ -55,7 +55,7 @@ Reference - the skill says so in its own words.
 (Revit 2020, session 36948) the owner's gate valve, Family1, had its two flanges cut by a bore void and two
 bolt-hole voids through `COMBINE_FAMILY_FORMS`, all in one combination, and `ADD_FAMILY_CONNECTOR` on the
 plane `Flange Face Left` answered *"No solid face lies on "Flange Face Left""* with the flange's face exactly
-on it (row 5b-410, recorded by PR #470 and not yet on main when this was written - it goes in `docs/fragment-issues/section-5b-rows-401-425.md`). Read in the source:
+on it ([row 5b-410](../fragment-issues/section-5b-rows-401-425.md)). Read in the source:
 the tool looked for the face in each form's own geometry, and once a form is joined or cut Revit keeps its
 faces in the combination's - `REPORT_FAMILY_FORMS` reads such a form at 0 L.
 
