@@ -53,6 +53,17 @@ purpose: >
   5 groups, 4 min 50 s from request to built; a 186-part transformer built
   in one call took 9 min 40 s, 27 s of it Revit and Heron.
 
+  TWO WAYS TO SEND THE PARTS, and the modeller chooses. GROUPS, above, is
+  the default. ONE PART PER CALL - every form its own CREATE_FAMILY_FORMS
+  call, so the modeller watches the parts arrive one after another - is
+  used when the modeller asks to see it built that way. It builds the same
+  family with no more mistakes, but it is slower and fills the chat: each
+  call is a turn and each reply is read. Measured 2026-10-12 on one fixed
+  diesel fire pump set already planned, 111 parts and 6 connectors: groups
+  12 calls, 34 s; one part per call 117 calls, 3 min, Revit's own work
+  4.4 s and 7.4 s. Say that before starting one part per call on a large
+  family.
+
   0. REPORT_FAMILY_TEMPLATE, then READ THE THING. The report says which KIND
      of family the modeller opened - and a family that is not level-based or
      work-plane-based has a skill of its own: HOSTED-FAMILY-CREATION for a
