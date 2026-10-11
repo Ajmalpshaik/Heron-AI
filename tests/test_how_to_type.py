@@ -722,9 +722,11 @@ def main():
     for door in ("revit_change", "revit_read"):
         body = re.search(r"\ndef %s\(.*?\n(?=\S)" % door, server, re.S)
         check(body is not None
-              and "explain(failure) + _what_to_type(failure, capability)"
-              in body.group(0),
-              "%s adds what to type under a refusal it hands back" % door)
+              and "_ended(_failure_ended(failure), explain(failure))"
+              in body.group(0)
+              and "+ _what_to_type(failure, capability)" in body.group(0),
+              "%s adds what to type under a refusal it hands back, after the "
+              "label the add-in's reply decides" % door)
     told = lift(server, ["_what_to_type"],
                 {"_contract_lines": lambda capability: ["", "  BLOCK FOR " +
                                                         capability]})

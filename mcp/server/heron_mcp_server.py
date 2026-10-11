@@ -1692,8 +1692,8 @@ def revit_change(capability: str = "", values: str = "",
     # a refusal whose message never says "refused" is still one (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_change"))
     if failure is not None:
-        return _ended(_failure_ended(failure),
-                      explain(failure) + _what_to_type(failure, capability))
+        return (_ended(_failure_ended(failure), explain(failure))
+                + _what_to_type(failure, capability))
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
@@ -2713,8 +2713,8 @@ def revit_read(capability: str = "", values: str = "",
     # is one even when its first line names only the capability (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:
-        return _ended(_failure_ended(failure),
-                      explain(failure) + _what_to_type(failure, capability))
+        return (_ended(_failure_ended(failure), explain(failure))
+                + _what_to_type(failure, capability))
 
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
