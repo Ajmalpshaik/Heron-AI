@@ -69,6 +69,11 @@ compatibility-note: >
 #   "list the sheets"            -> here. A QUESTION
 #   "how many sheets are there"  -> here
 #   "which sheets are empty"     -> here - the view count is on every row
+#   "what views are on this sheet"
+#                                -> LIST_VIEWS_ON_SHEET. This fragment only
+#                                   COUNTS a sheet's views; that one NAMES
+#                                   them, with type and scale, and lists the
+#                                   schedules apart (row 146, 2026-10-09)
 #   "put this view on a sheet"   -> PLACE_VIEW_ON_SHEET. A CHANGE
 #   "which sheet is this view on"-> FIND_VIEWS_SHOWING_ELEMENT is the wrong way
 #                                   round; this fragment's `onSheets` count is

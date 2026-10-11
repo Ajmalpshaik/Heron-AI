@@ -10,7 +10,7 @@
 `SET_FAMILY_TYPE_VALUES` version 2 writes a **material** parameter by the material's name and a **URL**
 (and any parameter Revit keeps as text) as text. Version 1 refused both - seen 2026-10-06 in the family
 `GM_PipeSupport_HexNut` with `Nut Material=TRG_Steel_Galvanised` and `URL=https://ajmalps.com`, which then
-had to be typed in the Family Types dialog ([row 5b-341](../fragment-issues/section-5b-rows-176-200.md)).
+had to be typed in the Family Types dialog ([row 5b-341](../fragment-issues/section-5b-rows-326-350.md)).
 The change is under `impl/`, so the version 1 proof went stale; **signed by Ajmal PS on 2026-10-06** on the CI1/CI2 record below, and PROVEN again.
 
 **Run on 2026-10-06, rolled back**, on the scratch family *Family3* (Revit 2024, unsaved, made with

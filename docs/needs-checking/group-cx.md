@@ -10,7 +10,7 @@
 On 2026-10-09 a modeller with a Duct Accessories family open in Revit 2024 asked *"list the materials
 in this family"* and was handed `TRANSFER_MATERIALS_BETWEEN_DOCUMENTS` - a write - on the lexical
 backend, and `FIND_UNUSED_MATERIALS`, which lists only what nothing uses, on the trained one
-([row 5b-376](../fragment-issues/section-5b-rows-176-200.md)). No capability listed the materials a
+([row 5b-376](../fragment-issues/section-5b-rows-376-400.md)). No capability listed the materials a
 document holds; [section 3d](../fragment-issues/section-3d.md) had recorded the want on 2026-09-08 and
 [section 3i](../fragment-issues/section-3i.md) had asked for it as `list-materials`.
 
@@ -84,7 +84,7 @@ card:
   `REPORT_AREA_VOLUME_COMPUTATIONS`, and *show me all the families* - `SELECT_SUBCOMPONENTS` on main - comes
   to THIS card, a list of materials for a question about families. It also tipped *how much space does
   this take up* to `REPORT_SPACE_AIRFLOW` (0.000029 apart) while only a comment on `REPORT_BOUNDING_BOX`
-  claimed it; [row 5b-385](../fragment-issues/section-5b-rows-176-200.md) declared it there, and with
+  claimed it; [row 5b-385](../fragment-issues/section-5b-rows-376-400.md) declared it there, and with
   both merged it goes there by exact match on both backends. Without *how many there are* the two go back,
   and *how many materials are there* goes to the transfer, a write. No other of the 27 moves, and none
   moves on the trained backend - where *how many rooms are there* reaches `PLACE_ROOMS`, **a write, the

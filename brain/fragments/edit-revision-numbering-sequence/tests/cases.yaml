@@ -1,19 +1,41 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
+#
+# Version 2 (2026-10-10) runs on Revit 2020 and 2021 as well, where the
+# project has ONE numeric and ONE alphanumeric numbering and no names. The
+# 2020/2021 cases are arranged for "Project2", a scratch project in Revit 2020
+# whose alphanumeric list read A, B, C ... Z (26 values) on 2026-10-10.
 
 positive:
-  - given: a TEST COPY, name=Custom, newName=Alphabetic
+  - given: >
+      Revit 2020, Project2 (a scratch project), name=Alphanumeric,
+      customSequence=AA, BB, CC, DD, EE, FF, GG, HH, II, JJ, KK, LL, MM, NN,
+      OO, PP, QQ, RR, SS, TT, UU, VV, WW, XX, YY, ZZ, every other value empty,
+      while no ISSUED revision uses alphanumeric numbering
+    expect: >
+      `changed` "custom sequence A, B, C, ... Z (26 values) -> AA, BB, CC, ...
+      ZZ (26 values)"; `findings` reads the list back as AA ... ZZ (26 values)
+      with prefix and suffix as they were. Which revisions use alphanumeric
+      numbering is unchanged - LIST_REVISIONS' numbering column reads the same
+      before and after
+
+  - given: the same values a second time, kept
+    expect: >
+      `changed` empty and the whole list in `alreadyThat`
+
+  - given: Revit 2020, customSequence=AA, BB, CC and name empty
+    expect: >
+      the alphanumeric numbering is the one changed - a custom list belongs to
+      nothing else on 2020
+
+  - given: a TEST COPY on 2022 or later, name=Custom, newName=Alphabetic
     expect: >
       `changed` "name 'Custom' -> 'Alphabetic'", read back; every revision
       that used it still does
 
-  - given: name=Numeric, prefix=R, minimumDigits=2, where no ISSUED revision uses it
+  - given: name=Numeric, prefix=R, minimumDigits=2, where no ISSUED revision uses it, 2022 or later
     expect: >
       `changed` naming both; `findings` reads back prefix 'R', minimum digits
       2. A sheet's revision schedule then prints R01
-
-  - given: the same values a second time
-    expect: >
-      `changed` empty and every field in `alreadyThat`
 
   - given: >
       the working model, no transaction open (validate without --write) - a
@@ -23,24 +45,51 @@ positive:
       it would have changed. Nothing changes
 
 negative:
-  - given: name=Numeric, minimumDigits=2, while an ISSUED revision uses 'Numeric'
+  - given: >
+      Revit 2020, Project2, name=Alphanumeric, customSequence=AA, BB, CC, AA -
+      a list with a value twice
+    expect: >
+      `refused` naming 'AA' 2 times; nothing changed - `findings` still reads
+      A, B, C ... Z (26 values)
+
+  - given: customSequence=AA, , CC and customSequence=AA, BB, CC,
+    expect: >
+      `refused` naming the empty position (2 of 3, and 4 of 4); nothing changed
+
+  - given: customSequence=AA, BB, ..., ZZ, and customSequence=<blank>
+    expect: >
+      `refused` - an ellipsis is not filled in, and an empty list is not a list;
+      nothing changed
+
+  - given: Revit 2020, name=Numeric, customSequence=A, B
+    expect: >
+      `refused` - the numeric numbering has no custom list; nothing changed
+
+  - given: Revit 2020, name=Alphanumeric, newName=Letters; and name=Numeric, minimumDigits=2
+    expect: >
+      `refused` - 2020 has no names to change and no minimum digits; nothing changed
+
+  - given: name=Alphanumeric, customSequence=AA, BB while an ISSUED revision uses alphanumeric numbering
+    expect: >
+      `refused` naming that revision; nothing changed
+
+  - given: name=Numeric, minimumDigits=2, while an ISSUED revision uses 'Numeric', 2022 or later
     expect: >
       `refused` naming that revision; nothing changed. A rename alone of the
       same sequence is allowed
 
-  - given: name=Numeric, customSequence=A, B
-    expect: >
-      `refused` - a numeric sequence has no custom list; nothing changed
-
   - given: name=Nonesuch
     expect: >
-      `refused` listing the sequences that do exist
+      `refused` listing the sequences that do exist - on 2020, naming Numeric
+      and Alphanumeric
 
-  - given: newName=Numeric on 'Custom'
+  - given: newName=Numeric on 'Custom', 2022 or later
     expect: >
       `refused` - another sequence already has that name
 
 second_route:
   - >
-    open Customize Numbering > Numbering > Edit in Revit; LIST_REVISIONS'
-    numberingSequences reads every setting
+    Revit 2020: Manage > Sheet Issues/Revisions > Numbering Options >
+    Alphanumeric, read the Sequence box by eye. Revit 2022 on: Customize
+    Numbering > Numbering > Edit. LIST_REVISIONS' numberingSequences reads
+    every setting on both

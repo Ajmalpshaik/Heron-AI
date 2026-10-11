@@ -1,12 +1,17 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-016
 semantic-identity: "change the revision description or date"
 
+# VERSION 2 RE-PROVED 2026-10-10 on Project2 (scratch, Revit 2020) and signed by
+# Ajmal PS - the proof block below. The positive wrote issued by, issued to and
+# the Issued tick; the negative, asked for values already held, changed nothing.
+# NOT covered: the refusal of an edit to an ISSUED revision (5b-412) and the
+# 2020/2021 numbering route. What follows is how version 2 came to be.
 # VERSION 2, BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK IS KEPT.
 # Version 1 found its revision by a `sequenceNumber` it was typed. Version 2 is
 # handed ONE revision by the find before it (SELECT_BY_PARAMETER_VALUE on the
@@ -115,29 +120,36 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-09'
+  date: '2026-10-10'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32940
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    list-revisions, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned changed 4 item(s) [description,
-    date, issued by, ...], nowIssued false, refused , revision Revision, sequenceNumber 1.
-    inputs came sequenceNumber as given; description as given; revisionDate as given; issuedBy
-    as given; issuedTo as given; issueState as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with description=HERON REV Z1, issueState=false, issuedBy=Heron, issuedTo=Proving,
-    revisionDate=2026-09-09, sequenceNumber=99 instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running list-revisions,
-    set-selection with this phase's own values - run inside a transaction and ROLLED BACK,
-    so the model was left exactly as it was. returned changed 0 item(s), nowIssued false,
-    refused No revision with sequence number 99. LIST_REVISIONS is where that number comes
-    from., revision (null), sequenceNumber 99. inputs came sequenceNumber as given; description
-    as given; revisionDate as given; issuedBy as given; issuedTo as given; issueState as given.
-    on Snowdon-scratch_ajmal.al
+  model: Project2 (3,661 elements), Revit 2020, session 36948
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-parameter-value with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyThat , changed
+    issued by (blank) -> ''M.Sagheer''; issued to (blank) -> ''A.Rahmani''; issued, findings
+    Read back: Seq. 2: numbering Numeric, date ''07-APR-2025'', description ''IFI - Issued
+    for Information'', ISSUED, issued to ''A.Rahmani'', issued by ''M.Sagheer'', show Cloud
+    and Tag (id 281406), nowIssued true, refused , revisionName Seq. 2 ''IFI - Issued for
+    Information''. inputs came elements from select-by-parameter-value (1); description as
+    given; revisionDate as given; issuedBy as given; issuedTo as given; show as given; numbering
+    as given; issueState as given. on Project2'
+  negative_case: 'run with description=IFI - Issued for Information, issueState=, issuedBy=,
+    issuedTo=, numbering=, revisionDate=07-APR-2025, show= arranged with categories=Revisions,
+    includeLinks=false, includeTypeParameters=false, matchMode=equals, matchText=2, parameterName=Revision
+    Sequence instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-parameter-value with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyThat description ''IFI - Issued for Information''; date
+    ''07-APR-2025'', changed , findings Read back: Seq. 2: numbering Numeric, date ''07-APR-2025'',
+    description ''IFI - Issued for Information'', not issued, issued to (blank), issued by
+    (blank), show Cloud and Tag (id 281406), nowIssued false, refused , revisionName Seq.
+    2 ''IFI - Issued for Information''. inputs came elements from select-by-parameter-value
+    (1); description as given; revisionDate as given; issuedBy as given; issuedTo as given;
+    show as given; numbering as given; issueState as given. on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b58ae7a13fd7c93b
-
+  fingerprint: b928479162dc855d
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -164,6 +176,11 @@ compatibility-note: >
 #   "tick issued"                        -> here, issueState=issue; unissue
 #                                           takes the tick off
 #   "show only the tag for revision 2"   -> here, show=tag
+#   "change the alphabetic revision list to AA, BB, CC, DD"
+#                                        -> EDIT_REVISION_NUMBERING_SEQUENCE -
+#                                           the numbering's own list, on every
+#                                           release 2020 on; `numbering` here
+#                                           is only which one a revision uses
 #   "move revision 2 up"                 -> REORDER_REVISION
 #   "merge revision 2 down"              -> MERGE_REVISION
 #   "make a new revision"                -> CREATE_REVISION

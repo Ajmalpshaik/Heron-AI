@@ -160,3 +160,14 @@ utterances:
   - what level are they on
   - which level is each duct on
   - what parameters does this duct have
+  # ADDED 2026-10-09 - the judgement above, ONE VALUE OFF AN ELEMENT, for two
+  # more questions measured reaching a write. "What is the insulation
+  # thickness" reached SET_MEP_INSULATION on both backends (FRAGMENT-ISSUES
+  # 146); "what is the sill height of these windows" reached
+  # PLACE_HOSTED_FAMILY on the trained model (5b-321). The parameters are
+  # "Insulation Thickness" - on a duct or pipe and on its insulation alike -
+  # and "Sill Height", as RevitAPI.xml names them for every release 2020 to
+  # 2027. That LookupParameter finds them by those names on a real duct and a
+  # real window is what a run in Revit has still to show.
+  - what is the insulation thickness
+  - what is the sill height of these windows

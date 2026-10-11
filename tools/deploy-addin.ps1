@@ -716,7 +716,19 @@ if ($isDotNet -and -not (Test-Path $deployedDeps)) {
 }
 
 # Point the manifest at the deployed assembly.
+#
+# A HANDED-IN FOLDER BRINGS ITS OWN MANIFEST - row 5b-371. Every product copies
+# its .addin into its build output, so a release asset carries it beside the
+# assembly. A PC that unzipped heron-project.zip has no revit\ folder at all,
+# and reading the manifest only from there refused every download with "the
+# Heron files are incomplete" - after the assemblies had been copied. The copy
+# in the folder is also the one built with what is being installed. A local
+# build still reads the source tree's, exactly as before.
 $manifestSource = Join-Path $repoRoot "revit\$productProject\$productAddin"
+if ($FromFolder) {
+    $handedIn = Join-Path $buildOut $productAddin
+    if (Test-Path $handedIn) { $manifestSource = $handedIn }
+}
 if (-not (Test-Path $manifestSource)) {
     throw "$manifestSource is missing, so Revit would have a DLL it never looks at. The Heron files are incomplete - fetch them again."
 }

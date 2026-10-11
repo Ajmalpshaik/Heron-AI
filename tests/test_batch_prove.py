@@ -424,6 +424,30 @@ def test_a_job_with_no_negative_arrangement_is_refused():
     check(verdict is None, "a job dict missing the optional key reads as absent")
 
 
+def test_a_negative_that_would_hand_the_chain_the_wrong_values_is_refused():
+    print("A setup chain with its own values needs them on the negative leg too")
+    # Row 5b-242: the client gives the negative leg's chain
+    # `negative_setup_values or using or values` - the NEGATIVE-SET, never the
+    # positive's `setup-set`. A job whose chain needs other values than its
+    # fragment was refused on the negative leg before the fragment ran, and
+    # the dry run said WOULD RUN.
+    library = {"sample": FakeFragment("sample", [{"name": "found"}]),
+               "find-schedules": FakeFragment("find-schedules", [{"name": "schedules"}])}
+    job = {"fragment": "sample", "setup": ["find-schedules"],
+           "setup-set": {"nameContains": "Air Terminal Schedule"},
+           "set": {"fieldNames": "Flow"}, "negative-set": {"fieldNames": "Family and Type"},
+           "negative-setup-set": {}, "write": True, "cross": None, "in": None,
+           "negative-in": None, "expect": None, "timeout": 60}
+    verdict, why = BP.job_refusal(job, library)
+    check(verdict == BP.REFUSED and "negative-setup-set" in (why or ""),
+          "`setup-set` and `negative-set` with no `negative-setup-set` is refused, naming the key (%s)" % why)
+    job["negative-setup-set"] = {"nameContains": "Air Terminal Schedule"}
+    check(BP.job_refusal(job, library)[0] is None, "given its own chain values, it runs")
+    job["setup-set"], job["negative-setup-set"] = {}, {}
+    check(BP.job_refusal(job, library)[0] is None,
+          "and a chain with no values of its own reads the negative-set, as it always did")
+
+
 def test_the_job_file_is_checked_against_the_contract():
     print("A mistyped name in the job file is caught before Revit is touched")
 
@@ -558,6 +582,7 @@ def main():
                  test_no_reply_is_reported_as_a_timeout,
                  test_every_proven_fragment_in_the_library_is_refused,
                  test_a_job_with_no_negative_arrangement_is_refused,
+                 test_a_negative_that_would_hand_the_chain_the_wrong_values_is_refused,
                  test_the_job_file_is_checked_against_the_contract,
                  test_defaults_merge_key_by_key,
                  test_the_command_line_is_one_the_client_actually_parses,

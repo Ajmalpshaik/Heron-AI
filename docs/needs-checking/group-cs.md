@@ -14,11 +14,11 @@ its own window, stops for the modeller to look at it, and brings it back (a to g
 for it, each PROVEN on 2026-10-07 and signed by Ajmal PS (CS1 to CS3):
 
 - `SAVE_DOCUMENT` version 2 - saves ANOTHER open document named by its file, and closes it when it is not the
-  window in front ([row 5b-365](../fragment-issues/section-5b-rows-176-200.md): version 1 could never save).
+  window in front ([row 5b-365](../fragment-issues/section-5b-rows-351-375.md): version 1 could never save).
 - `ACTIVATE_DOCUMENT` version 2 - "already in front" judged by the window in front, by its file
-  ([row 5b-359](../fragment-issues/section-5b-rows-176-200.md)).
+  ([row 5b-359](../fragment-issues/section-5b-rows-351-375.md)).
 - `LOAD_FAMILY` version 3 - a family open with unsaved changes is refused
-  ([row 5b-360](../fragment-issues/section-5b-rows-176-200.md)).
+  ([row 5b-360](../fragment-issues/section-5b-rows-351-375.md)).
 
 **What has run, 2026-10-07, Revit 2024 session 9240, on scratch families only** - `HeronNest_Car`,
 `HeronNest_Tyre`, `HeronNest_Hub` in `%TEMP%\heron-work\nest`, never Family1 (the owner's unsaved split AC).
@@ -39,7 +39,7 @@ from a run aimed at another document - reported, not measured here.
 | **CS3** | The same for `load-family` - **the owner's call whether to sign before Group CN**: the reload half of version 2 (CN1 to CN9) has not run | positive: a saved family not in the car loaded new; negative: `HeronNest_Hub` open with an unsaved form refused by name; both rolled back. **DONE 2026-10-07 - signed by Ajmal PS on his word; PROVEN.** The reload half stays Group CN's |
 | **CS4** | The whole chain through the CHAT, in the owner's words, on a real job - a car with its tyres - with the host SAVED once | The part opens in its own window; Heron STOPS and shows it before anything goes into the host; at the end the host is in front, the part's window closed, and the host's count of that category equals the number placed |
 | **CS5** | The same with a host NEVER SAVED - File > New > Family, nothing saved | Step e skipped and said so; the part saved; loaded and placed in the host BEHIND it; the part's window left open for the owner to close, and nothing lost when he does |
-| **CS6** | [Row 5b-361](../fragment-issues/section-5b-rows-176-200.md): open a saved scratch family with `ACTIVATE_DOCUMENT` five times with the Heron Companion page closed, and five times with it open; read the add-in log after each | **RECORD how many opens lose their reply** (`unknown_outcome`, or a second run answering `wasAlready true`) and whether *"A newer connection took the session"* appears within seconds of each. Name the process that connects if it can be told |
+| **CS6** | [Row 5b-361](../fragment-issues/section-5b-rows-351-375.md): open a saved scratch family with `ACTIVATE_DOCUMENT` five times with the Heron Companion page closed, and five times with it open; read the add-in log after each | **RECORD how many opens lose their reply** (`unknown_outcome`, or a second run answering `wasAlready true`) and whether *"A newer connection took the session"* appears within seconds of each. Name the process that connects if it can be told |
 | **CS7** | CS1 to CS3 on **Revit 2020** and **2027** | The same answers. All three compile on 2020, 2024 and 2027 (2026-10-07); the members they call read the same in the 2020, 2024 and 2027 reference XML; not run there |
 | **CS8** | The second routes: the same part saved with Ctrl+S and closed with File > Close by hand | No "save changes?" question when closed after `SAVE_DOCUMENT` - the save took; `Manage > Load` of the same file into the host gives the same family and types |
 

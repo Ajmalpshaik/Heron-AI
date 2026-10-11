@@ -126,7 +126,9 @@ THE STORE MUST HOLD THIS WORKING TREE, AND IT IS THE IDS THAT SAY SO
 Same rule and same reason as check-routing.py, which learned it the hard way:
 one store at %APPDATA%\\Heron\\knowledge serves every checkout on the machine,
 so a COUNT can match while the store holds another session's library. Timings
-over the wrong library look completely normal.
+over the wrong library look completely normal. It is check-routing.py's guard
+that asks, store_for_this_tree() - the ids, every row's content, and never a
+rebuild of that shared store from anywhere but the main checkout on main.
 """
 
 import os
@@ -144,6 +146,23 @@ FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 # How many requests to time. Small enough to run in seconds, large enough that
 # a median means something. Every request is a real declared utterance.
 DEFAULT_REQUESTS = 30
+
+
+def routing():
+    """tools/check-routing.py as a module - its filename has a hyphen in it.
+
+    Loaded for its store guard, store_for_this_tree(), so every tool that
+    measures over the knowledge store asks it the same three questions.
+    Found beside THIS file rather than under ROOT, which a test may point
+    somewhere else.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "heron_tool_check_routing",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-routing.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def library():
@@ -316,21 +335,20 @@ def main(argv):
     # in the tool written to catch exactly that.
     backend, _why = clock.time("load the trained encoder", EMBED.backend)
 
+    # The first open is the one timed, as it always was; the store is then
+    # handed to check-routing.py's guard and re-opened by it.
     store = clock.time("open the scope", lambda: SCOPE.open_scope(SCOPE.GLOBAL))
-    store_ids = set(row["id"] for row in store.fragments())
-    if store_ids != disk_ids:
-        store.close()
-        built, problems = SCOPE.rebuild()
-        store = SCOPE.open_scope(SCOPE.GLOBAL)
-        store_ids = set(row["id"] for row in store.fragments())
-        print("  (store did not match this working tree; rebuilt %d%s)"
-              % (built, "; %d problem(s)" % len(problems) if problems else ""))
-        if store_ids != disk_ids:
-            print("  the store STILL does not match this working tree. These")
-            print("  timings would be over a library that is not on disk, which")
-            print("  is not a measurement. Run `python brain/heron_fragment.py`.")
-            store.close()
-            return 2
+    store.close()
+
+    # THE STORE MUST HOLD THIS TREE'S LIBRARY - check-routing.py's guard,
+    # CALLED, NOT COPIED. Until 2026-10-09 this file kept its own ids-only
+    # copy: no row's content was compared with its card (row 5b-229), and the
+    # ONE store every chat on the PC reads was rebuilt from whatever checkout
+    # this ran in (row 5b-233). A refusal is exit 2, which this tool already
+    # meant as "these timings would not be a measurement".
+    store = routing().store_for_this_tree("latency baseline")
+    if store is None:
+        return 2
 
     try:
         clock.time("index for keywords", lambda: SEARCH.index(store))
