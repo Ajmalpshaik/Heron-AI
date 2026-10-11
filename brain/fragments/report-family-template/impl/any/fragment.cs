@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc` is in scope; leaves `familyKind`,
-// `templateReport`, `planeList`, `pointList`, `lineList`, `notAFamily` and
-// `findings` behind.
+// `templateReport`, `planeList`, `pointList`, `lineList`,
+// `classificationCodes`, `notAFamily` and `findings` behind.
 //
 // READS ONLY. Nothing is changed.
 //
@@ -23,6 +23,12 @@
 //
 // ONE LINE PER ANSWER, NOT A LIST. A list is cut to three entries before anyone
 // reads it - the reason REPORT_FAMILY_PARAMETERS answers on one line too.
+//
+// VERSION 2 (2026-10-11): THE OMNICLASS NUMBER AND TITLE ("Classification
+// Number" and "Classification Title" from Revit 2026) join the settings, and
+// `classificationCodes` lists the codes the classification file gives THIS
+// family's category - what a family build proposes the code from, and what
+// SET_FAMILY_SETTINGS accepts. Or, plainly, why there are none.
 
 var findings = new List<string>();
 var familyKind = "";
@@ -30,7 +36,127 @@ var templateReport = "";
 var planeList = "";
 var pointList = "";
 var lineList = "";
+var classificationCodes = "";
 var notAFamily = false;
+
+// ---------------------------------------------------------------------------
+// THE OMNICLASS NUMBER'S PARAMETER, AND THE CLASSIFICATION FILE (version 2)
+// ---------------------------------------------------------------------------
+//
+// ITS BUILT-IN PARAMETER WAS RENAMED AT REVIT 2026 AND KEPT ITS NUMBER:
+// OMNICLASS_CODE and OMNICLASS_DESCRIPTION up to 2025, CLASSIFICATION_CODE and
+// CLASSIFICATION_DESCRIPTION from 2026, and neither pair exists on the other
+// side. Naming either in code breaks the build on the other releases, so the
+// one this Revit has is found by NAME at run time, and shown in Revit's own
+// words - "OmniClass Number" on 2024, "Classification Number" on 2026.
+var clsNewNames = Enum.IsDefined(typeof(BuiltInParameter), "CLASSIFICATION_CODE");
+var clsCode = (BuiltInParameter)Enum.Parse(typeof(BuiltInParameter), clsNewNames ? "CLASSIFICATION_CODE" : "OMNICLASS_CODE");
+var clsTitle = (BuiltInParameter)Enum.Parse(typeof(BuiltInParameter),
+    Enum.IsDefined(typeof(BuiltInParameter), "CLASSIFICATION_DESCRIPTION") ? "CLASSIFICATION_DESCRIPTION" : "OMNICLASS_DESCRIPTION");
+Func<BuiltInParameter, string, string> clsLabelFor = (clsBip, clsOtherwise) =>
+{
+    try
+    {
+        var clsSaid = LabelUtils.GetLabelFor(clsBip);
+        return string.IsNullOrEmpty(clsSaid) ? clsOtherwise : clsSaid;
+    }
+    catch (Exception) { return clsOtherwise; }
+};
+var clsCodeLabel = clsLabelFor(clsCode, clsNewNames ? "Classification Number" : "OmniClass Number");
+var clsTitleLabel = clsLabelFor(clsTitle, clsNewNames ? "Classification Title" : "OmniClass Title");
+
+// Trimmed of every character char.IsWhiteSpace calls space - the 2020 to 2025
+// file ends some titles in a non-breaking space.
+Func<string, string> clsTidy = clsText =>
+{
+    var clsS = clsText ?? "";
+    int clsFrom = 0, clsTo = clsS.Length;
+    while (clsFrom < clsTo && char.IsWhiteSpace(clsS[clsFrom])) clsFrom++;
+    while (clsTo > clsFrom && char.IsWhiteSpace(clsS[clsTo - 1])) clsTo--;
+    return clsS.Substring(clsFrom, clsTo - clsFrom);
+};
+
+// THE CLASSIFICATION FILE - the list Revit's own OmniClass Number dialog
+// offers. No API reads it; it is a plain file, one row per line, TAB between
+// code, title, level and the BuiltInCategory it is filed under (that last one
+// may be empty), and '#' starts a comment: "OmniClassTaxonomy.txt" up to 2025,
+// "Classification_Taxonomy.txt" from 2026, the name that matches the parameter
+// found above tried first, and the path actually read is said. ONLY THE
+// PER-USER COPY IS READ - the one Revit itself reads, in
+// Application.CurrentUsersDataFolderPath, which Revit fills from its own cache
+// at start-up. That cache sits under a Windows special folder, and only
+// HeronPaths may resolve one (tools/check-structure.py, docs/06 section 2).
+var clsTried = new List<string>();
+string clsPath = null;
+string clsProblem = null;
+var clsSample = false;
+// code, title, the category column as written, the BuiltInCategory (boxed) or null
+var clsRows = new List<Tuple<string, string, string, object>>();
+Action clsLoad = () =>
+{
+    var clsFolders = new List<string>();
+    try
+    {
+        var clsUser = doc.Application.CurrentUsersDataFolderPath;
+        if (!string.IsNullOrEmpty(clsUser)) clsFolders.Add(clsUser);
+    }
+    catch (Exception) { }
+    var clsNames = clsNewNames
+        ? new[] { "Classification_Taxonomy.txt", "OmniClassTaxonomy.txt" }
+        : new[] { "OmniClassTaxonomy.txt", "Classification_Taxonomy.txt" };
+    foreach (var clsName in clsNames)
+        foreach (var clsFolder in clsFolders)
+        {
+            if (clsPath != null) break;
+            var clsCandidate = System.IO.Path.Combine(clsFolder, clsName);
+            clsTried.Add(clsCandidate);
+            if (System.IO.File.Exists(clsCandidate)) clsPath = clsCandidate;
+        }
+    if (clsPath == null) return;
+    string clsAll;
+    try
+    {
+        // THE 2020 TO 2025 FILE IS NOT UTF-8: it holds Windows-1252 bytes (an
+        // en dash, an e-cedilla). Strict UTF-8 first; then code page 1252,
+        // which .NET 8 and 10 refuse unless a code-page provider is
+        // registered; then Latin-1, which every runtime has.
+        var clsBytes = System.IO.File.ReadAllBytes(clsPath);
+        try { clsAll = new System.Text.UTF8Encoding(false, true).GetString(clsBytes); }
+        catch (Exception)
+        {
+            try { clsAll = System.Text.Encoding.GetEncoding(1252).GetString(clsBytes); }
+            catch (Exception) { clsAll = System.Text.Encoding.GetEncoding(28591).GetString(clsBytes); }
+        }
+    }
+    catch (Exception ex)
+    {
+        clsProblem = "the classification file " + clsPath + " could not be read: " + ex.Message;
+        return;
+    }
+    clsSample = clsAll.IndexOf("sample Classification File", StringComparison.OrdinalIgnoreCase) >= 0;
+    foreach (var clsLine in clsAll.Replace(((char)0xFEFF).ToString(), "").Split((char)10))
+    {
+        var clsTrimmed = clsTidy(clsLine);
+        if (clsTrimmed.Length == 0 || clsTrimmed.StartsWith("#")) continue;
+        var clsColumns = clsLine.Split((char)9);
+        if (clsColumns.Length < 2) continue;
+        var clsRowCode = clsTidy(clsColumns[0]);
+        if (clsRowCode.Length == 0) continue;
+        var clsRaw = clsColumns.Length > 3 ? clsTidy(clsColumns[3]) : "";
+        object clsFiled = null;
+        long clsNumber;
+        if (clsRaw.Length > 0 && long.TryParse(clsRaw, System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture, out clsNumber))
+        {
+            var clsEnum = Enum.ToObject(typeof(BuiltInCategory), clsNumber);
+            if (Enum.IsDefined(typeof(BuiltInCategory), clsEnum)) clsFiled = clsEnum;
+        }
+        clsRows.Add(Tuple.Create(clsRowCode, clsTidy(clsColumns[1]), clsRaw, clsFiled));
+    }
+};
+// Filed under this category: compared as ElementIds, never as numbers.
+Func<Tuple<string, string, string, object>, ElementId, bool> clsFiledUnder = (clsRow, clsCategoryId) =>
+    clsRow.Item4 != null && clsCategoryId != null && new ElementId((BuiltInCategory)clsRow.Item4).Equals(clsCategoryId);
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 Func<double, string> mm = feet => Math.Round(feet * 304.8, 1).ToString(invariant);
@@ -216,6 +342,52 @@ else
                 value = Enum.GetName(enumOf[s.Item2], code.Value);
             settingRows.Add(s.Item1 + " " + (value.Length == 0 ? "(blank)" : value));
         }
+
+    // THE OMNICLASS NUMBER AND TITLE (version 2), in Revit's own words, read
+    // as text - beside the switches in Family Category and Parameters.
+    var clsCodeRow = family == null ? null : family.get_Parameter(clsCode);
+    var clsTitleRow = family == null ? null : family.get_Parameter(clsTitle);
+    var clsCurrent = clsCodeRow == null ? "" : clsTidy(shown(clsCodeRow));
+    if (clsCodeRow != null) settingRows.Add(clsCodeLabel + " " + (clsCurrent.Length == 0 ? "(blank)" : clsCurrent));
+    if (clsTitleRow != null)
+    {
+        var clsTitleNow = clsTidy(shown(clsTitleRow));
+        settingRows.Add(clsTitleLabel + " " + (clsTitleNow.Length == 0 ? "(blank)" : clsTitleNow));
+    }
+
+    // -----------------------------------------------------------------------
+    // THE CODES THE CLASSIFICATION FILE GIVES THIS CATEGORY (version 2) - ONE
+    // line, because a list reaches the reply cut to three; and where there are
+    // none, why, in words - never an empty answer that reads as "none fit".
+    // -----------------------------------------------------------------------
+    if (category == null)
+        classificationCodes = "This family has no category, so no " + clsCodeLabel + " can be matched to it.";
+    else
+    {
+        clsLoad();
+        if (clsPath == null)
+            classificationCodes = "No classification file was found, so no " + clsCodeLabel + " can be proposed for "
+                + categoryName + " - looked for " + string.Join(", ", clsTried) + ". Revit reads the office's own file "
+                + "from the first of those paths.";
+        else if (clsProblem != null)
+            classificationCodes = "No " + clsCodeLabel + " can be proposed: " + clsProblem + ".";
+        else
+        {
+            var clsMine = clsRows.Where(r => clsFiledUnder(r, category.Id)).ToList();
+            if (clsMine.Count > 0)
+                classificationCodes = string.Join(" || ", clsMine.Select(r => r.Item1 + " " + r.Item2))
+                    + "  (" + clsMine.Count + " code(s) the classification file gives " + categoryName + ", read from "
+                    + clsPath + ")";
+            else if (clsSample)
+                classificationCodes = "The classification file at " + clsPath + " is the SAMPLE Revit 2026 and later "
+                    + "ship - a few example codes filed under no category - so out of the box no code is valid for "
+                    + categoryName + " or any other category. The office's own classification file goes at that path.";
+            else
+                classificationCodes = "The classification file " + clsPath + " gives " + categoryName + " no code at all "
+                    + "- of its " + clsRows.Count + " code(s), none is filed under that category - so none can be "
+                    + "proposed.";
+        }
+    }
 
     // -----------------------------------------------------------------------
     // THE REFERENCE PLANES: name, the axis it faces, where it sits along it,
@@ -427,4 +599,8 @@ else
     if (types == 0)
         findings.Add("The family has no type yet. A formula, and any value, needs one - SET_FAMILY_TYPE_VALUES "
             + "makes the first.");
+    if (clsCodeRow != null)
+        findings.Add(clsCodeLabel + " reads " + (clsCurrent.Length == 0 ? "(blank)" : clsCurrent) + ". The codes the "
+            + "classification file gives " + categoryName + " are in classificationCodes; SET_FAMILY_SETTINGS \""
+            + clsCodeLabel + "=<code>\" sets one of them.");
 }

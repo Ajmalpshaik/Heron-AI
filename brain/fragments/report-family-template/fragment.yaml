@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-037
-semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or face based, line based, adaptive, pattern based, profile, detail or annotation - and what its template already holds"
+semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or face based, line based, adaptive, pattern based, profile, detail or annotation - what its template already holds, and its OmniClass Number and the codes that fit its category"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TEMPLATE
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -41,6 +41,13 @@ purpose: >
 
   It reads only; nothing is changed.
 
+  **VERSION 2 (2026-10-11): THE OMNICLASS NUMBER AND TITLE** join the settings
+  (Classification Number and Title from Revit 2026), and it lists the codes
+  the classification file gives this family's category - what a family build
+  proposes the code from - or says why there are none. Version 1's proof no
+  longer describes the code and is kept below as a record; the fragment is
+  DRAFT until it is proved again.
+
 contract:
   needs:
     - name: doc
@@ -71,6 +78,15 @@ contract:
       # Every reference line, and every line drawn through points, on ONE line:
       # its id, the points it runs through by placement number, its length. The
       # ids a form on lines is built from.
+      role: result
+      type: string
+    - name: classificationCodes
+      # VERSION 2. The codes the classification file gives THIS family's
+      # category, on ONE line - "23.65.55.14.14 Isolation Valves for Liquid
+      # Services || ..." - then how many and the path read; a list would reach
+      # the reply cut to three. Where there are none, why, in words: no file
+      # (every path tried), the file holds no code for the category, or the
+      # sample Revit 2026 and later ship. Empty in a project.
       role: result
       type: string
     - name: notAFamily
@@ -132,6 +148,32 @@ compatibility-note: >
   off, and whether `IsCurtainPanelFamily` reads true for a classic curtain wall
   panel, and for a Generic Model Pattern Based family as well as a Curtain
   Panel Pattern Based one, are Revit's - recorded in NEEDS-CHECKING BV1.
+  VERSION 2, THE OMNICLASS NUMBER (read 2026-10-11 with `tools/api-surface
+  --members BuiltInParameter` over the 2020 to 2027 reference assemblies):
+  `OMNICLASS_CODE` (-1002502) and `OMNICLASS_DESCRIPTION` (-1002503) on 2020
+  to 2025 were RENAMED `CLASSIFICATION_CODE` and `CLASSIFICATION_DESCRIPTION`
+  at 2026, same numbers, old names gone (tools/api-surface/changes.json). So
+  the name the running Revit has is found at run time with `Enum.IsDefined`
+  and `Enum.Parse` - one implementation, no #if - and shown with
+  `LabelUtils.GetLabelFor(BuiltInParameter)`, 2020-2027: "OmniClass Number"
+  and "OmniClass Title" up to 2025, "Classification Number" and
+  "Classification Title" from 2026. The classification file is a plain file
+  no API reads: only the per-user copy Revit itself reads, at
+  `Application.CurrentUsersDataFolderPath` (2020-2027),
+  "OmniClassTaxonomy.txt" to 2025 and "Classification_Taxonomy.txt" from
+  2026, the one matching the parameter's name first. Revit refills that copy
+  from its cache under ProgramData at start-up; the cache is not read here,
+  because only HeronPaths may resolve a Windows special folder
+  (tools/check-structure.py, docs/06 section 2). Rows are TAB separated - code, title, level,
+  BuiltInCategory, the last possibly empty - and '#' lines are comments. The
+  2020 to 2025 file holds Windows-1252 bytes and some titles end in a
+  non-breaking space, so it is decoded strict UTF-8, then 1252, then Latin-1
+  (28591, present on .NET 8 and 10 without a code-page provider), and every
+  char.IsWhiteSpace character is trimmed. Revit 2026 and 2027 ship only a
+  sample file filed under no category, and the answer says so. The category
+  column is compared as `new ElementId(BuiltInCategory)` with
+  `Family.FamilyCategory.Id` after `Enum.IsDefined` - never an ElementId read
+  as a number, and not `Category.BuiltInCategory`, which is 2023 and later.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -140,6 +182,14 @@ compatibility-note: >
 #   "what reference planes does this family template have" -> here
 #   "what parameters does this family have"       -> REPORT_FAMILY_PARAMETERS
 #   "what forms are in this family"               -> REPORT_FAMILY_FORMS
+#   "what is the omniclass number of this family" -> here (version 2)
+#   "which omniclass codes fit this family"       -> here - the file's codes
+#                                                    for its category
+#   "set the omniclass number of this family"     -> SET_FAMILY_SETTINGS - the
+#                                                    WRITE; this only reads
+#   "which families have no omniclass number"     -> CHECK_FAMILY_STANDARDS -
+#                                                    a verdict per type, in a
+#                                                    project or a family
 
 utterances:
   - what kind of family is this
@@ -147,3 +197,5 @@ utterances:
   - which template was this family made from
   - what reference planes does this family template have
   - is this family line based or hosted
+  - what is the omniclass number of this family
+  - which omniclass codes fit this family

@@ -71,6 +71,10 @@ compatibility-note: >
 #   "check the families are named to our standard" -> CHECK_FAMILY_STANDARDS
 #                                        - about how they are BUILT; this one
 #                                          is about whether they are used
+#   "which families have no omniclass number" -> CHECK_FAMILY_STANDARDS
+#                                        - version 3 audits the classification;
+#                                          this answered it until 2026-10-11
+#                                          and is about USAGE
 utterances:
   - which families are unused
   - purge unused

@@ -40,7 +40,10 @@ contract:
       type: Document
     # The forms, by the ids the form tools gave back with commas between - or
     # kinds and sides: "all", "void", "solid, revolve", "swept blend",
-    # "freeform".
+    # "freeform". To DELETE them, what this picks goes on to DELETE_ELEMENTS
+    # through revit_change with expect_from="select-family-forms where
+    # forms=<the same ids>", once the modeller has said yes to that delete
+    # (Article 7) - the method delete-by-id has the steps.
     - name: forms
       type: string
       source: request
@@ -103,3 +106,8 @@ utterances:
   - select the forms with these ids
   - select the void forms
   - get the forms with these ids
+  # The owner's session's words, 2026-10-09 (5b-399). Declared so they reach
+  # this first step on every search backend: the laptop's re-ranker sent them
+  # to REMOVE_FAMILY_CONNECTOR, a write. The delete is DELETE_ELEMENTS after
+  # it - the method delete-by-id.
+  - delete one form from the family by its id

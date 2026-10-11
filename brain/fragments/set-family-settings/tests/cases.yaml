@@ -35,6 +35,33 @@ positive:
       both read back by their enum names in the report; Family Category and
       Parameters shows Precast Concrete and the section shape - LOOKED AT (BV23)
 
+  # VERSION 2 - the OmniClass Number. Revit 2024, whose per-user
+  # OmniClassTaxonomy.txt files 21 codes under Pipe Accessories.
+  - given: >
+      a new family from the metric Pipe Accessory template, OmniClass Number
+      blank; settings "OmniClass Number=23.65.55.14.14"
+    expect: >
+      changed 1; settingReport "OmniClass Number (blank) -> 23.65.55.14.14
+      Isolation Valves for Liquid Services - " and WHICH title outcome it
+      reports (Revit filled OmniClass Title / it was written from the file /
+      Revit holds it read-only) - the first time this is known; a finding
+      naming the classification file read; Family Category and Parameters
+      showing the number AND the title - LOOKED AT
+
+  - given: the same call again
+    expect: changed 0, alreadySet 1, nothing written to the number or the title
+
+  - given: settings "OmniClass Number=clear" after the code above is set
+    expect: >
+      changed 1; the number reads blank, read back; the title cleared, or
+      the report saying Revit holds it read-only and what it reads
+
+  - given: settings "OmniClass Number=" (an empty value) with the code set again
+    expect: >
+      the same clear as "clear" - the case that settles whether an empty value
+      reaches the fragment as "" (NamedValues keeps it, by reading) or is lost
+      on the way
+
 negative:
   - given: settings "Work Plane-Based=maybe"
     expect: refused - neither yes nor no - and nothing changed
@@ -51,7 +78,44 @@ negative:
   - given: settings "Material for Model Behavior=Granite"
     expect: refused naming the materials Revit has - nothing changed
 
+  # VERSION 2
+  - given: >
+      the Pipe Accessory family above; settings "OmniClass Number=23.99.99.99",
+      a code that is not in the file
+    expect: >
+      refused - "not a code in the classification file", the path named - and
+      the refusal listing the file's 21 Pipe Accessories codes as "code
+      Title", 23.65.55.14.14 Isolation Valves for Liquid Services among them;
+      no nearby code picked; the number unchanged
+
+  - given: >
+      the same Pipe Accessory family; settings "OmniClass Number=23.30.10.00",
+      which the 2024 file files under Doors
+    expect: >
+      refused naming Doors and the Pipe Accessories codes; nothing changed.
+      THE D-30 NEGATIVE: a real code, correctly typed, for another category,
+      must not be written
+
+  - given: a project in front; settings "OmniClass Number=23.65.55.14.14"
+    expect: >
+      notAFamily true, nothing changed, and the refusal saying the number is
+      set in the family - OPEN_FAMILY_FOR_EDITING, set it there, LOAD_FAMILY
+      back, a reload that needs the modeller's word (Article 7)
+
+  - given: >
+      Revit 2026 or 2027 with the classification file it ships (a sample filed
+      under no category); a Pipe Accessory family; settings "Classification
+      Number=23.65.55.14.14"
+    expect: >
+      refused - not in the file - and the refusal saying the file is the
+      sample, that no code is valid for any category out of the box, and the
+      path the office's own file goes at
+
 second_route:
   - >
       Family Category and Parameters in the Family Editor: the Work Plane-Based,
       Shared and Always Vertical boxes read as the answer says
+  - >
+      Family Category and Parameters: the OmniClass Number and OmniClass Title
+      rows (Classification Number and Title from 2026), and the dialog behind
+      the number's button listing the same codes for the category

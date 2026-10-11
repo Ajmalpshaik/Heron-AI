@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-QA-021
-semantic-identity: "audit the family library against the office standard, or check the mep family open in the family editor joins its run and follows its pipe size"
+semantic-identity: "audit the family library against the office standard and its OmniClass, Assembly Code and Keynote classification, or check the mep family open in the family editor joins its run and follows its pipe size"
 kind: filter
 domain: revit.qa
 capability: CHECK_FAMILY_STANDARDS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -83,6 +83,13 @@ purpose: >
   Version 1's proof no longer describes the code and is kept below as a record;
   the fragment is DRAFT until it is proved again (NEEDS-CHECKING Group CB).
 
+  **VERSION 3 (2026-10-11): CLASSIFICATION, IN BOTH DOCUMENTS.** The OmniClass
+  Number against the classification file - not in it, or filed under another
+  category or none, is wrong; blank is a WARN in a family and only counted in
+  a project unless `requiredParameters` names it - and each type's Assembly
+  Code and Keynote against the document's tables, a missing table NOT
+  CHECKED. A project's counts come back on one line, `classificationReport`.
+
 # IN A PROJECT, A REQUIRED NAME THE TYPE CARRIES TWICE IS A WARN, NOT A PASS -
 # counted by name, never looked up, and counted in `warned` (D-54 s3,
 # FRAGMENT-ISSUES 5b-203; added 2026-10-09, see that provide) - the WARN the
@@ -128,6 +135,16 @@ contract:
       # never a thing it did (D-52).
       role: accounting
       type: int
+    - name: classificationReport
+      # VERSION 3, ONE line. In a project: the OmniClass Number counts - blank,
+      # not in the classification file, filed under another category, filed
+      # under no category, not checked, not judged - then Assembly Code (not in
+      # the table, another category's entry, not checked) and Keynote (not in
+      # the keynote table, not checked), each naming up to the first ten family
+      # types, and the classification file read. In a family document: the
+      # classification lines of familyReport, and the file read.
+      role: result
+      type: string
       
 proof:
   date: '2026-09-13'
@@ -168,6 +185,37 @@ compatibility-note: >
   The name test is a plain substring match rather than a regular expression, so
   it behaves the same on .NET Framework and .NET 10 and needs no escaping of
   whatever the office convention contains.
+  VERSION 3, CLASSIFICATION (read 2026-10-11 with `tools/api-surface
+  --members` over the 2020 to 2027 reference assemblies): the built-in
+  parameters were RENAMED at 2026 with their numbers kept - `OMNICLASS_CODE`
+  (-1002502) and `UNIFORMAT_CODE` (-1002500) on 2020 to 2025 are
+  `CLASSIFICATION_CODE` and `ASSEMBLY_CODE` on 2026 and 2027, the old names
+  gone (tools/api-surface/changes.json) - so the name the running Revit has is
+  found with `Enum.IsDefined` and `Enum.Parse`, one implementation and no #if,
+  and shown with `LabelUtils.GetLabelFor(BuiltInParameter)`; `KEYNOTE_PARAM`
+  (-1140422) is the same on every release. `AssemblyCodeTable.GetAssemblyCodeTable`,
+  `KeynoteTable.GetKeynoteTable`, `KeyBasedTreeEntryTable.GetKeyBasedTreeEntries`,
+  `KeyBasedTreeEntry.Key`, `ClassificationEntry.CategoryId`, `Description` and
+  `HasBadCategoryId`, `FamilyManager.get_Parameter(BuiltInParameter)` and
+  `FamilyType.AsString` are all 2020-2027. The classification file is a plain
+  file no API reads: only the per-user copy Revit itself reads, at
+  `Application.CurrentUsersDataFolderPath`, "OmniClassTaxonomy.txt" to 2025,
+  "Classification_Taxonomy.txt" from 2026, the one matching the parameter's
+  name first. Revit refills that copy from its cache under ProgramData at
+  start-up; the cache is not read here, because only HeronPaths may resolve
+  a Windows special folder (tools/check-structure.py, docs/06 section 2). Its 2020 to 2025
+  copy holds Windows-1252 bytes, so it is decoded strict UTF-8, then 1252,
+  then Latin-1 (28591), which .NET 8 and 10 have without a code-page
+  provider; titles are trimmed of every char.IsWhiteSpace character. Revit
+  2026 and 2027 ship only a sample filed under no category, and with it
+  nothing is judged. Its category column is compared as `new
+  ElementId(BuiltInCategory)` with the family's category id after
+  `Enum.IsDefined` - never an ElementId read as a number, and not
+  `Category.BuiltInCategory`, which is 2023 and later; a category is named
+  with `Category.GetCategory`, else `LabelUtils.GetLabelFor(BuiltInCategory)`.
+  Whether a loaded family's TYPE exposes the OmniClass Number, and whether a
+  family document holds an Assembly Code table, are Revit's - an empty read
+  is NOT CHECKED, never blank (NEEDS-CHECKING).
 
 # ROUTING - repeated in RENAME_FAMILY, FIND_UNUSED_FAMILIES and
 # READ_ELEMENT_PARAMETERS.
@@ -204,6 +252,21 @@ compatibility-note: >
 #   "make this family work plane based", "set the part type"
 #                                        -> SET_FAMILY_SETTINGS - the WRITE that
 #                                           fixes what this reports
+#   "which families have no omniclass number"
+#                                        -> here (v3) - FIND_UNUSED_FAMILIES
+#                                           answered it until 2026-10-11, and
+#                                           that is about USAGE, not about
+#                                           what a family is classified as
+#   "check the omniclass numbers of the families" -> here (v3)
+#   "check the assembly codes"           -> here (v3)
+#   "what is the omniclass number of this family", "which omniclass codes
+#   fit this family"                     -> REPORT_FAMILY_TEMPLATE - the value
+#                                           and the file's codes, no verdict
+#   "set the omniclass number of this family"
+#                                        -> SET_FAMILY_SETTINGS - the WRITE
+#   "set the assembly code", "set the keynote"
+#                                        -> SET_FAMILY_TYPE_VALUES - per type,
+#                                           as text
 
 utterances:
   - check the families are named to our standard
@@ -215,3 +278,6 @@ utterances:
   - will this valve family connect to a pipe
   - why does this valve not follow the pipe size
   - check this mep family will connect and follow its size
+  - which families have no omniclass number
+  - check the omniclass numbers of the families
+  - check the assembly codes

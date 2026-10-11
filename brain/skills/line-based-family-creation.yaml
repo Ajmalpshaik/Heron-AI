@@ -26,6 +26,13 @@ purpose: >
      sizes change between types, and every part that repeats along the
      length (brackets, posts, slots) with its spacing. The length is never
      asked for as a type size: it is the placed copy's own.
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   2. The section's parameters and values first (ADD_FAMILY_PARAMETERS,
      SET_FAMILY_TYPE_VALUES); a count that follows the length is an Integer
      with a FORMULA (SET_FAMILY_FORMULA) - "Bracket Count =

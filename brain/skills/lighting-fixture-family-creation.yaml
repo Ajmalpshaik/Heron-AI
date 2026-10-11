@@ -23,6 +23,13 @@ purpose: >
      wall-based, and Lighting Fixtures as its category. A fixture that must
      sit on faces in a LINKED model is a face-based Generic Model changed to
      Lighting Fixtures with SET_FAMILY_CATEGORY.
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   1. READ THE THING: the body's sizes, the light's shape (a point for a
      downlight, a line for a linear fitting, a rectangle for a panel), its
      lumens and colour temperature from the datasheet, and an IES file if the
