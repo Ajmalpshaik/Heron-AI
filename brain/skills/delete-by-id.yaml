@@ -1,0 +1,75 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: delete-by-id
+name: Delete by id the solids and voids just modelled
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Takes one or more forms out of the family open in the Family Editor - a
+  void no longer wanted, an extrusion built in the wrong place - by the ids
+  the form tools gave back. Two capabilities do it, in this order, and the
+  second DELETES:
+
+  0. REPORT_FAMILY_FORMS - the forms the family holds now, with their ids.
+     Its count is the read-back for step 3.
+  1. SELECT_FAMILY_FORMS through revit_read, forms= the ids with commas
+     between. It reads only. One id that is not a form of this family
+     refuses the whole call, so the delete after it never reaches part of a
+     list.
+  2. ASK THE MODELLER FIRST, naming the forms: deleting needs a yes for that
+     one operation (Constitution Article 7). Then DELETE_ELEMENTS through
+     revit_change with expect_from="select-family-forms where forms=<the
+     same ids>" - it acts on what step 1 picked, never on what happens to be
+     selected in the window, and it reports what Revit really removed: a
+     form's sketch goes with it.
+  3. REPORT_FAMILY_FORMS again - fewer forms by the number named, and none
+     of their ids left. One Undo puts them back.
+
+  NEVER DELETE_ELEMENTS WITHOUT THE expect_from. With nothing carried it
+  deletes whatever is selected in the window, which may be anything.
+
+# The words a modeller says when a form has to go. The owner's session's
+# own - "delete one form from the family by its id" (FRAGMENT-ISSUES 5b-399)
+# - is declared on SELECT_FAMILY_FORMS, the first step. These and the name
+# keep off "form" and "family" on purpose: a lookup names a method by the
+# words it shares with the request, and with them every question about a
+# family's forms - "how many forms are in this family" - was offered this
+# delete (measured 2026-10-11, both search backends).
+utterances:
+  - delete this void by its id
+  - remove the solid with this id
+  - delete the ones with these ids
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+# REPORT_FAMILY_FORMS, the read-back in steps 0 and 3, is left off on
+# purpose, for the same reason as the words above: a lookup names a method
+# whose needs hold one of its answers.
+needs:
+  - SELECT_FAMILY_FORMS
+  - DELETE_ELEMENTS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - the family is open in the Family Editor, and the forms' ids are known - from the form tools' answers or REPORT_FAMILY_FORMS
+  - the modeller has said yes to deleting these forms, by name, for this one operation
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Built 2026-10-11 for FRAGMENT-ISSUES 5b-399: asked to delete a form by its
+  id, heron_lookup named only SELECT_FAMILY_FORMS, its answer never named
+  DELETE_ELEMENTS, and the modeller deleted the void by hand. The chain
+  already worked - NEEDS-CHECKING CW7 ran it on 2026-10-08 - and nothing a
+  lookup printed led to its second half. A method is what the lookup names
+  beside its answer, so the second step now reaches the caller with the
+  confirmation it needs. No new capability: whether a one-step
+  delete-by-id is wanted instead is the owner's decision.
