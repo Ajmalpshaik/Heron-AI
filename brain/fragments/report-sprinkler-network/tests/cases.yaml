@@ -58,6 +58,16 @@ negative:
   - given: a model with no fire protection system
     expect: systems empty, system null, elements empty, a finding says so
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      an elbow of the wet system whose family carries two parameters named
+      Angle - a shared "Angle" bound to Pipe Fittings beside the family's own
+    expect: >
+      its angle_deg is null, as for a family with none - never either value -
+      one finding names it and says two parameters share the name, and qa()
+      calls it "elbow, angle not read" (row 5b-203)
+
 second_route: >
   Revit's own System Browser for the system: the count of pipes, fittings,
   accessories and sprinklers it lists must equal the kinds in elements; and

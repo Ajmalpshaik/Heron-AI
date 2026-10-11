@@ -376,7 +376,7 @@ model the owner names. Where the build had to depart from the plan, the plan say
 | `revit_building_loads` (MCP tool) | Reads the take-off, asks or calculates, opens the Loads panel, tells the chat only the totals | `tests/test_building_loads.py` (through `heron_brain`) | DRAFT |
 | The Companion's Loads panel | Inputs per Space type, results, zone and building totals, the model's checks, Recalculate, Report, Finalize, earlier runs | [`tests/test_companion.py`](../tests/test_companion.py) `test_loads`; the page checked in a browser at desktop width and 375 px | DRAFT |
 | [`brain/heron_loads_report.py`](../brain/heron_loads_report.py) | The load calculation sheet: HTML, CSV, take-off CSV, and a PDF printed by Edge or Chrome when one is on the PC | [`tests/test_loads_report.py`](../tests/test_loads_report.py); a PDF printed by Edge on the owner's PC and read back | DRAFT |
-| Finalize | The three Space fields through the table's own Apply, then the diffusers through `SET_AIR_TERMINAL_FLOW`, then read back. **Two undo entries** until one TransactionGroup spans both writes - [register row 5b-314](fragment-issues/section-5b-rows-176-200.md) | `tests/test_building_loads.py` (the rows and units); `tests/test_companion.py` (the order and the model guard) | DRAFT |
+| Finalize | The three Space fields through the table's own Apply, then the diffusers through `SET_AIR_TERMINAL_FLOW`, then read back. **Two undo entries** until one TransactionGroup spans both writes - [register row 5b-314](fragment-issues/section-5b-rows-301-325.md) | `tests/test_building_loads.py` (the rows and units); `tests/test_companion.py` (the order and the model guard) | DRAFT |
 | [`space-airflow`](../brain/skills/space-airflow.yaml) skill, version 2 | Calculate first, review, then Finalize | `tests/test_skills.py` | DRAFT |
 
 **Two things the real code said, and the plan was changed to match:** the fragment takes `doc` only,
@@ -557,7 +557,7 @@ take-off and pressed **Finalize to Revit**. What it did, read back by hand:
   rounding; the diffusers through REPORT_SPACE_AIRFLOW on each level's Spaces.
 - **READ_SPACE_LOADS could not have read them back anyway** on this model: it reads the design and the
   calculated figures in one guard, and the calculated ones throw until Revit's own loads analysis has
-  run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-176-200.md); Finalize no
+  run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-301-325.md); Finalize no
   longer uses it.
 - **A family finding, not a Heron one:** the office's `TRG_SAD_T202_SupplyAirDiffuser_SquarePlaqueFaceType`
   ties its duct connector's flow to no parameter, so no tool can set its flow from outside - the tool says

@@ -118,6 +118,12 @@ compatibility-note: >
 #                                           a line is not
 #   "hatch this area"                    -> CREATE_FILLED_REGION - a filled
 #                                           region has a boundary AND a fill
+#   "draw a room separation line across an opening"
+#                                        -> CREATE_ROOM_SEPARATION_LINES - a
+#                                           detail or model line drawn here is
+#                                           never read by Revit's room
+#                                           boundary, so it splits no room.
+#                                           Repeated in that fragment
 
 utterances:
   - draw a detail line here

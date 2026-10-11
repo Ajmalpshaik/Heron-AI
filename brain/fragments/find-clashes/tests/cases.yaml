@@ -65,5 +65,16 @@ negative:
       each link's line reads "0 of N element(s) clash" - with N the number of
       ducts, so the zero is visibly a checked zero
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      a duct in this model passing through a linked beam, the beam's type
+      carrying two parameters named Fire Rating - a shared or project one
+      bound to Structural Framing beside another of that name - against EMPTY,
+      includeLinks true
+    expect: >
+      the link's line names the duct and the beam with "Fire Rating NOT READ -
+      2 parameters share that name", never either rating (row 5b-203)
+
 second_route:
   - Revit's own Interference Check, run on the same two selections

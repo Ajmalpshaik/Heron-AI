@@ -66,6 +66,16 @@ negative:
       each Space's face holds only the panels in it, never every panel of the
       wall
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      a Space carrying two parameters named Space Type - a project parameter
+      "Space Type" bound to MEP Spaces beside Revit's own
+    expect: >
+      its space_type is null, as for a Space with none - never either value -
+      and a finding names the Space and says two parameters share the name
+      (row 5b-203)
+
 second_route: >
   Revit's own Space schedule: Area and Volume per Space must equal area_m2 and
   volume_m3 in the take-off; the window count per wall against the plan

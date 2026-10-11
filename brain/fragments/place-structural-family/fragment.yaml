@@ -9,7 +9,7 @@ semantic-identity: "put a structural column or a footing at each of these points
 kind: action
 domain: revit.elements
 capability: PLACE_STRUCTURAL_FAMILY
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -17,6 +17,13 @@ purpose: >
   Places a point-based family at each point as a REAL STRUCTURAL MEMBER - a
   column, a footing - with the structural type the caller asked for, and a
   column's top at the level and offset asked for.
+
+  **VERSION 3: A STRUCTURAL FAMILY GOES IN ONLY AS ITS OWN KIND.** A family in
+  Structural Columns is placed only as a column, one in Structural Framing only
+  as a beam or a brace, one in Structural Foundations only as a footing -
+  anything else is refused, naming what to ask for, and nothing is placed.
+  Revit itself takes a column family asked as a beam and places it (row 128);
+  a family in any other category is left to Revit, as before.
 
   **VERSION 2 GIVES A COLUMN ITS TOP.** Version 1 placed a column on its base
   level and said nothing about where it stopped. `topLevelName` and

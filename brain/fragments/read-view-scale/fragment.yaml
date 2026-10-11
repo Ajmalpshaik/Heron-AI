@@ -1,0 +1,205 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-120
+semantic-identity: "the scale each of these views is drawn at"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# FRAGMENT-ISSUES row 146: "what is the scale of this view" reached
+# SET_VIEW_SCALE, a write, on the trained model and on spelling alike, because
+# SET_VIEW_SCALE was the only capability in the library with SCALE in its name
+# and nothing READ a view's scale. A question about a drawing answered by the
+# tool that changes it. This is the read half of SET_VIEW_SCALE.
+kind: action
+domain: revit.views
+capability: READ_VIEW_SCALE
+version: 1
+source: OFFICIAL
+risk: READ
+
+# HOW IT ANSWERS - kept here rather than in `purpose`, which is searched:
+#
+# **THE SCALE IS WRITTEN 1 : N.** `View.Scale` is the denominator, so the
+# number 100 is printed "1 : 100" and nobody has to remember which way round
+# it goes.
+#
+# **ONE STRING, ROWS JOINED BY "  ||  "**, because a list reaches the chat cut
+# to three entries and the rows are the answer. The same reason as
+# REPORT_PROJECT_UNITS.
+#
+# **"THIS VIEW" IS NAMED BY THE HOST.** `views` takes names, exactly as
+# SET_VIEW_SCALE and REPORT_VIEW_TEMPLATE_CONTROL take theirs, and the binder
+# has no "the active view" for a list of views. Every fragment run's reply
+# carries `activeView`, the view in front, so the host has the name to pass.
+#
+# **A KIND WITH NO SCALE HAS NO VIEW SCALE ROW IN THE PROPERTIES PALETTE** -
+# a sheet, a schedule, a perspective, a walkthrough, a rendering, a report -
+# which is the modeller's own evidence that the number the API hands back for
+# one is not an answer.
+#
+# WHY `purpose` SAYS "RATIO" AND "DRAWN AT", AND HOLDS NO CHANGE VERB.
+# heron_search and heron_embed both read semantic-identity, the utterances,
+# the capability, the domain and `purpose` - never a comment - and both weigh
+# a card by the words in that text. The first draft of this purpose said
+# "scale" and "view" more often than SET_VIEW_SCALE's whole indexed text does,
+# and change requests whose verb neither card holds were answered HERE on
+# ranking (heron_retrieve.find, private stores, 2026-10-09): on spelling "set
+# the view scale", "set view scale", "update the view scale" and "adjust the
+# view scale"; on the trained model "update the view scale" and "set the scale
+# of these views". A READ answering a change request changes nothing, and the
+# modeller who asked for the change does not get it. So the purpose names what
+# it reads by the ratio and by "drawn at", keeps "scale" and "view" scarcer
+# than SET_VIEW_SCALE does, and says none of set, change, update, adjust,
+# modify, edit, alter, apply or make. tests/test_read_view_scale.py holds the
+# verbs out and asks those requests back on whichever backend the machine
+# has; tests/test_routing_phrases.py asks them on the trained model.
+#
+# It also says neither "drawings" nor "printing". A draft that did was third
+# by nearness on the trained model for "the drawing prints heavy", which
+# FIND_OVERLAPPING_LINES (READ) claims in its routing table and wins at base
+# by less than one rank of fusion; one place lower on that route and
+# EXPORT_SHEETS_TO_PDF (PUBLISH) answered it instead (check-routing, private
+# store, 2026-10-09).
+purpose: >
+  Answers what scale a view is drawn at. For each one named it lists its name,
+  its type and the ratio it is drawn at, written 1 : N as the title under it on
+  a sheet shows it, and tells whether that ratio is its own or held by the view
+  template it follows. It only reads: nothing is selected and nothing in the
+  model is touched.
+
+  **NO NUMBER FOR ONE THAT IS NOT DRAWN TO A RATIO.** A sheet, a schedule, a
+  perspective 3D camera, a walkthrough, a rendered image and a report are each
+  named with the reason instead. Revit's own API documentation calls the number
+  a perspective holds meaningless, so giving it would be a confident wrong
+  answer. Plans, ceiling plans, structural and area plans, elevations,
+  sections, details, drafting views, legends, and 3D ones that are not
+  perspective are the kinds that have one; any other kind is named with its
+  type and given none.
+
+  **A RATIO HELD BY A TEMPLATE IS NAMED WITH THAT TEMPLATE**, read off the
+  template's own include list, so two of them following one template are told
+  the same. A template that leaves it free is said so, a template named
+  directly is answered with the ratio it holds, and a list that cannot be read
+  is reported as unknown, never guessed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The views, as the Project Browser names them, several separated by
+    # commas - "1 - Mech, {3D}". Two views sharing a name are written
+    # "FloorPlan: Level 1".
+    - name: views
+      type: IList<View>
+      source: request
+  provides:
+    - name: viewScales
+      # One row per view that HAS a scale: "'1 - Mech' (FloorPlan) 1 : 100 -
+      # held by its view template 'Mechanical Plan'". Empty when none of the
+      # views named is drawn at a scale.
+      role: result
+      type: string
+    - name: scaled
+      # How many of the views named were read with a scale - a count of what
+      # it FOUND.
+      role: result
+      type: int
+    - name: noScale
+      # Views handed in that have no scale - a sheet, a schedule, a
+      # perspective view - each named with its reason in `findings`. The
+      # evidence it looked, never a scale it found (D-52).
+      role: accounting
+      type: int
+    - name: heldByTemplate
+      # How many of the scaled views have that scale held by the view
+      # template they follow. Part of `scaled`, never more of it (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # A summary line, then one line per view with no scale and why, and
+      # any template whose include list could not be read.
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.Scale` (int, get and set),
+  `View.ViewType`, `View.IsTemplate`, `View.ViewTemplateId`,
+  `View.GetTemplateParameterIds`, `View.GetNonControlledTemplateParameterIds`,
+  `View3D.IsPerspective`, `Element.Name`, `Element.IsValidObject`,
+  `Element.get_Parameter(BuiltInParameter)`, `Parameter.Id` and
+  `ElementId.InvalidElementId` are present with the same signature 2020
+  through 2027, as are the `BuiltInParameter` values VIEW_SCALE,
+  VIEW_SCALE_PULLDOWN_METRIC and VIEW_SCALE_PULLDOWN_IMPERIAL - read off the
+  reference assemblies for every release with tools/api-surface --members on
+  2026-10-09, not remembered. Revit's own documentation of `View.Scale` says
+  it is "meaningless for perspective views" in identical words on all eight.
+
+  **THE KINDS OF VIEW ARE AN ALLOW LIST, AND THAT IS FORCED.** `ViewType`
+  value 121 is `PresureLossReport` on 2020 to 2026 and `PressureLossReport`
+  on 2027, so a list of the kinds WITHOUT a scale cannot name it on every
+  release. Every `ViewType` value named here is present and identically
+  spelt on all eight; a kind not named - that one, or one a later release
+  adds - is reported as having no scale, by its type, never as a number.
+
+  **WHICH PARAMETER A TEMPLATE'S INCLUDE LIST CARRIES FOR VIEW SCALE IS NOT
+  DOCUMENTED**, so the view's own VIEW_SCALE_PULLDOWN_METRIC,
+  VIEW_SCALE_PULLDOWN_IMPERIAL and VIEW_SCALE parameters are each compared
+  against it, ElementId to ElementId - no id is ever read as a number. Which
+  one Revit actually lists is a thing the proof records, not this card.
+
+  **2027 ADDS TWO MORE, AND THIS DOES NOT COMPARE THEM - NEEDS REAL REVIT.**
+  The 2027 reference assembly alone carries `BuiltInParameter`
+  VIEW_SCALE_METRIC (-1005146) and VIEW_SCALE_IMPERIAL (-1005145), each
+  documented in its RevitAPI.xml only as "Scale:"; 2020 to 2026 have neither
+  (tools/api-surface --members BuiltInParameter over the eight NuGet
+  reference assemblies, 2026-10-09). Naming either here would not compile
+  before 2027. If a 2027 template's include list carries one of them for View
+  Scale and none of the three above, a view following that template is
+  reported "whether that template holds View Scale could not be read" - an
+  honest unknown, never a wrong "its own". Which id each release lists is
+  NEEDS REAL REVIT, and on 2027 the proof must read it.
+
+# ROUTING. A sentence that crossed to another card before this one existed is
+# written in that card too: "what is the scale of this view" and "set this
+# view to 1:50" in SET_VIEW_SCALE, and "what scale is this plan at" in
+# SET_VIEW_SCALE, CREATE_CALLOUT and REPORT_VIEW_TEMPLATE_CONTROL. The other
+# rows below are written here only.
+#
+#   "what is the scale of this view"    -> here
+#   "what scale is this plan at"        -> here
+#   "what scale are these views at"     -> here
+#   "set this view to 1:50"             -> SET_VIEW_SCALE. A change, and this
+#                                          reads; a question never reaches
+#                                          that write (D-86)
+#   "set the scale of this view"        -> SET_VIEW_SCALE
+#   "make all these views the same scale" -> SET_VIEW_SCALE
+#   "set the view scale"                -> SET_VIEW_SCALE. This row and the
+#   "set view scale"                    -> SET_VIEW_SCALE  four below it were
+#   "update the view scale"             -> SET_VIEW_SCALE  answered HERE by the
+#   "adjust the view scale"             -> SET_VIEW_SCALE  first draft of this
+#   "set the scale of these views"      -> SET_VIEW_SCALE  card's purpose; see
+#                                          WHY `purpose` SAYS "RATIO" above
+#   "what scale is this view"           -> SET_VIEW_SCALE TODAY, by identity:
+#                                          that PROVEN card declares it, and
+#                                          moving it here is the owner's call
+#                                          (rows 146 and 158). It belongs here
+#   "why is the scale greyed out"       -> REPORT_VIEW_TEMPLATE_CONTROL - it
+#                                          names everything the template holds.
+#                                          This says only whether the scale is
+#                                          among it
+#   "what views are on this sheet"      -> NOT here. A sheet has no scale of
+#                                          its own; the views placed on it do,
+#                                          and those are asked about by name
+#   "make a callout of this plan"       -> CREATE_CALLOUT
+
+utterances:
+  - what is the scale of this view
+  - what scale is this plan at
+  - what scale are these views at
+  - what scale is this drawing

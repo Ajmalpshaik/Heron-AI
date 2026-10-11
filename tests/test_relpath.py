@@ -328,11 +328,17 @@ def run(far):
         # THE BUILDS ARE STOOD IN FOR, AND NOTHING AFTER THEM. What is under
         # test is the tail of main() - the checksums and the line naming the
         # folder - and a real build of every product costs most of an hour.
+        #
+        # THE INSTALLERS ARE BUILDS TOO, since row 5b-371. Left real, they
+        # ran a self-contained `dotnet publish` of both on any machine with
+        # an SDK - CI's included - and the one-argument workspace stand-in
+        # then raised on the folder they were handed.
         bra.build = lambda product, release: None
+        bra.build_installers = lambda stage_dir: []
         bra.pack = lambda product, release, out_dir: stand_in(
             os.path.join(out_dir, bra.asset_name(product, release)),
             b"a built add-in")
-        bra.workspace = lambda out_dir: stand_in(
+        bra.workspace = lambda out_dir, installers_dir=None: stand_in(
             os.path.join(out_dir, bra.WORKSPACE_NAME), b"the workspace")
         which = shutil.which
         shutil.which = lambda name, *a, **k: (

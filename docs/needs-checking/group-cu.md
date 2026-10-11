@@ -10,7 +10,7 @@
 Asked by the owner on 2026-10-07: a compression spring for vibration isolators, built the way ThomRVT's
 video *How to create Spring Revit Family (Parametric)* builds it - each half-turn of the coil one swept
 blend, a one-turn family nested in the main one and arrayed up, ground end turns whose profile is a half
-circle - with few clear parameters ([row 5b-366](../fragment-issues/section-5b-rows-176-200.md)). Three
+circle - with few clear parameters ([row 5b-366](../fragment-issues/section-5b-rows-351-375.md)). Three
 PROVEN fragments were widened rather than three new ones made; each was proved again on a scratch family
 and signed by Ajmal PS on 2026-10-07 (CU7), so each is PROVEN at its new version:
 
