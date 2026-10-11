@@ -311,9 +311,16 @@ else
         if (loop != null) loops.Add(loop);
     }
 
-    if (Math.Abs(endMm - startMm) * 1.0 < shortest)
-        problems.Add("The extrusion starts at " + plain(startMm) + " mm and ends at " + plain(endMm) + " mm - it "
-            + "needs a depth.");
+    // THE LEAST DEPTH IS REVIT'S SHORTEST LINE: an extrusion's side edges run
+    // from start to end. Said with the depth asked for and the least one,
+    // rounded UP so the number given back is one that builds - a refusal that
+    // only said "it needs a depth" told a modeller who had asked for 0.5 mm to
+    // add one (5b-400).
+    var depth = Math.Abs(endMm - startMm);
+    if (depth < shortest)
+        problems.Add("The extrusion starts at " + plain(startMm) + " mm and ends at " + plain(endMm) + " mm, "
+            + plain(depth) + " mm deep - less than Revit's shortest line, so it cannot be built. Make it at least "
+            + (Math.Ceiling(shortest * 100.0) / 100.0).ToString(invariant) + " mm deep.");
 
     if (problems.Count > 0) refused = "Nothing was built. " + string.Join(" ", problems);
 }

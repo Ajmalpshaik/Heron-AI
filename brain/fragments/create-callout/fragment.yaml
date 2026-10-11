@@ -100,6 +100,12 @@ compatibility-note: >
 #   "create a section through this" -> CREATE_SECTION_VIEW
 #   "which view does this callout open"  -> REPORT_VIEW_REFERENCES. This one
 #                                           makes a new callout
+#   "what scale is this plan at"         -> READ_VIEW_SCALE, which declares
+#                                           it. It reached HERE on the trained
+#                                           model before that READ existed
+#                                           (FRAGMENT-ISSUES row 146,
+#                                           2026-10-09) - a question answered
+#                                           by making a view
 
 utterances:
   - create a callout

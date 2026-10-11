@@ -73,9 +73,14 @@ contract:
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # "did this come back empty" (D-52). Empty (null) when nothing was
+      # refused. ONE STRING, because a list reaches the reply cut to sixty
+      # characters an item, and every refusal here is a sentence or more -
+      # what went wrong, that NOTHING WAS CREATED or that the circuit is
+      # UNASSIGNED, and why. At most one can be set in a run: each ends its
+      # own branch.
       role: accounting
-      type: IList<string>
+      type: string
     - name: findings
       type: IList<string>
 

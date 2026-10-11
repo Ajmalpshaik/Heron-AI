@@ -16,7 +16,7 @@ Model: "heron ai bulding", Revit 2024 (session 27288), the owner's L-shaped 14-o
 - **The owner's Duct Sizing broke Heron's supply run.** The `duct-layout` skill drew a 700 mm piece of
   850x195 duct out of each fan coil unit for the transition to sit in, leaving a 36 mm stub. Revit's Duct
   Sizing resized the stub, deleted the main carrying both taps and left two diffusers of three on open
-  ends - read back before and after with `REPORT_CONNECTORS`. **Fixed in PR #354** ([row 5b-250](../fragment-issues/section-5b-rows-176-200.md),
+  ends - read back before and after with `REPORT_CONNECTORS`. **Fixed in PR #354** ([row 5b-250](../fragment-issues/section-5b-rows-226-250.md),
   proof owed as [AL7](../needs-checking/group-al.md)): `FIT_MEP_JOINTS` version 2 builds the transition
   straight onto the outlet, and the skill draws the main from the outlet at the main's size. On the
   owner's word every duct in the model was removed and all 14 offices redrawn this way;

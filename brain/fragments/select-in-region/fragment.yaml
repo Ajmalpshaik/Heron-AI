@@ -14,9 +14,17 @@ source: OFFICIAL
 risk: READ
 
 purpose: >
-  Narrows the model to the elements inside a rectangular volume given by two
-  corners - the "what is in this area" question when there is no room to filter
-  by, or the area crosses several rooms, or it is outdoors.
+  Narrows the model to the elements that TOUCH a rectangular volume given by
+  two corners - inside it or crossing its edge - the "what is in this area"
+  question when there is no room to filter by, or the area crosses several
+  rooms, or it is outdoors.
+
+  **TOUCHING, NOT CONTAINED.** Both tests are intersect tests, so an element
+  only partly in the box counts. A box just bigger than an element proves it
+  touches the box, never that it sits inside it: to measure a gap, use two
+  strips, one stopping short that returns nothing and one reaching past that
+  returns it (row 5b-193 - a 602 mm box around a 600 mm diffuser was once read
+  as "centred within 1 mm").
 
   **Two tests, one fragment, and the caller says which.** The fast test asks
   whether an element's BOUNDING BOX overlaps the volume. The exact test asks

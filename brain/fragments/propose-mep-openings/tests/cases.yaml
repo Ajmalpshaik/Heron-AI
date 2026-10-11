@@ -93,6 +93,19 @@ negative:
       no line for that pipe - the test is the centre line through the solid,
       not the two boxes touching
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      pipes in this MEP model crossing a wall of the architectural link whose
+      type carries two parameters named Fire Rating - a shared "Fire Rating"
+      bound to Walls beside the built-in one - hosts EMPTY, allowanceMm 25,
+      includeLinks true
+    expect: >
+      each crossing proposed in `linkedMatches` with "Fire Rating NOT READ - 2
+      parameters share that name", never either rating - fire-stopping chosen
+      from a rating Revit picked at random is what this case guards (row
+      5b-203)
+
 second_route:
   - >
     FIND_CLASHES over the same services and hosts. Every proposal here should

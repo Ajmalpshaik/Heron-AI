@@ -63,5 +63,18 @@ negative:
       every device counted "with no ceiling above", and the summary naming
       that view - the proof that a hidden link is not silently read as clear
 
+  # Row 5b-203, added 2026-10-09. NOT RUN - it needs a model that carries a
+  # duplicated name, and none has been arranged yet.
+  - given: >
+      air terminals in this MEP model under a ceiling that is only in the
+      architectural link, its type carrying two parameters named Fire Rating -
+      a shared or project one bound to Ceilings beside another of that name -
+      tolerance 5, includeLinks true
+    expect: >
+      each terminal's line in `linkedMatches` names the linked ceiling with
+      "Fire Rating NOT READ - 2 parameters share that name", never either
+      rating, and `outOfPlane` and `noCeilingAbove` are unchanged from the
+      host-only run (row 5b-203)
+
 second_route:
   - Cut a section through one reported device and dimension from it to the ceiling

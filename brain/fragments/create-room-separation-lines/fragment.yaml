@@ -1,0 +1,147 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-059
+semantic-identity: "draw a room separation line across this opening"
+kind: action
+domain: revit.rooms
+capability: CREATE_ROOM_SEPARATION_LINES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws room separation lines - or space separation lines, when asked - along
+  a run of points in one plan view. The line Revit's own Room Separator draws:
+  it bounds a room where there is no wall, so a kitchen and a living room
+  joined by an open archway become two rooms instead of one.
+
+  **NOTHING COULD DRAW ONE BEFORE THIS.** Found 2026-10-02 drawing a
+  shop-and-flat plan in Project2 (Revit 2024): the kitchen and the living room
+  were joined by a 900 mm opening, PLACE_ROOM_AT_POINT made one room of both
+  because nothing bounded the gap, and no fragment called the API that makes a
+  separation line (FRAGMENT-ISSUES row 5b-289). A plain line from CREATE_LINE
+  does not bound a room - it is a drawing or reference line, a different
+  category Revit's room boundary never reads.
+
+  **ROOM OR SPACE IS THE CALLER'S WORD, AND NOT SAID MEANS ROOM.** A room
+  separation line bounds rooms and a space separation line bounds MEP spaces,
+  and neither bounds the other: a kitchen split for the architect is still one
+  space for the heating load. `asSpace` true draws the space kind. The two look
+  alike on a plan, so every line made is read back and its category reported.
+
+  **A RUN OF POINTS, like CREATE_WALL.** Consecutive points make the lines:
+  two points is one line across an opening, and a run whose last point repeats
+  the first is a closed loop. Points are millimetres when typed; Heron
+  converts them to internal feet at the boundary (D-67), so no length is
+  converted a second time.
+
+  **THE LINES LIE ON THE VIEW'S OWN LEVEL.** Only the plan position of each
+  point is used. The height is the plane of the level the plan belongs to, read
+  off the sketch plane Revit makes on that level rather than worked out by
+  hand - where levels are measured to a survey datum, a level's two heights
+  differ (ProjectElevation is the one the API draws at), and the wrong one puts
+  the lines where no room is.
+
+  **REFUSED, WITH THE REASON, RATHER THAN THROWN:** a family document (a
+  family has no rooms to bound), a view template, a view with no level of its own
+  (a section, a 3D view, a sheet), and fewer than two points. A
+  pair closer together than Revit's own shortest line is counted in `tooShort`
+  and the rest of the run is still drawn; a pair Revit itself refuses is named
+  in `refused` and the rest still drawn.
+
+  **READ BACK, NOT ASSUMED.** Every line is fetched again by its id after it is
+  made, and what is reported is what came back: how many, which category Revit
+  filed each one under, their ends in millimetres and their total length.
+
+  **IT PLACES NO ROOM AND JOINS NOTHING.** Splitting a room that already exists
+  is two steps: this line, then PLACE_ROOM_AT_POINT for the half that has no
+  room. What Revit does to the existing room when the line cuts it, and the
+  warning it gives for a line lying on a wall or on another separation line,
+  are Revit's, and are recorded by the proof rather than claimed.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The plan the lines are drawn in. Its level decides their height, so a
+    # view with no level of its own is refused.
+    - name: view
+      type: View
+      source: request
+    # A run: consecutive points make the lines. Plan position only - the
+    # view's level decides the height. Millimetres as typed, internal feet
+    # once the add-in has converted them (D-67).
+    - name: points
+      type: IList<XYZ>
+      source: request
+    # true draws SPACE separation lines, for MEP spaces. Not given means room
+    # separation lines, which is what "separation line" means on its own.
+    - name: asSpace
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: created
+      # The separation lines Revit made, each fetched again by its id after
+      # it was made - never the count that was asked for.
+      role: result
+      type: IList<Element>
+    - name: tooShort
+      # Consecutive points closer together than Revit's own shortest line, so
+      # no line could exist there. Given and unusable, never a line it drew
+      # (D-52).
+      role: accounting
+      type: int
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `NewRoomBoundaryLines` and
+  `NewSpaceBoundaryLines` - each taking a sketch plane, a curve array and a
+  view and returning the model curves made - sit on the creation factory
+  reached through `Document.Create` with the same signature 2020 through 2027,
+  as do `SketchPlane.Create` from a level's id, `SketchPlane.GetPlane`,
+  `View.GenLevel` and `CurveElement.GeometryCurve`. All read off the reference
+  assemblies for every release with tools/api-surface on 2026-10-09, not
+  remembered. The short-curve limit is the application's own, not a typed
+  number.
+
+# ROUTING - the rows naming another fragment are repeated in
+# PLACE_ROOM_AT_POINT and CREATE_LINE.
+#
+#   "draw a room separation line across an opening" -> here
+#   "add a room separator here"          -> here
+#   "draw a space separation line"       -> here, with asSpace true
+#   "close off this archway with a separation line" -> here
+#   "put a room in the other half"       -> PLACE_ROOM_AT_POINT. This draws
+#                                           the line and places no room; the
+#                                           half without one needs placing
+#   "draw a detail line here", "add a model line"
+#                                        -> CREATE_LINE. A detail or model line
+#                                           is drawing, and Revit's room
+#                                           boundary never reads it
+#   "put a wall here"                    -> CREATE_WALL. A wall bounds a room
+#                                           too, and is a building element
+#                                           with a type, a height and a cost
+
+utterances:
+  - draw a room separation line across an opening
+  - add a room separator here
+  - draw a space separation line
+  - close off this archway with a separation line

@@ -53,6 +53,15 @@ purpose: >
   crosses as one JSON string, `takeoffJson`, format 1, as READ_ELEMENT_TABLE's
   table does.
 
+# A NAME TWO PARAMETERS SHARE IS NEVER READ: a Space carrying two parameters
+# named Space Type - a shared or project one bound beside Revit's own - has its
+# space_type written as null, as for a Space with none, and a line in
+# `findings` naming it, never either value (D-54 s3, FRAGMENT-ISSUES 5b-203;
+# added 2026-10-09). Written here and not in `purpose`, as on
+# check-sleeve-size's card: the purpose is embedded for routing, and on that
+# card's change a purpose sentence about this moved other cards' utterances in
+# check-routing, measured against d9b27f03 (row 5b-203's 2026-10-09 note). Not
+# measured for this card.
 contract:
   needs:
     - name: doc
@@ -82,7 +91,8 @@ contract:
       role: accounting
       type: int
     # A sentence per thing that could not be read - a linked boundary, an
-    # opening with no size, no site location.
+    # opening with no size, no site location, and since 2026-10-09 a Space
+    # Type two parameters share (D-54 s3, FRAGMENT-ISSUES 5b-203).
     - name: findings
       role: accounting
       type: IList<string>

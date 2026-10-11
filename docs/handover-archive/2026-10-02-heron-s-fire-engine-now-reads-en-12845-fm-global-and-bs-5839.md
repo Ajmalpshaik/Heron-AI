@@ -38,7 +38,7 @@ any another also you can consider."*
 **FOUND ON THE WAY, RECORDED, NOT FIXED.**
 
 - **`main`'s CI has been red on every push since #379** - row
-  [5b-279](../fragment-issues/section-5b-rows-176-200.md): `tests/test_heron_session.py` expects the
+  [5b-279](../fragment-issues/section-5b-rows-276-300.md): `tests/test_heron_session.py` expects the
   session line on the repository, and #379 made that line silent in the main checkout on branch main,
   which is what CI's push checkout is. Pull requests are detached and pass. Reproduced both ways here.
 

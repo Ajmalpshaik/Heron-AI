@@ -315,6 +315,20 @@ def job_refusal(job, library):
                          "one, `validate` stops and waits for somebody to "
                          "arrange it by hand")
 
+    # A CHAIN WITH VALUES OF ITS OWN NEEDS THEM ON THE NEGATIVE LEG TOO. The
+    # client gives the negative leg's setup chain `negative-setup-set`, else
+    # the NEGATIVE-SET - never the positive's `setup-set`. So a job whose chain
+    # needs other values than its fragment sends the chain the fragment's
+    # values on the negative leg, the chain refuses, and the fragment never
+    # runs - while a dry run said WOULD RUN (row 5b-242).
+    if (job.get("setup-set") and job["negative-set"]
+            and not job.get("negative-setup-set")):
+        return REFUSED, ("`setup-set:` gives the setup chain its own values, and "
+                         "the negative leg has none: its chain would be handed "
+                         "the `negative-set:` instead and refuse before the "
+                         "fragment runs. Add `negative-setup-set:` - the same "
+                         "values, unless the negative is arranged differently")
+
     if job["expect"]:
         names = set(p.get("name") for p in frag.provides() or []
                     if isinstance(p, dict))

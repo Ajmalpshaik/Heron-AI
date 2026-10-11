@@ -115,6 +115,21 @@ compatibility-note: >
 #   "let this view set its own scale" -> SET_VIEW_TEMPLATE_CONTROL, which
 #                                      declares it. The sentence asks for the
 #                                      scale to be UNLOCKED, not set
+#
+# ROWS ADDED 2026-10-09 (FRAGMENT-ISSUES row 146) - the same rows are in
+# READ_VIEW_SCALE.
+#
+#   "what is the scale of this view"  -> READ_VIEW_SCALE, which declares it.
+#                                        It reached HERE on the trained model
+#                                        and on spelling while nothing read a
+#                                        view's scale - a question answered by
+#                                        the tool that changes the drawing
+#   "what scale is this plan at"      -> READ_VIEW_SCALE, which declares it
+#   "set this view to 1:50"           -> here. A change still reaches the write
+#
+# "what scale is this view", declared below, still answers HERE by identity.
+# Moving it to READ_VIEW_SCALE is an utterance change on this PROVEN card and
+# is the owner's call (row 146) - nothing here was changed but this comment.
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

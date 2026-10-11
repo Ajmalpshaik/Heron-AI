@@ -152,10 +152,11 @@ compatibility-note: >
 # handles worst.
 #   "find all elements of a category"    -> here
 #   "how many MEP spaces are in the model" -> here, category Spaces (5b-355)
-#   "list the rooms"                     -> here, category Rooms (5b-403)
-#   "show me all the rooms"              -> here, category Rooms (5b-403)
-#   "show me all the doors"              -> here, category Doors (5b-403)
-#   "find all the VCDs"                -> SELECT_BY_FAMILY, when the FAMILY
+#   "how many rooms are there"           -> here, category Rooms (5b-401)
+#   "list the rooms"                     -> here, category Rooms (5b-426)
+#   "show me all the rooms"              -> here, category Rooms (5b-426)
+#   "show me all the doors"              -> here, category Doors (5b-426)
+#   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
 #   "all the ductwork"                   -> SELECT_BY_CATEGORIES. Ducts,
@@ -186,7 +187,18 @@ utterances:
   - how many MEP spaces are in the model
   - count the spaces on this level
   - OST_MEPSpaces
-  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-403. Both reached PLACE_ROOMS - a
+  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-401. The same question about rooms
+  # was answered by PLACE_ROOMS - a change that PLACES rooms - on the trained
+  # backend, and by REPORT_AREA_VOLUME_COMPUTATIONS, a read of one setting
+  # that counts nothing, on the spelling one. Category Rooms, levelId none.
+  # Every Room element is counted, placed or not: the collector above has no
+  # test that would leave an unplaced one out. REPORT_ROOM_SPACE_DATA, handed
+  # the same rooms, names which are unplaced and which unenclosed.
+  #
+  # THE SENTENCE, NOT THE KIND, as for 5b-355: the row names the room
+  # counts that still reach a change.
+  - how many rooms are there
+  # ADDED 2026-10-09, FRAGMENT-ISSUES 5b-426. Both reached PLACE_ROOMS - a
   # change that PLACES rooms - on both backends. Listing every room with
   # nothing selected is this filter: category Rooms, levelId none; for "show
   # me", the select-elements skill then puts them on screen.
@@ -199,7 +211,7 @@ utterances:
   # listing rooms that still reach a change.
   - list the rooms
   - show me all the rooms
-  # ADDED WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-403. "show me all the
+  # ADDED WITH THE TWO ABOVE AND BECAUSE OF THEM, 5b-426. "show me all the
   # rooms" lifted this card one place in the words ranking for "show me all
   # the doors", and that broke a near-tie on the spelling backend: the answer
   # went from ZOOM_TO_ELEMENTS, which moves the view, to PLACE_HOSTED_FAMILY,

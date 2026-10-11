@@ -20,6 +20,15 @@
 // usual ones are tried and the one that answered is NAMED per row, so a family
 // calling it something else reads as unreadable rather than as passing.
 //
+// A NAME TWO PARAMETERS SHARE IS NOT READ. A shared or project parameter can be
+// bound beside a family's own one of the same name, and asked by name Revit
+// then returns "the first one encountered", which its own reference says "is
+// determined at random". So every name - a sleeve size, a service size, a
+// linked wall's Fire Rating - is counted before it is read, and where the
+// lookup would land on two the sleeve is unreadable, or the rating NOT READ,
+// with the name said. Never the next name in the list instead: that would be
+// choosing (D-54 s3, FRAGMENT-ISSUES 5b-203).
+//
 // WHAT THE SLEEVE GOES THROUGH IS READ FROM THE LINKS ONLY WHEN ASKED FOR -
 // D-59. On a coordination job the wall or slab a sleeve crosses is usually the
 // architect's or the structural engineer's, in a link, and its Fire Rating
@@ -58,6 +67,11 @@ Func<Element, string, double> readNamed = (element, name) =>
     if (parameter == null || !parameter.HasValue || parameter.StorageType != StorageType.Double) return -1;
     return parameter.AsDouble();
 };
+
+// Two parameters by this name on this element - asked BEFORE readNamed, so a
+// shared name is never read at all. See the header.
+Func<Element, string, bool> nameIsShared = (element, name) =>
+    element.GetParameters(name).Count > 1;
 
 // ---- D-59: which links, only when asked for --------------------------------
 
@@ -121,6 +135,10 @@ Func<Element, string> fireRatingOf = element =>
     foreach (var source in new[] { element, type })
     {
         if (source == null) continue;
+        // Two by this name where the lookup lands: said, never read (5b-203).
+        var sharing = 0;
+        try { sharing = source.GetParameters("Fire Rating").Count; } catch (Exception) { }
+        if (sharing > 1) return "NOT READ - " + sharing + " parameters share that name";
         Parameter parameter = null;
         try { parameter = source.LookupParameter("Fire Rating"); } catch (Exception) { }
         if (parameter == null || !parameter.HasValue) continue;
@@ -237,10 +255,21 @@ foreach (var sleeve in sleeves)
     // The sleeve's own size, by whichever name its family used.
     var sleeveSize = -1.0;
     var sizeNameUsed = "";
+    var sizeNameShared = "";
     foreach (var name in SIZE_NAMES)
     {
+        if (nameIsShared(sleeve, name)) { sizeNameShared = name; break; }
         var value = readNamed(sleeve, name);
         if (value > 0) { sleeveSize = value; sizeNameUsed = name; break; }
+    }
+
+    if (sizeNameShared.Length > 0)
+    {
+        unreadable++;
+        findings.Add(string.Format("sleeve {0}: TWO OR MORE parameters are named '{1}' - asked by name, "
+            + "Revit picks one of them at random, so its size was NOT read and it is not checked. Select "
+            + "it and look in Properties to see both", sleeve.Id, sizeNameShared));
+        continue;
     }
 
     if (sleeveSize <= 0)
@@ -252,10 +281,27 @@ foreach (var sleeve in sleeves)
         continue;
     }
 
-    // The service's size, and its real insulation.
-    var serviceSize = readNamed(through, "Outside Diameter");
-    if (serviceSize <= 0) serviceSize = readNamed(through, "Diameter");
-    if (serviceSize <= 0) serviceSize = readNamed(through, "Width");
+    // The service's size, and its real insulation. Each name is counted before
+    // it is read, in the order it is tried - see the header.
+    var serviceSize = -1.0;
+    var serviceNameShared = "";
+    foreach (var name in new[] { "Outside Diameter", "Diameter", "Width" })
+    {
+        if (nameIsShared(through, name)) { serviceNameShared = name; break; }
+        serviceSize = readNamed(through, name);
+        if (serviceSize > 0) break;
+    }
+
+    if (serviceNameShared.Length > 0)
+    {
+        unreadable++;
+        findings.Add(string.Format("sleeve {0}: the {1} through it ({2}) carries TWO OR MORE parameters "
+            + "named '{3}' - asked by name, Revit picks one of them at random, so its size was NOT read "
+            + "and the sleeve is not checked", sleeve.Id,
+            through.Category == null ? "service" : through.Category.Name, through.Id, serviceNameShared));
+        continue;
+    }
+
     if (serviceSize <= 0)
     {
         var serviceBox = through.get_BoundingBox(null);
