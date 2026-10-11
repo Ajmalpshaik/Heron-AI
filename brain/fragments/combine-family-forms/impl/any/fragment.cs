@@ -57,9 +57,25 @@ var notAFamily = false;
 string refused = null;
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
-Func<double, string> litres = cubicFeet => Math.Round(cubicFeet * 28.316846592, 3).ToString(invariant);
-// One cubic centimetre, in cubic feet - less than any cut worth making.
-var crumb = 1.0 / (304.8 * 304.8 * 304.8) * 1000.0;
+// A VOLUME IN WORDS, in the unit `scale` calls for: litres to a thousandth
+// from one litre up, cubic millimetres to a tenth below. Litres alone read an
+// LED-sized solid as 0 L, and a refusal could not show the difference it had
+// judged - "0.003 L before and the cut combination 0.003 L" (5b-398).
+Func<double, double, string> volume = (cubicFeet, scale) =>
+{
+    var cubicMm = cubicFeet * 304.8 * 304.8 * 304.8;
+    return Math.Abs(scale * 304.8 * 304.8 * 304.8) >= 1e6
+        ? Math.Round(cubicMm / 1e6, 3).ToString(invariant) + " L"
+        : Math.Round(cubicMm, 1).ToString(invariant) + " mm³";
+};
+// WHAT COUNTS AS NO CHANGE: a part in a billion of the solids' own volume.
+// Revit's volume of one body, read twice, agrees far closer than that, and a
+// real cut, however small, takes far more. Until 5b-398 it was one cubic
+// centimetre - "less than any cut worth making" - which refused every real cut
+// smaller: a 3 x 12 x 3 mm keyhole, 108 mm³, in a cylinder 22 mm across read
+// "the void took nothing away". A void that misses, or one Revit did not cut
+// with, still takes nothing away, and is still refused.
+var partOfVolume = 1e-9;
 
 Func<Element, double> volumeOf = element =>
 {
@@ -167,6 +183,7 @@ if (refused == null)
     if (before <= 0)
         throw new InvalidOperationException("The solids named hold no volume to measure, so nothing could prove a "
             + "join or a cut. NOTHING from this call was kept.");
+    var noChange = before * partOfVolume;
 
     // POINTS INSIDE EACH SOLID, TAKEN BEFORE COMBINING - afterwards a member's
     // own geometry is empty. One per face, from the chord through the solid
@@ -319,20 +336,21 @@ if (refused == null)
             throw new InvalidOperationException("Nothing is left of the solids once they are cut - the voids named "
                 + "take all of them away. NOTHING from this call was kept.");
 
-        if (cut && after > before - crumb)
-            throw new InvalidOperationException("The solids measured " + litres(before) + " L before and the cut "
-                + "combination " + litres(after) + " L - the void took nothing away. It does not pass through them, "
-                + "or Revit did not cut with it. NOTHING from this call was kept.");
-        if (!cut && after > before + crumb)
-            throw new InvalidOperationException("The solids measured " + litres(before) + " L apart and "
-                + litres(after) + " L joined - a join cannot add material. NOTHING from this call was kept.");
+        if (cut && after > before - noChange)
+            throw new InvalidOperationException("The solids measured " + volume(before, before) + " before and the "
+                + "cut combination " + volume(after, before) + ", " + volume(before - after, before - after)
+                + " apart - less than a billionth of their volume, so the void took nothing away. It does not "
+                + "pass through them, or Revit did not cut with it. NOTHING from this call was kept.");
+        if (!cut && after > before + noChange)
+            throw new InvalidOperationException("The solids measured " + volume(before, before) + " apart and "
+                + volume(after, before) + " joined - a join cannot add material. NOTHING from this call was kept.");
 
         combinationId = combination.UniqueId;
         combined = (cut ? "Cut " + solids.Count + " solid(s) with " + voids.Count + " void(s)"
                         : "Joined " + solids.Count + " solid(s)")
-            + ": " + litres(before) + " L before, " + litres(after) + " L after"
-            + (cut ? " - " + litres(before - after) + " L taken away." : (before - after > crumb
-                ? " - " + litres(before - after) + " L where they overlapped, now counted once."
+            + ": " + volume(before, before) + " before, " + volume(after, before) + " after"
+            + (cut ? " - " + volume(before - after, before - after) + " taken away." : (before - after > noChange
+                ? " - " + volume(before - after, before - after) + " where they overlapped, now counted once."
                 : " - they only touched."))
             + " Read back form by form: all " + solids.Count + " solid(s) are in the result - "
             + watched.Sum(kv => kv.Value.Count) + " point(s) inside them that no void covers, every one found in it.";
