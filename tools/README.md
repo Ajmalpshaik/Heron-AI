@@ -1603,6 +1603,15 @@ switches and changes neither. **It installs nothing**, for [Q-39](../docs/open-q
 reason: a missing package is named with its command. Exits 1 while anything **required** is missing.
 Held by `tests/test_heron_ready.py`.
 
+**Section 2a appears only when the Claude app is the Microsoft Store (MSIX) build** - a
+`%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_*` folder. Windows then keeps everything Claude's children
+write under AppData in that app's own copy, so a package Claude installed is invisible to the person's
+terminal and to Revit ([row 5b-417](../docs/fragment-issues/section-5b-rows-401-425.md)). It says whether
+this run is inside the app (`inside_claude_app` - read-only: a folder in the copy and the same name under
+`%APPDATA%` are one folder on disk only from inside), prints a `pip install --user` line pinned to the
+versions the copy holds, and says a Reset or uninstall of the app deletes the copy. **Warnings only - no
+exit code moves.** [`docs/WHAT-TO-INSTALL.md` §1b](../docs/WHAT-TO-INSTALL.md) is the same in plain words.
+
 **`--snapshot` is for comparing two PCs without sending either one's folders** - several of those hold
 the owner's Claude login, and Claude's memory holds his own words. It writes names, sizes, versions and
 yes/no: Python and the packages, the knowledge store and search model on disk, the add-in releases and
