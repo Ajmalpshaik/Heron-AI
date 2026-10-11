@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `namePattern`, `requiredParameters` and
 // `mustHaveConnectors` are in scope; leaves `findings`, `offStandard`,
-// `notChecked`, `warned` and `familyReport` behind.
+// `notChecked`, `warned`, `familyReport` and `classificationReport` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -68,12 +68,211 @@
 // SET_FAMILY_CONNECTOR_ROLES, DELETE_FAMILY_PARAMETERS and
 // SET_FAMILY_FORM_VISIBILITY, and ADD_FAMILY_PARAMETERS version 2 (5b-308) for
 // a size parameter to switch from type to instance with its formulas.
+//
+// ---------------------------------------------------------------------------
+// CLASSIFICATION (version 3, 2026-10-11), IN BOTH DOCUMENTS
+// ---------------------------------------------------------------------------
+//
+// THE OMNICLASS NUMBER ("Classification Number" from Revit 2026) against the
+// classification file Revit's own dialog offers: a code the file does not hold,
+// or files under another category or none, is wrong; a code the file gives
+// this category is right. A category the file gives no code is not judged, and
+// with no file nothing is judged - NOT CHECKED, never a pass.
+//
+// A BLANK ONE IS A WARN IN THE FAMILY and only COUNTED IN A PROJECT - there is
+// no universal standard that every family carries one (D-33) - unless
+// `requiredParameters` names it, which is the office saying it is required.
+//
+// EACH TYPE'S ASSEMBLY CODE against the document's Assembly Code table (not in
+// it, or an entry for another category, is wrong; blank is fine - it is
+// optional), and its KEYNOTE against the keynote table (a WARN, since a keynote
+// file is the office's choice). An empty or absent table is NOT CHECKED. The
+// fix for both is SET_FAMILY_TYPE_VALUES, which writes them as text.
 
 var findings = new List<string>();
 var offStandard = 0;
 var notChecked = 0;
 var warned = 0;
 var familyReport = "";
+var classificationReport = "";
+
+// ITS BUILT-IN PARAMETERS WERE RENAMED AT REVIT 2026 AND KEPT THEIR NUMBERS:
+// OMNICLASS_CODE, OMNICLASS_DESCRIPTION and UNIFORMAT_CODE up to 2025;
+// CLASSIFICATION_CODE, CLASSIFICATION_DESCRIPTION and ASSEMBLY_CODE from 2026,
+// and neither set exists on the other side. Naming either in code breaks the
+// build on the other releases, so the one this Revit has is found by NAME at
+// run time, and shown in Revit's own words.
+var clsNewNames = Enum.IsDefined(typeof(BuiltInParameter), "CLASSIFICATION_CODE");
+var clsCode = (BuiltInParameter)Enum.Parse(typeof(BuiltInParameter), clsNewNames ? "CLASSIFICATION_CODE" : "OMNICLASS_CODE");
+var clsAssembly = (BuiltInParameter)Enum.Parse(typeof(BuiltInParameter),
+    Enum.IsDefined(typeof(BuiltInParameter), "ASSEMBLY_CODE") ? "ASSEMBLY_CODE" : "UNIFORMAT_CODE");
+Func<BuiltInParameter, string, string> clsLabelFor = (clsBip, clsOtherwise) =>
+{
+    try
+    {
+        var clsSaid = LabelUtils.GetLabelFor(clsBip);
+        return string.IsNullOrEmpty(clsSaid) ? clsOtherwise : clsSaid;
+    }
+    catch (Exception) { return clsOtherwise; }
+};
+var clsCodeLabel = clsLabelFor(clsCode, clsNewNames ? "Classification Number" : "OmniClass Number");
+var clsAssemblyLabel = clsLabelFor(clsAssembly, "Assembly Code");
+var clsKeynoteLabel = clsLabelFor(BuiltInParameter.KEYNOTE_PARAM, "Keynote");
+
+// Trimmed of every character char.IsWhiteSpace calls space - the 2020 to 2025
+// file ends some titles in a non-breaking space.
+Func<string, string> clsTidy = clsText =>
+{
+    var clsS = clsText ?? "";
+    int clsFrom = 0, clsTo = clsS.Length;
+    while (clsFrom < clsTo && char.IsWhiteSpace(clsS[clsFrom])) clsFrom++;
+    while (clsTo > clsFrom && char.IsWhiteSpace(clsS[clsTo - 1])) clsTo--;
+    return clsS.Substring(clsFrom, clsTo - clsFrom);
+};
+
+// THE CLASSIFICATION FILE - the list Revit's own OmniClass Number dialog
+// offers. No API reads it; it is a plain file, one row per line, TAB between
+// code, title, level and the BuiltInCategory it is filed under (that last one
+// may be empty), and '#' starts a comment: "OmniClassTaxonomy.txt" up to 2025,
+// "Classification_Taxonomy.txt" from 2026, the name that matches the parameter
+// found above tried first, and the path actually read is said. ONLY THE
+// PER-USER COPY IS READ - the one Revit itself reads, in
+// Application.CurrentUsersDataFolderPath, which Revit fills from its own cache
+// at start-up. That cache sits under a Windows special folder, and only
+// HeronPaths may resolve one (tools/check-structure.py, docs/06 section 2).
+var clsTried = new List<string>();
+string clsPath = null;
+string clsProblem = null;
+var clsSample = false;
+// code, title, the category column as written, the BuiltInCategory (boxed) or null
+var clsRows = new List<Tuple<string, string, string, object>>();
+Action clsLoad = () =>
+{
+    var clsFolders = new List<string>();
+    try
+    {
+        var clsUser = doc.Application.CurrentUsersDataFolderPath;
+        if (!string.IsNullOrEmpty(clsUser)) clsFolders.Add(clsUser);
+    }
+    catch (Exception) { }
+    var clsNames = clsNewNames
+        ? new[] { "Classification_Taxonomy.txt", "OmniClassTaxonomy.txt" }
+        : new[] { "OmniClassTaxonomy.txt", "Classification_Taxonomy.txt" };
+    foreach (var clsName in clsNames)
+        foreach (var clsFolder in clsFolders)
+        {
+            if (clsPath != null) break;
+            var clsCandidate = System.IO.Path.Combine(clsFolder, clsName);
+            clsTried.Add(clsCandidate);
+            if (System.IO.File.Exists(clsCandidate)) clsPath = clsCandidate;
+        }
+    if (clsPath == null) return;
+    string clsAll;
+    try
+    {
+        // THE 2020 TO 2025 FILE IS NOT UTF-8: it holds Windows-1252 bytes (an
+        // en dash, an e-cedilla). Strict UTF-8 first; then code page 1252,
+        // which .NET 8 and 10 refuse unless a code-page provider is
+        // registered; then Latin-1, which every runtime has.
+        var clsBytes = System.IO.File.ReadAllBytes(clsPath);
+        try { clsAll = new System.Text.UTF8Encoding(false, true).GetString(clsBytes); }
+        catch (Exception)
+        {
+            try { clsAll = System.Text.Encoding.GetEncoding(1252).GetString(clsBytes); }
+            catch (Exception) { clsAll = System.Text.Encoding.GetEncoding(28591).GetString(clsBytes); }
+        }
+    }
+    catch (Exception ex)
+    {
+        clsProblem = "the classification file " + clsPath + " could not be read: " + ex.Message;
+        return;
+    }
+    clsSample = clsAll.IndexOf("sample Classification File", StringComparison.OrdinalIgnoreCase) >= 0;
+    foreach (var clsLine in clsAll.Replace(((char)0xFEFF).ToString(), "").Split((char)10))
+    {
+        var clsTrimmed = clsTidy(clsLine);
+        if (clsTrimmed.Length == 0 || clsTrimmed.StartsWith("#")) continue;
+        var clsColumns = clsLine.Split((char)9);
+        if (clsColumns.Length < 2) continue;
+        var clsRowCode = clsTidy(clsColumns[0]);
+        if (clsRowCode.Length == 0) continue;
+        var clsRaw = clsColumns.Length > 3 ? clsTidy(clsColumns[3]) : "";
+        object clsFiled = null;
+        long clsNumber;
+        if (clsRaw.Length > 0 && long.TryParse(clsRaw, System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture, out clsNumber))
+        {
+            var clsEnum = Enum.ToObject(typeof(BuiltInCategory), clsNumber);
+            if (Enum.IsDefined(typeof(BuiltInCategory), clsEnum)) clsFiled = clsEnum;
+        }
+        clsRows.Add(Tuple.Create(clsRowCode, clsTidy(clsColumns[1]), clsRaw, clsFiled));
+    }
+};
+// Filed under this category: compared as ElementIds, never as numbers.
+Func<Tuple<string, string, string, object>, ElementId, bool> clsFiledUnder = (clsRow, clsCategoryId) =>
+    clsRow.Item4 != null && clsCategoryId != null && new ElementId((BuiltInCategory)clsRow.Item4).Equals(clsCategoryId);
+Func<Tuple<string, string, string, object>, string> clsFiledWords = clsRow =>
+{
+    if (clsRow.Item3.Length == 0) return "no category";
+    if (clsRow.Item4 == null) return "a category this Revit does not have (" + clsRow.Item3 + ")";
+    var clsBic = (BuiltInCategory)clsRow.Item4;
+    try
+    {
+        var clsFound = Category.GetCategory(doc, clsBic);
+        if (clsFound != null) return clsFound.Name;
+    }
+    catch (Exception) { }
+    try { return LabelUtils.GetLabelFor(clsBic); }
+    catch (Exception) { return clsBic.ToString(); }
+};
+
+// THE DOCUMENT'S ASSEMBLY CODE AND KEYNOTE TABLES, by key. Either may be
+// absent or empty - in a family document above all - and then a code cannot
+// be checked: NOT CHECKED, never a pass.
+var clsAssemblyTable = new Dictionary<string, ClassificationEntry>(StringComparer.Ordinal);
+var clsKeynoteKeys = new HashSet<string>(StringComparer.Ordinal);
+try
+{
+    var clsTable = AssemblyCodeTable.GetAssemblyCodeTable(doc);
+    var clsEntries = clsTable == null ? null : clsTable.GetKeyBasedTreeEntries();
+    if (clsEntries != null)
+        foreach (var clsEntry in clsEntries)
+        {
+            var clsKeyed = clsEntry as ClassificationEntry;
+            var clsKey = clsKeyed == null ? "" : clsTidy(clsKeyed.Key);
+            if (clsKey.Length > 0 && !clsAssemblyTable.ContainsKey(clsKey)) clsAssemblyTable[clsKey] = clsKeyed;
+        }
+}
+catch (Exception) { }
+try
+{
+    var clsTable = KeynoteTable.GetKeynoteTable(doc);
+    var clsEntries = clsTable == null ? null : clsTable.GetKeyBasedTreeEntries();
+    if (clsEntries != null)
+        foreach (var clsEntry in clsEntries)
+        {
+            var clsKey = clsEntry == null ? "" : clsTidy(clsEntry.Key);
+            if (clsKey.Length > 0) clsKeynoteKeys.Add(clsKey);
+        }
+}
+catch (Exception) { }
+// An Assembly Code entry filed for ANOTHER category of this document: its
+// name, or null - no category, a bad one, this one, or one the document does
+// not hold is not judged.
+Func<ClassificationEntry, ElementId, string> clsAssemblyOther = (clsEntry, clsCategoryId) =>
+{
+    try
+    {
+        if (clsEntry == null || clsCategoryId == null || clsEntry.HasBadCategoryId()) return null;
+        var clsId = clsEntry.CategoryId;
+        if (clsId == null || clsId == ElementId.InvalidElementId || clsId.Equals(clsCategoryId)) return null;
+        var clsOther = Category.GetCategory(doc, clsId);
+        return clsOther == null ? null : clsOther.Name;
+    }
+    catch (Exception) { return null; }
+};
+Func<List<string>, string> clsFirstTen = clsNames => clsNames.Count == 0 ? ""
+    : " (" + string.Join(", ", clsNames.Take(10)) + (clsNames.Count > 10 ? ", and " + (clsNames.Count - 10) + " more" : "") + ")";
 
 if (doc.IsFamilyDocument)
 {
@@ -585,6 +784,142 @@ if (doc.IsFamilyDocument)
             "delete only the ones no schedule or tag reads (DELETE_FAMILY_PARAMETERS).");
     if (unused.Count == 0) pass("Every family parameter is used by something.");
 
+    // =======================================================================
+    // 4. CLASSIFICATION (version 3) - the OmniClass Number against the
+    //    classification file; each type's Assembly Code and Keynote against
+    //    this document's tables
+    // =======================================================================
+    var clsFirstRow = rows.Count;
+    clsLoad();
+    var clsCodeRow = family == null ? null : family.get_Parameter(clsCode);
+    // An annotation family - a tag, a symbol - is not classified, and is not
+    // judged on it, as in a project.
+    var clsAnnotationFamily = false;
+    try { clsAnnotationFamily = category != null && category.CategoryType == CategoryType.Annotation; }
+    catch (Exception) { }
+    if (clsCodeRow == null || clsCodeRow.StorageType != StorageType.String)
+    {
+        if (!clsAnnotationFamily) notRead(clsCodeLabel + ": this family holds none to read.");
+    }
+    else
+    {
+        var clsCurrent = clsTidy(clsCodeRow.AsString());
+        var clsShown = clsCurrent.Length == 0 ? "(blank)" : clsCurrent;
+        var clsMine = category == null ? new List<Tuple<string, string, string, object>>()
+            : clsRows.Where(r => clsFiledUnder(r, category.Id)).ToList();
+        var clsFix = "SET_FAMILY_SETTINGS \"" + clsCodeLabel + "=<code>\" with one of the classification file's "
+            + clsMine.Count + " code(s) for " + categoryName + " - REPORT_FAMILY_TEMPLATE lists them in classificationCodes.";
+        if (clsPath == null)
+            notRead(clsCodeLabel + " " + clsShown + ": no classification file was found to check it against - looked for "
+                + string.Join(", ", clsTried) + ".");
+        else if (clsProblem != null)
+            notRead(clsCodeLabel + " " + clsShown + ": " + clsProblem + ".");
+        else if (clsSample)
+            notRead(clsCodeLabel + " " + clsShown + ": the classification file at " + clsPath + " is the SAMPLE Revit 2026 "
+                + "and later ship, which files no code under any category - the office's own file goes at that path.");
+        else if (clsMine.Count == 0)
+            notRead(clsCodeLabel + " " + clsShown + ": the classification file " + clsPath + " gives " + categoryName
+                + " no code, so it is not judged here.");
+        else if (clsCurrent.Length == 0)
+            warn(clsCodeLabel + " is blank. The classification file gives " + categoryName + " " + clsMine.Count
+                + " code(s); a schedule, an export or a library sorted by it will not place this family.", clsFix);
+        else
+        {
+            var clsSame = clsRows.Where(r => string.Equals(r.Item1, clsCurrent, StringComparison.OrdinalIgnoreCase)).ToList();
+            var clsHere = clsSame.FirstOrDefault(r => clsFiledUnder(r, category.Id));
+            if (clsSame.Count == 0)
+                fail(clsCodeLabel + " " + clsCurrent + " is not a code in the classification file " + clsPath + ".", clsFix);
+            else if (clsHere != null)
+                pass(clsCodeLabel + " " + clsHere.Item1 + " " + clsHere.Item2 + " is one of the classification file's codes "
+                    + "for " + categoryName + ".");
+            else
+                fail(clsCodeLabel + " " + clsSame[0].Item1 + " " + clsSame[0].Item2 + " is filed under "
+                    + clsFiledWords(clsSame[0]) + " in the classification file, not " + categoryName
+                    + (clsSame[0].Item3.Length == 0 ? " - it fits no family." : "."), clsFix);
+        }
+    }
+
+    // EACH TYPE'S ASSEMBLY CODE AND KEYNOTE, read through the family parameter
+    // whose definition is the built-in one - found by its id, else by looking.
+    Func<BuiltInParameter, FamilyParameter> clsFamilyParameter = clsWhich =>
+    {
+        FamilyParameter clsGot = null;
+        try { clsGot = fm.get_Parameter(clsWhich); }
+        catch (Exception) { clsGot = null; }
+        if (clsGot != null) return clsGot;
+        return parameters.FirstOrDefault(clsP =>
+        {
+            var clsDefinition = clsP.Definition as InternalDefinition;
+            return clsDefinition != null && clsDefinition.BuiltInParameter == clsWhich;
+        });
+    };
+    var clsTypes = new List<FamilyType>();
+    foreach (FamilyType clsType in fm.Types) clsTypes.Add(clsType);
+    Func<FamilyParameter, List<Tuple<string, string>>> clsGiven = clsParameter =>
+    {
+        var clsFilled = new List<Tuple<string, string>>();
+        if (clsParameter == null) return clsFilled;
+        foreach (var clsType in clsTypes)
+        {
+            var clsValue = "";
+            try { clsValue = clsTidy(clsType.AsString(clsParameter)); }
+            catch (Exception) { clsValue = ""; }
+            if (clsValue.Length > 0) clsFilled.Add(Tuple.Create(clsType.Name, clsValue));
+        }
+        return clsFilled;
+    };
+
+    var clsAssemblyGiven = clsGiven(clsFamilyParameter(clsAssembly));
+    if (clsAssemblyGiven.Count > 0 && clsAssemblyTable.Count == 0)
+        notRead(clsAssemblyLabel + " of " + clsAssemblyGiven.Count + " type(s) ("
+            + string.Join(", ", clsAssemblyGiven.Select(g2 => "\"" + g2.Item1 + "\" " + g2.Item2)) + "): this document "
+            + "holds no Assembly Code table to check it against - a family document often holds none; the project it is "
+            + "loaded into checks it.");
+    else if (clsAssemblyGiven.Count > 0)
+    {
+        var clsGood = 0;
+        foreach (var clsPair in clsAssemblyGiven)
+        {
+            var clsTypeFix = "SET_FAMILY_TYPE_VALUES typeName \"" + clsPair.Item1 + "\", values \"" + clsAssemblyLabel
+                + "=<a code from the Assembly Code table>\".";
+            ClassificationEntry clsFiledEntry;
+            if (!clsAssemblyTable.TryGetValue(clsPair.Item2, out clsFiledEntry))
+            {
+                fail("Type \"" + clsPair.Item1 + "\": " + clsAssemblyLabel + " " + clsPair.Item2 + " is not in this "
+                    + "document's Assembly Code table.", clsTypeFix);
+                continue;
+            }
+            var clsElsewhere = clsAssemblyOther(clsFiledEntry, category == null ? null : category.Id);
+            if (clsElsewhere != null)
+                fail("Type \"" + clsPair.Item1 + "\": " + clsAssemblyLabel + " " + clsPair.Item2 + " ("
+                    + clsFiledEntry.Description + ") is an entry for " + clsElsewhere + " in the Assembly Code table, not "
+                    + categoryName + ".", clsTypeFix);
+            else clsGood++;
+        }
+        if (clsGood > 0) pass(clsAssemblyLabel + " of " + clsGood + " type(s) is in the Assembly Code table.");
+    }
+
+    var clsKeynoteGiven = clsGiven(clsFamilyParameter(BuiltInParameter.KEYNOTE_PARAM));
+    if (clsKeynoteGiven.Count > 0 && clsKeynoteKeys.Count == 0)
+        notRead(clsKeynoteLabel + " of " + clsKeynoteGiven.Count + " type(s): this document has no keynote table loaded "
+            + "to check it against.");
+    else if (clsKeynoteGiven.Count > 0)
+    {
+        var clsKnown = 0;
+        foreach (var clsPair in clsKeynoteGiven)
+        {
+            if (clsKeynoteKeys.Contains(clsPair.Item2)) { clsKnown++; continue; }
+            warn("Type \"" + clsPair.Item1 + "\": " + clsKeynoteLabel + " " + clsPair.Item2 + " is not in this document's "
+                + "keynote table, so a keynote tag shows it without its text.",
+                "SET_FAMILY_TYPE_VALUES typeName \"" + clsPair.Item1 + "\", values \"" + clsKeynoteLabel
+                + "=<a key from the keynote file>\".");
+        }
+        if (clsKnown > 0) pass(clsKeynoteLabel + " of " + clsKnown + " type(s) is in the keynote table.");
+    }
+
+    classificationReport = (rows.Count > clsFirstRow ? string.Join(" | ", rows.Skip(clsFirstRow)) : "Nothing to classify.")
+        + " Classification file: " + (clsPath ?? "none found - looked for " + string.Join(", ", clsTried)) + ".";
+
     familyReport = "\"" + familyName + "\" (" + categoryName
         + (partType == null ? "" : ", Part Type " + partWords)
         + (workPlaneBased.HasValue ? ", Work Plane-Based " + (workPlaneBased.Value == 1 ? "Yes" : "No") : "")
@@ -617,6 +952,46 @@ else
         if (!sampleByType.ContainsKey(typeId)) sampleByType[typeId] = instance;
         countByType[typeId] = (countByType.ContainsKey(typeId) ? countByType[typeId] : 0) + 1;
     }
+
+    // ---- CLASSIFICATION (version 3), gathered per type and said once, in
+    // `classificationReport`. Each list holds "Family : Type" names.
+    clsLoad();
+    var clsFileUsable = clsPath != null && clsProblem == null && !clsSample;
+    var clsRequired = requiredParameters != null && requiredParameters.Any(clsWanted => clsWanted != null
+        && (string.Equals(clsWanted.Trim(), clsCodeLabel, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(clsWanted.Trim(), "OmniClass Number", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(clsWanted.Trim(), "Classification Number", StringComparison.OrdinalIgnoreCase)));
+    var clsBlank = new List<string>();
+    var clsNotInFile = new List<string>();
+    var clsOtherCategory = new List<string>();
+    var clsNoCategory = new List<string>();
+    var clsUnchecked = new List<string>();
+    var clsUnjudged = 0;
+    var clsAssemblyMissing = new List<string>();
+    var clsAssemblyElsewhere = new List<string>();
+    var clsAssemblyUnchecked = new List<string>();
+    var clsKeynoteMissing = new List<string>();
+    var clsKeynoteUnchecked = new List<string>();
+    // Whether the file gives a category any code - asked once per category.
+    var clsHasCodes = new Dictionary<ElementId, bool>();
+    var clsFix = " - fix it in the family: OPEN_FAMILY_FOR_EDITING, SET_FAMILY_SETTINGS \"" + clsCodeLabel
+        + "=<code>\", then LOAD_FAMILY back";
+    // THE PARAMETER AN ELEMENT REALLY CARRIES. get_Parameter can hand back a
+    // stand-in for a built-in the element does not hold: it reads empty, and a
+    // write through it changes nothing (measured 2026-10-06 on a placed
+    // diffuser's Offset from Host and Level). A type that does not carry the
+    // family's OmniClass Number could read blank that way, so the element's
+    // own Parameters are looked through first.
+    Func<Element, BuiltInParameter, Parameter> clsCarried = (clsElement, clsBip) =>
+    {
+        if (clsElement == null) return null;
+        foreach (Parameter clsP in clsElement.Parameters)
+        {
+            var clsDefinition = clsP.Definition as InternalDefinition;
+            if (clsDefinition != null && clsDefinition.BuiltInParameter == clsBip) return clsP;
+        }
+        return null;
+    };
 
     foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)))
     {
@@ -683,15 +1058,151 @@ else
             }
         }
 
+        // ---- classification (version 3). A keynote not in the table is a
+        // WARN in the row and is NOT counted in `warned`, which counts only
+        // the doubled required names.
+        var clsNotes = new List<string>();
+        var clsName = family.Name + " : " + symbol.Name;
+        var clsCategory = family.FamilyCategory ?? symbol.Category;
+        var clsAnnotation = false;
+        try { clsAnnotation = clsCategory != null && clsCategory.CategoryType == CategoryType.Annotation; }
+        catch (Exception) { }
+        if (clsCategory != null && !clsHasCodes.ContainsKey(clsCategory.Id))
+            clsHasCodes[clsCategory.Id] = clsRows.Any(r => clsFiledUnder(r, clsCategory.Id));
+        var clsCategoryHasCodes = clsCategory != null && clsHasCodes[clsCategory.Id];
+
+        // THE OMNICLASS NUMBER, from the type, else its family - the one each
+        // CARRIES first, a plain lookup only when neither does. Whether a
+        // loaded type exposes it is not known yet (NEEDS-CHECKING), so a
+        // read that comes back empty-handed is NOT CHECKED - never blank -
+        // and so is an empty value only the plain lookup gave, which may be a
+        // stand-in.
+        Parameter clsRead = null;
+        var clsOnlyLookedUp = false;
+        try
+        {
+            clsRead = clsCarried(symbol, clsCode) ?? clsCarried(family, clsCode);
+            if (clsRead == null)
+            {
+                clsRead = symbol.get_Parameter(clsCode) ?? family.get_Parameter(clsCode);
+                clsOnlyLookedUp = clsRead != null;
+            }
+        }
+        catch (Exception) { clsRead = null; }
+        if (clsAnnotation) clsUnjudged++;
+        else if (clsRead == null || clsRead.StorageType != StorageType.String)
+            clsUnchecked.Add(clsName + " - no value to read");
+        else
+        {
+            var clsValue = clsTidy(clsRead.AsString());
+            if (clsValue.Length == 0 && clsOnlyLookedUp)
+                clsUnchecked.Add(clsName + " - reads blank, but neither the type nor its family carries the "
+                    + clsCodeLabel + " in its own parameters, so the blank may not be the family's");
+            else if (clsValue.Length == 0)
+            {
+                if (clsFileUsable && !clsCategoryHasCodes) clsUnjudged++;
+                else clsBlank.Add(clsName);
+                if (clsRequired) faults.Add(clsCodeLabel + " is blank, and requiredParameters names it" + clsFix);
+            }
+            else if (!clsFileUsable) clsUnchecked.Add(clsName + " - no classification file to check " + clsValue + " against");
+            else if (!clsCategoryHasCodes) clsUnjudged++;
+            else
+            {
+                var clsSame = clsRows.Where(r => string.Equals(r.Item1, clsValue, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (clsSame.Count == 0)
+                {
+                    clsNotInFile.Add(clsName + " " + clsValue);
+                    faults.Add(clsCodeLabel + " " + clsValue + " is not in the classification file" + clsFix);
+                }
+                else if (!clsSame.Any(r => clsFiledUnder(r, clsCategory.Id)))
+                {
+                    var clsWhere = clsFiledWords(clsSame[0]);
+                    if (clsSame[0].Item3.Length == 0) clsNoCategory.Add(clsName + " " + clsValue);
+                    else clsOtherCategory.Add(clsName + " " + clsValue + " (" + clsWhere + ")");
+                    faults.Add(clsCodeLabel + " " + clsValue + " " + clsSame[0].Item2 + " is filed under " + clsWhere
+                        + " in the classification file, not " + clsCategory.Name + clsFix);
+                }
+            }
+        }
+
+        // THE ASSEMBLY CODE, against the project's Assembly Code table.
+        var clsAssemblyValue = "";
+        try
+        {
+            var clsAssemblyRow = symbol.get_Parameter(clsAssembly);
+            clsAssemblyValue = clsAssemblyRow == null ? "" : clsTidy(clsAssemblyRow.AsString());
+        }
+        catch (Exception) { clsAssemblyValue = ""; }
+        if (clsAssemblyValue.Length > 0)
+        {
+            ClassificationEntry clsFiledEntry;
+            if (clsAssemblyTable.Count == 0) clsAssemblyUnchecked.Add(clsName);
+            else if (!clsAssemblyTable.TryGetValue(clsAssemblyValue, out clsFiledEntry))
+            {
+                clsAssemblyMissing.Add(clsName + " " + clsAssemblyValue);
+                faults.Add(clsAssemblyLabel + " " + clsAssemblyValue + " is not in the Assembly Code table - "
+                    + "SET_FAMILY_TYPE_VALUES \"" + clsAssemblyLabel + "=<code>\" in the family");
+            }
+            else
+            {
+                var clsElsewhere = clsAssemblyOther(clsFiledEntry, clsCategory == null ? null : clsCategory.Id);
+                if (clsElsewhere != null)
+                {
+                    clsAssemblyElsewhere.Add(clsName + " " + clsAssemblyValue + " (" + clsElsewhere + ")");
+                    faults.Add(clsAssemblyLabel + " " + clsAssemblyValue + " is an entry for " + clsElsewhere
+                        + " in the Assembly Code table - SET_FAMILY_TYPE_VALUES \"" + clsAssemblyLabel + "=<code>\" in "
+                        + "the family");
+                }
+            }
+        }
+
+        // THE KEYNOTE, against the project's keynote table - a warning only.
+        var clsKeynoteValue = "";
+        try
+        {
+            var clsKeynoteRow = symbol.get_Parameter(BuiltInParameter.KEYNOTE_PARAM);
+            clsKeynoteValue = clsKeynoteRow == null ? "" : clsTidy(clsKeynoteRow.AsString());
+        }
+        catch (Exception) { clsKeynoteValue = ""; }
+        if (clsKeynoteValue.Length > 0)
+        {
+            if (clsKeynoteKeys.Count == 0) clsKeynoteUnchecked.Add(clsName);
+            else if (!clsKeynoteKeys.Contains(clsKeynoteValue))
+            {
+                clsKeynoteMissing.Add(clsName + " " + clsKeynoteValue);
+                clsNotes.Add("WARN " + clsKeynoteLabel + " " + clsKeynoteValue + " is not in the keynote table");
+            }
+        }
+
         if (faults.Count > 0) offStandard++;
         if (cautions.Count > 0) warned++;
-        if (faults.Count > 0 || cautions.Count > 0)
+        if (faults.Count > 0 || cautions.Count > 0 || clsNotes.Count > 0)
         {
             findings.Add(string.Format("{0} : {1}  ({2} placed{3})  - {4}",
                 family.Name, symbol.Name, placed, inPlace ? ", IN-PLACE" : "",
-                string.Join("; ", faults.Concat(cautions))));
+                string.Join("; ", faults.Concat(cautions).Concat(clsNotes))));
         }
     }
+
+    classificationReport = clsCodeLabel + ": " + clsBlank.Count + " blank" + clsFirstTen(clsBlank)
+        + (clsRequired ? " - requiredParameters names it, so each is off standard"
+            : " - counted, not off standard: no code is required unless requiredParameters names it")
+        + "; " + clsNotInFile.Count + " not in the classification file" + clsFirstTen(clsNotInFile)
+        + "; " + clsOtherCategory.Count + " filed under another category" + clsFirstTen(clsOtherCategory)
+        + "; " + clsNoCategory.Count + " filed under no category" + clsFirstTen(clsNoCategory)
+        + "; " + clsUnchecked.Count + " not checked" + clsFirstTen(clsUnchecked)
+        + "; " + clsUnjudged + " not judged - an annotation, or a category the classification file gives no code. "
+        + clsAssemblyLabel + ": " + clsAssemblyMissing.Count + " not in the Assembly Code table" + clsFirstTen(clsAssemblyMissing)
+        + "; " + clsAssemblyElsewhere.Count + " an entry for another category" + clsFirstTen(clsAssemblyElsewhere)
+        + "; " + clsAssemblyUnchecked.Count + " not checked" + clsFirstTen(clsAssemblyUnchecked)
+        + (clsAssemblyTable.Count == 0 ? " - this project holds no Assembly Code table" : "") + ". "
+        + clsKeynoteLabel + ": " + clsKeynoteMissing.Count + " not in the keynote table, a warning only"
+        + clsFirstTen(clsKeynoteMissing)
+        + "; " + clsKeynoteUnchecked.Count + " not checked" + clsFirstTen(clsKeynoteUnchecked)
+        + (clsKeynoteKeys.Count == 0 ? " - no keynote file is loaded" : "") + ". "
+        + "Classification file: " + (clsPath ?? "none found - looked for " + string.Join(", ", clsTried))
+        + (clsSample ? " - the SAMPLE Revit 2026 and later ship, which files no code under any category" : "")
+        + (clsProblem != null ? " - " + clsProblem : "") + ".";
 
     findings.Insert(0, string.Format("{0} family type(s) off standard, {1} not checked for connectors"
         + "{3}. {2} system family type(s) excluded - a duct type or a wall type has no family file and "
@@ -699,4 +1210,5 @@ else
         warned > 0
             ? string.Format(", {0} WARNED for carrying a required parameter's name more than once", warned)
             : ""));
+    findings.Add(classificationReport);
 }

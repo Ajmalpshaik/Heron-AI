@@ -191,7 +191,7 @@ def _pipe_endpoint(pipe_name):
     """
     Where the server is listening, in this operating system's terms.
 
-    On Windows a named pipe is a path under \\.\pipe. On Unix, .NET has no
+    On Windows a named pipe is a path under \\\\.\\pipe. On Unix, .NET has no
     named pipes to use, so NamedPipeServerStream is a socket named
     CoreFxPipe_<name> in the temp directory. Both are the SAME C# object;
     only the address differs, which is why one shim is enough.

@@ -412,4 +412,18 @@ remembers Heron; a new one does not, so it read them off disk.
 the read-only Heron tools without a prompt on every new PC. That widens Claude Code's own permissions,
 which is his decision and not an agent's.
 
-**NOT MEASURED:** the minutes a family takes on a new PC now. The test is in row 5b-378.
+**MEASURED 2026-10-09 on the new laptop** - Windows 11, Revit 2024, Claude Code 2.1.293, `claude-opus-5-5`
+at effort *xhigh* on every request; [row 5b-378](FRAGMENT-ISSUES.md) names the sources. The chat called
+`heron_method` before any file read, then read `fragment.yaml` for how to write a value
+([row 5b-397](https://github.com/Ajmalpshaik/Heron-AI/pull/462), open in #462). A fire alarm control
+panel, 22 extrusions, took 367 s from request to finish; a duty/standby pump set, 107 forms, 792 s.
+On 2026-10-09 Revit's own time across all 180 fragment runs was 17.2 s, Heron and the MCP client added a
+median 0.68 s a batch, and about 93% of the active time was the model's own turns - extended thinking alone about
+609 s. **Nothing on the laptop was broken.** What lengthened those turns and is Heron's: the `revit_change`
+hand-back, 322,725 characters across the two builds and about 70% of it helpers and a repeated trailer
+([row 5b-407](fragment-issues/section-5b-rows-401-425.md)), and one form per call
+([Q-62](OPEN-QUESTIONS.md)).
+
+**NOT MEASURED:** the office PC's minutes for the same family, and the model, effort level and fast-mode
+setting its chat runs - which this section never considered and `heron-ready --snapshot` does not record
+([Q-61](OPEN-QUESTIONS.md)).

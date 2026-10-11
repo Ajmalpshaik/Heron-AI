@@ -1,0 +1,133 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-060
+semantic-identity: "build a list of extrusions and revolves in one call, solid or void, as one undo"
+kind: action
+domain: revit.families
+capability: CREATE_FAMILY_FORMS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds MANY FORMS IN ONE CALL in the family open in the Family Editor -
+  a list of extrusions and revolves, one row per form, solid or void - and
+  gives back every form's id in the order listed. For a family of dozens of
+  parts, where CREATE_FAMILY_EXTRUSION and CREATE_FAMILY_REVOLUTION build one
+  form a call: the whole list is one call and ONE entry in the undo list.
+
+  **EACH ROW STARTS `kind=extrusion` OR `kind=revolve`** and carries the
+  single-form tools' own fields: `workPlane`, `profile` and `solid`, then
+  `startMm` and `endMm` for an extrusion, or `axisLine`, `startDegrees` and
+  `endDegrees` for a revolve - written exactly as those tools take them. A
+  row may add `material` (a family material parameter, a material in the
+  family, or "by category"), and `detailLevels` and `views` as
+  SET_FAMILY_FORM_VISIBILITY takes them.
+
+  **THE LIST IS GIVEN IN THE VALUE, OR AS A FILE** - the full path of a text
+  file in the temporary folder, one row per line, lines starting # ignored.
+  A long list is written to the file once, under %TEMP%\heron-work, rather
+  than typed into every call.
+
+  **ALL OR NOTHING.** Every row is checked before anything is built, each
+  problem named with its row. Each form is then read back as the single-form
+  tools read theirs - its extent, a solid's volume, a material and where it
+  shows - and one row Revit refuses or that reads back wrong keeps nothing
+  of the whole list.
+
+  **A VOID CUTS NOTHING BY BEING MADE** - COMBINE_FAMILY_FORMS cuts it into
+  a solid, by the ids given back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The forms, ONE ROW EACH, each row starting kind=extrusion or kind=revolve
+    # and running to the next kind=; fields are name=value, each running to
+    # the next field's name. An extrusion: workPlane=, profile=, startMm=,
+    # endMm=, solid=. A revolve: workPlane=, profile=, axisLine=,
+    # startDegrees=, endDegrees=, solid=. Any row may add material=,
+    # detailLevels= and views=. Written as the single-form tools take them -
+    # profile loops with | between ("circle CX,CY R", "rect X1,Y1 X2,Y2",
+    # "polygon CX,CY R N", corners "X,Y; X,Y; arc MX,MY X,Y"), millimetres in
+    # the plane's own two model coordinates; solid true or false. E.g.
+    # "kind=extrusion workPlane=Ref. Level profile=circle 0,0 150 startMm=0
+    # endMm=500 solid=true kind=revolve workPlane=Center (Front/Back)
+    # profile=0,0; 40,0; 40,80; 0,80 axisLine=0,0 0,100 startDegrees=0
+    # endDegrees=360 solid=false". OR the full path of a text file in the
+    # temporary folder (%TEMP%\heron-work\...) holding the rows, one per line,
+    # lines starting # ignored - write a long list there once.
+    - name: forms
+      type: string
+      source: request
+  provides:
+    - name: formIds
+      # Every new form's unique id, in the order the rows were listed, commas
+      # between - what the lock, link, cut, material and visibility tools take.
+      role: result
+      type: string
+    - name: formCount
+      # How many forms were built - every row, or none.
+      role: result
+      type: int
+    - name: built
+      # Each form as Revit now holds it, one entry per row with || between:
+      # solid or void, kind, plane, its extent on all three axes in
+      # millimetres, a solid's volume, and any material or visibility set.
+      role: result
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, every problem named with its row. Empty when
+      # the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The calls CREATE_FAMILY_EXTRUSION, CREATE_FAMILY_REVOLUTION,
+  SET_FAMILY_FORM_MATERIAL and SET_FAMILY_FORM_VISIBILITY already make on
+  every release 2020 to 2027 - `FamilyItemFactory.NewExtrusion` and
+  `NewRevolution`, `SketchPlane.Create(Document, ElementId)`,
+  `Extrusion.StartOffset`, `Application.ShortCurveTolerance`,
+  `FamilyManager.AssociateElementParameterToFamilyParameter`,
+  `GenericForm.SetVisibility` and `Element.UniqueId` - with the material
+  parameter's kind read by reflection as SET_FAMILY_FORM_MATERIAL reads it,
+  because its type moved in 2022 and 2023. `System.IO.Path.GetTempPath` and
+  `File.ReadAllText` are the framework's own. Compiles on every release
+  (tools/check-fragments-compile.py, 2026-10-11); how it behaves has not yet
+  been run in Revit.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "build all these forms in one go"            -> here, a list of rows
+#   "make these ten extrusions and revolves"     -> here
+#   "extrude a circle 300 diameter 500 high"     -> CREATE_FAMILY_EXTRUSION,
+#                                                   one form
+#   "revolve this profile into a cone"           -> CREATE_FAMILY_REVOLUTION,
+#                                                   one form
+#   "make a blend / sweep"                       -> their own tools; a row
+#                                                   here is an extrusion or a
+#                                                   revolve
+#   "cut the solid with the void"                -> COMBINE_FAMILY_FORMS, by
+#                                                   the ids given back here
+
+utterances:
+  - build all these forms in one go
+  - make these extrusions and revolves in one call
+  - create the family's forms from this list
+  - build every part of the family at once
