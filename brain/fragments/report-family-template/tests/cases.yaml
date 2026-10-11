@@ -22,6 +22,18 @@ positive:
       the placement points 1 to 4 with ids and positions; lineList naming the
       template's lines between them with their ids - the ids a form is built on
 
+  # VERSION 2 - Revit 2024, whose per-user OmniClassTaxonomy.txt files 21
+  # codes under Pipe Accessories.
+  - given: >
+      a new family from the metric Pipe Accessory template, after
+      SET_FAMILY_SETTINGS "OmniClass Number=23.65.55.14.14"
+    expect: >
+      classificationCodes listing 21 codes as "code Title" joined by " || ",
+      23.65.55.14.14 Isolation Valves for Liquid Services among them, then
+      "21 code(s) ... Pipe Accessories, read from" and the per-user file's
+      path; templateReport's settings showing OmniClass Number 23.65.55.14.14
+      and OmniClass Title as Family Category and Parameters shows it
+
 negative:
   - given: >
       a new family from the plain metric Generic Model template - not hosted
@@ -30,10 +42,19 @@ negative:
       none, pointList empty - it must NOT read as wall-based or face-based
 
   - given: a project in front
-    expect: notAFamily true and nothing read
+    expect: notAFamily true and nothing read - classificationCodes empty
+
+  - given: a new family from the metric Detail Item template
+    expect: >
+      classificationCodes saying the classification file gives Detail Items no
+      code at all, with the path - a reason, NOT an empty answer; the 2024 file
+      files none under that category
 
 second_route:
   - >
       Family Category and Parameters in the Family Editor - the Host row and the
       switches - and the Family Types dialog for the built-in parameters; the
       reference planes read by selecting each and reading Properties
+  - >
+      The OmniClass Number button in Family Category and Parameters: the codes
+      its dialog offers for the category against classificationCodes

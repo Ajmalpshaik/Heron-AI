@@ -54,7 +54,16 @@ purpose: >
   1. SET_FAMILY_CATEGORY first, when the template's category is not the one
      wanted - a Generic Model that should be an Air Terminal. The category
      brings its own built-in parameters, and everything after it builds on
-     them. Then SET_FAMILY_SETTINGS when the family will be nested in another
+     them. CLASSIFY IT FROM THAT CATEGORY NEXT: REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's own taxonomy file gives the
+     category - run it again when the category was just changed. Propose the
+     one that fits the thing; the modeller confirms it, and picks where more
+     than one could fit - never guessed (D-33). SET_FAMILY_SETTINGS "OmniClass
+     Number=<code>" writes it and reads the title back. No file, or no code
+     for the category - Revit 2026 and later ship only a sample file - is
+     said, and the step is left out.
+     Then SET_FAMILY_SETTINGS when the family will be nested in another
      one: Work Plane-Based, so it is placed on a plane and moves with it, and
      Shared when a project must schedule or tag it on its own.
   2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
@@ -83,9 +92,12 @@ purpose: >
      CREATE_FAMILY_EXTRUSION for any other shape pushed straight;
      CREATE_FAMILY_REVOLUTION, CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
      CREATE_FAMILY_SWEPT_BLEND for the rest. Every one gives back its form's
-     id, which every later step names it by. Shapes are typed in millimetres
-     in the work plane's own two model coordinates. A smooth shape none of
-     these makes in one piece - a coil, an organic body - is
+     id, which every later step names it by. MANY extrusions and revolves -
+     a family of dozens of parts - go in ONE call of CREATE_FAMILY_FORMS, a
+     row per form written once to a file under %TEMP%\heron-work: one undo
+     entry, every id given back in the order listed. Shapes are typed in
+     millimetres in the work plane's own two model coordinates. A smooth
+     shape none of these makes in one piece - a coil, an organic body - is
      CREATE_FAMILY_FREEFORM_SOLID: a FIXED shape that no plane or parameter
      moves and no lock or label reaches, so say that before using it.
   8. LOCK_FORM_TO_PLANES for every form that is not a box from step 7 - each
@@ -211,6 +223,8 @@ needs:
   - CREATE_FAMILY_BLEND
   - CREATE_FAMILY_SWEEP
   - CREATE_FAMILY_SWEPT_BLEND
+  # Step 7's many forms at once - extrusions and revolves, one row each.
+  - CREATE_FAMILY_FORMS
   - CREATE_FAMILY_FREEFORM_SOLID
   - LOCK_FORM_TO_PLANES
   - LINK_FAMILY_FORM_PARAMETER

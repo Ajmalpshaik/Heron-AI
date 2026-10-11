@@ -36,7 +36,7 @@ C#, so this asks the Python seams that already resolve Heron's folders:
   1. HERON'S LOG FOLDER - HeronPaths.Logs, the folder the add-in writes its own
      daily log to, as mcp/client/heron_bridge_client.LOG_DIR resolves it.
      DERIVED: machine-local and disposable, which is exactly what a log of
-     hook decisions is. %LOCALAPPDATA%\Heron\logs on Windows, and elsewhere
+     hook decisions is. %LOCALAPPDATA%\\Heron\\logs on Windows, and elsewhere
      the ~/.local/share/Heron/logs that .NET names there.
 
   2. THE KNOWLEDGE FOLDER - heron_scope.knowledge_dir(), only when the first

@@ -1,0 +1,60 @@
+# Proving EDIT_REVISION_NUMBERING_SEQUENCE version 2 on Revit 2020 - 2026-10-10.
+# Version 2 reaches the 2020/2021 Numbering Options - the project's ONE
+# alphanumeric and ONE numeric numbering - which had never been editable from
+# Heron. NEEDS-CHECKING group BA, row BA7. DRAFT, never run on a model.
+#
+#     python tools/batch-prove.py tools/jobs/edit-revision-numbering-revit-2020-2026-10-10.yaml --dry-run
+#     python tools/batch-prove.py --session <pid> tools/jobs/edit-revision-numbering-revit-2020-2026-10-10.yaml
+#
+# --session NAMES THE REVIT 2020 - its process id, from `heron_bridge_client.py
+# list`; it was 36948 on 2026-10-10 and changes when Revit restarts. With two
+# Revits open and no --session, the run goes to whichever sorts first.
+#
+# RUN ON "Project2", A SCRATCH PROJECT, NEVER A WORKING FILE. Bring it to the
+# front. LIST_REVISIONS read its alphanumeric numbering on 2026-10-10 as
+# "custom sequence A, B, C, ... Z (26 values), prefix (blank), suffix (blank)".
+# Read it again first: the positive needs a list that is NOT already AA ... ZZ,
+# and NO ISSUED revision numbered alphanumeric - a settings change on a
+# numbering an issued revision uses is refused, naming it, by design. If
+# issue-revisions-revit-2020-2026-10-10.yaml was kept for real and Seq. 2 is
+# alphanumeric, that refusal is what comes back; write it down - it is BA7's
+# third leg - and run this on a project with no issued alphanumeric revision.
+#
+# THE VALUES ARE THE MODELLER'S OWN: the doubled letters AA to ZZ, his project
+# standard. `write: true` runs both legs in a transaction group and ROLLS THEM
+# BACK; run LIST_REVISIONS afterwards and see A, B, C ... Z still there rather
+# than assuming it.
+#
+# THE NEGATIVE IS THE SAME CALL WITH 'AA' TWICE. A tool that wrote whatever it
+# was handed would report it changed; this must refuse it naming 'AA', with
+# `changed` empty.
+
+model: '"Project2" (a scratch project), Revit 2020'
+
+jobs:
+  - fragment: edit-revision-numbering-sequence
+    write: true
+    expect: changed
+    # POSITIVE: the whole list, doubled letters A to Z, prefix and suffix left
+    # alone (empty leaves a field alone).
+    set:
+      name: Alphanumeric
+      newName: ""
+      minimumDigits: ""
+      startingNumber: ""
+      prefix: ""
+      suffix: ""
+      customSequence: "AA, BB, CC, DD, EE, FF, GG, HH, II, JJ, KK, LL, MM, NN, OO, PP, QQ, RR, SS, TT, UU, VV, WW, XX, YY, ZZ"
+    # NEGATIVE: 'AA' twice - refused by name, nothing changed.
+    negative-set:
+      name: Alphanumeric
+      newName: ""
+      minimumDigits: ""
+      startingNumber: ""
+      prefix: ""
+      suffix: ""
+      customSequence: "AA, BB, CC, AA"
+    note: >
+      Second route: Manage > Sheet Issues/Revisions > Numbering Options >
+      Alphanumeric, by eye, after the run - still A, B, C ... Z, because both
+      legs were rolled back.

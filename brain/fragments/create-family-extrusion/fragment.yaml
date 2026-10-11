@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,14 +74,18 @@ contract:
     - name: workPlane
       type: string
       source: request
-    # The shape, as loops with `|` between - "circle 0,0 150",
-    # "rect -300,-200 300,200 | circle 0,0 50", "0,0; 600,0; 600,100; 100,100;
-    # 100,400; 0,400". Millimetres, in the plane's two model coordinates.
+    # The shape, as loops with `|` between, each "circle CX,CY R",
+    # "rect X1,Y1 X2,Y2", "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY
+    # X,Y" closed back to the first - "rect -300,-200 300,200 | circle 0,0 50".
+    # A loop inside another is a hole. Millimetres from the family origin, in
+    # the plane's two model coordinates: X,Y on a level or horizontal plane,
+    # X,Z on a plane facing front or back, Y,Z on one facing left or right.
     - name: profile
       type: string
       source: request
-    # Extrusion Start: millimetres from the plane along the axis it faces. 0
-    # starts on the plane.
+    # Extrusion Start: millimetres from the plane along the axis it faces -
+    # up (+Z), back (+Y) or right (+X), negative the other way. 0 starts on
+    # the plane.
     - name: startMm
       type: double
       source: request

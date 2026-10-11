@@ -36,6 +36,43 @@ positive:
   - given: a connector whose System Classification is Domestic Cold Water on an inline accessory
     expect: a WARN, not a FAIL - some offices fix the system on purpose
 
+  # VERSION 3 - classification. Revit 2024, whose per-user
+  # OmniClassTaxonomy.txt files 21 codes under Pipe Accessories and 23.30.10.00
+  # under Doors.
+  - given: a Pipe Accessories family open in the Family Editor, OmniClass Number blank
+    expect: >
+      WARN "OmniClass Number is blank. The classification file gives Pipe
+      Accessories 21 code(s)" with FIX SET_FAMILY_SETTINGS "OmniClass
+      Number=<code>"; classificationReport carrying that line and the file read
+
+  - given: the same family after OmniClass Number is set to 23.30.10.00 by hand
+    expect: FAIL - filed under Doors in the classification file, not Pipe Accessories
+
+  - given: the same family with OmniClass Number 23.99.99.99 typed by hand
+    expect: FAIL - not a code in the classification file, the path named
+
+  - given: >
+      the same family with a type whose Assembly Code is typed by hand to a
+      code the Assembly Code table does not hold, and one whose Keynote is
+      not in the keynote table
+    expect: >
+      FAIL naming the type and the code, FIX SET_FAMILY_TYPE_VALUES "Assembly
+      Code=..."; WARN for the keynote - OR, if the family document holds no
+      Assembly Code or keynote table, NOT CHECKED saying so. Which of the two
+      a family document gives is the first thing this case learns
+
+  - given: >
+      a PROJECT with a loaded Pipe Accessories family whose OmniClass Number
+      is 23.30.10.00, and a family type whose Assembly Code is not in the
+      project's Assembly Code table
+    expect: >
+      both types' rows OFF STANDARD with the reason - "filed under Doors" with
+      OPEN_FAMILY_FOR_EDITING, SET_FAMILY_SETTINGS, LOAD_FAMILY back; the
+      Assembly Code not in the table - and classificationReport counting each,
+      naming the types, and naming the file read. FIRST read whether the
+      loaded type exposes OmniClass Number at all: a "not checked - no value
+      to read" there is the answer to that question, not a pass
+
 negative:
   - given: a family type that exists in the project but is placed NOWHERE
     expect: >
@@ -92,7 +129,37 @@ negative:
       It is present; which of the two a lookup by that name shows is Revit's
       pick (row 5b-203)
 
+  # VERSION 3
+  - given: >
+      the Pipe Accessories family with OmniClass Number 23.65.55.14.14
+      (Isolation Valves for Liquid Services) - set by SET_FAMILY_SETTINGS
+    expect: >
+      PASS on the OmniClass Number - a correct code for its category must NOT
+      be flagged. THE D-30 NEGATIVE for this group
+
+  - given: a Detail Items family open in the Family Editor, OmniClass Number blank
+    expect: >
+      NOT CHECKED - the classification file gives Detail Items no code, so it
+      is not judged; no WARN and no FAIL on the OmniClass Number
+
+  - given: >
+      a PROJECT whose loaded family types mostly have a blank OmniClass
+      Number, with requiredParameters empty
+    expect: >
+      the blanks COUNTED in classificationReport and NOT off standard - there
+      is no universal standard that every family carries one (D-33); the same
+      run with requiredParameters "OmniClass Number" makes each blank one off
+      standard
+
+  - given: a PROJECT family type whose Keynote is not in the loaded keynote file
+    expect: >
+      "WARN Keynote ... is not in the keynote table" in its row, counted in
+      classificationReport - NOT off standard, and `warned` unchanged (it
+      counts only doubled required names)
+
 second_route:
   - Project Browser, Families branch - and Manage, Purge Unused to see which are placed at all
   - "In the Family Editor: Family Category and Parameters for Work Plane-Based and Part Type; select each connector for its direction arrow, System Classification and the small associate button beside Diameter; Family Types for Instance or Type"
   - REPORT_FAMILY_TEMPLATE, REPORT_FAMILY_CONNECTORS and REPORT_FAMILY_PARAMETERS on the same family
+  - "The OmniClass Number in Family Category and Parameters (its button lists the file's codes); a type's Assembly Code and Keynote buttons in Type Properties, which list the loaded tables"
+  - REPORT_FAMILY_TEMPLATE's classificationCodes on the same family

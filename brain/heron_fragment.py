@@ -701,6 +701,72 @@ NO_HINT_ON_PURPOSE = {
 }
 
 
+def need_notes(path):
+    """What each need's own author wrote above it in `contract.needs`, by name.
+
+    A TYPE HINT CANNOT CARRY A SYNTAX, AND THE CARD ALREADY DOES. how_to_type
+    says how to write a `double` or a list; it has nothing to say about a
+    `string` (NO_HINT_ON_PURPOSE), and for most strings that is right. For some
+    it is the whole job: CREATE_FAMILY_EXTRUSION's `profile` is "loops with `|`
+    between - circle CX,CY R, rect X1,Y1 X2,Y2 ... in the plane's two model
+    coordinates", and that sentence sits in the comment above the need, where
+    yaml.safe_load drops it. On 2026-10-09 a chat building a fire alarm panel
+    was told only `profile  string`, called the capability empty to find out,
+    was refused, and then read brain/fragments/*/fragment.yaml to learn the
+    syntax - the file-reading AGENTS.md forbids for a Revit job, about a minute
+    and a half of one family. FRAGMENT-ISSUES 5b-397.
+
+    So the comment lines directly above each `- name:` inside `contract.needs`
+    are returned joined, keyed by that name. A need with no comment above it
+    is simply absent. Read as TEXT for the same reason
+    heron_bridge_client.fragment_needs is: a comment is not data to a YAML
+    parser. Anything unreadable gives {} - a note missing is the state before
+    this existed, never a wrong note.
+    """
+    try:
+        with io.open(path, encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except (OSError, UnicodeDecodeError):
+        return {}
+
+    notes, pending = {}, []
+    in_contract = in_needs = False
+    for raw in lines:
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            continue
+        indent = len(line) - len(line.lstrip())
+        comment = stripped.startswith("#")
+        if indent == 0 and not comment:
+            if in_needs:
+                break
+            in_contract = stripped == "contract:"
+            pending = []
+            continue
+        if not in_contract:
+            continue
+        if indent == 2 and not comment:
+            if in_needs:
+                break                   # `provides:`, or anything after needs
+            in_needs = stripped == "needs:"
+            pending = []
+            continue
+        if not in_needs:
+            continue
+        if comment:
+            pending.append(stripped.lstrip("#").strip())
+            continue
+        if stripped.startswith("- "):
+            key, _sep, value = stripped[2:].partition(":")
+            if key.strip() == "name" and any(pending):
+                notes[value.strip().strip("\"'")] = " ".join(p for p in pending if p)
+        # A key line ends the comment run: a comment BELOW `type:` belongs to
+        # the next need, never to the one it sits inside.
+        pending = []
+    return notes
+
+
 # THE AGENT REGISTRY, read from docs rather than copied here.
 #
 # Every fragment names the agent that owns it, and until 2026-09-01 nothing

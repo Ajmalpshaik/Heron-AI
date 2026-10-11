@@ -80,6 +80,38 @@ Then, the three things only you can do:
 Claude Code's own memory of your old PC does not come across. It does not need to: Heron hands Claude
 a job's whole method — every step of building a family, in order — through its `heron_method` tool.
 
+## 1b. If your Claude app came from the Microsoft Store — install from your own terminal
+
+**How to tell:** the folder `%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_…` exists (Windows chooses the
+letters after the underscore). `python tools/heron-ready.py` says so in a section **2a** when it finds one.
+
+**What it means.** Windows gives that app **a private copy of `%APPDATA%` and `%LOCALAPPDATA%`**.
+Everything Claude starts — its own shell, and Heron's server — writes into that copy, and sees the copy
+laid over your real folders. **Your own terminal and Revit see only the real folders.** Think of it as a
+link only Claude has loaded: Claude sees the link over the model and draws into the link, and everyone
+else sees only the model.
+Measured on the owner's laptop on 2026-10-10 ([row 5b-417](fragment-issues/section-5b-rows-401-425.md)):
+every package Claude had installed was in the copy and none was in the real folder, so
+`heron-ready --check` said **READY** inside Claude and **NOT READY** in his own terminal.
+
+1. **Install Python packages from your own terminal** — Windows Terminal or PowerShell, opened outside
+   Claude. Never ask Claude to install them for you: they would land only in its copy again.
+2. **Install the versions Claude's copy already holds.** `python tools/heron-ready.py`, run in your own
+   terminal, prints the `pip install --user` line with each version pinned. A *different* version would
+   leave two copies of one package mixed together in Claude's view. Leaving a package out is safe.
+3. **A Reset or uninstall of the Claude app deletes its copy** — the packages Claude installed, Heron's
+   knowledge store, each project's memory (load runs, standards, earlier answers) and the brain's record
+   of what each chat asked ([row 5b-419](fragment-issues/section-5b-rows-401-425.md)).
+4. **Choose a folder for load reports.** A report saved with no folder chosen and the model never saved
+   goes under Heron's knowledge folder, which on such a PC is inside Claude's copy — whether it opens
+   from Explorer has not been checked ([row 5b-418](fragment-issues/section-5b-rows-401-425.md)).
+5. **Revit's Companion button is expected not to find your chat** on such a PC, because each chat leaves
+   its note inside Claude's copy ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Not yet
+   tried in Revit.
+
+**Where Heron should run and keep its files on such a PC is not decided** — [Q-63](OPEN-QUESTIONS.md),
+the owner's to answer.
+
 ## 2. Optional — the two search add-ons
 
 When you type *"select all ducts"*, Heron has to pick the right tool out of its library. **That pick is
@@ -155,8 +187,8 @@ without it. It fails only when a **required** one is missing.
 | | Where |
 |---|---|
 | **The Revit add-in** | `%AppData%\Autodesk\Revit\Addins\<release>\Heron` — per-user, no administrator rights |
-| **Heron's settings and its knowledge store** | `%APPDATA%\Heron` |
-| **Python packages** | Your own Python's user folder |
+| **Heron's settings and its knowledge store** | `%APPDATA%\Heron` — but with a Microsoft Store Claude, the knowledge store and each project's memory are in Claude's private copy ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
+| **Python packages** | Your own Python's user folder — and with a Microsoft Store Claude, a second copy of whatever Claude installed, which only Claude sees ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
 | **The search add-ons' model files** | `C:\Users\<you>\.cache\huggingface` |
 | **The Heron folder** | The code and the tools. **None of the installs above** — so a Heron folder copied to another PC needs this page's list done again there |
 | **GitHub** | The code and these lists. **Never** the model files, and never your settings |
