@@ -156,7 +156,7 @@ pins one id across the whole batch by itself; a hand-run `validate` or `prove` n
 | `PASS` | both halves held | read the draft, then accept it under your own name |
 | `ALREADY` | at PROVEN or PRODUCTION | nothing. Remove it from the job file |
 | `POSITIVE EMPTY` | it ran and found nothing | **rule 2.** The arrangement is wrong, not the fragment |
-| `POSITIVE UNREADABLE` | nothing it returned is a quantity | read the fragment's own source. Its results may need a `role:` |
+| `POSITIVE UNREADABLE` | nothing it returned is a quantity | read the fragment's own source. Its results may need a `role:`; a sentence result needs `type: string` and `role: result` |
 | `NEG NOT EMPTY` | the negative returned content | a **finding**. The fragment may be falling back to something it was not given |
 | `NO NEGATIVE` | the second leg never ran | usually `needs_unbound` — the negative selection was empty. **Rule 3** |
 | `DID NOT RUN` | the positive never ran | read the message. Often a caller value the contract asks for |
@@ -169,9 +169,23 @@ when the batch itself could not run. Set the failures aside and pass the clean o
 ## What the runner cannot judge, and where `expect:` comes in
 
 It judges the positive by asking whether a **declared result moved off zero**, using the fragment's own
-contract: names declared `role: accounting` are skipped, and so are names matching the bookkeeping
-patterns [`brain/heron_validate.py`](../../../brain/heron_validate.py) already owns. Two shapes get
-past that, and both were met on real runs:
+contract: names declared `role: accounting` are skipped. Nothing reads a name any more - the naming
+patterns [`brain/heron_validate.py`](../../../brain/heron_validate.py) once guessed bookkeeping with were
+replaced by the `role:` every provide now declares.
+
+**A sentence is judged too, but only one declared `type: string` and `role: result`**: found when it says
+something, nothing when it is empty or `(null)`, and read the same way in the negative - so the same words
+in both legs are `NEG NOT EMPTY`, never a pass. Until 2026-10-11 a sentence was `POSITIVE UNREADABLE`
+however well both legs held - `edit-revision`'s `changed`, [row 5b-411](../../../docs/fragment-issues/section-5b-rows-401-425.md).
+**Beside a count or a flag, the count decides** (D-51): a sentence that reads back the state -
+`set-material-colour`'s `wasColour` - is filled whether or not anything changed, so with `changed 0`
+the positive is `POSITIVE EMPTY` however full the sentence. Name the sentence alone in `expect:` when it
+really is the result. A sentence the fragment always writes - a report that says *"nothing was
+checked"* - is never empty in the negative; give it `role: accounting`, or prove the fragment by
+tracking (below). **The runner cannot read what a sentence says**: `<none>` or *"no other revision was
+renumbered"* counts as found, so read the value the verdict quotes before signing.
+
+Two shapes get past the count, and both were met on real runs:
 
 - **A work counter the patterns miss.** `comparedCount 22` counts what was *looked at*.
 - **An echo of the input.** `wanted 1 item(s) [Comments]` is the field the caller asked for, non-zero

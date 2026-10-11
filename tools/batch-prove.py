@@ -54,6 +54,15 @@ by one rule: **a declared result has to have moved off zero.**
     in BOTH legs. **Unreadable is not evidence of work** - the same rule
     `_as_count` already follows for the negative, applied to the positive.
 
+    **A sentence is the one result that is not a count.** A provide declared
+    `type: string` AND `role: result` is found when it says something and
+    nothing when it is empty or `(null)`, in BOTH legs, so the same words in
+    each are content in the negative and cannot pass. Beside a count or a
+    flag the count decides, because a sentence that reads back the state is
+    filled whether or not anything changed. `edit-revision`'s `changed` was
+    POSITIVE UNREADABLE with both legs held (row 5b-411); see
+    `string_results` and `positive_worked` in heron_validate.
+
 WHERE THE JUDGING COMES FROM
 ----------------------------
 `looks_empty` is IMPORTED from `brain/heron_validate.py`, not copied. The runner
@@ -90,7 +99,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as HF                                     # noqa: E402
 
-# The underscore names below - `_as_count` and `_is_helper_object` - are
+# The underscore names below - `_as_count`, `_as_found` and `_is_helper_object` - are
 # reached into deliberately. They are the validation agent's private
 # workings, and normally that would be a reason to leave them alone; here the
 # alternative is a second copy of the reasoning they carry, judging the same run
@@ -351,13 +360,16 @@ def job_refusal(job, library):
 
 
 
-def why_not_empty(phase, roles, names):
+def why_not_empty(phase, roles, names, strings=()):
     """The entries that made `looks_empty` say no, and only those.
 
     A negative case that returns content is a FINDING, and a finding a person
     cannot act on is half a finding. Listing every declared name would print the
     zeros and the bookkeeping alongside the one value that actually came back -
     which is the reading this whole file exists to save somebody.
+
+    `strings` is read the way `looks_empty` reads it, or a one-word sentence
+    result that made it say no would be missing from the list (5b-411).
     """
     guilty = []
     for key, value in sorted((phase.get("provides") or {}).items()):
@@ -366,6 +378,10 @@ def why_not_empty(phase, roles, names):
         if roles.get(key) == "accounting":
             continue
         if key in HV.NOTE_KEYS:
+            continue
+        if key in strings:
+            if HV._as_found(value) != 0:
+                guilty.append("%s %s" % (key, value))
             continue
         if HV._is_helper_object(value):
             continue
@@ -418,15 +434,20 @@ def judge(record, frag, expect=None):
             return verdict, "%s; and the negative did not run - %s" % (reason, why)
         return NO_NEGATIVE, why
 
+    # A SENTENCE RESULT IS READ THE SAME WAY IN BOTH LEGS. `positive_worked`
+    # reads a declared string result as found or nothing; the negative must
+    # too, or the same one-word answer in both legs reads as found in one and
+    # as a helper object in the other, and passes (5b-411).
     roles, names = contract_of(frag)
-    empty = HV.looks_empty(negative, roles, names)
+    strings = HV.string_results(frag)
+    empty = HV.looks_empty(negative, roles, names, strings)
 
     if verdict is not None:
         if not empty:
             return verdict, "%s; the negative did not come back empty either" % reason
         return verdict, reason
     if not empty:
-        returned = why_not_empty(negative, roles, names)
+        returned = why_not_empty(negative, roles, names, strings)
         return NEG_NOT_EMPTY, "the negative returned %s" % (returned or "content")
 
     return PASS, "positive: %s" % reason
