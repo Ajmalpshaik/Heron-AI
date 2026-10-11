@@ -150,6 +150,9 @@ compatibility-note: >
 #                                           column this one writes
 #   "make an alphabetic sequence"        -> CREATE_REVISION_NUMBERING_SEQUENCE.
 #                                           This one USES a sequence by name
+#   "create revisions for the dates on the sheets" -> CREATE_REVISIONS_FROM_SHEET_DATES -
+#                                         one revision per date typed on the sheets,
+#                                         each on its own sheets. This one makes one
 
 utterances:
   - add a revision

@@ -1,0 +1,109 @@
+# NONE OF THESE HAS BEEN RUN. Written 2026-10-11 with version 1, for
+# NEEDS-CHECKING Group CZ. The arrangement is the two scratch projects of
+# Group CY (LIST_DATES_ON_SHEETS' proof, tools/jobs/list-dates-on-sheets-
+# 2026-10-10.yaml) with ONE revision added by hand to the first - so one
+# arrangement serves both proofs. It is never made in one of the owner's
+# working models.
+#
+# D-30: the negative is what catches "succeeded and did nothing" - and here,
+# above all, "made revisions from text it was told not to read": the same dates
+# typed inside views instead of on sheets must make nothing.
+
+positive:
+  - given: >
+      "Heron Sheet Dates", a scratch project: S-01 carries "ISSUED 09 SEP 2026"
+      and "REV A 22 Jul 2025" typed on the sheet; S-02 "22/JUL/25" and
+      "15 MAY 2026"; S-03 "15 May 2026"; S-04 "09-09-2026", "31 SEP 2026" and
+      "2 OFF 300", with a floor plan placed on it and "01 JAN 2026" typed INSIDE
+      the plan. Its revisions before the run: Revit's own Seq. 1 (on no sheet,
+      in no cloud) and Seq. 2 "IFI - Issued for Information" dated
+      "15 May 2026", made by hand, on no sheet. Values: description
+      "IFI - Issued for Information", every other value blank
+    expect: >
+      datesFound 3, revisionsCreated 2, revisionsReused 1,
+      revisionsAddedToSheets 5, sheetsChanged 3, and dateRevisions, oldest
+      first, "22-JUL-2025 -> Seq. 3 - IFI - Issued for Information, dated
+      '22-JUL-2025', CREATED: added to 2 sheet(s) (S-01, S-02)  ||
+      15-MAY-2026 -> Seq. 2 - IFI - Issued for Information, dated
+      '15 May 2026', REUSED as it was: added to 2 sheet(s) (S-02, S-03)  ||
+      09-SEP-2026 -> Seq. 4 - IFI - Issued for Information, dated
+      '09-SEP-2026', CREATED: added to 1 sheet(s) (S-01)". sheetsWithNoDate
+      "S-04"; revisionsRemaining 4, the summary saying the project had 2;
+      refused empty; the summary naming the sequence out of date order
+      (15-MAY-2026 is Seq. 2, before 22-JUL-2025's Seq. 3) and
+      REORDER_REVISION. Seq. 1 is still in the project. No revision dated
+      01-JAN-2026 - it is inside the plan - and none from S-04's three notes.
+      Nothing issued
+
+  - given: >
+      the same, KEPT, then run a second time with the same values
+    expect: >
+      revisionsCreated 0, revisionsReused 3, revisionsAddedToSheets 0,
+      sheetsChanged 0, and the summary opening "Nothing needed doing". A second
+      run never makes a second set
+
+  - given: >
+      the same project, dateFormat "DD.MM.YYYY", issuedBy "M.Sagheer",
+      issuedTo "A.Rahmani", issueState "issue"
+    expect: >
+      the new revisions dated "22.07.2025" and "09.09.2026" (a numeric month is
+      refused in what is READ, never in what the caller asks to WRITE), issued
+      by and to as given, and issued - set after every sheet took them. The
+      reused Seq. 2 still dated "15 May 2026", not issued, issued by and to
+      unchanged
+
+  - given: >
+      the same project, onlyDates "22-JUL-2025"
+    expect: >
+      one revision created, added to S-01 and S-02 only; the summary naming
+      15-MAY-2026 and 09-SEP-2026 as left out
+
+negative:
+  - given: >
+      "Heron Sheet Dates Empty", the second Group CY project: three sheets
+      carrying only "GENERAL NOTES" and "09-09-2026"; "09 SEP 2026" typed
+      INSIDE a floor plan placed on S-01, "22 JUL 2025" in a drafting view on
+      no sheet, "15 May 2026" in S-02's Sheet Issue Date parameter. Same values
+    expect: >
+      refused - "3 sheet(s) read and 6 text note(s) typed on them, and none
+      carries a date with a written month ... Nothing was created and no sheet
+      was changed." datesFound 0, revisionsCreated 0, revisionsReused 0,
+      revisionsAddedToSheets 0, sheetsChanged 0, dateRevisions empty, every
+      sheet number in sheetsWithNoDate, and the project's revisions exactly as
+      before. A version that read every view makes 09-SEP-2026 and
+      22-JUL-2025 here; one that read the parameter makes 15-MAY-2026
+
+  - given: >
+      the positive project with description empty, or "<blank>"
+    expect: >
+      refused, nothing created, no sheet changed
+
+  - given: >
+      the positive project with dateFormat "DD-MON-YYYY", "MMM YYYY" or
+      "Day DD"
+    expect: >
+      refused before anything is made, naming what the format takes - "MON"
+      has letters that are not a day, a month or a year, "MMM YYYY" has no
+      day, so two dates in one month would print the same
+
+  - given: >
+      the positive project with a second hand-made revision "IFI - Issued for
+      Information" dated "15-MAY-2026" beside Seq. 2
+    expect: >
+      refused, naming both revisions - which one the sheets should carry is
+      the drawing office's choice. Nothing created, no sheet changed
+
+  - given: >
+      the positive project with onlyDates "01-JAN-2026" (typed inside the plan,
+      on no sheet) or "09-09-2026" (a numeric month)
+    expect: >
+      refused, naming the dates that ARE on the sheets; nothing created
+
+second_route:
+  - >
+    LIST_DATES_ON_SHEETS on the same project before the run: its dateList names
+    the same dates on the same sheets as dateRevisions
+  - >
+    by eye in Revit: View > Revisions (Sheet Issues/Revisions) for the rows and
+    their dates, and each sheet's Revisions on Sheet for the ticks - S-01
+    ticks Seq. 3 and Seq. 4, S-02 Seq. 2 and Seq. 3, S-03 Seq. 2, S-04 none

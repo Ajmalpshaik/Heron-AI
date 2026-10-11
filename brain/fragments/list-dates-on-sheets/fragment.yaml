@@ -170,6 +170,9 @@ compatibility-note: >
 #                                             that IS a parameter
 #   "list the sheets"                      -> LIST_SHEETS
 #   "change the text in a note"            -> EDIT_TEXT_VALUES
+#   "create revisions for the dates on the sheets" -> CREATE_REVISIONS_FROM_SHEET_DATES -
+#                                         makes the revisions this card only lists,
+#                                         each on the sheets carrying its date
 
 # WHERE THE SENTENCE CAME FROM. The modeller's own, typed 2026-10-10 in Revit
 # 2020 with model 4355-BHVD-3D-50C10-BL001A open. Nothing else is declared.
