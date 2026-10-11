@@ -89,11 +89,25 @@ same suite fails on `DEBUG` or a framework symbol, which the fragment gate defin
 | 2024 | Built-in category and parameter enums | 32-bit | 64-bit — old int casts throw |
 | 2025 | Dimensions | one `Dimension` class | `LinearDimension`, `RadialDimension`, `ArcLengthDimension`. Exact-type checks fail — **and the same change brought the first PROJECT-side creation route**, see below |
 | 2026 | Add-in isolation | — | `<ManifestSettings>` in the manifest. ⚠ Read by **Revit 2025 or older this crashes Revit** — it must be stripped per release |
+| 2026 | Classification parameters RENAMED, same numbers | `BuiltInParameter.OMNICLASS_CODE`, `OMNICLASS_DESCRIPTION`, `UNIFORMAT_CODE`, `UNIFORMAT_DESCRIPTION` ("OmniClass Number", "OmniClass Title", "Assembly Code", "Assembly Description") | `CLASSIFICATION_CODE`, `CLASSIFICATION_DESCRIPTION`, `ASSEMBLY_CODE`, `ASSEMBLY_DESCRIPTION` ("Classification Number", "Classification Title"). The values are unchanged - -1002502, -1002503, -1002500, -1002501 - so **neither spelling compiles on every release**; resolve the enum by name at run time, see below |
 | 2027 | Runtime | .NET 8 | .NET 10 |
 | 2027 | All-user add-in path | `ProgramData` | `Program Files` |
 
 Also removed or deprecated at 2027: AXM import, several `Mechanical.Zone` members, legacy rebar
 creation methods, and several `EnergyDataSettings` properties.
+
+**The classification rename, and the file behind it.** Read 2026-10-11 off the shipped assemblies with
+`dotnet run --project tools/api-surface -- --members BuiltInParameter`: the four names above exist
+2020-2025 and are gone at 2026, where the same four numbers carry the new names. A fragment that types
+either spelling compiles on half the range, so one implementation asks the running Revit which name it
+has - `Enum.IsDefined(typeof(BuiltInParameter), "CLASSIFICATION_CODE")` - and parses that one. Revit's
+OmniClass list is a plain TAB-separated file no API reads (code, title, level, built-in category id):
+`OmniClassTaxonomy.txt` to 2025, `Classification_Taxonomy.txt` from 2026, in
+`Application.CurrentUsersDataFolderPath` with a cached copy in the release's `UserDataCache`. The 2020
+to 2025 file holds Windows-1252 bytes, not UTF-8, and **from 2026 Revit ships only a 14-line sample**
+with no real codes - so on 2026 and later nothing validates until the office supplies its own file.
+Assembly Code and Keynote have tables the API does read: `AssemblyCodeTable` and `KeynoteTable`, on
+every release from 2020.
 
 ## Creating a dimension — four routes, four different histories
 

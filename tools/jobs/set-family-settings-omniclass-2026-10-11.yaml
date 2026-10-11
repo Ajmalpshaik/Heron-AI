@@ -1,0 +1,69 @@
+# The proof of set-family-settings version 2 (SET_FAMILY_SETTINGS,
+# FRG-DOC-036) - the OmniClass Number, the one setting that takes text.
+# Version 1's proof (2026-10-03) went stale when the implementation changed;
+# this re-proves the whole tool on its new code.
+#
+#     python tools/batch-prove.py tools/jobs/set-family-settings-omniclass-2026-10-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-family-settings-omniclass-2026-10-11.yaml
+#
+# ONE JOB, because a run's record is kept per tool and a second job for the
+# same tool would overwrite it. The other cases are listed below to be run and
+# LOOKED AT by hand.
+#
+# THE ARRANGEMENT, made by hand before the run, on Revit 2024 (whose per-user
+# OmniClassTaxonomy.txt files 21 codes under Pipe Accessories, and 23.30.10.00
+# "Doors" under Doors):
+#
+#   "Heron OmniClass Valve Test"   File, New, Family, the metric Pipe Accessory
+#                                  template; nothing built in it; saved once
+#                                  under this title and left OPEN in the
+#                                  Family Editor. OmniClass Number left BLANK
+#                                  in Family Category and Parameters.
+#
+# POSITIVE: "OmniClass Number=23.65.55.14.14" - a code the file files under
+# Pipe Accessories - `changed` 1, settingReport "OmniClass Number (blank) ->
+# 23.65.55.14.14 Isolation Valves for Liquid Services - ...". READ WHICH TITLE
+# OUTCOME IT NAMES (Revit filled the title / written from the file / Revit
+# holds it read-only): whether an API write fills OmniClass Title is not known
+# until this run.
+#
+# NEGATIVE: "OmniClass Number=23.30.10.00" - a real code, typed correctly, that
+# the same file files under DOORS. It must be refused naming Doors and listing
+# the 21 Pipe Accessories codes, `changed` 0. A different VALUE, not an empty
+# one (D-30).
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at Family Category and Parameters afterwards anyway - rollback has failed
+# before on this PC (BD1).
+#
+# BY HAND AFTERWARDS, through revit_change on the same family, each one read
+# back in Family Category and Parameters:
+#   - the positive twice in a row: the second answers alreadySet 1, changed 0
+#   - "OmniClass Number=23.99.99.99": refused, "not a code in the
+#     classification file", the 21 codes listed, nothing changed
+#   - "OmniClass Number=clear", then (with the code set again)
+#     "OmniClass Number=" - both empty it; the second settles whether an empty
+#     value reaches the fragment as "" (the add-in's NamedValues keeps it, by
+#     reading) or is lost on the way
+#   - a PROJECT in front with "OmniClass Number=23.65.55.14.14": notAFamily,
+#     and the refusal naming OPEN_FAMILY_FOR_EDITING and LOAD_FAMILY
+#   - on Revit 2026 or 2027, the shipped sample file: refused, the sample named
+
+model: Heron OmniClass Valve Test (a new family from the metric Pipe Accessory template, OmniClass Number blank), Revit 2024
+
+defaults:
+  in: "Heron OmniClass Valve Test"
+  write: true
+
+jobs:
+  - fragment: set-family-settings
+    expect: changed
+    set:
+      settings: "OmniClass Number=23.65.55.14.14"
+    negative-set:
+      settings: "OmniClass Number=23.30.10.00"
+    note: >
+      Positive writes a Pipe Accessories code and reads it back; negative is a
+      Doors code from the same file and must change nothing. Read the title
+      outcome in settingReport - it is the first evidence of whether an API
+      write fills OmniClass Title.

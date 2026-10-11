@@ -31,6 +31,13 @@ purpose: >
      thicknesses, Rough Width and Height if the opening is larger than the
      door; a window's sill height, frame and sash sizes, glass. A picture
      gives shape, never size (D-33).
+     CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
+     classificationCodes line lists the OmniClass Numbers (Classification
+     Number from Revit 2026) that Revit's taxonomy file gives the category -
+     run it again after the category changed. The modeller confirms the code
+     that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
+     "OmniClass Number=<code>" writes it; no file or no code is said, never
+     guessed (D-33).
   2. Parameters and values (FAMILY-CREATION steps 2 and 3): Frame Width,
      Frame Depth, Leaf Thickness, sash sizes as TYPE lengths; Width, Height,
      Rough Width and Rough Height are already there. SET_FAMILY_FORMULA ties

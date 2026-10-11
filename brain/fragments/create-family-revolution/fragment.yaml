@@ -63,9 +63,13 @@ contract:
     - name: workPlane
       type: string
       source: request
-    # The half-section, as loops with `|` between - "0,0; 150,0; 150,300;
-    # 0,300" beside a vertical axis is a cylinder 300 across. Millimetres, in
-    # the plane's two model coordinates.
+    # The half-section, as loops with `|` between - "circle CX,CY R",
+    # "rect X1,Y1 X2,Y2", "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY
+    # X,Y" closed back to the first, wholly on one side of the axis.
+    # "0,0; 150,0; 150,300; 0,300" beside a vertical axis is a cylinder 300
+    # across. Millimetres from the family origin, in the plane's two model
+    # coordinates: X,Y on a level or horizontal plane, X,Z on a plane facing
+    # front or back, Y,Z on one facing left or right.
     - name: profile
       type: string
       source: request

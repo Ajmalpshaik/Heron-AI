@@ -1,0 +1,53 @@
+# The proof of report-family-template version 2 (REPORT_FAMILY_TEMPLATE,
+# FRG-DOC-037) - the OmniClass Number and Title in the settings, and
+# classificationCodes, the codes the classification file gives the family's
+# category. Version 1's proof (2026-10-03) went stale when the implementation
+# changed; this re-proves the whole tool on its new code.
+#
+#     python tools/batch-prove.py tools/jobs/report-family-template-omniclass-2026-10-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-family-template-omniclass-2026-10-11.yaml
+#
+# THE ARRANGEMENT, made by hand before the run, on Revit 2024 (whose per-user
+# OmniClassTaxonomy.txt files 21 codes under Pipe Accessories and none under
+# Detail Items):
+#
+#   "Heron OmniClass Valve Test"   the family set-family-settings-omniclass-
+#                                  2026-10-11.yaml uses - a new family from the
+#                                  metric Pipe Accessory template - with its
+#                                  OmniClass Number set BY HAND to
+#                                  23.65.55.14.14 in Family Category and
+#                                  Parameters, saved, left OPEN
+#   "Heron OmniClass Project"      a PROJECT, new from the metric
+#                                  Architectural template, saved under this
+#                                  title and left open - the negative: a
+#                                  report there says it is not a family and
+#                                  returns nothing else. Another FAMILY will not
+#                                  do: classificationCodes there is a sentence
+#                                  (the codes, or why there are none), and the
+#                                  runner's judge reads that as NEG NOT EMPTY
+#
+# POSITIVE: classificationCodes listing 21 codes as "code Title" joined by
+# " || ", 23.65.55.14.14 Isolation Valves for Liquid Services among them, then
+# the count and the per-user file's path; templateReport's settings reading
+# OmniClass Number 23.65.55.14.14 and OmniClass Title as Family Category and
+# Parameters shows it.
+#
+# NEGATIVE: the project - notAFamily true, classificationCodes empty.
+#
+# BY HAND AFTERWARDS, through revit_read: a new family from the metric Detail
+# Item template - classificationCodes must SAY the file gives Detail Items no
+# code at all, with the path, not come back empty.
+
+model: Heron OmniClass Valve Test (Pipe Accessory family, OmniClass Number 23.65.55.14.14 set by hand) and Heron OmniClass Project, Revit 2024
+
+defaults:
+  in: "Heron OmniClass Valve Test"
+
+jobs:
+  - fragment: report-family-template
+    expect: classificationCodes
+    negative-in: "Heron OmniClass Project"
+    note: >
+      The positive lists the file's Pipe Accessories codes and the path read;
+      the negative is a project and must list nothing. Check the 21 against
+      the OmniClass Number button's dialog in Family Category and Parameters.
