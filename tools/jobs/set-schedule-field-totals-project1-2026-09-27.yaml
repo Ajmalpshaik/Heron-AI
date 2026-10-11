@@ -61,3 +61,8 @@ jobs:
       fieldNames: Flow
     negative-set:
       fieldNames: Family and Type
+    # The negative is the SAME schedule, so its chain gets the same name. Left
+    # out, the chain was handed `fieldNames` and refused before the fragment
+    # ran - FRAGMENT-ISSUES row 5b-242.
+    negative-setup-set:
+      nameContains: Air Terminal Schedule

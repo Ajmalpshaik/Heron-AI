@@ -7,9 +7,16 @@
 > | **Authority** | None of its own. [`requirements.txt`](../requirements.txt) and [`requirements-optional.txt`](../requirements-optional.txt) are the lists, [Q-39](open-questions/answered.md) settled what a user must install, [07](07-installation-and-update.md) is how Heron is installed, and [`brain/retrieval-history.md`](../brain/retrieval-history.md) holds every measurement. Where this page disagrees with them, **they win** |
 > | **Opened** | 2026-09-24, with the first measurement of the search add-ons on the owner's own questions |
 
-> **Heron is not released yet.** No release has been published, and the [main README](../README.md) asks
-> modellers not to install it until it is announced. This page is the list for that day — and for the
-> owner's PC now.
+> **The first release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), was
+> published on 2026-10-08**, on the owner's word, so a new teammate could install Heron. It is an early,
+> **unsigned** build, and the [main README](../README.md) still asks modellers not to install Heron until
+> it is announced.
+>
+> **The installer is in that release, never in the code.** Searching the code will not find
+> `HeronInstaller.exe` — it is built, and [`.gitignore`](../.gitignore) keeps it out on purpose. It sits
+> at the top of `heron-project.zip` on the release page: row 6 below. With a copy of the code,
+> `.\tools\setup.ps1` builds and installs Heron with no installer at all —
+> [section 4](#4-only-to-build-heron-yourself).
 
 ## The short answer
 
@@ -28,10 +35,17 @@
 | 3 | **Python** | Heron's brain, and its connection to Claude, are written in Python | `winget install Python.Python.3.12 --scope user`, or Python from the Microsoft Store | `python --version` in a new terminal. Claude Code starts Heron with the plain command `python`, so that command has to answer |
 | 4 | **PyYAML** — Heron's only *required* Python package | Every Heron tool is described in a file Heron reads with it | In the Heron folder: `pip install --user -r requirements.txt` | `python tools/check-dependencies.py` |
 | 5 | **The MCP package** (`mcp`) | It is the line between Claude Code and Heron | `pip install --user mcp` | the same command |
-| 6 | **Heron itself** | The Heron tab in Revit | **Close Revit first**, then run `HeronInstaller.exe` from the Heron download | The Heron tab appears the next time Revit opens |
+| 6 | **Heron itself** | The Heron tab in Revit | **Close Revit first**, then double-click `HeronInstaller.exe` in the Heron folder | The Heron tab appears the next time Revit opens |
 
-**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24), and
-Heron's setup check looks only for `mcp` ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
+**The Heron folder is the download.** On the [Releases page](https://github.com/Ajmalpshaik/Heron-AI/releases),
+download `heron-project.zip` and unzip it where you want to keep Heron — **the installer is inside it**,
+at the top of the zip, beside the files rows 2 and 4 use. The other zips on that page are the plugin
+itself, one per Revit release; the installer fetches those, so you do not need to. Nothing is signed
+yet, so Windows says *"Windows protected your PC"* the first time: *More info*, then *Run anyway*.
+
+**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24).
+Heron's setup check looked only for `mcp` until 2026-10-09 and asks for both since - changed in the
+script and **not yet run on Windows** ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
 still talks to Revit, but every question to its knowledge answers *"needs PyYAML"* until it is
 installed.
 
@@ -65,6 +79,38 @@ Then, the three things only you can do:
 
 Claude Code's own memory of your old PC does not come across. It does not need to: Heron hands Claude
 a job's whole method — every step of building a family, in order — through its `heron_method` tool.
+
+## 1b. If your Claude app came from the Microsoft Store — install from your own terminal
+
+**How to tell:** the folder `%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_…` exists (Windows chooses the
+letters after the underscore). `python tools/heron-ready.py` says so in a section **2a** when it finds one.
+
+**What it means.** Windows gives that app **a private copy of `%APPDATA%` and `%LOCALAPPDATA%`**.
+Everything Claude starts — its own shell, and Heron's server — writes into that copy, and sees the copy
+laid over your real folders. **Your own terminal and Revit see only the real folders.** Think of it as a
+link only Claude has loaded: Claude sees the link over the model and draws into the link, and everyone
+else sees only the model.
+Measured on the owner's laptop on 2026-10-10 ([row 5b-417](fragment-issues/section-5b-rows-401-425.md)):
+every package Claude had installed was in the copy and none was in the real folder, so
+`heron-ready --check` said **READY** inside Claude and **NOT READY** in his own terminal.
+
+1. **Install Python packages from your own terminal** — Windows Terminal or PowerShell, opened outside
+   Claude. Never ask Claude to install them for you: they would land only in its copy again.
+2. **Install the versions Claude's copy already holds.** `python tools/heron-ready.py`, run in your own
+   terminal, prints the `pip install --user` line with each version pinned. A *different* version would
+   leave two copies of one package mixed together in Claude's view. Leaving a package out is safe.
+3. **A Reset or uninstall of the Claude app deletes its copy** — the packages Claude installed, Heron's
+   knowledge store, each project's memory (load runs, standards, earlier answers) and the brain's record
+   of what each chat asked ([row 5b-419](fragment-issues/section-5b-rows-401-425.md)).
+4. **Choose a folder for load reports.** A report saved with no folder chosen and the model never saved
+   goes under Heron's knowledge folder, which on such a PC is inside Claude's copy — whether it opens
+   from Explorer has not been checked ([row 5b-418](fragment-issues/section-5b-rows-401-425.md)).
+5. **Revit's Companion button is expected not to find your chat** on such a PC, because each chat leaves
+   its note inside Claude's copy ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Not yet
+   tried in Revit.
+
+**Where Heron should run and keep its files on such a PC is not decided** — [Q-63](OPEN-QUESTIONS.md),
+the owner's to answer.
 
 ## 2. Optional — the two search add-ons
 
@@ -121,7 +167,11 @@ A modeller installing a release needs none of this.
 | **The .NET SDK — version 10, not 8** | To compile the Revit add-in for every release Heron supports | Revit 2027 runs on .NET 10, so only the 10 SDK builds every release — [30](30-compiling-away-from-windows.md) has the rest, and how on Linux |
 
 A developer deploys the add-in with `tools/setup.ps1` rather than the installer, which also checks
-Python and `mcp` first — [07](07-installation-and-update.md).
+Python, `mcp` and PyYAML first — [07](07-installation-and-update.md).
+
+**To make the download itself**, installer included: `python tools/build-release-assets.py --out dist`
+builds every product for every release and puts `HeronInstaller.exe` at the top of
+`dist\heron-project.zip` — [`tools/README.md`](../tools/README.md).
 
 ## 5. Check what you have
 
@@ -137,8 +187,8 @@ without it. It fails only when a **required** one is missing.
 | | Where |
 |---|---|
 | **The Revit add-in** | `%AppData%\Autodesk\Revit\Addins\<release>\Heron` — per-user, no administrator rights |
-| **Heron's settings and its knowledge store** | `%APPDATA%\Heron` |
-| **Python packages** | Your own Python's user folder |
+| **Heron's settings and its knowledge store** | `%APPDATA%\Heron` — but with a Microsoft Store Claude, the knowledge store and each project's memory are in Claude's private copy ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
+| **Python packages** | Your own Python's user folder — and with a Microsoft Store Claude, a second copy of whatever Claude installed, which only Claude sees ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
 | **The search add-ons' model files** | `C:\Users\<you>\.cache\huggingface` |
 | **The Heron folder** | The code and the tools. **None of the installs above** — so a Heron folder copied to another PC needs this page's list done again there |
 | **GitHub** | The code and these lists. **Never** the model files, and never your settings |

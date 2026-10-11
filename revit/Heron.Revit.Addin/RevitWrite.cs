@@ -390,9 +390,10 @@ namespace Heron.Revit.Addin
 
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
-                            SafeRollBack(group);
-                            return Failed(workflow, preview, handler,
-                                "Revit did not accept the change, so nothing was moved.");
+                            var undone = SafeRollBack(group);
+                            return Failed(workflow, preview, handler, undone
+                                ? "Revit did not accept the change, so nothing was moved."
+                                : "Revit did not accept the change. " + RollbackNotConfirmed);
                         }
                     }
 
@@ -409,10 +410,13 @@ namespace Heron.Revit.Addin
                     // instead of what actually went wrong with their move. The
                     // second error is the less useful of the two, and it would
                     // arrive at the worst possible moment. See SafeRollBack.
-                    SafeRollBack(group);
+                    // ROLLED BACK ONLY WHEN REVIT SAYS SO (row 10).
+                    var rolledBack = SafeRollBack(group);
                     return Failed(workflow, preview, handler,
-                        "The move failed and was rolled back completely, so the model is as " +
-                        "it was. Revit said: " + ex.Message);
+                        (rolledBack
+                            ? "The move failed and was rolled back completely, so the model is as it was."
+                            : "The move failed. " + RollbackNotConfirmed)
+                        + " Revit said: " + ex.Message);
                 }
             }
 
@@ -532,19 +536,35 @@ namespace Heron.Revit.Addin
         /// Assimilate() that failed part way, or a GetStatus() that throws on
         /// its own. Cheap first, then total.
         /// </summary>
-        private static void SafeRollBack(TransactionGroup group)
+        /// <summary>
+        /// Roll the group back, never throwing - and say whether Revit CONFIRMS
+        /// it rolled back. FRAGMENT-ISSUES row 10: this was void, so the two
+        /// ways a rollback silently does nothing - a group whose status is not
+        /// Started, so the call is skipped, and a RollBack() that throws, so
+        /// it is swallowed - left the reply saying "rolled back completely"
+        /// on the strength of nothing.
+        /// </summary>
+        private static bool SafeRollBack(TransactionGroup group)
         {
             try
             {
                 if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
+                return group.GetStatus() == TransactionStatus.RolledBack;
             }
             catch
             {
-                // Nothing more can be done to the group, and saying so would
-                // replace a useful message with a useless one. The `using`
-                // block's Dispose() rolls back anything still open.
+                // Nothing more can be done to the group, and throwing would
+                // replace the useful message with a useless one. The `using`
+                // block's Dispose() rolls back anything still open - but that
+                // is not a confirmation, so it is reported as none.
+                return false;
             }
         }
+
+        private const string RollbackNotConfirmed =
+            "Revit did not confirm the rollback. Heron closes the change as it returns, which "
+            + "undoes anything still open, but it cannot say so for certain - look at the "
+            + "elements, or at Undo, before going on.";
 
         private static string Failed(string workflow, Preview preview, CollectWarnings handler,
                                      string message)

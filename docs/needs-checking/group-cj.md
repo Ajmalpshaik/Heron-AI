@@ -8,7 +8,7 @@
 ## Group CJ - the project's site, True North and units: set behind the Admin switch, and read (2026-10-06)
 
 **Four tools, built 2026-10-06 for the setup a building-loads run reads** ([row
-5b-322](../fragment-issues/section-5b-rows-176-200.md)): `set-project-location` and `set-project-units`
+5b-322](../fragment-issues/section-5b-rows-301-325.md)): `set-project-location` and `set-project-units`
 (both **ADMIN**, [D-106](../decisions/D-106.md)), `report-project-units`, and `report-location`
 **version 4**. All four compile on every release 2020 to 2027. **The two setters are PROVEN** - signed
 by Ajmal PS on 2026-10-07 at his word (CJ1); the two reads are **DRAFT**.
@@ -56,4 +56,4 @@ on; `batch-prove` sends nothing declared ADMIN.
 | **CJ7** | `true north=30 East` on a scratch whose **project base point is moved away** from the internal origin | The base point's shared E/N/elevation unchanged (the turn is about it), the survey point's shared position moved, both read back by REPORT_LOCATION. A turn that moved the base point throws and rolls back |
 | **CJ8** | The setters on a **workshared** scratch | Either the change read back, or Revit's own refusal in the reply and nothing changed |
 | **CJ9** | The Admin switch **OFF**, then `revit_change` asking to set the site | Refused by name - the Admin switch is off - and nothing sent. **The owner's switch, turned by him only** |
-| **CJ10** | **The loads' first uses**, on a scratch or a copy - never *Heron loads test* itself: **CC23** with the template's Boston site (the loads must FAIL naming `doha-0.4`), then `set-project-location` to Doha and the loads again, then put back; **CC12** with `set-project-units` Btu/h and CFM, Finalize, then put back; **CC4** with `true north=30 East` - [row 5b-345](../fragment-issues/section-5b-rows-176-200.md)'s sign was fixed in `azimuth_deg` on 2026-10-07 (PR #433), so this can run | CC23's FAIL and then pass; CC12's symbols exactly *Btu/h* and *CFM*, as REPORT_PROJECT_UNITS prints them; CC4's wall facing project north at bearing **330** for *30 East* |
+| **CJ10** | **The loads' first uses**, on a scratch or a copy - never *Heron loads test* itself: **CC23** with the template's Boston site (the loads must FAIL naming `doha-0.4`), then `set-project-location` to Doha and the loads again, then put back; **CC12** with `set-project-units` Btu/h and CFM, Finalize, then put back; **CC4** with `true north=30 East` - [row 5b-345](../fragment-issues/section-5b-rows-326-350.md)'s sign was fixed in `azimuth_deg` on 2026-10-07 (PR #433), so this can run | CC23's FAIL and then pass; CC12's symbols exactly *Btu/h* and *CFM*, as REPORT_PROJECT_UNITS prints them; CC4's wall facing project north at bearing **330** for *30 East* |

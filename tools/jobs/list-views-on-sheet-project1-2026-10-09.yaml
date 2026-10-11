@@ -1,0 +1,146 @@
+# The first proof of list-views-on-sheet (LIST_VIEWS_ON_SHEET, FRG-SHT-027),
+# written 2026-10-09 for FRAGMENT-ISSUES row 146. NOT RUN - written and read
+# back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/list-views-on-sheet-project1-2026-10-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-views-on-sheet-project1-2026-10-09.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# The fragment is a READ: no transaction is opened and nothing is changed, so
+# there is no `write:` below. The one change is the arrangement, by hand, on
+# the test copy.
+#
+# MEASURE THE TEST COPY FIRST - THE SHEETS BELOW ARE WHAT EARLIER RUNS
+# RECORDED, not what this file has seen. center-viewports-on-sheets-project1-
+# 2026-09-27.yaml says M-101 to M-104 are the "Level 1 -" plan sheets, each
+# carrying one viewport, and M-105 to M-107 are schedule sheets carrying NO
+# viewport; FRAGMENT-ISSUES row 5b-238 says PLACE_SCHEDULE_ON_SHEET put the
+# Space, HVAC Zone and Air Terminal schedules on M-105, M-106 and M-107 and
+# read each back at 25 mm, 570 mm. Check before the run, with the test copy
+# in front:
+#
+#     python mcp/client/heron_bridge_client.py validate list-sheets < /dev/null
+#
+# M-101 must read "(1 view)" and M-105 "(0 views)". list-sheets counts no
+# schedules, so open M-105 and see its one schedule there. If either has
+# changed, pick another sheet of the same shape and change its number below.
+#
+# ARRANGE THE NEGATIVE - AN EMPTY SHEET, BY HAND, ON THE TEST COPY. Project1
+# has no sheet with nothing on it: every one of M-101 to M-107 carries a
+# viewport or a schedule. A negative must be able to come back EMPTY - batch-
+# prove and `heron_validate accept` judge every result the card declares,
+# schedules included, and a negative with a schedule on it is NEG NOT EMPTY
+# and cannot be signed. So make ONE new sheet with the same title block as
+# M-105 and place nothing on it - the arrangement NEEDS-CHECKING row AW2
+# already asks for. Revit offers the next number, M-108. If it offers another,
+# or M-108 is taken, use any number no sheet carries and change the
+# `negative-set` of the two jobs that name M-108 below.
+#
+# WHICH READING OF THE NEGATIVE THIS FILE TAKES, AND WHY. The row asked for
+# "a negative case (a different sheet, not an empty one)". Read one way, that
+# is a sheet that differs from the positive AND has something on it; read the
+# other, it is a different SHEET rather than an empty VALUE - a blank number
+# or one no sheet carries. This file takes the second, and makes the
+# different sheet empty as well, because the first cannot be signed here:
+# batch-prove's verdict and `heron_validate accept` both judge the negative
+# with heron_validate.looks_empty, which reads EVERY result the card declares
+# - viewsOnSheet, viewCount, schedulesOnSheet and scheduleCount - whatever
+# `expect:` names. A different sheet carrying one view or one schedule is NEG
+# NOT EMPTY (batch-prove's judge() on a hand-written record, 2026-10-09:
+# M-101 against M-105 with `expect: viewCount` gives exactly that). The blank
+# and ZZZ999 legs are kept as checks of the two refusals, not as the proof.
+#
+# FOUR JOBS, ONE FRAGMENT, AND THE ORDER MATTERS. Each job overwrites the same
+# run record, brain/proof-drafts/runs/list-views-on-sheet.json, and the same
+# draft, brain/proof-drafts/list-views-on-sheet.yaml - so the draft left at
+# the end is the LAST job's: M-101 against the empty sheet, the pair to sign.
+# Read each job's verdict as it prints; the first three are checks, not the
+# proof.
+#
+#   1. blank number      - positive M-101, negative a blank sheetNumber
+#   2. no such number    - positive M-101, negative ZZZ999
+#   3. the schedules     - positive M-105, negative the empty sheet M-108
+#   4. THE PROOF         - positive M-101, negative the empty sheet M-108
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - job 1, PASS: the blank was refused and nothing was read. NEG NOT EMPTY
+#     means a blank number was answered from some sheet - the confident wrong
+#     answer the refusal exists to stop. NO NEGATIVE with needs_request_values
+#     means the add-in refused the blank before the fragment ran (row 5b-227
+#     left that unchecked; place-hosted-family-v4-2026-10-06.yaml ran with
+#     blank values, so a blank is expected to reach the fragment) - write
+#     down which
+#   - job 2, PASS whatever sheetProblem says. Read it: it must be "no sheet
+#     numbered 'ZZZ999'". Empty means the refusal went silent, and the
+#     verdict cannot see that
+#   - jobs 3 and 4, NEG NOT EMPTY: something was read off the empty sheet. On
+#     job 3 a schedule there means a schedule was credited to the wrong sheet
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - sheetRead on every leg names the sheet asked for: "M-101 - ...",
+#     "M-105 - ...", "M-108 - ...", and nothing on the blank and ZZZ999 legs
+#   - viewsOnSheet on M-101 names the view on M-101: open the sheet and
+#     compare its name, its type, and its View Scale in Properties - a scale
+#     that differs, or that every view shares whatever its Properties say, is
+#     a defect
+#   - the centre on M-101 is in millimetres on the sheet. Measure the
+#     viewport in Revit first: the 2026-09-27 job above recorded M-104 placed
+#     at (312, 303) mm and the other three aligned to it. A centre at or near
+#     (0, 0) means feet were divided rather than multiplied
+#   - schedulesOnSheet on M-105 names exactly ONE schedule - the one open on
+#     M-105 in Revit, about (25, 570) mm - and never the schedules on M-106 or
+#     M-107. scheduleCount on M-101 is 0
+#   - revisionSchedules on M-108 is however many revision schedules its title
+#     block carries; scheduleCount there is 0 (AW2's question, answered here
+#     too)
+#   - second route: list-sheets' "(n views)" beside M-101, M-105 and M-108
+#     must equal viewCount on those legs
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024 - sheets M-101 to M-107, and M-108 made empty by hand for the negative
+
+jobs:
+  - fragment: list-views-on-sheet
+    expect: viewCount
+    set:
+      sheetNumber: M-101
+    negative-set:
+      sheetNumber: ""
+    note: >
+      Check 1 of 4. A blank number refused, nothing read. NEG NOT EMPTY is a
+      blank answered from some sheet.
+
+  - fragment: list-views-on-sheet
+    expect: viewCount
+    set:
+      sheetNumber: M-101
+    negative-set:
+      sheetNumber: ZZZ999
+    note: >
+      Check 2 of 4. sheetProblem on the negative must read "no sheet numbered
+      'ZZZ999'" - the verdict passes without it, so read it.
+
+  - fragment: list-views-on-sheet
+    expect: scheduleCount
+    set:
+      sheetNumber: M-105
+    negative-set:
+      sheetNumber: M-108
+    note: >
+      Check 3 of 4. M-105's one schedule, named and placed in millimetres,
+      against an empty sheet. A schedule from M-106 or M-107 on either leg
+      is a schedule credited to the wrong sheet.
+
+  - fragment: list-views-on-sheet
+    expect: viewCount
+    set:
+      sheetNumber: M-101
+    negative-set:
+      sheetNumber: M-108
+    note: >
+      THE PROOF, and last so its draft is the one left. M-101's one view with
+      its type, its scale and its centre in millimetres, against a different
+      sheet with nothing on it.

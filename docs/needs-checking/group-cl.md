@@ -10,7 +10,7 @@
 `SET_FAMILY_TYPE_VALUES` version 3 renames a family's TYPE - `"Type Name=HexNut - ISO 4032"` in its
 `values`, the way the Family Types dialog's Rename sits beside its rows - and deletes one with the
 optional switch `deleteType`. Before it, the type `Standard` in `GM_PipeSupport_HexNut` had to be renamed
-by hand ([row 5b-343](../fragment-issues/section-5b-rows-176-200.md)). The new name rides in `values`
+by hand ([row 5b-343](../fragment-issues/section-5b-rows-326-350.md)). The new name rides in `values`
 because the binder refuses an absent text value (HeronBindingNote.AbsentValue); a separate `renameTo`
 would have stopped every existing call - chosen by Ajmal PS on 2026-10-06. The change is under `impl/`, so
 the version 2 proof went stale; **signed by Ajmal PS on 2026-10-06** on the CL1/CL2 record below, and PROVEN again.

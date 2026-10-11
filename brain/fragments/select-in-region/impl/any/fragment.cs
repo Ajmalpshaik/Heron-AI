@@ -196,7 +196,8 @@ else
                 if (withoutGeometry < 0) withoutGeometry = 0;
             }
 
-            findings.Add(string.Format("{0} element(s) in a {1:0} x {2:0} x {3:0} mm volume, by the "
+            // TOUCHING, not "in": both tests intersect (row 5b-193).
+            findings.Add(string.Format("{0} element(s) touching a {1:0} x {2:0} x {3:0} mm volume, by the "
                 + "{4} test{5}",
                 elements.Count, width, depth, height,
                 exact ? "EXACT geometry" : "fast BOUNDING BOX",

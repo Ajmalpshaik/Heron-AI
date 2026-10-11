@@ -1227,4 +1227,62 @@ else:
     if _fail:
         failed = True
 
+# ---------- 12. a link that names a 5b row reaches the file that holds it ----------
+#
+# SECTION 1 CANNOT SEE THIS ONE: the file is there, it is just the wrong
+# file. Section 5b's rows live 25 to a file, section-5b-rows-NNN-MMM.md, and
+# a new row is written at the end of the last file until
+# tools/split-register.py moves it to its own. On 2026-10-08 that moved the
+# rows after 200, and every link naming one of them - [row 5b-307](...) in a
+# NEEDS-CHECKING group, a decision, a skill, another row - still reached
+# section-5b-rows-176-200.md, which no longer held it. This passed: a one-off
+# script put them right (FRAGMENT-ISSUES rows 5b-380 and 5b-381).
+#
+# So a link whose words name exactly ONE 5b row and whose target is a rows
+# file must reach a file whose table HOLDS that row - read from the file, not
+# from its name, because a row appended to the last file is rightly linked
+# there until the split moves it, and the split now re-points it. A link in
+# fenced code or an inline code span is an example and is not read, and one
+# whose words name two rows is not this check's to judge. A rows file that is
+# not there is section 1's finding, not this one's. The rule is
+# register-text.py's row_links() and rows_held(), the same the split uses.
+out("\n=== 12. A LINK THAT NAMES A 5b ROW REACHES THE FILE THAT HOLDS IT ===\n")
+_band_name = re.compile(r'^section-5b-rows-[0-9]{3}-[0-9]{3}\.md$')
+_held, _astray, _row_named = {}, [], 0
+
+
+def _rows_of(path):
+    """The 5b rows the rows file at PATH holds, read once."""
+    if path not in _held:
+        _held[path] = _rt.rows_held(io.open(path, encoding='utf-8').read())
+    return _held[path]
+
+
+for p in md:
+    s = allsrc[p]
+    for _number, _start, _end in _rt.row_links(s, '5b'):
+        _href = s[_start:_end]
+        _tgt = _href.partition('#')[0]
+        if not _band_name.match(_tgt.rsplit('/', 1)[-1]):
+            continue
+        _file = os.path.normpath(os.path.join(os.path.dirname(p), _tgt)).replace(os.sep, '/')
+        if not os.path.isfile(_file):
+            continue
+        _row_named += 1
+        if _number in _rows_of(_file):
+            continue
+        _home = os.path.dirname(_file) or '.'
+        _holder = [n for n in sorted(os.listdir(_home)) if _band_name.match(n)
+                   and _number in _rows_of(os.path.join(_home, n).replace(os.sep, '/'))]
+        _astray.append((p, _number, _href, _holder))
+
+for p, _number, _href, _holder in _astray:
+    out("  ASTRAY: %s - a link naming row 5b-%d points at %s, which does not hold it; %s\n"
+        % (p, _number, _href, ("%s does" % _holder[0]) if _holder else "no rows file beside it does"))
+if _astray:
+    failed = True
+else:
+    out("  %d link(s) name one 5b row and point at a rows file: each reaches the file that holds it\n"
+        % _row_named)
+
 sys.exit(1 if failed else 0)

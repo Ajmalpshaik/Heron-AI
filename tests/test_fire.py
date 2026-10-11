@@ -366,6 +366,22 @@ def worked_examples():
     check(lshape["status"] == "ok" and not checks(lshape, "FAIL"),
           "an L-shaped room laid out on the same grid passes, the inside corner seen as a "
           "wall")
+    # Row 5b-339: a head STANDING ON A WALL passed. A 10 x 10 m L (less a 5 x 5 m
+    # corner) with a centred 3 x 3 grid puts heads on the re-entrant walls and
+    # the corner, and with no least wall distance given nothing caught it -
+    # inside() counts an edge as inside, ray_to_wall ignores a wall at 0.
+    ell10 = [[0, 0], [10000, 0], [10000, 5000], [5000, 5000], [5000, 10000], [0, 10000]]
+    third = 10000.0 / 3.0
+    centred = [[x, y] for y in (third / 2, 5000.0, 10000 - third / 2)
+               for x in (third / 2, 5000.0, 10000 - third / 2)
+               if not (x > 5000.0 and y > 5000.0)]
+    no_minimum = dict(STD, max_spacing_m=4.6, max_area_m2=12.1, max_wall_distance_m=2.3,
+                      branch_axis="x", outline_mm=ell10)
+    walled = run("sprinkler_spacing", dict(no_minimum, sprinklers=centred))
+    said = " ".join(checks(walled, "FAIL"))
+    check(said.count("(on a wall)") == 3 and "3 of 8 sprinklers" in said,
+          "the three heads standing on the re-entrant walls and corner FAIL 'on a wall', "
+          "with no least wall distance given (%r)" % said)
 
     rows = [("light", "steel", 10, "2"), ("light", "steel", 11, "2 1/2"),
             ("light", "copper", 12, "2"), ("OH1", "steel", 21, "3"),

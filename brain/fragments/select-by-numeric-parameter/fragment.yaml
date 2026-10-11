@@ -60,6 +60,11 @@ purpose: >
   is version 2; version 1's proof no longer describes the code, and the
   fragment is DRAFT until it is proved again.
 
+# A NAME TWO PARAMETERS SHARE IS NEVER READ, AND THE ELEMENT IS NEVER COMPARED -
+# it is counted in `ambiguous` (D-54 s3, FRAGMENT-ISSUES 5b-203; added
+# 2026-10-09, see that provide). Written here and not in `purpose` on purpose:
+# the purpose is embedded for routing, and a sentence about this in it moved
+# other cards' utterances in check-routing, measured against the base commit.
 contract:
   needs:
     - name: doc
@@ -106,6 +111,14 @@ contract:
     - name: notNumeric
       # Elements carrying the parameter as text rather than as a number, so no
       # comparison was possible. Given and unusable, never a match (D-52).
+      role: accounting
+      type: int
+    - name: ambiguous
+      # Elements carrying TWO OR MORE parameters by this name - on the
+      # element, or on its type when the search reached it - where Revit's
+      # lookup would pick one at random. Not compared and never matched:
+      # which one was meant is the modeller's to say (D-54 s3, FRAGMENT-ISSUES
+      # 5b-203). Turned down, never found (D-52).
       role: accounting
       type: int
     - name: findings
@@ -156,6 +169,7 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `Element.LookupParameter`,
+  `Element.GetParameters(string)`,
   `Parameter.HasValue`, `StorageType`, `AsDouble` and `AsInteger` are present
   2020 through 2027, compiled at both ends. **No units API is touched** -
   `DisplayUnitType` became `ForgeTypeId` at 2021 and there is no single

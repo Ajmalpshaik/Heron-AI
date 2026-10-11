@@ -528,8 +528,30 @@ def check_register():
             waiting("%s - the trained embedding backend" % item,
                     "a network that can reach a model host")
         else:
-            waiting("%s - %s" % (item, body.split("|")[0].strip()[:60]),
-                    "a real Revit")
+            check = body.split("|")[0].strip()
+            waiting("%s - %s" % (item, check[:60]), need_of(check))
+
+
+# WHAT A ROW SAYS IT NEEDS, read from its own check cell, before Revit is
+# assumed. Row 5b-199: A15 and K3 say they need a machine that reaches
+# huggingface.co, or a network, and AK1 is the cloud environment's settings -
+# all three printed under "needs a real Revit", in a cloud session that could
+# have run two of them. A list of ids is how they were missed; the words are
+# already in every row.
+NEEDS_FROM_WORDS = (
+    (re.compile(r"huggingface\.co|a machine with a network|a network that can reach", re.I),
+     "a network that can reach a model host"),
+    (re.compile(r"cloud session|Setup script box|cloud environment", re.I),
+     "a cloud session, after the owner sets its environment"),
+)
+
+
+def need_of(check):
+    """What one open row waits on, from the words of its check cell."""
+    for words, need in NEEDS_FROM_WORDS:
+        if words.search(check):
+            return need
+    return "a real Revit"
 
 
 def main():
