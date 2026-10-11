@@ -53,13 +53,13 @@ purpose: >
   5 groups, 4 min 50 s from request to built; a 186-part transformer built
   in one call took 9 min 40 s, 27 s of it Revit and Heron.
 
-  TWO WAYS TO SEND THE PARTS, and the modeller chooses by name. GROUPS,
+  TWO WAYS TO SEND THE PARTS, and the modeller chooses by name. GROUP BUILD,
   above, is the default. CONTINUOUS BUILD - every form its own
   CREATE_FAMILY_FORMS call, so the modeller watches the parts arrive one
   after another - is used when the modeller asks for it by that name. It builds the same
   family with no more mistakes, but it is slower and fills the chat: each
   call is a turn and each reply is read. Measured 2026-10-12 on one fixed
-  diesel fire pump set already planned, 111 parts and 6 connectors: groups
+  diesel fire pump set already planned, 111 parts and 6 connectors: group build
   12 calls, 34 s; continuous build 117 calls, 3 min, Revit's own work
   4.4 s and 7.4 s. Say that before starting a continuous build of a large
   family.
