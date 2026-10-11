@@ -155,7 +155,8 @@ foreach (var value in Enum.GetValues(typeof(ElectricalSystemType)))
 
 Func<Element, string> kindOf = element =>
     element is Extrusion ? "an extrusion" : element is Revolution ? "a revolve" : element is Blend ? "a blend"
-    : element is SweptBlend ? "a swept blend" : element is Sweep ? "a sweep" : "a form";
+    : element is SweptBlend ? "a swept blend" : element is Sweep ? "a sweep" : element is GenericForm ? "a form"
+    : "the element";
 
 // THE WAY ROUND A JOIN OR CUT, when Revit will not take a connector on its face
 // (row 5b-410): a thin solid on that face, in no combination, takes one - a
@@ -311,8 +312,11 @@ else
                 if (geometry == null) continue;
                 foreach (GeometryObject piece in geometry)
                 {
+                    // Only a piece holding volume, as COMBINE_FAMILY_FORMS
+                    // measures one - a void's own geometry is inside out, of
+                    // negative volume, and a join of voids is no solid face.
                     var solid = piece as Solid;
-                    if (solid == null) continue;
+                    if (solid == null || solid.Volume <= 0) continue;
                     foreach (Face each in solid.Faces)
                         if (onDatum(each))
                         {
@@ -373,6 +377,9 @@ if (refused == null)
                 : named is GeomCombination ? "the combination itself" : kindOf(named) + " " + named.UniqueId) + ".";
     }
     var refusedHere = " NOTHING from this call was kept." + (faceIn == null ? "" : " " + joinedFace + " " + sideStep);
+    // A refusal after the connector was made still says what the joined face's
+    // reference named - the measurement a proof of version 3 records.
+    var joinedNote = faceIn == null ? "" : " " + joinedFace;
 
     try
     {
@@ -399,7 +406,7 @@ if (refused == null)
         if (ownParameter == null || !fm.CanElementParameterBeAssociated(ownParameter))
             throw new InvalidOperationException("The connector's " + role + " cannot be tied to \""
                 + driver.Definition.Name + "\" in this Revit, so it would have stayed at one foot. NOTHING "
-                + "from this call was kept.");
+                + "from this call was kept." + joinedNote);
         try
         {
             fm.AssociateElementParameterToFamilyParameter(ownParameter, driver);
@@ -407,7 +414,7 @@ if (refused == null)
         catch (Exception ex)
         {
             throw new InvalidOperationException("Revit would not tie the connector's " + role + " to \""
-                + driver.Definition.Name + "\": " + ex.Message + " NOTHING from this call was kept.");
+                + driver.Definition.Name + "\": " + ex.Message + " NOTHING from this call was kept." + joinedNote);
         }
         sizedBy.Add("connector " + role + " <- " + driver.Definition.Name);
     };
@@ -449,7 +456,7 @@ if (refused == null)
                 + mm(faceAlongY) + " mm, and \"" + sizes[0].Definition.Name + "\" and \"" + sizes[1].Definition.Name
                 + "\" hold " + (first.HasValue ? mm(first.Value) : "nothing") + " and "
                 + (second.HasValue ? mm(second.Value) : "nothing") + " mm - a port sized by them would not fit "
-                + "the face it sits on. NOTHING from this call was kept.");
+                + "the face it sits on. NOTHING from this call was kept." + joinedNote);
 
         swapped = !asGiven;
     }
@@ -481,7 +488,7 @@ if (refused == null)
             throw new InvalidOperationException("The connector's diameter reads "
                 + (diameter.HasValue ? mm(diameter.Value) + " mm" : "nothing") + " and \"" + sizes[0].Definition.Name
                 + "\" holds " + (wanted.HasValue ? mm(wanted.Value) + " mm" : "nothing")
-                + ". NOTHING from this call was kept.");
+                + ". NOTHING from this call was kept." + joinedNote);
     }
     else
     {
@@ -493,7 +500,7 @@ if (refused == null)
             || Math.Abs(width.Value - faceAlongX) > halfMillimetre || Math.Abs(height.Value - faceAlongY) > halfMillimetre)
             throw new InvalidOperationException("The connector reads " + shape + " on a face "
                 + mm(faceAlongX) + " x " + mm(faceAlongY) + " mm along the same axes - it does not fit the face. "
-                + "NOTHING from this call was kept.");
+                + "NOTHING from this call was kept." + joinedNote);
 
         if (swapped)
             findings.Add("Revit runs this connector's width along the face's other side, so \""

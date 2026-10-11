@@ -61,8 +61,8 @@ positive:
     expect: >
       the connector on the RING's face, as before version 3 - a form's own
       face is used before a joined one - pointing right (+X) at X 150, and
-      `connector` saying 1 face of joined or cut forms lies on the same plane
-      too. This is the way round row 5b-410 used, kept working
+      `connector` ending "1 face(s) of joined or cut forms lie on the same
+      plane too". This is the way round row 5b-410 used, kept working
 
 negative:
   - given: system "Global" in a Generic Models family
