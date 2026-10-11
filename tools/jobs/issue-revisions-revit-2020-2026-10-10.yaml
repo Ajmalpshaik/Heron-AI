@@ -1,0 +1,98 @@
+# Re-proving the two tools that issue a revision, on Revit 2020 - 2026-10-10.
+# Both were signed in September and went STALE when their code changed
+# (check-signatures.py, 2026-10-10). This is the first time either has run on
+# Revit 2020.
+#
+#     python tools/batch-prove.py tools/jobs/issue-revisions-revit-2020-2026-10-10.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/issue-revisions-revit-2020-2026-10-10.yaml
+#
+# RUN ON "Project2", A SCRATCH PROJECT, NEVER A WORKING FILE. Bring it to the
+# front. What it held when this was written (LIST_REVISIONS, 2026-10-10): two
+# revisions, both unissued and on no sheet - Seq. 1 'Revision 1' (date 'Date 1')
+# and Seq. 2 'IFI - Issued for Information' (07-APR-2025); numbered Per Project.
+#
+# THE VALUES ARE THE ONES THE MODELLER IS ABOUT TO USE for real: issued by
+# M.Sagheer, issued to A.Rahmani, and the Issued tick - so the proof is of the
+# exact call that follows it. `write: true` runs both legs of edit-revision in a
+# transaction group and ROLLS THEM BACK; run LIST_REVISIONS afterwards rather
+# than assuming it.
+#
+# THE NEGATIVE ASKS FOR WHAT SEQ. 2 ALREADY HOLDS - its own description and
+# date - so `changed` must come back empty with both named in `alreadyThat`. A
+# tool that wrote without comparing would report them changed.
+#
+# NOT THE ISSUED-REVISION NEGATIVE of sheet-issues-revisions-test-copy-2026-09-28.yaml.
+# That one ISSUES Seq. 1 in a setup edit-revision, and the runner now refuses
+# it before Revit is touched: "setup values cannot reach a setup step that
+# CHANGES the model" (heron_bridge_client validate, exit 2, 2026-10-10). So the
+# refusal of an edit to an issued revision is still unmeasured.
+
+model: '"Project2" (a scratch project), Revit 2020'
+
+jobs:
+  # ---- the find ----------------------------------------------------------------
+
+  # Seq. 2 by its sequence number: exactly one revision. A number no revision
+  # holds: nothing.
+  - fragment: select-by-parameter-value
+    expect: elements
+    set:
+      parameterName: Revision Sequence
+      matchText: "2"
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"
+    negative-set:
+      parameterName: Revision Sequence
+      matchText: "99"
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"
+
+  # ---- the edit ----------------------------------------------------------------
+
+  - fragment: edit-revision
+    write: true
+    expect: changed
+    setup:
+      - select-by-parameter-value
+    keep-chain: true
+    setup-set:
+      parameterName: Revision Sequence
+      matchText: "2"
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"
+    # POSITIVE: Seq. 2 takes issued by, issued to and the Issued tick.
+    set:
+      description: ""
+      revisionDate: ""
+      issuedBy: M.Sagheer
+      issuedTo: A.Rahmani
+      show: ""
+      numbering: ""
+      issueState: issue
+      confirmCount: ""
+    # NEGATIVE: the same revision, asked for the description and date it
+    # already holds. `changed` empty, both in `alreadyThat`.
+    negative-set:
+      description: IFI - Issued for Information
+      revisionDate: 07-APR-2025
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: ""
+      issueState: ""
+      confirmCount: ""
+    # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the runner
+    # hands the chain the negative-set instead (row 5b-242).
+    negative-setup-set:
+      parameterName: Revision Sequence
+      matchText: "2"
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"

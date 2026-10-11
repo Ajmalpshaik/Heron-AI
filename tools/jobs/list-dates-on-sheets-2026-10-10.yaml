@@ -1,0 +1,59 @@
+# The proof of listing the dates typed on every sheet - NEEDS-CHECKING Group
+# CY, rows CY1 to CY8:
+#
+#   list-dates-on-sheets   LIST_DATES_ON_SHEETS   FRG-SHT-028   new, version 1
+#
+#     python tools/batch-prove.py tools/jobs/list-dates-on-sheets-2026-10-10.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-dates-on-sheets-2026-10-10.yaml
+#
+# NEVER ON ONE OF THE OWNER'S WORKING MODELS. The arrangement is two scratch
+# projects, made by hand before the run, saved once under the titles below so
+# `in:` can name them, and left OPEN TOGETHER (CY1, CY2). Every note is typed
+# with the SHEET as the open view, unless it says "inside" - the difference is
+# the whole fragment:
+#
+#   "Heron Sheet Dates"        four sheets, S-01 to S-04, each with a title
+#                              block. Typed ON the sheets:
+#                                S-01  "ISSUED 09 SEP 2026", "REV A 22 Jul 2025"
+#                                S-02  "22/JUL/25", "15 MAY 2026"
+#                                S-03  "15 May 2026"
+#                                S-04  "09-09-2026", "31 SEP 2026", "2 OFF 300"
+#                              and one floor plan placed on S-04 with
+#                              "01 JAN 2026" typed INSIDE the plan
+#   "Heron Sheet Dates Empty"  three sheets, S-01 to S-03, each carrying only
+#                              "GENERAL NOTES" and "09-09-2026" typed on it.
+#                              The dates are put everywhere EXCEPT on a sheet:
+#                              "09 SEP 2026" typed inside a floor plan placed
+#                              on S-01, "22 JUL 2025" in a drafting view placed
+#                              on no sheet, and "15 May 2026" in S-02's Sheet
+#                              Issue Date parameter
+#
+# WHY THE NEGATIVE IS A DIFFERENT DOCUMENT. LIST_DATES_ON_SHEETS takes nothing
+# but the document - no selection, no value - so the only thing a negative leg
+# can vary is the document. The empty project holds the SAME dates as the
+# positive, typed in the places this fragment must not read. A version that
+# read every view (FIND_DATES_IN_VIEWS' scope) shows 09-SEP-2026 and
+# 22-JUL-2025 there; one that read the document open beside it shows all
+# three; one that read the title block parameter shows 15-MAY-2026. Any of
+# them is NEG NOT EMPTY.
+
+model: two scratch projects open together, Revit 2024 (Heron Sheet Dates, Heron Sheet Dates Empty)
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: list-dates-on-sheets
+    in: "Heron Sheet Dates"
+    negative-in: "Heron Sheet Dates Empty"
+    write: false
+    expect: uniqueDateCount
+    note: >
+      Positive: uniqueDateCount 3, and dateList, oldest first,
+      "22-JUL-2025 - 2 note(s) on 2 sheet(s): S-01, S-02  ||  15-MAY-2026 -
+      2 note(s) on 2 sheet(s): S-02, S-03  ||  09-SEP-2026 - 1 note(s) on 1
+      sheet(s): S-01"; sheetsRead 4, notesOnSheets 8, sheetsWithNoDate "S-04",
+      notesInViewsNotRead at least 1, and NO 01-JAN-2026 - it is inside the
+      plan. Negative: uniqueDateCount 0, dateList empty, sheetsRead 3,
+      notesOnSheets 6, notesInViewsNotRead at least 2, and sheetsWithNoDate
+      naming S-01, S-02 and S-03.
