@@ -1218,7 +1218,9 @@ first and on this file second, on both backends.
 fragments**, behind the 2024 wall, on **`lexical`** and **`model`** (`model2vec:minishlab/potion-base-8M`,
 from a venv outside the repository, warmed before the first question), no re-ranker, every run on its own
 scratch store. Repeated on `main` with PR #450's `LIST_MATERIALS` merged locally, **481**, and again on
-`main` `36f02b54` after it merged, with the same result.
+`main` `36f02b54` after it merged, with the same result. Again on `main` `a2e00c7a`, **484**, against a trial
+merge: the same, except that two room questions now reach a write on that `main` with or without this change
+(row 5b-401 names them).
 
 | *how many rooms are there* | `lexical` | `model` |
 |---|---|---|
