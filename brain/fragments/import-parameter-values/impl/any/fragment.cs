@@ -528,7 +528,10 @@ else
             {
                 var tickBox = written.Item5.HasValue;
                 var stillThere = written.Item1.IsValidObject;
-                var again = stillThere ? written.Item1.LookupParameter(written.Item2) : null;
+                // Counted again, as at the write: a name two parameters share is
+                // never read from whichever Revit returns first (5b-203).
+                var named = stillThere ? written.Item1.GetParameters(written.Item2).Count : 0;
+                var again = named == 1 ? written.Item1.LookupParameter(written.Item2) : null;
                 var onId = stillThere ? "id " + written.Item1.Id : "an element no longer in the model";
                 if (again == null)
                 {
@@ -536,7 +539,8 @@ else
                     if (problems.Count < 25)
                     {
                         problems.Add("row " + written.Item3 + ": '" + written.Item2 + "' on " + onId
-                            + " could not be found again after the write, so what landed is NOT KNOWN");
+                            + (named > 1 ? " now names " + named + " parameters" : " could not be found again")
+                            + " after the write, so what landed is NOT KNOWN");
                     }
                     continue;
                 }
