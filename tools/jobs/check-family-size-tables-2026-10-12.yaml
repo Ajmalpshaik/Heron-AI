@@ -1,0 +1,44 @@
+# The first proof of check-family-size-tables (CHECK_FAMILY_SIZE_TABLES,
+# FRG-ELE-078): every size_lookup formula in the family open in front checked
+# against the lookup tables it names - the table, per type, and the column.
+#
+#     python tools/batch-prove.py tools/jobs/check-family-size-tables-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/check-family-size-tables-2026-10-12.yaml
+#
+# THE ARRANGEMENT, made by hand before the run, on Revit 2024, on TEST COPIES
+# only - never a working family:
+#
+#   "Heron Lookup Clean"   a pipe fitting family with one lookup table and a
+#                          Text type parameter "Lookup Table Name" holding its
+#                          name; two types; every size_lookup formula correct.
+#                          Flex both types in Family Types first: no dimension
+#                          may sit at its formula's default - the negative
+#   "Heron Lookup Broken"  a copy of it, saved under this name, with ONE
+#                          type's "Lookup Table Name" changed to "NoSuchTable"
+#                          and one formula's column renamed to "NoSuchColumn"
+#                          - the positive
+#
+# Both open in the Family Editor at the run; `in:` brings each to the front.
+#
+# POSITIVE: problemCount 2 or more - a MISSING TABLE line naming the changed
+# type and "NoSuchTable" (and NOT the other type), and a MISSING COLUMN line
+# naming the formula's parameter and listing the table's real columns.
+#
+# NEGATIVE: the clean copy - problemCount 0 with lookupsChecked NON-ZERO. A
+# correct lookup must NOT be flagged (D-30).
+#
+# BY HAND AFTERWARDS: with a PROJECT in front, notAFamily true and
+# problemCount 0. And flex the broken type: its dimension falls to the
+# formula's default, which is what MISSING TABLE says will happen.
+
+model: Heron Lookup Broken (one type names a table not in the family, one column misspelt) and Heron Lookup Clean, Revit 2024
+
+jobs:
+  - fragment: check-family-size-tables
+    in: "Heron Lookup Broken"
+    negative-in: "Heron Lookup Clean"
+    expect: problemCount
+    note: >
+      Read the clean family's problemCount BEFORE the run - it must be 0. If
+      it is not, the arrangement is wrong, not the fragment: fix the family
+      and read it again.
