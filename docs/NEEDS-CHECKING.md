@@ -579,6 +579,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-db.md`](needs-checking/group-db.md)
 
+## Group DC - 3D model text placed in a family, on a named plane, one undo entry (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dc.md`](needs-checking/group-dc.md)
+
+## Group DD - an electrical connector's voltage, poles, apparent load and power factor, set or driven by a family parameter (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dd.md`](needs-checking/group-dd.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

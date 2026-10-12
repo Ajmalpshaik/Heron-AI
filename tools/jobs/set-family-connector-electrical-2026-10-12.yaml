@@ -1,0 +1,64 @@
+# The proof of SET_FAMILY_CONNECTOR_ROLES version 3 - an electrical
+# connector's Voltage, Number of Poles, Apparent Load and Power Factor -
+# NEEDS-CHECKING Group DD:
+#
+#   set-family-connector-roles   SET_FAMILY_CONNECTOR_ROLES   FRG-MEP-055
+#
+#     python tools/batch-prove.py tools/jobs/set-family-connector-electrical-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-family-connector-electrical-2026-10-12.yaml
+#
+# NEVER ON ONE OF THE OWNER'S FAMILIES. THE ARRANGEMENT IS MADE ONCE, KEPT, IN
+# A NEW SCRATCH FAMILY: File, New, Family, Metric Electrical Equipment.rft, on
+# Revit 2020 first. Type its title where `in:` says FAMILY-TITLE. Then, in it,
+# with the Heron tools (the commands are in docs/needs-checking/group-dd.md):
+#
+#   a plane "Box Top" at 600 (height), CREATE_REFERENCE_PLANES
+#   one solid box: CREATE_FAMILY_FORMS "kind=extrusion workPlane=Ref. Level
+#     profile=rect -300,-150 300,150 startMm=0 endMm=600 solid=true"
+#   ADD_FAMILY_CONNECTOR, system "Power Balanced", on the face lying on
+#     "Box Top"
+#   a type Length parameter "Width" (ADD_FAMILY_PARAMETERS) - the wrong kind
+#     the negative leg names
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
+#
+# POSITIVE: "voltage=400 V; poles=3; apparentLoad=1.5 kVA; powerFactor=0.85"
+# on the connector on "Box Top". `changed` names all four, connectorReport
+# reads 400 V, 3 pole(s), 1500 VA, power factor 0.85, and findings quote
+# what REVIT shows for each - record those four sentences whole: "Revit
+# shows" is the check on the unit factor that no compile can make.
+#
+# NEGATIVE: "voltage=400 V [Width]" - Width is a Length. Refused naming both
+# kinds; `changed` EMPTY, no parameter made, the connector's Voltage as it was.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - the connector's Properties at
+# Revit's defaults: rollback has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>`.
+
+model: a scratch family from Metric Electrical Equipment.rft, Revit 2020 first, then 2024 and 2027
+
+defaults:
+  in: "FAMILY-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: set-family-connector-roles
+    expect: changed
+    set:
+      connectors: "Box Top"
+      settings: "voltage=400 V; poles=3; apparentLoad=1.5 kVA; powerFactor=0.85"
+      primary: ""
+      links: ""
+    negative-set:
+      connectors: "Box Top"
+      settings: "voltage=400 V [Width]"
+      primary: ""
+      links: ""
+    note: >
+      The negative changes only the settings: same family, same connector,
+      a family parameter of the wrong kind. The verdict is read off `changed`
+      - four entries, or none. The linking leg - "voltage=230 V [Supply
+      Voltage]" making the parameter - is run by hand, DD4.

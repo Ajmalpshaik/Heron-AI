@@ -45,6 +45,29 @@ positive:
   - given: links "Water In > none" on the same family
     expect: both connectors read not linked; the change names the former partner
 
+  - given: >
+      VERSION 3. A scratch Electrical Equipment family from the metric
+      template, one box, and ADD_FAMILY_CONNECTOR "Power Balanced" on the face
+      lying on "Box Top"; connectors "Box Top", settings "voltage=400 V;
+      poles=3; apparentLoad=1.5 kVA; powerFactor=0.85"
+    expect: >
+      changed names all four; connectorReport reads 400 V, 3 pole(s), 1500 VA,
+      power factor 0.85; findings quote what Revit shows for each - "400.00 V"
+      or as the family's units format it, and 1500 VA - and the connector's
+      Properties in the Family Editor read the same. A voltage that reads 37.2 V
+      or 4305 V instead is the unit factor wrong, and the refusal that checks
+      it against UnitUtils should have stopped it first
+
+  - given: >
+      the same family; connectors "Box Top", settings "voltage=230 V [Supply
+      Voltage]; apparentLoad=[Rated Load]", neither parameter in the family
+    expect: >
+      two type parameters made under Electrical - Loads, of Electrical
+      Potential and Apparent Power kind; Supply Voltage holds 230 V in the
+      current type and the connector's Voltage reads 230 V, driven by it;
+      Apparent Load driven by Rated Load and reading 0 VA until a value is
+      given; Family Types shows both
+
 negative:
   - given: connectors "Port Middle", where no connector lies on such a plane
     expect: refused, naming the family's connectors - nothing changed. MEASURED 2026-10-04
@@ -76,6 +99,21 @@ negative:
       linked, read back both ways, and a finding that a linked pair passes a
       system through only as Global - their system NOT changed
 
+  - given: >
+      VERSION 3. The valve family above; connectors "Port Left", settings
+      "voltage=400 V" - a pipe connector
+    expect: refused - Voltage is an electrical connector's - and nothing changed
+
+  - given: >
+      the Electrical Equipment family above; settings "voltage=400 V
+      [Width]", Width a Length parameter of the family
+    expect: >
+      refused naming Width's kind and the connector Voltage's kind, and nothing
+      changed - no parameter made, the connector's Voltage as it was
+
+  - given: the same; settings "poles=4"
+    expect: refused - 1, 2 or 3 - and nothing changed
+
   - given: a project in front
     expect: notAFamily true and nothing changed
 
@@ -84,3 +122,12 @@ second_route:
       In the Family Editor, select each connector: Properties shows System
       Classification, and the ribbon's connector tools show which is primary
       and which are linked
+  - >
+      VERSION 3. In the Family Editor, the electrical connector's Properties -
+      Voltage, Number of Poles, Apparent Load, Power Factor, Load
+      Classification, and the small button at the end of each row showing the
+      family parameter it is associated with; then the family loaded into a
+      test project, placed, and its Properties and an Electrical Equipment
+      schedule read for whatever Revit offers of Voltage and Number of Poles -
+      which of them a project shows without a shared parameter is part of
+      what is measured

@@ -191,6 +191,15 @@ compatibility-note: >
 #   "which connectors does this family have"     -> REPORT_FAMILY_CONNECTORS
 #   "set this connector to Global", "flip it"    -> SET_FAMILY_CONNECTOR_ROLES,
 #                                                   a connector already made
+#   "add an electrical connector to the family"  -> here; its voltage, poles,
+#                                                   load and power factor are
+#   "make the connector 3 phase 400 V"           -> SET_FAMILY_CONNECTOR_ROLES
+#                                                   after it is made (v3). By
+#                                                   one ranking route alone the
+#                                                   first sentence reaches that
+#                                                   card; the served answer is
+#                                                   this one (measured
+#                                                   2026-10-12, Revit 2020)
 #   "connect these ducts to the terminal"        -> CONNECT_AIR_TERMINALS, in a
 #                                                   project
 #   "report connector sizes in the model"        -> REPORT_CONNECTORS
