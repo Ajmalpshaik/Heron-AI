@@ -116,7 +116,11 @@ purpose: >
   2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
      lengths when they describe the product; a diameter is a length too. Any
      value a project must TAG or SCHEDULE is a shared parameter instead, from
-     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS.
+     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS. A family
+     parameter already labelling dimensions that must become the office's
+     shared one is REPLACED in place - the same tool, replaceExisting true,
+     "Width=Unit_Width" - never a second parameter driven by a formula, which
+     leaves two per size in the Properties palette.
   3. SET_FAMILY_TYPE_VALUES - make the first type and write the real sizes into
      it. BEFORE any dimension is labelled: a new length reads 0, and a label on
      a 0 drives its planes onto each other.

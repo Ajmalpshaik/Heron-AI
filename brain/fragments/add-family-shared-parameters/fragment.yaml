@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-031
-semantic-identity: "add the office's shared parameters, from its shared parameter file, to the family being edited"
+semantic-identity: "add the office's shared parameters, from its shared parameter file, to the family being edited, or replace family parameters with them"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_SHARED_PARAMETERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -35,6 +35,26 @@ purpose: >
   **READ BACK, ALL OR NOTHING**: each is found again by name, shared, with the
   file's GUID and the scope asked.
 
+  **REPLACING A FAMILY PARAMETER WITH A SHARED ONE (version 2).** With
+  replaceExisting true each name is a pair, Old=SharedName - "Width=Unit_Width;
+  Depth=Unit_Thickness" - and a family parameter already in the family becomes
+  the office's shared parameter in place, as Family Types > Modify > Shared
+  parameter > Select does. Every dimension label, formula and association that
+  pointed at the old one points at the shared one after, and each keeps its own
+  scope and every type's value. parameterGroup empty keeps each under its own
+  heading; instance is not used. Refused by name before anything changes: a
+  name not in the file, a kind that differs (a Length replaced by a Text), an
+  old parameter already shared or built in, a shared name already in the
+  family, and a formula that names the shared name - Revit refuses the replace
+  while one does. Read back, all or nothing: shared with the file's GUID, same
+  scope and heading, no family parameter left under the old name, every formula
+  that read it reading the shared name, every other formula unchanged, labels,
+  associations and values the same before and after.
+
+  This is the way to give an existing family the office's size parameters
+  without the two-per-size workaround (a shared one added beside a family one
+  driven by a formula), which leaves both in the Properties palette.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -51,9 +71,20 @@ contract:
       type: bool
       source: request
     # The Properties palette heading - "Mechanical", "Identity Data".
+    # When replacing, empty keeps each parameter under its own heading.
     - name: parameterGroup
       type: string
       source: request
+    # true REPLACES family parameters already in the family with the office's
+    # shared ones instead of adding new ones; each of parameterNames is then
+    # Old=SharedName, and semicolons separate the pairs. instance is not used -
+    # give it false, each keeps its own scope. Absent is false - adding,
+    # exactly as version 1 did. `optional: true` is what lets it be left out
+    # (HeronBindingNote.AbsentValue).
+    - name: replaceExisting
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: added
       # Each one added, with its kind, scope and GUID, read back.
@@ -64,6 +95,23 @@ contract:
       # nothing done (D-52).
       role: accounting
       type: IList<string>
+    - name: replaced
+      # Each family parameter replaced, Old -> SharedName, read back with its
+      # kind, scope, heading and the file's GUID.
+      role: result
+      type: IList<string>
+    - name: formulasReadBack
+      # Every formula that read an old name, and each replaced parameter's own
+      # formula, read back after replacing - "Width = Unit_Width * 2" - as one
+      # line.
+      role: accounting
+      type: string
+    - name: keptLinks
+      # What each replaced parameter was tied to, the same before and after:
+      # labelled dimensions, connector sizes, nested families, every type's
+      # value.
+      role: accounting
+      type: string
     - name: sharedFile
       # The shared parameter file that was read.
       role: accounting
@@ -72,47 +120,57 @@ contract:
       role: accounting
       type: bool
     - name: refused
-      # Why nothing was added, in plain words. Empty when the call ran.
+      # Why nothing was added or replaced, in plain words. Empty when the call ran.
       role: accounting
       type: string
     - name: findings
       type: IList<string>
 
+# VERSION 2 (replacing) PROVED 2026-10-12 on scratch Family4 (Revit 2020), signed by
+# Ajmal PS on his word - NEEDS-CHECKING DE. The adding mode of version 1 shares this
+# implementation; its own run is NEEDS-CHECKING BS (2026-10-03).
 proof:
-  date: '2026-10-03'
+  date: '2026-10-12'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family1,
-    Revit 2024, session 32340'
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+  model: Family4 (1,505 elements), Revit 2020, session 25812
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
-    added 1 item(s) [HERON_ASSET_TAG (Text, type, GUID 5cda9c6d-e92a-4d03-8f03-44...], alreadyThere
-    0 item(s), dbNamespace Autodesk.Revit.DB, findings 2 item(s) [Added 1 shared parameter(s)
-    from "C:\Users\AJMALA~1\AppData\..., They hold no value yet - SET_FAMILY_TYPE_VALUES writes
-    it. A...], flags BindingFlags, groupType RuntimeType, groupValue ForgeTypeId, groups 123
-    item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId], [Visibility, Autodesk.Revit.DB.ForgeTypeId],
-    [Extents, Autodesk.Revit.DB.ForgeTypeId], ...], instance false, kindLabel Func`2, names
-    1 item(s) [HERON_ASSET_TAG], notAFamily false, plans 1 item(s) [(HERON_ASSET_TAG, Autodesk.Revit.DB.ExternalDefinition)],
-    problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, sharedFile C:\Users\AJMALA~1\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai\b7dd5897-0db3-4fc5-b8aa-33f89dd8c419\scratchpad\exports\heron-shared.txt,
-    squash Func`2. inputs came parameterNames as given (1); instance as given; parameterGroup
-    as given. on Family1
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo, added 0 item(s), alreadyThere
-    0 item(s), dbNamespace Autodesk.Revit.DB, findings 1 item(s) [The document in front is
-    a project, not a family open in the...], flags BindingFlags, groupType RuntimeType, groupValue
-    (null), groups 123 item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId],
-    [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents, Autodesk.Revit.DB.ForgeTypeId],
-    ...], instance false, kindLabel Func`2, names 1 item(s) [HERON_ASSET_TAG], notAFamily
-    true, plans 0 item(s), problems 0 item(s), refused The document in front is a project,
-    not a family open in the Family Editor. A shared parameter is added to a project with
-    ADD_PROJECT_PARAMETER; to add one to a family, open it first., revitAssembly RuntimeAssembly,
-    sharedFile , squash Func`2. inputs came parameterNames as given (1); instance as given;
-    parameterGroup as given. on Project1
+    added 0 item(s), alreadyThere 0 item(s), dbNamespace Autodesk.Revit.DB, findings 3 item(s)
+    [Replaced 2 family parameter(s) with the office''s shared ones..., Formulas read back
+    with the shared names: Half Width = Unit_..., Kept as they were: Unit_Width: 1 labelled
+    dimension(s), valu...], flags BindingFlags, formulasReadBack Half Width = Unit_Width /
+    2, groupType RuntimeType, groupValue (null), groups 117 item(s) [[Route Analysis, PG_ROUTE_ANALYSIS],
+    [Geolocation, PG_GEO_LOCATION], [Structural Section Geometry, PG_STRUCTURAL_SECTION_GEOMETRY...,
+    ...], instance false, keptLinks Unit_Width: 1 labelled dimension(s), values Large 2''
+    - 11 111/256", Small 1'' - 11 159/256"; Unit_Thickness: values Large 1'' - 5 183/256",
+    Small 0'' - 11 13/16", kindLabel Func`2, names 1 item(s) [Width=Unit_Width; Depth=Unit_Thickness],
+    notAFamily false, plans 0 item(s), problems 0 item(s), refused (null), replaceExisting
+    true, replaceParameter RuntimeMethodInfo, replaced 2 item(s) [Width -> Unit_Width (Length,
+    type, under Dimensions, GUID 9f..., Depth -> Unit_Thickness (Length, type, under Dimensions,
+    GUI...], revitAssembly RuntimeAssembly, sharedFile D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt,
+    squash Func`2, swaps 2 item(s) [(Width, Autodesk.Revit.DB.ExternalDefinition), (Depth,
+    Autodesk.Revit.DB.ExternalDefinition)]. inputs came parameterNames as given (1); instance
+    as given; parameterGroup as given; replaceExisting as given. on Family4'
+  negative_case: run with instance=False, parameterGroup=, parameterNames=Width=Item_Tag,
+    replaceExisting=True instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned addParameter RuntimeMethodInfo, added 0 item(s), alreadyThere 0 item(s),
+    dbNamespace Autodesk.Revit.DB, findings 1 item(s) [Nothing was replaced. 'Width' holds
+    Length and the shared 'I...], flags BindingFlags, formulasReadBack , groupType RuntimeType,
+    groupValue (null), groups 117 item(s) [[Route Analysis, PG_ROUTE_ANALYSIS], [Geolocation,
+    PG_GEO_LOCATION], [Structural Section Geometry, PG_STRUCTURAL_SECTION_GEOMETRY..., ...],
+    instance false, keptLinks , kindLabel Func`2, names 1 item(s) [Width=Item_Tag], notAFamily
+    false, plans 0 item(s), problems 0 item(s), refused Nothing was replaced. 'Width' holds
+    Length and the shared 'Item_Tag' holds Text - the kinds must be the same, or every value
+    and formula reading it would mean something else., replaceExisting true, replaceParameter
+    RuntimeMethodInfo, replaced 0 item(s), revitAssembly RuntimeAssembly, sharedFile D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt,
+    squash Func`2, swaps 1 item(s) [(Width, Autodesk.Revit.DB.ExternalDefinition)]. inputs
+    came parameterNames as given (1); instance as given; parameterGroup as given; replaceExisting
+    as given. on Family4
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: afdd4feb12db137e
-
+  fingerprint: d9d2e24338639f6f
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -126,10 +184,25 @@ compatibility-note: >
   from 2022 (the RevitAPI reference assemblies and their XML remarks, read
   2026-10-01), so the overload is picked by reflection, newest first.
 
+  **REPLACING (version 2)** is `FamilyManager.ReplaceParameter(FamilyParameter,
+  ExternalDefinition, group, bool)` - BuiltInParameterGroup 2020 to 2024
+  (obsolete in 2024), ForgeTypeId 2022 to 2027 - picked the same way. The old
+  parameter's heading is `Definition.ParameterGroup` 2020 to 2024 or
+  `GetGroupTypeId()` 2022 to 2027, read in whichever world the call takes; its
+  kind is `GetDataType()` 2022 to 2027 or `ParameterType` 2020 to 2022.
+  Every type's value is read with `FamilyType.HasValue`, `AsValueString`,
+  `AsString`, `AsDouble`, `AsInteger` and `AsElementId`, and
+  `FamilyParameter.IsReporting`, all 2020 to 2027 (api-surface, read
+  2026-10-12).
+
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "add the shared parameter Equipment Tag to this family" -> here
 #   "add shared parameters from our file to this family"    -> here
+#   "replace the family parameter Width with the shared parameter Unit_Width"
+#                                          -> here, replaceExisting true
+#   "rename the family parameter Width"    -> ADD_FAMILY_PARAMETERS,
+#                                             renameExisting true
 #   "add a shared parameter to the project"       -> ADD_PROJECT_PARAMETER
 #   "add width and depth parameters to the family" -> ADD_FAMILY_PARAMETERS
 
@@ -138,3 +211,5 @@ utterances:
   - add shared parameters from our file to this family
   - put the office shared parameters into this family
   - add these shared parameters as type parameters under mechanical
+  - replace the family parameter Width with the shared parameter Unit_Width
+  - make the size parameters the shared parameters from our shared parameter file
