@@ -702,6 +702,28 @@ def test_an_admin_or_publish_fragment_is_never_sent_by_a_batch():
     verdict, _ = BP.job_refusal(dict(base, fragment="odd-sample"), library)
     check(verdict == BP.REFUSED, "a risk nobody knows is REFUSED (%s)" % verdict)
 
+    # A SETUP STEP ABOVE MODIFY IS NEVER SENT, WHATEVER THE FLAGS - `validate`
+    # asks `risk_refusal` of every step with no switch. So a job with one is
+    # REFUSED outright, behind a runnable fragment and an ADMIN one alike: the
+    # by-name command would fail on the step too.
+    library["no-card-step"] = FakeFragment("no-card-step", [])
+    os.remove(os.path.join(library["no-card-step"].folder, "fragment.yaml"))
+    for step, risk in (("admin-sample", "ADMIN"), ("publish-sample", "PUBLISH")):
+        for fragment in ("modify-sample", "admin-sample"):
+            verdict, why = BP.job_refusal(
+                dict(base, fragment=fragment, setup=[step]), library)
+            check(verdict == BP.REFUSED and step in (why or "")
+                  and ("risk %s" % risk) in (why or ""),
+                  "a setup step at %s behind %s is REFUSED, naming the step and "
+                  "its risk (%s)" % (risk, fragment, verdict))
+    verdict, why = BP.job_refusal(
+        dict(base, fragment="modify-sample", setup=["no-card-step"]), library)
+    check(verdict == BP.REFUSED and "no-card-step" in (why or ""),
+          "a setup step whose risk cannot be read is REFUSED (%s)" % verdict)
+    check(BP.job_refusal(dict(base, fragment="modify-sample",
+                              setup=["modify-sample"]), library)[0] is None,
+          "a MODIFY setup step is still runnable")
+
     # A JOB DICT MISSING THE OPTIONAL KEYS MUST NOT CRASH THE REFUSAL. The
     # command it prints is built from them, and job_refusal is called with
     # partial dicts by design.

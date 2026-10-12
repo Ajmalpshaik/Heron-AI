@@ -294,6 +294,33 @@ def job_refusal(job, library):
         # these and reported six passes for it.
         return ALREADY, "heron-status is %s" % frag.status
 
+    # THE SETUP STEPS COME BEFORE THE FRAGMENT'S OWN RISK, because the bucket
+    # below hands a person a by-name command - and that command fails too when
+    # one of its steps cannot be sent.
+    for step in job["setup"]:
+        if step not in library:
+            return REFUSED, "the setup names '%s', which is not a fragment" % step
+
+        # A STEP ABOVE MODIFY IS NEVER SENT, WHATEVER THE FLAGS. `validate`
+        # asks `risk_refusal` of every step with no switch at all: a step is an
+        # ARRANGEMENT, and nothing about arranging a proof needs to export,
+        # save or set up the project (D-106). This only checked that the step
+        # was a fragment, so such a job read WOULD RUN and came back DID NOT
+        # RUN - the twin of the fragment's own risk below (row 5b-440). Unlike
+        # that one there is no command that sends it, so the job is REFUSED.
+        step_root, step_slug = card_root(library[step]), library[step].slug
+        step_refusal = BRIDGE.risk_refusal(step_root, step_slug)
+        if step_refusal:
+            step_risk = BRIDGE.fragment_risk(os.path.join(
+                step_root, "brain", "fragments", step_slug, "fragment.yaml"))
+            if step_risk in BRIDGE.SWITCHED_OPERATIONS:
+                return REFUSED, (
+                    "the setup step '%s' is risk %s, and `validate` sends no "
+                    "setup step above MODIFY, whatever the flags - arranging a "
+                    "proof never needs to export, save or set up the project. "
+                    "Arrange it with steps at MODIFY or below" % (step, step_risk))
+            return REFUSED, "the setup step: %s" % step_refusal
+
     # THE FRAGMENT'S OWN RISK, READ FROM ITS CARD BY THE CLIENT'S OWN READER.
     # `validate` without --allow-publish refuses a PUBLISH or ADMIN fragment
     # before it sends anything (D-106 point 6: no batch sends one), and this
@@ -308,10 +335,6 @@ def job_refusal(job, library):
     refusal = risk_refusal(job, frag)
     if refusal:
         return refusal
-
-    for step in job["setup"]:
-        if step not in library:
-            return REFUSED, "the setup names '%s', which is not a fragment" % step
 
     if job.get("keep-chain") and not job["setup"]:
         # `.get` AND NOT `[...]`, UNLIKE ITS NEIGHBOURS. `job_refusal` reads a
