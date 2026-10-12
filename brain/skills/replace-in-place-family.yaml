@@ -1,0 +1,173 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: replace-in-place-family
+name: Replace in-place families with a loadable one, carrying their data across
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Swaps in-place families in a project for one loadable family - placed where
+  each old one stood, turned the way it faced, carrying every parameter value
+  the old one held - and deletes the old ones last, on the modeller's yes.
+  Each step below is its own call and its own undo entry, so the job as a
+  whole is NOT one undo: that is why nothing is deleted until the new units
+  have been read back and match.
+
+  FOUR THINGS THIS JOB NEEDS DO NOT EXIST YET, each marked GAP below: a full
+  parameter record, select by id, a GUID write and copying tags. They are not
+  in the list of capabilities after this method, because nothing provides
+  them - do not try to call them. At that step say so to the modeller and let
+  them choose; never work round a gap by guessing a value or typing an
+  element id.
+
+  0. FIND THE OLD ONES. SELECT_BY_FAMILY with familyName= the part of the
+     in-place family names they share - every in-place element is a family of
+     its own, so "TCM_ACU_T002" catches ..Unit1, ..Unit2 and ..Unit3, and the
+     answer names each family that matched with its count. Confirm the count
+     with the modeller before going on.
+
+  1. READ EVERYTHING THE OLD ONES HOLD, BEFORE ANYTHING CHANGES: every
+     INSTANCE and every TYPE parameter with its value AND its shared-parameter
+     GUID, the location and bounding box, which way each faces, and every tag
+     on them - its view, tag type, head position and leader.
+     GAP - A FULL PARAMETER RECORD: nothing reads all of that yet. A Heron
+     reply cuts a list to 3 items of 60 characters, so the capability this
+     needs answers with the whole record as ONE joined string.
+     REPORT_PARAMETER_INVENTORY, REPORT_BOUNDING_BOX and
+     REPORT_TAGS_AND_TARGETS (per view) each give part of it, cut short, and
+     none of them gives a GUID. Until the gap is filled, the modeller chooses:
+     stop here, or go on with those partial reads, knowing a long list or a
+     duplicate-named parameter can be missed.
+     A PROJECT CAN HOLD TWO SHARED PARAMETERS WITH THE SAME NAME. Seen
+     2026-10-12: two called "Equipment Tag", GUID e133774c... filled and GUID
+     cb0704fc... empty - a by-name read showed the empty one. Every value is
+     recorded, copied and compared by GUID, never by name alone.
+
+  2. FIND THE WALL AND THE PIPES BESIDE EACH OLD ONE, to choose how the new
+     one faces: its back to the wall, its connectors towards the pipes.
+     SELECT_IN_REGION round each old bounding box, grown a little, with
+     categories= Walls, then again with Pipes (exact=false is a box test,
+     exact=true touches the solid - neither means "wholly inside"). Then
+     REPORT_BOUNDING_BOX on what came back. A pipe joined to an in-place
+     family is joined to it, so note which pipes these are: step 8 checks them.
+
+  3. LOAD THE LOADABLE FAMILY. First look whether it is already loaded and
+     whether any of it is already placed - SELECT_BY_FAMILY with
+     familyName= the new family and exactMatch=true. LOAD_FAMILY with
+     familyPath= the .rfa REFUSES a family that is already loaded; a reload
+     (reload=true) needs the modeller's yes for that one reload (Article 7),
+     and a reload can overwrite same-named materials - its answer lists them.
+
+  4. PLACE ONE NEW UNIT PER OLD ONE. PLACE_FAMILY_INSTANCES with symbol= the
+     type, points= each old bounding box's centre in plan at its bottom, in
+     millimetres in the model's own coordinates (Z is the height in the model,
+     not above the level), and level= the old unit's level.
+     Then turn each one alone. Select it by a spot ONLY IT occupies -
+     SELECT_IN_REGION on a small box inside it that nothing else touches,
+     because the old unit is still standing in the same place and typed
+     element ids are refused. GAP - SELECT BY ID: nothing yet selects the
+     element whose id a Heron answer in this chat gave back, here the
+     placement's.
+     ROTATE_ELEMENTS (angleRadians, pivot= its own centre) and, where it must
+     be handed the other way, MIRROR_ELEMENTS with asCopy=false - each with
+     expect_from="select-in-region where minMm=<that box>", so it turns the
+     one just selected and nothing else. REPORT_CONNECTORS on it then says
+     which way its connectors point; they should face the pipes found in
+     step 2.
+
+  5. COPY THE VALUES. IMPORT_PARAMETER_VALUES with csvPath= a CSV whose first
+     column is the NEW element's id and whose other columns are the parameter
+     names, fed by a select of the new units (expect_from=
+     "select-by-family where familyName=<new family>"), so it can write only
+     onto them. includeTypeParameters=true writes the TYPE - every unit of
+     that type - so ask first. It REFUSES a name the element carries twice,
+     which is right: a duplicate-named shared parameter goes by its GUID.
+     GAP - A GUID WRITE: nothing writes a value by GUID yet. Widening
+     IMPORT_PARAMETER_VALUES to take a GUID as a column heading is the fix,
+     not a new capability.
+     MARK IS THE MODELLER'S CALL: it identifies an element, so it is never
+     copied in bulk while the old units still exist - Revit warns of
+     duplicate Marks. On Revit 2020 a Yes/No that was written correctly can
+     come back called "rejected": read the value before believing either.
+
+  6. READ BACK AND COMPARE, by (name, GUID): step 1's full record - the same
+     GAP - on the new units, against the old - 0 missing and 0 different, or
+     the job is not done. COMPARE_ELEMENTS on one old and one new unit (one region
+     round both selects the pair) is a first look only: it compares by
+     name, so two parameters sharing a name can hide a difference.
+
+  7. THE TAGS. Re-tag from the step 1 list with TAG_ELEMENTS (view,
+     tagTypeId, addLeader), or hand the list to the modeller - on 2026-10-12
+     the owner chose to re-tag himself. GAP - COPY TAGS: nothing yet puts
+     each tag back at its own head position with its own leader.
+
+  8. DELETE THE OLD ONES - LAST, AND ONLY ON THE MODELLER'S YES for that one
+     delete, naming the families and the count (Article 7). DELETE_ELEMENTS
+     with expect_from="select-by-family where familyName=<old family>" from
+     a fresh SELECT_BY_FAMILY of the OLD name: never without the expect_from,
+     which deletes whatever is selected in the window. Then run step 2's
+     SELECT_IN_REGION and REPORT_BOUNDING_BOX again: the same walls and pipes,
+     in the same places.
+
+# The words a modeller says. Skills are not indexed (tools/check-skill-routing.py),
+# so these move no other sentence's answer: they name this job beside a lookup
+# whose candidates include one of `needs` (heron_skill.methods_for), and the
+# words they share with the request put it first.
+utterances:
+  - replace the in-place family with the loadable one
+  - replace the in-place equipment with the loadable family
+  - put a loadable family where each in-place one stands
+  - swap the in-place ones for the loadable one and carry their data across
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+#
+# THE FOUR GAPS ARE NOT LISTED HERE, ON PURPOSE. tests/test_skills.py and
+# tests/test_brain_reachable.py assert that every capability a skill needs has
+# a provider, and naming a gap here turns both red (measured 2026-10-12). Their
+# own comment says a gap in the library "would be asserting that the work is
+# unfinished" - which for this job is true. Whether a skill may carry a gap in
+# `needs`, so it reaches heron_skill.py's CAPABILITY GAPS list, is the
+# owner's decision; until then each gap is named in the purpose, which
+# heron_method prints whole.
+needs:
+  - SELECT_BY_FAMILY
+  - REPORT_PARAMETER_INVENTORY
+  - REPORT_BOUNDING_BOX
+  - REPORT_TAGS_AND_TARGETS
+  - SELECT_IN_REGION
+  - LOAD_FAMILY
+  - PLACE_FAMILY_INSTANCES
+  - ROTATE_ELEMENTS
+  - MIRROR_ELEMENTS
+  - REPORT_CONNECTORS
+  - IMPORT_PARAMETER_VALUES
+  - COMPARE_ELEMENTS
+  - TAG_ELEMENTS
+  - DELETE_ELEMENTS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open, not a family, and the loadable family's .rfa is saved on disk
+  - the old units' full parameter record, with GUIDs and tags, has been read and kept before anything is placed or changed
+  - the modeller has said whether Mark is copied, and whether the tags are re-tagged by Heron or by the modeller
+  - the modeller has said yes to deleting the old in-place families, by name and count, for that one delete
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-12 from a swap done by hand that day on Revit 2020, project
+  4355-BHVD-3D-60P00-BL006A: three in-place
+  TCM_ACU_T002_AirCooledCondensingUnit1..3 : AAAA replaced by
+  TRG_Mechanical Equipment_Split Air Conditioner Outdoor Unit_Wall Mounted.
+  Steps 1 and 6 were done with a rolled-back scratch read, and the GUID write
+  in step 5 by hand, because no capability did them - which is what the
+  four gaps above are. The job as a whole
+  has not been watched working through Heron, so it stays DRAFT (D-30).
