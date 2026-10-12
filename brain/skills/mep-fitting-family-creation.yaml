@@ -19,6 +19,9 @@ purpose: >
   FAMILY-CREATION still hold; this is what a fitting adds.
 
   0. REPORT_FAMILY_TEMPLATE FIRST - category and Part Type as they stand.
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING: which fitting, its connection sizes, an elbow's angle
      range, and where its sizes come from - usually a manufacturer's table.
   2. SET_FAMILY_CATEGORY to Pipe Fittings or Duct Fittings when starting from
@@ -67,6 +70,9 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - SET_FAMILY_CATEGORY
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
