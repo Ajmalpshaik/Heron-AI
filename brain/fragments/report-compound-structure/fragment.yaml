@@ -124,6 +124,10 @@ compatibility-note: >
 #                                         has NO compound structure; panels and
 #                                         mullions are what it is made of
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "dimension the layers of this wall"     -> DIMENSION_ELEMENT_FACES
 utterances:
   - what is this wall made of
   - what is the wall build up

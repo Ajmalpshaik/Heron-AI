@@ -32,7 +32,8 @@ risk: MODIFY
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
   Attaches the tops or bases of walls to the roof, floor or ceiling above or
-  below each one - Attach Top/Base - or detaches them.
+  below each one, or a base to the terrain - Attach Top/Base - or detaches
+  them.
 
 contract:
   needs:
@@ -82,6 +83,7 @@ compatibility-note: >
 #
 #   "attach these walls to the roof"          -> here
 #   "detach the wall tops"                    -> here, detach
+#   "attach the wall bases to the terrain"    -> here, base
 #   "set the wall top to level 2"             -> SET_WALL_CONSTRAINTS
 
 utterances:
@@ -89,3 +91,4 @@ utterances:
   - attach the wall tops to the slab
   - detach the tops of these walls
   - attach the bases of these walls to the floor below
+  - attach the bottom of these walls to the toposolid

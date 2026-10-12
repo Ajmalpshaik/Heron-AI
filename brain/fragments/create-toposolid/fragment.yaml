@@ -31,12 +31,22 @@ contract:
   needs:
     - name: doc
       type: Document
-    # "x,y,z; x,y,z; ..." in millimetres, the outline in order.
+    # "x,y,z; x,y,z; ..." in millimetres, the outline in order; an EMPTY
+    # value lets Revit draw the outline round the points.
     - name: boundaryMm
       type: string
       source: request
     # "x,y,z; ..." interior spot heights; an EMPTY value is none.
     - name: pointsMm
+      type: string
+      source: request
+    # An imported or linked CAD drawing's id, its points read as survey
+    # heights; an EMPTY value reads none.
+    - name: cadImport
+      type: string
+      source: request
+    # The drawing's layers to read, comma separated; EMPTY reads every layer.
+    - name: cadLayers
       type: string
       source: request
     # A toposolid type by name; an EMPTY value takes the first.
@@ -70,6 +80,8 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "make the terrain from these spot levels"  -> here
+#   "make a toposolid from the survey dwg"     -> here, cadImport
+#   "lay this floor to the terrain"            -> EDIT_SLAB_SHAPE, follow
 #   "add a car park area to the terrain"       -> ADD_TOPOSOLID_SUBDIVISION
 #   "make a floor"                             -> CREATE_FLOOR
 
@@ -78,3 +90,4 @@ utterances:
   - create the site terrain from this boundary and spot heights
   - model the ground from these levels
   - add terrain for the site
+  - make a toposolid from the survey drawing

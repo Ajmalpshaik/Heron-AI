@@ -127,6 +127,10 @@ compatibility-note: >
 #                                        SET_CURTAIN_WALL_MULLIONS on the copy.
 #                                        Both change a TYPE, and so every wall
 #                                        of it
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "copy the guard rail type with a 1100 top rail" -> SET_RAILING_TYPE
 utterances:
   - make a new duct type
   - duplicate this type

@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-070
+semantic-identity: "how are the divided surfaces and divided paths laid out - grids, spacing, nodes"
+kind: action
+domain: revit.geometry
+capability: REPORT_DIVIDED_SURFACES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Every divided surface - host, U and V grid layout (number or distance,
+# justification, rotation, offset), gridline counts, border tiles - and every
+# divided path - node count, layout, length, closed or open, how distance is
+# measured - in the document in front, a conceptual family or a project.
+# withNodes adds the first 50 node positions of each, in millimetres: what an
+# adaptive component is placed on. A node's place comes from the point
+# Revit's geometry gives for it; one with none is counted, not guessed.
+#
+# DIVIDE_FAMILY_SURFACE divides a surface; PLACE_ADAPTIVE_COMPONENTS places
+# adaptive families on points or nodes.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Reads every divided surface and divided path - grid layout, spacing,
+  gridline and node counts, length - and, when asked, where the nodes are.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: withNodes
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: divided
+      # ONE STRING, a part per surface and per path (D-52).
+      role: result
+      type: string
+    - name: surfaceCount
+      role: result
+      type: int
+    - name: pathCount
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. DividedSurface with Host,
+  USpacingRule, VSpacingRule, NumberOfUGridlines, NumberOfVGridlines,
+  BorderTile and GetGridNodeReference, GridNode, SpacingRule with Layout,
+  Number, Distance, Justification, GridlinesRotation and Offset, and
+  DividedPath with NumberOfPoints, SpacingRuleLayout, FixedNumberOfPoints,
+  Distance, TotalPathLength, IsClosedLoop and MeasurementType are present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-13.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how is this surface divided"              -> here
+#   "where are the nodes of the divided path"  -> here, withNodes
+#   "divide this surface 10 by 6"              -> DIVIDE_FAMILY_SURFACE
+
+utterances:
+  - how is this surface divided
+  - list the divided surfaces and their grids
+  - where are the nodes of this divided path
+  - how many nodes does the divided path have
+  - where are the nodes of the divided path

@@ -123,8 +123,8 @@ jobs:
   - fragment: create-toposolid
     expect: toposolid
     write: true
-    set: {boundaryMm: "40000,0,0; 70000,0,0; 70000,20000,1500; 40000,20000,1500", pointsMm: "55000,10000,2500", typeName: "", level: Level 1}
-    negative-set: {boundaryMm: "40000,0,0; 70000,0,0", pointsMm: "", typeName: "", level: Level 1}
+    set: {boundaryMm: "40000,0,0; 70000,0,0; 70000,20000,1500; 40000,20000,1500", pointsMm: "55000,10000,2500", cadImport: "", cadLayers: "", typeName: "", level: Level 1}
+    negative-set: {boundaryMm: "40000,0,0; 70000,0,0", pointsMm: "", cadImport: "", cadLayers: "", typeName: "", level: Level 1}
 
   - fragment: add-toposolid-subdivision
     expect: subdivisionIds

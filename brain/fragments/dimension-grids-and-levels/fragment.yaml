@@ -189,6 +189,10 @@ compatibility-note: >
 # apart" wants a number and must change nothing; "put a dimension on" writes an
 # element onto the drawing.
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "dimension the sills and heads in this elevation" -> DIMENSION_ELEMENT_FACES
 utterances:
   - dimension the grids
   - put the setting out dimensions on this plan

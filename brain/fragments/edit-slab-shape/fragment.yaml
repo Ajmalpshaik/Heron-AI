@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-069
+semantic-identity: "edit the shape of this floor, roof or terrain - add points, split lines, raise or lower points, reset, or lay it to the terrain"
+kind: action
+domain: revit.geometry
+capability: EDIT_SLAB_SHAPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Revit's shape editing - Modify Sub Elements, Add Point, Add Split Line,
+# Reset Shape - on floors, footprint roofs and toposolids, one tool for all
+# three because Revit gives all three the same editor. Modes: points (add
+# and raise), lines (split lines through added points), heights (move the
+# existing point nearest each place, corners too), reset (flat again), and
+# follow - reset, then a grid of points and every corner set to the top of
+# another element straight above or below: a floor laid to the terrain, a
+# toposolid edited to a slab. Offsets are millimetres from the element's own
+# unshaped top, as Revit measures them.
+#
+# The editor and its calls changed names twice (a property before 2024,
+# AddPoint and AddSplitLine from 2025); each is found by name, so one
+# implementation runs on all eight releases - a toposolid only exists from
+# 2024.
+#
+# READ BACK: the top is probed again at every point set and how far it moved
+# reported; for follow, how many points sit within 5 mm of the target's top.
+#
+# CREATE_TOPOSOLID makes terrain; ADD_TOPOSOLID_SUBDIVISION paints a region
+# on it; CREATE_FLOOR makes a floor.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Edits the shape of floors, roofs and toposolids - adds points or split
+  lines, raises or lowers points, resets the shape, or lays a floor to the top
+  of the terrain.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "points", "lines", "heights", "reset" or "follow".
+    - name: mode
+      type: string
+      source: request
+    # points and heights: "x,y,offset; ..." in millimetres; lines: groups of
+    # those split by "|"; follow: "<element id>, <spacing mm>"; reset: EMPTY.
+    - name: shapeMm
+      type: string
+      source: request
+  provides:
+    - name: edited
+      role: result
+      type: int
+    - name: editedIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, element by element, with how far the top moved (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, by name where the names changed.
+  SlabShapeEditor with Enable, IsEnabled, ResetSlabShape, ModifySubElement
+  and SlabShapeVertices is present 2020 through 2027. The editor is the
+  property SlabShapeEditor on Floor and RoofBase 2020 to 2025 and the method
+  GetSlabShapeEditor on Floor, RoofBase and Toposolid 2024 to 2027; DrawPoint
+  and DrawSplitLine are 2020 to 2025 and AddPoint and AddSplitLine 2025 to
+  2027 - read off RevitAPI.xml in the Nice3point reference packages for all
+  eight releases on 2026-10-13. Face.Intersect(Curve, out
+  IntersectionResultArray) is present in all eight.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add a low point to this floor"                 -> here, points
+#   "slope this roof with split lines"              -> here, lines
+#   "lay this floor to the terrain"                 -> here, follow
+#   "reset the shape of this floor"                 -> here, reset
+#   "make a toposolid"                              -> CREATE_TOPOSOLID
+
+utterances:
+  - add a low point to this floor 25 mm down
+  - slope this roof with split lines
+  - raise the corners of this toposolid by 500
+  - reset the shape of this floor
+  - lay this floor to follow the terrain

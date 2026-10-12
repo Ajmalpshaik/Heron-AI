@@ -10,6 +10,11 @@
 // wall's top (for "top") or below its base (for "base"). Nothing is guessed
 // across the building: a wall with nothing over it is named and left.
 //
+// A WALL'S BASE ALSO TAKES A TOPOSOLID (added 2026-10-13) - a wall fitted to
+// the terrain. Terrain runs up past a wall's base wherever the ground slopes,
+// so a toposolid counts as below the base whenever the base is above the
+// toposolid's own bottom; a toposolid is never a top target.
+//
 // REVIT 2025 opened wall attachment to code; the card declares 2025 on.
 //
 // detach true removes every attachment at that end instead.
@@ -32,7 +37,7 @@ if (end != "" && end != "top" && end != "base") refusal = "\"" + where + "\" is 
 var hosts = new List<Tuple<Element, BoundingBoxXYZ>>();
 if (refusal == null && !detach)
 {
-    var categories = new[] { BuiltInCategory.OST_Roofs, BuiltInCategory.OST_Floors, BuiltInCategory.OST_Ceilings };
+    var categories = new[] { BuiltInCategory.OST_Roofs, BuiltInCategory.OST_Floors, BuiltInCategory.OST_Ceilings, BuiltInCategory.OST_Toposolid };
     foreach (var category in categories)
         foreach (var element in new FilteredElementCollector(doc).OfCategory(category).WhereElementIsNotElementType())
         {
@@ -70,8 +75,14 @@ if (refusal == null)
             var overlaps = hb.Min.X < box.Max.X && hb.Max.X > box.Min.X && hb.Min.Y < box.Max.Y && hb.Max.Y > box.Min.Y;
             if (!overlaps) continue;
             var gap = location == AttachmentLocation.Top ? hb.Min.Z - box.Max.Z : box.Min.Z - hb.Max.Z;
+            var terrain = host.Item1.Category != null && host.Item1.Category.Id == new ElementId(BuiltInCategory.OST_Toposolid);
+            if (terrain)
+            {
+                if (location == AttachmentLocation.Top || box.Min.Z < hb.Min.Z) continue;
+                gap = Math.Max(0, gap);
+            }
             // A small negative gap is a host the wall already runs into.
-            if (gap < -1.0) continue;
+            else if (gap < -1.0) continue;
             if (gap < bestGap) { bestGap = gap; best = host.Item1; }
         }
         if (best == null) { noTarget.Add(wall.Id); continue; }

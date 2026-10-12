@@ -1,0 +1,16 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a mass family with one face divided 10 x 6 by number, and a line divided into 8 by number, withNodes true
+    expect: >
+      one surface with U FixedNumber 10 and V FixedNumber 6 and their
+      gridline counts; one path with its node count, FixedNumber 8 and
+      length; node positions in millimetres for both
+
+negative:
+  - given: a new project with nothing in it
+    expect: >
+      divided empty; the finding says 0 surfaces and 0 paths
+
+second_route:
+  - Revit's Properties of the divided surface and the divided path

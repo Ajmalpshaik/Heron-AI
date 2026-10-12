@@ -639,6 +639,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dq.md`](needs-checking/group-dq.md)
 
+## Group DR - dimensions through faces, slab and terrain shape, toposolid tools, railing edits and types, divided surfaces, adaptive placement, copying between documents, purge (2026-10-13)
+
+**Its own file:** [`needs-checking/group-dr.md`](needs-checking/group-dr.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

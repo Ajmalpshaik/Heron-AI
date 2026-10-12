@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-072
+semantic-identity: "cut the terrain with this floor or pad, split it, simplify it or smooth it"
+kind: action
+domain: revit.geometry
+capability: EDIT_TOPOSOLID
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# The toposolid's own operations: excavate by floors, building pads or
+# foundations and take the cut away again (Revit 2025 on) - the nearest the
+# API comes to grading, which it does not offer; split by closed loops into
+# separate toposolids; simplify to a share of the inner points; and Smooth
+# Surface on or off (2025 on, a setting Revit holds for the document).
+# Excavation and smoothing are found by name, so the card runs on 2024 and
+# says so when asked for them there.
+#
+# EDIT_SLAB_SHAPE moves the terrain's points and lays a floor to it;
+# ADD_TOPOSOLID_SUBDIVISION paints a region on it; CREATE_TOPOSOLID makes it.
+#
+# READ BACK: Revit's own excavation check, the split's new toposolids looked
+# up, shape points counted before and after a simplify, smoothing read again.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Edits toposolids with their own tools - excavated by a floor or pad, split
+  into pieces by loops, simplified to fewer points, or smoothed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "excavate", "unexcavate", "split", "simplify" or "smooth".
+    - name: mode
+      type: string
+      source: request
+    # excavate and unexcavate: element ids, comma separated; split: loops of
+    # "x,y; ..." in millimetres split by "|"; simplify: a share 1 to 99;
+    # smooth: "on" or "off".
+    - name: value
+      type: string
+      source: request
+  provides:
+    - name: edited
+      role: result
+      type: int
+    - name: resultIds
+      # The toposolids edited, or the new ones a split made.
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, toposolid by toposolid (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Toposolid, its Split(IList<CurveLoop>), Simplify(double), SketchId and
+  GetSlabShapeEditor are present from 2024; ExcavateBy, RemoveExcavationBy,
+  CanBeExcavatedBy, SetSmoothedSurface and IsSmoothedSurfaceEnabled from
+  2025, found by name so one implementation runs on 2024 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-13. The card declares 2024 to 2027.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "cut the terrain with the building pad"   -> here, excavate
+#   "split the site into two toposolids"      -> here, split
+#   "simplify the terrain"                    -> here, simplify
+#   "lay this floor to follow the terrain"    -> EDIT_SLAB_SHAPE, follow
+
+utterances:
+  - cut the terrain with the building pad
+  - excavate the toposolid by this floor
+  - split the site toposolid along this line into two
+  - simplify the terrain to half its points
+  - turn on smooth surface for the toposolid

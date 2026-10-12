@@ -144,6 +144,10 @@ compatibility-note: >
 #   "bring the line styles over"           -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
 #   "bring the view filters over"          -> TRANSFER_VIEW_FILTERS_BETWEEN_DOCUMENTS
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "copy the extrusions from the valve family into this one" -> COPY_ELEMENTS_BETWEEN_DOCUMENTS
 utterances:
   - bring the materials over from the template
   - copy the materials from the other project

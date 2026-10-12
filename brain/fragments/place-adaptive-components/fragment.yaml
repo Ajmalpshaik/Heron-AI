@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-071
+semantic-identity: "place this adaptive component on these points, or on the nodes of a divided path or surface"
+kind: action
+domain: revit.geometry
+capability: PLACE_ADAPTIVE_COMPONENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# An adaptive family - a panel, a two-point beam, a one-point marker - placed
+# by setting each placement point, in a project or in a mass or adaptive
+# family. Points come as groups of x,y,z in millimetres, one group per
+# instance in placement order; or from the nodes of a divided path (runs of
+# as many nodes as the family has points, each starting where the last
+# ended) or a divided surface (a four-point family fills each cell, a
+# one-point family each node). The number of placement points is read from a
+# trial instance that is deleted at once. Points are SET, not hosted: an
+# instance does not follow a divided element changed later, and the report
+# says so.
+#
+# PLACE_ADAPTIVE_POINTS makes the points inside an adaptive family;
+# DIVIDE_FAMILY_SURFACE divides a surface; REPORT_DIVIDED_SURFACES reads the
+# nodes; PLACE_FAMILY_INSTANCE places ordinary families.
+#
+# READ BACK: every placement point is read again and compared within 1 mm.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places adaptive components by their placement points - on points given in
+  millimetres, or on the nodes of a divided path or a divided surface.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: familyType
+      type: FamilySymbol
+      source: request
+    # "x,y,z; x,y,z | ..." in millimetres, one group per instance; EMPTY when
+    # onNodesOf is given.
+    - name: pointsMm
+      type: string
+      source: request
+    # A divided path's or divided surface's id; an EMPTY value places on points.
+    - name: onNodesOf
+      type: string
+      source: request
+  provides:
+    - name: placed
+      role: result
+      type: int
+    - name: placedIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, groups left and points that read back elsewhere (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  AdaptiveComponentInstanceUtils.CreateAdaptiveComponentInstance,
+  GetInstancePlacementPointElementRefIds and IsAdaptiveFamilySymbol,
+  ReferencePoint.Position, DividedSurface.GetGridNodeReference,
+  NumberOfUGridlines and NumberOfVGridlines, GridNode and DividedPath are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-13.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "place this adaptive panel on these four points"  -> here
+#   "place the adaptive beam along the divided path"  -> here, onNodesOf
+#   "make a placement point in this adaptive family"  -> PLACE_ADAPTIVE_POINTS
+#   "where are the nodes of the divided path"         -> REPORT_DIVIDED_SURFACES
+
+utterances:
+  - place this adaptive panel on these four points
+  - place the adaptive component on every node of the divided path
+  - fill the divided surface cells with the adaptive panel
+  - place adaptive beams between the nodes

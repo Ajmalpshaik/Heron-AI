@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-097
+semantic-identity: "set up a railing type - its top rail, handrail, heights and which side"
+kind: action
+domain: revit.elements
+capability: SET_RAILING_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# The railing type's Type Properties for its rails: top rail type and
+# height, main handrail type, height and side (left, right, both, none).
+# duplicateAs copies the type first and changes the copy - a type change
+# reaches every railing of it, and the report counts them. Rail types are
+# found by name; a name not there refuses, naming those that are. The
+# handrail's height lives on the HANDRAIL type, so setting it changes every
+# railing type sharing that handrail type - the report counts them. Balusters
+# and posts are left alone: their pattern editor has no settable equivalent
+# worth guessing at.
+#
+# EDIT_RAILING changes a placed railing's path, host, type or side;
+# CREATE_RAILING places railings; DUPLICATE_TYPE copies any type by name.
+#
+# READ BACK: each value asked is read again from the type.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets up a railing type - its top rail type and height, its handrail type,
+  height and side - on the type itself or on a copy made first.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: railingTypeName
+      type: string
+      source: request
+    # A new type name: the type is copied and the copy changed; EMPTY changes it.
+    - name: duplicateAs
+      type: string
+      source: request
+    # A top rail type by name; an EMPTY value keeps it.
+    - name: topRailTypeName
+      type: string
+      source: request
+    # 0 keeps the height.
+    - name: topRailHeightMm
+      type: double
+      source: request
+    # A handrail type by name; an EMPTY value keeps it.
+    - name: handrailTypeName
+      type: string
+      source: request
+    # 0 keeps the height.
+    - name: handrailHeightMm
+      type: double
+      source: request
+    # "left", "right", "both" or "none"; an EMPTY value keeps it.
+    - name: handrailSide
+      type: string
+      source: request
+  provides:
+    - name: railingType
+      role: result
+      type: RailingType
+    - name: report
+      # ONE STRING: the type as it now reads, and how many railings use it (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. RailingType.TopRailType,
+  TopRailHeight, PrimaryHandrailType, PrimaryHandrailHeight and
+  PrimaryHandRailPosition, the HandRailPosition values None, Left, Right and
+  LeftAndRight, TopRailType, HandRailType.Height (PrimaryHandrailHeight is
+  read only) and ElementType.Duplicate are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-13.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make the top rail 1100 high on this type"   -> here
+#   "put the handrail on both sides"             -> here, handrailSide both
+#   "copy the guard rail type with a 1100 top rail" -> here, duplicateAs
+#   "make a copy of the guard rail type"         -> DUPLICATE_TYPE
+#   "flip this railing"                          -> EDIT_RAILING
+
+utterances:
+  - set the top rail height of this railing type to 1100
+  - put the handrail on both sides of the railing type
+  - make a copy of the guardrail type with a round top rail
+  - change the handrail type of this railing type
+  - copy the guard rail type with a 1100 top rail

@@ -134,6 +134,11 @@ compatibility-note: >
 #   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM -
 #                                                    the form to divide
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "how is this surface divided"            -> REPORT_DIVIDED_SURFACES
+#   "fill the divided surface cells with the adaptive panel" -> PLACE_ADAPTIVE_COMPONENTS
 utterances:
   - divide the surface of this mass into panels
   - divide the top face into a 10 by 8 grid

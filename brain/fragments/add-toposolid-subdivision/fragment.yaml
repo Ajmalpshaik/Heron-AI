@@ -64,6 +64,11 @@ compatibility-note: >
 #   "add a car park area to the terrain"      -> here
 #   "make the terrain"                        -> CREATE_TOPOSOLID
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "raise the corners of this toposolid by 500" -> EDIT_SLAB_SHAPE, heights
+#   "cut the terrain with the building pad"  -> EDIT_TOPOSOLID, excavate
 utterances:
   - add a car park area to the terrain
   - subdivide the toposolid for this path

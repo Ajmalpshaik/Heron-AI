@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-135
+semantic-identity: "dimension every face of these elements that faces one way - wall layers, floor layers, sills and heads, curtain grid lines"
+kind: action
+domain: revit.views
+capability: DIMENSION_ELEMENT_FACES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONE STRING PER ELEMENT through every planar face of its own solid whose
+# normal runs the asked way: across (a wall's thickness, a floor's depth),
+# along (down a wall), or the view's horizontal or vertical. That one rule
+# covers three drawing jobs: the layers of a wall in a plan or section, the
+# layers of a floor or roof in a section, and the base, sill, head and top
+# of a wall in an elevation - an opening cuts the wall, so its sill and head
+# are the wall's own faces. A curtain wall offers its grid lines instead.
+# Faces at one position count once.
+#
+# DIMENSION_WALL_OPENINGS runs the plan string along a wall through its
+# jambs; DIMENSION_FAMILY_INSTANCES strings family instances (refused here);
+# CREATE_LINEAR_DIMENSION takes named references - grids, levels, planes.
+#
+# Whether Revit hands a compound wall's layers as separate faces is what the
+# proof measures; a wall read as one piece gives its two outer faces only,
+# and the string says so by its count.
+#
+# READ BACK: each string's segment values are read from the dimension made.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Draws one dimension string per element through every face of it that faces
+  one way - the layers of a wall or slab, the sills and heads in an elevation,
+  the grid lines of a curtain wall.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # "across", "along", "horizontal" or "vertical"; an EMPTY value means across.
+    - name: direction
+      type: string
+      source: request
+    # Sideways from the middle of the element, in the view; 0 runs through it.
+    - name: offsetMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: IList<ElementId>
+    - name: measured
+      # ONE STRING, each element's references and segment values (D-52).
+      role: result
+      type: string
+    - name: noFaces
+      # Elements that offered fewer than two faces that way, or were refused.
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.Create.NewDimension(View,
+  Line, ReferenceArray), Options.ComputeReferences, PlanarFace.FaceNormal,
+  Wall.Orientation and CurtainGrid, CurtainGrid.GetUGridLineIds and
+  GetVGridLineIds, CurtainGridLine.FullCurve, new Reference(Element),
+  View.ViewDirection, RightDirection, UpDirection and Origin, and
+  DimensionSegment.Value are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-13.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "dimension the layers of this wall"           -> here, across
+#   "dimension the floor layers in this section"  -> here, across
+#   "dimension the sills and heads in this elevation" -> here, vertical
+#   "dimension the curtain grid"                  -> here, along
+#   "dimension the openings along this wall"      -> DIMENSION_WALL_OPENINGS
+#   "dimension between grid A and grid B"         -> CREATE_LINEAR_DIMENSION
+
+utterances:
+  - dimension the layers of this wall
+  - dimension the floor layers in this section
+  - dimension the sills and heads in this elevation
+  - dimension the curtain grid
+  - dimension each layer of the roof in the section
