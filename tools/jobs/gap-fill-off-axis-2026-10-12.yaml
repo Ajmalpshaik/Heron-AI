@@ -1,0 +1,48 @@
+# The proof of STRAIGHTEN_OFF_AXIS_LINES - walls, grids, lines and reference
+# planes a fraction of a degree off an axis turned onto it - NEEDS-CHECKING
+# Group DK:
+#
+#   straighten-off-axis-lines   STRAIGHTEN_OFF_AXIS_LINES   FRG-ELE-078
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-off-axis-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-off-axis-2026-10-12.yaml
+#
+# NEVER ON A WORKING PROJECT. In a NEW SCRATCH PROJECT from the Architectural
+# template, saved as "Heron Off Axis Test" - type its title where `in:` says
+# PROJECT-TITLE - by hand:
+#
+#   - on Level 1, two walls drawn a few hundredths of a degree off east-west:
+#     draw each from 0,0 to 10000,5 mm, typed in, so each is about 0.03
+#     degrees off. Manage > Warnings shows "slightly off axis" for both
+#   - on Level 2, one wall drawn at exactly 30 degrees and one exactly
+#     east-west - nothing off axis there
+#
+# POSITIVE: the Level 1 walls - straightened 2, each read back on the axis.
+# NEGATIVE: the Level 2 walls - straightened 0, the 30-degree wall in
+# `tooFarOff`, the east-west one counted in `alreadyOnAxis`.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# Look at Manage > Warnings afterwards anyway - the Level 1 warnings should
+# still be there: rollback has failed on this PC before (BD1).
+
+model: a scratch project from the Architectural template, "Heron Off Axis Test", Revit 2024 first, then 2020 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+  write: true
+
+jobs:
+  - fragment: straighten-off-axis-lines
+    expect: straightenedIds
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Walls
+      levelId: Level 1
+    negative-setup-set:
+      category: Walls
+      levelId: Level 2
+    note: >
+      snapDegrees and maxOffDegrees are left empty on purpose: the defaults
+      (90 and 0.5) are what the warning fixer is used with.

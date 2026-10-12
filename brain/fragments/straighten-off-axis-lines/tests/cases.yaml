@@ -1,0 +1,29 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and
+# here also "straightened a wall that was angled on purpose".
+
+positive:
+  - given: two walls drawn 0.03 degrees off east-west, a grid 0.02 degrees off north-south and a detail line 0.1 degrees off, snapDegrees empty, maxOffDegrees empty
+    expect: >
+      straightened 4, each read back on its axis, and the model's warning
+      list no longer showing "slightly off axis" for them. `report` gives how
+      far off each one was
+
+  - given: a reference plane 0.04 degrees off, snapDegrees 45
+    expect: >
+      straightened onto the nearer of 0, 45 or 90 degrees, its bubble end
+      where it was
+
+negative:
+  - given: a wall drawn deliberately at 30 degrees, and one exactly east-west
+    expect: >
+      straightened 0. The 30-degree wall in `tooFarOff`, untouched; the
+      east-west one counted in `alreadyOnAxis`. Nothing in the model moves
+
+  - given: an arc wall and a sloped model line, both slightly off an axis at their ends
+    expect: >
+      straightened 0, both in `notStraightened` - "not a straight line" and
+      "one end is higher than the other"
+
+second_route:
+  - Manage > Warnings, read before and after - the off-axis rows for these elements gone
+  - one Ctrl+Z puts every element back in a single step (Golden Rule 16)
