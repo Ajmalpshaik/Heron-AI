@@ -591,6 +591,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-de.md`](needs-checking/group-de.md)
 
+## Group DF - a shared parameter definition created in the shared parameter file first, then added or replaced (2026-10-12)
+
+**Its own file:** [`needs-checking/group-df.md`](needs-checking/group-df.md)
+
 ## Group DG - every tag on an old element made again on the element that replaced it, in every view (2026-10-12)
 
 **Its own file:** [`needs-checking/group-dg.md`](needs-checking/group-dg.md)
