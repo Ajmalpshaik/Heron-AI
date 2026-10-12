@@ -1,0 +1,58 @@
+positive:
+  - given: >
+      a new scratch family from the metric Generic Model template on Revit
+      2020, with one solid box built first - CREATE_FAMILY_FORMS
+      "kind=extrusion workPlane=Ref. Level profile=rect -300,-150 300,150
+      startMm=0 endMm=600 solid=true" - so its front face is at Y -150;
+      texts 'text="FIRE ALARM" workPlane=Center (Front/Back) at=0,400
+      heightMm=40 depthMm=2 align=center offsetMm=-150'
+    expect: >
+      textCount 1, textIds one id; placed names "FIRE ALARM" on "Center
+      (Front/Back)" at X 0, Z 400, a type of 40 mm, 2 mm deep, aligned
+      center, read from the front, running +X (right) and up +Z, on a work
+      plane of its own (offsetMm moved it), its letters reaching Y -150 to
+      -152 or -148 - WHICH of the two is the measurement; the Front
+      elevation in the Family Editor shows FIRE ALARM reading left to right,
+      not mirrored, centred on the box at 400 mm
+
+  - given: >
+      the same family; texts two rows, 'text="L1 L2 L3" workPlane=Ref. Level
+      at=-200,0 heightMm=25 depthMm=1 offsetMm=600' and 'text=400 V
+      workPlane=Center (Left/Right) at=0,300 heightMm=25 depthMm=1
+      readFrom=right offsetMm=300 material=by category detailLevels=medium,
+      fine'
+    expect: >
+      textCount 2 in ONE undo entry; ONE Model Text type of 25 mm used by
+      both (made once as "25 mm" if the family had none of that size, and
+      named in findings); the first reads from the top on the box's top at
+      Z 600, the second from the right on its right face at X 300, shown at
+      medium and fine only
+
+negative:
+  - given: >
+      the same family; texts 'text=PANEL workPlane=Center (Front Back)
+      at=0,400 heightMm=40 depthMm=2' - a plane name the family does not
+      have
+    expect: >
+      refused naming row 1 and listing the family's planes and levels;
+      textCount 0, nothing placed, and no Model Text type made
+
+  - given: >
+      the same family; texts 'text=PANEL workPlane=Ref. Level at=0,0
+      heightMm=40 depthMm=2 readFrom=front'
+    expect: refused - a horizontal plane is read from top or bottom - and nothing placed
+
+  - given: texts two rows, the second with heightMm 0
+    expect: refused naming row 2, and neither text placed
+
+  - given: a project in front
+    expect: notAFamily true, the refusal naming CREATE_TEXT_NOTE, and nothing placed anywhere
+
+second_route:
+  - >
+      In the Family Editor: the Front and Right elevations and the Ref. Level
+      plan, each text selected to read Text, Type, Depth, Horizontal Align and
+      Material in Properties, and the type's Text Size in Edit Type; Revit's
+      own Model Text button then places the same words on the same face by
+      hand, and the two are compared side by side - which way they read and
+      where they stand

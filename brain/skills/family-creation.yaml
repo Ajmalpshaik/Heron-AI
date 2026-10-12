@@ -185,7 +185,13 @@ purpose: >
       it is, keep a connector's flange out of every combination in step 10, or
       put a thin uncut pad on its face - a form's own face is used first. A pipe or duct port is sized by a length
       parameter even in a fixed family - add it and its value (steps 2 and 3)
-      first. A part that is a family of its own, loaded in with LOAD_FAMILY:
+      first. An ELECTRICAL connector is made with Revit's defaults and no
+      load: SET_FAMILY_CONNECTOR_ROLES then gives it its Voltage, Number of
+      Poles, Apparent Load and Power Factor - "voltage=400 V; poles=3;
+      apparentLoad=1.5 kVA; powerFactor=0.85" - each a value the modeller
+      gave in step 0's list, never assumed (D-33), or a family parameter in
+      square brackets that drives it, a shared one where a project must
+      schedule it (step 2). A part that is a family of its own, loaded in with LOAD_FAMILY:
       PLACE_NESTED_FAMILY on the plane it sits on - a Work Plane-Based family
       is placed on every
       release, a level-based one only from Revit 2024 - then
@@ -231,7 +237,12 @@ purpose: >
       the body is hidden at, with DRAW_FAMILY_FILLED_REGION for a solid or
       masked part of the symbol (in a 3D family from Revit 2023, a masking
       region from 2024). A family that must flip once placed gets
-      ADD_FAMILY_FLIP_CONTROL. A fixed family's materials are set outright:
+      ADD_FAMILY_FLIP_CONTROL. LETTERING - a nameplate, a panel's legend, a
+      label that must stand out in 3D - is ADD_FAMILY_MODEL_TEXT: one call
+      for every text, each on a named plane at a point in that plane's own
+      two model coordinates, its height, depth and material on the row, so
+      it stays editable text; never letters built of forms in step 7. A
+      fixed family's materials are set outright:
       CREATE_MATERIAL for each colour - the shading colour only, nothing a
       render uses - then SET_FAMILY_FORM_MATERIAL once per material, naming
       every form id that takes it. Made before step 7, the materials can be
@@ -310,6 +321,8 @@ needs:
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
+  # Step 11's electrical connector values, and any connector's settings.
+  - SET_FAMILY_CONNECTOR_ROLES
   # Step 11's nested part that is not a family yet, a to g.
   - CREATE_FAMILY_DOCUMENT
   - ACTIVATE_DOCUMENT
@@ -327,6 +340,8 @@ needs:
   - DRAW_FAMILY_SYMBOLIC_LINES
   - DRAW_FAMILY_FILLED_REGION
   - ADD_FAMILY_FLIP_CONTROL
+  # Step 12's lettering.
+  - ADD_FAMILY_MODEL_TEXT
   # A fixed family's colours, before SET_FAMILY_FORM_MATERIAL - see step 12.
   - CREATE_MATERIAL
   - REPORT_FAMILY_FORMS
@@ -370,5 +385,11 @@ note: >
   0, 1, 7 and 10 to 13 would drift from this one. Each rule it added was
   checked against a tool card or a register row (5b-296, 5b-410), and the
   inline valve's Work Plane-Based=no against the check valves the owner tested
-  in Project1 on 2026-10-04. Every step is DRAFT until it has been run on a
-  real family with a negative case (D-30).
+  in Project1 on 2026-10-04. Widened on 2026-10-12 after three fixed
+  electrical families on Revit 2020 - a fire alarm control panel, a
+  three-phase rotary isolator and an LV switchboard - showed two gaps: no
+  tool placed model text, so lettering was built from square extrusions,
+  and no tool set an electrical connector's voltage, poles or load. Step 12
+  names ADD_FAMILY_MODEL_TEXT and step 11 SET_FAMILY_CONNECTOR_ROLES
+  version 3 (NEEDS-CHECKING Groups DC and DD). Every step is DRAFT until it
+  has been run on a real family with a negative case (D-30).

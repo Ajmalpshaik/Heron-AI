@@ -1,0 +1,58 @@
+# The proof of ADD_FAMILY_MODEL_TEXT - 3D model text placed in the family being
+# edited - NEEDS-CHECKING Group DC:
+#
+#   add-family-model-text     ADD_FAMILY_MODEL_TEXT     FRG-GEO-061
+#
+#     python tools/batch-prove.py tools/jobs/add-family-model-text-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/add-family-model-text-2026-10-12.yaml
+#
+# NEVER ON ONE OF THE OWNER'S FAMILIES - the fire alarm control panel, the
+# rotary isolator and the LV switchboard built on 2026-10-12 are his. THE
+# ARRANGEMENT IS MADE ONCE, KEPT, IN A NEW SCRATCH FAMILY: File, New, Family,
+# Metric Generic Model.rft, on Revit 2020 first. Type its title where `in:`
+# says FAMILY-TITLE. Then, in it, with the Heron tools (the commands are in
+# docs/needs-checking/group-dc.md):
+#
+#   one solid box: CREATE_FAMILY_FORMS "kind=extrusion workPlane=Ref. Level
+#     profile=rect -300,-150 300,150 startMm=0 endMm=600 solid=true" - its
+#     front face at Y -150, its top at Z 600, its right face at X 300
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
+#
+# POSITIVE: "FIRE ALARM" on Center (Front/Back), offset -150 onto the box's
+# front face, 40 mm high, 2 mm deep, centred at X 0, Z 400. `textCount` 1,
+# and `placed` reads the type, the side it reads from, the way it runs and
+# WHERE ITS LETTERS REACH ON Y - -150 to -152 (standing out of the face,
+# toward the front) or -150 to -148 (sunk into the box). Record that sentence
+# whole: it is the measurement of which way Revit extrudes model text.
+#
+# NEGATIVE: the same row on "Center (Front Back)" - a plane the family does
+# not have. Refused naming row 1 and the family's planes; `textCount` 0, no
+# Model Text type made.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - no model text in it, and no "40 mm"
+# type in the Project Browser under Families, Annotation... Model Text:
+# rollback has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>`.
+
+model: a scratch family from Metric Generic Model.rft, Revit 2020 first, then 2024 and 2027
+
+defaults:
+  in: "FAMILY-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: add-family-model-text
+    expect: textCount
+    set:
+      texts: 'text="FIRE ALARM" workPlane=Center (Front/Back) at=0,400 heightMm=40 depthMm=2 align=center offsetMm=-150'
+    negative-set:
+      texts: 'text="FIRE ALARM" workPlane=Center (Front Back) at=0,400 heightMm=40 depthMm=2 align=center offsetMm=-150'
+    note: >
+      The negative changes only the plane's name: same family, same text,
+      same height. The verdict is read off textCount - one, or none. Whether
+      the letters read left to right from the front, and stand out of the
+      face rather than into it, is read by eye in the Front elevation - DC3.

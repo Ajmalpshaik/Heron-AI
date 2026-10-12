@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-055
-semantic-identity: "edit a connector already in the family being edited - set its system classification, flow, size parameters, flip it, make it primary, link a pair"
+semantic-identity: "edit a connector already in the family being edited - set its system classification, flow, size parameters, voltage, poles, load and power factor, flip it, make it primary, link a pair"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_CONNECTOR_ROLES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -20,12 +20,35 @@ purpose: >
   Flow Direction, Flow Configuration, Loss Method with its coefficient or
   pressure drop, Description, the family parameters driving its size, which
   way it points (a flip), which connector is PRIMARY and which pairs are
-  LINKED.
+  LINKED - and, from version 3, an ELECTRICAL connector's Voltage, Number of
+  Poles, Apparent Load, Power Factor and Load Classification.
 
   **`settings` IS ONE VALUE** - "system=Global; flowDirection=In; flip=true" -
   holding only what should change, for every connector `connectors` names.
   Keys: system, flowDirection, flowConfiguration, lossMethod,
-  lossCoefficient, pressureDrop (Pa), description, flip, sizeParameters.
+  lossCoefficient, pressureDrop (Pa), description, flip, sizeParameters;
+  and on an electrical connector voltage, poles, apparentLoad, powerFactor
+  and loadClassification.
+
+  **AN ELECTRICAL VALUE IS A NUMBER, A FAMILY PARAMETER, OR BOTH** -
+  "voltage=400 V; poles=3; apparentLoad=1.5 kVA; powerFactor=0.85" sets
+  the values; "voltage=[Voltage]" drives the connector's Voltage from the
+  family parameter Voltage, making it - a type parameter of the field's own
+  kind, under Electrical - Loads, as Revit's Associate Family Parameter
+  dialog does with New Parameter - when the family has none; "voltage=400 V
+  [Voltage]" does both and writes 400 V into the current type. A project
+  schedules a family's value only through a SHARED parameter: add it first
+  with ADD_FAMILY_SHARED_PARAMETERS and name it in the brackets. Voltage in
+  V or kV, Apparent Load in VA or kVA, Number of Poles 1 to 3 (a three-phase
+  connector is 3), Power Factor above 0 to 1 or a percentage. Revit keeps a
+  voltage and a load in its own internal units; the conversion is checked
+  against Revit's own on the release that runs, and every value is read
+  back with what Revit shows. Load Classification is a classification's
+  name in the family, set as a value only.
+
+  **VERSION 3 (2026-10-12).** The electrical values are new; version 2's
+  proof no longer describes the code and is kept below as a record, and the
+  fragment is DRAFT until it is proved again (NEEDS-CHECKING Group DD).
 
   **REVIT DECIDES WHICH SYSTEM A CONNECTOR MAY TAKE.** Each connector is
   asked (IsSystemClassificationValid) before anything changes, so a system
@@ -61,7 +84,10 @@ contract:
     # "name=value" with `;` between, only the settings to change:
     # system, flowDirection, flowConfiguration, lossMethod, lossCoefficient,
     # pressureDrop (Pa), description, flip, sizeParameters (diameter; or
-    # width, height). Empty changes none of them.
+    # width, height); on an electrical connector voltage (V, kV), poles (1-3),
+    # apparentLoad (VA, kVA), powerFactor (0-1 or %), each a value, a
+    # [family parameter] or both - "voltage=400 V [Voltage]" - and
+    # loadClassification (a name). Empty changes none of them.
     - name: settings
       type: string
       source: request
@@ -78,8 +104,10 @@ contract:
   provides:
     - name: connectorReport
       # Every connector as read back - domain, id, the plane it lies on,
-      # system, size and the parameters driving it, flow, which way it
-      # points, where it sits, primary or secondary, linked - on ONE line.
+      # system, size and the parameters driving it, an electrical one's
+      # voltage, poles, load, power factor and load classification, flow,
+      # which way it points, where it sits, primary or secondary, linked -
+      # on ONE line.
       role: result
       type: string
     - name: changed
@@ -149,6 +177,21 @@ compatibility-note: >
   `SetLinkedConnectorElement` throws for two domains or one connector twice,
   and for "a connector type that does not support linked connectors" - the
   first two are refused here before Revit is asked.
+  Version 3 adds the built-in parameters RBS_ELEC_VOLTAGE,
+  RBS_ELEC_NUMBER_OF_POLES, RBS_ELEC_APPARENT_LOAD, RBS_ELEC_POWER_FACTOR
+  and RBS_ELEC_LOAD_CLASSIFICATION and the class
+  ElectricalLoadClassification, all 2020 to 2027; `FamilyManager.Set` and
+  `CanElementParameterBeAssociated`, 2020 to 2027. Three things moved and
+  are reached by reflection so one build serves every release: a
+  parameter's kind (`Definition.ParameterType` to 2022,
+  `Definition.GetDataType()` from 2022), `FamilyManager.AddParameter`
+  (BuiltInParameterGroup and ParameterType to 2022, ForgeTypeId group and
+  spec from 2022 - PG_ELECTRICAL_LOADS / GroupTypeId.ElectricalLoads), and
+  the unit check (`UnitUtils.ConvertToInternalUnits` with DisplayUnitType
+  DUT_VOLTS / DUT_VOLT_AMPERES to 2021, UnitTypeId.Volts / VoltAmperes from
+  2021) - tools/api-surface --members, read 2026-10-12 off all eight
+  releases. Compiles on 2020 to 2027 (tools/check-fragments-compile.py,
+  2026-10-12); not yet run in Revit.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -159,15 +202,33 @@ compatibility-note: >
 #                                                   a read
 #   "put a supply air connector on the neck"     -> ADD_FAMILY_CONNECTOR - a
 #                                                   new connector
+#   "add an electrical connector to the family"  -> ADD_FAMILY_CONNECTOR - a
+#                                                   new one; its voltage and
+#                                                   poles are set here after
 #   "delete the connector on Port Left"          -> REMOVE_FAMILY_CONNECTOR -
 #                                                   named the same way, deleted
+#   "set the connector voltage and poles"       -> here, settings voltage=
+#                                                   and poles= on an
+#                                                   electrical connector
+#   "make the connector 3 phase 400 V"          -> here, "poles=3;
+#                                                   voltage=400 V"
 #   "link the connector flow to a family parameter"
 #                                                -> LINK_FAMILY_PARAMETER - a
 #                                                   connector's VALUE to a
-#                                                   family parameter
+#                                                   family parameter, any
+#                                                   connector by category and
+#                                                   system. An electrical value
+#                                                   SET here may name its
+#                                                   [family parameter] in the
+#                                                   same call; unlinking is
+#                                                   LINK_FAMILY_PARAMETER's
+#   "what is this panel's connected load"        -> REPORT_CONNECTOR_LOADS, a
+#                                                   read, in a project
 
 utterances:
   - set the primary connector of this family
   - make the neck connector the primary connector
   - link the inlet and outlet connectors so the system passes through
   - pair the two connectors of this coil family
+  - set the connector voltage and poles
+  - make the connector 3 phase 400 V

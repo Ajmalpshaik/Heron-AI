@@ -168,6 +168,10 @@ compatibility-note: >
 #   "add the shared parameter Equipment Tag to this family"
 #                                             -> ADD_FAMILY_SHARED_PARAMETERS
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
+#   "make the connector 3 phase 400 V"        -> SET_FAMILY_CONNECTOR_ROLES -
+#                                                a connector already made
+#   "add text to the family"                  -> ADD_FAMILY_MODEL_TEXT - 3D
+#                                                lettering on a named plane
 #   "delete the pipe connector from this family" -> REMOVE_FAMILY_CONNECTOR
 #   "link the connector flow to a parameter"  -> LINK_FAMILY_PARAMETER - an
 #                                                element already in the family

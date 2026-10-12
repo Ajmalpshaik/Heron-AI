@@ -1,0 +1,149 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-061
+semantic-identity: "place 3D model text - a raised or engraved label, a nameplate - on a named plane in the family being edited"
+kind: action
+domain: revit.families
+capability: ADD_FAMILY_MODEL_TEXT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places MODEL TEXT in the family open in the Family Editor - the Family
+  Editor's Model Text button, typed rather than clicked: a nameplate on a
+  panel, a raised or engraved label, a legend. Real 3D lettering that shows
+  in 3D and elevation and stays editable as text afterwards. One or many
+  texts in one call, ONE entry in the undo list.
+
+  **EACH ROW STARTS `text=`** and gives `workPlane` (a reference plane or
+  level by name - "Center (Front/Back)", "Ref. Level"), `at` (where),
+  `heightMm` (the letters' height) and `depthMm` (how far they stand out).
+  Optional: `align` (left, center, right - left is Revit's own default),
+  `readFrom`, `offsetMm`, `material`, `detailLevels` and `views`. A text
+  holding "=" goes in double quotes. A long list may be a file under
+  %TEMP%\heron-work, its full path given instead, read as
+  CREATE_FAMILY_FORMS reads its file.
+
+  **`at` IS IN THE PLANE'S OWN TWO MODEL COORDINATES, MILLIMETRES FROM THE
+  FAMILY ORIGIN**, the way the form tools write a profile: on a level or a
+  horizontal plane X,Y as seen in plan; on a plane facing front or back -
+  Center (Front/Back) - X,Z; on a plane facing left or right - Center
+  (Left/Right) - Y,Z. Never relative to the plane and never mirrored by the
+  way it faces. `offsetMm` moves the text off the plane along the axis it
+  faces, positive up (+Z), back (+Y) or right (+X) - onto a box's front face
+  with no plane of its own there.
+
+  **`readFrom` IS THE SIDE THE TEXT READS CORRECTLY FROM** - top or bottom on
+  a horizontal plane, front or back on a front-back one, left or right on a
+  left-right one; by default top, front and right, the Family Editor's own
+  views. The text stays on the named plane itself when that plane's own axes
+  already read from that side and no offset is given; otherwise it is put on
+  a work plane of its own at the same place, which does NOT follow the named
+  plane when it moves, and the answer says so.
+
+  **THE HEIGHT IS A TYPE.** A Model Text type of exactly that size is used
+  when the family has one; otherwise the first type by name is copied as
+  "<height> mm" - "40 mm", "2.5 mm" - keeping its font. A family holding no
+  Model Text type at all is refused.
+
+  **ALL OR NOTHING, READ BACK.** Every row is checked before anything is
+  placed. Each text is read back - its words, type and size, depth,
+  alignment, any material or visibility - with where its letters reach on
+  all three axes and which way it runs; one that reads back wrong keeps
+  nothing of the whole list.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The texts, ONE ROW EACH, each row starting text= and running to the
+    # next text=; fields are name=value, each running to the next field's
+    # name. Needed: text=, workPlane=, at=U,V (mm, the plane's own two model
+    # coordinates), heightMm=, depthMm=. Optional: align= (left, center,
+    # right), readFrom= (top, bottom, front, back, left, right), offsetMm=,
+    # material= (a family material parameter, a material in the family, or
+    # "by category"), detailLevels= and views= as SET_FAMILY_FORM_VISIBILITY
+    # takes them. E.g. 'text="FIRE ALARM CONTROL PANEL" workPlane=Center
+    # (Front/Back) at=0,1200 heightMm=40 depthMm=2 align=center
+    # offsetMm=-150'. OR the full path of a text file in the temporary
+    # folder (%TEMP%\heron-work\...) holding the rows, lines starting #
+    # ignored.
+    - name: texts
+      type: string
+      source: request
+  provides:
+    - name: textIds
+      # Every new text's unique id, in the order listed, commas between.
+      role: result
+      type: string
+    - name: textCount
+      # How many texts were placed - every row, or none.
+      role: result
+      type: int
+    - name: placed
+      # Each text as Revit now holds it, || between: its words and id, the
+      # plane and where on it, type and size, depth, alignment, the side it
+      # reads from and which way it runs, whether it sits on the named plane
+      # or a work plane of its own, material, visibility, and where its
+      # letters reach on X, Y and Z in millimetres.
+      role: result
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was placed, every problem named with its row. Empty when
+      # the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewModelText(string, ModelTextType, SketchPlane, XYZ,
+  HorizontalAlign, double)` has one signature 2020 to 2027, and so do
+  `ModelText.Text`, `Depth`, `HorizontalAlignment`, `ModelTextType`,
+  `GetVisibility` and `SetVisibility`, `ElementType.Duplicate(string)`, the
+  `HorizontalAlign` values Left, Center and Right, and the built-in
+  parameters MODEL_TEXT_SIZE (-1006336), TEXT_FONT and MATERIAL_ID_PARAM
+  (tools/api-surface --members, read 2026-10-12 off all eight releases).
+  `SketchPlane.Create(Document, ElementId)` and `(Document, Plane)`,
+  `Plane.CreateByOriginAndBasis` and the material parameter's kind read by
+  reflection are the calls CREATE_FAMILY_FORMS and SET_FAMILY_FORM_MATERIAL
+  already make on every release. Not yet run in Revit: which way Revit lays
+  the letters on a sketch plane (along its X, up its Y, standing out along
+  its normal is what the code assumes and the answer reports), whether `at`
+  is the start, middle or end of the baseline per alignment, whether the
+  metric templates hold a Model Text type, and that model text takes
+  MATERIAL_ID_PARAM - NEEDS-CHECKING Group DC.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "add text to the family"                     -> here, 3D model text
+#   "write a label on the panel"                 -> here, inside a family; in a
+#                                                   project view a 2D note is
+#                                                   CREATE_TEXT_NOTE
+#   "put a text note in this view"               -> CREATE_TEXT_NOTE - 2D, a
+#                                                   project view
+#   "draw the valve symbol in plan"              -> DRAW_FAMILY_SYMBOLIC_LINES -
+#                                                   2D lines, no 3D body
+#   "set the material of the lettering"          -> SET_FAMILY_FORM_MATERIAL is
+#                                                   for FORMS; model text takes
+#                                                   material= here, as it is placed
+
+utterances:
+  - add model text to a family
+  - add text to the family
+  - write a label on the panel
