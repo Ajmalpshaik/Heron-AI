@@ -16,7 +16,24 @@ positive:
       listed. This is the case sampling misses, and the reason the option exists
 
   - given: a shared parameter on the element
-    expect: reported as "shared", distinct from built-in
+    expect: reported as "shared", distinct from built-in, with its GUID
+
+  - given: >
+      an element whose type carries two shared parameters with the same name -
+      on 4355-BHVD-3D-60A10-BL003A the exhaust fan type "TRG_FAN_EXHAUST FAN:
+      AX45 (450mm Long)" carries two "Classification.Uniclass.Pr.Number"
+    expect: >
+      BOTH listed, each with its own GUID and value (8212e2e8... blank,
+      ee217f5d... "Pr_65_67_29_05"), and the name in sameNameTwice. Version 1
+      kept one line per name and dropped the other without a word - measured
+      322 parameters on that fan against version 2's 329
+
+  - given: one element, fullRecord true, includeTags true
+    expect: >
+      record holds its location and bounding box in mm, its facing and hand,
+      every instance and type parameter with kind, read-only and GUID, and every
+      tag on it with view, tag type, head in mm and leader - checked against the
+      Properties palette, Edit Type and each view the tags are in
 
 negative:
   - given: any element at all
@@ -41,6 +58,20 @@ negative:
     expect: >
       "this element has no type" IN WORDS, and the instance parameters still
       listed. Silence there reads as a fragment that stopped
+
+  - given: >
+      an element with no same-name pair and no tag - on
+      4355-BHVD-3D-60A10-BL003A the exhaust louvre "TCM_EAL_T001_ExhaustLouvre:
+      Standard", same switches as the positive
+    expect: >
+      sameNameTwice 0 and tagsFound 0, the record still written in full. A pair
+      of BUILT-IN parameters sharing a name (Revit's own two "Level"s) is not
+      listed: it is Revit's, on every element, and is never carried across
+
+  - given: fullRecord left out
+    expect: >
+      record empty and no tag read - the inventory alone, as version 1. The
+      summary says how to ask for the record
 
   - given: an empty element list
     expect: >
