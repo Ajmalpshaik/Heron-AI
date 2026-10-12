@@ -107,6 +107,9 @@ compatibility-note: >
 #   "draw the cable tray"              -> CREATE_ELECTRICAL_RUN. That is
 #                                         CONTAINMENT and not a circuit
 #   "what is on circuit 3"             -> SELECT_BY_ELECTRICAL_CIRCUIT
+#   "what circuits are on panel DB-1"  -> REPORT_PANEL_CIRCUITS (2026-10-12)
+#   "draw wires between these sockets" -> CREATE_WIRES - drawn wiring, not the
+#                                         circuit
 
 utterances:
   - put these devices on one circuit

@@ -123,6 +123,9 @@ compatibility-note: >
 #                                           to a fragment that creates a type,
 #                                           until 2026-09-05
 #   "what is the pressure drop"          -> REPORT_MEP_PRESSURE_DROP
+#   "make a supply air system from these" -> CREATE_MEP_SYSTEM - a system OF
+#                                           elements, not a type (2026-10-12)
+#   "change these ducts to return air"   -> SET_MEP_SYSTEM_TYPE
 
 utterances:
   - make a duct system type

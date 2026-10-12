@@ -1,0 +1,122 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-062
+semantic-identity: "make a duct or pipe system from this equipment and the terminals or fixtures it serves"
+kind: action
+domain: revit.mep
+capability: CREATE_MEP_SYSTEM
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here (measured 2026-10-12).
+#
+# A CONNECTOR JOINS ONLY WHEN IT SUITS THE SYSTEM: of the system's domain, in
+# no system already, and of its classification. Revit refuses a whole set for
+# one wrong connector, so each element is checked first and each one left out
+# is named with the reason.
+#
+# THE BASE EQUIPMENT IS NAMED OR FOUND, NEVER GUESSED: by Mark or id among the
+# elements handed in, or the one Mechanical Equipment instance among them.
+# Several and no name refuses; none makes the system without base equipment,
+# which Revit allows, and says so.
+#
+# EVERYTHING IS READ BACK OFF THE SYSTEM - name, members, base equipment. A
+# second run finds every connector already on a system and makes nothing.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates one mechanical duct system or one piping system from the elements
+  handed in - the equipment and the terminals or fixtures it serves, as Create
+  System does in the ribbon. The system type chosen decides which kind.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The equipment and the terminals or fixtures, from a selection or a filter.
+    - name: elements
+      type: IList<Element>
+    # A duct system type or a pipe system type by its Project Browser name -
+    # Supply Air, Domestic Cold Water. Which kind it is decides the system.
+    - name: systemType
+      type: MEPSystemType
+      source: request
+    # Optional. Empty lets Revit number it, as the ribbon does.
+    - name: systemName
+      type: string
+      source: request
+    # Optional. The base equipment's Mark or element id, among the elements
+    # handed in. Empty takes the one Mechanical Equipment instance among them.
+    - name: baseEquipment
+      type: string
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: MEPSystem
+    - name: createdName
+      role: result
+      type: string
+    - name: memberIds
+      # Read off the system after it was made, never copied from the request.
+      role: result
+      type: IList<ElementId>
+    - name: baseEquipmentId
+      # Read off the system's own base equipment field. InvalidElementId when
+      # it has none, which the findings say aloud.
+      role: result
+      type: ElementId
+    - name: skipped
+      # Elements left out - no suiting free connector, already on a system,
+      # or a duct or pipe rather than a family. Each reason is in `findings`
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence; null when something was made.
+      # One string because a list reaches the chat cut short (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. MechanicalSystem.Create and
+  PipingSystem.Create, both with and without a name, MEPSystem.Add(ConnectorSet),
+  the BaseEquipmentConnector setters on MechanicalSystem and PipingSystem,
+  MEPSystem.BaseEquipment and Elements, and Connector.MEPSystem, Domain,
+  ConnectorType, DuctSystemType and PipeSystemType are present 2020 through
+  2027 - read off RevitAPI.xml in the Nice3point reference packages for all
+  eight releases on 2026-10-12. Categories are compared by ElementId built
+  from the BuiltInCategory, so 2024's 64-bit ids do not reach it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a supply air system from these"   -> here
+#   "create a system for this pump"         -> here
+#   "put these diffusers on the FCU's system" -> here
+#   "make a new system type"                -> CREATE_MEP_SYSTEM_TYPE - a type
+#                                              in the Project Browser, not a
+#                                              system of elements
+#   "change these ducts to return air"      -> SET_MEP_SYSTEM_TYPE
+#   "what system is this on"                -> READ_MEP_SYSTEM
+#   "select everything on this system"      -> SELECT_BY_MEP_SYSTEM
+#   "circuit these sockets"                 -> CREATE_ELECTRICAL_CIRCUIT - an
+#                                              electrical system is a circuit
+
+utterances:
+  - make a supply air system from these diffusers and the fan coil unit
+  - create a duct system for this equipment
+  - create a piping system for this pump and the fixtures
+  - put these terminals on one system with the FCU as base equipment
+  - put these diffusers on the FCU's system

@@ -102,6 +102,9 @@ compatibility-note: >
 #   "place the rooms"            -> here
 #   "add spaces to this level"   -> here, with space asked for
 #   "the spaces are missing"     -> here
+#   "create spaces from the linked rooms"
+#                                -> SYNC_SPACES_WITH_LINKED_ROOMS - numbers and
+#                                   names from the architect's rooms (2026-10-12)
 #   "which ducts are in room 5"  -> FILTER_ELEMENTS_IN_ROOM - it needs the
 #                                   rooms to EXIST, which is what this does
 #   "how big is this room"       -> READ_ROOM_GEOMETRY

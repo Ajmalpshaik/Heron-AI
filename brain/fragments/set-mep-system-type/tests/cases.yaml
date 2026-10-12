@@ -1,0 +1,28 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three loose supply ducts (not joined to equipment), systemType Return Air
+    expect: >
+      changed 3, and each duct's System Type in Properties reads Return Air.
+      changedIds names all three
+
+  - given: one flex duct among them
+    expect: >
+      changed, through its System Type parameter - FlexDuct has no
+      set-system-type call - and read back as Return Air
+
+negative:
+  - given: two pipes and a pipe fitting, systemType Return Air (a duct system type)
+    expect: >
+      changed 0. The pipes are in `notChanged` with "a duct system type and
+      this is a pipe"; the fitting with "takes its system from what it is
+      connected to". Nothing in the model moves
+
+  - given: the positive run again, straight after
+    expect: >
+      changed 0 and alreadyThat naming all three - a second run writes
+      nothing
+
+second_route:
+  - each element's System Type in the Properties palette, read after
+  - one Ctrl+Z puts every type back in a single step (Golden Rule 16)

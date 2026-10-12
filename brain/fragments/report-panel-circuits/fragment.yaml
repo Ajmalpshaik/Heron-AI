@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-064
+semantic-identity: "what circuits are on each panel, with their loads and the panel totals"
+kind: action
+domain: revit.mep
+capability: REPORT_PANEL_CIRCUITS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here (measured 2026-10-12).
+#
+# EVERY VALUE IS REVIT'S OWN TEXT, read with AsValueString, in the project's
+# units and symbols as the panel schedule prints them. Electrical values are
+# not stored in SI inside Revit, so nothing is converted by hand here.
+#
+# A CIRCUIT ON NO PANEL IS LISTED APART: it appears on no panel schedule
+# anywhere, which is easy to miss.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Reads the electrical circuits fed from each panel - circuit number, load
+  name, rating, poles, apparent load, voltage and devices - with the panel's
+  connected and demand load. One panel by its Panel Name, or all of them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Optional. One panel by its Panel Name; empty reads every panel.
+    - name: panelName
+      type: string
+      source: request
+  provides:
+    - name: schedule
+      # ONE STRING, a line per panel and per circuit, because a list reaches
+      # the chat cut to three entries and the table is the answer.
+      role: result
+      type: string
+    - name: panelCount
+      role: result
+      type: int
+    - name: circuitCount
+      role: result
+      type: int
+    - name: unassigned
+      # Circuits fed from no panel - on no panel schedule anywhere. Read only
+      # when every panel is asked for (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ElectricalSystem with BaseEquipment,
+  PanelName, CircuitNumber, LoadName, PolesNumber, SystemType, StartSlot and
+  Elements, and the parameters RBS_ELEC_CIRCUIT_RATING_PARAM,
+  RBS_ELEC_APPARENT_LOAD, RBS_ELEC_VOLTAGE, RBS_ELEC_PANEL_NAME,
+  RBS_ELEC_PANEL_TOTALLOAD_PARAM, RBS_ELEC_PANEL_TOTALESTLOAD_PARAM and
+  RBS_ELEC_PANEL_TOTAL_DEMAND_CURRENT_PARAM, are present 2020 through 2027 -
+  read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12. Values are read with AsValueString, so there is no
+  UnitTypeId (2021 on) or DisplayUnitType (to 2021) branch.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is on panel DB-1"                   -> here
+#   "show me the panel schedule as a list"    -> here
+#   "which circuits are on no panel"          -> here
+#   "what devices are on circuit 3"           -> SELECT_BY_ELECTRICAL_CIRCUIT
+#   "circuit these sockets"                   -> CREATE_ELECTRICAL_CIRCUIT
+#   "what is the load on these connectors"    -> REPORT_CONNECTOR_LOADS
+
+utterances:
+  - what circuits are on panel DB-1
+  - show me the panel schedule as a list
+  - show me every circuit and its load
+  - which circuits are not on any panel

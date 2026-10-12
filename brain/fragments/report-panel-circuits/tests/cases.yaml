@@ -1,0 +1,27 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a model with panel DB-1 feeding three circuits (two lighting, one power), panelName empty
+    expect: >
+      panelCount 1, circuitCount 3, and `schedule` lists DB-1 with its
+      connected load, then the three circuits in slot order, each with its
+      number, load name, rating, poles, apparent load and voltage as Revit's
+      own panel schedule prints them
+
+  - given: the same, panelName DB-1
+    expect: >
+      the same three circuits under DB-1, and nothing else
+
+negative:
+  - given: panelName DB-2 where no panel of that name feeds any circuit
+    expect: >
+      panelCount 0, circuitCount 0, `schedule` empty, and findings saying no
+      circuit is fed from a panel named DB-2 - not DB-1's circuits
+
+  - given: one circuit made with no panel chosen, panelName empty
+    expect: >
+      that circuit's id in `unassigned` and on the ON NO PANEL line, not
+      under DB-1
+
+second_route:
+  - DB-1's panel schedule view in Revit, read side by side - the same circuit numbers, loads and totals

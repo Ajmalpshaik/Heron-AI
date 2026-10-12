@@ -1,0 +1,26 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: an MEP model linking an architectural model with three placed rooms on Level 1 (101 Office, 102 Store, 103 Corridor), Room Bounding on, no spaces yet, updateNames false
+    expect: >
+      created 3, each space numbered and named as its room, each reading back
+      with an area. orphans empty
+
+  - given: room 102 renamed "Plant" in the architectural model, the link reloaded, updateNames true
+    expect: >
+      renamed 1 (the space over 102 now reads "Plant"), alreadyMatching 2,
+      created 0
+
+negative:
+  - given: the first run again, straight after, updateNames false
+    expect: >
+      created 0, renamed 0, alreadyMatching 3 - nothing made twice
+
+  - given: room 103 deleted in the architectural model, the link reloaded
+    expect: >
+      the space over the old corridor in `orphans`, still in the model - it is
+      listed, never deleted
+
+second_route:
+  - the MEP model's Space schedule beside the architect's Room schedule - numbers and names line up
+  - one Ctrl+Z takes every space made and every rename back in a single step (Golden Rule 16)

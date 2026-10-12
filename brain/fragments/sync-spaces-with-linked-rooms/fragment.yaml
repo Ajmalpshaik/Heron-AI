@@ -1,0 +1,118 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-062
+semantic-identity: "make and rename this model's spaces to match the linked model's rooms, and list spaces with no room"
+kind: action
+domain: revit.rooms
+capability: SYNC_SPACES_WITH_LINKED_ROOMS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here (measured 2026-10-12: the
+# first wording took "halftone the linked model").
+#
+# For every placed room in the link: no space at its point here, one is made,
+# on the level at the same height, with the room's number and name; a space
+# whose number or name differs is renamed when updateNames is true and
+# reported otherwise; one that matches is counted and left.
+#
+# EVERY SPACE WITH NO LINKED ROOM UNDER IT IS LISTED AS AN ORPHAN and never
+# deleted: a space carries loads and tags, and deleting it is the modeller's
+# decision.
+#
+# THE LEVEL IS MATCHED BY HEIGHT, NEVER BY NAME. A room with no level at its
+# height here is named, not put on the nearest one.
+#
+# WHAT IS MADE IS READ BACK - a space with no area sits where nothing bounds
+# it, usually because the link is not Room Bounding here.
+#
+# PLACE_ROOMS fills enclosed areas with spaces but numbers and names none of
+# them from anywhere; this takes both from the architect's rooms.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates MEP spaces and copies onto them the architect's room numbers and
+  names - each room onto the space over it, a new space where none is -
+  and lists spaces left with no room under them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Optional. The architect's link by name; empty takes the only loaded one.
+    - name: link
+      type: RevitLinkInstance
+      source: request
+    # Optional. The phase new spaces are made in; empty takes the last.
+    - name: phase
+      type: Phase
+      source: request
+    # true renames spaces whose number or name differs from the room's;
+    # false only reports them.
+    - name: updateNames
+      type: bool
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: IList<ElementId>
+    - name: renamed
+      role: result
+      type: IList<ElementId>
+    - name: alreadyMatching
+      # Spaces whose number and name already match their room. The prior
+      # state, never a change (D-52).
+      role: accounting
+      type: int
+    - name: orphans
+      # Spaces here with no linked room under them. Listed, never deleted
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notPlaced
+      # Rooms for which no space could be made - no level at their height,
+      # or Revit refused - each with its reason (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, room by room, because a list reaches the chat cut short
+      # (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Creation.Document.NewSpace(Level,
+  Phase, UV), Document.GetSpaceAtPoint(XYZ) and GetRoomAtPoint(XYZ),
+  RevitLinkInstance.GetLinkDocument, Instance.GetTotalTransform,
+  Transform.Inverse, Level.ProjectElevation, SpatialElement.Number and Area,
+  and ROOM_NAME are present 2020 through 2027 - read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-12. Whether
+  ProjectElevation and a linked room's transformed height agree for every
+  Elevation Base setting is for Revit to show, and the proof records it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make spaces from the architect's rooms"   -> here
+#   "update the spaces to match the rooms"     -> here
+#   "which spaces have no room any more"       -> here
+#   "fill this level with spaces"              -> PLACE_ROOMS - every enclosed
+#                                                 area, no names from a link
+#   "put a space here"                         -> PLACE_ROOM_AT_POINT
+
+utterances:
+  - create spaces from the linked rooms
+  - update the spaces to match the architect's rooms
+  - sync the space numbers and names with the room link
+  - add spaces for the architect's new rooms

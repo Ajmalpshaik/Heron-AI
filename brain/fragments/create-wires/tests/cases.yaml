@@ -1,0 +1,28 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three sockets in a row on Level 1, view Level 1 power plan (a floor plan), no points, wiringStyle arc
+    expect: >
+      made 2 - first to second, second to third - each an arc, looseEnds 0,
+      and `report` printing the order walked. Select a socket and see two
+      wires on its connector in the plan
+
+  - given: points 0,0,0 then 2000,1000,0 then the first socket's position, snapMm 300
+    expect: >
+      made 1, its end on that socket's connector and its start free -
+      looseEnds 1, said in `report`
+
+negative:
+  - given: the three sockets with view set to a 3D view
+    expect: >
+      made 0 and `report` saying a wire is drawn in one floor plan or
+      reflected ceiling plan - nothing drawn anywhere
+
+  - given: one socket and a duct, no points
+    expect: >
+      made 0: the duct has no electrical connector and is named as left out,
+      and one device is too few for a chain
+
+second_route:
+  - the plan view itself, and each wire's Properties after
+  - one Ctrl+Z takes every wire away in a single step (Golden Rule 16)

@@ -1,0 +1,126 @@
+# The proofs of the five MEP fragments of the gap fill - NEEDS-CHECKING Group DJ:
+#
+#   create-mep-system               CREATE_MEP_SYSTEM               FRG-MEP-062
+#   set-mep-system-type             SET_MEP_SYSTEM_TYPE             FRG-MEP-063
+#   report-panel-circuits           REPORT_PANEL_CIRCUITS           FRG-MEP-064
+#   create-wires                    CREATE_WIRES                    FRG-MEP-065
+#   sync-spaces-with-linked-rooms   SYNC_SPACES_WITH_LINKED_ROOMS   FRG-GEO-062
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-mep-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-mep-2026-10-12.yaml
+#
+# NEVER ON A WORKING PROJECT. The arrangement is made once, kept, in a NEW
+# SCRATCH PROJECT from the Mechanical template, saved as "Heron Gap Fill MEP
+# Test". Type its title where `in:` says PROJECT-TITLE. In it, by hand, on
+# Level 1:
+#
+#   - one fan coil unit (Mechanical Equipment) with a free Supply Air
+#     connector, and three supply diffusers (Air Terminals), none on a system
+#   - three loose rectangular ducts on Supply Air, joined to nothing
+#   - two loose pipes on Domestic Cold Water, joined to nothing
+#   - one electrical panel named DB-1 feeding one power circuit of two
+#     sockets, and three more sockets (Electrical Fixtures) in a row, on no
+#     circuit
+#   - a link to an architectural project holding three placed rooms on a
+#     level at the same height as Level 1, Room Bounding ticked in the link's
+#     Type Properties - linked as "Heron Rooms Link"; and a second link of an
+#     empty project with no rooms - "Heron Empty Link"
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill PROJECT-TITLE first.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# LOOK at the model afterwards anyway - rollback has failed on this PC before
+# (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>`.
+
+model: a scratch project from the Mechanical template, "Heron Gap Fill MEP Test", Revit 2024 first, then 2020 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+  write: true
+
+jobs:
+  # POSITIVE: the FCU and the three diffusers, Supply Air - one system, its
+  # members read back off it. NEGATIVE: the same elements, Return Air - the
+  # diffusers' connectors are Supply Air, so nothing suits and nothing is made.
+  - fragment: create-mep-system
+    expect: memberIds
+    keep-chain: true
+    setup:
+      - select-by-categories
+    setup-set:
+      categories: Mechanical Equipment, Air Terminals
+    negative-setup-set:
+      categories: Mechanical Equipment, Air Terminals
+    set:
+      systemType: Supply Air
+    negative-set:
+      systemType: Return Air
+    note: >
+      The negative changes only the system type. Read `skipped` and `refused`:
+      each diffuser named as having no free Return Air connector.
+
+  # POSITIVE: three loose supply ducts to Return Air - changed 3, read back.
+  # NEGATIVE: the two pipes, the same duct system type - changed 0, each pipe
+  # named as the wrong domain.
+  - fragment: set-mep-system-type
+    expect: changedIds
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Ducts
+      levelId: Level 1
+    negative-setup-set:
+      category: Pipes
+      levelId: Level 1
+    set:
+      systemType: Return Air
+    negative-set:
+      systemType: Return Air
+
+  # READ. POSITIVE: DB-1 - its circuit, in slot order. NEGATIVE: a panel name
+  # nothing is fed from - schedule empty, never DB-1's circuits.
+  - fragment: report-panel-circuits
+    expect: schedule
+    write: false
+    set:
+      panelName: DB-1
+    negative-set:
+      panelName: NO-SUCH-PANEL
+
+  # POSITIVE: the three loose sockets, Level 1 floor plan, no points - a chain
+  # of two wires. NEGATIVE: the same sockets in the default 3D view - refused,
+  # no wire drawn.
+  - fragment: create-wires
+    expect: wireIds
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Electrical Fixtures
+      levelId: Level 1
+    negative-setup-set:
+      category: Electrical Fixtures
+      levelId: Level 1
+    set:
+      view: "FloorPlan: Level 1"
+      wiringStyle: arc
+    negative-set:
+      view: "{3D}"
+      wiringStyle: arc
+    note: >
+      The fixtures filter also finds DB-1's two circuited sockets, so the
+      chain is of five; read `report` for the order walked.
+
+  # POSITIVE: the rooms link - three spaces made, numbered and named. NEGATIVE:
+  # the empty link - nothing made, nothing renamed.
+  - fragment: sync-spaces-with-linked-rooms
+    expect: created
+    set:
+      link: Heron Rooms Link
+      updateNames: false
+    negative-set:
+      link: Heron Empty Link
+      updateNames: false
