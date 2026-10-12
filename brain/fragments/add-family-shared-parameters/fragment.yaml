@@ -16,6 +16,7 @@ source: OFFICIAL
 # "a parameter written into the shared parameter file stays in that file".
 # A card carries one risk, so adding and replacing without creating need the
 # Admin switch too. ADD_PROJECT_PARAMETER, which also writes that file, is ADMIN.
+# The owner kept it so, 2026-10-12: "keep it ADMIN" (NEEDS-CHECKING DF9).
 risk: ADMIN
 
 purpose: >

@@ -31,7 +31,7 @@ changes. Version 2's proof is kept as a record and the card reads STALE until th
 outside the model: D-106 names exactly that consequence - *a parameter written into the shared parameter
 file stays in that file* - and `ADD_PROJECT_PARAMETER`, which also writes it, is ADMIN. A card carries
 one risk, so **adding and replacing without `createMissing` need the Admin switch too** from version 3.
-That is stricter, never looser; it is the owner's to reverse (DF9). Two consequences, measured
+That is stricter, never looser, and **the owner kept it so on 2026-10-12: "keep it ADMIN"** (DF9). Two consequences, measured
 2026-10-12: `batch-prove` sends no ADMIN fragment (D-106 point 6), so its dry run reads a job for this
 card as WOULD RUN while the real batch would come back DID NOT RUN - the two earlier job files for this
 card ([`family-settings-shared-2026-10-01.yaml`](../../tools/jobs/family-settings-shared-2026-10-01.yaml)
@@ -72,5 +72,5 @@ connected, `< /dev/null` on every line, and **Changes and Admin both on** in Rev
 | **DF6** | createMissing true, "Refrigerant: Heron Speed [Velocity]" | refused naming each data type "Velocity" fits (HVAC and piping), **or** created once - record which; a probe of the matcher, not a negative |
 | **DF7** | DF2 with Admin OFF (Changes on) | refused before anything is sent, naming the Admin switch - and the scratch file unchanged |
 | **DF8** | DF2 and DF4 on **Revit 2024** and **2027** - the ForgeTypeId side: `SpecUtils.GetAllSpecs`, `GetDataType` | the same answers; the file's word for Pipe Size the same as 2020's |
-| **DF9** | **The owner's decision**: keep the card ADMIN for adding and replacing too, or split creating into a mode the add-in can gate on its own (a platform change, not this one) | his word, recorded here and in D-106's place in the decision log if he changes it |
+| ~~**DF9**~~ | **DECIDED 2026-10-12 by Ajmal PS: "keep it ADMIN".** The card stays ADMIN for adding and replacing as well as creating; no mode is split out for the add-in to gate on its own | nothing to run - the decision is recorded here and in [row 5b-438](../fragment-issues/section-5b-rows-401-425.md) |
 | **DF10** | The signature, on the owner's word only, after DF2, DF3, DF4 and DF5 | `python brain/heron_validate.py accept add-family-shared-parameters --by "Ajmal PS"` |
