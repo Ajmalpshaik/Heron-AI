@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: template "Heron A" duplicated as "Heron B", then in B the scale set to 1:50 and Ducts hidden
+    expect: >
+      differenceCount 2 - "Scale: 1:100 | 1:50" and "Category Ducts: shown |
+      hidden" - and nothing else
+
+negative:
+  - given: template "Heron A" and an untouched duplicate "Heron A copy"
+    expect: >
+      differenceCount 0 and findings saying they agree on everything compared
+
+  - given: templateB "No Such Template"
+    expect: >
+      refused naming it, nothing compared
+
+second_route:
+  - each template's View Template Properties and Visibility/Graphics, read side by side

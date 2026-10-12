@@ -130,6 +130,10 @@ compatibility-note: >
 #   "add four more floor levels"         -> CREATE_LEVELS - the same
 #                                           one-versus-many pair, for levels
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "set out a radial grid"                 -> CREATE_RADIAL_GRIDS
 utterances:
   - make a grid series across the building
   - set out the grid at 6000 bays

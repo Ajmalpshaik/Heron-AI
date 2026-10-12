@@ -1,0 +1,24 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one wall with one window, material a white paint, faces reveals
+    expect: >
+      painted 4 - two jambs, head and sill - each reading painted; the wall's
+      two main faces and its ends untouched
+
+  - given: two floors, faces top
+    expect: >
+      each floor's top face painted, the edges and bottom not
+
+negative:
+  - given: a wall with no openings, faces reveals
+    expect: >
+      painted 0 and report saying no reveals face would take the paint
+
+  - given: a duct, faces exterior
+    expect: >
+      painted 0 - exterior and interior belong to walls - and nothing changed
+
+second_route:
+  - a 3D view with Realistic style, the painted faces seen; Modify > Paint's own Remove Paint undoes one by hand
+  - one Ctrl+Z takes every face back in a single step (Golden Rule 16)

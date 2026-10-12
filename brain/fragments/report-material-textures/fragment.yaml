@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-045
+semantic-identity: "which image files do the materials use, and which are missing"
+kind: action
+domain: revit.document
+capability: REPORT_MATERIAL_TEXTURES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# SLOT BY SLOT: each material's appearance - diffuse, bump, cutout and the
+# rest - with the stored path and whether a file is there. A missing texture
+# renders as a plain colour and travels with the model to every consultant.
+#
+# READ WITHOUT NAMING THE ASSET TYPES. They live in Revit's appearance-asset
+# namespace, which the fragment contract does not supply
+# (tools/check-fragments-compile.py USINGS and the executor). So values are
+# taken by `var` and a bitmap's text by its property name. REPATHING OR
+# REMOVING a texture needs an edit scope from that namespace and is not offered
+# - it waits on the decision to add the namespace (gap-fill plan, batch 5).
+#
+# A PATH WITH NO DRIVE OR SHARE is relative to Revit's texture folders and the
+# render appearance paths in Options, which are not readable here; it is
+# reported as relative, never as missing.
+#
+# LIST_MATERIALS lists materials and their class; this reads the files behind
+# their appearance.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists the image files every material's appearance uses - diffuse, bump and
+  the rest - with each stored path and whether the file is there, and names
+  the missing ones.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # true lists only the missing files; false, or not said, lists every one.
+    - name: onlyMissing
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: textures
+      # ONE STRING, a line per texture file.
+      role: result
+      type: string
+    - name: missing
+      # "material / slot: path" for each full path with no file (D-52).
+      role: result
+      type: IList<string>
+    - name: materialCount
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Material.AppearanceAssetId,
+  AppearanceAssetElement.GetRenderingAsset, and on the asset Size, Get,
+  FindByName and on its properties Name, NumberOfConnectedProperties and
+  GetSingleConnectedAsset, with AssetPropertyString.Value read by reflection,
+  are present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which material textures are missing"     -> here
+#   "where are the texture images for the materials" -> here
+#   "list the materials"                      -> LIST_MATERIALS
+#   "replace this material with that one"     -> REPLACE_MATERIAL
+
+utterances:
+  - which material textures are missing
+  - where are the texture images for the materials stored
+  - list the image files the materials use
+  - check the material appearance files are all there

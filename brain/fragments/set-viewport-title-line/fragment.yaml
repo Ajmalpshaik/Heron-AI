@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-031
+semantic-identity: "make the viewport title lines this long, or fit each to its title"
+kind: action
+domain: revit.sheets
+capability: SET_VIEWPORT_TITLE_LINE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# REVIT 2022 opened the title line's length to code; before it the line is
+# dragged by hand, so this card declares 2022 on only.
+#
+# lengthMm > 0 sets every line to that length on the sheet; 0 fits each to the
+# width of its title's outline as Revit reports it - whether that outline
+# already includes the line is what the proof records.
+#
+# A viewport whose type shows no extension line still stores a length; it is
+# set, and the line does not show.
+#
+# READ BACK: each length off the viewport after a regeneration.
+#
+# ALIGN_VIEWPORTS_ACROSS_SHEETS and CENTER_VIEWPORTS_ON_SHEETS move viewports;
+# neither touches the title line.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the length of the viewport title lines on chosen sheets or every sheet
+  - one length in millimetres, or each fitted to its own title.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Sheet numbers separated by commas - "M-101, M-102"; an EMPTY value is
+    # every sheet.
+    - name: sheetNumbers
+      type: string
+      source: request
+    # Millimetres on the sheet; 0 fits each line to its own title.
+    - name: lengthMm
+      type: double
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: changedIds
+      role: result
+      type: IList<ElementId>
+    - name: alreadyThat
+      # Title lines already that length. The prior state (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING with every viewport left as it was and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Viewport.LabelLineLength is present from 2022 and absent in 2020 and 2021,
+  so the card declares 2022 to 2027 only - read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-12.
+  Viewport.GetLabelOutline, ViewSheet.GetAllViewports and IsPlaceholder are
+  present throughout. Lengths are millimetres divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "shorten the title lines to 80 mm"        -> here
+#   "fit the title lines to the titles"       -> here, lengthMm 0
+#   "line up the viewports on every sheet"    -> ALIGN_VIEWPORTS_ACROSS_SHEETS
+#   "which viewport types are there"          -> REPORT_VIEWPORT_TYPES
+
+utterances:
+  - make the viewport title lines 80 mm on every sheet
+  - fit the title lines to the view titles
+  - shorten the title lines on sheet M-101
+  - the viewport title lines are too long, trim them to the text

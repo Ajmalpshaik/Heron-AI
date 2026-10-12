@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: centreMm "0,0", radiiMm "6000, 12000", spokeAnglesDegrees "0, 30, 60, 90", startDegrees 0, endDegrees 90
+    expect: >
+      made 6 - two quarter-circle arcs and four spokes 12 m long - and
+      gridNames as Revit numbered them
+
+negative:
+  - given: radiiMm empty, spokeAnglesDegrees "0, 90"
+    expect: >
+      refused - spokes need a radius to run to - and no grid made
+
+  - given: radiiMm "0"
+    expect: >
+      refused before anything is made
+
+second_route:
+  - the floor plan, the arcs and spokes measured
+  - one Ctrl+Z removes every grid in a single step (Golden Rule 16)

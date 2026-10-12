@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-081
+semantic-identity: "attach the tops of these walls to the roof or floor above, or detach them"
+kind: action
+domain: revit.elements
+capability: ATTACH_WALLS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# EACH WALL FINDS ITS OWN TARGET: the nearest roof, floor or ceiling whose plan
+# extent overlaps it, above its top or below its base. A wall with nothing
+# there is named and left - nothing guessed across the building.
+#
+# REVIT 2025 opened wall attachment to code (Wall.AddAttachment,
+# RemoveAttachment, GetAttachmentIds), so the card declares 2025 on. On older
+# releases the attachment is done by hand.
+#
+# READ BACK: each wall's attachments at that end read again.
+#
+# SET_WALL_CONSTRAINTS sets a wall's levels and offsets; this attaches it to an
+# element, which follows that element when it moves.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Attaches the tops or bases of walls to the roof, floor or ceiling above or
+  below each one - Attach Top/Base - or detaches them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "top" or "base"; an EMPTY value means top.
+    - name: where
+      type: string
+      source: request
+    # true removes the attachments at that end instead; false, or not said,
+    # attaches.
+    - name: detach
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: attached
+      role: result
+      type: int
+    - name: attachedIds
+      role: result
+      type: IList<ElementId>
+    - name: noTarget
+      # Walls with no roof, floor or ceiling over or under them (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, wall by wall (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2025", "2026", "2027"]
+runtime: [net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Wall.AddAttachment, RemoveAttachment, GetAttachmentIds and AttachmentLocation
+  are present from 2025 and absent in 2020 to 2024 - read off RevitAPI.xml in
+  the Nice3point reference packages for all eight releases on 2026-10-12 - so
+  the card declares 2025 to 2027 only.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "attach these walls to the roof"          -> here
+#   "detach the wall tops"                    -> here, detach
+#   "set the wall top to level 2"             -> SET_WALL_CONSTRAINTS
+
+utterances:
+  - attach these walls to the roof above
+  - attach the wall tops to the slab
+  - detach the tops of these walls
+  - attach the bases of these walls to the floor below

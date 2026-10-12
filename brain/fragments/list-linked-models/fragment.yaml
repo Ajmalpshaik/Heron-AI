@@ -93,6 +93,11 @@ compatibility-note: >
 #   "unload this link"               -> RELOAD_LINKS
 #   "copy these out of the link"     -> COPY_FROM_LINK
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "link the architect's model"            -> LINK_FILES
+#   "is the structural link in the right place" -> CHECK_LINK_COORDINATES
 utterances:
   - list the linked models
   - which links do we have

@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-063
+semantic-identity: "set out a radial grid of arcs and spokes about one centre"
+kind: action
+domain: revit.datums
+capability: CREATE_RADIAL_GRIDS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Arcs at each radius between startDegrees and endDegrees, and spokes from the
+# centre to the largest radius at each angle - degrees anticlockwise from
+# east, as Revit measures. A full circle is drawn just short of closed: a grid
+# cannot be a closed circle. A spoke outside the arcs' sweep is drawn and
+# named, never dropped.
+#
+# Revit numbers the grids; the names are read back and returned.
+#
+# CREATE_GRIDS (PROVEN) sets out straight grids from bay spacings, and
+# CREATE_GRID draws one; neither makes an arc.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets out a radial grid - arcs about one centre at given radii between two
+  angles, and spokes out from the centre at given angles.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "x,y" or "x,y,z" in millimetres.
+    - name: centreMm
+      type: string
+      source: request
+    # Radii in millimetres separated by commas - "6000, 12000"; EMPTY for none.
+    - name: radiiMm
+      type: string
+      source: request
+    # Spoke angles in degrees separated by commas - "0, 30, 60, 90"; EMPTY
+    # for none.
+    - name: spokeAnglesDegrees
+      type: string
+      source: request
+    - name: startDegrees
+      type: double
+      source: request
+    - name: endDegrees
+      type: double
+      source: request
+  provides:
+    - name: made
+      role: result
+      type: int
+    - name: gridIds
+      role: result
+      type: IList<ElementId>
+    - name: gridNames
+      # Revit's names for the new grids, read back.
+      role: result
+      type: IList<string>
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Grid.Create(Document, Arc) and
+  Grid.Create(Document, Line), and Arc.Create(XYZ, double, double, double,
+  XYZ, XYZ), are present 2020 through 2027 - read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-12.
+  Millimetres are divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "set out a radial grid"                   -> here
+#   "arc grids at 6 and 12 m with spokes every 30 degrees" -> here
+#   "set out grids at 6 m bays"               -> CREATE_GRIDS
+
+utterances:
+  - set out a radial grid about this centre
+  - make arc grids at 6 m and 12 m with spokes every 30 degrees
+  - set out the radial setting-out for the round building
+  - create spoke grids from the centre at 0 30 60 and 90 degrees

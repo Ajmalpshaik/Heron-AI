@@ -1,0 +1,15 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a model linking one architectural model; the Level 1 plan set By Linked View to the link's Level 1 plan, Level 2 set Custom, the rest By Host View; linkName empty
+    expect: >
+      notByHost 2 - Level 1 naming the link's view it shows, Level 2 Custom -
+      and every other view counted By Host View
+
+negative:
+  - given: linkName "No Such Link"
+    expect: >
+      linkCount 0, usage empty, findings naming it
+
+second_route:
+  - Visibility/Graphics > Revit Links in each listed view, read beside it

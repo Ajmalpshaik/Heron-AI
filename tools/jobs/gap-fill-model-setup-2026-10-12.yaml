@@ -1,0 +1,87 @@
+# The proofs of the model and file setup batch of the gap fill - NEEDS-CHECKING
+# Group DO:
+#
+#   link-files                  LINK_FILES                   FRG-DOC-043
+#   set-link-path-type          SET_LINK_PATH_TYPE           FRG-DOC-044
+#   report-material-textures    REPORT_MATERIAL_TEXTURES     FRG-DOC-045
+#   check-link-coordinates      CHECK_LINK_COORDINATES       FRG-QA-035
+#   find-unused-images          FIND_UNUSED_IMAGES           FRG-SEL-036
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-model-setup-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-model-setup-2026-10-12.yaml
+#
+# NEVER ON A WORKING PROJECT. Two NEW SCRATCH PROJECTS on Revit 2024 first:
+#
+#   "Heron Gap Fill Setup Test" - type its title where `in:` says
+#   PROJECT-TITLE - and in it, by hand:
+#     - a folder %TEMP%\heron-work\link-test holding one small .rvt (any
+#       saved scratch project) and two small .dwg files, NOT yet linked
+#     - one Revit link already linked by shared coordinates with Absolute
+#       path, then moved 500 mm east (Move tool), so it disagrees
+#     - a material with an image texture from C:\Heron\brick.jpg, then that
+#       file renamed, so the texture is missing
+#     - three images in Manage Images: one placed on a sheet, one set as a
+#       door type's Type Image, one used nowhere
+#   "Heron Empty Test" - a new project, nothing added - type its title where
+#   `negative-in:` says EMPTY-TITLE.
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at Manage Links afterwards anyway - rollback has failed on this PC
+# before (BD1).
+
+model: two scratch projects, "Heron Gap Fill Setup Test" and "Heron Empty Test", Revit 2024 first, then 2020 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+
+jobs:
+  - fragment: link-files
+    expect: linkedIds
+    write: true
+    set:
+      paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/link-test"
+      placement: origin
+      viewName: ""
+    negative-set:
+      paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/no-such-folder/nothing.rvt"
+      placement: origin
+      viewName: ""
+
+  - fragment: set-link-path-type
+    expect: changed
+    write: true
+    set:
+      linkName: ""
+      pathType: relative
+    negative-set:
+      linkName: No Such Link
+      pathType: relative
+
+  - fragment: report-material-textures
+    expect: missing
+    set:
+      onlyMissing: true
+    negative-in: "EMPTY-TITLE"
+    negative-set:
+      onlyMissing: true
+
+  - fragment: check-link-coordinates
+    expect: mismatched
+    set:
+      toleranceMm: 0
+    negative-in: "EMPTY-TITLE"
+    negative-set:
+      toleranceMm: 0
+    note: >
+      The empty project has no links - mismatched empty and findings saying
+      so. A second negative worth running by hand: a link placed by shared
+      coordinates and not moved, which must agree.
+
+  - fragment: find-unused-images
+    expect: elements
+    negative-in: "EMPTY-TITLE"
+    note: >
+      No request values. The empty project has no images, so `elements` is
+      empty there.

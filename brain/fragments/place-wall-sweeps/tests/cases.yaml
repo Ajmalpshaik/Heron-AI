@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three walls round a room, one with a door, sweepTypeName a skirting sweep type, side interior, heightMm 0
+    expect: >
+      made 3, each sweep hosted by its wall and cut at the door, read back
+
+negative:
+  - given: sweepTypeName "No Such Sweep"
+    expect: >
+      refused naming the sweep types the project has, nothing made
+
+  - given: two ducts
+    expect: >
+      made 0 and report saying neither is a wall
+
+second_route:
+  - a 3D view of the room, the skirting seen along the walls and stopping at the door
+  - one Ctrl+Z removes every sweep in a single step (Golden Rule 16)

@@ -100,6 +100,10 @@ compatibility-note: >
 #   "make a 3d view"                     -> CREATE_3D_VIEW, which is not owned
 #                                           by anything and shows the model
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "make an assembly from these"           -> CREATE_ASSEMBLY, first
 utterances:
   - make the shop drawing views for this assembly
   - create the assembly views

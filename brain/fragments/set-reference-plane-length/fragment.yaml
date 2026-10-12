@@ -1,0 +1,76 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-086
+semantic-identity: "make these reference planes all the same length"
+kind: action
+domain: revit.elements
+capability: SET_REFERENCE_PLANE_LENGTH
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# EACH ABOUT ITS OWN MIDDLE: the plane stays where it is and faces the same
+# way; only its ends move in or out along it. Revit refuses an end that would
+# turn the plane, so the ends move only along the line they lie on.
+#
+# READ BACK: each plane's length after the change.
+#
+# CREATE_REFERENCE_PLANES makes planes in a family; this sets the length of
+# any planes, in a project or a family.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets reference planes to one length, each about its own middle, so a
+  drawing's planes read as one set.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: lengthMm
+      type: double
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyThat
+      # Planes already that length (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING with every plane left as it was and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ReferencePlane.BubbleEnd and FreeEnd
+  (get and set; setting one that would turn the plane throws) are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12. Millimetres are divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make the reference planes 5 m long"      -> here
+#   "add reference planes"                    -> CREATE_REFERENCE_PLANES
+
+utterances:
+  - make these reference planes 5 m long
+  - make all the reference planes the same length
+  - shorten the reference planes to 2000 mm
+  - tidy the reference planes to one length

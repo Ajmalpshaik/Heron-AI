@@ -1,0 +1,75 @@
+heron-agent: HERON-REVIT-IMP-019
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-036
+semantic-identity: "which images in Manage Images does nothing use"
+kind: filter
+domain: revit.selection
+capability: FIND_UNUSED_IMAGES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# IT DELETES NOTHING: the unused images are handed on as `elements`, so
+# DELETE_ELEMENTS removes them in the next step, after the modeller has seen
+# the list. One delete path for everything, already PROVEN.
+#
+# "USED" IS LOOKED FOR EVERYWHERE AN IMAGE CAN BE: every placed image, and
+# every element-id parameter of every element and type that names an image -
+# Image, Type Image, shared or family image parameters. An image used ONLY as
+# a schedule header picture is not seen, and the answer says so.
+#
+# FIND_UNUSED_FAMILIES, FIND_UNUSED_MATERIALS and FIND_UNUSED_GROUP_TYPES are
+# the same job for other things.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Finds the images in Manage Images that are placed nowhere and named by no
+  image parameter, and hands them on - to DELETE_ELEMENTS once the list has
+  been seen.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: unusedNames
+      role: result
+      type: IList<string>
+    - name: usedCount
+      # Images found in use. The evidence the search looked (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ImageType, ImageInstance and
+  Element.GetTypeId are present 2020 through 2027 - read off RevitAPI.xml in
+  the Nice3point reference packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which images are not used"               -> here
+#   "delete the unused images"                -> here, then DELETE_ELEMENTS
+#   "which families are not used"             -> FIND_UNUSED_FAMILIES
+#   "which materials are not used"            -> FIND_UNUSED_MATERIALS
+
+utterances:
+  - which images in the project are not used
+  - find the unused images in manage images
+  - clean out the images nothing uses
+  - list the raster images that are not placed anywhere

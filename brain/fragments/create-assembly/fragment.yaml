@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-GRP-033
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-080
+semantic-identity: "make an assembly from these elements"
+kind: action
+domain: revit.elements
+capability: CREATE_ASSEMBLY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ELEMENTS ALREADY IN AN ASSEMBLY are left out and named - Revit puts an
+# element in one only. The rest are checked with Revit's own tests first, so a
+# set Revit would refuse is refused with the reason, not half-made.
+#
+# THE NAMING CATEGORY decides the assembly's category and default name: given
+# by name it must be one Revit accepts for the set; empty takes the first
+# element's category.
+#
+# READ BACK: members and type name off the new assembly.
+#
+# CREATE_ASSEMBLY_VIEWS makes the shop drawing views of an EXISTING assembly;
+# GROUP_ELEMENTS makes a group, which is not an assembly.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates an assembly from the elements handed in - Create Assembly in the
+  ribbon - named as asked, ready for its shop drawing views.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The assembly's name; an EMPTY value lets Revit name it.
+    - name: assemblyName
+      type: string
+      source: request
+    # A category name to name it by - "Pipes"; an EMPTY value takes the
+    # first element's category.
+    - name: namingCategory
+      type: string
+      source: request
+  provides:
+    - name: assembly
+      role: result
+      type: AssemblyInstance
+    - name: memberIds
+      # Read off the new assembly.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyInOne
+      # Elements already in an assembly, left out (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. AssemblyInstance.Create,
+  AreElementsValidForAssembly, IsValidNamingCategory, AssemblyTypeName and
+  GetMemberIds, and Element.AssemblyInstanceId, are present 2020 through 2027
+  - read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make an assembly of this pipe spool"     -> here
+#   "make the shop drawings for this assembly" -> CREATE_ASSEMBLY_VIEWS
+#   "group these"                             -> GROUP_ELEMENTS
+#   "select by assembly"                      -> GROUP_BY_ASSEMBLY
+
+utterances:
+  - make an assembly from these elements
+  - create an assembly of this pipe spool called Spool 01
+  - assemble these into one prefab unit
+  - put these into a new assembly

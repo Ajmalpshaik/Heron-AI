@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-044
+semantic-identity: "make the Revit links relative, or absolute"
+kind: action
+domain: revit.document
+capability: SET_LINK_PATH_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Relative paths let a project folder move as one; absolute paths hold the
+# whole drive path. Revit forbids switching to or from Server, so Revit Server
+# and cloud links are named and left alone.
+#
+# READ BACK: each link type's path type after the change.
+#
+# RELOAD_LINKS reloads; LINK_FILES makes new links.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Switches how Revit links store their path - Relative or Absolute - for one
+  link or every link, as Manage Links' Path Type column does.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One link by its name or the start of it; an EMPTY value is every link.
+    - name: linkName
+      type: string
+      source: request
+    # "relative" or "absolute".
+    - name: pathType
+      type: string
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyThat
+      # Links already of that path type (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING with every link left alone and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. RevitLinkType.PathType (get and set)
+  and PathType.Absolute, Relative and Server are present 2020 through 2027 -
+  read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12, whose remarks say a path cannot be switched to or
+  from Server.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make all the links relative"             -> here
+#   "set the architect's link to absolute"    -> here
+#   "reload the links"                        -> RELOAD_LINKS
+#   "link the structural model"               -> LINK_FILES
+
+utterances:
+  - make all the links relative
+  - set the architect's link path to absolute
+  - change the link path type to relative
+  - switch every Revit link to relative paths

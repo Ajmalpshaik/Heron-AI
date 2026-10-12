@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-082
+semantic-identity: "paint this material on these faces - tops, sides, a wall's reveals - or take the paint off"
+kind: action
+domain: revit.elements
+capability: PAINT_FACES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# faces says which: all, vertical, top, bottom; a wall's exterior or interior
+# side as Revit names them; or reveals - a wall's jambs, head and sill: upright
+# faces square to the wall that are not its ends, and level faces that are not
+# its top or bottom. remove true takes the paint off instead.
+#
+# READ BACK: Revit is asked face by face whether it is painted. A face Revit
+# will not paint - most family geometry - is counted apart.
+#
+# REPLACE_MATERIAL swaps a material where it is assigned; SET_FAMILY_FORM_MATERIAL
+# sets a form's material in a family. Paint changes neither type nor family.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Paints a material onto chosen faces of many elements at once - all faces,
+  tops, sides, a wall's exterior or interior, or the reveals round its
+  openings - or takes the paint off.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The material by name. Needed even with remove, to name it; any material
+    # will do then.
+    - name: material
+      type: Material
+      source: request
+    # all, vertical, top, bottom, exterior, interior or reveals.
+    - name: faces
+      type: string
+      source: request
+    # true takes the paint off those faces; false, or not said, paints.
+    - name: remove
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: painted
+      # Faces that read back painted (or clear, with remove).
+      role: result
+      type: int
+    - name: elementsTouched
+      role: result
+      type: IList<ElementId>
+    - name: notPainted
+      # Faces chosen that Revit would not paint or clear (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING with every element left as it was and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.Paint, RemovePaint and
+  IsPainted, HostObjectUtils.GetSideFaces, GetTopFaces and GetBottomFaces,
+  Reference.ConvertToStableRepresentation, Face.ComputeNormal, Evaluate and
+  GetBoundingBox, and Options.ComputeReferences are present 2020 through 2027 -
+  read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "paint the window reveals white"          -> here, faces reveals
+#   "paint the tops of these slabs"           -> here, faces top
+#   "change the wall's material"              -> REPLACE_MATERIAL - the type,
+#                                                for every wall of it
+
+utterances:
+  - paint the window and door reveals with this material
+  - paint the tops of these slabs with epoxy
+  - paint the exterior face of these walls
+  - remove the paint from these walls

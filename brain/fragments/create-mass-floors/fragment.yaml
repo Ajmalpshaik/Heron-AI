@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-083
+semantic-identity: "give these conceptual masses their mass floors so their areas schedule"
+kind: action
+domain: revit.elements
+capability: CREATE_MASS_FLOORS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Mass floors at the levels named, or at every level the mass reaches when
+# none is named - what makes a mass's gross floor area and volume schedule.
+# A level the mass does not reach gets no floor; the read-back says so.
+#
+# READ BACK: each mass's floor levels after the change.
+#
+# CREATE_CONCEPTUAL_FORM makes a form in a mass family; this works on masses
+# placed in the project.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Gives conceptual masses their mass floors - Mass Floors in the ribbon - so
+  each mass's gross area and volume schedule.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # Level names separated by commas; an EMPTY value is every level each mass
+    # reaches.
+    - name: levelNames
+      type: string
+      source: request
+  provides:
+    - name: added
+      role: result
+      type: int
+    - name: alreadyThere
+      # Mass floors that existed before. The prior state (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, mass by mass (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. MassInstanceUtils
+  .AddMassLevelDataToMassInstance and GetMassLevelIds and Level.ProjectElevation
+  are present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add mass floors at every level"          -> here
+#   "make a mass form"                        -> CREATE_CONCEPTUAL_FORM
+
+utterances:
+  - add mass floors to these masses at every level
+  - create mass floors on this massing model
+  - the massing areas are not scheduling, add the mass floors
+  - put mass floors on this mass

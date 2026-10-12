@@ -623,6 +623,18 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dm.md`](needs-checking/group-dm.md)
 
+## Group DN - views and sheets: 3D cameras, cut planes read and moved, browser organisation, templates compared, link display, room elevations refitted, viewport types and title lines, assemblies (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dn.md`](needs-checking/group-dn.md)
+
+## Group DO - model and file setup: files linked, link paths switched, links' shared coordinates checked, material textures read, unused images found (2026-10-12)
+
+**Its own file:** [`needs-checking/group-do.md`](needs-checking/group-do.md)
+
+## Group DP - modelling: walls attached, faces painted, mass floors, wall sweeps, fascias, gutters and slab edges, reference plane lengths, radial grids (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dp.md`](needs-checking/group-dp.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

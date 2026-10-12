@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: paths a folder holding one .rvt and two .dwg files, placement origin, viewName empty
+    expect: >
+      linked 3, each read back - the Revit link Loaded, the two CAD links in
+      the model - and Manage Links listing all three
+
+negative:
+  - given: the same folder straight after
+    expect: >
+      linked 0 and alreadyLinked naming all three - nothing linked twice
+
+  - given: paths a file that does not exist
+    expect: >
+      linked 0 and report naming the missing path
+
+second_route:
+  - Manage > Manage Links, the Revit and CAD Formats tabs read
+  - one Ctrl+Z removes every new link in a single step (Golden Rule 16)

@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three pipes and two pipe fittings in one run, assemblyName "Spool 01", namingCategory "Pipes"
+    expect: >
+      one assembly named Spool 01, memberIds the five elements, read back
+
+negative:
+  - given: the same five elements straight after
+    expect: >
+      every one in alreadyInOne and refused - nothing made twice
+
+  - given: a text note, namingCategory empty
+    expect: >
+      refused with Revit's reason - a view-specific element is not assembled
+      - and nothing made
+
+second_route:
+  - the Project Browser's Assemblies node, and the assembly's members selected in a view
+  - one Ctrl+Z takes it away in a single step (Golden Rule 16)

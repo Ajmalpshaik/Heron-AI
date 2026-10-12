@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a hip roof on a rectangular plan, kind fascia, typeName the project's fascia type
+    expect: >
+      made 1, a fascia along the four eaves, joined at the corners, read back
+
+  - given: one floor, kind slab edge, typeName the project's slab edge type
+    expect: >
+      made 1, along the top outer edge only - not round any opening in it
+
+negative:
+  - given: two walls, kind fascia
+    expect: >
+      made 0, each named as not a roof
+
+  - given: typeName "No Such Fascia"
+    expect: >
+      refused naming the fascia types the project has, nothing made
+
+second_route:
+  - a 3D view - the fascia along the eaves, the slab edge round the floor
+  - one Ctrl+Z removes them in a single step (Golden Rule 16)

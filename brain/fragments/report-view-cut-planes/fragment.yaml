@@ -1,0 +1,76 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-129
+semantic-identity: "where does each section and elevation cut, which way does it look, how deep is its far clip"
+kind: action
+domain: revit.views
+capability: REPORT_VIEW_CUT_PLANES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# "LOOKING" IS THE OPPOSITE OF ViewDirection: Revit's ViewDirection points
+# from the model OUT towards the viewer, so a section looking north has a
+# ViewDirection of south. The answer prints the looking direction.
+#
+# The far clip is Revit's own text, on or off and how deep.
+#
+# A view name may carry its kind - "Section: Section 1"; empty reads every
+# section, elevation and detail view.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists each section, elevation and detail view with a point on its cut plane
+  in millimetres, the direction it looks, and whether its far clip is on and
+  how deep.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One view by name, or "Section: Section 1"; an EMPTY value reads every
+    # section, elevation and detail view.
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: cutPlanes
+      # ONE STRING, a line per view, because a list reaches the chat cut to
+      # three entries.
+      role: result
+      type: string
+    - name: viewCount
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. View.Origin and ViewDirection and the
+  parameters VIEWER_BOUND_FAR_CLIPPING and VIEWER_BOUND_OFFSET_FAR are present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "where does section 3 cut"                -> here
+#   "which way does this elevation look"      -> here
+#   "move the section 500 mm north"           -> MOVE_VIEW_CUT_PLANE
+#   "make a section through these"            -> CREATE_SECTION_VIEW
+
+utterances:
+  - where does section 3 cut the model
+  - which way does this elevation look
+  - list the sections with their far clip depth
+  - where are the cut lines of the sections

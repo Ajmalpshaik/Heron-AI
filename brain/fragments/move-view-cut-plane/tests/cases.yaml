@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: the view Section 1, looking north, offsetMm 500, throughMm empty
+    expect: >
+      movedMm 500 read back, and the section line in plan 500 mm further north
+
+  - given: an elevation alone on its marker, throughMm a point 2000 mm ahead
+    expect: >
+      movedMm about 2000, the marker moved, the view cutting through the point
+
+negative:
+  - given: the elevation North, one of the four default elevations on one marker, offsetMm 500
+    expect: >
+      refused naming East, South and West, and nothing moved
+
+  - given: offsetMm 0, throughMm empty
+    expect: >
+      refused - already there - and nothing moved
+
+second_route:
+  - the plan, the section line measured before and after
+  - one Ctrl+Z puts it back in a single step (Golden Rule 16)

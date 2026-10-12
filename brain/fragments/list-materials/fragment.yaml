@@ -185,6 +185,10 @@ compatibility-note: >
 # and "show me all the materials" are the owner's, given with the request for
 # this card on 2026-10-09 as what a modeller says. Nothing else is declared.
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "which material textures are missing"   -> REPORT_MATERIAL_TEXTURES
 utterances:
   - list the materials in this family
   - show me all the materials in this project

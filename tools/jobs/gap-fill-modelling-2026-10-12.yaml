@@ -1,0 +1,167 @@
+# The proofs of the modelling batch of the gap fill - NEEDS-CHECKING Group DP:
+#
+#   attach-walls                ATTACH_WALLS                 FRG-ELE-081  (2025 on)
+#   paint-faces                 PAINT_FACES                  FRG-ELE-082
+#   create-mass-floors          CREATE_MASS_FLOORS           FRG-ELE-083
+#   place-wall-sweeps           PLACE_WALL_SWEEPS            FRG-ELE-084
+#   create-edge-sweeps          CREATE_EDGE_SWEEPS           FRG-ELE-085
+#   set-reference-plane-length  SET_REFERENCE_PLANE_LENGTH   FRG-ELE-086
+#   create-radial-grids         CREATE_RADIAL_GRIDS          FRG-GEO-063
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-modelling-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-modelling-2026-10-12.yaml
+#
+# NEVER ON A WORKING PROJECT. A NEW SCRATCH PROJECT from the Architectural
+# template, saved as "Heron Gap Fill Modelling Test", on Revit 2025 first
+# (ATTACH_WALLS needs 2025) - type its title where `in:` says PROJECT-TITLE -
+# and in it, by hand:
+#
+#   - on Level 1, four walls round a room, one with a window and one with a
+#     door, their tops below a hip roof on Level 2 (roof by footprint over
+#     the four walls)
+#   - on Level 2, two walls with nothing above them
+#   - one floor on Level 1
+#   - an in-place mass 12 m tall over Levels 1 to 4
+#   - three reference planes on Level 1 of 3, 7 and 11 m
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the model afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: a scratch project from the Architectural template, "Heron Gap Fill Modelling Test", Revit 2025 first, then 2020 (all but attach-walls) and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+  write: true
+
+jobs:
+  - fragment: attach-walls
+    expect: attachedIds
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Walls
+      levelId: Level 1
+    negative-setup-set:
+      category: Walls
+      levelId: Level 2
+    set:
+      where: top
+    negative-set:
+      where: top
+
+  - fragment: paint-faces
+    expect: elementsTouched
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Walls
+      levelId: Level 1
+    negative-setup-set:
+      category: Walls
+      levelId: Level 2
+    set:
+      material: Glass
+      faces: reveals
+    negative-set:
+      material: Glass
+      faces: reveals
+    note: >
+      The Level 1 walls carry a window and a door, so their reveals paint;
+      the Level 2 walls have no openings, so painted 0. Any material the
+      template holds will do - Glass is in the default template.
+
+  - fragment: create-mass-floors
+    expect: added
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Mass
+      levelId: Level 1
+    negative-setup-set:
+      category: Walls
+      levelId: Level 1
+    set:
+      levelNames: ""
+    negative-set:
+      levelNames: ""
+
+  - fragment: place-wall-sweeps
+    expect: sweepIds
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Walls
+      levelId: Level 1
+    negative-setup-set:
+      category: Floors
+      levelId: Level 1
+    set:
+      sweepTypeName: "Wall Sweep"
+      side: interior
+      heightMm: 0
+    negative-set:
+      sweepTypeName: "Wall Sweep"
+      side: interior
+      heightMm: 0
+    note: >
+      Use the name of a wall sweep type the template holds; the negative hands
+      in a floor, which is not a wall - made 0.
+
+  - fragment: create-edge-sweeps
+    expect: sweepIds
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Floors
+      levelId: Level 1
+    negative-setup-set:
+      category: Walls
+      levelId: Level 1
+    set:
+      kind: slab edge
+      typeName: "Slab Edge"
+    negative-set:
+      kind: slab edge
+      typeName: "Slab Edge"
+    note: >
+      Use the name of the template's slab edge type. A fascia run on the roof
+      by hand is DP6.
+
+  - fragment: set-reference-plane-length
+    expect: changed
+    keep-chain: true
+    setup:
+      - select-by-categories
+    setup-set:
+      categories: Reference Planes
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categories: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      lengthMm: 5000
+    negative-set:
+      lengthMm: 5000
+
+  - fragment: create-radial-grids
+    expect: gridIds
+    set:
+      centreMm: "0,0"
+      radiiMm: "6000, 12000"
+      spokeAnglesDegrees: "0, 30, 60, 90"
+      startDegrees: 0
+      endDegrees: 90
+    negative-set:
+      centreMm: "0,0"
+      radiiMm: ""
+      spokeAnglesDegrees: "0, 90"
+      startDegrees: 0
+      endDegrees: 90

@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two sheets, three viewports of type Title w Line, sheetNumbers empty, lengthMm 80
+    expect: >
+      changed 3, each title line 80 mm on the sheet, read back
+
+negative:
+  - given: the same, straight after
+    expect: >
+      changed 0 and alreadyThat 3 - nothing written twice
+
+  - given: sheetNumbers "Z-999", a number no sheet has
+    expect: >
+      changed 0 and report naming Z-999
+
+second_route:
+  - the sheets themselves, each title line measured by eye
+  - one Ctrl+Z puts every line back in a single step (Golden Rule 16)

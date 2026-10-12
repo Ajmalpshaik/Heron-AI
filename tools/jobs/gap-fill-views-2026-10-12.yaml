@@ -1,0 +1,159 @@
+# The proofs of the views and sheets batch of the gap fill - NEEDS-CHECKING
+# Group DN:
+#
+#   set-view-camera             SET_VIEW_CAMERA              FRG-VIEW-128
+#   report-view-cut-planes      REPORT_VIEW_CUT_PLANES       FRG-VIEW-129
+#   move-view-cut-plane         MOVE_VIEW_CUT_PLANE          FRG-VIEW-130
+#   report-browser-organization REPORT_BROWSER_ORGANIZATION  FRG-VIEW-131
+#   compare-view-templates      COMPARE_VIEW_TEMPLATES       FRG-VIEW-132
+#   report-linked-view-usage    REPORT_LINKED_VIEW_USAGE     FRG-VIEW-133  (2024 on)
+#   refit-room-elevations       REFIT_ROOM_ELEVATIONS        FRG-VIEW-134
+#   report-viewport-types       REPORT_VIEWPORT_TYPES        FRG-SHT-030
+#   set-viewport-title-line     SET_VIEWPORT_TITLE_LINE      FRG-SHT-031   (2022 on)
+#   create-assembly             CREATE_ASSEMBLY              FRG-ELE-080
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-views-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-views-2026-10-12.yaml
+#
+# NEVER ON A WORKING PROJECT. Two NEW SCRATCH PROJECTS from the Architectural
+# template, on Revit 2024 first:
+#
+#   "Heron Gap Fill Views Test" - type its title where `in:` says
+#   PROJECT-TITLE - and in it, by hand:
+#     - a section "Section 1" drawn west to east, looking north
+#     - room 101 bounded by four walls on Level 1, with four interior
+#       elevations made by CREATE_ROOM_ELEVATIONS; then one wall moved out
+#       1000 mm, so the elevations no longer fit
+#     - two view templates "Heron A" and "Heron B" (B a duplicate of A with
+#       its scale set to 1:50)
+#     - two sheets, A101 and A102, each with one viewport of type Title w Line
+#     - a link to any other Revit project, its Level 1 plan set By Linked View
+#       in this model's Level 1 floor plan
+#     - three pipes and two fittings in one run on Level 1, in no assembly
+#   "Heron Empty Test" - a new project, nothing added - type its title where
+#   `negative-in:` says EMPTY-TITLE.
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the model afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: two scratch projects from the Architectural template, "Heron Gap Fill Views Test" and "Heron Empty Test", Revit 2024 first, then 2022 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+
+jobs:
+  - fragment: set-view-camera
+    expect: camera
+    write: true
+    set:
+      viewName: Heron Camera
+      eyeMm: "0,-10000,1600"
+      targetMm: "0,0,1600"
+      createIfMissing: true
+      perspective: false
+    negative-set:
+      viewName: No Such View
+      eyeMm: "0,-10000,1600"
+      targetMm: "0,0,1600"
+      createIfMissing: false
+      perspective: false
+
+  - fragment: report-view-cut-planes
+    expect: cutPlanes
+    set:
+      viewName: "Section: Section 1"
+    negative-set:
+      viewName: "Section: No Such Section"
+
+  - fragment: move-view-cut-plane
+    expect: newOrigin
+    write: true
+    set:
+      viewName: "Section: Section 1"
+      offsetMm: 500
+      throughMm: ""
+    negative-set:
+      viewName: "Elevation: North"
+      offsetMm: 500
+      throughMm: ""
+    note: >
+      North shares its marker with East, South and West, so the negative is
+      refused naming them - nothing moves.
+
+  - fragment: report-browser-organization
+    expect: organization
+    negative-in: "EMPTY-TITLE"
+    note: >
+      No request values. The empty project's browser lists only its default
+      views; read hiddenByFilter as 0 there.
+
+  - fragment: compare-view-templates
+    expect: differences
+    set:
+      templateA: Heron A
+      templateB: Heron B
+    negative-set:
+      templateA: Heron A
+      templateB: Heron A copy
+    note: >
+      Make "Heron A copy" by duplicating Heron A and changing nothing - the
+      negative is differenceCount 0.
+
+  - fragment: report-linked-view-usage
+    expect: usage
+    set:
+      linkName: ""
+    negative-set:
+      linkName: No Such Link
+
+  - fragment: refit-room-elevations
+    expect: refittedViews
+    write: true
+    set:
+      roomNumbers: "101"
+      marginMm: 300
+    negative-set:
+      roomNumbers: "999"
+      marginMm: 300
+
+  - fragment: report-viewport-types
+    expect: viewportTypes
+    negative-in: "EMPTY-TITLE"
+    note: >
+      No request values. In the empty project no viewport is placed, so every
+      type is in `unused` - the negative reads the opposite of the positive.
+
+  - fragment: set-viewport-title-line
+    expect: changedIds
+    write: true
+    set:
+      sheetNumbers: ""
+      lengthMm: 80
+    negative-set:
+      sheetNumbers: "Z-999"
+      lengthMm: 80
+
+  - fragment: create-assembly
+    expect: memberIds
+    write: true
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Pipes
+      levelId: Level 1
+    negative-setup-set:
+      category: Rooms
+      levelId: Level 1
+    set:
+      assemblyName: Spool 01
+      namingCategory: Pipes
+    negative-set:
+      assemblyName: Spool 02
+      namingCategory: ""
+    note: >
+      The negative hands in room 101, which Revit does not put in an assembly
+      - refused with its reason, nothing made.

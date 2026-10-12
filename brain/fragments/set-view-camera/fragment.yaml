@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-128
+semantic-identity: "point this 3D view's camera from here to there, or make a perspective view"
+kind: action
+domain: revit.views
+capability: SET_VIEW_CAMERA
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONE JOB WHETHER THE VIEW EXISTS OR IS NEW: an existing 3D view of that name
+# has its camera moved; with none and createIfMissing, a new PERSPECTIVE view
+# is made with that name first - what the ribbon's Camera tool makes.
+#
+# perspective true turns an isometric view perspective where Revit allows it.
+# Revit has no call turning a perspective view back to isometric, and none is
+# claimed.
+#
+# THE UP DIRECTION IS DERIVED: square to the line of sight in the vertical
+# plane through it, so the camera is level. Looking straight up or down,
+# north is up.
+#
+# A view a template controls is refused, not half-changed.
+#
+# READ BACK: eye, direction and perspective off the view, in millimetres.
+#
+# CREATE_3D_VIEW makes an isometric default 3D view and is PROVEN, so it was
+# not widened; SET_VIEW_SECTION_BOX boxes a 3D view round elements.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets a 3D view's camera from an eye point to a target point in millimetres,
+  turning it perspective if asked, or makes a new perspective view with that
+  camera - the Camera tool, without clicking.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The 3D view by name; with createIfMissing, the name of the new one.
+    - name: viewName
+      type: string
+      source: request
+    # "x,y,z" in millimetres.
+    - name: eyeMm
+      type: string
+      source: request
+    # "x,y,z" in millimetres - what the camera looks at.
+    - name: targetMm
+      type: string
+      source: request
+    # true turns an isometric view perspective; false, or not said, leaves
+    # its projection as it is.
+    - name: perspective
+      type: bool
+      source: request
+      optional: true
+    # true makes a new perspective view when none has the name; false, or
+    # not said, refuses.
+    - name: createIfMissing
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: camera
+      role: result
+      type: View3D
+    - name: madeNew
+      role: result
+      type: bool
+    - name: readBack
+      # Eye, direction and projection read off the view afterwards.
+      role: result
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. View3D.CreatePerspective,
+  SetOrientation, GetOrientation, IsPerspective, ToggleToPerspective,
+  IsLocked and Unlock, ViewOrientation3D(XYZ, XYZ, XYZ) and
+  ViewFamily.ThreeDimensional are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12. Points are millimetres divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a perspective from the entrance looking at the lobby" -> here
+#   "move the camera of this 3D view"         -> here
+#   "make a 3D view"                          -> CREATE_3D_VIEW
+#   "box the 3D view round these"             -> SET_VIEW_SECTION_BOX
+
+utterances:
+  - make a perspective view from the entrance looking at the lobby
+  - move the camera of the 3D view to look at the plant room
+  - set the eye and target of this 3D view
+  - make a camera view from this point to that point
+  - make a perspective from the entrance looking at the lobby

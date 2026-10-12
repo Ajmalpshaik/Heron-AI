@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-035
+semantic-identity: "do the linked models agree with this model's shared coordinates"
+kind: action
+domain: revit.qa
+capability: CHECK_LINK_COORDINATES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Two points of each link - its internal origin and 30 m east of it - get
+# their shared coordinates in the link's own system and in this model's after
+# the link's placement. Within toleranceMm for both, the link sits where its
+# own shared coordinates say. Otherwise the E/W, N/S and elevation difference
+# is printed for both points; a difference that changes between them is a
+# rotation.
+#
+# A link placed origin to origin on purpose disagrees, which is true: it is
+# not where the survey says it is.
+#
+# REPORT_LOCATION reads this model's site and True North; this compares links
+# against it.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Checks every loaded Revit link against this model's shared coordinates and
+  names the links that do not sit where their own shared coordinates say, with
+  the difference in millimetres.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # How close counts as agreeing; 0 means 1 mm.
+    - name: toleranceMm
+      type: double
+      source: request
+  provides:
+    - name: coordinates
+      # ONE STRING, a line per link.
+      role: result
+      type: string
+    - name: mismatched
+      # Links that disagree beyond the tolerance (D-52).
+      role: result
+      type: IList<string>
+    - name: agreeing
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.ActiveProjectLocation,
+  ProjectLocation.GetProjectPosition(XYZ) with ProjectPosition.EastWest,
+  NorthSouth and Elevation, RevitLinkInstance.GetLinkDocument and
+  Instance.GetTotalTransform are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "check the links' shared coordinates"     -> here
+#   "is the structural model in the right place" -> here
+#   "where is this project"                   -> REPORT_LOCATION
+#   "set the project location"                -> SET_PROJECT_LOCATION
+
+utterances:
+  - check the links against our shared coordinates
+  - is the structural link in the right place
+  - do the linked models line up with the survey point
+  - which links are not on shared coordinates
+  - is the structural model in the right place

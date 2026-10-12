@@ -1,0 +1,16 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a project with the default Title w Line, No Title and Title w/o Line types, three viewports on sheets all Title w Line
+    expect: >
+      typeCount 3, Title w Line used by 3, the other two used by 0 and listed
+      in `unused`
+
+negative:
+  - given: a project with no viewport on any sheet
+    expect: >
+      every type used by 0 and every one in `unused` - never a count invented
+      from the views
+
+second_route:
+  - each viewport's Type in its Properties on the sheets, counted by hand

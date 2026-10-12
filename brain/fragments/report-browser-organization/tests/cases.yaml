@@ -1,0 +1,17 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a project whose view organisation groups by Discipline then Family and Type, with a filter showing only views whose Sub-Discipline is HVAC
+    expect: >
+      the Views line naming that organisation, folders "Discipline > Family
+      and Type" (as the parameters are named), and hiddenByFilter counting
+      the views that are not HVAC
+
+negative:
+  - given: a project left on the default "all" organisation with no filter
+    expect: >
+      hiddenByFilter 0 and findings saying every view and sheet shows - not a
+      hidden count invented
+
+second_route:
+  - View > User Interface > Browser Organization, the organisation's Edit dialog read beside it

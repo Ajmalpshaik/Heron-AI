@@ -1,0 +1,25 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: viewName "Heron Camera", eyeMm "0,-10000,1600", targetMm "0,0,1600", createIfMissing true
+    expect: >
+      madeNew true, a perspective view named Heron Camera, readBack "eye
+      0,-10000,1600 mm, looking 0,1,0, perspective". Open it - the eye height
+      is 1600 and the horizon level
+
+  - given: an existing isometric 3D view, new eye and target, perspective true
+    expect: >
+      its camera moved and readBack saying perspective
+
+negative:
+  - given: viewName "No Such View", createIfMissing not said
+    expect: >
+      refused naming it, and no view made
+
+  - given: eyeMm and targetMm the same point
+    expect: >
+      refused - nothing to look along - and nothing changed
+
+second_route:
+  - the view opened in Revit, and the camera shown in a plan (Show Camera)
+  - one Ctrl+Z puts the camera back, or removes the new view, in a single step (Golden Rule 16)
