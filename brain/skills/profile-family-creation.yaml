@@ -21,6 +21,9 @@ purpose: >
 
   0. REPORT_FAMILY_TEMPLATE FIRST - confirm a profile (the Profiles category);
      read its view, as Ref. Level in the templates read so far, and its planes.
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING: the section's shape and which of its sizes change
      between types.
   2. SET_FAMILY_SETTINGS "Profile Usage=..." - where Revit offers the
@@ -50,6 +53,9 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES
