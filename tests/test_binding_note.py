@@ -239,6 +239,39 @@ def linked_carry_is_refused(text):
     return found
 
 
+def typed_ids_only_on_a_read(text):
+    """Are typed element ids matched only for `elementIds`, only on a read?
+
+    FRAGMENT-ISSUES 5b-441, the half the host cannot see. The host proves what
+    TypedIds, TypedIdsNotFound and TypedIdsOnAWrite say; only RevitFragment.cs
+    shows that the binder asks `reading` BEFORE it matches anything, that the
+    main bind passes `!writing`, and that a setup step - which runs inside the
+    group a write opened - passes false. Every position is checked for -1
+    first (heron-ship 2a).
+    """
+    found = []
+    keyed = text.find('if (need == "elementIds")')
+    asks = text.find("if (!reading)", keyed if keyed >= 0 else 0)
+    matches = text.find("return ElementsWithTypedIds(doc, typed, out problem);",
+                        keyed if keyed >= 0 else 0)
+    found.append((keyed >= 0 and asks >= 0 and matches >= 0 and keyed < asks < matches,
+                  "typed ids are keyed on `elementIds` and refused on a write BEFORE "
+                  "anything is matched (at %d, %d, %d)" % (keyed, asks, matches)))
+    found.append((re.search(r"supplied, expect, !writing,\s*out prologue, out binding\)",
+                            text) is not None,
+                  "the fragment's own bind says it reads only when it does not write"))
+    found.append((re.search(r"client, supplied, null, false,\s*out stepPrologue", text)
+                  is not None,
+                  "a setup step is never a read for this rule"))
+    # Code only - a comment explaining why the constructor is avoided names it.
+    built = [line.strip() for line in text.splitlines()
+             if "new ElementId(" in line and not line.strip().startswith("//")]
+    found.append((not built,
+                  "and no ElementId is built from a number anywhere in the binder%s"
+                  % ("" if not built else " - found: %s" % built)))
+    return found
+
+
 def main():
     tfm = _tfm()
     if tfm is None:
@@ -311,6 +344,11 @@ def main():
         print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
     linked_ok = all(ok_here for ok_here, _ in linked)
 
+    typed = typed_ids_only_on_a_read(text)
+    for ok_here, said_here in typed:
+        print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
+    typed_ok = all(ok_here for ok_here, _ in typed)
+
     # The Python half of the same rule, word for word on the same cases.
     sys.path.insert(0, os.path.join(ROOT, "brain"))
     import heron_fragment as HF
@@ -328,7 +366,7 @@ def main():
     agrees = all(HF.need_may_be_empty(need) == want for need, want in mirror)
     print("  %s  heron_fragment.need_may_be_empty answers the %d cases the host "
           "does" % ("ok  " if agrees else "FAIL", len(mirror)))
-    return 0 if ok and asks and empties and linked_ok and agrees else 1
+    return 0 if ok and asks and empties and linked_ok and typed_ok and agrees else 1
 
 
 if __name__ == "__main__":

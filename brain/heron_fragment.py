@@ -422,6 +422,38 @@ def id_need_names(path=ADDIN_FRAGMENT):
     return set(_ID_NAME.findall(source[start:end]))
 
 
+_TYPED_ID_NAME = re.compile(
+    r'if \(need == "([A-Za-z]+)"\)\s*\{\s*string typedProblem;\s*'
+    r'var typed = HeronBindingNote\.TypedIds\(')
+
+
+def typed_id_need_names(path=ADDIN_FRAGMENT):
+    """Every id-list need-name the add-in takes ids TYPED as digits for.
+
+    FRAGMENT-ISSUES ROW 5b-441. `FromRequest` matches typed element ids as
+    TEXT for `elementIds`, on a read only, and refuses them for every other
+    name exactly as before. Read out of the C#, like id_need_names and for its
+    reason: a hint offering digits the add-in refuses, or hiding digits it
+    takes, is a blank filled one way and judged another.
+
+    RAISES when the add-in cannot be read or the rule cannot be found - the
+    same stop as id_need_names, and how_to_type turns it into NOT KNOWN.
+    """
+    try:
+        source = io.open(path, encoding="utf-8", errors="replace").read()
+    except (IOError, OSError) as exc:
+        raise RuntimeError(
+            "Cannot read %s, so which id names take typed ids is unknown: %s"
+            % (path, exc))
+    found = set(_TYPED_ID_NAME.findall(source))
+    if not found:
+        raise RuntimeError(
+            "Found no typed-id rule (`HeronBindingNote.TypedIds`) in %s, so "
+            "whether any id need takes typed ids cannot be said. If the rule "
+            "was moved, move this reader with it." % path)
+    return found
+
+
 def how_to_type(declared, need_name=None):
     """What a person needs to know to fill this one in, beyond its type.
 
@@ -634,6 +666,22 @@ def how_to_type(declared, need_name=None):
         if ruled:
             return ('the NAME of the thing, never its number - "Level 1" for a '
                     'levelId. The field\'s own name says which kind')
+        # TYPED IDS, 5b-441: one name takes digits, matched as TEXT in the
+        # model being read and on a read only. Still no NAME - so the hint
+        # still opens CANNOT BE TYPED BY NAME, and stops saying "or number".
+        try:
+            typed = many and need_name in typed_id_need_names()
+        except RuntimeError:
+            typed = False
+        if typed:
+            return ('CANNOT BE TYPED BY NAME - the add-in has no rule for what '
+                    'these ids name. Type the element IDS instead, as Revit '
+                    'shows them: digits only, comma separated - "8453537, '
+                    '8453556" - matched as text in the model being read, on a '
+                    'READ only; an id naming nothing there refuses the call, '
+                    'naming it. Or the word `selected` for everything selected '
+                    'in Revit, in the model being read, and a blank binds an '
+                    'empty list')
         if many:
             return ('CANNOT BE TYPED BY NAME - the add-in has no rule for what '
                     'these ids name, so it refuses any name or number. The '

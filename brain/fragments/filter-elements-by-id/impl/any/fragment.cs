@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc` and `elementIds` are already in scope, and
-// leaves `elements` and `missing` in scope for whatever is composed after it.
+// leaves `elements`, `missing` and - since version 2 - `named` in scope for
+// whatever is composed after it.
 //
 // WHY A MISSING ID IS REPORTED AND NOT SKIPPED.
 //
@@ -37,3 +38,48 @@ foreach (var id in elementIds)
     if (element == null) missing.Add(id);
     else elements.Add(element);
 }
+
+// VERSION 2 (FRAGMENT-ISSUES 5b-441): WHAT EACH ELEMENT IS, IN ONE STRING.
+//
+// Ids may now be TYPED - the binder matches them as text in this document and
+// hands them here like any others - and a digit typed wrong names a different
+// element with nothing about it looking wrong. So the answer says what every
+// element is: its id, its category, and "Family: Type", the way the
+// Properties palette writes it. A STRING, because a reply cuts a list to three
+// items and prints an element by its name alone - "[Tees, Tees, Tees, ...]" -
+// which is exactly what cannot show a wrong id. Read it BEFORE a change uses
+// these elements through expect_from.
+//
+// "Family: Type" from the element's own type, which is the FamilySymbol for a
+// family instance and the ElementType for a wall or a duct. An element with no
+// type - a view, a level, a type itself - is named by its own name.
+
+Func<Element, string> describeOne = element =>
+{
+    string category = null;
+    try { category = element.Category == null ? null : element.Category.Name; } catch { }
+
+    string what = null;
+    try
+    {
+        var kind = doc.GetElement(element.GetTypeId()) as ElementType;
+        if (kind != null)
+            what = string.IsNullOrEmpty(kind.FamilyName) ? kind.Name : kind.FamilyName + ": " + kind.Name;
+    }
+    catch { }
+    if (string.IsNullOrEmpty(what))
+    {
+        try { what = element.Name; } catch { }
+    }
+
+    return element.Id.ToString() + " "
+        + (string.IsNullOrEmpty(category) ? "(no category)" : category)
+        + (string.IsNullOrEmpty(what) ? "" : " - \"" + what + "\"");
+};
+
+var described = new List<string>();
+foreach (var element in elements) described.Add(describeOne(element));
+var named = (elements.Count == 0
+        ? "no element"
+        : elements.Count + " element(s): " + string.Join("; ", described))
+    + (missing.Count == 0 ? "" : ". " + missing.Count + " id(s) named nothing - see `missing`");
