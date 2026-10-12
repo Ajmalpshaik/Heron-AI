@@ -607,6 +607,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-di.md`](needs-checking/group-di.md)
 
+## Group DJ - every size_lookup in a family checked against the tables it names (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dj.md`](needs-checking/group-dj.md)
+
 ## Group DK - walls, grids, lines and reference planes a fraction of a degree off an axis turned onto it (2026-10-12)
 
 **Its own file:** [`needs-checking/group-dk.md`](needs-checking/group-dk.md)

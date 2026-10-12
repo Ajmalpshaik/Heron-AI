@@ -1,0 +1,122 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-078
+semantic-identity: "does every size_lookup in this family find its table and its column"
+kind: action
+domain: revit.families
+capability: CHECK_FAMILY_SIZE_TABLES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks the lookup tables of the family open in front against the formulas
+  that read them, and names every size_lookup that cannot find what it asks
+  for - the table, or the column - type by type. The check to run after a
+  table is imported or renamed, and before the family is loaded into a job.
+
+  **A LOOKUP THAT MISSES IS SILENT.** size_lookup answers with its DEFAULT
+  when the table it names is not in the family, or the column it asks for is
+  not in that table. The family then builds at the default size, Revit says
+  nothing, and the first sign is a fitting the wrong size in a project weeks
+  later. Reading the table alone (REPORT_FAMILY_SIZE_TABLE) cannot see this:
+  the table is fine, it is the formula's way to it that is broken.
+
+  **THE TABLE NAME IS READ PER TYPE.** The first argument of size_lookup is a
+  Text parameter holding the table's name (seen in Revit 2024, docs/43 section
+  5), and that value can differ between types. One type naming a table that
+  is not there is one type building wrong, so every finding names the type.
+
+  **WHAT IT FINDS:** a table name that is blank or names no table in the
+  family; a first argument that is not a parameter, or not a Text one; a
+  column that is not in the table; a table or column name that differs only
+  in letter case; a table with no rows; a column other than the first with
+  no name; and, as a note rather than a problem, a table no type names.
+  Each problem is said once however many types share it.
+
+  **WHAT IT DOES NOT CHECK, AND SAYS SO:** whether each type's KEY value has
+  a row in the table. That needs the family's sizes and the table's cells
+  compared in one unit, a decision this read has not been given - so it is
+  reported as NOT CHECKED, never as passed. REPORT_FAMILY_SIZE_TABLE shows
+  the rows to compare by eye.
+
+  **IT NEEDS THE FAMILY OPEN FOR EDITING.** With a project in front it says
+  so rather than reporting no problems, because "nothing wrong" and "you are
+  looking at the wrong document" are different answers.
+
+  Changes nothing and opens no transaction.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: problemCount
+      # Distinct problems found. 0 with lookupsChecked above 0 is the clean
+      # answer; 0 with nothing checked is not, and the findings say which.
+      role: result
+      type: int
+    - name: report
+      # Every problem, then every note, on one line each. A string, because a
+      # list is abbreviated to three entries before a reader sees it.
+      role: result
+      type: string
+    - name: lookupsChecked
+      # size_lookup calls found in the family's formulas. Work DONE, never a
+      # thing found (D-52).
+      role: accounting
+      type: int
+    - name: tablesChecked
+      role: accounting
+      type: int
+    - name: typesRead
+      role: accounting
+      type: int
+    - name: notAFamily
+      # The document in front is a project. The evidence it looked in the
+      # wrong place, never a clean result (D-52).
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilySizeTableManager.
+  GetFamilySizeTableManager`, `GetAllSizeTableNames`, `GetSizeTable`,
+  `FamilySizeTable.NumberOfRows`, `NumberOfColumns`, `GetColumnHeader`,
+  `FamilySizeTableColumn.Name`, `FamilyManager.GetParameters`, `Types`,
+  `CurrentType`, `FamilyParameter.Formula`, `Definition`, `StorageType` and
+  `FamilyType.AsString` and `Name` are 2020 through 2027, read with
+  `tools/api-surface --members` over the reference assemblies on 2026-10-12.
+  No number is read or converted - names and text only - so the 2021 units
+  move cannot reach it. The formula is parsed as text: whether Revit itself
+  matches a column name with or without regard to letter case is not
+  established, and neither is it for a table name, so a case-only
+  difference in either is reported, not judged.
+
+# ROUTING - each sentence below measured through the host lookup on
+# 2026-10-12. Not yet repeated in REPORT_FAMILY_SIZE_TABLE's card: that card
+# is PROVEN, and this change leaves it untouched.
+#
+#   "check the lookup tables in this family" -> here - formulas against
+#                                               tables, in the family in front
+#   "what is in this family's lookup table"  -> REPORT_FAMILY_SIZE_TABLE - the
+#                                               rows, no verdict
+#   "check the lookup tables of all the families"
+#                                            -> REPORT_FAMILY_TABLES_IN_PROJECT,
+#                                               from the project
+#   "write a table back"                     -> WRITE_FAMILY_SIZE_TABLE
+
+utterances:
+  - check the lookup tables in this family
+  - does every size lookup find its table
+  - why does this family ignore its lookup table
+  - check the size_lookup formulas
