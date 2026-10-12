@@ -50,21 +50,22 @@ contract:
     - name: view
       type: View
       source: request
-    # Optional. Points in millimetres; two or more draw one wire through
-    # them. Empty draws device to device.
-    - name: points
-      type: IList<XYZ>
+    # Points in millimetres as text - "0,0,0; 2000,1000,0" - two or more draw
+    # one wire through them. An EMPTY value draws device to device. Text, not a
+    # list of points, because a list need cannot be left out.
+    - name: pointsMm
+      type: string
       source: request
-    # Optional. A wire type by name; empty takes the project's first.
+    # A wire type by name; an EMPTY value takes the project's first.
     - name: wireType
       type: string
       source: request
-    # Optional. "arc" (the default) or "chamfer".
+    # "arc" or "chamfer"; an EMPTY value means arc.
     - name: wiringStyle
       type: string
       source: request
-    # Optional. How near in plan a device's connector must be to an end point
-    # for the wire to land on it. Empty or 0 means 300 mm.
+    # How near in plan a device's connector must be to an end point for the
+    # wire to land on it; 0 means 300 mm.
     - name: snapMm
       type: double
       source: request
@@ -96,8 +97,9 @@ compatibility-note: >
   ElementId, WiringType, IList<XYZ>, Connector, Connector), WireType,
   WiringType.Arc and Chamfer, and Wire.ConnectorManager are present 2020
   through 2027 - read off RevitAPI.xml in the Nice3point reference packages
-  for all eight releases on 2026-10-12. Points arrive in millimetres and are
-  made feet by the add-in's point reader, as everywhere in the library.
+  for all eight releases on 2026-10-12. Points arrive as text in millimetres
+  and are made feet here, divided by 304.8 (D-20), read with the invariant
+  culture so a decimal point is a point on every PC.
 
 # ROUTING - the same rows are in the fragments named here.
 #

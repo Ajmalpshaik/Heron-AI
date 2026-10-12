@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a floor plan with three spot elevations on a floor and one spot coordinate on a column, view set to that plan
+    expect: >
+      spotCount 4, and `spots` lists each with "Spot Elevations" or "Spot
+      Coordinates", the text exactly as the plan shows it, and the floor or
+      column it is on
+
+negative:
+  - given: view set to a section with no spot dimensions in it
+    expect: >
+      spotCount 0 and `spots` empty - not the plan's four
+
+  - given: the floor under one spot elevation deleted
+    expect: >
+      that spot's id in `onNothing`, its line saying it measures nothing
+
+second_route:
+  - the plan itself, each spot's text read by eye against `spots`

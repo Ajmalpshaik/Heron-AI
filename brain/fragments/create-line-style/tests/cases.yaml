@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: styleName "Heron Setout", colour "0,0,255", weight 3, patternName "Dash"
+    expect: >
+      madeNew true and readBack "colour 0,0,255, weight 3, pattern Dash".
+      Manage > Additional Settings > Line Styles lists it so
+
+negative:
+  - given: styleName "Heron Setout" again straight after, updateExisting not said
+    expect: >
+      refused - the style exists - and its graphics unchanged
+
+  - given: patternName "No Such Pattern"
+    expect: >
+      refused before anything is made: no line pattern of that name
+
+second_route:
+  - Manage > Additional Settings > Line Styles, the row read by eye
+  - one Ctrl+Z removes it in a single step (Golden Rule 16)

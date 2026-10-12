@@ -43,6 +43,12 @@ jobs:
     negative-setup-set:
       category: Walls
       levelId: Level 2
+    set:
+      snapDegrees: 0
+      maxOffDegrees: 0
+    negative-set:
+      snapDegrees: 0
+      maxOffDegrees: 0
     note: >
-      snapDegrees and maxOffDegrees are left empty on purpose: the defaults
-      (90 and 0.5) are what the warning fixer is used with.
+      snapDegrees and maxOffDegrees are 0 on purpose: 0 takes the defaults
+      (90 and 0.5), which are what the warning fixer is used with.

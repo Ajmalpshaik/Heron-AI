@@ -55,8 +55,12 @@ jobs:
       categories: Mechanical Equipment, Air Terminals
     set:
       systemType: Supply Air
+      systemName: ""
+      baseEquipment: ""
     negative-set:
       systemType: Return Air
+      systemName: ""
+      baseEquipment: ""
     note: >
       The negative changes only the system type. Read `skipped` and `refused`:
       each diffuser named as having no free Return Air connector.
@@ -106,10 +110,16 @@ jobs:
       levelId: Level 1
     set:
       view: "FloorPlan: Level 1"
+      pointsMm: ""
+      wireType: ""
       wiringStyle: arc
+      snapMm: 0
     negative-set:
       view: "{3D}"
+      pointsMm: ""
+      wireType: ""
       wiringStyle: arc
+      snapMm: 0
     note: >
       The fixtures filter also finds DB-1's two circuited sockets, so the
       chain is of five; read `report` for the order walked.
@@ -119,8 +129,10 @@ jobs:
   - fragment: sync-spaces-with-linked-rooms
     expect: created
     set:
-      link: Heron Rooms Link
+      linkName: Heron Rooms Link
+      phaseName: ""
       updateNames: false
     negative-set:
-      link: Heron Empty Link
+      linkName: Heron Empty Link
+      phaseName: ""
       updateNames: false

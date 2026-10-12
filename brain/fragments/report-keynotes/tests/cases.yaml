@@ -1,0 +1,21 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: the default keynote file loaded, two wall types keyed with keys from it, and one wall type keyed "99 99 99" which the file does not hold; three keynote tags in a plan, view set to that plan
+    expect: >
+      tagCount 3, each line naming its tag's text as a key in the table, and
+      missingFromTable naming "99 99 99" with the wall type carrying it
+
+negative:
+  - given: view set to a plan with no keynote tags, every keynote value in the table
+    expect: >
+      tagCount 0 and missingFromTable empty - nothing reported as missing that
+      the table holds
+
+  - given: a model with no keynote table loaded
+    expect: >
+      tableLoaded false and the findings saying no value could be checked -
+      never every value reported missing
+
+second_route:
+  - Annotate > Keynote > Keynoting Settings > View, read beside missingFromTable

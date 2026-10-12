@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a plan with dimensions of 450, 900, 1200 and 3000 mm and a string of 300 + 2400, viewName that plan, minMm 0, maxMm 1000
+    expect: >
+      matched 3 - the 450, the 900 and the string (its 300 segment) - and
+      `elements` holding those three; outside 2
+
+negative:
+  - given: the same plan, minMm 5000, maxMm 0
+    expect: >
+      matched 0, `elements` empty, outside 5 - nothing over 5 m
+
+  - given: minMm 0 and maxMm 0
+    expect: >
+      nothing selected and findings saying every dimension is not a range
+
+second_route:
+  - the plan itself, each matched dimension read by eye against its value

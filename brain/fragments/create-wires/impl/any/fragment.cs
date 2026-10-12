@@ -1,4 +1,4 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `view`, `points`, `wireType`,
+// NOT STANDALONE. Assumes `doc`, `elements`, `view`, `pointsMm`, `wireType`,
 // `wiringStyle` and `snapMm` are in scope; leaves `made`, `wireIds`,
 // `looseEnds`, `report` and `findings` behind.
 //
@@ -45,6 +45,37 @@ Func<Element, Connector> electrical = e =>
 Func<XYZ, XYZ, double> planDistance = (a, b) =>
     Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
+// THE POINTS, AS TEXT IN MILLIMETRES - "x,y,z; x,y,z" - and EMPTY MEANS NONE.
+// A list-of-points need cannot be left out (the binder refuses an absent one),
+// and "no points, chain the devices" is half of what this does, so the points
+// are read here. A point that is not three numbers stops the run rather than
+// being skipped, because a wire with one vertex missing is a different wire.
+List<XYZ> points = null;
+string pointProblem = null;
+var pointText = (pointsMm ?? "").Trim();
+if (pointText != "")
+{
+    points = new List<XYZ>();
+    foreach (var chunk in pointText.Split(';'))
+    {
+        if (chunk.Trim() == "") continue;
+        var parts = chunk.Split(',');
+        double x, y, z;
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        var numberStyle = System.Globalization.NumberStyles.Float;
+        if (parts.Length != 3
+            || !double.TryParse(parts[0].Trim(), numberStyle, culture, out x)
+            || !double.TryParse(parts[1].Trim(), numberStyle, culture, out y)
+            || !double.TryParse(parts[2].Trim(), numberStyle, culture, out z))
+        {
+            pointProblem = "\"" + chunk.Trim() + "\" is not a point - three numbers in millimetres, "
+                + "separated by commas, points separated by semicolons. NO WIRE WAS DRAWN.";
+            break;
+        }
+        points.Add(new XYZ(x / MmPerFoot, y / MmPerFoot, z / MmPerFoot));
+    }
+}
+
 var devices = new List<Element>();
 var noConnector = new List<string>();
 foreach (var element in elements)
@@ -70,8 +101,9 @@ foreach (var candidate in new FilteredElementCollector(doc).OfClass(typeof(WireT
     }
 }
 
-string refusal = null;
-if (view == null || (view.ViewType != ViewType.FloorPlan && view.ViewType != ViewType.CeilingPlan))
+string refusal = pointProblem;
+if (refusal != null) { }
+else if (view == null || (view.ViewType != ViewType.FloorPlan && view.ViewType != ViewType.CeilingPlan))
     refusal = "A wire is drawn in one floor plan or reflected ceiling plan, and "
         + (view == null ? "no view was given" : "\"" + view.Name + "\" is neither")
         + ", so NO WIRE WAS DRAWN.";

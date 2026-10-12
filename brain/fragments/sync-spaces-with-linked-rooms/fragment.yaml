@@ -45,19 +45,23 @@ contract:
   needs:
     - name: doc
       type: Document
-    # Optional. The architect's link by name; empty takes the only loaded one.
-    - name: link
-      type: RevitLinkInstance
+    # The architect's link by name, whole or its start ("Arch.rvt"); an EMPTY
+    # value takes the only loaded link. A string, because a typed link need
+    # cannot be left out.
+    - name: linkName
+      type: string
       source: request
-    # Optional. The phase new spaces are made in; empty takes the last.
-    - name: phase
-      type: Phase
+    # The phase new spaces are made in, by name; an EMPTY value takes the
+    # model's last phase.
+    - name: phaseName
+      type: string
       source: request
     # true renames spaces whose number or name differs from the room's;
-    # false only reports them.
+    # false, or not said, only reports them.
     - name: updateNames
       type: bool
       source: request
+      optional: true
   provides:
     - name: created
       role: result

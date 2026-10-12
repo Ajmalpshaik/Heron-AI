@@ -11,9 +11,11 @@
 // That one sets a LITERAL. "Put AJ- in front of every mark" cannot be done that
 // way, because the value is different on every element.
 //
-// THE ELEMENT'S NAME IS JUST ANOTHER FIELD.
+// THE ELEMENT'S NAME IS JUST ANOTHER FIELD - AND SO IS A TEXT NOTE'S WORDING.
 //
-// `field` of "Name" edits Element.Name; anything else is a parameter. The
+// `field` of "Name" edits Element.Name; `field` of "Text" on a text note edits
+// the note's own wording, TextNote.Text, which is no parameter at all (version
+// 2, 2026-10-12, the gap fill); anything else is a parameter. The
 // earlier library had a rename fragment and a prefix/suffix fragment carrying
 // the same four transformations twice - so a fix to the replace rule could
 // reach one and miss the other.
@@ -70,6 +72,14 @@ string refused = null;
 
 bool editingName = string.Equals((field ?? "").Trim(), "Name",
                                  StringComparison.OrdinalIgnoreCase);
+// A text note's wording. Decided per element below, because a set handed in
+// can mix text notes with other elements; on anything that is not a note,
+// "Text" is looked up as a parameter like any other name.
+bool askingText = string.Equals((field ?? "").Trim(), "Text",
+                                StringComparison.OrdinalIgnoreCase);
+// Revit hands a note's text back with a closing carriage return; compared
+// without it, so a read-back is not called altered for a character nobody typed.
+Func<string, string> noteText = raw => (raw ?? "").TrimEnd('\r', '\n');
 string how = (mode ?? "").Trim().ToLowerInvariant();
 
 // DECIDED BEFORE ANY ELEMENT IS READ, let alone written. Each of these three
@@ -85,13 +95,19 @@ else if (how.Length == 0)
     refused = "no mode was given, so there is nothing to do. Use prefix, suffix or replace. "
         + "NOTHING WAS CHANGED";
 }
-else if (how != "prefix" && how != "suffix" && how != "replace")
+else if (how == "set" && !askingText)
+{
+    refused = "'set' writes the whole wording of a text note and is for field Text only. To set "
+        + "one value on a parameter, that is WRITE_ELEMENT_PARAMETERS. NOTHING WAS CHANGED";
+}
+else if (how != "prefix" && how != "suffix" && how != "replace" && how != "set")
 {
     refused = string.Format(
         "'{0}' is not an edit this fragment makes, so NOTHING WAS CHANGED. It makes three: "
         + "prefix (put text in front), suffix (put text after) and replace (swap one piece of "
-        + "text for another). Carrying on would hand every value straight back and report them "
-        + "all untouched, which reads exactly like an edit that had nothing to do", mode);
+        + "text for another) - and set, for a text note's whole wording. Carrying on would hand "
+        + "every value straight back and report them all untouched, which reads exactly like an "
+        + "edit that had nothing to do", mode);
 }
 else if (string.IsNullOrEmpty(text))
 {
@@ -163,6 +179,7 @@ Func<string, string> transform = current =>
 {
     if (how == "prefix") return text + current;
     if (how == "suffix") return current + text;
+    if (how == "set") return text;
     if (how == "replace")
     {
         if (string.IsNullOrEmpty(text)) return current;
@@ -182,10 +199,15 @@ foreach (var element in elements)
 
     string current = null;
     Parameter parameter = null;
+    var note = askingText ? element as TextNote : null;
 
     if (editingName)
     {
         try { current = element.Name; } catch { }
+    }
+    else if (note != null)
+    {
+        try { current = noteText(note.Text); } catch { }
     }
     else
     {
@@ -226,7 +248,15 @@ foreach (var element in elements)
         try { current = parameter.AsString(); } catch { }
     }
 
-    if (string.IsNullOrEmpty(current)) { blank.Add(element.Id); continue; }
+    // A blank stays blank - except a note's wording being SET, which is the
+    // whole of what was asked and creates nothing the modeller did not type.
+    if (string.IsNullOrEmpty(current) && !(note != null && how == "set"))
+    {
+        blank.Add(element.Id);
+        continue;
+    }
+    if (current == null) current = "";
+    if (note == null && how == "set") { absent.Add(element.Id); continue; }
 
     string wanted = transform(current);
     if (wanted == current) { untouched.Add(element.Id); continue; }
@@ -235,6 +265,7 @@ foreach (var element in elements)
     try
     {
         if (editingName) { element.Name = wanted; accepted = true; }
+        else if (note != null) { note.Text = wanted; accepted = true; }
         else accepted = parameter.Set(wanted);
     }
     catch { readOnly.Add(element.Id); continue; }
@@ -247,6 +278,7 @@ foreach (var element in elements)
     try
     {
         if (editingName) now = element.Name;
+        else if (note != null) now = noteText(note.Text);
         else now = parameter.AsString();
     }
     catch { }
@@ -259,7 +291,14 @@ foreach (var element in elements)
 // AFTER THE LOOP, AND ONLY BECAUSE NOTHING WAS WRITTEN ON EITHER PATH. Both
 // branches below are reached only when every element fell out at `absent` or
 // at the not-text check, and both of those `continue` before a single Set.
-if (refused == null && !editingName && handed > 0 && absent.Count == handed)
+if (refused == null && !editingName && handed > 0 && absent.Count == handed && how == "set")
+{
+    refused = string.Format(
+        "'set' writes a text note's wording and not one of the {0} element(s) handed in is a text "
+        + "note, so NOTHING WAS CHANGED. Filter for Text Notes first", handed);
+    absent.Clear();
+}
+else if (refused == null && !editingName && handed > 0 && absent.Count == handed)
 {
     refused = string.Format(
         "not one of the {0} element(s) handed in carries a field called '{1}', so NOTHING WAS "

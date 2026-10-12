@@ -9,13 +9,21 @@ semantic-identity: "change the text that is already there, rather than replacing
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Transforms text that is already on each element - add a prefix, add a suffix,
-  or replace part of it - instead of overwriting it with one flat value.
+  or replace part of it - instead of overwriting it with one flat value. A
+  text note's own wording is one more field: find and replace across text
+  notes, or set a note's whole wording.
+
+  **A TEXT NOTE'S WORDING IS FIELD "Text"** (version 3, 2026-10-12, the gap
+  fill). It is no parameter - it is the note's own text - so it is read and
+  written through the note itself, and compared without the closing carriage
+  return Revit adds. Mode "set" writes the whole wording, and only there: one
+  value on a parameter is WRITE_ELEMENT_PARAMETERS.
 
   **`WRITE_ELEMENT_PARAMETERS` SETS A LITERAL AND THAT IS A DIFFERENT JOB.**
   *"Put AJ- in front of every mark"* cannot be done by setting a value, because
@@ -142,7 +150,9 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `Element.Name`, `LookupParameter`,
+  One implementation for every release. `TextElement.Text` (read and
+  written for a text note, version 3) is present 2020 through 2027 - read off
+  RevitAPI.xml for all eight releases on 2026-10-12. `Element.Name`, `LookupParameter`,
   `Parameter.AsString` and `Parameter.Set(string)` are unchanged 2020 to 2027,
   and no units call is made - this only ever touches text, which is what keeps
   it clear of the 2021 units move entirely. Only string-storage parameters are
@@ -162,6 +172,8 @@ compatibility-note: >
 #                                           for text notes on a drawing
 #   "change SUP to SUPPLY in the         -> EDIT_PARAMETER_TEXT
 #    parameter"
+#   "find and replace in the text notes" -> here, field Text (version 3)
+#   "change the wording of this note"    -> here, field Text, mode set
 #   "change part of the name"            -> EDIT_PARAMETER_TEXT for a
 #                                           parameter, RENAME_ELEMENTS for a
 #                                           name. Neither is a text note
@@ -173,3 +185,7 @@ utterances:
   - rename these with a suffix
   - change part of the name
   - swap that word in the parameter
+  - find and replace REV A with REV B in all the text notes
+  - change the wording of this text note
+  - find and replace in the text notes
+  - change the wording of this note

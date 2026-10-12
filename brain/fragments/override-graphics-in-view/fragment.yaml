@@ -196,6 +196,10 @@ compatibility-note: >
 #                                        FIRST, then here with what it
 #                                        returns. Matching is a read and a
 #                                        write, and this half only writes
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "every dimension under 1 m in red"     -> SELECT_DIMENSIONS_BY_VALUE, then here
 utterances:
   - bring the services forward
   - make the architecture faint

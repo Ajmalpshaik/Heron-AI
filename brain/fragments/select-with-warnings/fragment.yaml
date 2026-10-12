@@ -99,8 +99,8 @@ compatibility-note: >
 # CHECK_FAMILY_STANDARDS.
 #
 #   "select everything with a warning" -> here
-#   "fix the slightly off axis warnings" -> here, then STRAIGHTEN_OFF_AXIS_LINES
-#                                       (2026-10-12)
+#   "fix the slightly off axis warnings" -> STRAIGHTEN_OFF_AXIS_LINES, after this
+#                                       selects them (2026-10-12)
 #   "isolate the error level warnings" -> here with errorsOnly, then
 #                                       ISOLATE_ELEMENTS
 #   "what warnings does this

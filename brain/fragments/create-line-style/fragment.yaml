@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-126
+semantic-identity: "make a line style with this colour, weight and pattern, or change one"
+kind: action
+domain: revit.views
+capability: CREATE_LINE_STYLE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A LINE STYLE IS A SUBCATEGORY OF LINES, so it is made with NewSubcategory
+# under Lines and given a colour, projection weight and pattern.
+#
+# EACH IS OPTIONAL BY VALUE: colour "" keeps black or the existing colour,
+# weight 0 keeps 1 or the existing weight, pattern "" keeps Solid or the
+# existing pattern. A pattern is found by name, never invented.
+#
+# AN EXISTING STYLE IS REFUSED unless updateExisting is true, and then its
+# graphics change in place - every line drawn in it changes with it.
+#
+# READ BACK: colour, weight and pattern off the style afterwards.
+#
+# REMAP_LINE_STYLES moves lines from one style to another; this makes or
+# changes a style.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates a line style - Manage > Additional Settings > Line Styles - with a
+  colour, line weight and line pattern, or changes the graphics of an existing
+  one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: styleName
+      type: string
+      source: request
+    # "R,G,B" each 0 to 255; an EMPTY value keeps black, or the existing colour.
+    - name: colour
+      type: string
+      source: request
+    # 1 to 16; 0 keeps 1, or the existing weight.
+    - name: weight
+      type: int
+      source: request
+    # A line pattern by name, or "Solid"; an EMPTY value keeps Solid, or the
+    # existing pattern.
+    - name: patternName
+      type: string
+      source: request
+    # true changes an existing style of that name; false, or not said,
+    # refuses it.
+    - name: updateExisting
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: style
+      role: result
+      type: GraphicsStyle
+    - name: madeNew
+      role: result
+      type: bool
+    - name: readBack
+      # The style's colour, weight and pattern, read off it afterwards.
+      role: result
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Categories.NewSubcategory,
+  Category.SubCategories, LineColor, SetLineWeight, GetLineWeight,
+  SetLinePatternId, GetLinePatternId and GetGraphicsStyle,
+  LinePatternElement.GetSolidPatternId and GetLinePatternElementByName are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a red dashed line style"            -> here
+#   "change the hidden lines style to blue"   -> here, updateExisting
+#   "move these lines to the thin lines style" -> REMAP_LINE_STYLES
+#   "bring the line styles from that model"   -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
+#   "make a dash dot pattern"                 -> CREATE_LINE_PATTERN
+
+utterances:
+  - make a red dashed line style
+  - create a line style called Heron Setout, weight 3, blue
+  - change the colour of the demolition line style to red
+  - add a new line style with the centre line pattern

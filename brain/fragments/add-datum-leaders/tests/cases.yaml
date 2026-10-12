@@ -1,0 +1,21 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: four grids in a floor plan, bubbles shown at their top ends only, no elbows, ends empty
+    expect: >
+      added 4, one elbow at each top end, read back; the bottom ends untouched
+      because they show no bubble
+
+negative:
+  - given: the same four grids straight after
+    expect: >
+      added 0 and alreadyHad 4 - nothing added twice
+
+  - given: four grids with no bubble shown at the bottom, ends "end" (the bottom)
+    expect: >
+      added 0 and noBubble 4, each named: Revit puts an elbow only where the
+      bubble shows
+
+second_route:
+  - the plan itself - each grid head with its elbow, which can be dragged
+  - one Ctrl+Z takes every elbow away in a single step (Golden Rule 16)

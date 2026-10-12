@@ -104,7 +104,7 @@ compatibility-note: >
 
 # ROUTING - the same rows are in the fragments named here.
 #
-#   "fix the slightly off axis warnings"      -> here, after SELECT_WITH_WARNINGS
+#   "fix the slightly off axis warnings"      -> here, after SELECT_WITH_WARNINGS selects them
 #   "straighten these walls"                  -> here
 #   "which elements have warnings"            -> SELECT_WITH_WARNINGS
 #   "rotate the equipment 90 degrees"         -> ROTATE_ELEMENTS - a turn by a
@@ -116,3 +116,4 @@ utterances:
   - straighten these walls onto the axis
   - these grids are slightly off axis, square them up
   - snap these lines to exactly horizontal and vertical
+  - straighten these walls

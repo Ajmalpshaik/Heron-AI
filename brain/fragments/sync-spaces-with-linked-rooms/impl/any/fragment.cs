@@ -1,4 +1,4 @@
-// NOT STANDALONE. Assumes `doc`, `link`, `phase` and `updateNames` are in
+// NOT STANDALONE. Assumes `doc`, `linkName`, `phaseName` and `updateNames` are in
 // scope; leaves `created`, `renamed`, `alreadyMatching`, `orphans`,
 // `notPlaced`, `report` and `findings` behind.
 //
@@ -42,22 +42,35 @@ var lines = new List<string>();
 var findings = new List<string>();
 string refusal = null;
 
-// THE LINK: the one given, or the only loaded one.
-RevitLinkInstance source = link;
-if (source == null)
+// THE LINK BY NAME, OR THE ONLY LOADED ONE WHEN THE NAME IS EMPTY. A string
+// and not a RevitLinkInstance need, because a typed need cannot be left out -
+// the binder refuses an absent one - and "the only link" is the common case.
+// A link instance's name reads "file.rvt : 1 : location", so the given name
+// is matched against the start of it as well as the whole.
+RevitLinkInstance source = null;
+var wantedLink = (linkName ?? "").Trim();
+var loaded = new List<RevitLinkInstance>();
+foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(RevitLinkInstance)))
 {
-    var loaded = new List<RevitLinkInstance>();
-    foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(RevitLinkInstance)))
-    {
-        var instance = element as RevitLinkInstance;
-        if (instance != null && instance.GetLinkDocument() != null) loaded.Add(instance);
-    }
-    if (loaded.Count == 1) source = loaded[0];
-    else refusal = loaded.Count == 0
-        ? "No linked model is loaded, so NOTHING WAS MADE. Load the architect's link first."
-        : loaded.Count + " linked models are loaded - " + string.Join(", ", loaded.Select(l => l.Name))
-          + " - and nothing says which holds the rooms, so NOTHING WAS MADE. Name the link.";
+    var instance = element as RevitLinkInstance;
+    if (instance != null && instance.GetLinkDocument() != null) loaded.Add(instance);
 }
+if (wantedLink != "")
+{
+    var matching = loaded.Where(l => string.Equals(l.Name, wantedLink, StringComparison.OrdinalIgnoreCase)
+        || l.Name.StartsWith(wantedLink, StringComparison.OrdinalIgnoreCase)).ToList();
+    if (matching.Count == 1) source = matching[0];
+    else refusal = matching.Count == 0
+        ? "No loaded link is named \"" + wantedLink + "\", so NOTHING WAS MADE. Loaded: "
+          + (loaded.Count == 0 ? "none" : string.Join(", ", loaded.Select(l => l.Name))) + "."
+        : matching.Count + " loaded links answer to \"" + wantedLink + "\" - "
+          + string.Join(", ", matching.Select(l => l.Name)) + " - so NOTHING WAS MADE. Give the whole name.";
+}
+else if (loaded.Count == 1) source = loaded[0];
+else refusal = loaded.Count == 0
+    ? "No linked model is loaded, so NOTHING WAS MADE. Load the architect's link first."
+    : loaded.Count + " linked models are loaded - " + string.Join(", ", loaded.Select(l => l.Name))
+      + " - and nothing says which holds the rooms, so NOTHING WAS MADE. Name the link.";
 
 Document linked = null;
 if (refusal == null)
@@ -66,11 +79,20 @@ if (refusal == null)
     if (linked == null) refusal = "\"" + source.Name + "\" is not loaded, so NOTHING WAS MADE.";
 }
 
-Phase onPhase = phase;
-if (refusal == null && onPhase == null)
+// THE PHASE BY NAME, OR THE LAST PHASE WHEN THE NAME IS EMPTY.
+Phase onPhase = null;
+var wantedPhase = (phaseName ?? "").Trim();
+if (refusal == null)
 {
     if (doc.Phases.Size == 0) refusal = "This model has no phase, so NOTHING WAS MADE.";
-    else onPhase = doc.Phases.get_Item(doc.Phases.Size - 1);
+    else if (wantedPhase == "") onPhase = doc.Phases.get_Item(doc.Phases.Size - 1);
+    else
+    {
+        foreach (Phase candidate in doc.Phases)
+            if (string.Equals(candidate.Name, wantedPhase, StringComparison.OrdinalIgnoreCase)) onPhase = candidate;
+        if (onPhase == null)
+            refusal = "No phase is named \"" + wantedPhase + "\", so NOTHING WAS MADE.";
+    }
 }
 
 Func<SpatialElement, string> nameOf = s =>
