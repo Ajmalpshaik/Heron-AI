@@ -249,6 +249,10 @@ compatibility-note: >
 #   "rename this family"                     -> RENAME_FAMILY
 #   "delete these family parameters"         -> DELETE_FAMILY_PARAMETERS
 #   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
+#   "replace the family parameter Width with the shared parameter Unit_Width"
+#                                            -> ADD_FAMILY_SHARED_PARAMETERS,
+#                                               replaceExisting true - a family
+#                                               parameter becomes a shared one
 #   "put 600 into Width"                     -> SET_FAMILY_TYPE_VALUES
 #   "what parameters has this family got"    -> REPORT_FAMILY_PARAMETERS
 
