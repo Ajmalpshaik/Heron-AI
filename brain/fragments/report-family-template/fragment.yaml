@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-037
-semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or face based, line based, adaptive, pattern based, profile, detail or annotation - what its template already holds, and its OmniClass Number and the codes that fit its category, and the units it shows a length in"
+semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or face based, line based, adaptive, pattern based, profile, detail or annotation - what its template already holds, and its OmniClass Number and the codes that fit its category"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TEMPLATE
@@ -48,10 +48,14 @@ purpose: >
   longer describes the code and is kept below as a record; the fragment is
   DRAFT until it is proved again.
 
-  **VERSION 3 (2026-10-12): THE LENGTH UNITS** join the report - which units
-  the family shows a length in, its symbol and rounding, and whether that is
-  metric - with a finding when it is not, so a template set to feet and
-  inches is caught before anything is built in it rather than after.
+# VERSION 3 (2026-10-12): THE LENGTH UNITS join templateReport - which units
+# the family shows a length in, its symbol and rounding, and whether that is
+# metric - with a finding when it is not, so a template set to feet and
+# inches is caught at a family build's first step rather than after it. A
+# comment, not `purpose`, because `purpose` is searched: units words there
+# moved "which template was this family made from" from 2nd to 3rd
+# (check-routing, measured 2026-10-12). Version 2's proof is still owed;
+# both are re-proved together (NEEDS-CHECKING DB15).
 
 contract:
   needs:
