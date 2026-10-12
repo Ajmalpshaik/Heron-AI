@@ -61,3 +61,27 @@ With `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Revits are co
 | **DE7** | `parameterGroup` "Identity Data" on DE2's positive; and with the family saved and a type catalogue "Heron Replace Shared Test.txt" beside it whose first line names Width | the shared one under Identity Data; a finding naming Width in the catalogue's first line |
 | **DE8** | DE2 and DE4 on **Revit 2024** and **2027** - the ForgeTypeId side of every reflected call | the same answers. Compiled on all eight releases; what Revit DOES was measured on none |
 | **DE9** | The signature, on the owner's word only, after DE2, DE3 and DE4 | `python brain/heron_validate.py accept add-family-shared-parameters --by "Ajmal PS"` |
+
+### Run 2026-10-12 - Revit 2020, scratch Family4 (DE1 to DE5)
+
+The owner asked for the proof on **Family4**, a new unsaved Generic Model family, and nowhere else; the
+split-unit family and a BIM 360 project were open beside it and nothing reached them - every call named
+`--in Family4`. **One change to the plan above, said here:** Revit was set to the office's file
+`D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt`, and the run used it **as it was set** - the
+setting was not changed, and the tool only reads the file - with the office's own names: Unit_Width,
+Unit_Thickness, Unit_Height (Length) and Item_Tag (Text). Values below are as Revit printed them in
+Family4's feet-and-inches units.
+
+| # | Result |
+|---|---|
+| **DE1** | Arranged, every step kept and read back: Width, Half Width, Depth (Length, type, Dimensions); types Large (900, 450, 450) and Small (600, 300, 300, current); planes Box Left / Box Right at -300 / 300; Width labelling them, centred on Center (Left/Right); Half Width = Width / 2 |
+| **DE2** | `batch-prove` **PASS**, both legs rolled back. Positive "Width=Unit_Width; Depth=Unit_Thickness": `replaced` 2 - Width -> Unit_Width and Depth -> Unit_Thickness, Length, type, under Dimensions, the file's GUIDs; formulasReadBack "Half Width = Unit_Width / 2"; keptLinks "Unit_Width: 1 labelled dimension(s), values Large 2' - 11 111/256", Small 1' - 11 159/256"; Unit_Thickness: values Large 1' - 5 183/256", Small 0' - 11 13/16"". Negative "Width=Item_Tag": refused, "'Width' holds Length and the shared 'Item_Tag' holds Text", `replaced` 0. **Read back after:** Width and Depth family parameters again, Half Width = Width / 2 - the rollback held |
+| **DE3** | Kept. The same two replaced and read back as DE2; then Unit_Width = 700 in Small (`SET_FAMILY_TYPE_VALUES`): Box Left / Box Right moved to -350 / 350 mm and Half Width read 1' - 1 25/32" (350 mm) by its formula - the label and the formula follow the shared parameter. Family Types by eye is the owner's, still owed |
+| **DE4** | The workaround built on Height: Height (family) and Unit_Height (shared) side by side, Unit_Height 600 / 500, Height = Unit_Height. The replace "Height=Unit_Height" **refused** with both reasons - Unit_Height already in the family, and Height's formula names it - nothing changed. Then the formula cleared (`SET_FAMILY_FORMULA`, empty), Unit_Height deleted (`DELETE_FAMILY_PARAMETERS`) and the replace run kept: `replaced` 1, Height -> Unit_Height, values Large 1' - 11 159/256" (600 mm) and Small 1' - 7 175/256" (500 mm) kept. **This is the path the owner's split-unit family takes** |
+| **DE5** | One call, no transaction: "Unit_Width=Clearance_Rear; NoSuchParameter=Clearance_Side; Half Width=Supply_Air_Width" refused by name three times - Unit_Width already SHARED (its GUID), NoSuchParameter not in the family, Half Width Length against Supply_Air_Width Duct Size. The project leg was not run |
+
+**Still owed:** DE6 (whether Revit's own dialog refuses a same-name replace while a formula reads it),
+DE7 (heading and type catalogue), DE8 (Revit 2024 and 2027), the Family Types look in DE3, and DE9 - the
+signature, the owner's. The draft waits in `brain/proof-drafts/` (`heron_validate.py review
+add-family-shared-parameters`). Family4 keeps Unit_Width, Unit_Thickness, Unit_Height and Half Width
+as the run left them; it is unsaved and is the owner's to close.
