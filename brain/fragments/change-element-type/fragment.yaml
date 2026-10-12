@@ -102,6 +102,15 @@ compatibility-note: >
 #                                       yet. This one moves instances onto a type
 #                                       that already does
 #   "duplicate this type"            -> DUPLICATE_TYPE
+#   "copy the tags from the old units -> COPY_TAGS_TO_REPLACEMENTS - the units
+#    to the new units"                  were REPLACED by other elements, whose
+#                                       tags must be made again. This one keeps
+#                                       the element, so its tags stay on it.
+#                                       "replace this type with another one"
+#                                       stays here: the host resolves it by
+#                                       identity (checked 2026-10-12), although
+#                                       the keyword route alone ranks
+#                                       COPY_TAGS_TO_REPLACEMENTS first
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

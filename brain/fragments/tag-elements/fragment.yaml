@@ -140,6 +140,13 @@ compatibility-note: >
 #                                           map has neither
 #   "stack the tags at the side"         -> STACK_TAGS, for tags that already
 #                                           exist
+#   "copy the tags from the old units    -> COPY_TAGS_TO_REPLACEMENTS, which
+#    to the new units"                      takes each OLD TAG's view, type,
+#                                           head and leader, in every view.
+#                                           Weighed as a widening of this one
+#                                           on 2026-10-12 and kept apart: a
+#                                           different contract, and this one's
+#                                           proof would go stale
 
 utterances:
   - tag these

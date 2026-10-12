@@ -1,0 +1,168 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-121
+semantic-identity: "give each replacement element the tags its old element carries, in every view"
+kind: action
+domain: revit.annotation
+capability: COPY_TAGS_TO_REPLACEMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  When elements are replaced - in-place units by a loadable family, one family
+  by another - makes on each new element a copy of every tag its old element
+  carries, anywhere in the model: same view, same tag type, same head
+  position, same leader on or off, end condition and orientation, and the
+  leader end and elbow where Revit takes them. Any category; which old element
+  goes to which new one is a file of id pairs.
+
+  IT EXISTS BECAUSE NO RELEASE LETS A TAG BE POINTED AT ANOTHER ELEMENT. On
+  2026-10-12, on Revit 2020, three in-place split units were replaced by a
+  loadable family and their 16 tags of "TCM_TG_HVAC Equipment: Equipment Tag",
+  across 9 floor plans and sections, all with leaders, had to be re-made by
+  hand. The only route is a new tag on the new element and the old tag's type
+  put on it.
+
+  **TAG_ELEMENTS WAS WEIGHED AND NOT WIDENED.** It places one type, chosen by
+  the caller, at each element's own location in ONE view. This takes the view,
+  the type, the head and the leader from each OLD TAG, across every view, and
+  takes pairs rather than elements. Folding that in would give one card two
+  jobs, and TAG_ELEMENTS is PROVEN - any change under its impl/ would make its
+  proof stale.
+
+  **IT NEVER DELETES THE OLD TAGS.** Deleting the old element takes them with
+  it, and that is the modeller's decision. Until then old and new tags sit side
+  by side, so the drawing can be compared before anything is lost.
+
+  **THE TYPE IS READ BACK.** IndependentTag.Create has made a tag of the
+  default type instead of the one passed (FRG-VIEW-030), so it is checked and
+  ChangeTypeId'd, and a tag that will not take the old type is removed again
+  in the same undo. If the typed route throws, the tag is made by category
+  (multi-category for a multi-category tag) and then changed.
+
+  **EVERYTHING ELSE IS READ BACK TOO, AND WHAT DIFFERS IS NAMED PER VIEW.** An
+  elbow on an ATTACHED leader may not hold - Revit owns that leader's shape -
+  and the end is never freed to force it, because a free end stops following
+  the element. The tag is kept and the elbow named.
+
+  **IT REFUSES, AND SAYS SO,** a tag pointing at several elements (2022 on), a
+  material tag, a view where the new element is not seen, and a new id not
+  among the elements handed in. An old element with no tag anywhere makes
+  nothing and is named. A second run finds every tag already there and makes
+  none.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The NEW elements, from whatever found them - a category filter or the
+    # selection. The old ones are found through their tags.
+    - name: elements
+      type: IList<Element>
+    # A CSV file. The first line is a header and is never read as a row. Each
+    # later line is an old element id, then the new element id that replaces
+    # it. Ids are matched as text against what Revit hands over, never built
+    # into ElementIds.
+    - name: csvPath
+      type: string
+      source: request
+  provides:
+    - name: made
+      role: result
+      type: int
+    - name: madeTags
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, because a list reaches the chat as three entries cut short
+      # and the cut part is where the views and the reasons are. Written
+      # whatever it found - so accounting: a negative that made nothing still
+      # says so, and must still read empty (D-52).
+      role: accounting
+      type: string
+    - name: notReproduced
+      # Made, but a head, leader, end, elbow, orientation or rotation reads
+      # back other than the old tag's. Named "view: tag: what", never counted
+      # as a clean copy (D-52).
+      role: accounting
+      type: IList<string>
+    - name: alreadyThere
+      # Old tags whose copy - same view, same type, head in place - is already
+      # on the new element. The prior state, never a change (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: oldWithNoTags
+      # Old ids from the file with no tag on them anywhere. The negative case:
+      # nothing made, and said so (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Old tags for which no copy was made - several targets, a material tag,
+      # the new element not seen in the view, Revit refusing, or a type that
+      # would not hold. Each reason is in `report` (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: rowsUnmatched
+      # Pairs whose new id is none of the elements handed in (D-52).
+      role: accounting
+      type: int
+    - name: badRows
+      # Lines that are not two different ids, or repeat an old id (D-52).
+      role: accounting
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A RUN-TIME split at 2022 with NO version #if, because an add-in built before
+  row 5b-181's fix compiles fragments with no release symbols. Found by name on
+  the tag: 2022 on, GetTaggedLocalElementIds, GetTaggedReferences,
+  GetLeaderEnd/SetLeaderEnd, HasLeaderElbow, GetLeaderElbow/SetLeaderElbow and
+  RotationAngle; 2020 and 2021, TaggedLocalElementId, LeaderEnd, HasElbow and
+  LeaderElbow, which are absent from 2023. Read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-12 (the
+  api-surface tool was blocked by Windows Application Control on this PC).
+  Both IndependentTag.Create overloads used - (Document, ElementId, ElementId,
+  Reference, bool, TagOrientation, XYZ) and (Document, ElementId, Reference,
+  bool, TagMode, TagOrientation, XYZ) - and TagHeadPosition, HasLeader,
+  LeaderEndCondition, CanLeaderEndConditionBeAssigned, TagOrientation,
+  IsMulticategoryTag and IsMaterialTag are present 2020 through 2027. No
+  ElementId is built from a number, so 2024's 64-bit ids do not reach it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "copy the tags from the old units to the new ones" -> here
+#   "re-tag the replaced units like before"            -> here
+#   "tag these" / "put tags on the ducts"              -> TAG_ELEMENTS - one
+#                                                         type, one view, at
+#                                                         each element's own
+#                                                         point
+#   "tag everything in this view"                      -> TAG_ELEMENTS_IN_VIEW
+#   "which ones are not tagged"                        -> FIND_UNTAGGED_ELEMENTS
+#   "remove the tags"                                  -> REMOVE_TAGS
+#   "change the unit to the new family type"           -> CHANGE_ELEMENT_TYPE,
+#                                                         which keeps its tags
+#                                                         because the element
+#                                                         stays the same one
+#   "replace this type with another one"               -> CHANGE_ELEMENT_TYPE.
+#                                                         The keyword route
+#                                                         alone ranks this card
+#                                                         first; the host
+#                                                         resolves it there by
+#                                                         identity (checked
+#                                                         2026-10-12)
+
+utterances:
+  - copy the tags from the old units to the new units
+  - put the old tags on the replacement families
+  - re-tag the new units the same as the old ones
+  - move the tags from the in-place units to the loadable ones

@@ -1,0 +1,75 @@
+# The proof of COPY_TAGS_TO_REPLACEMENTS - every tag on an old element made
+# again on the element that replaces it - NEEDS-CHECKING Group DG:
+#
+#   copy-tags-to-replacements   COPY_TAGS_TO_REPLACEMENTS   FRG-VIEW-121
+#
+#     python tools/batch-prove.py tools/jobs/copy-tags-to-replacements-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/copy-tags-to-replacements-2026-10-12.yaml
+#
+# NEVER ON 4355-BHVD-3D-60P00-BL006A OR ANY OTHER WORKING PROJECT. The
+# arrangement is made once, kept, in a NEW SCRATCH PROJECT on Revit 2020 first
+# (File, New, Project, the Mechanical template), saved as "Heron Copy Tags
+# Test". Type its title where `in:` says PROJECT-TITLE. In it, by hand:
+#
+#   - three Mechanical Equipment instances of any loaded family on Level 1,
+#     well apart: A, B and C
+#   - A tagged TWICE with an equipment tag: once in the Level 1 floor plan
+#     with a leader, its end Attached, and an elbow dragged in; once in a
+#     section through A with NO leader. Give the plan tag a second copy with
+#     a FREE leader end, so a free end is in the proof too
+#   - B and C untagged. B is A's replacement; C is the old element with no
+#     tags at all
+#
+# Then the two files, in %TEMP%\heron-work\copy-tags\ - the ids read off
+# Revit's Manage, IDs of Selection, never guessed:
+#
+#   pairs-positive.csv     Old,New        then   <A>,<B>
+#   pairs-negative.csv     Old,New        then   <C>,<B>
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill PROJECT-TITLE and
+# the two paths first.
+#
+# POSITIVE: `made` 3 - two in the plan, one in the section - each of A's tag
+# type, its head on A's tag's head, the plan ones with a leader and the free
+# one's end on the same point, the section one with none. `report` names any
+# elbow that did not hold on the attached leader; that is the measurement DG3
+# records. A's three tags are still there afterwards.
+#
+# NEGATIVE: the same elements, the same B, with C - which carries no tag
+# anywhere - as the old element. `made` 0, `madeTags` empty, `oldWithNoTags`
+# naming C, and `report` saying C has no tag on it anywhere so nothing was
+# made. B gains no tag.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the plan and the section afterwards anyway - B with no tag: rollback
+# has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>`.
+
+model: a scratch project from the Mechanical template, "Heron Copy Tags Test", Revit 2020 first, then 2024 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: copy-tags-to-replacements
+    expect: made
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Mechanical Equipment
+      levelId: Level 1
+    negative-setup-set:
+      category: Mechanical Equipment
+      levelId: Level 1
+    set:
+      csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/copy-tags/pairs-positive.csv"
+    negative-set:
+      csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/copy-tags/pairs-negative.csv"
+    note: >
+      The negative changes only the old element: same elements handed in, same
+      new element B, same views. C carries no tag anywhere, so the verdict is
+      read off `made` - three, or none - and `oldWithNoTags` names C.
