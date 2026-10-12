@@ -1,0 +1,44 @@
+positive:
+  - given: >
+      on a TEST COPY, two mechanical equipment units A and B, A carrying an equipment tag with
+      an attached leader and an elbow in a floor plan and a second one with no leader in a
+      section; B placed beside A as its replacement and untagged. Fed by
+      FILTER_ELEMENTS_BY_CATEGORY category Mechanical Equipment, with a csvPath of
+      "Old,New" then "A,B"
+    expect: >
+      made 2, one in each view, each of the old tag's type, head within half a paper
+      millimetre of the old head, leader on in the plan and off in the section - and A's two
+      tags still there, untouched. Anything that did not hold, the attached elbow most
+      likely, is named under that view in report and in notReproduced
+
+  - given: the same request run a second time, straight after
+    expect: >
+      made 0 and alreadyThere naming both old tags. THIS IS THE READ-BACK: the copy is judged
+      by view, type and head, so a second run finds both and makes nothing
+
+  - given: an old tag with a FREE leader end
+    expect: the new tag's leader end free, at the same point within half a paper millimetre
+
+negative:
+  - given: >
+      a pair whose OLD element carries no tag anywhere in the model - an untagged unit C,
+      with "C,B" in the file. THIS IS THE FIRST NEGATIVE TO RUN
+    expect: >
+      made 0, madeTags empty, oldWithNoTags naming C, and the report saying C has no tag on
+      it anywhere so nothing was made. B gains no tag
+
+  - given: a pair whose new id is not among the elements handed in
+    expect: rowsUnmatched 1, made 0, and the report naming the pair
+
+  - given: a file line "A,A", or "A" alone, or "A,B" twice
+    expect: badRows counting each, nothing made for them
+
+  - given: the new element hidden in one of the views the old tag is in
+    expect: that old tag in refused, the report saying the new element is not seen there
+
+second_route:
+  - >
+    Revit's own Properties on each new tag: the type matches the old tag's, Leader checked
+    or not as on the old one, Leader End Condition the same; and in the view, the new
+    head sitting on the old head. Then select the old unit and press Delete on the test
+    copy: its tags go with it and the new ones stay

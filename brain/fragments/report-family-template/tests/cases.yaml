@@ -34,6 +34,19 @@ positive:
       path; templateReport's settings showing OmniClass Number 23.65.55.14.14
       and OmniClass Title as Family Category and Parameters shows it
 
+  # VERSION 3 - Revit 2020, where the owner's outdoor unit was built in a
+  # template whose Length was Feet and fractional inches (2026-10-12). The
+  # same case again on 2024 or later, for the ForgeTypeId route.
+  - given: >
+      a new family from an IMPERIAL Generic Model template (English-Imperial
+      content, Length shown in Feet and fractional inches), nothing built
+    expect: >
+      templateReport naming "units: Length = Feet and fractional inches (no
+      symbol), rounding" and the accuracy Manage > Project Units shows, then
+      "- IMPERIAL"; a finding saying Length is not metric and naming
+      SET_PROJECT_UNITS "Length=Millimeters, 0 decimal places" and a Metric
+      template - and the same unit as REPORT_PROJECT_UNITS's Common: Length row
+
 negative:
   - given: >
       a new family from the plain metric Generic Model template - not hosted
@@ -50,11 +63,21 @@ negative:
       code at all, with the path - a reason, NOT an empty answer; the 2024 file
       files none under that category
 
+  - given: >
+      a new family from the metric Generic Model template, Length in
+      Millimeters
+    expect: >
+      templateReport naming "units: Length = Millimeters" ending "- metric",
+      and NO finding about units - a metric family must not be told to change
+
 second_route:
   - >
       Family Category and Parameters in the Family Editor - the Host row and the
       switches - and the Family Types dialog for the built-in parameters; the
       reference planes read by selecting each and reading Properties
+  - >
+      Manage > Project Units in the Family Editor, the Length row: its units,
+      rounding and symbol against templateReport's units line
   - >
       The OmniClass Number button in Family Category and Parameters: the codes
       its dialog offers for the category against classificationCodes

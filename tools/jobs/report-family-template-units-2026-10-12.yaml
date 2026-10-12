@@ -1,0 +1,51 @@
+# The proof of report-family-template version 3 (REPORT_FAMILY_TEMPLATE,
+# FRG-DOC-037) - the length units on templateReport's units line, and the
+# finding when they are not metric. Version 2's proof is still owed
+# (report-family-template-omniclass-2026-10-11.yaml); this one re-proves the
+# whole tool on its new code, on the release the gap was found on.
+#
+#     python tools/batch-prove.py tools/jobs/report-family-template-units-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-family-template-units-2026-10-12.yaml
+#
+# THE ARRANGEMENT, made by hand before the run, on Revit 2020 - where an
+# outdoor unit was built on 2026-10-12 in a template whose Length showed Feet
+# and fractional inches:
+#
+#   "Heron Units Imperial Test"    a new family from the IMPERIAL Generic
+#                                  Model template (English-Imperial content),
+#                                  nothing built in it, Length left as the
+#                                  template has it, saved, left OPEN
+#   "Heron Units Project"          a PROJECT, new from any template, saved
+#                                  under this title and left open - the
+#                                  negative: a report there says it is not a
+#                                  family and returns nothing else. Another
+#                                  FAMILY will not do: templateReport there is
+#                                  a sentence, and the runner's judge reads
+#                                  that as NEG NOT EMPTY
+#
+# POSITIVE: templateReport naming "units: Length = Feet and fractional inches
+# (no symbol), rounding" with the accuracy Manage > Project Units shows, then
+# "- IMPERIAL"; a finding naming SET_PROJECT_UNITS "Length=Millimeters, 0
+# decimal places" and a Metric template.
+#
+# NEGATIVE: the project - notAFamily true, templateReport empty.
+#
+# BY HAND AFTERWARDS, through revit_read: a new family from the METRIC Generic
+# Model template - the units line must read "Millimeters" and end "- metric",
+# with NO finding about units. Then REPORT_PROJECT_UNITS on both families: its
+# Common: Length row must name the same unit as the units line. Then the same
+# two families on Revit 2024, for the ForgeTypeId route.
+
+model: Heron Units Imperial Test (Generic Model family from the imperial template) and Heron Units Project, Revit 2020
+
+defaults:
+  in: "Heron Units Imperial Test"
+
+jobs:
+  - fragment: report-family-template
+    expect: templateReport
+    negative-in: "Heron Units Project"
+    note: >
+      The positive's units line reads Feet and fractional inches and IMPERIAL,
+      with the finding; the negative is a project and must report nothing.
+      Check the unit and rounding against Manage > Project Units, Length.
