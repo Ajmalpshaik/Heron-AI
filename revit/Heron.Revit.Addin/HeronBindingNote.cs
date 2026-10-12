@@ -240,5 +240,133 @@ namespace Heron.Revit.Addin
                  + "no fragment ran. Read what is needed off the linked elements in the step "
                  + "that found them; handing them on to another step is not built yet.";
         }
+
+        /// <summary>
+        /// The element ids a caller TYPED for `elementIds`, as text, or null
+        /// when the text is not a list of ids - a name, the word `selected`,
+        /// a blank - and the binder's other rules decide it as before.
+        ///
+        /// FRAGMENT-ISSUES ROW 5b-441. On 2026-10-12 (Revit 2020)
+        /// PLACE_FAMILY_INSTANCES answered with the ids of three new units,
+        /// and nothing would take them back: FILTER_ELEMENTS_BY_ID refused
+        /// any number, so each unit was selected by drawing SELECT_IN_REGION
+        /// round a spot only it stood in, just so ROTATE_ELEMENTS and
+        /// MIRROR_ELEMENTS could act on one at a time.
+        ///
+        /// TEXT, NEVER A NUMBER. Nothing here parses an id, and the binder
+        /// never builds an ElementId from one: `new ElementId(int)` became
+        /// `long` at Revit 2024, and this add-in carries no version #if
+        /// (D-05). Each typed id is compared, as text, with what Revit's own
+        /// ElementId.ToString() prints - the same text Heron prints an id
+        /// with, so an id copied out of an answer is matched exactly.
+        ///
+        /// DIGITS ONLY, '0' TO '9', and every part or none. A list mixing an
+        /// id with a name is refused rather than half bound; an id typed
+        /// twice is refused, because an element bound twice is turned or
+        /// mirrored twice by whatever uses it.
+        ///
+        /// Nothing here touches an Autodesk type, so it is proved without
+        /// Revit in Heron.BindingNote.TestHost.
+        /// </summary>
+        internal static List<string> TypedIds(string text, out string problem)
+        {
+            problem = null;
+
+            var parts = new List<string>();
+            foreach (var piece in (text ?? "").Split(','))
+            {
+                var trimmed = piece.Trim();
+                if (trimmed.Length > 0) parts.Add(trimmed);
+            }
+            if (parts.Count == 0) return null;
+
+            var digits = 0;
+            string other = null;
+            foreach (var part in parts)
+            {
+                if (AllDigits(part)) digits++;
+                else if (other == null) other = part;
+            }
+
+            if (digits == 0) return null;
+
+            if (other != null)
+            {
+                problem = "\"" + other + "\" is not an element id, and the rest of the list is. "
+                        + "Type the ids as Revit shows them - digits only, comma separated - "
+                        + "with nothing else in the same list. NOTHING WAS BOUND.";
+                return null;
+            }
+
+            var seen = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var part in parts)
+            {
+                if (seen.Add(part)) continue;
+                problem = part + " is typed more than once. An element bound twice is acted on "
+                        + "twice by whatever uses it - turned twice, mirrored twice - so type "
+                        + "each id once. NOTHING WAS BOUND.";
+                return null;
+            }
+
+            return parts;
+        }
+
+        /// <summary>Whether TEXT is one or more of the ten ASCII digits and nothing else.</summary>
+        private static bool AllDigits(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            foreach (var c in text)
+                if (c < '0' || c > '9') return false;
+            return true;
+        }
+
+        /// <summary>
+        /// The refusal when typed ids name no element in the model being read.
+        ///
+        /// EVERY ONE IS NAMED, AND NOTHING IS BOUND. Binding the ids that were
+        /// found and dropping the rest would hand the next step a shorter list
+        /// with no reason for it - the failure FILTER_ELEMENTS_BY_ID's own
+        /// `missing` exists to prevent. Its `missing` cannot hold a typed id
+        /// that names nothing, because that would mean building an ElementId
+        /// from a number; so the refusal holds them instead.
+        /// </summary>
+        internal static string TypedIdsNotFound(IList<string> missing, int typed, string target)
+        {
+            if (missing == null || missing.Count == 0) return null;
+
+            var here = string.IsNullOrEmpty(target) ? "the model being read" : "'" + target + "'";
+            return missing.Count + " of the " + typed + " element id(s) typed name no element in " + here + ": "
+                 + string.Join(", ", ToArray(missing)) + ". An id belongs to one model - "
+                 + "it names nothing, or something else, in another one, a copy included - "
+                 + "and it is gone once its element is deleted or the change that made it "
+                 + "is undone. NOTHING WAS BOUND. Take the ids from the answer that gave "
+                 + "them, for this model, or from Revit's Manage > IDs of Selection.";
+        }
+
+        /// <summary>
+        /// The refusal when ids are typed for a run that CHANGES the model.
+        ///
+        /// A TYPED ID IS ONLY EVER MATCHED ON A READ, so what each one is -
+        /// category, family, type - is in front of somebody before anything
+        /// is changed with it. A digit typed wrong names a different element
+        /// with nothing about it looking wrong; on a write that is a confident
+        /// change to the wrong thing. No change declares `elementIds` today,
+        /// so this is the rule for the next one that does.
+        /// </summary>
+        internal static string TypedIdsOnAWrite(string need)
+        {
+            return "'" + need + "' was typed as element ids, and this run CHANGES the model. "
+                 + "Typed ids are matched only on a read, so what each one is - category, "
+                 + "family, type - is seen before anything uses it. Run FILTER_ELEMENTS_BY_ID "
+                 + "with these ids first, then this with expect_from=\"filter-elements-by-id "
+                 + "where elementIds=<the same ids>\". NOTHING WAS BOUND.";
+        }
+
+        private static string[] ToArray(IList<string> items)
+        {
+            var copy = new string[items.Count];
+            items.CopyTo(copy, 0);
+            return copy;
+        }
     }
 }

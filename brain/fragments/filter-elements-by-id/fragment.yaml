@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,10 @@ semantic-identity: "the elements carrying these ids, in the active document"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_ID
-version: 1
+# VERSION 2 (2026-10-12, FRAGMENT-ISSUES 5b-441): element ids may be TYPED,
+# and the answer names what each element is. DRAFT until a Revit run signs it;
+# version 1's proof below no longer describes the code and reads STALE.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -28,6 +31,11 @@ contract:
   needs:
     - name: doc
       type: Document
+    # The word `selected` - everything selected in Revit - or, from version 2,
+    # element ids typed as Revit shows them: digits only, comma separated -
+    # "8453537, 8453556". Each is matched as TEXT in the model being read;
+    # one that names nothing there refuses the whole call, naming it. Typed
+    # ids are taken on a READ only - read `named` before a change uses them.
     - name: elementIds
       type: IList<ElementId>
       source: request
@@ -40,6 +48,15 @@ contract:
       # not use, never an element it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: named
+      # VERSION 2. What each element in `elements` is - its id, its category,
+      # and "Family: Type" - in one line: "3 element(s): 8453537 Mechanical
+      # Equipment - "FCU: 600"; ...". A STRING, because a reply cuts a list
+      # to three items and prints an element by its name alone, which cannot
+      # show that a typed id named the wrong thing. Accounting: it describes
+      # what `elements` holds.
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-15'
@@ -69,6 +86,11 @@ compatibility-note: >
   ids arrive from the request. That matters: 2024 widened ElementId to 64-bit,
   and `new ElementId(int)` is the call that breaks across that boundary. Taking
   ids rather than integers is what makes this fragment version-proof.
+  Version 2 keeps that true for TYPED ids: the add-in's binder matches each
+  one as text against `ElementId.ToString()` over one FilteredElementCollector
+  walk (ElementIsElementTypeFilter both ways), and builds no id from a number.
+  The fragment adds `Element.GetTypeId()`, `ElementType.FamilyName` and
+  `Category.Name`, all unchanged 2020 to 2027.
 
 # Three sentences were removed on 2026-08-30, found by tools/check-routing.py:
 # "trace from this element" and "what is connected to that duct" are
@@ -84,6 +106,33 @@ compatibility-note: >
 # READ_SELECTION does exactly that, so the sentence was never this fragment's
 # to answer and answering it meant acting on the wrong set with no sign
 # anything had gone wrong.
+
+# VERSION 2 - TYPED IDS, AND WHY HERE (FRAGMENT-ISSUES 5b-441).
+#
+# On 2026-10-12 (Revit 2020) PLACE_FAMILY_INSTANCES answered with the ids of
+# three new units, and nothing would take them back: this card refused any
+# number, so each unit was selected with SELECT_IN_REGION drawn round a spot
+# only it stood in, just so ROTATE_ELEMENTS and MIRROR_ELEMENTS could act on
+# one at a time. Now:
+#
+#   revit_read  FILTER_ELEMENTS_BY_ID  elementIds=8453537
+#               -> named "1 element(s): 8453537 Mechanical Equipment - ..."
+#   revit_change ROTATE_ELEMENTS  angleRadians=..., pivot=...
+#               expect_from="filter-elements-by-id where elementIds=8453537"
+#
+# THE RULE LIVES IN THE ADD-IN'S BINDER, KEYED ON THIS NEED'S NAME, AND ONLY
+# ON A READ - this card is the one READ that declares `elementIds`. A write
+# that declares it later is refused typed ids and told to come here first, so
+# what each id names is always seen before a change uses it.
+#
+# WHY NOT "LET PLACE_FAMILY_INSTANCES LEAVE `elements`" INSTEAD. It would hand
+# the WHOLE placement on as one set, and the job that found this turned and
+# mirrored each unit differently; it would serve ids from that one card only,
+# not from a clash list or a schedule; and it would re-open the proof of a
+# PROVEN card the sprinkler and terminal layouts stand on. It is still worth
+# having - every creator leaves `created`, which the binder hands to an
+# `elements` need, and that card leaves `placed` - so it is recorded in the
+# same row, not done here.
 
 utterances:
   - these ones

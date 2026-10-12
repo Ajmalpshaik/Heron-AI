@@ -504,7 +504,8 @@ namespace Heron.Revit.Addin
                 {
                     string binding;
                     var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
-                                            supplied, expect, out prologue, out binding);
+                                            supplied, expect, !writing,
+                                            out prologue, out binding);
                     if (refusal != null) return refusal;
                     Note = binding;
                 }
@@ -768,8 +769,12 @@ namespace Heron.Revit.Addin
                     // whose `By` is this fragment rather than the producer the
                     // caller named. Re-checking it here would refuse every
                     // multi-step fragment on its second step.
+                    //
+                    // AND NOT A READ, for the binder's one rule that asks: a
+                    // step runs inside the group a write opened, so typed
+                    // element ids are refused here as on any write (5b-441).
                     var refusal = BindNeeds(stepNeeds, globals, target, uidoc, stepBound,
-                                            client, supplied, null,
+                                            client, supplied, null, false,
                                             out stepPrologue, out stepBinding);
                     if (refusal != null)
                     {
@@ -1960,6 +1965,7 @@ namespace Heron.Revit.Addin
                                         string client,
                                         Dictionary<string, string> supplied,
                                         string expect,
+                                        bool reading,
                                         out string prologue,
                                         out string binding)
         {
@@ -2128,7 +2134,7 @@ namespace Heron.Revit.Addin
                     // caller can see they supplied.
                     string problem;
                     var given = FromRequest(givenText, type, name, target, selected,
-                                            out problem);
+                                            reading, out problem);
                     if (problem != null) return Json.Error("bad_request_value", problem);
 
                     globals.__heron[name] = given;
@@ -3800,6 +3806,62 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// The elements whose ids were TYPED, found in DOC by matching text,
+        /// in the order typed - or null, every id that named nothing listed in
+        /// `problem` (FRAGMENT-ISSUES 5b-441).
+        ///
+        /// NO ElementId IS BUILT FROM A NUMBER. Every id in DOC is walked once
+        /// and its own ToString() - what Revit prints, and what Heron prints
+        /// an id with - is compared with what was typed. The constructor that
+        /// changed from int to long at Revit 2024 is never reached, and
+        /// neither is IntegerValue, deprecated there; both ToString() and the
+        /// collector are on every release 2020 to 2027.
+        ///
+        /// ONLY DOC - the document being read. An id carries no model of its
+        /// own, so one copied from another model, a link's included, finds
+        /// nothing here or an unrelated element sharing the number. The read
+        /// that takes typed ids names each element's category, family and
+        /// type, which is where the second case shows.
+        ///
+        /// ELEMENT TYPES TOO, in the one walk: an id an earlier answer printed
+        /// may be a type's, and the walk stops as soon as every id is found.
+        /// </summary>
+        private static object ElementsWithTypedIds(Document doc, List<string> typed,
+                                                   out string problem)
+        {
+            problem = null;
+
+            var at = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var i = 0; i < typed.Count; i++) at[typed[i]] = i;
+
+            var found = new ElementId[typed.Count];
+            var left = typed.Count;
+
+            var everything = new LogicalOrFilter(new ElementIsElementTypeFilter(false),
+                                                 new ElementIsElementTypeFilter(true));
+            foreach (var id in new FilteredElementCollector(doc).WherePasses(everything)
+                                                                .ToElementIds())
+            {
+                int slot;
+                if (!at.TryGetValue(id.ToString(), out slot) || found[slot] != null) continue;
+                found[slot] = id;
+                if (--left == 0) break;
+            }
+
+            var missing = new List<string>();
+            for (var i = 0; i < typed.Count; i++)
+                if (found[i] == null) missing.Add(typed[i]);
+
+            if (missing.Count > 0)
+            {
+                problem = HeronBindingNote.TypedIdsNotFound(missing, typed.Count, doc.Title);
+                return null;
+            }
+
+            return new List<ElementId>(found);
+        }
+
+        /// <summary>
         /// An `ElementId`, resolved the way everything else here is: by NAMING
         /// the thing and taking its id.
         ///
@@ -4361,6 +4423,9 @@ namespace Heron.Revit.Addin
         ///                  2024. Resolved by NAMING the thing it belongs to and
         ///                  taking `.Id`, so the constructor is never reached;
         ///                  and a LIST of them also takes the word `selected`.
+        ///                  `elementIds` alone also takes ids typed as digits,
+        ///                  on a READ only, matched as text - see
+        ///                  ElementsWithTypedIds (5b-441).
         ///
         ///   OverrideGraphicSettings, ForgeTypeId, ParameterValue
         ///                  objects with no name to look up, so each is BUILT
@@ -4379,7 +4444,7 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static object FromRequest(string text, string type, string need,
                                           Document doc, IList<ElementId> selected,
-                                          out string problem)
+                                          bool reading, out string problem)
         {
             problem = null;
             var wanted = (type ?? "").Replace(" ", "");
@@ -4643,6 +4708,31 @@ namespace Heron.Revit.Addin
                         return null;
                     }
                     return new List<ElementId>(selected);
+                }
+
+                // ELEMENT IDS TYPED AS DIGITS - `elementIds` ONLY, and only on
+                // a READ (FRAGMENT-ISSUES 5b-441). Everything else that is not
+                // `selected` falls through to OneIdNamed exactly as before,
+                // which refuses this name: `elementIds` means "those ones
+                // there", and no NAME says which. See ElementsWithTypedIds.
+                if (need == "elementIds")
+                {
+                    string typedProblem;
+                    var typed = HeronBindingNote.TypedIds(text, out typedProblem);
+                    if (typedProblem != null)
+                    {
+                        problem = typedProblem;
+                        return null;
+                    }
+                    if (typed != null)
+                    {
+                        if (!reading)
+                        {
+                            problem = HeronBindingNote.TypedIdsOnAWrite(need);
+                            return null;
+                        }
+                        return ElementsWithTypedIds(doc, typed, out problem);
+                    }
                 }
 
                 var ids = new List<ElementId>();

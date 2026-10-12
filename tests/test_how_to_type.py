@@ -583,6 +583,23 @@ def main():
                      "IList<ElementId>"),
           "and so does a list: %r" % HF.how_to_type("IList<ElementId>"))
 
+    # TYPED IDS, FRAGMENT-ISSUES 5b-441. The add-in takes digits for ONE
+    # id-list name, on a read, and the hint is read out of the same C#. Only
+    # that name is offered digits; every other id need still hears "refuses
+    # any name or number", which is still what the add-in does with it.
+    typed_names = getattr(HF, "typed_id_need_names", None)
+    check(typed_names is not None and typed_names() == {"elementIds"},
+          "the add-in takes typed ids for `elementIds` alone: %r"
+          % (typed_names() if typed_names else None))
+    said = HF.how_to_type("IList<ElementId>", "elementIds") if takes_name else ""
+    check("digits only" in said and "READ only" in said and "or number" not in said,
+          "`elementIds` is told to type the ids as digits, on a read: %r" % said)
+    for folder, name, kind, _cap in ids:
+        if name == "elementIds" or not takes_name:
+            continue
+        check("digits only" not in HF.how_to_type(kind, name),
+              "%s's `%s` is offered no digits" % (folder, name))
+
     def need_row(lines, name):
         row = [line for line in lines if line.split()[:1] == [name]]
         return row[0].strip() if row else "no row for it in %r" % lines
