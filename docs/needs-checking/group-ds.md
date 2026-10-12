@@ -11,7 +11,7 @@
 The gap fill's first batch of widenings ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)):
 jobs Heron did in part, finished by widening a card that was DRAFT already - so no PROVEN card's proof went stale.
 
-**What changed - eight widenings and one new card.** `LIST_GRIDS` v3: `withIntersections`, where each two grids
+**What changed - ten widenings and one new card.** `LIST_GRIDS` v3: `withIntersections`, where each two grids
 cross, in millimetres - the points a column at every grid intersection goes on. `SELECT_UNENCLOSED_ROOMS` v3:
 `includeAreas`. `PLACE_FAMILY_ON_FACE` v2: finds the face itself - each point looks up, down or across through a
 3D view - and hosts on a loaded link's face too; version 1 took face references no request can carry, and refused
@@ -19,6 +19,9 @@ linked faces on a belief never measured. `ADD_FAMILY_CONNECTOR` v4: cable tray a
 `withAssets`, each physical and thermal asset's numbers as Revit formats them. `EXTRACT_CAD_CURVES` v2: `listOnly`,
 the segments' coordinates with nothing drawn. `FIND_NEAREST_ELEMENTS` v2: `withinMm`, everything within a distance,
 nearest first. `CREATE_VIEW_FILTER` v2: `moreRules` and `combine`, several rules matched all or any.
+`MOVE_ANNOTATION` v2: `arrange`, a set of tags, text notes or dimensions lined up or spread evenly in their view.
+`COMBINE_FAMILY_FORMS` v2: `forms` "list" says every combination in the family, "separate <ids>" takes named ones
+apart - words in the value it already took, so no family build's call changes.
 **New:** `ORDER_ELEMENTS_BY_POSITION` (FRG-SEL-038): the order a numbering should follow - left to right, reading,
 clockwise, along a line, level by level - handed on to `RENUMBER_SEQUENTIAL`, which by design decides none.
 
@@ -39,5 +42,7 @@ connected, and `< /dev/null` on every line.
 | **DS5** | `EXTRACT_CAD_CURVES` listOnly true on a DWG's grid layer | the segments in millimetres, against the DWG opened in CAD; nothing drawn |
 | **DS6** | `FIND_NEAREST_ELEMENTS` withinMm 3000, terminals to lights | every light within 3 m of each terminal, nearest first, read against a measured plan |
 | **DS7** | `CREATE_VIEW_FILTER` with moreRules "Comments contains L2", combine and, then or | the filter's rules in Visibility/Graphics match the two runs |
+| **DS10** | `MOVE_ANNOTATION` arrange "align left", then "spread down", on four ragged text notes in a plan | lined up on the leftmost, then evenly spaced, each read back within 1 mm |
+| **DS11** | A family with a solid cut by a void: `COMBINE_FAMILY_FORMS` forms "list", then "separate" and the solid's id | the one combination and its two forms; then both forms standing alone, the hole gone, both still in the family |
 | **DS8** | The rest on **Revit 2020** and **2027** | the same answers; on 2027 the intersections come from the newer call. Compiled on every declared release; what Revit DOES was measured on none |
 | **DS9** | The signatures, on the owner's word only, after the rows above | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each |

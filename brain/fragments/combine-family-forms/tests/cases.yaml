@@ -26,6 +26,12 @@ positive:
       cut true; 27.461 L before, 27.091 L after - the four corners rounded off;
       every solid read back in the result (5b-405)
 
+  - given: a family with one solid cut by one void, forms list, then forms separate and the solid's id
+    expect: >
+      list names the one combination and its two forms and changes nothing;
+      separate takes it apart and both forms read back as still in the family
+      (version 2)
+
 negative:
   - given: the same solid with a VOID that misses it, "circle 1000,0 50"
     expect: refused as the void taking nothing away, cut false and no combination left in the family

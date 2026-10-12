@@ -11,6 +11,12 @@ positive:
   - given: a text note handed in
     expect: moved by its location point, not refused
 
+  - given: 'four text notes at ragged left edges in a plan, arrange "align left"'
+    expect: >
+      all four moved across to the leftmost one's line, read back within 1 mm;
+      "spread down" then spaces them evenly between the top and bottom one
+      (version 2)
+
 negative:
   - given: a dimension handed in
     expect: >

@@ -129,10 +129,12 @@ jobs:
       categoryName: Text Notes
       inViewOnly: "Legend 1"
       target: "1000,0,0"
+      arrange: ""
     negative-set:
       categoryName: Ducts
       inViewOnly: "1 - Mech"
       target: "1000,0,0"
+      arrange: ""
 
   # Defaults as they stand: ducts move to a model point, text notes cannot -
   # annotation is view-specific and has no model position to move to.
