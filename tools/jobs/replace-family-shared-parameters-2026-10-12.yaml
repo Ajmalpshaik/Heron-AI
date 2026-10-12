@@ -12,20 +12,23 @@
 # FAMILY-TITLE. The commands are in docs/needs-checking/group-de.md:
 #
 #   Manage > Shared Parameters set to a SCRATCH file holding "Heron Unit Width"
-#     (Length) and "Heron Test Tag" (Text) - the tool only reads it. Note the
+#     and "Heron Unit Depth" (Length) and "Heron Test Tag" (Text) - the tool only reads it. Note the
 #     file that was set before, and set it back by hand afterwards: the
 #     setting is Revit's, outside every Undo
 #   planes "Left" and "Right" (the template's), a type Length family parameter
 #     "Width" labelling the dimension between them
 #   a type Length "Half Width" with the formula "Width / 2"
+#   a type Length family parameter "Depth", labelling nothing
 #   two types, Width 600 and Width 900
 #
 # THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
 #
-# POSITIVE: "Width=Heron Unit Width". `replaced` one entry - Width -> Heron
-# Unit Width, Length, type, under the heading Width had, the file's GUID;
-# formulasReadBack "Half Width = Heron Unit Width / 2"; keptLinks 1 labelled
-# dimension and both types' values (600, 900) - record the findings whole.
+# POSITIVE: "Width=Heron Unit Width; Depth=Heron Unit Depth" - two in one
+# call, as the owner's family needs four. `replaced` two entries - Width ->
+# Heron Unit Width and Depth -> Heron Unit Depth, Length, type, under the
+# heading each had, the file's GUIDs; formulasReadBack "Half Width = Heron Unit
+# Width / 2"; keptLinks 1 labelled dimension and both types' values - record
+# the findings whole.
 #
 # NEGATIVE: "Width=Heron Test Tag" - a Text shared parameter for a Length.
 # Refused naming both kinds; `replaced` EMPTY; Width still a family parameter.
@@ -47,7 +50,7 @@ jobs:
   - fragment: add-family-shared-parameters
     expect: replaced
     set:
-      parameterNames: "Width=Heron Unit Width"
+      parameterNames: "Width=Heron Unit Width; Depth=Heron Unit Depth"
       instance: false
       parameterGroup: ""
       replaceExisting: true
@@ -59,5 +62,5 @@ jobs:
     note: >
       The negative changes only the shared name: same family, same Width, a
       shared parameter of the wrong kind. The verdict is read off `replaced` -
-      one entry, or none. The workaround's refusal (a formula naming the shared
+      two entries, or none. The workaround's refusal (a formula naming the shared
       name) and the kept run are by hand, DE4 and DE3.
