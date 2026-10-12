@@ -1,0 +1,71 @@
+# The proof of ADD_FAMILY_SHARED_PARAMETERS version 3 - a definition the
+# office's shared parameter file does not have yet CREATED in it first
+# (createMissing), then added - NEEDS-CHECKING Group DF:
+#
+#   add-family-shared-parameters   ADD_FAMILY_SHARED_PARAMETERS   FRG-PAR-031
+#
+#     python tools/batch-prove.py tools/jobs/create-family-shared-parameters-2026-10-12.yaml --dry-run
+#
+# THE CARD IS ADMIN FROM VERSION 3, SO batch-prove DOES NOT SEND IT (D-106
+# point 6: no batch sends an ADMIN fragment). The dry run reads this file back
+# as WILL NOT RUN IN A BATCH and prints the command (row 5b-440);
+# the run itself is the one line D-106 leaves for proving one ADMIN fragment by
+# name, with Changes AND Admin switched on in Revit's ribbon first:
+#
+#     python mcp/client/heron_bridge_client.py validate --allow-publish --write \
+#       --in "Heron Create Shared Test" --out "$TEMP/heron-work/df2.json" \
+#       --set "parameterNames=Refrigerant: Heron Gas Pipe Diameter [Pipe Size], Refrigerant: Heron Liquid Pipe Diameter [Pipe Size]" \
+#       --set instance=false --set parameterGroup=Mechanical --set createMissing=true \
+#       --negative-set "parameterNames=Identity Data: Heron Test Tag [Length]" \
+#       --negative-set instance=false --negative-set parameterGroup=Mechanical \
+#       --negative-set createMissing=true \
+#       add-family-shared-parameters < /dev/null
+#
+# NEVER THE OFFICE'S FILE. Manage > Shared Parameters is set to a SCRATCH COPY
+# for the whole group - D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt is
+# never the file set while this runs. Write down the file set before, and set
+# it back by hand afterwards: that setting is Revit's, outside every Undo.
+#
+# THE POSITIVE WRITES THE SCRATCH FILE FOR GOOD. `--write` rolls the FAMILY
+# back; what was written into the shared parameter file stays there - that is
+# the point of this version, and why the file is a scratch one. Copy the
+# scratch file aside before DF2 so its bytes can be compared afterwards.
+#
+# POSITIVE: two new names in a group the file does not have. `created` two
+# entries - Pipe Size, group Refrigerant, a GUID each and the file's own word
+# for the data type; `added` two with the same GUIDs - record the findings
+# whole.
+#
+# NEGATIVE: "Identity Data: Heron Test Tag [Length]" - a name the scratch file
+# already holds, as Text. Refused, the existing definition never changed;
+# `created` EMPTY; and the scratch file's bytes the same before and after the
+# negative (fc /b), which is the part only a person can check.
+#
+# With two Revits connected to Heron, add `--session <process id>`.
+
+model: a scratch family "Heron Create Shared Test", Revit 2020 first, then 2024 and 2027, with a SCRATCH shared parameter file set
+
+defaults:
+  in: "Heron Create Shared Test"
+  # ADMIN: Changes and Admin both on; the family is ROLLED BACK, the scratch
+  # shared parameter file keeps what the positive wrote.
+  write: true
+
+jobs:
+  - fragment: add-family-shared-parameters
+    expect: created
+    set:
+      parameterNames: "Refrigerant: Heron Gas Pipe Diameter [Pipe Size], Refrigerant: Heron Liquid Pipe Diameter [Pipe Size]"
+      instance: false
+      parameterGroup: "Mechanical"
+      createMissing: true
+    negative-set:
+      parameterNames: "Identity Data: Heron Test Tag [Length]"
+      instance: false
+      parameterGroup: "Mechanical"
+      createMissing: true
+    note: >
+      The negative changes only the name and its data type: same family, same
+      scratch file, a name the file already holds as Text, asked as Length.
+      The verdict is read off `created` - two entries, or none. Replacing with
+      a created definition (the owner's own case) is by hand, DF4.
