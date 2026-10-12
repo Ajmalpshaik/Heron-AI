@@ -7,7 +7,8 @@
 #     python tools/batch-prove.py tools/jobs/create-family-shared-parameters-2026-10-12.yaml --dry-run
 #
 # THE CARD IS ADMIN FROM VERSION 3, SO batch-prove DOES NOT SEND IT (D-106
-# point 6: no batch sends an ADMIN fragment). The dry run reads this file back;
+# point 6: no batch sends an ADMIN fragment). The dry run reads this file back
+# as WILL NOT RUN IN A BATCH and prints the command (row 5b-440);
 # the run itself is the one line D-106 leaves for proving one ADMIN fragment by
 # name, with Changes AND Admin switched on in Revit's ribbon first:
 #

@@ -31,12 +31,13 @@ changes. Version 2's proof is kept as a record and the card reads STALE until th
 outside the model: D-106 names exactly that consequence - *a parameter written into the shared parameter
 file stays in that file* - and `ADD_PROJECT_PARAMETER`, which also writes it, is ADMIN. A card carries
 one risk, so **adding and replacing without `createMissing` need the Admin switch too** from version 3.
-That is stricter, never looser, and **the owner kept it so on 2026-10-12: "keep it ADMIN"** (DF9). Two consequences, measured
-2026-10-12: `batch-prove` sends no ADMIN fragment (D-106 point 6), so its dry run reads a job for this
-card as WOULD RUN while the real batch would come back DID NOT RUN - the two earlier job files for this
-card ([`family-settings-shared-2026-10-01.yaml`](../../tools/jobs/family-settings-shared-2026-10-01.yaml)
+That is stricter, never looser, and **the owner kept it so on 2026-10-12: "keep it ADMIN"** (DF9). One consequence:
+`batch-prove` sends no ADMIN fragment (D-106 point 6), so no batch runs a job for this card - the two
+earlier job files for it ([`family-settings-shared-2026-10-01.yaml`](../../tools/jobs/family-settings-shared-2026-10-01.yaml)
 and [`replace-family-shared-parameters-2026-10-12.yaml`](../../tools/jobs/replace-family-shared-parameters-2026-10-12.yaml))
-included; this group's runs use `validate --allow-publish --write` by name instead.
+included; this group's runs use `validate --allow-publish --write` by name instead. Its dry run said
+WOULD RUN for such a job when this group was written; since row 5b-440 (#492) it says WILL NOT RUN IN A
+BATCH and prints that command.
 
 **Measured without Revit, 2026-10-12.** `ExternalDefinitionCreationOptions(name, ParameterType)` is 2020
 to 2022 and `(name, ForgeTypeId)` 2022 to 2027; `DefinitionGroups.Create`, `Definitions.Create` and
@@ -50,7 +51,8 @@ parameters, our file does not have them yet" goes to `REPORT_PIPE_SEGMENTS` on t
 so nothing is written by it - recorded, not chased. **Nothing
 below has run in Revit.** The arrangement is in
 [`create-family-shared-parameters-2026-10-12.yaml`](../../tools/jobs/create-family-shared-parameters-2026-10-12.yaml),
-read by `batch-prove --dry-run` as 1 WOULD RUN.
+read back by `batch-prove --dry-run` as 1 WILL NOT RUN IN A BATCH - risk ADMIN, with the command to prove
+it by name (measured 2026-10-12, after #492).
 
 **Reviewed 2026-10-12** (Codex was out of credit, so a separate review read the code): no
 refusal after the write, version 2 unchanged with `createMissing` off. Two points were acted on:
