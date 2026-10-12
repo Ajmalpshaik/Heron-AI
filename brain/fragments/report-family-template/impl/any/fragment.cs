@@ -29,6 +29,11 @@
 // `classificationCodes` lists the codes the classification file gives THIS
 // family's category - what a family build proposes the code from, and what
 // SET_FAMILY_SETTINGS accepts. Or, plainly, why there are none.
+//
+// VERSION 3 (2026-10-12): THE LENGTH UNITS join templateReport - "units:
+// Length = Millimeters (mm), rounding 1 - metric" - with a finding when they
+// are not metric, so a family build's first step catches a template set to
+// feet and inches without a call of its own.
 
 var findings = new List<string>();
 var familyKind = "";
@@ -570,11 +575,79 @@ else
     if (floors > 0) hosts.Add(floors + " floor(s)");
     if (roofs > 0) hosts.Add(roofs + " roof(s)");
 
+    // -----------------------------------------------------------------------
+    // THE LENGTH UNITS (version 3) - how Project Units shows a length in this
+    // family, so a build is told BEFORE it starts. Sizes typed in millimetres
+    // build right in a template set to Feet and fractional inches, and every
+    // dimension and value then shows in feet and inches (2026-10-12, Revit
+    // 2020). The units API changed shape at 2021 and the add-in compiles a
+    // fragment with no release symbols, so both shapes are reached by
+    // reflection, as REPORT_PROJECT_UNITS reads them.
+    // -----------------------------------------------------------------------
+    var uniLine = "";
+    var uniMetric = true;
+    var uniName = "";
+    try
+    {
+        var uniStatics = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
+        var uniApi = typeof(Units).Assembly;
+        var uniSpace = typeof(Units).Namespace + ".";
+        var uniUnits = doc.GetUnits();
+        var uniForge = uniApi.GetType(uniSpace + "ForgeTypeId");
+        var uniSpecs = uniApi.GetType(uniSpace + "SpecTypeId");
+        FormatOptions uniFormat;
+        var uniSymbol = "";
+        var uniId = "";
+        if (uniForge != null && uniSpecs != null)
+        {
+            var uniOne = new[] { uniForge };
+            var uniLength = uniSpecs.GetProperty("Length", uniStatics).GetValue(null, null);
+            uniFormat = (FormatOptions)typeof(Units).GetMethod("GetFormatOptions", uniOne).Invoke(uniUnits, new[] { uniLength });
+            var uniUnit = typeof(FormatOptions).GetMethod("GetUnitTypeId", Type.EmptyTypes).Invoke(uniFormat, null);
+            uniId = (uniForge.GetProperty("TypeId").GetValue(uniUnit, null) as string) ?? "";
+            uniName = (typeof(LabelUtils).GetMethod("GetLabelForUnit", uniStatics, null, uniOne, null)
+                .Invoke(null, new[] { uniUnit }) as string) ?? "";
+            var uniSym = typeof(FormatOptions).GetMethod("GetSymbolTypeId", Type.EmptyTypes).Invoke(uniFormat, null);
+            if (uniSym != null && !(bool)uniForge.GetMethod("Empty", Type.EmptyTypes).Invoke(uniSym, null))
+                uniSymbol = (typeof(LabelUtils).GetMethod("GetLabelForSymbol", uniStatics, null, uniOne, null)
+                    .Invoke(null, new[] { uniSym }) as string) ?? "";
+        }
+        else
+        {
+            var uniType = uniApi.GetType(uniSpace + "UnitType");
+            var uniDisplay = uniApi.GetType(uniSpace + "DisplayUnitType");
+            var uniSymType = uniApi.GetType(uniSpace + "UnitSymbolType");
+            uniFormat = (FormatOptions)typeof(Units).GetMethod("GetFormatOptions", new[] { uniType })
+                .Invoke(uniUnits, new[] { Enum.Parse(uniType, "UT_Length") });
+            var uniUnit = typeof(FormatOptions).GetProperty("DisplayUnits").GetValue(uniFormat, null);
+            uniId = uniUnit.ToString();
+            uniName = (typeof(LabelUtils).GetMethod("GetLabelFor", uniStatics, null, new[] { uniDisplay }, null)
+                .Invoke(null, new[] { uniUnit }) as string) ?? "";
+            var uniSym = typeof(FormatOptions).GetProperty("UnitSymbol").GetValue(uniFormat, null);
+            if (uniSym != null && uniSym.ToString() != "UST_NONE")
+                uniSymbol = (typeof(LabelUtils).GetMethod("GetLabelFor", uniStatics, null, new[] { uniSymType }, null)
+                    .Invoke(null, new[] { uniSym }) as string) ?? "";
+        }
+        // METRIC IS READ FROM REVIT'S OWN ID FOR THE UNIT, never from its label,
+        // which is translated: every metric length unit's id names a metre -
+        // "millimeters-1.0.1", DUT_METERS_CENTIMETERS - and no imperial one does.
+        uniMetric = uniId.IndexOf("meter", StringComparison.OrdinalIgnoreCase) >= 0;
+        uniLine = "units: Length = " + uniName + (uniSymbol.Length > 0 ? " (" + uniSymbol + ")" : " (no symbol)")
+            + ", rounding " + uniFormat.Accuracy.ToString("0.############", invariant)
+            + (uniMetric ? " - metric" : " - IMPERIAL");
+    }
+    catch (Exception failure)
+    {
+        uniLine = "units: Length could not be read ("
+            + (failure.InnerException ?? failure).Message.TrimEnd('.') + ") - REPORT_PROJECT_UNITS reads them";
+    }
+
     var parts = new List<string>
     {
         "Family \"" + (family == null ? doc.Title : family.Name) + "\"",
         "category " + categoryName,
         "kind: " + familyKind,
+        uniLine,
         "placement " + placement,
         "host elements in the template: " + (hosts.Count == 0 ? "none" : string.Join(", ", hosts)),
         "settings: " + (settingRows.Count == 0 ? "none this category carries" : string.Join(", ", settingRows)),
@@ -596,6 +669,11 @@ else
         findings.Add("Family Category and Parameters reads Host \"" + hostWords + "\" - Revit's own word for how it is "
             + "placed. The template decided it; no setting changes a hosted family into another kind, and moving "
             + "one means starting again from the other template.");
+    if (!uniMetric)
+        findings.Add("Length shows in " + uniName + ", not metric. Sizes typed in millimetres still build right, but "
+            + "every dimension and value in this family will show in " + uniName + ". Say so before building: "
+            + "SET_PROJECT_UNITS \"Length=Millimeters, 0 decimal places\" changes it (the Admin switch), or the "
+            + "family is started again from a Metric template.");
     if (types == 0)
         findings.Add("The family has no type yet. A formula, and any value, needs one - SET_FAMILY_TYPE_VALUES "
             + "makes the first.");
