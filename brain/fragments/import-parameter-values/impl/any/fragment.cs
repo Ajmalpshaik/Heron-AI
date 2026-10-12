@@ -155,16 +155,24 @@ Func<string, int?> tickOf = text =>
 // What a parameter holds now, as the read-back compares it. A tick box is its
 // 1 or 0 - the displayed word is the UI language's - and is shown with the word
 // beside it so a person reading the finding need not decode it.
+// Never throws: a value Revit will not print is said, not allowed to end the run.
 Func<Parameter, bool, string> readOf = (p, tickBox) =>
 {
-    if (tickBox)
+    try
     {
-        var shown = p.AsValueString();
-        return p.AsInteger() + (string.IsNullOrEmpty(shown) ? "" : " (" + shown + ")");
+        if (tickBox)
+        {
+            var shown = p.AsValueString();
+            return p.AsInteger() + (string.IsNullOrEmpty(shown) ? "" : " (" + shown + ")");
+        }
+        var text = p.AsString();
+        if (string.IsNullOrEmpty(text)) text = p.AsValueString();
+        return text ?? "";
     }
-    var text = p.AsString();
-    if (string.IsNullOrEmpty(text)) text = p.AsValueString();
-    return text ?? "";
+    catch (Exception ex)
+    {
+        return "(could not be read: " + ex.Message + ")";
+    }
 };
 
 // EVERY WRITE WAITS HERE FOR ITS READ-BACK, which happens once, after one
@@ -175,6 +183,11 @@ Func<Parameter, bool, string> readOf = (p, tickBox) =>
 // same element replaces the earlier one - the model holds the later value.
 var pending = new List<Tuple<Element, string, int, string, int?, string>>();
 var pendingAt = new Dictionary<string, int>();
+
+// THE READ-BACK'S OWN LINES, kept apart from the write-phase lines and listed
+// first: they are what this version exists to show, and a file of many
+// write-phase notes must not crowd them out of the 25 a reply can carry.
+var readBack = new List<string>();
 
 // Honours the quoting a spreadsheet export writes: "quoted, fields" and a
 // doubled "" for a literal quote inside one.
@@ -491,11 +504,21 @@ else
                     int earlier;
                     if (pendingAt.TryGetValue(key, out earlier))
                     {
-                        if (problems.Count < 25)
+                        // ONLY THE LATER VALUE STANDS, so only it is counted and read
+                        // back. A schedule repeating a type value on every instance row
+                        // writes the same thing again - not a problem, and not said.
+                        var before = pending[earlier];
+                        valuesWritten--;
+                        if (before.Item4.Trim().Length == 0) cellsCleared--;
+                        var differs = tick.HasValue ? before.Item5 != tick : before.Item4.Trim() != wanted.Trim();
+                        if (differs && problems.Count < 25)
                         {
                             problems.Add("row " + (r + 1) + ": '" + parameterName + "' on id " + target.Id
-                                + " was also written by row " + pending[earlier].Item3
-                                + " - this row's value is the one the model keeps");
+                                + (before.Item3 == r + 1
+                                    ? " is named by two columns of this row"
+                                    : " was also written by row " + before.Item3)
+                                + " with a different value ('" + before.Item4 + "') - '" + wanted
+                                + "' is the one the model keeps");
                         }
                         pending[earlier] = entry;
                     }
@@ -530,15 +553,24 @@ else
                 var stillThere = written.Item1.IsValidObject;
                 // Counted again, as at the write: a name two parameters share is
                 // never read from whichever Revit returns first (5b-203).
-                var named = stillThere ? written.Item1.GetParameters(written.Item2).Count : 0;
-                var again = named == 1 ? written.Item1.LookupParameter(written.Item2) : null;
+                var named = 0;
+                Parameter again = null;
+                try
+                {
+                    named = stillThere ? written.Item1.GetParameters(written.Item2).Count : 0;
+                    again = named == 1 ? written.Item1.LookupParameter(written.Item2) : null;
+                }
+                catch (Exception)
+                {
+                    again = null;   // said below as NOT KNOWN, never as a value
+                }
                 var onId = stillThere ? "id " + written.Item1.Id : "an element no longer in the model";
                 if (again == null)
                 {
                     valuesRejected++;
-                    if (problems.Count < 25)
+                    if (readBack.Count < 25)
                     {
-                        problems.Add("row " + written.Item3 + ": '" + written.Item2 + "' on " + onId
+                        readBack.Add("row " + written.Item3 + ": '" + written.Item2 + "' on " + onId
                             + (named > 1 ? " now names " + named + " parameters" : " could not be found again")
                             + " after the write, so what landed is NOT KNOWN");
                     }
@@ -548,15 +580,20 @@ else
                 var landed = readOf(again, tickBox);
                 if (landed != written.Item6) changedOnRegeneration++;
 
+                int? tickNow = null;
+                if (tickBox)
+                {
+                    try { tickNow = again.AsInteger(); } catch (Exception) { tickNow = null; }
+                }
                 var same = tickBox
-                    ? again.AsInteger() == written.Item5.Value
+                    ? tickNow == written.Item5
                     : landed.Trim() == written.Item4.Trim();
                 if (same) continue;
 
                 valuesRejected++;
-                if (problems.Count < 25)
+                if (readBack.Count < 25)
                 {
-                    problems.Add("row " + written.Item3 + ": '" + written.Item2 + "' on " + onId
+                    readBack.Add("row " + written.Item3 + ": '" + written.Item2 + "' on " + onId
                         + " was set to '" + written.Item4 + "' and READS BACK as '" + landed + "'"
                         + (regenerated ? " after Revit regenerated" : "")
                         + (landed != written.Item6 ? " (straight after the write it read '" + written.Item6 + "')" : "")
@@ -575,9 +612,11 @@ else
                     + "so no column was recognised as a Yes/No and a Yes or No cell was refused as a number");
             }
 
-            rowFindings = string.Join(" | ", problems.ToArray());
-            foreach (var problem in problems) findings.Add("  " + problem);
-            if (problems.Count >= 25)
+            var allLines = new List<string>(readBack);
+            allLines.AddRange(problems);
+            rowFindings = string.Join(" | ", allLines.ToArray());
+            foreach (var line in allLines) findings.Add("  " + line);
+            if (readBack.Count >= 25 || problems.Count >= 25)
                 findings.Add("  ... further detail not listed. The counts above are complete");
 
             findings.Add("Skipped: " + unknownParameter + " because the parameter is not there, "
