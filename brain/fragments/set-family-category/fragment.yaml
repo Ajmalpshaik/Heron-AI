@@ -167,6 +167,9 @@ compatibility-note: >
 #   "make this family work plane based"       -> SET_FAMILY_SETTINGS
 #   "add the shared parameter Equipment Tag to this family"
 #                                             -> ADD_FAMILY_SHARED_PARAMETERS
+#   "replace the family parameter Width with the shared parameter Unit_Width"
+#                                             -> ADD_FAMILY_SHARED_PARAMETERS,
+#                                                replaceExisting true
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
 #   "make the connector 3 phase 400 V"        -> SET_FAMILY_CONNECTOR_ROLES -
 #                                                a connector already made

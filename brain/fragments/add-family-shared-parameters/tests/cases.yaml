@@ -11,6 +11,20 @@ positive:
   - given: the same call again
     expect: added empty, alreadyThere 1
 
+  - given: >
+      replaceExisting true (version 2): a family with a type Length family
+      parameter "Width" labelling one dimension, a type Length "Half Width"
+      with the formula "Width / 2", two types holding Width 600 and 900, and
+      the shared parameter file holding "Heron Unit Width" (Length);
+      parameterNames "Width=Heron Unit Width", instance false, parameterGroup
+      empty
+    expect: >
+      replaced 1, "Width -> Heron Unit Width", Length, type, under the heading
+      Width had, the file's GUID; no family parameter called Width left; the
+      dimension labelled Heron Unit Width; formulasReadBack "Half Width = Heron
+      Unit Width / 2"; keptLinks naming 1 labelled dimension and both types'
+      values unchanged
+
 negative:
   - given: parameterNames "Not In The File"
     expect: refused, naming the file and the close names, and nothing added
@@ -24,7 +38,27 @@ negative:
   - given: a project in front
     expect: notAFamily true, pointing to ADD_PROJECT_PARAMETER
 
+  - given: >
+      replaceExisting true, the same family and file, parameterNames "Width=Heron
+      Test Tag" - a Text shared parameter for a Length
+    expect: refused naming both kinds; replaced empty; Width still a family parameter
+
+  - given: >
+      replaceExisting true, "Heron Unit Width" already added beside Width and
+      Width given the formula "Heron Unit Width" - the two-per-size workaround
+    expect: >
+      refused, naming the formula on Width and that Heron Unit Width is already
+      in the family; replaced empty; nothing changed
+
+  - given: replaceExisting true, "Width=Not In The File"
+    expect: refused, naming the file and the close names; replaced empty
+
 second_route:
   - >
       Family Types in the Family Editor: the parameter listed as shared; Manage
       > Shared Parameters shows the same name in the office's file
+
+  - >
+      After a replace, Family Types in the Family Editor: Heron Unit Width listed
+      with the shared marker where Width was, its values per type the same, and
+      the dimension's label reading Heron Unit Width
