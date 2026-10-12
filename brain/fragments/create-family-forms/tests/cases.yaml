@@ -18,6 +18,15 @@ positive:
     expect: >
       the same ten forms built and read back, the comment line ignored
 
+  - given: >
+      Revit running with its temporary folder a GUID-named sub-folder of the
+      user's (%LOCALAPPDATA%\Temp\<guid>\, as on the owner's laptop), and
+      the ten rows in a file under the user's own %TEMP%\heron-work - the
+      folder the chat writes to - forms the file's full path (5b-430)
+    expect: >
+      the same ten forms built and read back on the FIRST call, with no copy
+      into Revit's own folder
+
 negative:
   - given: >
       the ten rows with row 7's workPlane "Ref Lvl", a name the family does
@@ -34,6 +43,15 @@ negative:
 
   - given: forms the full path of a file outside the temporary folder
     expect: refused naming the temporary folder, and nothing read or made
+
+  - given: >
+      Revit's temporary folder a GUID-named sub-folder as above, and forms the
+      full path of a file in the user's temporary folder but OUTSIDE
+      heron-work - %TEMP%\elsewhere\rows.txt - or in a folder whose name only
+      begins heron-work, %TEMP%\heron-workshop\rows.txt
+    expect: >
+      refused naming both folders read - Revit's own and the user's
+      heron-work - and nothing read or made (5b-430)
 
   - given: a project in front
     expect: notAFamily true and nothing built anywhere

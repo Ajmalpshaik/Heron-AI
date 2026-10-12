@@ -24,7 +24,8 @@
 // The same list may be a FILE, its full path given instead: one row per line,
 // lines starting # ignored, inside the temporary folder (%TEMP%) - the folder
 // both a chat and Revit see on a PC whose Claude app keeps a private copy of
-// AppData.
+// AppData. Where Revit's own temporary folder is a GUID-named sub-folder of
+// the user's, the user's %TEMP%\heron-work is read too (5b-430).
 //
 // ALL OR NOTHING. Every row is read and checked before anything is built, and
 // every problem is named with its row. Each form is then built, and read back
@@ -386,15 +387,32 @@ else
     {
         var path = said.Trim('"', '\'');
         var temporary = System.IO.Path.GetFullPath(System.IO.Path.GetTempPath());
+        // 5b-430: a Revit may run with its temporary folder moved into a
+        // sub-folder of the user's own, named by a GUID, while the chat writes
+        // to the user's own %TEMP%\heron-work. That one folder of the parent is
+        // read as well - never the rest of the parent.
+        string shared = null;
+        var temporaryName = System.IO.Path.GetFileName(temporary.TrimEnd(System.IO.Path.DirectorySeparatorChar,
+            System.IO.Path.AltDirectorySeparatorChar));
+        Guid guidName;
+        if (Guid.TryParse(temporaryName ?? "", out guidName))
+        {
+            var parent = System.IO.Path.GetDirectoryName(temporary.TrimEnd(System.IO.Path.DirectorySeparatorChar,
+                System.IO.Path.AltDirectorySeparatorChar));
+            if (!string.IsNullOrEmpty(parent))
+                shared = System.IO.Path.Combine(parent, "heron-work") + System.IO.Path.DirectorySeparatorChar;
+        }
         string full = null;
         try { if (System.IO.Path.IsPathRooted(path)) full = System.IO.Path.GetFullPath(path); }
         catch (Exception) { full = null; }
         if (full == null)
             problems.Add("\"" + shortened(said) + "\" is neither a list of forms - each row starts kind=extrusion or "
                 + "kind=revolve - nor the full path of a file that holds one.");
-        else if (!full.StartsWith(temporary, StringComparison.OrdinalIgnoreCase))
-            problems.Add("The file " + full + " is not in the temporary folder, " + temporary + ". Write the list "
-                + "under " + temporary + "heron-work - the folder both the chat and Revit can see.");
+        else if (!full.StartsWith(temporary, StringComparison.OrdinalIgnoreCase)
+            && (shared == null || !full.StartsWith(shared, StringComparison.OrdinalIgnoreCase)))
+            problems.Add("The file " + full + " is not in the temporary folder, " + temporary
+                + (shared == null ? "" : ", nor in " + shared) + ". Write the list under "
+                + (shared ?? temporary + "heron-work") + " - the folder both the chat and Revit can see.");
         else if (!System.IO.File.Exists(full))
             problems.Add("There is no file at " + full + ".");
         else
