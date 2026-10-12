@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-031
-semantic-identity: "add the office's shared parameters, from its shared parameter file, to the family being edited"
+semantic-identity: "add the office's shared parameters, from its shared parameter file, to the family being edited, or replace family parameters with them"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_SHARED_PARAMETERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -35,6 +35,26 @@ purpose: >
   **READ BACK, ALL OR NOTHING**: each is found again by name, shared, with the
   file's GUID and the scope asked.
 
+  **REPLACING A FAMILY PARAMETER WITH A SHARED ONE (version 2).** With
+  replaceExisting true each name is a pair, Old=SharedName - "Width=Unit_Width;
+  Depth=Unit_Thickness" - and a family parameter already in the family becomes
+  the office's shared parameter in place, as Family Types > Modify > Shared
+  parameter > Select does. Every dimension label, formula and association that
+  pointed at the old one points at the shared one after, and each keeps its own
+  scope and every type's value. parameterGroup empty keeps each under its own
+  heading; instance is not used. Refused by name before anything changes: a
+  name not in the file, a kind that differs (a Length replaced by a Text), an
+  old parameter already shared or built in, a shared name already in the
+  family, and a formula that names the shared name - Revit refuses the replace
+  while one does. Read back, all or nothing: shared with the file's GUID, same
+  scope and heading, no family parameter left under the old name, every formula
+  that read it reading the shared name, every other formula unchanged, labels,
+  associations and values the same before and after.
+
+  This is the way to give an existing family the office's size parameters
+  without the two-per-size workaround (a shared one added beside a family one
+  driven by a formula), which leaves both in the Properties palette.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -51,9 +71,20 @@ contract:
       type: bool
       source: request
     # The Properties palette heading - "Mechanical", "Identity Data".
+    # When replacing, empty keeps each parameter under its own heading.
     - name: parameterGroup
       type: string
       source: request
+    # true REPLACES family parameters already in the family with the office's
+    # shared ones instead of adding new ones; each of parameterNames is then
+    # Old=SharedName, and semicolons separate the pairs. instance is not used -
+    # give it false, each keeps its own scope. Absent is false - adding,
+    # exactly as version 1 did. `optional: true` is what lets it be left out
+    # (HeronBindingNote.AbsentValue).
+    - name: replaceExisting
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: added
       # Each one added, with its kind, scope and GUID, read back.
@@ -64,6 +95,23 @@ contract:
       # nothing done (D-52).
       role: accounting
       type: IList<string>
+    - name: replaced
+      # Each family parameter replaced, Old -> SharedName, read back with its
+      # kind, scope, heading and the file's GUID.
+      role: result
+      type: IList<string>
+    - name: formulasReadBack
+      # Every formula that read an old name, and each replaced parameter's own
+      # formula, read back after replacing - "Width = Unit_Width * 2" - as one
+      # line.
+      role: accounting
+      type: string
+    - name: keptLinks
+      # What each replaced parameter was tied to, the same before and after:
+      # labelled dimensions, connector sizes, nested families, every type's
+      # value.
+      role: accounting
+      type: string
     - name: sharedFile
       # The shared parameter file that was read.
       role: accounting
@@ -72,12 +120,15 @@ contract:
       role: accounting
       type: bool
     - name: refused
-      # Why nothing was added, in plain words. Empty when the call ran.
+      # Why nothing was added or replaced, in plain words. Empty when the call ran.
       role: accounting
       type: string
     - name: findings
       type: IList<string>
 
+# VERSION 1 (adding) PROVED 2026-10-03, signed by Ajmal PS. Version 2 adds
+# replaceExisting, so the implementation changed under that proof and it reads
+# STALE until version 2 is proved - NEEDS-CHECKING group DE.
 proof:
   date: '2026-10-03'
   by: Ajmal PS
@@ -126,10 +177,25 @@ compatibility-note: >
   from 2022 (the RevitAPI reference assemblies and their XML remarks, read
   2026-10-01), so the overload is picked by reflection, newest first.
 
+  **REPLACING (version 2)** is `FamilyManager.ReplaceParameter(FamilyParameter,
+  ExternalDefinition, group, bool)` - BuiltInParameterGroup 2020 to 2024
+  (obsolete in 2024), ForgeTypeId 2022 to 2027 - picked the same way. The old
+  parameter's heading is `Definition.ParameterGroup` 2020 to 2024 or
+  `GetGroupTypeId()` 2022 to 2027, read in whichever world the call takes; its
+  kind is `GetDataType()` 2022 to 2027 or `ParameterType` 2020 to 2022.
+  Every type's value is read with `FamilyType.HasValue`, `AsValueString`,
+  `AsString`, `AsDouble`, `AsInteger` and `AsElementId`, and
+  `FamilyParameter.IsReporting`, all 2020 to 2027 (api-surface, read
+  2026-10-12).
+
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "add the shared parameter Equipment Tag to this family" -> here
 #   "add shared parameters from our file to this family"    -> here
+#   "replace the family parameter Width with the shared parameter Unit_Width"
+#                                          -> here, replaceExisting true
+#   "rename the family parameter Width"    -> ADD_FAMILY_PARAMETERS,
+#                                             renameExisting true
 #   "add a shared parameter to the project"       -> ADD_PROJECT_PARAMETER
 #   "add width and depth parameters to the family" -> ADD_FAMILY_PARAMETERS
 
@@ -138,3 +204,5 @@ utterances:
   - add shared parameters from our file to this family
   - put the office shared parameters into this family
   - add these shared parameters as type parameters under mechanical
+  - replace the family parameter Width with the shared parameter Unit_Width
+  - make the size parameters the shared parameters from our shared parameter file

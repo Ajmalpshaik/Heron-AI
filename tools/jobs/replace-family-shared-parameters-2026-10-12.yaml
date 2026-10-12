@@ -1,0 +1,63 @@
+# The proof of ADD_FAMILY_SHARED_PARAMETERS version 2 - a family parameter
+# REPLACED in place by the office's shared one - NEEDS-CHECKING Group DE:
+#
+#   add-family-shared-parameters   ADD_FAMILY_SHARED_PARAMETERS   FRG-PAR-031
+#
+#     python tools/batch-prove.py tools/jobs/replace-family-shared-parameters-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/replace-family-shared-parameters-2026-10-12.yaml
+#
+# NEVER ON ONE OF THE OWNER'S FAMILIES, AND NEVER WITH HIS OFFICE FILE SET.
+# The arrangement is made once, kept, in a NEW SCRATCH FAMILY on Revit 2020
+# first (the release the request came from). Type its title where `in:` says
+# FAMILY-TITLE. The commands are in docs/needs-checking/group-de.md:
+#
+#   Manage > Shared Parameters set to a SCRATCH file holding "Heron Unit Width"
+#     (Length) and "Heron Test Tag" (Text) - the tool only reads it. Note the
+#     file that was set before, and set it back by hand afterwards: the
+#     setting is Revit's, outside every Undo
+#   planes "Left" and "Right" (the template's), a type Length family parameter
+#     "Width" labelling the dimension between them
+#   a type Length "Half Width" with the formula "Width / 2"
+#   two types, Width 600 and Width 900
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
+#
+# POSITIVE: "Width=Heron Unit Width". `replaced` one entry - Width -> Heron
+# Unit Width, Length, type, under the heading Width had, the file's GUID;
+# formulasReadBack "Half Width = Heron Unit Width / 2"; keptLinks 1 labelled
+# dimension and both types' values (600, 900) - record the findings whole.
+#
+# NEGATIVE: "Width=Heron Test Tag" - a Text shared parameter for a Length.
+# Refused naming both kinds; `replaced` EMPTY; Width still a family parameter.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at Family Types afterwards anyway - Width still there, no Heron Unit
+# Width: rollback has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>`.
+
+model: a scratch family, Revit 2020 first, then 2024 and 2027, with a scratch shared parameter file set
+
+defaults:
+  in: "FAMILY-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: add-family-shared-parameters
+    expect: replaced
+    set:
+      parameterNames: "Width=Heron Unit Width"
+      instance: false
+      parameterGroup: ""
+      replaceExisting: true
+    negative-set:
+      parameterNames: "Width=Heron Test Tag"
+      instance: false
+      parameterGroup: ""
+      replaceExisting: true
+    note: >
+      The negative changes only the shared name: same family, same Width, a
+      shared parameter of the wrong kind. The verdict is read off `replaced` -
+      one entry, or none. The workaround's refusal (a formula naming the shared
+      name) and the kept run are by hand, DE4 and DE3.
