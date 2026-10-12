@@ -27,6 +27,9 @@ purpose: >
      TEMPLATE'S PLANES OR ITS OPENING - they carry the hosting and the cut.
      Whether the template's opening follows Width and Height out of the box
      is what the report and a first FLEX_FAMILY show (docs/43 §7, UNSURE).
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING: a door's leaf count and swing, its frame and leaf
      thicknesses, Rough Width and Height if the opening is larger than the
      door; a window's sill height, frame and sash sizes, glass. A picture
@@ -91,6 +94,9 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA

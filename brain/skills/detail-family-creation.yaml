@@ -23,6 +23,9 @@ purpose: >
      item or an annotation; read its view and its planes, and for a line-based
      one the built-in Length and the planes it is measured between - the
      template's own, never moved.
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING: the lines, the solid or hatched fills, the masks, and
      which sizes change between types.
   2. The sizes as parameters, their values FIRST, formulas, planes on every
@@ -56,6 +59,9 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA

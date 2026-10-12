@@ -74,7 +74,17 @@ purpose: >
      MEP-FITTING-FAMILY-CREATION for a duct or pipe fitting,
      DOOR-WINDOW-FAMILY-CREATION, STRUCTURAL-FAMILY-CREATION for a beam, a
      brace or a structural column, and LIGHTING-FIXTURE-FAMILY-CREATION for a
-     light with its light source. Then read the
+     light with its light source. CHECK THE UNITS NEXT: the report's units
+     line says what the family shows a length in. Where it reads IMPERIAL -
+     Feet and fractional inches - and the modeller works in millimetres, SAY
+     SO BEFORE ANYTHING IS BUILT: sizes typed in millimetres still build
+     right, but every dimension and value then shows in feet and inches, and
+     the modeller finds it only afterwards (an outdoor unit, 2026-10-12,
+     Revit 2020). Offer SET_PROJECT_UNITS "Length=Millimeters, 0 decimal
+     places" - the Admin switch - or the family started again from the
+     Metric template, and the modeller chooses. A report with no units line,
+     or one that could not read it, is followed by REPORT_PROJECT_UNITS, one
+     call. Then read the
      thing before anything is built - from the picture, the
      sketch or the words. Say back, in one list: what it is and the category
      it belongs to; the FORMS it is made of, each as the form that builds it -
@@ -312,6 +322,10 @@ utterances:
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check - the read where the report has no units line, and
+  # the change the modeller may choose.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - SET_FAMILY_CATEGORY
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
@@ -407,5 +421,11 @@ note: >
   tool placed model text, so lettering was built from square extrusions,
   and no tool set an electrical connector's voltage, poles or load. Step 12
   names ADD_FAMILY_MODEL_TEXT and step 11 SET_FAMILY_CONNECTOR_ROLES
-  version 3 (NEEDS-CHECKING Groups DC and DD). Every step is DRAFT until it
+  version 3 (NEEDS-CHECKING Groups DC and DD). Widened on 2026-10-12 after
+  an outdoor unit was built on Revit 2020 in a template whose Length showed
+  Feet and fractional inches: the geometry was right, every dimension read in
+  feet and inches, and the owner noticed only afterwards; REPORT_PROJECT_UNITS
+  showed it in one call and SET_PROJECT_UNITS put it right. Step 0 checks the
+  units from REPORT_FAMILY_TEMPLATE version 3's units line, and the family
+  methods that share step 0 point at it. Every step is DRAFT until it
   has been run on a real family with a negative case (D-30).
