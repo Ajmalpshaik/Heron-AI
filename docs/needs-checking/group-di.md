@@ -6,39 +6,31 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group DI - every size_lookup in a family checked against the tables it names (2026-10-12)
+## Group DI - an element's full parameter record by GUID, with where it stands and its tags (2026-10-12)
 
-A `size_lookup` that cannot find its table, or its column, answers with its default and Revit says
-nothing - the family builds at the default size. Heron could read a table
-([`REPORT_FAMILY_SIZE_TABLE`](../../brain/fragments/report-family-size-table/fragment.yaml)) but not
-check the formulas that read it.
+On 2026-10-12, on Revit 2020, project 4355-BHVD-3D-60P00-BL006A carried two shared parameters called
+*Equipment Tag* on the in-place units being swapped - GUID e133774c... filled, cb0704fc... empty - and a
+by-name read showed the empty one. `REPORT_PARAMETER_INVENTORY` version 1 kept one line per name, so it
+could not show the pair at all. [FRAGMENT-ISSUES row 5b-443](../fragment-issues/section-5b-rows-401-425.md).
 
-**What was built - a new capability.** `CHECK_FAMILY_SIZE_TABLES` (FRG-ELE-078), read-only, in the
-family open in front: for every `size_lookup` formula it reads the Text parameter holding the table
-name in every type, and names a blank or missing table, a first argument that is not a Text parameter,
-a missing column, a table or column name differing only in letter case, an empty table, an unnamed column, and (as a
-note) a table no type names. It does **not** check whether each type's key value has a row - that is
-reported as NOT CHECKED.
+**What was built - version 2 of the same capability, not a new one.** Every parameter is listed by what
+it is, a shared one with its GUID; `sameNameTwice` names each name carried twice where one is shared or
+project; `fullRecord` gives `record`, one string with the location, bounding box, facing, every instance
+and type parameter and, with `includeTags`, every tag with its view, type, head and leader. The job
+`replace-in-place-family` names it at steps 1 and 6.
 
-**Measured without Revit, 2026-10-12.** Every API member it calls is in all eight releases
-(`tools/api-surface --members`); it compiles on all eight (`tools/check-fragments-compile.py`); its
-four sentences reach it by identity through the host lookup, and the table readers keep theirs.
-**Nothing below has run in Revit.** The arrangement is in
-[`check-family-size-tables-2026-10-12.yaml`](../../tools/jobs/check-family-size-tables-2026-10-12.yaml),
-read by `batch-prove --dry-run` as 1 WOULD RUN.
-
-**What only Revit can say:** whether `FamilyType.AsString` gives a formula-driven Text parameter's
-value; whether Revit matches a table or column name regardless of letter case (reported, not judged); and
-whether a family whose `size_lookup` names its table directly, not through a parameter, can exist at
-all on any release (docs/43 section 5 saw Revit 2024 refuse it).
-
-Never on a working family. Test copies only.
+**Run 2026-10-12, read only, on 4355-BHVD-3D-60A10-BL003A (Revit 2020, session 25812)** - a working
+project, which a read cannot change: no transaction is open. The values are in
+[`report-parameter-inventory-v2-2026-10-12.yaml`](../../tools/jobs/report-parameter-inventory-v2-2026-10-12.yaml).
+The run record and its draft are in this worktree's `brain/proof-drafts/` (git-ignored), so DI4 is run
+from the same folder.
 
 | # | Run | Look for |
 |---|---|---|
-| **DI1** | Arrange on **Revit 2024** the two test families the job file names: "Heron Lookup Clean" (every lookup correct, both types flexed with no dimension at its default) and "Heron Lookup Broken" (one type's table name "NoSuchTable", one column "NoSuchColumn") | both open in the Family Editor |
-| **DI2** | `python tools/batch-prove.py tools/jobs/check-family-size-tables-2026-10-12.yaml` | positive: `problemCount` 2 or more - MISSING TABLE naming the changed type only, MISSING COLUMN listing the real columns. negative: `problemCount` 0 with `lookupsChecked` non-zero |
-| **DI3** | By hand through `revit_read`, a project in front | `notAFamily` true, `problemCount` 0 |
-| **DI4** | The second route: Manage Lookup Tables and Family Types by hand on the broken copy | each reported name matches what is there; the broken type's dimension sits at the formula's default |
-| **DI5** | DI2 on **Revit 2020** and **2027** | the same answers. Compiled on all eight releases; what Revit DOES was measured on none |
-| **DI6** | The signature, on the owner's word only, after DI2 and DI4 | `python brain/heron_validate.py accept check-family-size-tables --by "Ajmal PS"` |
+| ~~**DI1**~~ | ~~Positive: the exhaust fan *TRG_FAN_EXHAUST FAN: AX45 (450mm Long)*, id 7614932, sampleOnly, type parameters, record, tags~~ | **DONE 2026-10-12.** Both *Classification.Uniclass.Pr.Number* on its type, GUID 8212e2e8... `<blank>` and GUID ee217f5d... `Pr_65_67_29_05`; `sameNameTwice` 4 (the two Uniclass pairs, and OmniClass Number and Title - a shared one beside the built-in); `tagsFound` 5, each *TCM_TG_HVAC Equipment: Equipment Tag* with its view, head and leader; location, bounding box and facing (0, 1, 0) |
+| ~~**DI2**~~ | ~~Negative: the louvre *TCM_EAL_T001_ExhaustLouvre: Standard*, id 7701431, the same switches~~ | **DONE 2026-10-12.** `sameNameTwice` 0, `tagsFound` 0, the record still whole. `batch-prove` says NEG NOT EMPTY: the parameter counts are never empty for a real element, so version 1 was proved by tracking (D-53) and the new outputs are read by eye |
+| ~~**DI3**~~ | ~~Before and after: version 1 from a base worktree of origin/main against version 2, same fan, same selection~~ | **DONE 2026-10-12.** 322 parameters against 329 - 156 to 158 on the instance, 166 to 171 on the type. 535 elements in one call came back as a 6.2 MB record, whole |
+| **DI4** | Compare DI1 by hand: the fan's Properties palette, Edit Type, and the five views its tags are in | each value as the palette shows it; the two *Classification.Uniclass.Pr.Number* rows in Edit Type; each tag's head where the view shows it |
+| **DI5** | The signature, on the owner's word only, from this worktree | `python brain/heron_validate.py accept report-parameter-inventory --by "Ajmal PS"`. **The draft quotes `record` whole** - about 50 KB lands in the card's proof block; say whether that is wanted before signing |
+| **DI6** | On **Revit 2024** and **2027**: a model whose element carries a same-name shared pair and a tag | the same answer. The 2022 tag members (`GetTaggedLocalElementIds`, `GetLeaderEnd`) were compiled against, not run |
+| **DI7** | On 4355-BHVD-3D-60P00-BL006A, when it is open: one of the units that carried the two *Equipment Tag*s, if any remain, or the new ones | both *Equipment Tag* lines, e133774c... and cb0704fc..., each with its own value |
