@@ -11,6 +11,16 @@ positive:
       equal what was asked for. That sum is the check: it is what makes a stale
       id visible instead of looking like a smaller system
 
+  # VERSION 2 (5b-441) - ids TYPED as digits, matched as text by the binder.
+  - given: elementIds typed as the ids of two units PLACE_FAMILY_INSTANCES just placed - "8453537, 8453556"
+    expect: >
+      2 elements, the same two, in the order typed; `missing` EMPTY; and
+      `named` giving each id with its category and "Family: Type", which must
+      be what the Properties palette shows for that element
+
+  - given: a typed id that is an element TYPE's, not an instance's
+    expect: it is found - the binder walks types too - and `named` names the type
+
 negative:
   - given: ids from a DIFFERENT open document
     expect: >
@@ -26,6 +36,26 @@ negative:
 
   - given: a list containing ElementId.InvalidElementId
     expect: it appears in `missing`, and nothing is looked up for it
+
+  # VERSION 2 (5b-441). Each is a REFUSAL by the binder, so the fragment never
+  # runs and NOTHING IS BOUND - the reply says so. None is a pass if it ran.
+  - given: one real id and one that names nothing - "8453537, 99999999"
+    expect: refused, naming 99999999 and the model; the real one is NOT bound alone
+
+  - given: an id and a name in one list - "8453537, Level 1"
+    expect: refused, naming "Level 1" as not an id
+
+  - given: one id typed twice - "8453537, 8453537"
+    expect: refused, because an element bound twice is acted on twice
+
+  - given: typed ids for a WRITE that declares elementIds (none exists today - a scratch card under this contract)
+    expect: refused on the write, naming FILTER_ELEMENTS_BY_ID and expect_from
+
+  - given: ids copied from ANOTHER model and typed here
+    expect: >
+      refused when they name nothing here; when a number happens to name an
+      element here, `named` shows an element nobody meant - which is why a
+      change takes typed ids only through this read
 
 second_route:
   - select the same elements by hand in Revit and compare the count

@@ -142,6 +142,7 @@ namespace Heron.BindingNote.TestHost
                   "and an element with no family never matches");
 
             Foreign();
+            Typed();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -152,6 +153,87 @@ namespace Heron.BindingNote.TestHost
             Console.WriteLine("PASSED - " + _checks + " checks. A partial revival no longer");
             Console.WriteLine("reads like a deliberate narrowing.");
             return 0;
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES 5b-441: element ids TYPED as digits for
+        /// `elementIds`, kept as TEXT and refused whole when any part is wrong.
+        ///
+        /// By reflection for Foreign's reason: on the code before the row the
+        /// rules do not exist, and these fail as checks, not as a build error.
+        /// </summary>
+        private static void Typed()
+        {
+            const BindingFlags Rule = BindingFlags.NonPublic | BindingFlags.Static;
+            var typedRule = typeof(HeronBindingNote).GetMethod("TypedIds", Rule);
+            var notFoundRule = typeof(HeronBindingNote).GetMethod("TypedIdsNotFound", Rule);
+            var writeRule = typeof(HeronBindingNote).GetMethod("TypedIdsOnAWrite", Rule);
+
+            Check(typedRule != null, "the binder has a rule for ids typed as digits");
+            Check(notFoundRule != null, "and a refusal naming every typed id that names nothing");
+            Check(writeRule != null, "and a refusal for typed ids on a write");
+            if (typedRule == null || notFoundRule == null || writeRule == null) return;
+
+            Func<string, Tuple<List<string>, string>> typed = text =>
+            {
+                var args = new object[] { text, null };
+                var ids = (List<string>)typedRule.Invoke(null, args);
+                return Tuple.Create(ids, (string)args[1]);
+            };
+
+            // THE ROW'S OWN CASE - the three ids PLACE_FAMILY_INSTANCES gave.
+            var three = typed("8453537, 8453556,8453557");
+            Check(three.Item2 == null && three.Item1 != null && three.Item1.Count == 3
+                  && three.Item1[0] == "8453537" && three.Item1[2] == "8453557",
+                  "three ids typed are three TEXTS, in the order typed, spaces trimmed");
+            var wide = typed("2147483648");
+            Check(wide.Item2 == null && wide.Item1 != null && wide.Item1[0] == "2147483648",
+                  "an id past int's range is kept as text - nothing is parsed (Revit 2024's long ids)");
+
+            // NOT AN ID LIST - the binder's other rules decide, as before.
+            Check(typed("selected").Item1 == null && typed("selected").Item2 == null,
+                  "`selected` is not typed ids and is not refused here");
+            Check(typed("").Item1 == null && typed("  ").Item2 == null,
+                  "a blank is not typed ids - it binds an empty list as before");
+            Check(typed("Level 1").Item1 == null && typed("Level 1").Item2 == null,
+                  "a name is left to OneIdNamed, which refuses it as before");
+
+            // REFUSED WHOLE.
+            var mixed = typed("8453537, Level 1");
+            Check(mixed.Item1 == null && mixed.Item2 != null
+                  && mixed.Item2.IndexOf("\"Level 1\"", StringComparison.Ordinal) >= 0,
+                  "an id beside a name is refused, naming the name - got \"" + mixed.Item2 + "\"");
+            Check(typed("-1").Item1 == null && typed("-1").Item2 == null,
+                  "a minus sign is not an id - InvalidElementId is never typed in");
+            Check(typed("8453537, -1").Item2 != null,
+                  "and beside a real id it refuses the list");
+            Check(typed("٣٤").Item1 == null,
+                  "digits other than 0-9 are not an id");
+            var twice = typed("8453537, 8453537");
+            Check(twice.Item1 == null && twice.Item2 != null
+                  && twice.Item2.IndexOf("8453537", StringComparison.Ordinal) >= 0,
+                  "an id typed twice is refused - an element bound twice is turned twice");
+
+            // EVERY ONE NOT FOUND IS NAMED, AND NOTHING IS BOUND.
+            var gone = (string)notFoundRule.Invoke(null, new object[]
+                { new List<string> { "99999999", "88888888" }, 3, "Project1" }) ?? "";
+            Check(gone.IndexOf("99999999", StringComparison.Ordinal) >= 0
+                  && gone.IndexOf("88888888", StringComparison.Ordinal) >= 0,
+                  "both ids that name nothing are named - got \"" + gone + "\"");
+            Check(gone.IndexOf("2 of the 3", StringComparison.Ordinal) >= 0,
+                  "and how many of how many");
+            Check(gone.IndexOf("'Project1'", StringComparison.Ordinal) >= 0,
+                  "and the model they were looked for in");
+            Check(gone.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
+                  "and that nothing was bound - the found one is not bound alone");
+            Check(notFoundRule.Invoke(null, new object[] { new List<string>(), 3, "Project1" }) == null,
+                  "nothing missing is no refusal");
+
+            var write = (string)writeRule.Invoke(null, new object[] { "elementIds" }) ?? "";
+            Check(write.IndexOf("FILTER_ELEMENTS_BY_ID", StringComparison.Ordinal) >= 0
+                  && write.IndexOf("expect_from", StringComparison.Ordinal) >= 0
+                  && write.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
+                  "a write is sent to the read first, then expect_from - got \"" + write + "\"");
         }
 
         /// <summary>

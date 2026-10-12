@@ -51,7 +51,27 @@ positive:
       that element's Comments is now empty, cellsCleared 1, and the clear also
       counted in valuesWritten. Asked for by name, so it is done
 
+  - given: >
+      version 4 - Revit 2020, a scratch model, three instances of a family whose
+      instance Yes/No parameter is ticked by default, and a file writing No on
+      all three (the 5b-439 run, rebuilt off the owner's project)
+    expect: >
+      3 written, valuesRejected 0, yesNoRoute "ParameterType", and the three
+      tick boxes unticked in Properties. Read changedOnRegeneration and SAY
+      what it was: 3 means the early read of version 3 was the defect; 0 means
+      it was not, and 5b-439 stays open with rowFindings quoted in full
+
 negative:
+  - given: >
+      version 4 - the same three instances, the Yes/No column again, plus a
+      length column given a value finer than the project shows (1234.56 where
+      lengths display to whole millimetres) and a number column given "abc"
+    expect: >
+      the tick boxes written and NOT counted as different; the length counted
+      in valuesRejected with rowFindings naming the row, both values and
+      "after Revit regenerated" in full, not cut at sixty characters; "abc"
+      counted as Revit would not take the value, not as reading back different
+
   - given: >
       version 3 - the same file with blankCells left out, and again with
       blankCells "delete"

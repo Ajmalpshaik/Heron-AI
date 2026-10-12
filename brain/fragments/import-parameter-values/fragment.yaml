@@ -9,7 +9,7 @@ semantic-identity: "put the values from this table back onto the elements they c
 kind: action
 domain: revit.parameters
 capability: IMPORT_PARAMETER_VALUES
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -85,6 +85,21 @@ purpose: >
   version 1's and is kept as a record; this version is DRAFT until it is
   proved.
 
+  **VERSION 4 READS BACK AFTER ONE REGENERATION, AND GIVES THE REASON
+  WHOLE.** On Revit 2020 version 3 wrote No into three Show_Clearance tick
+  boxes, reported all three as reading back different, and a separate read
+  straight afterwards found all three at 0, as asked (FRAGMENT-ISSUES
+  5b-439). Version 3 read each value the moment it was set, before Revit had
+  regenerated; `WRITE_ELEMENT_PARAMETERS` version 4 believes a value only
+  after `doc.Regenerate()` and a fresh lookup, and so does this now - once,
+  after the last write. `changedOnRegeneration` counts the values whose read
+  changed across it. The finding's value was cut at sixty characters, so
+  `rowFindings` carries every row's line as one string, shown whole, and
+  `yesNoRoute` names which Revit API recognised the tick box - the three
+  nulls in that reply were right for 2020, not a failed lookup. **The cause
+  is not yet measured: what the early read said never reached the chat.**
+  DRAFT until NEEDS-CHECKING CD13 has run on a scratch model.
+
 contract:
   needs:
     - name: doc
@@ -135,6 +150,20 @@ contract:
       # were clears.
       role: result
       type: int
+    - name: changedOnRegeneration
+      # Values written whose read straight after the write differed from the
+      # read after the one regeneration (version 4, 5b-439). The read-back
+      # that counts is the later one; this says how often the early one
+      # would have been wrong.
+      role: accounting
+      type: int
+    - name: rowFindings
+      # Every row's finding as ONE string, joined by " | " - shown whole,
+      # where a list is cut to three items of sixty characters (5b-439).
+      # Prose about what could not be used or did not land, never a result:
+      # it is empty on a clean run and full on the negative.
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-11'
@@ -179,6 +208,14 @@ compatibility-note: >
   reflection and neither is written as a call - the technique
   `WRITE_ELEMENT_PARAMETERS` version 4 uses. `Parameter.AsInteger` and
   `Parameter.Set(int)`, used for the tick box, are unchanged 2020 to 2027.
+  Checked 2026-10-12 in the 2020 to 2022 assemblies and the api-surface
+  record: `ParameterType` on `Definition`, `InternalDefinition` and
+  `ExternalDefinition` 2020 to 2022, removed at 2023; `GetDataType` and
+  `SpecTypeId.Boolean` from 2022, never removed. So one of the two answers on
+  every release, and both on 2022, where `GetDataType` is used.
+
+  Version 4 adds `Document.Regenerate`, unchanged 2020 to 2027 and allowed
+  inside the caller's open transaction.
 
   **No `ElementId` is constructed from a number, which is what makes this one
   implementation.** `ElementId(int)` still exists at 2027 and `ElementId(long)`

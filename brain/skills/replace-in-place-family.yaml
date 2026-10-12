@@ -20,10 +20,10 @@ purpose: >
   whole is NOT one undo: that is why nothing is deleted until the new units
   have been read back and match.
 
-  THREE THINGS THIS JOB NEEDS DO NOT EXIST YET, each marked GAP below: select
-  by id, a GUID write and copying tags. They are not in the list of
-  capabilities after this method, because nothing provides them - do not try
-  to call them. At that step say so to the modeller and let
+  TWO THINGS THIS JOB NEEDS DO NOT EXIST YET, each marked GAP below: a GUID
+  write and copying tags. They are not in the list of capabilities after
+  this method, because nothing provides them - do not try to call them. At
+  that step say so to the modeller and let
   them choose; never work round a gap by guessing a value or typing an
   element id.
 
@@ -69,16 +69,19 @@ purpose: >
      type, points= each old bounding box's centre in plan at its bottom, in
      millimetres in the model's own coordinates (Z is the height in the model,
      not above the level), and level= the old unit's level.
-     Then turn each one alone. Select it by a spot ONLY IT occupies -
-     SELECT_IN_REGION on a small box inside it that nothing else touches,
-     because the old unit is still standing in the same place and typed
-     element ids are refused. GAP - SELECT BY ID: nothing yet selects the
-     element whose id a Heron answer in this chat gave back, here the
-     placement's.
+     Then turn each one alone. FILTER_ELEMENTS_BY_ID with elementIds= that
+     unit's id from the placement's answer - digits, as it was printed - and
+     read `named`: it must be the new family's type, not the old in-place one
+     still standing in the same place.
      ROTATE_ELEMENTS (angleRadians, pivot= its own centre) and, where it must
      be handed the other way, MIRROR_ELEMENTS with asCopy=false - each with
-     expect_from="select-in-region where minMm=<that box>", so it turns the
-     one just selected and nothing else. REPORT_CONNECTORS on it then says
+     expect_from="filter-elements-by-id where elementIds=<that id>", so it
+     turns that one unit and nothing else. Typed ids are taken on a read only,
+     and that read is DRAFT until it has run in Revit (FRAGMENT-ISSUES 5b-441).
+     An add-in older than that refuses the digits: then select the unit by a
+     spot ONLY IT occupies - SELECT_IN_REGION on a small box inside it that
+     nothing else touches - and use
+     expect_from="select-in-region where minMm=<that box>" instead. REPORT_CONNECTORS on it then says
      which way its connectors point; they should face the pipes found in
      step 2.
 
@@ -147,6 +150,7 @@ needs:
   - SELECT_IN_REGION
   - LOAD_FAMILY
   - PLACE_FAMILY_INSTANCES
+  - FILTER_ELEMENTS_BY_ID
   - ROTATE_ELEMENTS
   - MIRROR_ELEMENTS
   - REPORT_CONNECTORS
@@ -173,5 +177,6 @@ note: >
   Steps 1 and 6 were done with a rolled-back scratch read, and the GUID write
   in step 5 by hand, because no capability did them. Steps 1 and 6 are
   REPORT_PARAMETER_INVENTORY version 2 since (row 5b-443); the gaps above are
-  what is still missing. The job as a whole
+  what is still missing. Selecting each new unit by id was a gap that day;
+  FILTER_ELEMENTS_BY_ID takes typed ids since 5b-441. The job as a whole
   has not been watched working through Heron, so it stays DRAFT (D-30).
