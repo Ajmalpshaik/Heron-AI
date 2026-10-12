@@ -13,7 +13,7 @@ Another plugin's tool list had seven separate fixers for Revit's "slightly off a
 lines, reference planes, room separation, area boundary and sketch lines. Here it is one job, because it is:
 a straight line a fraction of a degree off an axis, turned about one end until it lies on it.
 
-**What was built - one new capability.** `STRAIGHTEN_OFF_AXIS_LINES` (FRG-ELE-078). `ROTATE_ELEMENTS` was
+**What was built - one new capability.** `STRAIGHTEN_OFF_AXIS_LINES` (FRG-ELE-079). `ROTATE_ELEMENTS` was
 weighed: it turns by a given angle about a vertical axis, every element by the same amount, and this turns
 each element by its own error onto the nearest axis, refusing lines that are off on purpose. Folding the
 measuring into it would give one card two jobs, and it is PROVEN. `SNAP_TO_GRID` moves points onto a grid's

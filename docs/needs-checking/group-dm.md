@@ -1,4 +1,4 @@
-# Needs checking — Group DJ
+# Needs checking — Group DM
 
 > One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-12 so that it can be read
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
@@ -6,7 +6,7 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group DJ - MEP systems made and re-typed, panel circuits read, wires drawn, spaces kept in step with linked rooms (2026-10-12)
+## Group DM - MEP systems made and re-typed, panel circuits read, wires drawn, spaces kept in step with linked rooms (2026-10-12)
 
 On 2026-10-12 the owner had another Revit AI plugin's published tool list checked against Heron, job by
 job, and asked for every job Heron could not do to be built the Heron way - general, widening an existing
@@ -42,12 +42,12 @@ connected, and `< /dev/null` on every line.
 
 | # | Run | Look for |
 |---|---|---|
-| **DJ1** | Arrange on **Revit 2024**: the scratch project the header of [`gap-fill-mep-2026-10-12.yaml`](../../tools/jobs/gap-fill-mep-2026-10-12.yaml) describes, saved as **Heron Gap Fill MEP Test** | the FCU and three diffusers on no system; three loose supply ducts; two loose cold water pipes; DB-1 with one circuit; three more sockets on no circuit; the rooms link and the empty link |
-| **DJ2** | `python tools/batch-prove.py tools/jobs/gap-fill-mep-2026-10-12.yaml`, PROJECT-TITLE filled | create-mep-system: `memberIds` 4 then `refused` with each diffuser in `skipped`. set-mep-system-type: `changedIds` 3 then `changed` 0, each pipe "a duct system type". report-panel-circuits: DB-1's circuit then an empty `schedule`. create-wires: a chain of wires then `made` 0 for the 3D view. sync-spaces: `created` 3 then 0. Look at the model afterwards - nothing left: rollback has failed on this PC before (BD1) |
-| **DJ3** | By hand through `revit_change`, create-mep-system's positive kept | the System Browser shows one Supply Air system, the FCU as base equipment, the three diffusers on it; the same run again makes nothing |
-| **DJ4** | set-mep-system-type on a duct JOINED to the DJ3 system | record what Revit does - refuses, or carries Return Air along the whole run. `report` names it either way |
-| **DJ5** | report-panel-circuits beside DB-1's panel schedule view | the same circuit numbers, load names, ratings and totals, in the project's units |
-| **DJ6** | create-wires through three points ending on a socket, snapMm 300 | one wire, its end on the socket and its start free - `looseEnds` 1 |
-| **DJ7** | sync-spaces kept; rename room 102 in the architectural model, reload, run with updateNames true; then delete room 103, reload, run again | `renamed` 1, then the old corridor's space in `orphans` and still in the model |
-| **DJ8** | DJ2 on **Revit 2020** and **2027**, the arrangement made again from that release's template | the same answers. Compiled on all eight releases; what Revit DOES was measured on none |
-| **DJ9** | The signatures, on the owner's word only, after DJ2 to DJ7 | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each of the five |
+| **DM1** | Arrange on **Revit 2024**: the scratch project the header of [`gap-fill-mep-2026-10-12.yaml`](../../tools/jobs/gap-fill-mep-2026-10-12.yaml) describes, saved as **Heron Gap Fill MEP Test** | the FCU and three diffusers on no system; three loose supply ducts; two loose cold water pipes; DB-1 with one circuit; three more sockets on no circuit; the rooms link and the empty link |
+| **DM2** | `python tools/batch-prove.py tools/jobs/gap-fill-mep-2026-10-12.yaml`, PROJECT-TITLE filled | create-mep-system: `memberIds` 4 then `refused` with each diffuser in `skipped`. set-mep-system-type: `changedIds` 3 then `changed` 0, each pipe "a duct system type". report-panel-circuits: DB-1's circuit then an empty `schedule`. create-wires: a chain of wires then `made` 0 for the 3D view. sync-spaces: `created` 3 then 0. Look at the model afterwards - nothing left: rollback has failed on this PC before (BD1) |
+| **DM3** | By hand through `revit_change`, create-mep-system's positive kept | the System Browser shows one Supply Air system, the FCU as base equipment, the three diffusers on it; the same run again makes nothing |
+| **DM4** | set-mep-system-type on a duct JOINED to the DM3 system | record what Revit does - refuses, or carries Return Air along the whole run. `report` names it either way |
+| **DM5** | report-panel-circuits beside DB-1's panel schedule view | the same circuit numbers, load names, ratings and totals, in the project's units |
+| **DM6** | create-wires through three points ending on a socket, snapMm 300 | one wire, its end on the socket and its start free - `looseEnds` 1 |
+| **DM7** | sync-spaces kept; rename room 102 in the architectural model, reload, run with updateNames true; then delete room 103, reload, run again | `renamed` 1, then the old corridor's space in `orphans` and still in the model |
+| **DM8** | DM2 on **Revit 2020** and **2027**, the arrangement made again from that release's template | the same answers. Compiled on all eight releases; what Revit DOES was measured on none |
+| **DM9** | The signatures, on the owner's word only, after DM2 to DM7 | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each of the five |
