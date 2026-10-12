@@ -657,6 +657,24 @@ else
 //      that name and that group's id.
 // Anything else THROWS naming what the file now keeps; the host rolls the
 // family back, and the file - outside the model - keeps it.
+//
+// WHAT IS BOUND AFTERWARDS COMES FROM THE FILE AS REVIT OPENED IT AGAIN, found
+// by GUID - every definition, the ones found in the file before as well as the
+// new ones - so nothing is bound from a DefinitionFile that opening it a
+// second time may have left stale (review of PR #493, 2026-10-12).
+
+DefinitionFile reopened = null;
+Func<ExternalDefinition, ExternalDefinition> fresh = definition =>
+{
+    if (reopened == null || definition == null) return definition;
+    foreach (DefinitionGroup g in reopened.Groups)
+        foreach (Definition d in g.Definitions)
+        {
+            var external = d as ExternalDefinition;
+            if (external != null && external.GUID == definition.GUID) return external;
+        }
+    return definition;
+};
 
 Func<Dictionary<string, ExternalDefinition>> writePending = () =>
 {
@@ -681,7 +699,14 @@ Func<Dictionary<string, ExternalDefinition>> writePending = () =>
         }
 
         ExternalDefinition definition = null;
-        var options = (ExternalDefinitionCreationOptions)optionsCtor.Invoke(new object[] { entry.Item2, entry.Item3.Item4 });
+        ExternalDefinitionCreationOptions options = null;
+        try { options = (ExternalDefinitionCreationOptions)optionsCtor.Invoke(new object[] { entry.Item2, entry.Item3.Item4 }); }
+        catch (Exception ex)
+        {
+            var reason = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            throw new InvalidOperationException("Revit refused the options for \"" + entry.Item2 + "\" (" + entry.Item3.Item1
+                + "): " + reason + " Nothing in the family was changed." + fileKept());
+        }
         try { definition = group.Definitions.Create(options) as ExternalDefinition; }
         catch (Exception ex)
         {
@@ -699,6 +724,7 @@ Func<Dictionary<string, ExternalDefinition>> writePending = () =>
 
     // ---- 1. Revit opens the file again --------------------------------------
     var wrong = new List<string>();
+    var reread = new Dictionary<string, ExternalDefinition>(StringComparer.OrdinalIgnoreCase);
     DefinitionFile again = null;
     try { again = doc.Application.OpenSharedParameterFile(); } catch (Exception) { again = null; }
     if (again == null) wrong.Add("Revit could not open the file again to read them back");
@@ -718,6 +744,7 @@ Func<Dictionary<string, ExternalDefinition>> writePending = () =>
                 wrong.Add("\"" + entry.Item2 + "\" reads back with GUID " + found.GUID + ", not " + made[entry.Item2].GUID);
             else if (!sameKind(specOf(found), entry.Item3.Item4))
                 wrong.Add("\"" + entry.Item2 + "\" reads back holding " + kindLabel(found) + ", not " + entry.Item3.Item1);
+            else reread[entry.Item2] = found;
         }
 
     // ---- 2. the file's own text on disk -----------------------------------------
@@ -798,7 +825,9 @@ Func<Dictionary<string, ExternalDefinition>> writePending = () =>
         + string.Join("; ", created) + ".");
     findings.Add("The shared parameter file is outside the model: Undo in Revit does not take these out of it. Delete "
         + "one in Manage > Shared Parameters if it is not wanted.");
-    return made;
+    // Bound from here on: the file as Revit opened it again (see above).
+    reopened = again;
+    return reread;
 };
 
 // ---------------------------------------------------------------------------
@@ -811,6 +840,8 @@ if (refused == null && !replaceExisting)
     if (pendingAdds.Count > 0)
     {
         var newDefinitions = writePending();
+        // Every one bound from the file as Revit opened it again, by GUID.
+        plans = plans.Select(p => Tuple.Create(p.Item1, fresh(p.Item2))).ToList();
         foreach (var name in pendingAdds) plans.Add(Tuple.Create(name, newDefinitions[name]));
     }
     else if (createMissing)
@@ -827,7 +858,13 @@ if (refused == null && !replaceExisting)
                 + reason + " The call failed, and Heron rolls the family back." + fileKept());
         }
 
-        var made = fm.get_Parameter(plan.Item2.Name);
+        FamilyParameter made = null;
+        try { made = fm.get_Parameter(plan.Item2.Name); }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("\"" + plan.Item2.Name + "\" could not be read back: " + ex.Message
+                + " The call failed, and Heron rolls the family back." + fileKept());
+        }
         Guid? guid = null;
         try { if (made != null && made.IsShared) guid = made.GUID; } catch (Exception) { guid = null; }
         if (made == null || !guid.HasValue || guid.Value != plan.Item2.GUID || made.IsInstance != instance)
@@ -1164,20 +1201,13 @@ if (refused == null && replaceExisting)
     }
     else
     {
-        // ----- CREATING: the new definitions go into the file now, every check
-        // above having passed, and are read back before the family changes -----
-        if (pendingPlan.Count > 0)
-        {
-            var newDefinitions = writePending();
-            foreach (var step in pendingPlan) plan.Add(Tuple.Create(step.Item1, step.Item2, newDefinitions[step.Item3]));
-        }
-        else if (createMissing)
-            findings.Add("createMissing was on, and every shared name was already in the shared parameter file - "
-                + "nothing was written to it.");
-
-        // ----- BEFORE -----
-        var oldNames = plan.Select(x => x.Item2).ToList();
-        var newFor = plan.ToDictionary(x => x.Item2, x => x.Item3.Name, StringComparer.Ordinal);
+        // ----- BEFORE - read with nothing written yet, the file included: every
+        // pair, the ones still to be created too, so the only things that can
+        // fail once the file is written are Revit's own replace and the read
+        // back (review of PR #493) -----
+        var steps = plan.Select(x => Tuple.Create(x.Item1, x.Item2, x.Item3.Name)).Concat(pendingPlan).ToList();
+        var oldNames = steps.Select(x => x.Item2).ToList();
+        var newFor = steps.ToDictionary(x => x.Item2, x => x.Item3, StringComparer.Ordinal);
         var formulaBefore = new Dictionary<string, string>(StringComparer.Ordinal);
         var readsBefore = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         foreach (var entry in byName)
@@ -1194,7 +1224,7 @@ if (refused == null && replaceExisting)
         var tiedBefore = new Dictionary<string, string>(StringComparer.Ordinal);
         var valuesBefore = new Dictionary<string, string>(StringComparer.Ordinal);
         var reportingBefore = new Dictionary<string, bool>(StringComparer.Ordinal);
-        foreach (var step in plan)
+        foreach (var step in steps)
         {
             scopeBefore[step.Item2] = step.Item1.IsInstance;
             groupWanted[step.Item2] = wanted ?? groupOf(step.Item1.Definition);
@@ -1202,6 +1232,20 @@ if (refused == null && replaceExisting)
             valuesBefore[step.Item2] = valuesOf(step.Item1);
             reportingBefore[step.Item2] = step.Item1.IsReporting;
         }
+
+        // ----- CREATING: the new definitions go into the file now, every check
+        // and every reading above done, and are read back before the family
+        // changes. Then every pair is bound from the file as Revit opened it
+        // again, by GUID -----
+        if (pendingPlan.Count > 0)
+        {
+            var newDefinitions = writePending();
+            plan = plan.Select(x => Tuple.Create(x.Item1, x.Item2, fresh(x.Item3))).ToList();
+            foreach (var step in pendingPlan) plan.Add(Tuple.Create(step.Item1, step.Item2, newDefinitions[step.Item3]));
+        }
+        else if (createMissing)
+            findings.Add("createMissing was on, and every shared name was already in the shared parameter file - "
+                + "nothing was written to it.");
 
         // ----- REPLACE -----
         foreach (var step in plan)

@@ -52,6 +52,13 @@ below has run in Revit.** The arrangement is in
 [`create-family-shared-parameters-2026-10-12.yaml`](../../tools/jobs/create-family-shared-parameters-2026-10-12.yaml),
 read by `batch-prove --dry-run` as 1 WOULD RUN.
 
+**Reviewed 2026-10-12** (Codex was out of credit, so a separate review read the code): no
+refusal after the write, version 2 unchanged with `createMissing` off. Two points were acted on:
+every definition is now bound from the file as Revit opened it again, found by GUID, in case a second
+opening leaves the first one's objects stale; and replacing reads its "before" values before the file is
+written, so after the write only Revit's own add or replace and the read-back can fail - each naming
+what the file keeps.
+
 **The one thing to watch: whether Revit writes a new definition to disk at once.** The on-disk
 read-back assumes `Definitions.Create` saves the file when it returns. If it does not, DF2 fails safe -
 it throws, the family rolls back, and the message says what the file keeps - and that is a finding about
