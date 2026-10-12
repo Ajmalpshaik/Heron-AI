@@ -76,13 +76,26 @@ def check(condition, what):
         FAILURES.append(what)
 
 
-class FakeFragment(object):
-    """Only what the judge reads: a slug, a status, and a contract."""
+# A CHECKOUT OF CARDS FOR THE FAKES. `job_refusal` asks the client's own
+# `risk_refusal`, which reads `risk:` off a card on disk - and a fragment with
+# no card is refused as an unreadable risk, exactly as `validate` refuses it.
+# So every fake carries one, READ unless the test says otherwise.
+CARDS = tempfile.mkdtemp(prefix="heron-batch-cards-")
 
-    def __init__(self, slug, provides, status="DRAFT"):
+
+class FakeFragment(object):
+    """Only what the judge reads: a slug, a status, a contract and a card."""
+
+    def __init__(self, slug, provides, status="DRAFT", risk="READ"):
         self.slug = slug
         self.status = status
         self._provides = provides
+        self.folder = os.path.join(CARDS, "brain", "fragments", slug)
+        if not os.path.isdir(self.folder):
+            os.makedirs(self.folder)
+        with io.open(os.path.join(self.folder, "fragment.yaml"), "w",
+                     encoding="utf-8") as fh:
+            fh.write(u"risk: %s\n" % risk)
 
     def provides(self):
         return self._provides
@@ -648,6 +661,108 @@ def test_the_job_file_is_checked_against_the_contract():
     check(verdict == BP.NO_FRAGMENT, "an unknown fragment is NO FRAGMENT")
 
 
+def test_an_admin_or_publish_fragment_is_never_sent_by_a_batch():
+    print("An ADMIN or PUBLISH fragment is its own bucket, never WOULD RUN")
+    # Row 5b-440. `validate` without --allow-publish refuses these (D-106
+    # point 6: no batch sends one), and the dry run never asked - it said
+    # WOULD RUN for add-family-shared-parameters at risk: ADMIN, and the real
+    # run came back DID NOT RUN.
+    base = {"fragment": "admin-sample", "setup": [], "set": {"a": "1"},
+            "negative-set": {"a": "2"}, "write": False, "cross": None,
+            "in": None, "negative-in": None, "expect": None, "timeout": 60}
+    library = {"admin-sample": FakeFragment("admin-sample", [], risk="ADMIN"),
+               "publish-sample": FakeFragment("publish-sample", [],
+                                              risk="PUBLISH"),
+               "modify-sample": FakeFragment("modify-sample", [],
+                                             risk="MODIFY"),
+               "odd-sample": FakeFragment("odd-sample", [], risk="LAUNCH")}
+
+    word = getattr(BP, "NOT_IN_A_BATCH", None)
+    check(word is not None, "the runner has a verdict for this at all")
+    if word is None:
+        word = "WILL NOT RUN IN A BATCH"   # so the checks below still RUN and FAIL
+
+    verdict, why = BP.job_refusal(base, library)
+    check(verdict == word, "an ADMIN fragment is %s (%s)" % (word, verdict))
+    why = why or ""
+    check("risk ADMIN" in why, "and it names the risk: %s" % why)
+    check("validate --allow-publish" in why and "--write" in why,
+          "and the command that does send it, with --allow-publish and --write")
+    check("admin-sample" in why.split("`")[1] if why.count("`") >= 2 else False,
+          "and that command names the fragment")
+    check("Admin" in why, "and the switch that has to be on in Revit")
+
+    verdict, why = BP.job_refusal(dict(base, fragment="publish-sample"), library)
+    check(verdict == word and "risk PUBLISH" in (why or ""),
+          "a PUBLISH fragment is the same bucket (%s)" % verdict)
+
+    check(BP.job_refusal(dict(base, fragment="modify-sample"), library)[0] is None,
+          "a MODIFY fragment is still runnable - only the levels above are held")
+
+    verdict, _ = BP.job_refusal(dict(base, fragment="odd-sample"), library)
+    check(verdict == BP.REFUSED, "a risk nobody knows is REFUSED (%s)" % verdict)
+
+    # A SETUP STEP ABOVE MODIFY IS NEVER SENT, WHATEVER THE FLAGS - `validate`
+    # asks `risk_refusal` of every step with no switch. So a job with one is
+    # REFUSED outright, behind a runnable fragment and an ADMIN one alike: the
+    # by-name command would fail on the step too.
+    library["no-card-step"] = FakeFragment("no-card-step", [])
+    os.remove(os.path.join(library["no-card-step"].folder, "fragment.yaml"))
+    for step, risk in (("admin-sample", "ADMIN"), ("publish-sample", "PUBLISH")):
+        for fragment in ("modify-sample", "admin-sample"):
+            verdict, why = BP.job_refusal(
+                dict(base, fragment=fragment, setup=[step]), library)
+            check(verdict == BP.REFUSED and step in (why or "")
+                  and ("risk %s" % risk) in (why or ""),
+                  "a setup step at %s behind %s is REFUSED, naming the step and "
+                  "its risk (%s)" % (risk, fragment, verdict))
+    verdict, why = BP.job_refusal(
+        dict(base, fragment="modify-sample", setup=["no-card-step"]), library)
+    check(verdict == BP.REFUSED and "no-card-step" in (why or ""),
+          "a setup step whose risk cannot be read is REFUSED (%s)" % verdict)
+    check(BP.job_refusal(dict(base, fragment="modify-sample",
+                              setup=["modify-sample"]), library)[0] is None,
+          "a MODIFY setup step is still runnable")
+
+    # A JOB DICT MISSING THE OPTIONAL KEYS MUST NOT CRASH THE REFUSAL. The
+    # command it prints is built from them, and job_refusal is called with
+    # partial dicts by design.
+    try:
+        verdict, _ = BP.job_refusal({"fragment": "admin-sample", "setup": [],
+                                     "negative-set": {"a": "2"},
+                                     "negative-in": None, "expect": None,
+                                     "cross": None}, library)
+        check(verdict == word, "a partial job dict gets the same verdict")
+    except (KeyError, TypeError) as exc:
+        check(False, "a partial job dict crashed the refusal: %r" % exc)
+
+    # AND THE BATCH ITSELF: a dry run says so, the exit code stays 0 - the job
+    # file is not broken, a batch is the wrong way to send it - and a real run
+    # sends nothing, because the refusal comes before `run_one`.
+    sent = []
+    real_run_one, real_load_all = BP.run_one, BP.HF.load_all
+    workspace = tempfile.mkdtemp(prefix="heron-batch-")
+    try:
+        job_file = os.path.join(workspace, "admin.yaml")
+        with io.open(job_file, "w", encoding="utf-8") as fh:
+            fh.write(u"jobs:\n  - fragment: admin-sample\n"
+                     u"    set: {a: 1}\n    negative-set: {a: 2}\n")
+        BP.HF.load_all = lambda *a, **k: ({"x": library["admin-sample"]}, [])
+        BP.run_one = lambda *a, **k: sent.append(a) or (None, BP.DID_NOT_RUN, "")
+        for flags in (["--dry-run"], []):
+            report = os.path.join(workspace, "findings.json")
+            code = BP.main([job_file, "--report", report] + flags)
+            findings = json.loads(io.open(report, encoding="utf-8").read())
+            label = "dry run" if flags else "real run"
+            check([r["verdict"] for r in findings["results"]] == [word],
+                  "the %s reports %s, not WOULD RUN" % (label, word))
+            check(code == 0, "the %s exits 0 (%s)" % (label, code))
+        check(not sent, "and nothing was ever handed to `validate`")
+    finally:
+        BP.run_one, BP.HF.load_all = real_run_one, real_load_all
+        shutil.rmtree(workspace)
+
+
 def test_defaults_merge_key_by_key():
     print("One selection written once, and a job overrides only what differs")
 
@@ -758,11 +873,14 @@ def main():
                  test_a_job_with_no_negative_arrangement_is_refused,
                  test_a_negative_that_would_hand_the_chain_the_wrong_values_is_refused,
                  test_the_job_file_is_checked_against_the_contract,
+                 test_an_admin_or_publish_fragment_is_never_sent_by_a_batch,
                  test_defaults_merge_key_by_key,
                  test_the_command_line_is_one_the_client_actually_parses,
                  test_a_value_with_a_space_is_quoted_when_printed):
         test()
         print("")
+
+    shutil.rmtree(CARDS, ignore_errors=True)
 
     if FAILURES:
         print("%d failure(s):" % len(FAILURES))
