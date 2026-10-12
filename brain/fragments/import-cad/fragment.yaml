@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-IMP-019
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-046
+semantic-identity: "import this CAD drawing into this view, as an underlay"
+kind: action
+domain: revit.document
+capability: IMPORT_CAD
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# IMPORTED, NOT LINKED: the drawing becomes part of the file - what a family
+# underlay always wants and a project rarely does. LINK_FILES links instead.
+# Drawings sharing an origin line up across the plan and elevation they go
+# into. thisViewOnly keeps a drawing in one view; placement is origin, centre
+# or shared. READ BACK: each import looked up by id.
+#
+# CONVERT_CAD_TO_DIRECTSHAPE and EXTRACT_CAD_CURVES work on a drawing already
+# in the model.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Imports DWG, DXF or DGN drawings into a named view of the project or family
+  in front - an underlay in a family, this view only or the model.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Full paths separated by semicolons.
+    - name: paths
+      type: string
+      source: request
+    # The view to import into, by name - "Ref. Level" in a family.
+    - name: viewName
+      type: string
+      source: request
+    # "origin", "centre" or "shared"; an EMPTY value means origin.
+    - name: placement
+      type: string
+      source: request
+    # true keeps each drawing in that one view; false, or not said, imports
+    # into the model.
+    - name: thisViewOnly
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: imported
+      role: result
+      type: int
+    - name: importIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, file by file (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.Import with DWGImportOptions
+  and DGNImportOptions (Placement and ThisViewOnly on BaseImportOptions) and
+  ImportPlacement are present 2020 through 2027 - read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "import this dwg into the family plan as an underlay" -> here
+#   "link the cad drawings"                   -> LINK_FILES
+#   "turn this cad into model geometry"       -> CONVERT_CAD_TO_DIRECTSHAPE
+
+utterances:
+  - import this dwg into the family plan as an underlay
+  - bring the manufacturer's drawing into the front elevation
+  - import these cad drawings into this view only
+  - put the cad underlay in the reference level plan

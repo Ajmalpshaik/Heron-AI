@@ -1,0 +1,15 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a structural model with two columns, one beam and one floor, analytical model on, plus one analytical member drawn on its own
+    expect: >
+      memberCount 4 (two columns, the beam, the loose one), panelCount 1, and
+      unassociated naming the loose member
+
+negative:
+  - given: an architectural model with no structural elements
+    expect: >
+      memberCount 0, panelCount 0, nothing listed
+
+second_route:
+  - the Analytical Model view, each member selected to see its Associated physical element

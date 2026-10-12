@@ -1,0 +1,77 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-095
+semantic-identity: "push the top, bottom or side faces of these parts out or in"
+kind: action
+domain: revit.elements
+capability: OFFSET_PART_FACES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# faces picks top, bottom, vertical or all; a positive offset is outward. Only
+# faces Revit lets move are moved. READ BACK: each face's offset.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Offsets the top, bottom, side or all faces of parts outward or inward by a
+  distance - a finish thickened, a structure part trimmed back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # top, bottom, vertical or all.
+    - name: faces
+      type: string
+      source: request
+    # Millimetres; positive is outward.
+    - name: offsetMm
+      type: double
+      source: request
+  provides:
+    - name: offsetCount
+      role: result
+      type: int
+    - name: partsTouched
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING with every part left as it was and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Part.CanOffsetFace, SetFaceOffset and
+  GetFaceOffset, Face.ComputeNormal and GetBoundingBox are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12. Millimetres are divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make parts from these walls"             -> CREATE_PARTS
+#   "divide the parts at the grids"           -> DIVIDE_PARTS
+#   "merge these parts"                       -> MERGE_PARTS
+#   "exclude these parts"                     -> SET_PARTS_EXCLUDED
+#   "offset the top of these parts"           -> OFFSET_PART_FACES
+
+utterances:
+  - offset the top of these parts by 20 mm
+  - pull the sides of these parts in by 50 mm
+  - thicken the finish parts at the top
+  - push these part faces out

@@ -139,6 +139,10 @@ compatibility-note: >
 #    equipment"                             different thing entirely -
 #                                           MAXIMIZE_DATUM_EXTENTS
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "list the edges of this beam"           -> REPORT_ELEMENT_GEOMETRY
 utterances:
   - what is the bounding box of this duct
   - how big is the box around these elements

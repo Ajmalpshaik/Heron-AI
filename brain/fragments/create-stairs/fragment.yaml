@@ -137,6 +137,10 @@ compatibility-note: >
 #   "cut an opening in this slab"    -> CREATE_OPENING
 #   "make a floor slab"              -> CREATE_FLOOR
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "put railings on these stairs"          -> CREATE_RAILING
 utterances:
   - make the stair also
   - make the stair

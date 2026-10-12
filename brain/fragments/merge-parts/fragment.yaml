@@ -1,0 +1,68 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-093
+semantic-identity: "merge these parts back into one"
+kind: action
+domain: revit.elements
+capability: MERGE_PARTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Revit's own test decides whether the set can merge: touching, same material
+# and source. A set that cannot is refused with the reason, nothing changed.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Merges adjacent parts of the same material back into one part.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: merged
+      role: result
+      type: int
+    - name: mergedPart
+      role: result
+      type: ElementId
+    - name: refused
+      # Why NOTHING WAS MERGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PartUtils.CreateMergedPart,
+  ArePartsValidForMerge and GetMergedParts are present 2020 through 2027 - read
+  off RevitAPI.xml in the Nice3point reference packages for all eight releases
+  on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make parts from these walls"             -> CREATE_PARTS
+#   "divide the parts at the grids"           -> DIVIDE_PARTS
+#   "merge these parts"                       -> MERGE_PARTS
+#   "exclude these parts"                     -> SET_PARTS_EXCLUDED
+#   "offset the top of these parts"           -> OFFSET_PART_FACES
+
+utterances:
+  - merge these parts
+  - join these floor parts back into one
+  - combine the divided wall parts
+  - merge the parts on either side of the grid

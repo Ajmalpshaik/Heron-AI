@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a family with a 3D view "View 1", viewName "View 1"
+    expect: >
+      previewView "View 1" read back; after a save the family browser shows
+      that view
+
+negative:
+  - given: the same command run in a project, not a family
+    expect: >
+      refused - this is a project - nothing changed
+
+  - given: viewName "No Such View"
+    expect: >
+      refused naming it
+
+second_route:
+  - Save As > Options > Preview in the family, which shows the chosen view
+  - one Ctrl+Z puts the setting back in a single step (Golden Rule 16)

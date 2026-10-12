@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 'one toposolid 30 x 20 m, loopMm "5000,5000; 15000,5000; 15000,10000; 5000,10000"'
+    expect: >
+      one subdivision read back, following the terrain inside that outline
+
+negative:
+  - given: two walls
+    expect: >
+      none made, each named as not a toposolid
+
+  - given: loopMm with two points
+    expect: >
+      refused before anything is made
+
+second_route:
+  - the site plan, the subdivision outline and its material
+  - one Ctrl+Z removes it in a single step (Golden Rule 16)

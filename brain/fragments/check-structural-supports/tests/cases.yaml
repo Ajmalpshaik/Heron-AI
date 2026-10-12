@@ -1,0 +1,14 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: two columns on foundations, one beam between them, and a second beam with one end in mid-air; toleranceMm 0
+    expect: >
+      unsupported naming only the second beam's free end
+
+negative:
+  - given: the two columns and the first beam only
+    expect: >
+      unsupported empty - nothing invented
+
+second_route:
+  - a 3D view at each named end - nothing there to bear on

@@ -144,6 +144,10 @@ compatibility-note: >
 #                                               NonStructural and correct for it
 #   "put a beam along this line"             -> PLACE_LINE_BASED_FAMILY
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "fill this bay with joists at 600"      -> CREATE_BEAM_SYSTEM
 utterances:
   - place structural columns at these points
   - put a column at each grid intersection

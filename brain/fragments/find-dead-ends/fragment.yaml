@@ -157,6 +157,10 @@ compatibility-note: >
 #   "which pipes are still open at the end" -> here - a READ. It classifies
 #                                        every open end and only the
 #                                        unexplained ones are the finding
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "which beams have nothing under them"   -> CHECK_STRUCTURAL_SUPPORTS
 utterances:
   - which runs end in nothing
   - find the dead ends

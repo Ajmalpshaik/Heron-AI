@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two steel beams framing into one steel column
+    expect: >
+      coped 2, each beam's coping list naming the column, read back
+
+negative:
+  - given: the same straight after
+    expect: >
+      coped 0 and alreadyCoped 2 - nothing cut twice
+
+  - given: two walls
+    expect: >
+      coped 0, each named as not structural framing
+
+second_route:
+  - a 3D view at the joint, and each beam's Cope list in Modify > Cope
+  - one Ctrl+Z takes the cuts back in a single step (Golden Rule 16)

@@ -55,7 +55,34 @@ else
     {
         try
         {
-            var opening = doc.Create.NewOpening(host, profile, perpendicularFace);
+            // A BEAM, BRACE OR COLUMN takes Revit's own framing opening, the
+            // overload whose third argument is a reference face (version 2,
+            // 2026-10-12, the gap fill): perpendicularFace true cuts through
+            // the web, false through the flanges. That face type lives in a
+            // namespace the fragment contract does not supply, so the
+            // overload is found by its parameter's type name and the value
+            // parsed from its own name - nothing is written out in full.
+            // Every other host keeps the wall-and-slab call it always had.
+            var framingHost = host is FamilyInstance && host.Category != null
+                && (host.Category.Id == new ElementId(BuiltInCategory.OST_StructuralFraming)
+                    || host.Category.Id == new ElementId(BuiltInCategory.OST_StructuralColumns));
+            Opening opening = null;
+            if (framingHost)
+            {
+                var creator = doc.Create;
+                var method = creator.GetType().GetMethods().FirstOrDefault(m => m.Name == "NewOpening"
+                    && m.GetParameters().Length == 3
+                    && m.GetParameters()[2].ParameterType.Name == "eRefFace");
+                if (method == null)
+                    throw new InvalidOperationException("this Revit has no framing opening call");
+                var face = Enum.Parse(method.GetParameters()[2].ParameterType, perpendicularFace ? "CenterY" : "CenterZ");
+                try { opening = method.Invoke(creator, new object[] { host, profile, face }) as Opening; }
+                catch (System.Reflection.TargetInvocationException wrapped)
+                {
+                    throw wrapped.InnerException ?? wrapped;
+                }
+            }
+            else opening = doc.Create.NewOpening(host, profile, perpendicularFace);
 
             if (opening == null)
             {

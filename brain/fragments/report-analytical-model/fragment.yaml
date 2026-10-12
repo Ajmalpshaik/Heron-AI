@@ -1,0 +1,74 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-089
+semantic-identity: "the structural analytical model - members, panels and the physical elements they belong to"
+kind: action
+domain: revit.elements
+capability: REPORT_ANALYTICAL_MODEL
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Every analytical member with its end points in millimetres and its physical
+# element; every panel with its physical element; and analytical elements tied
+# to none - drawn on their own, or left behind by a deleted physical element.
+#
+# REVIT 2023 made the analytical model separate elements with an association
+# manager, so the card declares 2023 on.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Reads the structural analytical model for handing to analysis - each
+  analytical member's end points and physical element, each panel's physical
+  element, and those tied to none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: analytical
+      # ONE STRING, a line per member and panel.
+      role: result
+      type: string
+    - name: memberCount
+      role: result
+      type: int
+    - name: panelCount
+      role: result
+      type: int
+    - name: unassociated
+      # Analytical elements tied to no physical element (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  AnalyticalMember, AnalyticalPanel, AnalyticalElement.GetCurve and
+  AnalyticalToPhysicalAssociationManager.GetAnalyticalToPhysicalAssociationManager
+  and GetAssociatedElementId are present from 2023 and absent in 2020 to 2022
+  in this form - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12 - so the card declares 2023 to 2027 only.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "export the analytical model"             -> here, as text
+#   "which analytical members have no beam"   -> here
+
+utterances:
+  - read the structural analytical model
+  - list the analytical members and their beams
+  - which analytical elements have no physical element
+  - give me the analytical model for the structural engineer

@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-066
+semantic-identity: "make terrain from this boundary and these survey heights"
+kind: action
+domain: revit.geometry
+capability: CREATE_TOPOSOLID
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# The boundary is kept as given - never hulled - and interior spot heights
+# shape the surface; heights are millimetres above the internal origin, as
+# reduced from a survey. The type is found by name, empty takes the first.
+#
+# REVIT 2024 brought toposolids, so the card declares 2024 on.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates a toposolid - native terrain - from a boundary of points with
+  heights and interior survey spot heights, all in millimetres.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "x,y,z; x,y,z; ..." in millimetres, the outline in order.
+    - name: boundaryMm
+      type: string
+      source: request
+    # "x,y,z; ..." interior spot heights; an EMPTY value is none.
+    - name: pointsMm
+      type: string
+      source: request
+    # A toposolid type by name; an EMPTY value takes the first.
+    - name: typeName
+      type: string
+      source: request
+    - name: level
+      type: Level
+      source: request
+  provides:
+    - name: toposolid
+      role: result
+      type: Toposolid
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Toposolid.Create(Document, IList<CurveLoop>, IList<XYZ>, ElementId,
+  ElementId) and ToposolidType are present from 2024 and absent before - read
+  off RevitAPI.xml in the Nice3point reference packages for all eight releases
+  on 2026-10-12 - so the card declares 2024 to 2027 only.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make the terrain from these spot levels"  -> here
+#   "add a car park area to the terrain"       -> ADD_TOPOSOLID_SUBDIVISION
+#   "make a floor"                             -> CREATE_FLOOR
+
+utterances:
+  - make a toposolid from these survey points
+  - create the site terrain from this boundary and spot heights
+  - model the ground from these levels
+  - add terrain for the site

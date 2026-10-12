@@ -134,6 +134,10 @@ compatibility-note: >
 #                                           SCHEDULE column is meant. This
 #                                           one joins geometry
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "cope these beams at the columns"       -> COPE_FRAMING
 utterances:
   - join these walls together
   - the wall and the slab are not joining

@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two parts of a floor's finish layer, faces top, offsetMm 20
+    expect: >
+      offsetCount 2, each top face 20 mm higher, read back
+
+negative:
+  - given: faces sideways
+    expect: >
+      refused before anything is changed
+
+  - given: two walls, faces top
+    expect: >
+      offsetCount 0, each named as not a part
+
+second_route:
+  - a section through the floor with Show Parts, the finish 20 mm thicker
+  - one Ctrl+Z puts every face back in a single step (Golden Rule 16)

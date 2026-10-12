@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-092
+semantic-identity: "divide these parts where the grids or levels cross them"
+kind: action
+domain: revit.elements
+capability: DIVIDE_PARTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Divide Parts with Intersecting References: cutterNames names grids, levels
+# or reference planes, each finding exactly one. Parts Revit will not divide
+# are refused with the reason. READ BACK: the parts on the original elements
+# counted again.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Divides parts where named grids, levels or reference planes cross them, as
+  Divide Parts with intersecting references does.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The parts.
+    - name: elements
+      type: IList<Element>
+    # Grid, level or reference plane names separated by commas.
+    - name: cutterNames
+      type: string
+      source: request
+  provides:
+    - name: divided
+      role: result
+      type: int
+    - name: partCountAfter
+      # Parts now on the original elements, read back.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING with every refusal (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PartUtils.DivideParts(Document,
+  ICollection<ElementId>, ICollection<ElementId>, IList<Curve>, ElementId),
+  ArePartsValidForDivide and GetAssociatedParts, Part.GetSourceElementIds and
+  LinkElementId.HostElementId are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make parts from these walls"             -> CREATE_PARTS
+#   "divide the parts at the grids"           -> DIVIDE_PARTS
+#   "merge these parts"                       -> MERGE_PARTS
+#   "exclude these parts"                     -> SET_PARTS_EXCLUDED
+#   "offset the top of these parts"           -> OFFSET_PART_FACES
+
+utterances:
+  - divide these parts at the grids
+  - cut the floor parts at grid lines A and B
+  - split the wall parts at level 2
+  - divide the parts along these reference planes

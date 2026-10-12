@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-065
+semantic-identity: "draw area boundary lines round the exterior walls, or along these loops"
+kind: action
+domain: revit.rooms
+capability: CREATE_AREA_BOUNDARY_LINES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# TWO WAYS: traceWalls inside, outside or centre draws a line along every
+# exterior wall on the plan's level (type Function Exterior) at that face - a
+# gross or net measuring rule; loopsMm draws closed loops of points. An arc
+# wall is named and left: its face is not its centreline moved sideways.
+#
+# READ BACK: each line looked up by its id.
+#
+# CREATE_ROOM_SEPARATION_LINES draws room separation lines, not area
+# boundaries; PLACE_AREAS places the areas inside them.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Draws area boundary lines in an area plan - along the exterior walls at
+  their inside face, outside face or centreline, or along closed loops of
+  points.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: areaPlanName
+      type: string
+      source: request
+    # "inside", "outside" or "centre"; an EMPTY value traces no walls.
+    - name: traceWalls
+      type: string
+      source: request
+    # "x,y; x,y; x,y | x,y; ..." in millimetres; an EMPTY value draws no loops.
+    - name: loopsMm
+      type: string
+      source: request
+  provides:
+    - name: made
+      role: result
+      type: int
+    - name: lineIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING with every wall or loop left out and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Creation.Document.NewAreaBoundaryLine,
+  SketchPlane.Create(Document, ElementId), View.GenLevel, WallType.Function,
+  WallFunction.Exterior and Wall.Orientation are present 2020 through 2027 -
+  read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "trace the exterior walls in the GIA plan" -> here
+#   "draw room separation lines"              -> CREATE_ROOM_SEPARATION_LINES
+#   "place the areas"                         -> PLACE_AREAS
+
+utterances:
+  - trace the outside face of the exterior walls in the gross area plan
+  - draw area boundary lines along the exterior walls
+  - add area boundaries at the inside face of the walls
+  - draw an area boundary round these points
