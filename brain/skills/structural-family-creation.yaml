@@ -24,6 +24,9 @@ purpose: >
      extrusion already locked to them. A column template carries a lower and
      an upper reference level; a Generic Model changed to a column category
      does NOT get them, so a column always starts from the column template.
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING: the section and its sizes - usually a manufacturer's
      table - and the material. A picture gives shape, never size (D-33).
      CLASSIFY IT (FAMILY-CREATION step 1): REPORT_FAMILY_TEMPLATE's
@@ -71,6 +74,9 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES
   - WRITE_FAMILY_SIZE_TABLE
