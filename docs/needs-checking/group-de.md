@@ -60,7 +60,7 @@ With `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Revits are co
 | **DE6** | **Measure Revit's own rule.** A family parameter named exactly as the shared one - "Heron Unit Width" made by `ADD_FAMILY_PARAMETERS` - then "Heron Unit Width=Heron Unit Width", once with no formula reading it and once with Half Width reading it; the second also by hand in Family Types > Modify > Shared parameter | without a formula: replaced. With one: Heron refuses, by the rule it was given; **record whether Revit's own dialog refuses too.** If Revit allows it, the rule is wider than Revit's and the owner decides whether to narrow it |
 | **DE7** | `parameterGroup` "Identity Data" on DE2's positive; and with the family saved and a type catalogue "Heron Replace Shared Test.txt" beside it whose first line names Width | the shared one under Identity Data; a finding naming Width in the catalogue's first line |
 | **DE8** | DE2 and DE4 on **Revit 2024** and **2027** - the ForgeTypeId side of every reflected call | the same answers. Compiled on all eight releases; what Revit DOES was measured on none |
-| **DE9** | The signature, on the owner's word only, after DE2, DE3 and DE4 | `python brain/heron_validate.py accept add-family-shared-parameters --by "Ajmal PS"` |
+| **DE9** | The signature, on the owner's word only, after DE2, DE3 and DE4 | `python brain/heron_validate.py accept add-family-shared-parameters --by "Ajmal PS"`. Drafted 2026-10-12 from `runs/add-family-shared-parameters.json` (DE2; gap: no second route run). **SIGNED 2026-10-12 by Ajmal PS on his word ("Yes, I sign it") - PROVEN** |
 
 ### Run 2026-10-12 - Revit 2020, scratch Family4 (DE1 to DE5)
 
@@ -81,7 +81,6 @@ Family4's feet-and-inches units.
 | **DE5** | One call, no transaction: "Unit_Width=Clearance_Rear; NoSuchParameter=Clearance_Side; Half Width=Supply_Air_Width" refused by name three times - Unit_Width already SHARED (its GUID), NoSuchParameter not in the family, Half Width Length against Supply_Air_Width Duct Size. The project leg was not run |
 
 **Still owed:** DE6 (whether Revit's own dialog refuses a same-name replace while a formula reads it),
-DE7 (heading and type catalogue), DE8 (Revit 2024 and 2027), the Family Types look in DE3, and DE9 - the
-signature, the owner's. The draft waits in `brain/proof-drafts/` (`heron_validate.py review
-add-family-shared-parameters`). Family4 keeps Unit_Width, Unit_Thickness, Unit_Height and Half Width
+DE7 (heading and type catalogue), DE8 (Revit 2024 and 2027) and the Family Types look in DE3. DE9 is
+done: signed by Ajmal PS on his word, 2026-10-12, and the card is PROVEN. Family4 keeps Unit_Width, Unit_Thickness, Unit_Height and Half Width
 as the run left them; it is unsaved and is the owner's to close.
