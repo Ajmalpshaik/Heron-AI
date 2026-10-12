@@ -107,6 +107,15 @@ import heron_fragment as HF                                     # noqa: E402
 # is a smaller cost than a public judgement forked.
 import heron_validate as HV                                     # noqa: E402
 
+# THE CLIENT'S OWN RISK READERS, IMPORTED AND NOT COPIED - the argument made
+# above about `looks_empty`, and the one tools/generate-jobs.py makes about
+# `RUNNABLE_RISKS`. `validate` asks `risk_refusal` before it sends anything, so
+# the dry run asks the same function: a second reader here would be a second
+# opinion about which fragments a batch may send, and the client's is the one
+# that decides.
+sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+import heron_bridge_client as BRIDGE                            # noqa: E402
+
 try:
     import yaml
 except ImportError:                                          # pragma: no cover
@@ -154,6 +163,7 @@ contract_of = HV.contract_of
 positive_worked = HV.positive_worked
 
 ALREADY = "ALREADY"
+NOT_IN_A_BATCH = "WILL NOT RUN IN A BATCH"
 NO_FRAGMENT = "NO FRAGMENT"
 REFUSED = "REFUSED"
 TIMEOUT = "TIMEOUT"
@@ -168,6 +178,8 @@ MEANING = {
     PASS: "both halves held. A draft is waiting for a person to read",
     WOULD_RUN: "the job file is runnable as written",
     ALREADY: "already proved. Nothing was sent to Revit",
+    NOT_IN_A_BATCH: ("risk ADMIN or PUBLISH - D-106 lets no batch send it. "
+                     "Prove it by name. Nothing was sent to Revit"),
     NO_FRAGMENT: "no fragment of that name in the library",
     REFUSED: "the job file could not be run as written",
     TIMEOUT: "Revit did not answer in time. Try a smaller selection",
@@ -178,7 +190,7 @@ MEANING = {
     NEG_NOT_EMPTY: "the negative returned content. A FINDING, not a proof",
 }
 
-ORDER = [WOULD_RUN, PASS, ALREADY, POSITIVE_EMPTY, POSITIVE_UNREADABLE,
+ORDER = [WOULD_RUN, PASS, ALREADY, NOT_IN_A_BATCH, POSITIVE_EMPTY, POSITIVE_UNREADABLE,
          NEG_NOT_EMPTY, NO_NEGATIVE, DID_NOT_RUN, TIMEOUT, REFUSED, NO_FRAGMENT]
 
 
@@ -282,9 +294,47 @@ def job_refusal(job, library):
         # these and reported six passes for it.
         return ALREADY, "heron-status is %s" % frag.status
 
+    # THE SETUP STEPS COME BEFORE THE FRAGMENT'S OWN RISK, because the bucket
+    # below hands a person a by-name command - and that command fails too when
+    # one of its steps cannot be sent.
     for step in job["setup"]:
         if step not in library:
             return REFUSED, "the setup names '%s', which is not a fragment" % step
+
+        # A STEP ABOVE MODIFY IS NEVER SENT, WHATEVER THE FLAGS. `validate`
+        # asks `risk_refusal` of every step with no switch at all: a step is an
+        # ARRANGEMENT, and nothing about arranging a proof needs to export,
+        # save or set up the project (D-106). This only checked that the step
+        # was a fragment, so such a job read WOULD RUN and came back DID NOT
+        # RUN - the twin of the fragment's own risk below (row 5b-440). Unlike
+        # that one there is no command that sends it, so the job is REFUSED.
+        step_root, step_slug = card_root(library[step]), library[step].slug
+        step_refusal = BRIDGE.risk_refusal(step_root, step_slug)
+        if step_refusal:
+            step_risk = BRIDGE.fragment_risk(os.path.join(
+                step_root, "brain", "fragments", step_slug, "fragment.yaml"))
+            if step_risk in BRIDGE.SWITCHED_OPERATIONS:
+                return REFUSED, (
+                    "the setup step '%s' is risk %s, and `validate` sends no "
+                    "setup step above MODIFY, whatever the flags - arranging a "
+                    "proof never needs to export, save or set up the project. "
+                    "Arrange it with steps at MODIFY or below" % (step, step_risk))
+            return REFUSED, "the setup step: %s" % step_refusal
+
+    # THE FRAGMENT'S OWN RISK, READ FROM ITS CARD BY THE CLIENT'S OWN READER.
+    # `validate` without --allow-publish refuses a PUBLISH or ADMIN fragment
+    # before it sends anything (D-106 point 6: no batch sends one), and this
+    # never asked - so the dry run said WOULD RUN, "runnable as written", and
+    # the real run came back DID NOT RUN. Measured 2026-10-12 on
+    # add-family-shared-parameters at risk: ADMIN (row 5b-440).
+    #
+    # IT IS NOT REFUSED AS A BROKEN JOB, AND --allow-publish IS NOT ADDED. The
+    # job is fine; a batch is the wrong way to send it. So it gets its own
+    # bucket, naming the one command that does send it - typed by a person,
+    # per fragment, which is the decision D-106 asks for.
+    refusal = risk_refusal(job, frag)
+    if refusal:
+        return refusal
 
     if job.get("keep-chain") and not job["setup"]:
         # `.get` AND NOT `[...]`, UNLIKE ITS NEIGHBOURS. `job_refusal` reads a
@@ -352,6 +402,58 @@ def job_refusal(job, library):
                          "'count_elements' or 'duct'" % job["cross"])
 
     return None, None
+
+
+def card_root(frag):
+    """The checkout a library fragment's card sits in, for the client's readers.
+
+    `risk_refusal` takes a checkout and a name and builds the card's path
+    itself, so the checkout is read off where the card was FOUND rather than
+    assumed to be this one. A fragment with no folder - nothing load_all
+    returns - is read against this checkout, and an absent card there is
+    refused as an unreadable risk, which is what the client would do.
+    """
+    folder = getattr(frag, "folder", None)
+    if not folder:
+        return ROOT
+    return os.path.dirname(os.path.dirname(os.path.dirname(folder)))
+
+
+def risk_refusal(job, frag):
+    """(verdict, why) when the client would not send this job's fragment.
+
+    PUBLISH and ADMIN are NOT_IN_A_BATCH with the by-name command; an
+    unreadable or unknown risk is REFUSED with the client's own words, because
+    `validate` refuses those whatever the flags.
+    """
+    root = card_root(frag)
+    name = frag.slug
+    refusal = BRIDGE.risk_refusal(root, name)
+    if refusal is None:
+        return None
+    risk = BRIDGE.fragment_risk(os.path.join(root, "brain", "fragments", name,
+                                             "fragment.yaml"))
+    if risk not in BRIDGE.SWITCHED_OPERATIONS:
+        return REFUSED, refusal
+
+    # THE COMMAND THAT DOES SEND IT. `--allow-publish` and `--write` are both
+    # needed: the client lets these levels through only as their own write
+    # operation, and Revit still refuses unless the owner's switch is on.
+    # OVER THE KEYS validate_command READS, because job_refusal is called with
+    # partial job dicts (see its `keep-chain` comment) and a refusal must not
+    # crash on a key the job leaves out.
+    whole = {"in": None, "negative-in": None, "cross": None, "setup": [],
+             "keep-chain": False, "set": {}, "negative-set": {},
+             "setup-set": {}, "negative-setup-set": {}}
+    whole.update(job)
+    whole["write"] = True
+    argv = validate_command(whole, os.path.join(
+        "brain", "proof-drafts", "runs", "%s.json" % name))[2:]
+    argv.insert(1, "--allow-publish")
+    return NOT_IN_A_BATCH, (
+        "risk %s; prove it by name with `heron_bridge_client.py %s`, with %s "
+        "and Changes on in Revit's Heron ribbon"
+        % (risk, readable_command(argv), BRIDGE.SWITCH_NAMES[risk]))
 
 
 # ---------------------------------------------------------------------------
