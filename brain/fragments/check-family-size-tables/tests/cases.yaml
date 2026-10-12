@@ -1,0 +1,35 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a TEST COPY of a pipe fitting family with one lookup table and a Text
+      parameter 'Lookup Table Name' driving its size_lookup formulas, where
+      one type's 'Lookup Table Name' is changed to a name that is not imported
+    expect: >
+      a MISSING TABLE line naming that type and that table name, and no such
+      line for the types left alone. problemCount at least 1, lookupsChecked
+      equal to the number of size_lookup calls in the Family Types dialog
+
+  - given: the same copy with one formula's column name changed to one the table has not got
+    expect: >
+      a MISSING COLUMN line naming the formula's parameter and listing the
+      table's real columns - compare them with Manage Lookup Tables
+
+negative:
+  - given: the same family, unchanged, with every lookup correct
+    expect: >
+      problemCount 0 with lookupsChecked NON-ZERO. The value-driven negative -
+      a clean answer that still proves it read the formulas
+
+  - given: a project in front instead of a family
+    expect: >
+      notAFamily true and problemCount 0 - never a clean report about the
+      wrong document
+
+second_route:
+  - >
+    open Manage Lookup Tables and the Family Types dialog by hand, and check
+    each reported table and column name against what is there
+  - >
+    flex the broken type in Family Types and see the dimension fall to the
+    formula's default, which is what MISSING TABLE says will happen
