@@ -30,6 +30,9 @@ purpose: >
      that fits, or picks where more than one could, and SET_FAMILY_SETTINGS
      "OmniClass Number=<code>" writes it; no file or no code is said, never
      guessed (D-33).
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING: the body's sizes, the light's shape (a point for a
      downlight, a line for a linear fitting, a rectangle for a panel), its
      lumens and colour temperature from the datasheet, and an IES file if the
@@ -65,6 +68,9 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - SET_FAMILY_CATEGORY
   - ADD_FAMILY_PARAMETERS
   - SET_FAMILY_TYPE_VALUES

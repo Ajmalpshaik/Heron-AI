@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-037
-semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or face based, line based, adaptive, pattern based, profile, detail or annotation - what its template already holds, and its OmniClass Number and the codes that fit its category"
+semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or face based, line based, adaptive, pattern based, profile, detail or annotation - what its template already holds, and its OmniClass Number and the codes that fit its category, and the units it shows a length in"
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TEMPLATE
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -48,6 +48,11 @@ purpose: >
   longer describes the code and is kept below as a record; the fragment is
   DRAFT until it is proved again.
 
+  **VERSION 3 (2026-10-12): THE LENGTH UNITS** join the report - which units
+  the family shows a length in, its symbol and rounding, and whether that is
+  metric - with a finding when it is not, so a template set to feet and
+  inches is caught before anything is built in it rather than after.
+
 contract:
   needs:
     - name: doc
@@ -59,9 +64,10 @@ contract:
       role: result
       type: string
     - name: templateReport
-      # Category, kind, placement, host elements, the family's switches, the
-      # built-in parameters, counts of planes, lines, points, types, and the
-      # views - on ONE line.
+      # Category, kind, the length units (version 3) - "units: Length =
+      # Millimeters (mm), rounding 1 - metric", or "- IMPERIAL" - placement,
+      # host elements, the family's switches, the built-in parameters, counts
+      # of planes, lines, points, types, and the views - on ONE line.
       role: result
       type: string
     - name: planeList
@@ -174,6 +180,18 @@ compatibility-note: >
   column is compared as `new ElementId(BuiltInCategory)` with
   `Family.FamilyCategory.Id` after `Enum.IsDefined` - never an ElementId read
   as a number, and not `Category.BuiltInCategory`, which is 2023 and later.
+  VERSION 3, THE LENGTH UNITS (read 2026-10-12 with `tools/api-surface
+  --members` over the 2020 to 2027 reference assemblies): `SpecTypeId.Length`,
+  `ForgeTypeId.TypeId` and `ForgeTypeId.Empty()` exist 2021-2027 and not on
+  2020; `FormatOptions.Accuracy` 2020-2027. So it reads the way
+  REPORT_PROJECT_UNITS does, by reflection with one implementation: the
+  ForgeTypeId route where `SpecTypeId` exists, `UnitType.UT_Length` with
+  `DisplayUnits` and `UnitSymbol` on 2020. Metric is told from Revit's own id
+  for the unit - every metric length unit's names a metre
+  ("millimeters-1.0.1", DUT_METERS_CENTIMETERS) and no imperial one does -
+  never from the label, which Revit translates. Whether a family document's
+  Project Units read the same through these calls as a project's is Revit's,
+  and is part of the proof below.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -187,6 +205,10 @@ compatibility-note: >
 #                                                    for its category
 #   "set the omniclass number of this family"     -> SET_FAMILY_SETTINGS - the
 #                                                    WRITE; this only reads
+#   "what units is this family in"              -> REPORT_PROJECT_UNITS - the
+#                                                    whole table; this gives
+#                                                    the length line only
+#   "set this family to millimetres"            -> SET_PROJECT_UNITS
 #   "which families have no omniclass number"     -> CHECK_FAMILY_STANDARDS -
 #                                                    a verdict per type, in a
 #                                                    project or a family

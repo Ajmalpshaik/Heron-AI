@@ -21,6 +21,9 @@ purpose: >
 
   0. REPORT_FAMILY_TEMPLATE FIRST - confirm an adaptive component; read the
      points and lines it already holds.
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING: how many points the modeller clicks, IN WHAT ORDER, and
      what spans between them. The click order is the placement order and
      cannot be guessed.
@@ -67,6 +70,9 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - SET_FAMILY_SETTINGS
   - PLACE_ADAPTIVE_POINTS
   - DRAW_FAMILY_POINT_CURVES

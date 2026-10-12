@@ -30,6 +30,9 @@ purpose: >
      linked element, a face-based one can. Never move or delete the
      template's own planes: they carry the origin, the named references and,
      in a door or window, the labelled Width and Height.
+     CHECK THE UNITS (FAMILY-CREATION step 0): a units line reading IMPERIAL
+     where the modeller works in millimetres is said before anything is
+     built, with SET_PROJECT_UNITS or the Metric template offered.
   1. READ THE THING, as FAMILY-CREATION step 0 - and which SIDE of the host
      the body sits on: in front of the wall's face, below the ceiling, on top
      of the floor or roof - and what is cut OUT of the host.
@@ -86,6 +89,9 @@ utterances:
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - REPORT_FAMILY_TEMPLATE
+  # Step 0's units check, as FAMILY-CREATION's.
+  - REPORT_PROJECT_UNITS
+  - SET_PROJECT_UNITS
   - SET_FAMILY_CATEGORY
   - ADD_FAMILY_PARAMETERS
   - ADD_FAMILY_SHARED_PARAMETERS
