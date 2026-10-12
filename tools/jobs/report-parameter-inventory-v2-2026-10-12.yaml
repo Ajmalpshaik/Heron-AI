@@ -1,0 +1,54 @@
+# REPORT_PARAMETER_INVENTORY version 2 - the full record, by GUID, with the
+# tags. NEEDS-CHECKING Group DI; FRAGMENT-ISSUES row 5b-443.
+#
+# Run once on 2026-10-12 against 4355-BHVD-3D-60A10-BL003A (Revit 2020) through
+# `heron_bridge_client.py validate` with these values - a READ, so no
+# transaction was open and nothing could change. Both legs held:
+#   positive  TRG_FAN_EXHAUST FAN: AX45 (450mm Long), id 7614932 - its TYPE
+#             carries two shared "Classification.Uniclass.Pr.Number" (GUID
+#             8212e2e8... blank, GUID ee217f5d... "Pr_65_67_29_05");
+#             sameNameTwice 4, tagsFound 5
+#   negative  TCM_EAL_T001_ExhaustLouvre: Standard, id 7701431 - no name
+#             carried twice by a shared or project parameter, and no tag in
+#             any view; sameNameTwice 0, tagsFound 0
+#
+# `expect: sameNameTwice` because instanceCount, typeCount and parameterNames
+# are never empty for a real element - the runner would read the negative as
+# NEG NOT EMPTY. tagsFound is read off the same run by eye.
+#
+# Version 2 on Revit 2024 and 2027 has not run: on another model, find the
+# pair first (the purpose says how), then put its family and the clean one here.
+
+model: 4355-BHVD-3D-60A10-BL003A, Revit 2020 (a working project - this job only reads)
+
+defaults:
+  in: "4355-BHVD-3D-60A10-BL003A"
+
+jobs:
+  - fragment: report-parameter-inventory
+    expect: sameNameTwice
+    keep-chain: true
+    setup:
+      - select-by-family
+    setup-set:
+      familyName: TRG_FAN_EXHAUST FAN
+      exactMatch: "true"
+      categories: Mechanical Equipment
+    negative-setup-set:
+      familyName: TCM_EAL_T001_ExhaustLouvre
+      exactMatch: "true"
+      categories: Air Terminals
+    set:
+      sampleOnly: "true"
+      includeTypeParameters: "true"
+      fullRecord: "true"
+      includeTags: "true"
+    negative-set:
+      sampleOnly: "true"
+      includeTypeParameters: "true"
+      fullRecord: "true"
+      includeTags: "true"
+    note: >
+      The negative changes only the family selected. Same values, same switches;
+      the louvre carries no same-name pair and no tag, so sameNameTwice and
+      tagsFound read 0 while the record is still written in full.
