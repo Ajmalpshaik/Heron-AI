@@ -20,10 +20,10 @@ purpose: >
   whole is NOT one undo: that is why nothing is deleted until the new units
   have been read back and match.
 
-  THREE THINGS THIS JOB NEEDS DO NOT EXIST YET, each marked GAP below: a full
-  parameter record, a GUID write and copying tags. They are not
-  in the list of capabilities after this method, because nothing provides
-  them - do not try to call them. At that step say so to the modeller and let
+  TWO THINGS THIS JOB NEEDS DO NOT EXIST YET, each marked GAP below: a GUID
+  write and copying tags. They are not in the list of capabilities after
+  this method, because nothing provides them - do not try to call them. At
+  that step say so to the modeller and let
   them choose; never work round a gap by guessing a value or typing an
   element id.
 
@@ -33,22 +33,22 @@ purpose: >
      answer names each family that matched with its count. Confirm the count
      with the modeller before going on.
 
-  1. READ EVERYTHING THE OLD ONES HOLD, BEFORE ANYTHING CHANGES: every
-     INSTANCE and every TYPE parameter with its value AND its shared-parameter
-     GUID, the location and bounding box, which way each faces, and every tag
-     on them - its view, tag type, head position and leader.
-     GAP - A FULL PARAMETER RECORD: nothing reads all of that yet. A Heron
-     reply cuts a list to 3 items of 60 characters, so the capability this
-     needs answers with the whole record as ONE joined string.
-     REPORT_PARAMETER_INVENTORY, REPORT_BOUNDING_BOX and
-     REPORT_TAGS_AND_TARGETS (per view) each give part of it, cut short, and
-     none of them gives a GUID. Until the gap is filled, the modeller chooses:
-     stop here, or go on with those partial reads, knowing a long list or a
-     duplicate-named parameter can be missed.
+  1. READ EVERYTHING THE OLD ONES HOLD, BEFORE ANYTHING CHANGES.
+     REPORT_PARAMETER_INVENTORY with sampleOnly=false,
+     includeTypeParameters=true, fullRecord=true and includeTags=true, on the
+     old units from step 0 (expect_from="select-by-family where
+     familyName=<old family>"). Its `record` is ONE string: for each old unit
+     its location and bounding box in mm, which way it faces and hands and
+     whether it is mirrored, every INSTANCE and every TYPE parameter with its
+     value and, for a shared one, its GUID, and every tag on it - its view,
+     tag type, head position and leader. Keep it whole: steps 4, 6 and 7 read
+     it. Hand it the old units only - the record is not capped, and 535
+     elements made 6 MB.
      A PROJECT CAN HOLD TWO SHARED PARAMETERS WITH THE SAME NAME. Seen
      2026-10-12: two called "Equipment Tag", GUID e133774c... filled and GUID
-     cb0704fc... empty - a by-name read showed the empty one. Every value is
-     recorded, copied and compared by GUID, never by name alone.
+     cb0704fc... empty - a by-name read showed the empty one. `sameNameTwice`
+     names every such pair with both GUIDs; every value is recorded, copied
+     and compared by GUID, never by name alone.
 
   2. FIND THE WALL AND THE PIPES BESIDE EACH OLD ONE, to choose how the new
      one faces: its back to the wall, its connectors towards the pipes.
@@ -100,13 +100,17 @@ purpose: >
      duplicate Marks. On Revit 2020 a Yes/No that was written correctly can
      come back called "rejected": read the value before believing either.
 
-  6. READ BACK AND COMPARE, by (name, GUID): step 1's full record - the same
-     GAP - on the new units, against the old - 0 missing and 0 different, or
-     the job is not done. COMPARE_ELEMENTS on one old and one new unit (one region
-     round both selects the pair) is a first look only: it compares by
-     name, so two parameters sharing a name can hide a difference.
+  6. READ BACK AND COMPARE, by (name, GUID): REPORT_PARAMETER_INVENTORY
+     with step 1's values on the new units (expect_from="select-by-family
+     where familyName=<new family>"), its `record` against step 1's - every
+     value step 5 copied present under the same GUID with the same value, 0
+     missing and 0 different, or the job is not done. What belongs to the
+     element itself - its id, family, type - differs by nature.
+     COMPARE_ELEMENTS on one old and one new unit (one region round both
+     selects the pair) is a first look only: it compares by name, so two
+     parameters sharing a name can hide a difference.
 
-  7. THE TAGS. Re-tag from the step 1 list with TAG_ELEMENTS (view,
+  7. THE TAGS. Re-tag from the TAGS lines of step 1's record with TAG_ELEMENTS (view,
      tagTypeId, addLeader), or hand the list to the modeller - on 2026-10-12
      the owner chose to re-tag himself. GAP - COPY TAGS: nothing yet puts
      each tag back at its own head position with its own leader.
@@ -143,7 +147,6 @@ needs:
   - SELECT_BY_FAMILY
   - REPORT_PARAMETER_INVENTORY
   - REPORT_BOUNDING_BOX
-  - REPORT_TAGS_AND_TARGETS
   - SELECT_IN_REGION
   - LOAD_FAMILY
   - PLACE_FAMILY_INSTANCES
@@ -172,7 +175,8 @@ note: >
   TCM_ACU_T002_AirCooledCondensingUnit1..3 : AAAA replaced by
   TRG_Mechanical Equipment_Split Air Conditioner Outdoor Unit_Wall Mounted.
   Steps 1 and 6 were done with a rolled-back scratch read, and the GUID write
-  in step 5 by hand, because no capability did them - which is what the
-  gaps above are. Selecting each new unit by id was a fourth gap that day;
+  in step 5 by hand, because no capability did them. Steps 1 and 6 are
+  REPORT_PARAMETER_INVENTORY version 2 since (row 5b-443); the gaps above are
+  what is still missing. Selecting each new unit by id was a gap that day;
   FILTER_ELEMENTS_BY_ID takes typed ids since 5b-441. The job as a whole
   has not been watched working through Heron, so it stays DRAFT (D-30).

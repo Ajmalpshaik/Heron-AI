@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "every parameter this element actually has, before you know a
 kind: action
 domain: revit.parameters
 capability: REPORT_PARAMETER_INVENTORY
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -50,6 +50,42 @@ purpose: >
   set of different families genuinely varies, and `sampleOnly` off is how that
   variation is found - at the cost of reading everything.
 
+  **VERSION 2: EACH PARAMETER WITH ITS GUID, AND THE FULL RECORD.** Two
+  parameters sharing a name are both listed, and sameNameTwice names them;
+  fullRecord gives the whole record as one string. See the note above the
+  contract.
+
+# VERSION 2 - THE FULL RECORD, AND WHY IT IS A COMMENT. These paragraphs were the
+# purpose's until check-routing measured them, 2026-10-12: the longer purpose
+# dropped "list every parameter that exists on this element" and "what
+# parameters does this duct have" from #1 to #2 here. With them here, two of
+# this card's sentences that were not #1 anyway slip one place (#2 to #3, #5
+# to #6) and nothing else in the library moves. A shorter purpose line lost
+# "what parameters does this duct have" again.
+# A comment is not searched. heron_method and heron_lookup print the purpose,
+# so the purpose keeps the two sentences above.
+#
+# **THE FULL RECORD (version 2).** With fullRecord true, `record` is ONE
+# string holding, for each element read: its id, category and type; its
+# location (point and rotation, or curve ends) and bounding box in mm; which
+# way a family instance faces and hands, and whether it is flipped or
+# mirrored; EVERY instance parameter and, with includeTypeParameters, every
+# type parameter once per type - name, storage, kind, read-only, the GUID of a
+# shared one, and the value as Revit shows it; and with includeTags every tag
+# on it - tag id, view, tag type, head position and leader. One string because
+# a Heron reply cuts a list to three items of 60 characters. NOT CAPPED: give
+# sampleOnly false only for the few elements whose record is wanted. This is
+# the record a swap reads before anything changes and compares after.
+#
+# **A PARAMETER IS KNOWN BY WHAT IT IS, NEVER BY ITS NAME ALONE.** A project
+# can carry two shared parameters with the same name. Seen 2026-10-12 on Revit
+# 2020: two called "Equipment Tag", GUID e133774c... filled and GUID
+# cb0704fc... empty; a by-name read showed the empty one. Version 1 kept one
+# line per name and dropped the second without a word. Every line is now keyed
+# by the parameter itself, a shared one carries its GUID, and `sameNameTwice`
+# names every name an element or type carries more than once - read, copy and
+# compare those by GUID.
+
 contract:
   needs:
     - name: doc
@@ -62,6 +98,20 @@ contract:
     - name: includeTypeParameters
       type: bool
       source: request
+    # true fills `record` - every value with its GUID, the location, the
+    # bounding box and the facing, as one string. Absent is false: the
+    # inventory alone, exactly as version 1. `optional: true` is what lets it
+    # be left out (HeronBindingNote.AbsentValue).
+    - name: fullRecord
+      type: bool
+      source: request
+      optional: true
+    # true adds every tag on each element to `record` - one pass over every
+    # tag in the model. Absent is false. Read only with fullRecord.
+    - name: includeTags
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: findings
       type: IList<string>
@@ -79,7 +129,31 @@ contract:
       # parameter it found (D-52).
       role: accounting
       type: int
+    - name: record
+      # The full record as ONE string, a line per fact (see the purpose).
+      # Empty unless fullRecord is true. A string because a collection reaches
+      # the chat as its count and its first three items cut at 60 characters
+      # (RevitFragment.Describe) - the cut part is where the GUIDs are.
+      # Written in full whatever it finds, so accounting: a negative with no
+      # pair and no tag still has a record (D-52).
+      role: accounting
+      type: string
+    - name: sameNameTwice
+      # Every name an element or type read carries more than once, with each
+      # one's GUID - "instance id 123: 'Equipment Tag' x2 (e133..., cb07...)".
+      # A thing it FOUND, so a result (D-52). Filled with or without the record.
+      role: result
+      type: IList<string>
+    - name: tagsFound
+      # How many tags were found on the elements recorded. 0 unless fullRecord
+      # and includeTags are both true.
+      role: result
+      type: int
 
+# VERSION 2 RAN 2026-10-12 on 4355-BHVD-3D-60A10-BL003A (Revit 2020), read only,
+# both legs held - NEEDS-CHECKING DI, row 5b-443. NOT YET SIGNED. The proof below
+# is version 1's, kept as it was signed: the code has changed since, so it reads
+# STALE until version 2 is signed (D-30).
 proof:
   date: '2026-09-08'
   by: Ajmal PS
@@ -116,6 +190,16 @@ compatibility-note: >
   `Parameter.Definition`, `Definition.Name`, `InternalDefinition.BuiltInParameter`,
   `Parameter.IsShared`, `StorageType`, `IsReadOnly`, `AsValueString` and
   `AsString` are present and unchanged 2020 through 2027.
+
+  Version 2 adds `Parameter.GUID` (asked only when `IsShared`),
+  `LocationPoint.Point` and `Rotation`, `LocationCurve.Curve`,
+  `get_BoundingBox`, `FamilyInstance.FacingOrientation`, `HandOrientation`,
+  `FacingFlipped`, `HandFlipped` and `Mirrored`, and `IndependentTag`'s
+  `TagHeadPosition`, `HasLeader` and `OwnerViewId` - all on every release.
+  **What a tag points at changed at 2022**: `GetTaggedLocalElementIds` and
+  `GetLeaderEnd(Reference)` from 2022, `TaggedLocalElementId` and `LeaderEnd`
+  on 2020 and 2021. Both are looked up by name at run time rather than by a
+  `#if` (row 5b-181), as `COPY_TAGS_TO_REPLACEMENTS` does.
 
   **`Definition.ParameterGroup` is NOT named, and that is a version decision
   rather than an omission.** It exists on 2020 and is GONE by 2027; the
