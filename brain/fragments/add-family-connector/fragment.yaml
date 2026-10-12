@@ -9,7 +9,7 @@ semantic-identity: "put a duct, pipe or electrical connector on this face of the
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -27,6 +27,9 @@ purpose: >
   the connector's own width, height or diameter - so the port follows the
   neck when the family is resized, instead of being right once. An electrical
   connector has no size and takes none.
+
+  **CABLE TRAY AND CONDUIT** (version 4, 2026-10-13, the gap fill): a tray
+  port sized by width then height, a conduit port by its diameter.
 
   **THE FACE IS NAMED BY THE PLANE IT LIES ON.** A face cannot be typed, but
   every face of a box built by EXTRUDE_BETWEEN_PLANES lies on a named plane.

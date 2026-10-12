@@ -1,6 +1,14 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `filterName`, `categoryIds`,
-// `parameterId`, `matchValue` and `colour` are in scope; leaves `created` and
-// `refused` behind.
+// `parameterId`, `matchValue`, `moreRules`, `combine` and `colour` are in
+// scope; leaves `created` and `refused` behind.
+//
+// MORE THAN ONE RULE (version 2, 2026-10-13, the gap fill). `moreRules` adds
+// rules beside the first, "Parameter Name = value; Other Name contains text",
+// each operator one of =, !=, contains, does not contain, begins with, ends
+// with; the parameter is found by the name Revit shows, among those the
+// filter's categories share - none, or two, refuses. `combine` "or" makes the
+// filter match any rule; EMPTY or "and" makes it match all. EMPTY `moreRules`
+// is version 1 exactly.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -79,7 +87,70 @@ else
         }
     }
 
-    if (clash != null)
+    // The extra rules, read before anything is made.
+    var extra = new List<FilterRule>();
+    var how = (combine ?? "").Trim().ToLowerInvariant();
+    var ruleProblem = how != "" && how != "and" && how != "or"
+        ? "\"" + combine + "\" is not and or or" : null;
+    if (ruleProblem == null && !string.IsNullOrWhiteSpace(moreRules))
+    {
+        var shared = ParameterFilterUtilities.GetFilterableParametersInCommon(doc, categoryIds);
+        Func<ElementId, string> labelOf = id =>
+        {
+            var element = doc.GetElement(id);
+            if (element != null) return element.Name;
+#if REVIT2024_OR_GREATER
+            try { return LabelUtils.GetLabelFor((BuiltInParameter)(int)id.Value); } catch { return ""; }
+#else
+            try { return LabelUtils.GetLabelFor((BuiltInParameter)id.IntegerValue); } catch { return ""; }
+#endif
+        };
+        var operators = new[] { "does not contain", "begins with", "ends with", "contains", "!=", "=" };
+        foreach (var text in moreRules.Split(';'))
+        {
+            if (text.Trim() == "") continue;
+            string op = null;
+            var at = -1;
+            foreach (var candidate in operators)
+            {
+                at = text.IndexOf(candidate, StringComparison.OrdinalIgnoreCase);
+                if (at > 0) { op = candidate; break; }
+            }
+            if (op == null) { ruleProblem = "\"" + text.Trim() + "\" has no operator (=, !=, contains, does not contain, begins with, ends with)"; break; }
+            var paramName = text.Substring(0, at).Trim();
+            var value = text.Substring(at + op.Length).Trim();
+            var found = shared.Where(id => string.Equals(labelOf(id), paramName, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (found.Count != 1)
+            {
+                ruleProblem = found.Count == 0
+                    ? "no parameter the filter's categories share is called \"" + paramName + "\""
+                    : "two parameters the filter's categories share are called \"" + paramName + "\"";
+                break;
+            }
+            var pid = found[0];
+#if REVIT2020 || REVIT2021 || REVIT2022
+            extra.Add(op == "=" ? ParameterFilterRuleFactory.CreateEqualsRule(pid, value, true)
+                : op == "!=" ? ParameterFilterRuleFactory.CreateNotEqualsRule(pid, value, true)
+                : op == "contains" ? ParameterFilterRuleFactory.CreateContainsRule(pid, value, true)
+                : op == "does not contain" ? ParameterFilterRuleFactory.CreateNotContainsRule(pid, value, true)
+                : op == "begins with" ? ParameterFilterRuleFactory.CreateBeginsWithRule(pid, value, true)
+                : ParameterFilterRuleFactory.CreateEndsWithRule(pid, value, true));
+#else
+            extra.Add(op == "=" ? ParameterFilterRuleFactory.CreateEqualsRule(pid, value)
+                : op == "!=" ? ParameterFilterRuleFactory.CreateNotEqualsRule(pid, value)
+                : op == "contains" ? ParameterFilterRuleFactory.CreateContainsRule(pid, value)
+                : op == "does not contain" ? ParameterFilterRuleFactory.CreateNotContainsRule(pid, value)
+                : op == "begins with" ? ParameterFilterRuleFactory.CreateBeginsWithRule(pid, value)
+                : ParameterFilterRuleFactory.CreateEndsWithRule(pid, value));
+#endif
+        }
+    }
+
+    if (ruleProblem != null)
+    {
+        refused = ruleProblem + " - nothing was made";
+    }
+    else if (clash != null)
     {
         refused = string.Format(
             "a filter called \"{0}\" already exists in this project. Filters are "
@@ -109,7 +180,16 @@ else
             parameterId, matchValue ?? "");
 #endif
 
-        var test = new ElementParameterFilter(rule);
+        ElementFilter test;
+        if (extra.Count == 0) test = new ElementParameterFilter(rule);
+        else
+        {
+            var all = new List<FilterRule> { rule };
+            all.AddRange(extra);
+            test = how == "or"
+                ? (ElementFilter)new LogicalOrFilter(all.Select(r => (ElementFilter)new ElementParameterFilter(r)).ToList())
+                : new ElementParameterFilter(all);
+        }
 
         var filter = ParameterFilterElement.Create(doc, name, categoryIds, test);
 

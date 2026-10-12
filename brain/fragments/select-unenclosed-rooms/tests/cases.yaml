@@ -31,6 +31,11 @@ positive:
       unchanged, and each faulty linked room listed by name and number with
       NOT PLACED or NOT ENCLOSED
 
+  - given: an area plan with one area placed outside its boundary lines and one deleted from the plan but kept, includeAreas true
+    expect: >
+      the first in unenclosed and the second in unplaced, both handed on;
+      rooms and spaces read as before (version 3)
+
 negative:
   - given: a room that exists in the schedule and was never placed
     expect: >

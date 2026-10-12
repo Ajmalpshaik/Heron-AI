@@ -9,13 +9,13 @@ semantic-identity: "a rule that finds elements by a parameter value and colours 
 kind: action
 domain: revit.views
 capability: CREATE_VIEW_FILTER
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Creates a filter that tests one parameter, applies it to a view, and colours
-  whatever the rule matches.
+  Creates a filter that tests one parameter - or several, all or any of them
+  (version 2) - applies it to a view, and colours whatever the rule matches.
 
   **A filter matches; it does not remember.** Whatever satisfies the rule is
   caught, including work modelled next week - so a reissued drawing stays
@@ -42,6 +42,15 @@ contract:
       type: ElementId
       source: request
     - name: matchValue
+      type: string
+      source: request
+    # More rules beside the first, "Name = value; Name contains text"; an EMPTY
+    # value is the one rule alone (version 2).
+    - name: moreRules
+      type: string
+      source: request
+    # "and" or "or" across the rules; an EMPTY value means and.
+    - name: combine
       type: string
       source: request
     - name: colour
@@ -151,3 +160,4 @@ utterances:
   - colour the extract differently
   - set up a view filter
   - make a view filter for supply air
+  - make one view filter that needs two rules to match

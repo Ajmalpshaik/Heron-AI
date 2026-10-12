@@ -1,6 +1,11 @@
-// NOT STANDALONE. Assumes `elements` (the sources), `targets` (what to search)
-// and `metric` are in scope, and leaves `nearest`, `distancesMm`, `tied` and
-// `unmeasurable` behind.
+// NOT STANDALONE. Assumes `elements` (the sources), `targets` (what to search),
+// `metric` and `withinMm` are in scope, and leaves `nearest`, `distancesMm`,
+// `tied`, `withinRadius` and `unmeasurable` behind.
+//
+// EVERYTHING WITHIN A DISTANCE TOO (version 2, 2026-10-13, the gap fill):
+// `withinMm` above 0 also lists, for each element, every target no farther
+// than that by the same metric, nearest first - twenty per element, a hundred
+// elements. 0 keeps the answer to the nearest alone.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -47,6 +52,9 @@ var nearest = new Dictionary<ElementId, ElementId>();
 var distancesMm = new Dictionary<ElementId, double>();
 var tied = new List<ElementId>();
 var unmeasurable = new List<ElementId>();
+var withinRadius = "";
+var withinLines = new List<string>();
+var radius = withinMm > 0 ? withinMm / MillimetresPerFoot : 0.0;
 
 string how = (metric ?? "").Trim().ToLowerInvariant();
 bool useGap = how == "gap";
@@ -100,6 +108,7 @@ foreach (var element in elements)
     ElementId best = ElementId.InvalidElementId;
     double bestDistance = double.MaxValue;
     int equallyClose = 0;
+    var close = new List<KeyValuePair<ElementId, double>>();
 
     foreach (var pair in targetBoxes)
     {
@@ -125,6 +134,8 @@ foreach (var element in elements)
                 : Math.Sqrt((dx * dx) + (dy * dy) + (dz * dz));
         }
 
+        if (radius > 0 && distance <= radius) close.Add(new KeyValuePair<ElementId, double>(pair.Key, distance));
+
         if (distance < bestDistance - TieTolerance)
         {
             bestDistance = distance;
@@ -139,7 +150,15 @@ foreach (var element in elements)
 
     if (best == ElementId.InvalidElementId) { unmeasurable.Add(element.Id); continue; }
 
+    if (radius > 0 && withinLines.Count < 100)
+        withinLines.Add(element.Id + ": " + (close.Count == 0 ? "none within " + withinMm + " mm"
+            : string.Join(", ", close.OrderBy(c => c.Value).Take(20)
+                .Select(c => c.Key + " " + Math.Round(c.Value * MillimetresPerFoot) + " mm"))
+              + (close.Count > 20 ? " and " + (close.Count - 20) + " more" : "")));
+
     nearest[element.Id] = best;
     distancesMm[element.Id] = bestDistance * MillimetresPerFoot;
     if (equallyClose > 1) tied.Add(element.Id);
 }
+
+withinRadius = string.Join(" | ", withinLines);

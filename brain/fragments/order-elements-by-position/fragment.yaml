@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-038
+semantic-identity: "put these in order by where they are - left to right, reading order, clockwise, along a line"
+kind: filter
+domain: revit.selection
+capability: ORDER_ELEMENTS_BY_POSITION
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# The order a numbering, a schedule or a sheet set should follow, decided by
+# position and said out loud: left to right, right to left, top to bottom,
+# bottom to top, reading (rows from the top, each left to right), columns,
+# clockwise or anticlockwise round the set's middle from due north, along a
+# named line or curve, or level by level in reading order. rowMm says how far
+# apart two rows are before they are different rows. A viewport is placed by
+# its box on the sheet, so detail numbers can follow the sheet; an element by
+# its location point, its line's middle, or its box.
+#
+# RENUMBER_SEQUENTIAL numbers in the order it is handed and decides none, by
+# design - this is the step before it. SELECT_BY_PARAMETER_VALUE and the
+# other filters choose WHICH elements; this chooses their ORDER.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Puts elements in order by where they are - left to right, top to bottom,
+  reading order, clockwise or along a line - and hands them on in that order.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "left to right", "right to left", "top to bottom", "bottom to top",
+    # "reading", "columns", "clockwise", "anticlockwise", "along <id>" or "level".
+    - name: order
+      type: string
+      source: request
+    # Rows closer than this are one row; 0 means 1000.
+    - name: rowMm
+      type: double
+      source: request
+  provides:
+    - name: elements
+      # The same elements, in the order asked - the pipeline's currency, so
+      # the next step takes them as they are.
+      role: result
+      type: IList<Element>
+    - name: sequence
+      # Their ids in that order, the first 200, as ONE string (D-52).
+      role: result
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Viewport.GetBoxCenter, LocationPoint,
+  LocationCurve, CurveElement.GeometryCurve, Curve.Project and
+  IntersectionResult.Parameter, Element.LevelId and Level.Elevation are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-13.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "number the doors left to right"              -> here, then RENUMBER_SEQUENTIAL
+#   "put the viewports in reading order"          -> here, reading
+#   "order the rooms clockwise round the core"    -> here, clockwise
+#   "number these in the order I picked them"     -> RENUMBER_SEQUENTIAL
+
+utterances:
+  - put these in order from left to right
+  - order the rooms clockwise round the core
+  - sort these in reading order, top row first
+  - order the lights along this duct run
+  - put the viewports on each sheet in reading order

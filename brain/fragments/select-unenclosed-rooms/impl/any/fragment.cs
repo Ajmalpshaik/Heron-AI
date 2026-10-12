@@ -1,5 +1,5 @@
-// NOT STANDALONE. Assumes `doc`, `includeRooms`, `includeSpaces` and
-// `includeLinks` are in scope, and leaves `elements`, `unplaced`, `unenclosed`,
+// NOT STANDALONE. Assumes `doc`, `includeRooms`, `includeSpaces`,
+// `includeAreas` and `includeLinks` are in scope, and leaves `elements`, `unplaced`, `unenclosed`,
 // `roomsChecked`, `linksSearched` and `linkedMatches` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
@@ -21,6 +21,11 @@
 // Both read as "zero area" in a schedule, and telling somebody to go looking
 // for the walls around a room that was never placed wastes the afternoon that
 // this fragment exists to save.
+//
+// AREAS TOO (version 3, 2026-10-13, the gap fill): `includeAreas` sweeps the
+// areas of every area plan by the same two tests - an area is a spatial
+// element like the other two. Absent, it reads false, and the sweep is what it
+// always was. Linked areas are not read.
 //
 // REDUNDANT ROOMS ARE NOT DETECTED HERE. Two rooms in one enclosed region is a
 // third fault, and Revit reports it as a warning - which is a better answer
@@ -62,6 +67,14 @@ if (includeSpaces)
 {
     candidates.AddRange(new FilteredElementCollector(doc)
         .OfCategory(BuiltInCategory.OST_MEPSpaces)
+        .WhereElementIsNotElementType()
+        .OfType<SpatialElement>());
+}
+
+if (includeAreas)
+{
+    candidates.AddRange(new FilteredElementCollector(doc)
+        .OfCategory(BuiltInCategory.OST_Areas)
         .WhereElementIsNotElementType()
         .OfType<SpatialElement>());
 }

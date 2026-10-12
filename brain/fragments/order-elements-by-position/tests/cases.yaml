@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'six doors in two rows of three on a plan, picked in a jumble, order "reading", rowMm 1000'
+    expect: >
+      the top row's three left to right, then the bottom row's; the sequence
+      lists their ids in that order
+
+  - given: 'four rooms round a core, order "clockwise"'
+    expect: >
+      the room due north of the middle first, then east, south, west
+
+negative:
+  - given: 'the same doors, order "sideways"'
+    expect: >
+      refused, naming the orders there are; nothing handed on
+
+second_route:
+  - the plan itself, read by eye in the order asked

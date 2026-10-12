@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-092
-semantic-identity: "divide these parts where the grids or levels cross them"
+semantic-identity: "divide these parts along the grids or levels"
 kind: action
 domain: revit.elements
 capability: DIVIDE_PARTS
@@ -23,8 +23,8 @@ risk: MODIFY
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
-  Divides parts where named grids, levels or reference planes cross them, as
-  Divide Parts with intersecting references does.
+  Divides parts along named grids, levels or reference planes, as Revit's
+  Divide Parts does with chosen references.
 
 contract:
   needs:

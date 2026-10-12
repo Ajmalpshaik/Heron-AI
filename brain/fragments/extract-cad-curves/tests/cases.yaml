@@ -16,6 +16,11 @@ positive:
     expect: >
       the lines in that view alone, and absent from every other view
 
+  - given: 'a DWG import with a layer "A-GRID" of six lines, layerNames ["A-GRID"], listOnly true'
+    expect: >
+      coordinates lists six segments in millimetres; created empty - nothing
+      drawn (version 2)
+
 negative:
   - given: '"a-wall" named in lower case, when the DWG layer is "A-WALL"'
     expect: >

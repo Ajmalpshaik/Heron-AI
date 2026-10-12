@@ -22,6 +22,11 @@ positive:
       order with a direction; on a rotated link, directions in this model's
       terms
 
+  - given: grids 1 to 3 north-south at 6000 mm and A to B east-west at 8000 mm, withIntersections true
+    expect: >
+      six intersections, A/1 to B/3, each at its x and y in millimetres
+      (version 3)
+
 negative:
   - given: a radial grid in a curved facade
     expect: >

@@ -1,6 +1,11 @@
 // NOT STANDALONE. Assumes `doc`, `imports`, `layerNames`, `asDetailLines`,
-// `view` and `maxCurves` are in scope; leaves `created`, `layerCounts` and
-// `findings` behind.
+// `view`, `maxCurves` and `listOnly` are in scope; leaves `created`,
+// `layerCounts`, `coordinates` and `findings` behind.
+//
+// THE COORDINATES COME BACK TOO (version 2, 2026-10-13, the gap fill): every
+// matched segment's two ends in millimetres, layer by layer, the first 200 -
+// and with `listOnly` true nothing is drawn, so a drawing's setting-out can be
+// read without a line landing in the model.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Golden Rule 17's preview - run,
 // look, roll back - is how to see the result before keeping it.
@@ -22,6 +27,7 @@
 // the drawing it came from.
 
 var created = new List<ElementId>();
+var coordinates = "";
 var layerCounts = new Dictionary<string, int>();
 var findings = new List<string>();
 
@@ -115,6 +121,26 @@ else
     {
         findings.Add("NO LAYER WAS NAMED, so this was a survey and NOTHING was created. Name the "
             + "layers wanted - exactly as listed above, including case - and run it again");
+    }
+    else if (listOnly)
+    {
+        var listed = new List<string>();
+        var total = 0;
+        var invariant = System.Globalization.CultureInfo.InvariantCulture;
+        Func<XYZ, string> mm = p => "(" + Math.Round(p.X * 304.8).ToString(invariant) + ", " + Math.Round(p.Y * 304.8).ToString(invariant)
+            + ", " + Math.Round(p.Z * 304.8).ToString(invariant) + ")";
+        foreach (var name in wantedLayers)
+        {
+            if (!byLayer.ContainsKey(name)) { findings.Add("No layer called '" + name + "' is in these imports."); continue; }
+            foreach (var curve in byLayer[name])
+            {
+                total++;
+                if (listed.Count < 200) listed.Add(name + ": " + mm(curve.GetEndPoint(0)) + " to " + mm(curve.GetEndPoint(1)));
+            }
+        }
+        coordinates = string.Join(" | ", listed);
+        findings.Add(total + " segment(s) on the layers named, listed in millimetres" + (total > listed.Count ? " - the first " + listed.Count : "")
+            + ". listOnly was set, so NOTHING was created.");
     }
     else if (asDetailLines && view == null)
     {

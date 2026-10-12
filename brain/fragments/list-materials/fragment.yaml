@@ -9,7 +9,7 @@ semantic-identity: "every material this project or family holds, by name, with i
 kind: filter
 domain: revit.elements
 capability: LIST_MATERIALS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -105,12 +105,22 @@ purpose: >
   another document open beside it. A chat reads the model it is pinned to,
   and the answer says so.
 
+  **WITH ITS ASSETS, WHEN ASKED** (version 2, 2026-10-13, the gap fill):
+  `withAssets` adds every number of each material's physical and thermal
+  asset - density, conductivity, specific heat - as Revit formats it in the
+  project's units, so no unit is converted here.
+
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
 contract:
   needs:
     - name: doc
       type: Document
+    # Each material's physical and thermal asset values too; absent reads false.
+    - name: withAssets
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: materialCount
       # How many materials the document holds. A thing it FOUND, so a result
@@ -194,3 +204,4 @@ utterances:
   - show me all the materials in this project
   - what materials are in this project
   - show me all the materials
+  - list the materials with their thermal and physical properties
