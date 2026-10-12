@@ -61,7 +61,13 @@ contract:
     # "kind=extrusion workPlane=Ref. Level profile=circle 0,0 150 startMm=0
     # endMm=500 solid=true kind=revolve workPlane=Center (Front/Back)
     # profile=0,0; 40,0; 40,80; 0,80 axisLine=0,0 0,100 startDegrees=0
-    # endDegrees=360 solid=false". OR the full path of a text file in the
+    # endDegrees=360 solid=false". WHICH WAY A PLANE RUNS, measured 2026-10-11
+    # on Revit 2024 (row 5b-432): on "Center (Front/Back)" a profile is X,Z
+    # and startMm/endMm run along Y toward +Y; on "Center (Left/Right)" a
+    # profile is Y,Z and they run along X toward +X; on a named left-right
+    # plane at X=a a revolve's profile is Y,Z in the model's own Y. Both
+    # Center planes lie at 0 - on a plane elsewhere startMm/endMm count from
+    # that plane by the code, not yet measured. OR the full path of a text file in the
     # temporary folder (%TEMP%\heron-work\...) holding the rows, one per line,
     # lines starting # ignored - write a long list there once.
     - name: forms

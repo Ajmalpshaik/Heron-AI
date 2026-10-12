@@ -90,8 +90,10 @@ contract:
       type: string
       source: request
     # The system, as Revit names it - "Supply Air", "Return Air", "Domestic
-    # Cold Water", "Sanitary", "Fire Protection Wet", "Power Balanced",
-    # "Global" ("Global pipe" where the category does not say).
+    # Cold Water", "Sanitary", "Fire Protection Wet", "Fire Protection Other",
+    # "Other Pipe", "Power Balanced", "Global" ("Global pipe" where the
+    # category does not say). A bare "Other" is refused - "Other Pipe" for a
+    # pipe, "Other Air" for a duct (row 5b-433).
     - name: system
       type: string
       source: request
