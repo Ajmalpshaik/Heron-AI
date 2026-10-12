@@ -591,6 +591,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-de.md`](needs-checking/group-de.md)
 
+## Group DF - a shared parameter definition created in the shared parameter file first, then added or replaced (2026-10-12)
+
+**Its own file:** [`needs-checking/group-df.md`](needs-checking/group-df.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

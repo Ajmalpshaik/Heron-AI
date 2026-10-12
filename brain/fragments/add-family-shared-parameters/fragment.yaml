@@ -1,17 +1,22 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-031
-semantic-identity: "add the office's shared parameters, from its shared parameter file, to the family being edited, or replace family parameters with them"
+semantic-identity: "add the office's shared parameters, from its shared parameter file, to the family being edited, or replace family parameters with them - creating in that file the ones it does not have yet"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_SHARED_PARAMETERS
-version: 2
+version: 3
 source: OFFICIAL
-risk: MODIFY
+# ADMIN FROM VERSION 3 (D-106): creating writes the office's shared parameter
+# file, which is outside the model and which Undo does not reach - D-106's own
+# "a parameter written into the shared parameter file stays in that file".
+# A card carries one risk, so adding and replacing without creating need the
+# Admin switch too. ADD_PROJECT_PARAMETER, which also writes that file, is ADMIN.
+risk: ADMIN
 
 purpose: >
   Adds SHARED parameters to the family open in the Family Editor - Family
@@ -20,11 +25,13 @@ purpose: >
   is a shared parameter with the same GUID in both; ADD_FAMILY_PARAMETERS
   makes family parameters, which a project cannot read that way.
 
-  **THE OFFICE'S FILE IS THE ONLY SOURCE, AND IT IS ONLY READ.** Each name is
-  found in the shared parameter file Revit is set to (Manage > Shared
-  Parameters). Nothing is written to that file and the setting is never
-  changed: a GUID made here would be a different parameter under the office's
-  name. No file set, or a name not in it, is refused with the close names.
+  **THE OFFICE'S FILE IS THE ONLY SOURCE, AND IT IS ONLY READ** - unless
+  createMissing asks for a definition to be written into it (version 3,
+  below). Each name is found in the shared parameter file Revit is set to
+  (Manage > Shared Parameters), and that setting is never changed: a GUID made
+  here for a name the file already has would be a different parameter under
+  the office's name. No file set, or a name not in it, is refused with the
+  close names.
 
   **THE KIND COMES FROM THE FILE.** Type or instance, and the Properties
   palette heading, are asked for.
@@ -54,6 +61,42 @@ purpose: >
   This is the way to give an existing family the office's size parameters
   without the two-per-size workaround (a shared one added beside a family one
   driven by a formula), which leaves both in the Properties palette.
+
+  **CREATING THE DEFINITION FIRST (version 3, 2026-10-12).** With createMissing
+  true, a name the office's file does not have yet is written "Group: Name
+  [Data type]" - "Refrigerant: Gas Pipe Diameter [Pipe Size]" - and is created
+  in the file, as Manage > Shared Parameters > New Parameter does, before it is
+  added or replaced exactly as a name found there. Adding: "Refrigerant: Gas
+  Pipe Diameter [Pipe Size], Refrigerant: Liquid Pipe Diameter [Pipe Size]".
+  Replacing the family parameters of the same names: "Gas Pipe Diameter=
+  Refrigerant: Gas Pipe Diameter [Length]; Liquid Pipe Diameter=
+  Refrigerant: Liquid Pipe Diameter [Length]" - Length, because a replace
+  keeps the kind the family parameter holds, and a Pipe Size one is refused
+  for a Length before the file is written. The colon and the brackets
+  are read without ambiguity because Revit refuses both in a parameter's
+  name. **The group and the data type are never chosen for it** - either
+  missing is refused; the group is made in the file when it has none of that
+  name. The data type is matched by its label as that dialog shows it, by its
+  discipline and label, or by its internal name, and one that fits two
+  ("Velocity") is refused naming both. A name the file already has is used as
+  it is when it holds the data type written, and refused when it holds
+  another - an existing definition is never changed. A plain name not in the
+  file is refused as before, with how to write it. createMissing absent is
+  false - exactly version 2.
+
+  **EVERY REFUSAL COMES BEFORE THE FILE IS WRITTEN** - the family's own checks
+  included, a read-only file too. Then each new definition is READ BACK TWICE
+  - by Revit opening the file again, and in the file's own text on disk -
+  for its name, its group, its data type and its GUID, and `created` lists
+  each with the file's own word for its data type. Only then does the family
+  change. **The file is outside the model: Undo does not take a definition out
+  of it**, and a failure after it was written says what the file keeps. That
+  is why this card is ADMIN (D-106): with Changes and Admin on.
+
+  **VERSION 3's code shares the adding and replacing code of version 2**,
+  whose proof is kept below as a record; the card is DRAFT until it is proved
+  again (NEEDS-CHECKING Group DF), on a scratch copy of a shared parameter
+  file, never the office's own.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -85,6 +128,16 @@ contract:
       type: bool
       source: request
       optional: true
+    # true CREATES in the shared parameter file each name it does not have
+    # yet, written "Group: Name [Data type]" - in parameterNames, or as the
+    # SharedName of a pair when replacing - then adds or replaces it as one
+    # found there. The group and the data type are never defaulted. It WRITES
+    # the office's file, which Undo does not reach. Absent is false - nothing
+    # is written to the file, exactly as version 2.
+    - name: createMissing
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: added
       # Each one added, with its kind, scope and GUID, read back.
@@ -98,6 +151,13 @@ contract:
     - name: replaced
       # Each family parameter replaced, Old -> SharedName, read back with its
       # kind, scope, heading and the file's GUID.
+      role: result
+      type: IList<string>
+    - name: created
+      # Each definition written into the shared parameter file - its name,
+      # data type, group, GUID and the file's own word for the data type -
+      # read back by Revit and in the file's text on disk. Empty unless
+      # createMissing wrote one.
       role: result
       type: IList<string>
     - name: formulasReadBack
@@ -120,12 +180,17 @@ contract:
       role: accounting
       type: bool
     - name: refused
-      # Why nothing was added or replaced, in plain words. Empty when the call ran.
+      # Why nothing was added or replaced, in plain words. Empty when the call
+      # ran. A refusal never leaves the shared parameter file written.
       role: accounting
       type: string
     - name: findings
       type: IList<string>
 
+# THE PROOF BELOW IS VERSION 2's, KEPT AS A RECORD. Version 3 (createMissing)
+# changed impl/, so it no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group DF proves it again.
+#
 # VERSION 2 (replacing) PROVED 2026-10-12 on scratch Family4 (Revit 2020), signed by
 # Ajmal PS on his word - NEEDS-CHECKING DE. The adding mode of version 1 shares this
 # implementation; its own run is NEEDS-CHECKING BS (2026-10-03).
@@ -195,6 +260,24 @@ compatibility-note: >
   `FamilyParameter.IsReporting`, all 2020 to 2027 (api-surface, read
   2026-10-12).
 
+  **CREATING (version 3)** is `DefinitionFile.Groups` and
+  `DefinitionGroups.Create(name)`, `DefinitionGroup.Definitions.Create(
+  ExternalDefinitionCreationOptions)` and `ExternalDefinition.GUID`, 2020 to
+  2027. `ExternalDefinitionCreationOptions(name, ParameterType)` is 2020 to
+  2022 (obsolete in 2022) and `(name, ForgeTypeId)` 2022 to 2027, so the
+  constructor is picked by reflection, ForgeTypeId first - the same world as
+  `Definition.GetDataType()` (2022 to 2027; `ParameterType` 2020 to 2022).
+  The data types offered are the `ParameterType` enum with
+  `LabelUtils.GetLabelFor(ParameterType)` 2020 to 2022, and from 2022
+  `SpecUtils.GetAllSpecs()` and `IsValidDataType`,
+  `LabelUtils.GetLabelForSpec` (2021 to 2027), `UnitUtils.IsMeasurableSpec`,
+  `GetDiscipline` and `LabelUtils.GetLabelForDiscipline` (2022 to 2027) and
+  `ForgeTypeId.TypeId` (2021 to 2027), all reached by reflection. A new name
+  is checked with `NamingUtils.IsValidName`, 2020 to 2027 (api-surface, read
+  2026-10-12 off all eight). The file is read back from disk as UTF-16 when
+  it starts with that mark, by its `*PARAM` and `*GROUP` headings rather than
+  fixed columns.
+
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "add the shared parameter Equipment Tag to this family" -> here
@@ -203,6 +286,12 @@ compatibility-note: >
 #                                          -> here, replaceExisting true
 #   "rename the family parameter Width"    -> ADD_FAMILY_PARAMETERS,
 #                                             renameExisting true
+#   "our shared parameter file has no Gas Pipe Diameter - create it and add it
+#    to this family"                       -> here, createMissing true
+#   (Measured 2026-10-12, 2020 and 2024: "make Gas Pipe Diameter and Liquid
+#    Pipe Diameter shared parameters, our file does not have them yet" goes to
+#    REPORT_PIPE_SEGMENTS, a read, on the pipe words - the declared utterance
+#    below is reached by identity. Recorded in Group DF, not chased.)
 #   "add a shared parameter to the project"       -> ADD_PROJECT_PARAMETER
 #   "add width and depth parameters to the family" -> ADD_FAMILY_PARAMETERS
 
@@ -213,3 +302,5 @@ utterances:
   - add these shared parameters as type parameters under mechanical
   - replace the family parameter Width with the shared parameter Unit_Width
   - make the size parameters the shared parameters from our shared parameter file
+  - make the gas pipe and liquid pipe diameters shared parameters, our shared parameter file does not have them
+  - create the missing shared parameters in our shared parameter file and add them to this family

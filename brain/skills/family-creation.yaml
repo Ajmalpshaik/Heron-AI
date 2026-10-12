@@ -120,7 +120,12 @@ purpose: >
      parameter already labelling dimensions that must become the office's
      shared one is REPLACED in place - the same tool, replaceExisting true,
      "Width=Unit_Width" - never a second parameter driven by a formula, which
-     leaves two per size in the Properties palette.
+     leaves two per size in the Properties palette. A name the office's file
+     does not have yet is CREATED in it by the same tool, createMissing true,
+     written "Group: Name [Data type]" - "Refrigerant: Gas Pipe Diameter [Pipe
+     Size]". Ask the modeller for the group and the data type; never pick
+     them. It writes the office's file, which Undo does not reach, so it needs
+     the Admin switch and his yes for those names.
   3. SET_FAMILY_TYPE_VALUES - make the first type and write the real sizes into
      it. BEFORE any dimension is labelled: a new length reads 0, and a label on
      a 0 drives its planes onto each other.

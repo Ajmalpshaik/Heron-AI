@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `parameterNames`, `instance`,
-// `parameterGroup` and `replaceExisting` are in scope; leaves `added`,
-// `alreadyThere`, `replaced`, `formulasReadBack`, `keptLinks`, `sharedFile`,
-// `notAFamily`, `refused` and `findings` behind.
+// `parameterGroup`, `replaceExisting` and `createMissing` are in scope; leaves
+// `added`, `alreadyThere`, `replaced`, `created`, `formulasReadBack`,
+// `keptLinks`, `sharedFile`, `notAFamily`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -11,12 +11,28 @@
 // family and in the project; ADD_FAMILY_PARAMETERS makes family parameters,
 // which a tag cannot read.
 //
-// THE OFFICE'S SHARED PARAMETER FILE IS THE ONLY SOURCE, AND IT IS ONLY READ.
+// THE OFFICE'S SHARED PARAMETER FILE IS THE ONLY SOURCE, AND IT IS ONLY READ -
+// unless `createMissing` asks for a definition to be written (CREATING, below).
 // The file Revit is set to (Manage > Shared Parameters) is opened and each name
-// looked for in it; nothing is written to it and the setting is never changed.
-// A GUID made here would be a different parameter from the office's one with
-// the same name, and every tag and schedule would miss it. No file set, or a
-// name not in it, is refused - with the names that are close.
+// looked for in it; the setting is never changed. A GUID made here for a name
+// the file already has would be a different parameter from the office's one,
+// and every tag and schedule would miss it. No file set, or a name not in it,
+// is refused - with the names that are close.
+//
+// CREATING (version 3), when `createMissing` is true: a name the file does not
+// have yet may be written "Group: Name [Data type]" - "Refrigerant: Gas Pipe
+// Diameter [Pipe Size]" - and it is written into the file first, as Manage >
+// Shared Parameters > New does, then added or replaced exactly as a name found
+// there. The colon and the brackets are read without ambiguity because Revit
+// refuses both in a parameter's name. The group and the data type are NEVER
+// chosen for it: either missing is refused. A name the file already has is
+// used as it is when its data type is the one written, and refused when it is
+// another - an existing definition is never changed. EVERY REFUSAL COMES
+// BEFORE THE FILE IS WRITTEN; then each definition is read back twice - by
+// Revit opening the file again, and in the file's own text on disk - for its
+// name, group, data type and GUID. The file is outside the model: Undo does
+// not take a definition out of it, and every failure after it was written
+// says so. That is why the card is ADMIN (D-106).
 //
 // THE KIND COMES FROM THE FILE - what the definition holds. Type or instance,
 // and the Properties palette heading, are asked for; the group is matched by
@@ -43,6 +59,7 @@ var findings = new List<string>();
 var added = new List<string>();
 var alreadyThere = new List<string>();
 var replaced = new List<string>();
+var created = new List<string>();
 var formulasReadBack = "";
 var keptLinks = "";
 var sharedFile = "";
@@ -150,6 +167,186 @@ Func<Definition, string> kindLabel = definition =>
     }
 };
 
+// TWO KINDS ARE THE SAME KIND WHATEVER VERSION THEIR IDS CARRY - the
+// comparison ADD_FAMILY_PARAMETERS uses: NameEquals on a ForgeTypeId, plain
+// equality on the enum before 2021.
+Func<object, object, bool> sameKind = (first, second) =>
+{
+    if (first == null || second == null) return false;
+    var nameEquals = first.GetType().GetMethod("NameEquals", new[] { second.GetType() });
+    if (nameEquals != null)
+    {
+        try { return (bool)nameEquals.Invoke(first, new[] { second }); }
+        catch (Exception) { }
+    }
+    return first.Equals(second);
+};
+
+// What a definition holds: GetDataType from 2022, ParameterType before it.
+Func<Definition, object> specOf = definition =>
+{
+    try
+    {
+        var getDataType = typeof(Definition).GetMethod("GetDataType", System.Type.EmptyTypes);
+        if (getDataType != null) return getDataType.Invoke(definition, null);
+        var property = typeof(Definition).GetProperty("ParameterType");
+        return property == null ? null : property.GetValue(definition);
+    }
+    catch (Exception) { return null; }
+};
+
+// ---------------------------------------------------------------------------
+// CREATING (version 3) - what a new definition is made from
+// ---------------------------------------------------------------------------
+
+// ExternalDefinitionCreationOptions(name, SPEC) took ParameterType 2020 to 2022
+// and takes a ForgeTypeId from 2022 - picked by its own second parameter, newest
+// first, so 2022 is in the same world as Definition.GetDataType above.
+var optionsCtor = typeof(ExternalDefinitionCreationOptions).GetConstructors()
+    .Where(c => c.GetParameters().Length == 2 && c.GetParameters()[0].ParameterType == typeof(string))
+    .OrderBy(c => c.GetParameters()[1].ParameterType.Name == "ForgeTypeId" ? 0 : 1)
+    .FirstOrDefault();
+var specType = optionsCtor == null ? null : optionsCtor.GetParameters()[1].ParameterType;
+
+// EVERY DATA TYPE THIS REVIT OFFERS A SHARED PARAMETER: its label as Manage >
+// Shared Parameters > New shows it, its discipline (from 2022), its internal
+// name, and the value the constructor takes. Read only when creating.
+var specs = new List<Tuple<string, string, string, object>>();
+if (createMissing && specType != null)
+{
+    if (specType.IsEnum)
+    {
+        // 2020 and 2021: the ParameterType enum. Family Type needs a category,
+        // which this constructor cannot be given, so it is not offered.
+        var label = typeof(LabelUtils).GetMethod("GetLabelFor", new[] { specType });
+        foreach (var value in Enum.GetValues(specType))
+        {
+            var internalName = value.ToString();
+            if (internalName == "Invalid" || internalName == "FamilyType") continue;
+            string text = null;
+            try { text = label == null ? null : (string)label.Invoke(null, new[] { value }); }
+            catch (Exception) { }
+            specs.Add(Tuple.Create(string.IsNullOrEmpty(text) ? internalName : text, "", internalName, value));
+        }
+    }
+    else
+    {
+        // From 2022: SpecUtils.GetAllSpecs, each kept when IsValidDataType.
+        var specUtils = revitAssembly.GetType(dbNamespace + ".SpecUtils");
+        var unitUtils = revitAssembly.GetType(dbNamespace + ".UnitUtils");
+        var allSpecs = specUtils == null ? null : specUtils.GetMethod("GetAllSpecs", System.Type.EmptyTypes);
+        var isValid = specUtils == null ? null : specUtils.GetMethod("IsValidDataType", new[] { specType });
+        var isMeasurable = unitUtils == null ? null : unitUtils.GetMethod("IsMeasurableSpec", new[] { specType });
+        var discipline = unitUtils == null ? null : unitUtils.GetMethod("GetDiscipline", new[] { specType });
+        var specLabel = typeof(LabelUtils).GetMethod("GetLabelForSpec", new[] { specType });
+        var disciplineLabel = typeof(LabelUtils).GetMethod("GetLabelForDiscipline", new[] { specType });
+        var typeIdProperty = specType.GetProperty("TypeId");
+        System.Collections.IEnumerable listed = null;
+        try { listed = allSpecs == null ? null : allSpecs.Invoke(null, null) as System.Collections.IEnumerable; }
+        catch (Exception) { listed = null; }
+        if (listed != null)
+            foreach (var value in listed)
+            {
+                if (value == null) continue;
+                try { if (isValid != null && !(bool)isValid.Invoke(null, new[] { value })) continue; }
+                catch (Exception) { continue; }
+                string text = null;
+                try { text = specLabel == null ? null : (string)specLabel.Invoke(null, new[] { value }); }
+                catch (Exception) { }
+                if (string.IsNullOrEmpty(text)) continue;
+                var where = "";
+                try
+                {
+                    if (isMeasurable != null && discipline != null && disciplineLabel != null
+                        && (bool)isMeasurable.Invoke(null, new[] { value }))
+                        where = (string)disciplineLabel.Invoke(null, new[] { discipline.Invoke(null, new[] { value }) }) ?? "";
+                }
+                catch (Exception) { where = ""; }
+                // "autodesk.spec.aec.piping:pipeSize-2.0.0" is pipeSize.
+                var internalName = "";
+                try { internalName = typeIdProperty == null ? "" : (string)typeIdProperty.GetValue(value) ?? ""; }
+                catch (Exception) { internalName = ""; }
+                var colon = internalName.LastIndexOf(':');
+                if (colon >= 0) internalName = internalName.Substring(colon + 1);
+                var dash = internalName.LastIndexOf('-');
+                if (dash > 0) internalName = internalName.Substring(0, dash);
+                specs.Add(Tuple.Create(text, where, internalName, value));
+            }
+    }
+}
+
+Func<Tuple<string, string, string, object>, string> describeSpec = s =>
+    s.Item1 + " (" + (s.Item2.Length > 0 ? s.Item2 + ", " : "") + s.Item3 + ")";
+
+// A TYPED DATA TYPE, MATCHED TO ONE: by its internal name, or by its label, or
+// its discipline and label together - capitals, spaces and signs ignored.
+// Null, with the reason added to `sink`, when none fits or more than one does:
+// "Velocity" is an HVAC one and a piping one, and which is meant is asked.
+Func<string, List<string>, Tuple<string, string, string, object>> resolveSpec = (typed, sink) =>
+{
+    var key = squash(typed);
+    var byInternal = specs.Where(s => squash(s.Item3) == key).ToList();
+    var hits = byInternal.Count > 0 ? byInternal
+        : specs.Where(s => squash(s.Item1) == key || (s.Item2.Length > 0 && squash(s.Item2 + s.Item1) == key)).ToList();
+    if (key.Length > 0 && hits.Count == 1) return hits[0];
+    if (key.Length > 0 && hits.Count > 1)
+    {
+        sink.Add("\"" + typed + "\" is " + hits.Count + " data types in this Revit - " + string.Join(", ",
+            hits.Select(describeSpec)) + ". Name one by the word in brackets.");
+        return null;
+    }
+    // Close: one holds the other, or two letters or fewer apart - "Pipe Sise".
+    Func<string, string, int> apart = (a, b) =>
+    {
+        var row = Enumerable.Range(0, b.Length + 1).ToArray();
+        for (var i = 1; i <= a.Length; i++)
+        {
+            var previous = row[0];
+            row[0] = i;
+            for (var j = 1; j <= b.Length; j++)
+            {
+                var kept = row[j];
+                row[j] = Math.Min(Math.Min(row[j] + 1, row[j - 1] + 1), previous + (a[i - 1] == b[j - 1] ? 0 : 1));
+                previous = kept;
+            }
+        }
+        return row[b.Length];
+    };
+    var close = specs.Where(s => key.Length > 1 && squash(s.Item1).Length > 0
+            && (squash(s.Item1).Contains(key) || key.Contains(squash(s.Item1)) || apart(squash(s.Item1), key) <= 2))
+        .Select(describeSpec).Distinct().Take(12).ToList();
+    sink.Add("\"" + typed + "\" is not a data type this Revit offers a shared parameter."
+        + (close.Count > 0 ? " Close: " + string.Join(", ", close) + "."
+            : " They are named as Manage > Shared Parameters > New Parameter lists them - Length, Pipe Size, Text, "
+                + "Yes/No, Number, Integer and the rest."));
+    return null;
+};
+
+// "Group: Name [Data type]" - a definition to create when the file has no such
+// name. Null when the text is not written that way: it is then a name to find.
+Func<string, Tuple<string, string, string>> parseNew = text =>
+{
+    var t = (text ?? "").Trim();
+    if (!t.EndsWith("]")) return null;
+    var open = t.LastIndexOf('[');
+    if (open < 0) return null;
+    var kind = t.Substring(open + 1, t.Length - open - 2).Trim();
+    var head = t.Substring(0, open).Trim();
+    var colon = head.LastIndexOf(':');
+    var group = colon < 0 ? "" : head.Substring(0, colon).Trim();
+    var name = colon < 0 ? head : head.Substring(colon + 1).Trim();
+    return Tuple.Create(group, name, kind);
+};
+
+// Each definition to write: the group in the file, the name, the data type.
+var toCreate = new List<Tuple<string, string, Tuple<string, string, string, object>>>();
+// What has been written to the file so far - named in every failure after it.
+var written = new List<string>();
+Func<string> fileKept = () => written.Count == 0 ? ""
+    : " The shared parameter file is outside the model and KEEPS what was written to it: "
+        + string.Join("; ", written) + ". Undo does not take that out - delete it in Manage > Shared Parameters if "
+        + "it is not wanted.";
+
 var names = new List<string>();
 if (parameterNames != null)
     foreach (var raw in parameterNames)
@@ -163,6 +360,11 @@ if (parameterNames != null)
 var plans = new List<Tuple<string, ExternalDefinition>>();
 // Each one to replace: the old name as typed, and the file's definition.
 var swaps = new List<Tuple<string, ExternalDefinition>>();
+// Creating: each name to add, and each Old with the name to replace it by,
+// whose definition is written to the file once nothing is refused.
+var pendingAdds = new List<string>();
+var pendingSwaps = new List<Tuple<string, string>>();
+DefinitionFile file = null;
 object groupValue = null;
 var problems = new List<string>();
 
@@ -180,8 +382,7 @@ else if (replaceExisting && replaceParameter == null)
         + "recognises, so nothing was replaced.";
 else
 {
-    // ---- the office's file, read and never written --------------------------
-    DefinitionFile file = null;
+    // ---- the office's file, read - and written only below, when asked ---------
     try { sharedFile = doc.Application.SharedParametersFilename ?? ""; } catch (Exception) { sharedFile = ""; }
     if (sharedFile.Trim().Length == 0)
         problems.Add("Revit has no shared parameter file set. Set the office's file in Manage > Shared Parameters, "
@@ -238,12 +439,103 @@ else
             return exact[0].Item2;
         };
 
+        // ONE ENTRY, A NAME TO FIND OR - with createMissing - "Group: Name [Data
+        // type]": the file's definition, or the name of one to write; null with
+        // the reason in the problems.
+        Func<string, Tuple<ExternalDefinition, string>> resolveEntry = text =>
+        {
+            var wanted = parseNew(text);
+            if (wanted == null)
+            {
+                var inFile = everything.Any(e => string.Equals(e.Item2.Name, text, StringComparison.OrdinalIgnoreCase));
+                var definition = findInFile(text);
+                if (!inFile && createMissing)
+                    problems.Add("To create \"" + text + "\" in the file, write its group there and its data type: "
+                        + "\"Group: " + text + " [Data type]\". Neither is chosen for you.");
+                return definition == null ? null : Tuple.Create(definition, (string)null);
+            }
+            if (!createMissing)
+            {
+                problems.Add("\"" + text + "\" names a definition to CREATE in the shared parameter file, and createMissing "
+                    + "is not on - nothing is written to the file unless that is asked for.");
+                return null;
+            }
+
+            var before = problems.Count;
+            var groupText = wanted.Item1;
+            var nameText = wanted.Item2;
+            if (groupText.Length == 0)
+                problems.Add("\"" + text + "\" names no group in the shared parameter file - write it \"Group: Name [Data "
+                    + "type]\". The group is never chosen for you.");
+            else if (groupText.Any(c => char.IsControl(c)))
+                problems.Add("The group \"" + groupText + "\" holds a tab or a line break, which the file cannot hold.");
+            if (nameText.Length == 0)
+                problems.Add("\"" + text + "\" names no parameter.");
+            else if (nameText.Any(c => char.IsControl(c)) || !NamingUtils.IsValidName(nameText))
+                problems.Add("\"" + nameText + "\" is not a name Revit allows a parameter - none of \\ : { } [ ] | ; < > ? "
+                    + "` ~, and no tab or line break.");
+            Tuple<string, string, string, object> spec = null;
+            if (wanted.Item3.Length == 0)
+                problems.Add("\"" + text + "\" names no data type in its brackets - Length, Pipe Size, Text, Yes/No and "
+                    + "the rest. The data type is never chosen for you.");
+            else if (optionsCtor == null)
+                problems.Add("This Revit has no ExternalDefinitionCreationOptions(name, data type) that this recognises, "
+                    + "so nothing can be created.");
+            else
+                spec = resolveSpec(wanted.Item3, problems);
+            if (problems.Count > before || spec == null) return null;
+
+            // ALREADY IN THE FILE: used as it is when it holds this data type,
+            // refused when it holds another. It is never changed.
+            var matches = everything.Where(e => e.Item2.Name == nameText).ToList();
+            if (matches.Count == 0)
+                matches = everything.Where(e => string.Equals(e.Item2.Name, nameText, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (matches.Count > 0)
+            {
+                var existing = findInFile(nameText);
+                if (existing == null) return null;
+                var filedUnder = matches[0].Item1;
+                if (!sameKind(specOf(existing), spec.Item4))
+                {
+                    problems.Add("\"" + existing.Name + "\" is already in the shared parameter file, under " + filedUnder
+                        + ", holding " + kindLabel(existing) + " - not " + spec.Item1 + ". An existing definition is never "
+                        + "changed, and a second one of that name would be a different parameter. Use it as it is, or "
+                        + "choose another name.");
+                    return null;
+                }
+                findings.Add("\"" + existing.Name + "\" was already in the shared parameter file under " + filedUnder
+                    + (string.Equals(filedUnder, groupText, StringComparison.OrdinalIgnoreCase) ? ""
+                        : " (not " + groupText + ")")
+                    + ", holding " + kindLabel(existing) + " - that definition was used, and nothing was written for it.");
+                return Tuple.Create(existing, (string)null);
+            }
+
+            // TO WRITE. The same name twice is one definition when it is
+            // written the same way, and refused when it is not.
+            var twin = toCreate.FirstOrDefault(c => string.Equals(c.Item2, nameText, StringComparison.OrdinalIgnoreCase));
+            if (twin != null)
+            {
+                if (string.Equals(twin.Item1, groupText, StringComparison.OrdinalIgnoreCase) && sameKind(twin.Item3.Item4, spec.Item4))
+                    return Tuple.Create((ExternalDefinition)null, twin.Item2);
+                problems.Add("\"" + nameText + "\" is asked to be created twice, differently - " + twin.Item1 + " ["
+                    + twin.Item3.Item1 + "] and " + groupText + " [" + spec.Item1 + "].");
+                return null;
+            }
+            toCreate.Add(Tuple.Create(groupText, nameText, spec));
+            return Tuple.Create((ExternalDefinition)null, nameText);
+        };
+
         if (!replaceExisting)
         {
             foreach (var name in names)
             {
-                var definition = findInFile(name);
-                if (definition != null) plans.Add(Tuple.Create(name, definition));
+                var entry = resolveEntry(name);
+                if (entry == null) continue;
+                if (entry.Item1 != null)
+                {
+                    if (!plans.Any(p => p.Item2.GUID == entry.Item1.GUID)) plans.Add(Tuple.Create(name, entry.Item1));
+                }
+                else if (!pendingAdds.Contains(entry.Item2)) pendingAdds.Add(entry.Item2);
             }
         }
         else
@@ -261,8 +553,10 @@ else
                         problems.Add("Not one Old=SharedName: '" + text + "'.");
                         continue;
                     }
-                    var definition = findInFile(halves[1].Trim());
-                    if (definition != null) swaps.Add(Tuple.Create(halves[0].Trim(), definition));
+                    var resolved = resolveEntry(halves[1].Trim());
+                    if (resolved == null) continue;
+                    if (resolved.Item1 != null) swaps.Add(Tuple.Create(halves[0].Trim(), resolved.Item1));
+                    else pendingSwaps.Add(Tuple.Create(halves[0].Trim(), resolved.Item2));
                 }
         }
     }
@@ -310,11 +604,202 @@ else
                 + (existingGuid.HasValue ? "another shared parameter (GUID " + existingGuid.Value + ")" : "not shared")
                 + " - adding the office's one would put two under one name. Rename or remove that one first.");
         }
+
+        // A NAME TO CREATE that the family already has, by any parameter: the
+        // new GUID can never be that one's, so it would be two under one name.
+        foreach (var name in pendingAdds)
+        {
+            FamilyParameter clash = null;
+            foreach (FamilyParameter p in fm.Parameters)
+                if (p.Definition != null && string.Equals(p.Definition.Name, name, StringComparison.OrdinalIgnoreCase))
+                { clash = p; break; }
+            if (clash != null)
+                problems.Add("This family already has a parameter called \"" + clash.Definition.Name + "\" - a new shared "
+                    + "parameter of that name would be two under one name. To make that one the shared parameter, "
+                    + "replace it instead: replaceExisting true, \"" + clash.Definition.Name + "=Group: " + name
+                    + " [Data type]\".");
+        }
+    }
+
+    // THE FILE MUST TAKE A WRITE before anything is asked of it.
+    if (problems.Count == 0 && toCreate.Count > 0)
+    {
+        try
+        {
+            if (new System.IO.FileInfo(sharedFile).IsReadOnly)
+                problems.Add("The shared parameter file \"" + sharedFile + "\" is read-only, so nothing can be created in "
+                    + "it. Ask whoever keeps it, or create the definitions there first.");
+        }
+        catch (Exception ex)
+        {
+            problems.Add("The shared parameter file \"" + sharedFile + "\" could not be looked at (" + ex.Message + "), so "
+                + "nothing was created in it.");
+        }
     }
 
     if (problems.Count > 0)
-        refused = (replaceExisting ? "Nothing was replaced. " : "Nothing was added. ") + string.Join(" ", problems);
+        refused = (replaceExisting ? "Nothing was replaced. " : "Nothing was added. ")
+            + (createMissing ? "Nothing was written to the shared parameter file. " : "") + string.Join(" ", problems);
 }
+
+// ---------------------------------------------------------------------------
+// CREATING - write each new definition into the file, then read each back
+// twice, before anything in the family changes
+// ---------------------------------------------------------------------------
+//
+// Called only once nothing is refused - every check is above it - so a refusal
+// never leaves the file written. Each one goes into its group (made when the
+// file has none of that name, capitals ignored) with Revit's defaults:
+// visible, editable, no description, and a GUID Revit makes. Then:
+//   1. Revit opens the file again, and the definition is found in its group
+//      with that GUID and that data type;
+//   2. the file's own text on disk is read, and a PARAM line holds that GUID,
+//      that name and that group's id.
+// Anything else THROWS naming what the file now keeps; the host rolls the
+// family back, and the file - outside the model - keeps it.
+
+Func<Dictionary<string, ExternalDefinition>> writePending = () =>
+{
+    var made = new Dictionary<string, ExternalDefinition>(StringComparer.OrdinalIgnoreCase);
+    if (toCreate.Count == 0) return made;
+    var groupsMade = new List<string>();
+    var groupUsed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var entry in toCreate)
+    {
+        DefinitionGroup group = null;
+        foreach (DefinitionGroup g in file.Groups)
+            if (string.Equals(g.Name, entry.Item1, StringComparison.OrdinalIgnoreCase)) { group = g; break; }
+        try
+        {
+            if (group == null) { group = file.Groups.Create(entry.Item1); groupsMade.Add(entry.Item1); }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Revit refused to make the group \"" + entry.Item1 + "\" in the shared "
+                + "parameter file \"" + sharedFile + "\": " + ex.Message + " Nothing in the family was changed." + fileKept());
+        }
+
+        ExternalDefinition definition = null;
+        var options = (ExternalDefinitionCreationOptions)optionsCtor.Invoke(new object[] { entry.Item2, entry.Item3.Item4 });
+        try { definition = group.Definitions.Create(options) as ExternalDefinition; }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Revit refused to write \"" + entry.Item2 + "\" into the shared parameter "
+                + "file \"" + sharedFile + "\": " + ex.Message + " Nothing in the family was changed." + fileKept());
+        }
+        finally { options.Dispose(); }
+        if (definition == null)
+            throw new InvalidOperationException("Revit gave no definition back for \"" + entry.Item2 + "\". Nothing in the "
+                + "family was changed." + fileKept());
+        made[entry.Item2] = definition;
+        groupUsed[entry.Item2] = group.Name;
+        written.Add(entry.Item2 + " (" + entry.Item3.Item1 + ", group " + group.Name + ", GUID " + definition.GUID + ")");
+    }
+
+    // ---- 1. Revit opens the file again --------------------------------------
+    var wrong = new List<string>();
+    DefinitionFile again = null;
+    try { again = doc.Application.OpenSharedParameterFile(); } catch (Exception) { again = null; }
+    if (again == null) wrong.Add("Revit could not open the file again to read them back");
+    else
+        foreach (var entry in toCreate)
+        {
+            ExternalDefinition found = null;
+            foreach (DefinitionGroup g in again.Groups)
+            {
+                if (!string.Equals(g.Name, groupUsed[entry.Item2], StringComparison.Ordinal)) continue;
+                foreach (Definition d in g.Definitions)
+                    if (d.Name == entry.Item2 && d is ExternalDefinition) { found = (ExternalDefinition)d; break; }
+            }
+            if (found == null)
+                wrong.Add("\"" + entry.Item2 + "\" is not in the group " + groupUsed[entry.Item2] + " when Revit opens the file again");
+            else if (found.GUID != made[entry.Item2].GUID)
+                wrong.Add("\"" + entry.Item2 + "\" reads back with GUID " + found.GUID + ", not " + made[entry.Item2].GUID);
+            else if (!sameKind(specOf(found), entry.Item3.Item4))
+                wrong.Add("\"" + entry.Item2 + "\" reads back holding " + kindLabel(found) + ", not " + entry.Item3.Item1);
+        }
+
+    // ---- 2. the file's own text on disk -----------------------------------------
+    var onDisk = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    string text = null;
+    try
+    {
+        var bytes = System.IO.File.ReadAllBytes(sharedFile);
+        if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+            text = System.Text.Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
+        else if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+            text = System.Text.Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
+        else if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            text = System.Text.Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
+        else if (bytes.Length >= 2 && bytes[1] == 0)
+            text = System.Text.Encoding.Unicode.GetString(bytes);
+        else
+            text = System.Text.Encoding.UTF8.GetString(bytes);
+    }
+    catch (Exception ex) { wrong.Add("the file's text could not be read from disk (" + ex.Message + ")"); }
+    if (text != null)
+    {
+        string[] paramHeader = null;
+        string[] groupHeader = null;
+        var groupRows = new List<string[]>();
+        var paramRows = new List<string[]>();
+        foreach (var raw in text.Split('\n'))
+        {
+            var cells = raw.TrimEnd('\r').Split('\t');
+            if (cells[0] == "*PARAM") paramHeader = cells;
+            else if (cells[0] == "*GROUP") groupHeader = cells;
+            else if (cells[0] == "GROUP") groupRows.Add(cells);
+            else if (cells[0] == "PARAM") paramRows.Add(cells);
+        }
+        var guidAt = paramHeader == null ? -1 : Array.IndexOf(paramHeader, "GUID");
+        var nameAt = paramHeader == null ? -1 : Array.IndexOf(paramHeader, "NAME");
+        var typeAt = paramHeader == null ? -1 : Array.IndexOf(paramHeader, "DATATYPE");
+        var inGroupAt = paramHeader == null ? -1 : Array.IndexOf(paramHeader, "GROUP");
+        var idAt = groupHeader == null ? -1 : Array.IndexOf(groupHeader, "ID");
+        var groupNameAt = groupHeader == null ? -1 : Array.IndexOf(groupHeader, "NAME");
+        if (guidAt < 0 || nameAt < 0 || inGroupAt < 0 || idAt < 0 || groupNameAt < 0)
+            wrong.Add("the file's text on disk has no *PARAM and *GROUP headings to read it by");
+        else
+            foreach (var entry in toCreate)
+            {
+                var guid = made[entry.Item2].GUID;
+                string[] row = null;
+                foreach (var cells in paramRows)
+                {
+                    Guid read;
+                    if (cells.Length > Math.Max(guidAt, nameAt) && Guid.TryParse(cells[guidAt], out read) && read == guid)
+                    { row = cells; break; }
+                }
+                if (row == null) { wrong.Add("no line in the file on disk holds \"" + entry.Item2 + "\"'s GUID " + guid); continue; }
+                if (row[nameAt] != entry.Item2)
+                    wrong.Add("the file on disk names GUID " + guid + " \"" + row[nameAt] + "\", not \"" + entry.Item2 + "\"");
+                var groupId = row.Length > inGroupAt ? row[inGroupAt] : "";
+                var groupRow = groupRows.FirstOrDefault(g => g.Length > Math.Max(idAt, groupNameAt) && g[idAt] == groupId);
+                if (groupRow == null || groupRow[groupNameAt] != groupUsed[entry.Item2])
+                    wrong.Add("the file on disk files \"" + entry.Item2 + "\" under group "
+                        + (groupRow == null ? "id " + groupId : "\"" + groupRow[groupNameAt] + "\"") + ", not \""
+                        + groupUsed[entry.Item2] + "\"");
+                onDisk[entry.Item2] = typeAt >= 0 && row.Length > typeAt ? row[typeAt] : "";
+            }
+    }
+
+    if (wrong.Count > 0)
+        throw new InvalidOperationException("Read back from the shared parameter file \"" + sharedFile + "\": "
+            + string.Join("; ", wrong) + ". Nothing in the family was changed." + fileKept());
+
+    foreach (var entry in toCreate)
+        created.Add(entry.Item2 + " (" + entry.Item3.Item1 + ", group " + groupUsed[entry.Item2] + ", GUID "
+            + made[entry.Item2].GUID + ", on disk as " + (onDisk.ContainsKey(entry.Item2) && onDisk[entry.Item2].Length > 0
+                ? onDisk[entry.Item2] : "a PARAM line") + ")");
+    findings.Add("Wrote " + created.Count + " new definition(s) into the shared parameter file \"" + sharedFile + "\""
+        + (groupsMade.Count > 0 ? ", making the group(s) " + string.Join(", ", groupsMade) : "")
+        + ", and read each back twice - by Revit opening the file again, and in its own text on disk: "
+        + string.Join("; ", created) + ".");
+    findings.Add("The shared parameter file is outside the model: Undo in Revit does not take these out of it. Delete "
+        + "one in Manage > Shared Parameters if it is not wanted.");
+    return made;
+};
 
 // ---------------------------------------------------------------------------
 // ADD, THEN READ EVERY ONE BACK
@@ -323,6 +808,15 @@ else
 if (refused == null && !replaceExisting)
 {
     var fm = doc.FamilyManager;
+    if (pendingAdds.Count > 0)
+    {
+        var newDefinitions = writePending();
+        foreach (var name in pendingAdds) plans.Add(Tuple.Create(name, newDefinitions[name]));
+    }
+    else if (createMissing)
+        findings.Add("createMissing was on, and every name was already in the shared parameter file - nothing was "
+            + "written to it.");
+
     foreach (var plan in plans)
     {
         try { addParameter.Invoke(fm, new object[] { plan.Item2, groupValue, instance }); }
@@ -330,7 +824,7 @@ if (refused == null && !replaceExisting)
         {
             var reason = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
             throw new InvalidOperationException("Revit refused the shared parameter \"" + plan.Item2.Name + "\": "
-                + reason + " The call failed, and Heron rolls the whole call back.");
+                + reason + " The call failed, and Heron rolls the family back." + fileKept());
         }
 
         var made = fm.get_Parameter(plan.Item2.Name);
@@ -339,7 +833,7 @@ if (refused == null && !replaceExisting)
         if (made == null || !guid.HasValue || guid.Value != plan.Item2.GUID || made.IsInstance != instance)
             throw new InvalidOperationException("\"" + plan.Item2.Name + "\" does not read back as the office's shared "
                 + (instance ? "instance" : "type") + " parameter with GUID " + plan.Item2.GUID + ". The call failed, and "
-                + "Heron rolls the whole call back.");
+                + "Heron rolls the family back." + fileKept());
 
         added.Add(plan.Item2.Name + " (" + kindLabel(plan.Item2) + ", " + (instance ? "instance" : "type") + ", GUID "
             + plan.Item2.GUID + ")");
@@ -401,34 +895,6 @@ if (refused == null && !replaceExisting)
 if (refused == null && replaceExisting)
 {
     var fm = doc.FamilyManager;
-
-    // TWO KINDS ARE THE SAME KIND WHATEVER VERSION THEIR IDS CARRY - the
-    // comparison ADD_FAMILY_PARAMETERS uses: NameEquals on a ForgeTypeId, plain
-    // equality on the enum before 2021.
-    Func<object, object, bool> sameKind = (first, second) =>
-    {
-        if (first == null || second == null) return false;
-        var nameEquals = first.GetType().GetMethod("NameEquals", new[] { second.GetType() });
-        if (nameEquals != null)
-        {
-            try { return (bool)nameEquals.Invoke(first, new[] { second }); }
-            catch (Exception) { }
-        }
-        return first.Equals(second);
-    };
-
-    // What a definition holds: GetDataType from 2022, ParameterType before it.
-    Func<Definition, object> specOf = definition =>
-    {
-        try
-        {
-            var getDataType = typeof(Definition).GetMethod("GetDataType", System.Type.EmptyTypes);
-            if (getDataType != null) return getDataType.Invoke(definition, null);
-            var property = typeof(Definition).GetProperty("ParameterType");
-            return property == null ? null : property.GetValue(definition);
-        }
-        catch (Exception) { return null; }
-    };
 
     // The heading a definition sits under, in the world the replace call takes:
     // GetGroupTypeId for a ForgeTypeId, ParameterGroup for the enum.
@@ -591,23 +1057,36 @@ if (refused == null && replaceExisting)
     foreach (var p in everyParameter.OrderBy(x => isBuiltIn(x) ? 1 : 0))
         if (!byName.ContainsKey(p.Definition.Name)) byName[p.Definition.Name] = p;
 
-    var sharedNames = swaps.Select(s => s.Item2.Name).ToList();
+    // Every pair, the file's definition or - creating - the name still to be
+    // written, so the checks below are the same for both.
+    var asked = swaps.Select(s => Tuple.Create(s.Item1, s.Item2, s.Item2.Name))
+        .Concat(pendingSwaps.Select(s => Tuple.Create(s.Item1, (ExternalDefinition)null, s.Item2))).ToList();
+
+    var sharedNames = asked.Select(s => s.Item3).ToList();
     var namesBefore = byName.Keys.Concat(sharedNames).Distinct(StringComparer.Ordinal)
         .OrderByDescending(n => n.Length).ToList();
 
-    // ----- REFUSE BY NAME, BEFORE ANYTHING CHANGES -----
+    // ----- REFUSE BY NAME, BEFORE ANYTHING CHANGES - the file included -----
     var reasons = new List<string>();
-    foreach (var g in swaps.GroupBy(x => x.Item1, StringComparer.Ordinal).Where(g => g.Count() > 1))
+    foreach (var g in asked.GroupBy(x => x.Item1, StringComparer.Ordinal).Where(g => g.Count() > 1))
         reasons.Add("'" + g.Key + "' is replaced twice in one call.");
     foreach (var g in swaps.GroupBy(x => x.Item2.GUID).Where(g => g.Count() > 1))
         reasons.Add("The shared parameter '" + g.First().Item2.Name + "' is asked for " + g.Count() + " parameters - "
             + "a family holds one parameter of a GUID.");
+    foreach (var g in pendingSwaps.GroupBy(x => x.Item2, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1))
+        reasons.Add("The new shared parameter '" + g.Key + "' is asked for " + g.Count() + " parameters - a family holds "
+            + "one parameter of a GUID.");
 
     var plan = new List<Tuple<FamilyParameter, string, ExternalDefinition>>();
-    foreach (var swap in swaps)
+    // Creating: each family parameter, its old name and the name to write.
+    var pendingPlan = new List<Tuple<FamilyParameter, string, string>>();
+    foreach (var swap in asked)
     {
         var oldName = swap.Item1;
         var definition = swap.Item2;
+        var sharedName = swap.Item3;
+        var pending = definition == null
+            ? toCreate.First(c => string.Equals(c.Item2, sharedName, StringComparison.OrdinalIgnoreCase)) : null;
         FamilyParameter p;
         if (!byName.TryGetValue(oldName, out p))
         {
@@ -629,24 +1108,27 @@ if (refused == null && replaceExisting)
         }
 
         var oldKind = specOf(p.Definition);
-        var newKind = specOf(definition);
+        var newKind = definition != null ? specOf(definition) : pending.Item3.Item4;
+        var newKindLabel = definition != null ? kindLabel(definition) : pending.Item3.Item1;
         if (oldKind == null || newKind == null || !sameKind(oldKind, newKind))
         {
-            reasons.Add("'" + oldName + "' holds " + kindLabel(p.Definition) + " and the shared '" + definition.Name
-                + "' holds " + kindLabel(definition) + " - the kinds must be the same, or every value and formula "
-                + "reading it would mean something else.");
+            reasons.Add("'" + oldName + "' holds " + kindLabel(p.Definition) + " and the shared '" + sharedName
+                + "' " + (definition != null ? "holds " : "would hold ") + newKindLabel + " - the kinds must be the same, "
+                + "or every value and formula reading it would mean something else.");
             continue;
         }
 
+        // A NEW ONE'S GUID IS NOT MADE YET, so only its name can be taken.
         var takenByName = everyParameter.FirstOrDefault(o => o.Id != p.Id
-            && string.Equals(o.Definition.Name, definition.Name, StringComparison.OrdinalIgnoreCase));
+            && string.Equals(o.Definition.Name, sharedName, StringComparison.OrdinalIgnoreCase));
         FamilyParameter takenByGuid = null;
-        try { takenByGuid = fm.get_Parameter(definition.GUID); } catch (Exception) { }
+        if (definition != null)
+            try { takenByGuid = fm.get_Parameter(definition.GUID); } catch (Exception) { }
         if (takenByName != null || takenByGuid != null)
         {
             var taken = takenByName ?? takenByGuid;
-            reasons.Add("'" + definition.Name + "' is already in this family"
-                + (taken.Definition.Name == definition.Name ? "" : " (as '" + taken.Definition.Name + "')")
+            reasons.Add("'" + sharedName + "' is already in this family"
+                + (taken.Definition.Name == sharedName ? "" : " (as '" + taken.Definition.Name + "')")
                 + " - replacing '" + oldName + "' with it would put two under one name. Clear any formula that reads it "
                 + "and delete it first (SET_FAMILY_FORMULA, then DELETE_FAMILY_PARAMETERS), then replace.");
         }
@@ -657,28 +1139,42 @@ if (refused == null && replaceExisting)
             string formula = null;
             try { formula = other.Formula; } catch (Exception) { }
             if (string.IsNullOrEmpty(formula)) continue;
-            if (namesReadFrom(formula, namesBefore).Contains(definition.Name))
+            if (namesReadFrom(formula, namesBefore).Contains(sharedName))
                 reasons.Add("'" + other.Definition.Name + "' has the formula '" + formula + "', which names '"
-                    + definition.Name + "' - Revit refuses the replace while a formula names the shared parameter. "
+                    + sharedName + "' - Revit refuses the replace while a formula names the shared parameter. "
                     + "Clear that formula first (SET_FAMILY_FORMULA).");
         }
 
-        plan.Add(Tuple.Create(p, oldName, definition));
+        if (definition != null) plan.Add(Tuple.Create(p, oldName, definition));
+        else pendingPlan.Add(Tuple.Create(p, oldName, sharedName));
     }
 
     object wanted = null;
     if (groupValue != null) wanted = groupValue;
-    foreach (var step in plan)
+    foreach (var step in plan.Select(x => Tuple.Create(x.Item1, x.Item2))
+        .Concat(pendingPlan.Select(x => Tuple.Create(x.Item1, x.Item2))))
         if (groupValue == null && groupOf(step.Item1.Definition) == null)
             reasons.Add("The Properties palette heading of '" + step.Item2 + "' could not be read - name one in "
                 + "parameterGroup.");
 
     if (reasons.Count > 0)
     {
-        refused = "Nothing was replaced. " + string.Join(" ", reasons);
+        refused = "Nothing was replaced. " + (createMissing ? "Nothing was written to the shared parameter file. " : "")
+            + string.Join(" ", reasons);
     }
     else
     {
+        // ----- CREATING: the new definitions go into the file now, every check
+        // above having passed, and are read back before the family changes -----
+        if (pendingPlan.Count > 0)
+        {
+            var newDefinitions = writePending();
+            foreach (var step in pendingPlan) plan.Add(Tuple.Create(step.Item1, step.Item2, newDefinitions[step.Item3]));
+        }
+        else if (createMissing)
+            findings.Add("createMissing was on, and every shared name was already in the shared parameter file - "
+                + "nothing was written to it.");
+
         // ----- BEFORE -----
         var oldNames = plan.Select(x => x.Item2).ToList();
         var newFor = plan.ToDictionary(x => x.Item2, x => x.Item3.Name, StringComparer.Ordinal);
@@ -719,8 +1215,8 @@ if (refused == null && replaceExisting)
             {
                 var reason = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 throw new InvalidOperationException(reason + " - Revit, replacing '" + step.Item2 + "' with the shared '"
-                    + step.Item3.Name + "'. NOTHING from this call was kept: the parameters in it are replaced together "
-                    + "or not at all.");
+                    + step.Item3.Name + "'. NOTHING from this call was kept in the family: the parameters in it are "
+                    + "replaced together or not at all." + fileKept());
             }
         }
 
@@ -820,7 +1316,7 @@ if (refused == null && replaceExisting)
 
         if (wrong.Count > 0)
             throw new InvalidOperationException("Read back after replacing: " + string.Join("; ", wrong)
-                + ". NOTHING from this call was kept.");
+                + ". NOTHING from this call was kept in the family." + fileKept());
 
         formulasReadBack = formulaLines.Count == 0
             ? "no formula in the family reads the parameters replaced, and none of them has one"

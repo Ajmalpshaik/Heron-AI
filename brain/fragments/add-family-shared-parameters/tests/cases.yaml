@@ -25,6 +25,38 @@ positive:
       Unit Width / 2"; keptLinks naming 1 labelled dimension and both types'
       values unchanged
 
+  - given: >
+      createMissing true (version 3): a family open in the Family Editor, and
+      Revit's shared parameter file set to a SCRATCH COPY holding no
+      "Refrigerant" group; parameterNames "Refrigerant: Heron Gas Pipe
+      Diameter [Pipe Size], Refrigerant: Heron Liquid Pipe Diameter [Pipe
+      Size]", instance false, parameterGroup "Mechanical"
+    expect: >
+      created 2, each with Pipe Size, group Refrigerant, a GUID and the file's
+      own word for the data type; added 2 with those same GUIDs; findings
+      naming the group made and that Undo does not reach the file; Manage >
+      Shared Parameters on the scratch copy showing both under Refrigerant
+
+  - given: >
+      createMissing and replaceExisting true: a family with type Length family
+      parameters "Gas Pipe Diameter" (12.7 mm) and "Liquid Pipe Diameter"
+      (6.35 mm), each driving a pipe connector's diameter, and the scratch file
+      without either name; parameterNames "Gas Pipe Diameter=Refrigerant: Gas
+      Pipe Diameter [Length]; Liquid Pipe Diameter=Refrigerant: Liquid Pipe
+      Diameter [Length]" - Length, as the family parameters hold; [Pipe Size]
+      is refused as another kind, before the file is written - parameterGroup
+      empty
+    expect: >
+      created 2, replaced 2 under the SAME names - or, if Revit refuses a
+      shared parameter of the same name in place, a throw naming what the file
+      now keeps and the family rolled back (DE6's question, answered here);
+      the connector sizes and both values kept
+
+  - given: the first createMissing call again
+    expect: >
+      created empty; "already in the shared parameter file" for each, nothing
+      written; alreadyThere 2
+
 negative:
   - given: parameterNames "Not In The File"
     expect: refused, naming the file and the close names, and nothing added
@@ -53,6 +85,38 @@ negative:
   - given: replaceExisting true, "Width=Not In The File"
     expect: refused, naming the file and the close names; replaced empty
 
+  - given: >
+      createMissing true, the scratch file holding "Heron Test Tag" as Text;
+      parameterNames "Identity Data: Heron Test Tag [Length]"
+    expect: >
+      refused - already in the file holding Text, not Length, never changed;
+      created empty; the scratch file's bytes the same before and after
+
+  - given: >
+      createMissing true, "Heron New Thing [Length]" and "Refrigerant: Heron New
+      Thing []"
+    expect: refused twice - no group, no data type - neither chosen; nothing written to the file
+
+  - given: >
+      createMissing true, "Refrigerant: Heron Gas Pipe Diameter [Pipe Sise]"
+    expect: >
+      refused - not a data type this Revit offers - with Pipe Size among the
+      close ones; the file not written
+
+  - given: >
+      createMissing true, "Refrigerant: Heron Test Tag2 [Text]" while the
+      family already has a family parameter "Heron Test Tag2"
+    expect: >
+      refused - two under one name, pointing to replaceExisting - and the
+      scratch file NOT written: the family's own checks come before the file
+
+  - given: >
+      createMissing absent, "Refrigerant: Heron Gas Pipe Diameter [Pipe Size]"
+    expect: refused - createMissing is not on - nothing written
+
+  - given: createMissing true, the scratch file marked read-only
+    expect: refused - read-only - nothing written, nothing added
+
 second_route:
   - >
       Family Types in the Family Editor: the parameter listed as shared; Manage
@@ -62,3 +126,9 @@ second_route:
       After a replace, Family Types in the Family Editor: Heron Unit Width listed
       with the shared marker where Width was, its values per type the same, and
       the dimension's label reading Heron Unit Width
+
+  - >
+      After creating, the scratch shared parameter file opened in Notepad: a
+      GROUP line Refrigerant and a PARAM line for each new name carrying the
+      GUID `created` reported and that group's id; Manage > Shared Parameters
+      listing them under Refrigerant as Pipe Size
