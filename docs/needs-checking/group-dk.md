@@ -9,9 +9,9 @@
 ## Group DK - walls, grids, lines and reference planes a fraction of a degree off an axis turned onto it (2026-10-12)
 
 The second batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)).
-Another plugin's tool list had seven separate fixers for Revit's "slightly off axis" warning - walls, grids,
-lines, reference planes, room separation, area boundary and sketch lines. Here it is one job, because it is:
-a straight line a fraction of a degree off an axis, turned about one end until it lies on it.
+Revit's "slightly off axis" warning comes on walls, grids, lines, reference planes, room separation, area
+boundary and sketch lines. Here it is one job, because it is: a straight line a fraction of a degree off an
+axis, turned about one end until it lies on it.
 
 **What was built - one new capability.** `STRAIGHTEN_OFF_AXIS_LINES` (FRG-ELE-079). `ROTATE_ELEMENTS` was
 weighed: it turns by a given angle about a vertical axis, every element by the same amount, and this turns
