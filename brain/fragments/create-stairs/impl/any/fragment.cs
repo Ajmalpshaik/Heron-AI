@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `editScopeFailures`, `baseLevel`, `topLevel`,
 // `stairType`, `shape`, `runWidth`, `area`, `entrySide`, `firstRunSide`,
 // `startOffset` and `cutOpening`; leaves `created`, `risers`, `riserHeightMm`,
-// `runCount`, `landingCount`, `openings` and `findings`.
+// `runCount`, `landingCount`, `openings`, `railings` and `findings`.
 //
 // ===========================================================================
 // THIS FRAGMENT OPENS ITS OWN TRANSACTIONS, AND ONLY BECAUSE IT HAS TO - D-112.
@@ -53,6 +53,14 @@
 // Level 2 over Stair 1 removed nothing from either slab inside a transaction,
 // while a floor opening in the Level 2 slab removed 8 m3 - so it is the
 // slab's own opening that is cut.
+//
+// THE RAILINGS ARE REVIT'S, NOT THIS FRAGMENT'S, AND THEY ARRIVE AT THE COMMIT.
+// Measured 2026-10-13 on Project1, Revit 2020.2, rolled back (FRAGMENT-ISSUES
+// 5b-455): every stair came with two railings of the document's default stair
+// railing type, hosted by the stair - none inside the edit scope before its
+// Commit, two after. So `railings` is read from Stairs.GetAssociatedRailings
+// only once the scope has committed, and named in one finding with its count
+// and type. A stair that is refused, or taken away again, names none.
 
 var created = ElementId.InvalidElementId;
 var risers = 0;
@@ -60,6 +68,8 @@ var riserHeightMm = 0.0;
 var runCount = 0;
 var landingCount = 0;
 var openings = new List<ElementId>();
+var railings = new List<ElementId>();
+string railingNote = null;
 var findings = new List<string>();
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
@@ -323,6 +333,24 @@ if (refused == null)
                     refused = "Revit did not keep the stair when its edit mode closed";
                 else
                     created = stairsId;
+
+                // THE RAILINGS REVIT ADDED, read only now - the header's RAILINGS.
+                if (refused == null)
+                {
+                    railings.AddRange(((Stairs)doc.GetElement(created)).GetAssociatedRailings());
+                    var railingTypes = railings
+                        .Select(id => doc.GetElement(id))
+                        .Select(e => e == null ? null : doc.GetElement(e.GetTypeId()))
+                        .Select(t => t == null ? "(no type)" : "'" + t.Name + "'")
+                        .Distinct()
+                        .ToList();
+                    railingNote = railings.Count == 0
+                        ? "Revit added no railings with the stair"
+                        : string.Format("Revit added {0} railing{1} of type{2} {3} with the stair",
+                            railings.Count, railings.Count == 1 ? "" : "s",
+                            railingTypes.Count == 1 ? "" : "s", string.Join(", ", railingTypes));
+                    findings.Add(railingNote);
+                }
             }
             else
             {
@@ -424,4 +452,8 @@ if (refused != null)
 {
     findings.Add("Nothing was made. " + refused);
     risers = 0; riserHeightMm = 0; runCount = 0; landingCount = 0;
+
+    // A stair taken away again took its railings with it, so none are named.
+    if (railingNote != null) findings.Remove(railingNote);
+    railings.Clear();
 }

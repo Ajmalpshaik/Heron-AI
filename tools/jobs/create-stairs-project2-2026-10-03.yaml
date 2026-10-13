@@ -54,3 +54,7 @@ jobs:
       Level 2 slab it removed (about 0.15 x the footprint). Check it in 3D and
       in a section through the hall. Negative: refused naming the six loaded
       types; created invalid, risers 0, no opening.
+      Version 3 (5b-455, BX8): the positive also leaves `railings` - the
+      railings Revit added with the stair, 2 on Revit 2020.2 - and a finding
+      "Revit added N railings of type '...' with the stair"; the negative leaves
+      `railings` empty and no such finding.
