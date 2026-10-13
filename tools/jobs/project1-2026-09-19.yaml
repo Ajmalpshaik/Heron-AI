@@ -168,17 +168,25 @@ jobs:
   # "Generic - 200mm" is one of six wall types the model carries. The negative
   # is driven by the value - layer 99 of a wall that has nothing like 99
   # layers. If it applies anyway it is not reading layerIndex.
+  #
+  # VERSION 2 (2026-10-13) added `material` and `layerFunction`, and a request
+  # value that is absent is refused - so both are passed BLANK here, which is
+  # "leave it as it is", and this job still measures exactly what it measured.
   - fragment: set-compound-layer-width
     setup: []
     write: true
     set:
-      hostType:   "Generic - 200mm"
-      layerIndex: 0
-      widthMm:    250
+      hostType:      "Generic - 200mm"
+      layerIndex:    0
+      widthMm:       250
+      material:      ""
+      layerFunction: ""
     negative-set:
-      hostType:   "Generic - 200mm"
-      layerIndex: 99
-      widthMm:    250
+      hostType:      "Generic - 200mm"
+      layerIndex:    99
+      widthMm:       250
+      material:      ""
+      layerFunction: ""
 
   # THE NEGATIVE OF A CREATOR IS A DEGENERATE INPUT, which is the pattern
   # tools/jobs/creators-project1.yaml settled - a wall from a point to itself,
