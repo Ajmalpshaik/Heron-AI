@@ -612,6 +612,47 @@ def main():
         finally:
             second.close()
 
+        # --- BUT NEVER IN THE MIDDLE OF AN ANSWER (FRAGMENT-ISSUES 5b-458) ---
+        # A newer connection used to dispose the older pipe while Revit was
+        # still running its request: the work went on, the answer had nowhere
+        # to go, and on 2026-10-13 a chat was told "the answer was lost" about
+        # curtain walls that were standing in the model. test_wait is the
+        # host's stand-in for that work.
+        owed = connect(pipe_name, timeout=3.0)
+        try:
+            owed.write((json.dumps({"op": "test_wait", "ms": "1500", "token": TOKEN,
+                                    "client": CLIENT}) + "\n").encode("utf-8"))
+            time.sleep(0.4)                   # the stand-in Revit is working now
+            newer = connect(pipe_name, timeout=3.0)
+            try:
+                if call(newer, "ping").get("ok"):
+                    print("  PASS  a newer connection is served while an answer is owed")
+                else:
+                    failures.append("the newer connection was not served")
+            finally:
+                newer.close()
+            line = b""
+            while not line.endswith(b"\n"):
+                chunk = owed.read(1)
+                if not chunk:
+                    break
+                line += chunk
+            answer = json.loads(line.decode("utf-8").strip()) if line.strip() else None
+            if answer and answer.get("ok") and answer.get("waitedMs") == 1500:
+                print("  PASS  the displaced connection still gets the answer it was owed")
+            else:
+                failures.append("the answer owed to the displaced connection was lost: %r"
+                                % (answer if answer is not None else "end of stream"))
+            # And then it goes, exactly as an idle displaced one does.
+            try:
+                stale = call(owed, "ping")
+                failures.append("the displaced connection kept serving after its answer: %r"
+                                % stale)
+            except Exception:
+                print("  PASS  and only then is it dropped")
+        finally:
+            owed.close()
+
     except Exception as exc:
         failures.append("%s: %s" % (type(exc).__name__, exc))
     finally:

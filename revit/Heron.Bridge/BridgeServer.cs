@@ -6,6 +6,7 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Pipes;
@@ -42,6 +43,14 @@ namespace Heron.Bridge
     ///     "one chat, one Revit" rule of docs/25 true by construction rather
     ///     than by hoping. A dropped client reconnects on its next call.
     ///
+    ///   * BUT NEVER IN THE MIDDLE OF AN ANSWER. A connection displaced while
+    ///     Revit is still running its request keeps its pipe until the answer
+    ///     is written, then closes. Until 2026-10-13 it was disposed on the
+    ///     spot: the work carried on in Revit, the answer had nowhere to go,
+    ///     and the chat was told "the answer was lost" about walls that were
+    ///     standing in the model - which invites the repeat that doubles them.
+    ///     FRAGMENT-ISSUES section 5b, row 458; docs/25 section 3.
+    ///
     ///   * Local only by construction. A named pipe has no network surface,
     ///     the ACL restricts it to the current user, and a per-session token
     ///     means another process of that same user cannot reach Revit without
@@ -63,9 +72,18 @@ namespace Heron.Bridge
         // tuning. See ReadBoundedLineAsync.
         private const int MaxRequestChars = 1024 * 1024;
 
-        // 2, not 1: preemption needs one instance servicing the current chat
-        // AND a second already listening for the next one, at the same time.
-        private const int PipeInstances = 2;
+        // NOT 1: preemption needs one instance servicing the current chat AND
+        // a second already listening for the next one, at the same time.
+        //
+        // AND NOT 2 ANY MORE, because a displaced connection whose request is
+        // still running in Revit now keeps its instance until the answer is
+        // written (see Connection). While it finishes there are three: that
+        // one, the newcomer, and the next listener. Each one finishing holds a
+        // request Revit is working through one at a time, and one MCP server
+        // sends one request at a time, so this is a ceiling on separate
+        // processes talking to one Revit at the same instant - far above the
+        // handful that ever do. FRAGMENT-ISSUES section 5b, row 458.
+        private const int PipeInstances = 16;
 
         private const int DefaultIdleReleaseMinutes = 3;
 
@@ -75,9 +93,14 @@ namespace Heron.Bridge
         private readonly TimeSpan _idleRelease;
 
         private CancellationTokenSource _cancellation;
-        private NamedPipeServerStream _activePipe;    // serving a connected chat, if any
+        private Connection _active;                   // serving a connected chat, if any
         private NamedPipeServerStream _waitingPipe;   // listening for the next connect
         private Task _listenLoop;
+
+        // Displaced while Revit was running their request: each is writing the
+        // answer it owes and then closing. Kept only so Stop can still close
+        // every pipe it owns.
+        private readonly List<Connection> _finishing = new List<Connection>();
 
         private volatile bool _running;
 
@@ -163,9 +186,13 @@ namespace Heron.Bridge
             // inside a read.
             lock (_pipeLock)
             {
-                Dispose(_activePipe);
+                if (_active != null) Dispose(_active.Pipe);
                 Dispose(_waitingPipe);
-                _activePipe = null;
+                // The user pressed Stop: an answer still owed is not delivered,
+                // exactly as before the finishing list existed.
+                foreach (var finishing in _finishing) Dispose(finishing.Pipe);
+                _finishing.Clear();
+                _active = null;
                 _waitingPipe = null;
             }
 
@@ -206,35 +233,38 @@ namespace Heron.Bridge
                     // One bad connection must not take the bridge down. Replace
                     // the instance and keep listening.
                     Dispose(waiting);
-                    try
-                    {
-                        waiting = CreatePipe();
-                        lock (_pipeLock) { _waitingPipe = waiting; }
-                    }
-                    catch (Exception ex)
-                    {
-                        _log("Bridge stopped listening: " + ex.Message);
-                        break;
-                    }
+                    waiting = await CreateWaitingPipeAsync(token).ConfigureAwait(false);
+                    if (waiting == null) break;
                     continue;
                 }
 
                 if (token.IsCancellationRequested) { Dispose(waiting); break; }
 
                 // This client becomes the session now, displacing whoever held
-                // it. Disposing the old pipe unblocks its pending read, so the
-                // handler for it exits on its own.
-                var accepted = waiting;
-                NamedPipeServerStream displaced;
+                // it. A displaced connection that is only WAITING for its next
+                // request is disposed here, which unblocks its pending read so
+                // its handler exits on its own. One whose request Revit is
+                // still running is left to write that answer and close itself.
+                var accepted = new Connection(waiting);
+                Connection displaced;
                 lock (_pipeLock)
                 {
-                    displaced = _activePipe;
-                    _activePipe = accepted;
+                    displaced = _active;
+                    _active = accepted;
                 }
                 if (displaced != null)
                 {
-                    Dispose(displaced);
-                    _log("A newer connection took the session.");
+                    if (displaced.Displace())
+                    {
+                        Dispose(displaced.Pipe);
+                        _log("A newer connection took the session.");
+                    }
+                    else
+                    {
+                        lock (_pipeLock) { _finishing.Add(displaced); }
+                        _log("A newer connection took the session. The one it displaced is " +
+                             "waiting on Revit and will close once its answer is written.");
+                    }
                 }
 
                 // Serve on its own task so the loop can stand the next instance
@@ -242,24 +272,61 @@ namespace Heron.Bridge
                 var served = accepted;
                 var ignored = ServeAsync(served, token).ContinueWith(delegate
                 {
-                    Dispose(served);
+                    Dispose(served.Pipe);
                     lock (_pipeLock)
                     {
-                        if (ReferenceEquals(_activePipe, served)) _activePipe = null;
+                        if (ReferenceEquals(_active, served)) _active = null;
+                        _finishing.Remove(served);
                     }
                 }, TaskScheduler.Default);
                 GC.KeepAlive(ignored);
 
+                waiting = await CreateWaitingPipeAsync(token).ConfigureAwait(false);
+                if (waiting == null) break;
+            }
+        }
+
+        /// <summary>
+        /// The next listening instance - and if every instance is held, a
+        /// short wait for one to come free rather than giving up at once.
+        ///
+        /// The ceiling (PipeInstances) can only be reached now that a displaced
+        /// connection may hold its instance while Revit finishes its request;
+        /// before row 458 the displaced pipe was always gone first. Reaching it
+        /// used to end the listen loop - "Bridge stopped listening" while the
+        /// ribbon still said connected - and a full house is temporary by
+        /// nature: every one of those connections is waiting on a request that
+        /// ends. Null means stopped, or a minute without a free instance, and
+        /// the caller stops listening as it always did.
+        /// </summary>
+        private async Task<NamedPipeServerStream> CreateWaitingPipeAsync(CancellationToken token)
+        {
+            for (var attempt = 0; ; attempt++)
+            {
                 try
                 {
-                    waiting = CreatePipe();
-                    lock (_pipeLock) { _waitingPipe = waiting; }
+                    var created = CreatePipe();
+                    lock (_pipeLock) { _waitingPipe = created; }
+                    return created;
+                }
+                catch (IOException ex)
+                {
+                    if (token.IsCancellationRequested || attempt >= 600)
+                    {
+                        _log("Bridge stopped listening: " + ex.Message);
+                        return null;
+                    }
+                    if (attempt == 0)
+                        _log("Every pipe instance is in use; waiting for one to close: " + ex.Message);
                 }
                 catch (Exception ex)
                 {
                     _log("Bridge stopped listening: " + ex.Message);
-                    break;
+                    return null;
                 }
+
+                try { await Task.Delay(100, token).ConfigureAwait(false); }
+                catch (OperationCanceledException) { return null; }
             }
         }
 
@@ -408,8 +475,63 @@ namespace Heron.Bridge
             public bool TooLong;
         }
 
-        private async Task ServeAsync(NamedPipeServerStream pipe, CancellationToken token)
+        /// <summary>
+        /// One accepted pipe, and whether it is in the middle of an answer.
+        ///
+        /// The two threads that decide its fate - this connection's own
+        /// handler, and the listen loop when a newer connection arrives - each
+        /// move it with one compare-and-swap, so exactly one of two things
+        /// happens and never both: it is displaced while waiting and closes at
+        /// once, or it is displaced while answering and closes straight after
+        /// the answer is written. A read finished in the same instant it is
+        /// displaced is never dispatched: its pipe is already gone, so nothing
+        /// is run that nobody can be told about.
+        /// </summary>
+        private sealed class Connection
         {
+            private const int Waiting = 0;
+            private const int Answering = 1;
+            private const int DisplacedWaiting = 2;
+            private const int DisplacedAnswering = 3;
+
+            private int _state = Waiting;
+
+            public Connection(NamedPipeServerStream pipe) { Pipe = pipe; }
+
+            public NamedPipeServerStream Pipe { get; private set; }
+
+            /// <summary>A request has been read. False: displaced, do not run it.</summary>
+            public bool TryBeginAnswer()
+            {
+                return Interlocked.CompareExchange(ref _state, Answering, Waiting) == Waiting;
+            }
+
+            /// <summary>The answer is written. False: displaced meanwhile, close now.</summary>
+            public bool TryEndAnswer()
+            {
+                return Interlocked.CompareExchange(ref _state, Waiting, Answering) == Answering;
+            }
+
+            /// <summary>A newer connection arrived. True: dispose it now.
+            /// False: it is answering, and closes itself when it has.</summary>
+            public bool Displace()
+            {
+                while (true)
+                {
+                    var now = Volatile.Read(ref _state);
+                    var next = now == Waiting ? DisplacedWaiting
+                             : now == Answering ? DisplacedAnswering
+                             : now;
+                    if (next == now) return now == DisplacedWaiting;
+                    if (Interlocked.CompareExchange(ref _state, next, now) == now)
+                        return next == DisplacedWaiting;
+                }
+            }
+        }
+
+        private async Task ServeAsync(Connection connection, CancellationToken token)
+        {
+            var pipe = connection.Pipe;
             try
             {
                 var encoding = new UTF8Encoding(false);
@@ -451,6 +573,10 @@ namespace Heron.Bridge
                         if (line == null) return;            // client closed
                         if (line.Length == 0) continue;
 
+                        // Displaced in the instant the line arrived: the pipe
+                        // is gone, so the request is not run at all.
+                        if (!connection.TryBeginAnswer()) return;
+
                         string response;
                         try
                         {
@@ -462,6 +588,11 @@ namespace Heron.Bridge
                         }
 
                         await writer.WriteLineAsync(response).ConfigureAwait(false);
+
+                        // A newer connection took the session while Revit was
+                        // working. The answer it was owed has now been written;
+                        // the pipe goes, and the client reconnects next call.
+                        if (!connection.TryEndAnswer()) return;
                     }
                 }
             }
