@@ -14,6 +14,18 @@ positive:
   - given: the same hall, shape straight, entry south, first run centre, run width 1200, start offset 300
     expect: one run of 23 risers along the hall's length, no landing, no opening
 
+  - given: >
+      A STAIR WHOSE BASE LEVEL IS NOT AT 0 (5b-445). Project2 on Revit 2020.2,
+      the futuristic house: Level 2 at 4000 to Level 3 at 7600, clear inside
+      X 21000..23400, Y 17700..21650 mm, 'Monolithic Stair', shape u, run width
+      1100, entry south, first run west, start offset 0, cutOpening true
+    expect: >
+      a stair based on Level 2 and topped at Level 3 with two runs and one
+      landing, every riser 180 mm or less, its plan extent inside the hall, and
+      an opening in the Level 3 slab over it. Version 1 was refused here by Revit
+      with "The topElevation is less than the extension below base of the stairs
+      run" and made nothing
+
 negative:
   - given: the same values with stairType=Spiral Feature Stair, a name Project2 does not have
     expect: refused by name with the six loaded stair types listed, nothing made
@@ -22,6 +34,9 @@ negative:
     expect: >
       refused before the model is touched - two 4000 mm runs need 8000 mm
       across and the hall is 7223 mm - nothing made
+
+  - given: the Level 2 to Level 3 values above with the levels swapped - base Level 3, top Level 2
+    expect: refused before the model is touched - 'Level 2' is not above 'Level 3' - nothing made
 
   - given: run as a read (no --write)
     expect: refused by the add-in, D-112 - an edit-mode fragment never runs on the read path
