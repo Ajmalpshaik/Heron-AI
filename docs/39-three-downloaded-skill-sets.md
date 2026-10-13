@@ -158,7 +158,7 @@ asked which, one at a time.
 | Parts, and making an assembly | |
 | Point clouds | |
 | Masses, and the floors and walls made from one | |
-| Painting one face; the material of one layer of a wall | `SET_COMPOUND_LAYER_WIDTH` changes a layer's width and nothing else |
+| ~~Painting one face; the material of one layer of a wall~~ | **Both built, DRAFT.** Painting a face is `PAINT_FACES` (2026-10-13, #502). The material of a layer is `SET_COMPOUND_LAYER_WIDTH` **version 2** (2026-10-13, [5b-449](fragment-issues/section-5b-rows-401-425.md)) - a layer's width, material and function, widened rather than a card added; run on Revit 2020, not signed ([Group DU](needs-checking/group-du.md)). Until then it changed a layer's width and nothing else |
 | ~~A door or a window put into one particular wall~~ | **Built 2026-09-25 as `PLACE_HOSTED_FAMILY` version 2, DRAFT** (#334) - it finds the wall at each point. Not from these notes: [the house plan of 2026-09-22](fragment-issues/a-drawing-set-and-a-house-plan-2026-09-22.md) found it, and [`building-shell`](../brain/skills/building-shell.yaml) now has a door step |
 
 ---

@@ -1,21 +1,39 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-070
-semantic-identity: "make this layer of the wall build-up thicker"
+semantic-identity: "change one layer of a wall or floor type - its thickness, material or function"
 kind: action
 domain: revit.elements
 capability: SET_COMPOUND_LAYER_WIDTH
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-449): a layer's MATERIAL and its
+# FUNCTION as well as its width, a layer found by its function, and a read and
+# a check. Version 1 changed the width and nothing else. The name stays, so
+# every caller of version 1 still finds it; the two new values are blank for
+# "leave it", and its old inputs mean what they meant - except widthMm 0, which
+# version 1 refused and version 2 reads as "keep the width".
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Changes the thickness of one layer in a wall, floor, roof or ceiling type's
-  build-up, and reports what it was before.
+  Changes one layer in a wall, floor, roof or ceiling type's build-up - its
+  thickness, its material, its function, any of the three - and reports what it
+  was before. Or reads the layer, or checks it against values, and changes
+  nothing.
+
+  **A LAYER'S MATERIAL IS TYPE DATA, AND IT HAD NO ROUTE.** Version 1 set the
+  width alone, so a wall's colours went on by painting faces - which is not the
+  type, and schedules as nothing. The material is given by its name and must
+  already be in the project; a name that is not refuses the call, naming the
+  closest that are. `CREATE_MATERIAL` makes one. `<By Category>` clears it.
+
+  **BLANK MEANS LEAVE IT.** `material` and `layerFunction` blank and `widthMm` 0
+  read the layer as it stands; `checkOnly` compares what is given and writes
+  nothing.
 
   **`REPORT_COMPOUND_STRUCTURE` READS THE BUILD-UP AND NOTHING WROTE IT.** So
   *"modify thickness"* - asked plainly, and the ordinary answer to a spec change -
@@ -32,9 +50,9 @@ purpose: >
   until it is set back on the type. That silent no-op is the mistake this fragment
   exists to make impossible.
 
-  **THE LAYER IS BY INDEX, AND THE INDEX IS REVIT'S.** `REPORT_COMPOUND_STRUCTURE`
-  is what turns "the insulation" into a number; guessing it here would change the
-  wrong layer and still report success.
+  **THE LAYER IS BY INDEX, AND THE INDEX IS REVIT'S** - 0 is the outside face.
+  `-1` finds it by its function instead, and two layers with that function are
+  refused by number rather than one guessed at.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -49,8 +67,32 @@ contract:
       type: int
       source: request
     - name: widthMm
+      # MILLIMETRES. 0 leaves the width as it is (version 2; version 1 refused
+      # it). A negative width is refused.
       type: double
       source: request
+    - name: material
+      # Version 2. A material's NAME, as the project already holds it. BLANK
+      # LEAVES IT AS IT IS; "<By Category>" or "none" clears it. A name the
+      # project does not hold is refused, naming the closest it does - nothing
+      # is ever made here. A string and not a Material, because a Material
+      # cannot be left blank: an absent or unbindable value stops the call.
+      type: string
+      source: request
+    - name: layerFunction
+      # Version 2. Structure, Substrate, Thermal/Air Layer (or Insulation),
+      # Finish 1, Finish 2, Membrane Layer or Structural Deck - the dialog's
+      # words or the API's, the [n] optional. BLANK LEAVES IT. With layerIndex
+      # -1 it FINDS the layer and is not written.
+      type: string
+      source: request
+    - name: checkOnly
+      # Version 2. Compare the layer with the values given and change nothing.
+      # Absent is false, so a caller of version 1 changes the layer as before
+      # (HeronBindingNote.AbsentValue - only an optional bool may be left out).
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: applied
       role: result
@@ -58,6 +100,26 @@ contract:
     - name: wasMm
       role: result
       type: double
+    - name: wasLayer
+      # The layer before this call, as one line - function, width, material.
+      # What was already there, never a thing it found (D-52).
+      role: accounting
+      type: string
+    - name: buildUp
+      # Every layer of the type after the call, as ONE string - numbered as
+      # layerIndex numbers them, the core marked. A string because a list
+      # reaches the reply cut to three lines of sixty characters, and the
+      # material name is what gets cut. Empty on a refusal.
+      role: result
+      type: string
+    - name: matches
+      # checkOnly: true when the layer already holds every value given.
+      role: result
+      type: bool
+    - name: differences
+      # checkOnly: what differs, in words. Empty when it matches.
+      role: result
+      type: string
     - name: refused
       # Why it declined, in the user's words - evidence it looked and said no.
       # Never a thing it FOUND (D-52).
@@ -93,6 +155,15 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
+  Version 2 adds `CompoundStructure.GetMaterialId` / `SetMaterialId`,
+  `GetLayerFunction` / `SetLayerFunction`, `IsValid(Document, out errors, out
+  pairs)`, `GetFirstCoreLayerIndex` / `GetLastCoreLayerIndex` and the eight
+  `MaterialFunctionAssignment` members - read off RevitAPI.xml for 2020 and 2027
+  on 2026-10-13, the same in both. `SetMaterialId`'s own remark is that the id
+  is NOT checked to be a material, so the name is found here and refused here.
+  `CompoundStructureError`'s members are read by NAME, never written in code, so
+  one added or dropped in a release cannot stop the file compiling.
+
   `HostObjAttributes.GetCompoundStructure`, `HostObjAttributes.SetCompoundStructure`,
   `CompoundStructure.GetLayerWidth`, `CompoundStructure.SetLayerWidth` and
   `CompoundStructure.LayerCount` are present 2020 through 2027 - read off the
@@ -101,6 +172,13 @@ compatibility-note: >
   out (D-20).
 
 # ROUTING - repeated in REPORT_COMPOUND_STRUCTURE and DUPLICATE_TYPE.
+#
+#   "set the material of a layer in a wall type" -> here (version 2)
+#   "paint this face of the wall"   -> PAINT_FACES - one face of one element,
+#                                      which is not the type
+#   "swap this material for that one everywhere" -> REPLACE_MATERIAL - every
+#                                      layer and parameter holding one material
+#   "make a new material"           -> CREATE_MATERIAL - this only uses one
 #
 #   "make the insulation thicker"   -> SET_MEP_INSULATION. Said with no
 #                                      subject a modeller means the pipe or
@@ -120,3 +198,7 @@ utterances:
   - change the insulation layer in this wall type
   - set the wall layer width
   - modify the thickness of this build up
+  # Version 2 - the two sentences that found nothing on 2026-10-13.
+  - set the material of a layer in a wall type
+  - assign a material to a floor type or wall type
+  - change the function of this wall layer

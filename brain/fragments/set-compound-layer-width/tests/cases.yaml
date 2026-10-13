@@ -8,7 +8,47 @@ positive:
       not read off the report. `wasMm` must be the old value, which is what makes
       the change reversible
 
+  - given: >
+      version 2: a NEW type duplicated from a basic wall, layer 0, material
+      "Brick, Common" (a material the project holds), width 0 and function blank
+    expect: >
+      applied, the layer reading Brick, Common and its width and function as they
+      were - read back with REPORT_COMPOUND_STRUCTURE, a separate reader, not off
+      this fragment's own answer. Run 2026-10-13 on Project1, Revit 2020: kept,
+      and REPORT_COMPOUND_STRUCTURE read "Structure 200 mm Brick, Common" where it
+      had read "<by category / none>"
+
+  - given: version 2, layerIndex -1 and layerFunction "Structure"
+    expect: the one Structure layer found and changed, as if its number were given
+
+  - given: version 2, widthMm 0, material blank, layerFunction blank
+    expect: >
+      nothing changed, and buildUp is the whole build-up as one line - the READ
+
+  - given: version 2, checkOnly true and a material the layer does not hold
+    expect: >
+      matches false, differences naming both materials, nothing changed. The same
+      with the material it does hold: matches true
+
 negative:
+  - given: >
+      version 2: a material name the project does not hold -
+      "TRG_Material_White_Render" in a project that has no such material
+    expect: >
+      refused naming the closest names it has, nothing changed - read back after a
+      KEPT run of this case, and the layer still held what it held before
+
+  - given: version 2, layerFunction "Membrane Layer" on a 200 mm layer
+    expect: >
+      refused in Revit's own complaint - a membrane has no thickness - and nothing
+      changed. SetCompoundStructure documents no refusal, so IsValid is asked first
+
+  - given: version 2, layerIndex -1 and a function the type has none of, or two of
+    expect: refused naming the layers it has; with two, naming both numbers
+
+  - given: version 2, checkOnly true with nothing to check
+    expect: refused - a check against nothing would always "match"
+
   - given: a layer index of 99 on a three-layer wall
     expect: >
       refused by name, saying how many layers there are and where the numbers
@@ -20,8 +60,10 @@ negative:
       correctly reports no build-up for one - and a silent zero-layer answer here
       would read as a broken wall
 
-  - given: a width of 0 mm
-    expect: refused by name, nothing changed
+  - given: a negative width
+    expect: >
+      refused by name, nothing changed. A width of 0 was refused here until
+      version 2, which reads it as "keep the width"
 
   - given: >
       the change applied, and then a SECOND wall of the same type looked at
