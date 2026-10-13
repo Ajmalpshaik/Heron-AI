@@ -9,7 +9,7 @@ semantic-identity: "colour the rooms, spaces or HVAC zones in a plan by one para
 kind: action
 domain: revit.views
 capability: APPLY_COLOR_FILL_SCHEME
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -27,56 +27,83 @@ risk: MODIFY
 # to CREATE_HVAC_ZONE. "Color Scheme" and "Color Fill Legend" are what Revit
 # calls them and what a modeller types; the British spelling alone lost it.
 #
+# VERSION 2 (2026-10-13) - THE WHOLE VERB FAMILY, ON THE CARD THAT ALREADY HAD
+#   HALF OF IT. Found because the futuristic-house plans in Project2 (Revit
+#   2020.2) could not be coloured: heron_lookup, asked twice, offered
+#   SET_CATEGORY_SOLID_FILL, COLOR_BY_PARAMETER and SHOW_ANALYSIS_HEATMAP - this
+#   card was in the library and the version filter hid it, because it declared
+#   2022 to 2027. The owner's rule is to widen what already touches the job, so
+#   version 2 widens this one rather than adding a second writer:
+#     - SEVERAL VIEWS, or a VIEW TEMPLATE. `view` is a list now, and a single
+#       name still binds, so no caller of version 1 breaks. A template is the
+#       answer when a plan's template holds the colour scheme: the refusal names
+#       the template and says how many views follow it.
+#     - COLOURS. A band - vivid, pastel, neon, COLOR_BY_PARAMETER's words and
+#       hue steps exactly - and/or one colour per value, value=r,g,b or #RRGGBB.
+#       Each row is read back in the colour it was given.
+#     - A NAMED SCHEME (schemeToUse): used if it is there, made by copying if it
+#       is not. Naming a scheme is also how a scheme other views show is
+#       re-coloured everywhere - unnamed, new colours go on a copy.
+#     - THE LEGEND: blank places one beside the crop region (version 1); none
+#       places none; x,y in millimetres places it, or moves the one already
+#       there, to that point of the model.
+#     - CLEARING (clearScheme): the category's scheme off every view, and that
+#       category's legends with it unless legend says keep. The scheme element
+#       itself is never deleted - other views may show it.
+#   Reading a view's scheme is REPORT_COLOR_FILL_SCHEME, a READ: a question
+#   must never need the Changes switch.
+#
 # NOT COLOR_BY_PARAMETER - AND THE DIFFERENCE IS WHAT FOLLOWS A CHANGE. That
 #   one paints graphic overrides on the elements it is handed, one by one, and
 #   a room renamed tomorrow keeps yesterday's colour. This sets a SCHEME on the
 #   view, which Revit re-reads every time the view is drawn - a renamed room
 #   changes colour by itself - and the legend is Revit's own element, which a
 #   sheet can carry.
-# USED OR COPIED, NEVER EDITED, NEVER MADE FROM NOTHING. A scheme is shared by
-#   every view that shows it, so editing one to suit this view would re-colour
-#   the others without anybody asking. The API can only copy a scheme, so a
-#   model with none for the category is refused by name rather than worked
-#   around. The copy is named "<category> by <parameter>", e.g. "Rooms by Name".
-# THE LEGEND IS PLACED ONCE. A view that already carries a colour fill legend
-#   for the category keeps it and gets no second one. A new one goes 10 mm on
-#   the sheet to the right of the crop region's right-hand edge, level with its
-#   top, and where it landed is read back off the legend and reported in
-#   millimetres on the sheet (legendAtMm).
-# THE ANSWER IS WHAT THE VIEW HOLDS AFTERWARDS. The view's scheme for the
-#   category is read again after it is set (schemeApplied), and the colour fill
-#   legends in the view are counted again after one is placed (legendsInView).
-#   `summary` carries all of it in one sentence, because a reply shows only the
-#   first three rows of a list.
-# ALL OF IT OR NONE OF IT. Once a scheme has been copied or set, a failure -
-#   the view will not take it, it reads back wrong, Revit will not place the
-#   legend - throws, and the whole request rolls back: a coloured plan with no
-#   legend is not kept.
+# USED OR COPIED, NEVER MADE FROM NOTHING, AND NEVER RE-COLOURED UNASKED. A
+#   scheme is shared by every view that shows it, so new colours on one shown
+#   elsewhere would re-colour the others without anybody asking - it is copied
+#   instead unless named. The API can only copy a scheme, so a model with none
+#   for the category is refused by name rather than worked around. An unnamed
+#   copy is called "<category> by <parameter>", e.g. "Rooms by Name".
+# ONE SPATIAL SCHEME PER VIEW. Revit shows at most one across Rooms, Spaces,
+#   HVAC Zones and Areas in a view (the API's own words for SetColorFillSchemeId),
+#   so a Rooms scheme replaces a Spaces one. The reply names what it replaced.
+# FOR AREAS THE AREA PLAN DECIDES THE AREA SCHEME. A colour scheme for Areas
+#   belongs to one area scheme and an area plan to one, so the plan answers it
+#   and is not asked of the caller; plans of two area schemes are refused.
+# THE LEGEND IS PLACED ONCE PER VIEW. A view that already carries a colour fill
+#   legend for the category keeps it and gets no second one. A new one goes
+#   10 mm on the sheet to the right of the crop region's right-hand edge, level
+#   with its top, and where it landed is read back off the legend.
+# THE ANSWER IS WHAT THE VIEWS HOLD AFTERWARDS. Each view's scheme is read
+#   again after it is set or cleared (schemeApplied, viewsChanged), each colour
+#   after it is written (rowsRecoloured), and the legends counted again
+#   (legendsInView). `summary` carries it all in one sentence, because a reply
+#   shows only the first three rows of a list.
+# ALL OF IT OR NONE OF IT. Every refusal is decided before the first write.
+#   Once a scheme has been copied or set, a failure - a view that will not take
+#   it, a colour that reads back wrong, a legend Revit will not place - throws,
+#   and the whole request rolls back: a coloured plan with no legend is not kept.
 # A LEGEND OUTSIDE THE CROP MAKES THE VIEWPORT BIGGER, on a sheet that pulls
 #   the plan off the centre it had. Re-centring is a separate step; the reply
 #   says whether the annotation crop is on, because an annotation crop cuts off
 #   anything outside it.
 purpose: >
-  Colour-fills one plan the way Revit's own Color Fill does it: sets the view's
+  Colour-fills plans the way Revit's own Color Fill does it: sets the views'
   Color Scheme for one category - Rooms, Spaces, HVAC Zones, Areas, Ducts,
   Pipes, whichever the view takes - to one that colours by the parameter named,
-  and places Revit's Color Fill Legend in the view. "Colour the rooms by name"
-  and "add a colour fill legend" are this.
+  colours its rows, and places Revit's Color Fill Legend in the view. Takes a
+  view's Color Scheme off again too. "Colour the rooms by name" and "add a
+  colour fill legend" are this.
 
   **NOT COLOR_BY_PARAMETER**, which paints overrides element by element; a
   scheme follows a renamed room by itself.
 
-  **A SCHEME IS USED OR COPIED, NEVER EDITED.** One already colouring by the
-  parameter is used as it stands; otherwise one is copied as "<category> by
-  <parameter>" and only the copy changes. A category with no scheme is refused.
-
-  **THE LEGEND IS PLACED ONCE**, 10 mm right of the crop region.
+  **A SCHEME OTHER VIEWS SHOW IS COPIED, NEVER RE-COLOURED UNASKED.** A
+  category with no scheme is refused.
 
   **ALL OF IT OR NONE OF IT.** Once anything is written, a failure rolls the
   whole request back.
-
-  **A LEGEND OUTSIDE THE CROP MAKES THE VIEWPORT BIGGER.** The sheet is not
-  touched; the reply says whether the annotation crop is on.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 
@@ -84,8 +111,12 @@ contract:
   needs:
     - name: doc
       type: Document
+    # ONE VIEW OR SEVERAL, separated by commas - or a view template, which is
+    # where the scheme goes when a template holds the colour scheme. Version 1
+    # took one View; a single name still binds a list of one, so no caller
+    # breaks.
     - name: view
-      type: View
+      type: IList<View>
       source: request
     # The category the scheme colours - Rooms, Spaces, HVAC Zones. Which ones a
     # view takes is the VIEW's answer, read off it, and a refusal lists them.
@@ -93,35 +124,70 @@ contract:
       type: Category
       source: request
     # What it colours by, as the Edit Color Scheme dialog's "Color" list shows
-    # it - Name, Department, Zone. Matched exactly first, then ignoring case.
+    # it - Name, Department, Number, any parameter the category carries.
+    # Matched exactly first, then ignoring case. EMPTY when clearing, or when
+    # schemeToUse names a scheme to use as it colours.
     - name: parameterName
       type: string
       source: request
+    # VERSION 2 - each of the three below is EMPTY for version 1's behaviour.
+    # The colours: a band (vivid, pastel or neon) and/or one per value,
+    # "Kitchen=255,200,200; Bath=#C8DCFF". EMPTY leaves the scheme's colours.
+    - name: colours
+      type: string
+      source: request
+    # The scheme to use, or to make by copying when there is none by that
+    # name. EMPTY means one already colouring by the parameter, else a copy
+    # called "<category> by <parameter>".
+    - name: schemeToUse
+      type: string
+      source: request
+    # EMPTY places a legend beside the crop region; "none" places none; "keep"
+    # leaves the legends as they are (and keeps them when clearing); "x,y" in
+    # millimetres places it at that point of the model, or moves the one there.
+    - name: legend
+      type: string
+      source: request
+    # Takes the category's scheme off the views, and its legends unless legend
+    # says keep. Not mentioned is off (D-59), so version 1's callers are safe.
+    - name: clearScheme
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: schemeName
       role: result
       type: string
     - name: schemeSource
-      # Whether an existing scheme was used as it stands or one was COPIED,
-      # naming both - the difference between touching nothing and adding a
-      # scheme to the model.
+      # Whether an existing scheme was used as it stands, re-coloured, or one
+      # was COPIED, naming both - or what clearing took off.
       role: result
       type: string
     - name: schemeApplied
-      # The view's scheme for the category READ BACK after it was set, and
-      # true only when it is the one named in schemeName.
+      # Every view's scheme for the category READ BACK after it was set, and
+      # true only when each is the one named in schemeName.
       role: result
       type: bool
+    - name: viewsChanged
+      # Views whose scheme was set, changed or cleared - or whose legends were
+      # removed - each read back. 0 on a second identical run.
+      role: result
+      type: int
+    - name: rowsRecoloured
+      # Rows given a new colour, or added in one, each read back.
+      role: result
+      type: int
     - name: legendPlaced
       role: result
       type: bool
     - name: legendsInView
-      # Every colour fill legend the view carries afterwards, counted again.
+      # The colour fill legends for the category the views carry afterwards,
+      # counted again.
       role: result
       type: int
     - name: legendAtMm
-      # Where the legend for this category sits, read off the legend, in
-      # millimetres on the sheet from the crop region's top-right corner.
+      # Where each view's legend sits, read off the legend: millimetres on the
+      # sheet from the crop region's top-right corner, or the model point.
       role: result
       type: string
     - name: entries
@@ -135,9 +201,9 @@ contract:
       role: accounting
       type: string
     - name: findings
-      # What it noticed on the way - the scheme the view had before, a legend
-      # already there, an annotation crop that can cut the legend off. Notes,
-      # never things it found in the model (D-52).
+      # What it noticed on the way - a scheme Revit replaced, a legend already
+      # there, an annotation crop that can cut the legend off. Notes, never
+      # things it found in the model (D-52).
       role: accounting
       type: IList<string>
     - name: refused
@@ -146,39 +212,47 @@ contract:
       role: accounting
       type: string
 
-revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  **2022 AND LATER ONLY, READ OFF THE REFERENCE ASSEMBLIES ON 2026-09-27.**
-  `tools/api-surface --members` over the shipped assemblies of all eight
-  releases:
+  **THE WRITES ARE 2022 AND LATER; 2020 AND 2021 ARE REFUSED IN PLAIN WORDS.**
+  Read off the reference assemblies on 2026-10-13 (the NuGet reference
+  packages for all eight releases, by reflection and by RevitAPI.xml):
 
-    ColorFillScheme, ColorFillSchemeEntry, ColorFillLegend
-                     2022-2027 present, 2020-2021 "the type is not in these"
-    View.SupportedColorFillCategoryIds, GetColorFillSchemeId,
-    SetColorFillSchemeId, CanApplyColorFillScheme
-                     2022-2027 present, 2020-2021 absent
+    ColorFillScheme, ColorFillSchemeEntry   2021 (2021.1.100) to 2027
+    ColorFillLegend                         2022 to 2027 - not in 2021
+    View.GetColorFillSchemeId, SetColorFillSchemeId, SupportedColorFillCategoryIds
+                                            2021 (2021.1.100) to 2027
+    View.CanApplyColorFillScheme            one argument in 2021, two from 2022
+    none of them                            2020 - only BuiltInParameter
+                                            COLOR_SCHEME_LOCATION and the
+                                            category OST_ColorFillSchema
 
-  Unlike EXPORT_SHEETS_TO_PDF's 2021 case, this is not a type that exists and
-  cannot be reached - it is simply not there, so there is no older route to
-  fall back on through the API. **A 2020 or 2021 caller gets nothing from this
-  fragment**, and the compile gate checks exactly the six releases claimed.
+  2021's scheme calls are a different shape from 2022's (AddColorFillEntry,
+  an entry built with the Document, `ByRange`, `InUse`), it has no legend at
+  all, and no Revit 2021 is on this PC to prove a route through them - so
+  2021 takes the same branch as 2020 (`#if REVIT2020 || REVIT2021`): nothing
+  is written, the reply says the calls arrived in 2022, names the schemes the
+  model holds, and gives the steps in Revit's own dialog. Version 1 declared
+  2022 to 2027 only, and the version filter hid it on 2020 altogether - a
+  refusal that says why is better than a lookup that offers the wrong tool.
 
-  Everything used is unchanged 2022 to 2027 by the same reading:
-  `ColorFillScheme.Duplicate`, `ParameterDefinition`, `Title`, `IsByRange`,
-  `StorageType`, `GetEntries`, `AddEntry`, `GetSupportedParameterIds`,
-  `IsValidParameterDefinitionId`, `IsValidSchemeName`; `ColorFillLegend.Create`,
-  `Origin`, `ColorFillCategoryId`; and, for a category with nothing placed
-  yet, `ParameterUtils.GetAllBuiltInParameters`, `GetBuiltInParameter`,
+  Everything the 2022 branch uses is unchanged 2022 to 2027 by the same
+  reading: `ColorFillScheme.Duplicate`, `ParameterDefinition`, `Title`,
+  `AreaSchemeId`, `StorageType`, `GetEntries`, `AddEntry`, `UpdateEntry`,
+  `CanUpdateEntry`, `GetSupportedParameterIds`, `IsValidParameterDefinitionId`,
+  `IsValidSchemeName`; `ColorFillSchemeEntry.Color`, `Caption`, `IsInUse`;
+  `ColorFillLegend.Create`, `Origin` (get and set), `ColorFillCategoryId`;
+  `View.CanApplyColorFillScheme(category, InvalidElementId)` to ask before
+  clearing; `ViewPlan.AreaScheme`; and, for a category with nothing placed yet,
+  `ParameterUtils.GetAllBuiltInParameters`, `GetBuiltInParameter`,
   `LabelUtils.GetLabelForBuiltInParameter` and `new ElementId(BuiltInParameter)`;
-  for a numeric row, `Definition.GetDataType` and `UnitFormatUtils.Format(Units,
-  ForgeTypeId, double, bool)` - all 2022-2027, read the same way. No
-  `ElementId` is read as a number - a parameter's name comes off an element
-  that carries it or off Revit's own list of built-in parameters, and ids are
-  only ever compared - so 2024's move to 64-bit ids does not reach here. Millimetres on
-  the sheet become model feet by the view's scale over 304.8 (D-20).
+  for a numeric row, `Definition.GetDataType` and `UnitFormatUtils.Format`.
+  No `ElementId` is read as a number, so 2024's 64-bit ids do not reach here.
+  Millimetres on the sheet become model feet by the view's scale over 304.8,
+  and a legend point in millimetres by 304.8 (D-20, D-71).
 
 # ROUTING - repeated in COLOR_BY_PARAMETER and CREATE_LEGEND_VIEW.
 #
@@ -189,6 +263,11 @@ compatibility-note: >
 #                                        what a colour SCHEME is for
 #   "colour fill the spaces"          -> here
 #   "colour the HVAC zones by name"   -> here
+#   "remove the colour scheme from this view" -> here, clearScheme
+#   "make the kitchen red in the colour scheme" -> here, colours
+#   "which colour scheme does this view use" -> REPORT_COLOR_FILL_SCHEME, a
+#                                        READ - a question never needs the
+#                                        Changes switch
 #   "color the hvac zones" / "colour the spaces by zone" /
 #   "colour fill the zones"           -> here, NOT CREATE_HVAC_ZONE. That one
 #                                        MAKES zones and moves spaces into
@@ -212,3 +291,5 @@ utterances:
   - color the hvac zones
   - colour the spaces by zone
   - colour fill the zones
+  - remove the colour scheme from this view
+  - make the kitchen red in the colour scheme

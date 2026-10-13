@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-136
+semantic-identity: "which Color Scheme a view shows, what it colours by and in which colours, and whether its Color Fill Legend is there"
+kind: filter
+domain: revit.views
+capability: REPORT_COLOR_FILL_SCHEME
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY THIS IS A NEW CARD AND NOT A WIDENING (2026-10-13). The owner's rule is
+#   to widen what already touches the job, and APPLY_COLOR_FILL_SCHEME was
+#   widened for every verb that CHANGES a scheme. Reading is the one verb a
+#   MODIFY card cannot carry: revit_read refuses anything above ANALYZE, so a
+#   question asked of a writer needs the Changes switch and lands in the undo
+#   list. The library pairs every writer with its read the same way -
+#   SET_CATEGORY_GRAPHICS with REPORT_CATEGORY_OVERRIDES, APPLY_VIEW_FILTER with
+#   REPORT_VIEW_FILTERS. No read of a view's colour scheme existed: asked
+#   "which colour scheme does this view use and what colours are in it",
+#   heron_lookup answered COLOR_BY_PARAMETER, a write.
+# THE CHECK LIVES HERE TOO, because every check is a reading: a coloured plan
+#   with no legend, a legend with no scheme, two rows in one colour or nearly
+#   (within 24 across the three channels), values the view shows with no row,
+#   elements with no value, rows nothing uses, rows switched to hidden, and a
+#   view template that holds the scheme - so a change goes to the template.
+# REVIT 2020 AND 2021. The 2020 API has no colour scheme type and no view call
+#   that reads one, and 2021's is a different shape with no legend (read off
+#   the reference assemblies, see APPLY_COLOR_FILL_SCHEME's compatibility-note).
+#   Those releases report what they can see - the legends each view owns, the
+#   schemes the model holds by name, and the view's own property when Revit
+#   exposes one holding a scheme - and say the rest is not readable there.
+purpose: >
+  Answers which Color Scheme each view shows - for Rooms, Spaces, HVAC Zones,
+  Areas, Ducts or Pipes - what it colours by, every row's value and colour,
+  and the Color Fill Legends the view carries. Then checks it: a coloured plan
+  with no legend, two rows in one colour, values the view shows with no row,
+  rows nothing uses, a view template that holds the scheme.
+
+  Reads only. It opens no transaction and changes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One view or several, separated by commas, or a view template.
+    - name: views
+      type: IList<View>
+      source: request
+  provides:
+    - name: schemes
+      # One line per view and category with a scheme set: the scheme, what it
+      # colours by, its rows and its legends. A view with none adds nothing.
+      role: result
+      type: IList<string>
+    - name: legends
+      # The colour fill legends the views own, every category.
+      role: result
+      type: int
+    - name: report
+      # Everything - every row with its colour, every check - in one string
+      # the reply cannot truncate. Prose, so accounting (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # The checks that found something. Questions for a person about the
+      # drawing, never a count of what was read (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **2022 AND LATER READ EVERYTHING; 2020 AND 2021 READ WHAT THEIR API SEES.**
+  The 2022 branch uses `View.SupportedColorFillCategoryIds`,
+  `GetColorFillSchemeId` and `CanApplyColorFillScheme`; `ColorFillScheme`
+  `ParameterDefinition`, `Title`, `IsByRange`, `AreaSchemeId`, `StorageType`
+  and `GetEntries`; `ColorFillSchemeEntry` `Color`, `Caption`, `IsInUse`,
+  `IsVisible` and its value getters; `ColorFillLegend` `OwnerViewId`,
+  `ColorFillCategoryId` and `Origin` - each present 2022 to 2027 in the
+  reference assemblies, read 2026-10-13. 2020 and 2021 take `#if REVIT2020 ||
+  REVIT2021`: the legend categories (OST_ColorFillLegends,
+  OST_DuctColorFillLegends, OST_PipeColorFillLegends) and the scheme category
+  (OST_ColorFillSchema) exist in all eight, and a view parameter is matched by
+  the CATEGORY of the element it holds, never by its name, so another
+  language's Revit finds it too. No `ElementId` is read as a number.
+
+# ROUTING
+#
+#   "which colour scheme does this view use" -> here
+#   "check the colour fill legend"    -> here
+#   "colour the rooms by name"        -> APPLY_COLOR_FILL_SCHEME, which sets it
+#   "remove the colour scheme from this view" -> APPLY_COLOR_FILL_SCHEME
+#   "which rooms have no name"        -> not here - a room question, not a
+#                                        scheme one
+utterances:
+  - which colour scheme does this view use
+  - what colours are in the colour scheme
+  - check the colour fill legend
+  - does this plan have a colour fill legend
