@@ -15,11 +15,35 @@ positive:
       a MISSING COLUMN line naming the formula's parameter and listing the
       table's real columns - compare them with Manage Lookup Tables
 
+  - given: >
+      version 2 - a TEST COPY of a Generic Model family whose lookup is keyed
+      on a TYPE length parameter 'Size', with one type's 'Size' set to a
+      value no row of the table holds
+    expect: >
+      a NO ROW line naming that type, the table and 'Size' in the column's
+      own unit, and every formula it leaves at its default - and none for
+      the types whose size is in the table. rowSearches equal to types x
+      lookups keyed on 'Size'
+
 negative:
   - given: the same family, unchanged, with every lookup correct
     expect: >
       problemCount 0 with lookupsChecked NON-ZERO. The value-driven negative -
       a clean answer that still proves it read the formulas
+
+  - given: >
+      version 2 - the same Generic Model copy with every type's 'Size' in the
+      table
+    expect: >
+      no NO ROW line, rowSearches NON-ZERO - a clean answer that still proves
+      it searched the rows
+
+  - given: >
+      a pipe fitting whose lookups are keyed on the instance parameter
+      'Nominal Diameter'
+    expect: >
+      a ROWS NOT CHECKED note naming it as an instance parameter, and no NO
+      ROW line - its sizes are set where it is placed, never judged here
 
   - given: a project in front instead of a family
     expect: >
