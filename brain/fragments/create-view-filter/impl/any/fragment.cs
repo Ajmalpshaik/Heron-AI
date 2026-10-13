@@ -99,11 +99,9 @@ else
         {
             var element = doc.GetElement(id);
             if (element != null) return element.Name;
-#if REVIT2024_OR_GREATER
-            try { return LabelUtils.GetLabelFor((BuiltInParameter)(int)id.Value); } catch { return ""; }
-#else
-            try { return LabelUtils.GetLabelFor((BuiltInParameter)id.IntegerValue); } catch { return ""; }
-#endif
+            // A built-in parameter's id is its enum value; its text is the same
+            // number on every release, where the property that holds it changed.
+            try { return LabelUtils.GetLabelFor((BuiltInParameter)(int)long.Parse(id.ToString())); } catch { return ""; }
         };
         var operators = new[] { "does not contain", "begins with", "ends with", "contains", "!=", "=" };
         foreach (var text in moreRules.Split(';'))
