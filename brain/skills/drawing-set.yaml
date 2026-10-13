@@ -78,7 +78,7 @@ purpose: >
   12. THE CHECK, and it is the proof that the set is there - the calls not
       failing is not. READ_MODEL_WARNINGS (PROVEN) for anything the set
       added, and revit_sheets for every sheet with the views on it and none
-      empty. To put a sheet on screen, OPEN_VIEW (DRAFT, version 2) with the
+      empty. To put a sheet on screen, OPEN_VIEW (PROVEN, version 2) with the
       sheet's NAME - or "DrawingSheet: <name>" when a plan shares it, which
       is how its refusal starts - never its number. On 2026-10-13 Revit
       refused every view OPEN_VIEW asked for, this set's sheet and a 3D view

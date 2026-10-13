@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -105,27 +105,34 @@ contract:
     - name: findings
       type: IList<string>
 
-# THIS PROOF IS OF VERSION 1, kept for the record. Its positive case was the
-# view ALREADY on screen, so RequestViewChange was never called in it, and the
-# call it never made is the one Revit refused through revit_change (5b-456).
-# Version 2 is DRAFT until a run against a named model replaces it.
+# VERSION 2'S PROOF, signed 2026-10-13. Its positive was a sheet asked for with
+# ANOTHER view in front, so RequestViewChange ran. Version 1's proof (2026-09-08,
+# Snowdon-scratch, Revit 2024, fingerprint cc31a7cd4123b951) had as its positive
+# the view ALREADY on screen, which answers before that call - and that call is
+# the one Revit refused through revit_change (5b-456).
 proof:
-  date: '2026-09-08'
+  date: '2026-10-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned asked Model Linking, findings 1
-    item(s) ["Model Linking" is already the view on screen. Nothing was c...], matches 1 item(s)
-    [Model Linking  -  FloorPlan], opened true, requestedView Model Linking, viewBefore Model
-    Linking. inputs came viewName as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with viewName=Mechanical Plan instead - chosen because it should not
-    contain what this fragment reports. returned asked Mechanical Plan, findings 1 item(s)
-    ["Mechanical Plan" names 1 thing(s) in this project and none ...], matches 1 item(s) [Mechanical
-    Plan  -  FloorPlan  [view template, cannot be ope...], opened false, requestedView Mechanical
-    Plan, viewBefore Model Linking. inputs came viewName as given. on Snowdon-scratch_ajmal.al
+  model: Project1 (2,953 elements), Revit 2020, session 33484
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked HERON TEST - OPEN_VIEW, findings
+    2 item(s) [Asked Revit to open "HERON TEST - OPEN_VIEW" (DrawingSheet),..., THE CHANGE
+    IS REQUESTED, NOT YET DONE. Revit performs it whe...], matches 1 item(s) [HERON TEST -
+    OPEN_VIEW  -  DrawingSheet], opened true, requestedView HERON TEST - OPEN_VIEW, viewBefore
+    Site. inputs came editScopeFailures - Heron's failure discipline, for the fragment's own
+    edit mode; viewName as given. on Project1
+  negative_case: run with viewName=Architectural Plan instead - chosen because it should not
+    contain what this fragment reports - run inside a transaction, and Revit reported the
+    transaction group ROLLED BACK afterwards. returned asked Architectural Plan, findings
+    1 item(s) ["Architectural Plan" names 1 thing(s) in this project and no...], matches 1
+    item(s) [Architectural Plan  -  FloorPlan  [view template, cannot be ...], opened false,
+    requestedView Architectural Plan, viewBefore HERON TEST - OPEN_VIEW. inputs came editScopeFailures
+    - Heron's failure discipline, for the fragment's own edit mode; viewName as given. on
+    Project1
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cc31a7cd4123b951
+  fingerprint: 76a244c127041638
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
