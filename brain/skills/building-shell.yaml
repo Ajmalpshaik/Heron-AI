@@ -103,14 +103,22 @@ purpose: >
   12. SLOPE_ROOF_EDGES (DRAFT), only when the roof is pitched: a gable slopes
       the two long eaves and leaves the two ends upright, a hip slopes every
       edge. The pitch is the modeller's and is never assumed.
-  13. COLOURS, only when the modeller asks for them. Nothing in the library
-      sets a chosen layer of a type to a material yet. REPLACE_MATERIAL
-      (PROVEN) swaps one named material for another inside a type's layers,
-      but it changes every element of that type, never matches a layer set to
-      <By Category>, and leaves curtain walls alone - so for colour on chosen
-      faces and bands the colour goes on as paint. CREATE_MATERIAL (PROVEN),
-      one material per colour, named, with
-      its colour and transparency; then PAINT_FACES (DRAFT) on what
+  13. COLOURS, only when the modeller asks for them. First CREATE_MATERIAL
+      (PROVEN), one material per colour, named, with its colour and
+      transparency. Then one of two routes.
+      A COLOUR THAT IS PART OF THE WALL, FLOOR OR ROOF TYPE - every wall of a
+      type finished alike: SET_COMPOUND_LAYER_WIDTH (DRAFT), version 2, sets
+      one layer's material by name - hostType= the type, layerIndex (0 is the
+      outside face) or layerIndex=-1 with layerFunction ("Finish 1") to find
+      the layer, material= a name the project already holds, widthMm=0 to
+      leave the thickness. With a layer given by its index, leave
+      layerFunction blank: given there, it is written onto the layer. It
+      changes every element of that type, so
+      DUPLICATE_TYPE (PROVEN) first and CHANGE_ELEMENT_TYPE (PROVEN) the walls
+      that should change onto the copy. Version 2 has run on Revit 2020 only
+      and is not signed (FRAGMENT-ISSUES 5b-449, NEEDS-CHECKING Group DU).
+      A COLOUR ON CHOSEN FACES OR BANDS - a white strip under a window on a
+      wall of one type: paint. PAINT_FACES (DRAFT) on what
       SELECT_IN_REGION (DRAFT) finds in a thin band of height - one band and
       one category at a time, so the band that picks up a white strip under a
       window does not pick up the glass above it. In each band paint the walls
@@ -137,8 +145,7 @@ purpose: >
   whose grid and mullions sit on the TYPE. The ground: CREATE_TOPOSOLID
   (DRAFT) makes terrain on Revit 2024 and later only; on an older release
   nothing in the library builds it, and on 2026-10-13 the garden and the deck
-  were drawn as floors. Setting a chosen layer of a type to a material, for
-  colours that are part of the wall rather than paint on it.
+  were drawn as floors.
 
 # The words the modeller says when he wants a building put up.
 utterances:
@@ -176,8 +183,10 @@ needs:
   - CREATE_ROOF
   # Only for a pitched roof - see step 12.
   - SLOPE_ROOF_EDGES
-  # Only when colours are asked for - see step 13.
+  # Only when colours are asked for - see step 13: a type's layer, or paint.
   - CREATE_MATERIAL
+  - DUPLICATE_TYPE
+  - SET_COMPOUND_LAYER_WIDTH
   - PAINT_FACES
   - SET_VIEW_PROPERTIES
   # The count. Never skipped.
