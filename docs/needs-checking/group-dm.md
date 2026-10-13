@@ -8,9 +8,8 @@
 
 ## Group DM - MEP systems made and re-typed, panel circuits read, wires drawn, spaces kept in step with linked rooms (2026-10-12)
 
-On 2026-10-12 the owner had another Revit AI plugin's published tool list checked against Heron, job by
-job, and asked for every job Heron could not do to be built the Heron way - general, widening an existing
-fragment where one nearly fits. The plan and its build list are in
+On 2026-10-12 the owner asked for the Revit jobs Heron could not do yet to be built the Heron way -
+general, widening an existing fragment where one nearly fits. The plan and its build list are in
 [`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md). This group is
 its first batch, the MEP one: five jobs no fragment did.
 
