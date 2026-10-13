@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `view`, `elements`, `offsetMm` and
-// `withOverall` are in scope, and leaves `created`, `segmentsDisagree`,
-// `noOpeningFaces` and `notAWall` behind.
+// NOT STANDALONE. Assumes `doc`, `view`, `elements`, `offsetMm`, `withOverall`
+// and `side` are in scope, and leaves `created`, `segmentsDisagree`,
+// `noOpeningFaces`, `notAWall`, `sideUsed` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). A plan of walls, one undo.
 //
@@ -28,6 +28,29 @@
 // Asking a multi-segment dimension for its value returns nothing. That is not
 // an error and not a failure to create; the overall comes from the second
 // dimension, which is one of the reasons there are two.
+//
+// WHICH SIDE OF THE WALL (version 2). Version 1 always drew to the RIGHT of
+// the wall as it was drawn - its location line, start to end - so on a wall
+// drawn left to right the string went below it on the plan, whatever was
+// there. Measured 2026-10-13 on the futuristic house (Project2, Revit 2020.2):
+// the outside stone wall at y 19850, rooms south of it, got its 900 mm string
+// on the ROOM side, through the Foyer, WC and Store tags. `side` lets the
+// caller choose, and BLANK IS VERSION 1 EXACTLY:
+//
+//   blank    right of the wall as drawn - version 1, unchanged
+//   right    the same, said out loud
+//   left     the other side of the wall as drawn
+//   outside  AWAY FROM THE ROOMS: the side a point just off the wall finds no
+//            room or space on, when the other side finds one. With rooms on
+//            both sides or neither: a wall whose type is an Exterior wall
+//            takes its own exterior face as Revit has it; any other, the side
+//            farther from the middle of the walls joined to it, corner to
+//            corner; and only on a tie, the exterior face
+//   inside   the opposite of outside, by the same reading
+//
+// Each wall's answer says which side it took and why, in plan words - above,
+// below, left or right of the wall on the view - so it can be checked against
+// the drawing without anybody reading coordinates.
 
 const double MmToFeet = 1.0 / 304.8;
 
@@ -35,6 +58,119 @@ var created = new List<ElementId>();
 var segmentsDisagree = new List<ElementId>();
 var noOpeningFaces = new List<ElementId>();
 var notAWall = new List<ElementId>();
+var sideUsed = new List<string>();
+var refused = new List<string>();
+
+var sideMode = (side ?? "").Trim().ToLowerInvariant();
+bool sideKnown = sideMode == "" || sideMode == "right" || sideMode == "left"
+              || sideMode == "outside" || sideMode == "inside";
+if (!sideKnown)
+{
+    // REFUSED WHOLE, BEFORE ANYTHING IS DRAWN. A misspelt side drawing every
+    // string on the version 1 side would look like it worked.
+    refused.Add("side \"" + side + "\" is not one this knows - leave it blank, or type outside, "
+              + "inside, left or right. Nothing was drawn.");
+}
+
+// The phase rooms are looked for in: the view's own, so a demolished room in
+// an earlier phase does not decide which side is outside.
+Phase viewPhase = null;
+try
+{
+    var phaseParameter = view.get_Parameter(BuiltInParameter.VIEW_PHASE);
+    if (phaseParameter != null) viewPhase = doc.GetElement(phaseParameter.AsElementId()) as Phase;
+}
+catch { viewPhase = null; }
+
+Func<XYZ, bool> inARoom = point =>
+{
+    try
+    {
+        if (viewPhase != null)
+            return doc.GetRoomAtPoint(point, viewPhase) != null
+                || doc.GetSpaceAtPoint(point, viewPhase) != null;
+        return doc.GetRoomAtPoint(point) != null || doc.GetSpaceAtPoint(point) != null;
+    }
+    catch { return false; }
+};
+
+// THE MIDDLE OF THE BUILDING THIS WALL BELONGS TO: the centre, in plan, of
+// the walls reached from it through the joins at their ends - its corners,
+// their corners, and on round. Not every wall on the level: a level can carry
+// two buildings, and the middle of both together can sit outside each of
+// them. Only a wall joined to fewer than two others falls back to every wall
+// on its level.
+var middleFor = new Dictionary<ElementId, XYZ>();
+Func<IEnumerable<Wall>, XYZ> centreOf = group =>
+{
+    double minX = double.MaxValue, minY = double.MaxValue;
+    double maxX = double.MinValue, maxY = double.MinValue;
+    foreach (var member in group)
+    {
+        var box = member.get_BoundingBox(null);
+        if (box == null) continue;
+        minX = Math.Min(minX, box.Min.X); minY = Math.Min(minY, box.Min.Y);
+        maxX = Math.Max(maxX, box.Max.X); maxY = Math.Max(maxY, box.Max.Y);
+    }
+    return minX <= maxX ? new XYZ((minX + maxX) / 2, (minY + maxY) / 2, 0) : null;
+};
+Func<Wall, XYZ> buildingMiddle = forWall =>
+{
+    XYZ middle;
+    if (middleFor.TryGetValue(forWall.Id, out middle)) return middle;
+
+    var joined = new Dictionary<ElementId, Wall> { { forWall.Id, forWall } };
+    var toVisit = new Queue<Wall>();
+    toVisit.Enqueue(forWall);
+    while (toVisit.Count > 0)
+    {
+        var at = toVisit.Dequeue();
+        var atCurve = at.Location as LocationCurve;
+        if (atCurve == null) continue;
+        for (int end = 0; end < 2; end++)
+        {
+            ElementArray atJoin = null;
+            try { atJoin = atCurve.get_ElementsAtJoin(end); } catch { atJoin = null; }
+            if (atJoin == null) continue;
+            foreach (Element neighbour in atJoin)
+            {
+                var neighbourWall = neighbour as Wall;
+                if (neighbourWall == null || joined.ContainsKey(neighbourWall.Id)) continue;
+                joined[neighbourWall.Id] = neighbourWall;
+                toVisit.Enqueue(neighbourWall);
+            }
+        }
+    }
+
+    if (joined.Count >= 3)
+    {
+        // One search answers every wall in the group, so each is remembered.
+        middle = centreOf(joined.Values);
+        foreach (var member in joined.Keys) middleFor[member] = middle;
+    }
+    else
+    {
+        var onLevel = new List<Wall>();
+        foreach (Wall other in new FilteredElementCollector(doc).OfClass(typeof(Wall)))
+            if (other.LevelId == forWall.LevelId) onLevel.Add(other);
+        middle = centreOf(onLevel);
+    }
+    middleFor[forWall.Id] = middle;
+    return middle;
+};
+
+// A direction in plan words, against the view's own up and right.
+Func<XYZ, string> planWords = towards =>
+{
+    try
+    {
+        double up = towards.DotProduct(view.UpDirection);
+        double right = towards.DotProduct(view.RightDirection);
+        if (Math.Abs(up) >= Math.Abs(right)) return up >= 0 ? "above" : "below";
+        return right >= 0 ? "right of" : "left of";
+    }
+    catch { return "to one side of"; }
+};
 
 double offset = offsetMm * MmToFeet;
 
@@ -78,7 +214,7 @@ foreach (var element in elements)
     catch { notAWall.Add(element.Id); }
 }
 
-foreach (var wall in walls)
+foreach (var wall in sideKnown ? walls : new List<Wall>())
 {
     var location = wall.Location as LocationCurve;
     Line run = location != null ? location.Curve as Line : null;
@@ -87,6 +223,79 @@ foreach (var wall in walls)
     XYZ start = run.GetEndPoint(0);
     XYZ direction = run.Direction;
     XYZ across = direction.CrossProduct(XYZ.BasisZ).Normalize();
+
+    // WHICH SIDE. `across` is version 1's side - right of the wall as drawn -
+    // and blank or "right" leaves it exactly as it was.
+    string why = sideMode == "" ? "as version 1 - right of the wall as drawn"
+               : sideMode == "right" ? "right of the wall as drawn" : "left of the wall as drawn";
+    if (sideMode == "left") across = across.Negate();
+    if (sideMode == "outside" || sideMode == "inside")
+    {
+        // A point clear of each face, 300 mm above the wall's base, at the
+        // middle of its run. Measured a WHOLE width plus 300 mm from the
+        // location line, because that line can be a face or a core edge
+        // rather than the centre - half a width from a finish face lands a
+        // probe inside a thick wall, which finds no room and loses the answer.
+        XYZ middle = run.Evaluate(0.5, true);
+        double clear = wall.Width + 300 * MmToFeet;
+        XYZ probeRight = middle + across * clear + XYZ.BasisZ * (300 * MmToFeet);
+        XYZ probeLeft = middle - across * clear + XYZ.BasisZ * (300 * MmToFeet);
+        bool roomRight = inARoom(probeRight);
+        bool roomLeft = inARoom(probeLeft);
+
+        // `found` says how OUTSIDE was found, in words that read true for
+        // both answers - "inside" is then the other side of the same reading.
+        int outwardIsRight = 0;
+        string found;
+        bool exteriorByType = false;
+        try { exteriorByType = wall.WallType.Function == WallFunction.Exterior; } catch { }
+        if (roomRight != roomLeft)
+        {
+            outwardIsRight = roomRight ? -1 : 1;
+            found = "a room on one side only - outside is the side without it";
+        }
+        else if (exteriorByType)
+        {
+            // AN OUTSIDE WALL BY ITS TYPE KEEPS REVIT'S OWN EXTERIOR FACE. The
+            // middle of the building is a box's centre, and on an L, a U or a
+            // C plan it can fall in the courtyard - every courtyard wall would
+            // then put "outside" in the building.
+            outwardIsRight = wall.Orientation.DotProduct(across) >= 0 ? 1 : -1;
+            found = (roomRight ? "rooms on both sides" : "no room on either side")
+                  + ", an Exterior wall type - outside is its exterior face";
+        }
+        else
+        {
+            found = null;
+            XYZ centre = buildingMiddle(wall);
+            if (centre != null)
+            {
+                var flatRight = new XYZ(probeRight.X - centre.X, probeRight.Y - centre.Y, 0);
+                var flatLeft = new XYZ(probeLeft.X - centre.X, probeLeft.Y - centre.Y, 0);
+                double gap = flatRight.GetLength() - flatLeft.GetLength();
+                if (Math.Abs(gap) > 1e-6)
+                {
+                    outwardIsRight = gap > 0 ? 1 : -1;
+                    found = (roomRight ? "rooms on both sides" : "no room on either side")
+                          + " - outside is the side farther from the middle of the walls joined to it";
+                }
+            }
+            if (outwardIsRight == 0)
+            {
+                outwardIsRight = wall.Orientation.DotProduct(across) >= 0 ? 1 : -1;
+                found = "nothing else told the sides apart - outside is its exterior face";
+            }
+        }
+
+        bool wantRight = sideMode == "outside" ? outwardIsRight > 0 : outwardIsRight < 0;
+        if (!wantRight) across = across.Negate();
+        why = sideMode + ": " + found;
+    }
+
+    // Said only once its strings exist - see below, after the running string
+    // is made. A wall that ends in noOpeningFaces has no strings to place.
+    string sideLine = wall.Name + " " + wall.Id + ": " + planWords(across)
+                    + " the wall on the view (" + why + ")";
 
     // Every planar face whose normal runs ALONG the wall: its two ends, and
     // both sides of every opening cut through it.
@@ -135,6 +344,7 @@ foreach (var wall in walls)
 
     if (running == null) { noOpeningFaces.Add(wall.Id); continue; }
     created.Add(running.Id);
+    sideUsed.Add(sideLine);
 
     if (!withOverall) continue;
 

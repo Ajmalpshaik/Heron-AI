@@ -74,18 +74,23 @@ jobs:
   # Eight dimensions from four walls with one door in them is the right order:
   # the door gives openings to dimension and `withOverall` adds the run.
   - fragment: dimension-wall-openings
+    # `side` blank is version 1's side (version 2, FRAGMENT-ISSUES 5b-451). It
+    # is passed because an absent request value is refused unless it is an
+    # optional bool, and blank is what keeps this job the run it always was.
     set:
       categoryName: Walls
       inViewOnly:   "1 - Mech"
       view:         "1 - Mech"
       offsetMm:     500
       withOverall:  true
+      side:         ""
     negative-set:
       categoryName: Ducts
       inViewOnly:   "1 - Mech"
       view:         "1 - Mech"
       offsetMm:     500
       withOverall:  true
+      side:         ""
     expect: created
 
   # DISALLOW-JOIN IS LEFT OUT, AND THIS RECORDS WHY RATHER THAN DROPPING IT.

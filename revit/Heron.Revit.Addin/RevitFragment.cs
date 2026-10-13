@@ -2132,9 +2132,18 @@ namespace Heron.Revit.Addin
                     // unit on it - so it is named rather than dropped. Falling
                     // back to "unbound" here would report a missing value the
                     // caller can see they supplied.
+                    // A CARD MAY LET A CATEGORY NEED TAKE A SUB-CATEGORY -
+                    // `subcategories: true` on the need, read the same way as
+                    // `optional` above. Off unless the card says so: see
+                    // OneCategoryOrSub for why it is not every category need.
+                    string subcategoriesFlag;
+                    need.TryGetValue("subcategories", out subcategoriesFlag);
+                    bool takesSubcategories = string.Equals((subcategoriesFlag ?? "").Trim(),
+                        "true", StringComparison.OrdinalIgnoreCase);
+
                     string problem;
                     var given = FromRequest(givenText, type, name, target, selected,
-                                            reading, out problem);
+                                            reading, out problem, takesSubcategories);
                     if (problem != null) return Json.Error("bad_request_value", problem);
 
                     globals.__heron[name] = given;
@@ -4171,6 +4180,120 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// One category OR SUB-CATEGORY object, for a need declared `Category`
+        /// or `IList&lt;Category&gt;` - what Visibility/Graphics switches and
+        /// overrides, where "Interior Fill" under Rooms is a row of its own.
+        ///
+        /// `doc.Settings.Categories` holds the top-level categories only, so
+        /// OneCategory never saw a sub-category: "Rooms: Interior Fill" and
+        /// "Interior Fill" were both refused "No category called ..." on the
+        /// futuristic house, 2026-10-13 (FRAGMENT-ISSUES 5b-448).
+        ///
+        /// THE ORDER KEEPS EVERY NAME THAT WORKED BEFORE: a top-level category
+        /// is matched first, exactly as OneCategory does. Only a name that was
+        /// refused before can reach a sub-category -
+        ///
+        ///   "Parent: Sub"   the sub-category of that category, by name. The
+        ///                   form to use, because sub-category names repeat.
+        ///   "Sub"           a sub-category, ONLY when one category has a
+        ///                   sub-category of that name. "Interior Fill" is
+        ///                   under Rooms AND Areas, so it is refused, naming
+        ///                   both and the spelling that would decide it.
+        ///
+        /// ONLY FOR A NEED WHOSE CARD SAYS `subcategories: true`, and today
+        /// that is SET_CATEGORY_VISIBILITY alone. MEASURED 2026-10-13 on Revit
+        /// 2020.2 (Project1, a plan, rolled back): View.SetCategoryOverrides on
+        /// "Rooms: Interior Fill" and "Walls: Common Edges" threw nothing,
+        /// IsCategoryOverridable said true, and GetCategoryOverrides read back
+        /// NOTHING - while Doors and Walls read back the colour and weight set.
+        /// SET_CATEGORY_GRAPHICS and SET_CATEGORY_SOLID_FILL count the call, so
+        /// handed a sub-category they would answer "overridden 1" for an
+        /// override that is not there, where today the name is refused. The
+        /// same holds for selecting types or binding a parameter: a
+        /// sub-category reaches them only when a card has decided it means
+        /// something there (FRAGMENT-ISSUES 5b-453).
+        /// </summary>
+        private static Category OneCategoryOrSub(Document doc, string text, out string problem)
+        {
+            problem = null;
+            var trimmed = (text ?? "").Trim();
+
+            var top = OneCategory(doc, trimmed);
+            if (top != null) return top;
+
+            int colon = trimmed.IndexOf(':');
+            if (colon > 0)
+            {
+                var parentName = trimmed.Substring(0, colon).Trim();
+                var subName = trimmed.Substring(colon + 1).Trim();
+                var parent = OneCategory(doc, parentName);
+                if (parent == null)
+                {
+                    problem = "No category called \"" + parentName + "\" in " + doc.Title
+                            + ", so \"" + trimmed + "\" names no sub-category. Type what the "
+                            + "Visibility/Graphics list shows - \"Rooms: Interior Fill\".";
+                    return null;
+                }
+
+                var hasNames = new List<string>();
+                foreach (Category sub in parent.SubCategories)
+                {
+                    if (sub == null) continue;
+                    string readable;
+                    try { readable = sub.Name; } catch { continue; }
+                    if (string.Equals(readable, subName, StringComparison.OrdinalIgnoreCase))
+                        return sub;
+                    hasNames.Add(readable);
+                }
+                hasNames.Sort(StringComparer.OrdinalIgnoreCase);
+                problem = "\"" + parent.Name + "\" has no sub-category called \"" + subName
+                        + "\" in " + doc.Title + ". "
+                        + (hasNames.Count == 0
+                            ? "It has no sub-categories at all."
+                            : "Its sub-categories are " + string.Join(", ", hasNames) + ".");
+                return null;
+            }
+
+            Category found = null;
+            var owners = new List<string>();
+            foreach (Category parent in doc.Settings.Categories)
+            {
+                if (parent == null) continue;
+                CategoryNameMap subs;
+                try { subs = parent.SubCategories; } catch { continue; }
+                if (subs == null) continue;
+                foreach (Category sub in subs)
+                {
+                    if (sub == null) continue;
+                    string readable;
+                    try { readable = sub.Name; } catch { continue; }
+                    if (!string.Equals(readable, trimmed, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    found = sub;
+                    owners.Add(parent.Name);
+                    break;
+                }
+            }
+
+            if (owners.Count == 1) return found;
+            if (owners.Count > 1)
+            {
+                owners.Sort(StringComparer.OrdinalIgnoreCase);
+                var named = owners.Count <= 8
+                    ? string.Join(", ", owners)
+                    : string.Join(", ", owners.GetRange(0, 8)) + " and " + (owners.Count - 8)
+                      + " more";
+                problem = "\"" + trimmed + "\" is a sub-category of " + owners.Count
+                        + " categories in " + doc.Title + " - " + named + ". Say which, as \""
+                        + owners[0] + ": " + trimmed + "\".";
+                return null;
+            }
+
+            problem = "No category called \"" + trimmed + "\" in " + doc.Title + ".";
+            return null;
+        }
+
+        /// <summary>
         /// A SET OF ELEMENTS, NAMED BY CATEGORY - the second set, and in this
         /// library it is only ever the second set.
         ///
@@ -4461,7 +4584,8 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static object FromRequest(string text, string type, string need,
                                           Document doc, IList<ElementId> selected,
-                                          bool reading, out string problem)
+                                          bool reading, out string problem,
+                                          bool takesSubcategories = false)
         {
             problem = null;
             var wanted = (type ?? "").Replace(" ", "");
@@ -4817,6 +4941,7 @@ namespace Heron.Revit.Addin
 
             if (wanted == "Category")
             {
+                if (takesSubcategories) return OneCategoryOrSub(doc, text, out problem);
                 var single = OneCategory(doc, text);
                 if (single != null) return single;
                 problem = "No category called \"" + text + "\" in " + doc.Title + ".";
@@ -4926,6 +5051,13 @@ namespace Heron.Revit.Addin
                 var categories = new List<Category>();
                 foreach (var part in Parts(text))
                 {
+                    if (takesSubcategories)
+                    {
+                        var either = OneCategoryOrSub(doc, part, out problem);
+                        if (either == null) return null;
+                        categories.Add(either);
+                        continue;
+                    }
                     var one = OneCategory(doc, part);
                     if (one == null)
                     {
