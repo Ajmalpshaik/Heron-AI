@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put the Level 2 ceiling plan on screen"
 kind: action
 domain: revit.views
 capability: OPEN_VIEW
-version: 1
+version: 2
 source: OFFICIAL
 risk: EXECUTE
 
@@ -42,13 +42,41 @@ purpose: >
   Opens no transaction and needs none: it acts on the session, not the building.
   That is why it is EXECUTE rather than MODIFY.
 
+  **VERSION 2: IT RUNS WITH NO TRANSACTION OPEN, BECAUSE REVIT CHANGES NO VIEW
+  INSIDE ONE.** Every write fragment runs inside a transaction, and Revit
+  refuses `RequestViewChange` there: *"Cannot change the active view of a
+  modifiable document (with a transaction curently open)"* (Revit's spelling).
+  So version 1 was refused for EVERY view through revit_change - on 2026-10-13
+  a sheet in Project2 and a 3D view in Project1 - and only its "already on
+  screen" answer ever worked there. Measured 2026-10-13 on Project1, Revit
+  2020 (FRAGMENT-ISSUES 5b-455): with no transaction open the same call opens
+  the view, a TransactionGroup alone included. This card declares the ambient
+  `editScopeFailures` need, and the add-in runs it inside the job's group with
+  no transaction open (D-112, widened by D-115). Revit's own words now come
+  FIRST in a refusal, because a finding is shown cut short.
+
+  **TWO VIEWS SHARING A NAME ARE TOLD APART THE LIBRARY'S WAY** -
+  "FloorPlan: Level 1", "DrawingSheet: Ground Floor Plan", the spelling every
+  fragment taking a view accepts. The plain name is tried first and wins when
+  it names one openable view; the refusal for two lists the spellings to use.
+
 contract:
   needs:
     - name: uidoc
       type: UIDocument
     - name: doc
       type: Document
+    - name: editScopeFailures
+      # NEVER USED BY THE CODE. Declaring it is the switch that has the add-in
+      # run this inside the job's TransactionGroup with NO transaction open
+      # (D-112, D-115) - Revit refuses a view change inside one (5b-455). It
+      # also refuses this fragment on the read path, which revit_read already
+      # does for anything declared EXECUTE.
+      type: IFailuresPreprocessor
+      source: ambient
     - name: viewName
+      # The view's name as the Project Browser shows it, or "Kind: name" when
+      # two views share it - "FloorPlan: Level 1", "DrawingSheet: Level 1".
       type: string
       source: request
   provides:
@@ -75,6 +103,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# THIS PROOF IS OF VERSION 1, kept for the record. Its positive case was the
+# view ALREADY on screen, so RequestViewChange was never called in it, and the
+# call it never made is the one Revit refused through revit_change (5b-455).
+# Version 2 is DRAFT until a run against a named model replaces it.
 proof:
   date: '2026-09-08'
   by: Ajmal PS
@@ -98,7 +130,9 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `UIDocument.RequestViewChange(View)`,
+  One implementation for every release. Revit 2020 measured on 2026-10-13
+  refusing RequestViewChange inside a transaction and accepting it with none
+  open; the other releases are not measured. `UIDocument.RequestViewChange(View)`,
   `UIDocument.ActiveView`, `View.IsTemplate`, `View.ViewType` and
   `FilteredElementCollector` are unchanged 2020 to 2027 - checked by compiling
   this fragment against the reference assemblies for all eight.
@@ -108,7 +142,13 @@ compatibility-note: >
 #   "open the Level 2 ceiling plan"    -> here
 #   "go to the section"                -> here
 #   "show me that sheet"               -> here, when a SHEET is named. A sheet is
-#                                         a view and opens the same way
+#                                         a view and opens the same way - by
+#                                         its name, or "DrawingSheet: <name>"
+#                                         when a view shares it. Not by its
+#                                         number yet. Version 1 was refused by
+#                                         Revit for EVERY view through
+#                                         revit_change, a sheet included
+#                                         (5b-455); version 2 is DRAFT
 #   "which views are there"            -> FIND_VIEWS. Run it first when the exact
 #                                         name is not known - this one needs the
 #                                         name
