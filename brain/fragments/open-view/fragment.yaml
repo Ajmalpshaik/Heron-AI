@@ -9,7 +9,7 @@ semantic-identity: "put the Level 2 ceiling plan on screen"
 kind: action
 domain: revit.views
 capability: OPEN_VIEW
-version: 1
+version: 2
 source: OFFICIAL
 risk: EXECUTE
 
@@ -42,13 +42,43 @@ purpose: >
   Opens no transaction and needs none: it acts on the session, not the building.
   That is why it is EXECUTE rather than MODIFY.
 
+  **VERSION 2: IT RUNS WITH NO TRANSACTION OPEN, BECAUSE REVIT CHANGES NO VIEW
+  INSIDE ONE.** Every write fragment runs inside a transaction, and Revit
+  refuses `RequestViewChange` there: *"Cannot change the active view of a
+  modifiable document (with a transaction curently open)"* (Revit's spelling).
+  So version 1 was refused for EVERY view through revit_change - on 2026-10-13
+  a sheet in Project2 and a 3D view in Project1 - and only its "already on
+  screen" answer ever worked there. Measured 2026-10-13 on Project1, Revit
+  2020 (FRAGMENT-ISSUES 5b-456): with no transaction open the same call opens
+  the view, a TransactionGroup alone included. This card declares the ambient
+  `editScopeFailures` need, and the add-in runs it inside the job's group with
+  no transaction open (D-112, widened by D-115). Revit's own words now come
+  FIRST in a refusal, because a finding is shown cut short - the add-in cuts
+  every list item to about sixty characters.
+
+  **TWO VIEWS SHARING A NAME ARE TOLD APART THE LIBRARY'S WAY** -
+  "FloorPlan: Level 1", "DrawingSheet: Ground Floor Plan", the spelling every
+  fragment taking a view accepts. The plain name is tried first and wins when
+  it names one openable view; the refusal for two STARTS with the spellings to
+  use. Run on sheets on 2026-10-13, Revit 2020, before and after (5b-456).
+
 contract:
   needs:
     - name: uidoc
       type: UIDocument
     - name: doc
       type: Document
+    - name: editScopeFailures
+      # NEVER USED BY THE CODE. Declaring it is the switch that has the add-in
+      # run this inside the job's TransactionGroup with NO transaction open
+      # (D-112, D-115) - Revit refuses a view change inside one (5b-456). It
+      # also refuses this fragment on the read path, which revit_read already
+      # does for anything declared EXECUTE.
+      type: IFailuresPreprocessor
+      source: ambient
     - name: viewName
+      # The view's name as the Project Browser shows it, or "Kind: name" when
+      # two views share it - "FloorPlan: Level 1", "DrawingSheet: Level 1".
       type: string
       source: request
   provides:
@@ -75,30 +105,43 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 2'S PROOF, signed 2026-10-13. Its positive was a sheet asked for with
+# ANOTHER view in front, so RequestViewChange ran. Version 1's proof (2026-09-08,
+# Snowdon-scratch, Revit 2024, fingerprint cc31a7cd4123b951) had as its positive
+# the view ALREADY on screen, which answers before that call - and that call is
+# the one Revit refused through revit_change (5b-456).
 proof:
-  date: '2026-09-08'
+  date: '2026-10-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned asked Model Linking, findings 1
-    item(s) ["Model Linking" is already the view on screen. Nothing was c...], matches 1 item(s)
-    [Model Linking  -  FloorPlan], opened true, requestedView Model Linking, viewBefore Model
-    Linking. inputs came viewName as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with viewName=Mechanical Plan instead - chosen because it should not
-    contain what this fragment reports. returned asked Mechanical Plan, findings 1 item(s)
-    ["Mechanical Plan" names 1 thing(s) in this project and none ...], matches 1 item(s) [Mechanical
-    Plan  -  FloorPlan  [view template, cannot be ope...], opened false, requestedView Mechanical
-    Plan, viewBefore Model Linking. inputs came viewName as given. on Snowdon-scratch_ajmal.al
+  model: Project1 (2,953 elements), Revit 2020, session 33484
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked HERON TEST - OPEN_VIEW, findings
+    2 item(s) [Asked Revit to open "HERON TEST - OPEN_VIEW" (DrawingSheet),..., THE CHANGE
+    IS REQUESTED, NOT YET DONE. Revit performs it whe...], matches 1 item(s) [HERON TEST -
+    OPEN_VIEW  -  DrawingSheet], opened true, requestedView HERON TEST - OPEN_VIEW, viewBefore
+    Site. inputs came editScopeFailures - Heron's failure discipline, for the fragment's own
+    edit mode; viewName as given. on Project1
+  negative_case: run with viewName=Architectural Plan instead - chosen because it should not
+    contain what this fragment reports - run inside a transaction, and Revit reported the
+    transaction group ROLLED BACK afterwards. returned asked Architectural Plan, findings
+    1 item(s) ["Architectural Plan" names 1 thing(s) in this project and no...], matches 1
+    item(s) [Architectural Plan  -  FloorPlan  [view template, cannot be ...], opened false,
+    requestedView Architectural Plan, viewBefore HERON TEST - OPEN_VIEW. inputs came editScopeFailures
+    - Heron's failure discipline, for the fragment's own edit mode; viewName as given. on
+    Project1
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cc31a7cd4123b951
+  fingerprint: 76a244c127041638
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `UIDocument.RequestViewChange(View)`,
+  One implementation for every release. Revit 2020 measured on 2026-10-13
+  refusing RequestViewChange inside a transaction and accepting it with none
+  open; the other releases are not measured. `UIDocument.RequestViewChange(View)`,
   `UIDocument.ActiveView`, `View.IsTemplate`, `View.ViewType` and
   `FilteredElementCollector` are unchanged 2020 to 2027 - checked by compiling
   this fragment against the reference assemblies for all eight.
@@ -108,7 +151,13 @@ compatibility-note: >
 #   "open the Level 2 ceiling plan"    -> here
 #   "go to the section"                -> here
 #   "show me that sheet"               -> here, when a SHEET is named. A sheet is
-#                                         a view and opens the same way
+#                                         a view and opens the same way - by
+#                                         its name, or "DrawingSheet: <name>"
+#                                         when a view shares it. Not by its
+#                                         number, nor as "Sheet: A101 - name".
+#                                         Version 1 was refused by Revit for
+#                                         EVERY view through revit_change, a
+#                                         sheet included (5b-456)
 #   "which views are there"            -> FIND_VIEWS. Run it first when the exact
 #                                         name is not known - this one needs the
 #                                         name

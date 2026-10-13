@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "wash a whole category with a solid colour in one view"
 kind: action
 domain: revit.views
 capability: SET_CATEGORY_SOLID_FILL
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-453): every category is READ BACK
+# after the Set - the stamped solid fill included - and counted only when what
+# was asked for is what Revit holds. Version 1 counted the call, so Rooms on
+# Revit 2020 came back "overridden 1" with nothing stored. One that reads back
+# empty is in `refused` in a sentence; one that kept part of it is in the new
+# `notKept`, each setting named. The inputs and the other outputs mean what
+# they meant. The proof below is version 1's, signed before this change -
+# DRAFT until re-proved.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values
@@ -55,8 +63,11 @@ contract:
       source: request
     # Top-level categories only: a sub-category's name is refused. Revit
     # 2020 takes an override on a sub-category and reads back nothing
-    # (measured 2026-10-13, FRAGMENT-ISSUES 5b-453), and this counts the call,
-    # so it would report a change that is not there. SET_CATEGORY_VISIBILITY
+    # (measured 2026-10-13, FRAGMENT-ISSUES 5b-453). Version 1 counted the
+    # call, so it would have reported a change that is not there; version 2
+    # reads it back and would refuse it in words, but the binder still hands
+    # this card top-level categories only - whether a later release keeps a
+    # sub-category's override is NEEDS-CHECKING DV4. SET_CATEGORY_VISIBILITY
     # takes sub-categories; it reads its change back.
     - name: categories
       type: IList<Category>
@@ -69,8 +80,17 @@ contract:
       source: request
   provides:
     - name: overridden
+      # Categories whose read-back holds every setting asked for, the solid
+      # fill included. Not the calls made: version 1 counted those (5b-453).
       role: result
       type: int
+    - name: notKept
+      # Categories that read back with PART of what was asked for, each
+      # setting that did not land named with what came back - "Ducts: not
+      # kept - surface colour asked 230,230,230, read back none". Something
+      # was written, so this is not a refusal; not all of it, so not counted.
+      role: accounting
+      type: IList<string>
     - name: solidPattern
       # WHICH pattern it found, by name. The evidence the wash will actually
       # paint - "overridden 1" cannot tell you that on its own.
@@ -79,8 +99,9 @@ contract:
     - name: notCuttable
       # Categories whose CUT half was left alone because Revit never cuts
       # them. NOT a refusal and NOT a skip - these ARE overridden and DO
-      # count toward `overridden`. It is a note on what landed, so that a
-      # cut colour that draws nothing is a sentence rather than a mystery.
+      # count toward `overridden` when the surface half reads back. It is a
+      # note on what landed, so that a cut colour that draws nothing is a
+      # sentence rather than a mystery.
       role: accounting
       type: IList<string>
     - name: notControllable
@@ -91,7 +112,9 @@ contract:
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # "did this come back empty" (D-52). A category name alone is a view
+      # template that refused the Set; "Revit took the override and stored
+      # nothing for Rooms" is a Set that raised nothing and read back empty.
       role: accounting
       type: IList<string>
 
@@ -156,22 +179,26 @@ compatibility-note: >
   `Category.IsCuttable` and the OverrideGraphicSettings COPY CONSTRUCTOR are
   both unchanged across the same span. The copy is what makes the per-category
   decision possible without stamping and un-stamping one shared object round
-  the loop.
+  the loop. The read-back (version 2) calls `View.GetCategoryOverrides` and
+  the getters beside those setters, under the same 2019 names;
+  tools/check-api-surface.py finds every one on 2020 to 2027.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
 # Another tool, on real models and mostly on Revit 2020, saw a CATEGORY
 # override drop the SURFACE fill on ducts, pipes, air terminals, sprinklers,
 # cable tray and conduit - and found that `IsCuttable` predicts only the CUT
-# half of what lands. This fragment decides the cut half by `IsCuttable` and
-# counts every category it set as `overridden`, so on those six categories the
-# wash may not land at all and nothing in the answer says so. Heron measured
-# the same shape once, one fragment over: on Ducts, Revit kept one setting of
-# the four SET_CATEGORY_GRAPHICS gave it, the surface colour among the ones
-# dropped (FRAGMENT-ISSUES row 175, Revit 2024). Not reproduced here for this
-# fragment. Since PR #300, REPORT_CATEGORY_OVERRIDES reads the surface and cut
-# pattern and colour back in full, so what stuck can be read rather than
-# assumed - read it after this runs. NEEDS-CHECKING AJ7.
+# half of what lands. This fragment decides the cut half by `IsCuttable`.
+# Version 1 counted every category it set as `overridden`, so on those six
+# categories the wash might not land at all and nothing in the answer said so.
+# Heron measured the same shape once, one fragment over: on Ducts, Revit kept
+# one setting of the four SET_CATEGORY_GRAPHICS gave it, the surface colour
+# among the ones dropped (FRAGMENT-ISSUES row 175, Revit 2024). Not reproduced
+# here for this fragment. Since version 2 (5b-453) each category is read back
+# after the Set, and a wash that did not land comes back in `notKept` or
+# `refused`, named, rather than counted. Since PR #300, REPORT_CATEGORY_OVERRIDES
+# reads the surface and cut pattern and colour back in full as well.
+# NEEDS-CHECKING AJ7.
 #
 # THE INSULATION RULE IS NOT APPLIED HERE, AND WHY. The owner's standing rule
 # is that insulation and lining take the colour of the run they wrap, and
@@ -183,10 +210,11 @@ compatibility-note: >
 # categories at all is not known. To wash insulation the colour of its runs,
 # name the insulation categories in the same call.
 #
-# A note only. This fragment is PROVEN and its code is unchanged. Row 174 -
+# Written 2026-09-23 as a note only, while the code was version 1's. Row 174 -
 # its signed proof says the read-back cannot tell a stamped pattern from none,
 # and the code and a run since say it could - is the owner's call and is not
-# touched here.
+# touched here: version 2 compares the pattern ids it stamped, so its own
+# read-back does tell them apart.
 
 # ROUTING - the line between this and SET_CATEGORY_GRAPHICS is ONE QUESTION:
 # must the category READ as a colour, or only be tinted where it already
