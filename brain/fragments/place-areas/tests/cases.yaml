@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 'an area plan "Area Plan GIA" with two enclosed regions; pointsMm inside each, names "Office, Store", numbers "A1, A2"'
+    expect: >
+      placed 2, each with a size read back, named and numbered in order
+
+negative:
+  - given: a point outside every boundary
+    expect: >
+      placed 0, the area in `unenclosed` with no size
+
+  - given: areaPlanName of a floor plan, not an area plan
+    expect: >
+      refused - no area plan of that name - nothing placed
+
+second_route:
+  - the area plan, each area's tag and Properties read
+  - one Ctrl+Z removes them in a single step (Golden Rule 16)

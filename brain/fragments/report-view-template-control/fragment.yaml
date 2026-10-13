@@ -136,6 +136,10 @@ compatibility-note: >
 #                                         template holds it; this one names
 #                                         everything the template holds
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "where do these two templates differ"   -> COMPARE_VIEW_TEMPLATES
 utterances:
   - why is this view setting greyed out
   # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. The shorter

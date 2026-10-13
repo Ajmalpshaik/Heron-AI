@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a new generic model family, paths one plan DWG, viewName "Ref. Level", placement origin, thisViewOnly true
+    expect: >
+      imported 1, read back, seen in Ref. Level only
+
+negative:
+  - given: viewName "No Such View"
+    expect: >
+      refused naming it, nothing imported
+
+  - given: paths a file that does not exist
+    expect: >
+      imported 0 and report naming the path
+
+second_route:
+  - the view itself, the drawing under the reference planes; Manage > Manage Links lists nothing (it is not a link)
+  - one Ctrl+Z removes it in a single step (Golden Rule 16)

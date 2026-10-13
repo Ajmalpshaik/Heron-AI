@@ -127,6 +127,11 @@ compatibility-note: >
 #   "what view does this section open"   -> REPORT_VIEW_REFERENCES, the read
 #                                           side. This one creates a section
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "where does section 3 cut"              -> REPORT_VIEW_CUT_PLANES
+#   "move section 3 forward 500 mm"         -> MOVE_VIEW_CUT_PLANE
 utterances:
   - create a section through this
   - make a section here

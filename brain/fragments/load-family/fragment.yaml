@@ -166,6 +166,10 @@ compatibility-note: >
 #   "i need that family as an rfa"       -> EXPORT_FAMILIES, the way OUT.
 #                                           This one is the way in
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "find a gate valve family in the library" -> FIND_LIBRARY_FAMILIES, then here
 utterances:
   - load a family
   - load this rfa

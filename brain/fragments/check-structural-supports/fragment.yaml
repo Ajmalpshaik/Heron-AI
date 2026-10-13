@@ -1,0 +1,79 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-036
+semantic-identity: "which beam ends and column bases have nothing to bear on"
+kind: action
+domain: revit.qa
+capability: CHECK_STRUCTURAL_SUPPORTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A GEOMETRIC SWEEP, NOT AN ANALYSIS: a beam end must touch a column, wall,
+# beam or foundation; a column base must sit on a foundation, floor, beam or
+# wall - each within toleranceMm of the candidate's bounding box. A support
+# drawn a few millimetres short is still found; one metres away is not. The
+# answer says it is a geometric check and never calls a structure adequate.
+#
+# FIND_DEAD_ENDS is the MEP version for open connectors.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Finds beam and brace ends and column bases with nothing found to bear on -
+  no column, wall, beam, floor or foundation within a tolerance - as a
+  geometric check of the model.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # Millimetres; 0 means 50.
+    - name: toleranceMm
+      type: double
+      source: request
+  provides:
+    - name: unsupported
+      # "beam 123 start", "column 456 base" for each end found bearing on
+      # nothing (D-52).
+      role: result
+      type: IList<string>
+    - name: checkedCount
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, end by end.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. BoundingBoxIntersectsFilter, Outline,
+  LocationCurve and LocationPoint are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which beams are not supported"           -> here
+#   "check the columns sit on foundations"    -> here
+#   "which pipes are connected to nothing"    -> FIND_DEAD_ENDS
+
+utterances:
+  - which beams have an end with nothing under it
+  - check every column sits on a foundation or slab
+  - find unsupported structural framing
+  - are any beams floating

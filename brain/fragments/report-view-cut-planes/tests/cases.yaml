@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a section drawn west to east through 0,5000 looking north, far clip on at 3000 mm, viewName empty
+    expect: >
+      its line reads cuts through about y 5000 mm, looking 0,1,0, far clip on,
+      3000 - and the project's four default elevations are listed too
+
+negative:
+  - given: 'viewName "Section: No Such Section"'
+    expect: >
+      viewCount 0 and cutPlanes empty, findings naming it
+
+  - given: 'viewName "FloorPlan: Level 1"'
+    expect: >
+      viewCount 0 - a plan has no cut plane here and is not listed
+
+second_route:
+  - the section's line in a plan, and its far clip in its Properties

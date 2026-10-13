@@ -85,6 +85,10 @@ compatibility-note: >
 #                                       through the link's own transform.
 #                                       This one copies inside THIS model
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "copy the furniture over from the other project" -> COPY_ELEMENTS_BETWEEN_DOCUMENTS
 utterances:
   - copy the terminals to the next room
   - duplicate these

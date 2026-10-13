@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-037
+semantic-identity: "which elements of every category are unused in this project or family"
+kind: filter
+domain: revit.selection
+capability: FIND_PURGEABLE_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# What Purge Unused would offer, by Revit's own unused-element list - so
+# nothing here decides what counts as used - in a project or in a family in
+# front, every category or the ones named. The elements are handed on;
+# DELETE_ELEMENTS removes them after the modeller has seen the list. Purge
+# is a ladder: removing a type can leave its material unused, so a second
+# run after the delete finds the next rung. Revit 2024 opened the list to
+# code.
+#
+# A loaded family is purged by opening it (OPEN_FAMILY_FOR_EDITING), running
+# this and DELETE_ELEMENTS there, and loading it back (LOAD_FAMILY) - a
+# family cannot be opened inside a change in the project.
+#
+# FIND_UNUSED_FAMILIES, FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES and
+# FIND_UNUSED_IMAGES each answer for one kind, on every release.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Finds every element Revit counts as unused - in a project or a family, in
+  every category or the ones named - and hands them on for deleting.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Category names, comma separated; an EMPTY value looks in every category.
+    - name: categories
+      type: string
+      source: request
+  provides:
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: purgeableNames
+      role: result
+      type: IList<string>
+    - name: byCategory
+      # ONE STRING, how many in each category (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Document.GetUnusedElements(ISet<ElementId>) is present from 2024 and absent
+  before - read off RevitAPI.xml in the Nice3point reference packages for all
+  eight releases on 2026-10-13 - so the card declares 2024 to 2027 only.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "list everything purgeable in this family" -> here
+#   "every unused element, all categories"     -> here, then DELETE_ELEMENTS
+#   "purge unused"                             -> FIND_UNUSED_FAMILIES, families on every release
+#   "purge this loaded family"                 -> OPEN_FAMILY_FOR_EDITING, here, DELETE_ELEMENTS, LOAD_FAMILY
+#   "which materials are unused"               -> FIND_UNUSED_MATERIALS
+
+utterances:
+  - list everything purgeable in this family
+  - every unused element, all categories
+  - find the unused elements of every category in the model

@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-088
+semantic-identity: "fill this bay with a beam system at this spacing"
+kind: action
+domain: revit.elements
+capability: CREATE_BEAM_SYSTEM
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# The bay's corners in millimetres ("x,y; x,y; ..."), closed automatically;
+# beams at a fixed spacing centred in the bay, parallel to the edge numbered
+# directionEdge (0 is first corner to second). Revit lays the beams; the count
+# is read back off the system.
+#
+# PLACE_STRUCTURAL_FAMILY places single structural members; this lays a whole
+# bay.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates a beam system filling one bay - the bay's corners in millimetres,
+  beams of one type at a fixed spacing, parallel to a chosen edge - on a
+  level.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "x,y; x,y; x,y; x,y" in millimetres.
+    - name: boundaryMm
+      type: string
+      source: request
+    - name: level
+      type: Level
+      source: request
+    # A structural framing type, "Family: Type".
+    - name: beamType
+      type: FamilySymbol
+      source: request
+    - name: spacingMm
+      type: double
+      source: request
+    # Which edge the beams run along; 0 is the first corner to the second.
+    - name: directionEdge
+      type: int
+      source: request
+  provides:
+    - name: beamSystem
+      role: result
+      type: BeamSystem
+    - name: beamCount
+      # Beams Revit laid, read off the system.
+      role: result
+      type: int
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. BeamSystem.Create(Document,
+  IList<Curve>, Level, int, bool), BeamType, LayoutRule, GetBeamIds and
+  LayoutRuleFixedDistance(double, BeamSystemJustifyType) are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "fill this bay with joists at 600"        -> here
+#   "place a beam between these columns"      -> PLACE_STRUCTURAL_FAMILY
+
+utterances:
+  - fill this bay with a beam system at 1200 mm
+  - lay joists across this bay at 600 centres
+  - create a beam system between these grid lines
+  - put secondary beams in this bay

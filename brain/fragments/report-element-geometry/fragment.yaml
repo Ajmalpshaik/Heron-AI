@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-068
+semantic-identity: "what is the shape of this element - its faces, edges and volume in numbers"
+kind: action
+domain: revit.geometry
+capability: REPORT_ELEMENT_GEOMETRY
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# summary: solids, faces and their area, edges and their length, volume and
+# box; edges: each line with its ends or arc with centre and radius; faces:
+# each flat face with its normal and area. Detailed lists stop at 200 lines.
+# A family instance is read as placed and turned.
+#
+# REPORT_BOUNDING_BOX gives the box only; MEASURE_ELEMENT_VOLUME the volume
+# only; REPORT_GEOMETRY_COMPLEXITY counts for model health.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Reads the geometry of elements in millimetres - solids, faces and their
+  area, edges and their length, volume and box - and, when asked, each edge
+  or face.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "summary", "edges" or "faces"; an EMPTY value means summary.
+    - name: detail
+      type: string
+      source: request
+  provides:
+    - name: geometry
+      # ONE STRING, a line per element and, when asked, per edge or face.
+      role: result
+      type: string
+    - name: solidCount
+      role: result
+      type: int
+    - name: noGeometry
+      # Elements with no solid geometry - annotation, lines (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Element.get_Geometry with Options,
+  Solid.Faces, Edges and Volume, Face.Area, Edge.AsCurve and
+  ApproximateLength, GeometryInstance.GetInstanceGeometry, Arc.Center and
+  Radius, and PlanarFace.FaceNormal are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what shape is this element"              -> here
+#   "list the edges of this beam"             -> here, detail edges
+#   "how big is the box round these"          -> REPORT_BOUNDING_BOX
+#   "what is the volume of these"             -> MEASURE_ELEMENT_VOLUME
+
+utterances:
+  - what are the faces and edges of this element
+  - list the edges of this beam with their coordinates
+  - read the geometry of these elements
+  - give me the face areas of this family instance
+  - list the edges of this beam

@@ -137,6 +137,10 @@ compatibility-note: >
 # unused, and deleting it strips paint off every face. That is the defect, and
 # it is why both reads are named in the purpose rather than left in the code.
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "which images are not used"             -> FIND_UNUSED_IMAGES
 utterances:
   - which materials is nobody using
   - find the unused materials

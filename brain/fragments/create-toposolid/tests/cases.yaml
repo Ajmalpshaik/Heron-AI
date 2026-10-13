@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 'boundaryMm "0,0,0; 30000,0,0; 30000,20000,1500; 0,20000,1500", pointsMm "15000,10000,2500", typeName empty, level Level 1'
+    expect: >
+      a toposolid read back, sloping 1.5 m across with a 2.5 m hump in the
+      middle
+
+negative:
+  - given: boundaryMm with two points
+    expect: >
+      refused - three or more are needed - nothing made
+
+  - given: boundaryMm with a point of two numbers only
+    expect: >
+      refused naming the x,y,z rule, nothing made
+
+second_route:
+  - a 3D view and a section through the hump
+  - one Ctrl+Z removes it in a single step (Golden Rule 16)

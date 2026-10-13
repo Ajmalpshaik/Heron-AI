@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-034
+semantic-identity: "how much embodied carbon is in these elements, and where most of it is"
+kind: action
+domain: revit.parameters
+capability: REPORT_EMBODIED_CARBON
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Each element's material volumes times each material's factor, grouped by
+# material, category or type, largest first - the hotspots lead.
+#
+# THE FACTOR IS THE MODELLER'S: a Number parameter on the material, kgCO2e per
+# cubic metre. Heron invents none; a material with no value is listed in
+# noFactor and adds nothing, said aloud. Writing factors is
+# WRITE_ELEMENT_PARAMETERS on the materials.
+#
+# VOLUME is Revit's material volume (cubic feet inside, 1 ft3 =
+# 0.028316846592 m3). To compare two constructions, run it on each set.
+#
+# REPORT_MATERIAL_TAKEOFF reports material quantities without carbon.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Calculates the embodied carbon of the elements handed in from each
+  material's volume and a carbon factor stored on the material, grouped and
+  largest first, and names the materials with no factor.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The material parameter holding kgCO2e per cubic metre, e.g. "Carbon
+    # Factor".
+    - name: factorParameter
+      type: string
+      source: request
+    # "material", "category" or "type"; an EMPTY value means material.
+    - name: groupBy
+      type: string
+      source: request
+    # How many groups to list; 0 means 20.
+    - name: top
+      type: int
+      source: request
+  provides:
+    - name: carbon
+      # ONE STRING, a line per group: kgCO2e, m3 and share of the total.
+      role: result
+      type: string
+    - name: totalKg
+      role: result
+      type: double
+    - name: noFactor
+      # Materials with no factor - they add nothing to the total (D-52).
+      role: accounting
+      type: IList<string>
+    - name: noVolume
+      # Elements whose materials have no volume (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Element.GetMaterialIds and
+  GetMaterialVolume and Element.LookupParameter are present 2020 through 2027
+  - read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12. The factor parameter is expected as a Number, so no
+  units conversion is applied to it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is the embodied carbon of the walls" -> here
+#   "which materials have the most carbon"     -> here, groupBy material
+#   "give me the concrete volume"              -> REPORT_MATERIAL_TAKEOFF
+#   "set the carbon factor on these materials" -> WRITE_ELEMENT_PARAMETERS
+
+utterances:
+  - what is the embodied carbon of these walls and floors
+  - which materials carry the most carbon
+  - calculate the carbon of the structure by type
+  - where are the carbon hotspots in this model

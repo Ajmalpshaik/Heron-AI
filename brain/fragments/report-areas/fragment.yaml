@@ -158,6 +158,11 @@ compatibility-note: >
 #   "is volume computation on"           -> REPORT_AREA_VOLUME_COMPUTATIONS
 #   "create an area scheme"              -> SET_AREA_VOLUME_COMPUTATIONS
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "place the areas in the GIA plan"       -> PLACE_AREAS
+#   "trace the exterior walls for the areas" -> CREATE_AREA_BOUNDARY_LINES
 utterances:
   - report the areas in this model
   - what areas do we have

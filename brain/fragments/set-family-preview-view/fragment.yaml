@@ -1,0 +1,72 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-048
+semantic-identity: "take the family's preview picture from this view"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_PREVIEW_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Sets which view of the family in front the preview picture - in the family
+# browser and Windows Explorer - is taken from, refreshed on every save. The
+# picture is drawn by Revit at the next save; SAVE_DOCUMENT saves. READ BACK:
+# the preview view off the document's settings.
+#
+# SET_FAMILY_SETTINGS sets a family's category-level settings; this only the
+# preview.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the view a family's preview picture is taken from - the thumbnail in
+  the family browser and Windows Explorer - drawn at the next save.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A plan, elevation or 3D view of the family, by name.
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: previewView
+      # The preview view's name, read back.
+      role: result
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Document.GetDocumentPreviewSettings
+  with PreviewViewId, IsViewIdValidForPreview and ForceViewUpdate, and
+  Document.IsFamilyDocument are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "set the family thumbnail to the 3D view" -> here
+#   "save the family"                         -> SAVE_DOCUMENT
+
+utterances:
+  - set the family thumbnail to the 3D view
+  - use this view for the family preview picture
+  - make the family preview show the isometric view
+  - change the family preview image

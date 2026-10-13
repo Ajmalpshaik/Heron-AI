@@ -1,0 +1,15 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: two links, one placed by shared coordinates (Acquire done), one moved 500 mm east after linking, toleranceMm 0
+    expect: >
+      agreeing 1, and mismatched naming the moved link with E/W 500 mm at both
+      points
+
+negative:
+  - given: a model with one link placed by shared coordinates and untouched
+    expect: >
+      mismatched empty and agreeing 1 - no difference invented
+
+second_route:
+  - Report Shared Coordinates on one point of the link, in the link and in this model

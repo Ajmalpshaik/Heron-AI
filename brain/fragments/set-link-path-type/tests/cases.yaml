@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two Revit links stored Absolute, linkName empty, pathType relative
+    expect: >
+      changed 2, each reading Relative in Manage Links afterwards
+
+negative:
+  - given: the same straight after
+    expect: >
+      changed 0 and alreadyThat 2 - nothing written twice
+
+  - given: pathType sideways
+    expect: >
+      refused before any link is touched
+
+second_route:
+  - Manage > Manage Links, the Path Type column read
+  - one Ctrl+Z puts every path type back in a single step (Golden Rule 16)

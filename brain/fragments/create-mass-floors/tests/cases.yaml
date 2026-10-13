@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one in-place mass 12 m tall over Levels 1 to 4 (3 m apart), levelNames empty
+    expect: >
+      added 4 (or 5 with a level at its top), a mass floor at each level the
+      mass reaches, read back
+
+negative:
+  - given: the same straight after
+    expect: >
+      added 0 and alreadyThere counting each - nothing added twice
+
+  - given: a wall, levelNames empty
+    expect: >
+      added 0 and report saying it is not a mass
+
+second_route:
+  - the mass's Mass Floors dialog, and a Mass Floor schedule
+  - one Ctrl+Z removes them all in a single step (Golden Rule 16)

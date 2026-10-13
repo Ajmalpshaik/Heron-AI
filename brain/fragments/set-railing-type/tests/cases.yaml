@@ -1,0 +1,16 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'railing type "Handrail - Rectangular", duplicateAs "TRG Guard 1100", topRailHeightMm 1100, handrailSide both'
+    expect: >
+      a new type "TRG Guard 1100" with its top rail at 1100 mm and the
+      handrail on both sides, read back as asked; the original unchanged; 0
+      railings of the new type
+
+negative:
+  - given: 'railing type "No Such Railing", topRailHeightMm 1100'
+    expect: >
+      refused, naming the railing types there are; nothing changed
+
+second_route:
+  - Revit's Type Properties of the new type - Top Rail and Handrail 1

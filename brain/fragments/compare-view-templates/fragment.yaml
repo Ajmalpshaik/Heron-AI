@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-132
+semantic-identity: "where do these two view templates differ"
+kind: action
+domain: revit.views
+capability: COMPARE_VIEW_TEMPLATES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONLY WHERE THEY DIFFER, as "setting: A value | B value": view type, scale,
+# detail level, visual style, discipline, phase filter; template parameters
+# ticked in one only; categories hidden in one only, or with a different line
+# colour, weight, halftone or transparency override; filters applied in one
+# only, visible in one only, or overridden differently.
+#
+# REPORT_VIEW_TEMPLATE_CONTROL says which template controls one view's
+# setting; this compares two templates. COMPARE_ELEMENTS compares parameters
+# of elements, not a template's visibility.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Compares two view templates and lists only where they differ - scale,
+  detail level, visual style, discipline, phase filter, which settings each
+  controls, category visibility and overrides, and filters.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: templateA
+      type: string
+      source: request
+    - name: templateB
+      type: string
+      source: request
+  provides:
+    - name: differences
+      # ONE STRING, a line per difference, A on the left and B on the right.
+      role: result
+      type: string
+    - name: differenceCount
+      role: result
+      type: int
+    - name: refused
+      # Why nothing was compared - a template not found; null otherwise
+      # (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. View.Scale, DetailLevel, DisplayStyle,
+  GetTemplateParameterIds, GetNonControlledTemplateParameterIds,
+  GetCategoryHidden, IsCategoryOverridable, GetCategoryOverrides, GetFilters,
+  GetFilterVisibility and GetFilterOverrides, the OverrideGraphicSettings
+  members read, and VIEW_DISCIPLINE and VIEW_PHASE_FILTER are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is different between these two templates" -> here
+#   "compare the mechanical and plumbing templates" -> here
+#   "why is this setting greyed out"          -> REPORT_VIEW_TEMPLATE_CONTROL
+#   "compare these two ducts"                 -> COMPARE_ELEMENTS
+
+utterances:
+  - what is different between these two view templates
+  - compare the mechanical plan template with the plumbing one
+  - where do these view templates differ
+  - check these two templates against each other

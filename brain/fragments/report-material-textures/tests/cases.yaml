@@ -1,0 +1,16 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a material given an image texture from C:/Heron/brick.jpg, then that file renamed, onlyMissing true
+    expect: >
+      missing naming that material, its diffuse slot and C:/Heron/brick.jpg;
+      textures holding that one line
+
+negative:
+  - given: the file named back, onlyMissing true
+    expect: >
+      missing empty and textures empty - a found file is never listed as
+      missing
+
+second_route:
+  - the material's Appearance tab, its image's path read in the texture editor

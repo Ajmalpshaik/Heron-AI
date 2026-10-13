@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'a four-point adaptive panel family loaded in a project, pointsMm "0,0,0; 2000,0,0; 2000,0,3000; 0,0,3000"'
+    expect: >
+      one panel placed, its four points read back within 1 mm
+
+  - given: a two-point adaptive beam family in a mass family with a line divided into 6 by number, onNodesOf the path's id
+    expect: >
+      one beam between each pair of neighbouring nodes, each read back; the
+      finding says they do not follow the path
+
+negative:
+  - given: 'an ordinary, non-adaptive family type, pointsMm "0,0,0"'
+    expect: >
+      refused as not an adaptive family; nothing placed
+
+second_route:
+  - Revit's placement of the same family, clicking the same points

@@ -95,6 +95,10 @@ compatibility-note: >
 # type's defaults and nothing of the view somebody was looking at, which is a
 # surprise if they meant "like that one".
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "make a perspective from the entrance"  -> SET_VIEW_CAMERA
 utterances:
   - make a new 3d view
   - create a 3d view

@@ -1,0 +1,76 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-067
+semantic-identity: "add a car park or path area to this terrain"
+kind: action
+domain: revit.geometry
+capability: ADD_TOPOSOLID_SUBDIVISION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# The outline is points in millimetres, closed automatically, wholly inside
+# each toposolid; the subdivision follows the terrain and takes its own
+# material. READ BACK: each toposolid's subdivisions listed again.
+#
+# REVIT 2024 brought toposolids, so the card declares 2024 on.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Adds a subdivision to each toposolid - a car park, a path, a planted bed -
+  from an outline of points in millimetres.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The toposolids.
+    - name: elements
+      type: IList<Element>
+    # "x,y; x,y; ..." in millimetres.
+    - name: loopMm
+      type: string
+      source: request
+  provides:
+    - name: subdivisionIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, toposolid by toposolid (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Toposolid.CreateSubDivision(Document, IList<CurveLoop>) and
+  GetSubDivisionIds are present from 2024 and absent before - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12 - so the card declares 2024 to 2027 only.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add a car park area to the terrain"      -> here
+#   "make the terrain"                        -> CREATE_TOPOSOLID
+
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "raise the corners of this toposolid by 500" -> EDIT_SLAB_SHAPE, heights
+#   "cut the terrain with the building pad"  -> EDIT_TOPOSOLID, excavate
+utterances:
+  - add a car park area to the terrain
+  - subdivide the toposolid for this path
+  - mark out a planted bed on the site
+  - create a subdivision on the topography here

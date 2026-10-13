@@ -135,6 +135,10 @@ compatibility-note: >
 #   "draw lines between the adaptive points"      -> DRAW_FAMILY_POINT_CURVES
 #   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "place this adaptive panel on these four points" -> PLACE_ADAPTIVE_COMPONENTS
 utterances:
   - add four adaptive points to this family
   - host a point on this line at its midpoint

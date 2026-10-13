@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'on Revit 2025, a sloping toposolid and a floor sunk into it, mode excavate, value the floor id'
+    expect: >
+      the toposolid cut by the floor - a hole where it stands, seen in a
+      section; the report names the floor
+
+  - given: 'a toposolid with 400 shape points, mode simplify, value "50"'
+    expect: >
+      the shape points before and after reported, about half after
+
+negative:
+  - given: two walls, mode simplify, value "50"
+    expect: >
+      nothing changed - each named as not a toposolid; edited 0
+
+second_route:
+  - Revit's Excavate and Simplify Surface on the same toposolid, read in a section

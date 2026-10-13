@@ -1,0 +1,16 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: the parts of one floor crossing grids A and B, cutterNames "A, B"
+    expect: >
+      divided equal to the parts handed in, partCountAfter higher than before,
+      read back
+
+negative:
+  - given: cutterNames "Z9", a name no datum has
+    expect: >
+      refused naming it, nothing divided
+
+second_route:
+  - a plan with Show Parts, the new seams on the grid lines
+  - one Ctrl+Z undoes the division in a single step (Golden Rule 16)

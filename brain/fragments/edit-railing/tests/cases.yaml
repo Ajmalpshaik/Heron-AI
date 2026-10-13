@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'one railing drawn along a balcony, pathMm "0,0; 4000,0; 4000,2000", flip true'
+    expect: >
+      the railing on the new three-point path, 6000 mm long, and its side
+      reads flipped
+
+  - given: one stair railing whose path was edited, reset true
+    expect: >
+      reset to the stair's own path; the length reads the stair's run again
+
+negative:
+  - given: two walls, flip true
+    expect: >
+      nothing changed - each named as not a railing; edited 0
+
+second_route:
+  - Revit's Edit Path and the Flip arrow on the same railing

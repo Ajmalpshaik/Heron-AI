@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-090
+semantic-identity: "put railings on these stairs, or a railing along this path"
+kind: action
+domain: revit.elements
+capability: CREATE_RAILING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# TWO WAYS: stairs or ramps handed in get Revit's own railings on all their
+# sides, on the treads or the stringer; or pathMm draws one open run on a
+# level - a balcony edge, a guard. The type is found by name; a name not there
+# refuses, naming those that are. READ BACK: every railing Revit hands back is
+# looked up by id.
+#
+# CREATE_STAIRS makes stairs, with or without railings.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places railings - on every side of the stairs or ramps handed in, on the
+  treads or stringer, or along a path of points on a level.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Stairs or ramps, from a selection or a filter; none for a path only.
+    - name: elements
+      type: IList<Element>
+      optional: true
+    - name: railingTypeName
+      type: string
+      source: request
+    # "treads" or "stringer"; an EMPTY value means treads.
+    - name: placement
+      type: string
+      source: request
+    # "x,y; x,y; ..." in millimetres; an EMPTY value draws no path.
+    - name: pathMm
+      type: string
+      source: request
+    # The level a path railing is drawn on. Give any level when there is no
+    # path; it is used only for one.
+    - name: level
+      type: Level
+      source: request
+  provides:
+    - name: made
+      role: result
+      type: int
+    - name: railingIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, host by host and the path (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Railing.Create(Document, ElementId,
+  ElementId, RailingPlacementPosition) and Railing.Create(Document, CurveLoop,
+  ElementId, ElementId), RailingType and RailingPlacementPosition are present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "put handrails on these stairs"           -> here
+#   "add a guard rail along the balcony"      -> here, pathMm
+#   "make a stair"                            -> CREATE_STAIRS
+
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "edit the path of this railing"          -> EDIT_RAILING
+#   "set the top rail height of this railing type to 1100" -> SET_RAILING_TYPE
+utterances:
+  - put railings on these stairs
+  - add handrails to the ramp on the stringer
+  - add a guard rail along the balcony edge
+  - draw a railing along these points on level 2

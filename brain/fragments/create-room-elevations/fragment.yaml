@@ -116,6 +116,10 @@ compatibility-note: >
 #   "how big is this room"               -> READ_ROOM_GEOMETRY - and it is what
 #                                          gives the centre point this needs
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "the room got bigger, fix its elevations" -> REFIT_ROOM_ELEVATIONS
 utterances:
   - make elevations inside each room
   - I need interior elevations of this toilet

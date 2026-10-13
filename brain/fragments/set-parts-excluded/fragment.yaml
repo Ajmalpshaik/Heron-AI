@@ -1,0 +1,75 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-094
+semantic-identity: "exclude these parts from the model, or bring them back"
+kind: action
+domain: revit.elements
+capability: SET_PARTS_EXCLUDED
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# An excluded part stays in the file and drops out of views and schedules -
+# how a finish layer is taken out of one area. include true brings it back.
+# READ BACK: each part's Excluded state.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Excludes parts from the model, or includes them again, so a layer drops out
+  of views and schedules where it is not built.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # true brings excluded parts back; false, or not said, excludes them.
+    - name: include
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyThat
+      # Parts already in the asked state (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING with every part left as it was and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Part.Excluded (get and set) is present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make parts from these walls"             -> CREATE_PARTS
+#   "divide the parts at the grids"           -> DIVIDE_PARTS
+#   "merge these parts"                       -> MERGE_PARTS
+#   "exclude these parts"                     -> SET_PARTS_EXCLUDED
+#   "offset the top of these parts"           -> OFFSET_PART_FACES
+
+utterances:
+  - exclude these parts
+  - take these finish parts out of the model
+  - bring the excluded parts back
+  - include these parts again

@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: three reference planes 3, 7 and 11 m long, lengthMm 5000
+    expect: >
+      changed 3, each 5000 mm long, each middle where it was, read back
+
+negative:
+  - given: the same straight after
+    expect: >
+      changed 0 and alreadyThat 3 - nothing written twice
+
+  - given: two grids, lengthMm 5000
+    expect: >
+      changed 0 and report naming each as not a reference plane
+
+second_route:
+  - the plan, each plane measured and its middle checked against before
+  - one Ctrl+Z puts them back in a single step (Golden Rule 16)

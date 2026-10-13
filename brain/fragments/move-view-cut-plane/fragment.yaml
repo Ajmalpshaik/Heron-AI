@@ -1,0 +1,94 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-130
+semantic-identity: "move this section or elevation forward or back, or through a point"
+kind: action
+domain: revit.views
+capability: MOVE_VIEW_CUT_PLANE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONLY THE DEPTH CHANGES: forward by offsetMm along the way the view looks
+# (negative is back), or onto a point given in throughMm. The plane never
+# turns.
+#
+# WHAT IS MOVED: a section's or detail's viewer (its line in plan), found
+# among the Viewers by the view's name; an elevation's marker, ONLY when it
+# carries this one view - a marker with four views is refused, naming them.
+#
+# ONLY THE MODEL SAYS IT MOVED: the view's origin is read again after a
+# regeneration and the distance moved along the looking direction reported.
+#
+# MOVE_ELEMENTS moves model elements by a vector and does not find a view's
+# viewer or refuse a shared elevation marker.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Moves a section's, detail's or elevation's cut plane forward or back along
+  the way it looks, by a distance or so that it passes through a point.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view by name, or "Section: Section 1".
+    - name: viewName
+      type: string
+      source: request
+    # Millimetres along the way the view looks; negative moves it back.
+    # Ignored when throughMm is given.
+    - name: offsetMm
+      type: double
+      source: request
+    # "x,y,z" in millimetres: the plane is moved to pass through it. An EMPTY
+    # value uses offsetMm.
+    - name: throughMm
+      type: string
+      source: request
+  provides:
+    - name: movedMm
+      # How far the plane moved along its looking direction, read back.
+      role: result
+      type: double
+    - name: newOrigin
+      role: result
+      type: string
+    - name: refused
+      # Why NOTHING WAS MOVED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ElementTransformUtils.MoveElement,
+  View.Origin and ViewDirection, ElevationMarker.GetViewId and
+  MaximumViewCount and the Viewers category are present 2020 through 2027 -
+  read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12. That a section's viewer is the Viewers element of
+  the same name is what the proof establishes.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "move section 3 500 mm north"             -> here
+#   "push the elevation back to the wall"     -> here, throughMm
+#   "where does section 3 cut"                -> REPORT_VIEW_CUT_PLANES
+#   "move these ducts 500"                    -> MOVE_ELEMENTS
+
+utterances:
+  - move section 3 forward 500 mm
+  - push this elevation back so it cuts through the wall
+  - shift the section line 1 metre
+  - move the cut plane of this section through this point

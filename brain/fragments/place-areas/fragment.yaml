@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-064
+semantic-identity: "place areas in this area plan at these points"
+kind: action
+domain: revit.rooms
+capability: PLACE_AREAS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# One area at each point, inside a region the boundary lines enclose, names
+# and numbers in the same order as the points. An area placed where nothing
+# encloses it has no size; it is read back and named in `unenclosed`.
+#
+# REPORT_AREAS lists areas; CREATE_AREA_BOUNDARY_LINES draws the boundaries;
+# PLACE_ROOMS places rooms and spaces, not areas.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places areas in an area plan, one at each point given in millimetres, with
+  names and numbers in order, and names any that nothing encloses.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: areaPlanName
+      type: string
+      source: request
+    # "x,y; x,y" in millimetres.
+    - name: pointsMm
+      type: string
+      source: request
+    # Names separated by commas, in point order; an EMPTY value leaves Revit's.
+    - name: names
+      type: string
+      source: request
+    # Numbers separated by commas, in point order; an EMPTY value leaves Revit's.
+    - name: numbers
+      type: string
+      source: request
+  provides:
+    - name: placed
+      role: result
+      type: int
+    - name: areaIds
+      role: result
+      type: IList<ElementId>
+    - name: unenclosed
+      # Areas placed where no boundary encloses them - no size (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, point by point (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Creation.Document.NewArea(ViewPlan,
+  UV), SpatialElement.Area and Number, ROOM_NAME and ViewType.AreaPlan are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "place the areas in the GIA plan"         -> here
+#   "draw the area boundaries"                -> CREATE_AREA_BOUNDARY_LINES
+#   "report the areas"                        -> REPORT_AREAS
+#   "place the rooms"                         -> PLACE_ROOMS
+
+utterances:
+  - place areas in the gross area plan at these points
+  - add an area in each zone of this area plan
+  - put areas named Office and Store in the area plan
+  - place the areas for the lettable area plan

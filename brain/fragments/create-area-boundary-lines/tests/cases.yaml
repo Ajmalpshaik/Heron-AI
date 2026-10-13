@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: an area plan on Level 1 over four exterior walls (type Function Exterior), traceWalls outside, loopsMm empty
+    expect: >
+      made 4, a line along the outside face of each wall, read back
+
+negative:
+  - given: the same area plan, traceWalls empty, loopsMm empty
+    expect: >
+      refused - neither walls nor loops - nothing drawn
+
+  - given: an area plan whose level has only interior walls, traceWalls outside
+    expect: >
+      made 0 - no exterior wall to trace
+
+second_route:
+  - the area plan, each line on the wall face measured
+  - one Ctrl+Z removes them in a single step (Golden Rule 16)

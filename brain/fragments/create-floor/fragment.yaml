@@ -111,6 +111,10 @@ compatibility-note: >
 #                                           one takes one typed loop and cuts
 #                                           no openings
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "lay this floor to follow the terrain"   -> EDIT_SLAB_SHAPE, follow
 utterances:
   - make a floor slab over this area
   - add a slab here

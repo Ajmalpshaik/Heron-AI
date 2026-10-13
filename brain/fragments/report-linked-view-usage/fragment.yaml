@@ -1,0 +1,81 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-133
+semantic-identity: "how each view displays a linked model - by host view, by linked view or custom"
+kind: action
+domain: revit.views
+capability: REPORT_LINKED_VIEW_USAGE
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Only views NOT By Host View are listed one by one, with the linked view they
+# borrow: a plan whose link shows a different level, or a template that does
+# not reach the link, are the surprises.
+#
+# REVIT 2024 opened a view's link settings to code, so the card declares 2024
+# on. linkName narrows to one link by its name or its start.
+#
+# SET_LINK_GRAPHICS greys or fades a link in one view; this only reads.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists the views that show a Revit link By Linked View or Custom rather than
+  By Host View, and the linked view each borrows - the Revit Links tab of
+  Visibility/Graphics across every view.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One link by its name or the start of it; an EMPTY value reads every
+    # link.
+    - name: linkName
+      type: string
+      source: request
+  provides:
+    - name: usage
+      # ONE STRING, a line per view and link that is not By Host View.
+      role: result
+      type: string
+    - name: notByHost
+      role: result
+      type: int
+    - name: linkCount
+      # Links read. Zero when the model has none, which the findings say
+      # (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  View.GetLinkOverrides, RevitLinkGraphicsSettings with LinkVisibilityType and
+  LinkedViewId, and LinkVisibility are present from 2024 and absent in 2020 to
+  2023 - read off RevitAPI.xml in the Nice3point reference packages for all
+  eight releases on 2026-10-12 - so the card declares 2024 to 2027 only.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which views show the architect's link by linked view" -> here
+#   "why does the link show the wrong level in this plan"   -> here
+#   "grey out the linked model"               -> SET_LINK_GRAPHICS
+#   "which models are linked"                 -> LIST_LINKED_MODELS
+
+utterances:
+  - which views display the link by linked view
+  - which views have custom link settings
+  - why does the architect's link show the wrong level in some plans
+  - list how every view displays the linked models
+  - why does the link show the wrong level in this plan

@@ -1,0 +1,73 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-131
+semantic-identity: "how is the project browser organised, and which views does its filter hide"
+kind: action
+domain: revit.views
+capability: REPORT_BROWSER_ORGANIZATION
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE GROUPING IS READ OFF REAL ITEMS: the API gives no list of an
+# organisation's rules, only the folders one view or sheet sits in. So every
+# item's folder path is read, and each level named from the item's own
+# parameters, matched by id - never built from a number.
+#
+# A VIEW THE FILTER HIDES is the finding: it exists, may be on a sheet, and
+# nobody can find it in the browser.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Reports how the Project Browser is organised for views and for sheets - the
+  organisation in use, the parameters its folders group by, its sorting - and
+  how many views and sheets its filter hides.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: organization
+      # ONE STRING, a line for views and one for sheets.
+      role: result
+      type: string
+    - name: hiddenByFilter
+      # Views and sheets the organisation's filter keeps out of the browser
+      # (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. BrowserOrganization
+  .GetCurrentBrowserOrganizationForViews and ForSheets, GetFolderItems,
+  AreFiltersSatisfied, SortingParameterId and SortingOrder, and FolderItemInfo
+  .ElementId and Name are present 2020 through 2027 - read off RevitAPI.xml in
+  the Nice3point reference packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "how is the project browser organised"    -> here
+#   "why can't I find this view in the browser" -> here
+#   "which views are not on a sheet"          -> FIND_UNPLACED_VIEWS
+#   "which views have no template"            -> FIND_VIEWS_WITHOUT_TEMPLATE
+
+utterances:
+  - how is the project browser organised
+  - what does the project browser group the views by
+  - which views are hidden from the project browser
+  - why can't I find this view in the project browser
+  - why can't I find this view in the browser

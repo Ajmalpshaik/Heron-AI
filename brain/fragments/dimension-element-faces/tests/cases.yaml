@@ -1,0 +1,25 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: one three-layer wall, 15 + 200 + 15 mm, in Level 1's plan, direction across
+    expect: >
+      one string with four references reading 15 + 200 + 15 mm - or, if
+      Revit gives the wall as one piece, two references reading 230 mm, and
+      the count says which
+
+  - given: a wall with one window, sill 900, head 2100, in a 3000 mm wall, in an elevation, direction vertical
+    expect: >
+      one string base, sill, head, top reading 900 + 1200 + 900 mm
+
+  - given: a curtain wall with vertical grid lines every 1500 mm, in a plan, direction along
+    expect: >
+      one string through the grid lines, each segment 1500 mm
+
+negative:
+  - given: the same wall, in a 3D view
+    expect: >
+      refused - a dimension is drawn in a plan, section, elevation or detail;
+      nothing drawn
+
+second_route:
+  - Revit's Aligned Dimension, Tab through the layer faces, in the same view

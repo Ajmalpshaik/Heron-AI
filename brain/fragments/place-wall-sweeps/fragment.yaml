@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-084
+semantic-identity: "run a skirting, cornice or reveal along these walls"
+kind: action
+domain: revit.elements
+capability: PLACE_WALL_SWEEPS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A wall sweep (or reveal) along each wall's whole length, which Revit cuts at
+# doors itself: skirting at the base, a cornice at the top, a dado at 900 mm.
+# side is the wall's own interior or exterior; heightMm is from the wall's
+# base; reveal true cuts instead of adding.
+#
+# The type is found by name among the wall sweep or reveal types; a name not
+# there refuses, naming the ones that are.
+#
+# For skirting in rooms, hand in the rooms' bounding walls; which side faces a
+# room is how the wall was drawn, said in the answer rather than guessed.
+#
+# READ BACK: each sweep looked up and its host read.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places a wall sweep or reveal along each wall handed in - skirting at the
+  base, a cornice, a dado rail - on the interior or exterior side at a height.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: sweepTypeName
+      type: string
+      source: request
+    # "interior" or "exterior"; an EMPTY value means interior.
+    - name: side
+      type: string
+      source: request
+    # From the wall's base, millimetres.
+    - name: heightMm
+      type: double
+      source: request
+    # true makes a reveal; false, or not said, a sweep.
+    - name: reveal
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: made
+      role: result
+      type: int
+    - name: sweepIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING with every wall left without one and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. WallSweep.Create(Wall, ElementId,
+  WallSweepInfo), WallSweepInfo(WallSweepType, bool) with WallSide and
+  Distance, WallSweep.GetHostIds and the Cornices and Reveals categories are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add skirting to these walls"             -> here
+#   "put a dado rail at 900 on the corridor walls" -> here
+#   "add a slab edge to this floor"           -> CREATE_EDGE_SWEEPS
+
+utterances:
+  - add skirting to the inside of these walls
+  - put a dado rail at 900 mm on these walls
+  - run a cornice along the top of these walls
+  - add a reveal at 3 m on the exterior of these walls
+  - put a dado rail at 900 on the corridor walls

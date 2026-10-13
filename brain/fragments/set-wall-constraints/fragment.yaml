@@ -135,6 +135,10 @@ compatibility-note: >
 #   "the corners are cleaning up wrong"  -> DISALLOW_JOIN
 #   "what is attached to this element"   -> REPORT_ELEMENT_DEPENDENCIES
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "attach these walls to the roof"        -> ATTACH_WALLS (2025 on)
 utterances:
   - put these walls on a different level
   - the walls are on the wrong level

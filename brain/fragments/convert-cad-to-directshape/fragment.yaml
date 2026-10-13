@@ -97,6 +97,10 @@ compatibility-note: >
 #                                           possible once the solids are
 #                                           elements
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "import this dwg as an underlay"         -> IMPORT_CAD
 utterances:
   - turn the cad import into real elements
   - the dwg is one lump in revit

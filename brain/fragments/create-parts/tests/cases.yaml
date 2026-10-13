@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one wall of a three-layer type
+    expect: >
+      madeFrom 1 and three part ids, read back
+
+negative:
+  - given: the same wall straight after
+    expect: >
+      madeFrom 0 and alreadyParts 1 - nothing made twice
+
+  - given: a door
+    expect: >
+      madeFrom 0 and report saying Revit will not make parts of it
+
+second_route:
+  - a 3D view with Parts Visibility set to Show Parts
+  - one Ctrl+Z removes the parts in a single step (Golden Rule 16)

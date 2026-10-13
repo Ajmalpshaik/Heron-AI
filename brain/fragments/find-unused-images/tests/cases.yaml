@@ -1,0 +1,14 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: three images loaded in Manage Images; one placed on a sheet, one set as a door type's Type Image, one used nowhere
+    expect: >
+      elements holding the one used nowhere, unusedNames naming it, usedCount 2
+
+negative:
+  - given: the unused image placed on a drafting view
+    expect: >
+      elements empty and usedCount 3 - nothing handed on to delete
+
+second_route:
+  - Manage > Manage Images, each image's use checked by hand

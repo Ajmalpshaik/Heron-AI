@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-043
+semantic-identity: "link this Revit model or these CAD drawings, or every one in this folder"
+kind: action
+domain: revit.document
+capability: LINK_FILES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONE JOB, THE EXTENSION DECIDES: .rvt makes a Revit link type and one
+# instance; .dwg, .dxf and .dgn make a CAD link in the model (not this view
+# only). A folder links every such file in it.
+#
+# PLACEMENT: origin (the default) or shared - which the files must already
+# agree on; CHECK_LINK_COORDINATES says whether they do. A CAD link is placed
+# from a plan view's level; viewName names it, empty takes the first floor
+# plan.
+#
+# A FILE ALREADY LINKED IS LEFT OUT AND NAMED - twice is the building twice.
+# Nothing is IMPORTED; a link stays a link.
+#
+# READ BACK: each new link looked up by id; a Revit link's load status read.
+#
+# RELOAD_LINKS and UNLOAD_LINKS act on links already there.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Links a Revit model or CAD drawings into the model - one file, several, or
+  every linkable file in a folder - origin to origin or by shared
+  coordinates.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Full paths separated by semicolons, or a folder.
+    - name: paths
+      type: string
+      source: request
+    # "origin" or "shared"; an EMPTY value means origin.
+    - name: placement
+      type: string
+      source: request
+    # The floor plan CAD links are placed from; an EMPTY value takes the
+    # first floor plan. Not used for a Revit link.
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: linked
+      role: result
+      type: int
+    - name: linkedIds
+      role: result
+      type: IList<ElementId>
+    - name: alreadyLinked
+      # File names already linked, left out (D-52).
+      role: accounting
+      type: IList<string>
+    - name: report
+      # ONE STRING, file by file (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. RevitLinkType.Create(Document,
+  ModelPath, RevitLinkOptions), RevitLinkInstance.Create, ImportPlacement,
+  Document.Link with DWGImportOptions and DGNImportOptions (Placement and
+  ThisViewOnly on BaseImportOptions), CADLinkType, GetExternalFileReference
+  and ModelPathUtils are present 2020 through 2027 - read off RevitAPI.xml in
+  the Nice3point reference packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "link the architect's model"              -> here
+#   "link every dwg in this folder"           -> here
+#   "reload the links"                        -> RELOAD_LINKS
+#   "unload the architecture link"            -> UNLOAD_LINKS
+#   "which models are linked"                 -> LIST_LINKED_MODELS
+
+utterances:
+  - link the architect's model
+  - link every dwg in this folder by shared coordinates
+  - link this cad drawing into the model
+  - link these Revit models origin to origin
+  - link every dwg in this folder

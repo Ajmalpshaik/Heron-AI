@@ -1,0 +1,14 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: two concrete floors of 10 m3 each, the material Concrete carrying a Number parameter "Carbon Factor" of 300, factorParameter "Carbon Factor", groupBy empty, top 0
+    expect: >
+      totalKg 6000 and the Concrete line first with 6000 kgCO2e, 20 m3, 100%
+
+negative:
+  - given: the same floors with the Carbon Factor parameter cleared
+    expect: >
+      totalKg 0 and noFactor naming Concrete - never a factor guessed
+
+second_route:
+  - a material takeoff schedule of the floors, the volume multiplied by hand

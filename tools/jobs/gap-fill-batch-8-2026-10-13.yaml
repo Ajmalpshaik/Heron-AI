@@ -1,0 +1,121 @@
+# The proofs of batch 8 of the gap fill - the last of the missing jobs:
+# dimensions through faces, shape editing, railings, divided surfaces,
+# adaptive placement, copying between documents and purge - NEEDS-CHECKING
+# Group DR:
+#
+#   dimension-element-faces          DIMENSION_ELEMENT_FACES          FRG-VIEW-135
+#   edit-slab-shape                  EDIT_SLAB_SHAPE                  FRG-GEO-069
+#   edit-toposolid                   EDIT_TOPOSOLID                   FRG-GEO-072  (2024 on)
+#   report-divided-surfaces          REPORT_DIVIDED_SURFACES          FRG-GEO-070  (row DR5, by hand)
+#   place-adaptive-components        PLACE_ADAPTIVE_COMPONENTS        FRG-GEO-071
+#   edit-railing                     EDIT_RAILING                     FRG-ELE-096
+#   set-railing-type                 SET_RAILING_TYPE                 FRG-ELE-097
+#   copy-elements-between-documents  COPY_ELEMENTS_BETWEEN_DOCUMENTS  FRG-ELE-098
+#   find-purgeable-elements          FIND_PURGEABLE_ELEMENTS          FRG-SEL-037  (2024 on)
+#   create-toposolid (CAD survey), attach-walls (to terrain)          (rows DR7, DR8, by hand)
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-batch-8-2026-10-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-batch-8-2026-10-13.yaml
+#
+# NEVER ON A WORKING PROJECT. Two NEW SCRATCH PROJECTS on Revit 2024 first,
+# both open at once:
+#
+#   "Heron Gap Fill Batch 8 Test", from the Architectural template - type
+#   its title where `in:` says PROJECT-TITLE - and in it, by hand:
+#     - on Level 1, one wall of a three-layer type with one window in it,
+#       one floor 6000 x 4000 mm, and one railing drawn along the floor's
+#       long edge
+#     - one curtain wall with vertical grid lines every 1500 mm
+#     - one toposolid on Level 1, with a few points raised by hand
+#     - a four-point adaptive panel family loaded (any made from "Generic
+#       Model Adaptive") - type its "Family: Type" where `set:` says
+#       ADAPTIVE-TYPE
+#     - one wall type and one door family loaded and never placed
+#   "Heron Gap Fill Batch 8 Source" - a second new project holding three
+#   generic models (any loaded generic model family) and one text note.
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the model afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: two scratch projects open at once, "Heron Gap Fill Batch 8 Test" (Architectural template) and "Heron Gap Fill Batch 8 Source", Revit 2024 first, then 2020 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+
+jobs:
+  - fragment: dimension-element-faces
+    expect: created
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Walls, levelId: Level 1}
+    negative-setup-set: {category: Walls, levelId: Level 1}
+    set: {view: "FloorPlan: Level 1", direction: across, offsetMm: 0}
+    negative-set: {view: "ThreeD: {3D}", direction: across, offsetMm: 0}
+    note: >
+      The positive draws a layer string across each wall in Level 1's plan;
+      the curtain wall gives one through its grid lines only with direction
+      along, so the positive counts the three-layer wall. The negative names
+      the default 3D view, which is refused.
+
+  - fragment: edit-slab-shape
+    expect: editedIds
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Floors, levelId: Level 1}
+    negative-setup-set: {category: Walls, levelId: Level 1}
+    set: {mode: points, shapeMm: "3000,2000,-25"}
+    negative-set: {mode: points, shapeMm: "3000,2000,-25"}
+    note: Draw the floor with a corner at 0,0 so 3000,2000 is inside it.
+
+  - fragment: edit-toposolid
+    expect: resultIds
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Toposolid, levelId: Level 1}
+    negative-setup-set: {category: Walls, levelId: Level 1}
+    set: {mode: simplify, value: "50"}
+    negative-set: {mode: simplify, value: "50"}
+    note: Excavation needs Revit 2025 - row DR9 runs it by hand.
+
+  - fragment: edit-railing
+    expect: editedIds
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Railings, levelId: Level 1}
+    negative-setup-set: {category: Walls, levelId: Level 1}
+    set: {pathMm: "", host: "", railingTypeName: "", flip: true, reset: false}
+    negative-set: {pathMm: "", host: "", railingTypeName: "", flip: true, reset: false}
+
+  - fragment: set-railing-type
+    expect: railingType
+    write: true
+    set: {railingTypeName: "Handrail - Rectangular", duplicateAs: "TRG Gap Fill Guard", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: both}
+    negative-set: {railingTypeName: "No Such Railing", duplicateAs: "", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    note: Use a railing type the template holds for railingTypeName.
+
+  - fragment: place-adaptive-components
+    expect: placedIds
+    write: true
+    set: {familyType: "ADAPTIVE-TYPE", pointsMm: "20000,0,0; 22000,0,0; 22000,0,3000; 20000,0,3000", onNodesOf: ""}
+    negative-set: {familyType: "ADAPTIVE-TYPE", pointsMm: "20000,0,0; 22000,0,0", onNodesOf: ""}
+    note: >
+      The negative gives two points to a four-point family - the group is
+      left and nothing placed.
+
+  - fragment: copy-elements-between-documents
+    expect: copiedIds
+    write: true
+    set: {sourceDocumentTitle: "Heron Gap Fill Batch 8 Source", categories: "Generic Models", elementIds: "", offsetMm: ""}
+    negative-set: {sourceDocumentTitle: "No Such File", categories: "all", elementIds: "", offsetMm: ""}
+
+  - fragment: find-purgeable-elements
+    expect: elements
+    set: {categories: ""}
+    negative-set: {categories: "No Such Category"}

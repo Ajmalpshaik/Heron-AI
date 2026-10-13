@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'a 6000 x 4000 mm floor, mode points, shapeMm "3000,2000,-25"'
+    expect: >
+      one point added in the middle; the top there moved -25 mm; five shape
+      points now (four corners and the new one)
+
+  - given: 'a floor beside a sloping toposolid, mode follow, shapeMm "<toposolid id>, 1000"'
+    expect: >
+      the shape reset, a grid of points and the corners set; most points
+      within 5 mm of the toposolid's top, those off the terrain named as flat
+
+negative:
+  - given: two walls, mode points
+    expect: >
+      nothing changed - each named as having no shape editing
+
+second_route:
+  - Revit's Modify Sub Elements on the same floor, reading each point's height

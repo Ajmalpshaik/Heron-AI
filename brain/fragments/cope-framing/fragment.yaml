@@ -1,0 +1,74 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-087
+semantic-identity: "cope these beams where they meet columns and other beams"
+kind: action
+domain: revit.elements
+capability: COPE_FRAMING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Each beam handed in is coped by every structural column and other framing
+# member whose box it runs into; the beam is the one cut, never the column. A
+# cut already there is counted, not made twice. READ BACK: each beam's coping
+# list after the change.
+#
+# JOIN_GEOMETRY joins element geometry; coping is the steel-detailing cut.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Applies Revit's coping cut to beams where they meet structural columns or
+  other beams, for many beams at once.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: coped
+      role: result
+      type: int
+    - name: copedIds
+      role: result
+      type: IList<ElementId>
+    - name: alreadyCoped
+      # Coping cuts that existed before (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, beam by beam (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FamilyInstance.AddCoping and
+  GetCopingIds, BoundingBoxIntersectsFilter and Outline are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "cope these beams at the columns"         -> here
+#   "join these walls"                        -> JOIN_GEOMETRY
+
+utterances:
+  - cope these beams at the columns
+  - apply coping where the beams meet
+  - cut the beam ends round the columns
+  - cope the secondary beams into the primaries

@@ -9,13 +9,18 @@ semantic-identity: "cut the hole through this wall or slab"
 kind: action
 domain: revit.elements
 capability: CREATE_OPENING
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Cuts an opening through a host element - a wall, a floor, a roof or a ceiling -
-  from a closed boundary.
+  from a closed boundary, and through a beam, brace or column with Revit's own
+  framing opening.
+
+  **A BEAM, BRACE OR COLUMN** (version 2, 2026-10-12, the gap fill) takes the
+  framing opening: perpendicularFace true cuts through the web, false through
+  the flanges - the duct or pipe penetration through a steel beam's web.
 
   **THIS IS THE HALF `PROPOSE_MEP_OPENINGS` SAYS SOMEBODY ELSE MUST DO, AND
   NOBODY DID.** Its own purpose reads: *"It creates nothing... The list this
@@ -102,3 +107,4 @@ utterances:
   - cut the penetrations
   - create an opening
   - put a hole in this wall for the duct
+  - cut a hole through the web of this beam for the duct

@@ -1,0 +1,74 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-030
+semantic-identity: "which viewport types are there, what does each title show, and how many use each"
+kind: action
+domain: revit.sheets
+capability: REPORT_VIEWPORT_TYPES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# The type settings are Revit's own text: title family, show title, extension
+# line, box. A type no viewport uses is listed apart - two near-identical
+# title types, one unused, is the usual reason a sheet set looks inconsistent.
+#
+# Viewport types are found by family name "Viewport", so no BuiltInCategory
+# member is relied on.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists the viewport types - Title w Line, No Title and the rest - with each
+  one's title family, whether the title and extension line show, and how many
+  viewports on sheets use it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: viewportTypes
+      # ONE STRING, a line per type, because a list reaches the chat cut to
+      # three entries.
+      role: result
+      type: string
+    - name: typeCount
+      role: result
+      type: int
+    - name: unused
+      # Viewport types no viewport uses (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Viewport, ElementType.FamilyName and
+  the parameters VIEWPORT_ATTR_LABEL_TAG, VIEWPORT_ATTR_SHOW_LABEL,
+  VIEWPORT_ATTR_SHOW_EXTENSION_LINE and VIEWPORT_ATTR_SHOW_BOX are present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which viewport types are there"          -> here
+#   "which title type is each viewport"       -> LIST_VIEWS_ON_SHEET
+#   "change the viewports to No Title"        -> CHANGE_ELEMENT_TYPE on the viewports
+#   "shorten the title lines"                 -> SET_VIEWPORT_TITLE_LINE
+
+utterances:
+  - which viewport types are in this project
+  - list the viewport title types and how many use each
+  - which viewport types are not used
+  - what does each viewport type show in its title

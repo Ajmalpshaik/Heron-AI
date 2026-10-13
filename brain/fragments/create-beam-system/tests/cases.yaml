@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 'boundaryMm "0,0; 6000,0; 6000,9000; 0,9000", level Level 2, a steel beam type, spacingMm 1500, directionEdge 0'
+    expect: >
+      a beam system read back with about 6 beams running east-west across the
+      9 m depth
+
+negative:
+  - given: boundaryMm with two corners only
+    expect: >
+      refused - a bay needs three corners - and nothing made
+
+  - given: directionEdge 9 on a four-cornered bay
+    expect: >
+      refused naming edges 0 to 3, nothing made
+
+second_route:
+  - the Level 2 plan, the beams counted and their spacing measured
+  - one Ctrl+Z removes the system in a single step (Golden Rule 16)

@@ -1,0 +1,17 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: four walls under a sloped roof, where empty (top)
+    expect: >
+      attached 4, each wall's top following the roof slope in a section,
+      and its attachment read back
+
+negative:
+  - given: two walls with no roof, floor or ceiling over them
+    expect: >
+      attached 0 and noTarget naming both - nothing attached to something far
+      away
+
+second_route:
+  - a section through the walls - the tops follow the roof; Edit Profile is not involved
+  - one Ctrl+Z detaches them all in a single step (Golden Rule 16)

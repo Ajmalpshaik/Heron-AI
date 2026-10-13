@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: room 101 with four interior elevations made by CREATE_ROOM_ELEVATIONS, then one wall moved out 1000 mm; roomNumbers 101, marginMm 300
+    expect: >
+      refitted 4, each crop 300 mm round the room as it now is, the
+      elevation facing the moved wall with its far clip 1000 mm deeper
+
+negative:
+  - given: roomNumbers 999, a number no room has
+    expect: >
+      refitted 0 and findings saying no marker stands inside those rooms
+
+  - given: a room with no elevation marker inside it
+    expect: >
+      refitted 0, nothing changed in any view
+
+second_route:
+  - each elevation opened beside the plan, the crop edges on the walls
+  - one Ctrl+Z puts every crop back in a single step (Golden Rule 16)

@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'two projects open, the other holding three generic models and one text note; categories "Generic Models", offset empty'
+    expect: >
+      three generic models arrived in the project in front at the same
+      places, read back by id
+
+  - given: 'a family in front and a second family open holding two extrusions; categories "all"'
+    expect: >
+      both forms arrived in the family in front
+
+negative:
+  - given: 'sourceDocumentTitle "No Such File", categories "all"'
+    expect: >
+      refused, naming the documents that are open; nothing copied
+
+second_route:
+  - Revit's Copy to Clipboard and Paste Aligned, Same Place, between the same windows

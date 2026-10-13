@@ -1,0 +1,15 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: 'search "gate valve", folder "D:/04_BIM/01_Revit_Families"'
+    expect: >
+      files listing every .rfa under that folder whose name holds both words,
+      each a full path
+
+negative:
+  - given: search "zzqx nothing"
+    expect: >
+      files empty and fileCount the number looked at - nothing invented
+
+second_route:
+  - Windows Explorer search in the same folder for the same words

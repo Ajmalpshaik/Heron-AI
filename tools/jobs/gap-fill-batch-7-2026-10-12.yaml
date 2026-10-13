@@ -1,0 +1,169 @@
+# The proofs of batch 7 of the gap fill - structural, areas, railings, parts,
+# site, carbon, family files and geometry - NEEDS-CHECKING Group DQ:
+#
+#   cope-framing                COPE_FRAMING                 FRG-ELE-087
+#   create-beam-system          CREATE_BEAM_SYSTEM           FRG-ELE-088
+#   report-analytical-model     REPORT_ANALYTICAL_MODEL      FRG-ELE-089  (2023 on)
+#   create-railing              CREATE_RAILING               FRG-ELE-090
+#   create-parts                CREATE_PARTS                 FRG-ELE-091
+#   divide-parts                DIVIDE_PARTS                 FRG-ELE-092
+#   merge-parts                 MERGE_PARTS                  FRG-ELE-093
+#   set-parts-excluded          SET_PARTS_EXCLUDED           FRG-ELE-094
+#   offset-part-faces           OFFSET_PART_FACES            FRG-ELE-095
+#   check-structural-supports   CHECK_STRUCTURAL_SUPPORTS    FRG-QA-036
+#   place-areas                 PLACE_AREAS                  FRG-GEO-064
+#   create-area-boundary-lines  CREATE_AREA_BOUNDARY_LINES   FRG-GEO-065
+#   create-toposolid            CREATE_TOPOSOLID             FRG-GEO-066  (2024 on)
+#   add-toposolid-subdivision   ADD_TOPOSOLID_SUBDIVISION    FRG-GEO-067  (2024 on)
+#   report-element-geometry     REPORT_ELEMENT_GEOMETRY      FRG-GEO-068
+#   report-embodied-carbon      REPORT_EMBODIED_CARBON       FRG-PAR-034
+#   import-cad                  IMPORT_CAD                   FRG-DOC-046
+#   find-library-families       FIND_LIBRARY_FAMILIES        FRG-DOC-047
+#   set-family-preview-view     SET_FAMILY_PREVIEW_VIEW      FRG-DOC-048
+#   create-opening (v2)         CREATE_OPENING               (beam openings)
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-batch-7-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-batch-7-2026-10-12.yaml
+#
+# NEVER ON A WORKING PROJECT. Two NEW SCRATCH PROJECTS on Revit 2024 first:
+#
+#   "Heron Gap Fill Batch 7 Test", from the Structural template - type its
+#   title where `in:` says PROJECT-TITLE - and in it, by hand:
+#     - Level 1 and Level 2; two steel columns on Level 1, a beam between
+#       them on Level 2, and a second beam with one end in mid-air
+#     - one stair from Level 1 to Level 2 with no railings
+#     - one wall of a three-layer type on Level 1, and one floor on Level 1
+#     - an area plan "Area Plan GIA" on Level 1 with two regions closed by
+#       area boundary lines; four exterior walls round Level 1
+#     - one toposolid 30 x 20 m on Level 1
+#     - a material "Concrete" carrying a Number project parameter "Carbon
+#       Factor" of 300; the floor of that material
+#     - a folder %TEMP%\heron-work\cad holding one small plan .dwg
+#   "Heron Empty Test" - a new project, nothing added - type its title where
+#   `negative-in:` says EMPTY-TITLE.
+#
+# set-family-preview-view and the CAD underlay need a FAMILY in front; they
+# are DQ rows run by hand, not jobs here.
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the model afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: two scratch projects, "Heron Gap Fill Batch 7 Test" (Structural template) and "Heron Empty Test", Revit 2024 first, then 2020 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+
+jobs:
+  - fragment: cope-framing
+    expect: copedIds
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Structural Framing, levelId: Level 2}
+    negative-setup-set: {category: Walls, levelId: Level 1}
+
+  - fragment: create-beam-system
+    expect: beamSystem
+    write: true
+    set: {boundaryMm: "0,0; 6000,0; 6000,9000; 0,9000", level: Level 2, beamType: "W Shapes: W12X26", spacingMm: 1500, directionEdge: 0}
+    negative-set: {boundaryMm: "0,0; 6000,0", level: Level 2, beamType: "W Shapes: W12X26", spacingMm: 1500, directionEdge: 0}
+    note: Use any beam type the template holds for beamType.
+
+  - fragment: report-analytical-model
+    expect: analytical
+    negative-in: "EMPTY-TITLE"
+
+  - fragment: check-structural-supports
+    expect: unsupported
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Structural Framing, levelId: Level 2}
+    negative-setup-set: {category: Structural Columns, levelId: Level 1}
+    set: {toleranceMm: 0}
+    negative-set: {toleranceMm: 0}
+    note: >
+      The negative hands in the two columns, which stand on Level 1 - put a
+      floor or foundation under them so nothing is reported.
+
+  - fragment: create-railing
+    expect: railingIds
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Stairs, levelId: Level 1}
+    negative-setup-set: {category: Walls, levelId: Level 1}
+    set: {railingTypeName: "Handrail - Rectangular", placement: treads, pathMm: "", level: Level 1}
+    negative-set: {railingTypeName: "Handrail - Rectangular", placement: treads, pathMm: "", level: Level 1}
+    note: Use a railing type the template holds.
+
+  - fragment: create-parts
+    expect: partIds
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Walls, levelId: Level 1}
+    negative-setup-set: {category: Structural Columns, levelId: Level 1}
+
+  - fragment: place-areas
+    expect: areaIds
+    write: true
+    set: {areaPlanName: Area Plan GIA, pointsMm: "PUT-A-POINT-IN-REGION-1; PUT-A-POINT-IN-REGION-2", names: "Office, Store", numbers: "A1, A2"}
+    negative-set: {areaPlanName: No Such Plan, pointsMm: "0,0", names: "", numbers: ""}
+    note: Replace the two placeholders with a point inside each region, x,y in mm.
+
+  - fragment: create-area-boundary-lines
+    expect: lineIds
+    write: true
+    set: {areaPlanName: Area Plan GIA, traceWalls: outside, loopsMm: ""}
+    negative-set: {areaPlanName: Area Plan GIA, traceWalls: "", loopsMm: ""}
+
+  - fragment: create-toposolid
+    expect: toposolid
+    write: true
+    set: {boundaryMm: "40000,0,0; 70000,0,0; 70000,20000,1500; 40000,20000,1500", pointsMm: "55000,10000,2500", cadImport: "", cadLayers: "", typeName: "", level: Level 1}
+    negative-set: {boundaryMm: "40000,0,0; 70000,0,0", pointsMm: "", cadImport: "", cadLayers: "", typeName: "", level: Level 1}
+
+  - fragment: add-toposolid-subdivision
+    expect: subdivisionIds
+    write: true
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Toposolid, levelId: Level 1}
+    negative-setup-set: {category: Walls, levelId: Level 1}
+    set: {loopMm: "5000,5000; 15000,5000; 15000,10000; 5000,10000"}
+    negative-set: {loopMm: "5000,5000; 15000,5000; 15000,10000; 5000,10000"}
+
+  - fragment: report-element-geometry
+    expect: geometry
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Walls, levelId: Level 1}
+    negative-setup-set: {category: Rooms, levelId: Level 1}
+    set: {detail: summary}
+    negative-set: {detail: summary}
+    note: Put one room on Level 1 for the negative - a room has no solid here.
+
+  - fragment: report-embodied-carbon
+    expect: carbon
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Floors, levelId: Level 1}
+    negative-setup-set: {category: Floors, levelId: Level 1}
+    set: {factorParameter: Carbon Factor, groupBy: material, top: 0}
+    negative-set: {factorParameter: No Such Factor, groupBy: material, top: 0}
+    note: The negative asks for a parameter no material has - totalKg 0, Concrete in noFactor.
+
+  - fragment: import-cad
+    expect: importIds
+    write: true
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/cad/plan.dwg", viewName: Level 1, placement: origin, thisViewOnly: true}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/cad/plan.dwg", viewName: No Such View, placement: origin, thisViewOnly: true}
+    note: Name the .dwg as it is in the folder. Level 1 may name two views - a plan and a ceiling plan; rename one first if so.
+
+  - fragment: find-library-families
+    expect: files
+    set: {search: "column", folder: ""}
+    negative-set: {search: "zzqx nothing", folder: ""}

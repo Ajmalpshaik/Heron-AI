@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two parts of a floor's finish layer, include not said
+    expect: >
+      changed 2, both reading Excluded, gone from the floor finish schedule
+
+negative:
+  - given: the same straight after
+    expect: >
+      changed 0 and alreadyThat 2
+
+  - given: two walls
+    expect: >
+      changed 0, each named as not a part
+
+second_route:
+  - each part's Excluded tick in Properties
+  - one Ctrl+Z puts them back in a single step (Golden Rule 16)

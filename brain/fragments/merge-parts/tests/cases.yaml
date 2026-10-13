@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two adjacent parts of one floor's finish layer
+    expect: >
+      merged 2 and one merged part, read back
+
+negative:
+  - given: one part only
+    expect: >
+      refused - two or more are needed - nothing merged
+
+  - given: a finish part and a structure part, different materials
+    expect: >
+      refused with Revit's reason, nothing merged
+
+second_route:
+  - a plan with Show Parts, the seam gone
+  - one Ctrl+Z undoes the merge in a single step (Golden Rule 16)

@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-098
+semantic-identity: "copy these elements from the other open file into this one - family to family, project to project"
+kind: action
+domain: revit.elements
+capability: COPY_ELEMENTS_BETWEEN_DOCUMENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Copy to Clipboard in one window and Paste Aligned in the other, for model
+# elements: from another document open in the same Revit into the one in
+# front, either side a project or a family - the forms of one family into
+# another, model elements from one project into this one. Picked by category
+# name (or "all" model elements) or by id in the other document; an offset
+# moves them on the way. View-specific elements are left and counted: Revit
+# copies those view to view. Types and materials come along as Revit's own
+# paste brings them.
+#
+# COPY_ELEMENTS copies within this model; COPY_FROM_LINK copies out of a
+# linked model; the TRANSFER_*_BETWEEN_DOCUMENTS cards carry views, filters,
+# materials, line and object styles and project parameters.
+#
+# READ BACK: every id Revit returns is looked up in this document.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Copies model elements from another open document - a project or a family -
+  into the one in front, by category or by id, aligned or moved by an offset.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    - name: sourceDocumentTitle
+      type: string
+      source: request
+    # Category names, comma separated, or "all"; EMPTY when ids are given.
+    - name: categories
+      type: string
+      source: request
+    # Ids in the other document, comma separated; an EMPTY value is none.
+    - name: elementIds
+      type: string
+      source: request
+    # "x,y,z" in millimetres; an EMPTY value keeps them aligned.
+    - name: offsetMm
+      type: string
+      source: request
+  provides:
+    - name: copied
+      role: result
+      type: int
+    - name: copiedIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING: picked, arrived by category, view-specific left (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ElementTransformUtils.CopyElements(
+  Document, ICollection<ElementId>, Document, Transform, CopyPasteOptions),
+  Application.Documents, Element.OwnerViewId, Category.Parent and
+  CategoryType are present 2020 through 2027 - read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-13.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "copy the extrusions from the valve family into this one" -> here
+#   "copy the furniture over from the other project"          -> here
+#   "copy these walls 3 m to the east"                        -> COPY_ELEMENTS
+#   "copy the ducts out of the linked model"                  -> COPY_FROM_LINK
+
+utterances:
+  - copy the forms from the other family into this family
+  - copy the furniture from the other open project into this one
+  - copy the extrusions from the valve family into this one
+  - copy the furniture over from the other project
+  - copy these element ids from the other file into this one
+  - paste the generic models from the template project here

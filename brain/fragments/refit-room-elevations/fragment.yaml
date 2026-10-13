@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-134
+semantic-identity: "fit the interior elevations to the room again after it changed size"
+kind: action
+domain: revit.views
+capability: REFIT_ROOM_ELEVATIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# An elevation marker standing inside a room carries its interior elevations;
+# each is refitted to the room as it is NOW: crop width and height to the
+# room's extent across and up the view, far clip to its furthest extent in the
+# looking direction, each plus marginMm. The extent is the room's bounding box
+# from its level to its upper limit; a room that is not rectangular is fitted
+# to its box, as a person dragging the crop would.
+#
+# A template-controlled view keeps what the template owns; each refusal named.
+#
+# READ BACK: each crop read again and compared with what was asked.
+#
+# CREATE_ROOM_ELEVATIONS makes the elevations; SET_VIEW_CROP sets one view's
+# crop to given numbers.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Refits a room's interior elevations to the room as it is now - crop width
+  and height and far clip - after the room was made bigger or smaller.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Room numbers separated by commas; an EMPTY value refits every room's
+    # interior elevations.
+    - name: roomNumbers
+      type: string
+      source: request
+    # Millimetres added round the room on every side and to the far clip.
+    - name: marginMm
+      type: double
+      source: request
+  provides:
+    - name: refitted
+      role: result
+      type: int
+    - name: refittedViews
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, view by view, with each crop and every refusal (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ElevationMarker.GetViewId,
+  CurrentViewCount and MaximumViewCount, View.CropBox and CropBoxActive,
+  Document.GetRoomAtPoint, Element.get_BoundingBox and VIEWER_BOUND_OFFSET_FAR
+  are present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-12. Margins are
+  millimetres divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "refit the interior elevations of room 101" -> here
+#   "the room got bigger, fix its elevations"  -> here
+#   "make interior elevations for this room"   -> CREATE_ROOM_ELEVATIONS
+#   "crop this view to these numbers"          -> SET_VIEW_CROP
+
+utterances:
+  - refit the interior elevations of room 101
+  - the room got bigger, fit its elevations again
+  - update the interior elevation crops to the rooms
+  - make the room elevations match the new room size

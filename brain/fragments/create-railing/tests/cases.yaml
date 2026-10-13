@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one stair with no railings, railingTypeName the template's handrail type, placement treads, pathMm empty
+    expect: >
+      made 2 (one each side), read back, on the treads
+
+  - given: 'no elements, pathMm "0,0; 5000,0; 5000,3000", level Level 2'
+    expect: >
+      made 1, a railing along the three points on Level 2
+
+negative:
+  - given: two walls and pathMm empty
+    expect: >
+      refused - neither a stair nor a path - each wall named as not a stair
+
+  - given: railingTypeName "No Such Railing"
+    expect: >
+      refused naming the railing types, nothing made
+
+second_route:
+  - a 3D view of the stair and the balcony
+  - one Ctrl+Z removes every railing in a single step (Golden Rule 16)

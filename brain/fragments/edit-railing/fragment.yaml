@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-096
+semantic-identity: "change these railings - a new path, a new host, another type, flip or reset"
+kind: action
+domain: revit.elements
+capability: EDIT_RAILING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Edit Path, Pick New Host, Reset Railing, Flip and the type, on railings
+# already placed - each part done only when asked, in the order reset, path,
+# host, type, flip. A new path is an open run of straight lines at the
+# railing's own height, checked by Revit's own path test before it is set.
+# "none" as the host frees a railing from its stair or floor.
+#
+# CREATE_RAILING places new railings; SET_RAILING_TYPE changes what a railing
+# type is made of - rails, heights, handrails.
+#
+# READ BACK: the type, host and side are read again after a regeneration and
+# each asked change checked; the path's length is reported.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Edits railings already placed - a new path, a new host or none, another
+  railing type, flipped to the other side, or reset to the host's path.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "x,y; x,y; ..." in millimetres; an EMPTY value keeps the path.
+    - name: pathMm
+      type: string
+      source: request
+    # An element id to host the railings, "none" to free them; EMPTY keeps it.
+    - name: host
+      type: string
+      source: request
+    # A railing type by name; an EMPTY value keeps the type.
+    - name: railingTypeName
+      type: string
+      source: request
+    - name: flip
+      type: bool
+      source: request
+      optional: true
+    - name: reset
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: edited
+      role: result
+      type: int
+    - name: editedIds
+      role: result
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, railing by railing, what changed and what did not (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Railing.GetPath, SetPath,
+  IsValidPathForRailing, Flip, Flipped, Reset, CanReset, HasHost, HostId,
+  RemoveHost and RailingCanBeHostedByElement, and RailingType, are present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-13.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "move this railing to a new path"        -> here, pathMm
+#   "flip this railing to the other side"    -> here, flip
+#   "change these railings to the glass type" -> here, railingTypeName
+#   "put railings on these stairs"           -> CREATE_RAILING
+#   "make the top rail 1100 high"            -> SET_RAILING_TYPE
+
+utterances:
+  - edit the path of this railing
+  - flip this railing to the other side
+  - host this railing on the floor
+  - reset the railing to the stair
+  - change these railings to the glass railing type

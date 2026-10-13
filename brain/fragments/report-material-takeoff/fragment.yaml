@@ -104,6 +104,10 @@ compatibility-note: >
 #   "make a floor slab over this area" -> CREATE_FLOOR
 #   "make a new material"            -> CREATE_MATERIAL
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "what is the embodied carbon"           -> REPORT_EMBODIED_CARBON
 utterances:
   - how much of each material is there
   - give me a material takeoff

@@ -1,0 +1,15 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: a project with one wall type and one door family loaded and never placed, categories empty
+    expect: >
+      both among the elements, each named with its category, matching what
+      Purge Unused lists for them
+
+negative:
+  - given: 'categories "No Such Category"'
+    expect: >
+      refused as no such category; no elements
+
+second_route:
+  - Revit's Manage > Purge Unused on the same project, its list read

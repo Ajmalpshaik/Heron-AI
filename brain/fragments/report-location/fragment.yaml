@@ -223,6 +223,10 @@ compatibility-note: >
 #   "what units is this project in"      -> REPORT_PROJECT_UNITS - how the
 #                                           project measures, not where it is
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "do the links agree with our coordinates" -> CHECK_LINK_COORDINATES
 utterances:
   - where exactly are these
   - what are the coordinates of this

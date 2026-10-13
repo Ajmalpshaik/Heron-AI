@@ -1,0 +1,74 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-091
+semantic-identity: "make parts from these walls, floors, roofs or ceilings"
+kind: action
+domain: revit.elements
+capability: CREATE_PARTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# One part per layer; Revit's own test decides which elements can have parts,
+# the rest are named; an element with parts already is counted, not made
+# twice. READ BACK: each element's parts afterwards.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates parts from walls, floors, roofs and ceilings - one part per layer -
+  so the layers can be divided, excluded and scheduled.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: madeFrom
+      role: result
+      type: int
+    - name: partIds
+      role: result
+      type: IList<ElementId>
+    - name: alreadyParts
+      # Elements that had parts before (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING with every element left without parts and why (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PartUtils.CreateParts,
+  AreElementsValidForCreateParts and GetAssociatedParts are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make parts from these walls"             -> CREATE_PARTS
+#   "divide the parts at the grids"           -> DIVIDE_PARTS
+#   "merge these parts"                       -> MERGE_PARTS
+#   "exclude these parts"                     -> SET_PARTS_EXCLUDED
+#   "offset the top of these parts"           -> OFFSET_PART_FACES
+
+utterances:
+  - make parts from these walls
+  - create parts of the floor layers
+  - split these walls into parts by layer
+  - turn these slabs into parts

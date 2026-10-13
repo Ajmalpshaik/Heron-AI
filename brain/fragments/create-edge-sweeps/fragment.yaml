@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-085
+semantic-identity: "run a fascia or gutter along the roof eaves, or a slab edge round the floor"
+kind: action
+domain: revit.elements
+capability: CREATE_EDGE_SWEEPS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE EDGES COME FROM THE HOST'S OWN GEOMETRY: a roof's eaves are the level
+# edges of its upward faces at each face's lowest height; a floor's slab edge
+# is the outer loop of its top face. One sweep per host, along all its edges,
+# which is how Revit joins them at corners.
+#
+# The type is found by name among the fascia, gutter or slab edge types; a
+# name not there refuses, naming those that are.
+#
+# READ BACK: each sweep looked up after a regeneration.
+#
+# PLACE_WALL_SWEEPS runs a sweep along walls; SLOPE_ROOF_EDGES sets which roof
+# edges slope.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places a fascia or gutter along the eaves of each roof, or a slab edge round
+  the top outer edge of each floor, the edges taken from the host itself.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # "fascia", "gutter" or "slab edge".
+    - name: kind
+      type: string
+      source: request
+    - name: typeName
+      type: string
+      source: request
+  provides:
+    - name: made
+      role: result
+      type: int
+    - name: sweepIds
+      role: result
+      type: IList<ElementId>
+    - name: edgeCount
+      # Edges the new sweeps run along (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, host by host (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Creation.Document.NewFascia,
+  NewGutter and NewSlabEdge with a ReferenceArray, FasciaType, GutterType,
+  SlabEdgeType, Face.EdgeLoops, Edge.Reference, AsCurve and ApproximateLength,
+  and PlanarFace.FaceNormal are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add a fascia to this roof"               -> here
+#   "put gutters on the eaves"                -> here
+#   "add a slab edge round this floor"        -> here
+#   "add skirting to these walls"             -> PLACE_WALL_SWEEPS
+
+utterances:
+  - add a fascia along the eaves of this roof
+  - put gutters on the roof edges
+  - add a slab edge round the edge of this floor
+  - run a fascia board round the roof

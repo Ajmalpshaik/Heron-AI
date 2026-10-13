@@ -75,6 +75,10 @@ compatibility-note: >
 #                                        - version 3 audits the classification;
 #                                          this answered it until 2026-10-11
 #                                          and is about USAGE
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "list everything purgeable in this family" -> FIND_PURGEABLE_ELEMENTS (2024 on)
 utterances:
   - which families are unused
   - purge unused

@@ -1,0 +1,77 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-047
+semantic-identity: "find the family file for this in the library folders"
+kind: action
+domain: revit.families
+capability: FIND_LIBRARY_FAMILIES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# Every word searched for must be in the file name; sub-folders are searched;
+# the full path comes back so LOAD_FAMILY can load it. With no folder given,
+# Revit's own library folders (Options > File Locations > Places) are
+# searched. It stops at 200 matches or 50,000 files and says so.
+#
+# FIND_UNUSED_FAMILIES and the revit_families tool read families already in
+# the model; this reads the disk.
+#
+# READ ONLY - opens no transaction and touches no model.
+purpose: >
+  Searches family library folders on disk for family files whose names hold
+  every word given, and returns their full paths ready to load.
+
+contract:
+  needs:
+    - name: app
+      type: Application
+    # Words that must all be in the file name - "gate valve".
+    - name: search
+      type: string
+      source: request
+    # A folder to search; an EMPTY value searches Revit's library folders.
+    - name: folder
+      type: string
+      source: request
+  provides:
+    - name: files
+      role: result
+      type: IList<string>
+    - name: fileCount
+      # Family files looked at (D-52).
+      role: accounting
+      type: int
+    - name: foldersSearched
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Application.GetLibraryPaths is present
+  2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12. The rest is System.IO.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "find a gate valve family in the library" -> here
+#   "load this family"                        -> LOAD_FAMILY
+#   "which families are not used"             -> FIND_UNUSED_FAMILIES
+
+utterances:
+  - find a gate valve family in the library
+  - search the family folders for a ceiling fan coil unit
+  - where is the fire damper family file
+  - look in the library for a pressure gauge family

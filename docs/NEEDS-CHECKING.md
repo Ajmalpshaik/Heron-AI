@@ -623,6 +623,26 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dm.md`](needs-checking/group-dm.md)
 
+## Group DN - views and sheets: 3D cameras, cut planes read and moved, browser organisation, templates compared, link display, room elevations refitted, viewport types and title lines, assemblies (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dn.md`](needs-checking/group-dn.md)
+
+## Group DO - model and file setup: files linked, link paths switched, links' shared coordinates checked, material textures read, unused images found (2026-10-12)
+
+**Its own file:** [`needs-checking/group-do.md`](needs-checking/group-do.md)
+
+## Group DP - modelling: walls attached, faces painted, mass floors, wall sweeps, fascias, gutters and slab edges, reference plane lengths, radial grids (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dp.md`](needs-checking/group-dp.md)
+
+## Group DQ - structural coping, beam systems and supports, analytical model, areas, railings, parts, toposolids, carbon, CAD import, library search, family preview, geometry, beam openings (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dq.md`](needs-checking/group-dq.md)
+
+## Group DR - dimensions through faces, slab and terrain shape, toposolid tools, railing edits and types, divided surfaces, adaptive placement, copying between documents, purge (2026-10-13)
+
+**Its own file:** [`needs-checking/group-dr.md`](needs-checking/group-dr.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

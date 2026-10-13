@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "read something and called it the answer".
+
+positive:
+  - given: one generic box wall 5000 x 200 x 3000 mm, detail summary
+    expect: >
+      1 solid, 6 faces with about 31.2 m2 in all, 12 edges, volume 3 m3, and
+      its box
+
+  - given: the same wall, detail edges
+    expect: >
+      the summary then 12 line edges with their end points in millimetres
+
+negative:
+  - given: two text notes
+    expect: >
+      solidCount 0 and both in noGeometry
+
+second_route:
+  - the wall's Volume and Area in its Properties
