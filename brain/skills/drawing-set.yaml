@@ -91,9 +91,10 @@ purpose: >
   the model before repeating a change whose answer never came: it may have
   happened, and a repeat makes it twice.
 
-  NOT YET: colouring the rooms on a plan - APPLY_COLOR_FILL_SCHEME (DRAFT) is
-  declared for Revit 2022 and later only, and on an older release nothing in
-  the library does it. A tag on a door that is a curtain panel. Printing or
+  NOT YET: colouring the rooms on a plan on Revit 2020 or 2021 -
+  APPLY_COLOR_FILL_SCHEME (DRAFT) colours them on 2022 and later and refuses
+  in plain words on those two, and nothing else in the library does it. A tag
+  on a door that is a curtain panel. Printing or
   exporting the set is a separate PUBLISH step behind its own switch, not
   part of this method.
 
