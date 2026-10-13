@@ -15,7 +15,9 @@ capability: CREATE_STAIRS
 # them at the Commit, none before), and one finding with their count and type,
 # e.g. "Revit added 2 railings of type '1100mm' with the stair". Same inputs,
 # same refusals; a refused stair, or one taken away again because its opening
-# failed, names none. Not yet run in Revit - Group BX, BX8.
+# failed, names none. Run ROLLED BACK on Revit 2020 only (2026-10-13,
+# Project1: a U and a straight stair each named 2 railings of type '1100mm',
+# a refused one none - 5b-455); the kept run is Group BX, BX8.
 # Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-445): a run's top is set only when
 # its path did not already give it. Version 1 always set it, and Revit 2020
 # refused that on every stair whose base level is not at 0 - see the
@@ -87,8 +89,9 @@ purpose: >
 #   - NOT measured on 2021 to 2027 - Group BX, BX7.
 #   - VERSION 3 NAMES THEM. "and reads them back" in the purpose means the
 #     `railings` result and its one finding, read after the Commit - see the
-#     version note. Version 2's answer said nothing of them. The answer is NOT
-#     yet run in Revit: Group BX, BX8. A host about to run CREATE_RAILING
+#     version note. Version 2's answer said nothing of them. The answer has
+#     run only rolled back, on Revit 2020 (5b-455); the kept run is Group BX,
+#     BX8. A host about to run CREATE_RAILING
 #     reads the count here first.
 #   - THOSE FOUR WORDS WERE MEASURED, main against this branch, 2026-10-13, as
 #     5b-455's status records: 80 sentences on both backends, no winner moved.
