@@ -11,8 +11,12 @@ domain: revit.views
 capability: TAG_ELEMENTS_IN_VIEW
 # Version 4 (2026-10-13, FRAGMENT-ISSUES 5b-450): every taggable category, not
 # only MEP. Six doors handed to version 3 came back notTagged 6 because its map
-# knew seventeen MEP categories and nothing else. The MEP path is unchanged.
-version: 4
+# knew seventeen MEP categories and nothing else.
+#
+# Version 5 (2026-10-13, FRAGMENT-ISSUES 5b-452, the owner's word - Group DV
+# DV5): an MEP tag with no leader goes on its own element. Versions 3 and 4
+# passed the project origin as its head, and Revit put every head there.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -83,9 +87,10 @@ contract:
       type: ElementId
       source: request
     - name: leader
-      # none | straight, and `none` is the default ON PURPOSE - it is byte for
-      # byte the behaviour proved on 2026-09-14 (addLeader false, head at
-      # XYZ.Zero), so leaders did not disturb the path that was proved.
+      # none | straight, and `none` is the default ON PURPOSE - addLeader
+      # false, the head on the element's own point. Until version 5 an MEP
+      # element's head went to XYZ.Zero instead, the project origin, and that
+      # is where Revit put it (5b-452).
       #
       # `L` IS ACCEPTED BUT MEANS `straight` HERE. This fragment does not bend
       # anything: FORCE_TAG_LEADER_LSHAPE (FRG-VIEW-088) owns that, because a
@@ -183,9 +188,12 @@ contract:
 
 # THIS PROOF IS THE VERSION 1 RECORD AND IT IS STALE. It was run before
 # leaders existed in this fragment, so it says nothing about `leader=straight`
-# or `leader=L` - only about the `none` path, which is unchanged. The
-# fingerprint below no longer matches the implementation and D-30 will report
-# STALE until this is re-run. Do not read the status above as covering leaders.
+# or `leader=L`. It counted 14 tagged on the `none` path and nobody looked
+# where the tags went: the head it passed was the project origin, and on Revit
+# 2020.2 that is where every duct tag's head was read back (5b-452), until
+# version 5 put it on the duct. The fingerprint below no longer matches the
+# implementation and D-30 will report STALE until this is re-run. Do not read
+# the status above as covering leaders, or where a tag lands.
 proof:
   date: '2026-09-14'
   by: Ajmal PS

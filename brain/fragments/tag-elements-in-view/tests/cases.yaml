@@ -25,6 +25,15 @@ positive:
       caller's hint". Count them back with SELECT_BY_CATEGORY_NAME Door Tags
       inViewOnly=<the view>. Version 3 answered notTagged for every door
 
+  - given: >
+      ducts in a plan view, leader = none (version 5)
+    expect: >
+      every tag's head READ BACK at its own duct - the middle of the location
+      line, in the view's plane - and none at the project origin. Versions 3
+      and 4 passed XYZ.Zero on the MEP path and Revit put every head there,
+      87 to 93 m from its duct, while the count still said tagged 3 (5b-452).
+      A count cannot see where a tag went; IndependentTag.TagHeadPosition can
+
 negative:
   - given: >
       any successful run - check typeCorrections whatever the result
@@ -50,6 +59,11 @@ negative:
 
   - given: an empty element list
     expect: all counts zero, notTagged empty, reported as nothing to do
+
+  - given: the same ducts with minLengthMm longer than any of them
+    expect: >
+      tagged 0 and every duct in tooShort, nothing created - the value alone
+      empties the result, so the selection is the positive's
 
   - given: the same elements in a DIFFERENT view
     expect: >
