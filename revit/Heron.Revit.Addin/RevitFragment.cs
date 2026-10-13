@@ -4096,6 +4096,13 @@ namespace Heron.Revit.Addin
         /// add-in carries a version #if today. Matching the enum by name, then
         /// by the display name Revit gives it, reaches the same answer and
         /// compiles identically on all eight releases.
+        ///
+        /// THE NAME REVIT SHOWS IS ASKED BEFORE THE API NAME IS GUESSED FROM
+        /// IT (FRAGMENT-ISSUES 5b-444). "OST_" + "Railings" parses - to
+        /// OST_Railings, -2000175 - while the category Visibility/Graphics
+        /// shows as Railings is OST_StairsRailing, -2000126. The guess came
+        /// first, so FILTER_ELEMENTS_BY_CATEGORY and SELECT_IN_REGION answered
+        /// 0 for two railings SELECT_BY_CATEGORY_NAME found.
         /// </summary>
         private static bool OneBuiltInCategory(Document doc, string text, out BuiltInCategory found)
         {
@@ -4103,38 +4110,41 @@ namespace Heron.Revit.Addin
             var trimmed = (text ?? "").Trim();
             if (trimmed.Length == 0) return false;
 
-            foreach (var attempt in new[] { trimmed, "OST_" + trimmed })
+            // The API name exactly as typed - OST_DuctCurves.
+            try
             {
-                try
-                {
-                    found = (BuiltInCategory)Enum.Parse(typeof(BuiltInCategory), attempt, true);
-                    return true;
-                }
-                catch { }
+                found = (BuiltInCategory)Enum.Parse(typeof(BuiltInCategory), trimmed, true);
+                return true;
             }
+            catch { }
 
-            // What a modeller actually types - "Ducts", "Mechanical Equipment".
-            foreach (Category category in doc.Settings.Categories)
+            // What a modeller actually types - "Ducts", "Mechanical Equipment",
+            // "Railings". MATCHED BY ID, NOT BY NAME: the value taken is the one
+            // whose ElementId IS the category the name found, which is what
+            // SELECT_BY_CATEGORY_NAME collects with OfCategoryId. Asking each
+            // value for its own category's name could stop at another value
+            // answering to the same words. new ElementId(BuiltInCategory) is
+            // unchanged from 2020 to 2027, so no integer is read.
+            var named = OneCategory(doc, trimmed);
+            if (named != null)
             {
-                if (category == null) continue;
-                string readable;
-                try { readable = category.Name; } catch { continue; }
-                if (!string.Equals(readable, trimmed, StringComparison.OrdinalIgnoreCase)) continue;
-
                 foreach (BuiltInCategory candidate in Enum.GetValues(typeof(BuiltInCategory)))
                 {
-                    Category resolved = null;
-                    try { resolved = Category.GetCategory(doc, candidate); } catch { }
-                    if (resolved == null) continue;
-                    string other;
-                    try { other = resolved.Name; } catch { continue; }
-                    if (string.Equals(other, readable, StringComparison.Ordinal))
+                    if (new ElementId(candidate).Equals(named.Id))
                     {
                         found = candidate;
                         return true;
                     }
                 }
             }
+
+            // Last, the API name without its prefix - DuctCurves.
+            try
+            {
+                found = (BuiltInCategory)Enum.Parse(typeof(BuiltInCategory), "OST_" + trimmed, true);
+                return true;
+            }
+            catch { }
             return false;
         }
 
