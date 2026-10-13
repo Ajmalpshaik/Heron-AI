@@ -78,11 +78,12 @@ contract:
     # Which side of the wall the strings go (version 2). BLANK IS VERSION 1:
     # right of the wall as drawn, its location line start to end - which put
     # the outside stone wall's string through the room tags on the futuristic
-    # house. `outside` is away from the rooms (a room or space found just off
-    # one face and not the other); with rooms on both sides or neither, the
-    # side farther from the middle of the building; only on a tie, the wall's
-    # own exterior face. `inside` is the opposite. `left` and `right` are of
-    # the wall as drawn. Anything else is refused and nothing is drawn.
+    # house. `outside` is away from the rooms (a room or space found 300 mm
+    # clear of one face and not the other); with rooms on both sides or
+    # neither, an Exterior wall type's own exterior face, any other wall the
+    # side farther from the middle of the walls joined to it, and only on a
+    # tie the exterior face. `inside` is the opposite. `left` and `right` are
+    # of the wall as drawn. Anything else is refused and nothing is drawn.
     #
     # A STRING, NOT A BOOL OR AN ENUM, so blank can mean "as before": an absent
     # need is refused unless it is an optional bool, so every caller passes it,

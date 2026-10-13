@@ -21,7 +21,9 @@ alone; `SET_CATEGORY_GRAPHICS` and `SET_CATEGORY_SOLID_FILL` stay top-level, for
 [5b-453](../fragment-issues/section-5b-rows-401-425.md). That closes 5b-448 (PR #509) once both are merged.
 
 **What is proved and what is not.** Both fragment changes ran in Revit, were kept on the test plan and read
-back, and each has a proof draft from `validate` waiting for a signature. The binder change is compiled for all
+back. `TAG_ELEMENTS_IN_VIEW`'s proof draft matches the code and waits for a signature.
+`DIMENSION_WALL_OPENINGS`' draft does NOT: a review of the PR found four faults in the side choice, fixed
+after Revit had been closed - compiled, not run (5b-451) - so DV2 is one more rolled-back run first. The binder change is compiled for all
 eight releases and **has not run in Revit**: the add-in in the running Revit is the one it loaded, and it
 refused both *"Rooms: Interior Fill"* and *"Interior Fill"* "No category called ...", as on the house. A
 rolled-back probe carrying the new binder methods word for word resolved *"Rooms: Interior Fill"* to
@@ -39,7 +41,7 @@ these in to sign there, because `accept` reads the record from that one place.
 | # | Run | Look for |
 |---|---|---|
 | **DV1** | Read [`brain/proof-drafts/tag-elements-in-view.yaml`](../../brain/proof-drafts/README.md), then `python brain/heron_validate.py accept tag-elements-in-view --by "Ajmal PS"` and set `heron-status: PROVEN` | positive: 4 doors tagged by *M_Door Tag (the caller's hint)*; negative: the 4 rooms, tagged 0, sent to `TAG_ROOMS`; fingerprint `1178953aaf3a21e6` |
-| **DV2** | The same for `dimension-wall-openings` | positive: 2 strings, *"above the wall on the view (outside: no room on that side...)"*; negative: `side=outsid` refused, created 0; fingerprint `ef524f3e98e95e3d` |
+| **DV2** | On a scratch model: a box of walls drawn clockwise, two rooms south of the north wall, a door in it, a duplicate plan. `validate --in <title> dimension-wall-openings --write --setup select-in-region --keep-chain` (the north wall), positive `side=outside`, negative `side=outsid`, `offsetMm=900`, `withOverall=true`; then `draft` and `accept --by "Ajmal PS"` | positive: 2 strings, *"above the wall on the view (outside: a room on one side only - outside is the side without it)"*; negative: refused, created 0; fingerprint `7dd9a387271437a7` - the ef524f3e98e95e3d draft is of the code before the review |
 | **DV3** | After the add-in from this branch is deployed and Revit restarted, on a scratch plan: `SET_CATEGORY_VISIBILITY` with `categories=Rooms: Interior Fill`, `visible=true`; then `categories=Interior Fill`; then `SET_CATEGORY_GRAPHICS` with `categories=Rooms: Interior Fill` | changed 1 and the box in Visibility/Graphics ticked with Rooms as it was; the second refused naming Areas, HVAC Zones and Rooms; the third refused "No category called" - the binder keeps sub-categories from a card that did not ask for them |
 | **DV4** | Revit 2024 or later, a scratch plan: set a projection-line override on *Rooms: Interior Fill* through the Visibility/Graphics dialog, then read it with a probe's `GetCategoryOverrides` | whether a sub-category's override is stored and readable on a later release - [5b-453](../fragment-issues/section-5b-rows-401-425.md)'s unmeasured half |
 | **DV5** | The owner's word on [5b-452](../fragment-issues/section-5b-rows-401-425.md): the MEP path's no-leader head at the element rather than at 0,0,0 | a decision, then a re-proof that reads each head back |

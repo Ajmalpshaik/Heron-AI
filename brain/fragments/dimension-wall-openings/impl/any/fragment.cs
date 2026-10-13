@@ -42,9 +42,10 @@
 //   left     the other side of the wall as drawn
 //   outside  AWAY FROM THE ROOMS: the side a point just off the wall finds no
 //            room or space on, when the other side finds one. With rooms on
-//            both sides or neither, the side farther from the middle of the
-//            building (the walls joined to it, corner to corner), and only on a tie,
-//            the wall's own exterior face as Revit has it
+//            both sides or neither: a wall whose type is an Exterior wall
+//            takes its own exterior face as Revit has it; any other, the side
+//            farther from the middle of the walls joined to it, corner to
+//            corner; and only on a tie, the exterior face
 //   inside   the opposite of outside, by the same reading
 //
 // Each wall's answer says which side it took and why, in plan words - above,
@@ -143,7 +144,9 @@ Func<Wall, XYZ> buildingMiddle = forWall =>
 
     if (joined.Count >= 3)
     {
+        // One search answers every wall in the group, so each is remembered.
         middle = centreOf(joined.Values);
+        foreach (var member in joined.Keys) middleFor[member] = middle;
     }
     else
     {
@@ -159,10 +162,14 @@ Func<Wall, XYZ> buildingMiddle = forWall =>
 // A direction in plan words, against the view's own up and right.
 Func<XYZ, string> planWords = towards =>
 {
-    double up = towards.DotProduct(view.UpDirection);
-    double right = towards.DotProduct(view.RightDirection);
-    if (Math.Abs(up) >= Math.Abs(right)) return up >= 0 ? "above" : "below";
-    return right >= 0 ? "right of" : "left of";
+    try
+    {
+        double up = towards.DotProduct(view.UpDirection);
+        double right = towards.DotProduct(view.RightDirection);
+        if (Math.Abs(up) >= Math.Abs(right)) return up >= 0 ? "above" : "below";
+        return right >= 0 ? "right of" : "left of";
+    }
+    catch { return "to one side of"; }
 };
 
 double offset = offsetMm * MmToFeet;
@@ -224,23 +231,42 @@ foreach (var wall in sideKnown ? walls : new List<Wall>())
     if (sideMode == "left") across = across.Negate();
     if (sideMode == "outside" || sideMode == "inside")
     {
-        // A point just clear of each face, 300 mm above the wall's base, at
-        // the middle of its run.
+        // A point clear of each face, 300 mm above the wall's base, at the
+        // middle of its run. Measured a WHOLE width plus 300 mm from the
+        // location line, because that line can be a face or a core edge
+        // rather than the centre - half a width from a finish face lands a
+        // probe inside a thick wall, which finds no room and loses the answer.
         XYZ middle = run.Evaluate(0.5, true);
-        double clear = wall.Width / 2 + 300 * MmToFeet;
+        double clear = wall.Width + 300 * MmToFeet;
         XYZ probeRight = middle + across * clear + XYZ.BasisZ * (300 * MmToFeet);
         XYZ probeLeft = middle - across * clear + XYZ.BasisZ * (300 * MmToFeet);
         bool roomRight = inARoom(probeRight);
         bool roomLeft = inARoom(probeLeft);
 
+        // `found` says how OUTSIDE was found, in words that read true for
+        // both answers - "inside" is then the other side of the same reading.
         int outwardIsRight = 0;
+        string found;
+        bool exteriorByType = false;
+        try { exteriorByType = wall.WallType.Function == WallFunction.Exterior; } catch { }
         if (roomRight != roomLeft)
         {
             outwardIsRight = roomRight ? -1 : 1;
-            why = "no room on that side, a room on the other";
+            found = "a room on one side only - outside is the side without it";
+        }
+        else if (exteriorByType)
+        {
+            // AN OUTSIDE WALL BY ITS TYPE KEEPS REVIT'S OWN EXTERIOR FACE. The
+            // middle of the building is a box's centre, and on an L, a U or a
+            // C plan it can fall in the courtyard - every courtyard wall would
+            // then put "outside" in the building.
+            outwardIsRight = wall.Orientation.DotProduct(across) >= 0 ? 1 : -1;
+            found = (roomRight ? "rooms on both sides" : "no room on either side")
+                  + ", an Exterior wall type - outside is its exterior face";
         }
         else
         {
+            found = null;
             XYZ centre = buildingMiddle(wall);
             if (centre != null)
             {
@@ -250,24 +276,26 @@ foreach (var wall in sideKnown ? walls : new List<Wall>())
                 if (Math.Abs(gap) > 1e-6)
                 {
                     outwardIsRight = gap > 0 ? 1 : -1;
-                    why = (roomRight ? "rooms on both sides" : "no room on either side")
-                        + " - the side farther from the middle of the building";
+                    found = (roomRight ? "rooms on both sides" : "no room on either side")
+                          + " - outside is the side farther from the middle of the walls joined to it";
                 }
             }
             if (outwardIsRight == 0)
             {
                 outwardIsRight = wall.Orientation.DotProduct(across) >= 0 ? 1 : -1;
-                why = "the wall's own exterior face - nothing else told the sides apart";
+                found = "nothing else told the sides apart - outside is its exterior face";
             }
         }
 
         bool wantRight = sideMode == "outside" ? outwardIsRight > 0 : outwardIsRight < 0;
         if (!wantRight) across = across.Negate();
-        why = sideMode + ": " + why;
+        why = sideMode + ": " + found;
     }
 
-    sideUsed.Add(wall.Name + " " + wall.Id + ": " + planWords(across) + " the wall on the view ("
-               + why + ")");
+    // Said only once its strings exist - see below, after the running string
+    // is made. A wall that ends in noOpeningFaces has no strings to place.
+    string sideLine = wall.Name + " " + wall.Id + ": " + planWords(across)
+                    + " the wall on the view (" + why + ")";
 
     // Every planar face whose normal runs ALONG the wall: its two ends, and
     // both sides of every opening cut through it.
@@ -316,6 +344,7 @@ foreach (var wall in sideKnown ? walls : new List<Wall>())
 
     if (running == null) { noOpeningFaces.Add(wall.Id); continue; }
     created.Add(running.Id);
+    sideUsed.Add(sideLine);
 
     if (!withOverall) continue;
 

@@ -64,6 +64,14 @@ negative:
     expect: >
       its id in `notAWall` and the walls still dimensioned
 
+  - given: >
+      side=outside on the courtyard walls of a U-shaped plan with no rooms
+      placed, the walls an Exterior wall type
+    expect: >
+      each string on the courtyard side - the wall's exterior face - and
+      `sideUsed` saying so. The middle of the plan's box sits IN the
+      courtyard, so the box's centre must not decide an Exterior wall
+
   - given: side=outsid (misspelt)
     expect: >
       refused, naming the four it knows, `created` empty and NOTHING drawn. A
