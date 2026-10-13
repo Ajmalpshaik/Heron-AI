@@ -1,6 +1,7 @@
 # The first proof of check-family-size-tables (CHECK_FAMILY_SIZE_TABLES,
-# FRG-ELE-078): every size_lookup formula in the family open in front checked
-# against the lookup tables it names - the table, per type, and the column.
+# FRG-ELE-078) version 2: every size_lookup formula in the family open in
+# front checked against the lookup tables it names - the table, per type, the
+# column, and a row for each type's size.
 #
 #     python tools/batch-prove.py tools/jobs/check-family-size-tables-2026-10-12.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/check-family-size-tables-2026-10-12.yaml
@@ -8,30 +9,39 @@
 # THE ARRANGEMENT, made by hand before the run, on Revit 2024, on TEST COPIES
 # only - never a working family:
 #
-#   "Heron Lookup Clean"   a pipe fitting family with one lookup table and a
-#                          Text type parameter "Lookup Table Name" holding its
-#                          name; two types; every size_lookup formula correct.
-#                          Flex both types in Family Types first: no dimension
-#                          may sit at its formula's default - the negative
-#   "Heron Lookup Broken"  a copy of it, saved under this name, with ONE
-#                          type's "Lookup Table Name" changed to "NoSuchTable"
-#                          and one formula's column renamed to "NoSuchColumn"
-#                          - the positive
+#   "Heron Lookup Clean"   a Generic Model family (metric) with one lookup
+#                          table "HeronSizes": a first column of row names,
+#                          then Size##length##millimeters,
+#                          Width##length##millimeters and
+#                          Depth##length##millimeters, rows for Size 20, 25
+#                          and 32. TYPE parameters: "Size" (Length), and
+#                          "Lookup Table Name" (Text) = HeronSizes. Width =
+#                          size_lookup(Lookup Table Name, "Width", 10 mm,
+#                          Size) and Depth the same with "Depth". Three types,
+#                          A, B and C, Size 20, 25 and 32. Flex every type in
+#                          Family Types first: no Width or Depth may sit at
+#                          10 mm - the negative
+#   "Heron Lookup Broken"  a copy of it, saved under this name, with type B's
+#                          Size changed to 33 (no row), type C's "Lookup Table
+#                          Name" changed to "NoSuchTable", and Depth's formula
+#                          asking for "NoSuchColumn" - the positive
 #
 # Both open in the Family Editor at the run; `in:` brings each to the front.
 #
-# POSITIVE: problemCount 2 or more - a MISSING TABLE line naming the changed
-# type and "NoSuchTable" (and NOT the other type), and a MISSING COLUMN line
-# naming the formula's parameter and listing the table's real columns.
+# POSITIVE: problemCount 3 or more - a NO ROW line naming type B, HeronSizes,
+# "Size = 33" and 'Width'; a MISSING TABLE line naming type C and
+# "NoSuchTable" (and NOT A or B); a MISSING COLUMN line naming 'Depth' and
+# listing the table's real columns. Type A in none of them.
 #
-# NEGATIVE: the clean copy - problemCount 0 with lookupsChecked NON-ZERO. A
-# correct lookup must NOT be flagged (D-30).
+# NEGATIVE: the clean copy - problemCount 0 with lookupsChecked AND
+# rowSearches NON-ZERO. A correct lookup must NOT be flagged (D-30).
 #
 # BY HAND AFTERWARDS: with a PROJECT in front, notAFamily true and
-# problemCount 0. And flex the broken type: its dimension falls to the
-# formula's default, which is what MISSING TABLE says will happen.
+# problemCount 0. Flex type B: Width falls to 10 mm, which is what NO ROW
+# says will happen. And any pipe fitting keyed on its instance Nominal
+# Diameter: a ROWS NOT CHECKED note, no NO ROW line.
 
-model: Heron Lookup Broken (one type names a table not in the family, one column misspelt) and Heron Lookup Clean, Revit 2024
+model: Heron Lookup Broken (one type's size has no row, one type names a table not in the family, one column misspelt) and Heron Lookup Clean, Revit 2024
 
 jobs:
   - fragment: check-family-size-tables
