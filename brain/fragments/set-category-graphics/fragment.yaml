@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,7 +15,7 @@ capability: SET_CATEGORY_GRAPHICS
 # with nothing stored. One that reads back empty is in `refused` in a
 # sentence; one that kept part of it is in the new `notKept`, each setting
 # named. The inputs and the other outputs mean what they meant. The proof below
-# is version 1's, signed before this change - DRAFT until re-proved.
+# is version 2's, signed by Ajmal PS on 2026-10-13 (Group DV, DV6).
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -87,23 +87,34 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-15'
+  date: '2026-10-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 28236
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned notControllable 0 item(s), overridden
-    1, refused 0 item(s). inputs came view as given; categories as given (1); overrides as
-    given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categories=Ducts, categoryName=Ducts, inViewOnly=FloorPlan: M1,
-    overrides=halftone=true; projection-line-colour=255,0,0, view=FloorPlan: M1 instead -
-    chosen because it should not contain what this fragment reports - run inside a transaction,
+  model: Project1 (3,001 elements), Revit 2020, session 33484
+  positive_case: 'THE POSITIVE WAS Walls on ''FloorPlan: Level 1'', overrides=projection-line-colour=200,30,30;
+    projection-line-weight=5, and it is counted because GetCategoryOverrides read back 200,30,30
+    and 5 (version 2''s own read-back). run as it would normally be run - run inside a transaction,
     and Revit reported the transaction group ROLLED BACK afterwards. returned notControllable
-    0 item(s), overridden 0, refused 1 item(s) [Ducts]. inputs came view as given; categories
-    as given (1); overrides as given. on Snowdon-scratch_ajmal.al'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 4e408c779f7ba5f4
+    0 item(s), notKept 0 item(s), overridden 1, refused 0 item(s). inputs came view as given;
+    categories as given (1); overrides as given. on Project1'
+  negative_case: 'run with view=FloorPlan: Level 1, categories=Rooms, overrides=projection-line-colour=200,30,30;
+    projection-line-weight=5 instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned notControllable 0 item(s), notKept 0 item(s), overridden 0, refused
+    1 item(s) [Revit took the override and stored nothing for Rooms]. inputs came view as
+    given; categories as given (1); overrides as given. on Project1. VERSION 1, RUN THE SAME
+    WAY ON Rooms the same hour (rolled back), answered overridden 1, refused 0 - the defect
+    this version fixes (FRAGMENT-ISSUES 5b-453).'
+  second_route: 'REPORT_CATEGORY_OVERRIDES, the same evening on the same model and plan, rolled
+    back. It reads only categories that have elements in the view and Project1''s plan had
+    no room, so four walls and an enclosed room were made first by a scratch setup step (NOT
+    a Heron fragment - CREATE_WALL and PLACE_ROOM_AT_POINT share their `points` input and
+    cannot both run in one arrangement), then this fragment as a setup step, then the report:
+    categories present 11 against 10 without the room, so Rooms was looked at. With Walls
+    asked: 1 of 11 carry an override, ''Walls: line RGB(200,30,30), line weight 5''. With
+    Rooms asked: 0 of 11, nothing overridden at category level. The plan read 10 categories
+    and no override afterwards, so nothing was kept. Visibility/Graphics by hand was not opened:
+    nothing survives a rollback to look at.'
+  fingerprint: b1d6f1eeb854fcba
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
