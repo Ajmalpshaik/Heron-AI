@@ -10,7 +10,8 @@
 //    duct is tagged by a duct tag" at run time. `ElementTypeGroup` carries no
 //    per-MEP-category tag entries, so the map lives here. EVERY OTHER CATEGORY
 //    is worked out from Revit's own category names (version 4, below) - the
-//    map is checked first and its path is unchanged.
+//    map is checked first. Version 5 changed one thing on the map's path:
+//    where a tag with no leader goes (5b-452, below).
 //
 // 2. THE TAG FAMILY COMES FROM THE PROJECT'S DEFAULT, NOT THE FIRST LOADED.
 //    `GetDefaultFamilyTypeId` on the tag category returns what Revit's own
@@ -228,8 +229,9 @@ foreach (var element in elements)
         continue;
     }
 
-    // ON THE MEP MAP OR NOT. Only read here; the map is looked up again below
-    // exactly as version 3 did, so an MEP element takes the same path it took.
+    // ON THE MEP MAP OR NOT. Read here for the riser rule and the leader's
+    // anchor; the tag category is looked up again below exactly as version 3
+    // did. Where the head goes no longer depends on it (version 5).
     bool onMepMap = false;
     foreach (var pair in tagCategoryFor)
     {
@@ -389,8 +391,10 @@ foreach (var element in elements)
     // exactly at the point passed. Versions 3 and 4 passed XYZ.Zero on the MEP
     // map, and measured 2026-10-13 on Revit 2020.2 that stacked every duct tag
     // at the project origin, 87 to 93 m from its duct (FRAGMENT-ISSUES
-    // 5b-452). Only the head moved in version 5: the leader's anchor on the
-    // MEP map below is version 3's.
+    // 5b-452). Version 5 moved the head, and an MEP element with no point and
+    // no extent is now refused with this reason rather than tagged at the
+    // origin, as one off the map already was. The leader's anchor on the MEP
+    // map below is version 3's.
     XYZ anchor = null;
     XYZ own = ownPoint(element);
     if (own == null)
