@@ -102,9 +102,9 @@ compatibility-note: >
   established, and neither is it for a table name, so a case-only
   difference in either is reported, not judged.
 
-# ROUTING - each sentence below measured through the host lookup on
-# 2026-10-12. Not yet repeated in REPORT_FAMILY_SIZE_TABLE's card: that card
-# is PROVEN, and this change leaves it untouched.
+# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE and
+# REPORT_FAMILY_TABLES_IN_PROJECT. Each sentence below measured through the
+# host lookup on 2026-10-12.
 #
 #   "check the lookup tables in this family" -> here - formulas against
 #                                               tables, in the family in front
