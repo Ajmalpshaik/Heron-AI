@@ -9,11 +9,20 @@ semantic-identity: "make a stair between these two levels in this stair hall"
 kind: action
 domain: revit.elements
 capability: CREATE_STAIRS
+# Version 3 (2026-10-13, FRAGMENT-ISSUES 5b-455): the answer names the railings
+# Revit adds with the stair - `railings`, their ids from
+# Stairs.GetAssociatedRailings read AFTER the edit scope's Commit (Revit adds
+# them at the Commit, none before), and one finding with their count and type,
+# e.g. "Revit added 2 railings of type '1100mm' with the stair". Same inputs,
+# same refusals; a refused stair, or one taken away again because its opening
+# failed, names none. Run ROLLED BACK on Revit 2020 only (2026-10-13,
+# Project1: a U and a straight stair each named 2 railings of type '1100mm',
+# a refused one none - 5b-455); the kept run is Group BX, BX8.
 # Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-445): a run's top is set only when
 # its path did not already give it. Version 1 always set it, and Revit 2020
 # refused that on every stair whose base level is not at 0 - see the
 # compatibility-note. Same inputs, same results; a stair from Level 2 now runs.
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -52,7 +61,7 @@ purpose: >
   either slab, while a floor opening in the Level 2 slab removed 8 m3.
 
   Revit gives the stair the model's default stair railing on both sides as it
-  is made (5b-455); this adds none of its own.
+  is made (5b-455); this adds none of its own, and reads them back.
 
 # THE RAILINGS, MEASURED - kept here, out of the purpose, because the purpose's
 # words move routing and a comment's do not. Until 2026-10-13 the purpose said
@@ -77,8 +86,19 @@ purpose: >
 #   - CREATE_RAILING (FRG-ELE-090) places railings on a stair or along a path.
 #     Count what came with the stair first: what it does to a stair that
 #     already has its railings is not measured.
-#   - NOT measured on 2021 to 2027 - Group BX, BX7. This answer does not name
-#     the railings yet; 5b-455 records that as owed.
+#   - NOT measured on 2021 to 2027 - Group BX, BX7.
+#   - VERSION 3 NAMES THEM. "and reads them back" in the purpose means the
+#     `railings` result and its one finding, read after the Commit - see the
+#     version note. Version 2's answer said nothing of them. The answer has
+#     run only rolled back, on Revit 2020 (5b-455); the kept run is Group BX,
+#     BX8. A host about to run CREATE_RAILING
+#     reads the count here first.
+#   - THOSE FOUR WORDS WERE MEASURED, main against this branch, 2026-10-13, as
+#     5b-455's status records: 80 sentences on both backends, no winner moved.
+#     Two other wordings were dropped - "the count and type are read back"
+#     moved CREATE_STAIRS up the lexical shortlist for "count the ducts on
+#     level 2", and "every one is read back" put it second for "is there one
+#     stair on each level". Explanations go here, never in the purpose.
 
 contract:
   needs:
@@ -138,6 +158,12 @@ contract:
       role: result
       type: int
     - name: openings
+      role: result
+      type: IList<ElementId>
+    - name: railings
+      # Version 3 (5b-455): the railings Revit added with the stair, from
+      # Stairs.GetAssociatedRailings after the edit scope's Commit. Empty when
+      # the stair was refused or taken away again.
       role: result
       type: IList<ElementId>
     - name: findings
