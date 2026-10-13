@@ -1,0 +1,159 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: drawing-set
+name: Make a drawing set - plans, elevations, schedules and sheets
+domain: revit.sheets
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Turns a modelled building into a set of drawings: a floor plan for every
+  level, its elevations and its schedules, each on a sheet in the title block
+  the modeller names, with the rooms and doors tagged, the plans dimensioned
+  and one look applied to every plan - then reads the warnings and the sheet
+  list back. Any building, any title block, any scale: the values in quotes
+  below are examples from the first set made this way, never defaults.
+
+  The status in brackets after each capability is what that capability's own
+  fragment.yaml said on 2026-10-13. The list of capabilities after this method
+  is read from the library every time it is served: where the two differ, the
+  list is right and this text is out of date.
+
+  1. CREATE_SHEET (PROVEN), one call per sheet: its number, its name and the
+     title block by its type name ("A1 metric"). The number is checked for a
+     clash before anything is made. Decide the sheets first - one per plan,
+     one per elevation unless two fit, one for the schedules, and a cover when
+     asked - from the size of each drawing at the scale against the title
+     block's drawing area, never from habit: AT 1:50 ONLY ONE ELEVATION OF A
+     BUILDING ABOUT 23 M LONG FITTED ON AN A1 SHEET.
+  2. SET_VIEW_PROPERTIES (PROVEN) on every plan and elevation going on a
+     sheet: the scale (50 for 1:50) and the detail level ("Fine").
+  3. CREATE_PLAN_VIEW (PROVEN) for each level that has no floor plan - a level
+     made through the API comes with none - then step 2 on that plan alone,
+     so it matches the others.
+  4. THE CROP, one plan and one elevation at a time. SELECT_IN_REGION (DRAFT)
+     with categories=Walls over the box that holds that level's walls - for an
+     elevation, the walls of the face it looks at - then SET_VIEW_CROP
+     (PROVEN) on that view with marginMm, expect_from naming that select. The
+     crop then frames the building, not the site round it.
+  5. ROOM TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY (PROVEN) with
+     category=Rooms and that levelId, then TAG_ROOMS (PROVEN) in that level's
+     plan with the room tag type named ("Room Tag With Area"). Name the plan
+     with its view type - "FloorPlan: Level 1" - whenever a ceiling plan has
+     the same name: "Level 1" alone could be either.
+  6. LOAD_FAMILY (PROVEN) the door tag family, only when no door tag is loaded
+     - from the path the modeller gives, in the library of the release in use.
+  7. DOOR TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY with
+     category=Doors and that levelId, then FIND_UNTAGGED_ELEMENTS (PROVEN) in
+     that level's plan, then TAG_ELEMENTS (PROVEN) with the door tag type,
+     each step's expect_from naming the one before it. TAG_ELEMENTS_IN_VIEW
+     (DRAFT) does not know doors today, so it is not the route. A door that
+     is a curtain panel refused a tag: count those out rather than retry them.
+  8. DIMENSIONS, on each plan. DIMENSION_ROOMS (PROVEN) on that level's rooms
+     with measureTo=inside, and DIMENSION_WALL_OPENINGS (PROVEN) on that
+     level's walls with withOverall=true, each at the offsetMm the modeller
+     gives. Look at each plan afterwards: on the first set one wall's strings
+     ran through three room tags, and taking a string away is a delete that
+     needs the modeller's yes for that one delete.
+  9. PLACE_VIEW_ON_SHEET (PROVEN), each plan and elevation on its own sheet,
+     at a point on the sheet in millimetres inside the title block's drawing
+     area ((390, 300) on "A1 metric"). A view goes on one sheet only.
+  10. SCHEDULES. CREATE_SCHEDULE (PROVEN) for each - a category and its fields
+      ("Rooms", "Doors"); FIND_SCHEDULES (PROVEN) by name; then
+      PLACE_SCHEDULE_ON_SHEET (PROVEN) at atXMm and atYMm on the schedules'
+      sheet, expect_from naming the find.
+  11. PRESENTATION GRAPHICS, when the modeller asks for a look. On ONE plan
+      only: SET_CATEGORY_SOLID_FILL (PROVEN) for the categories cut or seen
+      as solid colour - walls, floors, mullions - and SET_CATEGORY_GRAPHICS
+      (PROVEN) for the lines and colours of the rest - panels, railings,
+      doors, stairs, dimensions, tags. Then CREATE_VIEW_TEMPLATE_FROM_VIEW
+      (PROVEN) from that plan under the template name the modeller gives, and
+      APPLY_VIEW_TEMPLATE (PROVEN) to the other plans - one look, set once.
+  12. THE CHECK, and it is the proof that the set is there - the calls not
+      failing is not. READ_MODEL_WARNINGS (PROVEN) for anything the set
+      added, and revit_sheets for every sheet with the views on it and none
+      empty. OPEN_VIEW (PROVEN) cannot open a sheet - Revit refuses it - so
+      the modeller opens the sheets to look at them.
+
+  TWO CHATS ON ONE REVIT. With another chat working the same model, the
+  values one step carries to the next can be replaced by the other chat's,
+  and an answer can be lost on the way back. expect_from with "where" -
+  expect_from="filter-elements-by-category where category=Doors" - refuses
+  values the other chat left, which catches the first. For the second, read
+  the model before repeating a change whose answer never came: it may have
+  happened, and a repeat makes it twice.
+
+  NOT YET: colouring the rooms on a plan - APPLY_COLOR_FILL_SCHEME (DRAFT) is
+  declared for Revit 2022 and later only, and on an older release nothing in
+  the library does it. A tag on a door that is a curtain panel. Printing or
+  exporting the set is a separate PUBLISH step behind its own switch, not
+  part of this method.
+
+# The words the modeller says when he wants the drawings made.
+utterances:
+  - make the drawing set for this building
+  - create sheets with the floor plans and elevations at 1:50
+  - put the plans, the elevations and the schedules on sheets
+  - tag the rooms and the doors and dimension the plans
+  - set up the documentation drawings with a title block
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  - CREATE_SHEET
+  - SET_VIEW_PROPERTIES
+  # Only for a level with no floor plan - see step 3.
+  - CREATE_PLAN_VIEW
+  # The crop: the walls the view should frame, then the crop round them.
+  - SELECT_IN_REGION
+  - SET_VIEW_CROP
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - TAG_ROOMS
+  # Only when no door tag is loaded - see step 6.
+  - LOAD_FAMILY
+  - FIND_UNTAGGED_ELEMENTS
+  - TAG_ELEMENTS
+  - DIMENSION_ROOMS
+  - DIMENSION_WALL_OPENINGS
+  - PLACE_VIEW_ON_SHEET
+  - CREATE_SCHEDULE
+  - FIND_SCHEDULES
+  - PLACE_SCHEDULE_ON_SHEET
+  # Only when a look is asked for - see step 11.
+  - SET_CATEGORY_SOLID_FILL
+  - SET_CATEGORY_GRAPHICS
+  - CREATE_VIEW_TEMPLATE_FROM_VIEW
+  - APPLY_VIEW_TEMPLATE
+  # The check. Never skipped.
+  - READ_MODEL_WARNINGS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, it is the model the modeller means, and the building is in it - walls on every level, rooms placed, doors in their walls
+  - the modeller has given the title block, the scale, the detail level, each sheet's number and name, which views go on which sheet, the room tag type and the door tag type - and none is assumed (D-33)
+  - every length - crop margins, dimension offsets, points on a sheet - is in millimetres (D-71)
+  - the model has been saved under a name before the first step - a set of many steps in a model that was never saved has no copy to go back to
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  THE ORDER WAS LEARNED ON THE OWNER'S OWN HOUSE, not decided at a desk - a
+  set made in Project2 on Revit 2020.2 on 2026-10-13: nine A1 sheets in "A1
+  metric", a cover, a plan for each of three levels and one sheet per
+  elevation at 1:50 and Fine, a sheet with the room and door schedules, every
+  plan cropped to its walls, the rooms and the doors tagged and the plans
+  dimensioned; then a presentation look set on one plan, kept as a view
+  template and applied to the other two. The house came first and the method
+  is general: nothing in it depends on that house, that title block or that
+  scale. Revit was closed that afternoon without saving Project2, so the set
+  is not there to look at.
+
+  Every step is one entry in Revit's undo list. DRAFT until the whole order has
+  been run on a saved scratch copy and read back with revit_sheets; no
+  NEEDS-CHECKING group holds that run yet.

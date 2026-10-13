@@ -14,56 +14,121 @@ risk: MODIFY
 
 purpose: >
   Builds the shell of a building from a plan the modeller gives - its levels,
-  its walls, a slab on each floor, a room in every space, a ceiling in every
-  room and a roof on top - and counts each part against the plan before the
+  its walls, a slab on each floor, a room in every space, its stairs and
+  railings, its doors and windows, a ceiling in every room, a roof on top and,
+  when asked, its colours - and counts each part against the plan before the
   next one goes on. The steps are listed in the order they have to happen, and
   the order is not a preference: each one hangs off the one before it.
 
-  1. CREATE_LEVELS first, every level the building will have. A wall, a slab
-     and a roof each belong to a level, and a level added afterwards leaves
-     what was already built on the wrong one. Count them before going on.
-  2. CREATE_GRIDS when the plan is set out on bays - the lines the walls are
-     drawn to, so a wall position is read off the plan rather than worked out.
-  3. CREATE_WALL, one run of points per wall line, on its level, at the height
-     from that level to the one above.
-  4. SET_WALL_CONSTRAINTS on those walls, tying each top to the level above,
-     with allowUnconnectedToBecomeBound set - a wall drawn at a typed height
-     does not follow when the level above is moved, and one tied to it does.
-     Because step 3 drew it to that height, nothing moves when it is tied.
-  5. CREATE_FLOOR, one slab per floor, drawn to the OUTSIDE faces of the
-     outside walls - not to their centrelines, which leaves the slab half a
-     wall short all the way round.
-  6. PLACE_ROOM_AT_POINT with a point inside every space, all of one level in
-     one call. Then SELECT_UNENCLOSED_ROOMS must return none: a room that is not
-     enclosed has no area, and it almost always means two walls do not meet.
-     SET_ROOM_LIMITS ties each room's top to the level above, when the rooms
-     must reach it.
-  7. PLACE_HOSTED_FAMILY for the doors and windows, after the rooms because
-     each door is turned toward the room it opens into: for every one, a point
-     on its wall's line, a point inside that room and a point at its hinge
-     jamb. It finds the wall AT the point, so a door never ends up standing on
-     its own - right in plan and cutting nothing - and it refuses a point with
-     no wall or with two.
-  8. CREATE_FROM_ROOM_BOUNDARIES for the ceilings, the shape of each room, at
-     the height the modeller gives. Rooms at different ceiling heights - a
-     corridor higher than the rooms off it - are separate calls, one per height.
-  9. CREATE_ROOF on the top level, from the outline of the outside walls. It
-     makes a FLAT roof, and it takes its level as an input, so which view is
-     open does not decide where it goes.
-  10. SLOPE_ROOF_EDGES, only when the roof is pitched: a gable slopes the two
-      long eaves and leaves the two ends upright, a hip slopes every edge. The
-      pitch is the modeller's and is never assumed.
-  11. The count, and it is the proof that the shell is the plan - the calls not
-      failing is not. FILTER_ELEMENTS_BY_CATEGORY then COUNT_ELEMENTS for the
-      walls, floors, rooms, doors, windows and ceilings on each level against
-      the plan's own numbers; MEASURE_ELEMENT_LENGTHS for the total length of
-      wall against the plan's; READ_MODEL_WARNINGS for anything the shell
-      added. A door counted is not a door in its wall: the wall it went into is
-      smaller by the opening, and that is the check that it is hosted.
+  The status in brackets after each capability is what that capability's own
+  fragment.yaml said on 2026-10-13. The list of capabilities after this method
+  is read from the library every time it is served: where the two differ, the
+  list is right and this text is out of date.
+
+  1. CREATE_LEVELS (PROVEN) first, every level the building will have. A wall,
+     a slab and a roof each belong to a level, and a level added afterwards
+     leaves what was already built on the wrong one. Count them before going
+     on.
+  2. CREATE_GRIDS (PROVEN) when the plan is set out on bays - the lines the
+     walls are drawn to, so a wall position is read off the plan rather than
+     worked out.
+  3. CREATE_WALL (PROVEN), one run of points per wall line, on its level, at
+     the height from that level to the one above.
+  4. SET_WALL_CONSTRAINTS (PROVEN) on those walls, tying each top to the level
+     above, with allowUnconnectedToBecomeBound set - a wall drawn at a typed
+     height does not follow when the level above is moved, and one tied to it
+     does. Because step 3 drew it to that height, nothing moves when it is
+     tied.
+  5. CREATE_FLOOR (PROVEN), one slab per floor, drawn to the OUTSIDE faces of
+     the outside walls - not to their centrelines, which leaves the slab half a
+     wall short all the way round. A terrace or a roof deck is a slab of its
+     own. Every slab a stair arrives at must be in before step 7, which cuts
+     it.
+  6. PLACE_ROOM_AT_POINT (PROVEN) with a point inside every space, all of one
+     level in one call. Then SELECT_UNENCLOSED_ROOMS (DRAFT) must return none:
+     a room that is not enclosed has no area, and it almost always means two
+     walls do not meet. SET_ROOM_LIMITS (DRAFT) ties each room's top to the
+     level above, when the rooms must reach it.
+  7. CREATE_STAIRS (DRAFT), after the rooms, one call per flight from a level
+     to the level above: straight, or a U with a landing across the far end,
+     inside a rectangle that is the CLEAR inside of the stair hall - its wall
+     faces, not its centrelines - in the stair type the modeller names. Give
+     cutOpening=true, so the slab of the level above is cut over the stair in
+     the same undo entry; the stair is taken away again if the cut removed
+     nothing. Two things are still open. A stair type with side stringers is
+     refused: "Private" reached 50 mm past the hall on both sides and the
+     stair's own check refused it, while "Monolithic Stair" in the same hall
+     was made (FRAGMENT-ISSUES 5b-446, OPEN) - name a type without stringers,
+     or give a rectangle inset by the stringers. And a stair whose base level
+     is not at 0 was refused by version 1; version 2 (5b-445) makes it, but
+     has been run once, on Revit 2020.2, and is not signed (NEEDS-CHECKING
+     BX6).
+  8. CREATE_RAILING (DRAFT) along each terrace and roof-deck edge, and round
+     each stair opening, as pathMm on the level it stands on, in the railing
+     type the modeller names. COUNT THE RAILINGS FIRST. The stair made on
+     2026-10-13 came with railings of its own, although CREATE_STAIRS's own
+     record says it makes none - so a stair is given railings here (elements=
+     that stair) only when it has none, or it ends up with two sets. Count them
+     with SELECT_BY_CATEGORY_NAME (DRAFT), categoryName=Railings:
+     FILTER_ELEMENTS_BY_CATEGORY and SELECT_IN_REGION answered 0 for two
+     railings that day (5b-444), and the fix for that has not yet been run in
+     Revit.
+  9. PLACE_HOSTED_FAMILY (DRAFT) for the doors and windows, after the rooms
+     because each door is turned toward the room it opens into: for every one,
+     a point on its wall's line, a point inside that room and a point at its
+     hinge jamb. It finds the wall AT the point, so a door never ends up
+     standing on its own - right in plan and cutting nothing - and it refuses
+     a point with no wall or with two.
+     A DOOR IN A CURTAIN WALL is not placed: it takes the place of one panel,
+     once the curtain wall is up (the curtain-wall method). LOAD_FAMILY
+     (PROVEN) the curtain-wall door family when its type is not in the model;
+     SELECT_IN_REGION (DRAFT) with categories=Curtain Panels, on a box inside
+     that one panel only; then CHANGE_ELEMENT_TYPE (PROVEN) of that panel to
+     the door type, with expect_from naming that select. On 2026-10-13 this
+     worked on a wall whose grid is on its type, with nothing unpinned, and
+     the door took the whole panel's size - so the grid lines decide the
+     door's width and height.
+  10. CREATE_FROM_ROOM_BOUNDARIES (PROVEN) for the ceilings, the shape of each
+      room, at the height the modeller gives. Rooms at different ceiling
+      heights - a corridor higher than the rooms off it - are separate calls,
+      one per height.
+  11. CREATE_ROOF (DRAFT) on the top level, from the outline of the outside
+      walls. It makes a FLAT roof, and it takes its level as an input, so which
+      view is open does not decide where it goes.
+  12. SLOPE_ROOF_EDGES (DRAFT), only when the roof is pitched: a gable slopes
+      the two long eaves and leaves the two ends upright, a hip slopes every
+      edge. The pitch is the modeller's and is never assumed.
+  13. COLOURS, only when the modeller asks for them. Nothing in the library
+      sets the material of a type's layers yet, so the colour goes on the
+      faces. CREATE_MATERIAL (PROVEN), one material per colour, named, with
+      its colour and transparency; then PAINT_FACES (DRAFT) on what
+      SELECT_IN_REGION (DRAFT) finds in a thin band of height - one band and
+      one category at a time, so the band that picks up a white strip under a
+      window does not pick up the glass above it. In each band paint the walls
+      first and the curtain walls after: a curtain wall is a wall to Revit, so
+      a band selected by Walls holds both, and that order is the one that
+      worked on 2026-10-13. SELECT_IN_REGION tests bounding boxes unless
+      exact=true, so picking one small wall out from beside a curtain wall
+      needs exact=true - the box test caught a glass wall as well that day. To
+      see the colours, SET_VIEW_PROPERTIES (PROVEN) on the 3D view with
+      visualStyle=ShadingWithEdges: it takes Revit's own name for a style, and
+      "Shaded" was refused.
+  14. The count, and it is the proof that the shell is the plan - the calls
+      not failing is not. FILTER_ELEMENTS_BY_CATEGORY (PROVEN) then
+      COUNT_ELEMENTS (PROVEN) for the walls, floors, rooms, stairs, doors,
+      windows and ceilings on each level against the plan's own numbers, and
+      the railings with SELECT_BY_CATEGORY_NAME as in step 8;
+      MEASURE_ELEMENT_LENGTHS (PROVEN) for the total length of wall against
+      the plan's; READ_MODEL_WARNINGS (PROVEN) for anything the shell added. A
+      door counted is not a door in its wall: the wall it went into is smaller
+      by the opening, and that is the check that it is hosted.
 
   NOT YET: curtain walls have a method of their own - the curtain-wall skill,
-  whose grid and mullions sit on the TYPE. Stairs, railings and the ground are
-  not here, because nothing in the library builds them yet.
+  whose grid and mullions sit on the TYPE. The ground: CREATE_TOPOSOLID
+  (DRAFT) makes terrain on Revit 2024 and later only; on an older release
+  nothing in the library builds it, and on 2026-10-13 the garden and the deck
+  were drawn as floors. A type's layer materials, for colours that are part of
+  the wall rather than paint on it.
 
 # The words the modeller says when he wants a building put up.
 utterances:
@@ -72,6 +137,7 @@ utterances:
   - put a room in every space and a ceiling in every room
   - make the levels, the walls and the floor slab
   - build the shell of the house with a roof
+  - add the stairs between the floors and the railings on the terraces
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
@@ -85,12 +151,25 @@ needs:
   - SELECT_UNENCLOSED_ROOMS
   # Only when the rooms must reach the level above - see step 6.
   - SET_ROOM_LIMITS
+  # After the rooms and the slab above, with cutOpening - see step 7.
+  - CREATE_STAIRS
+  # Counts the railings a stair came with before any are added - step 8.
+  - SELECT_BY_CATEGORY_NAME
+  - CREATE_RAILING
   # After the rooms: each door is turned toward the room it opens into.
   - PLACE_HOSTED_FAMILY
+  # A door in a curtain wall: the door family, the one panel, its type.
+  - LOAD_FAMILY
+  - SELECT_IN_REGION
+  - CHANGE_ELEMENT_TYPE
   - CREATE_FROM_ROOM_BOUNDARIES
   - CREATE_ROOF
-  # Only for a pitched roof - see step 10.
+  # Only for a pitched roof - see step 12.
   - SLOPE_ROOF_EDGES
+  # Only when colours are asked for - see step 13.
+  - CREATE_MATERIAL
+  - PAINT_FACES
+  - SET_VIEW_PROPERTIES
   # The count. Never skipped.
   - FILTER_ELEMENTS_BY_CATEGORY
   - COUNT_ELEMENTS
@@ -101,9 +180,10 @@ needs:
 # useful instead of deep inside a transaction (docs/09 s2).
 preconditions:
   - a project, not a family, is open in front, and it is the model the modeller means
-  - every size has been given for THIS request - the levels and their heights, each wall's type and points, the slab type, a point inside every room, each door and window's type and its three points, each ceiling's type and height, the roof type, and the pitch if the roof is pitched - and none is assumed (D-33)
+  - every size has been given for THIS request - the levels and their heights, each wall's type and points, the slab type, a point inside every room, each stair's type, shape, run width and hall, each railing's type and path, each door and window's type and its three points, each ceiling's type and height, the roof type, and the pitch if the roof is pitched - and none is assumed (D-33)
   - every length is in millimetres from one origin the modeller has named (D-71)
   - the shell is not already there - counted first, because a second run lays a second set of walls over the first and Revit only warns about it
+  - a new model has been saved under a name before the first step - a build of many steps in a model that was never saved has no copy to go back to
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
@@ -114,12 +194,22 @@ note: >
   steps: its walls went in at a typed 4000 mm and were left still needing to be
   tied to the level above; its slab went to the outside faces; its fifteen rooms
   went in one call with none left unenclosed; and its ceilings needed two
-  heights, 2400 in the rooms and 2800 in the corridor. Its count is step 10:
+  heights, 2400 in the rooms and 2800 in the corridor. Its count is step 14:
   twenty-one walls found, and their total length measured back at exactly the
-  design's 311200 mm. Project4 taught step 7 - a door placed through Heron on
+  design's 311200 mm. Project4 taught step 9 - a door placed through Heron on
   2026-09-22 came out standing on its own, cutting nothing, while the answer
   said it was placed; the door step waited for PLACE_HOSTED_FAMILY's second
   version, which finds the wall at the point, and it arrived on 2026-09-25.
+
+  Steps 7, 8, 9's curtain-wall door and 13 were learned on a house built in
+  Project2 on Revit 2020.2 on 2026-10-13. A U stair went from Level 1 to Level
+  2 with cutOpening=true in "Monolithic Stair" - "Private" was refused by the
+  stair's own 50 mm check - and came with its own railings; glass railings
+  ("Glass Panel - Bottom Fill") went on a terrace path and round the stair
+  opening; three curtain panels became doors by changing their type; and the
+  colours went on as paint in bands of height. Revit was closed that afternoon
+  without saving Project2, so none of it is left to look at: the last
+  precondition is that day's lesson.
 
   Every step is one entry in Revit's undo list. DRAFT until the whole order has
   been run from an empty level on a scratch model, with the count at the end
