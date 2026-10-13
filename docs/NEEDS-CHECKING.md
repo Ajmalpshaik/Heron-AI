@@ -647,6 +647,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ds.md`](needs-checking/group-ds.md)
 
+## Group DT - colour schemes: APPLY_COLOR_FILL_SCHEME version 2 and REPORT_COLOR_FILL_SCHEME, the read and the check (2026-10-13)
+
+**Its own file:** [`needs-checking/group-dt.md`](needs-checking/group-dt.md)
+
 ## Group DV - door tags in a plan, a sub-category switched in a view, and which side of a wall its dimensions go (2026-10-13)
 
 **Its own file:** [`needs-checking/group-dv.md`](needs-checking/group-dv.md)
