@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,11 @@ semantic-identity: "dimension the wall and pick up the door and window positions
 kind: action
 domain: revit.annotation
 capability: DIMENSION_WALL_OPENINGS
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-451): the caller chooses which side
+# of the wall the strings go - `side`, blank keeping version 1's side exactly.
+# Version 1's proof below no longer describes the code, so this is DRAFT until
+# it is proved again (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -46,6 +50,11 @@ purpose: >
   Rooms may be passed instead of walls: each room's bounding walls are
   dimensioned, which is how the job is usually asked for.
 
+  **THE CALLER CHOOSES THE SIDE (version 2).** `side` outside puts the strings
+  away from the rooms, inside towards them, left or right of the wall as drawn;
+  blank keeps the one side version 1 always used. Each wall says which side it
+  took and why.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -65,6 +74,22 @@ contract:
     # true draws the second, overall dimension outside the running one.
     - name: withOverall
       type: bool
+      source: request
+    # Which side of the wall the strings go (version 2). BLANK IS VERSION 1:
+    # right of the wall as drawn, its location line start to end - which put
+    # the outside stone wall's string through the room tags on the futuristic
+    # house. `outside` is away from the rooms (a room or space found 300 mm
+    # clear of one face and not the other); with rooms on both sides or
+    # neither, an Exterior wall type's own exterior face, any other wall the
+    # side farther from the middle of the walls joined to it, and only on a
+    # tie the exterior face. `inside` is the opposite. `left` and `right` are
+    # of the wall as drawn. Anything else is refused and nothing is drawn.
+    #
+    # A STRING, NOT A BOOL OR AN ENUM, so blank can mean "as before": an absent
+    # need is refused unless it is an optional bool, so every caller passes it,
+    # and the job files that run this pass it blank.
+    - name: side
+      type: string
       source: request
   provides:
     - name: created
@@ -87,7 +112,21 @@ contract:
       # of what it was GIVEN and could not use, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: sideUsed
+      # One line per wall: which side its strings went, in plan words (above,
+      # below, left of, right of the wall on the view) and why. How the side
+      # was CHOSEN, never a thing it made (D-52) - the strings are `created`.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - a `side` it does not know.
+      # Never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
 
+# THIS PROOF IS THE VERSION 1 RECORD. It was run before `side` existed, on the
+# blank path that version 2 keeps unchanged, so it says nothing about outside,
+# inside, left or right - and its fingerprint no longer matches the code.
 proof:
   date: '2026-09-10'
   by: Ajmal PS
@@ -125,11 +164,17 @@ compatibility-note: >
   every release and is null for a multi-segment string, which is read as a fact
   rather than as a failure.
 
+  Version 2's side choice adds `Document.GetRoomAtPoint` and
+  `GetSpaceAtPoint` (both with a `Phase`), the view's `VIEW_PHASE` parameter
+  and `Wall.Orientation` - all present and unchanged 2020 to 2027.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "dimension the wall with the door    -> here
 #    in it"
 #   "put the door positions on the plan" -> here
+#   "dimension the outside walls, on    -> here, with side=outside
+#    the outside"
 #   "dimension the rooms"                -> DIMENSION_ROOMS, which measures a
 #                                           room's overall size and cannot see
 #                                           an opening at all
