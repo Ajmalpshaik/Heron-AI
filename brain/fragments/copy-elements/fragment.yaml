@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "duplicate these elements at an offset, and hand back the cop
 kind: action
 domain: revit.geometry
 capability: COPY_ELEMENTS
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-460): copies onto a LIST OF LEVELS
+# as well - Revit's Paste Aligned > Selected Levels - each copy belonging to its
+# level, with an optional turn per level about a plan point. Version 1 copied by
+# one offset and nothing else. The name stays, so every caller finds it; with
+# the three new values blank it runs version 1's code unchanged. The new values
+# are strings because only an optional bool may be left out, and a blank string
+# is how "not asked" is typed (HeronBindingNote.AbsentValue).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -18,12 +25,28 @@ purpose: >
   the next step can act on the copies alone - select just them, set a parameter
   on just them, move just them.
 
+  OR ONTO LEVELS - Paste Aligned to Selected Levels. Name the levels in
+  toLevels, comma separated, or a run of them as "Level 2..Roof", and every
+  element is copied onto each one, standing over the original in plan. Each
+  copy BELONGS to its level: a wall's base constraint, a floor's or a
+  ceiling's level, a roof's base level, a duct's or a pipe's reference level, a
+  family's level is set to it, and the offset is the original's. Walls keep
+  their type and height - one tied to the level above is tied to the level
+  above its new base, or left unconnected at the same height on the top storey.
+  Floors keep their type and outline.
+
+  TURNED, WHEN ASKED: turnDegrees turns each level's copy that much more than
+  the one before, anticlockwise in plan, about turnCentreMm - a plan point in
+  millimetres, or the middle of what is copied when blank. A twisting tower is
+  one storey drawn, then one call.
+
   Unlike moving and rotating, this one is self-evidencing: Revit returns the
   ids it created, and a copy that did not happen is a copy that is not in that
-  list. There is no before-and-after comparison here because there is nothing
-  to compare - the evidence arrives with the answer. That is worth saying out
-  loud, because the sibling fragments are full of position probes and their
-  absence here looks like an oversight.
+  list. Onto levels it also reads every copy back - its level, that it did not
+  move up or down when it took it, its offset against the original's, and its
+  plan point against where the turn puts it - and one copy that fails takes the
+  whole call back. A level name the model does not have is refused before
+  anything is copied, naming the levels it does have.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -34,7 +57,27 @@ contract:
     - name: elements
       type: IList<Element>
     - name: offset
+      # MILLIMETRES, three numbers. Onto levels it must be 0,0,0 - each copy
+      # stands over its original - and anything else is refused.
       type: XYZ
+      source: request
+    - name: toLevels
+      # Version 2. Level names, comma separated, as Revit spells them - case
+      # and extra spaces forgiven - or "A..B" for every level from A to B by
+      # height. BLANK COPIES BY THE OFFSET, as version 1. The order given is the
+      # order of the turn. A name the model does not have refuses the call.
+      type: string
+      source: request
+    - name: turnDegrees
+      # Version 2. Degrees each level's copy turns more than the one before,
+      # anticlockwise in plan; negative turns clockwise. Blank or 0 is no turn.
+      # Given without toLevels it is refused rather than ignored.
+      type: string
+      source: request
+    - name: turnCentreMm
+      # Version 2. The plan point the copies turn about, "x, y" in MILLIMETRES.
+      # Blank is the middle of the originals' box in plan.
+      type: string
       source: request
   provides:
     - name: copies
@@ -45,6 +88,18 @@ contract:
       # not, never a thing it did (D-52).
       role: accounting
       type: int
+    - name: copiedTo
+      # Version 2, onto levels: one line per level - how many were copied, how
+      # many read back as belonging to it at their originals' offsets, how many
+      # plan points sit where the turn puts them. ONE string because a list
+      # reaches the reply cut to three lines. Empty when copying by the offset.
+      role: result
+      type: string
+    - name: refused
+      # Why it declined, in the modeller's words, ending "Nothing was copied".
+      # Evidence it looked and said no, never a thing it did (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -77,7 +132,10 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `ElementTransformUtils.CopyElements`
   returning an `ICollection<ElementId>` is unchanged 2020 to 2027, and the
-  offset arrives in internal feet with no units call.
+  offset arrives in internal feet with no units call. Version 2 adds
+  `RotateElements` and level and offset parameters by their built-in names,
+  all present on every release from 2020; the turn centre is millimetres to
+  feet by arithmetic (D-20). Compiled 2020 to 2027; run on Revit 2020 only.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -96,3 +154,6 @@ utterances:
   - copy them across
   - repeat this equipment
   - put a second set 3 metres over
+  - copy this floor to the levels above
+  - paste aligned to selected levels
+  - repeat this storey on every level up to the roof

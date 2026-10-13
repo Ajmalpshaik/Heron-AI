@@ -44,6 +44,22 @@ purpose: >
      wall short all the way round. A terrace or a roof deck is a slab of its
      own. Every slab a stair arrives at must be in before step 7, which cuts
      it.
+     A TYPICAL STOREY IS DRAWN ONCE AND COPIED. When floors repeat - a tower,
+     or upper floors that match - draw one storey's walls, curtain walls and
+     slab (steps 3 to 5), collect them with SELECT_BY_LEVEL (DRAFT),
+     levelId= that level, categories=Walls, Floors, then COPY_ELEMENTS (DRAFT,
+     version 2) with expect_from naming that select, offset=0,0,0 and
+     toLevels= the levels to repeat on - "Level 2..Roof" is every level from
+     Level 2 to Roof by height. Each copy BELONGS to its level at its
+     original's offset, so it is never a ground-floor wall lifted by a height;
+     a wall tied to the level above is tied to the level above its new base,
+     and on the top storey keeps its height unconnected. A TWISTING TOWER is
+     the same call with turnDegrees= the turn per storey and turnCentreMm= the
+     plan point it turns about, in millimetres; leave both blank for none.
+     Read the answer: each level's line must say every copy belongs to it and
+     every plan point sits where the turn puts it. On 2026-10-13 a 32-storey
+     twisting tower took 33 CREATE_WALL and 36 CREATE_FLOOR calls without
+     it. Rooms, stairs and doors still go in level by level, as below.
   6. PLACE_ROOM_AT_POINT (PROVEN) with a point inside every space, all of one
      level in one call. Then SELECT_UNENCLOSED_ROOMS (DRAFT) must return none:
      a room that is not enclosed has no area, and it almost always means two
@@ -163,6 +179,9 @@ needs:
   - CREATE_WALL
   - SET_WALL_CONSTRAINTS
   - CREATE_FLOOR
+  # A typical storey drawn once, then copied onto the levels - see step 5.
+  - SELECT_BY_LEVEL
+  - COPY_ELEMENTS
   - PLACE_ROOM_AT_POINT
   # The rooms' own check, before a ceiling is hung from any of them.
   - SELECT_UNENCLOSED_ROOMS

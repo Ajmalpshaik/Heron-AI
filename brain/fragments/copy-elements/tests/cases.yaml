@@ -14,6 +14,20 @@ positive:
       takes a list rather than looping: copied one at a time they arrive
       unjoined, and that is invisible until somebody traces the system
 
+  - given: >
+      version 2 - one slab and four walls on Level 1, toLevels "Level 2, Level 3",
+      turnDegrees 5, turnCentreMm "0, 0", offset 0,0,0
+    expect: >
+      ten copies; copiedTo says 5 of 5 belong to Level 2 and 5 of 5 to Level 3
+      at their originals' offsets, and the four wall points sit where a turn of
+      5 deg (Level 2) and 10 deg (Level 3) puts them. Read back from outside
+      too: the walls' Base Constraint is Level 2 and Level 3, not Level 1 with
+      an offset of a storey
+
+  - given: version 2 with toLevels, turnDegrees and turnCentreMm all blank
+    expect: >
+      exactly version 1 - one copy at the offset, copiedTo empty, refused empty
+
 negative:
   - given: an empty element list
     expect: >
@@ -25,6 +39,14 @@ negative:
       it is missing from `copies` and counted in `notCopied`. The two lists must
       not be assumed to line up - a caller pairing originals with copies by
       index would pair the wrong ones from that point on
+
+  - given: version 2 - toLevels names a level the model does not have
+    expect: >
+      `copies` EMPTY, refused names the unknown level and lists the model's
+      own, and ends "Nothing was copied" - the element count is unchanged
+
+  - given: version 2 - a turn given with toLevels blank
+    expect: refused, nothing copied - a turn is never silently ignored
 
 second_route:
   - a count of that category before and after, differing by exactly the number copied
