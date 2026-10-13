@@ -647,6 +647,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ds.md`](needs-checking/group-ds.md)
 
+## Group DU - a layer's material and function: `SET_COMPOUND_LAYER_WIDTH` version 2 sets a wall, floor, roof or ceiling type's layer material, function and width, finds a layer by function, reads and checks (2026-10-13)
+
+**Its own file:** [`needs-checking/group-du.md`](needs-checking/group-du.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
