@@ -4120,17 +4120,24 @@ namespace Heron.Revit.Addin
 
             // What a modeller actually types - "Ducts", "Mechanical Equipment",
             // "Railings". MATCHED BY ID, NOT BY NAME: the value taken is the one
-            // whose ElementId IS the category the name found, which is what
-            // SELECT_BY_CATEGORY_NAME collects with OfCategoryId. Asking each
-            // value for its own category's name could stop at another value
-            // answering to the same words. new ElementId(BuiltInCategory) is
-            // unchanged from 2020 to 2027, so no integer is read.
+            // whose number IS the id of the category the name found, which is
+            // what SELECT_BY_CATEGORY_NAME collects with OfCategoryId. Asking
+            // each value for its own category's name could stop at another
+            // value answering to the same words. The id is read as TEXT -
+            // ElementId.ToString(), "the value of the id" from 2020 to 2027 -
+            // as typed ids are, so no ElementId is built here (5b-441). The
+            // current culture is asked first: a category id is negative, and a
+            // culture's minus sign is not always '-'.
             var named = OneCategory(doc, trimmed);
-            if (named != null)
+            var idText = named == null ? null : named.Id.ToString();
+            long number;
+            if (idText != null
+                && (long.TryParse(idText, NumberStyles.Integer, CultureInfo.CurrentCulture, out number)
+                    || long.TryParse(idText, NumberStyles.Integer, CultureInfo.InvariantCulture, out number)))
             {
                 foreach (BuiltInCategory candidate in Enum.GetValues(typeof(BuiltInCategory)))
                 {
-                    if (new ElementId(candidate).Equals(named.Id))
+                    if (Convert.ToInt64(candidate, CultureInfo.InvariantCulture) == number)
                     {
                         found = candidate;
                         return true;

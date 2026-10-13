@@ -39,10 +39,11 @@ text, the technique test_binding_note.py's call-site checks already use:
   1. the API name exactly as typed - OST_DuctCurves - is tried first;
   2. then the name Revit shows, through `OneCategory`, the same lookup the
      `Category` needs use;
-  3. that category is turned into an enum value BY ITS ID - the candidate
-     whose `new ElementId(...)` equals the category's `Id` - and not by
-     comparing another value's category name, which can stop at a second
-     value answering to the same words;
+  3. that category is turned into an enum value BY ITS ID - its `Id` read as
+     text, the way the binder reads typed ids, and compared with each
+     candidate's number, with no ElementId built (row 5b-441's rule) - and
+     not by comparing another value's category name, which can stop at a
+     second value answering to the same words;
   4. only then the "OST_" + word guess;
   5. and both shapes the two fragments declare - one category and a list -
      still go through it.
@@ -142,14 +143,19 @@ def main():
           "the shown name is tried BEFORE the \"OST_\" guess - row 5b-444: "
           "\"Railings\" guessed OST_Railings, which holds no railing")
 
-    by_id = re.search(r"new ElementId\(\s*candidate\s*\)", code) is not None
-    equals = re.search(r"\.Equals\(\s*\w+\.Id\s*\)", code) is not None
-    check(by_id and equals,
-          "the shown category becomes an enum value BY ITS ID - "
-          "new ElementId(candidate) equal to the category's Id")
+    reads_id = re.search(r"\w+\.Id\.ToString\(\)", code) is not None
+    compares = re.search(r"Convert\.ToInt64\(\s*candidate\b[^)]*\)\s*==\s*\w+", code) is not None
+    check(reads_id and compares,
+          "the shown category becomes an enum value BY ITS ID - the category's "
+          "Id read as text and compared with each candidate's number")
     by_name = re.search(r"GetCategory\(\s*doc\s*,\s*candidate\s*\)", code) is not None
     check(not by_name,
           "and not by asking each candidate for its own category's name")
+    # The binder's own rule, 5b-441: no ElementId is built in it at all, so the
+    # 2024 move to 64-bit ids is never crossed. test_binding_note.py holds it
+    # for the whole binder; this says it for this method in its own words.
+    check("new ElementId(" not in code,
+          "and no ElementId is built to do it")
 
     print()
     print("Both fragments of row 5b-444 still reach it")
