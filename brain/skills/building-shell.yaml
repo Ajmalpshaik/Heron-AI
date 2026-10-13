@@ -48,7 +48,10 @@ purpose: >
      level in one call. Then SELECT_UNENCLOSED_ROOMS (DRAFT) must return none:
      a room that is not enclosed has no area, and it almost always means two
      walls do not meet. SET_ROOM_LIMITS (DRAFT) ties each room's top to the
-     level above, when the rooms must reach it.
+     level above, when the rooms must reach it. Names go on in ONE
+     SET_PARAMETER_VALUES_BY_ID (DRAFT) call keyed on Number -
+     key=Number|in=Rooms|Level=<level>;1|Name=Lift Lobby;2|Name=... - never a
+     find and a write per room.
   7. CREATE_STAIRS (DRAFT), after the rooms, one call per flight from a level
      to the level above: straight, or a U with a landing across the far end,
      inside a rectangle that is the CLEAR inside of the stair hall - its wall
@@ -168,6 +171,8 @@ needs:
   - SELECT_UNENCLOSED_ROOMS
   # Only when the rooms must reach the level above - see step 6.
   - SET_ROOM_LIMITS
+  # Every room's name in one call, keyed on its Number - see step 6.
+  - SET_PARAMETER_VALUES_BY_ID
   # After the rooms and the slab above, with cutOpening - see step 7.
   - CREATE_STAIRS
   # Counts the railings a stair came with before any are added - step 8.

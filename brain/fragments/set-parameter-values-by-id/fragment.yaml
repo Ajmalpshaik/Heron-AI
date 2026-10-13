@@ -9,7 +9,13 @@ semantic-identity: "a different value for each named element, only if nothing mo
 kind: action
 domain: revit.parameters
 capability: SET_PARAMETER_VALUES_BY_ID
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-459): an element may also be named
+# by a value one of its parameters holds - a room's Number, a sheet's Sheet
+# Number, a Mark - so giving 13 rooms 13 names is one call, not 26. The id rows
+# of version 1 are read and written exactly as before. The semantic-identity
+# line is version 1's on purpose: it is searched, and a new word in it moves
+# other cards' answers (the routing measured for 5b-459).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -42,6 +48,11 @@ purpose: >
   percent-encoded so a value may hold a bar or a semicolon, rows separated by
   semicolons.
 
+  **Or by a value each element holds** (version 2): a first row of the key
+  parameter and the categories to look in, then rows of a key value and the
+  values to write. A key matching no element, or more than one, is refused for
+  that row alone; the other rows are written and read back.
+
   ASSUMES AN OPEN TRANSACTION and does not open one - the operation's
   TransactionGroup makes the whole Apply one entry in Revit's undo list
   (Golden Rule 16).
@@ -50,6 +61,15 @@ contract:
   needs:
     - name: doc
       type: Document
+    # TWO SHAPES; the first row says which. BY ID (the Companion's table):
+    # id|uniqueId|parameter|was|new per row. BY ANY PARAMETER VALUE: first row
+    # key=<parameter>|in=<categories>, then <key value>|<parameter>=<value>
+    # per element, any number of parameter=value after the key - e.g.
+    # key=Number|in=Rooms;1|Name=Lift Lobby;2|Name=Staircase 1. Categories as
+    # Visibility/Graphics names them, comma-separated; any other name=value on
+    # the first row narrows the search (Level=Level 14). Rows are separated by
+    # ; and a ; | = or % inside a value is percent-encoded. A key matching no
+    # element or several is refused for that row; the others are written.
     - name: rows
       type: string
       source: request
@@ -59,13 +79,28 @@ contract:
       role: result
       type: int
     # The whole answer as one JSON string, format 1 - applied or not, the stale
-    # rows with why, and the value Revit holds for each written row.
+    # rows with why, and the value Revit holds for each written row. By key it
+    # is format 2: applied means at least one row was written, `refused` names
+    # each row turned down with why, and every readBack entry carries its key,
+    # the value asked and the value Revit holds now.
+    # ACCOUNTING, NOT RESULT (version 2): it is written on every run, nothing
+    # written included, so as a result no negative case could ever read empty
+    # - `written` is the count that says whether anything landed (D-51; the
+    # fragment-proving skill's rule for a sentence the fragment always writes).
     - name: resultJson
-      role: result
+      role: accounting
       type: string
     # Rows that stopped the run - changed in Revit, gone, read-only. Nothing
     # was written when this is not empty. Turned down, never found (D-52).
+    # Id rows only; always empty by key.
     - name: stale
+      role: accounting
+      type: IList<string>
+    # By key only: each row not written, as "<key>: why" - no element or
+    # several hold that key, the key is given twice, the parameter cannot be
+    # written, or Revit would not take the value. The other rows were written.
+    # Always empty for id rows. Turned down, never found (D-52).
+    - name: refused
       role: accounting
       type: IList<string>
     # A sentence per thing turned down, in the modeller's words.
@@ -82,8 +117,13 @@ compatibility-note: >
   AsValueString, AsString, SetValueString, Set(string), Set(int), Regenerate,
   Uri.UnescapeDataString - all present from 2020 to 2027. A Yes/No is found by
   its display string reading Yes or No on an integer parameter, which needs no
-  version-specific type API.
+  version-specific type API. Version 2 adds Settings.Categories, Category.Name,
+  FilteredElementCollector.OfCategoryId, WhereElementIsNotElementType and
+  SubTransaction - all present from 2020 to 2027 - and still never builds an
+  ElementId from a number: a key is matched as the text a parameter shows.
 
 utterances:
   - apply the values edited in the Companion table
   - write these edited parameter values back to the elements
+  - give each room its own name, matched by its room number
+  - set a different value on each element found by its Mark
