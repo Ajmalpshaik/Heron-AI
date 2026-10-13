@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "override whole categories' graphics in one view"
 kind: action
 domain: revit.views
 capability: SET_CATEGORY_GRAPHICS
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-453): every category is READ BACK
+# after the Set and counted only when what was asked for is what Revit holds.
+# Version 1 counted the call, so Rooms on Revit 2020 came back "overridden 1"
+# with nothing stored. One that reads back empty is in `refused` in a
+# sentence; one that kept part of it is in the new `notKept`, each setting
+# named. The inputs and the other outputs mean what they meant. The proof below
+# is version 1's, signed before this change - DRAFT until re-proved.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values
@@ -40,8 +47,11 @@ contract:
       source: request
     # Top-level categories only: a sub-category's name is refused. Revit
     # 2020 takes an override on a sub-category and reads back nothing
-    # (measured 2026-10-13, FRAGMENT-ISSUES 5b-453), and this counts the call,
-    # so it would report a change that is not there. SET_CATEGORY_VISIBILITY
+    # (measured 2026-10-13, FRAGMENT-ISSUES 5b-453). Version 1 counted the
+    # call, so it would have reported a change that is not there; version 2
+    # reads it back and would refuse it in words, but the binder still hands
+    # this card top-level categories only - whether a later release keeps a
+    # sub-category's override is NEEDS-CHECKING DV4. SET_CATEGORY_VISIBILITY
     # takes sub-categories; it reads its change back.
     - name: categories
       type: IList<Category>
@@ -51,8 +61,17 @@ contract:
       source: request
   provides:
     - name: overridden
+      # Categories whose read-back holds every setting asked for. Not the
+      # calls made: version 1 counted those (5b-453).
       role: result
       type: int
+    - name: notKept
+      # Categories that read back with PART of what was asked for, each
+      # setting that did not land named with what came back - "Ducts: not
+      # kept - surface colour asked 255,0,0, read back none". Something was
+      # written, so this is not a refusal; not all of it, so not counted.
+      role: accounting
+      type: IList<string>
     - name: notControllable
       # Categories this view will not let be overridden. The evidence it
       # looked and could not, never a thing it did (D-52).
@@ -61,7 +80,9 @@ contract:
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
-      # "did this come back empty" (D-52).
+      # "did this come back empty" (D-52). A category name alone is a view
+      # template that refused the Set; "Revit took the override and stored
+      # nothing for Rooms" is a Set that raised nothing and read back empty.
       role: accounting
       type: IList<string>
 
@@ -93,7 +114,11 @@ compatibility-note: >
   OVERRIDE_GRAPHICS_IN_VIEW is: the settings object arrives already built, so
   the setters that were renamed across releases are the caller's problem and
   not this fragment's. `View.SetCategoryOverrides` and
-  `Category.get_AllowsVisibilityControl` are unchanged 2020 to 2027.
+  `Category.get_AllowsVisibilityControl` are unchanged 2020 to 2027. The
+  read-back (version 2) calls `View.GetCategoryOverrides` and the
+  OverrideGraphicSettings getters of the foreground/background pattern names
+  Revit 2019 introduced, so 2020 is past that rename too;
+  tools/check-api-surface.py finds every one on 2020 to 2027.
 
 # ROUTING - repeated in CREATE_VIEW_FILTER and OVERRIDE_GRAPHICS_IN_VIEW.
 #
