@@ -651,6 +651,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dt.md`](needs-checking/group-dt.md)
 
+## Group DU - a layer's material and function: `SET_COMPOUND_LAYER_WIDTH` version 2 sets a wall, floor, roof or ceiling type's layer material, function and width, finds a layer by function, reads and checks (2026-10-13)
+
+**Its own file:** [`needs-checking/group-du.md`](needs-checking/group-du.md)
+
 ## Group DV - door tags in a plan, a sub-category switched in a view, and which side of a wall its dimensions go (2026-10-13)
 
 **Its own file:** [`needs-checking/group-dv.md`](needs-checking/group-dv.md)
