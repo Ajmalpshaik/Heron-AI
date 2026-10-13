@@ -9,7 +9,7 @@ semantic-identity: "turn the lines on a CAD layer into real revit lines"
 kind: action
 domain: revit.elements
 capability: EXTRACT_CAD_CURVES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -17,7 +17,8 @@ purpose: >
   Reads the geometry of an imported or linked CAD file and redraws the curves
   on chosen layers as real Revit model lines or detail lines - the "trace this
   DWG background into Revit" job, done by reading it rather than by drawing
-  over it.
+  over it. With listOnly it hands back the segments' coordinates instead and
+  draws nothing (version 2).
 
   **NAMING NO LAYER SURVEYS; NAMING LAYERS EXTRACTS.** With an empty layer list
   this creates nothing and reports every layer it found with a curve count
@@ -68,6 +69,11 @@ contract:
     - name: maxCurves
       type: int
       source: request
+    # The segments' coordinates only, nothing drawn (version 2); absent reads false.
+    - name: listOnly
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: created
       role: result
@@ -77,6 +83,11 @@ contract:
       # - in survey mode this IS the answer and nothing is created at all.
       role: result
       type: IDictionary<string, int>
+    - name: coordinates
+      # With listOnly: each matched segment's ends in millimetres, layer by
+      # layer, the first 200, as ONE string (version 2).
+      role: result
+      type: string
     - name: findings
       type: IList<string>
 
@@ -118,3 +129,4 @@ utterances:
   - extract curves from this cad link
   - convert cad linework to detail lines
   - trace this cad background
+  - list the coordinates of the lines on this cad layer

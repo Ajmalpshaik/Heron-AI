@@ -1,0 +1,66 @@
+# The proofs of the gap fill's first batch of widenings - DRAFT cards made to
+# do the part they did not, and one new ordering card - NEEDS-CHECKING Group DS:
+#
+#   order-elements-by-position  ORDER_ELEMENTS_BY_POSITION  FRG-SEL-038  (new)
+#   list-grids                  LIST_GRIDS v3               grid intersections
+#   select-unenclosed-rooms     SELECT_UNENCLOSED_ROOMS v3  areas too
+#   place-family-on-face        PLACE_FAMILY_ON_FACE v2     finds the face, links too
+#   add-family-connector v4, list-materials v2, extract-cad-curves v2,
+#   find-nearest-elements v2, create-view-filter v2         rows DS3 to DS7, by hand
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-widenings-2026-10-13.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-widenings-2026-10-13.yaml
+#
+# NEVER ON A WORKING PROJECT. Two NEW SCRATCH PROJECTS on Revit 2024 first:
+#
+#   "Heron Gap Fill Widenings Test", from the Architectural template - type
+#   its title where `in:` says PROJECT-TITLE - and in it, by hand:
+#     - grids 1 to 3 north-south 6000 mm apart and A to B east-west 8000 mm
+#       apart
+#     - six doors on Level 1 in two rows of three
+#     - an area plan with one area placed outside its boundary lines
+#     - a ceiling on Level 1 at 2700 mm, and a face-based family loaded (any
+#       downlight or diffuser made from a face-based template) - type its
+#       "Family: Type" where `set:` says FACE-BASED-TYPE
+#   "Heron Empty Test" - a new project, nothing added - type its title where
+#   `negative-in:` says EMPTY-TITLE.
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the model afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: two scratch projects, "Heron Gap Fill Widenings Test" (Architectural template) and "Heron Empty Test", Revit 2024 first, then 2020 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+
+jobs:
+  - fragment: order-elements-by-position
+    expect: sequence
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: Doors, levelId: Level 1}
+    negative-setup-set: {category: Doors, levelId: Level 1}
+    set: {order: reading, rowMm: 1000}
+    negative-set: {order: sideways, rowMm: 1000}
+
+  - fragment: list-grids
+    expect: intersections
+    set: {includeLinks: false, withIntersections: true}
+    negative-in: "EMPTY-TITLE"
+
+  - fragment: select-unenclosed-rooms
+    expect: elements
+    set: {includeRooms: false, includeSpaces: false, includeAreas: true}
+    negative-in: "EMPTY-TITLE"
+
+  - fragment: place-family-on-face
+    expect: created
+    write: true
+    set: {symbol: "FACE-BASED-TYPE", pointsMm: "2000,2000,2000; 4000,2000,2000", ray: up, view3D: "{3D}", facing: "", searchLinks: false}
+    negative-set: {symbol: "FACE-BASED-TYPE", pointsMm: "90000,90000,2000", ray: up, view3D: "{3D}", facing: "", searchLinks: false}
+    note: >
+      Both points sit under the ceiling - draw it over 0,0 to 6000,6000. The
+      negative looks up from far outside the building and finds no face.

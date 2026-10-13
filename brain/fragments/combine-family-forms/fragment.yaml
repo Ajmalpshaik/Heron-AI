@@ -9,7 +9,7 @@ semantic-identity: "join solid forms, or cut a solid form with a void, in the fa
 kind: action
 domain: revit.families
 capability: COMBINE_FAMILY_FORMS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -17,7 +17,8 @@ purpose: >
   CUTS a solid form with a void, or JOINS solid forms, in the family open in
   the Family Editor, by combining the forms named into one combination: a void
   in it cuts the solids, and the solids are made one. The step that turns a
-  void built by a form tool into a hole.
+  void built by a form tool into a hole. Version 2 also lists the family's
+  combinations and takes named ones apart again.
 
   **THE ONLY ROUTE THE API HAS IN AN ORDINARY FAMILY.** The solid-cut utility
   refuses any document that is not a project, a conceptual mass, a curtain
@@ -57,6 +58,8 @@ contract:
       type: UIDocument
     # The forms, by the ids the form tools gave back, commas between - or
     # `selected` for what is selected in the family's own window.
+    # The forms' ids, commas between, or "selected"; "list" says every
+    # combination; "separate <ids>" takes apart the ones named (version 2).
     - name: forms
       type: string
       source: request
@@ -149,3 +152,5 @@ utterances:
   - join these solids in the family
   - cut geometry in the family
   - join these family forms
+  - unjoin these forms in the family
+  - which forms are joined in this family

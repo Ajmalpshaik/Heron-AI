@@ -1,4 +1,4 @@
-// NOT STANDALONE. Assumes `doc` is in scope; leaves `materialCount`,
+// NOT STANDALONE. Assumes `doc` and `withAssets` are in scope; leaves `materialCount`,
 // `materialList`, `materialClasses`, `materialIds` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
@@ -66,7 +66,32 @@ var findings = new List<string>();
         var materialClass = (material.MaterialClass ?? "").Trim();
         var shown = materialClass.Length > 0 ? materialClass : "no class";
 
-        rows.Add(string.Format("{0} ({1}, id {2})", material.Name, shown, material.Id));
+        var row = string.Format("{0} ({1}, id {2})", material.Name, shown, material.Id);
+
+        // THE PHYSICAL AND THERMAL ASSETS, when asked (version 2, 2026-10-13,
+        // the gap fill): every number each asset holds, as Revit formats it
+        // in the project's own units - no unit is converted here, so none can
+        // be converted wrongly. Names are Revit's, in the language it runs in.
+        if (withAssets)
+        {
+            var assets = new[] { Tuple.Create("physical", material.StructuralAssetId), Tuple.Create("thermal", material.ThermalAssetId) };
+            foreach (var asset in assets)
+            {
+                var set = doc.GetElement(asset.Item2) as PropertySetElement;
+                if (set == null) continue;
+                var values = new List<string>();
+                foreach (Parameter p in set.Parameters)
+                {
+                    if (p.StorageType != StorageType.Double || !p.HasValue) continue;
+                    var text = p.AsValueString();
+                    if (string.IsNullOrEmpty(text) || Math.Abs(p.AsDouble()) < 1e-12) continue;
+                    values.Add(p.Definition.Name + " " + text);
+                }
+                values.Sort(StringComparer.OrdinalIgnoreCase);
+                if (values.Count > 0) row += "; " + asset.Item1 + " \"" + set.Name + "\": " + string.Join(", ", values.Take(10));
+            }
+        }
+        rows.Add(row);
 
         int already;
         byClass.TryGetValue(shown, out already);

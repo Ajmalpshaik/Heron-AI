@@ -1,6 +1,12 @@
-// NOT STANDALONE. Assumes `doc` and `includeLinks` are in scope; leaves
-// `elements`, `findings`, `notLinear`, `linksSearched` and `linkedMatches`
-// behind.
+// NOT STANDALONE. Assumes `doc`, `includeLinks` and `withIntersections` are in
+// scope; leaves `elements`, `findings`, `notLinear`, `linksSearched`,
+// `linkedMatches` and `intersections` behind.
+//
+// WHERE THE GRIDS CROSS, WHEN ASKED (version 3, 2026-10-13, the gap fill):
+// `withIntersections` adds every crossing of two of this model's grids, within
+// both grids' drawn extents, as "A/1 (x, y)" in millimetres - the points a
+// column at every grid intersection is placed on, and a beam along a grid runs
+// between. Curved grids cross too, at each point Revit finds.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -106,6 +112,47 @@ foreach (var grid in grids)
     else direction = "on a skew";
 
     findings.Add(string.Format("{0}  - runs {1}", grid.Name, direction));
+}
+
+// ---- Where the grids cross, when asked ----------------------------------------
+
+var intersections = "";
+if (withIntersections)
+{
+    var crossings = new List<string>();
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    for (var i = 0; i < grids.Count; i++)
+        for (var j = i + 1; j < grids.Count; j++)
+        {
+            // REVIT 2026 changed how two curves are intersected; each release
+            // takes its own call, and both give the crossing points.
+            var points = new List<XYZ>();
+            try
+            {
+                // Compared flat, at the first grid's height - grids are drawn
+                // at their own levels and a height difference is no miss.
+                var a = grids[i].Curve;
+                var b = grids[j].Curve;
+                var lift = Transform.CreateTranslation(new XYZ(0, 0, a.GetEndPoint(0).Z - b.GetEndPoint(0).Z));
+#if REVIT2026_OR_GREATER
+                var met = a.Intersect(b.CreateTransformed(lift), CurveIntersectResultOption.Detailed);
+                if (met.Result != SetComparisonResult.Overlap) continue;
+                foreach (var overlap in met.GetOverlaps()) points.Add(overlap.Point);
+#else
+                IntersectionResultArray hits;
+                var met = a.Intersect(b.CreateTransformed(lift), out hits);
+                if (met != SetComparisonResult.Overlap || hits == null) continue;
+                for (var k = 0; k < hits.Size; k++) points.Add(hits.get_Item(k).XYZPoint);
+#endif
+            }
+            catch (Exception) { continue; }
+            foreach (var p in points)
+                crossings.Add(grids[i].Name + "/" + grids[j].Name + " (" + Math.Round(p.X * 304.8).ToString(invariant)
+                    + ", " + Math.Round(p.Y * 304.8).ToString(invariant) + ")");
+        }
+    intersections = string.Join(" | ", crossings.Take(500));
+    findings.Add(crossings.Count + " grid intersection(s) within the grids' drawn extents"
+        + (crossings.Count > 500 ? ", the first 500 listed" : "") + ", in millimetres.");
 }
 
 // ---- D-59: which links, only when asked for --------------------------------

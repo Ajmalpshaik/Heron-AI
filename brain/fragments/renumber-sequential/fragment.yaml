@@ -164,6 +164,10 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+
+# ROUTING (2026-10-13, the gap fill)
+#
+#   "number the doors left to right"         -> ORDER_ELEMENTS_BY_POSITION, then here
 utterances:
   - renumber these
   - number them in order

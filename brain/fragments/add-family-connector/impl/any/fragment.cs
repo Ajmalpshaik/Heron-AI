@@ -29,6 +29,11 @@
 // A CONNECTOR THAT CANNOT BE TIED TO ITS SIZE IS NOT LEFT BEHIND AT ONE FOOT.
 // Any refusal after the checks THROWS, and the host rolls the call back.
 //
+// CABLE TRAY AND CONDUIT (version 4, 2026-10-13, the gap fill) have no system
+// list in Revit: "Cable Tray" takes two length parameters, width then height,
+// turned to the face like a rectangular duct port; "Conduit" takes one, its
+// diameter.
+//
 // GLOBAL AND FITTING ARE OFFERED, as Revit's System Classification list offers
 // them; where Revit refuses one for a face, its refusal is reported and nothing
 // is kept. SET_FAMILY_CONNECTOR_ROLES changes a connector already made.
@@ -152,6 +157,8 @@ foreach (var value in Enum.GetValues(typeof(PipeSystemType)))
     if (!notOffered.Contains(value.ToString())) systems.Add(Tuple.Create("pipe", value.ToString(), value));
 foreach (var value in Enum.GetValues(typeof(ElectricalSystemType)))
     if (!notOffered.Contains(value.ToString())) systems.Add(Tuple.Create("electrical", value.ToString(), value));
+systems.Add(Tuple.Create("cable tray", "CableTray", (object)null));
+systems.Add(Tuple.Create("conduit", "Conduit", (object)null));
 
 Func<Element, string> kindOf = element =>
     element is Extrusion ? "an extrusion" : element is Revolution ? "a revolve" : element is Blend ? "a blend"
@@ -197,7 +204,7 @@ else
                 || squash(s.Item2).Contains(said) || said.Contains(squash(s.Item2)))
             .Select(s => spaced(s.Item2) + " (" + s.Item1 + ")").Take(8).ToList();
         problems.Add("No connector system is called \"" + system.Trim() + "\"."
-            + (near.Count > 0 ? " Close: " + string.Join(", ", near) + "." : " Revit's names are used - Supply Air, Return Air, Exhaust Air, Domestic Cold Water, Domestic Hot Water, Hydronic Supply, Hydronic Return, Sanitary, Vent, Fire Protection Wet, Fire Protection Dry, Fire Protection Pre-Action, Fire Protection Other, Other Pipe, Power Balanced."));
+            + (near.Count > 0 ? " Close: " + string.Join(", ", near) + "." : " Revit's names are used - Supply Air, Return Air, Exhaust Air, Domestic Cold Water, Domestic Hot Water, Hydronic Supply, Hydronic Return, Sanitary, Vent, Fire Protection Wet, Fire Protection Dry, Fire Protection Pre-Action, Fire Protection Other, Other Pipe, Power Balanced, Cable Tray, Conduit."));
     }
     else if (systemMatches.Count > 1)
     {
@@ -245,6 +252,12 @@ else
                 + "Revit's one-foot placeholder, whatever face it is on.");
         if (chosen.Item1 == "pipe" && sizes.Count != 1)
             problems.Add("A pipe connector needs ONE length parameter - its diameter. Without it it stays at "
+                + "Revit's one-foot placeholder.");
+        if (chosen.Item1 == "cable tray" && sizes.Count != 2)
+            problems.Add("A cable tray connector needs TWO length parameters - its width, then its height. "
+                + "Without them it stays at Revit's one-foot placeholder.");
+        if (chosen.Item1 == "conduit" && sizes.Count != 1)
+            problems.Add("A conduit connector needs ONE length parameter - its diameter. Without it it stays at "
                 + "Revit's one-foot placeholder.");
         if (chosen.Item1 == "electrical" && sizes.Count != 0)
             problems.Add("An electrical connector has no size, so no size parameters are taken.");
@@ -388,6 +401,10 @@ if (refused == null)
                 round ? ConnectorProfileType.Round : ConnectorProfileType.Rectangular, face.Reference);
         else if (chosen.Item1 == "pipe")
             made = ConnectorElement.CreatePipeConnector(doc, (PipeSystemType)chosen.Item3, face.Reference);
+        else if (chosen.Item1 == "cable tray")
+            made = ConnectorElement.CreateCableTrayConnector(doc, face.Reference);
+        else if (chosen.Item1 == "conduit")
+            made = ConnectorElement.CreateConduitConnector(doc, face.Reference);
         else
             made = ConnectorElement.CreateElectricalConnector(doc, (ElectricalSystemType)chosen.Item3, face.Reference);
     }
@@ -430,7 +447,7 @@ if (refused == null)
     var swapped = false;
     var faceAlongX = 0.0;
     var faceAlongY = 0.0;
-    if (chosen.Item1 == "duct" && !round)
+    if ((chosen.Item1 == "duct" || chosen.Item1 == "cable tray") && !round)
     {
         var frame = made.CoordinateSystem;
         var points = new List<XYZ>();

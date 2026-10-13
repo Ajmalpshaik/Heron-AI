@@ -32,6 +32,11 @@ positive:
       it is listed as "(no class, id N)" and counted under "no class" in
       materialClasses - never left out for having no class
 
+  - given: a project whose material Concrete carries a physical asset of density 2400 kg/m3 and a thermal asset, withAssets true
+    expect: >
+      Concrete's line carries its physical asset's density and its thermal
+      asset's conductivity as Revit shows them in Properties (version 2)
+
 negative:
   - given: >
       "Heron Materials Annotation", a family new from Metric Generic

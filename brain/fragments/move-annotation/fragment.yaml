@@ -9,13 +9,14 @@ semantic-identity: "put this tag exactly here, rather than wherever a rule decid
 kind: action
 domain: revit.annotation
 capability: MOVE_ANNOTATION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Moves an annotation - a tag, a dimension, a text note - to a point the caller
-  names.
+  names, or lines a set of them up or spaces them evenly in their view
+  (version 2).
 
   **NOTHING IN THE LIBRARY MOVED AN ANNOTATION TO A POINT, AND THAT IS A SHAPE
   RATHER THAN ONE MISSING FRAGMENT.** Every tag fragment here is RULE-based:
@@ -44,6 +45,11 @@ contract:
       type: IList<Element>
     - name: target
       type: XYZ
+      source: request
+    # "point" or EMPTY moves to target; "align left|right|top|bottom|centre|
+    # middle" or "spread across|down" arranges the set (version 2).
+    - name: arrange
+      type: string
       source: request
   provides:
     - name: moved
@@ -86,3 +92,5 @@ utterances:
   - move this dimension
   - set the tag location
   - move the text note here
+  - line up these text notes on the left
+  - space these text notes evenly down the sheet

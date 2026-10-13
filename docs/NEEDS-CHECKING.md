@@ -643,6 +643,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dr.md`](needs-checking/group-dr.md)
 
+## Group DS - widenings of DRAFT cards: grid intersections, unenclosed areas, face hosting found by a ray and on links, tray and conduit connectors, material assets, CAD coordinates, distances within a radius, filters of several rules, and ordering by position (2026-10-13)
+
+**Its own file:** [`needs-checking/group-ds.md`](needs-checking/group-ds.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

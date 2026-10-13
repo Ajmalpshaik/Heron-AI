@@ -9,14 +9,14 @@ semantic-identity: "find the rooms that are not enclosed or were never placed"
 kind: filter
 domain: revit.selection
 capability: SELECT_UNENCLOSED_ROOMS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
 purpose: >
   Sweeps the model for Rooms and MEP Spaces that are not doing their job -
   placed where the boundaries do not close, or never placed at all - and hands
-  them on as the set to act on. Read-only.
+  them on as the set to act on. Read-only. Areas too, when asked (version 3).
 
   **THE TWO FAULTS LOOK IDENTICAL AND NEED OPPOSITE FIXES.** Both report zero
   area. A room with no location was never put in the model: it sits in the
@@ -65,6 +65,12 @@ contract:
     - name: includeSpaces
       type: bool
       source: request
+    # Areas of every area plan, by the same two tests (version 3); absent
+    # reads false.
+    - name: includeAreas
+      type: bool
+      source: request
+      optional: true
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before and what its proof measured.
@@ -161,3 +167,4 @@ utterances:
   - which rooms were never placed
   - the spaces are not calculating
   - check the rooms before I run the loads
+  - find the unplaced and unenclosed areas

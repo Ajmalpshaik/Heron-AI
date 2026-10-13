@@ -9,13 +9,19 @@ semantic-identity: "put this face-based family on that face, hosted to it proper
 kind: action
 domain: revit.elements
 capability: PLACE_FAMILY_ON_FACE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Places a FACE-BASED family onto explicit faces, so each instance is genuinely
-  HOSTED by the thing it sits on.
+  Hosts a FACE-BASED family on the face it finds looking up to a ceiling, down
+  to a floor or across to a wall - in this model or a linked one - so each
+  instance is genuinely HOSTED by the thing it sits on.
+
+  **VERSION 2 (2026-10-13) FINDS THE FACE.** Version 1 took face references,
+  which no request can carry, so nothing could run it. Now each point looks
+  along a direction through a 3D view, and a face in a loaded link hosts too -
+  version 1 refused those on a belief never measured.
 
   **PLACE_FAMILY_INSTANCES CANNOT DO THIS, AND THE DIFFERENCE IS NOT COSMETIC.**
   That one places at a point on a level. A diffuser placed that way sits at a
@@ -48,22 +54,30 @@ contract:
   needs:
     - name: doc
       type: Document
-    # RESOLVED, never an id. Building an ElementId from an integer is what
-    # breaks in Revit 2024 (D-05); taking the object makes the trap unreachable.
     - name: symbol
       type: FamilySymbol
       source: request
-    # Paired by position with `points`. A face nobody named cannot be guessed.
-    - name: faces
-      type: IList<Reference>
+    # "x,y,z; ..." in millimetres - where each instance looks from.
+    - name: pointsMm
+      type: string
       source: request
-    - name: points
-      type: IList<XYZ>
+    # "up", "down", "north", "south", "east", "west" or "x,y,z"; EMPTY means up.
+    - name: ray
+      type: string
       source: request
-    # The direction the instance faces on the host.
-    - name: direction
-      type: XYZ
+    # A 3D view, not a template - faces are found through one.
+    - name: view3D
+      type: View3D
       source: request
+    # "x,y,z" for the family's own X along the face; EMPTY takes a default.
+    - name: facing
+      type: string
+      source: request
+    # Look in loaded links as well; absent reads false.
+    - name: searchLinks
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: created
       role: result
@@ -89,7 +103,10 @@ compatibility-note: >
   XYZ, XYZ, FamilySymbol)`, `Family.FamilyPlacementType`, `FamilySymbol.IsActive` /
   `.Activate()`, `FamilyInstance.Host` and `Reference.ElementId` are unchanged
   2020 to 2027 - checked by compiling this fragment against the reference
-  assemblies for all eight.
+  assemblies for all eight. Version 2's ReferenceIntersector(View3D) with
+  TargetType, FindReferencesInRevitLinks and FindNearest, ReferenceWithContext
+  and Reference.GlobalPoint are present in all eight too - read off
+  RevitAPI.xml in the Nice3point reference packages on 2026-10-13.
 
 # ROUTING - cross-referenced in PLACE_FAMILY_INSTANCES and SELECT_BY_HOST.
 #
@@ -119,3 +136,4 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "place these
   # on the wall face": PLACE_HOSTED_FAMILY on the trained backend answered it.
   - place these on the wall face
+  - put the downlights on the linked ceiling above

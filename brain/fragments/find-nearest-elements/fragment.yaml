@@ -9,14 +9,15 @@ semantic-identity: "which one of those is closest to each of these"
 kind: action
 domain: revit.geometry
 capability: FIND_NEAREST_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 purpose: >
   For each element, the nearest one from a second set. "Which FCU serves this
   terminal", "which exit is closest to this room", "what is the nearest light to
-  each switch".
+  each switch". With withinMm, every one within that distance too, nearest first
+  (version 2).
 
   **THREE WAYS TO MEASURE DISTANCE, AND THE CHOICE CHANGES THE ANSWER**, so it
   is a request input rather than a default:
@@ -71,6 +72,11 @@ contract:
     - name: metric
       type: string
       source: request
+    # Also list every target within this distance, nearest first; 0 lists none
+    # (version 2).
+    - name: withinMm
+      type: double
+      source: request
   provides:
     - name: nearest
       role: result
@@ -84,6 +90,11 @@ contract:
       # away.
       role: result
       type: IList<ElementId>
+    - name: withinRadius
+      # With withinMm: per element, every target within it, nearest first, as
+      # ONE string (version 2).
+      role: result
+      type: string
     - name: unmeasurable
       # Elements no distance could be taken from, so it could not be measured.
       # The evidence it looked, never a thing it found (D-52).
@@ -108,3 +119,4 @@ utterances:
   - which is the nearest light to each switch
   - how close is the nearest one
   - pair each of these with the closest
+  - list everything within 3 m of each of these, nearest first

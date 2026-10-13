@@ -2,6 +2,14 @@
 // `combinationId`, `combined`, `cut`, `notAFamily`, `refused` and `findings`
 // behind.
 //
+// LISTED AND TAKEN APART, TOO (version 2, 2026-10-13, the gap fill), said in
+// `forms` itself as "selected" already is, so no call made before changes:
+// "list" changes nothing and says every combination in the family and the
+// forms in it; "separate <ids>" takes apart the combinations named - by their
+// own ids or by a form in them - so the forms stand alone again, as Unjoin
+// Geometry does. Every form that was in one must still be there afterwards,
+// or the call throws and the host rolls it back.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // JOIN SOLIDS, OR CUT A SOLID WITH A VOID, in the family open in the Family
@@ -101,14 +109,24 @@ Func<Element, string> describe = element =>
 
 var members = new List<Element>();
 var problems = new List<string>();
+var act = "combine";
+var separateText = "";
+var spoken = (forms ?? "").Trim();
+if (string.Equals(spoken, "list", StringComparison.OrdinalIgnoreCase)) act = "list";
+else if (spoken.StartsWith("separate", StringComparison.OrdinalIgnoreCase))
+{
+    act = "separate";
+    separateText = spoken.Substring("separate".Length).TrimStart(':', ' ');
+}
 
-if (!doc.IsFamilyDocument)
+if (refused != null) { }
+else if (!doc.IsFamilyDocument)
 {
     notAFamily = true;
     refused = "The document in front is a project, not a family open in the Family Editor. Forms are joined and "
         + "cut inside the family - open it first.";
 }
-else
+else if (act == "combine")
 {
     var said = (forms ?? "").Trim();
     var named = new List<Element>();
@@ -173,7 +191,67 @@ else
     if (problems.Count > 0) refused = "Nothing was joined or cut. " + string.Join(" ", problems);
 }
 
-if (refused == null)
+// ---- list and separate (version 2) --------------------------------------------
+if (refused == null && act == "list")
+{
+    var rows = new List<string>();
+    foreach (GeomCombination one in new FilteredElementCollector(doc).OfClass(typeof(GeomCombination)))
+    {
+        var parts = new List<string>();
+        foreach (CombinableElement member in one.AllMembers) parts.Add(describe(member));
+        rows.Add("combination " + one.UniqueId + ": " + string.Join(", ", parts));
+    }
+    combined = string.Join(" | ", rows);
+    findings.Add(rows.Count + " combination(s) of joined or cut forms in this family"
+        + (rows.Count == 0 ? "." : ", each with its forms. Nothing was changed."));
+}
+else if (refused == null && act == "separate")
+{
+    var targets = new List<GeomCombination>();
+    foreach (var part in separateText.Split(',').Select(p => p.Trim()).Where(p => p.Length > 0))
+    {
+        var element = doc.GetElement(part);
+        var asCombination = element as GeomCombination;
+        var asForm = element as CombinableElement;
+        if (element == null) problems.Add("No element in this family has the id \"" + part + "\".");
+        else if (asCombination != null) { if (!targets.Any(t => t.Id == asCombination.Id)) targets.Add(asCombination); }
+        else if (asForm != null)
+        {
+            var any = false;
+            foreach (GeomCombination one in asForm.Combinations)
+            {
+                any = true;
+                if (!targets.Any(t => t.Id == one.Id)) targets.Add(one);
+            }
+            if (!any) problems.Add("The " + describe(element) + " is in no combination - there is nothing to take apart.");
+        }
+        else problems.Add("\"" + part + "\" is not a form nor a combination of them.");
+    }
+    if (problems.Count == 0 && targets.Count == 0) problems.Add("Nothing was named - \"separate\" then the combination's id, or a form in it.");
+    if (problems.Count > 0) refused = "Nothing was taken apart. " + string.Join(" ", problems);
+    else
+    {
+        var kept = new List<ElementId>();
+        var rows = new List<string>();
+        foreach (var one in targets)
+        {
+            var parts = new List<string>();
+            foreach (CombinableElement member in one.AllMembers) { kept.Add(member.Id); parts.Add(describe(member)); }
+            rows.Add(string.Join(", ", parts));
+            doc.Delete(one.Id);
+        }
+        doc.Regenerate();
+        var gone = kept.Where(id => doc.GetElement(id) == null).ToList();
+        if (gone.Count > 0)
+            throw new InvalidOperationException("Taking the combination apart removed " + gone.Count + " of its forms too - "
+                + "NOTHING from this call was kept.");
+        combined = string.Join(" | ", rows);
+        findings.Add(targets.Count + " combination(s) taken apart; their " + kept.Count + " form(s) stand alone again, "
+            + "each read back as still in the family: " + combined + ".");
+    }
+}
+
+if (refused == null && act == "combine")
 {
     var solids = members.Where(m => !(m is GenericForm) || ((GenericForm)m).IsSolid).ToList();
     var voids = members.Where(m => m is GenericForm && !((GenericForm)m).IsSolid).ToList();

@@ -64,6 +64,13 @@ positive:
       `connector` ending "1 face(s) of joined or cut forms lie on the same
       plane too". This is the way round row 5b-410 used, kept working
 
+  - given: >
+      a Cable Tray Fittings family with a 300 x 100 end face on "End Left";
+      facePlane "End Left", system "Cable Tray", sizeParameters "Tray Width, Tray Height"
+    expect: >
+      a cable tray connector, rectangular 300 x 100 mm, tied to both
+      parameters and read back (version 4)
+
 negative:
   - given: system "Global" in a Generic Models family
     expect: refused - Global is a duct and a pipe system both; "Global pipe" or "Global duct" asked for

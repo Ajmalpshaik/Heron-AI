@@ -64,8 +64,10 @@ jobs:
   - fragment: find-nearest-elements
     set:
       metric: centre
+      withinMm: 0
     negative-set:
       metric: centre
+      withinMm: 0
     expect: nearest
 
   # Same shape, same reason. `pairsChecked` is 56 against 0 and is a work

@@ -9,6 +9,11 @@ positive:
       it looks identical today and is wrong at the next issue. That is the
       difference the two fragments exist to keep apart
 
+  - given: 'ducts, the first rule System Type = Supply Air, moreRules "Comments contains L2", combine and'
+    expect: >
+      one filter matching only supply ducts whose comments hold L2; with
+      combine or, every supply duct and every duct marked L2 (version 2)
+
 negative:
   - given: a filter name already in the project
     expect: >

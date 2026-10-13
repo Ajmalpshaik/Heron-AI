@@ -65,8 +65,10 @@ jobs:
   - fragment: find-nearest-elements
     set:
       metric: "centre"
+      withinMm: 0
     negative-set:
       metric: "centre"
+      withinMm: 0
     expect: nearest
     note: >
       `targets (IList<Element>)` is left to bind from the chain the way `views`

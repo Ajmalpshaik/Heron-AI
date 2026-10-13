@@ -18,6 +18,11 @@ positive:
       7 m, not 5. A straight line is 5; cable does not fly diagonally through a
       building, and that gap is the whole reason the metric exists
 
+  - given: three air terminals and five lights, metric gap, withinMm 3000
+    expect: >
+      each terminal's nearest light as before, and withinRadius listing every
+      light within 3000 mm of it, nearest first (version 2)
+
 negative:
   - given: >
       a LONG WALL running right past a source element, with its centre far
