@@ -977,7 +977,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-115 — A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW
 
-**Status:** Proposed · **Date:** 2026-10-13 · **Source:** [FRAGMENT-ISSUES 5b-455](fragment-issues/section-5b-rows-401-425.md) - OPEN_VIEW refused by Revit for every view through revit_change, a sheet included, and the cause measured on Project1, Revit 2020, the same day
+**Status:** Proposed · **Date:** 2026-10-13 · **Source:** [FRAGMENT-ISSUES 5b-456](fragment-issues/section-5b-rows-401-425.md) - OPEN_VIEW refused by Revit for every view through revit_change, a sheet included, and the cause measured on Project1, Revit 2020, the same day
 **Widens:** [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group) item 1 - the switch it made for Revit's edit modes is declared for one more reason, and nothing else in D-112 changes
 **Keeps:** Golden Rule 16 - one TransactionGroup, one undo, rolled back on a preview · the read path's guarantee that nothing there can open a transaction · [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) - nothing new in the add-in
 **Affects:** `open-view` only. Nothing in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) or [`heron_fragment.py`](../brain/heron_fragment.py) changes

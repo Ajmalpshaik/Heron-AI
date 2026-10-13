@@ -49,7 +49,7 @@ purpose: >
   So version 1 was refused for EVERY view through revit_change - on 2026-10-13
   a sheet in Project2 and a 3D view in Project1 - and only its "already on
   screen" answer ever worked there. Measured 2026-10-13 on Project1, Revit
-  2020 (FRAGMENT-ISSUES 5b-455): with no transaction open the same call opens
+  2020 (FRAGMENT-ISSUES 5b-456): with no transaction open the same call opens
   the view, a TransactionGroup alone included. This card declares the ambient
   `editScopeFailures` need, and the add-in runs it inside the job's group with
   no transaction open (D-112, widened by D-115). Revit's own words now come
@@ -60,7 +60,7 @@ purpose: >
   "FloorPlan: Level 1", "DrawingSheet: Ground Floor Plan", the spelling every
   fragment taking a view accepts. The plain name is tried first and wins when
   it names one openable view; the refusal for two STARTS with the spellings to
-  use. Run on sheets on 2026-10-13, Revit 2020, before and after (5b-455).
+  use. Run on sheets on 2026-10-13, Revit 2020, before and after (5b-456).
 
 contract:
   needs:
@@ -71,7 +71,7 @@ contract:
     - name: editScopeFailures
       # NEVER USED BY THE CODE. Declaring it is the switch that has the add-in
       # run this inside the job's TransactionGroup with NO transaction open
-      # (D-112, D-115) - Revit refuses a view change inside one (5b-455). It
+      # (D-112, D-115) - Revit refuses a view change inside one (5b-456). It
       # also refuses this fragment on the read path, which revit_read already
       # does for anything declared EXECUTE.
       type: IFailuresPreprocessor
@@ -107,7 +107,7 @@ contract:
 
 # THIS PROOF IS OF VERSION 1, kept for the record. Its positive case was the
 # view ALREADY on screen, so RequestViewChange was never called in it, and the
-# call it never made is the one Revit refused through revit_change (5b-455).
+# call it never made is the one Revit refused through revit_change (5b-456).
 # Version 2 is DRAFT until a run against a named model replaces it.
 proof:
   date: '2026-09-08'
@@ -150,7 +150,7 @@ compatibility-note: >
 #                                         number, nor as "Sheet: A101 - name".
 #                                         Version 1 was refused by Revit for
 #                                         EVERY view through revit_change, a
-#                                         sheet included (5b-455)
+#                                         sheet included (5b-456)
 #   "which views are there"            -> FIND_VIEWS. Run it first when the exact
 #                                         name is not known - this one needs the
 #                                         name

@@ -78,10 +78,14 @@ purpose: >
   12. THE CHECK, and it is the proof that the set is there - the calls not
       failing is not. READ_MODEL_WARNINGS (PROVEN) for anything the set
       added, and revit_sheets for every sheet with the views on it and none
-      empty. The modeller opens the sheets to look at them. OPEN_VIEW
-      (PROVEN) says a sheet opens like any view, but on 2026-10-13 Revit
-      refused it for a sheet and the reason was not recorded - so a sheet that
-      will not open through Heron is not a sign the set is wrong.
+      empty. To put a sheet on screen, OPEN_VIEW (DRAFT, version 2) with the
+      sheet's NAME - or "DrawingSheet: <name>" when a plan shares it, which
+      is how its refusal starts - never its number. On 2026-10-13 Revit
+      refused every view OPEN_VIEW asked for, this set's sheet and a 3D view
+      alike, because it ran inside a transaction (FRAGMENT-ISSUES 5b-456);
+      version 2 runs with none open and opened sheets on Revit 2020 that
+      evening. A sheet that will not open through Heron is not a sign the set
+      is wrong - the modeller opens it.
 
   TWO CHATS ON ONE REVIT. With another chat working the same model, the
   values one step carries to the next can be replaced by the other chat's,

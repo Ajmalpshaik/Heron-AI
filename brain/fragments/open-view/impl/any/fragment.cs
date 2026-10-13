@@ -4,7 +4,7 @@
 // NO TRANSACTION, AND IT MUST RUN WITH NONE OPEN. Revit refuses to change the
 // active view while a transaction is open: "Cannot change the active view of a
 // modifiable document (with a transaction curently open)" - Revit's spelling,
-// measured 2026-10-13 on Project1, Revit 2020 (row 5b-455). Every write
+// measured 2026-10-13 on Project1, Revit 2020 (row 5b-456). Every write
 // fragment runs inside one, so version 1 was refused for EVERY view through
 // revit_change - a sheet and a 3D view alike. The card declares the ambient
 // `editScopeFailures` need, and the add-in runs a fragment declaring it inside
@@ -113,7 +113,7 @@ else
     // to fail obscurely inside Revit.
     // WHAT TO TYPE INSTEAD COMES FIRST in the two refusals below that have
     // an answer: a finding reaches the chat cut to its first sixty or so
-    // characters, and a hint at the end of one was never seen (row 5b-455).
+    // characters, and a hint at the end of one was never seen (row 5b-456).
     if (named.Count == 0 && otherKinds.Count > 0)
     {
         findings.Add("Say " + string.Join(" or ", otherKinds) + " - there is no \"" + asked
@@ -171,7 +171,7 @@ else
             {
                 // REVIT'S WORDS FIRST. A finding is shown cut short, and the
                 // 2026-10-13 refusals arrived as "Revit refused to open ... so
-                // the view on sc..." with the reason gone (row 5b-455, as row
+                // the view on sc..." with the reason gone (row 5b-456, as row
                 // 90 found for switch-active-project).
                 findings.Add(ex.Message + " - so Revit did not open \"" + (target.Name ?? "")
                     + "\" (" + target.ViewType + ") and the view on screen is UNCHANGED. "
