@@ -9,15 +9,16 @@ semantic-identity: "does every size_lookup in this family find its table and its
 kind: action
 domain: revit.families
 capability: CHECK_FAMILY_SIZE_TABLES
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 purpose: >
   Checks the lookup tables of the family open in front against the formulas
   that read them, and names every size_lookup that cannot find what it asks
-  for - the table, or the column - type by type. The check to run after a
-  table is imported or renamed, and before the family is loaded into a job.
+  for - the table, the column, or (version 2) a row for the type's size -
+  type by type. The check to run after a table is imported or renamed, and
+  before the family is loaded into a job.
 
   **A LOOKUP THAT MISSES IS SILENT.** size_lookup answers with its DEFAULT
   when the table it names is not in the family, or the column it asks for is
@@ -38,11 +39,24 @@ purpose: >
   no name; and, as a note rather than a problem, a table no type names.
   Each problem is said once however many types share it.
 
-  **WHAT IT DOES NOT CHECK, AND SAYS SO:** whether each type's KEY value has
-  a row in the table. That needs the family's sizes and the table's cells
-  compared in one unit, a decision this read has not been given - so it is
-  reported as NOT CHECKED, never as passed. REPORT_FAMILY_SIZE_TABLE shows
-  the rows to compare by eye.
+  **VERSION 2: A ROW FOR EVERY TYPE'S SIZE.** A table and a column that are
+  both there still answer with the default when no row holds the type's
+  size. Each key that is a TYPE parameter holding a number is read in every
+  type, converted into the unit its column's header declares - the unit the
+  table itself is written in - and looked for in the rows, to 0.0001 of
+  that unit. A miss is a NO ROW problem naming the type, the table, the key
+  values and every formula left at its default. Keys are matched from the
+  table's SECOND column on, the first column holding row names: the reading
+  seen in Revit 2024 (docs/43 section 5), with FRAGMENT-ISSUES row 5b-281
+  still open on its negative half.
+
+  **WHAT IT STILL DOES NOT CHECK, AND SAYS SO** - each a ROWS NOT CHECKED
+  note, never a pass: a key that is an INSTANCE parameter, whose value is
+  set where the family is placed (a pipe fitting's Nominal Diameter, most
+  often - for those the sizes to check are the pipe segment's, in the
+  project); a key that is an expression rather than one parameter; a key
+  that is text; and a measured key against a column whose header declares
+  no unit, where comparing would mean guessing the unit.
 
   **IT NEEDS THE FAMILY OPEN FOR EDITING.** With a project in front it says
   so rather than reporting no problems, because "nothing wrong" and "you are
@@ -68,6 +82,11 @@ contract:
     - name: lookupsChecked
       # size_lookup calls found in the family's formulas. Work DONE, never a
       # thing found (D-52).
+      role: accounting
+      type: int
+    - name: rowSearches
+      # Type-by-formula searches for a row (version 2). 0 with lookups found
+      # means every key was one this cannot check - the report says why.
       role: accounting
       type: int
     - name: tablesChecked
@@ -101,10 +120,24 @@ compatibility-note: >
   matches a column name with or without regard to letter case is not
   established, and neither is it for a table name, so a case-only
   difference in either is reported, not judged.
+  VERSION 2, THE ROW CHECK (read 2026-10-13 with `tools/api-surface
+  --members`): a cell is only readable as text, `FamilySizeTable.
+  AsValueString` (2020-2027), and is parsed invariant first, then in the
+  machine's own culture. A column's unit is `FamilySizeTableColumn.
+  DisplayUnitType` on 2020 (gone after 2021) and `GetUnitTypeId()` from 2021,
+  so one `#if REVIT2020`; `UnitUtils.ConvertFromInternalUnits` takes the
+  matching argument on each side. A unitless column is DUT_GENERAL,
+  DUT_UNDEFINED or DUT_CUSTOM on 2020 and an empty ForgeTypeId or one whose
+  TypeId begins `autodesk.unit.unit:general` from 2021. `FamilyType.
+  AsDouble`, `AsInteger` and `FamilyParameter.IsInstance` are 2020-2027.
+  That AsValueString writes a cell in its column's own unit was seen on
+  Revit 2020 (REPORT_FAMILY_SIZE_TABLE's proof: an ND column in millimetres
+  read 6.350000), not on every release; and whether Revit's own match uses
+  the same tolerance is not established.
 
-# ROUTING - each sentence below measured through the host lookup on
-# 2026-10-12. Not yet repeated in REPORT_FAMILY_SIZE_TABLE's card: that card
-# is PROVEN, and this change leaves it untouched.
+# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE and
+# REPORT_FAMILY_TABLES_IN_PROJECT. Each sentence below measured through the
+# host lookup on 2026-10-12.
 #
 #   "check the lookup tables in this family" -> here - formulas against
 #                                               tables, in the family in front
