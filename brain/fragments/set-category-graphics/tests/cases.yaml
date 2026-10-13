@@ -16,7 +16,29 @@ positive:
   - given: an EMPTY settings object passed for the same categories
     expect: the override is cleared - apply and undo are the same call here
 
+  - given: >
+      Walls, projection-line-colour=200,30,30 and projection-line-weight=5, on
+      a floor plan
+    expect: >
+      `overridden` 1, counted because GetCategoryOverrides reads back
+      200,30,30 and 5 - not because the Set was called (5b-453)
+
 negative:
+  - given: >
+      Rooms, the same override, on a floor plan in Revit 2020 - Revit takes it
+      without an exception and reads back nothing (5b-453)
+    expect: >
+      `overridden` 0 and `refused` carries "Revit took the override and stored
+      nothing for Rooms". Version 1 answered "overridden 1" here
+
+  - given: >
+      a category that keeps PART of the override - Ducts on Revit 2024 kept
+      the projection line colour of four settings asked for (row 175)
+    expect: >
+      not counted, and `notKept` names each setting that did not land with
+      what was read back, e.g. "Ducts: not kept - surface colour asked
+      255,0,0, read back none"
+
   - given: a view whose TEMPLATE controls graphics
     expect: >
       the category names in `refused`, nothing changed, no exception. "That view
