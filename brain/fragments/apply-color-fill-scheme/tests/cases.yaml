@@ -4,6 +4,11 @@
 # was rolled back beside it and no fingerprint was taken (D-30). The proof is
 # still to be run, on a test copy, by the owner. NEEDS-CHECKING group AV.
 #
+# VERSION 2, 2026-10-13. The cases marked (v2) are new and NOTHING of version 2
+# has run in Revit. Every input version 2 added is EMPTY in version 1's cases
+# (colours, schemeToUse, legend) and clearScheme is not mentioned, so those
+# cases still describe version 1's behaviour exactly.
+#
 # ARRANGE: a floor plan with its crop region on, rooms or spaces on its level,
 # and no colour fill legend in it yet. Run it TWICE on the same view: the
 # second run is the case that shows nothing is duplicated.
@@ -43,6 +48,60 @@ positive:
       a scheme "Spaces by Name" is copied from a Spaces scheme, and nothing
       about the Rooms scheme or the first view changes
 
+  - given: >
+      (v2) the copy of a floor plan, "Level 1 - Colour Test", category Rooms,
+      parameterName Name, colours, schemeToUse and legend empty - on Revit 2022
+      or later, with a copy of the plan made first so the original is never
+      touched
+    expect: >
+      schemeApplied true and viewsChanged 1; entries lists one row per room
+      name the copy shows; legendsInView 1. REPORT_COLOR_FILL_SCHEME on the copy
+      lists the same rows and colours, and on the ORIGINAL plan lists whatever
+      it showed before - unchanged
+
+  - given: >
+      (v2) two plans at once, "Level 1, Level 2", Rooms by Name
+    expect: >
+      one scheme set on both, viewsChanged 2, one legend in each,
+      legendAtMm names both views
+
+  - given: >
+      (v2) colours "pastel; Kitchen=255,200,200" on the plan just coloured
+    expect: >
+      every row re-coloured on COLOR_BY_PARAMETER's pastel steps and Kitchen
+      255,200,200; rowsRecoloured equals the rows whose colour changed; each
+      read back. If another view also shows the scheme, the colours went on a
+      COPY and findings says so; with schemeToUse naming it, the scheme itself
+      changes and schemeSource says other views changed too
+
+  - given: >
+      (v2) schemeToUse "TRG Rooms Presentation", a name no scheme has, with
+      parameterName Name
+    expect: >
+      a scheme of that name is made by copying, coloured by Name, and set;
+      run again, it is USED, and no "(2)" copy appears
+
+  - given: >
+      (v2) legend "12000,4000" on a plan that already has its legend
+    expect: >
+      no second legend; the one there is moved and legendAtMm reads
+      "at 12000, 4000 mm"
+
+  - given: >
+      (v2) clearScheme true, category Rooms, on the coloured copy
+    expect: >
+      viewsChanged 1; the copy's Rooms scheme reads back as none and its
+      Rooms legend is gone; the scheme element is still in the model and
+      every other view showing it is unchanged
+
+  - given: >
+      (v2) a plan whose view template holds the colour scheme, then the same
+      request naming THE TEMPLATE as the view
+    expect: >
+      the plan is refused, naming the template and how many views follow it;
+      the template takes the scheme, with a finding that a template carries
+      no legend
+
 negative:
   - given: >
       category Walls on the same floor plan - a category Revit never
@@ -77,6 +136,31 @@ negative:
   - given: parameterName "ZZZ Not A Parameter" with category Rooms
     expect: >
       refused lists what a Rooms scheme CAN colour by. No scheme is copied
+
+  - given: >
+      (v2) the copy of the floor plan, parameterName "ZZZ Not A Parameter",
+      or a plan with no rooms coloured Rooms by a parameter no room carries
+    expect: >
+      refused names what Rooms in the model can be coloured by. Nothing is
+      written - REPORT_COLOR_FILL_SCHEME on the view reads as it did before
+
+  - given: >
+      (v2) colours "Kitchen=300,0,0", or legend "beside"
+    expect: >
+      refused says what the input takes, before anything is written
+
+  - given: >
+      (v2) clearScheme true on a plan with no Rooms scheme and no legend
+    expect: >
+      refused says there was nothing to clear; viewsChanged 0
+
+  - given: >
+      (v2) ANY request on Revit 2020 or 2021
+    expect: >
+      refused says Revit's API cannot set or clear a view's colour scheme or
+      place a legend before 2022, names the schemes the model holds and gives
+      the steps in Revit's own dialog. Nothing is written - and the lookup now
+      OFFERS this card on 2020, where version 1's 2022-to-2027 claim hid it
 
 second_route: >
   Revit's own dialog: select the view, Properties > Color Scheme shows the

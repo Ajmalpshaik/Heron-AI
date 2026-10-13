@@ -1,0 +1,44 @@
+# THE PROOF PLAN, written 2026-10-13. Nothing here has run in Revit.
+#
+# ARRANGE: a plan whose colour scheme APPLY_COLOR_FILL_SCHEME set and read back
+# (the positive), and a plan or a 3D view with no colour scheme and no colour
+# fill legend (the negative). On Revit 2020 or 2021 the positive can only show
+# the legends and the scheme names - see the third case.
+
+positive:
+  - given: >
+      a plan coloured Rooms by Name with a Color Fill Legend beside it -
+      APPLY_COLOR_FILL_SCHEME's positive, on Revit 2022 or later
+    expect: >
+      schemes has one line for that view: Rooms, the scheme's name, "by Name",
+      its row count and "1 legend(s)"; legends 1; report lists every row with
+      its RGB, the same rows and colours APPLY_COLOR_FILL_SCHEME's `entries`
+      gave, and the legend's position in millimetres
+
+  - given: the same plan after its legend is deleted by hand
+    expect: >
+      findings says Rooms is coloured but the view has no Color Fill Legend
+      for it; legends 0. The scheme line is unchanged
+
+  - given: the same plan on Revit 2020
+    expect: >
+      legends counts the legend the view owns; report names the schemes the
+      model holds and says which scheme the view shows per category is not
+      something Revit 2020's API can read. If the view exposes a property
+      holding a scheme, schemes names it
+
+negative:
+  - given: >
+      a plan with no colour scheme on any category and no colour fill legend
+    expect: >
+      schemes empty and legends 0; report says the view shows no colour scheme
+      on any of the categories it can colour-fill and lists them
+
+  - given: the {3D} view
+    expect: >
+      schemes empty, legends 0; report says it takes no colour scheme at all
+
+second_route: >
+  Revit's own dialog: select the view, Properties > Color Scheme > Edit Color
+  Scheme shows the scheme per category, what it colours by, and every row with
+  its colour - the same rows `report` lists.

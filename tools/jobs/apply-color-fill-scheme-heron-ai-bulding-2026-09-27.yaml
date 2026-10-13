@@ -22,12 +22,19 @@ defaults:
     view: "FloorPlan: 1 - Mech"
     category: Spaces
     parameterName: Name
+    # Version 2's inputs, EMPTY for version 1's behaviour (2026-10-13).
+    colours: ""
+    schemeToUse: ""
+    legend: ""
   negative-set:
     # THE SAME VIEW, A CATEGORY REVIT NEVER COLOUR-FILLS. Not an empty request:
     # the refusal must list what the view DOES take, and write nothing.
     view: "FloorPlan: 1 - Mech"
     category: Walls
     parameterName: Name
+    colours: ""
+    schemeToUse: ""
+    legend: ""
 
 jobs:
   - fragment: apply-color-fill-scheme
