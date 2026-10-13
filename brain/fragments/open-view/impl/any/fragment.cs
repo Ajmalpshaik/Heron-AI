@@ -24,35 +24,15 @@ var findings = new List<string>();
 var opened = false;
 var viewBefore = "";
 var requestedView = "";
-ElementId activeId = null;
 
 try
 {
     var active = uidoc.ActiveView;
-    if (active != null)
-    {
-        viewBefore = active.Name ?? "";
-        activeId = active.Id;
-    }
+    if (active != null) viewBefore = active.Name ?? "";
 }
 catch { }
 
 var asked = (viewName ?? "").Trim();
-
-// A view template, or a view kind that is never on screen, is not a view
-// anybody can open - only the rest are candidates.
-Func<View, bool> canOpen = v => !v.IsTemplate
-    && v.ViewType != ViewType.Internal
-    && v.ViewType != ViewType.ProjectBrowser
-    && v.ViewType != ViewType.SystemBrowser
-    && v.ViewType != ViewType.Undefined;
-
-Func<string, List<View>> viewsCalled = text => new FilteredElementCollector(doc)
-    .OfClass(typeof(View))
-    .Cast<View>()
-    .Where(v => v != null && v.IsValidObject
-             && string.Equals(v.Name ?? "", text, StringComparison.OrdinalIgnoreCase))
-    .ToList();
 
 if (asked.Length == 0)
 {
@@ -61,7 +41,28 @@ if (asked.Length == 0)
 }
 else
 {
+    // Declared in here, not at the top: every top-level local comes back
+    // in the reply, and a helper is not something to show a modeller.
     requestedView = asked;
+
+    ElementId activeId = null;
+    try { activeId = uidoc.ActiveView == null ? null : uidoc.ActiveView.Id; }
+    catch { }
+
+    // A view template, or a view kind that is never on screen, is not a view
+    // anybody can open - only the rest are candidates.
+    Func<View, bool> canOpen = v => !v.IsTemplate
+        && v.ViewType != ViewType.Internal
+        && v.ViewType != ViewType.ProjectBrowser
+        && v.ViewType != ViewType.SystemBrowser
+        && v.ViewType != ViewType.Undefined;
+
+    Func<string, List<View>> viewsCalled = text => new FilteredElementCollector(doc)
+        .OfClass(typeof(View))
+        .Cast<View>()
+        .Where(v => v != null && v.IsValidObject
+                 && string.Equals(v.Name ?? "", text, StringComparison.OrdinalIgnoreCase))
+        .ToList();
 
     var named = viewsCalled(asked);
     var openable = named.Where(canOpen).ToList();
@@ -110,14 +111,19 @@ else
     // A template shares the list and is the most likely wrong answer to
     // "open the ceiling plan", so it is named as the reason rather than left
     // to fail obscurely inside Revit.
-    if (named.Count == 0)
+    // WHAT TO TYPE INSTEAD COMES FIRST in the two refusals below that have
+    // an answer: a finding reaches the chat cut to its first sixty or so
+    // characters, and a hint at the end of one was never seen (row 5b-455).
+    if (named.Count == 0 && otherKinds.Count > 0)
+    {
+        findings.Add("Say " + string.Join(" or ", otherKinds) + " - there is no \"" + asked
+            + "\", so NOTHING HAS BEEN SENT TO REVIT and nothing was created.");
+    }
+    else if (named.Count == 0)
     {
         findings.Add("This project has no view called \"" + asked + "\", so NOTHING HAS BEEN SENT "
             + "TO REVIT. Nothing was created either - this opens an existing view and never makes "
-            + "one. "
-            + (otherKinds.Count > 0
-                ? "That name is here as " + string.Join(" and ", otherKinds) + "."
-                : "FIND_VIEWS lists what is there."));
+            + "one. FIND_VIEWS lists what is there.");
     }
     else if (openable.Count == 0)
     {
@@ -131,9 +137,9 @@ else
             .Select(v => "\"" + v.ViewType + ": " + (v.Name ?? "") + "\"")
             .Distinct()
             .ToList();
-        findings.Add(openable.Count + " openable views are called \"" + asked + "\", so NOTHING HAS "
-            + "BEEN SENT TO REVIT. Picking one would be guessing which the user meant. Say which: "
-            + string.Join(" or ", choices) + ".");
+        findings.Add("Say " + string.Join(" or ", choices) + " - " + openable.Count
+            + " openable views are called \"" + asked + "\", so NOTHING HAS BEEN SENT TO REVIT. "
+            + "Picking one would be guessing which the user meant.");
     }
     else
     {

@@ -19,6 +19,19 @@ positive:
       it still matches. A modeller types the name they remember, not the one
       stored
 
+  - given: >
+      a name two views share, written "Kind: name" - "DrawingSheet: Site",
+      "CeilingPlan: Level 1"
+    expect: >
+      that one opens - the spelling every fragment taking a view accepts. Run
+      2026-10-13 on Revit 2020 (5b-455)
+
+  - given: any view at all, sent through revit_change
+    expect: >
+      the change requested, not refused. Version 1 ran inside Heron's
+      transaction and Revit refused every view there: "Cannot change the
+      active view of a modifiable document" (5b-455)
+
 negative:
   - given: the name of a VIEW TEMPLATE
     expect: >
@@ -35,7 +48,9 @@ negative:
   - given: two openable views sharing the same name
     expect: >
       refused with both listed and their types shown, rather than one picked.
-      Guessing which was meant puts the user somewhere they did not ask to be
+      Guessing which was meant puts the user somewhere they did not ask to be.
+      The refusal STARTS with the spellings to send instead, because a
+      finding reaches the chat cut to about sixty characters
 
   - given: an empty view name
     expect: >
@@ -43,8 +58,13 @@ negative:
 
   - given: any run at all
     expect: >
-      NO TRANSACTION, NOTHING CREATED, NOTHING CLOSED. This puts an existing view
-      on screen and does nothing else
+      NO TRANSACTION OPEN, NOTHING CREATED, NOTHING CLOSED. This puts an
+      existing view on screen and does nothing else
+
+  - given: >
+      a sheet's number, or Revit's title-bar spelling "Sheet: OV1 - name"
+    expect: >
+      "no view called" - neither is a name this reads. Measured 2026-10-13
 
 second_route:
   - >

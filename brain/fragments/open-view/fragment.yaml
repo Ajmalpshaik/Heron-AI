@@ -53,12 +53,14 @@ purpose: >
   the view, a TransactionGroup alone included. This card declares the ambient
   `editScopeFailures` need, and the add-in runs it inside the job's group with
   no transaction open (D-112, widened by D-115). Revit's own words now come
-  FIRST in a refusal, because a finding is shown cut short.
+  FIRST in a refusal, because a finding is shown cut short - the add-in cuts
+  every list item to about sixty characters.
 
   **TWO VIEWS SHARING A NAME ARE TOLD APART THE LIBRARY'S WAY** -
   "FloorPlan: Level 1", "DrawingSheet: Ground Floor Plan", the spelling every
   fragment taking a view accepts. The plain name is tried first and wins when
-  it names one openable view; the refusal for two lists the spellings to use.
+  it names one openable view; the refusal for two STARTS with the spellings to
+  use. Run on sheets on 2026-10-13, Revit 2020, before and after (5b-455).
 
 contract:
   needs:
@@ -145,10 +147,10 @@ compatibility-note: >
 #                                         a view and opens the same way - by
 #                                         its name, or "DrawingSheet: <name>"
 #                                         when a view shares it. Not by its
-#                                         number yet. Version 1 was refused by
-#                                         Revit for EVERY view through
-#                                         revit_change, a sheet included
-#                                         (5b-455); version 2 is DRAFT
+#                                         number, nor as "Sheet: A101 - name".
+#                                         Version 1 was refused by Revit for
+#                                         EVERY view through revit_change, a
+#                                         sheet included (5b-455)
 #   "which views are there"            -> FIND_VIEWS. Run it first when the exact
 #                                         name is not known - this one needs the
 #                                         name
