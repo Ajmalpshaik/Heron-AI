@@ -53,6 +53,11 @@ contract:
     - name: view
       type: View
       source: request
+    # Top-level categories only: a sub-category's name is refused. Revit
+    # 2020 takes an override on a sub-category and reads back nothing
+    # (measured 2026-10-13, FRAGMENT-ISSUES 5b-453), and this counts the call,
+    # so it would report a change that is not there. SET_CATEGORY_VISIBILITY
+    # takes sub-categories; it reads its change back.
     - name: categories
       type: IList<Category>
       source: request
