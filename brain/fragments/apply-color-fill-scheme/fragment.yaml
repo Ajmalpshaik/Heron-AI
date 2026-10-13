@@ -92,8 +92,9 @@ purpose: >
   Colour-fills plans the way Revit's own Color Fill does it: sets the views'
   Color Scheme for one category - Rooms, Spaces, HVAC Zones, Areas, Ducts,
   Pipes, whichever the view takes - to one that colours by the parameter named,
-  colours its rows, and places Revit's Color Fill Legend in the view. Takes a
-  view's Color Scheme off again too. "Colour the rooms by name" and "add a
+  re-colours its rows - a band such as pastel, or one colour per value - and
+  places Revit's Color Fill Legend in the view. Takes a view's Color Scheme off
+  again too. "Colour the rooms by name" and "add a
   colour fill legend" are this.
 
   **NOT COLOR_BY_PARAMETER**, which paints overrides element by element; a

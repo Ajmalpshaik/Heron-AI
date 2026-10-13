@@ -36,10 +36,10 @@ risk: READ
 #   exposes one holding a scheme - and say the rest is not readable there.
 purpose: >
   Answers which Color Scheme each view shows - for Rooms, Spaces, HVAC Zones,
-  Areas, Ducts or Pipes - what it colours by, every row's value and colour,
-  and the Color Fill Legends the view carries. Then checks it: a coloured plan
-  with no legend, two rows in one colour, values the view shows with no row,
-  rows nothing uses, a view template that holds the scheme.
+  Areas, Ducts or Pipes - what it colours by, every row's value and RGB, and
+  the Color Fill Legends the view carries. Then checks it: a filled plan with
+  no legend, two rows that look alike, values the view shows with no row, rows
+  nothing uses, a view template that holds the scheme.
 
   Reads only. It opens no transaction and changes nothing.
 
