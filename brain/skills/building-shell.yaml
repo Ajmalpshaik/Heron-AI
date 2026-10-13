@@ -65,11 +65,16 @@ purpose: >
      BX6).
   8. CREATE_RAILING (DRAFT) along each terrace and roof-deck edge, and round
      each stair opening, as pathMm on the level it stands on, in the railing
-     type the modeller names. COUNT THE RAILINGS FIRST. The stair made on
-     2026-10-13 came with railings of its own, although CREATE_STAIRS's own
-     record says it makes none - so a stair is given railings here (elements=
-     that stair) only when it has none, or it ends up with two sets. Count them
-     with SELECT_BY_CATEGORY_NAME (DRAFT), categoryName=Railings:
+     type the modeller names. COUNT THE RAILINGS FIRST. A stair made by
+     CREATE_STAIRS comes with railings of its own: Revit adds them as the
+     stair is finished, in the type the model sets as its default for stair
+     railings - two on every stair measured on Revit 2020.2 on 2026-10-13, an
+     inner and an outer on a U and one each side of a straight run; not
+     measured on 2021 to 2027. So a stair is given railings here (elements=
+     that stair) only when it has none, or it ends up with two sets. For another
+     railing type on a stair, the modeller changes the model's default stair
+     railing type before the stair is made. Count
+     them with SELECT_BY_CATEGORY_NAME (DRAFT), categoryName=Railings:
      FILTER_ELEMENTS_BY_CATEGORY and SELECT_IN_REGION answered 0 for two
      railings that day (5b-444), and the fix for that has not yet been run in
      Revit.
@@ -99,8 +104,12 @@ purpose: >
       the two long eaves and leaves the two ends upright, a hip slopes every
       edge. The pitch is the modeller's and is never assumed.
   13. COLOURS, only when the modeller asks for them. Nothing in the library
-      sets the material of a type's layers yet, so the colour goes on the
-      faces. CREATE_MATERIAL (PROVEN), one material per colour, named, with
+      sets a chosen layer of a type to a material yet. REPLACE_MATERIAL
+      (PROVEN) swaps one named material for another inside a type's layers,
+      but it changes every element of that type, never matches a layer set to
+      <By Category>, and leaves curtain walls alone - so for colour on chosen
+      faces and bands the colour goes on as paint. CREATE_MATERIAL (PROVEN),
+      one material per colour, named, with
       its colour and transparency; then PAINT_FACES (DRAFT) on what
       SELECT_IN_REGION (DRAFT) finds in a thin band of height - one band and
       one category at a time, so the band that picks up a white strip under a
@@ -111,8 +120,9 @@ purpose: >
       exact=true, so picking one small wall out from beside a curtain wall
       needs exact=true - the box test caught a glass wall as well that day. To
       see the colours, SET_VIEW_PROPERTIES (PROVEN) on the 3D view with
-      visualStyle=ShadingWithEdges: it takes Revit's own name for a style, and
-      "Shaded" was refused.
+      visualStyle=ShadingWithEdges. It takes the API's name for a style -
+      Wireframe, HLR, Shading, ShadingWithEdges, Realistic - not the name the
+      view control bar shows, so "Shaded" was refused.
   14. The count, and it is the proof that the shell is the plan - the calls
       not failing is not. FILTER_ELEMENTS_BY_CATEGORY (PROVEN) then
       COUNT_ELEMENTS (PROVEN) for the walls, floors, rooms, stairs, doors,
@@ -127,8 +137,8 @@ purpose: >
   whose grid and mullions sit on the TYPE. The ground: CREATE_TOPOSOLID
   (DRAFT) makes terrain on Revit 2024 and later only; on an older release
   nothing in the library builds it, and on 2026-10-13 the garden and the deck
-  were drawn as floors. A type's layer materials, for colours that are part of
-  the wall rather than paint on it.
+  were drawn as floors. Setting a chosen layer of a type to a material, for
+  colours that are part of the wall rather than paint on it.
 
 # The words the modeller says when he wants a building put up.
 utterances:
@@ -203,15 +213,18 @@ note: >
 
   Steps 7, 8, 9's curtain-wall door and 13 were learned on a house built in
   Project2 on Revit 2020.2 on 2026-10-13. A U stair went from Level 1 to Level
-  2 with cutOpening=true in "Monolithic Stair" - "Private" was refused by the
-  stair's own 50 mm check - and came with its own railings; glass railings
-  ("Glass Panel - Bottom Fill") went on a terrace path and round the stair
-  opening; three curtain panels became doors by changing their type; and the
-  colours went on as paint in bands of height. Revit was closed that afternoon
-  without saving Project2, so none of it is left to look at: the last
-  precondition is that day's lesson.
+  2 with cutOpening=true in "Monolithic Stair" - "Private" reached 50 mm past
+  the hall on both sides and was refused by the stair's own 5 mm check - and
+  came with its own railings; glass railings ("Glass Panel - Bottom Fill")
+  went on a terrace path and round the stair opening; three curtain panels
+  became doors by changing their type; and the colours went on as paint in
+  bands of height. Revit was closed that afternoon without saving Project2, so
+  none of it is left to look at: the last precondition is that day's lesson.
+  That a stair made this way comes with two railings was then measured on
+  Revit 2020.2 in Project1 the same day, every change rolled back.
 
   Every step is one entry in Revit's undo list. DRAFT until the whole order has
   been run from an empty level on a scratch model, with the count at the end
-  compared against the plan (NEEDS-CHECKING Group AP, and Group AO for the
-  doors).
+  compared against the plan. NEEDS-CHECKING Group AP covers the levels, walls,
+  slabs, rooms, ceilings and roof, and Group AO the doors; no group yet covers
+  the stairs, the railings, the curtain-wall door or the colours.

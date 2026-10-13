@@ -78,8 +78,10 @@ purpose: >
   12. THE CHECK, and it is the proof that the set is there - the calls not
       failing is not. READ_MODEL_WARNINGS (PROVEN) for anything the set
       added, and revit_sheets for every sheet with the views on it and none
-      empty. OPEN_VIEW (PROVEN) cannot open a sheet - Revit refuses it - so
-      the modeller opens the sheets to look at them.
+      empty. The modeller opens the sheets to look at them. OPEN_VIEW
+      (PROVEN) says a sheet opens like any view, but on 2026-10-13 Revit
+      refused it for a sheet and the reason was not recorded - so a sheet that
+      will not open through Heron is not a sign the set is wrong.
 
   TWO CHATS ON ONE REVIT. With another chat working the same model, the
   values one step carries to the next can be replaced by the other chat's,
