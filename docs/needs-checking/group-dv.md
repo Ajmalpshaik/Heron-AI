@@ -1,0 +1,45 @@
+# Needs checking — Group DV
+
+> One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-13 so that it can be read
+> alone. **The register's rules, and every group's place in it, are on that page.** A new row
+> for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
+> reads it back into the register for every tool that reads the register, so a row here is seen
+> exactly as it was seen there.
+
+## Group DV - door tags in a plan, a sub-category switched in a view, and which side of a wall its dimensions go (2026-10-13)
+
+Three widenings found making the futuristic house's drawing set in Project2 (Revit 2020.2), all three run on
+Revit 2020.2 in Project1 (session 18392, an unsaved scratch project - Project2 was closed without saving at
+14:42), on a duplicate plan, `Tool Test - 6e9a05`, with a negative case each.
+
+**What changed.** `TAG_ELEMENTS_IN_VIEW` version 4 tags every taggable category, not only MEP
+([FRAGMENT-ISSUES 5b-450](../fragment-issues/section-5b-rows-401-425.md)). `DIMENSION_WALL_OPENINGS` version 2
+takes `side` - outside, inside, left, right, or blank for version 1's side ([5b-451](../fragment-issues/section-5b-rows-401-425.md)).
+The add-in's binder resolves a sub-category - *"Rooms: Interior Fill"*, or a bare name only one category has -
+for a need whose card says `subcategories: true`, which today is `SET_CATEGORY_VISIBILITY`'s `categories`
+alone; `SET_CATEGORY_GRAPHICS` and `SET_CATEGORY_SOLID_FILL` stay top-level, for the reason in
+[5b-453](../fragment-issues/section-5b-rows-401-425.md). That closes 5b-448 (PR #509) once both are merged.
+
+**What is proved and what is not.** Both fragment changes ran in Revit, were kept on the test plan and read
+back, and each has a proof draft from `validate` waiting for a signature. The binder change is compiled for all
+eight releases and **has not run in Revit**: the add-in in the running Revit is the one it loaded, and it
+refused both *"Rooms: Interior Fill"* and *"Interior Fill"* "No category called ...", as on the house. A
+rolled-back probe carrying the new binder methods word for word resolved *"Rooms: Interior Fill"* to
+-2000161 and switched it hidden to shown with Rooms left as it was, switched *"Walls: Common Edges"*, and
+refused *"Interior Fill"* naming Areas, HVAC Zones and Rooms - so Revit's half is measured, and the compiled
+binder's is DV3.
+
+With `HERON_CLIENT_ID=ajmal-pc` and `< /dev/null` on every line. The two drafts and their run records are
+git-ignored, so they are not in this change: they sit in the worktree that made them
+(`.claude/worktrees/vigorous-ritchie-8b204c/brain/proof-drafts/`) and a copy in
+`%TEMP%\heron-work\ritchie-6e9a05\keep`. The main checkout's `brain/proof-drafts/runs/` already holds the
+September records of version 3 and version 1 under the same two names - move those aside before copying
+these in to sign there, because `accept` reads the record from that one place.
+
+| # | Run | Look for |
+|---|---|---|
+| **DV1** | Read [`brain/proof-drafts/tag-elements-in-view.yaml`](../../brain/proof-drafts/README.md), then `python brain/heron_validate.py accept tag-elements-in-view --by "Ajmal PS"` and set `heron-status: PROVEN` | positive: 4 doors tagged by *M_Door Tag (the caller's hint)*; negative: the 4 rooms, tagged 0, sent to `TAG_ROOMS`; fingerprint `1178953aaf3a21e6` |
+| **DV2** | The same for `dimension-wall-openings` | positive: 2 strings, *"above the wall on the view (outside: no room on that side...)"*; negative: `side=outsid` refused, created 0; fingerprint `ef524f3e98e95e3d` |
+| **DV3** | After the add-in from this branch is deployed and Revit restarted, on a scratch plan: `SET_CATEGORY_VISIBILITY` with `categories=Rooms: Interior Fill`, `visible=true`; then `categories=Interior Fill`; then `SET_CATEGORY_GRAPHICS` with `categories=Rooms: Interior Fill` | changed 1 and the box in Visibility/Graphics ticked with Rooms as it was; the second refused naming Areas, HVAC Zones and Rooms; the third refused "No category called" - the binder keeps sub-categories from a card that did not ask for them |
+| **DV4** | Revit 2024 or later, a scratch plan: set a projection-line override on *Rooms: Interior Fill* through the Visibility/Graphics dialog, then read it with a probe's `GetCategoryOverrides` | whether a sub-category's override is stored and readable on a later release - [5b-453](../fragment-issues/section-5b-rows-401-425.md)'s unmeasured half |
+| **DV5** | The owner's word on [5b-452](../fragment-issues/section-5b-rows-401-425.md): the MEP path's no-leader head at the element rather than at 0,0,0 | a decision, then a re-proof that reads each head back |

@@ -16,6 +16,14 @@ positive:
       the new one is invisible too. That is the whole difference from hiding
       elements, and it is the case that shows it
 
+  - given: >
+      categories = "Rooms: Interior Fill", visible false (5b-448)
+    expect: >
+      changed 1, the room fills gone from that view and Rooms itself still on
+      - the sub-category's box in Visibility/Graphics unticked, its parent's
+      ticked. Before the add-in's binder learned sub-categories this name was
+      refused "No category called"
+
 negative:
   - given: a view whose TEMPLATE controls visibility and graphics
     expect: >
@@ -29,6 +37,13 @@ negative:
 
   - given: an empty category list
     expect: changed 0, both lists empty, reported as nothing to do
+
+  - given: >
+      categories = Interior Fill (a bare sub-category name that Rooms AND
+      Areas both have)
+    expect: >
+      refused before anything is sent, naming Areas and Rooms and the spelling
+      that decides it - "Areas: Interior Fill"
 
 second_route:
   - open Visibility/Graphics on the view and read the checkbox by hand

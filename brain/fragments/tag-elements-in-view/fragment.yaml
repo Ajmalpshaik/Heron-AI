@@ -9,21 +9,25 @@ semantic-identity: "tag a mixed set of elements in one view, each with the right
 kind: action
 domain: revit.views
 capability: TAG_ELEMENTS_IN_VIEW
-version: 3
+# Version 4 (2026-10-13, FRAGMENT-ISSUES 5b-450): every taggable category, not
+# only MEP. Six doors handed to version 3 came back notTagged 6 because its map
+# knew seventeen MEP categories and nothing else. The MEP path is unchanged.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Tags a MIXED set of elements in one view - ducts get a duct tag, pipes a pipe
-  tag, terminals a terminal tag - and reports what it tagged, what was already
-  tagged, and what it could not tag.
+  Tags a MIXED set of elements in one view - ducts get a duct tag, doors a door
+  tag, walls a wall tag - and reports what it tagged, what was already tagged,
+  and what it could not tag and why.
 
   THREE THINGS IT KNOWS THAT THE API WILL NOT TELL YOU, all of them the reason
   this is a fragment rather than three lines:
 
-  **1. The category-to-tag-category map is a fixed fact, not a lookup.** Nothing
-  in the API derives "a duct is tagged by a duct tag". `ElementTypeGroup` has no
-  per-MEP-category tag entries at all, so the map is carried here.
+  **1. Which tag category tags what.** For MEP it is a fixed map carried here -
+  nothing in the API derives "a duct is tagged by a duct tag". Every other
+  category takes the tag category Revit's own names give it (OST_Doors to
+  OST_DoorTags). Rooms are TAG_ROOMS'.
 
   **2. The tag family must come from the project's own default, never from the
   first one loaded.** `GetDefaultFamilyTypeId` on the tag category returns what
@@ -161,6 +165,21 @@ contract:
       # placed (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: notTaggedWhy
+      # WHY each one in `notTagged` is there, one line per reason with a count
+      # - "2 x Rooms: a room ... takes its own kind of tag - TAG_ROOMS", "1 x
+      # Curtain Panels: no Curtain Panel Tags family is loaded". Version 3 gave
+      # bare ids, and six untagged doors said nothing about why. Never a tag
+      # it placed (D-52).
+      role: accounting
+      type: IList<string>
+    - name: tagTypesUsed
+      # One line per tag category: the tag type used, as "Family: Type", and
+      # which of the three routes found it - the caller's hint, the project's
+      # default, or the first one loaded (a guess). How it CHOSE, never a thing
+      # it made (D-52); the tags are `tagged`.
+      role: accounting
+      type: IList<string>
 
 # THIS PROOF IS THE VERSION 1 RECORD AND IT IS STALE. It was run before
 # leaders existed in this fragment, so it says nothing about `leader=straight`
@@ -199,7 +218,11 @@ compatibility-note: >
   One implementation for every release. `IndependentTag.Create`,
   `IndependentTag.GetTaggedLocalElementIds`, `Element.ChangeTypeId`,
   `Document.GetDefaultFamilyTypeId` and `Category.GetCategory` are unchanged
-  2020 to 2027, and no units call is made.
+  2020 to 2027, and no units call is made. Version 4's derived tag category
+  reads `Enum.GetNames(typeof(BuiltInCategory))` and `Category.CategoryType` -
+  the enum's names differ between releases only by categories added, and a
+  name a release lacks simply does not parse, so the same code asks each
+  release about the categories it has.
 
   **TWO REAL VERSION BREAKS, BOTH FOUND BY THE COMPILE GATE AND NEITHER BY
   READING.** This note said something confidently wrong before it was run, which
@@ -230,6 +253,14 @@ compatibility-note: >
 #                                       tags already there, and it must not
 #                                       answer by placing more
 #   "what is untagged"               -> FIND_UNTAGGED_ELEMENTS
+#   "tag the doors in this view"     -> here, since version 4. Before it the
+#                                       route that worked was
+#                                       FIND_UNTAGGED_ELEMENTS then TAG_ELEMENTS
+#                                       with the door tag named - still right
+#                                       when the caller wants one tag type on
+#                                       everything, chosen by hand
+#   "tag the rooms"                  -> TAG_ROOMS - a room tag is not an
+#                                       independent tag, and here refuses rooms
 
 utterances:
   - tag these elements

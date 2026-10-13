@@ -37,9 +37,16 @@ contract:
     - name: view
       type: View
       source: request
+    # A sub-category too, as "Parent: Sub" - "Rooms: Interior Fill", "Walls:
+    # Common Edges" - or bare when one category alone has it; "Interior Fill"
+    # (Areas, HVAC Zones, Rooms) is refused naming all three. `subcategories:
+    # true` is what lets the add-in's binder look below the top level
+    # (FRAGMENT-ISSUES 5b-448); this code is unchanged, because Revit's
+    # SetCategoryHidden takes a sub-category's id as it takes a category's.
     - name: categories
       type: IList<Category>
       source: request
+      subcategories: true
     - name: visible
       type: bool
       source: request

@@ -21,6 +21,19 @@ positive:
     expect: >
       each room's bounding walls dimensioned. That is how the job is asked for
 
+  - given: >
+      side=outside on an outside wall drawn left to right with rooms below it
+      on the plan (the futuristic house's stone wall, y 19850)
+    expect: >
+      both strings ABOVE the wall, away from the rooms, and `sideUsed` saying
+      "above the wall ... no room on that side". Read the dimension's own line
+      back and check it is on the far side of the wall from the rooms
+
+  - given: side blank on the same wall
+    expect: >
+      the strings where version 1 put them - right of the wall as drawn, here
+      below it, through the rooms. Blank must not move anything
+
 negative:
   - given: a wall whose openings were dimensioned from the DOOR's own references
     expect: >
@@ -50,6 +63,12 @@ negative:
   - given: a duct or a floor in the set
     expect: >
       its id in `notAWall` and the walls still dimensioned
+
+  - given: side=outsid (misspelt)
+    expect: >
+      refused, naming the four it knows, `created` empty and NOTHING drawn. A
+      misspelling must not draw every string on the version 1 side and look
+      like it worked
 
 second_route:
   - >

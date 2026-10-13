@@ -647,6 +647,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ds.md`](needs-checking/group-ds.md)
 
+## Group DV - door tags in a plan, a sub-category switched in a view, and which side of a wall its dimensions go (2026-10-13)
+
+**Its own file:** [`needs-checking/group-dv.md`](needs-checking/group-dv.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
