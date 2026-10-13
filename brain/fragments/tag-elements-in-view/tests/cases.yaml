@@ -17,6 +17,14 @@ positive:
   - given: a tagTypeHintId naming a real tag type of the right category
     expect: that family is used, and the read-back confirms it on every tag
 
+  - given: >
+      doors on one level (version 4), tagTypeHintId = a door tag type, in a
+      plan view
+    expect: >
+      every door tagged with THAT door tag, `tagTypesUsed` naming it with "the
+      caller's hint". Count them back with SELECT_BY_CATEGORY_NAME Door Tags
+      inViewOnly=<the view>. Version 3 answered notTagged for every door
+
 negative:
   - given: >
       any successful run - check typeCorrections whatever the result
@@ -34,6 +42,11 @@ negative:
 
   - given: an element whose category has no tag category at all, e.g. a room separation line
     expect: its id in notTagged, no exception, the taggable elements still tagged
+
+  - given: rooms handed in with the doors
+    expect: >
+      the rooms in notTagged and `notTaggedWhy` sending them to TAG_ROOMS; the
+      doors still tagged. A room tag is not an independent tag
 
   - given: an empty element list
     expect: all counts zero, notTagged empty, reported as nothing to do

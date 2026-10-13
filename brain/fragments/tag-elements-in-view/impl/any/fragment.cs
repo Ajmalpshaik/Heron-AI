@@ -1,14 +1,16 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `view` and `tagTypeHintId` are in
-// scope, and leaves `tagged`, `alreadyTagged`, `typeCorrections` and
-// `notTagged` behind.
+// scope, and leaves `tagged`, `alreadyTagged`, `typeCorrections`,
+// `notTagged`, `notTaggedWhy` and `tagTypesUsed` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16), so a whole view is one undo.
 //
 // THE THREE THINGS THIS CARRIES THAT THE API WILL NOT TELL YOU.
 //
-// 1. THE CATEGORY -> TAG CATEGORY MAP IS A FIXED FACT. Nothing derives "a duct
-//    is tagged by a duct tag" at run time. `ElementTypeGroup` carries no
-//    per-MEP-category tag entries, so the map lives here.
+// 1. THE MEP CATEGORY -> TAG CATEGORY MAP IS A FIXED FACT. Nothing derives "a
+//    duct is tagged by a duct tag" at run time. `ElementTypeGroup` carries no
+//    per-MEP-category tag entries, so the map lives here. EVERY OTHER CATEGORY
+//    is worked out from Revit's own category names (version 4, below) - the
+//    map is checked first and its path is unchanged.
 //
 // 2. THE TAG FAMILY COMES FROM THE PROJECT'S DEFAULT, NOT THE FIRST LOADED.
 //    `GetDefaultFamilyTypeId` on the tag category returns what Revit's own
@@ -33,6 +35,18 @@ var verticalSkipped = new List<ElementId>();
 var tooShort = new List<ElementId>();
 int leadersNotDrawn = 0;
 var notTagged = new List<ElementId>();
+
+// WHY EACH ONE IN `notTagged` IS THERE, one line per reason with a count.
+// Version 3 handed back bare ids: six doors came back "notTagged 6" with
+// nothing to say that the fragment did not know doors at all, and the working
+// route (FIND_UNTAGGED_ELEMENTS then TAG_ELEMENTS) had to be found by hand.
+var whyCount = new Dictionary<string, int>();
+Action<string> because = reason =>
+{
+    int seenBefore;
+    whyCount.TryGetValue(reason, out seenBefore);
+    whyCount[reason] = seenBefore + 1;
+};
 
 // LEADER SHAPE, and `none` is the default ON PURPOSE. `none` is byte for byte
 // what this fragment did before leaders existed in it - addLeader false, head
@@ -98,6 +112,79 @@ var tagCategoryFor = new Dictionary<BuiltInCategory, BuiltInCategory>
     { BuiltInCategory.OST_Sprinklers,        BuiltInCategory.OST_SprinklerTags },
 };
 
+// EVERY OTHER CATEGORY - doors, windows, walls, furniture, generic models,
+// structure, casework and the rest - FROM REVIT'S OWN CATEGORY NAMES, not from
+// a second hand list. A taggable category's tag category is named after it in
+// the API: OST_Doors -> OST_DoorTags, OST_GenericModel -> OST_GenericModelTags,
+// OST_Stairs -> OST_StairsTags, OST_Assemblies -> OST_AssemblyTags. So the
+// category's own enum name is tried with "Tags" added, then singular with
+// "Tags" added, and a name only counts when THIS document has that category
+// and it is an ANNOTATION category. Enum names, not shown names, so a German
+// or French Revit derives the same answer. The MEP map above stays first and
+// unchanged, because OST_DuctCurves -> OST_DuctTags is exactly the kind of
+// pair this rule cannot see.
+//
+// ROOMS, AREAS AND SPACES ARE NOT TAGGED HERE. Their tags are a different kind
+// of element (a room tag, not an independent tag), placed by TAG_ROOMS, and
+// IndependentTag.Create refuses them - so they are named in the answer rather
+// than attempted.
+var derivedTagCategory = new Dictionary<ElementId, BuiltInCategory>();
+Func<Category, BuiltInCategory> tagCategoryByName = elementCategory =>
+{
+    BuiltInCategory answer;
+    if (derivedTagCategory.TryGetValue(elementCategory.Id, out answer)) return answer;
+    answer = BuiltInCategory.INVALID;
+
+    foreach (var enumName in Enum.GetNames(typeof(BuiltInCategory)))
+    {
+        BuiltInCategory ownCategory;
+        if (!Enum.TryParse(enumName, false, out ownCategory)) continue;
+        if (elementCategory.Id != new ElementId(ownCategory)) continue;
+
+        var singular = enumName.EndsWith("ies", StringComparison.Ordinal)
+            ? enumName.Substring(0, enumName.Length - 3) + "y"
+            : enumName.EndsWith("s", StringComparison.Ordinal)
+              && !enumName.EndsWith("ss", StringComparison.Ordinal)
+                ? enumName.Substring(0, enumName.Length - 1)
+                : enumName;
+
+        foreach (var tagName in new[] { enumName + "Tags", singular + "Tags" })
+        {
+            BuiltInCategory tagCandidate;
+            if (!Enum.TryParse(tagName, false, out tagCandidate)) continue;
+            Category tagCategoryHere = null;
+            try { tagCategoryHere = Category.GetCategory(doc, tagCandidate); } catch { }
+            if (tagCategoryHere != null
+                && tagCategoryHere.CategoryType == CategoryType.Annotation)
+            {
+                answer = tagCandidate;
+                break;
+            }
+        }
+        if (answer != BuiltInCategory.INVALID) break;
+    }
+
+    derivedTagCategory[elementCategory.Id] = answer;
+    return answer;
+};
+
+// WHERE A TAG GOES WHEN IT IS NOT ON THE MEP PATH: the element's own point -
+// the middle of its location line, its insertion point, or, for an element
+// Revit gives neither (a door that IS a curtain-wall panel is one), the centre
+// of its extent in this view. TAG_ELEMENTS places at the location the same way,
+// and refused a curtain-panel door for having no point; the extent is what
+// lets one be tagged here.
+Func<Element, XYZ> ownPoint = element =>
+{
+    var onCurve = element.Location as LocationCurve;
+    if (onCurve != null && onCurve.Curve != null) return onCurve.Curve.Evaluate(0.5, true);
+    var onPoint = element.Location as LocationPoint;
+    if (onPoint != null) return onPoint.Point;
+    BoundingBoxXYZ extent = null;
+    try { extent = element.get_BoundingBox(view) ?? element.get_BoundingBox(null); } catch { }
+    return extent == null ? null : (extent.Min + extent.Max) * 0.5;
+};
+
 // EVERY ELEMENT ALREADY TAGGED IN THIS VIEW, read once before anything is
 // created. Running twice must be safe: a second tag stacked on the first makes
 // a drawing that looks right on screen and prints wrong.
@@ -122,14 +209,17 @@ foreach (var existing in new FilteredElementCollector(doc, view.Id)
 #endif
 }
 
-// Resolved once per tag category, not once per element.
+// Resolved once per tag category, not once per element - and WHICH of the
+// three routes found it is kept, so `tagTypesUsed` can say so.
 var typeForCategory = new Dictionary<BuiltInCategory, ElementId>();
+var routeFor = new Dictionary<BuiltInCategory, string>();
 
 foreach (var element in elements)
 {
     if (element == null || element.Category == null)
     {
         notTagged.Add(element == null ? ElementId.InvalidElementId : element.Id);
+        because("no category - nothing to choose a tag by");
         continue;
     }
 
@@ -137,6 +227,14 @@ foreach (var element in elements)
     {
         alreadyTagged++;
         continue;
+    }
+
+    // ON THE MEP MAP OR NOT. Only read here; the map is looked up again below
+    // exactly as version 3 did, so an MEP element takes the same path it took.
+    bool onMepMap = false;
+    foreach (var pair in tagCategoryFor)
+    {
+        if (element.Category.Id == new ElementId(pair.Key)) { onMepMap = true; break; }
     }
 
     // A RISER IS A DOT ON A PLAN. Tagging one puts text and a leader against
@@ -149,6 +247,11 @@ foreach (var element in elements)
     // length once flattened onto the paper, not which way it points in the
     // model. A run keeping less than a fifth of its length in the view plane
     // is standing too close to end-on to tag.
+    //
+    // AN MEP RUN'S RULE, AND ONLY APPLIED TO ONE. A beam seen end-on in a
+    // section is tagged there on purpose, so the categories version 4 added
+    // skip this test; the minimum length below still applies to them, because
+    // that one is the caller's own choice.
     var runCurve = element.Location as LocationCurve;
     if (runCurve != null && runCurve.Curve != null)
     {
@@ -159,7 +262,7 @@ foreach (var element in elements)
             double across = span.DotProduct(view.RightDirection);
             double along = span.DotProduct(view.UpDirection);
             double inPlane = Math.Sqrt(across * across + along * along);
-            if (full > 1e-9 && inPlane < full * 0.2)
+            if (onMepMap && full > 1e-9 && inPlane < full * 0.2)
             {
                 verticalSkipped.Add(element.Id);
                 continue;
@@ -202,10 +305,25 @@ foreach (var element in elements)
     }
     if (!known)
     {
-        // No tag category known for this kind of element. Reported rather than
-        // tagged with something arbitrary.
-        notTagged.Add(element.Id);
-        continue;
+        // NOT ON THE MEP MAP: a room, area or space is TAG_ROOMS' job, and
+        // anything else takes the tag category Revit's names give it.
+        if (element is SpatialElement)
+        {
+            notTagged.Add(element.Id);
+            because(element.Category.Name + ": a room, area or space takes its own kind of "
+                  + "tag - TAG_ROOMS places room tags");
+            continue;
+        }
+
+        tagCategory = tagCategoryByName(element.Category);
+        if (tagCategory == BuiltInCategory.INVALID)
+        {
+            // No tag category exists for this kind of element. Reported rather
+            // than tagged with something arbitrary.
+            notTagged.Add(element.Id);
+            because(element.Category.Name + ": Revit has no tag category for it");
+            continue;
+        }
     }
 
     ElementId tagTypeId;
@@ -221,10 +339,12 @@ foreach (var element in elements)
                 && hinted.Category.Id == new ElementId(tagCategory))
                 tagTypeId = hinted.Id;
         }
+        string route = "the caller's hint";
 
         // 2. the PROJECT'S OWN DEFAULT - what "Tag by Category" would use
         if (tagTypeId == ElementId.InvalidElementId)
         {
+            route = "the project's default";
             var category = Category.GetCategory(doc, tagCategory);
             if (category != null)
                 tagTypeId = doc.GetDefaultFamilyTypeId(category.Id);
@@ -233,6 +353,7 @@ foreach (var element in elements)
         // 3. last resort, the first one loaded - a guess, and the weakest route
         if (tagTypeId == ElementId.InvalidElementId)
         {
+            route = "the first one loaded - a guess";
             foreach (var symbol in new FilteredElementCollector(doc)
                                        .OfClass(typeof(FamilySymbol))
                                        .OfCategory(tagCategory)
@@ -244,6 +365,7 @@ foreach (var element in elements)
         }
 
         typeForCategory[tagCategory] = tagTypeId;
+        routeFor[tagCategory] = tagTypeId == ElementId.InvalidElementId ? "none loaded" : route;
     }
 
     if (tagTypeId == ElementId.InvalidElementId)
@@ -251,6 +373,9 @@ foreach (var element in elements)
         // No tag family of this category is loaded at all. Nothing this
         // fragment can do, and saying so is the useful answer.
         notTagged.Add(element.Id);
+        string tagCategoryName = tagCategory.ToString();
+        try { tagCategoryName = Category.GetCategory(doc, tagCategory).Name; } catch { }
+        because(element.Category.Name + ": no " + tagCategoryName + " family is loaded - load one");
         continue;
     }
 
@@ -261,11 +386,28 @@ foreach (var element in elements)
 
     // WHERE THE HEAD GOES. Only asked once a leader is wanted: with no leader
     // the head is placed at the point passed, and that stays XYZ.Zero here.
+    //
+    // OFF THE MEP MAP THE HEAD IS AT THE ELEMENT, leader or not - its own
+    // point, or the centre of its extent when Revit gives no location (a
+    // curtain-panel door). The MEP path above is left exactly as version 3
+    // had it; whether its XYZ.Zero head lands on the element is recorded in
+    // FRAGMENT-ISSUES rather than changed here.
     XYZ anchor = null;
+    XYZ own = onMepMap ? null : ownPoint(element);
+    if (!onMepMap && own == null)
+    {
+        notTagged.Add(element.Id);
+        because(element.Category.Name + ": Revit gives no point or extent to put a tag at");
+        continue;
+    }
     if (wantLeader)
     {
         var locCurve = element.Location as LocationCurve;
-        if (locCurve != null && locCurve.Curve != null)
+        if (!onMepMap)
+        {
+            anchor = own;
+        }
+        else if (locCurve != null && locCurve.Curve != null)
         {
             anchor = locCurve.Curve.Evaluate(0.5, true);
         }
@@ -285,7 +427,7 @@ foreach (var element in elements)
 
     XYZ headPoint = leaderHere
         ? new XYZ(anchor.X + offsetFeet, anchor.Y + offsetFeet, anchor.Z)
-        : XYZ.Zero;
+        : (onMepMap ? XYZ.Zero : own);
 
     IndependentTag made = null;
     try
@@ -294,15 +436,21 @@ foreach (var element in elements)
             doc, tagTypeId, view.Id, new Reference(element),
             leaderHere, TagOrientation.Horizontal, headPoint);
     }
-    catch (Exception)
+    catch (Exception refusal)
     {
+        // Revit's own words FIRST, cut short: a reason that opens with
+        // context arrives with its last sentence missing.
         notTagged.Add(element.Id);
+        var said = (refusal.Message ?? "").Trim();
+        if (said.Length > 90) said = said.Substring(0, 90) + "...";
+        because(element.Category.Name + ": Revit refused the tag - " + said);
         continue;
     }
 
     if (made == null)
     {
         notTagged.Add(element.Id);
+        because(element.Category.Name + ": Revit made no tag and gave no reason");
         continue;
     }
 
@@ -322,10 +470,33 @@ foreach (var element in elements)
             // tagged: a tag of the wrong family is a drawing defect, and
             // reporting it as a success is how it reaches a printed sheet.
             notTagged.Add(element.Id);
+            because(element.Category.Name + ": the tag came out in the wrong family and "
+                  + "could not be changed back");
             continue;
         }
     }
 
     tagged++;
     alreadyHasTag.Add(element.Id);
+}
+
+// THE TWO ANSWERS A PERSON CAN ACT ON. Why each untagged element is untagged,
+// with a count, and which tag type each tag category used and by which of the
+// three routes - so a guess at the first family loaded is never invisible.
+var notTaggedWhy = new List<string>();
+foreach (var reason in whyCount.OrderByDescending(r => r.Value))
+    notTaggedWhy.Add(reason.Value + " x " + reason.Key);
+
+var tagTypesUsed = new List<string>();
+foreach (var entry in typeForCategory)
+{
+    string tagCategoryShown = entry.Key.ToString();
+    try { tagCategoryShown = Category.GetCategory(doc, entry.Key).Name; } catch { }
+    var symbolUsed = entry.Value == ElementId.InvalidElementId
+        ? null : doc.GetElement(entry.Value) as FamilySymbol;
+    string routeTaken;
+    routeFor.TryGetValue(entry.Key, out routeTaken);
+    tagTypesUsed.Add(tagCategoryShown + ": "
+        + (symbolUsed == null ? "none" : symbolUsed.FamilyName + ": " + symbolUsed.Name)
+        + " (" + (routeTaken ?? "unknown") + ")");
 }
