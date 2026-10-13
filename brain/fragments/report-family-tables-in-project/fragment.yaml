@@ -141,6 +141,11 @@ compatibility-note: >
 #   "read THIS family's table"           -> REPORT_FAMILY_SIZE_TABLE, with the
 #                                           family open in front
 #   "write a table back"                 -> WRITE_FAMILY_SIZE_TABLE
+#   "check the lookup tables in this family"
+#                                        -> CHECK_FAMILY_SIZE_TABLES - the
+#                                           family open in front, its
+#                                           size_lookup formulas against its
+#                                           tables
 
 utterances:
   - check the lookup tables of all the families
