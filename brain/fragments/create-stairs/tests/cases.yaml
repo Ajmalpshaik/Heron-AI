@@ -26,6 +26,20 @@ positive:
       with "The topElevation is less than the extension below base of the stairs
       run" and made nothing
 
+  - given: >
+      THE RAILINGS REVIT ADDS (5b-455), version 3. The U stair of the first case,
+      or on Project1 (Revit 2020.2) 'Cast-In-Place Stair', Level 1 to Level 2,
+      shape u, run width 1100 - first as a preview, which runs it and rolls all of
+      it back (D-112), before any run that keeps it on a test copy
+    expect: >
+      `railings` holds 2 ids - one railing between the runs and one round the
+      outside, as measured 2026-10-13 on Revit 2020.2 - and one finding reads
+      "Revit added 2 railings of type '<the model's default stair railing
+      type>' with the stair" ('1100mm' on Project1). The same 2 ids are what
+      SELECT_BY_CATEGORY_NAME categoryName=Railings finds afterwards, each
+      hosted by the stair in Properties. A straight stair also names 2, one
+      each side
+
 negative:
   - given: the same values with stairType=Spiral Feature Stair, a name Project2 does not have
     expect: refused by name with the six loaded stair types listed, nothing made
@@ -40,6 +54,14 @@ negative:
 
   - given: run as a read (no --write)
     expect: refused by the add-in, D-112 - an edit-mode fragment never runs on the read path
+
+  - given: >
+      A REFUSED STAIR NAMES NO RAILINGS (5b-455), version 3: the first negative
+      case above, stairType=Spiral Feature Stair
+    expect: >
+      refused by name as above, nothing made, `railings` empty and no finding
+      that begins "Revit added" - the railing count Revit gives a stair is never
+      reported for a stair that was not made
 
 second_route:
   - >
