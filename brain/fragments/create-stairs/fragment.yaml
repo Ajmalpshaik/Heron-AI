@@ -9,7 +9,11 @@ semantic-identity: "make a stair between these two levels in this stair hall"
 kind: action
 domain: revit.elements
 capability: CREATE_STAIRS
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-445): a run's top is set only when
+# its path did not already give it. Version 1 always set it, and Revit 2020
+# refused that on every stair whose base level is not at 0 - see the
+# compatibility-note. Same inputs, same results; a stair from Level 2 now runs.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -127,6 +131,17 @@ compatibility-note: >
   `StairsType.MaxRiserHeight`, `MinTreadDepth` and `MinRunWidth` - all present
   and unchanged across the range. `Document.Create.NewOpening(Element, CurveArray,
   bool)` is CREATE_OPENING's call, present throughout.
+
+  TWO ELEVATION FRAMES, read in RevitAPI.xml for 2020 to 2027 and MEASURED on
+  Revit 2020.2 only (Project2, 2026-10-13, rolled back, 5b-445). A straight
+  run's path Z is in MODEL coordinates - "must be greater than or equal to the
+  stairs base elevation"; a path at Z 0 on a stair based at 4000 mm was refused.
+  A run's TopElevation and BaseElevation are RELATIVE to the stair's base, and
+  that is how they read - but on 2020 the TopElevation SETTER refused every
+  value below the base level's own elevation, the run's own reading included,
+  and took 5200 as a relative 5143. So it is called only when the run's path
+  did not already give the top. Whether 2021 to 2027 share that setter's
+  behaviour is NOT measured; this code does not depend on it.
 
 # ROUTING - repeated in CREATE_OPENING.
 #
