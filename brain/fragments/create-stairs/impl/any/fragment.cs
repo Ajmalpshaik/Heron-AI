@@ -19,6 +19,17 @@
 // LENGTHS: `runWidth` and `startOffset` arrive in MILLIMETRES and become feet
 // by / 304.8 (D-20); the corners in `area` arrive already in feet.
 //
+// ELEVATIONS COME IN TWO FRAMES, and only one of them can be set. Measured
+// 2026-10-13 on Project2, Revit 2020.2, stair from Level 2 (4000 mm) to Level 3,
+// rolled back (FRAGMENT-ISSUES 5b-445). A run path's Z is in MODEL coordinates,
+// as RevitAPI.xml says for 2020 to 2027: a path at Z 0 or 1000 mm was refused
+// as "not a valid location path line", one at 4000 mm made a run reading Base 0.
+// A run's TopElevation READS relative to the stair's base, but its SETTER
+// refused every value below the base level's own elevation - the run's own
+// reading of 1200 mm included - with "The topElevation is less than the
+// extension below base of the stairs run". A path of r - 1 treads already makes
+// a run of r risers, so the setter is asked only when the run reads otherwise.
+//
 // THE PLAN IS A RECTANGLE THE STAIR MUST FIT INSIDE - the CLEAR inside of the
 // stair hall, wall faces not centrelines. `entrySide` is the side the first
 // riser faces: the stair climbs AWAY from it. `startOffset` is the clear floor
@@ -214,15 +225,22 @@ if (refused == null)
                     if (stairs.GetTypeId() != chosenType.Id) stairs.ChangeTypeId(chosenType.Id);
                     stairs.DesiredRisersNumber = total;
 
+                    // THE PATH IN MODEL COORDINATES, THE TOP RELATIVE TO THE STAIR -
+                    // the header's ELEVATIONS. Setting a top the path already gave
+                    // is what refused every stair not based at 0 (5b-445).
                     var z = baseLevel.ProjectElevation;
                     var justify = StairsRunJustification.Center;
                     var length1 = Math.Max(first - 1, 1) * tread;
+                    Action<StairsRun, double> topAt = (run, top) =>
+                    {
+                        if (Math.Abs(run.TopElevation - top) > tolerance) run.TopElevation = top;
+                    };
 
                     var run1 = StairsRun.CreateStraightRun(doc, stairsId,
                         Line.CreateBound(at(offset, across1, z), at(offset + length1, across1, z)),
                         justify);
                     run1.ActualRunWidth = width;
-                    run1.TopElevation = first * riser;
+                    topAt(run1, first * riser);
 
                     if (form == "u")
                     {
@@ -233,7 +251,7 @@ if (refused == null)
                                              at(offset + length1 - length2, across2, z2)),
                             justify);
                         run2.ActualRunWidth = width;
-                        run2.TopElevation = height;
+                        topAt(run2, height);
 
                         if (!StairsLanding.CanCreateAutomaticLanding(doc, run1.Id, run2.Id))
                             refused = "Revit cannot put a landing between the two runs as they "
