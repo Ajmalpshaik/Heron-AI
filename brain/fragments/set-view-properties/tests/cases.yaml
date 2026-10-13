@@ -14,6 +14,22 @@ positive:
       the properties it does not have refused and named, and the ones it does
       still set
 
+  - given: visual style "Shaded" on a 3D view in Hidden Line
+    expect: >
+      it reads back as Revit's Shading, and visualStyleNote says so in full.
+      THIS IS 5b-457: version 1 refused the word because the API calls it
+      Shading
+  - given: the other View Control Bar words, in any capitals and spacing - Hidden
+      Line, Wireframe, Consistent Colors (or Colours), Realistic, Shaded with
+      Edges, Realistic with Edges, and Textures on 2021 or later
+    expect: each read back as the style the View Control Bar shows by that name
+  - given: Revit's own names - HLR, Shading, FlatColors, RealisticWithEdges
+    expect: they still work. Every word version 1 took is still taken
+  - given: the word "Shaded" on a view already showing edges
+    expect: >
+      it stays Shaded with Edges. Show Edges is its own tick box in Revit, and
+      the word did not ask to turn it off
+
 negative:
   - given: >
       a view controlled by a view template that locks the scale, set to a new
@@ -36,6 +52,16 @@ negative:
 
   - given: nothing asked for at all
     expect: refused, with the reason - not a run that touched nothing and reported success
+
+  - given: a visual style word Revit has no style for, such as "Shadded"
+    expect: >
+      refused ONCE, not once per view, nothing changed, and visualStyleNote
+      lists every word this Revit takes - whole, because a finding is cut to
+      sixty characters on its way back
+  - given: visual style "Ray Trace"
+    expect: >
+      refused with Revit's reason and nothing changed. Revit 2020 throws on
+      setting it and 2021 on has no value for it, so it is never offered
 
 second_route: >
   Revit's own Properties palette on one of the views, read before and after -

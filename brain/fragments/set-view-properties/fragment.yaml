@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,19 @@ semantic-identity: "set the scale and detail on these views"
 kind: action
 domain: revit.views
 capability: SET_VIEW_PROPERTIES
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-457): the visual style is taken in
+# the words Revit's View Control Bar shows - Wireframe, Hidden Line, Shaded,
+# Consistent Colors, Realistic, and Textures where the running release has it -
+# as well as Revit's own names, which version 1 matched alone. Version 1
+# refused "Shaded" (the API says Shading) on Revit 2020.2 in Project1 while
+# "Realistic" worked. "Shaded" and "Realistic" leave Show Edges as the view has
+# it. Ray Trace is refused with Revit's reason: Revit 2020's API will not set
+# it, and 2021 on has no value for it. An unknown word is refused once, listing
+# every word this Revit takes, and that refusal and the style each view reads
+# back are left whole in the new `visualStyleNote`. Scale and detail level are
+# unchanged. The proof below is version 1's, signed before this change - DRAFT
+# until re-proved.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -52,6 +64,11 @@ contract:
     - name: detailLevel
       type: string
       source: request
+    # A View Control Bar word - Wireframe, Hidden Line, Shaded, Shaded with
+    # Edges, Consistent Colors, Realistic, Realistic with Edges, and Textures
+    # (2021 on) - or Revit's own name for a style, such as HLR or FlatColors.
+    # Spaces and capitals do not matter. Not Ray Trace: Revit will not let a
+    # tool set it.
     - name: visualStyle
       type: string
       source: request
@@ -61,6 +78,15 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+    - name: visualStyleNote
+      # The visual style's outcome in one whole sentence: the style each view
+      # reads back ("Shaded on 1" or "Shaded with Edges on 2") and Revit's words
+      # for any view that refused it, or, for a word this Revit does not know,
+      # the refusal listing every word it takes. A
+      # finding is cut to sixty characters on its way back and this is not.
+      # Empty when no visual style was asked for. Evidence, never the count.
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-08'
@@ -88,9 +114,15 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `View.Scale`, `View.DetailLevel`,
   `View.DisplayStyle`, `ViewDetailLevel` and `DisplayStyle` are present 2020
-  through 2027, compiled at both ends. The detail level and visual style are
-  matched against the enumeration names as text, so a release adding a style is
-  matched rather than needing a new case.
+  through 2027, compiled at both ends. The visual style is matched by NAME at
+  run time, never by a typed member: `DisplayStyle` value 9 is `Raytrace` on
+  2020 and `Textures` from 2021 (read off the reference assemblies for all
+  eight releases on 2026-10-13), so either name typed would fail to compile on
+  the other half of the range. A word whose name the running release lacks is
+  not offered, and a release adding a style is matched by its own name.
+  `Raytrace` is never offered: Revit 2020 throws on setting it - "it is not
+  permitted to directly assign the display style to this value" - measured
+  2026-10-13.
 
 # ROUTING - repeated in APPLY_VIEW_TEMPLATE, SET_VIEW_SCALE and
 # REPORT_VIEW_TEMPLATE_CONTROL.
