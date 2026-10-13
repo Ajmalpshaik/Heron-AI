@@ -32,7 +32,30 @@ positive:
       out is if this says so. NOT a refusal - the override is real and the
       surface does wash
 
+  - given: >
+      Walls, surface-colour=230,230,230 and projection-line-colour=200,30,30,
+      on a floor plan
+    expect: >
+      `overridden` 1, counted because GetCategoryOverrides reads back the
+      colours AND the solid fill pattern it stamped - not because the Set was
+      called (5b-453)
+
 negative:
+  - given: >
+      Rooms, the same override, on a floor plan in Revit 2020 - Revit takes it
+      without an exception and reads back nothing (5b-453)
+    expect: >
+      `overridden` 0 and `refused` carries "Revit took the override and stored
+      nothing for Rooms". Version 1 answered "overridden 1" here
+
+  - given: >
+      a category that keeps PART of the wash - the surface fill on Ducts and
+      five other MEP categories (AJ7), as Ducts did for SET_CATEGORY_GRAPHICS
+      on Revit 2024 (row 175)
+    expect: >
+      not counted, and `notKept` names each setting that did not land with
+      what was read back
+
   - given: a model whose solid fill pattern has been PURGED
     expect: >
       `refused` carries the sentence, `solidPattern` reads "none found",

@@ -4206,9 +4206,12 @@ namespace Heron.Revit.Addin
         /// "Rooms: Interior Fill" and "Walls: Common Edges" threw nothing,
         /// IsCategoryOverridable said true, and GetCategoryOverrides read back
         /// NOTHING - while Doors and Walls read back the colour and weight set.
-        /// SET_CATEGORY_GRAPHICS and SET_CATEGORY_SOLID_FILL count the call, so
-        /// handed a sub-category they would answer "overridden 1" for an
-        /// override that is not there, where today the name is refused. The
+        /// SET_CATEGORY_GRAPHICS and SET_CATEGORY_SOLID_FILL counted the call
+        /// until their version 2, so handed a sub-category they would have
+        /// answered "overridden 1" for an override that is not there; version
+        /// 2 reads each category back and would refuse it in words, and the
+        /// name is still refused here until a release is measured keeping
+        /// one (NEEDS-CHECKING DV4). The
         /// same holds for selecting types or binding a parameter: a
         /// sub-category reaches them only when a card has decided it means
         /// something there (FRAGMENT-ISSUES 5b-453).
