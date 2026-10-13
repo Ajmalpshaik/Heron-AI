@@ -186,6 +186,7 @@ an edit.
 | [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group) | A fragment that must work in one of Revit's edit modes opens its own transactions inside Heron's group | ⏳ Proposed · 2026-10-03 |
 | [D-113](#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about) | A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about | ⏳ Proposed · 2026-10-06 |
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
+| [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
 
 ## Format
 
@@ -973,3 +974,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (`FamilyReload`, `FamilyLoadNeed`), [`heron_fragment.py`](../brain/heron_fragment.py) (`AMBIENT`), `load-family`
 
 **Full record:** [`decisions/D-114.md`](decisions/D-114.md)
+
+## D-115 — A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW
+
+**Status:** Accepted · **Date:** 2026-10-13 · **Accepted:** Ajmal PS, 2026-10-13, in conversation: *"accept D-115 and merge the PR"* · **Source:** [FRAGMENT-ISSUES 5b-456](fragment-issues/section-5b-rows-401-425.md) - OPEN_VIEW refused by Revit for every view through revit_change, a sheet included, and the cause measured on Project1, Revit 2020, the same day
+**Widens:** [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group) item 1 - the switch it made for Revit's edit modes is declared for one more reason, and nothing else in D-112 changes
+**Keeps:** Golden Rule 16 - one TransactionGroup, one undo, rolled back on a preview · the read path's guarantee that nothing there can open a transaction · [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) - nothing new in the add-in
+**Affects:** `open-view` only. Nothing in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) or [`heron_fragment.py`](../brain/heron_fragment.py) changes
+
+**Full record:** [`decisions/D-115.md`](decisions/D-115.md)
