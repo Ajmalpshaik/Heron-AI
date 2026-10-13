@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,10 @@ semantic-identity: "put a tag on each of these elements in this view"
 kind: action
 domain: revit.views
 capability: TAG_ELEMENTS
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-454): an element Revit gives no
+# location - a door that is a curtain-wall panel - is tagged at the centre of
+# its extent in the view instead of refused. Same inputs, same results.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -104,6 +107,11 @@ compatibility-note: >
   removing this one. The tag type and view arrive as ElementId objects taken
   from live elements, so nothing here builds an ElementId from an integer and
   2024's move to 64-bit ids does not reach this code.
+
+  An element with no location is tagged at the centre of
+  `Element.get_BoundingBox(View)`, or of `get_BoundingBox(null)` when the view
+  gives none - one call, present and unchanged from 2020 through 2027. That a
+  curtain-panel door has no location was MEASURED on Revit 2020.2 only.
 
 # ROUTING - tagging is asked for in the same words as selecting and reporting,
 # and this table is repeated in SET_SELECTION.
