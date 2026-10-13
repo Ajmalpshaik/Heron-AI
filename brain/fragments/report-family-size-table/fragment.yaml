@@ -140,6 +140,10 @@ compatibility-note: >
 #   "what sizes does this family know"             -> here
 #   "what fitting will this type insert"           -> REPORT_ROUTING_PREFERENCES
 #   "what sizes does the segment have"             -> REPORT_PIPE_SEGMENTS
+#   "check the lookup tables in this family"       -> CHECK_FAMILY_SIZE_TABLES
+#                                         - whether each size_lookup finds
+#                                         its table and column; this card
+#                                         shows the rows, no verdict
 
 utterances:
   - what is in this family's lookup table
