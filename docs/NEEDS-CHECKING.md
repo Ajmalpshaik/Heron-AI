@@ -611,6 +611,18 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dj.md`](needs-checking/group-dj.md)
 
+## Group DK - walls, grids, lines and reference planes a fraction of a degree off an axis turned onto it (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dk.md`](needs-checking/group-dk.md)
+
+## Group DL - text note wording, spot and keynote reads, datum elbows, line and fill patterns, line styles, dimensions by value (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dl.md`](needs-checking/group-dl.md)
+
+## Group DM - MEP systems made and re-typed, panel circuits read, wires drawn, spaces kept in step with linked rooms (2026-10-12)
+
+**Its own file:** [`needs-checking/group-dm.md`](needs-checking/group-dm.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

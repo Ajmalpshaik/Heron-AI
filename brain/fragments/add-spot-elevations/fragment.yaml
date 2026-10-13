@@ -114,6 +114,10 @@ compatibility-note: >
 #   "what height is this"            -> REPORT_LOCATION, which answers without
 #                                       drawing anything
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "what do the spot levels say"          -> REPORT_SPOT_DIMENSIONS - a READ
 utterances:
   - put the levels on the drawing
   - add spot levels to these

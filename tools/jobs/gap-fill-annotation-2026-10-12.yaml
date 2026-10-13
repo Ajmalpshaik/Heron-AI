@@ -1,0 +1,157 @@
+# The proofs of the annotation batch of the gap fill - NEEDS-CHECKING Group DL:
+#
+#   edit-text-values (v3)        EDIT_TEXT_VALUES            FRG-PAR-009
+#   report-spot-dimensions       REPORT_SPOT_DIMENSIONS      FRG-VIEW-122
+#   report-keynotes              REPORT_KEYNOTES             FRG-VIEW-123
+#   add-datum-leaders            ADD_DATUM_LEADERS           FRG-VIEW-124
+#   create-line-pattern          CREATE_LINE_PATTERN         FRG-VIEW-125
+#   create-line-style            CREATE_LINE_STYLE           FRG-VIEW-126
+#   create-fill-pattern          CREATE_FILL_PATTERN         FRG-VIEW-127
+#   select-dimensions-by-value   SELECT_DIMENSIONS_BY_VALUE  FRG-SEL-035
+#
+#     python tools/batch-prove.py tools/jobs/gap-fill-annotation-2026-10-12.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/gap-fill-annotation-2026-10-12.yaml
+#
+# NEVER ON A WORKING PROJECT. In a NEW SCRATCH PROJECT from the Architectural
+# template, saved as "Heron Gap Fill Annotation Test" - type its title where
+# `in:` says PROJECT-TITLE - by hand, in the Level 1 floor plan:
+#
+#   - four text notes, two reading SEE DETAIL A and two reading anything else
+#   - a floor, three spot elevations on it and one spot coordinate on it
+#   - the default keynote file loaded (Annotate > Keynoting Settings); a wall
+#     type keyed with a key from it, and a second wall type keyed 99 99 99;
+#     two keynote tags on walls of the first type
+#   - four grids with their bubbles shown at the TOP end only, no elbows
+#   - five dimensions measuring about 450, 900, 1200 and 3000 mm and a string
+#     of 300 + 2400 mm
+#   - a section through the floor with no spots, no keynotes, no dimensions
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill PROJECT-TITLE first.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the plan afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: a scratch project from the Architectural template, "Heron Gap Fill Annotation Test", Revit 2024 first, then 2020 and 2027
+
+defaults:
+  in: "PROJECT-TITLE"
+
+jobs:
+  # POSITIVE: replace DETAIL A with DETAIL B in the plan's text notes - two
+  # changed. NEGATIVE: a word no note holds - none changed, all untouched.
+  - fragment: edit-text-values
+    expect: changed
+    write: true
+    keep-chain: true
+    setup:
+      - select-by-categories
+    setup-set:
+      categories: Text Notes
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categories: Text Notes
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      field: Text
+      mode: replace
+      text: DETAIL A
+      replacement: DETAIL B
+    negative-set:
+      field: Text
+      mode: replace
+      text: ZZZNOSUCH
+      replacement: DETAIL B
+
+  - fragment: report-spot-dimensions
+    expect: spots
+    set:
+      viewName: "FloorPlan: Level 1"
+    negative-set:
+      viewName: "Section: Section 1"
+
+  - fragment: report-keynotes
+    expect: missingFromTable
+    set:
+      viewName: "FloorPlan: Level 1"
+    negative-set:
+      viewName: "Section: Section 1"
+    note: >
+      The values on types are read for the whole model in both legs, so the
+      negative's missingFromTable is NOT empty - read tagCount for the
+      negative instead: 2 then 0.
+
+  # POSITIVE: elbows at the bubble ends - four. NEGATIVE: the bottom ends,
+  # where no bubble shows - none added, four named.
+  - fragment: add-datum-leaders
+    expect: addedOn
+    write: true
+    keep-chain: true
+    setup:
+      - select-by-categories
+    setup-set:
+      categories: Grids
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categories: Grids
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "FloorPlan: Level 1"
+      ends: bubble
+    negative-set:
+      view: "FloorPlan: Level 1"
+      ends: start
+    note: >
+      Which end Revit calls the start depends on how each grid was drawn;
+      draw them bottom to top so the start is the bottom, bubble-less end.
+
+  - fragment: create-line-pattern
+    expect: pattern
+    write: true
+    set:
+      patternName: Heron Centre
+      segmentsMm: "dash 12, space 3, dot, space 3"
+    negative-set:
+      patternName: Heron Centre Bad
+      segmentsMm: "space 3, dash 12"
+
+  - fragment: create-line-style
+    expect: style
+    write: true
+    set:
+      styleName: Heron Setout
+      colour: "0,0,255"
+      weight: 3
+      patternName: Dash
+    negative-set:
+      styleName: Heron Setout Bad
+      colour: "0,0,255"
+      weight: 3
+      patternName: No Such Pattern
+
+  - fragment: create-fill-pattern
+    expect: pattern
+    write: true
+    set:
+      patternName: Heron Tile 600
+      target: model
+      angleDegrees: 0
+      spacingMm: 600
+      crossSpacingMm: 600
+    negative-set:
+      patternName: Heron Tile Bad
+      target: model
+      angleDegrees: 0
+      spacingMm: 0
+      crossSpacingMm: 600
+
+  - fragment: select-dimensions-by-value
+    expect: elements
+    set:
+      viewName: "FloorPlan: Level 1"
+      minMm: 0
+      maxMm: 1000
+    negative-set:
+      viewName: "FloorPlan: Level 1"
+      minMm: 5000
+      maxMm: 0

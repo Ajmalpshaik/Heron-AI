@@ -135,6 +135,11 @@ compatibility-note: >
 #                                                        changes nothing about
 #                                                        which style a line IS
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "make a red dashed line style"         -> CREATE_LINE_STYLE
+#   "make a dash dot line pattern"         -> CREATE_LINE_PATTERN
 utterances:
   - change all the old line styles to the new ones
   - move everything off this line style

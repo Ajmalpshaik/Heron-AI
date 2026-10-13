@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and
+# here also "succeeded and swept in what it should have left out".
+
+positive:
+  - given: one fan coil unit (Mechanical Equipment) and three supply diffusers, none on a system, systemType Supply Air, no name, no baseEquipment
+    expect: >
+      one mechanical system made. memberIds read off it holds the three
+      diffusers and the FCU; baseEquipmentId is the FCU's id; createdName is
+      the name Revit gave it. Select the system in the System Browser and see
+      the same four
+
+  - given: the same arrangement with systemName "AHU-01 Supply" and baseEquipment the FCU's Mark
+    expect: >
+      createdName reads "AHU-01 Supply" and the FCU is base equipment - the
+      Mark found it among the elements handed in
+
+  - given: a pump and two plumbing fixtures, systemType Domestic Cold Water
+    expect: >
+      a piping system, not a duct system - the system type decided it - with
+      the fixtures' cold water connectors on it
+
+negative:
+  - given: the same FCU and diffusers, with systemType Return Air while the diffusers' connectors are Supply Air
+    expect: >
+      the diffusers in `skipped`, each named in findings as having no free
+      connector of the Return Air kind. The FCU is taken only if it has a free
+      Return Air connector; with none, `refused` says so and NOTHING WAS MADE
+
+  - given: the positive run again, straight after, over the same elements
+    expect: >
+      every connector is already on a system, so `refused` reads that not one
+      element has a free connector of that kind and NOTHING WAS MADE - no
+      second system beside the first
+
+  - given: two Mechanical Equipment instances and the diffusers, no baseEquipment
+    expect: >
+      `refused` names both instances and asks which is the base equipment;
+      NOTHING WAS MADE
+
+second_route:
+  - Revit's System Browser, read after - the system, its base equipment and its members
+  - one Ctrl+Z takes the system away in a single step (Golden Rule 16)

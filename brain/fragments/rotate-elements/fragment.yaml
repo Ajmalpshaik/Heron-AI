@@ -93,6 +93,12 @@ compatibility-note: >
   person says are converted at the edge, not here (D-20's rule applied to an
   angle rather than a length).
 
+# ROUTING (2026-10-12)
+#
+#   "straighten these walls onto the axis" -> STRAIGHTEN_OFF_AXIS_LINES - each
+#                                             turned by its own error, not by
+#                                             one given angle
+
 utterances:
   - rotate the equipment 90 degrees
   - spin that damper round

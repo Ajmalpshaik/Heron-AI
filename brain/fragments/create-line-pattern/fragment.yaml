@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-125
+semantic-identity: "make a line pattern from dashes, dots and spaces"
+kind: action
+domain: revit.views
+capability: CREATE_LINE_PATTERN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE PATTERN IN WORDS, millimetres on paper: "dash 6, space 2, dot, space 2".
+# Revit's rules are checked before anything is made - starts with a dash or
+# dot, alternates with spaces, ends with a space, every dash and space longer
+# than zero - because Revit's own refusal names none of them.
+#
+# AN EXISTING NAME IS REFUSED unless replaceExisting is true, and then its
+# segments are replaced IN PLACE, so every line style using it follows.
+#
+# READ BACK in the same words, off the stored pattern.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates a line pattern - Manage > Additional Settings > Line Patterns - from
+  dashes, dots and spaces given in millimetres, or replaces the segments of an
+  existing one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: patternName
+      type: string
+      source: request
+    # "dash 6, space 2, dot, space 2" - millimetres on paper.
+    - name: segmentsMm
+      type: string
+      source: request
+    # true replaces the segments of a pattern of that name in place; false,
+    # or not said, refuses an existing name.
+    - name: replaceExisting
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: pattern
+      role: result
+      type: LinePatternElement
+    - name: madeNew
+      role: result
+      type: bool
+    - name: segmentsRead
+      # The stored segments, read back and written in the same words.
+      role: result
+      type: string
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence; null when a pattern was made
+      # or replaced (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. LinePattern(string), SetSegments and
+  GetSegments, LinePatternSegment(LinePatternSegmentType, double),
+  LinePatternElement.Create, GetLinePatternElementByName, SetLinePattern and
+  GetLinePattern are present 2020 through 2027 - read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-12. Lengths
+  are millimetres divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a dash dot line pattern"            -> here
+#   "make a line style that is red and dashed" -> CREATE_LINE_STYLE, which takes
+#                                                a pattern by name
+#   "bring the line patterns from the other project"
+#                                             -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
+#   "make a hatch pattern"                    -> CREATE_FILL_PATTERN
+
+utterances:
+  - make a dash dot line pattern
+  - create a line pattern with 6 mm dashes and 2 mm gaps
+  - add a new line pattern called centre line
+  - change the hidden line pattern to longer dashes

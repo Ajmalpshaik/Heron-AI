@@ -1,0 +1,102 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-063
+semantic-identity: "change the system type of these ducts, pipes or systems, and check it held"
+kind: action
+domain: revit.mep
+capability: SET_MEP_SYSTEM_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here (measured 2026-10-12: the
+# first wording took "change SUP to SUPPLY" and "make a duct system type").
+#
+# EACH KIND IS CHANGED THE WAY REVIT CHANGES IT: a duct or pipe by its own
+# SetSystemType call; a flex duct or flex pipe, which has none on any release,
+# by its System Type parameter; a system element by ChangeTypeId, as the
+# System Browser does. Fittings, accessories, terminals and equipment take
+# their system from what they connect to, so they are named and left alone.
+#
+# A DUCT IS NEVER GIVEN A PIPE SYSTEM TYPE, nor a pipe a duct one.
+#
+# ONLY THE MODEL SAYS IT CHANGED: every element is read back after a
+# regeneration. Revit may keep the old type, or carry the change along the
+# whole connected run, which the answer says. Elements already of that type
+# are counted apart, so a second run changes nothing.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Moves existing ducts, pipes, flex ducts, flex pipes or whole systems onto
+  another duct or piping system classification - return air instead of
+  exhaust, hot water instead of cold - and reads each one back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # A duct or pipe system type by its Project Browser name.
+    - name: systemType
+      type: MEPSystemType
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: changedIds
+      # Read back as the asked type after a regeneration.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyThat
+      # Already of the asked type before anything was written. The prior
+      # state, never a change (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notChanged
+      # Left alone or refused or held at the old type by Revit; each reason
+      # is in `report` (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, element by element, because a list reaches the chat cut
+      # short and the reasons are the part that matters (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Duct.SetSystemType and
+  Pipe.SetSystemType, Element.ChangeTypeId, FlexDuct, FlexPipe and the
+  RBS_DUCT_SYSTEM_TYPE_PARAM and RBS_PIPING_SYSTEM_TYPE_PARAM parameters are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point reference
+  packages for all eight releases on 2026-10-12. No set-system-type call exists
+  on FlexDuct or FlexPipe on any release, which is why their parameter is
+  written instead.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "change these ducts to return air"        -> here
+#   "this pipe should be hot water"           -> here
+#   "make a system from these"                -> CREATE_MEP_SYSTEM
+#   "change the duct type to rectangular"     -> CHANGE_ELEMENT_TYPE - the
+#                                                duct's own type, not its
+#                                                system
+#   "what system is this on"                  -> READ_MEP_SYSTEM
+
+utterances:
+  - change these ducts to return air
+  - set the system type of these pipes to domestic hot water
+  - this pipe should be hot water
+  - change the system of this run to exhaust

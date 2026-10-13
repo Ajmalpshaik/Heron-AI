@@ -95,6 +95,11 @@ compatibility-note: >
 #                                       it is in no schedule and no other view
 
 #   "draw a detail line here"          -> CREATE_LINE - a line has no fill
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "make a 45 degree hatch pattern"       -> CREATE_FILL_PATTERN - the pattern,
+#                                             not a region drawn with one
 utterances:
   - hatch this area on the drawing
   - shade this bit

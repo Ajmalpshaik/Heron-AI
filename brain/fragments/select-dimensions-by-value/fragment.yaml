@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-035
+semantic-identity: "find the dimensions that measure under, over or between these values"
+kind: filter
+domain: revit.selection
+capability: SELECT_DIMENSIONS_BY_VALUE
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# IT HANDS `elements` ON rather than painting anything: OVERRIDE_GRAPHICS_IN_VIEW
+# colours them, ISOLATE_ELEMENTS shows them alone, SET_SELECTION selects them.
+#
+# THE VALUE IS REVIT'S MEASURED VALUE, not its text. A string of segments is
+# in range when ANY segment is. An overridden text ("EQ") does not change what
+# a dimension measures.
+#
+# ONLY LINEAR DIMENSIONS; angular and radial are counted apart.
+#
+# RANGE: minMm 0 is no lower limit, maxMm 0 no upper limit; both 0 refuses.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Finds the linear dimensions whose measured value is under, over or between
+  given millimetre values, in one view or every view, and hands them on - to
+  colour, isolate or select.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One view by its Project Browser name; an EMPTY value reads every view.
+    # Where a plan and a ceiling plan share a name, write the kind first:
+    # "FloorPlan: Level 1". A name that still answers to two views is refused.
+    - name: viewName
+      type: string
+      source: request
+    # 0 means no lower limit.
+    - name: minMm
+      type: double
+      source: request
+    # 0 means no upper limit.
+    - name: maxMm
+      type: double
+      source: request
+  provides:
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: matched
+      role: result
+      type: int
+    - name: outside
+      # Linear dimensions read and found outside the range (D-52).
+      role: accounting
+      type: int
+    - name: notLinear
+      # Angular and radial dimensions, left out (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Dimension.DimensionShape, Value,
+  NumberOfSegments and Segments, DimensionSegment.Value and DimensionShape
+  .Linear are present 2020 through 2027 - read off RevitAPI.xml in the
+  Nice3point reference packages for all eight releases on 2026-10-12. Values
+  are compared in feet, millimetres divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "show me every dimension under 1 m in red" -> here, then OVERRIDE_GRAPHICS_IN_VIEW
+#   "which dimensions are less than 500"       -> here
+#   "dimension these rooms"                    -> DIMENSION_ROOMS
+#   "ducts 500 mm high"                        -> SELECT_BY_NUMERIC_PARAMETER
+
+utterances:
+  - find every dimension under 1000 mm
+  - which dimensions are less than 500 in this view
+  - select the dimensions over 5 m
+  - pick out the dimensions between 1 and 2 metres
+  - which dimensions are less than 500

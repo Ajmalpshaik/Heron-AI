@@ -1,0 +1,119 @@
+heron-agent: HERON-REVIT-WRN-016
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-079
+semantic-identity: "straighten these lines that are slightly off axis so the warning goes"
+kind: action
+domain: revit.geometry
+capability: STRAIGHTEN_OFF_AXIS_LINES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# ONE JOB, WHATEVER CARRIES THE LINE. Walls, grids, model and detail lines,
+# reference planes, room separation and area boundary lines all raise Revit's
+# "slightly off axis" warning for the same reason and are fixed the same way,
+# so they are one fragment, not seven.
+#
+# AN AXIS is a multiple of snapDegrees from the project's X axis (90 by
+# default; 45 adds the diagonals). A line further off than maxOffDegrees (0.5
+# by default) was drawn at that angle on purpose and is left alone, counted.
+#
+# TURNED ABOUT ITS START, so that end does not move and the other moves by the
+# hair that puts it on the axis. A joined wall's neighbour may follow; that is
+# Revit keeping the join, and the answer says so.
+#
+# ONLY THE MODEL SAYS IT IS STRAIGHT: Revit's rotate turns nothing for a pinned
+# element or a group member and returns normally, so every angle is read again
+# after a regeneration.
+#
+# NOT HANDLED, AND NAMED: arcs and other curves, a line not level, a grid of
+# several segments, and lines inside a floor, ceiling or roof sketch, which
+# only sketch mode can change.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Turns walls, grids, model and detail lines, reference planes, room
+  separation and area boundary lines that lie a fraction of a degree off an
+  axis exactly onto it, clearing Revit's "slightly off axis" warnings.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # From a selection, or from SELECT_WITH_WARNINGS for the off-axis warning.
+    - name: elements
+      type: IList<Element>
+    # Optional. The axes are multiples of this from the project's X axis;
+    # empty or 0 means 90 (east-west and north-south). 45 adds the diagonals.
+    - name: snapDegrees
+      type: double
+      source: request
+    # Optional. Lines further off than this are left as drawn; empty or 0
+    # means 0.5 degrees.
+    - name: maxOffDegrees
+      type: double
+      source: request
+  provides:
+    - name: straightened
+      role: result
+      type: int
+    - name: straightenedIds
+      # Read back on the axis after a regeneration.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyOnAxis
+      # Exactly on an axis before anything was turned. The prior state,
+      # never a change (D-52).
+      role: accounting
+      type: int
+    - name: tooFarOff
+      # More than maxOffDegrees off - drawn at that angle on purpose, left
+      # alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notStraightened
+      # Arcs, sloped lines, multi-segment grids, sketch lines, refusals, and
+      # elements still off after the turn; each reason is in `report` (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, element by element, with how far off each one was (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ElementTransformUtils.RotateElement,
+  Grid.Curve and IsCurved, ReferencePlane.BubbleEnd and FreeEnd,
+  CurveElement.GeometryCurve and LocationCurve are present 2020 through 2027 -
+  read off RevitAPI.xml in the Nice3point reference packages for all eight
+  releases on 2026-10-12. Categories are compared by ElementId built from the
+  BuiltInCategory, so 2024's 64-bit ids do not reach it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "fix the slightly off axis warnings"      -> here, after SELECT_WITH_WARNINGS selects them
+#   "straighten these walls"                  -> here
+#   "which elements have warnings"            -> SELECT_WITH_WARNINGS
+#   "rotate the equipment 90 degrees"         -> ROTATE_ELEMENTS - a turn by a
+#                                                given angle, not onto an axis
+#   "what warnings are in the model"          -> READ_MODEL_WARNINGS
+
+utterances:
+  - fix the slightly off axis warnings
+  - straighten these walls onto the axis
+  - these grids are slightly off axis, square them up
+  - snap these lines to exactly horizontal and vertical
+  - straighten these walls

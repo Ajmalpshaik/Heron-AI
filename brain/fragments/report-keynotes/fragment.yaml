@@ -1,0 +1,98 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-123
+semantic-identity: "list the keynote tags and the keynote values the keynote table does not hold"
+kind: action
+domain: revit.annotation
+capability: REPORT_KEYNOTES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# TWO QUESTIONS, ANSWERED TOGETHER: the keynote tags (view, text shown, and
+# whether that text is a key or a keynote text in the table), and every Keynote
+# value on element types and materials with the ones the table does not hold.
+#
+# A VALUE THE TABLE DOES NOT HOLD IS THE FINDING - the keynote file was swapped
+# or edited, an element still carries a key no longer in it, and the legend has
+# no line for it.
+#
+# THE TABLE IS REVIT'S LOADED COPY (KeynoteTable), not the file on disk.
+#
+# Changing a keynote value is WRITE_ELEMENT_PARAMETERS on the Keynote
+# parameter; this only reads.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists keynote tags with the text each shows, and every keynote value used on
+  element types and materials, naming the values the loaded keynote table does
+  not hold.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One view for the tags by its Project Browser name; an EMPTY value reads
+    # every view. The values on types and materials are always read for the
+    # whole model. A string, because a View need cannot be left out.
+    # Where a plan and a ceiling plan share a name, write the kind first:
+    # "FloorPlan: Level 1". A name that still answers to two views is refused.
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: keynotes
+      # ONE STRING - a line per tag, then the values the table does not hold -
+      # because a list reaches the chat cut to three entries.
+      role: result
+      type: string
+    - name: tagCount
+      role: result
+      type: int
+    - name: missingFromTable
+      # Keynote values on types or materials that are not a key in the loaded
+      # table, each with up to five of the types carrying it (D-52).
+      role: accounting
+      type: IList<string>
+    - name: tableLoaded
+      # False when the model has no keynote table loaded - then nothing could
+      # be checked against one, and the findings say so (D-52).
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. KeynoteTable.GetKeynoteTable,
+  KeyBasedTreeEntryTable.GetKeyBasedTreeEntries, KeyBasedTreeEntry.Key,
+  KeynoteEntry.KeynoteText, IndependentTag.TagText and KEYNOTE_PARAM are
+  present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
+  reference packages for all eight releases on 2026-10-12. The tag's target is
+  not read, so the 2022 change to how a tag names its element does not reach
+  it.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "check the keynotes"                      -> here
+#   "which keynotes are not in the keynote file" -> here
+#   "change the keynote on these"             -> WRITE_ELEMENT_PARAMETERS, the
+#                                                Keynote parameter
+#   "which elements are not tagged"           -> FIND_UNTAGGED_ELEMENTS
+
+utterances:
+  - check the keynotes against the keynote file
+  - which keynote values are missing from the keynote table
+  - list the keynote tags on this sheet view
+  - what do the keynotes say
+  - check the keynotes

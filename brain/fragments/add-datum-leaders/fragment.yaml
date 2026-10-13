@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-124
+semantic-identity: "add the elbow to these grid and level heads in this view"
+kind: action
+domain: revit.datums
+capability: ADD_DATUM_LEADERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# REVIT'S OWN RULE decides where an elbow can go: only at an end whose bubble
+# is shown in the view, and only where none is already. Both are checked per
+# end first, and every end left alone is counted with its reason.
+#
+# ENDS: "bubble" (the default) is every end showing a bubble; "start" and
+# "end" are one end only.
+#
+# READ BACK: an end counts only if Revit hands a leader back for it after a
+# regeneration. A second run finds every elbow there and adds none.
+#
+# Reference planes carry no leaders in any release. Revit offers no call to
+# remove a leader; that stays a hand job, and the answer never claims it.
+#
+# SET_DATUM_BUBBLES shows and hides the bubble itself; MAXIMIZE_DATUM_EXTENTS
+# and RESET_DATUM_EXTENTS move the ends. Neither adds an elbow.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Adds the elbow - Add Elbow - to the heads of grids and levels in one view,
+  at every end showing a bubble or at the start or end only, for many datums
+  at once.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The grids and levels.
+    - name: elements
+      type: IList<Element>
+    - name: view
+      type: View
+      source: request
+    # Optional. "bubble" (the default), "start" or "end".
+    - name: ends
+      type: string
+      source: request
+  provides:
+    - name: added
+      role: result
+      type: int
+    - name: addedOn
+      role: result
+      type: IList<ElementId>
+    - name: alreadyHad
+      # Ends that had an elbow before. The prior state, never a change (D-52).
+      role: accounting
+      type: int
+    - name: noBubble
+      # Ends asked for by name that show no bubble in the view, where Revit
+      # allows no elbow (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, element by element, with every reason an end was left
+      # alone (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. DatumPlane.AddLeader, GetLeader,
+  HasBubbleInView and CanBeVisibleInView, and DatumEnds, are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages for
+  all eight releases on 2026-10-12. No release has a call that removes a
+  datum leader.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "add elbows to the grid heads"            -> here
+#   "jog the level heads in this elevation"   -> here
+#   "put the grid bubbles on the other side"  -> SET_DATUM_BUBBLES
+#   "stretch the grids to the model"          -> MAXIMIZE_DATUM_EXTENTS
+
+utterances:
+  - add elbows to the grid heads in this view
+  - jog the level heads in this elevation
+  - add a leader to the grid bubbles so they do not clash
+  - put an elbow on the top end of these grids

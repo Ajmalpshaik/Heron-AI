@@ -127,6 +127,10 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "change the wording of this note"      -> EDIT_TEXT_VALUES, field Text
 utterances:
   - add a text note
   - put a note here

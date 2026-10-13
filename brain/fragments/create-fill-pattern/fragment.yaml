@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-127
+semantic-identity: "make a hatch pattern of parallel lines or a crosshatch, drafting or model"
+kind: action
+domain: revit.views
+capability: CREATE_FILL_PATTERN
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE TWO PATTERNS Revit's Fill Patterns dialog makes without a .pat file:
+# parallel lines at an angle and spacing, or a crosshatch when crossSpacingMm
+# is more than 0.
+#
+# DRAFTING OR MODEL: a drafting pattern's spacing is on paper and scales with
+# the view; a model pattern's is real size - a 600 mm tile grid. A name is
+# unique within its target only.
+#
+# AN EXISTING NAME IS REFUSED unless replaceExisting is true, and then the
+# pattern is replaced in place, so every region and material using it follows.
+#
+# READ BACK: the stored grids, angle and spacing of each.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Creates a fill pattern - parallel lines at an angle and spacing, or a
+  crosshatch - as a drafting or a model pattern, or replaces an existing one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: patternName
+      type: string
+      source: request
+    # "drafting" or "model"; an EMPTY value means drafting.
+    - name: target
+      type: string
+      source: request
+    - name: angleDegrees
+      type: double
+      source: request
+    - name: spacingMm
+      type: double
+      source: request
+    # 0 for parallel lines; more than 0 adds a set at right angles this far
+    # apart - a crosshatch.
+    - name: crossSpacingMm
+      type: double
+      source: request
+    # true replaces a pattern of that name and target in place; false, or not
+    # said, refuses an existing name.
+    - name: replaceExisting
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: pattern
+      role: result
+      type: FillPatternElement
+    - name: madeNew
+      role: result
+      type: bool
+    - name: readBack
+      # The stored grids, read off the pattern afterwards.
+      role: result
+      type: string
+    - name: refused
+      # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. FillPattern's two constructors (one
+  spacing, and two for a crosshatch), FillPatternElement.Create,
+  GetFillPatternElementByName, SetFillPattern and GetFillPattern, and
+  FillGrid.Angle and Offset are present 2020 through 2027 - read off
+  RevitAPI.xml in the Nice3point reference packages for all eight releases on
+  2026-10-12. Spacing is millimetres divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make a 45 degree hatch"                  -> here
+#   "make a 600 mm tile pattern"              -> here, target model, crosshatch
+#   "fill this area with a hatch"             -> CREATE_FILLED_REGION, which
+#                                                uses a filled region type
+#   "make a dash dot line pattern"            -> CREATE_LINE_PATTERN
+
+utterances:
+  - make a 45 degree hatch pattern
+  - create a 600 mm square tile fill pattern
+  - add a crosshatch drafting pattern at 3 mm
+  - make a diagonal hatch for the demolition areas
+  - make a 600 mm tile pattern

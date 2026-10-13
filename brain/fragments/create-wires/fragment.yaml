@@ -1,0 +1,116 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-065
+semantic-identity: "draw wires in this plan between these devices, or along these points"
+kind: action
+domain: revit.mep
+capability: CREATE_WIRES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here (measured 2026-10-12: the
+# word "switch" took "switch to the MEP project").
+#
+# TWO WAYS. Given points, ONE wire through them, each end on a device's
+# electrical connector when one lies within snapMm of it in plan, otherwise
+# free and counted. Given no points, a wire from each device to the next,
+# walked nearest-first from the first device handed in, the order printed.
+#
+# AN ARC between two devices gets one point off the middle, a fifth of the
+# span to the side; otherwise Revit draws it straight.
+#
+# EVERY WIRE IS READ BACK - an end counts on a device only if the wire's own
+# connector says so. A view that is not a floor plan or ceiling plan is
+# refused first: Revit puts a wire in one such view.
+#
+# A wire is drawn annotation, not the circuit: CREATE_ELECTRICAL_CIRCUIT makes
+# the circuit, CREATE_ELECTRICAL_RUN the tray and conduit.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Draws electrical wires in a floor plan or reflected ceiling plan between
+  sockets, lights and other devices, or along given points - arc or chamfer
+  wiring, as the Wire tool draws.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The devices - sockets, lights, switches. Each needs an electrical
+    # connector; one without is named and left out.
+    - name: elements
+      type: IList<Element>
+    # The floor plan or reflected ceiling plan the wires live in.
+    - name: view
+      type: View
+      source: request
+    # Points in millimetres as text - "0,0,0; 2000,1000,0" - two or more draw
+    # one wire through them. An EMPTY value draws device to device. Text, not a
+    # list of points, because a list need cannot be left out.
+    - name: pointsMm
+      type: string
+      source: request
+    # A wire type by name; an EMPTY value takes the project's first.
+    - name: wireType
+      type: string
+      source: request
+    # "arc" or "chamfer"; an EMPTY value means arc.
+    - name: wiringStyle
+      type: string
+      source: request
+    # How near in plan a device's connector must be to an end point for the
+    # wire to land on it; 0 means 300 mm.
+    - name: snapMm
+      type: double
+      source: request
+  provides:
+    - name: made
+      role: result
+      type: int
+    - name: wireIds
+      role: result
+      type: IList<ElementId>
+    - name: looseEnds
+      # Wire ends on no device, read off the wire's own connectors (D-52).
+      role: accounting
+      type: int
+    - name: report
+      # ONE STRING, wire by wire, with the chain's order and every refusal
+      # (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Wire.Create(Document, ElementId,
+  ElementId, WiringType, IList<XYZ>, Connector, Connector), WireType,
+  WiringType.Arc and Chamfer, and Wire.ConnectorManager are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages
+  for all eight releases on 2026-10-12. Points arrive as text in millimetres
+  and are made feet here, divided by 304.8 (D-20), read with the invariant
+  culture so a decimal point is a point on every PC.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "wire these sockets together"             -> here
+#   "draw a wire from this socket to the next one" -> here
+#   "circuit these sockets"                   -> CREATE_ELECTRICAL_CIRCUIT - the
+#                                                circuit, not the drawn wire
+#   "run conduit / cable tray"                -> CREATE_ELECTRICAL_RUN
+
+utterances:
+  - draw wires between these sockets
+  - wire these lights together in this plan
+  - draw a wire from this socket to the next one
+  - add arc wiring between the devices

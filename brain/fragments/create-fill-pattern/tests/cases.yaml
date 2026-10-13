@@ -1,0 +1,25 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: patternName "Heron Tile 600", target model, angleDegrees 0, spacingMm 600, crossSpacingMm 600
+    expect: >
+      madeNew true, readBack two grids - 0 degrees 600 mm apart and 90
+      degrees 600 mm apart. Manage > Additional Settings > Fill Patterns, Model,
+      lists it
+
+  - given: patternName "Heron Hatch 45", target drafting, angleDegrees 45, spacingMm 3, crossSpacingMm 0
+    expect: >
+      one grid at 45 degrees, 3 mm apart, as a drafting pattern
+
+negative:
+  - given: patternName Heron Tile 600, target model, again straight after, replaceExisting not said
+    expect: >
+      refused - the name exists - and nothing changed
+
+  - given: spacingMm 0
+    expect: >
+      refused before anything is made
+
+second_route:
+  - Manage > Additional Settings > Fill Patterns, the new row opened and read
+  - one Ctrl+Z removes it in a single step (Golden Rule 16)

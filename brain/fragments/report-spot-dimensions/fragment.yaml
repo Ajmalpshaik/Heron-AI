@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-122
+semantic-identity: "what do the spot elevations and spot coordinates show, and on what"
+kind: action
+domain: revit.annotation
+capability: REPORT_SPOT_DIMENSIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE TEXT IS REVIT'S: prefix, ValueString and suffix as the drawing prints
+# them, in the project's units and the spot type's format. A figure derived
+# here from geometry would not be what the sheet shows.
+#
+# THE KIND IS THE CATEGORY NAME Revit gives the spot (Spot Elevations, Spot
+# Coordinates, Spot Slopes), so no BuiltInCategory member is relied on.
+#
+# A SPOT ON NOTHING - its reference no longer names an element, because what
+# it measured was deleted or replaced - still prints a value on the sheet. It
+# is listed apart, by id.
+#
+# READ ONLY - opens no transaction.
+purpose: >
+  Lists the spot elevations, spot coordinates and spot slopes in one view or
+  the whole model - the view each sits in, the text it shows, and the element
+  it measures - and the spots that measure nothing any more.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One view by its name in the Project Browser; an EMPTY value reads every
+    # view. A string, because a View need cannot be left out.
+    # Where a plan and a ceiling plan share a name, write the kind first:
+    # "FloorPlan: Level 1". A name that still answers to two views is refused.
+    - name: viewName
+      type: string
+      source: request
+  provides:
+    - name: spots
+      # ONE STRING, a line per spot, because a list reaches the chat cut to
+      # three entries and the list is the answer.
+      role: result
+      type: string
+    - name: spotCount
+      role: result
+      type: int
+    - name: onNothing
+      # Spots whose reference names no element - a value on the sheet that
+      # measures nothing (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. SpotDimension, Dimension.ValueString,
+  Prefix, Suffix and References, and Element.OwnerViewId are present 2020
+  through 2027 - read off RevitAPI.xml in the Nice3point reference packages
+  for all eight releases on 2026-10-12.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what do the spot levels say"             -> here
+#   "list the spot elevations on this plan"   -> here
+#   "put spot levels on these"                -> ADD_SPOT_ELEVATIONS - a WRITE
+#   "which views show this element"           -> FIND_VIEWS_SHOWING_ELEMENT
+
+utterances:
+  - list the spot elevations on this plan
+  - what do the spot levels say
+  - read the spot coordinates in the model
+  - which spot elevations are not on anything any more

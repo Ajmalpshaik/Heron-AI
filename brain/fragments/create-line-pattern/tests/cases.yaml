@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: patternName "Heron Centre", segmentsMm "dash 12, space 3, dot, space 3"
+    expect: >
+      madeNew true, and segmentsRead "dash 12, space 3, dot, space 3". Manage >
+      Additional Settings > Line Patterns lists it with those segments
+
+negative:
+  - given: patternName "Heron Centre" again straight after, replaceExisting not said
+    expect: >
+      refused - the name exists - and nothing changed; pattern null
+
+  - given: segmentsMm "space 3, dash 12"
+    expect: >
+      refused before anything is made: a pattern starts with a dash or a dot
+
+second_route:
+  - Manage > Additional Settings > Line Patterns, the new row opened and read
+  - one Ctrl+Z removes it in a single step (Golden Rule 16)

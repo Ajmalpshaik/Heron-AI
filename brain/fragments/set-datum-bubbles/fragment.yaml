@@ -112,6 +112,10 @@ compatibility-note: >
 #                                               elements, and used to answer
 #                                               this sentence
 
+
+# ROUTING (2026-10-12, the gap fill)
+#
+#   "add elbows to the grid heads"         -> ADD_DATUM_LEADERS
 utterances:
   - the grid bubbles are on the wrong side
   - flip the bubbles
