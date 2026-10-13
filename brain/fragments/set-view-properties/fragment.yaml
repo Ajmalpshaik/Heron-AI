@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -19,8 +19,9 @@ capability: SET_VIEW_PROPERTIES
 # it, and 2021 on has no value for it. An unknown word is refused once, listing
 # every word this Revit takes, and that refusal and the style each view reads
 # back are left whole in the new `visualStyleNote`. Scale and detail level are
-# unchanged. The proof below is version 1's, signed before this change - DRAFT
-# until re-proved.
+# unchanged. The proof below is version 2's, signed by Ajmal PS on 2026-10-13.
+# Version 1's (2026-09-08, Snowdon, fingerprint a49cc089d5151844) went stale
+# with this change; it recorded a scale set and no visual style word tried.
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -89,23 +90,30 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-08'
+  date: '2026-10-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: 'run as it would normally be run - run inside a transaction and ROLLED BACK,
-    so the model was left exactly as it was. returned changed 1, findings 1 item(s) [1 of
-    1 view(s) changed in some way: scale set on 1, detail l...], scale 75. inputs came views
-    as given (1); scale as given; detailLevel as given; visualStyle as given. on Snowdon-scratch_ajmal.al'
-  negative_case: run with views=Model Linking, scale=0, detailLevel=, visualStyle= instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned changed 0, findings
-    1 item(s) [Nothing was asked for - give a scale, a detail level or a vi...], scale 0.
-    inputs came views as given (1); scale as given; detailLevel as given; visualStyle as given.
-    on Snowdon-scratch_ajmal.al
+  model: Project1 (3,079 elements), Revit 2020, session 33484
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned changed 1, findings 1 item(s) [1
+    of 1 view(s) changed in some way: scale set on 0, detail l...], scale 0, visualStyleNote
+    "Shaded" read back on 1 of 1 view(s): Shaded on 1. Show Edges was left as each view had
+    it - say "Shaded with Edges" to turn edges on.. inputs came views as given (1); scale
+    as given; detailLevel as given; visualStyle as given. on Project1'
+  negative_case: 'run with views=HERON TEST - VISUAL STYLE, scale=0, detailLevel=, visualStyle=Shadded
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    changed 0, findings 2 item(s) [No visual style is called "Shadded", so the visual style
+    was..., 0 of 1 view(s) changed in some way: scale set on 0, detail l...], scale 0, visualStyleNote
+    No visual style is called "Shadded", so the visual style was not touched on any view.
+    Say one of the words Revit''s View Control Bar shows: Wireframe, Hidden Line, Shaded,
+    Shaded with Edges, Consistent Colors, Realistic, Realistic with Edges - or Revit''s own
+    name for one: Wireframe, HLR, Shading, ShadingWithEdges, Rendering, Realistic, FlatColors,
+    RealisticWithEdges.. inputs came views as given (1); scale as given; detailLevel as given;
+    visualStyle as given. on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a49cc089d5151844
+  fingerprint: 49da3f00afa98157
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
