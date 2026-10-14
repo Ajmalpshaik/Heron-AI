@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-139
+semantic-identity: "make an elevation looking straight at this wall, from outside or from inside"
+kind: action
+domain: revit.views
+capability: CREATE_WALL_ELEVATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places an elevation marker in front of one straight wall, turned so its view
+  looks square at the wall's face - from the exterior side or the interior
+  side - and makes that elevation. The facade, the plant room wall, the riser
+  wall a services drawing needs.
+
+  **CREATE_ROOM_ELEVATIONS LOOKS IN THE MARKER'S DEFAULT DIRECTIONS**, so in a
+  rotated building its views look at corners. This turns the marker to the
+  wall, and reads the view's direction back to prove it faces the wall square.
+
+  **THE SIDE IS ASKED FOR.** "Exterior" is the side the wall's own exterior
+  face is on - Revit's, flips included; "interior" the other. The marker sits
+  the offset given in front of that face.
+
+  **THE VIEW IS NOT CROPPED TO THE WALL.** It keeps Revit's default extents;
+  SET_VIEW_CROP crops it around the wall. A curved wall is refused.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The plan the marker goes in; the elevation inherits its phase.
+    - name: planView
+      type: View
+      source: request
+    # The one wall - selected.
+    - name: wall
+      type: Element
+      source: request
+    # "exterior" or "interior".
+    - name: side
+      type: string
+      source: request
+    # How far in front of the wall's face the marker sits, in millimetres.
+    - name: offsetMm
+      type: double
+      source: request
+    - name: scale
+      type: int
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: View
+    - name: marker
+      role: result
+      type: Element
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ElevationMarker.CreateElevationMarker`,
+  `CreateElevation` and `IsAvailableIndex` (as CREATE_ROOM_ELEVATIONS, PROVEN,
+  uses them), `Wall.Orientation` and `Width`, `View.ViewDirection` and
+  `ElementTransformUtils.RotateElement` are present 2020 through 2027, read with
+  tools/api-surface on 2026-10-14. Millimetres to feet by 304.8 (D-20).
+
+# ROUTING - the same rows are in CREATE_ROOM_ELEVATIONS and CREATE_SECTION_VIEW.
+#
+#   "make an elevation of this wall"        -> here
+#   "elevate the north facade"              -> here, with that wall and exterior
+#   "make the room elevations"              -> CREATE_ROOM_ELEVATIONS - four from
+#                                              inside a room
+#   "cut a section through this"            -> CREATE_SECTION_VIEW
+#   "crop the view to the wall"             -> SET_VIEW_CROP, after this
+
+utterances:
+  - make an elevation of this wall
+  - create an elevation looking at this wall from outside
+  - elevate the north facade wall
+  - make an interior elevation of this wall only

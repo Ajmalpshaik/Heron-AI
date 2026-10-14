@@ -9,15 +9,16 @@
 #
 # THE MODEL - "Heron Gap Pass Test", part P7 (docs/needs-checking/group-ec.md):
 #   - a MODEL group named "Heron Test Group", made from three short walls on
-#     Level 1 (select them, Create Group, name it), placed once
-#   - nothing at 10000,0 or 13000,0 on Level 1 - the two copies go there
+#     LEVEL 2 (select them, Create Group, name it), placed once - on Level 2
+#     because part P1 needs its wall to be the only wall in Level 1's plan
+#   - nothing at 10000,0 or 13000,0 on Level 2 - the two copies go there
 #
 # THE NEGATIVE CHANGES ONLY THE NAME: "Heron No Such Group" matches no model
 # group type, so nothing may be placed - and the model groups that exist are
 # listed in the refusal.
 #
 # WHAT TO READ BEYOND THE VERDICT:
-#   - placed 2, each finding reading the group "on 'Level 1'"
+#   - placed 2, each finding reading the group "on 'Level 2'"
 #   - the second route (EC8b): run it by hand with the write kept; the Project
 #     Browser's Groups > Model > Heron Test Group shows three instances, and
 #     SELECT_GROUP_MEMBERS on a new one returns three walls
@@ -25,7 +26,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P7 - a model group "Heron Test Group" of three walls on Level 1, Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P7 - a model group "Heron Test Group" of three walls on Level 2, Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"
@@ -37,11 +38,11 @@ jobs:
     expect: placed
     set:
       groupTypeName: "Heron Test Group"
-      level: "Level 1"
+      level: "Level 2"
       points: "10000,0,0; 13000,0,0"
     negative-set:
       groupTypeName: "Heron No Such Group"
-      level: "Level 1"
+      level: "Level 2"
       points: "10000,0,0; 13000,0,0"
     note: >
       Two instances of a real group type against a name that matches none.

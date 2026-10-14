@@ -120,6 +120,8 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "the room got bigger, fix its elevations" -> REFIT_ROOM_ELEVATIONS
+#   "make an elevation of this wall"          -> CREATE_WALL_ELEVATION - one view,
+#                                               turned square to one wall (2026-10-14)
 utterances:
   - make elevations inside each room
   - I need interior elevations of this toilet

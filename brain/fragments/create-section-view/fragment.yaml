@@ -132,6 +132,8 @@ compatibility-note: >
 #
 #   "where does section 3 cut"              -> REPORT_VIEW_CUT_PLANES
 #   "move section 3 forward 500 mm"         -> MOVE_VIEW_CUT_PLANE
+#   "make an elevation of this wall"        -> CREATE_WALL_ELEVATION - an elevation
+#                                              marker turned to the wall (2026-10-14)
 utterances:
   - create a section through this
   - make a section here
