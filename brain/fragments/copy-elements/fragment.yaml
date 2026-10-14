@@ -214,6 +214,9 @@ compatibility-note: >
 #   "copy these walls onto the selected levels" -> here, a new copy on each level
 #   "change the walls' base level"     -> SET_WALL_CONSTRAINTS, which re-hosts
 #                                         the walls it is given and copies none
+#   "place the toilet block group at these points" -> PLACE_MODEL_GROUPS - a new
+#                                         copy of a group TYPE at given points,
+#                                         not a copy of a placed one (2026-10-14)
 utterances:
   - copy the terminals to the next room
   - duplicate these

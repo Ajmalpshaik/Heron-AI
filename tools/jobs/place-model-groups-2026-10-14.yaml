@@ -1,0 +1,47 @@
+# The proof of place-model-groups (PLACE_MODEL_GROUPS, FRG-ELE-099), written
+# 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC8. NOT RUN -
+# written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/place-model-groups-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-model-groups-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test", part P7 (docs/needs-checking/group-ec.md):
+#   - a MODEL group named "Heron Test Group", made from three short walls on
+#     Level 1 (select them, Create Group, name it), placed once
+#   - nothing at 10000,0 or 13000,0 on Level 1 - the two copies go there
+#
+# THE NEGATIVE CHANGES ONLY THE NAME: "Heron No Such Group" matches no model
+# group type, so nothing may be placed - and the model groups that exist are
+# listed in the refusal.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - placed 2, each finding reading the group "on 'Level 1'"
+#   - the second route (EC8b): run it by hand with the write kept; the Project
+#     Browser's Groups > Model > Heron Test Group shows three instances, and
+#     SELECT_GROUP_MEMBERS on a new one returns three walls
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P7 - a model group "Heron Test Group" of three walls on Level 1, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: place-model-groups
+    expect: placed
+    set:
+      groupTypeName: "Heron Test Group"
+      level: "Level 1"
+      points: "10000,0,0; 13000,0,0"
+    negative-set:
+      groupTypeName: "Heron No Such Group"
+      level: "Level 1"
+      points: "10000,0,0; 13000,0,0"
+    note: >
+      Two instances of a real group type against a name that matches none.

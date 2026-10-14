@@ -1,0 +1,23 @@
+positive:
+  - given: >
+      a model group type "Heron Test Group" of three elements, Level 1, two
+      points 3000 mm apart at z 0
+    expect: >
+      two new group instances, each read back on Level 1 with offset 0, each
+      holding the same three members as the type
+
+negative:
+  - given: a group type name that matches no model group
+    expect: >
+      NOTHING PLACED - refused, the model group types that exist listed. THIS
+      IS THE CASE THAT MATTERS: no group is guessed by a near name
+
+  - given: the name of a DETAIL group type
+    expect: refused as a detail group, nothing placed
+
+  - given: any run at all
+    expect: NO TRANSACTION OPENED. Undo is the caller's
+
+second_route: >
+  Revit itself: the Project Browser's Groups > Model > Heron Test Group shows
+  two more instances, and SELECT_GROUP_MEMBERS on one returns three members
