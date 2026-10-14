@@ -32,14 +32,15 @@ purpose: >
 
   **THE DISTANCES ARE FROM THE RUN'S OWN START**, as SPLIT_MEP_RUN measures
   them - whichever end it was modelled from. Both are refused when they fall
-  outside the run, and the length is reported so the number can be corrected.
+  outside the run, and the reply says where it ends so the number can be
+  corrected.
 
   **A RISING OR VERTICAL RUN IS REFUSED** - up and down are the offset here,
   and a riser needs a sideways one this version does not make. Cable tray and
   conduit are refused: Revit gives no break for them.
 
   **AT 45 DEGREES EACH LEG RUNS AS FAR ALONG AS IT RISES**, so the stretch must
-  be longer than twice the offset, or it is refused.
+  exceed twice the offset, or it is refused.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
   entry, and the caller owns it.
