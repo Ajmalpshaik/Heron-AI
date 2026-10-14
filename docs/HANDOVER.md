@@ -223,6 +223,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-10-14 | [SIXTY PLAIN QUESTIONS, AND WHAT ANSWERED THEM](handover-archive/2026-10-14-sixty-plain-questions-and-what-answered-them.md) |
 | 2026-10-14 | [THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO](handover-archive/2026-10-14-the-gap-pass-new-tools-for-what-the-library-could-not-do.md) |
 | 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](handover-archive/2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
 | 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](handover-archive/2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
@@ -234,7 +235,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-09-24 | [THE RE-RANKER RAN FOR THE FIRST TIME, AND IT MAKES PICKING A TOOL WORSE](handover-archive/2026-09-24-the-re-ranker-ran-for-the-first-time-and-it-makes-picking-a.md) |
 | 2026-09-23 | [THE THREE ROWS C1 LEFT OPEN ARE FIXED, AND THE SETUP SCRIPT HAS TO BE PASTED AGAIN](handover-archive/2026-09-23-the-three-rows-c1-left-open-are-fixed-and-the-setup-script.md) |
 | 2026-09-23 | [THE GUARD RAN ONLY WHERE ITS SKILL WAS LOADED, AND NOTHING SAID WHEN MAIN HAD MOVED](handover-archive/2026-09-23-the-guard-ran-only-where-its-skill-was-loaded-and-nothing.md) |
-| 2026-09-22 | [THE CATEGORY-OVERRIDE READ-BACK COULD NOT SHOW THE FILL](handover-archive/2026-09-22-the-category-override-read-back-could-not-show-the-fill.md) |
 
 ## The session archive — what happened before today
 
