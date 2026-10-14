@@ -101,31 +101,46 @@ else
     // ------------------------------------------------------------------
     // ONTO LEVELS.
     //
-    // THE METHOD, AND WHY EACH STEP IS THERE:
+    // THE METHOD, AND WHY EACH STEP IS THERE - one pass per level, in the
+    // order the levels were named:
     //
-    //  1. Copy the whole set straight up by the height from the originals'
-    //     level to the target - one ElementTransformUtils call, so joins and
-    //     hosted elements come along exactly as in the offset path. Revit
-    //     treats that like moving them up in an elevation: each copy stays on
-    //     the ORIGINAL's level with its offset raised by the height. That is
-    //     the state this fragment exists to not leave behind.
-    //  2. Turn the copies about a vertical line through the centre, by the
-    //     turn times the level's place in the list - the first level named
-    //     one turn, the second two. Only elements standing on their own are
-    //     turned; a door, a panel or a mullion follows its wall.
-    //  3. Put each copy ON its level: the level parameter set to it and the
-    //     offset worked out again so the copy does not move - absolute height
-    //     read first, offset written as that height less the new level's.
-    //     So the copy's offset is the original's offset, by arithmetic rather
-    //     than by trust. A wall tied to the level above is tied to the level
-    //     the same height above its new base; with none there it becomes
-    //     unconnected at the same height.
-    //  4. Read every copy back after Revit has regenerated: its level must be
-    //     the one written and its bounding box must not have moved up or down
-    //     by more than half a millimetre. A copy that fails either takes the
-    //     WHOLE call back with it (the exception below), because a tower with
-    //     one storey left floating on the ground floor's level is worse than
-    //     no tower.
+    //  1. Copy the whole set once, the way Revit's own Paste Aligned to
+    //     Selected Levels does it: from a floor plan on the originals' level
+    //     to a floor plan on the target - one ElementTransformUtils call, so
+    //     joins and hosted elements come along exactly as in the offset path.
+    //     A level with no floor plan gets a temporary one, deleted as soon as
+    //     the copy is made, inside the same undo entry. A kilometre to the
+    //     side as well, because a copy made against its original joins to it
+    //     and Revit refuses to keep that join once the copy is turned ("Can't
+    //     keep elements joined").
+    //     WHY PLAN TO PLAN, ALL MEASURED 2026-10-14 ON REVIT 2020, rolled
+    //     back: copied by a +4000 mm vector, four walls stayed at 0..4000 on
+    //     Level 1 while the slab rose; and a curtain wall moved onto Level 2
+    //     by its Base Constraint keeps all six panels on Level 1, read-only.
+    //     Plan to plan, the walls came out on Level 3 + 0 with their top tie
+    //     moved from Level 2 to Level 4, the slab on Level 3 + 0 and all six
+    //     panels on Level 3 - with walls and floors hidden in the source plan,
+    //     and into a plan made for the copy and deleted after it.
+    //  2. Match every copy to its original - same category, same type, same
+    //     outline in plan less the step aside.
+    //  3. Make sure each copy is ON its level, from its ORIGINAL's values:
+    //     the level parameter the level, and every height the original's own
+    //     one storey up, so the offset is the original's. A wall tied to the
+    //     level above is tied to the level the same height above its new
+    //     base; with none there it is left unconnected at the same height.
+    //     Only a value that differs is written - Revit's copy has normally
+    //     set them all already, and a level written again for nothing is
+    //     what strands a curtain wall's panels on the old one.
+    //  4. Move the copies back over the originals and turn them about a
+    //     vertical line through the centre, by the turn times the level's place
+    //     in the list. Only elements standing on their own are moved; a door,
+    //     a panel or a mullion follows its host.
+    //  5. Read every copy back after Revit has regenerated, against its own
+    //     original: its level, its box exactly the rise above the original's
+    //     to half a millimetre, its offset, and its plan point where the turn
+    //     puts it. A copy that fails the level or the height takes the WHOLE
+    //     call back with it (the exceptions below), because a tower with one
+    //     storey left on the ground floor's level is worse than no tower.
     //
     // WHAT IS REFUSED BEFORE ANYTHING IS COPIED - each one says "nothing was
     // copied" in as many words: a level name the model does not have (the
@@ -387,27 +402,33 @@ else
     }
     else if (source.Count > 0 && standing.Count > 0)
     {
-        // THE CENTRE, when none was given: the middle of the originals' box in
-        // plan. Worked out before anything is copied, so every level turns about
-        // the same point.
-        if (centre == null)
+        // THE ORIGINALS' BOX IN PLAN, and each one's own box: the turn centre
+        // when none was given, how far aside the copies are made, and how each
+        // copy is matched back to its original.
+        double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+        var boxes = new Dictionary<ElementId, BoundingBoxXYZ>();
+        foreach (var element in standing)
         {
-            double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
-            foreach (var element in standing)
-            {
-                var box = element.get_BoundingBox(null);
-                if (box == null) continue;
-                minX = Math.Min(minX, box.Min.X); minY = Math.Min(minY, box.Min.Y);
-                maxX = Math.Max(maxX, box.Max.X); maxY = Math.Max(maxY, box.Max.Y);
-            }
-            centre = minX <= maxX ? new XYZ((minX + maxX) / 2, (minY + maxY) / 2, 0) : XYZ.Zero;
+            var box = element.get_BoundingBox(null);
+            if (box == null)
+                throw new InvalidOperationException("Revit gives a " + categoryOf(element) + " in the set no extent to "
+                    + "measure, so its copies could not be checked. Nothing was copied.");
+            boxes[element.Id] = box;
+            minX = Math.Min(minX, box.Min.X); minY = Math.Min(minY, box.Min.Y);
+            maxX = Math.Max(maxX, box.Max.X); maxY = Math.Max(maxY, box.Max.Y);
         }
+        if (centre == null) centre = new XYZ((minX + maxX) / 2, (minY + maxY) / 2, 0);
         var axis = Line.CreateBound(centre, centre + XYZ.BasisZ);
+
+        // ASIDE: a kilometre east of the originals' box, so no copy ever stands
+        // on, in or against an original - see step 1.
+        var aside = (maxX - minX) + 1000000.0 / mmPerFoot;
+        const double samePlace = 2.0 / mmPerFoot;
 
         // A PLAN POINT FOR EVERY ORIGINAL THAT HAS ONE - a wall's start, a
         // duct's start, a family's insertion point. Turned by each level's
-        // angle, these are where the copies must be found. Floors, roofs and
-        // ceilings have no single point and are checked by their level alone.
+        // angle, it is where its copy must be found. Floors, roofs and ceilings
+        // have no single point and are checked by their level and height alone.
         Func<Element, XYZ> pointOf = element =>
         {
             var at = element.Location as LocationPoint;
@@ -416,14 +437,48 @@ else
             if (along != null && along.Curve != null) return along.Curve.GetEndPoint(0);
             return null;
         };
-        Func<double, double, string> key = (x, y) =>
-            Math.Round(x * mmPerFoot).ToString("0", System.Globalization.CultureInfo.InvariantCulture) + ","
-            + Math.Round(y * mmPerFoot).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
 
-        var originalPoints = standing.Select(pointOf).Where(p => p != null).ToList();
-        var originalOffsets = standing
-            .Select(e => categoryOf(e) + "@" + mm(valueOf(e, ruleFor(e)[3])))
-            .OrderBy(s => s, StringComparer.Ordinal).ToList();
+        // WRITTEN ONLY WHEN IT DIFFERS - see step 3.
+        Func<Element, BuiltInParameter, ElementId, bool> putLevel = (element, which, id) =>
+        {
+            var held = element.get_Parameter(which);
+            if (held != null && held.StorageType == StorageType.ElementId && held.AsElementId() == id) return true;
+            var parameter = writable(element, which);
+            return parameter != null && parameter.Set(id);
+        };
+        Func<Element, BuiltInParameter, double, bool> putLength = (element, which, value) =>
+        {
+            var held = element.get_Parameter(which);
+            if (held != null && held.StorageType == StorageType.Double && held.HasValue
+                && Math.Abs(held.AsDouble() - value) < 1e-9) return true;
+            var parameter = writable(element, which);
+            return parameter != null && parameter.Set(value);
+        };
+
+        // A FLOOR PLAN ON A LEVEL - the model's own when it has one, else one
+        // made for the copy and deleted straight after it (step 1).
+        var floorPlanType = new FilteredElementCollector(doc).OfClass(typeof(ViewFamilyType))
+            .Cast<ViewFamilyType>().FirstOrDefault(t => t.ViewFamily == ViewFamily.FloorPlan);
+        var temporaryPlans = new List<ElementId>();
+        Func<Level, ViewPlan> planOn = level =>
+        {
+            var own = new FilteredElementCollector(doc).OfClass(typeof(ViewPlan)).Cast<ViewPlan>()
+                .FirstOrDefault(v => !v.IsTemplate && v.ViewType == ViewType.FloorPlan
+                    && v.GenLevel != null && v.GenLevel.Id == level.Id);
+            if (own != null) return own;
+            if (floorPlanType == null)
+                throw new InvalidOperationException("This model has no floor plan type to make a plan on " + level.Name
+                    + " with, and Revit copies onto a level from one plan to another. Nothing was copied.");
+            var plan = ViewPlan.Create(doc, floorPlanType.Id, level.Id);
+            temporaryPlans.Add(plan.Id);
+            return plan;
+        };
+        Action dropTemporaryPlans = () =>
+        {
+            foreach (var id in temporaryPlans) if (doc.GetElement(id) != null) doc.Delete(id);
+            temporaryPlans.Clear();
+        };
+        var fromPlan = planOn(reference);
 
         var lines = new List<string>();
         lines.Add("From " + reference.Name + " onto " + targets.Count + " level(s)"
@@ -435,7 +490,7 @@ else
             + "ride with them.");
 
         var unconnectedTops = 0;
-        var keptTops = 0;
+        var columnTops = 0;
 
         for (var place = 0; place < targets.Count; place++)
         {
@@ -444,11 +499,20 @@ else
             var degrees = turn * (place + 1);
             var radians = degrees * Math.PI / 180.0;
 
-            // 1. COPY, straight up.
+            // 1. COPY, PLAN TO PLAN AND ASIDE - see the method above.
             ICollection<ElementId> made;
             try
             {
-                made = ElementTransformUtils.CopyElements(doc, source, new XYZ(0, 0, rise));
+                var toPlan = planOn(target);
+                var toPlanId = toPlan.Id;
+                made = ElementTransformUtils.CopyElements(fromPlan, source, toPlan,
+                    Transform.CreateTranslation(new XYZ(aside, 0, 0)), new CopyPasteOptions());
+                if (temporaryPlans.Contains(toPlanId))
+                {
+                    // Read before the delete: a deleted view's own Id cannot be.
+                    temporaryPlans.Remove(toPlanId);
+                    doc.Delete(toPlanId);
+                }
             }
             catch (Exception failure)
             {
@@ -461,159 +525,217 @@ else
 
             copies.AddRange(made);
             notCopied += Math.Max(0, source.Count - made.Count);
+            doc.Regenerate();
 
             // THE COPIES THAT STAND ON A LEVEL - one per original that does.
             // Whatever else Revit made rides with them: a door, a panel, a
             // curtain grid line, a slab edge. Fewer than the originals means
             // Revit dropped one, and a storey with a slab missing is stopped
             // here rather than reported as a storey.
-            var arrived = made.Select(id => doc.GetElement(id)).Where(e => e != null).ToList();
-            var own = arrived.Where(e => !rides(e) && ruleFor(e) != null).ToList();
+            var own = made.Select(id => doc.GetElement(id))
+                .Where(e => e != null && !rides(e) && ruleFor(e) != null).ToList();
             if (own.Count != standing.Count)
                 throw new InvalidOperationException("Revit made " + own.Count + " copies on " + target.Name + " of the "
                     + standing.Count + " element(s) that stand on a level. Nothing was kept - the copies on the "
                     + "levels before it were taken back too.");
 
-            // 2. TURN, the ones standing on their own; what rides follows.
-            if (Math.Abs(radians) > 1e-12 && own.Count > 0)
+            // 2. EACH COPY MATCHED TO ITS ORIGINAL: the same category, the same
+            // type, the same outline in plan less the step aside. Two alike in
+            // plan are told apart by height, lowest with lowest.
+            var unmatched = new List<Element>(standing);
+            var pairs = new List<Tuple<Element, Element, Level>>();
+            foreach (var copy in own.OrderBy(e => e.get_BoundingBox(null) == null ? 0 : e.get_BoundingBox(null).Min.Z))
             {
-                try
-                {
-                    ElementTransformUtils.RotateElements(doc, own.Select(e => e.Id).ToList(), axis, radians);
-                }
-                catch (Exception failure)
-                {
-                    throw new InvalidOperationException("Revit would not turn the copies on " + target.Name + ": "
-                        + failure.Message + " Nothing was kept.");
-                }
-            }
-            doc.Regenerate();
-
-            // 3. ONTO THE LEVEL, without moving. Every value read before any is
-            // written, so nothing written can change what is read.
-            var watched = new List<Tuple<Element, ElementId, double, double>>();
-            foreach (var copy in own)
-            {
-                var rule = ruleFor(copy);
-                var now = rule == null ? null : levelIn(copy, rule[0]);
-                if (now == null)
+                var box = copy.get_BoundingBox(null);
+                var match = box == null ? null : unmatched
+                    .Where(o => o.GetTypeId() == copy.GetTypeId() && categoryOf(o) == categoryOf(copy)
+                        && Math.Abs(box.Min.X - aside - boxes[o.Id].Min.X) < samePlace
+                        && Math.Abs(box.Max.X - aside - boxes[o.Id].Max.X) < samePlace
+                        && Math.Abs(box.Min.Y - boxes[o.Id].Min.Y) < samePlace
+                        && Math.Abs(box.Max.Y - boxes[o.Id].Max.Y) < samePlace)
+                    .OrderBy(o => boxes[o.Id].Min.Z).FirstOrDefault();
+                if (match == null)
                     throw new InvalidOperationException("A copy of a " + categoryOf(copy) + " on " + target.Name
-                        + " has no level Heron can change, though its original had. Nothing was kept.");
+                        + " came out a different shape from every original. Nothing was kept.");
+                unmatched.Remove(match);
 
-                // The level a copy belongs on: the one as far above its own
-                // level as the target is above the originals'. For everything
-                // on the originals' level that is the target itself.
-                var wanted = originalLevels.Contains(now.Id) ? levelAt(now.Elevation + rise) : null;
-                if (wanted == null) wanted = target;
+                // The level a copy belongs on: as far above its original's level
+                // as the target is above the originals'. For everything on the
+                // originals' level that is the target itself.
+                var from = levelIn(match, ruleFor(match)[0]);
+                var wanted = from.Id == reference.Id ? target : (levelAt(from.Elevation + rise) ?? target);
+                pairs.Add(Tuple.Create(copy, match, wanted));
+            }
+
+            // 3. ONTO THE LEVEL, AT THE ORIGINAL'S OFFSET. Every height is the
+            // original's own, one rise up; the level parameter is the wanted
+            // level and the offset is what is left. Going up, the top is set
+            // before the base, so the wall is never asked to end below where it
+            // starts; going down, the other way round.
+            foreach (var pair in pairs)
+            {
+                var copy = pair.Item1;
+                var original = pair.Item2;
+                var wanted = pair.Item3;
+                var rule = ruleFor(original);
+                var from = levelIn(original, rule[0]);
 
                 var heights = new double[rule.Length - 3];
-                for (var i = 3; i < rule.Length; i++) heights[i - 3] = now.Elevation + valueOf(copy, rule[i]);
+                for (var i = 3; i < rule.Length; i++) heights[i - 3] = from.Elevation + valueOf(original, rule[i]) + rise;
 
-                var topNow = levelIn(copy, rule[1]);
-                var topHeight = topNow != null ? topNow.Elevation + valueOf(copy, rule[2]) : 0;
+                var topFrom = levelIn(original, rule[1]);
+                var topHeight = topFrom != null ? topFrom.Elevation + valueOf(original, rule[2]) + rise : 0;
+                var topWanted = topFrom != null ? levelAt(topFrom.Elevation + rise) : null;
 
-                var box = copy.get_BoundingBox(null);
-                watched.Add(Tuple.Create(copy, wanted.Id,
-                    box != null ? box.Min.Z : double.NaN, box != null ? box.Max.Z : double.NaN));
-
-                var written = copy.get_Parameter(rule[0]).Set(wanted.Id);
-                for (var i = 3; i < rule.Length && written; i++)
+                Func<bool> putBase = () =>
                 {
-                    var offsetParameter = writable(copy, rule[i]);
-                    written = offsetParameter != null && offsetParameter.Set(heights[i - 3] - wanted.Elevation);
-                }
-
-                if (written && topNow != null)
+                    var done = putLevel(copy, rule[0], wanted.Id);
+                    for (var i = 3; i < rule.Length && done; i++)
+                        done = putLength(copy, rule[i], heights[i - 3] - wanted.Elevation);
+                    return done;
+                };
+                Func<bool> putTop = () =>
                 {
-                    var topWanted = levelAt(topNow.Elevation + rise);
-                    if (topWanted != null)
+                    if (topFrom == null)
                     {
-                        var topParameter = writable(copy, rule[1]);
-                        written = topParameter != null && topParameter.Set(topWanted.Id);
-                        var topOffset = written ? writable(copy, rule[2]) : null;
-                        written = written && topOffset != null && topOffset.Set(topHeight - topWanted.Elevation);
+                        // An unconnected wall: the copy keeps the original's height.
+                        if (!(copy is Wall)) return true;
+                        var tie = writable(copy, BuiltInParameter.WALL_HEIGHT_TYPE);
+                        if (tie != null && tie.AsElementId() != ElementId.InvalidElementId
+                            && !tie.Set(ElementId.InvalidElementId)) return false;
+                        return putLength(copy, BuiltInParameter.WALL_USER_HEIGHT_PARAM,
+                            valueOf(original, BuiltInParameter.WALL_USER_HEIGHT_PARAM));
                     }
-                    else if (copy is Wall)
+                    if (topWanted != null)
+                        return putLevel(copy, rule[1], topWanted.Id)
+                            && putLength(copy, rule[2], topHeight - topWanted.Elevation);
+                    if (copy is Wall)
                     {
                         // No level that far above the new base - the top of the
                         // building. The wall keeps its height, unconnected.
-                        var tie = writable(copy, BuiltInParameter.WALL_HEIGHT_TYPE);
-                        written = tie != null && tie.Set(ElementId.InvalidElementId);
-                        var height = written ? writable(copy, BuiltInParameter.WALL_USER_HEIGHT_PARAM) : null;
-                        written = written && height != null && height.Set(topHeight - heights[0]);
                         unconnectedTops++;
+                        return putLevel(copy, BuiltInParameter.WALL_HEIGHT_TYPE, ElementId.InvalidElementId)
+                            && putLength(copy, BuiltInParameter.WALL_USER_HEIGHT_PARAM, topHeight - heights[0]);
                     }
-                    else
-                    {
-                        // A column's top must be on a level. Left on the one it
-                        // has, at the height it has - the copy is still whole.
-                        keptTops++;
-                    }
-                }
+                    // A column's top must be on a level: its own base level,
+                    // raised by the column's height.
+                    columnTops++;
+                    return putLevel(copy, rule[1], wanted.Id) && putLength(copy, rule[2], topHeight - wanted.Elevation);
+                };
 
+                var written = rise >= 0 ? putTop() && putBase() : putBase() && putTop();
                 if (!written)
                     throw new InvalidOperationException("Revit would not put a copy of a " + categoryOf(copy)
                         + " on " + wanted.Name + ". Nothing was kept.");
             }
+
+            // 4. BACK OVER THE ORIGINALS, AND TURNED. What rides follows its host.
+            var ownIds = own.Select(e => e.Id).ToList();
+            try
+            {
+                ElementTransformUtils.MoveElements(doc, ownIds, new XYZ(-aside, 0, 0));
+                if (Math.Abs(radians) > 1e-12) ElementTransformUtils.RotateElements(doc, ownIds, axis, radians);
+            }
+            catch (Exception failure)
+            {
+                throw new InvalidOperationException("Revit would not bring the copies on " + target.Name
+                    + " into place: " + failure.Message + " Nothing was kept.");
+            }
             doc.Regenerate();
 
-            // 4. READ BACK. Its level, and that it did not move.
+            // 5. READ BACK, each copy against its own original: its level, its
+            // height one rise above the original's, its offset, its plan point.
             var onLevel = 0;
-            foreach (var check in watched)
+            var atOffset = 0;
+            var withPoint = 0;
+            var placed = 0;
+            foreach (var pair in pairs)
             {
-                var copy = check.Item1;
-                var rule = ruleFor(copy);
-                var level = rule == null ? null : levelIn(copy, rule[0]);
-                if (level == null || level.Id != check.Item2)
-                    throw new InvalidOperationException("A copy of a " + categoryOf(copy) + " did not take the level "
-                        + "it was given on " + target.Name + ". Nothing was kept.");
-                var box = copy.get_BoundingBox(null);
-                if (box != null && !double.IsNaN(check.Item3)
-                    && (Math.Abs(box.Min.Z - check.Item3) > stayedPut || Math.Abs(box.Max.Z - check.Item4) > stayedPut))
-                    throw new InvalidOperationException("A copy of a " + categoryOf(copy) + " moved "
-                        + mm(Math.Max(Math.Abs(box.Min.Z - check.Item3), Math.Abs(box.Max.Z - check.Item4)))
-                        + " mm up or down when it was put on " + level.Name + ". Nothing was kept.");
+                var copy = pair.Item1;
+                var original = pair.Item2;
+                var rule = ruleFor(original);
+
+                var level = levelIn(copy, rule[0]);
+                if (level == null || level.Id != pair.Item3.Id)
+                    throw new InvalidOperationException("A copy of a " + categoryOf(copy) + " did not take " + pair.Item3.Name
+                        + " as its level. Nothing was kept.");
                 if (level.Id == target.Id) onLevel++;
-            }
 
-            // The originals' offsets, kind by kind, against the copies'.
-            var copyOffsets = own
-                .Select(e => categoryOf(e) + "@" + mm(valueOf(e, ruleFor(e)[3])))
-                .OrderBy(s => s, StringComparer.Ordinal).ToList();
-            var sameOffsets = copyOffsets.SequenceEqual(originalOffsets);
+                var box = copy.get_BoundingBox(null);
+                var was = boxes[original.Id];
+                var off = box == null ? double.MaxValue
+                    : Math.Max(Math.Abs(box.Min.Z - (was.Min.Z + rise)), Math.Abs(box.Max.Z - (was.Max.Z + rise)));
+                if (off > stayedPut)
+                    throw new InvalidOperationException("A copy of a " + categoryOf(copy) + " on " + level.Name + " is "
+                        + (box == null ? "not measurable" : mm(off) + " mm away from " + mm(rise) + " mm above its original")
+                        + ". Nothing was kept.");
 
-            // Where the turn should have put each point, against where they are.
-            var expected = new List<string>();
-            foreach (var p in originalPoints)
-            {
+                if (Math.Abs(valueOf(copy, rule[3]) - valueOf(original, rule[3])) < stayedPut) atOffset++;
+
+                var p = pointOf(original);
+                var q = pointOf(copy);
+                if (p == null || q == null) continue;
+                withPoint++;
                 var dx = p.X - centre.X;
                 var dy = p.Y - centre.Y;
-                expected.Add(key(centre.X + dx * Math.Cos(radians) - dy * Math.Sin(radians),
-                                 centre.Y + dx * Math.Sin(radians) + dy * Math.Cos(radians)));
+                var x = centre.X + dx * Math.Cos(radians) - dy * Math.Sin(radians);
+                var y = centre.Y + dx * Math.Sin(radians) + dy * Math.Cos(radians);
+                if (Math.Abs(q.X - x) < samePlace && Math.Abs(q.Y - y) < samePlace) placed++;
             }
-            var found = own.Select(pointOf).Where(p => p != null).Select(p => key(p.X, p.Y)).ToList();
-            var placed = 0;
-            foreach (var point in expected)
+
+            // AND WHAT RIDES ON THEM: a curtain wall's panels and mullions, a
+            // door in its wall. Each should read the level its host now has -
+            // the thing a re-levelled curtain wall gets wrong (step 1).
+            var parts = 0;
+            var partsOff = 0;
+            foreach (var pair in pairs)
             {
-                if (found.Remove(point)) placed++;
+                var hostLevel = levelIn(pair.Item1, ruleFor(pair.Item2)[0]);
+                var wall = pair.Item1 as Wall;
+                var riding = new List<ElementId>();
+                if (wall != null && wall.CurtainGrid != null)
+                {
+                    riding.AddRange(wall.CurtainGrid.GetPanelIds());
+                    riding.AddRange(wall.CurtainGrid.GetMullionIds());
+                }
+                riding.AddRange(made.Where(id =>
+                {
+                    var e = doc.GetElement(id);
+                    var host = e == null ? null : hostOf(e);
+                    return host != null && host.Id == pair.Item1.Id;
+                }));
+                foreach (var id in riding.Distinct())
+                {
+                    var part = doc.GetElement(id);
+                    if (part == null || part.LevelId == ElementId.InvalidElementId) continue;
+                    parts++;
+                    if (part.LevelId != hostLevel.Id) partsOff++;
+                }
             }
 
             lines.Add(target.Name + " (" + (rise >= 0 ? "+" : "") + mm(rise) + " mm): " + made.Count + " copied; "
-                + onLevel + " of " + own.Count + " now belong to " + target.Name
-                + (sameOffsets ? " at their originals' offsets" : " - their offsets DIFFER from the originals'")
-                + "; " + placed + " of " + expected.Count + " plan point(s) where "
+                + onLevel + " of " + own.Count + " belong to " + target.Name + ", " + atOffset
+                + " at their original's offset, each exactly " + mm(rise) + " mm above its original; " + placed + " of " + withPoint
+                + " plan point(s) where "
                 + (Math.Abs(radians) > 1e-12
                     ? "a turn of " + degrees.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture) + " deg"
                     : "no turn")
-                + " puts them.");
+                + " puts them"
+                + (parts > 0
+                    ? (partsOff == 0
+                        ? "; all " + parts + " panel(s), mullion(s) and hosted part(s) on their host's level"
+                        : "; " + partsOff + " of " + parts + " panel(s), mullion(s) and hosted part(s) still read ANOTHER level than their host")
+                    : "")
+                + ".");
         }
+        dropTemporaryPlans();
 
         if (unconnectedTops > 0)
-            lines.Add(unconnectedTops + " wall copy(ies) had no level as far above their new base as their top "
-                + "was tied to, so each keeps its height with its top unconnected.");
-        if (keptTops > 0)
-            lines.Add(keptTops + " column copy(ies) had no level for their top, so each top stays on the level "
-                + "it had, at the same height.");
+            lines.Add(unconnectedTops + " wall copy(ies) had no level as far above their new base as their "
+                + "original's top was tied to, so each keeps its height with its top unconnected.");
+        if (columnTops > 0)
+            lines.Add(columnTops + " column copy(ies) had no level for their top, so each top is tied to its own "
+                + "base level, raised by the column's height.");
 
         copiedTo = string.Join("\n", lines);
     }

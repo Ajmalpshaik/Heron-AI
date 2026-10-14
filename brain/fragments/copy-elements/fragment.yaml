@@ -20,33 +20,44 @@ version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 2, IN FULL - kept here as a comment, because a purpose's words move
+# routing and a comment's do not (measured on this card: the long version-2
+# purpose pulled "put a second set 3 metres over" and "make another row of
+# them" off it, FRAGMENT-ISSUES 5b-460).
+#
+# Name the levels in toLevels, comma separated, or a run of them as
+# "Level 2..Roof", and every element is copied onto each one, standing over the
+# original in plan. Each copy BELONGS to its level: a wall's base constraint, a
+# floor's or a ceiling's level, a roof's base level, a duct's or a pipe's
+# reference level, a family's level is set to it, and the offset is the
+# original's. Walls keep their type and height - one tied to the level above is
+# tied to the level above its new base, or left unconnected at the same height
+# on the top storey. Floors keep their type and outline. turnDegrees turns each
+# level's copy that much more than the one before, anticlockwise in plan, about
+# turnCentreMm - a plan point in millimetres, or the middle of what is copied
+# when blank. A twisting tower is one storey drawn, then one call.
+#
+# Onto levels it reads every copy back against its original - its level, its
+# height exactly the rise above, its offset, its plan point where the turn puts
+# it, and every panel, mullion and hosted part on its host's level - and one
+# copy that fails the level or the height takes the whole call back. A level
+# name the model does not have is refused before anything is copied, naming the
+# levels it does have.
 purpose: >
   Duplicates every element at one offset and hands back the NEW elements, so
   the next step can act on the copies alone - select just them, set a parameter
   on just them, move just them.
 
-  OR ONTO LEVELS - Paste Aligned to Selected Levels. Name the levels in
-  toLevels, comma separated, or a run of them as "Level 2..Roof", and every
-  element is copied onto each one, standing over the original in plan. Each
-  copy BELONGS to its level: a wall's base constraint, a floor's or a
-  ceiling's level, a roof's base level, a duct's or a pipe's reference level, a
-  family's level is set to it, and the offset is the original's. Walls keep
-  their type and height - one tied to the level above is tied to the level
-  above its new base, or left unconnected at the same height on the top storey.
-  Floors keep their type and outline.
-
-  TURNED, WHEN ASKED: turnDegrees turns each level's copy that much more than
-  the one before, anticlockwise in plan, about turnCentreMm - a plan point in
-  millimetres, or the middle of what is copied when blank. A twisting tower is
-  one storey drawn, then one call.
+  Or onto other levels, as Paste Aligned to Selected Levels does: one copy on
+  each level named in toLevels, each belonging to that level, optionally turned
+  a further turnDegrees per level about turnCentreMm.
 
   Unlike moving and rotating, this one is self-evidencing: Revit returns the
   ids it created, and a copy that did not happen is a copy that is not in that
-  list. Onto levels it also reads every copy back - its level, that it did not
-  move up or down when it took it, its offset against the original's, and its
-  plan point against where the turn puts it - and one copy that fails takes the
-  whole call back. A level name the model does not have is refused before
-  anything is copied, naming the levels it does have.
+  list. There is no before-and-after comparison here because there is nothing
+  to compare - the evidence arrives with the answer. That is worth saying out
+  loud, because the sibling fragments are full of position probes and their
+  absence here looks like an oversight.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -132,10 +143,28 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `ElementTransformUtils.CopyElements`
   returning an `ICollection<ElementId>` is unchanged 2020 to 2027, and the
-  offset arrives in internal feet with no units call. Version 2 adds
-  `RotateElements` and level and offset parameters by their built-in names,
-  all present on every release from 2020; the turn centre is millimetres to
-  feet by arithmetic (D-20). Compiled 2020 to 2027; run on Revit 2020 only.
+  offset arrives in internal feet with no units call. Version 2 adds the
+  plan-to-plan `CopyElements` overload, `ViewPlan.Create` for a level with no
+  floor plan, `MoveElements`, `RotateElements` and level and offset
+  parameters by their built-in names, all present on every release from 2020;
+  the turn centre is millimetres to feet by arithmetic (D-20). Compiled 2020
+  to 2027; run on Revit 2020 only (2026-10-14, Project2, 5b-460).
+
+# WHY VERSION 2 COPIES PLAN TO PLAN - measured 2026-10-14 on Revit 2020 in a
+# scratch Project2, every probe rolled back (FRAGMENT-ISSUES 5b-460):
+#   - copied by a +4000 mm vector, four walls stayed at 0..4000 on Level 1 and
+#     only the slab rose; the first version of this code then re-levelled them
+#     in place, which read back as "offsets DIFFER";
+#   - a curtain wall moved onto Level 2 by its Base Constraint keeps its six
+#     panels on Level 1 (read-only) - a type swap to refresh them made eleven;
+#   - plan to plan, as Paste Aligned > Selected Levels does it, the walls came
+#     out on Level 3 + 0 with their top tie moved from Level 2 to Level 4, the
+#     slab on Level 3 + 0 and all six panels on Level 3 - with walls and floors
+#     hidden in the source plan, and into a plan made for the copy and deleted
+#     after it;
+#   - a copy made on top of its original joins to it and Revit refused to keep
+#     the join once the copy was turned ("Can't keep elements joined"), so the
+#     copy is made a kilometre aside and brought back.
 
 # ROUTING - the same rows are in the fragments named here.
 #
