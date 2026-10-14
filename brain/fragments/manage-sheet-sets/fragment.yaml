@@ -114,6 +114,18 @@ compatibility-note: >
 #                                           a set once it exists
 #   "make the sheets"                    -> CREATE_SHEETS
 #   "which sheets are there"             -> LIST_SHEETS
+#   "how many sheet sets are there"      -> LIST_SHEET_SETS. A QUESTION: this
+#                                           fragment makes, renames and
+#                                           deletes a set and reads none back,
+#                                           and before 2026-10-14 it answered
+#                                           that question on the spelling
+#                                           route (row 5b-465)
+#   "list the view/sheet sets"           -> LIST_SHEET_SETS - every saved set,
+#                                           its sheets and views, and the
+#                                           empty ones flagged
+#   "add these sheets to the set"        -> NOT YET. No mode here adds to or
+#                                           takes from an existing set - row
+#                                           5b-466
 #   "save these elements as a set"       -> CREATE_SELECTION_FILTER. A
 #                                           selection set and a sheet set are
 #                                           different things with one word

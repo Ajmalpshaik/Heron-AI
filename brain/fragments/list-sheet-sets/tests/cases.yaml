@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "answered, and about another model".
+# The proof plan is tools/jobs/list-sheet-sets-bl001a-2026-10-14.yaml.
+
+positive:
+  - given: >
+      Ajmal PS's Revit 2020 job model 4355-BHVD-3D-21S10-BL001A, with
+      whatever View/Sheet Sets it holds on the day of the run. COUNT THEM
+      FIRST in File - Print - Settings: the number moves - a scratch read
+      counted six on 2026-10-14, and a seventh was made there with
+      MANAGE_SHEET_SETS the same day
+    expect: >
+      setCount equal to the number of saved sets the Print dialog lists,
+      and sheetSets naming each of them in name order: every sheet as
+      "number - name", every view with its view type, and each empty set
+      marked EMPTY and named in emptySets. Each set's sheet and view
+      counts equal its ticked boxes in the dialog. (The set names are the
+      client's, so they are in the run record, not in this file.)
+
+  - given: a set holding both sheets and views
+    expect: >
+      one row carrying both counts, the sheets by number and the views by
+      name with their view type - a sheet is a view too, and it is counted
+      as a sheet, never twice
+
+  - given: a set whose sheets and views have all been deleted
+    expect: >
+      it IS listed, marked EMPTY, and named in emptySets - it still sits in
+      the print dialog under its name and prints nothing
+
+negative:
+  - given: >
+      "Heron Sheet Sets Empty", a new project from Revit 2020's default
+      template with no saved View/Sheet Set - a DIFFERENT model from the
+      positive, open at the same time, not an empty value (the job says how
+      to make it)
+    expect: >
+      setCount 0, sheetSets and emptySets empty, and the finding saying no
+      set is saved and that the in-session set is not one. BL001A's sets
+      appearing is what a read of the wrong document would show
+
+  - given: the print dialog's in-session set, with sheets ticked in it
+    expect: >
+      NOT counted. It is not saved in the model and is not an element; a
+      model whose only set is the in-session one answers 0
+
+second_route:
+  - >
+    Revit itself: File - Print - Settings (or Export - CAD Formats - DWG -
+    the View/Sheet Set list), whose drop-down lists every saved set by name;
+    select each one and count the ticked sheets and views. The names and
+    counts must match sheetSets set for set
+  - >
+    LIST_SHEETS on the same model: every sheet number in a set here is a
+    sheet LIST_SHEETS lists - two collectors, one set of numbers
