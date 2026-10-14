@@ -96,7 +96,8 @@ compatibility-note: >
 #                                           office's, not this call's
 #   "group these elements"               -> GROUP_ELEMENTS. A group is not an
 #                                           assembly and generates no drawings
-#   "what is in this assembly"           -> GROUP_BY_ASSEMBLY
+#   "what is in this assembly"           -> SELECT_GROUP_MEMBERS, a read that opens
+#                                           the assembly (row 5b-470)
 #   "make a 3d view"                     -> CREATE_3D_VIEW, which is not owned
 #                                           by anything and shows the model
 

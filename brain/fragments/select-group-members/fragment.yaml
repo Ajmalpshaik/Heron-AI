@@ -5,18 +5,25 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SEL-014
-semantic-identity: "everything inside this group, as elements i can act on"
+semantic-identity: "everything inside this group or assembly, as elements i can act on"
 kind: filter
 domain: revit.selection
 capability: SELECT_GROUP_MEMBERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 purpose: >
   Returns the member elements of a model group instance - the repeated toilet
-  block, the typical FCU-and-terminals cluster - as a set the next fragment can
-  act on.
+  block, the typical FCU-and-terminals cluster - or of an assembly - the pipe
+  spool, the prefabricated riser - as a set the next fragment can act on.
+
+  **An assembly is opened the same way, and says it is one.** Version 2. An
+  assembly (Create > Assembly) is a container of its own: like a group, the
+  collector returns the assembly and not its members, and like a group it is
+  opened by the instance, never by a name several copies share. Its members are
+  read back with the assembly's type name and naming category, and
+  `containerKind` says which of the two was opened.
 
   **A group instance is one element, and its members are not in any normal
   sweep.** `FilteredElementCollector` returns the group, not the twelve things
@@ -51,6 +58,11 @@ contract:
     - name: elements
       role: result
       type: IList<Element>
+    - name: containerKind
+      # "group" or "assembly" - which kind of container was opened, or empty
+      # when the element handed in was neither. Version 2.
+      role: accounting
+      type: string
     - name: nestedGroups
       # How many members are themselves groups. NESTED GROUPS COME BACK AS
       # GROUPS, ONE ELEMENT EACH, NOT FLATTENED - so this is what says the set
@@ -66,7 +78,9 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `Group.GetMemberIds` and `GroupType` are
-  present 2020 through 2027, compiled at both ends. Member ids are resolved
+  present 2020 through 2027, compiled at both ends. `AssemblyInstance.GetMemberIds`,
+  `AssemblyTypeName` and `NamingCategoryId` are present 2020 through 2027,
+  read with tools/api-surface on 2026-10-14. Member ids are resolved
   through `Document.GetElement` and compared as ElementIds, never as numbers.
 
 # ROUTING - repeated in GROUP_ELEMENTS, UNGROUP_ELEMENTS and GROUP_BY_ASSEMBLY.
@@ -78,9 +92,13 @@ compatibility-note: >
 #                                       really wanted when the next step is to
 #                                       EDIT the members - this fragment only
 #                                       hands them out to read
-#   "what is in this assembly"       -> GROUP_BY_ASSEMBLY. An assembly is a
-#                                       different Revit thing from a group and
-#                                       does not answer to this
+#   "what is in this assembly"       -> here, since version 2. It went to
+#                                       GROUP_BY_ASSEMBLY, which walks NESTED
+#                                       FAMILIES and never opens an assembly,
+#                                       and on 2026-10-14 the sentence reached
+#                                       CREATE_ASSEMBLY, a write (row 5b-470)
+#   "how many units are these really"-> GROUP_BY_ASSEMBLY / REPORT_NESTED_FAMILIES -
+#                                       nested families, not assemblies (row 5b-469)
 #   "how many of these groups
 #    are there"                      -> COUNT_ELEMENTS over the group category
 
@@ -90,3 +108,9 @@ utterances:
   - show me the group members
   - list what this group contains
   - find everything in this model group
+  # ADDED 2026-10-14, version 2, row 5b-470: an assembly is opened here too.
+  - what is in this assembly
+  - select the elements in this assembly
+  - show me the assembly members
+  - list what this pipe spool assembly contains
+  - which elements are in this assembly

@@ -93,6 +93,16 @@ compatibility-note: >
 # purpose, and nothing else. So a table saying "-> here" recorded a decision
 # that retrieval could not act on, and these resolved elsewhere.
 
+# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in REPORT_MATERIAL_TAKEOFF.
+# The two cards overlap and neither named the other until then.
+#
+#   "what material is this"            -> here - each element's materials, and the
+#                                         volume of each from the element itself
+#   "give me a material takeoff"       -> REPORT_MATERIAL_TAKEOFF - area and volume from
+#                                         Revit's own takeoff engine, painted
+#                                         materials included, the numbers a
+#                                         Material Takeoff schedule shows
+
 utterances:
   - what material is this
   - what is it made of
