@@ -65,11 +65,22 @@ DEFAULTS = {
 # How far the client's deadline must sit beyond the add-in's, in seconds.
 #
 # It only has to cover the pipe and the JSON on the way back, which is
-# milliseconds. Thirty seconds is far more than that on purpose: the cost of
-# being too generous is that a truly dead bridge takes half a minute longer to
-# give up on, and the cost of being too tight is losing the one message that
-# tells the user what is actually happening.
-CLIENT_MARGIN_S = 30.0
+# milliseconds. Twenty seconds is far more than that on purpose: the cost of
+# being too generous is that a truly dead bridge takes longer to give up on,
+# and the cost of being too tight is losing the one message that tells the
+# user what is actually happening.
+#
+# IT WAS THIRTY, OVER THE OPERATION TIMEOUT ALONE - and the add-in's longest
+# answer is not the operation timeout. It waits up to revit.busyTimeoutSeconds
+# for Revit to START a request (that clock runs from the enqueue, so time
+# spent queued behind other requests counts) and then up to
+# revit.operationTimeoutSeconds for it to FINISH. Thirty silently covered the
+# default busy wait of ten; a busy wait above thirty, which the settings allow,
+# let this side give up on a request that had waited its turn and was still
+# going to answer - "the answer was lost" for work that then completed.
+# FRAGMENT-ISSUES section 5b, row 458. Twenty over the SUM leaves the default
+# deadline at exactly 90.
+CLIENT_MARGIN_S = 20.0
 
 
 def config_path():
@@ -190,9 +201,13 @@ def response_timeout(values=None):
     Derived, never configured separately. The whole point is that the far side
     is the one that gets to answer, because only it knows whether Revit took
     the request, started it, or never saw it.
+
+    BOTH of the add-in's waits, because they run one after the other: the
+    clock here starts when the request is sent, so a request queued in the
+    add-in spends its busy wait inside this deadline too (row 458).
     """
     values = load() if values is None else values
-    return operation_timeout(values) + CLIENT_MARGIN_S
+    return busy_timeout(values) + operation_timeout(values) + CLIENT_MARGIN_S
 
 
 # A FRAGMENT RUN IS NOT AN ORDINARY REQUEST. Roslyn compiles the source

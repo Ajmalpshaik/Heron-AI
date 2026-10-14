@@ -159,7 +159,10 @@ RESERVED_KEYS = frozenset(("op", "token", "client"))
 # both, so they cannot disagree.
 #
 # With the defaults this is 60 + 30 = 90.0, exactly what it was before, so
-# nothing proven in Steps 1-5 changes behaviour.
+# nothing proven in Steps 1-5 changes behaviour. Since row 458 it counts the
+# add-in's busy wait too - 10 + 60 + 20, still 90.0 - because this clock
+# starts when the request is SENT, and the add-in may hold a request queued
+# for that long before Revit starts it.
 RESPONSE_TIMEOUT_S = heron_config.response_timeout()
 
 #: Heron's own version. Checked against Directory.Build.props by

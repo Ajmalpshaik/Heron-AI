@@ -271,6 +271,24 @@ the lease, or an interrupted transaction could be stranded.
 > from a machine that cannot compile it. The lease removes the **takeover**; it narrows rather than
 > eliminates the **interruption**.
 
+> **Correction, 2026-10-13 - the lost reply was not "one", and it is closed now.** On 2026-10-13 a chat
+> sent nine `CREATE_WALL` calls at once and two came back *"the answer was lost"*; all nine had built
+> their walls, and the add-in logged two displacements in that second
+> ([FRAGMENT-ISSUES 5b-458](FRAGMENT-ISSUES.md)). Measured on a stand-in host running the real bridge
+> sources: one chat sending one request at a time, with a second process merely **pinging** the same
+> Revit every 150 ms, got 0 of 30 answers back - so "the first chat loses one reply" understated it.
+> Every connection, from any process, cut off whatever answer was owed at that moment.
+>
+> **What changed, and what did not.** The newest connection still takes the session, and a displaced
+> connection that is only waiting for its next request is still dropped at once. A displaced connection
+> whose request **Revit is still running** now keeps its pipe until the answer is written, then
+> closes, so the chat is told what happened. That is "holding both pipes open" for exactly as long as an
+> answer is owed, and no longer: the lease is untouched, and `MaxServerInstances` is 16 so that the
+> finishing pipe, the newcomer and the next listener can exist together. Measured afterwards on the
+> same stand-in: every one of the 30 came back. **What is left:** a request that reaches an idle pipe in the instant
+> it is displaced is not run at all, and the client still says it cannot tell - safe, because nothing
+> ran, and rare (1 or 2 of 20 when twenty connections arrive in the same instant).
+
 **[NOTE]** The addendum note makes the case for a lease stronger than safety alone:
 
 > *"The list doesn't say which Revit another chat is already using. Nothing shows it. That's why you
