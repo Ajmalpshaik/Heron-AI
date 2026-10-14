@@ -3,16 +3,18 @@
 
 positive:
   - given: >
-      Ajmal PS's Revit 2020 job model 4355-BHVD-3D-21S10-BL001A - six saved
-      View/Sheet Sets, as a scratch read counted them on 2026-10-14
+      Ajmal PS's Revit 2020 job model 4355-BHVD-3D-21S10-BL001A, with
+      whatever View/Sheet Sets it holds on the day of the run. COUNT THEM
+      FIRST in File - Print - Settings: the number moves - a scratch read
+      counted six on 2026-10-14, and a seventh was made there with
+      MANAGE_SHEET_SETS the same day
     expect: >
-      setCount 6, and sheetSets naming six sets in name order with the
-      counts the scratch read gave: one set of 8 sheets and no view, with
-      every sheet as "number - name"; four of views only - 1, 1, 6 and 2
-      views, each named with its view type; and one EMPTY, which emptySets
-      names. Compare with File - Print - Settings' View/Sheet Set list, and
-      with each set's tick boxes there. (The set names are the client's,
-      so they are in the run record, not in this file.)
+      setCount equal to the number of saved sets the Print dialog lists,
+      and sheetSets naming each of them in name order: every sheet as
+      "number - name", every view with its view type, and each empty set
+      marked EMPTY and named in emptySets. Each set's sheet and view
+      counts equal its ticked boxes in the dialog. (The set names are the
+      client's, so they are in the run record, not in this file.)
 
   - given: a set holding both sheets and views
     expect: >
@@ -27,12 +29,13 @@ positive:
 
 negative:
   - given: >
-      Project1 ("heron ai bulding"), a default-template model with no saved
-      View/Sheet Set - a DIFFERENT model from the positive, open at the same
-      time, not an empty value
+      "Heron Sheet Sets Empty", a new project from Revit 2020's default
+      template with no saved View/Sheet Set - a DIFFERENT model from the
+      positive, open at the same time, not an empty value (the job says how
+      to make it)
     expect: >
       setCount 0, sheetSets and emptySets empty, and the finding saying no
-      set is saved and that the in-session set is not one. BL001A's six
+      set is saved and that the in-session set is not one. BL001A's sets
       appearing is what a read of the wrong document would show
 
   - given: the print dialog's in-session set, with sheets ticked in it

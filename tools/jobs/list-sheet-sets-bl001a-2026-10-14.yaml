@@ -11,11 +11,15 @@
 #
 # THE TWO DOCUMENTS, BOTH OPEN IN ONE REVIT 2020:
 #
-#   "4355-BHVD-3D-21S10-BL001A"  the positive. A scratch read on 2026-10-14
-#                                counted SIX saved sets: one of 8 sheets and
-#                                no view, four of views only (1, 1, 6 and 2
-#                                views) and one EMPTY. The names are the
-#                                client's and stay in the run record
+#   "4355-BHVD-3D-21S10-BL001A"  the positive. COUNT ITS SETS FIRST, in
+#                                File - Print - Settings, and write the number
+#                                down: it moves. A scratch read counted six on
+#                                2026-10-14 (one of 8 sheets, four of views
+#                                only, one EMPTY), and a seventh - 8 sheets,
+#                                the same 8 numbers as the first - was made
+#                                there with MANAGE_SHEET_SETS the same day.
+#                                The names are the client's and stay in the
+#                                run record
 #   "Heron Sheet Sets Empty"     the negative - MAKE IT FIRST: a new project
 #                                from Revit 2020's default metric template,
 #                                saved under this name, with no set saved.
@@ -28,24 +32,25 @@
 # WHY THE NEGATIVE IS A DIFFERENT DOCUMENT. This reads the whole document and
 # takes no value, so the only thing a negative leg can vary is the document.
 # A read that answered from the wrong one - the active document, the last one
-# asked - would bring BL001A's six into the empty project's answer.
+# asked - would bring BL001A's sets into the empty project's answer.
 #
 # WHAT EACH VERDICT MEANS HERE:
-#   - PASS: six sets on the positive, none on the negative
+#   - PASS: sets on the positive, none on the negative. PASS does not
+#     check the NUMBER - the next line does
 #   - NEG NOT EMPTY: a set was read from the empty project. Look at its
 #     Print dialog again before calling it a defect - a set saved there by
 #     somebody is a set, and the arrangement is wrong, not the fragment
 #
 # WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
-#   - sheetSets on BL001A names six sets in name order, with 8 / 0, 0 / 1,
-#     0 / 1, 0 / 6, 0 / 2 sheets / views, and one EMPTY - the counts the
-#     scratch read gave. Open File - Print - Settings and select each set:
+#   - setCount on BL001A equals the number counted in the Print dialog,
+#     and sheetSets names every set in name order. Select each set there:
 #     its ticked sheets and views must be the ones named, set for set
-#   - every sheet in the 8-sheet set reads "number - name", and the numbers
-#     are ones LIST_SHEETS lists on the same model (the second route)
+#   - every sheet reads "number - name", and the numbers are ones
+#     LIST_SHEETS lists on the same model (the second route)
 #   - every view reads "name (view type)" - a 3D view says 3D View, a plan
 #     Floor Plan
-#   - emptySets names exactly the one empty set, and findings says "1 EMPTY"
+#   - emptySets names exactly the sets the dialog shows with nothing
+#     ticked, and findings counts the same number EMPTY
 #   - on the negative, findings says no set is saved and that the in-session
 #     set is not one
 #
@@ -63,5 +68,6 @@ jobs:
     negative-in: "Heron Sheet Sets Empty"
     expect: [setCount, sheetSets]
     note: >
-      THE PROOF. Six saved sets on the job model, every member named and the
-      empty one flagged, against a project with none.
+      THE PROOF. Every saved set on the job model - count them in the Print
+      dialog first - every member named and the empty ones flagged, against a
+      project with none.
