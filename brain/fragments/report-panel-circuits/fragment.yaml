@@ -95,3 +95,5 @@ utterances:
   # that makes a view. Asking to SEE a schedule is a read; making one is not.
   - show me the panel schedule
   - what is on the panel schedule for DB-1
+  - show the panel schedule for DB-1
+  - what does the panel schedule say

@@ -81,6 +81,8 @@ compatibility-note: >
 #   "draw the area boundaries"                -> CREATE_AREA_BOUNDARY_LINES
 #   "report the areas"                        -> REPORT_AREAS
 #   "place the rooms"                         -> PLACE_ROOMS
+#   "make the gross area plan for level 1"    -> CREATE_AREA_PLAN - the area plan
+#                                                this places areas in (2026-10-14)
 
 utterances:
   - place areas in the gross area plan at these points

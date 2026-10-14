@@ -84,13 +84,14 @@ compatibility-note: >
 #   "put the panel schedule on a sheet"     -> PLACE_SCHEDULE_ON_SHEET, after this
 #
 # MEASURED 2026-10-14, scratch store, lexical hybrid, 2024 wall: "show me the
-# panel schedule" reached THIS write once it existed, and is now declared on
-# REPORT_PANEL_CIRCUITS. Three undeclared paraphrases still reach here on
-# that route - "show the panel schedule for DB-1", "what does the panel
-# schedule say", "open the panel schedule for DB-1" - by nearness #1. The
-# lexical route is weak on paraphrase across the library ("open the level 2
-# plan" reaches CREATE_STAIRS there); measure these on the trained backend
-# before this card is PROVEN. NEEDS-CHECKING EC3.
+# panel schedule", "show the panel schedule for DB-1" and "what does the panel
+# schedule say" reached THIS write once it existed - on main the first two
+# reached REPORT_PANEL_CIRCUITS - so all three are declared there now and
+# reach it again. "open the panel schedule for DB-1" still reaches here; on
+# main it reached DRAW_FAMILY_POINT_CURVES, another write, so this is no worse
+# and is not fixed - opening a view is OPEN_VIEW's, a PROVEN card whose
+# sentences are the owner's call. Measure on the trained backend before this
+# card is PROVEN. NEEDS-CHECKING EC3.
 
 utterances:
   - make the panel schedules for these panels

@@ -1,0 +1,28 @@
+positive:
+  - given: Level 2 and "Gross Building", in a project with no area plan on Level 2
+    expect: >
+      one area plan made for Level 2 in the Gross Building scheme, named in
+      findings, and the finding that no boundary was drawn
+
+  - given: the same with viewName "L2 - GIA"
+    expect: the area plan made and named "L2 - GIA"
+
+negative:
+  - given: >
+      Level 1 and "Gross Building", where Level 1 ALREADY has a Gross Building
+      area plan
+    expect: >
+      NOTHING MADE - the existing plan named in `existing`, created null.
+      THIS IS THE CASE THAT MATTERS: a second plan of one scheme invites areas
+      placed twice
+
+  - given: an area scheme name that matches none
+    expect: refused, the schemes that exist listed, nothing made
+
+  - given: any run at all
+    expect: NO BOUNDARY DRAWN AND NO TRANSACTION OPENED
+
+second_route: >
+  Revit itself: Project Browser > Area Plans (Gross Building) - the new plan
+  under Level 2, and View > Area Plan's own dialog no longer offering Level 2
+  for that scheme
