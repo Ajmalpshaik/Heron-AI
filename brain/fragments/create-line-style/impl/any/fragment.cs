@@ -102,20 +102,19 @@ Category sub = null;
 var onCategory = false;
 if (refused == null)
 {
+    foreach (Category existing in parent.SubCategories)
+    {
+        if (string.Equals(existing.Name, name, StringComparison.OrdinalIgnoreCase)) { sub = existing; break; }
+    }
     // THE FAMILY'S CATEGORY ITSELF - by its own name, or "none" as
-    // DRAW_FAMILY_DETAIL_LINES and SET_FAMILY_FORM_SUBCATEGORY say it.
-    if (familyCategory && (string.Equals(name, "none", StringComparison.OrdinalIgnoreCase)
+    // DRAW_FAMILY_DETAIL_LINES and SET_FAMILY_FORM_SUBCATEGORY say it - and
+    // only when no real subcategory has that name, so one called "None" is
+    // still reached.
+    if (sub == null && familyCategory && (string.Equals(name, "none", StringComparison.OrdinalIgnoreCase)
         || string.Equals(name, parent.Name, StringComparison.OrdinalIgnoreCase)))
     {
         sub = parent;
         onCategory = true;
-    }
-    else
-    {
-        foreach (Category existing in parent.SubCategories)
-        {
-            if (string.Equals(existing.Name, name, StringComparison.OrdinalIgnoreCase)) { sub = existing; break; }
-        }
     }
     if (sub != null && !updateExisting)
     {

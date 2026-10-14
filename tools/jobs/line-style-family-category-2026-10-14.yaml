@@ -21,7 +21,9 @@
 # Open in the Family Editor at the run; `in:` brings it to the front.
 #
 # POSITIVE: madeNew false, readBack "colour 0,0,255, weight 1, pattern Solid",
-# and a finding "Updated subcategory "Signature" of Generic Annotations".
+# and a finding "Updated subcategory "Signature" of Generic Annotations". The
+# pattern is ASKED for: Revit may hold no stored pattern on a subcategory nobody
+# set one on, and the read-back would then say "(none)".
 #
 # NEGATIVE: the SAME family and the same subcategory, updateExisting false -
 # refused, "already has a subcategory named "Signature"", style empty. A
@@ -47,7 +49,7 @@ jobs:
       styleName: Signature
       colour: "0,0,255"
       weight: 1
-      patternName: ""
+      patternName: Solid
       updateExisting: true
       familyCategory: true
     negative-set:
@@ -59,5 +61,5 @@ jobs:
       familyCategory: true
     note: >
       Both legs name updateExisting and familyCategory: a negative inherits
-      no value from the positive. patternName "" keeps Solid - a bare
-      `patternName:` would send None.
+      no value from the positive. The negative's patternName "" asks for no
+      pattern - a bare `patternName:` would send None.

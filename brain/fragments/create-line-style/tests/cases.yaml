@@ -10,7 +10,7 @@ positive:
   # drew on the subcategory "Signature".
   - given: >
       in that family, styleName "Signature", colour "0,0,255", weight 1,
-      patternName "", updateExisting true, familyCategory true
+      patternName "Solid", updateExisting true, familyCategory true
     expect: >
       madeNew false and readBack "colour 0,0,255, weight 1, pattern Solid";
       Manage > Object Styles > Annotation Objects shows Generic Annotations >
@@ -31,7 +31,7 @@ negative:
       weight 1, patternName "", familyCategory true, updateExisting not said
     expect: >
       refused - the family's category already has a subcategory named
-      "Signature" - and the signature still blue
+      "Signature" - and its colour, weight and pattern unchanged
 
   # Version 2: familyCategory in a project, where there is no family category.
   - given: >
