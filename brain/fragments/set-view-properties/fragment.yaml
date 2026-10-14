@@ -9,7 +9,24 @@ semantic-identity: "set the scale and detail on these views"
 kind: action
 domain: revit.views
 capability: SET_VIEW_PROPERTIES
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-457): the visual style is taken in
+# the words Revit's View Control Bar shows - Wireframe, Hidden Line, Shaded,
+# Consistent Colors, Realistic, and Textures where the running release has it
+# (2024 on) - as well as Revit's own names, which version 1 matched alone.
+# Version 1 refused "Shaded" (the API says Shading) on Revit 2020.2 in Project1
+# while "Realistic" worked. "Shaded" leaves Show Edges as the view has it;
+# "Realistic" keeps version 1's meaning, no edges, so a word still takes edges
+# off a realistic view. Ray Trace is refused with Revit's reason: Revit 2020's
+# API will not set it, and 2021 on has no value for it. An unknown word is
+# refused once, listing every word this Revit takes, and that refusal and the
+# style each view reads back are left whole in the new `visualStyleNote`.
+# Scale and detail level are unchanged. The proof below is the re-run on the
+# fixed build, signed by Ajmal PS on 2026-10-14. The first, signed 2026-10-13
+# (fingerprint 49da3f00afa98157), went stale with a review's fixes (Realistic's
+# edges, a template's refusal in the note). Version 1's (2026-09-08, Snowdon,
+# fingerprint a49cc089d5151844) recorded a scale set and no visual style word
+# tried.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -52,6 +69,11 @@ contract:
     - name: detailLevel
       type: string
       source: request
+    # A View Control Bar word - Wireframe, Hidden Line, Shaded, Shaded with
+    # Edges, Consistent Colors, Realistic, Realistic with Edges, and Textures
+    # (2024 on) - or Revit's own name for a style, such as HLR or FlatColors.
+    # Spaces and capitals do not matter. Not Ray Trace: Revit will not let a
+    # tool set it.
     - name: visualStyle
       type: string
       source: request
@@ -61,25 +83,43 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+    - name: visualStyleNote
+      # The visual style's outcome in one whole sentence: the style each view
+      # reads back ("Shaded on 1" or "Shaded with Edges on 2") and Revit's words
+      # for any view that refused it, or, for a word this Revit does not know,
+      # the refusal listing every word it takes. A
+      # finding is cut to sixty characters on its way back and this is not.
+      # Empty when no visual style was asked for. Evidence, never the count.
+      role: accounting
+      type: string
 
 proof:
-  date: '2026-09-08'
+  date: '2026-10-14'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: 'run as it would normally be run - run inside a transaction and ROLLED BACK,
-    so the model was left exactly as it was. returned changed 1, findings 1 item(s) [1 of
-    1 view(s) changed in some way: scale set on 1, detail l...], scale 75. inputs came views
-    as given (1); scale as given; detailLevel as given; visualStyle as given. on Snowdon-scratch_ajmal.al'
-  negative_case: run with views=Model Linking, scale=0, detailLevel=, visualStyle= instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned changed 0, findings
-    1 item(s) [Nothing was asked for - give a scale, a detail level or a vi...], scale 0.
-    inputs came views as given (1); scale as given; detailLevel as given; visualStyle as given.
-    on Snowdon-scratch_ajmal.al
+  model: Project1, Revit 2020, session 33484 - the count is NOT recorded because 2,927 elements
+    was measured on Project2, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned changed 1, findings 1 item(s) [1
+    of 1 view(s) changed in some way: scale set on 0, detail l...], scale 0, visualStyleNote
+    "Shaded" read back on 1 of 1 view(s): Shaded on 1. Show Edges was left as each view had
+    it - say "Shaded with Edges" to turn edges on.. inputs came views as given (1); scale
+    as given; detailLevel as given; visualStyle as given. on Project1'
+  negative_case: 'run with views=HERON TEST - VISUAL STYLE, scale=0, detailLevel=, visualStyle=Shadded
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    changed 0, findings 2 item(s) [No visual style is called "Shadded", so the visual style
+    was..., 0 of 1 view(s) changed in some way: scale set on 0, detail l...], scale 0, visualStyleNote
+    No visual style is called "Shadded", so the visual style was not touched on any view.
+    Say one of the words Revit''s View Control Bar shows: Wireframe, Hidden Line, Shaded,
+    Shaded with Edges, Consistent Colors, Realistic, Realistic with Edges - or Revit''s own
+    name for one: Wireframe, HLR, Shading, ShadingWithEdges, Rendering, Realistic, FlatColors,
+    RealisticWithEdges.. inputs came views as given (1); scale as given; detailLevel as given;
+    visualStyle as given. on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a49cc089d5151844
+  fingerprint: 9bbdfa885185a07f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -88,9 +128,15 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `View.Scale`, `View.DetailLevel`,
   `View.DisplayStyle`, `ViewDetailLevel` and `DisplayStyle` are present 2020
-  through 2027, compiled at both ends. The detail level and visual style are
-  matched against the enumeration names as text, so a release adding a style is
-  matched rather than needing a new case.
+  through 2027, compiled at both ends. The visual style is matched by NAME at
+  run time, never by a typed member: `DisplayStyle` value 9 is `Raytrace` on
+  2020, absent from 2021 to 2023, and `Textures` from 2024 (read off each
+  release's reference assembly on its own on 2026-10-13), so either name typed
+  would fail to compile somewhere in the range. A word whose name the running release lacks is
+  not offered, and a release adding a style is matched by its own name.
+  `Raytrace` is never offered: Revit 2020 throws on setting it - "it is not
+  permitted to directly assign the display style to this value" - measured
+  2026-10-13.
 
 # ROUTING - repeated in APPLY_VIEW_TEMPLATE, SET_VIEW_SCALE and
 # REPORT_VIEW_TEMPLATE_CONTROL.

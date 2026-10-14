@@ -10,7 +10,8 @@
 //    duct is tagged by a duct tag" at run time. `ElementTypeGroup` carries no
 //    per-MEP-category tag entries, so the map lives here. EVERY OTHER CATEGORY
 //    is worked out from Revit's own category names (version 4, below) - the
-//    map is checked first and its path is unchanged.
+//    map is checked first. Version 5 changed one thing on the map's path:
+//    where a tag with no leader goes (5b-452, below).
 //
 // 2. THE TAG FAMILY COMES FROM THE PROJECT'S DEFAULT, NOT THE FIRST LOADED.
 //    `GetDefaultFamilyTypeId` on the tag category returns what Revit's own
@@ -48,10 +49,9 @@ Action<string> because = reason =>
     whyCount[reason] = seenBefore + 1;
 };
 
-// LEADER SHAPE, and `none` is the default ON PURPOSE. `none` is byte for byte
-// what this fragment did before leaders existed in it - addLeader false, head
-// at XYZ.Zero - so the run proved on 2026-09-14 is not disturbed by any of
-// this. Only a caller who asks for a leader gets the new path.
+// LEADER SHAPE, and `none` is the default ON PURPOSE - addLeader false, the
+// head on the element itself. Only a caller who asks for a leader gets a head
+// moved off the element.
 //
 //   none      no leader at all
 //   straight  one segment, element to tag head
@@ -59,8 +59,8 @@ Action<string> because = reason =>
 //             head - what a modeller means by an L-shaped tag
 //
 // A LEADER NEEDS THE HEAD AWAY FROM THE ELEMENT. A leader from a point to
-// itself is not a leader, so a head position is computed per element rather
-// than the XYZ.Zero the no-leader path passes.
+// itself is not a leader, so with one the head is offset from the element
+// rather than placed on it as the no-leader path does.
 //
 // BENDING THE LEADER INTO AN L IS NOT THIS FRAGMENT'S JOB, and must not become
 // it again. FORCE_TAG_LEADER_LSHAPE (FRG-VIEW-088) already does it and does it
@@ -168,7 +168,7 @@ Func<Category, BuiltInCategory> tagCategoryByName = elementCategory =>
     return answer;
 };
 
-// WHERE A TAG GOES WHEN IT IS NOT ON THE MEP PATH: the element's own point -
+// WHERE A TAG GOES, ON THE MEP MAP OR OFF IT: the element's own point -
 // the middle of its location line, its insertion point, or, for an element
 // Revit gives neither (a door that IS a curtain-wall panel is one), the centre
 // of its extent in this view. TAG_ELEMENTS places at the location the same way,
@@ -229,8 +229,9 @@ foreach (var element in elements)
         continue;
     }
 
-    // ON THE MEP MAP OR NOT. Only read here; the map is looked up again below
-    // exactly as version 3 did, so an MEP element takes the same path it took.
+    // ON THE MEP MAP OR NOT. Read here for the riser rule and the leader's
+    // anchor; the tag category is looked up again below exactly as version 3
+    // did. Where the head goes no longer depends on it (version 5).
     bool onMepMap = false;
     foreach (var pair in tagCategoryFor)
     {
@@ -384,17 +385,19 @@ foreach (var element in elements)
     var tagSymbol = doc.GetElement(tagTypeId) as FamilySymbol;
     if (tagSymbol != null && !tagSymbol.IsActive) tagSymbol.Activate();
 
-    // WHERE THE HEAD GOES. Only asked once a leader is wanted: with no leader
-    // the head is placed at the point passed, and that stays XYZ.Zero here.
-    //
-    // OFF THE MEP MAP THE HEAD IS AT THE ELEMENT, leader or not - its own
-    // point, or the centre of its extent when Revit gives no location (a
-    // curtain-panel door). The MEP path above is left exactly as version 3
-    // had it; whether its XYZ.Zero head lands on the element is recorded in
-    // FRAGMENT-ISSUES rather than changed here.
+    // WHERE THE HEAD GOES: AT THE ELEMENT, leader or not, on the MEP map or
+    // off it - its own point, or the centre of its extent when Revit gives no
+    // location (a curtain-panel door). With no leader Revit puts the head
+    // exactly at the point passed. Versions 3 and 4 passed XYZ.Zero on the MEP
+    // map, and measured 2026-10-13 on Revit 2020.2 that stacked every duct tag
+    // at the project origin, 87 to 93 m from its duct (FRAGMENT-ISSUES
+    // 5b-452). Version 5 moved the head, and an MEP element with no point and
+    // no extent is now refused with this reason rather than tagged at the
+    // origin, as one off the map already was. The leader's anchor on the MEP
+    // map below is version 3's.
     XYZ anchor = null;
-    XYZ own = onMepMap ? null : ownPoint(element);
-    if (!onMepMap && own == null)
+    XYZ own = ownPoint(element);
+    if (own == null)
     {
         notTagged.Add(element.Id);
         because(element.Category.Name + ": Revit gives no point or extent to put a tag at");
@@ -427,7 +430,7 @@ foreach (var element in elements)
 
     XYZ headPoint = leaderHere
         ? new XYZ(anchor.X + offsetFeet, anchor.Y + offsetFeet, anchor.Z)
-        : (onMepMap ? XYZ.Zero : own);
+        : own;
 
     IndependentTag made = null;
     try

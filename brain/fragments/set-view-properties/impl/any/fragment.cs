@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `views`, `scale`, `detailLevel` and
-// `visualStyle` are in scope; leaves `changed` and `findings` behind.
+// `visualStyle` are in scope; leaves `changed`, `findings` and
+// `visualStyleNote` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -15,9 +16,32 @@
 // somebody left out would quietly restyle a whole drawing set.
 //
 // EVERY VALUE IS READ BACK. A view property can refuse without raising.
+//
+// THE VISUAL STYLE IS TAKEN IN THE WORDS REVIT SHOWS A MODELLER (version 2,
+// FRAGMENT-ISSUES 5b-457). Version 1 matched Revit's API names only, so
+// "Shaded" was refused - the API calls it Shading - while "Realistic" worked
+// because there the two names happen to agree. The View Control Bar's words are
+// read first, then the API's own names, so every word version 1 took still
+// works. Matched by NAME at run time, never by a typed member: value 9 is
+// Raytrace on Revit 2020, absent from 2021 to 2023, and Textures from 2024, so
+// either name typed here would fail to compile somewhere in the range.
+//
+// "SHADED" LEAVES SHOW EDGES AS THE VIEW HAS IT. In Revit, Show Edges is its
+// own tick box in Graphic Display Options, and the View Control Bar changes
+// the style without touching it. The API folds the two together - Shading or
+// ShadingWithEdges - so a view already showing edges keeps them, and "Shaded
+// with Edges" asks for them outright. "REALISTIC" DOES NOT: it is also the
+// API's own name, and it keeps the meaning version 1 gave it - Realistic with
+// no edges - because otherwise no word could take edges off a realistic view.
+//
+// AN UNKNOWN WORD IS REFUSED ONCE, NOT ONCE PER VIEW, and the refusal lists
+// every word this Revit takes. It is also left whole in `visualStyleNote`,
+// because a finding is cut to sixty characters on its way back and the list is
+// the part the caller needs.
 
 var changed = 0;
 var findings = new List<string>();
+var visualStyleNote = "";
 
 if (views == null || views.Count == 0)
 {
@@ -41,12 +65,100 @@ else
         var styleSet = 0;
         var refused = new List<string>();
 
+        // Revit's own names for a visual style ON THIS RELEASE that a view can
+        // be SET to. Undefined is the absence of a style. Raytrace is refused by
+        // Revit 2020 itself - "it is not permitted to directly assign the display
+        // style to this value", measured 2026-10-13 - and 2021 on has no such
+        // value, so neither is offered.
+        var revitStyles = new Dictionary<string, DisplayStyle>(StringComparer.OrdinalIgnoreCase);
+        foreach (DisplayStyle candidate in Enum.GetValues(typeof(DisplayStyle)))
+        {
+            var revitName = candidate.ToString();
+            if (revitName == "Undefined" || revitName == "Raytrace" || revitStyles.ContainsKey(revitName))
+                continue;
+            revitStyles[revitName] = candidate;
+        }
+
+        // The View Control Bar's words, each beside Revit's name for the same
+        // style. A word whose name this release does not have is not offered.
+        var barWords = new[]
+        {
+            new[] { "Wireframe", "Wireframe" },
+            new[] { "Hidden Line", "HLR" },
+            new[] { "Shaded", "Shading" },
+            new[] { "Shaded with Edges", "ShadingWithEdges" },
+            new[] { "Consistent Colors", "FlatColors" },
+            new[] { "Textures", "Textures" },
+            new[] { "Realistic", "Realistic" },
+            new[] { "Realistic with Edges", "RealisticWithEdges" },
+        };
+
+        // Spaces, capitals and the British spelling do not decide a match.
+        Func<string, string> squash = text =>
+            new string((text ?? "").Where(char.IsLetterOrDigit).ToArray())
+                .ToLowerInvariant().Replace("colours", "colors");
+
+        // A style read back, in the word a modeller sees for it.
+        Func<DisplayStyle, string> barWord = style =>
+        {
+            foreach (var pair in barWords)
+                if (string.Equals(pair[1], style.ToString(), StringComparison.Ordinal)) return pair[0];
+            return style.ToString();
+        };
+
+        DisplayStyle? styleWanted = null;
+        var keepEdges = false;
+        var styleReadBack = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        var styleRefused = new List<string>();
+
+        if (wantStyle.Length > 0)
+        {
+            var key = squash(wantStyle);
+            foreach (var pair in barWords)
+            {
+                if (squash(pair[0]) != key || !revitStyles.ContainsKey(pair[1])) continue;
+                styleWanted = revitStyles[pair[1]];
+                keepEdges = pair[0] == "Shaded";
+                break;
+            }
+
+            if (styleWanted == null)
+            {
+                foreach (var entry in revitStyles)
+                {
+                    if (squash(entry.Key) != key) continue;
+                    styleWanted = entry.Value;
+                    break;
+                }
+            }
+
+            if (styleWanted == null)
+            {
+                var offered = "Say one of the words Revit's View Control Bar shows: "
+                    + string.Join(", ", barWords.Where(p => revitStyles.ContainsKey(p[1])).Select(p => p[0]))
+                    + " - or Revit's own name for one: " + string.Join(", ", revitStyles.Keys) + ".";
+
+                visualStyleNote = key == "raytrace"
+                    ? "Revit does not let a tool set a view to Ray Trace - its API refuses it on Revit 2020, "
+                        + "because Ray Trace puts the view in a restricted mode, and has no value for it from "
+                        + "2021 - so the visual style was not touched on any view. Where Revit offers Ray Trace, "
+                        + "choose it in the View Control Bar by hand. " + offered
+                    : "No visual style is called \"" + wantStyle + "\", so the visual style was not touched "
+                        + "on any view. " + offered;
+                findings.Add(visualStyleNote);
+            }
+        }
+
         foreach (var view in views)
         {
             if (view == null) continue;
             if (view.IsTemplate)
             {
-                refused.Add(string.Format("'{0}' is a template, not a view", view.Name));
+                // Into the style's own list when a style was asked, so the whole
+                // note says why this view did not take it.
+                var notAView = string.Format("'{0}' is a template, not a view", view.Name);
+                if (styleWanted != null) styleRefused.Add(notAView);
+                else refused.Add(notAView);
                 continue;
             }
 
@@ -96,29 +208,34 @@ else
                 }
             }
 
-            if (wantStyle.Length > 0)
+            if (styleWanted != null)
             {
                 try
                 {
-                    var matchedStyle = false;
-                    foreach (DisplayStyle candidate in Enum.GetValues(typeof(DisplayStyle)))
+                    var target = styleWanted.Value;
+                    if (keepEdges)
                     {
-                        if (!string.Equals(candidate.ToString(), wantStyle, StringComparison.OrdinalIgnoreCase))
-                            continue;
-
-                        view.DisplayStyle = candidate;
-                        matchedStyle = true;
-                        if (view.DisplayStyle == candidate) { styleSet++; touched = true; }
-                        else refused.Add(string.Format("'{0}': the visual style did not take", view.Name));
-                        break;
+                        var before = view.DisplayStyle;
+                        var edgesShown = before == DisplayStyle.ShadingWithEdges
+                                      || before == DisplayStyle.RealisticWithEdges;
+                        if (edgesShown) target = DisplayStyle.ShadingWithEdges;
                     }
 
-                    if (!matchedStyle)
-                        refused.Add(string.Format("'{0}': no visual style is called '{1}'", view.Name, wantStyle));
+                    view.DisplayStyle = target;
+                    var now = view.DisplayStyle;
+                    if (now == target)
+                    {
+                        styleSet++;
+                        touched = true;
+                        var shown = barWord(now);
+                        styleReadBack[shown] = (styleReadBack.ContainsKey(shown) ? styleReadBack[shown] : 0) + 1;
+                    }
+                    else styleRefused.Add(string.Format("'{0}': the visual style did not take - asked {1}, "
+                        + "reads {2}", view.Name, barWord(target), barWord(now)));
                 }
                 catch (Exception ex)
                 {
-                    refused.Add(string.Format("'{0}' visual style: {1}", view.Name, ex.Message));
+                    styleRefused.Add(string.Format("'{0}' visual style: {1}", view.Name, ex.Message));
                 }
             }
 
@@ -130,6 +247,21 @@ else
             + "took one and refused another is counted here and named below",
             changed, views.Count, scaleSet, detailSet, styleSet));
 
+        // WHICH STYLE EACH VIEW READS BACK, whole, because "Shaded" can come
+        // back with or without edges and the finding above is cut short.
+        if (styleWanted != null)
+        {
+            visualStyleNote = "\"" + wantStyle + "\" read back on " + styleSet + " of " + views.Count
+                + " view(s)"
+                + (styleReadBack.Count == 0 ? "" : ": " + string.Join(", ",
+                    styleReadBack.Select(e => e.Key + " on " + e.Value)))
+                + (keepEdges ? ". Show Edges was left as each view had it - say \"" + barWord(styleWanted.Value)
+                    + " with Edges\" to turn edges on" : "")
+                + (styleRefused.Count == 0 ? "" : ". Refused: " + string.Join("; ", styleRefused))
+                + ".";
+        }
+
+        refused.AddRange(styleRefused);
         foreach (var failure in refused) findings.Add("Refused: " + failure);
 
         if (refused.Count > 0)
