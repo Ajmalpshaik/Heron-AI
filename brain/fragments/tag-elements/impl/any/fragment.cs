@@ -19,10 +19,17 @@
 // which is why it is a stated input and not a default.
 //
 // WHERE THE TAG GOES. At the host's own location - the midpoint of a curve, the
-// point of a point-based element. Readable placement is a drafting judgement
-// and a different job; putting every tag somewhere predictable is the honest
-// starting point, and it is easier to move a tag that exists than to find one
-// that was never placed.
+// point of a point-based element - and, for an element Revit gives no location
+// at all, the centre of its extent in this view. Readable placement is a
+// drafting judgement and a different job; putting every tag somewhere
+// predictable is the honest starting point, and it is easier to move a tag that
+// exists than to find one that was never placed.
+//
+// THE EXTENT IS FOR A DOOR THAT IS A CURTAIN-WALL PANEL (version 2, 5b-454).
+// Measured on Revit 2020.2, Project1, 2026-10-13: such a door has `Location`
+// null where a wall-hosted door has a point, so version 1 refused every one of
+// them. IndependentTag.Create at the centre of its extent in the plan made a
+// tag there. TAG_ELEMENTS_IN_VIEW falls back the same way.
 
 var tagged = 0;
 var skipped = new List<ElementId>();
@@ -40,8 +47,8 @@ foreach (var element in elements)
         continue;
     }
 
-    // Where to put it, from the element's own geometry. An element with
-    // neither a point nor a curve gives us nowhere to place a tag, and
+    // Where to put it, from the element's own geometry. An element with no
+    // point, no curve and no extent gives us nowhere to place a tag, and
     // inventing the origin would put every such tag on top of each other at
     // 0,0,0 - which reads on the drawing as a bug in Revit rather than in this.
     XYZ point = null;
@@ -55,6 +62,18 @@ foreach (var element in elements)
     {
         var atPoint = element.Location as LocationPoint;
         if (atPoint != null) point = atPoint.Point;
+    }
+
+    // No location: the centre of its extent - in this view first, because that
+    // is where the tag is drawn, and the model's extent when the view gives
+    // none. An extent that cannot be read leaves the point empty, and the
+    // element is refused below exactly as before.
+    if (point == null)
+    {
+        BoundingBoxXYZ extent = null;
+        try { extent = element.get_BoundingBox(view) ?? element.get_BoundingBox(null); }
+        catch (Exception) { extent = null; }
+        if (extent != null) point = (extent.Min + extent.Max) * 0.5;
     }
 
     if (point == null)

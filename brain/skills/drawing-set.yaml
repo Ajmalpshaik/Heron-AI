@@ -53,8 +53,10 @@ purpose: >
      category=Doors and that levelId, then FIND_UNTAGGED_ELEMENTS (PROVEN) in
      that level's plan, then TAG_ELEMENTS (PROVEN) with the door tag type,
      each step's expect_from naming the one before it. TAG_ELEMENTS_IN_VIEW
-     (DRAFT) does not know doors today, so it is not the route. A door that
-     is a curtain panel refused a tag: count those out rather than retry them.
+     (DRAFT) tags doors since its version 4 but is not signed, so it is not
+     the route yet. A door that is a curtain panel is tagged too, at the
+     centre of its extent - TAG_ELEMENTS version 2 (5b-454); version 1
+     refused it.
   8. DIMENSIONS, on each plan. DIMENSION_ROOMS (PROVEN) on that level's rooms
      with measureTo=inside, and DIMENSION_WALL_OPENINGS (PROVEN) on that
      level's walls with withOverall=true, each at the offsetMm the modeller
