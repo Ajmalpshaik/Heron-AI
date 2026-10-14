@@ -5,40 +5,89 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-031
-semantic-identity: "what categories does this model actually have"
+semantic-identity: "what categories does this model actually have, and how each one draws in Object Styles"
 kind: filter
 domain: revit.document
 capability: LIST_CATEGORIES
-version: 1
+# Version 2 (2026-10-14, FRAGMENT-ISSUES 5b-464): reads OBJECT STYLES as well -
+# every category's and subcategory's projection line colour, projection and cut
+# line weight and projection line pattern, as one string, one row per line; in
+# a family the family's own category and its subcategories first. Version 1
+# listed the names, the bindable count and the sub-category total, and those
+# three are unchanged. An optional `everySubcategory` lists every other
+# category's subcategories too; left out it is false. Nothing read a
+# category's own graphics before this, so "what colour is the signature
+# subcategory" was answered by a WRITE - the routing outcome D-86 does not
+# leave to judgement.
+version: 2
 source: OFFICIAL
 risk: READ
 
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# NOTHING LISTED THEM. SELECT_BY_CATEGORY_NAME returns NEAR MISSES when a name
+# does not match, which is the closest thing in the library and is not a list -
+# it only answers once somebody has already guessed wrong. So the question a
+# modeller asks first, what is even in here, had no answer.
+#
+# CATEGORY NAMES ARE LOCALISED AND THE INTERNAL IDENTIFIERS ARE NOT. On a
+# French or Arabic Revit the names come back in that language. That is not a
+# defect to work around: it is exactly why SELECT_BY_CATEGORY_NAME exists, and
+# this fragment is what tells somebody which names their machine will accept.
+#
+# IT LISTS WHAT THE DOCUMENT HAS, NOT WHAT REVIT KNOWS. Every release carries
+# hundreds of built-in categories whether or not the model uses them. This
+# reads Document.Settings.Categories, the document's own set, and reports
+# sub-categories with it because that is where an object style lives.
+#
+# OBJECT STYLES ARE READ OFF THE CATEGORY ITSELF (version 2) - Manage > Object
+# Styles in a project, the Model Objects and Annotation Objects tabs in the
+# Family Editor - never off a view. A view's override of a category is
+# REPORT_CATEGORY_OVERRIDES, and the two answer different questions: "what
+# colour is Walls" here, "why are the walls red in this view" there. The cut
+# line weight is given only where the category is cut (IsCuttable); "-"
+# otherwise. Solid is the solid pattern's own id; "none" is no pattern, no
+# weight or no colour set.
+#
+# ONE STRING, ONE LINE PER ROW: `objectStyles`. Its first line says what the
+# rows are and what was left out, its second names the columns. A reply shows a
+# list as its first three items, each cut to sixty characters, and a string
+# whole (RevitFragment.Describe), so the rows travel as text.
+#
+# NARROWED BY ONE SWITCH, NOT BY NAME. In a family the family's own category
+# (doc.OwnerFamily.FamilyCategory) and every subcategory of it come first; every
+# other category follows as its own row, sorted by name, and its subcategories
+# only with `everySubcategory` - a project has hundreds, and a reply would carry
+# every one. A category or subcategory NAME to narrow to would be a string, and
+# the add-in binds an absent value only for an optional bool
+# (HeronBindingNote.AbsentValue, row 5b-227), so a name would have been a new
+# required input for every caller of version 1. Recorded in row 5b-464.
+#
+# AN INTERNAL CATEGORY HAS NO ROW. Object Styles shows model, annotation and
+# analytical categories; an internal one is counted in the first line and left
+# out.
+#
+# ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 purpose: >
-  Lists the categories in this document - their names, whether they can carry a
-  project parameter, and how many sub-categories each has.
-
-  **NOTHING LISTED THEM.** `SELECT_BY_CATEGORY_NAME` returns NEAR MISSES when a
-  name does not match, which is the closest thing in the library and is not a
-  list - it only answers once somebody has already guessed wrong. So the question
-  a modeller asks first, *what is even in here*, had no answer.
-
-  **CATEGORY NAMES ARE LOCALISED AND THE INTERNAL IDENTIFIERS ARE NOT.** On a
-  French or Arabic Revit the names come back in that language. That is not a
-  defect to work around: it is exactly why `SELECT_BY_CATEGORY_NAME` exists, and
-  this fragment is what tells somebody which names their machine will accept.
-
-  **IT LISTS WHAT THE DOCUMENT HAS, NOT WHAT REVIT KNOWS.** Every release carries
-  hundreds of built-in categories whether or not the model uses them. This reads
-  `Document.Settings.Categories`, which is the document's own set, and reports
-  sub-categories with it because that is where an object-style override actually
-  lives.
-
-  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+  Answers what categories this document has and how each category and
+  subcategory draws its lines in Object Styles - the projection line colour,
+  the projection and cut line weight and the line pattern. In a family, the
+  family's own category and its subcategories come first. Also counts the
+  categories that can carry a project parameter.
 
 contract:
   needs:
     - name: doc
       type: Document
+    # true lists every subcategory of every category. Absent is false: in a
+    # family, the family's own category's subcategories and every other
+    # category's own row; in a project, one row per category. `optional: true`
+    # is what lets it be left out (HeronBindingNote.AbsentValue).
+    - name: everySubcategory
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: names
       role: result
@@ -47,6 +96,20 @@ contract:
       # How many of them can carry a project parameter - the number that decides
       # whether ADD_PROJECT_PARAMETER can reach a category at all. A thing it
       # FOUND, so a result (D-52).
+      role: result
+      type: int
+    - name: objectStyles
+      # Object Styles, one row per line: "category > subcategory | projection
+      # line colour R,G,B | projection line weight | cut line weight (- not
+      # cut) | projection line pattern", after a first line saying what the
+      # rows are and what was left out. A STRING because a reply cuts a list
+      # to three items of sixty characters.
+      role: result
+      type: string
+    - name: familySubcategories
+      # How many subcategories the family's own category has - the rows that
+      # follow its own row at the top of objectStyles. 0 in a project, and 0 in
+      # a family whose category has none: that is the proof's negative leg.
       role: result
       type: int
     - name: findings
@@ -61,18 +124,38 @@ compatibility-note: >
   `Category.AllowsBoundParameters` are present 2020 through 2027 - read off the
   reference assemblies at both ends on 2026-09-18. `Categories` is iterated
   rather than indexed, so nothing here depends on an ordering Revit does not
-  promise.
+  promise. Version 2 adds `Category.LineColor`, `GetLineWeight` (an `int?`),
+  `GetLinePatternId`, `IsCuttable` and `CategoryType`,
+  `LinePatternElement.GetSolidPatternId`, `Document.IsFamilyDocument`,
+  `Document.OwnerFamily` and `Family.FamilyCategory` - read off tools/api-surface
+  for all eight releases on 2026-10-14, each 2020-2027 with one signature; the
+  same members CREATE_LINE_STYLE and SET_FAMILY_FORM_SUBCATEGORY already call.
 
-# ROUTING - repeated in SELECT_BY_CATEGORY_NAME and REPORT_FILTERABLE_PARAMETERS.
+# ROUTING - repeated in SELECT_BY_CATEGORY_NAME and REPORT_FILTERABLE_PARAMETERS;
+# the object-style rows in CREATE_LINE_STYLE, SET_FAMILY_FORM_SUBCATEGORY and
+# DRAW_FAMILY_DETAIL_LINES.
 #
 #   "what categories are in this model" -> here
+#   "what colour is the signature subcategory" -> here - its Object Styles row
+#   "what line weight is the hidden lines subcategory" -> here
+#   "list the object styles in this family" -> here
+#   "what colour are the lines in this family" -> here
 #   "everything in duct accessories"    -> SELECT_BY_CATEGORY_NAME - and this
 #                                          fragment is what tells you the name
 #                                          that machine will accept
 #   "which parameters can I filter on"  -> REPORT_FILTERABLE_PARAMETERS
+#   "what category overrides are on this view" -> REPORT_CATEGORY_OVERRIDES - a
+#                                          view's override, not the category's
+#                                          own style
+#   "make a red dashed line style"      -> CREATE_LINE_STYLE - the write
+#   "put this extrusion on the Hidden Lines subcategory" -> SET_FAMILY_FORM_SUBCATEGORY
 
 utterances:
   - list the categories
   - what categories are in this model
   - show me all categories
   - which categories can take a parameter
+  - what colour are the lines in this family
+  - what colour is the signature subcategory
+  - what line weight is the hidden lines subcategory
+  - list the object styles in this family

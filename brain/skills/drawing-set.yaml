@@ -112,6 +112,13 @@ utterances:
   - tag the rooms and the doors and dimension the plans
   - set up the documentation drawings with a title block
 
+# NOT NAMED, ON PURPOSE (2026-10-14, FRAGMENT-ISSUES 5b-465): LIST_SHEET_SETS,
+# the read of the saved View/Sheet Sets. Nothing in this method saves a set -
+# the method stops before the issue, and a print set is MANAGE_SHEET_SETS',
+# which is not a step here - so there is nothing for the read to check. When a
+# print-set step is added (row 5b-466 asks MANAGE_SHEET_SETS for an add mode
+# first), LIST_SHEET_SETS is its read-back and goes in this list beside it.
+#
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - CREATE_SHEET

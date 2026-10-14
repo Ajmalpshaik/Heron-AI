@@ -80,6 +80,11 @@ compatibility-note: >
 #                                   the sheet side of the same question
 #   "make a new sheet"           -> CREATE_SHEET
 #   "which sheets have this revision" -> LIST_REVISIONS
+#   "how many sheet sets are there"  -> LIST_SHEET_SETS - the saved View/Sheet
+#                                       Sets, which hold views as well as
+#                                       sheets. Not this fragment: a set is
+#                                       not a sheet (row 5b-465, 2026-10-14)
+#   "list the view/sheet sets"       -> LIST_SHEET_SETS
 
 #   "make a sheet list schedule"       -> CREATE_SHEET_LIST - a schedule VIEW
 #                                        that prints on the cover. This is a

@@ -141,6 +141,7 @@ compatibility-note: >
 #   "move these lines to the thin lines style" -> REMAP_LINE_STYLES
 #   "bring the line styles from that model"   -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
 #   "make a dash dot pattern"                 -> CREATE_LINE_PATTERN
+#   "what colour is the signature subcategory" -> LIST_CATEGORIES - a question goes to the read
 
 utterances:
   - make a red dashed line style
