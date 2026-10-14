@@ -9,13 +9,15 @@ semantic-identity: "every column grid line in the project, in the order a drawin
 kind: filter
 domain: revit.datums
 capability: LIST_GRIDS
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
 purpose: >
   Collects the project's column grids and reports each one's name and which way
-  it runs - and, when asked, where each two cross, in millimetres (version 3).
+  it runs - and, when asked, where each two cross, in millimetres (version 3) -
+  and the spacing from each grid to the next one running the same way, square
+  to them, in millimetres (version 4).
 
   **Grid names are not sortable as text, and this is the case that proves it.**
   A normal grid runs 1 to 12 one way and A to N the other. Sorted as strings,
@@ -91,6 +93,13 @@ contract:
       # millimetres, as ONE string (version 3).
       role: result
       type: string
+    - name: spacings
+      # Version 4, always: for each set of straight grids running the same way
+      # (within half a degree), each grid to the next across them and the
+      # distance between the two lines, square to them - "1 > 2 6000 mm" - as
+      # ONE string. Empty when no two straight grids run the same way.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -112,6 +121,9 @@ tests: tests/
 compatibility-note: >
   `Grid`, `Grid.Curve` and `Grid.Name` are unchanged 2020 to 2027. No ElementId
   is built from an int, so 2024's 64-bit ids do not reach this code.
+  Version 4's spacing reads `Line.Direction` and `Curve.GetEndPoint`, and
+  `XYZ.DotProduct`, `Normalize` and `GetLength`, the same members version 3's
+  crossings and every other geometry read here use; no new API.
 
 # ROUTING - repeated in CREATE_GRID and SNAP_TO_GRID.
 #
@@ -139,3 +151,12 @@ utterances:
   - grid names
   - which grids do we have
   - where do the grids intersect
+  # Version 4, 2026-10-14 (FRAGMENT-ISSUES row 5b-477): "what is the distance
+  # between these grids" reached CREATE_RADIAL_GRIDS, a write, on the trained
+  # model, and MEASURE_DISTANCE measures between bounding boxes, which is not
+  # the spacing of two grids on a skew.
+  - what is the grid spacing
+  - how far apart are the grids
+  # Declared, not ranked: with the spacing built, it still ranked to
+  # CREATE_RADIAL_GRIDS on the trained model. This read answers it now.
+  - what is the distance between these grids

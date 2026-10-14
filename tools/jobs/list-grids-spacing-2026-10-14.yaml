@@ -1,0 +1,39 @@
+# The proof of list-grids version 4 (LIST_GRIDS, FRG-ELE-023) - the spacing
+# between neighbouring parallel grids - written 2026-10-14, NEEDS-CHECKING
+# Group EC, row EC15. NOT RUN - written in a cloud session with no Revit.
+# It re-proves version 3's crossings on the same run.
+#
+#     python tools/batch-prove.py tools/jobs/list-grids-spacing-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-grids-spacing-2026-10-14.yaml
+#
+# READ: nothing is changed, so no transaction and no write switch.
+#
+# THE ARRANGEMENT - part 12 (docs/needs-checking/group-ec.md):
+#   - "Heron Gap Pass Test": grids 1, 2, 3 north-south, 1 to 2 at 6000 mm and
+#     2 to 3 at 7200 mm; A and B east-west, 8000 mm apart
+#   - "Heron Gap Pass Grids Negative": ONE north-south grid and ONE east-west
+#     grid, nothing else, saved and left OPEN - the negative: no two grids
+#     run the same way, so spacings must be empty
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - spacings: "1 > 2 6000 mm, 2 > 3 7200 mm" and "A > B 8000 mm"
+#   - intersections: six, A/1 to B/3 (version 3, on the same run)
+#   - the second route: an aligned dimension from grid 1 to grid 2
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to the command.
+
+model: '"Heron Gap Pass Test" part 12 and "Heron Gap Pass Grids Negative" (docs/needs-checking/group-ec.md), Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+
+jobs:
+  - fragment: list-grids
+    expect: spacings
+    set:
+      withIntersections: "true"
+    negative-in: "Heron Gap Pass Grids Negative"
+    note: >
+      The positive reads 6000, 7200 and 8000 mm; the negative has two
+      crossing grids and must report no spacing.

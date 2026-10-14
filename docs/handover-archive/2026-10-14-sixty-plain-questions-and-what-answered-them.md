@@ -26,12 +26,13 @@ ranking runs. **A sweep of paraphrases is the only thing that measures it.**
 |---|---|
 | `REPORT_PROJECT_INFORMATION`, new | *"what is the project number"*, *"who is the project client"* - nothing read Project Information |
 | `REPORT_VIEW_SETTINGS`, new | Detail level, visual style, discipline, phase, phase filter - nothing read them |
+| `LIST_GRIDS` version 4 | The spacing from each grid to the next running the same way - nothing measured it square to the grids |
 | Six questions declared on the read that answers each | Fan coil position, pipe ends, equipment level, duct elevation, section scale, unconnected ducts |
 | `REPORT_LOCATION`'s 809-word purpose moved to comments | Its site paragraph began at word-piece 512, past what the trained model reads |
 | Question utterances on `REPORT_PROJECT_UNITS`, `REPORT_AREA_VOLUME_COMPUTATIONS` | Rows 5b-356 and 5b-476: two of the suite's failures |
 | Two #534 cards reworded | *"when was this model last synced"* reached the Publish ownership tool |
 
-**26 to 16** on the sweep; `tests/test_routing_phrases.py` 5 failures to 3; check-routing's
+**26 to 15** on the sweep; `tests/test_routing_phrases.py` 5 failures to 3; check-routing's
 claimed-and-not-reached 52 to 50 on the trained model and 39 to 35 on spelling. No question that
 reached a read moved to a write.
 
@@ -43,7 +44,7 @@ setter, which is the owner's call.
 **How to measure a routing change on the trained model, learned the hard way:**
 
 - **Write the test sentences before reading the cards**, and keep them out of every card while they
-  measure. A sentence declared on a card is answered by identity and measures nothing - the seven
+  measure. A sentence declared on a card is answered by identity and measures nothing - the eight
   sweep sentences declared here were declared as repairs, after measuring, and measure nothing now.
 - **Measure against the commit before, not against nothing**, on fresh private stores, both backends.
   Many contests are exact ties - words #1 + nearness #2 against words #2 + nearness #1 - and the PROVEN
