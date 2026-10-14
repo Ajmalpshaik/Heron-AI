@@ -1,0 +1,58 @@
+# The proof of create-panel-schedules (CREATE_PANEL_SCHEDULES, FRG-MEP-067),
+# written 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC3. NOT
+# RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/create-panel-schedules-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-panel-schedules-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test", part P2 (docs/needs-checking/group-ec.md):
+#   - load a panelboard family from the library (Electrical > Distribution)
+#   - place ONE panel on Level 1, Panel Name PB-1, visible in "FloorPlan: Level 1".
+#     Do NOT make a schedule for it
+#   - place ONE panel on Level 2, Panel Name PB-2, visible in "FloorPlan: Level 2",
+#     and make its panel schedule BY HAND (Create Panel Schedules) - it must
+#     already have one
+#
+# WHY THE NEGATIVE IS A PANEL THAT ALREADY HAS ONE. A panel has one schedule,
+# and a second is the duplicate this fragment exists not to make. So the
+# negative selects PB-2 and must make NOTHING - created empty, PB-2 and its
+# view's name in alreadyScheduled. That is a stronger negative than a wall.
+#
+# `templateName` EMPTY: Revit's default template for the panel's configuration.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - findings name PB-1 and the view made for it
+#   - the second route (EC3b): run the positive by hand with the write kept,
+#     then Project Browser > Panel Schedules - one new view, opening on PB-1
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P2 - PB-1 on Level 1 with no schedule, PB-2 on Level 2 with one, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Electrical Equipment
+    inViewOnly: "FloorPlan: Level 1"
+    templateName: ""
+
+  negative-set:
+    categoryName: Electrical Equipment
+    inViewOnly: "FloorPlan: Level 2"
+    templateName: ""
+
+jobs:
+  - fragment: create-panel-schedules
+    expect: created
+    note: >
+      PB-1 (no schedule) against PB-2 (already has one). The negative must
+      make nothing and name PB-2 in alreadyScheduled.

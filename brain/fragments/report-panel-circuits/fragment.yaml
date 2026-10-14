@@ -80,9 +80,18 @@ compatibility-note: >
 #   "what devices are on circuit 3"           -> SELECT_BY_ELECTRICAL_CIRCUIT
 #   "circuit these sockets"                   -> CREATE_ELECTRICAL_CIRCUIT
 #   "what is the load on these connectors"    -> REPORT_CONNECTOR_LOADS
+#   "make the panel schedules"                -> CREATE_PANEL_SCHEDULES - the schedule
+#                                                VIEW a sheet carries; this card only
+#                                                reads the circuits (2026-10-14)
 
 utterances:
   - what circuits are on panel DB-1
   - show me the panel schedule as a list
   - show me every circuit and its load
   - which circuits are not on any panel
+  # ADDED 2026-10-14 with CREATE_PANEL_SCHEDULES. Measured on a scratch store,
+  # lexical hybrid, 2024 wall: "show me the panel schedule" reached that WRITE
+  # (words #2, nearness #1) once it existed - a question answered by the tool
+  # that makes a view. Asking to SEE a schedule is a read; making one is not.
+  - show me the panel schedule
+  - what is on the panel schedule for DB-1

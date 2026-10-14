@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-067
+semantic-identity: "create a new panel schedule view for each electrical panel that has none yet"
+kind: action
+domain: revit.mep
+capability: CREATE_PANEL_SCHEDULES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates the panel schedule VIEW for each electrical panel handed in - the
+  view Revit makes with Create Panel Schedules, which goes on a sheet. Until
+  this fragment the library could READ a panel's circuits
+  (REPORT_PANEL_CIRCUITS) and make nothing a drawing could carry.
+
+  **A PANEL HAS ONE SCHEDULE, SO ONE ALREADY THERE IS REPORTED, NOT
+  DUPLICATED.** Every existing panel schedule view is read first and matched
+  to its panel; a panel that has one is named with that view's name and
+  skipped.
+
+  **THE TEMPLATE IS NAMED, OR REVIT CHOOSES.** With `templateName` empty, Revit
+  uses the default template for the panel's configuration - branch panel,
+  switchboard or data panel. A name that matches no panel schedule template is
+  refused before anything is made; a template of the wrong configuration for a
+  panel is Revit's refusal, caught and reported for that panel alone.
+
+  **ONLY ELECTRICAL EQUIPMENT IS A PANEL.** Anything else handed in is named
+  and skipped, so a selection with a light fitting in it still schedules the
+  panels.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
+  entry, and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The panel schedule template to use, by its name in the Project Browser
+    # (Panel Schedule Templates). Empty - Revit's default for each panel.
+    - name: templateName
+      type: string
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: IList<View>
+    - name: alreadyScheduled
+      # Panels that had a schedule view before this ran - "panel: view". The
+      # evidence it looked and left them alone, never a thing it made.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `PanelScheduleView.CreateInstanceView`
+  (both overloads), `GetPanel` and `IsPanelScheduleTemplate`, and the
+  `PanelScheduleTemplate` class, are present 2020 through 2027, read with
+  tools/api-surface on 2026-10-14. Ids are compared as ElementIds, never as
+  numbers.
+
+# ROUTING - the same rows are in REPORT_PANEL_CIRCUITS.
+#
+#   "make the panel schedules"              -> here
+#   "create a panel schedule for DB-1"      -> here
+#   "what is on panel DB-1"                 -> REPORT_PANEL_CIRCUITS - a READ of
+#                                              the circuits, no view made
+#   "show me the panel schedule as a list"  -> REPORT_PANEL_CIRCUITS
+#   "put the panel schedule on a sheet"     -> PLACE_SCHEDULE_ON_SHEET, after this
+#
+# MEASURED 2026-10-14, scratch store, lexical hybrid, 2024 wall: "show me the
+# panel schedule" reached THIS write once it existed, and is now declared on
+# REPORT_PANEL_CIRCUITS. Three undeclared paraphrases still reach here on
+# that route - "show the panel schedule for DB-1", "what does the panel
+# schedule say", "open the panel schedule for DB-1" - by nearness #1. The
+# lexical route is weak on paraphrase across the library ("open the level 2
+# plan" reaches CREATE_STAIRS there); measure these on the trained backend
+# before this card is PROVEN. NEEDS-CHECKING EC3.
+
+utterances:
+  - make the panel schedules for these panels
+  - create a panel schedule for this distribution board
+  - generate panel schedule views
+  - make a panel schedule using the switchboard template
