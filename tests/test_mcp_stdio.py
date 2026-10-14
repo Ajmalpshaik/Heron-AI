@@ -31,18 +31,32 @@ handler always answered. Installing it to prove the search understands meaning
 So this file starts the server the way a host does and holds it to a DEADLINE.
 A test that waits forever cannot tell a slow answer from no answer, which is
 the whole failure being guarded against.
+
+WITH ONE DIFFERENCE FROM A HOST, ON PURPOSE (row 5b-461): the child's
+LOCALAPPDATA is a scratch folder, so the Revits it finds are none. A host's
+server finds the real ones, and so did this one until 2026-10-14 - 121 opens
+of a live Revit's pipe in a run, measured the day before, and still a pass.
+tests/live_revit_guard.py is installed in the child as well, refuses any
+named-pipe open, and fails the run if the real discovery folder was read.
 """
 
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp", "server"))
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp", "client"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from heron_tools import TOOLS                                  # noqa: E402
+import heron_bridge_client as bridge                           # noqa: E402
+import live_revit_guard as GUARD                               # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
@@ -63,9 +77,9 @@ def check(condition, what):
 class Host(object):
     """The smallest thing that behaves like an MCP host over stdio."""
 
-    def __init__(self):
+    def __init__(self, env):
         self.proc = subprocess.Popen(
-            [sys.executable, "-u", SERVER], cwd=ROOT,
+            [sys.executable, "-u", SERVER], cwd=ROOT, env=env,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, encoding="utf-8", bufsize=1)
         self.err = []
@@ -97,6 +111,9 @@ class Host(object):
     def close(self):
         try:
             self.proc.terminate()
+            # Waited for, so the guard's log is complete before it is read
+            # and the scratch folder is free to be removed.
+            self.proc.wait(10)
         except Exception:
             pass
 
@@ -119,7 +136,20 @@ def main():
         return 0
 
     print("Heron over real stdio, as a host sees it")
-    host = Host()
+    # NO CALL HERE MAY REACH THE REVIT RUNNING ON THIS PC (row 5b-461). The
+    # child is guarded as this process would be: a pipe open is refused, and
+    # whatever it touched is read back below.
+    scratch = tempfile.mkdtemp(prefix="heron-mcp-stdio-")
+    guard = GUARD.Guard.around(bridge)
+    env = guard.for_child(os.environ, scratch)
+    # THE FIX: the child's machine-local folder is a scratch one, so the
+    # discovery folder it reads is empty - "no Revit connected". Only the
+    # environment crosses into a child, and this is the variable the client
+    # already resolves that folder from on Windows (local_app_data), so no
+    # production code learns a test's switch. It moves the child's bridge
+    # logs and companion files out of the owner's folder too.
+    env["LOCALAPPDATA"] = os.path.join(scratch, "local")
+    host = Host(env)
     try:
         t0 = time.time()
         host.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
@@ -213,6 +243,14 @@ def main():
                   "it names a capability for a sentence in BIM language")
     finally:
         host.close()
+
+    print()
+    print("  the Revit running on this PC, never reached (row 5b-461)")
+    touched = guard.touched()
+    check(not touched,
+          "the server never listed %s or opened any named pipe - found %s"
+          % (guard.describe(), GUARD.summary(touched)))
+    shutil.rmtree(scratch, ignore_errors=True)
 
     print()
     if FAILURES:

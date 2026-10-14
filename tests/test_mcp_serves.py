@@ -79,6 +79,11 @@ WHAT IT PROVES, when an SDK is installed
      "failed" for a lost answer and revit_busy, and "ok" for a good reply
      from a model whose very name says Failed; revit_edit_table hands back
      the label revit_read gave the answer it hands back.
+ 12. NOTHING HERE REACHES THE REVIT RUNNING ON THIS PC (row 5b-461). The
+     client's discovery folder is an empty one for the whole run, and
+     tests/live_revit_guard.py refuses any named-pipe open and fails the run
+     if the real folder was so much as listed. Until then this file opened a
+     live Revit's pipe 1,842 times a run and passed.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -1177,6 +1182,15 @@ def main():
 
     print("  SDK version %s" % version)
 
+    # NO TOOL CALL HERE MAY REACH THE REVIT RUNNING ON THIS PC (row 5b-461).
+    # The guard is built from the folder the client names BEFORE anything
+    # moves it, so it watches the real one, and it refuses a pipe open rather
+    # than only counting it.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import live_revit_guard as GUARD
+    import heron_bridge_client as bridge
+    guard = GUARD.Guard.around(bridge).install()
+
     # Knowledge has to live somewhere; the brain refuses rather than invent a
     # location, which is correct and would fail this test for the wrong reason.
     home = tempfile.mkdtemp(prefix="heron-mcp-serves-")
@@ -1188,6 +1202,15 @@ def main():
     # folder. Found by the review of the 5b-324 change, 2026-10-06.
     had_audit = os.environ.get("HERON_AUDIT")
     os.environ["HERON_AUDIT"] = os.path.join(home, "audit")
+    # AND ITS REVITS. Every way this file asks which Revits are connected -
+    # heron_resolve's version wall, revit_health, a real discover() put back
+    # after a stand-in - reads the client's discovery folder, and the real one
+    # names the Revit the owner's chats are using: 1,842 pipe opens on it in
+    # one run, measured 2026-10-13 (row 5b-461). An empty folder is "no Revit
+    # connected"; the checks that need one bring a stand-in of their own.
+    real_discovery = bridge.DISCOVERY_DIR
+    bridge.DISCOVERY_DIR = os.path.join(home, "bridges")
+    os.makedirs(bridge.DISCOVERY_DIR)
     try:
         try:
             import heron_mcp_server as server_module
@@ -1210,6 +1233,14 @@ def main():
         asyncio.run(exercise_words(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
+
+        guard.stop()
+        print()
+        print("  the Revit running on this PC, never reached (row 5b-461)")
+        touched = guard.touched()
+        check(not touched,
+              "no call here listed %s or opened any named pipe - found %s"
+              % (guard.describe(), GUARD.summary(touched)))
 
         print()
         if FAILURES:
@@ -1235,6 +1266,8 @@ def main():
             os.environ.pop("HERON_AUDIT", None)
         else:
             os.environ["HERON_AUDIT"] = had_audit
+        bridge.DISCOVERY_DIR = real_discovery
+        guard.stop()
         shutil.rmtree(home, ignore_errors=True)
 
 
