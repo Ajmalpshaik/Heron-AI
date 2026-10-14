@@ -1,0 +1,56 @@
+# The proof of list-categories (LIST_CATEGORIES, FRG-DOC-031) version 2: Object
+# Styles read back - every category's and subcategory's projection line
+# colour, projection and cut line weight and projection line pattern, with a
+# family's own category and its subcategories first. NEEDS-CHECKING Group DZ,
+# FRAGMENT-ISSUES row 5b-464. A READ: nothing is changed, so no `write:`.
+#
+#     python tools/batch-prove.py tools/jobs/list-categories-object-styles-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-categories-object-styles-2026-10-14.yaml
+#
+# THE ARRANGEMENT, made before the run, on TEST COPIES only - never a working
+# family and never the modeller's own signature family:
+#
+#   "Heron Object Styles Test"   a new family from the Metric Generic
+#                                Annotation template, with ONE subcategory
+#                                made under Generic Annotations in Manage >
+#                                Object Styles > Annotation Objects: "Signature",
+#                                Line Color 0,0,255, Line Weight 2, Solid.
+#                                Read the dialog BEFORE the run and write the
+#                                Generic Annotations row down too.
+#   "Heron No Subcategory Test"  a new family from the Metric Generic Model
+#                                template whose Object Styles > Model Objects
+#                                shows Generic Models with NOTHING under it -
+#                                delete any subcategory the template carried.
+#
+# Both open in the Family Editor at the run; `in:` and `negative-in:` bring each
+# to the front.
+#
+# POSITIVE: familySubcategories 1, and objectStyles opening "This family's own
+# category, Generic Annotations, and its 1 subcategory(ies) are the first 2
+# row(s)", then the column line, then the Generic Annotations row and
+# "Generic Annotations > Signature | 0,0,255 | 2 | - | Solid".
+#
+# NEGATIVE: familySubcategories 0 - the family's own category has no
+# subcategories - and objectStyles saying "it has no subcategories, so its own
+# row stands alone", with no "Generic Models > ..." row. A subcategory counted
+# here would mean the family branch read the wrong category (D-30).
+#
+# BY HAND AFTERWARDS (Group DZ): a project with everySubcategory left out and
+# set; the Object Styles dialog read by eye against the rows - the second route.
+
+model: Heron Object Styles Test (a Generic Annotation family with one subcategory, Signature, 0,0,255, weight 2) and Heron No Subcategory Test (a Generic Model family with none), Revit 2020 first, then 2024 and 2027
+
+jobs:
+  - fragment: list-categories
+    in: "Heron Object Styles Test"
+    negative-in: "Heron No Subcategory Test"
+    expect: familySubcategories
+    set:
+      everySubcategory: false
+    negative-set:
+      everySubcategory: false
+    note: >
+      Both legs name everySubcategory: a negative inherits no value from the
+      positive. Read objectStyles in the run record by eye against Object
+      Styles - the count is what the runner judges, the colour and weights are
+      what a person checks.
