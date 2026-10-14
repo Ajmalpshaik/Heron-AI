@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -20,11 +20,12 @@ capability: SET_VIEW_PROPERTIES
 # API will not set it, and 2021 on has no value for it. An unknown word is
 # refused once, listing every word this Revit takes, and that refusal and the
 # style each view reads back are left whole in the new `visualStyleNote`.
-# Scale and detail level are unchanged. The proof below was signed by Ajmal PS
-# on 2026-10-13 for the build before a review's fixes (Realistic's edges, a
-# template's refusal in the note) - DRAFT until re-proved. Version 1's
-# (2026-09-08, Snowdon, fingerprint a49cc089d5151844) recorded a scale set and
-# no visual style word tried.
+# Scale and detail level are unchanged. The proof below is the re-run on the
+# fixed build, signed by Ajmal PS on 2026-10-14. The first, signed 2026-10-13
+# (fingerprint 49da3f00afa98157), went stale with a review's fixes (Realistic's
+# edges, a template's refusal in the note). Version 1's (2026-09-08, Snowdon,
+# fingerprint a49cc089d5151844) recorded a scale set and no visual style word
+# tried.
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -93,9 +94,11 @@ contract:
       type: string
 
 proof:
-  date: '2026-10-13'
+  date: '2026-10-14'
   by: Ajmal PS
-  model: Project1 (3,079 elements), Revit 2020, session 33484
+  model: Project1, Revit 2020, session 33484 - the count is NOT recorded because 2,927 elements
+    was measured on Project2, the document in front, and this ran against another one (row
+    15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned changed 1, findings 1 item(s) [1
     of 1 view(s) changed in some way: scale set on 0, detail l...], scale 0, visualStyleNote
@@ -116,7 +119,7 @@ proof:
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 49da3f00afa98157
+  fingerprint: 9bbdfa885185a07f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
