@@ -81,7 +81,7 @@ COULD_NOT_RUN = 3
 FAILURES = []
 
 # A build's output folders. Skipped by WHOLE FOLDER NAME below the folder
-# walked, never by a word anywhere in the path above it (5b row 461).
+# walked, never by a word anywhere in the path above it (5b row 462).
 BUILD_OUTPUT = ("bin", "obj")
 
 
@@ -330,13 +330,13 @@ def wiring():
     # this section skipped any folder whose WHOLE path held "<sep>obj" or
     # "<sep>bin", so from a worktree the Claude app had named objective-...
     # it read no file in revit/, made no check, and the suite exited 0
-    # (5b row 461). So the count is a check of its own.
+    # (5b row 462). So the count is a check of its own.
     check(openers > 0,
           "the walk reached the writers at all - %d file(s) open a transaction"
           % openers)
     # And from a checkout whose own path says obj and bin, the walk still
     # reads the source file - and still leaves out a bin and an obj inside it.
-    scratch = tempfile.mkdtemp(prefix="heron-5b461-")
+    scratch = tempfile.mkdtemp(prefix="heron-5b462-")
     try:
         base = os.path.join(scratch, "obj", "objective-chebyshev", "bin", "revit")
         kept = os.path.join(base, "Heron.Revit.Addin", "Writer.cs")

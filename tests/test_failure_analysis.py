@@ -48,7 +48,7 @@ import heron_relpath as RELPATH                              # noqa: E402
 FAILURES = []
 
 # A build's output folders. Skipped by WHOLE FOLDER NAME below the folder
-# walked, never by a word anywhere in the path above it (5b row 461).
+# walked, never by a word anywhere in the path above it (5b row 462).
 BUILD_OUTPUT = ("bin", "obj")
 
 
@@ -234,9 +234,9 @@ def main():
     # skipped any folder whose WHOLE path held "<sep>obj" or "<sep>bin" - so
     # from .claude/worktrees/objective-chebyshev-fda7f7 it skipped all of
     # revit/, found 0 codes and called every classified code ORPHANED, on a
-    # commit that passed under any other name (5b row 461). Both directions:
+    # commit that passed under any other name (5b row 462). Both directions:
     # the source file is read, and a bin and an obj inside revit/ still are not.
-    scratch = tempfile.mkdtemp(prefix="heron-5b461-")
+    scratch = tempfile.mkdtemp(prefix="heron-5b462-")
     try:
         base = os.path.join(scratch, "obj", "objective-chebyshev", "bin", "revit")
         plant(os.path.join(base, "Heron.Revit.Addin", "Handler.cs"),

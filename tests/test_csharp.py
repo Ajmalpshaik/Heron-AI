@@ -46,7 +46,7 @@ import heron_relpath as RELPATH                                # noqa: E402
 FAILURES = []
 
 # A build's output folders. Skipped by WHOLE FOLDER NAME below the root
-# searched, never by a word anywhere in the path above it (5b row 461).
+# searched, never by a word anywhere in the path above it (5b row 462).
 BUILD_OUTPUT = ("bin", "obj")
 
 
@@ -134,9 +134,9 @@ def main():
     # AND THEY STILL SHIP FROM A CHECKOUT WHOSE OWN PATH SAYS obj AND bin.
     # Until 2026-10-14 a file was dropped for a "<sep>obj<sep>" ANYWHERE in
     # its path, so a checkout under a folder named exactly obj or bin
-    # shipped 0 files (5b row 461). Both directions: the source is found,
+    # shipped 0 files (5b row 462). Both directions: the source is found,
     # and a bin and an obj inside a layer are still left out.
-    scratch = tempfile.mkdtemp(prefix="heron-5b461-")
+    scratch = tempfile.mkdtemp(prefix="heron-5b462-")
     try:
         root = os.path.join(scratch, "obj", "objective-chebyshev", "bin", "heron")
         kept = os.path.join(root, "revit", "Heron.Revit.Addin", "Handler.cs")
