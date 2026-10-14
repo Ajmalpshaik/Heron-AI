@@ -129,6 +129,8 @@ compatibility-note: >
 #   "pipe these sprinklers to the main" -> CREATE_FIXTURE_BRANCHES first - it
 #                                      draws the risers and arms; this then
 #                                      fits its `runs` (2026-10-14)
+#   "jump this pipe over the beam"  -> OFFSET_MEP_SECTION first; this then fits
+#                                      its five `runs` (2026-10-14)
 
 utterances:
   - fit all the joints

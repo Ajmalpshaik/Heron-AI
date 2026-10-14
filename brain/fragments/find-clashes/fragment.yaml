@@ -168,3 +168,8 @@ utterances:
   - do these hit anything
   - check these against the structure
   - what is clashing
+  # ADDED 2026-10-14 in the gap pass. Measured on scratch stores from main
+  # bed17298 and from this branch, lexical hybrid, 2024 wall: "which of these
+  # clash" reached JOIN_GEOMETRY, a WRITE that joins walls and floors, on
+  # both - a question answered by the tool that changes the model.
+  - which of these clash

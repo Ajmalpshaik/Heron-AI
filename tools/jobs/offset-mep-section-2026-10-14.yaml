@@ -1,0 +1,66 @@
+# The proof of offset-mep-section (OFFSET_MEP_SECTION, FRG-MEP-069), written
+# 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC7. NOT RUN -
+# written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/offset-mep-section-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/offset-mep-section-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test", part P6 (docs/needs-checking/group-ec.md),
+# in "FloorPlan: Level 2":
+#   - ONE straight pipe, DN100, Domestic Cold Water, 6000 mm long, drawn from
+#     WEST TO EAST (left to right) so its start is the west end, at a Middle
+#     Elevation of 3000 mm. Nothing tapped into it. The only pipe in that plan.
+#
+# `run` IS ONE ELEMENT, "selected": the setup selects every pipe in the plan,
+# so the plan must hold exactly this one.
+#
+# THE NEGATIVE CHANGES ONLY THE STRETCH: 2000 to 7000 mm runs past the pipe's
+# 6000 mm, so nothing may be changed - runs empty, the length stated.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - five pieces in `runs`, the finding saying the stretch moved UP by 400 mm
+#   - the second route (EC7b): run it by hand with the write kept, then
+#     FIT_MEP_JOINTS on the five (toleranceMm 1): four elbows, nothing rolled
+#     back. A section: the pipe's two far ends where they were, the stretch at
+#     3400 mm from 2000 to 3500 mm along. TRACE_CONNECTIVITY from the west
+#     piece reaches the east piece
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P6 - one 6000 mm DN100 pipe at 3000 mm in "FloorPlan: Level 2", Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Pipes
+    inViewOnly: "FloorPlan: Level 2"
+    run: selected
+    startMm: 2000
+    endMm: 3500
+    offsetMm: 400
+    angleDegrees: 90
+
+  negative-set:
+    categoryName: Pipes
+    inViewOnly: "FloorPlan: Level 2"
+    run: selected
+    startMm: 2000
+    endMm: 7000
+    offsetMm: 400
+    angleDegrees: 90
+
+jobs:
+  - fragment: offset-mep-section
+    expect: runs
+    note: >
+      A 1500 mm stretch lifted 400 mm against a stretch past the pipe's end.
+      The negative must change nothing.

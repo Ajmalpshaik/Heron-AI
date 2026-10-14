@@ -1,0 +1,112 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-069
+semantic-identity: "lift or drop a stretch of this duct or pipe to go over or under something, with a leg at each end"
+kind: action
+domain: revit.mep
+capability: OFFSET_MEP_SECTION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Takes one straight duct or pipe and moves the stretch between two distances
+  along it up or down by an offset - to go over a beam, under a duct, round a
+  clash - joining it back with a leg at each end, straight up and down or at
+  45 degrees. The coordination fix a modeller makes by hand most days.
+
+  **IT BREAKS, MOVES AND DRAWS; FIT_MEP_JOINTS FITS.** The run is broken at the
+  two points with Revit's own break, the middle piece is moved by the offset,
+  and the two legs are drawn on the run's type, system and size. `runs` hands
+  the five pieces to FIT_MEP_JOINTS, which puts the four elbows in and rolls
+  everything back if one will not fit - the owner's order: draw, then fit.
+
+  **THE FAR ENDS STAY WHERE THEY WERE, JOINED TO WHAT THEY WERE JOINED TO.**
+  Only the stretch between the two points moves. The two breaks are made by
+  Revit, which keeps the run's own end connections; the joints at the two
+  points are opened, because a leg goes in there.
+
+  **THE DISTANCES ARE FROM THE RUN'S OWN START**, as SPLIT_MEP_RUN measures
+  them - whichever end it was modelled from. Both are refused when they fall
+  outside the run, and the length is reported so the number can be corrected.
+
+  **A RISING OR VERTICAL RUN IS REFUSED** - up and down are the offset here,
+  and a riser needs a sideways one this version does not make. Cable tray and
+  conduit are refused: Revit gives no break for them.
+
+  **AT 45 DEGREES EACH LEG RUNS AS FAR ALONG AS IT RISES**, so the stretch must
+  be longer than twice the offset, or it is refused.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
+  entry, and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The one duct or pipe to reroute - selected.
+    - name: run
+      type: Element
+      source: request
+    # Where the stretch starts and ends, in millimetres from the run's start.
+    - name: startMm
+      type: double
+      source: request
+    - name: endMm
+      type: double
+      source: request
+    # How far the stretch moves, in millimetres - positive up, negative down.
+    - name: offsetMm
+      type: double
+      source: request
+    # 90 - legs straight up and down; 45 - legs at 45 degrees.
+    - name: angleDegrees
+      type: double
+      source: request
+  provides:
+    - name: runs
+      # The five pieces in order - the start piece, the first leg, the moved
+      # stretch, the second leg, the end piece - for FIT_MEP_JOINTS. Empty
+      # when nothing was done.
+      role: result
+      type: IList<Element>
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `MechanicalUtils.BreakCurve`,
+  `PlumbingUtils.BreakCurve` (as SPLIT_MEP_RUN, PROVEN, uses them),
+  `Duct.Create` and `Pipe.Create` by two points, `Connector.DisconnectFrom`
+  and `AllRefs`, and the size and system parameters copied
+  (`RBS_CURVE_WIDTH_PARAM`, `RBS_CURVE_HEIGHT_PARAM`, `RBS_CURVE_DIAMETER_PARAM`,
+  `RBS_PIPE_DIAMETER_PARAM`, `RBS_DUCT_SYSTEM_TYPE_PARAM`,
+  `RBS_PIPING_SYSTEM_TYPE_PARAM`) are present 2020 through 2027, read with
+  tools/api-surface on 2026-10-14. Millimetres to feet by 304.8 (D-20).
+
+# ROUTING - cross-referenced in SPLIT_MEP_RUN, ALIGN_MEP_ELEVATION and
+# FIT_MEP_JOINTS.
+#
+#   "jump this pipe over the beam"          -> here
+#   "drop the duct under the beam here"     -> here, with a negative offset
+#   "break this duct in two"                -> SPLIT_MEP_RUN - a break, nothing moved
+#   "align the tops"                        -> ALIGN_MEP_ELEVATION - the WHOLE run
+#                                              moves, no legs
+#   "put the elbows in"                     -> FIT_MEP_JOINTS, on `runs`
+#   "what is clashing"                      -> FIND_CLASHES - a read, first
+
+utterances:
+  - jump this pipe over the beam
+  - drop the duct under the beam between these two points
+  - offset this pipe up 300 between 2000 and 3500
+  - take this duct over the other one with 45 degree bends

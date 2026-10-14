@@ -1,0 +1,41 @@
+positive:
+  - given: >
+      one straight DN100 pipe 6000 mm long at 3000 mm, startMm 2000, endMm
+      3500, offsetMm 400, angleDegrees 90
+    expect: >
+      five pieces in `runs`: the start piece ending at 2000 mm, a 400 mm leg
+      straight up, the stretch at 3400 mm from 2000 to 3500 mm along, a 400 mm
+      leg down, the end piece from 3500 mm - each leg DN100 on the pipe's
+      system. The pipe's two far ends exactly where they were. FIT_MEP_JOINTS
+      on `runs` then fits four elbows
+
+  - given: a 400x200 duct, offsetMm -300, angleDegrees 45
+    expect: >
+      each leg running 300 mm along as it drops 300 mm, the stretch shortened
+      by 600 mm, legs 400x200
+
+negative:
+  - given: >
+      the same pipe with startMm 2000 and endMm 7000 - past its end
+    expect: >
+      NOTHING CHANGED - refused with the run's length stated, `runs` empty.
+      THIS IS THE CASE THAT MATTERS: a stretch that is not on the run is
+      never guessed onto it
+
+  - given: a stretch with a branch tapped into it
+    expect: >
+      refused before any break, the branch named; nothing changed
+
+  - given: a vertical riser, a cable tray, or 30 degrees
+    expect: each refused by name; nothing changed
+
+  - given: any run at all
+    expect: NO ELBOW MADE AND NO TRANSACTION OPENED
+
+second_route:
+  - >
+    a section through the stretch: the far ends unmoved and still connected,
+    the stretch moved by exactly the offset
+  - >
+    after FIT_MEP_JOINTS, TRACE_CONNECTIVITY from the start piece reaches the
+    end piece - one run again
