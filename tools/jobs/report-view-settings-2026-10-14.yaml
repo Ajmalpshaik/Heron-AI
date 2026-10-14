@@ -1,0 +1,43 @@
+# The proof of report-view-settings (REPORT_VIEW_SETTINGS, FRG-VIEW-140),
+# written 2026-10-14 - NEEDS-CHECKING Group EC, row EC14. NOT RUN - written in
+# a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/report-view-settings-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-view-settings-2026-10-14.yaml
+#
+# READ: nothing is changed, so no transaction and no write switch.
+#
+# THE ARRANGEMENT - "Heron Gap Pass Test", part 11 (docs/needs-checking/group-ec.md):
+#   - "FloorPlan: Level 1" with NO view template, set by hand: Detail Level
+#     Fine, Visual Style Hidden Line, Discipline Mechanical, Phase New
+#     Construction, Phase Filter Show Complete
+#   - any sheet - put its sheet NAME (not its number) in negative-set below
+#
+# THE NEGATIVE CHANGES ONLY THE VIEW: a sheet has none of the five settings,
+# so viewSettings must come back empty with the sheet named in findings.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - the plan's row reads exactly the five values set by hand
+#   - by hand afterwards: apply a view template that includes Detail Level to
+#     the plan, ask again through revit_read - Detail Level is marked held by
+#     the template, and REPORT_VIEW_TEMPLATE_CONTROL agrees
+#   - the second route: the plan's Properties palette, Graphics and Phasing
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to the command.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 11 - Level 1 plan set by hand, and a sheet, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+
+jobs:
+  - fragment: report-view-settings
+    expect: viewSettings
+    set:
+      views: "FloorPlan: Level 1"
+    negative-set:
+      views: "<the sheet's name>"
+    note: >
+      The positive reads Fine, Hidden Line, Mechanical, New Construction and
+      Show Complete; the negative is a sheet and must report no setting.

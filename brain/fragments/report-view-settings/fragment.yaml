@@ -1,0 +1,121 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-140
+semantic-identity: "how a view is shown - its detail level, visual style, discipline, phase and phase filter"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# FRAGMENT-ISSUES row 5b-477: nothing read a view's detail level, visual
+# style, discipline, phase or phase filter. On the trained model, private
+# stores, 2026-10-14, "what is the detail level of this view" reached
+# PLACE_DETAIL_COMPONENTS and "what is the detail level of these views"
+# SET_VIEW_PROPERTIES - both writes - "is this view in wireframe or shaded"
+# reached SET_VIEW_CAMERA, and "which phase filter does this view use" and
+# "what phase is this view showing" reached reads about filters and
+# visibility that do not say. This is the read half of SET_VIEW_PROPERTIES
+# and SET_VIEW_PHASE. The scale is READ_VIEW_SCALE's and is not repeated.
+kind: action
+domain: revit.views
+capability: REPORT_VIEW_SETTINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# HOW IT ANSWERS - a comment, not `purpose`, because `purpose` is searched.
+#
+# **REVIT'S OWN WORDS.** Each setting is the view's own parameter, found by
+# BuiltInParameter and printed with AsValueString under its own name - "Detail
+# Level = Fine", "Phase Filter = Show Complete" - as the Properties palette
+# shows it, in whatever language Revit runs in.
+#
+# **A SETTING A KIND OF VIEW DOES NOT HAVE IS NAMED.** A schedule has a phase
+# and no detail level; it is listed as "not on this kind of view", never
+# given a value.
+#
+# **A SETTING HELD BY A VIEW TEMPLATE IS MARKED**, read off the template's
+# include list as READ_VIEW_SCALE and REPORT_VIEW_TEMPLATE_CONTROL read it,
+# because the place to change it is then the template, not the view.
+#
+# **ONE STRING, ROWS JOINED BY "  ||  "**, for the same reason as
+# READ_VIEW_SCALE: a list reaches the chat cut to three entries.
+#
+# `purpose` HOLDS NO CHANGE VERB - none of set, change, update, adjust,
+# switch, make or apply - for the reason READ_VIEW_SCALE's card gives: a READ
+# whose searched text names a change takes change requests from the write.
+purpose: >
+  Answers how each view named is shown: its detail level, its visual style,
+  its discipline, the phase it shows and its phase filter, in the words the
+  Properties palette uses, and whether each is held by the view template the
+  view follows. It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The views, as the Project Browser names them, several separated by
+    # commas - "1 - Mech, {3D}". Two views sharing a name are written
+    # "FloorPlan: Level 1". The same binding as READ_VIEW_SCALE.
+    - name: views
+      type: IList<View>
+      source: request
+  provides:
+    - name: viewSettings
+      # One row per view that has any of the five: "'1 - Mech' (FloorPlan)
+      # Detail Level = Medium (held by its view template), Visual Style =
+      # Hidden Line, Discipline = Mechanical, Phase = New Construction, Phase
+      # Filter = Show All - follows view template 'Mechanical Plan'".
+      role: result
+      type: string
+    - name: read
+      # How many of the views named had at least one of the five - a count of
+      # what it FOUND.
+      role: result
+      type: int
+    - name: heldByTemplate
+      # How many of those have at least one setting held by their view
+      # template. Part of `read`, never more of it (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      # A summary line, then a line per view with none of the five, and any
+      # template whose include list could not be read.
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of all eight releases, 2020 to 2027, on
+  2026-10-14: the BuiltInParameter values VIEW_DETAIL_LEVEL,
+  MODEL_GRAPHICS_STYLE, VIEW_DISCIPLINE, VIEW_PHASE and VIEW_PHASE_FILTER,
+  `LabelUtils.GetLabelFor(BuiltInParameter)`, `View.IsTemplate`,
+  `View.ViewTemplateId`, `View.GetTemplateParameterIds` and
+  `View.GetNonControlledTemplateParameterIds` are present with the same
+  signature on all eight. `Element.get_Parameter(BuiltInParameter)`,
+  `Parameter.AsValueString`, `AsString`, `Parameter.Id` and `Definition.Name`
+  are the long-standing members READ_VIEW_SCALE uses the same way.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is the detail level of this view"  -> here
+#   "what visual style is this view"         -> here
+#   "which phase filter does this view use"  -> here
+#   "what is the scale of this view"         -> READ_VIEW_SCALE
+#   "set these views to fine"                -> SET_VIEW_PROPERTIES. A change,
+#                                               and this reads (D-86)
+#   "set the phase of this view to existing" -> SET_VIEW_PHASE
+#   "what does the view template control"    -> REPORT_VIEW_TEMPLATE_CONTROL,
+#                                               which names everything the
+#                                               template holds
+
+utterances:
+  - what is the detail level of this view
+  - what visual style is this view in
+  - which phase filter does this view use
+  - which phase does this view show
+  - what discipline is this view
