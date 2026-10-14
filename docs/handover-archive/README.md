@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-10-14 | [THE GAP PASS: ELEVEN TOOLS FOR WHAT THE LIBRARY COULD NOT DO](2026-10-14-the-gap-pass-eleven-new-tools-for-what-the-library-could-not-do.md) |
 | 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
 | 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
 | 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |
