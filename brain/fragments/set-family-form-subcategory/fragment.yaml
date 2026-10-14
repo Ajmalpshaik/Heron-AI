@@ -117,6 +117,7 @@ compatibility-note: >
 #   "set the subcategory of these forms"         -> here
 #   "make this family an air terminal"           -> SET_FAMILY_CATEGORY, the
 #                                                   family's own category
+#   "what line weight is the hidden lines subcategory" -> LIST_CATEGORIES - a question goes to the read
 
 utterances:
   - put the insulation on its own subcategory

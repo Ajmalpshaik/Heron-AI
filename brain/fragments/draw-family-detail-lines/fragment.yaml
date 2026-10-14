@@ -140,6 +140,7 @@ compatibility-note: >
 #   "draw the valve symbol in plan"               -> DRAW_FAMILY_SYMBOLIC_LINES -
 #                                                    a 3D family's 2D symbol
 #   "draw a line between these points"            -> CREATE_LINE - a project's view
+#   "what colour are the lines in this family"    -> LIST_CATEGORIES - a question goes to the read
 
 utterances:
   - draw the profile in this profile family
