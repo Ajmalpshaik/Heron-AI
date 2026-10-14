@@ -174,3 +174,7 @@ utterances:
   - how much rentable area is there
   - show me the area breakdown
   - are any areas not placed
+  # ADDED 2026-10-14. The routing table above has claimed this since it was
+  # written; on a scratch store, lexical, through `find`, it was served by
+  # CREATE_AREA_PLAN - a write - once that card existed (check-routing).
+  - what is the gross floor area

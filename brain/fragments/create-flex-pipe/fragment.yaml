@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-066
-semantic-identity: "run the flexible pipe drop from the branch line to the sprinkler, along the points I give"
+semantic-identity: "draw flex pipe from the branch line down to the sprinkler head, along the points I give"
 kind: action
 domain: revit.mep
 capability: CREATE_FLEX_PIPE
@@ -14,16 +14,16 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Creates ONE flexible pipe along the points given - the flexible sprinkler
-  drop from the branch line to the head, or the flexible hose to a fixture.
-  Rigid pipe cannot express it, and until this fragment the library could make
-  flexible DUCT and nothing flexible on a piping system.
+  Creates ONE flex pipe along the points given - the flex hose from a
+  sprinkler branch line to the head, or to a fixture. Rigid pipe cannot
+  express it, and until this fragment the library could make flex DUCT and no
+  flex pipe on a piping system.
 
   **IT GUESSES NO ROUTE, DELIBERATELY.** Every point is given, in order, and
   the order is the route. An invented path looks plausible on plan and is not
   what anybody would have drawn.
 
-  **THE LENGTH LIMIT IS ENFORCED, NOT SUGGESTED.** A flexible sprinkler drop is
+  **THE LENGTH LIMIT IS ENFORCED, NOT SUGGESTED.** A sprinkler flex hose is
   listed for a maximum length, and the length is exceeded by accident - two
   points further apart than they looked. The limit is a required input and a
   route over it is REFUSED before anything is made.
@@ -103,5 +103,6 @@ compatibility-note: >
 utterances:
   - run a flexible pipe along these points
   - make the flex drop to that sprinkler
-  - create a flexible sprinkler drop on this route
+  - create flex pipe to the sprinkler on this route
   - draw flex pipe from the branch to the head
+  - make the flex drop to the head

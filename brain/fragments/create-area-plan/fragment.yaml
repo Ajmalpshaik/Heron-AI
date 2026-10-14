@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-137
-semantic-identity: "make the area plan for this level in this area scheme - gross building or rentable"
+semantic-identity: "make a new area plan view for this level, to place areas in"
 kind: action
 domain: revit.views
 capability: CREATE_AREA_PLAN
@@ -14,21 +14,21 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Creates an area plan for one level in one area scheme - the Gross Building
-  or Rentable plan areas are placed and boundaries drawn in.
+  Creates an area plan view for one level - the Gross Building or the
+  Rentable plan that areas are placed and boundaries drawn in.
 
   **IT CLOSES A HOLE PLACE_AREAS LEFT OPEN.** Areas can only be placed in an
   area plan, and CREATE_PLAN_VIEW makes floor and ceiling plans only - so
   PLACE_AREAS and CREATE_AREA_BOUNDARY_LINES had nowhere to work in a project
   that had no area plan yet.
 
-  **THE SCHEME IS NAMED, NEVER GUESSED.** Gross Building and Rentable are
+  **WHICH KIND IS NAMED, NEVER GUESSED.** Gross Building and Rentable are
   measured to different faces of a wall and give different totals; the
-  schemes in the model are listed when the name matches none.
+  kinds this model holds are listed when the name matches none.
 
-  **ONE AREA PLAN PER LEVEL AND SCHEME IS MADE, NOT A SECOND.** An area plan
-  that already exists for that level in that scheme is reported by name and
-  nothing is made - two plans of one scheme invite areas placed twice.
+  **ONE AREA PLAN PER LEVEL AND KIND IS MADE, NOT A SECOND.** An area plan
+  that already exists for that level and kind is reported by name and nothing
+  is made - two of one kind invite areas placed twice.
 
   **IT MAKES THE VIEW AND DRAWS NO BOUNDARY.** Revit's own dialog offers to
   draw boundary lines round the exterior walls; this does not, and says so.
@@ -90,4 +90,4 @@ utterances:
   - make the gross building area plan for level 1
   - create an area plan for this level
   - add a rentable area plan for level 2
-  - make a new area plan in the gross building scheme
+  - make the rentable area plans for the upper floors
