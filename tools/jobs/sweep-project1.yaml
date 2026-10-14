@@ -51,8 +51,9 @@ jobs:
     expect: moved
 
   - fragment: copy-elements                 # same shape, but it copies
-    set:          {offset: "1000,0,0"}
-    negative-set: {offset: "0,0,0"}
+    # Version 2 (5b-460) takes three more values; blank is version 1.
+    set:          {offset: "1000,0,0", toLevels: "", turnDegrees: "", turnCentreMm: ""}
+    negative-set: {offset: "0,0,0", toLevels: "", turnDegrees: "", turnCentreMm: ""}
     expect: copies
 
   - fragment: rotate-elements               # a real angle against no angle

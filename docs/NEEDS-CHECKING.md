@@ -663,6 +663,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dw.md`](needs-checking/group-dw.md)
 
+## Group DX - copying a storey onto other levels: `COPY_ELEMENTS` version 2, Paste Aligned to Selected Levels with a turn per level (2026-10-14)
+
+**Its own file:** [`needs-checking/group-dx.md`](needs-checking/group-dx.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
