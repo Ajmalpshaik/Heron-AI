@@ -32,7 +32,10 @@ purpose: >
      edge a size moves, and labels between them - FAMILY-CREATION steps 2 to
      6, in the family's one view.
   3. DRAW_FAMILY_DETAIL_LINES with lockToPlanes true, so the lines move with
-     the planes; a subcategory for each line weight the drawing needs.
+     the planes; a subcategory for each line weight the drawing needs. Each
+     subcategory's colour, weight and pattern - Object Styles - is then
+     CREATE_LINE_STYLE with familyCategory true and updateExisting true,
+     read back.
   4. DRAW_FAMILY_FILLED_REGION for every fill: a filled region type by name -
      the family's own Solid Black or a hatch - or "masking", which Revit makes
      through its API only from 2024; before that a filled region type with its
@@ -69,6 +72,8 @@ needs:
   - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
   - DRAW_FAMILY_DETAIL_LINES
+  # Step 3's subcategory colour, weight and pattern (version 2, row 5b-463).
+  - CREATE_LINE_STYLE
   - DRAW_FAMILY_FILLED_REGION
   - LINK_FAMILY_PARAMETER
   - ADD_FAMILY_SHARED_PARAMETERS
