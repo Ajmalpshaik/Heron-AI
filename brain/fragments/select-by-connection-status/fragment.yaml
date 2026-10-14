@@ -165,3 +165,8 @@ utterances:
   # and "which ducts are not joined up", which is the same question in a
   # modeller's other words.
   - did anything come apart
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-477: in a sweep of 60 plain
+  # questions on the trained model, this went to AUTO_SIZE_MEP, a write. This
+  # read answers it, so it is declared here and answered by identity (rows
+  # 116 and 146).
+  - which ducts are not connected

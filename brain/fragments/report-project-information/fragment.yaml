@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-052
+semantic-identity: "what Project Information says - the project name, number, client, status and issue date"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# Nothing in the library read Manage > Project Information: a search of every
+# fragment's code for ProjectInformation and PROJECT_NUMBER on 2026-10-14
+# found none. Sixty plain questions written that day before any card was
+# read, asked on private stores on the trained model, sent "what is the
+# project number" to SET_REVISION_SETTINGS and "who is the project client" to
+# ADD_PROJECT_PARAMETER - a write and an Admin write - because there was no
+# read for them to reach (FRAGMENT-ISSUES row 5b-477).
+kind: action
+domain: revit.document
+capability: REPORT_PROJECT_INFORMATION
+version: 1
+source: OFFICIAL
+risk: READ
+
+# HOW IT ANSWERS - a comment, not `purpose`, because `purpose` is searched.
+#
+# **THE LABELS ARE REVIT'S.** The ten values the dialog always shows are found
+# by BuiltInParameter and printed under the parameter's own name, so the reply
+# reads like the dialog in whatever language Revit runs in.
+#
+# **AN EMPTY VALUE IS SAID TO BE EMPTY.** A title block label prints a blank
+# for it, which is often why the question was asked.
+#
+# **ADDED PARAMETERS COME AFTER THE TEN**, by name - the project and shared
+# parameters a firm binds to Project Information for its title block. Settings
+# buttons such as Energy Settings hold an element, not a value, and are left
+# out.
+#
+# **THE WHOLE TABLE IS ONE STRING**, rows joined, because a list reaches the
+# chat cut to three entries and the table is the answer.
+purpose: >
+  Answers what Manage > Project Information says: the project name and
+  number, the client name, the project address, the project status and issue
+  date, the building name, the author and the organization - and every
+  parameter a project has added there - in Revit's own labels, empty ones
+  named. These are the values a title block prints on every sheet. Nothing
+  needs to be selected and nothing changes. In a family document it says
+  Project Information belongs to a project.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: projectInfo
+      # Every value, one row each: "Project Number = HERON-2026-014", the ten
+      # in the dialog's order with "(empty)" where nothing is set, then the
+      # added parameters that have a value, by name.
+      role: result
+      type: string
+    - name: fields
+      # How many values are set - a count of what it FOUND.
+      role: result
+      type: int
+    - name: notAProject
+      # That the document in front is a family, which has no Project
+      # Information.
+      role: accounting
+      type: bool
+    - name: findings
+      # How many of the ten and of the added parameters are set, and which of
+      # the ten are empty.
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read with tools/api-surface --members
+  on the reference assemblies of all eight releases, 2020 to 2027, on
+  2026-10-14: `Document.ProjectInformation`, the ten BuiltInParameter values
+  PROJECT_ORGANIZATION_NAME, PROJECT_ORGANIZATION_DESCRIPTION,
+  PROJECT_BUILDING_NAME, PROJECT_AUTHOR, PROJECT_ISSUE_DATE, PROJECT_STATUS,
+  CLIENT_NAME, PROJECT_ADDRESS, PROJECT_NAME and PROJECT_NUMBER, and
+  `InternalDefinition.BuiltInParameter` are present and unchanged on all
+  eight. `Element.get_Parameter(BuiltInParameter)`, `Element.Parameters`,
+  `Parameter.AsValueString`, `AsString` and `StorageType` are the long-standing
+  Element and Parameter members every other parameter read here uses. No
+  units API is touched.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "what is the project number"             -> here
+#   "who is the client"                      -> here
+#   "what version of Revit saved this file"  -> READ_MODEL_FILE_INFO, which
+#                                               reads the file's header
+#   "where is this project"                  -> REPORT_LOCATION - the site,
+#                                               not the project's details
+#   "add a project parameter for the drawing checker" -> ADD_PROJECT_PARAMETER
+#   "set the project number"                 -> nothing in Heron yet. A
+#                                               change, and this never makes it
+
+utterances:
+  - what does project information say
+  - show the project information
+  - which client is this project for
+  - what is the project name and number
+  - what issue date is set for the project
+  - what is the project status
+  - who is the client

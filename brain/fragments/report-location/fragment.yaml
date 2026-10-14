@@ -274,3 +274,9 @@ utterances:
   # backend. More of this card's own words are about the site now.
   - which direction is true north in this model
   - is true north turned in this project
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-477: in a sweep of 60 plain
+  # questions on the trained model, the first went to CREATE_MEP_SYSTEM and
+  # the second to SPLIT_MEP_RUN - both writes. This read answers both, so
+  # they are declared here and answered by identity (rows 116 and 146).
+  - where is this fan coil unit
+  - where does this pipe start and end

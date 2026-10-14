@@ -143,3 +143,9 @@ utterances:
 # MOVE_TO_RAY_HIT on spelling. The offset above the level is this fragment's
 # answer, and "how high is this above the floor" above is the same question.
   - how high is this off the floor
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-477: in a sweep of 60 plain
+  # questions on the trained model, the first went to CREATE_MEP_SYSTEM and
+  # the second to ALIGN_MEP_ELEVATION - both writes. This read answers both,
+  # so they are declared here and answered by identity (rows 116 and 146).
+  - what level is this equipment on
+  - what is the elevation of this duct
