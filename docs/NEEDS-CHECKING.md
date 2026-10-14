@@ -667,6 +667,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dx.md`](needs-checking/group-dx.md)
 
+## Group DY - a family's own subcategory given a colour, a weight and a pattern: `CREATE_LINE_STYLE` version 2, `familyCategory` (2026-10-14)
+
+**Its own file:** [`needs-checking/group-dy.md`](needs-checking/group-dy.md)
+
 ## Group EA - the saved View/Sheet Sets read back: `LIST_SHEET_SETS`, every set's sheets and views, and the empty ones (2026-10-14)
 
 **Its own file:** [`needs-checking/group-ea.md`](needs-checking/group-ea.md)

@@ -1,0 +1,65 @@
+# The proof of create-line-style (CREATE_LINE_STYLE, FRG-VIEW-126) version 2:
+# with familyCategory true, a subcategory of the FAMILY's own category - Object
+# Styles in the Family Editor - given its colour, weight and pattern, as a line
+# style is. NEEDS-CHECKING Group DY, FRAGMENT-ISSUES row 5b-463.
+#
+#     python tools/batch-prove.py tools/jobs/line-style-family-category-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/line-style-family-category-2026-10-14.yaml
+#
+# THE ARRANGEMENT, made before the run, on TEST COPIES only - never a working
+# family and never the modeller's signature family itself:
+#
+#   "Heron Signature Test"  a new family from the Metric Generic Annotation
+#                           template, saved under this name, with three or
+#                           four detail lines in its view drawn by
+#                           DRAW_FAMILY_DETAIL_LINES with subcategory
+#                           "Signature" - so Generic Annotations > Signature
+#                           exists, black, weight 1, Solid. Read it in
+#                           Manage > Object Styles > Annotation Objects BEFORE
+#                           the run.
+#
+# Open in the Family Editor at the run; `in:` brings it to the front.
+#
+# POSITIVE: madeNew false, readBack "colour 0,0,255, weight 1, pattern Solid",
+# and a finding "Updated subcategory "Signature" of Generic Annotations". The
+# pattern is ASKED for: Revit may hold no stored pattern on a subcategory nobody
+# set one on, and the read-back would then say "(none)".
+#
+# NEGATIVE: the SAME family and the same subcategory, updateExisting false -
+# refused, "already has a subcategory named "Signature"", style empty. A
+# subcategory that exists must NOT be changed unless the caller said so (D-30).
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK. Read
+# Object Styles afterwards anyway - Signature black again - because rollback
+# has failed on this PC before (BD1).
+#
+# BY HAND AFTERWARDS (Group DY): the same call with a PROJECT in front is
+# refused by name and makes nothing; kept rather than rolled back, the lines
+# turn blue in the family's view; and a line style made with familyCategory
+# left out still lands under Lines, as version 1.
+
+model: Heron Signature Test (a Generic Annotation family with detail lines on the subcategory Signature), Revit 2020 first, then 2024 and 2027
+
+jobs:
+  - fragment: create-line-style
+    in: "Heron Signature Test"
+    expect: style
+    write: true
+    set:
+      styleName: Signature
+      colour: "0,0,255"
+      weight: 1
+      patternName: Solid
+      updateExisting: true
+      familyCategory: true
+    negative-set:
+      styleName: Signature
+      colour: "255,0,0"
+      weight: 1
+      patternName: ""
+      updateExisting: false
+      familyCategory: true
+    note: >
+      Both legs name updateExisting and familyCategory: a negative inherits
+      no value from the positive. The negative's patternName "" asks for no
+      pattern - a bare `patternName:` would send None.
