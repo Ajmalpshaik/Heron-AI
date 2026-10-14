@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-049
-semantic-identity: "take this model's shared coordinates from the linked model - acquire coordinates"
+semantic-identity: "acquire coordinates from this linked model, so ours match the architect's"
 kind: action
 domain: revit.document
 capability: ACQUIRE_COORDINATES
@@ -14,24 +14,24 @@ source: OFFICIAL
 risk: ADMIN
 
 purpose: >
-  Acquires shared coordinates from one linked Revit model: the link's shared
-  coordinate system, origin and True North become this model's, based on where
-  the link sits now. Manage > Coordinates > Acquire Coordinates - the step that
-  puts an MEP model on the architect's site coordinates.
+  Acquires coordinates from one linked Revit model: the link's shared system,
+  origin and True North become this model's, based on where the link sits now.
+  Manage > Coordinates > Acquire Coordinates - the step that puts an MEP model
+  on the architect's survey system.
 
   **IT MOVES NOTHING AND CHANGES WHERE EVERYTHING IS SAID TO BE.** No element's
-  internal position changes; every shared coordinate, spot coordinate and
-  exported position does. So the shared position of the internal origin is
+  internal position changes; every shared position, spot reading and exported
+  position does. So the shared position of the internal origin is
   read BEFORE and AFTER, east/west, north/south, elevation and angle to True
   North, and both are reported - the evidence of what changed.
 
   **IT IS ADMIN, AND IT IS THE LINK THAT DECIDES.** A link placed in the wrong
-  spot hands over the wrong coordinates, and everything exported afterwards
-  carries them. CHECK_LINK_COORDINATES is the read to run first.
+  spot hands over the wrong system, and everything exported afterwards carries
+  it. CHECK_LINK_COORDINATES is the read to run first.
 
   **A REVIT LINK ONLY.** Acquiring from a CAD link takes a different id and is
-  not done here. Publishing coordinates INTO a link changes the linked file and
-  is not done here either.
+  not done here. Publishing INTO a link changes the linked file and is not
+  done here either.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 
@@ -84,6 +84,6 @@ compatibility-note: >
 
 utterances:
   - acquire coordinates from the architecture link
-  - take the shared coordinates from the linked model
+  - take the survey system from the linked model
   - get our coordinates from the architect's model
   - acquire shared coordinates from this link

@@ -70,8 +70,10 @@ compatibility-note: >
 # ROUTING - the same rows are in SYNC_SPACES_WITH_LINKED_ROOMS and PLACE_ROOMS.
 #
 #   "make the architecture link room bounding" -> here
-#   "the spaces will not place"                -> here first, if the link is not
-#                                                 Room Bounding - then PLACE_ROOMS
+#   "the spaces will not place"                -> PLACE_ROOMS, which reports what
+#                                                 will not bound - and this card
+#                                                 first when the link is not
+#                                                 Room Bounding
 #   "make the links relative"                  -> SET_LINK_PATH_TYPE
 #   "make spaces from the linked rooms"        -> SYNC_SPACES_WITH_LINKED_ROOMS
 

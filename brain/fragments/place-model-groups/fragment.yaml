@@ -71,7 +71,7 @@ compatibility-note: >
 # ROUTING - the same rows are in GROUP_ELEMENTS and COPY_ELEMENTS.
 #
 #   "place the toilet block group here"     -> here
-#   "put another copy of this group down"   -> here
+#   "put another one of this model group down here" -> here
 #   "group these"                           -> GROUP_ELEMENTS - makes the group
 #   "copy this group up to the other floors"-> COPY_ELEMENTS - copies a placed
 #                                              group to other levels
