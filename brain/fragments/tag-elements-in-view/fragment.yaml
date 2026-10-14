@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -186,37 +186,48 @@ contract:
       role: accounting
       type: IList<string>
 
-# THIS PROOF IS THE VERSION 1 RECORD AND IT IS STALE. It was run before
-# leaders existed in this fragment, so it says nothing about `leader=straight`
-# or `leader=L`. It counted 14 tagged on the `none` path and nobody looked
-# where the tags went: the head it passed was the project origin, and on Revit
-# 2020.2 that is where every duct tag's head was read back (5b-452), until
-# version 5 put it on the duct. The fingerprint below no longer matches the
-# implementation and D-30 will report STALE until this is re-run. Do not read
-# the status above as covering leaders, or where a tag lands.
+# THE VERSION 5 RECORD (Group DV DV5), signed 2026-10-13. It replaces the
+# version 1 record of 2026-09-14, which counted 14 tagged on the `none` path
+# while every head it passed was the project origin (5b-452). Both legs are
+# `leader=none` on three ducts, so it says nothing about `leader=straight` or
+# `leader=L`, or about the categories version 4 added - the door run of
+# version 4 is recorded in 5b-450, not here. WHERE the heads went is not in
+# the counts below: a probe read each one back 0.0 mm from its duct's
+# midpoint, recorded in 5b-452.
 proof:
-  date: '2026-09-14'
+  date: '2026-10-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyHasTag
-    HashSet`1, alreadyTagged 8, notTagged 0 item(s), tagCategoryFor 17 entry(ies), tagged
-    14, typeCorrections 0, typeForCategory 1 entry(ies). inputs came elements from the selection
-    (22); view as given; tagTypeHintId as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categories=Ducts, categoryName=Ducts, exact=False, inViewOnly=FloorPlan:
-    M1, maxMm=-22360,11410,5055, minMm=-25940,4250,1600, tagTypeHintId=none, view=3D HVAC
-    Layout instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running select-by-category-name, set-selection with this
-    phase''s own values - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned alreadyHasTag HashSet`1, alreadyTagged 0, notTagged 22
-    item(s) [1447716, 1447725, 1447768, ...], tagCategoryFor 17 entry(ies), tagged 0, typeCorrections
-    0, typeForCategory 1 entry(ies). inputs came elements from the selection (22); view as
-    given; tagTypeHintId as given. on Snowdon-scratch_ajmal.al'
+  model: Project1 (3,026 elements), Revit 2020, session 33484
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312,
+    alreadyHasTag HashSet`1, alreadyTagged 0, because Action`1, derivedTagCategory 0 entry(ies),
+    leaderMode none, leaderOffsetMm 0, leadersDrawn 0, leadersNotDrawn 0, minLengthMm 0, notTagged
+    0 item(s), notTaggedWhy 0 item(s), offsetFeet 2.6246719160105, ownPoint Func`2, routeFor
+    1 entry(ies), scale 100, tagCategoryByName Func`2, tagCategoryFor 17 entry(ies), tagTypesUsed
+    1 item(s) [Duct Tags: M_Duct Size Tag: M_Duct Size Tag (the caller''s hi...], tagged 3,
+    tooShort 0 item(s), typeCorrections 0, typeForCategory 1 entry(ies), verticalSkipped 0
+    item(s), wantLeader false, whyCount 0 entry(ies). inputs came elements from filter-elements-by-category
+    (3); view as given; tagTypeHintId as given; leader as given; minLengthMm as given; leaderOffsetMm
+    as given. on Project1'
+  negative_case: 'run with view=FloorPlan: Level 1 Copy 2, tagTypeHintId=M_Duct Size Tag,
+    leader=none, minLengthMm=100000, leaderOffsetMm=0 arranged with category=Ducts, levelId=Level
+    1, includeLinks=false instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running filter-elements-by-category with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312, alreadyHasTag HashSet`1,
+    alreadyTagged 0, because Action`1, derivedTagCategory 0 entry(ies), leaderMode none, leaderOffsetMm
+    0, leadersDrawn 0, leadersNotDrawn 0, minLengthMm 100000, notTagged 0 item(s), notTaggedWhy
+    0 item(s), offsetFeet 2.6246719160105, ownPoint Func`2, routeFor 0 entry(ies), scale 100,
+    tagCategoryByName Func`2, tagCategoryFor 17 entry(ies), tagTypesUsed 0 item(s), tagged
+    0, tooShort 3 item(s) [345710, 345714, 345717], typeCorrections 0, typeForCategory 0 entry(ies),
+    verticalSkipped 0 item(s), wantLeader false, whyCount 0 entry(ies). inputs came elements
+    from filter-elements-by-category (3); view as given; tagTypeHintId as given; leader as
+    given; minLengthMm as given; leaderOffsetMm as given. on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 2c5c4f862d2ab409
+  fingerprint: 12bbc94345a1dc3d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
