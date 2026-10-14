@@ -223,7 +223,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
-| 2026-10-14 | [THE GAP PASS: ELEVEN TOOLS FOR WHAT THE LIBRARY COULD NOT DO](handover-archive/2026-10-14-the-gap-pass-eleven-new-tools-for-what-the-library-could-not-do.md) |
+| 2026-10-14 | [THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO](handover-archive/2026-10-14-the-gap-pass-new-tools-for-what-the-library-could-not-do.md) |
 | 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](handover-archive/2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
 | 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](handover-archive/2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
 | 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](handover-archive/2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |

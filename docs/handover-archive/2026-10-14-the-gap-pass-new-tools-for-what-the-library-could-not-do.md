@@ -1,4 +1,4 @@
-# Session note — THE GAP PASS: ELEVEN TOOLS FOR WHAT THE LIBRARY COULD NOT DO
+# Session note — THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO
 
 > **Session note** from 2026-10-14, written straight into this folder, one file per sitting, as
 > [`README.md`](README.md) asks. Nothing here is specification: where it disagrees with
@@ -7,7 +7,7 @@
 
 ---
 
-### 2026-10-14 — THE GAP PASS: ELEVEN TOOLS FOR WHAT THE LIBRARY COULD NOT DO
+### 2026-10-14 — THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO
 
 The owner asked for every fragment to be checked - *"is there anything we are missing ... or we can
 merge something, we can add something"* - and then, going to sleep, for the work to carry on without
@@ -34,6 +34,7 @@ has the test project, its parts and one dry-run-clean job file per row:
 | `ACQUIRE_COORDINATES` | Shared coordinates from a Revit link - ADMIN |
 | `SET_LINK_ROOM_BOUNDING` | Why spaces will not place in an MEP model |
 | `CREATE_WALL_ELEVATION` | An elevation turned square to one wall |
+| `SET_WORKSHARING_OWNERSHIP` | Make a workset editable, or relinquish, without a sync - PUBLISH |
 | `SELECT_GROUP_MEMBERS` v2 | An assembly opened, not built |
 
 Two methods string them together: `sprinkler-piping` and `clash-reroute`.
@@ -60,5 +61,5 @@ start a row with a bold capital-and-digit cell.
 a rotating part on a reference line is stopped at the API in docs/43 §9 (row 280); exterior elevations
 already come with the templates.
 
-**Waiting on the owner:** the eleven EC rows on a test copy; the merge in 5b-469; 5b-472's domains;
+**Waiting on the owner:** the EC rows on a test copy; the merge in 5b-469; 5b-472's domains;
 5b-473's duplicate sentences; widening the PROVEN `LIST_LINKED_MODELS` for 5b-474.
