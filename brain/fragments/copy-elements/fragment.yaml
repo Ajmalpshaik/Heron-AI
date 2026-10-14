@@ -5,7 +5,18 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-005
-semantic-identity: "duplicate these elements at an offset, and hand back the copies"
+# THE IDENTITY NAMES VERSION 2's LEVELS (2026-10-14, FRAGMENT-ISSUES 5b-467).
+# It said only "duplicate these elements at an offset", and the re-ranker reads
+# a card's identity, capability and domain and nothing else - so on the live
+# backend "copy these walls onto the selected levels" went to
+# SET_WALL_CONSTRAINTS, a write that re-hosts walls, while words and nearness
+# both had this card first. Chosen from thirty-five wordings scored against the
+# re-ranker. It keeps "duplicate" because a wording without it took "duplicate
+# the selected fixtures" - version 1's own job - to DUPLICATE_TYPE. Wordings
+# naming "storey" lifted "copy this storey to levels 2 to 10" too, and moved
+# "what is on each storey" onto this card; wordings naming "walls" pulled this
+# card to second place on wall-level questions it does not answer. Neither kept.
+semantic-identity: "duplicate these elements at an offset or copy them up onto other levels, one copy per level, and hand back the copies"
 kind: action
 domain: revit.geometry
 capability: COPY_ELEMENTS
@@ -196,6 +207,13 @@ compatibility-note: >
 # ROUTING (2026-10-13, the gap fill)
 #
 #   "copy the furniture over from the other project" -> COPY_ELEMENTS_BETWEEN_DOCUMENTS
+
+
+# ROUTING (2026-10-14, FRAGMENT-ISSUES 5b-467)
+#
+#   "copy these walls onto the selected levels" -> here, a new copy on each level
+#   "change the walls' base level"     -> SET_WALL_CONSTRAINTS, which re-hosts
+#                                         the walls it is given and copies none
 utterances:
   - copy the terminals to the next room
   - duplicate these

@@ -145,6 +145,14 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "attach these walls to the roof"        -> ATTACH_WALLS (2025 on)
+
+
+# ROUTING (2026-10-14, FRAGMENT-ISSUES 5b-467)
+#
+#   "change the walls' base level"     -> here
+#   "copy these walls onto the selected levels" -> COPY_ELEMENTS, which makes a
+#                                         new copy on each level. This one
+#                                         copies nothing
 utterances:
   - put these walls on a different level
   - the walls are on the wrong level
