@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -11,17 +11,20 @@ domain: revit.views
 capability: SET_VIEW_PROPERTIES
 # Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-457): the visual style is taken in
 # the words Revit's View Control Bar shows - Wireframe, Hidden Line, Shaded,
-# Consistent Colors, Realistic, and Textures where the running release has it -
-# as well as Revit's own names, which version 1 matched alone. Version 1
-# refused "Shaded" (the API says Shading) on Revit 2020.2 in Project1 while
-# "Realistic" worked. "Shaded" and "Realistic" leave Show Edges as the view has
-# it. Ray Trace is refused with Revit's reason: Revit 2020's API will not set
-# it, and 2021 on has no value for it. An unknown word is refused once, listing
-# every word this Revit takes, and that refusal and the style each view reads
-# back are left whole in the new `visualStyleNote`. Scale and detail level are
-# unchanged. The proof below is version 2's, signed by Ajmal PS on 2026-10-13.
-# Version 1's (2026-09-08, Snowdon, fingerprint a49cc089d5151844) went stale
-# with this change; it recorded a scale set and no visual style word tried.
+# Consistent Colors, Realistic, and Textures where the running release has it
+# (2024 on) - as well as Revit's own names, which version 1 matched alone.
+# Version 1 refused "Shaded" (the API says Shading) on Revit 2020.2 in Project1
+# while "Realistic" worked. "Shaded" leaves Show Edges as the view has it;
+# "Realistic" keeps version 1's meaning, no edges, so a word still takes edges
+# off a realistic view. Ray Trace is refused with Revit's reason: Revit 2020's
+# API will not set it, and 2021 on has no value for it. An unknown word is
+# refused once, listing every word this Revit takes, and that refusal and the
+# style each view reads back are left whole in the new `visualStyleNote`.
+# Scale and detail level are unchanged. The proof below was signed by Ajmal PS
+# on 2026-10-13 for the build before a review's fixes (Realistic's edges, a
+# template's refusal in the note) - DRAFT until re-proved. Version 1's
+# (2026-09-08, Snowdon, fingerprint a49cc089d5151844) recorded a scale set and
+# no visual style word tried.
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -67,7 +70,7 @@ contract:
       source: request
     # A View Control Bar word - Wireframe, Hidden Line, Shaded, Shaded with
     # Edges, Consistent Colors, Realistic, Realistic with Edges, and Textures
-    # (2021 on) - or Revit's own name for a style, such as HLR or FlatColors.
+    # (2024 on) - or Revit's own name for a style, such as HLR or FlatColors.
     # Spaces and capitals do not matter. Not Ray Trace: Revit will not let a
     # tool set it.
     - name: visualStyle
@@ -124,9 +127,9 @@ compatibility-note: >
   `View.DisplayStyle`, `ViewDetailLevel` and `DisplayStyle` are present 2020
   through 2027, compiled at both ends. The visual style is matched by NAME at
   run time, never by a typed member: `DisplayStyle` value 9 is `Raytrace` on
-  2020 and `Textures` from 2021 (read off the reference assemblies for all
-  eight releases on 2026-10-13), so either name typed would fail to compile on
-  the other half of the range. A word whose name the running release lacks is
+  2020, absent from 2021 to 2023, and `Textures` from 2024 (read off each
+  release's reference assembly on its own on 2026-10-13), so either name typed
+  would fail to compile somewhere in the range. A word whose name the running release lacks is
   not offered, and a release adding a style is matched by its own name.
   `Raytrace` is never offered: Revit 2020 throws on setting it - "it is not
   permitted to directly assign the display style to this value" - measured

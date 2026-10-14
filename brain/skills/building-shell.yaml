@@ -128,9 +128,12 @@ purpose: >
       exact=true, so picking one small wall out from beside a curtain wall
       needs exact=true - the box test caught a glass wall as well that day. To
       see the colours, SET_VIEW_PROPERTIES (PROVEN) on the 3D view with
-      visualStyle=ShadingWithEdges. It takes the API's name for a style -
-      Wireframe, HLR, Shading, ShadingWithEdges, Realistic - not the name the
-      view control bar shows, so "Shaded" was refused.
+      visualStyle=Shaded with Edges. It takes the words the View Control Bar
+      shows - Wireframe, Hidden Line, Shaded, Shaded with Edges, Consistent
+      Colors, Realistic, Realistic with Edges, Textures from Revit 2024 - and
+      the API's names as well; until version 2 (5b-457) it took only the
+      API's, so "Shaded" was refused. Never Ray Trace: Revit will not let a
+      tool set it.
   14. The count, and it is the proof that the shell is the plan - the calls
       not failing is not. FILTER_ELEMENTS_BY_CATEGORY (PROVEN) then
       COUNT_ELEMENTS (PROVEN) for the walls, floors, rooms, stairs, doors,

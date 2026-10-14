@@ -21,7 +21,7 @@ positive:
       Shading
   - given: the other View Control Bar words, in any capitals and spacing - Hidden
       Line, Wireframe, Consistent Colors (or Colours), Realistic, Shaded with
-      Edges, Realistic with Edges, and Textures on 2021 or later
+      Edges, Realistic with Edges, and Textures on 2024 or later
     expect: each read back as the style the View Control Bar shows by that name
   - given: Revit's own names - HLR, Shading, FlatColors, RealisticWithEdges
     expect: they still work. Every word version 1 took is still taken
@@ -29,6 +29,11 @@ positive:
     expect: >
       it stays Shaded with Edges. Show Edges is its own tick box in Revit, and
       the word did not ask to turn it off
+  - given: the word "Realistic" on a view already showing edges
+    expect: >
+      plain Realistic, no edges - what version 1 gave it. "Realistic" is also
+      the API's own name, and without this no word takes edges off a realistic
+      view
 
 negative:
   - given: >

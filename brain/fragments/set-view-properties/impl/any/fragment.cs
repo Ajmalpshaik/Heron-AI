@@ -23,14 +23,16 @@
 // because there the two names happen to agree. The View Control Bar's words are
 // read first, then the API's own names, so every word version 1 took still
 // works. Matched by NAME at run time, never by a typed member: value 9 is
-// Raytrace on Revit 2020 and Textures from 2021, so either name typed here
-// would fail to compile on the other half of the range.
+// Raytrace on Revit 2020, absent from 2021 to 2023, and Textures from 2024, so
+// either name typed here would fail to compile somewhere in the range.
 //
-// "SHADED" AND "REALISTIC" LEAVE SHOW EDGES AS THE VIEW HAS IT. In Revit, Show
-// Edges is its own tick box in Graphic Display Options, and the View Control
-// Bar changes the style without touching it. The API folds the two together -
-// Shading or ShadingWithEdges - so a view already showing edges keeps them,
-// and "Shaded with Edges" asks for them outright.
+// "SHADED" LEAVES SHOW EDGES AS THE VIEW HAS IT. In Revit, Show Edges is its
+// own tick box in Graphic Display Options, and the View Control Bar changes
+// the style without touching it. The API folds the two together - Shading or
+// ShadingWithEdges - so a view already showing edges keeps them, and "Shaded
+// with Edges" asks for them outright. "REALISTIC" DOES NOT: it is also the
+// API's own name, and it keeps the meaning version 1 gave it - Realistic with
+// no edges - because otherwise no word could take edges off a realistic view.
 //
 // AN UNKNOWN WORD IS REFUSED ONCE, NOT ONCE PER VIEW, and the refusal lists
 // every word this Revit takes. It is also left whole in `visualStyleNote`,
@@ -116,7 +118,7 @@ else
             {
                 if (squash(pair[0]) != key || !revitStyles.ContainsKey(pair[1])) continue;
                 styleWanted = revitStyles[pair[1]];
-                keepEdges = pair[0] == "Shaded" || pair[0] == "Realistic";
+                keepEdges = pair[0] == "Shaded";
                 break;
             }
 
@@ -152,7 +154,11 @@ else
             if (view == null) continue;
             if (view.IsTemplate)
             {
-                refused.Add(string.Format("'{0}' is a template, not a view", view.Name));
+                // Into the style's own list when a style was asked, so the whole
+                // note says why this view did not take it.
+                var notAView = string.Format("'{0}' is a template, not a view", view.Name);
+                if (styleWanted != null) styleRefused.Add(notAView);
+                else refused.Add(notAView);
                 continue;
             }
 
@@ -212,8 +218,7 @@ else
                         var before = view.DisplayStyle;
                         var edgesShown = before == DisplayStyle.ShadingWithEdges
                                       || before == DisplayStyle.RealisticWithEdges;
-                        if (edgesShown && target == DisplayStyle.Shading) target = DisplayStyle.ShadingWithEdges;
-                        else if (edgesShown && target == DisplayStyle.Realistic) target = DisplayStyle.RealisticWithEdges;
+                        if (edgesShown) target = DisplayStyle.ShadingWithEdges;
                     }
 
                     view.DisplayStyle = target;
