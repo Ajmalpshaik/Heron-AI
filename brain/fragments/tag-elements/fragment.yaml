@@ -9,7 +9,10 @@ semantic-identity: "put a tag on each of these elements in this view"
 kind: action
 domain: revit.views
 capability: TAG_ELEMENTS
-version: 1
+# Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-454): an element Revit gives no
+# location - a door that is a curtain-wall panel - is tagged at the centre of
+# its extent in the view instead of refused. Same inputs, same results.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -71,27 +74,27 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-14'
+  date: '2026-10-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 33220
+  model: Project1 (3,011 elements), Revit 2020, session 33484
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     select-by-category-name, set-selection, find-untagged-elements with this phase's own values
     - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
     returned addLeader false, have HashSet`1, refused 0 item(s), skipped 0 item(s), tagged
-    14. inputs came view as given; elements from find-untagged-elements (14); tagTypeId as
-    given; addLeader as given; alreadyTagged from find-untagged-elements (8). on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, view=3D HVAC Layout,
-    tagTypeId=Duct Size Tag, addLeader=false instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    3. inputs came view as given; elements from find-untagged-elements (3); tagTypeId as given;
+    addLeader as given; alreadyTagged from find-untagged-elements (0). on Project1
+  negative_case: 'run with categoryName=Doors, inViewOnly=FloorPlan: Level 1, view=HERON TEST
+    - 3D tags, tagTypeId=M_Door Tag, addLeader=false instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
     set-selection, find-untagged-elements with this phase''s own values - run inside a transaction,
     and Revit reported the transaction group ROLLED BACK afterwards. returned addLeader false,
-    have HashSet`1, refused 22 item(s) [1447716, 1447725, 1447768, ...], skipped 0 item(s),
-    tagged 0. inputs came view as given; elements from find-untagged-elements (22); tagTypeId
-    as given; addLeader as given; alreadyTagged from find-untagged-elements (0). on Snowdon-scratch_ajmal.al'
+    have HashSet`1, refused 3 item(s) [345728, 345747, 345749], skipped 0 item(s), tagged
+    0. inputs came view as given; elements from find-untagged-elements (3); tagTypeId as given;
+    addLeader as given; alreadyTagged from find-untagged-elements (0). on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 08a2e192b07bf3e3
+  fingerprint: 9b6f4c3cb7434529
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -104,6 +107,11 @@ compatibility-note: >
   removing this one. The tag type and view arrive as ElementId objects taken
   from live elements, so nothing here builds an ElementId from an integer and
   2024's move to 64-bit ids does not reach this code.
+
+  An element with no location is tagged at the centre of
+  `Element.get_BoundingBox(View)`, or of `get_BoundingBox(null)` when the view
+  gives none - one call, present and unchanged from 2020 through 2027. That a
+  curtain-panel door has no location was MEASURED on Revit 2020.2 only.
 
 # ROUTING - tagging is asked for in the same words as selecting and reporting,
 # and this table is repeated in SET_SELECTION.

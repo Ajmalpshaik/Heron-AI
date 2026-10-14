@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,8 +15,8 @@ capability: SET_CATEGORY_SOLID_FILL
 # Revit 2020 came back "overridden 1" with nothing stored. One that reads back
 # empty is in `refused` in a sentence; one that kept part of it is in the new
 # `notKept`, each setting named. The inputs and the other outputs mean what
-# they meant. The proof below is version 1's, signed before this change -
-# DRAFT until re-proved.
+# they meant. The proof below is version 2's, signed by Ajmal PS on
+# 2026-10-13 (Group DV, DV7).
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -119,50 +119,38 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-22'
+  date: '2026-10-13'
   by: Ajmal PS
-  model: Project1 (3,432 elements), Revit 2024, session 43984
-  positive_case: >
-    run on view '1 - Mech' with categories=Walls and
-    overrides=projection-line-colour=255,0,0; cut-line-colour=255,0,0;
-    surface-colour=230,230,230; cut-colour=230,230,230. returned
-    notControllable 0 item(s), notCuttable 0 item(s), overridden 1, refused 0
-    item(s), solidPattern <Solid fill>. LOOKED AT, AND THAT IS DELIBERATE: the
-    walls went from a red outline with nothing inside it to a red outline with
-    a light grey wash. The read-back is NOT the evidence here and must not be
-    used as it - REPORT_CATEGORY_OVERRIDES reports the same four colours
-    whether or not a pattern was ever stamped, which is the exact failure this
-    fragment exists to catch. Both halves of the cluster were run on this model
-    an hour apart and read back identically; only the screen told them apart
-  positive_case_2: >
-    THE PER-CATEGORY DECISION, run as one call so that it cannot be a
-    coincidence: view '2 - Mech Copy 1', categories=Walls, Mechanical
-    Equipment, overrides=surface-colour=230,230,230; cut-colour=230,230,230.
-    returned overridden 2, notCuttable 1 item(s) [Mechanical Equipment],
-    refused 0 item(s). BOTH were overridden and only the one Revit never cuts
-    came back named - Walls is absent from that list in the same call that
-    named Mechanical Equipment, so the test is of the CATEGORY and not of the
-    request. Added after Ajmal PS pointed out that cut lines and patterns
-    cannot be set on every category and that Revit does not say so
-  negative_case: >
-    run on '2 - Mech Copy 1' while it carried the 'Architectural Plan' view
-    template, with categories=Walls and overrides=surface-colour=230,230,230;
-    cut-colour=230,230,230. Chosen because a view template holds the graphics,
-    so the fragment must decline rather than report success. returned
-    notControllable 0 item(s), notCuttable 0 item(s), overridden 0, refused 1
-    item(s) [Walls], solidPattern <Solid fill>. NOTHING WAS WRITTEN and no
-    exception was raised - the category came back NAMED, which is an answer
-    somebody can act on
-  second_route: >
-    NOT ESTABLISHED. The by-hand read that would settle it is one dialog away
-    - Visibility/Graphics on '1 - Mech', where the Pattern field read
-    '<No Override>' before this fragment existed and should now read
-    'Solid fill' - and it has not been done since the write. D-30 asks for a
-    second route 'where one exists'; one plainly exists here, so this is a gap
-    rather than an absence. The OTHER negative D-30 would want is a model whose
-    solid fill pattern has been PURGED, which is the case the implementation
-    refuses on and which no model to hand can produce
-  fingerprint: 0144109dbd31ea68
+  model: Project1 (3,001 elements), Revit 2020, session 33484
+  positive_case: 'THE POSITIVE WAS Walls on ''FloorPlan: Level 1'', overrides=surface-colour=230,230,230;
+    projection-line-colour=200,30,30; projection-line-weight=5, and it is counted because
+    GetCategoryOverrides read back those colours, the weight and the solid fill on both the
+    surface and the cut (version 2''s own read-back). run as it would normally be run - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned notControllable 0 item(s), notCuttable 0 item(s), notKept 0 item(s), overridden
+    1, refused 0 item(s), solid FillPatternElement, solidPattern <Solid fill>. inputs came
+    view as given; categories as given (1); overrides as given. on Project1'
+  negative_case: 'run with view=FloorPlan: Level 1, categories=Rooms, overrides=surface-colour=230,230,230;
+    projection-line-colour=200,30,30; projection-line-weight=5 instead - chosen because it
+    should not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned notControllable 0 item(s), notCuttable
+    1 item(s) [Rooms], notKept 0 item(s), overridden 0, refused 1 item(s) [Revit took the
+    override and stored nothing for Rooms], solid FillPatternElement, solidPattern <Solid
+    fill>. inputs came view as given; categories as given (1); overrides as given. on Project1.
+    VERSION 1, RUN THE SAME WAY ON Rooms the same hour (rolled back), answered overridden
+    1, refused 0 - the defect this version fixes (FRAGMENT-ISSUES 5b-453).'
+  second_route: 'REPORT_CATEGORY_OVERRIDES, the same evening on the same model and plan, rolled
+    back. It reads only categories that have elements in the view and Project1''s plan had
+    no room, so four walls and an enclosed room were made first by a scratch setup step (NOT
+    a Heron fragment - CREATE_WALL and PLACE_ROOM_AT_POINT share their `points` input and
+    cannot both run in one arrangement), then this fragment as a setup step, then the report:
+    categories present 11 against 10 without the room, so Rooms was looked at. With Walls
+    asked: 1 of 11 carry an override, ''Walls: line RGB(200,30,30), surface RGB(230,230,230),
+    surface pattern <Solid fill>, cut pattern <Solid fill>, line weight 5''. With Rooms asked:
+    0 of 11, nothing overridden at category level. The plan read 10 categories and no override
+    afterwards, so nothing was kept. Visibility/Graphics by hand was not opened: nothing survives
+    a rollback to look at.'
+  fingerprint: d8d8e5d89b509e2a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
