@@ -235,23 +235,38 @@ namespace Heron.Revit.Addin
 
             lock (_queueLock) { _queue.Enqueue(job); }
 
+            // ABANDONED ONLY IF REVIT HAS NOT TAKEN IT, in both places below.
+            // The check and the start used to be two steps on two threads -
+            // Execute asked IsAbandoned and then marked the job started - so a
+            // wait that ran out between them reported "nothing was sent" for a
+            // job Revit then ran. Behind a queue of other requests that wait
+            // runs out far more often, because the busy clock starts at the
+            // enqueue. One compare-and-swap now decides: whichever side moves
+            // the job first wins, and the other follows what really happened.
+            // FRAGMENT-ISSUES section 5b, row 458.
+            var raised = true;
             try
             {
                 raiser.Raise();
             }
             catch (Exception ex)
             {
-                job.Abandon();
-                if (job.TakeBannerEnd())
-                    _banner.End(false, "Revit would not take the request", -1, model);
-                return Json.Error("raise_failed", ex.Message);
+                // An Execute already draining the queue for an earlier request
+                // can still take this one; if it has, it is running - wait for
+                // it like any other.
+                if (job.TryAbandon())
+                {
+                    if (job.TakeBannerEnd())
+                        _banner.End(false, "Revit would not take the request", -1, model);
+                    return Json.Error("raise_failed", ex.Message);
+                }
+                raised = false;
             }
 
-            if (!job.WaitForStart(_busyTimeout))
+            if (raised && !job.WaitForStart(_busyTimeout) && job.TryAbandon())
             {
-                // Revit never became idle. Abandon it so the handler skips it
+                // Revit never became idle. Abandoned, so the handler skips it
                 // rather than doing work whose answer nobody is waiting for.
-                job.Abandon();
                 RecordRefusal(job.WorkflowId, request, "revit_busy");
 
                 // Execute will skip this one, so nobody else will lower the
@@ -302,9 +317,8 @@ namespace Heron.Revit.Addin
                     job = _queue.Dequeue();
                 }
 
-                if (job.IsAbandoned) continue;   // the caller already gave up
+                if (!job.TryStart()) continue;   // the caller already gave up
 
-                job.MarkStarted();
                 var clock = Stopwatch.StartNew();
                 string response = null;
                 string document = null;
@@ -589,9 +603,13 @@ namespace Heron.Revit.Addin
         /// <summary>One request, and the two signals its caller waits on.</summary>
         private sealed class RevitJob
         {
+            private const int Queued = 0;
+            private const int Started = 1;
+            private const int Abandoned = 2;
+
             private readonly ManualResetEventSlim _started = new ManualResetEventSlim(false);
             private readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
-            private volatile bool _abandoned;
+            private int _state = Queued;
             private int _bannerEnded;
 
             public RevitJob(string request, string workflowId)
@@ -605,9 +623,18 @@ namespace Heron.Revit.Addin
             /// <summary>Follows this request through every layer that touches it.</summary>
             public string WorkflowId { get; private set; }
             public string Response { get; private set; }
-            public bool IsAbandoned { get { return _abandoned; } }
 
-            public void MarkStarted() { _started.Set(); }
+            /// <summary>
+            /// Revit's thread takes the job. False when the caller abandoned it
+            /// first - skip it. Never true for a job its caller was told Revit
+            /// did not take: that is the whole of row 458's second half.
+            /// </summary>
+            public bool TryStart()
+            {
+                if (Interlocked.CompareExchange(ref _state, Started, Queued) != Queued) return false;
+                _started.Set();
+                return true;
+            }
 
             /// <summary>
             /// Claims the right to lower the banner for this job, once.
@@ -630,12 +657,18 @@ namespace Heron.Revit.Addin
                 _finished.Set();
             }
 
-            /// <summary>The caller stopped waiting. Skip it rather than run it.</summary>
-            public void Abandon()
+            /// <summary>
+            /// The caller stops waiting, so Revit must skip it rather than run
+            /// it. False when Revit has already taken it: it is running, and
+            /// the caller must wait for its answer instead of saying it was not
+            /// sent.
+            /// </summary>
+            public bool TryAbandon()
             {
-                _abandoned = true;
+                if (Interlocked.CompareExchange(ref _state, Abandoned, Queued) != Queued) return false;
                 _started.Set();      // release anything still parked on it
                 _finished.Set();
+                return true;
             }
 
             public bool WaitForStart(TimeSpan timeout) { return _started.Wait(timeout); }

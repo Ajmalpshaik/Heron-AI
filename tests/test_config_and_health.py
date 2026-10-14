@@ -158,6 +158,29 @@ def main():
               % (operation, server, client))
 
     print()
+    print("BUG 2, THE QUEUE - the add-in's deadline is its busy wait AND its operation wait")
+    # The add-in waits up to revit.busyTimeoutSeconds for Revit to START a
+    # request, counted from the enqueue, and THEN up to the operation timeout
+    # for it to finish. The client's clock starts when the request is sent, so
+    # it has to outlast both. Compared with the operation timeout alone, a busy
+    # wait above the old 30-second margin let the client give up on a request
+    # that was still going to answer - "the answer was lost" for work that then
+    # completed. FRAGMENT-ISSUES section 5b, row 458.
+    for operation in (10, 60, 120, 600):
+        for busy in (1, 10, 30, 31, 45, 60, 120, 600):
+            if busy > operation:
+                continue                  # refused by problems(), checked below
+            values = dict(cfg.DEFAULTS)
+            values["revit.operationTimeoutSeconds"] = str(operation)
+            values["revit.busyTimeoutSeconds"] = str(busy)
+            longest = cfg.busy_timeout(values) + cfg.operation_timeout(values)
+            for name, client in (("response", cfg.response_timeout(values)),
+                                 ("fragment", cfg.fragment_timeout(values))):
+                check(client > longest,
+                      "busy=%s operation=%s -> add-in answers within %g, %s wait %g "
+                      "(must be higher)" % (busy, operation, longest, name, client))
+
+    print()
     print("BUG 2 AGAIN, ONE LAYER ALONG - a fragment run waits longer, still by derivation")
     # FIVE CALL SITES TYPED `response_timeout=180.0` BY HAND: the write path in
     # heron_mcp_server.py and four fragment runs in heron_bridge_client.py. A

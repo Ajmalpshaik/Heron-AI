@@ -61,10 +61,16 @@ the rule was not run.
 import io
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(ROOT, "brain"))
+
+import heron_relpath as RELPATH                                 # noqa: E402
+
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
 DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
@@ -73,6 +79,10 @@ HOST = os.path.join(ROOT, "tests", "Heron.FailureNote.TestHost")
 COULD_NOT_RUN = 3
 
 FAILURES = []
+
+# A build's output folders. Skipped by WHOLE FOLDER NAME below the folder
+# walked, never by a word anywhere in the path above it (5b row 462).
+BUILD_OUTPUT = ("bin", "obj")
 
 
 def check(condition, what):
@@ -86,6 +96,35 @@ def read(path):
         return io.open(path, encoding="utf-8").read()
     except (IOError, OSError):
         return None
+
+
+def build_output(folder, base):
+    """Is `folder` a build's output - inside a bin or obj folder below `base`?
+
+    Asked of the path RELATIVE to `base`, one whole folder name at a time, so
+    nothing above `base` - the checkout's own folder - can answer it.
+    """
+    below = RELPATH.relpath(folder, base)
+    return any(part in BUILD_OUTPUT for part in below.split(os.sep))
+
+
+def sources(base):
+    """Every .cs file under `base`, build output left out."""
+    for folder, _, names in os.walk(base):
+        if build_output(folder, base):
+            continue
+        for name in sorted(names):
+            if name.endswith(".cs"):
+                yield os.path.join(folder, name)
+
+
+def plant(path, text):
+    """Write one scratch file, making its folders."""
+    folder = os.path.dirname(path)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    with io.open(path, "w", encoding="utf-8") as handle:
+        handle.write(text)
 
 
 def code_only(text):
@@ -279,16 +318,39 @@ def wiring():
           "the fragment - the move path keeps its own record")
 
     print("\n4. no writer in revit/ opens a transaction without a preprocessor")
-    for folder, _, names in os.walk(os.path.join(ROOT, "revit")):
-        if os.sep + "bin" in folder or os.sep + "obj" in folder:
-            continue
-        for name in sorted(names):
-            if not name.endswith(".cs"):
-                continue
-            text = code_only(read(os.path.join(folder, name)) or "")
-            if re.search(r"new\s+Transaction\s*\(", text):
-                check("SetFailuresPreprocessor(" in text,
-                      "%s opens a transaction and sets a failures preprocessor" % name)
+    openers = 0
+    for path in sources(os.path.join(ROOT, "revit")):
+        text = code_only(read(path) or "")
+        if re.search(r"new\s+Transaction\s*\(", text):
+            openers += 1
+            check("SetFailuresPreprocessor(" in text,
+                  "%s opens a transaction and sets a failures preprocessor"
+                  % os.path.basename(path))
+    # A WALK THAT READ NOTHING CHECKS NOTHING, AND PASSES. Until 2026-10-14
+    # this section skipped any folder whose WHOLE path held "<sep>obj" or
+    # "<sep>bin", so from a worktree the Claude app had named objective-...
+    # it read no file in revit/, made no check, and the suite exited 0
+    # (5b row 462). So the count is a check of its own.
+    check(openers > 0,
+          "the walk reached the writers at all - %d file(s) open a transaction"
+          % openers)
+    # And from a checkout whose own path says obj and bin, the walk still
+    # reads the source file - and still leaves out a bin and an obj inside it.
+    scratch = tempfile.mkdtemp(prefix="heron-5b462-")
+    try:
+        base = os.path.join(scratch, "obj", "objective-chebyshev", "bin", "revit")
+        kept = os.path.join(base, "Heron.Revit.Addin", "Writer.cs")
+        plant(kept, u"// read\n")
+        plant(os.path.join(base, "Heron.Revit.Addin", "obj", "Debug", "Made.cs"),
+              u"// skipped\n")
+        plant(os.path.join(base, "Heron.Revit.Addin", "bin", "x64", "Copy.cs"),
+              u"// skipped\n")
+        walked = [RELPATH.relpath(path, base) for path in sources(base)]
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    check(walked == [RELPATH.relpath(kept, base)],
+          "a checkout whose own path holds obj and bin is still walked, "
+          "and only its source - walked %s" % (walked or "nothing"))
 
     note = read(NOTE)
     check(note is not None, "HeronFailureNote.cs is there")

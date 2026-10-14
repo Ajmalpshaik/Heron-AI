@@ -31,7 +31,9 @@ WHAT IT PROVES
 import glob
 import io
 import os
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -39,8 +41,13 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 import heron_csharp as CSH                                     # noqa: E402
 import heron_apichanges as ACI                                 # noqa: E402
 import heron_contract as CON                                   # noqa: E402
+import heron_relpath as RELPATH                                # noqa: E402
 
 FAILURES = []
+
+# A build's output folders. Skipped by WHOLE FOLDER NAME below the root
+# searched, never by a word anywhere in the path above it (5b row 462).
+BUILD_OUTPUT = ("bin", "obj")
 
 
 def check(condition, what):
@@ -49,15 +56,32 @@ def check(condition, what):
         FAILURES.append(what)
 
 
-def repository():
+def build_output(path, root):
+    """Is `path` a build's output - inside a bin or obj folder below `root`?
+
+    Asked of its folder RELATIVE to `root`, one whole folder name at a time,
+    so nothing above `root` - the checkout's own folder - can answer it.
+    """
+    below = RELPATH.relpath(os.path.dirname(path), root)
+    return any(part in BUILD_OUTPUT for part in below.split(os.sep))
+
+
+def repository(root=ROOT):
     """Every C# file this repository ships, minus build output."""
     found = []
     for layer in ("revit", "platform", "mcp"):
-        found += glob.glob(os.path.join(ROOT, layer, "**", "*.cs"),
+        found += glob.glob(os.path.join(root, layer, "**", "*.cs"),
                            recursive=True)
-    return sorted(path for path in found
-                  if os.sep + "obj" + os.sep not in path
-                  and os.sep + "bin" + os.sep not in path)
+    return sorted(path for path in found if not build_output(path, root))
+
+
+def plant(path, text):
+    """Write one scratch file, making its folders."""
+    folder = os.path.dirname(path)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    with io.open(path, "w", encoding="utf-8") as handle:
+        handle.write(text)
 
 
 def main():
@@ -107,6 +131,26 @@ def main():
     print("\n3. the numbers in the docstring are measured here")
     files = repository()
     check(len(files) >= 20, "%d C# file(s) ship" % len(files))
+    # AND THEY STILL SHIP FROM A CHECKOUT WHOSE OWN PATH SAYS obj AND bin.
+    # Until 2026-10-14 a file was dropped for a "<sep>obj<sep>" ANYWHERE in
+    # its path, so a checkout under a folder named exactly obj or bin
+    # shipped 0 files (5b row 462). Both directions: the source is found,
+    # and a bin and an obj inside a layer are still left out.
+    scratch = tempfile.mkdtemp(prefix="heron-5b462-")
+    try:
+        root = os.path.join(scratch, "obj", "objective-chebyshev", "bin", "heron")
+        kept = os.path.join(root, "revit", "Heron.Revit.Addin", "Handler.cs")
+        plant(kept, u"// read\n")
+        plant(os.path.join(root, "revit", "Heron.Revit.Addin", "obj", "Debug",
+                           "Made.cs"), u"// skipped\n")
+        plant(os.path.join(root, "mcp", "Heron.Bridge", "bin", "x64", "Copy.cs"),
+              u"// skipped\n")
+        shipped = [RELPATH.relpath(path, root) for path in repository(root)]
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    check(shipped == [RELPATH.relpath(kept, root)],
+          "a checkout whose own path holds obj and bin still ships its C#, "
+          "and only its source - shipped %s" % (shipped or "nothing"))
     handlers = broad = narrow = 0
     shapes = {}
     types = {}

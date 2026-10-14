@@ -30,16 +30,26 @@ one property, asserted from several directions:
 import io
 import os
 import re
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+# Appended, not inserted: brain/ goes behind mcp/ so it can shadow nothing
+# this suite imports from there.
+sys.path.append(os.path.join(ROOT, "brain"))
 
 import heron_failure as fa                                   # noqa: E402
 from heron_failure import analyse, explain                   # noqa: E402
+import heron_relpath as RELPATH                              # noqa: E402
 
 FAILURES = []
+
+# A build's output folders. Skipped by WHOLE FOLDER NAME below the folder
+# walked, never by a word anywhere in the path above it (5b row 462).
+BUILD_OUTPUT = ("bin", "obj")
 
 
 def check(condition, what):
@@ -50,6 +60,40 @@ def check(condition, what):
 
 def refusal(code, message=None):
     return {"ok": False, "error": code, "message": message}
+
+
+def build_output(folder, base):
+    """Is `folder` a build's output - inside a bin or obj folder below `base`?
+
+    Asked of the path RELATIVE to `base`, one whole folder name at a time, so
+    nothing above `base` - the checkout's own folder - can answer it.
+    """
+    below = RELPATH.relpath(folder, base)
+    return any(part in BUILD_OUTPUT for part in below.split(os.sep))
+
+
+def codes_in(base):
+    """Every literal code a Json.Error call in the C# under `base` produces."""
+    produced = set()
+    for folder, _, names in os.walk(base):
+        if build_output(folder, base):
+            continue
+        for name in names:
+            if not name.endswith(".cs"):
+                continue
+            text = io.open(os.path.join(folder, name), encoding="utf-8",
+                           errors="replace").read()
+            produced.update(re.findall(r'Json\.Error\(\s*"([a-z_]+)"', text))
+    return produced
+
+
+def plant(path, text):
+    """Write one scratch file, making its folders."""
+    folder = os.path.dirname(path)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    with io.open(path, "w", encoding="utf-8") as handle:
+        handle.write(text)
 
 
 def main():
@@ -181,19 +225,36 @@ def main():
     # would be the third copy of the same set and would go stale the same
     # way. The pattern is the one the add-in uses everywhere: Json.Error with
     # a literal code.
-    produced = set()
-    for base in (os.path.join(ROOT, "revit"),):
-        for folder, _, names in os.walk(base):
-            if os.sep + "bin" in folder or os.sep + "obj" in folder:
-                continue
-            for name in names:
-                if not name.endswith(".cs"):
-                    continue
-                text = io.open(os.path.join(folder, name), encoding="utf-8",
-                               errors="replace").read()
-                produced.update(re.findall(r'Json\.Error\(\s*"([a-z_]+)"', text))
+    produced = codes_in(os.path.join(ROOT, "revit"))
     check(len(produced) > 30,
           "found %d error codes in the add-in's C#" % len(produced))
+
+    # AND IT FINDS THEM FROM A CHECKOUT WHOSE OWN PATH SAYS obj AND bin. The
+    # Claude app names a worktree at random, and until 2026-10-14 this scan
+    # skipped any folder whose WHOLE path held "<sep>obj" or "<sep>bin" - so
+    # from .claude/worktrees/objective-chebyshev-fda7f7 it skipped all of
+    # revit/, found 0 codes and called every classified code ORPHANED, on a
+    # commit that passed under any other name (5b row 462). Both directions:
+    # the source file is read, and a bin and an obj inside revit/ still are not.
+    scratch = tempfile.mkdtemp(prefix="heron-5b462-")
+    try:
+        base = os.path.join(scratch, "obj", "objective-chebyshev", "bin", "revit")
+        plant(os.path.join(base, "Heron.Revit.Addin", "Handler.cs"),
+              u'return Json.Error("from_source", "read");\n')
+        plant(os.path.join(base, "Heron.Revit.Addin", "obj", "Debug", "Made.cs"),
+              u'return Json.Error("from_obj", "skipped");\n')
+        plant(os.path.join(base, "Heron.Revit.Addin", "bin", "x64", "Copy.cs"),
+              u'return Json.Error("from_bin", "skipped");\n')
+        found = codes_in(base)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    check("from_source" in found,
+          "a checkout whose own path holds obj and bin is still scanned - "
+          "found %s" % (sorted(found) or "nothing"))
+    leaked = sorted(found & set(["from_obj", "from_bin"]))
+    check(not leaked,
+          "and a bin or obj folder inside revit/ is still skipped%s"
+          % ("" if not leaked else " - READ: " + ", ".join(leaked)))
 
     # handler_failed is deliberately absent and the file says why: it is
     # raised when an exception escapes from anywhere, so only the

@@ -40,6 +40,23 @@ namespace Heron.Bridge.TestHost
             var identity = new BridgeIdentity(revitVersion, "0.1.0-testhost");
             using (var bridge = new BridgeServer(identity, Console.WriteLine))
             {
+                // "test_wait" stands in for Revit working on a request: it
+                // answers after `ms` milliseconds, so the suite can connect a
+                // newer chat while an answer is still owed - the case that lost
+                // a chat's answer about walls already built (FRAGMENT-ISSUES
+                // section 5b, row 458). Every other operation gets what the
+                // bridge says with no handler at all.
+                bridge.RequestHandler = request =>
+                {
+                    if (Json.ReadString(request, "op") != "test_wait")
+                        return Json.Error("unknown_op",
+                            "No handler for that here. This host answers ping, info and test_wait.");
+                    int ms;
+                    int.TryParse(Json.ReadString(request, "ms"), out ms);
+                    Thread.Sleep(Math.Max(0, Math.Min(ms, 10000)));
+                    return Json.Ok(Json.Num("waitedMs", ms));
+                };
+
                 if (cycle)
                 {
                     bridge.Start();
