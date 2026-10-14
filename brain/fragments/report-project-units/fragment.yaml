@@ -107,3 +107,9 @@ utterances:
   - show the project units
   - is cooling load in watts or btu/h
   - what symbol does air flow use
+  # ADDED 2026-10-14, FRAGMENT-ISSUES rows 5b-356 and 5b-476. On the trained
+  # backend questions about which units a value is SHOWN in reached
+  # SET_PROJECT_UNITS, an Admin write: four of seven paraphrases written
+  # before this wording was chosen. Questions, so they belong to this read.
+  - which units does the model use for loads
+  - are temperatures in celsius or fahrenheit

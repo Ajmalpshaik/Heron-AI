@@ -13,6 +13,80 @@ version: 4
 source: OFFICIAL
 risk: READ
 
+# HOW IT ANSWERS, VERSION BY VERSION - comments, not `purpose`, because
+# `purpose` is searched (FRAGMENT-ISSUES rows 5b-356 and 5b-476). Until
+# 2026-10-14 these paragraphs were the purpose: 809 words, most of them on
+# element positions. The trained model reads the first 512 word-pieces of a
+# card, and version 4's paragraph on the site began at word-piece 512, so it
+# was never read; the words route's length penalty fell on every site word.
+# Questions about True North went to SET_PROJECT_LOCATION, an Admin write, on
+# four of five paraphrases written before this change, and to ROTATE_ELEMENTS
+# on the fifth. Moved here word for word; the behaviour is unchanged.
+#
+# **AN ELEMENT HAS ONE OF THREE KINDS OF POSITION AND THE REPORT SAYS WHICH.** A
+# piece of equipment is at a point. A duct runs from one place to another and
+# has no single position at all. A wall assembly, a group, an in-place element
+# may have neither. Reporting all three as "the location" and printing one set
+# of coordinates makes the second kind a lie - the midpoint of a thirty-metre
+# run is a place the duct passes through, not where it is.
+#
+# **The bounding-box centre is named as a fallback every time it is used**, and
+# never dressed up as a location. It is the centre of a box around the thing,
+# which for anything L-shaped or sloped is a point in fresh air.
+#
+# **Coordinates are Revit's internal ones, converted to millimetres.** They are
+# measured from the project's internal origin, which is not necessarily the
+# survey point or the project base point - so these numbers are for comparing
+# elements with each other, and a coordinate to hand to a surveyor is a
+# different question.
+#
+# **A POINT-PLACED ELEMENT ALSO REPORTS WHICH WAY IT IS TURNED (version 2).**
+# Its rotation in degrees, and the facing direction of a family instance.
+# Two units at the same point facing opposite ways are not the same
+# placement, and copying a layout from one room to the next needs both
+# halves. Measured 2026-09-28 on "heron ai bulding": an FCU the modeller had
+# turned by hand read "turned 180 degrees", and one left alone read 0. This
+# is version 2; version 1's proof no longer describes the code, and the
+# fragment is DRAFT until it is proved again.
+#
+# **SHARED COORDINATES, TRUE NORTH AND THE TWO SITE POINTS (version 3).**
+# Version 2's paragraph above calling a surveyor's coordinate "a different
+# question" is kept as the record of what it did; it is no longer the
+# answer. The internal origin stays the DEFAULT, and every reply says
+# which coordinates it gives. With `sharedCoordinates` set, every position
+# is ALSO given as east / north / elevation in the model's shared
+# coordinates, through the active project location, and a facing direction
+# in true north beside project north. Which way the location's transform
+# runs is not assumed: it is tried both ways against the project base point
+# and the survey point, whose own internal and shared positions Revit
+# reports, and used only if one direction reproduces both - otherwise the
+# reply says shared coordinates could not be given, and why. Every reply
+# now also names the angle from project north to true north, where the
+# project base point and the survey point are (internal and shared), and
+# how far the farthest reported position is from the internal origin, in
+# metres. That distance is a number, not a verdict: it is flagged only
+# beyond the 20 miles (about 32 km) Revit's own help gives as the limit for
+# geometry from the internal origin. A facing direction without the switch
+# is said to be in project north, which v2 printed without saying. This is
+# version 3; version 2 was never proved, version 1's proof does not
+# describe this code, and the fragment is DRAFT until it is proved again.
+#
+# **WHERE THE PROJECT IS, WITH NOTHING SELECTED (version 4).** The site is
+# now the whole of Manage > Location too - place name, latitude and
+# longitude, time zone, daylight saving, weather station and site elevation -
+# and True North in the Site tab's words, degrees East or West of project
+# north, beside the angle Revit stores. Its side is MEASURED from where Revit
+# puts two points along project north, never taken from the sign of the
+# stored angle, which the API documentation does not state; that also holds
+# when both base points sit on the internal origin, where version 3's
+# transform check cannot tell its two directions apart. It comes back as ONE
+# string, `site`, because a list reaches the chat cut to three lines.
+# `elements` is optional: with nothing selected the add-in binds an empty
+# list and the answer is the site alone, so "where is this project" needs no
+# selection - an add-in older than this version still refuses, as before.
+# SET_PROJECT_LOCATION writes the same settings in the same words. Versions
+# 1 to 3's proofs do not describe this code; it is DRAFT until proved again.
+
 purpose: >
   Answers WHERE. Where the project is on the earth - which place its site is
   named, what latitude and longitude, which time zone and whether daylight
@@ -22,69 +96,15 @@ purpose: >
   things that have one, both ends for the things that run somewhere, the
   centre of the bounding box for everything else. It reads and never changes.
 
-  **AN ELEMENT HAS ONE OF THREE KINDS OF POSITION AND THE REPORT SAYS WHICH.** A
-  piece of equipment is at a point. A duct runs from one place to another and
-  has no single position at all. A wall assembly, a group, an in-place element
-  may have neither. Reporting all three as "the location" and printing one set
-  of coordinates makes the second kind a lie - the midpoint of a thirty-metre
-  run is a place the duct passes through, not where it is.
-
-  **The bounding-box centre is named as a fallback every time it is used**, and
-  never dressed up as a location. It is the centre of a box around the thing,
-  which for anything L-shaped or sloped is a point in fresh air.
-
-  **Coordinates are Revit's internal ones, converted to millimetres.** They are
-  measured from the project's internal origin, which is not necessarily the
-  survey point or the project base point - so these numbers are for comparing
-  elements with each other, and a coordinate to hand to a surveyor is a
-  different question.
-
-  **A POINT-PLACED ELEMENT ALSO REPORTS WHICH WAY IT IS TURNED (version 2).**
-  Its rotation in degrees, and the facing direction of a family instance.
-  Two units at the same point facing opposite ways are not the same
-  placement, and copying a layout from one room to the next needs both
-  halves. Measured 2026-09-28 on "heron ai bulding": an FCU the modeller had
-  turned by hand read "turned 180 degrees", and one left alone read 0. This
-  is version 2; version 1's proof no longer describes the code, and the
-  fragment is DRAFT until it is proved again.
-
-  **SHARED COORDINATES, TRUE NORTH AND THE TWO SITE POINTS (version 3).**
-  Version 2's paragraph above calling a surveyor's coordinate "a different
-  question" is kept as the record of what it did; it is no longer the
-  answer. The internal origin stays the DEFAULT, and every reply says
-  which coordinates it gives. With `sharedCoordinates` set, every position
-  is ALSO given as east / north / elevation in the model's shared
-  coordinates, through the active project location, and a facing direction
-  in true north beside project north. Which way the location's transform
-  runs is not assumed: it is tried both ways against the project base point
-  and the survey point, whose own internal and shared positions Revit
-  reports, and used only if one direction reproduces both - otherwise the
-  reply says shared coordinates could not be given, and why. Every reply
-  now also names the angle from project north to true north, where the
-  project base point and the survey point are (internal and shared), and
-  how far the farthest reported position is from the internal origin, in
-  metres. That distance is a number, not a verdict: it is flagged only
-  beyond the 20 miles (about 32 km) Revit's own help gives as the limit for
-  geometry from the internal origin. A facing direction without the switch
-  is said to be in project north, which v2 printed without saying. This is
-  version 3; version 2 was never proved, version 1's proof does not
-  describe this code, and the fragment is DRAFT until it is proved again.
-
-  **WHERE THE PROJECT IS, WITH NOTHING SELECTED (version 4).** The site is
-  now the whole of Manage > Location too - place name, latitude and
-  longitude, time zone, daylight saving, weather station and site elevation -
-  and True North in the Site tab's words, degrees East or West of project
-  north, beside the angle Revit stores. Its side is MEASURED from where Revit
-  puts two points along project north, never taken from the sign of the
-  stored angle, which the API documentation does not state; that also holds
-  when both base points sit on the internal origin, where version 3's
-  transform check cannot tell its two directions apart. It comes back as ONE
-  string, `site`, because a list reaches the chat cut to three lines.
-  `elements` is optional: with nothing selected the add-in binds an empty
-  list and the answer is the site alone, so "where is this project" needs no
-  selection - an add-in older than this version still refuses, as before.
-  SET_PROJECT_LOCATION writes the same settings in the same words. Versions
-  1 to 3's proofs do not describe this code; it is DRAFT until proved again.
+  With nothing selected the answer is the site alone, as one string: place
+  name, latitude and longitude, time zone, daylight saving, weather station,
+  site elevation, True North East or West of project north, and where the
+  project base point and survey point are. Element positions are measured
+  from the internal origin unless `sharedCoordinates` is set, which adds
+  east, north and elevation in shared coordinates and a facing in true north;
+  every reply says which it gave, and how far the farthest position is from
+  the internal origin. A bounding-box centre is always named as a fallback,
+  never as a location.
 
 contract:
   needs:
@@ -249,3 +269,8 @@ utterances:
   # changes the shared coordinates (check-routing, claimed and not reached).
   - what are the coordinates
   - what are the shared coordinates of this
+  # ADDED 2026-10-14, FRAGMENT-ISSUES rows 5b-356 and 5b-476: questions about
+  # True North reached SET_PROJECT_LOCATION, an Admin write, on the trained
+  # backend. More of this card's own words are about the site now.
+  - which direction is true north in this model
+  - is true north turned in this project

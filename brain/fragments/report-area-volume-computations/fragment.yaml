@@ -161,6 +161,11 @@ utterances:
   - are volumes switched on in this project
   - is area and volume computation turned on
   - which room area computation does this project use
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-476. On the trained backend a
+  # question about which wall face room areas reach went to PLACE_AREAS, a
+  # write, at nearness rank 17 for this card - its text is mostly volumes.
+  - which wall face are room areas measured to
+  - do the room areas include the wall finish
   # ADDED 2026-10-14 with CREATE_AREA_PLAN. `areaSchemes` names each scheme's
   # area plans, so this card answers the question - and on a scratch store,
   # lexical hybrid, 2024 wall, "what area plans are there" reached it on main
