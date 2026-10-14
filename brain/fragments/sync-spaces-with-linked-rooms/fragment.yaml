@@ -123,3 +123,6 @@ utterances:
   - update the spaces to match the architect's rooms
   - sync the space numbers and names with the room link
   - add spaces for the architect's new rooms
+  # ADDED 2026-10-14. It reached this card on main, and SET_LINK_ROOM_BOUNDING
+  # on the gap-pass branch once that card existed (lexical, scratch stores).
+  - place spaces in all rooms of the linked model
