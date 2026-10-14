@@ -5,11 +5,20 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-126
-semantic-identity: "make a line style with this colour, weight and pattern, or change one"
+semantic-identity: "make a line style with this colour, weight and pattern, or change one - in a family, its own subcategory in Object Styles"
 kind: action
 domain: revit.views
 capability: CREATE_LINE_STYLE
-version: 1
+# Version 2 (2026-10-14, FRAGMENT-ISSUES 5b-463): an optional `familyCategory`
+# makes or changes a subcategory of the FAMILY'S OWN category - Object Styles
+# in the Family Editor - with the same colour, weight and pattern. Left out it
+# is false: a line style under Lines as version 1, which only gains a NOT KEPT
+# finding when Revit does not hold a value that was asked for. The identity
+# gained "- in a family, its own subcategory in Object Styles": the re-ranker
+# reads only identity, capability and domain, and without those words 8 of 10
+# unseen ways of asking for a subcategory's colour or weight reached
+# SET_FAMILY_FORM_SUBCATEGORY on the trained backend (measured in row 5b-463).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -26,7 +35,19 @@ risk: MODIFY
 # AN EXISTING STYLE IS REFUSED unless updateExisting is true, and then its
 # graphics change in place - every line drawn in it changes with it.
 #
-# READ BACK: colour, weight and pattern off the style afterwards.
+# A FAMILY'S OWN SUBCATEGORY (version 2): familyCategory true, in a family
+# open in the Family Editor, works on the family category's subcategories -
+# Object Styles, Annotation Objects or Model Objects tab - instead of Lines:
+# Generic Annotations > Signature, the subcategory DRAW_FAMILY_DETAIL_LINES
+# drew a signature on. The category's own name, or "none", is the category
+# itself. A project is refused by name. It is a bool, not a category name,
+# because only an optional bool may be left out (HeronBindingNote.AbsentValue)
+# and a required input would break every caller; a project's Object Styles
+# subcategory of another category (Walls > ...) is therefore not reached -
+# recorded in row 5b-463.
+#
+# READ BACK: colour, weight and pattern off the style after one regeneration;
+# a value asked for that Revit does not hold is named NOT KEPT.
 #
 # REMAP_LINE_STYLES moves lines from one style to another; this makes or
 # changes a style.
@@ -35,7 +56,8 @@ risk: MODIFY
 purpose: >
   Creates a line style - Manage > Additional Settings > Line Styles - with a
   colour, line weight and line pattern, or changes the graphics of an existing
-  one.
+  one. In a family it does the same to a subcategory of the family's own
+  category, in Object Styles.
 
 contract:
   needs:
@@ -60,6 +82,15 @@ contract:
     # true changes an existing style of that name; false, or not said,
     # refuses it.
     - name: updateExisting
+      type: bool
+      source: request
+      optional: true
+    # true works on a subcategory of the open FAMILY's own category - Object
+    # Styles in the Family Editor - instead of a line style under Lines; its
+    # own name, or "none", is the category itself. false, or not said, is a
+    # line style, as version 1. A subcategory the lines are already on exists,
+    # so recolouring it needs updateExisting too.
+    - name: familyCategory
       type: bool
       source: request
       optional: true
@@ -91,12 +122,22 @@ compatibility-note: >
   SetLinePatternId, GetLinePatternId and GetGraphicsStyle,
   LinePatternElement.GetSolidPatternId and GetLinePatternElementByName are
   present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
-  reference packages for all eight releases on 2026-10-12.
+  reference packages for all eight releases on 2026-10-12. Version 2 adds
+  Document.IsFamilyDocument, Document.OwnerFamily, Family.FamilyCategory and
+  Category.CanAddSubcategory, read off tools/api-surface for 2020, 2024 and
+  2027 on 2026-10-14 and compiled for all eight - the same members
+  DRAW_FAMILY_DETAIL_LINES and SET_FAMILY_FORM_SUBCATEGORY already call.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "make a red dashed line style"            -> here
 #   "change the hidden lines style to blue"   -> here, updateExisting
+#   "make the signature lines blue in this family" -> here, familyCategory and
+#                                                updateExisting - the lines are on it
+#   "change the colour of a subcategory in the family" -> here, familyCategory
+#   "put this extrusion on the Hidden Lines subcategory" -> SET_FAMILY_FORM_SUBCATEGORY
+#   "draw the lines of this detail item family" -> DRAW_FAMILY_DETAIL_LINES
+#   "bring the object styles over from the template" -> TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS
 #   "move these lines to the thin lines style" -> REMAP_LINE_STYLES
 #   "bring the line styles from that model"   -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
 #   "make a dash dot pattern"                 -> CREATE_LINE_PATTERN
@@ -106,3 +147,5 @@ utterances:
   - create a line style called Heron Setout, weight 3, blue
   - change the colour of the demolition line style to red
   - add a new line style with the centre line pattern
+  - make the signature lines blue in this family
+  - change the colour of a subcategory in the family
