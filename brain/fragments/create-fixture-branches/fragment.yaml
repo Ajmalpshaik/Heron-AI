@@ -1,0 +1,126 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-068
+semantic-identity: "draw the branch pipe from each sprinkler or fixture to the main above or below it, joined at the head"
+kind: action
+domain: revit.mep
+capability: CREATE_FIXTURE_BRANCHES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  For each sprinkler or plumbing fixture handed in, draws the branch pipe from
+  its open pipe connector to the nearest main: a straight RISER from the
+  connector to the main's centreline height, and a level ARM across to the
+  main's centreline. The branch is drawn at the connector's own size, on the
+  main's pipe type and piping system, and joined to the head.
+
+  **THE PIPE TWIN OF CONNECT_AIR_TERMINALS, IN TWO STEPS.** Revit taps an air
+  terminal onto a duct in one call; there is no such call for a pipe. So this
+  draws the branch, and FIT_MEP_JOINTS then puts the elbow where the riser
+  meets the arm and the tap or tee where the arm lands on the main - the
+  owner's own order: draw the pipes, then the path is known and the fittings
+  are made at one time. `runs` hands FIT_MEP_JOINTS the branches and the mains
+  they land on.
+
+  **NOTHING IS MOVED.** No head, fixture or main moves; the branch is drawn to
+  where they are. A head too far from any main is listed in `noMainNear`,
+  never pulled across.
+
+  **THE CONNECTOR MUST FACE UP OR DOWN, AND THE MAIN MUST BE THAT WAY.** A
+  pendent sprinkler faces up to a main above it; a floor drain faces down to
+  one below. A connector facing sideways - a basin's - is refused in version
+  1, because a level connector needs a different branch shape and guessing one
+  is drawing somebody else's design.
+
+  **THE ARM LANDS CLEAR OF THE MAIN'S ENDS**, at least 100 mm or two main
+  diameters in, because a tap at an end is no tap. A head whose arm would land
+  past an end is skipped for that main.
+
+  **A HEAD ALREADY CONNECTED IS SKIPPED**, so running this twice does not draw
+  a second branch to it.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
+  entry, and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The sprinklers or plumbing fixtures.
+    - name: elements
+      type: IList<Element>
+    # The mains to branch from - by category, "Pipes". Only pipes are used;
+    # handing them in keeps the choice of system with whoever knows it.
+    - name: pipes
+      type: IList<Element>
+      source: request
+    # The longest branch allowed, riser and arm together, in millimetres. A
+    # head with no main this close is listed, never connected by a long pipe.
+    - name: maxDistanceMm
+      type: double
+      source: request
+  provides:
+    - name: branched
+      # How many heads got a branch drawn AND joined at the head.
+      role: result
+      type: int
+    - name: runs
+      # The new branch pipes and the mains they land on - what FIT_MEP_JOINTS
+      # takes next as its `elements`.
+      role: result
+      type: IList<Element>
+    - name: alreadyConnected
+      # Heads whose pipe connectors were all connected already. The evidence
+      # it looked, never a change it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noMainNear
+      # Heads with no main within reach in the direction they face. The
+      # evidence it looked, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Pipe.Create(Document, ElementId,
+  ElementId, ElementId, XYZ, XYZ)`, `MEPCurve.ReferenceLevel`,
+  `Connector.ConnectTo`, `Connector.Radius` / `Shape` / `Domain` /
+  `CoordinateSystem`, `RBS_PIPE_DIAMETER_PARAM` and
+  `RBS_PIPING_SYSTEM_TYPE_PARAM` are present 2020 through 2027, read with
+  tools/api-surface on 2026-10-14. Lengths in feet internally, millimetres at
+  the edges by 304.8 (D-20); no ElementId is built from a number.
+
+  The connector overload of Pipe.Create was NOT used: RevitAPI.xml says that
+  when it cannot join it still creates the pipe and THROWS, which leaves a
+  pipe nothing here can name. Drawing by points and joining with ConnectTo
+  keeps every pipe made in `runs`.
+
+# ROUTING - cross-referenced in CONNECT_AIR_TERMINALS and FIT_MEP_JOINTS.
+#
+#   "draw the drops from the sprinklers to the branch line" -> here
+#   "pipe these sprinklers to the main"     -> here, then FIT_MEP_JOINTS on
+#                                              `runs` for the elbows and taps
+#   "connect these diffusers to the duct"   -> CONNECT_AIR_TERMINALS - a duct
+#                                              tap Revit makes in one call
+#   "put the fittings on these pipes"       -> FIT_MEP_JOINTS
+#   "is every sprinkler actually piped"     -> CHECK_FIXTURE_CONNECTIVITY
+
+utterances:
+  - draw the drops from the sprinklers to the branch line
+  - pipe these sprinklers to the main above
+  - run branch pipes from these heads to the pipe
+  - draw the branch from each floor drain down to the drain line

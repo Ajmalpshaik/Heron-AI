@@ -126,6 +126,9 @@ compatibility-note: >
 #   "connect the diffusers to the
 #    duct"                          -> CONNECT_AIR_TERMINALS - but NEEDS-CHECKING
 #                                      AJ1 saw it lift terminals; see its card
+#   "pipe these sprinklers to the main" -> CREATE_FIXTURE_BRANCHES first - it
+#                                      draws the risers and arms; this then
+#                                      fits its `runs` (2026-10-14)
 
 utterances:
   - fit all the joints

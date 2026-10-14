@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      two pendent sprinklers at 2700 mm, each 600 mm to one side of a straight
+      DN50 wet main at 3200 mm, the main named as "Pipes", maxDistanceMm 1500
+    expect: >
+      for each head a riser of about 500 mm and an arm of 600 mm, at the head's
+      connector size, on the main's system and type; each JOINED at the head;
+      `runs` holding the four branch pipes and the main. Then FIT_MEP_JOINTS
+      on `runs` puts two elbows and two taps or tees
+
+  - given: a sprinkler directly under the main
+    expect: >
+      a riser only, landing on the main's axis - no arm - and still joined at
+      the head
+
+negative:
+  - given: >
+      the same heads with maxDistanceMm 300
+    expect: >
+      NOTHING DRAWN - both heads in noMainNear, runs empty. THIS IS THE CASE
+      THAT MATTERS: a head is never connected by a pipe longer than allowed
+
+  - given: a head already joined to a branch
+    expect: >
+      skipped into alreadyConnected; no second branch drawn
+
+  - given: a basin whose pipe connector faces sideways
+    expect: >
+      refused by name - version 1 draws risers and arms only - nothing drawn
+
+  - given: a head whose arm would land within 100 mm of the main's end
+    expect: >
+      that main skipped for that head; noMainNear when there is no other
+
+  - given: any run at all
+    expect: >
+      NO FITTING MADE, NOTHING MOVED, NO TRANSACTION OPENED
+
+second_route:
+  - >
+    TRACE_CONNECTIVITY from a head after FIT_MEP_JOINTS - it must reach the
+    main and the rest of the system
+  - >
+    a section through a head: the riser vertical from the connector, the arm
+    level at the main's centreline, the head where it was

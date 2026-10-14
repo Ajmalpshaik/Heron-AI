@@ -1,0 +1,53 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: sprinkler-piping
+name: Pipe the sprinklers to the main
+domain: revit.fire
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Connects each sprinkler head to the branch main above it with rigid pipe - a
+  riser from the head, a level arm to the main's centreline, an elbow where
+  they meet and a tap or tee on the main - in two calls however many heads
+  there are, then proves every head is joined.
+
+# The words the owner says - written 2026-10-14 from the duct-layout skill's
+# sentences, turned to pipe. None was heard on a sprinkler job yet.
+utterances:
+  - connect the sprinklers to the main
+  - pipe the sprinkler heads to the branch line
+  - draw the sprinkler drops and fit them
+  - connect all the heads in this room to the pipe
+
+# CAPABILITIES, never fragment ids. In order: draw the branches, fit the
+# joints on what was drawn, join any end left free, then sweep for loose ends.
+needs:
+  - CREATE_FIXTURE_BRANCHES
+  - FIT_MEP_JOINTS
+  - CONNECT_OPEN_ENDS
+  - SELECT_BY_CONNECTION_STATUS
+
+preconditions:
+  - the heads are placed and the branch main is drawn as ONE straight run at its own height, with each head's arm landing clear of the main's ends
+  - the pipe type's routing preference has the junction the owner wants at a branch - a tap or a tee
+  - every riser, from the head's connector up to the main's centreline, is longer than the pipe type's elbow leg plus some straight pipe
+  - the maximum branch length has been stated for THIS job - it is never assumed
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-10-14 IN A CLOUD SESSION, NOT RUN. It is the pipe twin of
+  duct-layout, and that skill's rules were each learned by getting them wrong
+  in front of a model; they are carried across here as preconditions and none
+  is measured on pipe yet. Revit has no pipe twin of the duct tap call
+  CONNECT_AIR_TERMINALS uses, so CREATE_FIXTURE_BRANCHES draws the riser and the
+  arm and joins them at the head, and FIT_MEP_JOINTS - handed its `runs` -
+  makes the elbow and the tap. FLEXIBLE drops are CREATE_FLEX_PIPE, a different
+  job: rigid here unless the owner says flex. NEEDS-CHECKING Group EC.

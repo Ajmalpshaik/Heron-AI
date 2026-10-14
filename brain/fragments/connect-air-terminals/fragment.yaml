@@ -181,6 +181,10 @@ compatibility-note: >
 #   "the flow is zero everywhere"       -> often this: nothing is tapped in, so
 #                                          Revit has no terminals to draw air
 #                                          through the run
+#   "pipe these sprinklers to the main" -> CREATE_FIXTURE_BRANCHES - there is no
+#                                          pipe twin of this call, so the branch
+#                                          is drawn there and fitted after
+#                                          (2026-10-14)
 
 utterances:
   - connect the diffusers to the duct

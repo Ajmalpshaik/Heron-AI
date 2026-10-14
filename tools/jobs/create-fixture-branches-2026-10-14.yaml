@@ -1,0 +1,61 @@
+# The proof of create-fixture-branches (CREATE_FIXTURE_BRANCHES, FRG-MEP-068),
+# written 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC4. NOT
+# RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/create-fixture-branches-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-fixture-branches-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test", part P3 (docs/needs-checking/group-ec.md),
+# in "FloorPlan: Level 1":
+#   - ONE straight pipe, DN50, system Fire Protection Wet, at Middle Elevation
+#     3200 mm, 6000 mm long, drawn along X. Nothing else that is a pipe.
+#   - TWO pendent sprinklers (Sprinklers category, loaded from the library),
+#     at 2700 mm, each 600 mm to one side of the pipe in plan and at least
+#     1000 mm in from either end of it. Write down each head's id.
+#
+# THE NEGATIVE CHANGES ONLY THE REACH: the same heads and the same main, with
+# maxDistanceMm 300 - shorter than any head's riser plus arm (about 500 + 600).
+# Nothing may be drawn: both heads in noMainNear, runs empty.
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - branched 2, and each finding: riser about 500 mm, arm 600 mm, "joined at
+#     the head"
+#   - runs holds five pipes: two risers, two arms and the main
+#   - the second route (EC4b): run it by hand with the write kept, then
+#     FIT_MEP_JOINTS on the same pipes (toleranceMm 1), then TRACE_CONNECTIVITY
+#     from one head - it must reach the main. And a section through one head:
+#     the head has NOT moved
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P3 - one DN50 wet main at 3200 mm and two pendent sprinklers at 2700 mm, 600 mm off it, in "FloorPlan: Level 1", Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Sprinklers
+    inViewOnly: "FloorPlan: Level 1"
+    pipes: Pipes
+    maxDistanceMm: 1500
+
+  negative-set:
+    categoryName: Sprinklers
+    inViewOnly: "FloorPlan: Level 1"
+    pipes: Pipes
+    maxDistanceMm: 300
+
+jobs:
+  - fragment: create-fixture-branches
+    expect: [branched, runs]
+    note: >
+      Two heads, one main. The negative is the same arrangement with a reach
+      too short for any branch - nothing may be drawn.
