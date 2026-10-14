@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-051
-semantic-identity: "check out these worksets for the current user, or relinquish all mine, without a sync"
+semantic-identity: "check out these worksets for the current user, or relinquish all mine, without sending my edits to central"
 kind: action
 domain: revit.document
 capability: SET_WORKSHARING_OWNERSHIP
@@ -16,8 +16,8 @@ risk: PUBLISH
 purpose: >
   On a workshared model, takes ownership of named user worksets for the
   current user - Revit's Make Editable - or gives back every element and
-  workset the user owns that is unchanged since the last sync - Relinquish All
-  Mine - without synchronising.
+  workset the user owns and has not edited - Relinquish All Mine - without
+  sending any edits to central.
 
   **IT REACHES THE CENTRAL MODEL, SO IT IS PUBLISH.** Taking a workset stops
   everybody else editing it; giving it back lets them. Neither is undone by
@@ -27,9 +27,9 @@ purpose: >
   as it can; one owned by somebody else stays theirs. Each workset asked for is
   read back afterwards - owned by this user, or by whom - never assumed.
 
-  **ONLY WHAT IS UNCHANGED IS RELINQUISHED.** An element edited since the last
-  sync stays owned until it is synchronised - Revit's rule - so the count given
-  back can be smaller than what is owned. SYNC_WITH_CENTRAL is the sync.
+  **ONLY WHAT IS UNCHANGED IS RELINQUISHED.** An element edited and not yet
+  sent to central stays owned - Revit's rule - so the count given back can be
+  smaller than what is owned. SYNC_WITH_CENTRAL is how edits reach central.
 
   **A MODEL THAT IS NOT WORKSHARED IS REFUSED BY NAME.**
 
