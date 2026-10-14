@@ -113,3 +113,7 @@ utterances:
   # before this wording was chosen. Questions, so they belong to this read.
   - which units does the model use for loads
   - are temperatures in celsius or fahrenheit
+  # Declared, not ranked: the two lines above lengthened this card's words,
+  # and "what symbol does air flow show" - claimed in the routing table above
+  # - fell to a three-way tie that SET_AIR_TERMINAL_FLOW, a write, took.
+  - what symbol does air flow show
