@@ -10,11 +10,13 @@ id: FRG-GEO-005
 # a card's identity, capability and domain and nothing else - so on the live
 # backend "copy these walls onto the selected levels" went to
 # SET_WALL_CONSTRAINTS, a write that re-hosts walls, while words and nearness
-# both had this card first. Chosen from twenty-one wordings scored against the
-# re-ranker. The two naming "walls" lifted one more paraphrase each and were not
-# kept: they pulled this card to second place on wall-level questions it does
-# not answer ("which level are these walls on", "list the walls on level 2").
-semantic-identity: "copy these elements by an offset or up onto other levels, a storey at a time, and hand back the copies"
+# both had this card first. Chosen from thirty-five wordings scored against the
+# re-ranker. It keeps "duplicate" because a wording without it took "duplicate
+# the selected fixtures" - version 1's own job - to DUPLICATE_TYPE. Wordings
+# naming "storey" lifted "copy this storey to levels 2 to 10" too, and moved
+# "what is on each storey" onto this card; wordings naming "walls" pulled this
+# card to second place on wall-level questions it does not answer. Neither kept.
+semantic-identity: "duplicate these elements at an offset or copy them up onto other levels, one copy per level, and hand back the copies"
 kind: action
 domain: revit.geometry
 capability: COPY_ELEMENTS
