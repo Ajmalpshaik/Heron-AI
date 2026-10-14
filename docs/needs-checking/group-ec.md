@@ -23,8 +23,10 @@ make only the parts for the rows being run. Everything is on Level 1 and drawn i
 
 | Part | What to model | Used by |
 |---|---|---|
+| **P0** | Nothing - the template as it comes: a Fire Protection Wet piping system type, a flex pipe type, Level 1. Check the two type names against the job file's header | EC2 |
 | **P1** | One **assembly**: three pipes of one run, Create > Assembly, naming category Pipes. Note its member count in Edit Assembly. One straight wall nearby. Nothing else that is an assembly or a wall in that plan | EC1 |
 
 | # | Run | Look for |
 |---|---|---|
 | **EC1** | Part P1: `python tools/batch-prove.py tools/jobs/select-group-members-assembly-2026-10-14.yaml`, then read [`brain/proof-drafts/select-group-members.yaml`](../../brain/proof-drafts/README.md), `python brain/heron_validate.py accept select-group-members --by "Ajmal PS"` and set `heron-status: PROVEN` | `SELECT_GROUP_MEMBERS` version 2 ([row 5b-470](../fragment-issues/section-5b-rows-401-425.md)). Positive: `containerKind` "assembly", the member count equal to Edit Assembly's, and the report naming the assembly type and the Pipes category; negative (the wall): refused by name, `containerKind` empty, no elements. A model group still opens as before - version 1's cases in its `tests/cases.yaml` are unchanged |
+| **EC2** | Part P0: `python tools/batch-prove.py tools/jobs/create-flex-pipe-2026-10-14.yaml`, then read [`brain/proof-drafts/create-flex-pipe.yaml`](../../brain/proof-drafts/README.md), `python brain/heron_validate.py accept create-flex-pipe --by "Ajmal PS"` and set `heron-status: PROVEN` | `CREATE_FLEX_PIPE` (FRG-MEP-066), new - the library made flexible duct and nothing flexible on a piping system. Positive: one flex pipe, `lengthMm` 600, the wet system named, and the *not connected* sentence; negative (a 2400 mm route, the same 1200 mm limit): nothing made, `created` null, `lengthMm` 0, both numbers in the refusal. Second route: the positive kept with `--write` by hand, its Length in Properties reading 600 |

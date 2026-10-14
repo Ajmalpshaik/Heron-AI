@@ -124,6 +124,8 @@ compatibility-note: >
 #   "connect the terminal to the duct" -> CONNECT_AIR_TERMINALS. This one makes
 #                                         the flex and does NOT join it up
 #   "is it actually connected"         -> TRACE_CONNECTIVITY
+#   "make the flex drop to that sprinkler" -> CREATE_FLEX_PIPE - flexible PIPE,
+#                                         on a piping system (2026-10-14)
 
 utterances:
   - run a flexible duct along these points
