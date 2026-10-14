@@ -256,7 +256,10 @@ purpose: >
       the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
       SET_FAMILY_FORM_VISIBILITY where a project must show or style a part on
       its own: the body hidden in a coarse plan, the insulation on its own
-      subcategory. A part only some types have from step 0:
+      subcategory. A subcategory's colour, line weight and pattern, as Object
+      Styles sets them, are CREATE_LINE_STYLE with familyCategory true -
+      updateExisting true once the subcategory exists. A part only some types
+      have from step 0:
       LINK_FAMILY_FORM_PARAMETER, its Visible to that Yes/No parameter. Where a
       plan must show a SYMBOL rather than the body - a valve's bow tie, a fan's
       circle and cross - DRAW_FAMILY_SYMBOLIC_LINES on Ref. Level at the levels
@@ -366,6 +369,8 @@ needs:
   - LINK_FAMILY_PARAMETER
   - SET_FAMILY_FORM_MATERIAL
   - SET_FAMILY_FORM_SUBCATEGORY
+  # Step 12's subcategory colour, weight and pattern (version 2, row 5b-463).
+  - CREATE_LINE_STYLE
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_SYMBOLIC_LINES
   - DRAW_FAMILY_FILLED_REGION
