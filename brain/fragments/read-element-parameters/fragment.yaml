@@ -182,7 +182,8 @@ utterances:
   # Element.LevelId - the only place a wall keeps its level. "Base Constraint"
   # is the wall's own parameter as Properties names it; it holds a level, and
   # that AsValueString gives that level's name is what a run in Revit has
-  # still to show. Not READ_ELEMENT_LEVEL: it reads no wall's Base Offset, so
-  # it puts 0 mm beside every wall's level (the row records it).
+  # still to show. Not READ_ELEMENT_LEVEL: until its version 2 (DRAFT, the
+  # same day) it read no wall's Base Offset and put 0 mm beside every wall's
+  # level, and this card is the PROVEN one that reads a wall's level.
   - which level are these walls on
   - what is the base constraint of these walls

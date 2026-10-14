@@ -2,6 +2,9 @@ positive:
   - given: a duct hosted on Level 1 with a 2800 mm offset
     expect: levelName reads "Level 1" and offsetMm reads about 2800 - MEASURED against the Properties palette, not against what the create call was told
 
+  - given: three walls on Level 1 with Base Offset 0, 300 and -150 mm (version 2, 5b-468)
+    expect: levelName reads "Level 1" for all three and offsetMm reads 0, 300 and -150 - each wall's Base Offset in the Properties palette. Version 1 read 0 for all three
+
   - given: 40 mixed MEP elements across three levels
     expect: every element appears in exactly one of levelName or noLevel, and the level names match a Revit schedule grouped by level
 

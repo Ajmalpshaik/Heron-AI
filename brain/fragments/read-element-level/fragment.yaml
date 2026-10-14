@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "what level are these on, and how far above it"
 kind: action
 domain: revit.reporting
 capability: READ_ELEMENT_LEVEL
-version: 1
+# VERSION 2 (2026-10-14, FRAGMENT-ISSUES 5b-468): a wall's offset is read.
+# Version 1 asked three offset parameters and a wall carries none of them -
+# its offset is WALL_BASE_OFFSET, "Base Offset" - so every wall came back
+# with its level right and 0 mm beside it, whatever its Base Offset was. That
+# parameter is now asked LAST, so nothing version 1 read an offset from reads
+# a different one. DRAFT until version 2 is run in Revit: NEEDS-CHECKING
+# Group EB.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -46,6 +53,10 @@ contract:
       role: accounting
       type: IList<ElementId>
 
+# THIS PROOF IS VERSION 1's AND IT IS STALE. It ran on 28 duct taps and 12
+# sheets and never on a wall, which is how a wall's 0 mm went unseen. The
+# fingerprint below no longer matches the implementation; Group EB is the run
+# that replaces it.
 proof:
   date: '2026-09-07'
   by: Ajmal PS
@@ -75,7 +86,9 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `Element.LevelId`, the
   `RBS_START_LEVEL_PARAM` / `FAMILY_LEVEL_PARAM` / `SCHEDULE_LEVEL_PARAM`
-  built-in parameters and `Level.Name` are unchanged 2020 to 2027. Feet to
+  built-in parameters, the four offset parameters - `WALL_BASE_OFFSET` among
+  them, which SET_WALL_CONSTRAINTS also reads and compiles for every release -
+  and `Level.Name` are unchanged 2020 to 2027. Feet to
   millimetres is arithmetic, not `UnitUtils` (D-20), so 2021's unit API rewrite
   does not reach this code.
 
