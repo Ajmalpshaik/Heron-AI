@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-138
+semantic-identity: "put a detail component or an annotation symbol on this view at these points"
+kind: action
+domain: revit.annotation
+capability: PLACE_DETAIL_COMPONENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a detail component - a detail item family - or an annotation symbol
+  - a generic annotation such as a north arrow or a fire-rating symbol - on
+  one view, once at each point given, turned if an angle is given.
+
+  **THESE FAMILIES BELONG TO A VIEW, NOT TO A LEVEL.** PLACE_FAMILY_INSTANCES
+  places model families on a level and cannot place one of these at all; a
+  detail item or a symbol exists only in the view it was drawn in. So the view
+  is asked for, and a family that is NOT view-based is refused by name and
+  pointed at PLACE_FAMILY_INSTANCES.
+
+  **A 3D VIEW OR A TEMPLATE IS REFUSED.** Revit draws neither kind in a 3D
+  view, and a view template holds no elements.
+
+  **The points are on the view's own plane, in millimetres.** On a plan that is
+  X and Y; a drafting view is the same.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
+  entry, and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    # The detail item or generic annotation type - "Family: Type".
+    - name: symbol
+      type: FamilySymbol
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    # Turned about the view's direction, anticlockwise, in degrees. 0 - not turned.
+    - name: rotationDegrees
+      type: double
+      source: request
+  provides:
+    - name: placed
+      role: result
+      type: IList<Element>
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Create.NewFamilyInstance(XYZ,
+  FamilySymbol, View)`, `Family.FamilyPlacementType`, `FamilySymbol.IsActive`
+  / `Activate` and `ElementTransformUtils.RotateElement` are present 2020
+  through 2027, read with tools/api-surface on 2026-10-14. PLACE_FLOW_ARROWS
+  already places view-based annotation through the same call.
+
+# ROUTING - the same rows are in PLACE_FAMILY_INSTANCES and PLACE_FLOW_ARROWS.
+#
+#   "put the north arrow on this plan"      -> here
+#   "add a detail component here"           -> here
+#   "place a diffuser"                      -> PLACE_FAMILY_INSTANCES - a model
+#                                              family, on a level
+#   "show which way the air is going"       -> PLACE_FLOW_ARROWS, which works out
+#                                              where the arrows go
+#   "put a text note here"                  -> CREATE_TEXT_NOTE
+#   "hatch this area"                       -> CREATE_FILLED_REGION
+
+utterances:
+  - put the north arrow on this plan
+  - add a detail component at these points
+  - place this detail item in the drafting view
+  - put the fire rating symbol on this view

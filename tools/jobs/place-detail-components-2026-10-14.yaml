@@ -1,0 +1,50 @@
+# The proof of place-detail-components (PLACE_DETAIL_COMPONENTS, FRG-VIEW-138),
+# written 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC6. NOT
+# RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/place-detail-components-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-detail-components-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test", part P5 (docs/needs-checking/group-ec.md):
+#   - load ONE generic annotation family from the library's Annotations folder
+#     - a north arrow - and write its "Family: Type" name below, in `symbol`
+#   - part P3's sprinkler family is loaded (any MODEL family will do for the
+#     negative) - write its "Family: Type" name in the negative's `symbol`
+#
+# THE NEGATIVE CHANGES ONLY THE FAMILY TYPE: a model family, same plan, same
+# point. It must be refused as not view-based, and nothing placed.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - placed 1, and the north arrow visible in "FloorPlan: Level 1" only
+#   - the second route (EC6b): run it by hand with the write kept; select the
+#     arrow - Properties shows Owner View "Level 1"; it is not in Level 2
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P5 - a north arrow generic annotation loaded, and part P3''s sprinkler, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: place-detail-components
+    expect: placed
+    set:
+      view: "FloorPlan: Level 1"
+      symbol: "M_North Arrow 1: M_North Arrow 1"
+      points: "1000,1000,0"
+      rotationDegrees: 0
+    negative-set:
+      view: "FloorPlan: Level 1"
+      symbol: "M_Sprinkler - Pendent - Hosted: 15 mm Pendent"
+      points: "1000,1000,0"
+      rotationDegrees: 0
+    note: >
+      THE TWO "Family: Type" NAMES ARE GUESSES at the library's names - read
+      them in the Project Browser and change them before running. A name that
+      matches nothing is an arrangement fault, not a defect.

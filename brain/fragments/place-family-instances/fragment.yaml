@@ -189,6 +189,9 @@ compatibility-note: >
 #                                   (docs/47): it works out WHERE, previews,
 #                                   and then calls this to place them. Added
 #                                   2026-10-06; this card's own sentences stand
+#   "add a detail component here" -> PLACE_DETAIL_COMPONENTS. A detail item or
+#                                   an annotation symbol belongs to ONE VIEW and
+#                                   this card cannot place one (2026-10-14)
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

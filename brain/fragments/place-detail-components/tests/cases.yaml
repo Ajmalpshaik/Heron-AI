@@ -1,0 +1,25 @@
+positive:
+  - given: >
+      "FloorPlan: Level 1", a generic annotation type loaded (a north arrow),
+      one point, rotationDegrees 0
+    expect: one symbol placed in that plan at the point, and only in that plan
+
+  - given: a detail item type, a drafting view, three points, 45 degrees
+    expect: three placed, each turned 45 degrees
+
+negative:
+  - given: a MODEL family type - a sprinkler - with the same plan and point
+    expect: >
+      NOTHING PLACED - refused by name as not view-based and pointed at
+      PLACE_FAMILY_INSTANCES. THIS IS THE CASE THAT MATTERS: a model family
+      is placed on a level, never into one view
+
+  - given: a 3D view
+    expect: refused by name, nothing placed
+
+  - given: any run at all
+    expect: NO TRANSACTION OPENED. Undo is the caller's
+
+second_route: >
+  Revit itself: the symbol is visible in the view it was placed in and in no
+  other view; Properties shows its Owner View as that view
