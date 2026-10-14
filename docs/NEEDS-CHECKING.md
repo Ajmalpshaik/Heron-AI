@@ -667,6 +667,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dx.md`](needs-checking/group-dx.md)
 
+## Group DY - a family's own subcategory given a colour, a weight and a pattern: `CREATE_LINE_STYLE` version 2, `familyCategory` (2026-10-14)
+
+**Its own file:** [`needs-checking/group-dy.md`](needs-checking/group-dy.md)
+
 ## Group DZ - Object Styles read back: `LIST_CATEGORIES` version 2, each category's and subcategory's line colour, weights and pattern (2026-10-14)
 
 **Its own file:** [`needs-checking/group-dz.md`](needs-checking/group-dz.md)
