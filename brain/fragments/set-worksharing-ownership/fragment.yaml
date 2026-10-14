@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-051
+semantic-identity: "take ownership of these worksets for me, or relinquish everything I own, without a sync"
+kind: action
+domain: revit.document
+capability: SET_WORKSHARING_OWNERSHIP
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  On a workshared model, takes ownership of named user worksets for the
+  current user - Revit's Make Editable - or gives back every element and
+  workset the user owns that is unchanged since the last sync - Relinquish All
+  Mine - without synchronising.
+
+  **IT REACHES THE CENTRAL MODEL, SO IT IS PUBLISH.** Taking a workset stops
+  everybody else editing it; giving it back lets them. Neither is undone by
+  Undo, and Revit refuses both inside a transaction - this opens none.
+
+  **WHAT WAS ASKED IS NOT WHAT WAS GOT.** Revit takes as many of the worksets
+  as it can; one owned by somebody else stays theirs. Each workset asked for is
+  read back afterwards - owned by this user, or by whom - never assumed.
+
+  **ONLY WHAT IS UNCHANGED IS RELINQUISHED.** An element edited since the last
+  sync stays owned until it is synchronised - Revit's rule - so the count given
+  back can be smaller than what is owned. SYNC_WITH_CENTRAL is the sync.
+
+  **A MODEL THAT IS NOT WORKSHARED IS REFUSED BY NAME.**
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "take" - make the named worksets editable; "give" - relinquish all mine.
+    - name: action
+      type: string
+      source: request
+    # For "take": user workset names, comma separated. Ignored for "give".
+    - name: worksetNames
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Worksets now owned by this user ("take"), or worksets and elements
+      # given back ("give") - read back from Revit.
+      role: result
+      type: int
+    - name: report
+      # One line per workset asked for: owned by me, or still owned by whom.
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `WorksharingUtils.CheckoutWorksets`
+  (the ISet and TransactWithCentralOptions overload), `RelinquishOwnership`,
+  `RelinquishOptions`, `RelinquishedItems`, `FilteredWorksetCollector.OfKind`
+  and `Workset.Owner` are present 2020 through 2027, read with tools/api-surface
+  on 2026-10-14. RevitAPI.xml (2022) says both calls refuse a document with an
+  open transaction.
+
+# ROUTING - the same rows are in SYNC_WITH_CENTRAL and READ_ELEMENT_OWNERSHIP.
+#
+#   "make my workset editable"             -> here, take
+#   "relinquish everything I own"          -> here, give - no sync
+#   "sync to central"                      -> SYNC_WITH_CENTRAL, which can
+#                                             relinquish as it syncs
+#   "who owns this"                        -> READ_ELEMENT_OWNERSHIP - a read
+#   "which worksets are there"             -> LIST_WORKSETS - a read
+#
+# MEASURED 2026-10-14, scratch stores, lexical: "which worksets are editable"
+# reaches LIST_WORKSETS (PROVEN), as on main. "is the mechanical workset
+# editable" reaches THIS card - on main it reached SET_VIEW_WORKSET_VISIBILITY,
+# another write. LIST_WORKSETS names each workset's owner and answers it;
+# declaring the sentence there is a change to a PROVEN card and the owner's
+# call (NEEDS-CHECKING EC12).
+
+utterances:
+  - make my workset editable
+  - take the mechanical workset for me
+  - relinquish everything I own
+  - give back all my worksets without syncing

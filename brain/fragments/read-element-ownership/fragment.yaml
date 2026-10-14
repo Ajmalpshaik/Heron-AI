@@ -109,6 +109,8 @@ compatibility-note: >
 #                                     and which are open, rather than one
 #                                     element's owner
 #   "put these on the MEP workset" -> SET_ELEMENT_WORKSET
+#   "make my workset editable"     -> SET_WORKSHARING_OWNERSHIP - the PUBLISH
+#                                     change; this only reads (2026-10-14)
 
 # "can I edit these" WAS CLAIMED HERE AND BELONGS TO REPORT_ELEMENT_OWNERSHIP,
 # whose semantic identity is "whether these elements CAN BE EDITED". Two
