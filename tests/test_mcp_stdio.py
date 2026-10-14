@@ -36,8 +36,8 @@ WITH ONE DIFFERENCE FROM A HOST, ON PURPOSE (row 5b-461): the child's
 LOCALAPPDATA is a scratch folder, so the Revits it finds are none. A host's
 server finds the real ones, and so did this one until 2026-10-14 - 121 opens
 of a live Revit's pipe in a run, measured the day before, and still a pass.
-tests/live_revit_guard.py is installed in the child as well, refuses any
-named-pipe open, and fails the run if the real discovery folder was read.
+tests/support/live_revit_guard.py is installed in the child as well, refuses
+any named-pipe open, and fails the run if the real discovery folder was read.
 """
 
 import json
@@ -53,7 +53,7 @@ sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp", "server"))
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp", "client"))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "support"))
 from heron_tools import TOOLS                                  # noqa: E402
 import heron_bridge_client as bridge                           # noqa: E402
 import live_revit_guard as GUARD                               # noqa: E402

@@ -81,7 +81,7 @@ WHAT IT PROVES, when an SDK is installed
      the label revit_read gave the answer it hands back.
  12. NOTHING HERE REACHES THE REVIT RUNNING ON THIS PC (row 5b-461). The
      client's discovery folder is an empty one for the whole run, and
-     tests/live_revit_guard.py refuses any named-pipe open and fails the run
+     tests/support/live_revit_guard.py refuses any named-pipe open and fails the run
      if the real folder was so much as listed. Until then this file opened a
      live Revit's pipe 1,842 times a run and passed.
 
@@ -1186,7 +1186,7 @@ def main():
     # The guard is built from the folder the client names BEFORE anything
     # moves it, so it watches the real one, and it refuses a pipe open rather
     # than only counting it.
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "support"))
     import live_revit_guard as GUARD
     import heron_bridge_client as bridge
     guard = GUARD.Guard.around(bridge).install()

@@ -18,7 +18,8 @@ row 5b-461.
     guard.touched()                                # [] when nothing was
 
 Not a suite: check-gaps runs tests/test_*.py, and this is what two of them
-import.
+import. In a folder of its own because every .py directly in tests/ is a
+suite - brain/heron_naming.py observes that and test_naming.py holds it.
 
 WHY IT EXISTS. test_mcp_serves.py and test_mcp_stdio.py ask the bridge client
 which Revits are connected - heron_resolve's version wall, revit_health,
@@ -67,7 +68,7 @@ import sys
 CHILD_SPEC = "HERON_TEST_LIVE_REVIT_GUARD"
 
 SITECUSTOMIZE = (
-    "# Written by tests/live_revit_guard.py for one test run. Not part of Heron.\n"
+    "# Written by tests/support/live_revit_guard.py for one test run. Not part of Heron.\n"
     "import importlib.util, json, os\n"
     "_spec = json.loads(os.environ[%r])\n"
     "_load = importlib.util.spec_from_file_location('live_revit_guard', _spec['module'])\n"
@@ -165,7 +166,7 @@ class Guard(object):
             if event == "open":
                 listed = " - a Revit on this PC listens on it" if _pipe_key(path) in self.pipes else ""
                 self._note("pipe %s opened%s" % (path, listed))
-                raise PermissionError("refused by tests/live_revit_guard.py - a test may "
+                raise PermissionError("refused by tests/support/live_revit_guard.py - a test may "
                                       "not open a named pipe: %s" % path)
             return
         here = _same(path)
@@ -177,7 +178,7 @@ class Guard(object):
                 self._note("read %s, in the real discovery folder" % path)
             else:
                 self._note("removed %s, from the real discovery folder" % path)
-                raise PermissionError("refused by tests/live_revit_guard.py - a test may "
+                raise PermissionError("refused by tests/support/live_revit_guard.py - a test may "
                                       "not remove a Revit's discovery file: %s" % path)
 
     def _note(self, what):
