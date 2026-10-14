@@ -10,9 +10,11 @@ positive:
       Construction, Phase Filter Show Complete; and the default 3D view
     expect: >
       `read` 2. The floor plan's row reads exactly those five values, each
-      under the name its Properties palette uses, and says nothing is held by
-      a template. The 3D view's row carries its own values. Each value is
-      the Properties palette's, not a remembered one
+      under the name its Properties palette uses, then its View Range - top,
+      cut plane, bottom and view depth as the View Range dialog shows them,
+      each a level and an offset in millimetres - and says nothing is held by
+      a template. The 3D view's row carries its own values and no view range.
+      Each value is the Properties palette's, not a remembered one
 
   - given: the same floor plan after a view template that includes Detail Level is applied to it
     expect: >
@@ -32,8 +34,12 @@ negative:
   - given: the positive floor plan with Detail Level changed by hand to Coarse
     expect: the Detail Level reads Coarse and nothing else in the row changes
 
+  - given: the same plan with its cut plane changed by hand to 1500 mm
+    expect: the View Range reads "Cut plane" at 1500 mm and nothing else changes
+
 second_route:
   - >
     The Properties palette of each view named: the Graphics group (Detail
     Level, Visual Style, Discipline) and the Phasing group (Phase Filter,
-    Phase), and greyed-out rows for what a template holds
+    Phase), and greyed-out rows for what a template holds; and for a plan,
+    Properties > Extents > View Range > Edit

@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-140
-semantic-identity: "how a view is shown - its detail level, visual style, discipline, phase and phase filter"
+semantic-identity: "how a view is shown - its detail level, visual style, discipline, phase, phase filter and view range"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # FRAGMENT-ISSUES row 5b-477: nothing read a view's detail level, visual
@@ -17,6 +17,11 @@ semantic-identity: "how a view is shown - its detail level, visual style, discip
 # "what phase is this view showing" reached reads about filters and
 # visibility that do not say. This is the read half of SET_VIEW_PROPERTIES
 # and SET_VIEW_PHASE. The scale is READ_VIEW_SCALE's and is not repeated.
+# The second sweep the same night (row 5b-478) found "what is the view range
+# of this plan" reaching SET_VIEW_RANGE and "what is the cut plane height"
+# LABEL_FAMILY_DIMENSION, both writes - nothing read a plan's view range - so
+# the view range was added here before the card was ever run, as the read
+# half of SET_VIEW_RANGE.
 kind: action
 domain: revit.views
 capability: REPORT_VIEW_SETTINGS
@@ -48,8 +53,9 @@ risk: READ
 purpose: >
   Answers how each view named is shown: its detail level, its visual style,
   its discipline, the phase it shows and its phase filter, in the words the
-  Properties palette uses, and whether each is held by the view template the
-  view follows. It only reads.
+  Properties palette uses, and for a plan its view range - top, cut plane,
+  bottom and view depth, each a level and an offset in millimetres - and
+  whether each is held by the view template the view follows. It only reads.
 
 contract:
   needs:
@@ -66,7 +72,9 @@ contract:
       # One row per view that has any of the five: "'1 - Mech' (FloorPlan)
       # Detail Level = Medium (held by its view template), Visual Style =
       # Hidden Line, Discipline = Mechanical, Phase = New Construction, Phase
-      # Filter = Show All - follows view template 'Mechanical Plan'".
+      # Filter = Show All, View Range = Top: Level 2 + 0 mm, Cut plane: Level 1
+      # + 1200 mm, Bottom: Level 1 + 0 mm, View depth: Level 1 + 0 mm - follows
+      # view template 'Mechanical Plan'".
       role: result
       type: string
     - name: read
@@ -98,14 +106,22 @@ compatibility-note: >
   `View.GetNonControlledTemplateParameterIds` are present with the same
   signature on all eight. `Element.get_Parameter(BuiltInParameter)`,
   `Parameter.AsValueString`, `AsString`, `Parameter.Id` and `Definition.Name`
-  are the long-standing members READ_VIEW_SCALE uses the same way.
+  are the long-standing members READ_VIEW_SCALE uses the same way. The view
+  range reads `ViewPlan.GetViewRange`, `PlanViewRange.GetLevelId` and
+  `GetOffset`, the markers `PlanViewRange.Current`, `LevelAbove`,
+  `LevelBelow` and `Unlimited`, the `PlanViewPlane` values TopClipPlane,
+  CutPlane, BottomClipPlane and ViewDepthPlane, and BuiltInParameter
+  PLAN_VIEW_RANGE - all present unchanged 2020 to 2027, read the same way on
+  2026-10-14.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "what is the detail level of this view"  -> here
 #   "what visual style is this view"         -> here
 #   "which phase filter does this view use"  -> here
+#   "what is the view range of this plan"    -> here
 #   "what is the scale of this view"         -> READ_VIEW_SCALE
+#   "set the cut plane to 1500"              -> SET_VIEW_RANGE
 #   "set these views to fine"                -> SET_VIEW_PROPERTIES. A change,
 #                                               and this reads (D-86)
 #   "set the phase of this view to existing" -> SET_VIEW_PHASE
@@ -119,3 +135,7 @@ utterances:
   - which phase filter does this view use
   - which phase does this view show
   - what discipline is this view
+  - what is the view range of this plan
+  # Declared, not ranked: in the second sweep (row 5b-478) this reached
+  # LABEL_FAMILY_DIMENSION, a write, with the view range already built here.
+  - what is the cut plane height

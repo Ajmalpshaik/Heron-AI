@@ -14,6 +14,14 @@
 // under LabelUtils' label for it, so nothing is typed here and the reply reads
 // like the Properties palette in whatever language Revit runs in.
 //
+// A PLAN'S VIEW RANGE IS READ TOO - top, cut plane, bottom and view depth,
+// each as a level and an offset in millimetres, the way the View Range dialog
+// shows them: "Cut plane: Level 1 + 1200 mm". The read half of SET_VIEW_RANGE;
+// nothing else read it. A plane on Revit's own markers is named in the
+// dialog's words - Associated Level, Level Above, Level Below, Unlimited.
+// Whether a template holds it is read off PLAN_VIEW_RANGE in the template's
+// include list, the same way as the five.
+//
 // A SETTING THIS KIND OF VIEW DOES NOT HAVE IS NAMED, NOT GUESSED. A sheet has
 // no detail level; a schedule has a phase and nothing else. A parameter the
 // view does not carry is listed as not on this kind of view.
@@ -126,9 +134,65 @@ var viewSettings = "";
             parts.Add(text);
         }
 
+        // The view range, for a plan only.
+        var plan = view as ViewPlan;
+        if (plan != null)
+        {
+            try
+            {
+                var range = plan.GetViewRange();
+                Func<ElementId, string> levelName = id =>
+                {
+                    if (id == PlanViewRange.Current) return "Associated Level";
+                    if (id == PlanViewRange.LevelAbove) return "Level Above";
+                    if (id == PlanViewRange.LevelBelow) return "Level Below";
+                    if (id == PlanViewRange.Unlimited) return "Unlimited";
+                    var level = doc.GetElement(id);
+                    return level == null ? "(no level)" : level.Name;
+                };
+                var planes = new[]
+                {
+                    new KeyValuePair<string, PlanViewPlane>("Top", PlanViewPlane.TopClipPlane),
+                    new KeyValuePair<string, PlanViewPlane>("Cut plane", PlanViewPlane.CutPlane),
+                    new KeyValuePair<string, PlanViewPlane>("Bottom", PlanViewPlane.BottomClipPlane),
+                    new KeyValuePair<string, PlanViewPlane>("View depth", PlanViewPlane.ViewDepthPlane),
+                };
+                var rangeParts = new List<string>();
+                foreach (var plane in planes)
+                {
+                    var id = range.GetLevelId(plane.Value);
+                    var where = levelName(id);
+                    if (id != PlanViewRange.Unlimited)
+                    {
+                        var mm = Math.Round(range.GetOffset(plane.Value) * 304.8);
+                        where += (mm < 0 ? " - " : " + ")
+                            + Math.Abs(mm).ToString(System.Globalization.CultureInfo.InvariantCulture) + " mm";
+                    }
+                    rangeParts.Add(plane.Key + ": " + where);
+                }
+                var rangeText = "View Range = " + string.Join(", ", rangeParts.ToArray());
+                if (template != null && canControl != null && free != null)
+                {
+                    Parameter onTemplate = null;
+                    try { onTemplate = template.get_Parameter(BuiltInParameter.PLAN_VIEW_RANGE); }
+                    catch (Exception) { }
+                    if (onTemplate != null && canControl.Contains(onTemplate.Id) && !free.Contains(onTemplate.Id))
+                    {
+                        rangeText += " (held by its view template)";
+                        held++;
+                    }
+                }
+                parts.Add(rangeText);
+            }
+            catch (Exception ex)
+            {
+                findings.Add(label + ": its view range could not be read (" + ex.Message.TrimEnd('.') + ").");
+            }
+        }
+
         if (parts.Count == 0)
         {
-            findings.Add(label + ": none of the five settings is on this kind of view.");
+            findings.Add(label + ": none of these settings is on this kind of view.");
             continue;
         }
 

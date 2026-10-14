@@ -204,3 +204,8 @@ utterances:
   - what views are on this sheet
   - which drawings are on this sheet
   - what schedules are on this sheet
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-478: in a second sweep of 60
+  # plain questions on the trained model, this went to PLACE_VIEWS_ON_SHEET,
+  # a write. This read answers it by the sheet's number, so it is declared
+  # here and answered by identity (rows 116 and 146).
+  - which views are on sheet M-101
