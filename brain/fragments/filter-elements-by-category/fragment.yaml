@@ -156,6 +156,12 @@ compatibility-note: >
 #   "list the rooms"                     -> here, category Rooms (5b-426)
 #   "show me all the rooms"              -> here, category Rooms (5b-426)
 #   "show me all the walls"              -> here, category Walls (5b-426)
+#   "list the walls on level 2"          -> here, category Walls, that level
+#                                           (5b-468)
+#   "how many walls are on each level"   -> here, category Walls, then a level
+#                                           read and a count (5b-468)
+#   "which level are these walls on"     -> READ_ELEMENT_PARAMETERS, Level -
+#                                           walls already chosen (5b-468)
 #   "find all the VCDs"                 -> SELECT_BY_FAMILY, when the FAMILY
 #                                           name is what is known and the
 #                                           category is not
@@ -222,3 +228,11 @@ utterances:
   # these points" to CREATE_WALL on lexical, so it is not. The row names
   # the other "show me all the ..." sentences that reach a change.
   - show me all the walls
+  # ADDED 2026-10-14, FRAGMENT-ISSUES 5b-468. Both reached
+  # SET_WALL_CONSTRAINTS, a write that re-hosts walls - the first on every
+  # backend, the second on the trained one. Category Walls: levelId Level 2
+  # for the first. For the second levelId none, then READ_ELEMENT_PARAMETERS
+  # with parameterName Level and GROUP_AND_COUNT give one line per level -
+  # the size-breakdown chain, grouped by level instead of by size.
+  - list the walls on level 2
+  - how many walls are on each level

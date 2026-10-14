@@ -241,6 +241,16 @@ DECLARED = [
     # so no READ named them until LIST_VIEWS_ON_SHEET was written (2026-10-09).
     ("what views are on this sheet", "LIST_VIEWS_ON_SHEET",
      "146: answered PLACE_VIEWS_ON_SHEET on both"),
+    # 5b-468: questions about walls and their levels, each answered by
+    # SET_WALL_CONSTRAINTS - a write that re-hosts walls - on main 2e6fe29.
+    ("which level are these walls on", "READ_ELEMENT_PARAMETERS",
+     "5b-468: answered SET_WALL_CONSTRAINTS on every backend"),
+    ("what is the base constraint of these walls", "READ_ELEMENT_PARAMETERS",
+     "5b-468: answered SET_WALL_CONSTRAINTS on every backend"),
+    ("list the walls on level 2", "FILTER_ELEMENTS_BY_CATEGORY",
+     "5b-468: answered SET_WALL_CONSTRAINTS on every backend"),
+    ("how many walls are on each level", "FILTER_ELEMENTS_BY_CATEGORY",
+     "5b-468: answered SET_WALL_CONSTRAINTS on the model"),
 ]
 
 OWN = [
