@@ -671,6 +671,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dy.md`](needs-checking/group-dy.md)
 
+## Group DZ - Object Styles read back: `LIST_CATEGORIES` version 2, each category's and subcategory's line colour, weights and pattern (2026-10-14)
+
+**Its own file:** [`needs-checking/group-dz.md`](needs-checking/group-dz.md)
+
+## Group EA - the saved View/Sheet Sets read back: `LIST_SHEET_SETS`, every set's sheets and views, and the empty ones (2026-10-14)
+
+**Its own file:** [`needs-checking/group-ea.md`](needs-checking/group-ea.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

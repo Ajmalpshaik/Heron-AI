@@ -5,6 +5,27 @@ positive:
       among them - checked against Revit's own Visibility/Graphics dialog, which
       lists the same set
 
+  - given: >
+      version 2, everySubcategory left out, in a scratch Generic Annotation
+      family whose own category has a subcategory "Signature" given colour
+      0,0,255, projection weight 2 and the Solid pattern in Manage > Object
+      Styles beforehand
+    expect: >
+      objectStyles opens with "This family's own category, Generic Annotations,
+      and its 1 subcategory(ies) are the first 2 row(s)", then the column line,
+      then "Generic Annotations | ..." and "Generic Annotations > Signature |
+      0,0,255 | 2 | - | Solid" - the cut column "-" because an annotation
+      category is not cut. names, bindable and the first finding read exactly as
+      version 1's would on the same family
+
+  - given: >
+      version 2, everySubcategory true, in a scratch project
+    expect: >
+      every category's own row AND every subcategory's - Walls > Common Edges,
+      Doors > Frame/Mullion among them - each with a number in the cut column
+      where Object Styles shows a cut weight for it, and nothing in the first
+      line about subcategories left out
+
 negative:
   - given: >
       a document opened on a non-English Revit - French or Arabic
@@ -19,8 +40,30 @@ negative:
       too and the answer will be a much shorter list - an empty one would mean
       the iteration is wrong
 
+  - given: >
+      version 2, everySubcategory left out, in a scratch Generic Model family
+      with NO subcategory made under its own category
+    expect: >
+      objectStyles' first line says the family's own category "has no
+      subcategories, so its own row stands alone", the first row is "Generic
+      Models | ..." and the next row is ANOTHER category's own row, never a
+      "Generic Models > ..." row - a subcategory row here would mean the family
+      branch is reading the wrong category
+
+  - given: >
+      version 2, everySubcategory left out, in a scratch project
+    expect: >
+      one row per category and NO row with " > " in it, and the first line
+      naming how many subcategories were not listed - the switch left off must
+      read as off, not as "this project has no subcategories"
+
 second_route:
   - >
       Revit's own Visibility/Graphics Overrides dialog on the same model, and the
       two lists compared - specifically the count, which is the easiest thing to
       get quietly wrong by skipping sub-categories
+  - >
+      version 2: Manage > Object Styles on the same family or project, the
+      Signature row (or Walls > Common Edges) read by eye - Line Weight
+      Projection and Cut, Line Color, Line Pattern - against the row
+      objectStyles printed for it
