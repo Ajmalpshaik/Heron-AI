@@ -168,7 +168,24 @@ purpose: >
      or the rings of a fan guard, is one form instead of dozens. Loops that
      touch or cross fail with only "code 1" (row 5b-296): a ring is an
      outer loop with an inner one, and a smaller ring may sit inside that
-     hole. A long profile - a thread, blades, rings, a row of bars - is
+     hole. A SLOT WITH ROUND ENDS is one loop of corners and `arc MX,MY X,Y`
+     sides - "xc-5,zc+15; arc xc,zc+20 xc+5,zc+15; xc+5,zc-15; arc xc,zc-20
+     xc-5,zc-15" - STARTED at the end of a straight side: the tool closes
+     every loop itself with a STRAIGHT line back to its first corner, so
+     that straight side is the one it draws, and the first corner is never
+     written again at the end. A HEX NUT is `polygon CX,CY R 6`, R the
+     radius to a CORNER, not half across the flats - 13 mm across flats is
+     R 7.5. The first corner lies along the plane's first coordinate, so on
+     Center (Left/Right) the flats come out top and bottom - R 6.35 read
+     back at Z 279.5 to 290.5, 11 mm across the flats. A small part -
+     a port, a screw, a bolt - carries `detailLevels=medium, fine` or
+     `detailLevels=fine` on its own row: set and read back in the same
+     call, with no SET_FAMILY_FORM_VISIBILITY step after it. Measured
+     2026-10-14 on Revit 2020, a fixed 60 inch monitor on a wall bracket:
+     43 forms in 6 calls, every extent read back by REPORT_FAMILY_FORMS as
+     planned; six such slots and eight circles through two straps were one
+     row, and its volume read back at the hand calculation's 225980.5 cubic
+     millimetres. A long profile - a thread, blades, rings, a row of bars - is
      written out by a small script, into that file or the call, never
      typed by hand and never saved beside Heron. A smooth shape none of
      these makes in one piece - a coil, an organic body - is
@@ -273,7 +290,9 @@ purpose: >
       it stays editable text; never letters built of forms in step 7. A
       fixed family's materials are set outright:
       CREATE_MATERIAL for each colour - the shading colour only, nothing a
-      render uses - then SET_FAMILY_FORM_MATERIAL once per material, naming
+      render uses, with a transparencies value for glass or a vial
+      (2026-10-14, Revit 2020) - then SET_FAMILY_FORM_MATERIAL once per
+      material, naming
       every form id that takes it. Made before step 7, the materials can be
       named on CREATE_FAMILY_FORMS's rows instead.
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
@@ -432,5 +451,10 @@ note: >
   feet and inches, and the owner noticed only afterwards; REPORT_PROJECT_UNITS
   showed it in one call and SET_PROJECT_UNITS put it right. Step 0 checks the
   units from REPORT_FAMILY_TEMPLATE version 3's units line, and the family
-  methods that share step 0 point at it. Every step is DRAFT until it
+  methods that share step 0 point at it. Widened on 2026-10-14 after a
+  fixed 60 inch monitor and wall bracket on Revit 2020: step 7 names the
+  round-ended slot, the hex nut's polygon and a row's own detailLevels, and
+  step 12 CREATE_MATERIAL's transparency - each as that build wrote it and
+  read it back, the closing straight line and the corner radius also as
+  CREATE_FAMILY_FORMS's code makes them. Every step is DRAFT until it
   has been run on a real family with a negative case (D-30).
