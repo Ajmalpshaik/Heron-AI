@@ -151,6 +151,11 @@ CHANGES = [
     # table, never declared - on the model.
     ("line the viewports up", "ALIGN_VIEWPORTS_ACROSS_SHEETS",
      "146: a later draft of LIST_VIEWS_ON_SHEET answered it"),
+    # 5b-467, 2026-10-14: words and nearness both had COPY_ELEMENTS first, and
+    # the re-ranker, reading an identity that said only "at an offset", put the
+    # wall re-host first. So it went wrong only where a re-ranker is installed.
+    ("copy these walls onto the selected levels", "COPY_ELEMENTS",
+     "5b-467: asked live 2026-10-14, answered SET_WALL_CONSTRAINTS"),
 ]
 
 QUESTIONS = [
