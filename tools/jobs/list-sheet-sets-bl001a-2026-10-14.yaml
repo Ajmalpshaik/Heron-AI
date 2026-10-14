@@ -1,0 +1,67 @@
+# The first proof of list-sheet-sets (LIST_SHEET_SETS, FRG-SHT-032), written
+# 2026-10-14 for FRAGMENT-ISSUES row 5b-465 - NEEDS-CHECKING Group EA, row EA1.
+# NOT RUN - written and read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/list-sheet-sets-bl001a-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-sheet-sets-bl001a-2026-10-14.yaml
+#
+# A READ. No transaction is opened and nothing is changed, so there is no
+# `write:` below - which is why the positive may be the owner's own job model,
+# where the question was asked, rather than a scratch copy of it.
+#
+# THE TWO DOCUMENTS, BOTH OPEN IN ONE REVIT 2020:
+#
+#   "4355-BHVD-3D-21S10-BL001A"  the positive. A scratch read on 2026-10-14
+#                                counted SIX saved sets: one of 8 sheets and
+#                                no view, four of views only (1, 1, 6 and 2
+#                                views) and one EMPTY. The names are the
+#                                client's and stay in the run record
+#   "Heron Sheet Sets Empty"     the negative - MAKE IT FIRST: a new project
+#                                from Revit 2020's default metric template,
+#                                saved under this name, with no set saved.
+#                                Check File - Print - Settings: its View/Sheet
+#                                Set list must offer nothing but the
+#                                in-session entry. If it offers a saved set,
+#                                delete it there, or use another project that
+#                                has none and change `negative-in` below
+#
+# WHY THE NEGATIVE IS A DIFFERENT DOCUMENT. This reads the whole document and
+# takes no value, so the only thing a negative leg can vary is the document.
+# A read that answered from the wrong one - the active document, the last one
+# asked - would bring BL001A's six into the empty project's answer.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: six sets on the positive, none on the negative
+#   - NEG NOT EMPTY: a set was read from the empty project. Look at its
+#     Print dialog again before calling it a defect - a set saved there by
+#     somebody is a set, and the arrangement is wrong, not the fragment
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - sheetSets on BL001A names six sets in name order, with 8 / 0, 0 / 1,
+#     0 / 1, 0 / 6, 0 / 2 sheets / views, and one EMPTY - the counts the
+#     scratch read gave. Open File - Print - Settings and select each set:
+#     its ticked sheets and views must be the ones named, set for set
+#   - every sheet in the 8-sheet set reads "number - name", and the numbers
+#     are ones LIST_SHEETS lists on the same model (the second route)
+#   - every view reads "name (view type)" - a 3D view says 3D View, a plan
+#     Floor Plan
+#   - emptySets names exactly the one empty set, and findings says "1 EMPTY"
+#   - on the negative, findings says no set is saved and that the in-session
+#     set is not one
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: 4355-BHVD-3D-21S10-BL001A (Ajmal PS's job model, read only) and a new empty project "Heron Sheet Sets Empty", both open in Revit 2020
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: list-sheet-sets
+    in: "4355-BHVD-3D-21S10-BL001A"
+    negative-in: "Heron Sheet Sets Empty"
+    expect: [setCount, sheetSets]
+    note: >
+      THE PROOF. Six saved sets on the job model, every member named and the
+      empty one flagged, against a project with none.
