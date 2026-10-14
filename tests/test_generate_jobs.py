@@ -554,10 +554,14 @@ def test_the_second_set_is_named_by_category():
     check("MODEL" in hint, "and that it means the whole model, not a view")
     check("selected" in hint, "and that the selection is refused here")
 
+    # A ROLL-CALL, KEPT ON PURPOSE: a fragment that starts asking for a second
+    # set joins it by name, and the check above has already asked that it
+    # brings a first set too. create-fixture-branches joined 2026-10-14 - its
+    # `pipes` are the mains, named by category; its heads are the selection.
     freed = unblocked_by("IList<Element>")
     check(freed == ["check-room-mep-completeness", "connect-air-terminals",
-                    "propose-mep-openings"],
-          "it frees the three second-set fragments: %s" % (freed or "nothing"))
+                    "create-fixture-branches", "propose-mep-openings"],
+          "it frees the second-set fragments: %s" % (freed or "nothing"))
 
 
 def test_a_line_is_two_points_and_curves_are_pairs_of_them():
