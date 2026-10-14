@@ -1,0 +1,70 @@
+# The proof of read-element-level version 2 (READ_ELEMENT_LEVEL, FRG-ELE-011),
+# written 2026-10-14 for FRAGMENT-ISSUES row 5b-468 - NEEDS-CHECKING Group EB,
+# row EB1. NOT RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/read-element-level-wall-offset-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/read-element-level-wall-offset-2026-10-14.yaml
+#
+# WHAT VERSION 2 CHANGED. A wall's offset is WALL_BASE_OFFSET ("Base Offset"),
+# which version 1 never asked, so every wall came back with its level right and
+# 0 mm beside it. Version 1's proof ran on duct taps and sheets, never a wall.
+#
+# A READ. No transaction is opened and nothing is changed, so there is no
+# `write:` below.
+#
+# THE MODEL - MAKE IT FIRST, in Revit 2020 (any release 2020 to 2027 will do):
+#
+#   "Heron Wall Offset Test"   a new project from the default metric template,
+#                              saved under this name. In "FloorPlan: Level 1"
+#                              draw three walls on Level 1 and set their Base
+#                              Offset in Properties to 0, 300 and -150 mm -
+#                              write down which wall has which. Draw two grids
+#                              in the same plan. Nothing else.
+#
+# WHY GRIDS FOR THE NEGATIVE. A grid belongs to no level: LevelId is invalid
+# and it carries none of the level parameters, so all of them must land in
+# `noLevel` and none in `levelName` - not the nearest level. A different
+# selection, not a cleared one: a cleared one leaves `elements` unbound and
+# the executor refuses, which proves nothing.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: levels read on the walls, none on the grids. PASS does not check
+#     the OFFSETS - the next block does, and the offsets are the change
+#   - NEG NOT EMPTY: a grid was given a level. That is the guess this
+#     fragment exists not to make - a defect, not an arrangement fault
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - levelName says "Level 1" for all three walls
+#   - offsetMm says 0, 300 and -150 for the walls you wrote down, each equal
+#     to that wall's Base Offset in the Properties palette (the second route).
+#     Version 1 said 0 for all three; a 0 for the 300 or the -150 wall is a
+#     FAIL whatever the verdict says
+#   - on the negative, noLevel names both grids and offsetMm is empty
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: 'a new project "Heron Wall Offset Test" from the default metric template - three walls on Level 1 with Base Offset 0, 300 and -150 mm and two grids, in "FloorPlan: Level 1", Revit 2020'
+
+defaults:
+  in: "Heron Wall Offset Test"
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Walls
+    inViewOnly: "FloorPlan: Level 1"
+
+  negative-set:
+    categoryName: Grids
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: read-element-level
+    expect: [levelName, offsetMm]
+    note: >
+      THE PROOF OF VERSION 2. Three walls with three Base Offsets against
+      two grids. Read each wall's offsetMm against its Base Offset in the
+      Properties palette - the verdict cannot.

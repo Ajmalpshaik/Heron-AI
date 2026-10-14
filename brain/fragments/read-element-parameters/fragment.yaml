@@ -106,6 +106,10 @@ compatibility-note: >
 #                                           this one second: this reads a
 #                                           parameter you can already name
 #   "what is the Mark on these"           -> here
+#   "which level are these walls on"      -> here, Level (5b-468)
+#   "what is the base constraint of these walls" -> here, Base Constraint
+#   "change the walls' base level"        -> SET_WALL_CONSTRAINTS, which
+#                                           re-hosts them without moving them
 #   "show me the global parameters in this model" -> REPORT_GLOBAL_PARAMETERS -
 #                                           a global belongs to the MODEL, not
 #                                           to any element, so nothing here can
@@ -171,3 +175,15 @@ utterances:
   # real window is what a run in Revit has still to show.
   - what is the insulation thickness
   - what is the sill height of these windows
+  # ADDED 2026-10-14, FRAGMENT-ISSUES 5b-468 - the judgement above, ONE VALUE
+  # OFF AN ELEMENT, for two questions about walls measured reaching
+  # SET_WALL_CONSTRAINTS, a write that re-hosts walls, on every backend.
+  # "Which level" is parameterName Level, the special case that reads
+  # Element.LevelId - the only place a wall keeps its level. "Base Constraint"
+  # is the wall's own parameter as Properties names it; it holds a level, and
+  # that AsValueString gives that level's name is what a run in Revit has
+  # still to show. Not READ_ELEMENT_LEVEL: until its version 2 (DRAFT, the
+  # same day) it read no wall's Base Offset and put 0 mm beside every wall's
+  # level, and this card is the PROVEN one that reads a wall's level.
+  - which level are these walls on
+  - what is the base constraint of these walls

@@ -34,11 +34,17 @@ var levelParameters = new BuiltInParameter[]
     BuiltInParameter.SCHEDULE_LEVEL_PARAM,
 };
 
+// WALL_BASE_OFFSET IS LAST ON PURPOSE (version 2, FRAGMENT-ISSUES 5b-468). A
+// wall carries none of the first three - its offset is "Base Offset" - so
+// version 1 put 0 mm beside every wall's level whatever that offset was. Last,
+// so it is only asked when nothing above answered: no element version 1 read
+// an offset from can read a different one now.
 var offsetParameters = new BuiltInParameter[]
 {
     BuiltInParameter.RBS_OFFSET_PARAM,
     BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM,
     BuiltInParameter.INSTANCE_ELEVATION_PARAM,
+    BuiltInParameter.WALL_BASE_OFFSET,
 };
 
 foreach (var element in elements)

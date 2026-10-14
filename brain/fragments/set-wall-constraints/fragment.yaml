@@ -134,6 +134,12 @@ compatibility-note: >
 #   "build a wall here"                  -> CREATE_WALL
 #   "the corners are cleaning up wrong"  -> DISALLOW_JOIN
 #   "what is attached to this element"   -> REPORT_ELEMENT_DEPENDENCIES
+#   "which level are these walls on"     -> READ_ELEMENT_PARAMETERS, Level. A
+#                                           question, and this one changes it
+#   "what is the base constraint of these walls" -> READ_ELEMENT_PARAMETERS
+#   "list the walls on level 2"          -> FILTER_ELEMENTS_BY_CATEGORY, Walls
+#   "how many walls are on each level"   -> FILTER_ELEMENTS_BY_CATEGORY, then
+#                                           a level read and a count (5b-468)
 
 
 # ROUTING (2026-10-12, the gap fill)
