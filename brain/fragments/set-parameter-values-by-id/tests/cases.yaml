@@ -21,3 +21,32 @@ negative:
 
   - given: a row whose UniqueId names an element that was deleted
     expect: written 0, stale "it is no longer in the model", nothing written
+
+# Version 2, BY KEY (5b-459): a first row key=<parameter>|in=<categories>,
+# then <key value>|<parameter>=<value> per element. A row is refused on its own.
+positive_by_key:
+  - given: >
+      key=Number|in=Rooms;1|Name=Lift Lobby;2|Name=Staircase 1;...;13|Name=Lift 10,
+      on a model where rooms 1 to 13 each hold a different Number
+    expect: >
+      written 13 in ONE call; resultJson format 2, applied true, refused []; each
+      readBack entry's value equals its asked name; one entry in Revit's undo list
+  - given: the same with Level=Level 1 on the first row, on a model whose rooms are all on Level 1
+    expect: the same - the narrowing keeps every room that holds that level
+
+negative_by_key:
+  - given: >
+      key=Name|in=Rooms;Room|Comments=x, where several rooms are still named
+      "Room"
+    expect: >
+      written 0; applied false; refused names "Room" and says how many rooms
+      hold it, with their ids; no room's Comments changed (read back)
+  - given: >
+      key=Number|in=Rooms;5|Name=A;99|Name=B, where one room is 5 and none is 99
+    expect: written 1 (room 5 reads A); refused names 99 - no element holds it
+  - given: key=Number|in=Room;1|Name=A (a category name that does not exist)
+    expect: written 0; findings says the model has no category called 'Room'
+  - given: id rows exactly as version 1 (no key row)
+    expect: >
+      the version 1 answer unchanged - resultJson format 1, stale as before,
+      refused empty
