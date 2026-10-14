@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-066
-semantic-identity: "draw flex pipe from the branch line down to the sprinkler head, along the points I give"
+semantic-identity: "draw a flexible pipe from the sprinkler branch line down to the head, along the points I give"
 kind: action
 domain: revit.mep
 capability: CREATE_FLEX_PIPE
@@ -99,10 +99,19 @@ compatibility-note: >
 #                                               on an air system
 #   "draw pipe between these points"         -> CREATE_PIPE, which makes RIGID pipe
 #   "is the sprinkler connected"             -> TRACE_CONNECTIVITY
+#
+# MEASURED 2026-10-14 on the trained backend (model2vec 0.10.0, potion-base-8M,
+# private stores): "run flex to that diffuser" - CREATE_FLEX_DUCT's routing
+# claim, never declared there - reaches THIS card by 0.0323 to 0.0319,
+# nearness #1 against #5; on main, with no flex pipe card, it reached the
+# duct. Rewording this card did not move it. It fails safe: `systemType` is a
+# PipingSystemType, so a duct system named here is refused by the binder.
+# The fix is declaring the sentence on CREATE_FLEX_DUCT, PROVEN - the owner's
+# call (NEEDS-CHECKING EC2).
 
 utterances:
-  - run a flexible pipe along these points
-  - make the flex drop to that sprinkler
+  - draw a flexible pipe along these points
+  - draw a flex hose down to that sprinkler head
   - create flex pipe to the sprinkler on this route
   - draw flex pipe from the branch to the head
   - make the flex drop to the head

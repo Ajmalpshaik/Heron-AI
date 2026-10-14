@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-051
-semantic-identity: "take ownership of these worksets for me, or relinquish everything I own, without a sync"
+semantic-identity: "check out these worksets for the current user, or relinquish all mine, without a sync"
 kind: action
 domain: revit.document
 capability: SET_WORKSHARING_OWNERSHIP
@@ -91,6 +91,6 @@ compatibility-note: >
 
 utterances:
   - make my workset editable
-  - take the mechanical workset for me
+  - check out the mechanical workset
   - relinquish everything I own
   - give back all my worksets without syncing

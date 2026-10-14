@@ -77,7 +77,7 @@ compatibility-note: >
 # ROUTING - the same rows are in REPORT_PANEL_CIRCUITS.
 #
 #   "make the panel schedules"              -> here
-#   "create a panel schedule for DB-1"      -> here
+#   "make the panel schedules for these panels" -> here
 #   "what is on panel DB-1"                 -> REPORT_PANEL_CIRCUITS - a READ of
 #                                              the circuits, no view made
 #   "show me the panel schedule as a list"  -> REPORT_PANEL_CIRCUITS

@@ -98,7 +98,8 @@ compatibility-note: >
 # FIT_MEP_JOINTS.
 #
 #   "jump this pipe over the beam"          -> here
-#   "drop the duct under the beam here"     -> here, with a negative offset
+#   "drop the duct under the beam between these two points" -> here, with a
+#                                              negative offset
 #   "break this duct in two"                -> SPLIT_MEP_RUN - a break, nothing moved
 #   "align the tops"                        -> ALIGN_MEP_ELEVATION - the WHOLE run
 #                                              moves, no legs
