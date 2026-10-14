@@ -114,6 +114,9 @@ compatibility-note: >
 #   "fill this level with spaces"              -> PLACE_ROOMS - every enclosed
 #                                                 area, no names from a link
 #   "put a space here"                         -> PLACE_ROOM_AT_POINT
+#   "make the architecture link room bounding" -> SET_LINK_ROOM_BOUNDING - the
+#                                                 setting this card names when a
+#                                                 linked room has no space (2026-10-14)
 
 utterances:
   - create spaces from the linked rooms

@@ -1,0 +1,82 @@
+heron-agent: HERON-REVIT-LNK-015
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-050
+semantic-identity: "make the linked model room bounding, so rooms and spaces see its walls"
+kind: action
+domain: revit.document
+capability: SET_LINK_ROOM_BOUNDING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Switches Room Bounding on or off for one Revit link or every link - the
+  link type's own setting that lets this model's rooms and MEP spaces stop at
+  the linked model's walls, floors and ceilings.
+
+  **IT IS THE REASON SPACES WILL NOT PLACE IN AN MEP MODEL.** An MEP model
+  draws no walls of its own; its spaces are bounded by the architect's link,
+  and only when that link is Room Bounding. PLACE_ROOMS and
+  SYNC_SPACES_WITH_LINKED_ROOMS both find unbounded spaces when it is off, and
+  until this fragment nothing could switch it.
+
+  **IT IS A TYPE SETTING**, so every placed copy of that link changes with it,
+  and each link type is read back after the change, never assumed.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One link by its name or the start of it; EMPTY is every Revit link.
+    - name: linkName
+      type: string
+      source: request
+    # true - Room Bounding on; false - off.
+    - name: roomBounding
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyThat
+      # Link types already set that way. The evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RevitLinkType` and
+  `WALL_ATTR_ROOM_BOUNDING` are present 2020 through 2027, read with
+  tools/api-surface on 2026-10-14. THAT THE LINK TYPE CARRIES ITS ROOM BOUNDING
+  ON THAT PARAMETER IS NOT YET SEEN ON A MODEL: the type parameter named
+  "Room Bounding" is asked for by name when the built-in one is absent, and a
+  type carrying neither is refused by name. The read-back is the check.
+
+# ROUTING - the same rows are in SYNC_SPACES_WITH_LINKED_ROOMS and PLACE_ROOMS.
+#
+#   "make the architecture link room bounding" -> here
+#   "the spaces will not place"                -> here first, if the link is not
+#                                                 Room Bounding - then PLACE_ROOMS
+#   "make the links relative"                  -> SET_LINK_PATH_TYPE
+#   "make spaces from the linked rooms"        -> SYNC_SPACES_WITH_LINKED_ROOMS
+
+utterances:
+  - make the architecture link room bounding
+  - turn on room bounding for the linked model
+  - the spaces will not place because the link is not room bounding
+  - switch room bounding off for this link

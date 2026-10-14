@@ -1,0 +1,44 @@
+# The proof of set-link-room-bounding (SET_LINK_ROOM_BOUNDING, FRG-DOC-050),
+# written 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC10. NOT
+# RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/set-link-room-bounding-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-link-room-bounding-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test", part P8's link A (docs/needs-checking/
+# group-ec.md), LOADED, with Room Bounding OFF in its Type Properties. Put
+# the start of link A's name in `linkName` below - "LinkA" is a guess.
+#
+# THE NEGATIVE ASKS FOR WHAT IS ALREADY THERE: Room Bounding OFF on a link
+# that is OFF. Nothing may be written - changed 0, alreadyThat 1.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - the finding "Room Bounding is now ON, read back" on the positive
+#   - the second route (EC10b): run it by hand with the write kept; Edit Type
+#     on link A shows Room Bounding ticked. AND THE CLAIM THE CARD COULD NOT
+#     CHECK: if the finding says "no Room Bounding setting could be found",
+#     the parameter guess is wrong - record it, that is the defect
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P8 - link A loaded, its Room Bounding OFF, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: set-link-room-bounding
+    expect: changed
+    set:
+      linkName: "LinkA"
+      roomBounding: true
+    negative-set:
+      linkName: "LinkA"
+      roomBounding: false
+    note: >
+      ON asked of an OFF link, against OFF asked of the same OFF link.

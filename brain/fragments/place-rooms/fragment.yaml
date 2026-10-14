@@ -149,6 +149,9 @@ compatibility-note: >
 #   "which rooms are missing services"   -> CHECK_ROOM_MEP_COMPLETENESS. It
 #                                           reached HERE on both backends
 #                                           until 2026-10-09 (5b-426)
+#   "turn on room bounding for the linked model" -> SET_LINK_ROOM_BOUNDING, first,
+#                                           when spaces will not bound in an MEP
+#                                           model (2026-10-14)
 
 utterances:
   - place the rooms

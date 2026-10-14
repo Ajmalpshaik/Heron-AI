@@ -1,0 +1,24 @@
+positive:
+  - given: >
+      one Revit link whose type has Room Bounding OFF, linkName its name,
+      roomBounding true
+    expect: >
+      changed 1, the link type read back ON; Type Properties shows Room
+      Bounding ticked
+
+negative:
+  - given: >
+      the same link, already ON, with roomBounding true
+    expect: >
+      changed 0, alreadyThat 1, nothing written. THIS IS THE CASE THAT
+      MATTERS: a link already set is never written again
+
+  - given: a linkName that starts no link's name
+    expect: refused, nothing changed
+
+  - given: any run at all
+    expect: NO TRANSACTION OPENED. Undo is the caller's
+
+second_route: >
+  Revit itself: select the link, Edit Type - Room Bounding ticked after; and a
+  space placed inside a room of the link now bounds (PLACE_ROOMS)
