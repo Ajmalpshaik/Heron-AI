@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-067
-semantic-identity: "create a new panel schedule view for each electrical panel that has none yet"
+semantic-identity: "create a new panel schedule view for each distribution board that has none yet"
 kind: action
 domain: revit.mep
 capability: CREATE_PANEL_SCHEDULES
@@ -14,25 +14,24 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Creates the panel schedule VIEW for each electrical panel handed in - the
+  Creates the panel schedule VIEW for each distribution board handed in - the
   view Revit makes with Create Panel Schedules, which goes on a sheet. Until
-  this fragment the library could READ a panel's circuits
-  (REPORT_PANEL_CIRCUITS) and make nothing a drawing could carry.
+  this fragment the library could READ the circuits (REPORT_PANEL_CIRCUITS)
+  and make nothing a drawing could carry.
 
-  **A PANEL HAS ONE SCHEDULE, SO ONE ALREADY THERE IS REPORTED, NOT
-  DUPLICATED.** Every existing panel schedule view is read first and matched
-  to its panel; a panel that has one is named with that view's name and
-  skipped.
+  **ONE SCHEDULE PER BOARD, SO ONE ALREADY THERE IS REPORTED, NOT
+  DUPLICATED.** Every existing schedule view is read first and matched to its
+  board; a board that has one is reported with that view and skipped.
 
-  **THE TEMPLATE IS NAMED, OR REVIT CHOOSES.** With `templateName` empty, Revit
-  uses the default template for the panel's configuration - branch panel,
-  switchboard or data panel. A name that matches no panel schedule template is
-  refused before anything is made; a template of the wrong configuration for a
-  panel is Revit's refusal, caught and reported for that panel alone.
+  **THE TEMPLATE IS GIVEN, OR REVIT CHOOSES.** With `templateName` empty,
+  Revit uses the default template for the board's configuration - branch,
+  switchboard or data. A template that does not exist is refused before
+  anything is made; a template of the wrong configuration is Revit's refusal,
+  caught and reported for that board alone.
 
-  **ONLY ELECTRICAL EQUIPMENT IS A PANEL.** Anything else handed in is named
-  and skipped, so a selection with a light fitting in it still schedules the
-  panels.
+  **ONLY ELECTRICAL EQUIPMENT IS SCHEDULED.** Anything else handed in is
+  listed and skipped, so a selection with a light fitting in it still
+  schedules the boards.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
   entry, and the caller owns it.
