@@ -20,6 +20,15 @@ positive:
       line gives its loads, circuits and panel names, checked against the
       panel schedule opened in the link
 
+  # Version 3, added 2026-10-14. NOT RUN.
+  - given: >
+      kind "none", in a model with two lights and a receptacle on circuits
+      and one light and one receptacle on none
+    expect: >
+      the uncircuited light and receptacle selected, "Lighting Fixtures 1,
+      Electrical Fixtures 1" in the finding, and nothing on a circuit among
+      them; the panel counted apart and not selected
+
 negative:
   - given: kind "Data" in a model whose only circuit is power
     expect: >
@@ -71,3 +80,9 @@ second_route: >
   loads under its panel, which is the same structure this fragment reports as
   elements plus panels. Building a circuit to test against is a fair way to get
   a fixture where a model has none
+
+  # Version 3: with every device circuited, "none" must select nothing.
+  - given: kind "none", in a model where every light and receptacle is on a circuit
+    expect: >
+      ZERO selected, and the finding saying 0 of N elements with an
+      electrical connector are on no circuit - never the circuited ones

@@ -27,26 +27,28 @@ ranking runs. **A sweep of paraphrases is the only thing that measures it.**
 | `REPORT_PROJECT_INFORMATION`, new | *"what is the project number"*, *"who is the project client"* - nothing read Project Information |
 | `REPORT_VIEW_SETTINGS`, new | Detail level, visual style, discipline, phase, phase filter - nothing read them |
 | `REPORT_VIEW_SETTINGS` also reads a plan's view range | *"what is the view range of this plan"* reached `SET_VIEW_RANGE` - nothing read it |
+| `SELECT_BY_ELECTRICAL_CIRCUIT` version 3 | `circuitKind` "none": what no circuit carries - *"which lights are not on a circuit"* reached a write |
 | `LIST_GRIDS` version 4 | The spacing from each grid to the next running the same way - nothing measured it square to the grids |
 | Six questions declared on the read that answers each | Fan coil position, pipe ends, equipment level, duct elevation, section scale, unconnected ducts |
 | `REPORT_LOCATION`'s 809-word purpose moved to comments | Its site paragraph began at word-piece 512, past what the trained model reads |
 | Question utterances on `REPORT_PROJECT_UNITS`, `REPORT_AREA_VOLUME_COMPUTATIONS` | Rows 5b-356 and 5b-476: two of the suite's failures |
 | Two #534 cards reworded | *"when was this model last synced"* reached the Publish ownership tool |
 
-**26 to 15** on the first sweep and **22 to 18** on a second one of 60 more (row 5b-478, which also
+**26 to 15** on the first sweep and **22 to 17** on a second one of 60 more (row 5b-478, which also
 caught `CREATE_PANEL_SCHEDULES`, new in #534, taking *"what is the panel name of this panel"* - fixed); `tests/test_routing_phrases.py` 5 failures to 3; check-routing's
 claimed-and-not-reached 52 to 50 on the trained model and 39 to 35 on spelling. No question that
 reached a read moved to a write.
 
 **What it cost, said in the rows.** Three commands now reach a read: *"set cooling load to Btu/h"* and,
 on the trained model, *"move the site to these coordinates"* (row 5b-356), and *"set the detail level
-to coarse on these views"* (row 5b-477). The safe direction - and each is repaired by one declared sentence on a PROVEN
-setter, which is the owner's call.
+to coarse on these views"* (row 5b-477). The safe direction - and each is repaired by one declared
+sentence on a PROVEN setter, which is the owner's call. A fourth, *"put these lights on a circuit"*,
+was declared on its DRAFT setter here (row 5b-478).
 
 **How to measure a routing change on the trained model, learned the hard way:**
 
 - **Write the test sentences before reading the cards**, and keep them out of every card while they
-  measure. A sentence declared on a card is answered by identity and measures nothing - the twelve
+  measure. A sentence declared on a card is answered by identity and measures nothing - the thirteen
   sweep sentences declared here were declared as repairs, after measuring, and measure nothing now.
 - **Measure against the commit before, not against nothing**, on fresh private stores, both backends.
   Many contests are exact ties - words #1 + nearness #2 against words #2 + nearness #1 - and the PROVEN
@@ -57,6 +59,6 @@ setter, which is the owner's call.
 - **A purpose long enough to pass 512 word-pieces is partly unread** by the trained model. History
   belongs in comments.
 
-**Waiting on the owner:** EC13, EC14 and EC15 on a test copy; the tie rule (5b-329); the setters'
+**Waiting on the owner:** EC13 to EC16 on a test copy; the tie rule (5b-329); the setters'
 command sentences (5b-356, 5b-477); declaring the sweep questions a PROVEN read answers - 13 in row
 5b-477, 11 in row 5b-478.

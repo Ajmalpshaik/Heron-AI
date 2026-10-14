@@ -1,0 +1,39 @@
+# The proof of select-by-electrical-circuit version 3 (SELECT_BY_ELECTRICAL_CIRCUIT,
+# FRG-MEP-032) - circuitKind "none", the devices and fixtures no circuit
+# carries - written 2026-10-14, NEEDS-CHECKING Group EC, row EC16. NOT RUN -
+# written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/select-by-electrical-circuit-none-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/select-by-electrical-circuit-none-2026-10-14.yaml
+#
+# READ: it selects and changes nothing, so no transaction and no write switch.
+#
+# THE ARRANGEMENT - part 13 (docs/needs-checking/group-ec.md):
+#   - "Heron Gap Pass Test": a panelboard, one lighting circuit with two
+#     lights, one power circuit with one receptacle - and one MORE light and
+#     one MORE receptacle on NO circuit
+#   - "Heron Gap Pass Circuited": a copy with those two put on circuits too,
+#     saved and left OPEN - the negative: nothing is uncircuited
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - exactly the two uncircuited elements, counted by category
+#   - the panel counted apart, not selected
+#   - the second route: the panel schedule lists only the circuited ones
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to the command.
+
+model: '"Heron Gap Pass Test" part 13 and "Heron Gap Pass Circuited" (docs/needs-checking/group-ec.md), Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+
+jobs:
+  - fragment: select-by-electrical-circuit
+    expect: elements
+    set:
+      circuitKind: "none"
+    negative-in: "Heron Gap Pass Circuited"
+    note: >
+      The positive selects the one light and one receptacle on no circuit;
+      the negative, where every device is circuited, selects nothing.
