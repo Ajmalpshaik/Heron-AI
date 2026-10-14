@@ -220,9 +220,14 @@ Two things about it are easy to get wrong, and both have already been got wrong 
   construction rather than by a special case: the lease is checked once when a request arrives, and a
   rollback happens *inside* a request already admitted.
 
-It narrows rather than eliminates interruption: the pipe is displaced at connect time, before the lease
-can speak, so the first chat still loses one in-flight reply. See docs/25 for why closing that properly
-was not attempted.
+**A displaced pipe is never closed in the middle of an answer** (since 2026-10-13,
+[FRAGMENT-ISSUES 5b-458](../../../docs/FRAGMENT-ISSUES.md)). The pipe is still displaced at connect
+time, before the lease can speak - but a connection whose request Revit is running keeps its pipe until
+that answer is written, then closes; only one waiting for its next request is dropped at once. Before
+that, ANY new connection - another chat, a tool merely pinging - cut off the answer then owed, and a
+write that had run was reported *"the answer was lost"*. If you touch `BridgeServer`, keep the two
+moves on one compare-and-swap (`Connection`): a connection must never be both displaced and answered
+from a disposed pipe. docs/25 §3 has the measurements.
 
 **Every request authenticates first — before the operation is even read.** A caller with the wrong token
 must not learn which operations exist. The token is minted on connect and destroyed on disconnect, so
