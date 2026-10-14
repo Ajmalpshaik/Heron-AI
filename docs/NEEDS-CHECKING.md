@@ -659,6 +659,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-dv.md`](needs-checking/group-dv.md)
 
+## Group DW - a different value on each element, matched by any parameter value: `SET_PARAMETER_VALUES_BY_ID` version 2 takes a room's Number, a sheet's Sheet Number or a Mark as the key (2026-10-13)
+
+**Its own file:** [`needs-checking/group-dw.md`](needs-checking/group-dw.md)
+
 ## Group DX - copying a storey onto other levels: `COPY_ELEMENTS` version 2, Paste Aligned to Selected Levels with a turn per level (2026-10-14)
 
 **Its own file:** [`needs-checking/group-dx.md`](needs-checking/group-dx.md)
