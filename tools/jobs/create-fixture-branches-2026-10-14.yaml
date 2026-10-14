@@ -7,12 +7,12 @@
 #
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
-# THE MODEL - "Heron Gap Pass Test", part P3 (docs/needs-checking/group-ec.md),
+# THE MODEL - "Heron Gap Pass Test", part 3 (docs/needs-checking/group-ec.md),
 # in "FloorPlan: Level 1":
 #   - ONE straight pipe, DN50, system Fire Protection Wet, at Middle Elevation
 #     3200 mm, 6000 mm long, drawn along X. NO OTHER PIPE WITHIN 2000 mm of it:
-#     `pipes: Pipes` names every pipe in the MODEL, so part P1's assembly and
-#     part P6's pipe are candidates too - kept far away, they are never nearest.
+#     `pipes: Pipes` names every pipe in the MODEL, so part 1's assembly and
+#     part 6's pipe are candidates too - kept far away, they are never nearest.
 #   - TWO pendent sprinklers (Sprinklers category, loaded from the library),
 #     at 2700 mm, each 600 mm to one side of the pipe in plan and at least
 #     1000 mm in from either end of it. Write down each head's id.
@@ -33,7 +33,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P3 - one DN50 wet main at 3200 mm and two pendent sprinklers at 2700 mm, 600 mm off it, in "FloorPlan: Level 1", Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 3 - one DN50 wet main at 3200 mm and two pendent sprinklers at 2700 mm, 600 mm off it, in "FloorPlan: Level 1", Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"

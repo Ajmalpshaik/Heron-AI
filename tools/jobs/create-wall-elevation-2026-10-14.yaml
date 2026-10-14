@@ -8,9 +8,9 @@
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
 # THE MODEL - "Heron Gap Pass Test" (docs/needs-checking/group-ec.md):
-#   - part P1's wall: the ONLY wall in "FloorPlan: Level 1", straight, drawn at
+#   - part 1's wall: the ONLY wall in "FloorPlan: Level 1", straight, drawn at
 #     30 degrees to the project axes - at 30 degrees so the marker has to turn
-#   - part P6's pipe: the ONLY pipe in "FloorPlan: Level 2" - the negative
+#   - part 6's pipe: the ONLY pipe in "FloorPlan: Level 2" - the negative
 #
 # `wall` IS ONE ELEMENT, "selected": the setup selects every element of the
 # category in the plan, so each plan must hold exactly one.
@@ -27,7 +27,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) parts P1 and P6 - one wall at 30 degrees alone in Level 1''s plan, one pipe alone in Level 2''s, Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) parts 1 and part 6 - one wall at 30 degrees alone in Level 1''s plan, one pipe alone in Level 2''s, Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"

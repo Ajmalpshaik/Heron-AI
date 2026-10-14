@@ -7,10 +7,10 @@
 #
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
-# THE MODEL - "Heron Gap Pass Test", part P5 (docs/needs-checking/group-ec.md):
+# THE MODEL - "Heron Gap Pass Test", part 5 (docs/needs-checking/group-ec.md):
 #   - load ONE generic annotation family from the library's Annotations folder
 #     - a north arrow - and write its "Family: Type" name below, in `symbol`
-#   - part P3's sprinkler family is loaded (any MODEL family will do for the
+#   - part 3's sprinkler family is loaded (any MODEL family will do for the
 #     negative) - write its "Family: Type" name in the negative's `symbol`
 #
 # THE NEGATIVE CHANGES ONLY THE FAMILY TYPE: a model family, same plan, same
@@ -24,7 +24,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P5 - a north arrow generic annotation loaded, and part P3''s sprinkler, Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 5 - a north arrow generic annotation loaded, and part 3''s sprinkler, Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"

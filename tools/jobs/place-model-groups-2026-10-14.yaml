@@ -7,10 +7,10 @@
 #
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
-# THE MODEL - "Heron Gap Pass Test", part P7 (docs/needs-checking/group-ec.md):
+# THE MODEL - "Heron Gap Pass Test", part 7 (docs/needs-checking/group-ec.md):
 #   - a MODEL group named "Heron Test Group", made from three short walls on
 #     LEVEL 2 (select them, Create Group, name it), placed once - on Level 2
-#     because part P1 needs its wall to be the only wall in Level 1's plan
+#     because part 1 needs its wall to be the only wall in Level 1's plan
 #   - nothing at 10000,0 or 13000,0 on Level 2 - the two copies go there
 #
 # THE NEGATIVE CHANGES ONLY THE NAME: "Heron No Such Group" matches no model
@@ -26,7 +26,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P7 - a model group "Heron Test Group" of three walls on Level 2, Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 7 - a model group "Heron Test Group" of three walls on Level 2, Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"

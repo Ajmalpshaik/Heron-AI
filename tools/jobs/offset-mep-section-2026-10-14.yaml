@@ -7,7 +7,7 @@
 #
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
-# THE MODEL - "Heron Gap Pass Test", part P6 (docs/needs-checking/group-ec.md),
+# THE MODEL - "Heron Gap Pass Test", part 6 (docs/needs-checking/group-ec.md),
 # in "FloorPlan: Level 2":
 #   - ONE straight pipe, DN100, Domestic Cold Water, 6000 mm long, drawn from
 #     WEST TO EAST (left to right) so its start is the west end, at a Middle
@@ -30,7 +30,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P6 - one 6000 mm DN100 pipe at 3000 mm in "FloorPlan: Level 2", Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 6 - one 6000 mm DN100 pipe at 3000 mm in "FloorPlan: Level 2", Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"

@@ -7,7 +7,7 @@
 #
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
-# THE MODEL - "Heron Gap Pass Test", part P8's link A (docs/needs-checking/
+# THE MODEL - "Heron Gap Pass Test", part 8's link A (docs/needs-checking/
 # group-ec.md), LOADED, with Room Bounding OFF in its Type Properties. Put
 # the start of link A's name in `linkName` below - "LinkA" is a guess.
 #
@@ -24,7 +24,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P8 - link A loaded, its Room Bounding OFF, Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 8 - link A loaded, its Room Bounding OFF, Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"

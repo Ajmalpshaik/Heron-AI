@@ -7,7 +7,7 @@
 #
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
-# THE MODEL - "Heron Gap Pass Test", part P4 (docs/needs-checking/group-ec.md):
+# THE MODEL - "Heron Gap Pass Test", part 4 (docs/needs-checking/group-ec.md):
 #   - Level 1 HAS a Gross Building area plan - make one by hand (View > Area
 #     Plan > Gross Building, Level 1) if the template did not
 #   - Level 2 has NO Gross Building area plan - delete it if the template made one
@@ -25,7 +25,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P4 - a Gross Building area plan on Level 1 and none on Level 2, Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 4 - a Gross Building area plan on Level 1 and none on Level 2, Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"

@@ -7,7 +7,7 @@
 #
 # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
 #
-# THE MODEL - "Heron Gap Pass Test", part P2 (docs/needs-checking/group-ec.md):
+# THE MODEL - "Heron Gap Pass Test", part 2 (docs/needs-checking/group-ec.md):
 #   - load a panelboard family from the library (Electrical > Distribution)
 #   - place ONE panel on Level 1, Panel Name PB-1, visible in "FloorPlan: Level 1".
 #     Do NOT make a schedule for it
@@ -30,7 +30,7 @@
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.
 
-model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part P2 - PB-1 on Level 1 with no schedule, PB-2 on Level 2 with one, Revit 2024'
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 2 - PB-1 on Level 1 with no schedule, PB-2 on Level 2 with one, Revit 2024'
 
 defaults:
   in: "Heron Gap Pass Test"
