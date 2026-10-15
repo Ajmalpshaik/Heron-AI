@@ -35,6 +35,28 @@ so it publishes only CenterLeftRight and CenterFrontBack, like the opening - one
 that has his real project open, and have him Synchronize with Central first: on 2026-10-15 his Revit 2020
 ran out of memory and lost unsynchronised work.
 
+**FIRST RUN IN REVIT, 2026-10-15 - ON THE REAL PROJECT, SO NOT THE PROOF.** The session that asked for
+version 3 ran it the same day, on the owner's word, from a copy of this branch through the bridge client, on
+model 4355-BHVD-3D-21P60-ST001I in Revit 2020 (session 3460): two rolled-back tries, then nine dimensions
+KEPT, every one with the same point given twice, `face ID SIDE` on the openings and a grid or a level beside
+them. As that session reported them (not re-read here):
+
+| View | `between` | measured |
+|---|---|---|
+| Section-04 | `level PLAN AT EL. +110.700 \| face 6648936 bottom \| face 6648936 top` | 3193.5 + 485 |
+| Section-04 | `grid 2 \| face 6648936 left \| face 6648936 right` | 485 + 2527 |
+| Section-04 | the same two for 6648937 | 3210.1 + 485, and 485 + 2477.5 to grid 3 |
+| Section-03 | the level +106.832 to 6648933's bottom and top | 2339.5 + 625 |
+| Section-03 | 6648933's sides and grid 3 | 1025 + 3083 |
+| Section-03 | 6648934: level, then `face 6648934 left \| face 6648934 right \| grid 4` | 2314.5 + 625, and 379.1 + 1025 |
+| Section-03 | 6648939, level to bottom and top | 2137.9 + 625 |
+
+Section-03's openings read 1025 x 625, the extent measured read-only in that view before version 3 existed;
+Section-04's 485 x 485 was not measured any other way. Revit ordered each chain's segments by position, not
+by the order typed. Section-04's four were read back separately: dimensions 6649376 to 6649379, three references
+each. **What it does not settle:** it is a real model, which the proof must not be; no negative case ran;
+and no proof draft was written, so the card stays DRAFT. EF1 to EF5 below still decide it.
+
 | # | Run | Look for |
 |---|---|---|
 | **EF1** | The job file's first job: `grid A \| family BOXID CenterLeftRight`, then `grid A \| family BOXID Left` as the negative | measured `2500 mm`; the negative refused, naming what the box publishes - CenterLeftRight and CenterFrontBack among it - and offering `face BOXID left\|right\|top\|bottom`; nothing created |
