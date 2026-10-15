@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -77,17 +77,202 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-15'
   by: Ajmal PS
-  model: >
-    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
-  positive_case: >
-    Snowdon Towers: 13 filters checked against 30 views, 9 unused, each named and described as a RULE.
-  negative_case: >
-    Project1: 10 filters against 18 views, 6 unused - a different model gives different numbers rather than a repeated answer, and neither run reported the other's filters.
-  second_route: >
-    FIND_UNUSED_DEFINITIONS reached the same unused count by a different route in the same run: 8 used by nothing plus 1 used only by unused templates = 9 on Snowdon, and 6 on Project1. Two mechanisms agreeing.
-  fingerprint: "007bed6516b5b671"
+  model: 'Two new, unsaved projects from Revit 2020''s Systems template, open together in
+    one Revit 2020, session 25244: Project2 for the positive (untouched - 10 filters, 6 on
+    no view) and Project1 for the negative (13 filters, every one on a view after the arrangement,
+    {3D} carrying none) - element counts not recorded: the count the client measured was of
+    the document in front (row 15)'
+  positive_case: "run as it would normally be run. returned asked 1 item(s) [*], filterCount\
+    \ 10, filterSettings View '1 - Mech' (FloorPlan): 3 filter(s). Revit 2020 has no Enable\
+    \ Filter tick; every filter here is in effect.\n  'Domestic' - Visibility OFF (what it\
+    \ matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground\
+    \ no override / background no override; Transparency 0; Cut Lines: no override; Cut Patterns:\
+    \ foreground no override / background no override; Halftone off; cut not applicable -\
+    \ none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the\
+    \ Cut columns are greyed out.\n  'Sanitary' - Visibility OFF (what it matches is HIDDEN);\
+    \ Projection/Surface Lines: no override; Surface Patterns: foreground no override / background\
+    \ no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override\
+    \ / background no override; Halftone off; cut not applicable - none of Pipe Insulations,\
+    \ Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n\
+    \  'Vent' - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\nView '1 - Ceiling Mech' (CeilingPlan):\
+    \ 3 filter(s). Revit 2020 has no Enable Filter tick; every filter here is in effect.\n\
+    \  'Domestic' - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines:\
+    \ no override; Surface Patterns: foreground no override / background no override; Transparency\
+    \ 0; Cut Lines: no override; Cut Patterns: foreground no override / background no override;\
+    \ Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe\
+    \ Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  'Sanitary' - Visibility\
+    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\n  'Vent' - Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView '2 - Mech' (FloorPlan): 3 filter(s). Revit 2020 has no Enable Filter\
+    \ tick; every filter here is in effect.\n  'Domestic' - Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\n  'Sanitary' - Visibility OFF (what it matches is HIDDEN); Projection/Surface\
+    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
+    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
+    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
+    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  'Vent' - Visibility\
+    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\nView '2 - Ceiling Mech' (CeilingPlan): 3 filter(s).\
+    \ Revit 2020 has no Enable Filter tick; every filter here is in effect.\n  'Domestic'\
+    \ - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\n  'Sanitary' - Visibility OFF\
+    \ (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\n  'Vent' - Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView 'North - Mech' (Elevation): 3 filter(s). Revit 2020 has no Enable\
+    \ Filter tick; every filter here is in effect.\n  'Domestic' - Visibility OFF (what it\
+    \ matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground\
+    \ no override / background no override; Transparency 0; Cut Lines: no override; Cut Patterns:\
+    \ foreground no override / background no override; Halftone off; cut not applicable -\
+    \ none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the\
+    \ Cut columns are greyed out.\n  'Sanitary' - Visibility OFF (what it matches is HIDDEN);\
+    \ Projection/Surface Lines: no override; Surface Patterns: foreground no override / background\
+    \ no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override\
+    \ / background no override; Halftone off; cut not applicable - none of Pipe Insulations,\
+    \ Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n\
+    \  'Vent' - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\nView 'East - Mech' (Elevation):\
+    \ 3 filter(s). Revit 2020 has no Enable Filter tick; every filter here is in effect.\n\
+    \  'Domestic' - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines:\
+    \ no override; Surface Patterns: foreground no override / background no override; Transparency\
+    \ 0; Cut Lines: no override; Cut Patterns: foreground no override / background no override;\
+    \ Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe\
+    \ Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  'Sanitary' - Visibility\
+    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\n  'Vent' - Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView 'West - Mech' (Elevation): 3 filter(s). Revit 2020 has no Enable Filter\
+    \ tick; every filter here is in effect.\n  'Domestic' - Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\n  'Sanitary' - Visibility OFF (what it matches is HIDDEN); Projection/Surface\
+    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
+    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
+    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
+    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\n  'Vent' - Visibility\
+    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\nView 'South - Mech' (Elevation): 3 filter(s).\
+    \ Revit 2020 has no Enable Filter tick; every filter here is in effect.\n  'Domestic'\
+    \ - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\n  'Sanitary' - Visibility OFF\
+    \ (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\n  'Vent' - Visibility OFF (what it matches\
+    \ is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground no override\
+    \ / background no override; Transparency 0; Cut Lines: no override; Cut Patterns: foreground\
+    \ no override / background no override; Halftone off; cut not applicable - none of Pipe\
+    \ Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the Cut columns are\
+    \ greyed out.\nView '1 - Plumbing' (FloorPlan): 1 filter(s). Revit 2020 has no Enable\
+    \ Filter tick; every filter here is in effect.\n  'Hydronic' - Visibility OFF (what it\
+    \ matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns: foreground\
+    \ no override / background no override; Transparency 0; Cut Lines: no override; Cut Patterns:\
+    \ foreground no override / background no override; Halftone off; cut not applicable -\
+    \ none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be cut, so the\
+    \ Cut columns are greyed out.\nView '2 - Plumbing' (FloorPlan): 1 filter(s). Revit 2020\
+    \ has no Enable Filter tick; every filter here is in effect.\n  'Hydronic' - Visibility\
+    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\nView '3D Plumbing' (ThreeD): 1 filter(s). Revit\
+    \ 2020 has no Enable Filter tick; every filter here is in effect.\n  'Hydronic' - Visibility\
+    \ OFF (what it matches is HIDDEN); Projection/Surface Lines: no override; Surface Patterns:\
+    \ foreground no override / background no override; Transparency 0; Cut Lines: no override;\
+    \ Cut Patterns: foreground no override / background no override; Halftone off; cut not\
+    \ applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings, Pipes can be\
+    \ cut, so the Cut columns are greyed out.\nView 'East - Plumbing' (Elevation): 1 filter(s).\
+    \ Revit 2020 has no Enable Filter tick; every filter here is in effect.\n  'Hydronic'\
+    \ - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines: no override;\
+    \ Surface Patterns: foreground no override / background no override; Transparency 0; Cut\
+    \ Lines: no override; Cut Patterns: foreground no override / background no override; Halftone\
+    \ off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe Fittings,\
+    \ Pipes can be cut, so the Cut columns are greyed out.\nView 'North - Plumbing' (Elevation):\
+    \ 1 filter(s). Revit 2020 has no Enable Filter tick; every filter here is in effect.\n\
+    \  'Hydronic' - Visibility OFF (what it matches is HIDDEN); Projection/Surface Lines:\
+    \ no override; Surface Patterns: foreground no override / background no override; Transparency\
+    \ 0; Cut Lines: no override; Cut Patterns: foreground no override / background no override;\
+    \ Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories, Pipe\
+    \ Fittings, Pipes can be cut, so the Cut columns are greyed out.\nView 'South - Plumbing'\
+    \ (Elevation): 1 filter(s). Revit 2020 has no Enable Filter tick; every filter here is\
+    \ in effect.\n  'Hydronic' - Visibility OFF (what it matches is HIDDEN); Projection/Surface\
+    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
+    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
+    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
+    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out.\nView 'West - Plumbing'\
+    \ (Elevation): 1 filter(s). Revit 2020 has no Enable Filter tick; every filter here is\
+    \ in effect.\n  'Hydronic' - Visibility OFF (what it matches is HIDDEN); Projection/Surface\
+    \ Lines: no override; Surface Patterns: foreground no override / background no override;\
+    \ Transparency 0; Cut Lines: no override; Cut Patterns: foreground no override / background\
+    \ no override; Halftone off; cut not applicable - none of Pipe Insulations, Pipe Accessories,\
+    \ Pipe Fittings, Pipes can be cut, so the Cut columns are greyed out., filters 10 item(s)\
+    \ [Domestic, Domestic Cold Water, Domestic Hot Water, ...], findings 11 item(s) [10 filter(s)\
+    \ in this project, checked against 18 view(s). 6 ..., 'Domestic'  - a RULE, which keeps\
+    \ working as the model grows..., 'Domestic Cold Water'  - a RULE, which keeps working\
+    \ as the ..., ...], unusedFilters 6 item(s) [468406, 468407, 468408, ...], views 18 item(s)\
+    \ [Project View, 1 - Mech, 1 - Ceiling Mech, ...]. inputs came viewName as given. on Project2"
+  negative_case: run against 'Project1' with viewName={3D} instead - chosen because it should
+    not contain what this fragment reports. returned asked 1 item(s) [{3D}], filterCount 13,
+    filterSettings , filters 13 item(s) [Domestic, Domestic Cold Water, Domestic Hot Water,
+    ...], findings 15 item(s) [View '{3D}' (ThreeD) carries no filters., 13 filter(s) in this
+    project, checked against 18 view(s). 0 ..., 'Domestic'  - a RULE, which keeps working
+    as the model grows..., ...], unusedFilters 0 item(s), views 18 item(s) [Project View,
+    1 - Mech, 1 - Ceiling Mech, ...]. inputs came viewName as given. on Project1
+  second_route: '2026-10-15, both projects: a throwaway READ probe that calls the Revit API
+    directly and shares no code with this fragment (FilteredElementCollector of FilterElement,
+    View.GetFilters on every non-template view), run in the same session and deleted afterwards:
+    Project2 - 10 filters, 6 on no view (Mechanical - Supply, Mechanical - Return, Mechanical
+    - Exhaust, Domestic Cold Water, Domestic Hot Water, Interior); Project1 - 13 filters,
+    0 on no view, {3D} carrying none. This fragment''s positive said unusedFilters 6 in Project2
+    and its negative unusedFilters 0 with filterSettings empty for {3D} in Project1. Two routes
+    agree.'
+  fingerprint: c4172d0123f7c3fd
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

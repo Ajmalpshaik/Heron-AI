@@ -1,0 +1,140 @@
+# The view-filter tools, proved together on Revit 2020 - 2026-10-15.
+#
+#     python tools/batch-prove.py tools/jobs/view-filters-project1-revit2020-2026-10-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/view-filters-project1-revit2020-2026-10-15.yaml
+#
+# WHY NOW. The owner asked for a level filter on a live model's 3D view and
+# every tool that makes or places a view filter was DRAFT - four of them signed
+# once and STALE since their version 2, two never run at all. Article 11: an
+# untested tool never touches a live model, so they are proved here first, on a
+# NEW, UNSAVED project opened for this in the same Revit 2020.
+#
+# THE MODEL: "Project1", Revit 2020's Systems template, nothing drawn - 10 view
+# filters (Domestic, Sanitary, Vent, Hydronic among them), 18 views, two
+# levels. `in: Project1` reaches it by name, so the live model open beside it
+# in the same Revit is never the target. Read with report-view-filters before
+# this file was written: `{3D}` carries no filter, `North - Mech` carries three.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# report-view-filters is READ and runs without it.
+#
+# NOT HERE: create-view-filter. Its `parameterId` is an ElementId the add-in
+# cannot bind by any name (FRAGMENT-ISSUES 5b-191), so it cannot run at all.
+model: Project1 (new, unsaved, Revit 2020 Systems template), Revit 2020, session 25244
+defaults:
+  in: Project1
+  write: true
+jobs:
+  # VERSION 2's OPERATOR AND VERSION 1's PLAIN VALUE, IN ONE CALL. "does not
+  # contain Level 1" is the new path; "Level 2" with no operator is equals, the
+  # path every older call takes. `readBack` must say "Name does not contain
+  # 'Level 1'" and "Name equals 'Level 2'", each catching one level.
+  #
+  # NEGATIVE: System Classification, which Levels cannot be filtered by -
+  # `cannotFilter` names Levels and NOTHING is created, for both names.
+  - fragment: create-view-filters-by-rule
+    expect: [created, readBack]
+    set:
+      filterNames: HERON PROOF Not Level 1, HERON PROOF Level 2
+      categories: Levels
+      parameterName: Name
+      matchValues: does not contain Level 1, Level 2
+    negative-set:
+      filterNames: HERON PROOF Not Level 1, HERON PROOF Level 2
+      categories: Levels
+      parameterName: System Classification
+      matchValues: does not contain Level 1, Level 2
+
+  # POSITIVE: Domestic holds four pipe categories; cut it to two. `changed`
+  # must name it and `readBack` must list Pipe Fittings and Pipes alone, with
+  # its rule unchanged.
+  #
+  # NEGATIVE: Walls alone - Domestic's rule cannot apply to walls, so the
+  # filter is LEFT AS IT WAS, never emptied: `leftOut` names Walls, nothing
+  # changed. `readBack` describes the filter in BOTH legs - the first run
+  # (NEG NOT EMPTY on it) is why it is accounting since 2026-10-15.
+  - fragment: set-view-filter-categories
+    expect: changed
+    set:
+      filterNames: Domestic
+      categories: Pipes, Pipe Fittings
+    negative-set:
+      filterNames: Domestic
+      categories: Walls
+
+  # POSITIVE: Domestic onto `{3D}`, which carries no filter, with a red line
+  # override. `enabled` is BLANK - Revit 2020 has no Enable Filter tick and a
+  # non-blank value refuses the call (BC5's first half).
+  #
+  # NEGATIVE: the same call on `Project View`, the project browser, which
+  # refuses a filter in Revit's own words - `applied` false.
+  - fragment: apply-view-filter
+    expect: applied
+    set:
+      view: "{3D}"
+      filter: Domestic
+      overrides: "projection-line-colour=255,0,0"
+      visible: "true"
+      enabled: ""
+      keepOtherSettings: ""
+      solidFill: ""
+    negative-set:
+      view: "Project View"
+      filter: Domestic
+      overrides: "projection-line-colour=255,0,0"
+      visible: "true"
+      enabled: ""
+      keepOtherSettings: ""
+      solidFill: ""
+
+  # READ. POSITIVE: every view carrying a filter - fifteen of them, three or
+  # one filter each. NEGATIVE: `{3D}`, which carries none, so `filterSettings`
+  # comes back EMPTY.
+  #
+  # `unusedFilters` IS PROJECT-WIDE, so it is filled in both legs while any
+  # filter sits on no view - six did in this template, and the first run was
+  # NEG NOT EMPTY on them. They were then KEPT on `3D Plumbing` (apply-view-
+  # filter --write --apply, overrides none, one call each), so the project has
+  # no unused filter and both results can be empty in the negative.
+  #
+  # THAT LEFT THE POSITIVE WITH unusedFilters 0, and `accept` refused it -
+  # POSITIVE EMPTY: beside a count, the sentence is not counted (D-51), and
+  # `expect:` narrows only batch-prove's judgement, never accept's. So the
+  # positive runs in "Project2", a SECOND new project from the same Systems
+  # template opened for it - six unused filters, untouched - and the negative
+  # stays in Project1, where none is unused and {3D} carries none. Two models,
+  # as version 1 was proved.
+  - fragment: report-view-filters
+    write: false
+    in: Project2
+    negative-in: Project1
+    set:
+      viewName: "*"
+    negative-set:
+      viewName: "{3D}"
+
+  # POSITIVE: the two levels, selected in the North - Mech elevation where
+  # levels are drawn, one filter per distinct Name - two filters, put on that
+  # view with a colour each.
+  #
+  # NEGATIVE: the same two levels and a parameter none of them carries -
+  # nothing is created and `valuesFound` is empty.
+  - fragment: create-view-filters-by-value
+    expect: [created, valuesFound]
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Levels
+      inViewOnly: "North - Mech"
+    negative-setup-set:
+      categoryName: Levels
+      inViewOnly: "North - Mech"
+    set:
+      view: "North - Mech"
+      parameterName: Name
+      namePrefix: "HERON PROOF "
+    negative-set:
+      view: "North - Mech"
+      parameterName: ZZZNOTHINGHERE
+      namePrefix: "HERON PROOF "
