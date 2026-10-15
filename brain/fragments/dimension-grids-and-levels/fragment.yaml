@@ -172,6 +172,9 @@ compatibility-note: >
 #                                            this one uses returns nothing for
 #                                            a duct
 #   "dimension between these two units"   -> CREATE_DIMENSION
+#   "dimension this opening from the level and the grid" -> CREATE_LINEAR_DIMENSION
+#                                            (5b-482) - a datum to an element's
+#                                            own face, not datum to datum
 #   "dimension the room"                  -> DIMENSION_ROOMS
 #   "how far apart are the grids"         -> REPORT_LEVEL_ELEVATIONS for
 #                                            levels, or a measure - a NUMBER,
