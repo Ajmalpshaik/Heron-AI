@@ -687,6 +687,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ec.md`](needs-checking/group-ec.md)
 
+## Group ED - a view's whole Visibility/Graphics read back: `REPORT_CATEGORY_OVERRIDES` and `AUDIT_VIEW_FILTERS` version 2 (2026-10-15)
+
+**Its own file:** [`needs-checking/group-ed.md`](needs-checking/group-ed.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

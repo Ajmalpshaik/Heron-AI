@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "the filter is on the view so why is nothing coloured"
 kind: action
 domain: revit.views
 capability: AUDIT_VIEW_FILTERS
-version: 1
+# VERSION 2 (2026-10-15, FRAGMENT-ISSUES 5b-480): `everyFilter` leaves
+# `filterList`, every filter on the view in priority order with its rule, its
+# categories, how many host elements in the view it catches and its whole
+# override, as one string. Version 1 answered in counts and in lists a reply
+# cuts to three items of sixty characters; on a real HVAC project on Revit 2020
+# with 21 filters, no read printed a filter's rule at all. Left out it is false
+# and the audit answers exactly as version 1. DRAFT until version 2 is run in
+# Revit: NEEDS-CHECKING Group ED.
+version: 2
 source: OFFICIAL
 risk: ANALYZE
 
@@ -40,6 +48,11 @@ purpose: >
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
+  **Every filter in full, with `everyFilter`.** In priority order - the higher
+  one wins where two set the same thing - each filter's rules, its categories,
+  how many elements in this view it catches, and its whole override: the two
+  more ways a filter does nothing, catching nothing here or being outranked.
+
 contract:
   needs:
     - name: doc
@@ -47,6 +60,13 @@ contract:
     - name: view
       type: View
       source: request
+    # true lists every filter on the view in full in `filterList`. Absent is
+    # false: `filterList` stays empty and the audit is version 1's, unchanged.
+    # `optional: true` is what lets it be left out (HeronBindingNote.AbsentValue).
+    - name: everyFilter
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: findings
       type: IList<string>
@@ -76,7 +96,21 @@ contract:
       # never a fault it found (D-52).
       role: accounting
       type: int
+    - name: filterList
+      # VERSION 2, empty unless `everyFilter` is true. ONE STRING - a heading
+      # line, then one row per filter in priority order: "1. 'Supply Air'
+      # (rule) - Enable Filter ON | Visibility ON | categories (2): Ducts, Duct
+      # Fittings | rule: System Type equals 'SA' | catches 214 host element(s)
+      # drawn here | override: projection lines colour 0,0,255, weight 3".
+      # The override cells read as REPORT_CATEGORY_OVERRIDES' allCategories
+      # rows do. Empty when the view carries no filter.
+      role: result
+      type: string
 
+# THIS PROOF IS VERSION 1's AND IT IS STALE. It ran with no `everyFilter`,
+# which version 2 still answers exactly the same way, but the implementation
+# changed and the fingerprint below no longer matches it. NEEDS-CHECKING Group
+# ED is the run that replaces it.
 proof:
   date: '2026-09-08'
   by: Ajmal PS
@@ -111,6 +145,19 @@ compatibility-note: >
   overrides at all, such as a schedule or a sheet, is reported as such rather
   than as a view with no filters.
 
+  Version 2 adds, read off the reference assemblies of all eight releases on
+  2026-10-15: `View.GetOrderedFilters` (2021 to 2027, ABSENT from 2020) and
+  `View.GetIsFilterEnabled` (the same), both reached BY NAME at run time as
+  REPORT_VIEW_FILTERS does, never under a version #if; and, on every release,
+  `ParameterFilterElement.GetElementFilter`, `ElementLogicalFilter.GetFilters`,
+  `ElementParameterFilter.GetRules`, `ElementFilter.Inverted`,
+  `FilterRule.GetRuleParameter`, `FilterInverseRule.GetInnerRule`,
+  `FilterCategoryRule`, `HasValueFilterRule`, `HasNoValueFilterRule`, the
+  string and numeric rule getters, `SelectionFilterElement.GetElementIds`,
+  `LabelUtils.GetLabelFor(BuiltInParameter)` and the `ElementId(BuiltInParameter)`
+  constructor. No `ElementId` number is read - it changes type at 2024 and loses
+  `IntegerValue` at 2026 - so a built-in parameter is matched by `ElementId`.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "the filter is on the view and       -> here
@@ -132,6 +179,23 @@ compatibility-note: >
 #    this drawing"                          and nothing draws;
 #                                           COLOR_BY_PARAMETER when nothing
 #                                           has been coloured yet
+#
+# VERSION 2 - with everyFilter true. A QUESTION ABOUT A FILTER'S RULE GOES TO A
+# READ: on 2026-10-15 "what are the filter rules on this view" reached
+# CREATE_VIEW_FILTER, a write, on both search backends.
+#
+#   "what are the filter rules on this view" -> here
+#   "list every filter on this view in order with its rules" -> here
+#   "what are the filter settings on this view" -> REPORT_VIEW_FILTERS - the
+#                                        Filters-tab cells of the views NAMED,
+#                                        several at once; here is ONE view, its
+#                                        filters in priority order with their
+#                                        rules and catches
+#   "show me the full visibility graphics of this view" ->
+#                                        REPORT_CATEGORY_OVERRIDES with
+#                                        allCategories true - the categories,
+#                                        sub-categories and per-element
+#                                        overrides; this card is the filters
 
 utterances:
   - the filter is on the view but nothing is coloured
@@ -140,3 +204,5 @@ utterances:
   - is this filter switched off
   - my filter change did not save
   - the colours are not showing on this drawing
+  # VERSION 2 - answered with everyFilter true.
+  - list every filter on this view in order with its rules

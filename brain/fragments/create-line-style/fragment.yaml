@@ -142,6 +142,9 @@ compatibility-note: >
 #   "bring the line styles from that model"   -> TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS
 #   "make a dash dot pattern"                 -> CREATE_LINE_PATTERN
 #   "what colour is the signature subcategory" -> LIST_CATEGORIES - a question goes to the read
+#   "what colours, line weights and patterns does this view use" -> REPORT_CATEGORY_OVERRIDES -
+#                                                a question goes to the read; it reached
+#                                                here on the trained search (5b-480)
 
 utterances:
   - make a red dashed line style
