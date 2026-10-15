@@ -695,6 +695,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ef.md`](needs-checking/group-ef.md)
 
+## Group EG - a tag turned as well as moved: `OFFSET_TAGS_FROM_HOST` version 2 (2026-10-15)
+
+**Its own file:** [`needs-checking/group-eg.md`](needs-checking/group-eg.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

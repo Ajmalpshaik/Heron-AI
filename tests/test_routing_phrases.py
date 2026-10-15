@@ -166,6 +166,20 @@ CHANGES = [
      "SET_VIEW_FILTER_CATEGORIES", "5b-481: answered CREATE_VIEW_FILTERS_BY_RULE"),
     ("edit the rule of the OUTSEL filter", "SET_VIEW_FILTER_CATEGORIES",
      "5b-481: answered CREATE_VIEW_FILTER"),
+    # 5b-484, 2026-10-15: nothing turned a tag until OFFSET_TAGS_FROM_HOST
+    # version 2. On main c3dc8a68 the first answered ROTATE_ELEMENTS on the
+    # model (with the re-ranker it reached this card already), and the next
+    # two answered other writes on both - those two fail on main. The last is
+    # that card's own version 1 job, which a first draft of version 2's
+    # identity sent to FORCE_TAG_LEADER_LSHAPE on the re-ranker.
+    ("set the tag orientation to vertical", "OFFSET_TAGS_FROM_HOST",
+     "5b-484: answered ROTATE_ELEMENTS on the model"),
+    ("turn the opening tags to match the wall direction", "OFFSET_TAGS_FROM_HOST",
+     "5b-484: answered CREATE_WALL_ELEVATION and DIMENSION_WALL_OPENINGS"),
+    ("the tags should have the same orientation as the opening", "OFFSET_TAGS_FROM_HOST",
+     "5b-484: the owner's words; answered COPY_TAGS_TO_REPLACEMENTS and ARRANGE_TAGS"),
+    ("put the duct tags above the ducts with a leader", "OFFSET_TAGS_FROM_HOST",
+     "5b-484: a draft identity sent it to FORCE_TAG_LEADER_LSHAPE on the re-ranker"),
 ]
 
 QUESTIONS = [

@@ -140,6 +140,12 @@ compatibility-note: >
 #   "move the tags beside the diffusers" -> OFFSET_TAGS_FROM_HOST - each tag
 #                                           beside its own element, not in a
 #                                           column
+#   "turn this tag vertical"             -> OFFSET_TAGS_FROM_HOST - a tag turned
+#                                           on its side, not a column of tags.
+#                                           "align the tags vertically" is
+#                                           declared below because its version
+#                                           2, which turns tags, took it on the
+#                                           re-ranker (row 5b-484, 2026-10-15)
 
 utterances:
   - stack these tags in a column
@@ -148,3 +154,4 @@ utterances:
   - line the tags up vertically
   - stack the tags
   - put the tags in a column
+  - align the tags vertically
