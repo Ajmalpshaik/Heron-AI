@@ -687,6 +687,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ec.md`](needs-checking/group-ec.md)
 
+## Group EF - a family instance dimensioned by its own references and faces: `CREATE_LINEAR_DIMENSION` version 3 (2026-10-15)
+
+**Its own file:** [`needs-checking/group-ef.md`](needs-checking/group-ef.md)
+
 ## Group EG - a tag turned as well as moved: `OFFSET_TAGS_FROM_HOST` version 2 (2026-10-15)
 
 **Its own file:** [`needs-checking/group-eg.md`](needs-checking/group-eg.md)
