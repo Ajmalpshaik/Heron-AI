@@ -11,6 +11,26 @@ positive:
       "wall <id> exterior | wall <id> interior" on one wall
     expect: one dimension reading the wall's thickness
 
+  # VERSION 3 (5b-482, NEEDS-CHECKING Group EF) - a family instance.
+  - given: >
+      a section through a Generic Model box 1000 mm wide and 600 mm high whose
+      bottom sits 1200 mm above Level 1, and "family ID Left | family ID Right"
+    expect: >
+      one dimension reading the box's width, 1000 mm - checked against the
+      width the box was placed at, not read off the report
+
+  - given: >
+      the same section and "level Level 1 | face ID bottom | face ID top", the
+      same point given twice for lineFrom and lineTo, beside the box
+    expect: >
+      one chained string reading "1200 mm + 600 mm", run through that point
+      square to the level - the second segment the box's height
+
+  - given: >
+      the same section and "grid A | face ID left", the grid 2000 mm from the
+      box's left side
+    expect: one dimension reading 2000 mm
+
 negative:
   - given: >
       "grid A | grid Nope" - a name the model does not have
@@ -31,6 +51,24 @@ negative:
     expect: >
       reported - "a dimension can only measure what the view shows". This is the
       likely real-world failure and a bare null would explain nothing
+
+  - given: >
+      "family ID Banana" - a reference the family does not publish
+    expect: >
+      refused naming every reference it does publish - Left, Right,
+      CenterLeftRight and the rest - and offering "face ID left|right|top|bottom";
+      nothing created
+
+  - given: >
+      "face ID up" - a side that is not left, right, top, bottom, near or far
+    expect: refused naming the six sides, nothing created
+
+  - given: >
+      the same point twice with "family ID Weak Plane | family ID Other Plane" -
+      two references known only by their names
+    expect: >
+      refused saying none of the references says which way the string runs,
+      and asking for two different points; nothing created
 
 second_route:
   - >
