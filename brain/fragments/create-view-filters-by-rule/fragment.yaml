@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,10 @@ semantic-identity: "create named view filters from a parameter name, a list of c
 kind: action
 domain: revit.views
 capability: CREATE_VIEW_FILTERS_BY_RULE
-version: 1
+# Version 2, 2026-10-15: a value may lead with the operator Revit's Filters
+# dialog shows - "does not contain TRG". A value with none is "equals", as
+# version 1 read it.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -48,6 +51,9 @@ purpose: >
   **EACH NEW ONE IS READ BACK FROM REVIT** - its categories and rule as Revit
   holds them, and how many elements the rule catches today.
 
+  **THE OPERATOR GOES IN FRONT OF THE VALUE** - "does not contain TRG",
+  "begins with M_". No operator means equals.
+
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 
 contract:
@@ -65,8 +71,12 @@ contract:
       source: request
     - name: matchValues
       # One value per filter name, in the same order - the text the rule
-      # "equals". Type it as Revit shows it: whether capitals matter on 2023
-      # and later is not known here (CREATE_VIEW_FILTER's cases say why).
+      # matches, with the operator in front when it is not "equals": equals,
+      # does not equal, contains, does not contain, begins with, does not
+      # begin with, ends with, does not end with ("does not contain TRG").
+      # "equals contains" matches the word itself. Type it as Revit shows it:
+      # whether capitals matter on 2023 and later is not known here
+      # (CREATE_VIEW_FILTER's cases say why).
       type: IList<string>
       source: request
   provides:
@@ -97,6 +107,55 @@ contract:
       role: accounting
       type: string
 
+proof:
+  date: '2026-10-15'
+  by: Ajmal PS
+  model: 'Project1 (new, unsaved, Revit 2020 Systems template - 10 view filters, 18 views,
+    2 levels), Revit 2020, session 25244 - element count not recorded: the count the client
+    measured was of the other document in front, not Project1 (row 15)'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allowedBy 1 entry(ies), alreadyExists
+    0 item(s), badName , bareOperator , builtInName 8 entry(ies), cannotFilter 0 item(s),
+    categoryIds 1 item(s) [-2000240], categoryName 1 entry(ies), created 2 item(s) [ParameterFilterElement,
+    ParameterFilterElement], names 2 item(s) [HERON PROOF Not Level 1, HERON PROOF Level 2],
+    operatorMethods 8 entry(ies), operatorWords 8 item(s) [does not begin with, does not end
+    with, does not contain, ...], operators 2 item(s) [does not contain, equals], parameterLabel
+    8 entry(ies), readBack ''HERON PROOF Not Level 1'': categories Levels; rule Name does
+    not contain ''Level 1''; catches 1 element(s) in the model today (Levels 1) | ''HERON
+    PROOF Level 2'': categories Levels; rule Name equals ''Level 2''; catches 1 element(s)
+    in the model today (Levels 1) | none of them is on a view yet - APPLY_VIEW_FILTER puts
+    one on a view, refused , repeated , ruleParameter 1 item(s) [id -1008000], seen HashSet`1,
+    tests 2 entry(ies), texts 2 item(s) [Level 1, Level 2], toCreate 2 item(s) [0, 1], values
+    2 item(s) [does not contain Level 1, Level 2], wanted Name. inputs came filterNames as
+    given (2); categories as given (1); parameterName as given; matchValues as given (2).
+    on Project1'
+  negative_case: 'run with categories=Levels, filterNames=HERON PROOF Not Level 1, HERON PROOF
+    Level 2, matchValues=does not contain Level 1, Level 2, parameterName=System Classification
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    allowedBy 1 entry(ies), alreadyExists 0 item(s), badName , bareOperator , builtInName
+    8 entry(ies), cannotFilter 1 item(s) [Levels - it cannot be filtered by ''System Classification''],
+    categoryIds 1 item(s) [-2000240], categoryName 1 entry(ies), created 0 item(s), names
+    2 item(s) [HERON PROOF Not Level 1, HERON PROOF Level 2], operatorMethods 8 entry(ies),
+    operatorWords 8 item(s) [does not begin with, does not end with, does not contain, ...],
+    operators 2 item(s) [does not contain, equals], parameterLabel 8 entry(ies), readBack
+    , refused NOTHING WAS CREATED. 1 of the 1 categories cannot take a rule on ''System Classification'':
+    Levels - it cannot be filtered by ''System Classification''. Revit rejects a filter whose
+    categories include one the parameter does not apply to, so take it out of the list and
+    ask again, repeated , ruleParameter (null), seen HashSet`1, tests 0 entry(ies), texts
+    2 item(s) [Level 1, Level 2], toCreate 0 item(s), values 2 item(s) [does not contain Level
+    1, Level 2], wanted System Classification. inputs came filterNames as given (2); categories
+    as given (1); parameterName as given; matchValues as given (2). on Project1'
+  second_route: '2026-10-15, Project1: the positive''s operator call KEPT (fragment --write
+    --apply) as ''HERON CHECK Not Level 1'', categories Levels, parameterName Name, matchValues
+    ''does not contain Level 1'' - readBack ''rule Name does not contain Level 1; catches
+    1 element(s)''. Then a throwaway READ probe that calls the Revit API directly and shares
+    no code with this fragment (ParameterFilterElement.GetCategories, GetElementFilter, FilterInverseRule.GetInnerRule,
+    View.GetFilters, a FilteredElementCollector through the filter), run in the same session
+    and deleted afterwards: categories Levels; its one rule a FilterInverseRule around FilterStringContains
+    ''Level 1''; the collector through it catches Level 2 alone. Two routes agree.'
+  fingerprint: 27efc54628f979fc
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -108,7 +167,13 @@ compatibility-note: >
   off the reference assemblies for each release with `tools/api-surface
   --members`. The two-argument one is used where it exists, the three-argument
   one with `false` elsewhere - the same choice CREATE_VIEW_FILTERS_BY_VALUE
-  makes.
+  makes. Version 2's seven other text rules - CreateNotEqualsRule,
+  CreateContainsRule, CreateNotContainsRule, CreateBeginsWithRule,
+  CreateNotBeginsWithRule, CreateEndsWithRule, CreateNotEndsWithRule - have
+  exactly the same two spellings on the same releases, read with
+  `tools/api-surface --members ParameterFilterRuleFactory` on 2026-10-15, and
+  are reached the same way. `FilterInverseRule.GetInnerRule`, which the
+  read-back uses to say "does not", is on 2020 to 2027 unchanged.
 
   Unchanged 2020 through 2027, read the same way:
   `ParameterFilterUtilities.GetAllFilterableCategories` and
@@ -161,3 +226,5 @@ utterances:
   - set up supply and return filters for the ductwork
   - make a view filter for return air
   - make a view filter for exhaust air
+  - create a filter for levels whose name does not contain trg
+  - make a view filter where the type name begins with

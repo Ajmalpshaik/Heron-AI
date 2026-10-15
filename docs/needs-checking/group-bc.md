@@ -84,3 +84,22 @@ CREATE_VIEW_FILTER, a writer, and "check the filter overrides" COPY_VIEW_FILTERS
 | **BC3** | The two legs for `apply-view-filter` ([D-30](../DECISIONS.md)) - **a draft, not yet signed.** On a TEST COPY saved after 2026-09-27, with `HERON_CLIENT_ID=ajmal-pc` set and the copy in front: `python tools/batch-prove.py tools/jobs/apply-view-filter-heron-ai-bulding-2026-09-28.yaml --dry-run`, then the same without `--dry-run`. Then write BC1 into the draft's `second_route`, sign with `python brain/heron_validate.py accept apply-view-filter --by "Ajmal PS"` and set `heron-status: PROVEN` | `PASS` on the flag: `applied` true putting Supply Air onto `1 - Mech`, which carries no filter, with the summary saying *"cut not applicable"* and naming the eight categories; `applied` false on `Project View`, which refuses a filter in Revit's own words. Afterwards `1 - Mech` carries no filter - both legs are rolled back |
 | **BC4** | The two legs for `report-view-filters` - **a draft, not yet signed.** READ ONLY, so the working model will do: `python tools/batch-prove.py tools/jobs/report-view-filters-heron-ai-bulding-2026-09-28.yaml --dry-run`, then without `--dry-run`. Sign only after BC1 is written into its draft's `second_route` | `PASS`: `viewName=*` gives six rows in `filterSettings`, matching what BC1 saw on screen; `viewName=1 - Mech` gives `filterSettings` EMPTY and the first finding *"carries no filters"* |
 | **BC5** | **Revit 2020.** On a copy of a 2020 model with a view filter on a view, in a chat: APPLY_VIEW_FILTER with `enabled=true`; then the same with `enabled` blank; then REPORT_VIEW_FILTERS with that view's name. **NEEDS REAL REVIT 2020** - no 2020 session was open on 2026-09-28 | The first: `applied` false, NOTHING written, *"Revit 2020 has no Enable Filter tick - it arrived at Revit 2021"*. The second: applied, *"No Enable Filter tick in this release"*. The report: the view's heading says 2020 has no Enable Filter tick and no row claims one. **All three prove the fragment still compiles on a real 2020**, which the reference-assembly compile cannot |
+
+### 2026-10-15 - BC3 and BC4 done on Revit 2020, both fragments PROVEN; BC5 half done
+
+Run on the owner's PC with `tools/jobs/view-filters-project1-revit2020-2026-10-15.yaml`, against
+two NEW, unsaved projects from Revit 2020's Systems template opened for it - not on copies of
+"heron ai bulding". Signed by Ajmal PS the same day; both cards set to `heron-status: PROVEN`.
+
+- **`apply-view-filter`**: Domestic onto `{3D}`, which carried none - `applied` true, *"is now on
+  '{3D}'. No Enable Filter tick in this release"*; the same call on `Project View` - `applied`
+  false, in Revit's words. Second route: six filters kept on `3D Plumbing` with this fragment, then
+  read with `View.GetFilters` by a throwaway probe that shares no code with it.
+- **`report-view-filters` needed TWO models**, as version 1 did. With every filter on a view the
+  positive had `unusedFilters` 0 and `accept` refused it - POSITIVE EMPTY, because beside a count
+  the sentence is not counted (D-51), and `expect:` narrows only batch-prove's judgement. The
+  positive ran in "Project2" (6 filters on no view), the negative on `{3D}` in "Project1" (0 unused,
+  `filterSettings` empty). The same probe agreed on both.
+- **BC5**: `enabled` BLANK ran on a real 2020 - applied, *"No Enable Filter tick in this release"* -
+  and the report's headings say *"Revit 2020 has no Enable Filter tick"*. **Still open: `enabled=true`
+  on 2020** (the refusal), **BC1** by eye and **BC2**, the parser half.

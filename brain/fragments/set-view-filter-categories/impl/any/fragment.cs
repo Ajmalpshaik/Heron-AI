@@ -390,8 +390,19 @@ if (targets.Count > 0)
                 continue;
             }
 
-            foreach (var heldRule in byParameter.GetRules())
+            foreach (var outerRule in byParameter.GetRules())
             {
+                // A "does not" rule is held as the positive one, inverted - the
+                // same unwrapping CREATE_VIEW_FILTERS_BY_RULE's read-back does.
+                var heldRule = outerRule;
+                var inverted = false;
+                var inverse = outerRule as FilterInverseRule;
+                if (inverse != null && inverse.GetInnerRule() != null)
+                {
+                    heldRule = inverse.GetInnerRule();
+                    inverted = true;
+                }
+
                 var parameterText = "?";
                 try
                 {
@@ -405,14 +416,22 @@ if (targets.Count > 0)
                 var textRule = heldRule as FilterStringRule;
                 if (textRule != null)
                 {
+                    // Revit's Filters dialog words, not the evaluator's class
+                    // name - "FilterStringContains" reached the chat until
+                    // 2026-10-15 for every rule but equals.
                     var evaluator = textRule.GetEvaluator();
                     var verb = evaluator == null ? "?" : evaluator.GetType().Name;
-                    if (verb == "FilterStringEquals") verb = "equals";
+                    if (verb == "FilterStringEquals") verb = inverted ? "does not equal" : "equals";
+                    else if (verb == "FilterStringContains") verb = inverted ? "does not contain" : "contains";
+                    else if (verb == "FilterStringBeginsWith") verb = inverted ? "does not begin with" : "begins with";
+                    else if (verb == "FilterStringEndsWith") verb = inverted ? "does not end with" : "ends with";
+                    else if (inverted) verb = "NOT " + verb;
                     heldRules.Add(string.Format("{0} {1} '{2}'", parameterText, verb, textRule.RuleString));
                 }
                 else
                 {
-                    heldRules.Add(string.Format("{0} ({1})", parameterText, heldRule.GetType().Name));
+                    heldRules.Add(string.Format("{0} ({1}{2})", parameterText, inverted ? "NOT " : "",
+                        heldRule.GetType().Name));
                 }
             }
         }

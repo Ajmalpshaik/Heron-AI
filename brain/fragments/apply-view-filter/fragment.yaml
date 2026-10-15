@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -123,24 +123,43 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-15'
+  date: '2026-10-15'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 28236
+  model: 'Project1 (new, unsaved, Revit 2020 Systems template - 10 view filters, 18 views,
+    2 levels), Revit 2020, session 25244 - element count not recorded: the count the client
+    measured was of the other document in front, not Project1 (row 15)'
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned applied true, findings 2 item(s)
-    [''ABL - General Lighting'' is now on ''Model Linking'', and what..., WARNING: the override
-    sets a projection colour and NO cut co...], visible true. inputs came view as given; filter
-    as given; overrides as given; visible as given. on Snowdon-scratch_ajmal.al'
-  negative_case: run with filter=ABL - General Lighting, overrides=halftone=true; projection-line-colour=255,0,0,
-    view=Project View, visible=true instead - chosen because it should not contain what this
-    fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned applied false, findings 1 item(s) ['ABL - General Lighting'
-    could not be applied to 'Project Vi...], visible true. inputs came view as given; filter
-    as given; overrides as given; visible as given. on Snowdon-scratch_ajmal.al
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 5f6f24b9efa1b690
+    the transaction group ROLLED BACK afterwards. returned applied true, blank OverrideGraphicSettings,
+    cutFrom Action`2, enabledNow Func`1, findings 1 item(s) [''Domestic'' is now on ''{3D}'',
+    and what it matches is visible], getEnabled (null), keep true, keepText , keepTick -1,
+    merge Func`3, patternName Func`2, refusal (null), rgb Func`2, row Func`2, setEnabled (null),
+    setsCut Func`2, solid (null), solidCut false, solidLine 1 item(s) [id -3000010], solidSurface
+    false, summary ''Domestic'' is now on ''{3D}''. No Enable Filter tick in this release,
+    Visibility ON. Set: projection line colour 255,0,0., tick Func`2, visible true, wantEnabled
+    -1. inputs came view as given; filter as given; overrides as given; visible as given;
+    enabled as given; keepOtherSettings as given; solidFill as given. on Project1'
+  negative_case: 'run with enabled=, filter=Domestic, keepOtherSettings=, overrides=projection-line-colour=255,0,0,
+    solidFill=, view=Project View, visible=true instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned applied false, blank OverrideGraphicSettings, cutFrom
+    Action`2, enabledNow Func`1, findings 1 item(s) [''Domestic'' could not be applied to
+    ''Project View'': The view ...], getEnabled (null), keep true, keepText , keepTick -1,
+    merge Func`3, patternName Func`2, refusal (null), rgb Func`2, row Func`2, setEnabled (null),
+    setsCut Func`2, solid (null), solidCut false, solidLine 1 item(s) [id -3000010], solidSurface
+    false, summary NOTHING KEPT. ''Domestic'' could not be applied to ''Project View'': The
+    view type does not support Visibility/Graphics Overriddes., tick Func`2, visible true,
+    wantEnabled -1. inputs came view as given; filter as given; overrides as given; visible
+    as given; enabled as given; keepOtherSettings as given; solidFill as given. on Project1'
+  second_route: '2026-10-15, Project1: the six filters no view used (Mechanical - Supply,
+    Mechanical - Return, Mechanical - Exhaust, Domestic Cold Water, Domestic Hot Water, Interior)
+    were each put on ''3D Plumbing'' with this fragment KEPT (fragment --write --apply, overrides
+    none, applied true six times). Then a throwaway READ probe that calls the Revit API directly
+    and shares no code with this fragment (ParameterFilterElement.GetCategories, GetElementFilter,
+    FilterInverseRule.GetInnerRule, View.GetFilters, a FilteredElementCollector through the
+    filter), run in the same session and deleted afterwards: View.GetFilters finds each of
+    the six on exactly one view, 3D Plumbing, and {3D} - the positive''s view, rolled back
+    - on none; REPORT_VIEW_FILTERS run after reported 0 unused filters. Two routes agree.'
+  fingerprint: 11739febc28228c7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
