@@ -175,6 +175,8 @@ compatibility-note: >
 #   "dimension this opening from the level and the grid" -> here, version 3:
 #                                       family and face references
 #   "dimension the opening's width and height in this section" -> here
+#                                       (reached by ranking on the spelling
+#                                       backend only - not declared, see below)
 #   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS - centrelines of
 #                                       parallel MEP runs, and only that
 #   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
@@ -196,13 +198,15 @@ utterances:
   - dimension from this to that
   # ADDED 2026-10-15, row 5b-482 - version 3's job, a family instance
   # dimensioned from a datum and by its own faces, asked on a real project
-  # for a builders-work opening in a section. Before version 3 the first went
-  # to DIMENSION_GRIDS_AND_LEVELS on the trained backends, and the second to
-  # LABEL_FAMILY_DIMENSION, a Family Editor write (spelling, model), or
-  # DIMENSION_WALL_OPENINGS (model and re-ranker). Ranking alone did not
-  # bring the second here on the trained model, so both are declared. What
-  # that moved besides them is in the row: on the spelling backend "add an
-  # angular dimension" tips from CREATE_ANGULAR_DIMENSION to CREATE_DIMENSION,
-  # a pair main already ranks less than half a rank apart.
+  # for a builders-work opening in a section. Before version 3 it went to
+  # DIMENSION_GRIDS_AND_LEVELS on the trained backends.
+  #
+  # NOT DECLARED, ON PURPOSE: "dimension the opening's width and height in
+  # this section". Declared here it reached this card on all three backends,
+  # and it also sent the QUESTION "which dimensions are in Section-03" from
+  # SELECT_DIMENSIONS_BY_VALUE to this write on the trained model without the
+  # re-ranker (seen by the session of row 5b-483, re-measured here) - and a
+  # question must not reach a write (D-86). Left undeclared it reaches this
+  # card on the spelling backend by ranking, and stays where main sends it on
+  # the trained ones: LABEL_FAMILY_DIMENSION, DIMENSION_WALL_OPENINGS.
   - dimension this opening from the level and the grid
-  - dimension the opening's width and height in this section
