@@ -1,0 +1,53 @@
+# CREATE_VIEW_FILTER version 3, proved on Revit 2020 - 2026-10-15.
+#
+#     python tools/batch-prove.py tools/jobs/create-view-filter-project2-revit2020-2026-10-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-view-filter-project2-revit2020-2026-10-15.yaml
+#
+# WHY NOW. Version 2 could not run at all: its `parameterId` is an ElementId
+# the add-in binds by no name (FRAGMENT-ISSUES 5b-191), so every call was
+# refused at binding. Version 3 takes `parameterName`, the name Revit shows,
+# and lets `matchValue` lead with the Filters dialog's operator. This file is
+# the first time the fragment has met a model.
+#
+# THE MODEL: "Project2", a NEW, UNSAVED project from Revit 2020's Systems
+# template - 10 view filters, 18 views, two levels (Level 1 at 0 mm, Level 2 at
+# 4000 mm), `{3D}` carrying no filter, no HERON PROOF filter in it. It was
+# opened the same day for the other view-filter proofs
+# (view-filters-project1-revit2020-2026-10-15.yaml). "Project1", the first
+# such project, was CLOSED by the time this ran, so `in: Project2` reaches the
+# second one by name - the live models open beside it in the same Revit are
+# never the target. Read with report-view-filters and list-levels before this
+# file was written.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+model: Project2 (new, unsaved, Revit 2020 Systems template), Revit 2020, session 25244
+defaults:
+  in: Project2
+  write: true
+jobs:
+  # POSITIVE: one filter on Levels whose rule is Name does not contain
+  # "Level 1" - version 3's operator, read off the front of the value - put on
+  # `{3D}` with red lines. `created` is the new filter's id.
+  #
+  # NEGATIVE: System Classification, which Levels cannot be filtered by -
+  # refused, naming the parameter; `created` stays null and nothing is made.
+  - fragment: create-view-filter
+    expect: created
+    set:
+      view: "{3D}"
+      filterName: HERON PROOF CVF Levels
+      categoryIds: Levels
+      parameterName: Name
+      matchValue: does not contain Level 1
+      moreRules: ""
+      combine: ""
+      colour: "255,0,0"
+    negative-set:
+      view: "{3D}"
+      filterName: HERON PROOF CVF Levels
+      categoryIds: Levels
+      parameterName: System Classification
+      matchValue: does not contain Level 1
+      moreRules: ""
+      combine: ""
+      colour: "255,0,0"
