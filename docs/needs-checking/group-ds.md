@@ -72,3 +72,5 @@ been closed. `python tools/batch-prove.py tools/jobs/create-view-filter-project2
   measured. **DS9 for this card:** the signature -
   `python brain/heron_validate.py accept create-view-filter --by "Ajmal PS"`, run in the worktree that
   holds the draft, then `heron-status: PROVEN`.
+- **Signed by Ajmal PS the same day** (fingerprint 266666b41263c99c) and set to `heron-status: PROVEN`
+  on his yes. DS7's `moreRules` half and DS8 for this card stay open.
