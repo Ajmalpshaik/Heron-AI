@@ -36,6 +36,21 @@
 // three-argument one is passed `false`, not case sensitive, the same as
 // CREATE_VIEW_FILTERS_BY_VALUE.
 //
+// VERSION 2 (2026-10-15): THE OPERATOR RIDES IN FRONT OF THE VALUE, in the
+// words of Revit's own Filters dialog - "does not contain TRG". The eight text
+// operators are equals, does not equal, contains, does not contain, begins
+// with, does not begin with, ends with and does not end with; each has its own
+// factory method with the same two spellings and the same 2023 split as
+// CreateEqualsRule, read off all eight reference assemblies with
+// `tools/api-surface --members ParameterFilterRuleFactory` on 2026-10-15. A
+// value with no operator in front is "equals", exactly as version 1 read it,
+// so every older call means what it meant. "equals contains" is how the WORD
+// "contains" is matched; a value that is an operator and nothing else is
+// refused, because there is nothing to match.
+//
+// THE "DOES NOT" RULES COME BACK FROM REVIT WRAPPED - a FilterInverseRule
+// around the positive one - so the read-back unwraps it and says "does not".
+//
 // EVERYTHING IS CHECKED BEFORE ANYTHING IS CREATED - names, the categories,
 // the parameter, and each rule against Revit's own acceptability test. The
 // creating loop then catches nothing: an exception there ends the run, and
@@ -60,6 +75,49 @@ if (filterNames != null)
 var values = new List<string>();
 if (matchValues != null)
     foreach (var given in matchValues) values.Add((given ?? "").Trim());
+
+// Each value split into the operator in front of it and the text it matches.
+// Longest first, so "does not contain" is never read as something shorter.
+var operatorWords = new[]
+{
+    "does not begin with", "does not end with", "does not contain", "does not equal",
+    "begins with", "ends with", "contains", "equals",
+};
+var operatorMethods = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+{
+    { "does not begin with", "CreateNotBeginsWithRule" },
+    { "does not end with", "CreateNotEndsWithRule" },
+    { "does not contain", "CreateNotContainsRule" },
+    { "does not equal", "CreateNotEqualsRule" },
+    { "begins with", "CreateBeginsWithRule" },
+    { "ends with", "CreateEndsWithRule" },
+    { "contains", "CreateContainsRule" },
+    { "equals", "CreateEqualsRule" },
+};
+var operators = new List<string>();
+var texts = new List<string>();
+var bareOperator = "";
+foreach (var value in values)
+{
+    var op = "equals";
+    var text = value;
+    foreach (var word in operatorWords)
+    {
+        if (string.Equals(value, word, StringComparison.OrdinalIgnoreCase))
+        {
+            if (bareOperator.Length == 0) bareOperator = value;
+            break;
+        }
+        if (value.StartsWith(word + " ", StringComparison.OrdinalIgnoreCase))
+        {
+            op = word;
+            text = value.Substring(word.Length).Trim();
+            break;
+        }
+    }
+    operators.Add(op);
+    texts.Add(text);
+}
 
 var wanted = (parameterName ?? "").Trim();
 
@@ -112,6 +170,15 @@ else if (names.Count != values.Count)
 else if (names.Contains("") || values.Contains(""))
 {
     refused = "a filter name or a value was blank - every filter needs both";
+}
+else if (bareOperator.Length > 0)
+{
+    refused = string.Format("'{0}' is an operator with nothing after it - write what it should "
+        + "match, \"{0} TRG\", or \"equals {0}\" to match the word itself", bareOperator);
+}
+else if (texts.Contains(""))
+{
+    refused = "a value was an operator with nothing after it - every filter needs text to match";
 }
 else if (repeated.Length > 0)
 {
@@ -311,18 +378,6 @@ var tests = new Dictionary<int, ElementFilter>();
 
 if (refused.Length == 0)
 {
-    System.Reflection.MethodInfo withoutFlag = null;
-    System.Reflection.MethodInfo withFlag = null;
-    foreach (var candidate in typeof(ParameterFilterRuleFactory).GetMethods())
-    {
-        if (candidate.Name != "CreateEqualsRule") continue;
-        var arguments = candidate.GetParameters();
-        if (arguments.Length < 2 || arguments[0].ParameterType != typeof(ElementId)
-            || arguments[1].ParameterType != typeof(string)) continue;
-        if (arguments.Length == 2) withoutFlag = candidate;
-        else if (arguments.Length == 3 && arguments[2].ParameterType == typeof(bool)) withFlag = candidate;
-    }
-
     // Filter names already in the project - FilterElement, so a SELECTION
     // filter of the same name is seen too; both live in one list.
     var existing = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -334,67 +389,81 @@ if (refused.Length == 0)
 
     var categorySet = new HashSet<ElementId>(categoryIds);
 
-    if (withoutFlag == null && withFlag == null)
+    for (var index = 0; index < names.Count && refused.Length == 0; index++)
     {
-        refused = "this Revit version exposes no text rule this recognises - no filter was created";
-    }
-    else
-    {
-        for (var index = 0; index < names.Count && refused.Length == 0; index++)
+        var name = names[index];
+        if (existing.ContainsKey(name))
         {
-            var name = names[index];
-            if (existing.ContainsKey(name))
-            {
-                alreadyExists.Add(existing[name] == name
-                    ? name
-                    : string.Format("{0} (held as '{1}')", name, existing[name]));
-                continue;
-            }
-
-            FilterRule rule = null;
-            try
-            {
-                rule = withoutFlag != null
-                    ? withoutFlag.Invoke(null, new object[] { ruleParameter, values[index] }) as FilterRule
-                    : withFlag.Invoke(null, new object[] { ruleParameter, values[index], false }) as FilterRule;
-            }
-            catch (Exception ex)
-            {
-                var cause = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                refused = string.Format("NOTHING WAS CREATED. Revit would not build the rule '{0}' "
-                    + "equals '{1}': {2}", wanted, values[index], cause);
-                break;
-            }
-
-            if (rule == null)
-            {
-                refused = string.Format("NOTHING WAS CREATED. Revit built no rule for '{0}' equals "
-                    + "'{1}'", wanted, values[index]);
-                break;
-            }
-
-            var test = new ElementParameterFilter(rule);
-
-            var acceptable = false;
-            var why = "";
-            try
-            {
-                acceptable = ParameterFilterElement.ElementFilterIsAcceptableForParameterFilterElement(
-                    doc, categorySet, test);
-            }
-            catch (Exception ex) { why = " - " + ex.Message; }
-
-            if (!acceptable)
-            {
-                refused = string.Format("NOTHING WAS CREATED. Revit says the rule '{0}' equals '{1}' "
-                    + "cannot be used on these categories{2}. A text rule on a parameter that holds a "
-                    + "number is the usual reason", wanted, values[index], why);
-                break;
-            }
-
-            toCreate.Add(index);
-            tests[index] = test;
+            alreadyExists.Add(existing[name] == name
+                ? name
+                : string.Format("{0} (held as '{1}')", name, existing[name]));
+            continue;
         }
+
+        // The factory for this operator, in whichever spelling this release has.
+        var op = operators[index];
+        System.Reflection.MethodInfo withoutFlag = null;
+        System.Reflection.MethodInfo withFlag = null;
+        foreach (var candidate in typeof(ParameterFilterRuleFactory).GetMethods())
+        {
+            if (candidate.Name != operatorMethods[op]) continue;
+            var arguments = candidate.GetParameters();
+            if (arguments.Length < 2 || arguments[0].ParameterType != typeof(ElementId)
+                || arguments[1].ParameterType != typeof(string)) continue;
+            if (arguments.Length == 2) withoutFlag = candidate;
+            else if (arguments.Length == 3 && arguments[2].ParameterType == typeof(bool)) withFlag = candidate;
+        }
+
+        if (withoutFlag == null && withFlag == null)
+        {
+            refused = string.Format("NOTHING WAS CREATED. This Revit version has no text rule "
+                + "'{0}' this recognises", op);
+            break;
+        }
+
+        FilterRule rule = null;
+        try
+        {
+            rule = withoutFlag != null
+                ? withoutFlag.Invoke(null, new object[] { ruleParameter, texts[index] }) as FilterRule
+                : withFlag.Invoke(null, new object[] { ruleParameter, texts[index], false }) as FilterRule;
+        }
+        catch (Exception ex)
+        {
+            var cause = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            refused = string.Format("NOTHING WAS CREATED. Revit would not build the rule '{0}' "
+                + "{1} '{2}': {3}", wanted, op, texts[index], cause);
+            break;
+        }
+
+        if (rule == null)
+        {
+            refused = string.Format("NOTHING WAS CREATED. Revit built no rule for '{0}' {1} "
+                + "'{2}'", wanted, op, texts[index]);
+            break;
+        }
+
+        var test = new ElementParameterFilter(rule);
+
+        var acceptable = false;
+        var why = "";
+        try
+        {
+            acceptable = ParameterFilterElement.ElementFilterIsAcceptableForParameterFilterElement(
+                doc, categorySet, test);
+        }
+        catch (Exception ex) { why = " - " + ex.Message; }
+
+        if (!acceptable)
+        {
+            refused = string.Format("NOTHING WAS CREATED. Revit says the rule '{0}' {1} '{2}' "
+                + "cannot be used on these categories{3}. A text rule on a parameter that holds a "
+                + "number is the usual reason", wanted, op, texts[index], why);
+            break;
+        }
+
+        toCreate.Add(index);
+        tests[index] = test;
     }
 }
 
@@ -449,8 +518,18 @@ if (refused.Length == 0)
                 continue;
             }
 
-            foreach (var heldRule in byParameter.GetRules())
+            foreach (var outerRule in byParameter.GetRules())
             {
+                // A "does not" rule is held as the positive one, inverted.
+                var heldRule = outerRule;
+                var inverted = false;
+                var inverse = outerRule as FilterInverseRule;
+                if (inverse != null && inverse.GetInnerRule() != null)
+                {
+                    heldRule = inverse.GetInnerRule();
+                    inverted = true;
+                }
+
                 var parameterText = "?";
                 try
                 {
@@ -466,12 +545,17 @@ if (refused.Length == 0)
                 {
                     var evaluator = textRule.GetEvaluator();
                     var verb = evaluator == null ? "?" : evaluator.GetType().Name;
-                    if (verb == "FilterStringEquals") verb = "equals";
+                    if (verb == "FilterStringEquals") verb = inverted ? "does not equal" : "equals";
+                    else if (verb == "FilterStringContains") verb = inverted ? "does not contain" : "contains";
+                    else if (verb == "FilterStringBeginsWith") verb = inverted ? "does not begin with" : "begins with";
+                    else if (verb == "FilterStringEndsWith") verb = inverted ? "does not end with" : "ends with";
+                    else if (inverted) verb = "NOT " + verb;
                     heldRules.Add(string.Format("{0} {1} '{2}'", parameterText, verb, textRule.RuleString));
                 }
                 else
                 {
-                    heldRules.Add(string.Format("{0} ({1})", parameterText, heldRule.GetType().Name));
+                    heldRules.Add(string.Format("{0} ({1}{2})", parameterText, inverted ? "NOT " : "",
+                        heldRule.GetType().Name));
                 }
             }
         }

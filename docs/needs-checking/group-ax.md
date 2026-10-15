@@ -75,3 +75,27 @@ outcome is in doubt is measured without keeping it -
 | **AX3** | The second route, THEN the signature. Revit's own Manage, Filters dialog, on the working model after AX1, or on the test copy after the positive leg is run and KEPT in a chat. Write what was seen into the `second_route` field of the draft that `brain/proof-drafts/` holds for `create-view-filters-by-rule`, with the model and the date. Only then sign it with `python brain/heron_validate.py accept create-view-filters-by-rule --by "Ajmal PS"` and set `heron-status: PROVEN` | The dialog shows the categories ticked and the rule exactly as `readBack` reported them. **Read on screen, not inferred from `created`** |
 | **AX4** | Whether capitals matter on 2023 and later. On a test copy, in a chat: the five categories, `filterNames=HERON CASE`, `parameterName=System Classification`, `matchValues=supply air` - lower case | Either catches the same 45 as "Supply Air" (capitals do not matter) or 0 (they do). **Write down which**: the three-argument rule used on 2020 to 2022 is passed "not case sensitive", so a 0 here would mean the same filter catches different elements on different Revit releases |
 | **AX5** | The two legs for `set-view-filter-categories` - **a draft, not yet signed.** On a TEST COPY saved AFTER call 5 above, so it holds the three filters: `python tools/batch-prove.py tools/jobs/set-view-filter-categories-project1-2026-09-27.yaml --dry-run`, then the same without `--dry-run`. Sign only after AX1 is written into the draft's `second_route` | `PASS`. The positive: `changed` 2 and `readBack` naming Air Terminals and Ducts only, for Supply Air and Return Air. The negative - Walls alone: `changed` 0, `leftOut` naming Walls, and `refused` saying each was left as it was, never emptied. `POSITIVE EMPTY` with `notFound` filled means the copy is older than the filters. Afterwards Manage, Filters shows the eight categories again - both legs are rolled back |
+
+### 2026-10-15 - AX2, AX3 and AX5 done on Revit 2020, both fragments PROVEN
+
+Run on the owner's PC with `tools/jobs/view-filters-project1-revit2020-2026-10-15.yaml`, against
+"Project1" - a NEW, unsaved project from Revit 2020's Systems template, opened beside the working
+model for this - not on "heron ai bulding", whose copies these rows were written for. Signed by
+Ajmal PS the same day; both cards set to `heron-status: PROVEN`.
+
+- **`create-view-filters-by-rule` is version 2 first**: a value may lead with the operator Revit's
+  Filters dialog shows ("does not contain TRG"); none is equals, as before. The positive made two
+  Levels filters in one call - *Name does not contain 'Level 1'* and *Name equals 'Level 2'*, each
+  catching one level; the negative, System Classification on Levels, named Levels in
+  `cannotFilter` and created nothing.
+- **`set-view-filter-categories`**: Domestic cut from four pipe categories to Pipes and Pipe
+  Fittings, `changed` 1; Walls alone left it as it was. Its `readBack` is now `role: accounting` -
+  it describes the filter in both legs, and the first run read that as content in the negative -
+  and it names a rule in the dialog's words ("contains"), where it printed "FilterStringContains".
+- **AX3's second route was not the Filters dialog by eye.** Each positive was run once more and
+  KEPT in Project1, then read by a throwaway probe calling the Revit API directly
+  (`ParameterFilterElement.GetCategories`, `GetElementFilter`, `FilterInverseRule.GetInnerRule`, a
+  collector through the filter), sharing no code with either fragment; both agreed. The words are
+  in each card's `second_route`.
+- **Still open: AX1** (the working model's three filters, by eye) **and AX4** (capitals on 2023
+  and later) - neither was reachable on Revit 2020.

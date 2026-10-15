@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -82,30 +82,38 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-09'
+  date: '2026-10-15'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 17356
+  model: 'Project1 (new, unsaved, Revit 2020 Systems template - 10 view filters, 18 views,
+    2 levels), Revit 2020, session 25244 - element count not recorded: the count the client
+    measured was of the other document in front, not Project1 (row 15)'
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned byValue 3 entry(ies),
-    categories 1 item(s) [-2008000], created 3 item(s) [ParameterFilterElement, ParameterFilterElement,
-    ParameterFilterElement], parameterId ElementId, refused 1 item(s) [3 distinct value(s)
-    of 'System Type' across 1 category(ies)....], valuesFound 3 item(s) [Exhaust Air, Return
-    Air, Supply Air], withoutParameter 0. inputs came view as given; elements from the selection
-    (307); parameterName as given; namePrefix as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: L3, view=FloorPlan: L3,
-    parameterName=ZZZNOTHINGHERE, namePrefix=HERON Z8 instead - chosen because it should not
-    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase''s own values - run inside a transaction and ROLLED BACK,
-    so the model was left exactly as it was. returned byValue 0 entry(ies), categories 0 item(s),
-    created 0 item(s), parameterId ElementId, refused 2 item(s) [307 element(s) do not carry
-    ''ZZZNOTHINGHERE'' and were left o..., no element carries a parameter called ''ZZZNOTHINGHERE''
-    - not...], valuesFound 0 item(s), withoutParameter 307. inputs came view as given; elements
-    from the selection (307); parameterName as given; namePrefix as given. on Snowdon-scratch_ajmal.al'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 5db0230e4db0bb0d
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned byValue 2 entry(ies),
+    carriesItTwice 0, categories 1 item(s) [-2000240], created 2 item(s) [ParameterFilterElement,
+    ParameterFilterElement], parameterId 1 item(s) [id -1008000], refused 1 item(s) [2 distinct
+    value(s) of 'Name' across 1 category(ies). These ...], valuesFound 2 item(s) [Level 1,
+    Level 2], withoutParameter 0. inputs came view as given; elements from the selection (2);
+    parameterName as given; namePrefix as given. on Project1
+  negative_case: run with namePrefix=HERON PROOF , parameterName=ZZZNOTHINGHERE, view=North
+    - Mech arranged with categoryName=Levels, inViewOnly=North - Mech instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running select-by-category-name, set-selection with this phase's own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    byValue 0 entry(ies), carriesItTwice 0, categories 0 item(s), created 0 item(s), parameterId
+    (null), refused 2 item(s) [2 element(s) do not carry 'ZZZNOTHINGHERE' and were left out...,
+    no element carries a parameter called 'ZZZNOTHINGHERE' - not...], valuesFound 0 item(s),
+    withoutParameter 2. inputs came view as given; elements from the selection (2); parameterName
+    as given; namePrefix as given. on Project1
+  second_route: '2026-10-15, Project1: the positive KEPT on the same arrangement (select-by-category-name
+    Levels in North - Mech, set-selection 2) with namePrefix ''HERON CHECK '' - created 2,
+    valuesFound Level 1, Level 2. Then a throwaway READ probe that calls the Revit API directly
+    and shares no code with this fragment (ParameterFilterElement.GetCategories, GetElementFilter,
+    FilterInverseRule.GetInnerRule, View.GetFilters, a FilteredElementCollector through the
+    filter), run in the same session and deleted afterwards: ''HERON CHECK Level 1'' holds
+    Name equals ''Level 1'' and catches Level 1, ''HERON CHECK Level 2'' holds equals ''Level
+    2'' and catches Level 2, both on North - Mech. Two routes agree.'
+  fingerprint: ecbe5e1777c480c5
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
