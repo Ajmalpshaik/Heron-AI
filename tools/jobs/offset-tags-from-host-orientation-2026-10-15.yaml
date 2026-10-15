@@ -33,7 +33,8 @@
 #      family is not set to rotate with its door: every tag must read
 #      Horizontal before the run.
 #   5. One room inside the rectangle, tagged (the Room tool tags it), the tag
-#      Horizontal.
+#      Horizontal with no leader - `leadersOn` is a result, so a leader on it
+#      would make EG2's negative read not empty.
 #
 # EDIT BEFORE THE RUN - batch-prove has no way to fill this in:
 #   - `in:` below: the title Revit shows for the new project, as the title

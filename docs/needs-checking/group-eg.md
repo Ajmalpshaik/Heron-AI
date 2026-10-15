@@ -32,8 +32,20 @@ an element tag for Model there is refused and the tag left as it was. **A room, 
 orientation takes Horizontal, Vertical and Model on every release 2020 to 2027.** Whether Revit then
 accepts a value for a given tag family is in no assembly; it is what the read-back and these rows find out.
 
-**Compiled for every release 2020 to 2027, not yet run in Revit.** The job file's dry run reads all three
-jobs runnable, and Group AY's version 1 job still reads runnable with none of the new switches in it.
+**Compiled for every release 2020 to 2027.** The job file's dry run reads all three jobs runnable, and Group
+AY's version 1 job still reads runnable with none of the new switches in it.
+
+**FIRST RUN IN REVIT, 2026-10-15 - ON THE REAL PROJECT, SO NOT THE PROOF.** The session that asked for
+version 2 ran the card as committed (`f4cd49ea`) the same day, on the owner's word, from a copy in its scratch
+root through the bridge client - not the live server - on model 4355-BHVD-3D-21P60-ST001I in Revit 2020
+(session 3460), view *PLAN AT EL. +115.292__Builders Work Layouts 3*: tag 6650538 (a Generic Model tag on
+opening 6650523, in a north-south wall), chained from `filter-elements-by-id`, with
+`tagCategories=Generic Model Tags`, both offsets 0, `addLeader=keep`, `orientVertical=true` and
+`keepHead=true`. As that session reported it (not re-read here): rolled back first, *"1 tag(s) changed with
+each head left where it was ... turned Vertical. 1 turned"*, every head within 0 mm; then kept, `turned` 1,
+and read back separately - the head unchanged at (1067220, 931902) and the orientation Vertical. **What it
+does not settle:** a real model, which the proof must not be; `orientVertical`, not `orientToHost`; one tag;
+and no negative case. EG1 to EG7 below still decide it.
 
 **THE TEST PROJECT IS A NEW ONE, NEVER THE REAL PROJECT.** The header of
 [`tools/jobs/offset-tags-from-host-orientation-2026-10-15.yaml`](../../tools/jobs/offset-tags-from-host-orientation-2026-10-15.yaml)
