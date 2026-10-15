@@ -62,7 +62,10 @@ purpose: >
      level's walls with withOverall=true, each at the offsetMm the modeller
      gives. Look at each plan afterwards: on the first set one wall's strings
      ran through three room tags, and taking a string away is a delete that
-     needs the modeller's yes for that one delete.
+     needs the modeller's yes for that one delete. One element in a section
+     or elevation - an opening from its level and grid, its own width and
+     height - is CREATE_LINEAR_DIMENSION (DRAFT, version 3 of 2026-10-15),
+     "face ID top" and "family ID Left" among its references.
   9. PLACE_VIEW_ON_SHEET (PROVEN), each plan and elevation on its own sheet,
      at a point on the sheet in millimetres inside the title block's drawing
      area ((390, 300) on "A1 metric"). A view goes on one sheet only.
@@ -136,6 +139,8 @@ needs:
   - TAG_ELEMENTS
   - DIMENSION_ROOMS
   - DIMENSION_WALL_OPENINGS
+  # Only for one element in a section or elevation - see step 8.
+  - CREATE_LINEAR_DIMENSION
   - PLACE_VIEW_ON_SHEET
   - CREATE_SCHEDULE
   - FIND_SCHEDULES
