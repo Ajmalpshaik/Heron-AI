@@ -5,16 +5,35 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-122
-semantic-identity: "what do the spot elevations and spot coordinates show, and on what"
+semantic-identity: "list the existing dimensions in a view - the value each one reads and the references it measures between - and what the spot elevations show"
 kind: action
 domain: revit.annotation
 capability: REPORT_SPOT_DIMENSIONS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
+#
+# VERSION 2 (2026-10-15, row 5b-483): EVERY DIMENSION, not only spots. "list
+# the dimensions in this view with their values and references" reached
+# CREATE_LINEAR_DIMENSION - a write - on the live server, because no read
+# listed a view's dimensions: SELECT_DIMENSIONS_BY_VALUE only filters by a
+# range and refuses without one, REPORT_VIEW_REFERENCES reads section marks,
+# and revit_annotation counts. This card already listed one kind of dimension
+# with its text and what it is on, so it was widened rather than a second
+# card added. Spots stay in `spots`, collected exactly as version 1 did;
+# the rest go in `dimensions`, one line each: the view, the kind and shape,
+# the type, the text each segment shows, and what it measures between - a
+# grid or level by name, a plane by name, an element by category, family,
+# type, Mark and id, a face in a linked model by the link.
+#
+# A TYPED-OVER VALUE ("EQ") is printed as typed with what it measures beside
+# it - the drawing shows the first, the model holds the second.
+#
+# A LOCK OR ALIGNMENT is a Dimension underneath, in the Constraints category.
+# The drawing shows none, so it is left out and counted in `findings`.
 #
 # THE TEXT IS REVIT'S: prefix, ValueString and suffix as the drawing prints
 # them, in the project's units and the spot type's format. A figure derived
@@ -29,9 +48,10 @@ risk: READ
 #
 # READ ONLY - opens no transaction.
 purpose: >
-  Lists the spot elevations, spot coordinates and spot slopes in one view or
-  the whole model - the view each sits in, the text it shows, and the element
-  it measures - and the spots that measure nothing any more.
+  Answers what the dimensions in one view or the whole model read: each
+  linear, angular or radial dimension's text, segment by segment, and the
+  grids, levels or elements it measures between; each spot elevation,
+  coordinate or slope and what it is on; and the ones measuring nothing.
 
 contract:
   needs:
@@ -53,9 +73,18 @@ contract:
     - name: spotCount
       role: result
       type: int
+    - name: dimensions
+      # VERSION 2. ONE STRING, a line per dimension that is not a spot, for
+      # the same reason as `spots`: view | kind (shape) | type | reads the
+      # text of each segment | between what it measures | its id.
+      role: result
+      type: string
+    - name: dimensionCount
+      role: result
+      type: int
     - name: onNothing
-      # Spots whose reference names no element - a value on the sheet that
-      # measures nothing (D-52).
+      # Dimensions and spots whose references name no element - a value on
+      # the sheet that measures nothing (D-52).
       role: accounting
       type: IList<ElementId>
     - name: findings
@@ -69,13 +98,22 @@ compatibility-note: >
   One implementation for every release. SpotDimension, Dimension.ValueString,
   Prefix, Suffix and References, and Element.OwnerViewId are present 2020
   through 2027 - read off RevitAPI.xml in the Nice3point reference packages
-  for all eight releases on 2026-10-12.
+  for all eight releases on 2026-10-12. Version 2 adds Dimension
+  .DimensionShape, ValueOverride, NumberOfSegments and Segments,
+  DimensionSegment's Prefix, Suffix, ValueString and ValueOverride,
+  Reference.LinkedElementId and the Constraints category - it compiled on
+  all eight releases with tools/check-fragments-compile.py on 2026-10-15 -
+  and compares category ids as ElementId, never as an integer.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "what do the spot levels say"             -> here
 #   "list the spot elevations on this plan"   -> here
+#   "list the dimensions in this view with their values and references" -> here
 #   "put spot levels on these"                -> ADD_SPOT_ELEVATIONS - a WRITE
+#   "dimension between grid A and grid B"     -> CREATE_LINEAR_DIMENSION - a WRITE
+#   "which dimensions are less than 500"      -> SELECT_DIMENSIONS_BY_VALUE
+#   "find the locked dimensions on these"     -> REPORT_CONSTRAINTS
 #   "which views show this element"           -> FIND_VIEWS_SHOWING_ELEMENT
 
 utterances:
@@ -83,3 +121,4 @@ utterances:
   - what do the spot levels say
   - read the spot coordinates in the model
   - which spot elevations are not on anything any more
+  - list the dimensions in this view with their values and references
