@@ -46,3 +46,29 @@ connected, and `< /dev/null` on every line.
 | **DS11** | A family with a solid cut by a void: `COMBINE_FAMILY_FORMS` forms "list", then "separate" and the solid's id | the one combination and its two forms; then both forms standing alone, the hole gone, both still in the family |
 | **DS8** | The rest on **Revit 2020** and **2027** | the same answers; on 2027 the intersections come from the newer call. Compiled on every declared release; what Revit DOES was measured on none |
 | **DS9** | The signatures, on the owner's word only, after the rows above | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each |
+
+### 2026-10-15 - DS7: `CREATE_VIEW_FILTER` version 3 ran on Revit 2020; signature owed
+
+Version 2 could never reach Revit: its `parameterId` was an ElementId the add-in binds by no name
+([FRAGMENT-ISSUES 5b-191](../FRAGMENT-ISSUES.md#)), so DS7 could not be run as written. Version 3 is the
+same card edited ([row 5b-479](../FRAGMENT-ISSUES.md#)): `parameterName`, typed as Revit shows it, and a
+`matchValue` that may lead with the Filters dialog's operator, *"does not contain Level 1"*. Its rule
+factories are found by reflection, so no `#if` is left. Compiled on all eight releases.
+
+Run on the owner's PC, **Revit 2020, session 25244**, in "Project2" - a new, unsaved project from the
+Systems template, opened that day for the other view-filter proofs. "Project1", named for this, had
+been closed. `python tools/batch-prove.py tools/jobs/create-view-filter-project2-revit2020-2026-10-15.yaml`:
+
+- **PASS.** Levels, `parameterName` Name, `matchValue` *does not contain Level 1*, red, on `{3D}` -
+  `created` id 918728 (rolled back). With `parameterName` System Classification - refused, *"no parameter
+  the filter's categories share is called "System Classification" - nothing was made"*, `created` null.
+- **Second route.** The positive run once more KEPT (`fragment --in Project2 create-view-filter --write
+  --apply`, id 918729). `REPORT_VIEW_FILTERS` on `{3D}`, which carried no filter before, then showed
+  *HERON PROOF CVF Levels*: Visibility ON, lines and foreground patterns 255,0,0, projection and cut,
+  and the project's filters went from 10 to 11. `TEST_VIEW_FILTER_MATCH` on both levels: matched Level 2
+  only. The kept filter is still in Project2, which is unsaved.
+- **Still open in DS7:** `moreRules` with `combine` and, then or. **DS8 for this card:** Revit 2021 to
+  2027 - on 2023 and later the two-argument factory is taken, and whether it ignores capitals is not
+  measured. **DS9 for this card:** the signature -
+  `python brain/heron_validate.py accept create-view-filter --by "Ajmal PS"`, run in the worktree that
+  holds the draft, then `heron-status: PROVEN`.

@@ -9,13 +9,20 @@ semantic-identity: "a rule that finds elements by a parameter value and colours 
 kind: action
 domain: revit.views
 capability: CREATE_VIEW_FILTER
-version: 2
+# Version 3, 2026-10-15: the parameter is typed by NAME - `parameterName`,
+# where version 2's `parameterId` could be bound by no name at all
+# (FRAGMENT-ISSUES 5b-191) - and `matchValue` may lead with the operator
+# Revit's Filters dialog shows, "does not contain Level 1". No operator is
+# equals, as version 2 read it.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Creates a filter that tests one parameter - or several, all or any of them
   (version 2) - applies it to a view, and colours whatever the rule matches.
+  Version 3: the parameter by its name, and an operator in front of the value
+  when it is not equals - "does not contain Level 1".
 
   **A filter matches; it does not remember.** Whatever satisfies the rule is
   caught, including work modelled next week - so a reissued drawing stays
@@ -38,14 +45,23 @@ contract:
     - name: categoryIds
       type: ICollection<ElementId>
       source: request
-    - name: parameterId
-      type: ElementId
+    # The parameter the first rule tests, by the name Revit shows - "Type
+    # Name", "System Classification" - among those EVERY category given may
+    # be filtered by. None, or two, refuses; a built-in one may be typed by
+    # its Revit name, RBS_SYSTEM_CLASSIFICATION_PARAM, to choose it (version 3).
+    - name: parameterName
+      type: string
       source: request
+    # The text the first rule matches, with the operator in front when it is
+    # not "equals": equals, does not equal, contains, does not contain, begins
+    # with, does not begin with, ends with, does not end with ("does not
+    # contain Level 1"). "equals contains" matches the word itself (version 3).
     - name: matchValue
       type: string
       source: request
-    # More rules beside the first, "Name = value; Name contains text"; an EMPTY
-    # value is the one rule alone (version 2).
+    # More rules beside the first, "Name = value; Name contains text", with =,
+    # != or any of the eight operators above; an EMPTY value is the one rule
+    # alone (version 2).
     - name: moreRules
       type: string
       source: request
@@ -72,16 +88,21 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  **The second fragment in the library needing a compile symbol.** Neither form
-  of `ParameterFilterRuleFactory.CreateEqualsRule` for a string spans 2020 to
-  2027:
+  **No compile symbol since version 3: the rule factories are reached by
+  reflection, by method name.** Neither form of a text rule factory in
+  `ParameterFilterRuleFactory` - CreateEqualsRule and the seven others the
+  operators call - spans 2020 to 2027:
 
     (ElementId, string, bool)   2020 to 2025. REMOVED IN 2026
     (ElementId, string)         ADDED IN 2023
 
-  The overlap is 2023 to 2025. The split is at 2023 rather than at 2026 - both
-  work - so that the newer form is used from the first release that has it,
-  which is the shorter-lived branch to maintain.
+  The two-argument form is taken where it exists, otherwise the three-argument
+  one with `false`, not case sensitive, as CREATE_VIEW_FILTERS_BY_RULE does.
+  Version 2 split on a REVIT20xx symbol, which the add-in did not pass a
+  fragment until 2026-10-09 (FRAGMENT-ISSUES 5b-181), so on 2020 to 2022 it
+  compiled the newer branch and failed; reflection does not depend on it.
+
+  The next paragraph is about version 2's split, kept for its lesson.
 
   **THIS NOTE WAS WRONG WHEN FIRST WRITTEN AND THE CODE WAS NOT.** It said the
   three-argument form was "gone after 2022"; it survived to 2025. The
@@ -94,9 +115,9 @@ compatibility-note: >
   ElementFilter)`, `View.AddFilter` and `View.SetFilterOverrides` are unchanged
   across the whole span.
 
-  It puts the same REQUIREMENT ON UNBUILT WORK that FIND_UNTAGGED_ELEMENTS
-  does: D-28's Roslyn executor must define the `REVIT20xx` symbol MSBuild
-  defines, or the `#else` branch is taken and this breaks on 2020 to 2022 only.
+  Version 2 put a REQUIREMENT on the executor - define the `REVIT20xx` symbol
+  MSBuild defines, or the `#else` branch is taken and this breaks on 2020 to
+  2022. Version 3 has no `#if` and puts none.
 
 # WHY THE CONTRAST BELOW IS IN A COMMENT. `purpose` is indexed, and the first
 # draft explained this fragment by describing what OVERRIDE_GRAPHICS_IN_VIEW
@@ -151,7 +172,8 @@ compatibility-note: >
 #    ducts"                                 parameter typed by NAME, the
 #                                           categories by name, one or several
 #                                           filters, and on NO view - this one
-#                                           needs a parameter id and a view
+#                                           makes ONE and puts it on a view
+#                                           with a colour
 utterances:
   - colour by system
   - add a filter to the view

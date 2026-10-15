@@ -14,6 +14,12 @@ positive:
       one filter matching only supply ducts whose comments hold L2; with
       combine or, every supply duct and every duct marked L2 (version 2)
 
+  - given: 'categories Levels, parameterName Name, matchValue "does not contain Level 1", red'
+    expect: >
+      one filter whose rule Revit holds as Name does not contain 'Level 1',
+      on the view with red lines - the operator read off the front of the
+      value (version 3)
+
 negative:
   - given: a filter name already in the project
     expect: >
@@ -23,15 +29,32 @@ negative:
 
   - given: value "supply air" against a system type named "Supply Air"
     expect: >
-      NO match on Revit 2020 to 2022, where the case-sensitivity flag is passed
-      as true on purpose - a project with both "SUPPLY" and "Supply" has two
-      different system types and a loose match colours the wrong one.
+      A MATCH on Revit 2020 to 2022 since version 3. There the three-argument
+      factory is the only one, and it is passed the case-sensitivity flag as
+      false - as CREATE_VIEW_FILTERS_BY_RULE does. Version 2 passed
+      true, so that "SUPPLY" and "Supply" stayed two systems, and on 2023 and
+      later the two-argument form has nowhere to say either way.
 
-      ON 2023 AND LATER THIS IS UNVERIFIED. The overload has nowhere to say, and
-      reflection shows a signature rather than a behaviour. **Check this case
-      first when the fragment meets a real model**: if the two branches disagree,
-      the same filter colours different elements on different Revit versions,
-      which is the worst place for a difference to hide
+      ON 2023 AND LATER THIS IS STILL UNVERIFIED. Reflection shows a signature
+      rather than a behaviour. **Check this case first when the fragment meets
+      a real model on a newer Revit**: if the two spellings disagree, the same
+      filter colours different elements on different Revit versions, which is
+      the worst place for a difference to hide
+
+  - given: a parameterName none of the categories can be filtered by - System Classification on Levels
+    expect: >
+      refused, naming the parameter, and nothing made - no filter in the
+      project and none on the view (version 3)
+
+  - given: a parameterName two shared parameters answer to
+    expect: >
+      refused, naming both; the built-in one can then be typed by its Revit
+      name to choose it (version 3)
+
+  - given: a matchValue that is an operator alone - "does not contain"
+    expect: >
+      refused - there is nothing to match. "equals does not contain" matches
+      the words themselves (version 3)
 
   - given: no parameter given
     expect: >
@@ -40,9 +63,9 @@ negative:
 
   - given: compiled with no REVIT20xx symbol defined
     expect: >
-      the 2023-onward branch is taken and it fails on 2020 to 2022 - which
-      includes the release the owner runs. That is a requirement on D-28's
-      unbuilt executor, not a defect here
+      the same code on every release since version 3 - the factory is found
+      by reflection, so there is no branch to take. Version 2 took its
+      2023-onward branch and failed on 2020 to 2022
 
 second_route:
   - Revit's own View > Filters dialog with the same categories and rule, compared for which elements change colour
