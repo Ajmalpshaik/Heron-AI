@@ -83,6 +83,43 @@ contract:
       role: accounting
       type: string
 
+proof:
+  date: '2026-10-15'
+  by: Ajmal PS
+  model: Project2, Revit 2020, session 25244 - the count is NOT recorded because 25,093 elements
+    was measured on 4355-BHVD-3D-21S10-BL001A, the document in front, and this ran against
+    another one (row 15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned bareOperator , created 1 item(s)
+    [id 918728], firstOperator does not contain, firstText Level 1, name HERON PROOF CVF Levels,
+    operatorMethods 10 entry(ies), operatorWords 8 item(s) [does not begin with, does not
+    end with, does not contain, ...], refused (null), wanted Name. inputs came view as given;
+    filterName as given; categoryIds as given (1); parameterName as given; matchValue as given;
+    moreRules as given; combine as given; colour as given. on Project2
+  negative_case: run with categoryIds=Levels, colour=255,0,0, combine=, filterName=HERON PROOF
+    CVF Levels, matchValue=does not contain Level 1, moreRules=, parameterName=System Classification,
+    view={3D} instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned bareOperator , created (null), firstOperator does not contain, firstText Level
+    1, name HERON PROOF CVF Levels, operatorMethods 10 entry(ies), operatorWords 8 item(s)
+    [does not begin with, does not end with, does not contain, ...], refused no parameter
+    the filter's categories share is called "System Classification" - nothing was made, wanted
+    System Classification. inputs came view as given; filterName as given; categoryIds as
+    given (1); parameterName as given; matchValue as given; moreRules as given; combine as
+    given; colour as given. on Project2
+  second_route: '2026-10-15, Project2: the positive run once more and KEPT - fragment --in
+    Project2 create-view-filter --write --apply with the same values, created id 918729, APPLIED.
+    Then read back by two PROVEN reads that share no code with this fragment. REPORT_VIEW_FILTERS
+    viewName={3D}: {3D}, which carried no filter before, now carries one - ''HERON PROOF CVF
+    Levels'', Visibility ON, Projection/Surface Lines colour 255,0,0, Surface Patterns foreground
+    colour 255,0,0, Cut Lines colour 255,0,0, Cut Patterns foreground colour 255,0,0, cut
+    not applicable for Levels - and the project''s filters went from 10 to 11. TEST_VIEW_FILTER_MATCH
+    filterName=HERON PROOF CVF Levels on the two levels collected in North - Mech (select-by-category-name,
+    elements 2 [Level 1, Level 2]): matched 1 [Level 2], outOfScope 0, so the rule Revit holds
+    lets Level 2 through and stops Level 1 - Name does not contain ''Level 1''. Two routes
+    agree. The kept filter stays in Project2, unsaved, as one undo step.'
+  fingerprint: 266666b41263c99c
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
