@@ -23,7 +23,60 @@ positive:
       moved by their head, leader on, the leader end left in the room, and nothing in
       leaderNotAsAsked - a room tag has no end condition to attach
 
+  # VERSION 2 - TURNING (2026-10-15, row 5b-484, NEEDS-CHECKING Group EG).
+  - given: >
+      four Horizontal door tags, one door in each wall of a rectangle on an unrotated plan -
+      two walls east-west, two north-south - with orientToHost true, keepHead true, both
+      offsets 0 and addLeader keep
+    expect: >
+      turned 2 and alreadyThere 2: the tags of the doors in the north-south walls read back
+      Vertical, the other two stay Horizontal; every head where it was; offAxis and
+      noDirection empty
+
+  - given: the same four door tags with orientVertical true and keepHead true
+    expect: turned 4, every one read back Vertical, every head where it was
+
+  - given: >
+      the real job - cut-out tags moved inside the building with addLeader false, an offset,
+      and orientToHost true
+    expect: >
+      each tag moved by the offset from its own opening AND turned the way its opening's wall
+      runs; every moved head within half a paper millimetre of its target, read back after
+      the turn
+
+  - given: a room tag with orientVertical true and keepHead true
+    expect: turned 1, read back Vertical - a room tag's own orientation, on every release
+
+  - given: an element tag with orientModel true on Revit 2022 or later
+    expect: turned, read back Model
+
+  - given: a duct drawn at 30 degrees to the view's right, its tag with orientToHost true
+    expect: turned Horizontal, the nearer, and named in offAxis with its 30 degrees
+
 negative:
+  - given: orientHorizontal true and orientVertical true together
+    expect: refused as two orientations at once, naming both, and nothing moved or turned
+
+  - given: keepHead true with offsetRightMm 8
+    expect: refused - the head cannot stay where it is and move 8 mm - and nothing moved
+
+  - given: keepHead true, no orientation, addLeader keep
+    expect: refused as asking for no change, and nothing moved
+
+  - given: room tags with orientToHost true, keepHead true and addLeader keep
+    expect: noDirection naming every one, moved 0, turned 0 - a room runs no way
+
+  - given: an element tag with orientModel true on Revit 2020 or 2021
+    expect: >
+      refused, saying an element tag has no Model orientation before 2022, and the tag left
+      as it was - not moved either
+
+  - given: >
+      a tag whose family turns with its element, asked to turn the other way
+    expect: >
+      refused with the orientation it read back, and put back whole - head, leader and
+      orientation as they were
+
   - given: >
       the same 90 air terminal tags handed in, with tagCategories Duct Tags. THIS IS THE
       FIRST NEGATIVE TO RUN
@@ -48,3 +101,6 @@ second_route:
     Revit's own Tag properties on a moved tag: Leader checked, Leader End Condition Attached;
     and the tag head measured on the sheet from its diffuser's insertion point with Revit's
     measure tool - 8 mm right and 6 mm up on paper
+  - >
+    Version 2: Revit's own Properties on a turned tag - Orientation reads Vertical (or
+    Horizontal, or Model) - and on screen its text reads up the sheet, along its door's wall

@@ -5,20 +5,31 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-113
-semantic-identity: "move each tag a set distance off its own element, with or without a leader"
+semantic-identity: "move each tag a set distance off its own element, with or without a leader, and turn each tag horizontal, vertical or to the orientation of its element"
 kind: action
 domain: revit.annotation
 capability: OFFSET_TAGS_FROM_HOST
-version: 1
+# VERSION 2 (2026-10-15, FRAGMENT-ISSUES 5b-484): a tag is TURNED as well as
+# moved - Horizontal, Vertical, Model, or the way its own element runs in the
+# view - and keepHead turns it, or changes its leader, without moving it.
+# Asked for on a real project (Revit 2020) where five cut-out tags were moved
+# inside the building with no leader and one, on an opening in a north-south
+# wall, had to be turned Vertical by hand: nothing in the library set a tag's
+# orientation. Every new input is an OPTIONAL bool, so a caller that names
+# none of them runs version 1 exactly. DRAFT, not yet run in Revit:
+# NEEDS-CHECKING Group EG.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Moves every tag handed in to the same offset from ITS OWN element - so many
-  paper millimetres right and up - and switches its leader on, off, or leaves
-  it. Any tag: air terminal, duct, pipe, equipment, door and window tags, and
-  room, space and area tags. Which tags, how far and whether they have a leader
-  are all values; nothing here knows about diffusers.
+  paper millimetres right and up - switches its leader on, off, or leaves it,
+  and turns the tag Horizontal, Vertical, Model, or the way its own element
+  runs, or leaves it turned as it is. Any tag: air terminal, duct, pipe,
+  equipment, door, window and opening tags, and room, space and area tags.
+  Which tags, how far, the leader and the orientation are all values; nothing
+  here knows about diffusers or openings.
 
   IT EXISTS BECAUSE THE TAGS ON A 1:75 AIR TERMINAL PLAN SAT ON TOP OF THEIR
   DIFFUSERS after the tag family was edited, and every tag fragment in the
@@ -74,6 +85,33 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
+# HOW VERSION 2 TURNS A TAG - kept as a comment, not in the purpose, because
+# the search reads the purpose and these words moved the card's own version 1
+# sentences to STACK_TAGS and FORCE_TAG_LEADER_LSHAPE (row 5b-484).
+#
+# **TURNING IS ONE CHOICE OF FOUR, OR NONE.** orientHorizontal,
+# orientVertical, orientModel or orientToHost; none of them leaves each tag
+# turned as it was, and two at once is refused. orientToHost reads the way
+# the tag's element runs IN THE VIEW - a family's hand direction, which runs
+# along the wall for an opening or a door hosted in one, else its facing
+# turned a quarter, else the line of a duct, pipe or wall, else the wall an
+# opening is cut in - and turns the tag Horizontal along the view's right and
+# Vertical along its up. Between the two it takes the nearer and names the
+# tag in offAxis; at exactly 45 degrees, and for a room or a riser seen
+# end-on, it leaves the orientation and names the tag in noDirection.
+# **Model is an element tag's from Revit 2022 only**: 2020 and 2021 have no
+# such value for it, and such a tag is refused and left as it was. A room,
+# space or area tag takes Horizontal, Vertical and Model on every release.
+# Each tag is turned before its head is placed, and its orientation is read
+# back: one Revit keeps the other way - a tag family that turns with its
+# element, for one - is put back whole and named in refused.
+#
+# **keepHead LEAVES EACH HEAD WHERE IT IS**, so a tag can be turned, or its
+# leader changed, without moving it. Both offsets must then be 0, and
+# keepHead with no orientation and the leader kept is refused as asking for
+# nothing. TAG_ELEMENTS_IN_VIEW places new tags Horizontal; it is PROVEN and
+# was not widened, so a tag wanted turned is placed there and turned here.
+
 contract:
   needs:
     - name: doc
@@ -101,8 +139,47 @@ contract:
     - name: addLeader
       type: string
       source: request
+    # VERSION 2 - THE ORIENTATION, ONE CHOICE OF FOUR. Each is an optional
+    # bool: absent is false, so a caller that names none of them leaves every
+    # tag turned as it is, exactly as version 1 did. `optional: true` is what
+    # lets it be left out - the binder refuses any other absent value
+    # (HeronBindingNote.AbsentValue). Two given true is refused.
+    - name: orientHorizontal
+      type: bool
+      source: request
+      optional: true
+    - name: orientVertical
+      type: bool
+      source: request
+      optional: true
+    # Revit's Model orientation. An element tag has it from 2022 only; a room,
+    # space or area tag on every release.
+    - name: orientModel
+      type: bool
+      source: request
+      optional: true
+    # The way the tag's own element runs in this view: along its right is
+    # Horizontal, along its up Vertical, the nearer between.
+    - name: orientToHost
+      type: bool
+      source: request
+      optional: true
+    # true leaves each head where it is - turn the tags, or change their
+    # leader, without moving them. Both offsets must then be 0. Absent is
+    # false: the tags move, as version 1 did.
+    - name: keepHead
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: moved
+      # Tags written - moved, turned or their leader changed - and read back
+      # as asked.
+      role: result
+      type: int
+    - name: turned
+      # Of those, the tags whose orientation was changed and read back as
+      # asked.
       role: result
       type: int
     - name: leadersOn
@@ -125,8 +202,8 @@ contract:
       role: accounting
       type: string
     - name: alreadyThere
-      # Tags that were at the target with the leader as asked, so nothing was
-      # written. The prior state, never a change (D-52).
+      # Tags that were at the target with the leader and the orientation as
+      # asked, so nothing was written. The prior state, never a change (D-52).
       role: accounting
       type: IList<ElementId>
     - name: fromBoxCentre
@@ -137,6 +214,18 @@ contract:
     - name: noHostLocation
       # Tags whose element could not be found or located - an orphan, or one
       # in a link that is not loaded. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noDirection
+      # orientToHost asked, and the element has no way it runs in this view -
+      # a room, a riser seen end-on, one at exactly 45 degrees. Orientation
+      # left as it was; the move and the leader still done (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: offAxis
+      # orientToHost turned these to the nearer of Horizontal and Vertical
+      # while their element runs more than a degree off both. About HOW it
+      # turned them, never a tag it found (D-52).
       role: accounting
       type: IList<ElementId>
     - name: leaderNotAsAsked
@@ -161,8 +250,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: refused
-      # Revit refused the move, or the head read back more than half a paper
-      # millimetre off. Each is put back as it was (D-52).
+      # Revit refused the move, the head read back more than half a paper
+      # millimetre off, the orientation read back other than asked, or Model
+      # was asked of an element tag before 2022. Each is put back as it was
+      # (D-52).
       role: accounting
       type: IList<ElementId>
 
@@ -186,6 +277,20 @@ compatibility-note: >
   `GetBoxOutline`, `SheetId` and `ViewId` - all read from the reference assemblies for each
   release with `tools/api-surface --members` on 2026-09-27. A room tag has no
   `LeaderEndCondition` on any release.
+  VERSION 2, read the same way on 2026-10-15, one release at a time:
+  `IndependentTag.TagOrientation` (get and set) is on every release 2020 to
+  2027, and the `TagOrientation` enum has Horizontal = 0 and Vertical = 1 on
+  all eight but AnyModelDirection = 2 - Revit's "Model" - from 2022 only.
+  So Model is set by NUMBER, `(TagOrientation)2`, and only where
+  `Enum.IsDefined` finds it: named in source, it would not compile on 2020 or
+  2021. `SpatialElementTag.TagOrientation` (get and set) is on every release,
+  typed `SpatialElementTagOrientation` with Horizontal = 0, Vertical = 1 and
+  Model = 2 on all eight - so a room, space or area tag can be turned all
+  three ways from 2020. `RotationAngle` on both kinds is 2022 on and is not
+  used. `FamilyInstance.HandOrientation` and `FacingOrientation`,
+  `Opening.Host`, `Curve.ComputeDerivatives` and `Transform.OfVector` are
+  present 2020 through 2027. Which value Revit then ACCEPTS for a given tag
+  family is not in any assembly - it is read back on every tag.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -207,9 +312,31 @@ compatibility-note: >
 #   "make the leaders L-shaped"            -> FORCE_TAG_LEADER_LSHAPE, which
 #                                             bends a leader and leaves the
 #                                             head where it is
+#   "turn this tag vertical"               -> here, orientVertical with
+#                                             keepHead and both offsets 0
+#   "make the tags follow the opening direction"
+#                                          -> here, orientToHost
+#   "rotate the tag to match the wall"     -> here, orientToHost - a TAG is
+#                                             turned here; the ELEMENT itself
+#                                             is turned by ROTATE_ELEMENTS
+#   "line the tags up vertically",
+#   "align the tags vertically",
+#   "put the tags in a vertical line"      -> STACK_TAGS - a column of tags,
+#                                             never a tag turned on its side.
+#                                             The second is declared there: this
+#                                             card took it on the re-ranker once
+#                                             it turned tags. The third still
+#                                             reaches here on the re-ranker -
+#                                             declared there, it pulled "which
+#                                             tags are vertical" onto STACK_TAGS
+#                                             on lexical (row 5b-484)
 
 utterances:
   - move the tags beside the diffusers
   - offset the duct tags with a leader
   - move the tags off the elements
   - move each tag 8 mm right and 6 mm up from its element
+  - turn this tag vertical
+  - make the tags follow the opening direction
+  - rotate the tag to match the wall
+  - give each tag the same orientation as its opening
