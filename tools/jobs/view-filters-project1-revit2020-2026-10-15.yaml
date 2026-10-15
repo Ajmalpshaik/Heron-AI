@@ -58,9 +58,15 @@ jobs:
     set:
       filterNames: Domestic
       categories: Pipes, Pipe Fittings
+      newName: ""
+      parameterName: ""
+      matchValue: ""
     negative-set:
       filterNames: Domestic
       categories: Walls
+      newName: ""
+      parameterName: ""
+      matchValue: ""
 
   # POSITIVE: Domestic onto `{3D}`, which carries no filter, with a red line
   # override. `enabled` is BLANK - Revit 2020 has no Enable Filter tick and a

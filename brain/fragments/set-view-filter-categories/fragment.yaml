@@ -1,15 +1,22 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-112
-semantic-identity: "tick and untick categories on existing view filters, keeping their rules"
+semantic-identity: "rename existing view filters, change their rule, and tick and untick their categories"
 kind: action
 domain: revit.views
 capability: SET_VIEW_FILTER_CATEGORIES
-version: 1
+# VERSION 2 (2026-10-15, FRAGMENT-ISSUES 5b-481): the filter's NAME and RULE
+# can be changed too - `newName`, `parameterName` and `matchValue` - and
+# `categories` may be blank. A blank keeps what the filter has, so version 1's
+# calls, which give categories and nothing else, mean what they meant. On a
+# live model that day a rename and a re-rule took six undo steps and left a
+# filter behind, because no tool could edit either. DRAFT until version 2 is
+# run in Revit: NEEDS-CHECKING Group EE.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values
@@ -18,25 +25,36 @@ companion: settings
 companion-subject: filterNames
 
 purpose: >
-  Changes which categories named rule-based view filters apply to - the
-  Categories ticks beside a filter's rule - keeping the rule, the name and
-  every view it is on. *"Take Duct Systems off those three and add the duct
-  insulation and lining to them."*
+  Edits rule-based view filters already in the project - renames one, changes
+  its rule, changes which categories it applies to, or all three in one undo
+  step - keeping every view it is on and its overrides there. *"Rename it
+  OUTSEL_TRG_MECH_Level_Grid, add Grids, and make the rule Type Name does not
+  contain TRG_MEC."*
+
+  **A BLANK KEEPS WHAT THE FILTER HAS** - the name, the rule or the categories.
 
   **THE CATEGORIES GIVEN REPLACE THE ONES IT HAD.** One it had that the request
-  leaves out is taken off, which is how "not Duct Systems" is said.
+  leaves out is taken off, which is how "not Duct Systems" is said; adding one
+  means giving the ones it has and the new one.
+
+  **THE RULE IS WRITTEN WITH ITS OPERATOR IN FRONT** - "does not contain
+  TRG_MEC", "begins with M_"; none means equals. A parameter left blank keeps
+  the one the rule tests now.
 
   **A CATEGORY THE RULE CANNOT APPLY TO IS LEFT OUT, NAMED WITH THE REASON, AND
   THE REST ARE STILL SET.** Each is asked whether it may be filtered by every
   parameter the rule tests, then put to Revit's own acceptability test for that
   rule, and the survivors are tested together once more before anything is
   set. One that no given category survives for keeps what it had - never
-  emptied.
+  emptied. A new rule with the categories kept must fit all of them.
 
-  **A SECOND RUN CHANGES NOTHING.** Categories it already has are compared as a
-  set, reported as already so, and not written again.
+  **A NEW NAME OR RULE IS ALL OR NOTHING.** A name another filter has, or a rule
+  one filter cannot take, changes nothing.
 
-  **AFTERWARDS EACH ONE IS READ BACK FROM REVIT** - its categories, its rule,
+  **A SECOND RUN CHANGES NOTHING.** What it already holds is reported as already
+  so and not written again.
+
+  **AFTERWARDS EACH ONE IS READ BACK FROM REVIT** - its name, categories, rule,
   and how many elements that rule catches today.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
@@ -50,8 +68,32 @@ contract:
       type: IList<string>
       source: request
     - name: categories
-      # The WHOLE new list - it replaces what each filter holds.
-      type: IList<BuiltInCategory>
+      # The WHOLE new list - it replaces what each filter holds - or BLANK to
+      # keep the categories each filter has. TEXT since version 2, read into
+      # categories by the fragment in the add-in binder's order (OST_ name,
+      # the name Visibility/Graphics shows, the OST_ name without its prefix):
+      # the binder refuses a blank IList<BuiltInCategory> before the fragment
+      # runs, so a typed list could not be left blank. Callers type exactly
+      # what they typed before.
+      type: IList<string>
+      source: request
+    - name: newName
+      # The filter's new name, or BLANK to keep it. One filter only; a name
+      # another filter has is refused by name.
+      type: string
+      source: request
+    - name: parameterName
+      # The parameter the new rule tests, as Revit shows it ("Type Name") or by
+      # its built-in name, or BLANK to keep the one the rule tests now.
+      type: string
+      source: request
+    - name: matchValue
+      # The new rule's value with its operator in front, as
+      # CREATE_VIEW_FILTERS_BY_RULE version 2 takes it: equals, does not
+      # equal, contains, does not contain, begins with, does not begin with,
+      # ends with, does not end with ("does not contain TRG_MEC"). None means
+      # equals. BLANK keeps the rule as it is.
+      type: string
       source: request
   provides:
     - name: changed
@@ -68,8 +110,9 @@ contract:
       role: accounting
       type: string
     - name: alreadySet
-      # Filters that already held exactly this list and were not written. The
-      # prior state, never a change it made (D-52).
+      # Filters that already held exactly what was asked - name, categories
+      # and rule - and were not written. The prior state, never a change it
+      # made (D-52).
       role: accounting
       type: IList<string>
     - name: leftOut
@@ -147,8 +190,28 @@ compatibility-note: >
   `ElementId(BuiltInCategory)` and `ElementId(BuiltInParameter)`
   constructors. No id is read as a number.
 
+  Version 2's members, read the same way on 2026-10-15 and unchanged 2020
+  through 2027: `ParameterFilterElement.SetElementFilter(ElementFilter)`
+  (returns bool), `ClearRules()`, `FilterElement.IsNameUnique(Document,
+  string)`, `Element.Name { get; set; }`, `NamingUtils.IsValidName`,
+  `Document.Settings.Categories`, `Category.GetCategory(Document, ElementId)`
+  and `ElementParameterFilter(FilterRule)`. The text rule factories are
+  reached BY REFLECTION exactly as CREATE_VIEW_FILTERS_BY_RULE version 2
+  reaches them - CreateEqualsRule, CreateNotEqualsRule, CreateContainsRule,
+  CreateNotContainsRule, CreateBeginsWithRule, CreateNotBeginsWithRule,
+  CreateEndsWithRule and CreateNotEndsWithRule are (ElementId, string, bool)
+  on 2020 to 2025 and (ElementId, string) on 2023 to 2027; the two-argument
+  one is used where it exists, the three-argument one with `false`
+  elsewhere. That code is a COPY - a fragment cannot call another's - and is
+  kept in step with CREATE_VIEW_FILTERS_BY_RULE by hand: the operator words,
+  their factory methods, the parameter matched by label or built-in name,
+  and the read-back's rule words.
+
 # ROUTING - the same rows are in CREATE_VIEW_FILTERS_BY_RULE.
 #
+#   "rename this view filter"                -> here, with newName. RENAME_ELEMENTS renames what a finder hands it, never a filter
+#   "change the filter rule to does not contain TRG_MEC" -> here, with matchValue - the parameter kept
+#   "add grids to this filter"               -> here, with the WHOLE list - the ones it has and Grids
 #   "take the Duct Systems category off      -> here
 #    these view filters"
 #   "add duct insulation and lining to       -> here, with the WHOLE list -
@@ -168,3 +231,8 @@ utterances:
   - change the categories of these view filters
   - add duct insulation and lining to those filters
   - set which categories the filter applies to
+  - rename this view filter
+  - rename this filter
+  - change the filter rule to does not contain TRG_MEC
+  - change the rule of this view filter
+  - add grids to this filter

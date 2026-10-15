@@ -156,6 +156,16 @@ CHANGES = [
     # wall re-host first. So it went wrong only where a re-ranker is installed.
     ("copy these walls onto the selected levels", "COPY_ELEMENTS",
      "5b-467: asked live 2026-10-14, answered SET_WALL_CONSTRAINTS"),
+    # 5b-481: an existing view filter renamed and its rule changed. Nothing
+    # could do either until SET_VIEW_FILTER_CATEGORIES version 2 (2026-10-15);
+    # these reached tools that cannot edit a filter, and were measured with
+    # the card at DRAFT and again at PROVEN, on both backends.
+    ("rename the filter OUTSEL_TRG_MECH_Level to OUTSEL_TRG_MECH_Level_Grid",
+     "SET_VIEW_FILTER_CATEGORIES", "5b-481: asked live 2026-10-15, answered RENAME_WORKSET"),
+    ("change this filter's rule to type name does not contain TRG_MEC",
+     "SET_VIEW_FILTER_CATEGORIES", "5b-481: answered CREATE_VIEW_FILTERS_BY_RULE"),
+    ("edit the rule of the OUTSEL filter", "SET_VIEW_FILTER_CATEGORIES",
+     "5b-481: answered CREATE_VIEW_FILTER"),
 ]
 
 QUESTIONS = [
@@ -209,6 +219,11 @@ QUESTIONS = [
      "146: answered CREATE_LEGEND_VIEW"),
     ("what legends are on this sheet",
      "146: answered CREATE_LEGEND_VIEW"),
+    # 5b-481: answered by SET_VIEW_FILTER_CATEGORIES, a write, until its card
+    # named renames and rules; REPORT_FILTERABLE_PARAMETERS now, with that card
+    # at DRAFT and at PROVEN.
+    ("which categories can be filtered",
+     "5b-481: answered SET_VIEW_FILTER_CATEGORIES"),
 ]
 
 # A question about the project's own setup reaches the tool that READS it.
