@@ -48,10 +48,8 @@ purpose: >
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
-  **Every filter in full, with `everyFilter`.** In priority order - the higher
-  one wins where two set the same thing - each filter's rules, its categories,
-  how many elements in this view it catches, and its whole override: the two
-  more ways a filter does nothing, catching nothing here or being outranked.
+  **With `everyFilter`, every filter on the view in priority order** - its
+  rules, categories, what it catches here and its override.
 
 contract:
   needs:
