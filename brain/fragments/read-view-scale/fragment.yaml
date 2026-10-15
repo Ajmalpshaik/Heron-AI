@@ -203,3 +203,8 @@ utterances:
   - what scale is this plan at
   - what scale are these views at
   - what scale is this drawing
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-477: in a sweep of 60 plain
+  # questions on the trained model, this went to SET_VIEW_SCALE, a write. This
+  # read answers it, so it is declared here and answered by identity (rows
+  # 116 and 146).
+  - what scale is this section

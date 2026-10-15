@@ -27,12 +27,30 @@ positive:
       six intersections, A/1 to B/3, each at its x and y in millimetres
       (version 3)
 
+  # Version 4, added 2026-10-14. NOT RUN.
+  - given: the same grids, 1 to 2 at 6000 mm and 2 to 3 at 7200 mm, A to B at 8000 mm
+    expect: >
+      `spacings` reads "1 > 2 6000 mm, 2 > 3 7200 mm" for the north-south
+      set and "A > B 8000 mm" for the east-west one. An aligned dimension
+      from 1 to 2 in a plan reads 6000
+
+  - given: two grids drawn at 30 degrees to the project axes, 5000 mm apart square to each other
+    expect: >
+      one set running on a skew, "5000 mm" between them - the bounding-box
+      gap MEASURE_DISTANCE gives for the same two is a different number
+
 negative:
   - given: a radial grid in a curved facade
     expect: >
       it is LISTED and reported as curved, with no direction. A curve's
       direction is only true at one point on it, and printing one would be a
       confident wrong answer
+
+  # Version 4: a grid with no other running the same way has no spacing.
+  - given: one north-south grid and one east-west grid, nothing else
+    expect: >
+      `spacings` EMPTY - no two grids run the same way - and the finding says
+      none were found, never a distance between two crossing lines
 
   - given: a grid two degrees off true north
     expect: >

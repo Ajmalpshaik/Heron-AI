@@ -16,6 +16,17 @@
 // finds PowerCircuit. The alternative is asking a modeller to know the API's
 // spelling.
 //
+// "none" ASKS THE OPPOSITE QUESTION (version 3, 2026-10-14): the devices and
+// fixtures with an electrical connector that NO circuit carries - "which lights
+// are not on a circuit" (FRAGMENT-ISSUES row 5b-478, where that question
+// reached CREATE_ELECTRICAL_CIRCUIT, a write). Every circuit's own Elements are
+// gathered first, the way the match below reads them, and an element with an
+// electrical connector that is in none of them is selected. Membership is read
+// that way rather than through MEPModel, whose ElectricalSystems property was
+// replaced by GetElectricalSystems() at Revit 2021 - neither compiles on all
+// eight. Electrical equipment is counted apart, never selected: a panel FEEDS
+// circuits, and one with no supply of its own is a different finding.
+//
 // LINKS ARE READ ONLY WHEN ASKED FOR, AND THEY ARE COUNTED, NEVER SELECTED -
 // D-59. The electrical model is often a link in somebody else's model. With
 // `includeLinks` set, each loaded link's circuits are matched the same way and
@@ -81,7 +92,100 @@ var linkBlocked = "";
 var wantKind = string.IsNullOrEmpty(circuitKind) ? "" : circuitKind.Trim();
 var wantName = string.IsNullOrEmpty(circuitName) ? "" : circuitName.Trim();
 
-if (wantKind.Length == 0 && wantName.Length == 0)
+// Version 3: "none" (or "unassigned") - what no circuit carries.
+var wantNone = wantKind.Equals("none", StringComparison.OrdinalIgnoreCase)
+    || wantKind.Equals("unassigned", StringComparison.OrdinalIgnoreCase);
+
+// Every load of every circuit in a document, by id.
+Func<Document, HashSet<ElementId>> onACircuit = d =>
+{
+    var carried = new HashSet<ElementId>();
+    foreach (var circuit in new FilteredElementCollector(d)
+        .OfClass(typeof(ElectricalSystem)).Cast<ElectricalSystem>())
+    {
+        try
+        {
+            foreach (Element load in circuit.Elements)
+                if (load != null) carried.Add(load.Id);
+        }
+        catch (Exception) { }
+    }
+    return carried;
+};
+
+// Whether a family instance has a connector in the electrical domain.
+Func<FamilyInstance, bool> electrical = instance =>
+{
+    try
+    {
+        var model = instance.MEPModel;
+        if (model == null || model.ConnectorManager == null) return false;
+        foreach (Connector connector in model.ConnectorManager.Connectors)
+            if (connector.Domain == Domain.DomainElectrical) return true;
+    }
+    catch (Exception) { }
+    return false;
+};
+
+if (wantNone)
+{
+    var carried = onACircuit(doc);
+    var byCategory = new SortedDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    var equipmentUnfed = 0;
+    var checkedCount = 0;
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(FamilyInstance)).WhereElementIsNotElementType().Cast<FamilyInstance>())
+    {
+        if (!electrical(instance)) continue;
+        checkedCount++;
+        if (carried.Contains(instance.Id)) continue;
+        var category = instance.Category;
+        if (category != null && category.Id.Equals(new ElementId(BuiltInCategory.OST_ElectricalEquipment)))
+        {
+            equipmentUnfed++;
+            continue;
+        }
+        elements.Add(instance);
+        var label = category == null ? "(no category)" : category.Name;
+        int count;
+        byCategory[label] = byCategory.TryGetValue(label, out count) ? count + 1 : 1;
+    }
+
+    findings.Add(string.Format("{0} of {1} element(s) with an electrical connector are on NO circuit and "
+        + "are selected{2}", elements.Count, checkedCount,
+        byCategory.Count == 0 ? "" : ": " + string.Join(", ", byCategory.Select(kv => kv.Key + " " + kv.Value).ToArray())));
+    if (equipmentUnfed > 0)
+        findings.Add(string.Format("{0} piece(s) of electrical equipment have no supply circuit of their own. "
+            + "They are NOT selected - a panel feeds circuits, and one with no supply is often the main "
+            + "board, not a fault", equipmentUnfed));
+    if (checkedCount == 0)
+        findings.Add("Nothing in the model has an electrical connector, so there was nothing to check - "
+            + "the same answer a model with no electrical work at all gives");
+
+    // The same count in each link, never selected (D-59).
+    for (var i = 0; i < linkDocs.Count; i++)
+    {
+        var linked = linkDocs[i];
+        var linkCarried = onACircuit(linked);
+        var linkUncircuited = 0;
+        try
+        {
+            foreach (var instance in new FilteredElementCollector(linked)
+                .OfClass(typeof(FamilyInstance)).WhereElementIsNotElementType().Cast<FamilyInstance>())
+            {
+                if (!electrical(instance) || linkCarried.Contains(instance.Id)) continue;
+                var category = instance.Category;
+                if (category != null && category.Id.Equals(new ElementId(BuiltInCategory.OST_ElectricalEquipment))) continue;
+                linkUncircuited++;
+            }
+        }
+        catch (Exception) { }
+        linksSearched++;
+        linkedTotal += linkUncircuited;
+        linkedMatches.Add(string.Format("{0}: {1} element(s) on no circuit", linked.Title, linkUncircuited));
+    }
+}
+else if (wantKind.Length == 0 && wantName.Length == 0)
 {
     findings.Add("Name a circuit kind - power, lighting, data - or a circuit name, or both. Every "
         + "circuit in the model is a legitimate answer to neither, and almost never the question");
@@ -203,8 +307,9 @@ else if (linkBlocked.Length > 0)
 else if (linksSearched == 0)
     linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
 else
-    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} load(s) on matching circuits, NOT selected",
-        linksSearched, linkedTotal));
+    linkedMatches.Insert(0, wantNone
+        ? string.Format("{0} link(s) read: {1} element(s) on no circuit, NOT selected", linksSearched, linkedTotal)
+        : string.Format("{0} link(s) read: {1} load(s) on matching circuits, NOT selected", linksSearched, linkedTotal));
 
 if (includeLinks && nestedLinks > 0)
     linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "

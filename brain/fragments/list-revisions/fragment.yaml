@@ -158,3 +158,8 @@ utterances:
   - are the revisions numbered per sheet or per project
   - show me the revision numbering sequences
   - what arc length do the revision clouds use
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-478: in a second sweep of 60
+  # plain questions on the trained model, this went to SET_REVISION_SETTINGS,
+  # a write. This read answers it, so it is declared here and answered by
+  # identity (rows 116 and 146).
+  - what revisions are in the project

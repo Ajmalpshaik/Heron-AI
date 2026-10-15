@@ -116,3 +116,8 @@ utterances:
   - circuit these sockets to the panel
   - create a power circuit from this selection
   - make a fire alarm circuit
+  # ADDED 2026-10-14, FRAGMENT-ISSUES row 5b-478: SELECT_BY_ELECTRICAL_CIRCUIT
+  # version 3 declares "which lights are not on a circuit", and this command -
+  # the same words, asking for the change - then tied with it and landed on
+  # that read. Declared here so the command reaches the tool that makes it.
+  - put these lights on a circuit

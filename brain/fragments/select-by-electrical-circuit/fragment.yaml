@@ -9,13 +9,15 @@ semantic-identity: "everything wired onto one circuit, or onto every circuit of 
 kind: filter
 domain: revit.mep
 capability: SELECT_BY_ELECTRICAL_CIRCUIT
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
 purpose: >
   Gathers the elements on electrical circuits, matched by the circuit's kind -
-  power, lighting, data - or by its name, or both.
+  power, lighting, data - or by its name, or both. With the kind "none" it
+  gathers the opposite: the devices and fixtures with an electrical connector
+  that no circuit carries (version 3).
 
   **This is a separate fragment from SELECT_BY_MEP_SYSTEM on purpose.** A duct
   or pipe system type is a document element with a name a project can change; an
@@ -55,11 +57,25 @@ purpose: >
   Links nested inside a link are not read, and are counted in the answer.
   This is version 2, and DRAFT until proved.
 
+# "none" SELECTS WHAT NO CIRCUIT CARRIES (version 3) - a comment, not
+# `purpose`, because `purpose` is searched, and this paragraph there took
+# "circuit these sockets" - a claimed command - from CREATE_ELECTRICAL_CIRCUIT
+# (measured 2026-10-14). "put these lights on a circuit" still tied here once
+# "which lights are not on a circuit" was declared below, so it is declared on
+# CREATE_ELECTRICAL_CIRCUIT (row 5b-478). Every circuit's own loads
+# are gathered first, and each element with an electrical connector that is
+# among none of them is selected, counted by category. Electrical equipment
+# is counted apart and not selected: a panel feeds circuits, and one with no
+# supply of its own is often the main board, not a fault. With links, each
+# link's count is given and nothing from it is selected.
 contract:
   needs:
     - name: doc
       type: Document
     - name: circuitKind
+      # power, lighting, data and the rest, matched as text against the
+      # enumeration's name - or "none" (or "unassigned"), version 3: what no
+      # circuit carries.
       type: string
       source: request
     - name: circuitName
@@ -111,6 +127,11 @@ compatibility-note: >
   `Elements` and `PanelName` are present 2020 through 2027, compiled at both
   ends. The circuit kind is compared as text against the enumeration's own
   name, so a release adding a kind is matched rather than needing a new case.
+  Version 3's "none" reads circuit membership from each circuit's own
+  `Elements`, never `MEPModel.ElectricalSystems` (2020-2021, obsolete in 2021)
+  or `GetElectricalSystems()` (2021 on), neither of which compiles on all
+  eight - read with tools/api-surface on 2026-10-14. `MEPModel.ConnectorManager`,
+  `Connector.Domain` and `Domain.DomainElectrical` are present 2020 to 2027.
 
 # ROUTING - repeated in SELECT_BY_MEP_SYSTEM, REPORT_CONNECTOR_LOADS and
 # CREATE_ELECTRICAL_RUN.
@@ -137,3 +158,8 @@ utterances:
   - what is wired to panel A
   - find elements on a power circuit
   - show me everything on this electrical circuit
+  # Version 3, 2026-10-14 (FRAGMENT-ISSUES row 5b-478): "which lights are not
+  # on a circuit" reached CREATE_ELECTRICAL_CIRCUIT, a write, on the trained
+  # model; nothing found what no circuit carries.
+  # Declared, not ranked: with "none" built it still ranked to the write.
+  - which lights are not on a circuit

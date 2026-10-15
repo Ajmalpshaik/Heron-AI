@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `includeLinks` and `withIntersections` are in
 // scope; leaves `elements`, `findings`, `notLinear`, `linksSearched`,
-// `linkedMatches` and `intersections` behind.
+// `linkedMatches`, `intersections` and `spacings` behind.
+//
+// THE SPACING BETWEEN NEIGHBOURING PARALLEL GRIDS (version 4, 2026-10-14):
+// `spacings` gives, for each set of straight grids that run the same way,
+// each grid to the next across them and the distance between the two lines,
+// square to them, in millimetres - "1 > 2 6000 mm". A bounding-box gap is not
+// that distance for a grid on a skew, and a modeller asking "what is the grid
+// spacing" means this one (FRAGMENT-ISSUES row 5b-477). Grids count as
+// running the same way within half a degree; two on one line - a grid split
+// in two - are 0 mm apart and said to be on one line.
 //
 // WHERE THE GRIDS CROSS, WHEN ASKED (version 3, 2026-10-13, the gap fill):
 // `withIntersections` adds every crossing of two of this model's grids, within
@@ -112,6 +121,68 @@ foreach (var grid in grids)
     else direction = "on a skew";
 
     findings.Add(string.Format("{0}  - runs {1}", grid.Name, direction));
+}
+
+// ---- The spacing between neighbouring parallel grids (version 4) -------------
+
+var spacings = "";
+{
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var sameWay = Math.Cos(0.5 * Math.PI / 180.0);
+    var sets = new List<List<Grid>>();
+    var setDirection = new List<XYZ>();
+    foreach (var grid in grids)
+    {
+        var line = grid.Curve as Line;
+        if (line == null) continue;
+        var flat = new XYZ(line.Direction.X, line.Direction.Y, 0);
+        if (flat.GetLength() < 1e-9) continue;
+        flat = flat.Normalize();
+        var placed = false;
+        for (var k = 0; k < sets.Count && !placed; k++)
+        {
+            if (Math.Abs(flat.DotProduct(setDirection[k])) >= sameWay)
+            {
+                sets[k].Add(grid);
+                placed = true;
+            }
+        }
+        if (!placed)
+        {
+            sets.Add(new List<Grid> { grid });
+            setDirection.Add(flat);
+        }
+    }
+
+    var rowsOut = new List<string>();
+    var pairs = 0;
+    for (var k = 0; k < sets.Count; k++)
+    {
+        if (sets[k].Count < 2) continue;
+        // Across the set: the plan direction square to its grids. Each grid's
+        // place across is its line's start point measured along it.
+        var across = new XYZ(-setDirection[k].Y, setDirection[k].X, 0);
+        var placedAcross = sets[k]
+            .Select(g => new { Grid = g, At = across.DotProduct(((Line)g.Curve).GetEndPoint(0)) })
+            .OrderBy(x => x.At)
+            .ToList();
+        var steps = new List<string>();
+        for (var i = 1; i < placedAcross.Count; i++)
+        {
+            var mm = Math.Round((placedAcross[i].At - placedAcross[i - 1].At) * 304.8);
+            steps.Add(placedAcross[i - 1].Grid.Name + " > " + placedAcross[i].Grid.Name + " "
+                + (mm < 0.5 ? "0 mm - on one line" : mm.ToString(invariant) + " mm"));
+            pairs++;
+        }
+        string way;
+        if (Math.Abs(setDirection[k].Y) > 0.966) way = "north-south";
+        else if (Math.Abs(setDirection[k].X) > 0.966) way = "east-west";
+        else way = "on a skew";
+        rowsOut.Add("grids running " + way + ": " + string.Join(", ", steps.ToArray()));
+    }
+    spacings = string.Join("  ||  ", rowsOut.ToArray());
+    findings.Add(pairs + " spacing(s) between neighbouring parallel grids, square to them, in "
+        + "millimetres; a grid with no other running the same way, and a curved one, has none.");
 }
 
 // ---- Where the grids cross, when asked ----------------------------------------

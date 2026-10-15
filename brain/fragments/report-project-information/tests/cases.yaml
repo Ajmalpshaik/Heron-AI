@@ -1,0 +1,38 @@
+# D-30. A READ that describes the whole project cannot come back empty in a
+# project, so the negative case is a FAMILY document, where there is no
+# Project Information to read: projectInfo must be empty and notAProject true.
+# Tracking (D-53) is the second negative: a value changed by hand must come
+# back changed.
+
+positive:
+  - given: >
+      a scratch project with Manage > Project Information filled in by hand -
+      Project Number "HERON-2026-014", Client Name "Heron Test Client",
+      Project Status "Issued for coordination", Project Issue Date
+      "14 Oct 2026" - and Building Name left empty
+    expect: >
+      `projectInfo` with ten rows in the dialog's order, "Project Number =
+      HERON-2026-014" and "Client Name = Heron Test Client" among them, and
+      "Building Name = (empty)". `findings` names Building Name as empty.
+      `notAProject` false
+
+  - given: the same project with a text project parameter bound to Project Information and a value typed in it
+    expect: that parameter after the ten, "name = value"; `fields` counts it
+
+negative:
+  - given: a family document open in front, with no project behind it
+    expect: >
+      `projectInfo` empty, `fields` 0, `notAProject` true, and a finding that
+      Project Information belongs to a project
+
+  # Tracking (D-53), beside the family: the answer follows the model.
+  - given: the positive project, Project Status changed by hand to "Issued for construction"
+    expect: >
+      the Project Status row reads "Issued for construction" and nothing else
+      changes - a reader repeating a remembered answer could not follow it
+
+second_route:
+  - >
+    Manage > Project Information in Revit: the same ten values, and any added
+    parameter under its group; and the title block on any sheet, whose labels
+    print the same values

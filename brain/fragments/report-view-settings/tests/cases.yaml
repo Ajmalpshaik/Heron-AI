@@ -1,0 +1,45 @@
+# D-30. A READ: the positive is views that carry the five settings, the
+# negative a sheet, whose Properties palette has no Graphics or Phasing group -
+# `viewSettings` must come back EMPTY with the sheet named in `findings`,
+# never given a value. Nothing selected, nothing chained: `views` is typed.
+
+positive:
+  - given: >
+      a floor plan with no view template, set by hand to Detail Level Fine,
+      Visual Style Hidden Line, Discipline Mechanical, Phase New
+      Construction, Phase Filter Show Complete; and the default 3D view
+    expect: >
+      `read` 2. The floor plan's row reads exactly those five values, each
+      under the name its Properties palette uses, then its View Range - top,
+      cut plane, bottom and view depth as the View Range dialog shows them,
+      each a level and an offset in millimetres - and says nothing is held by
+      a template. The 3D view's row carries its own values and no view range.
+      Each value is the Properties palette's, not a remembered one
+
+  - given: the same floor plan after a view template that includes Detail Level is applied to it
+    expect: >
+      its row marks Detail Level "(held by its view template)", names the
+      template, and `heldByTemplate` 1; Detail Level is greyed out in that
+      view's Properties palette. REPORT_VIEW_TEMPLATE_CONTROL lists it in the
+      template's HOLDS list. THE THREE MUST AGREE
+
+negative:
+  - given: a sheet, named by its sheet NAME (not its number)
+    expect: >
+      `viewSettings` empty, `read` 0, and `findings` naming the sheet as
+      having none of the five - NOT a value. A reader that printed a default
+      for every view would put one here
+
+  # Tracking (D-53), beside the sheet: the answer follows the model.
+  - given: the positive floor plan with Detail Level changed by hand to Coarse
+    expect: the Detail Level reads Coarse and nothing else in the row changes
+
+  - given: the same plan with its cut plane changed by hand to 1500 mm
+    expect: the View Range reads "Cut plane" at 1500 mm and nothing else changes
+
+second_route:
+  - >
+    The Properties palette of each view named: the Graphics group (Detail
+    Level, Visual Style, Discipline) and the Phasing group (Phase Filter,
+    Phase), and greyed-out rows for what a template holds; and for a plan,
+    Properties > Extents > View Range > Edit

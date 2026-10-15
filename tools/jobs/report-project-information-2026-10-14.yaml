@@ -1,0 +1,40 @@
+# The proof of report-project-information (REPORT_PROJECT_INFORMATION,
+# FRG-DOC-052), written 2026-10-14 - NEEDS-CHECKING Group EC, row EC13. NOT
+# RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/report-project-information-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-project-information-2026-10-14.yaml
+#
+# READ: nothing is changed, so no transaction and no write switch.
+#
+# THE ARRANGEMENT - "Heron Gap Pass Test", part 10 (docs/needs-checking/group-ec.md):
+#   - Manage > Project Information: Project Number HERON-2026-014, Client
+#     Name Heron Test Client, Project Status Issued for coordination, Project
+#     Issue Date 14 Oct 2026, Building Name left EMPTY
+#   - "Heron Gap Pass Family", a new Generic Model family, saved and left OPEN
+#     beside the project - the negative: a family has no Project Information,
+#     so projectInfo must be empty and notAProject true
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - the ten rows are in the dialog's order and under Revit's own labels
+#   - "Building Name = (empty)", and a finding naming it
+#   - TRACKING, by hand afterwards: change Project Status to Issued for
+#     construction and ask again through revit_read - only that row changes
+#   - the second route: Manage > Project Information, and a sheet's title block
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to the command.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 10 - Project Information filled in, and "Heron Gap Pass Family" open beside it, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+
+jobs:
+  - fragment: report-project-information
+    expect: projectInfo
+    negative-in: "Heron Gap Pass Family"
+    note: >
+      The positive names HERON-2026-014 and Heron Test Client, and Building
+      Name as empty; the negative is a family and must report nothing. Check
+      the values against Manage > Project Information.

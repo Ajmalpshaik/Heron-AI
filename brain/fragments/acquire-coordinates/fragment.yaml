@@ -19,7 +19,7 @@ purpose: >
   Manage > Coordinates > Acquire Coordinates - the step that puts an MEP model
   on the architect's survey system.
 
-  **IT MOVES NOTHING AND CHANGES WHERE EVERYTHING IS SAID TO BE.** No element's
+  **NO ELEMENT IS SHIFTED, AND WHERE EVERYTHING IS SAID TO BE CHANGES.** No element's
   internal position changes; every shared position, spot reading and exported
   position does. So the shared position of the internal origin is
   read BEFORE and AFTER, east/west, north/south, elevation and angle to True
