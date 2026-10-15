@@ -84,6 +84,7 @@ compatibility-note: >
 #
 #   "show me every dimension under 1 m in red" -> here, then OVERRIDE_GRAPHICS_IN_VIEW
 #   "which dimensions are less than 500"       -> here
+#   "list the dimensions in this view with their values and references" -> REPORT_SPOT_DIMENSIONS
 #   "dimension these rooms"                    -> DIMENSION_ROOMS
 #   "ducts 500 mm high"                        -> SELECT_BY_NUMERIC_PARAMETER
 

@@ -32,8 +32,10 @@ risk: READ
 # A TYPED-OVER VALUE ("EQ") is printed as typed with what it measures beside
 # it - the drawing shows the first, the model holds the second.
 #
-# A LOCK OR ALIGNMENT is a Dimension underneath, in the Constraints category.
-# The drawing shows none, so it is left out and counted in `findings`.
+# A LOCK OR ALIGNMENT is a Dimension underneath, in the Constraints category,
+# as REPORT_CONSTRAINTS reads them. The drawing shows none, so it is left out
+# and counted in `findings`. Whether a view's collector returns one at all
+# has not been measured - NEEDS-CHECKING DL11.
 #
 # THE TEXT IS REVIT'S: prefix, ValueString and suffix as the drawing prints
 # them, in the project's units and the spot type's format. A figure derived
