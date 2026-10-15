@@ -1,0 +1,177 @@
+# The proof of offset-tags-from-host version 2 (OFFSET_TAGS_FROM_HOST,
+# FRG-VIEW-113), written 2026-10-15 for FRAGMENT-ISSUES row 5b-484 -
+# NEEDS-CHECKING Group EG, rows EG1 to EG3. NOT RUN - written with Revit open
+# on a real project that must not be written to.
+#
+#     python tools/batch-prove.py tools/jobs/offset-tags-from-host-orientation-2026-10-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/offset-tags-from-host-orientation-2026-10-15.yaml
+#
+# WHAT VERSION 2 CHANGED. A tag is TURNED as well as moved: orientHorizontal,
+# orientVertical, orientModel or orientToHost - the way the tag's own element
+# runs in the view - and keepHead turns it without moving it. All five are
+# optional bools; with none of them the card is version 1, and Group AY's
+# job file still runs it unchanged.
+#
+# MODIFY: every leg runs inside a transaction group and is ROLLED BACK.
+#
+# THE MODEL - MAKE IT FIRST, in Revit 2020 (any release 2020 to 2027 will do).
+# A NEW project, never a real one: the case that asked for this is a real
+# BIM 360 project and is not written to.
+#
+#   1. A new project from the default metric template. Save it as
+#      "Heron Tag Turn" in your temp folder before anything else, so a crash
+#      costs nothing (on 2026-10-15 a Revit 2020 ran out of memory).
+#   2. In "FloorPlan: Level 1", four Basic Walls, Level 1 to Level 2, as a
+#      rectangle: SOUTH (0,0) to (10000,0) and NORTH (0,6000) to
+#      (10000,6000) run east-west; WEST (0,0) to (0,6000) and EAST
+#      (10000,0) to (10000,6000) run north-south. The plan must NOT be
+#      rotated: its right is east and its up is north.
+#   3. One door - the template's single-flush door - in the middle of each of
+#      the four walls.
+#   4. Tag all four doors with the template's door tag, HORIZONTAL, no
+#      leader (Annotate > Tag All, Door Tags). Check in Properties that its
+#      family is not set to rotate with its door: every tag must read
+#      Horizontal before the run.
+#   5. One room inside the rectangle, tagged (the Room tool tags it), the tag
+#      Horizontal.
+#
+# EDIT BEFORE THE RUN - batch-prove has no way to fill this in:
+#   - `in:` below: the title Revit shows for the new project, as the title
+#     bar says it
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the positive turned at least one tag and read it back, and the
+#     negative turned and moved none. PASS does not check WHICH tags turned -
+#     the next block does
+#   - NEG NOT EMPTY: a tag was written from a request that should change
+#     nothing - a defect, not an arrangement fault
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - EG1 (all four Vertical, keepHead): `turned` 4, `report` "0 Horizontal,
+#     4 Vertical" and "every moved head within 0 mm"; the negative refused
+#     as two orientations at once, naming both, `moved` 0
+#   - EG2 (the room tag Vertical): `turned` 1, "1 Vertical" - a room tag's
+#     own orientation, settable on 2020; the negative (orientToHost on the
+#     room tag) `noDirection` 1, `moved` 0 - a room runs no way
+#   - EG3 (orientToHost, keepHead): `turned` 2 and `alreadyThere` 2 - the
+#     WEST and EAST door tags turned Vertical, the SOUTH and NORTH ones
+#     already Horizontal - and "2 Horizontal, 2 Vertical"; `offAxis` 0 and
+#     `noDirection` 0. Which two turned is read on screen in EG4, not here
+#   - `viewportKept` on every leg: "The view is on no sheet" - fine here
+#
+# THE THREE JOBS WRITE ONE RUN RECORD. All three are this one fragment, so
+# each overwrites brain/proof-drafts/runs/offset-tags-from-host.json and the
+# proof draft is the LAST - EG3, orientToHost, the one the real job asked
+# for. Add `--report <a path in your temp folder>` to keep all three answers.
+#
+# THE TAGS COME FROM THEIR CATEGORY IN THE VIEW, NOT THE SELECTION.
+# `keep-chain: true` hands select-by-category-name's `elements` straight to
+# the fragment: other chats share this Revit's selection.
+#
+# NOT `--session` HERE: with two Revits connected to Heron - the real project
+# is open in one - add `--session <process id>` to both commands, naming the
+# Revit that has the new project.
+
+model: 'a new project from the default metric template, "Heron Tag Turn": four walls as a 10 x 6 m rectangle on Level 1, a door in the middle of each, the four door tags Horizontal with no leader, and one tagged room, Revit 2020'
+
+defaults:
+  in: "Heron Tag Turn"
+  write: true
+  keep-chain: true
+
+jobs:
+  - fragment: offset-tags-from-host
+    expect: [moved, turned]
+    setup:
+      - select-by-category-name
+    setup-set:
+      categoryName: Door Tags
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "FloorPlan: Level 1"
+      tagCategories: Door Tags
+      offsetRightMm: 0
+      offsetUpMm: 0
+      addLeader: keep
+      orientVertical: "true"
+      keepHead: "true"
+    negative-setup-set:
+      categoryName: Door Tags
+      inViewOnly: "FloorPlan: Level 1"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      tagCategories: Door Tags
+      offsetRightMm: 0
+      offsetUpMm: 0
+      addLeader: keep
+      orientVertical: "true"
+      orientHorizontal: "true"
+      keepHead: "true"
+    note: >
+      EG1 - one orientation for every tag, the head left where it is. The
+      four door tags turned Vertical in place. The negative asks for two
+      orientations at once and must refuse before any tag is touched.
+
+  - fragment: offset-tags-from-host
+    expect: [moved, turned]
+    setup:
+      - select-by-category-name
+    setup-set:
+      categoryName: Room Tags
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "FloorPlan: Level 1"
+      tagCategories: Room Tags
+      offsetRightMm: 0
+      offsetUpMm: 0
+      addLeader: keep
+      orientVertical: "true"
+      keepHead: "true"
+    negative-setup-set:
+      categoryName: Room Tags
+      inViewOnly: "FloorPlan: Level 1"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      tagCategories: Room Tags
+      offsetRightMm: 0
+      offsetUpMm: 0
+      addLeader: keep
+      orientToHost: "true"
+      keepHead: "true"
+    note: >
+      EG2 - a room tag's own orientation, which the API offers on every
+      release from 2020. The negative asks the room tag to follow its room,
+      which runs no way: noDirection 1, nothing written.
+
+  - fragment: offset-tags-from-host
+    expect: [moved, turned]
+    setup:
+      - select-by-category-name
+    setup-set:
+      categoryName: Door Tags
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      view: "FloorPlan: Level 1"
+      tagCategories: Door Tags
+      offsetRightMm: 0
+      offsetUpMm: 0
+      addLeader: keep
+      orientToHost: "true"
+      keepHead: "true"
+    negative-setup-set:
+      categoryName: Door Tags
+      inViewOnly: "FloorPlan: Level 1"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      tagCategories: Room Tags
+      offsetRightMm: 0
+      offsetUpMm: 0
+      addLeader: keep
+      orientToHost: "true"
+      keepHead: "true"
+    note: >
+      EG3 - what the real job asked for: each tag turned the way its own door
+      runs. The two door tags in the north-south walls turn Vertical; the two
+      in the east-west walls are already Horizontal and are left. The
+      negative hands in the same four door tags with tagCategories Room Tags:
+      otherCategory 4, nothing turned.
