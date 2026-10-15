@@ -180,6 +180,10 @@ compatibility-note: >
 #                                           an opening at all
 #   "dimension these ducts"              -> DIMENSION_MEP_RUNS
 #   "dimension between these two"        -> CREATE_DIMENSION
+#   "dimension this opening from the level and the grid" -> CREATE_LINEAR_DIMENSION
+#                                           (5b-482) - ONE opening FAMILY in a
+#                                           section, by its own faces; this one
+#                                           strings the openings a wall hosts
 #   "how wide is that door"              -> READ_ELEMENT_PARAMETERS. A question
 #                                           must not be answered by marking the
 #                                           drawing

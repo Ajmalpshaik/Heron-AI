@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,31 @@ semantic-identity: "dimension between these grids, levels, planes, lines or wall
 kind: action
 domain: revit.annotation
 capability: CREATE_LINEAR_DIMENSION
-version: 2
+# VERSION 3 (2026-10-15, FRAGMENT-ISSUES 5b-482): `between` reaches a FAMILY
+# INSTANCE. On a real project (Revit 2020) the modeller asked for a
+# builders-work opening - a Generic Model family - to be dimensioned in a
+# section from its level and its grid, and by its own width and height. The
+# family published only CenterLeftRight, CenterFrontBack and nine weak
+# references, and version 2's words - grid, level, plane, line, wall - reach
+# none of them, so no tool in the library could draw it. Two words more:
+#   family ID WHICH - the instance's own reference: Left, Right, Top, Bottom,
+#                     Front, Back, CenterLeftRight, CenterFrontBack,
+#                     CenterElevation, or a reference plane's NAME (strong or
+#                     weak). One it does not publish is refused with the list
+#                     it does publish.
+#   face ID SIDE    - the element's flat solid face pointing most toward
+#                     left, right, top or bottom OF THE VIEW (near, far:
+#                     toward and away from whoever looks). Any element, even a
+#                     family with no named reference - read from the geometry
+#                     the view shows, with references computed.
+# And the same point given twice for lineFrom and lineTo runs the string
+# THROUGH that point, square to what it measures; it was refused before, so no
+# caller is changed. Every version 2 word reads exactly as it did. The purpose
+# below is version 2's, word for word, so the search reads the same text -
+# its "a face ... is not offered" means a face picked with the mouse; a face
+# named by its side is offered since version 3. DRAFT until version 3 is run
+# in Revit: NEEDS-CHECKING Group EF.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -57,11 +81,18 @@ contract:
       source: request
     # What it measures between, `|` between them, two or more: "grid A | grid B",
     # "level Level 1 | level Level 2", "plane Box Left | plane Box Right",
-    # "line 123456 | wall 234567 exterior".
+    # "line 123456 | wall 234567 exterior". On a family instance (an id as
+    # Revit shows it): "family 345678 Left" - Left, Right, Top, Bottom, Front,
+    # Back, CenterLeftRight, CenterFrontBack, CenterElevation or a reference
+    # plane's name - and on any element "face 345678 top" - its flat face
+    # toward left, right, top or bottom of this view: "grid D | face 345678
+    # left", "level Level 1 | face 345678 bottom | face 345678 top".
     - name: between
       type: string
       source: request
     # Where the dimension string sits: one end, in millimetres - "0,-1000,0".
+    # The SAME point for both ends runs the string through that point, square
+    # to what it measures - a point beside the element is enough.
     - name: lineFrom
       type: XYZ
       source: request
@@ -86,6 +117,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# THIS PROOF IS VERSION 2's AND IT IS STALE. It ran grids in a floor plan and
+# never reached a family instance, a solid face or a string run through one
+# point - none of which version 2 had. The fingerprint below no longer matches
+# the implementation; Group EF is the run that replaces it.
 proof:
   date: '2026-10-03'
   by: Ajmal PS
@@ -125,9 +160,23 @@ compatibility-note: >
   ArcLengthDimension) changed what comes BACK, not how it is made, and nothing
   here names a subclass, so one path serves every release.
 
+  Version 3's members are the same on every release too, read off the
+  reference assemblies with tools/api-surface --members one release at a time
+  on 2026-10-15: FamilyInstance.GetReferences, GetReferenceName,
+  GetReferenceByName and GetReferenceType, the FamilyInstanceReferenceType
+  values Left (0) to NotAReference (11), Options.ComputeReferences and
+  Options.View, all present 2020 through 2027. An element is still found by
+  matching its Id.ToString(), never by constructing an ElementId - the int
+  and long constructors split at 2024 and 2026.
+
 # ROUTING - repeated in CREATE_DIMENSION and DIMENSION_GRIDS_AND_LEVELS.
 #
 #   "dimension from this to that"    -> here
+#   "dimension this opening from the level and the grid" -> here, version 3:
+#                                       family and face references
+#   "dimension the opening's width and height in this section" -> here
+#                                       (reached by ranking on the spelling
+#                                       backend only - not declared, see below)
 #   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS - centrelines of
 #                                       parallel MEP runs, and only that
 #   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
@@ -147,3 +196,17 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "dimension
   # from this to that": CREATE_DIMENSION answered it on both backends.
   - dimension from this to that
+  # ADDED 2026-10-15, row 5b-482 - version 3's job, a family instance
+  # dimensioned from a datum and by its own faces, asked on a real project
+  # for a builders-work opening in a section. Before version 3 it went to
+  # DIMENSION_GRIDS_AND_LEVELS on the trained backends.
+  #
+  # NOT DECLARED, ON PURPOSE: "dimension the opening's width and height in
+  # this section". Declared here it reached this card on all three backends,
+  # and it also sent the QUESTION "which dimensions are in Section-03" from
+  # SELECT_DIMENSIONS_BY_VALUE to this write on the trained model without the
+  # re-ranker (seen by the session of row 5b-483, re-measured here) - and a
+  # question must not reach a write (D-86). Left undeclared it reaches this
+  # card on the spelling backend by ranking, and stays where main sends it on
+  # the trained ones: LABEL_FAMILY_DIMENSION, DIMENSION_WALL_OPENINGS.
+  - dimension this opening from the level and the grid
