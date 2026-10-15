@@ -179,8 +179,8 @@ in both legs are `NEG NOT EMPTY`, never a pass. Until 2026-10-11 a sentence was 
 however well both legs held - `edit-revision`'s `changed`, [row 5b-411](../../../docs/fragment-issues/section-5b-rows-401-425.md).
 **Beside a count or a flag, the count decides** (D-51): a sentence that reads back the state -
 `set-material-colour`'s `wasColour` - is filled whether or not anything changed, so with `changed 0`
-the positive is `POSITIVE EMPTY` however full the sentence. Name the sentence alone in `expect:` when it
-really is the result. A sentence the fragment always writes - a report that says *"nothing was
+the positive is `POSITIVE EMPTY` however full the sentence. Naming the sentence alone in `expect:`
+satisfies batch-prove and NOT `accept` - see the `expect:` paragraph below. A sentence the fragment always writes - a report that says *"nothing was
 checked"* - is never empty in the negative; give it `role: accounting`, or prove the fragment by
 tracking (below). **The runner cannot read what a sentence says**: `<none>` or *"no other revision was
 renumbered"* counts as found, so read the value the verdict quotes before signing.
@@ -201,6 +201,15 @@ When a fragment has one, name the real result in the job file and the runner jud
 If a fragment's own contract is what is wrong — a work counter declared as a result — fix the contract.
 `role: accounting` on the `provides` entry is the fragment saying so about itself, and it is worth more
 than a line in a job file because every later run gets it too.
+
+**`expect:` NARROWS ONE THING ONLY - batch-prove's judgement of the POSITIVE.** Measured 2026-10-15 on
+`report-view-filters` and `set-view-filter-categories`: the NEGATIVE is still judged on every declared
+`role: result`, and **`accept` never reads the job file at all** - it judges the draft on the contract
+alone, count before sentence (D-51). So a job can read `PASS` in batch-prove and then be refused at
+`accept` with `POSITIVE EMPTY`, or read `NEG NOT EMPTY` on a result `expect:` left out. What settles it:
+a result that is always filled is `role: accounting` in the contract; and a project-wide count beside a
+per-view sentence (`unusedFilters` beside `filterSettings`) needs a positive where the count is
+non-zero and a negative where it is zero - usually two models, with `in:` and `negative-in:`.
 
 ## Fragments that cannot come back empty
 

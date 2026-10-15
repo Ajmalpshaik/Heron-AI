@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,7 +62,10 @@ contract:
       # or left as it was: its categories, its rule, and the elements it
       # catches today. ONE STRING, because a list reaches the chat as three
       # entries cut at sixty characters and the rule is at the end of each.
-      role: result
+      # ACCOUNTING, not a result (2026-10-15): it describes every named filter
+      # whether or not anything changed, so it is filled in the negative too
+      # and a proof read it as content there. `changed` is the result.
+      role: accounting
       type: string
     - name: alreadySet
       # Filters that already held exactly this list and were not written. The
@@ -85,6 +88,44 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-15'
+  by: Ajmal PS
+  model: 'Project1 (new, unsaved, Revit 2020 Systems template - 10 view filters, 18 views,
+    2 levels), Revit 2020, session 25244 - element count not recorded: the count the client
+    measured was of the other document in front, not Project1 (row 15)'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadySet 0 item(s), categoryIds
+    2 item(s) [-2008044, -2008049], categoryName 2 entry(ies), changed 1 item(s) [Domestic],
+    leftOut 0 item(s), leftOutOf 0 entry(ies), leftOutOrder 0 item(s), names 1 item(s) [Domestic],
+    notFound 0 item(s), parameterLabel 1 entry(ies), plan 1 entry(ies), readBack ''Domestic''
+    (changed): categories Pipe Fittings, Pipes; rule System Classification contains ''Domestic'';
+    catches 0 element(s) in the model today, refusals 0 item(s), refused , targets 1 item(s)
+    [Domestic]. inputs came filterNames as given (1); categories as given (2). on Project1'
+  negative_case: 'run with categories=Walls, filterNames=Domestic instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned alreadySet 0 item(s),
+    categoryIds 1 item(s) [-2000011], categoryName 1 entry(ies), changed 0 item(s), leftOut
+    1 item(s) [Walls - it cannot be filtered by ''System Classification''], leftOutOf 1 entry(ies),
+    leftOutOrder 1 item(s) [Walls - it cannot be filtered by ''System Classification''], names
+    1 item(s) [Domestic], notFound 0 item(s), parameterLabel 1 entry(ies), plan 0 entry(ies),
+    readBack ''Domestic'' (left as it was): categories Pipe Accessories, Pipe Fittings, Pipe
+    Insulations, Pipes; rule System Classification contains ''Domestic''; catches 0 element(s)
+    in the model today, refusals 1 item(s) [''Domestic'' left exactly as it was - none of
+    the categories g...], refused ''Domestic'' left exactly as it was - none of the categories
+    given can take its rule, and a filter is never emptied. left out and NOT set: Walls -
+    it cannot be filtered by ''System Classification'', targets 1 item(s) [Domestic]. inputs
+    came filterNames as given (1); categories as given (1). on Project1'
+  second_route: '2026-10-15, Project1: the positive KEPT (fragment --write --apply) - Domestic
+    set to Pipes, Pipe Fittings, changed 1. Then a throwaway READ probe that calls the Revit
+    API directly and shares no code with this fragment (ParameterFilterElement.GetCategories,
+    GetElementFilter, FilterInverseRule.GetInnerRule, View.GetFilters, a FilteredElementCollector
+    through the filter), run in the same session and deleted afterwards: Domestic''s categories
+    are Pipe Fittings and Pipes alone, where the negative''s readBack and REPORT_VIEW_FILTERS
+    had named four (Pipe Accessories, Pipe Fittings, Pipe Insulations, Pipes). Two routes
+    agree.'
+  fingerprint: 3b0db84a6b34c2d4
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
