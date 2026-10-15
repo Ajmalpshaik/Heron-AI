@@ -1,0 +1,117 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-066
+semantic-identity: "draw a flexible pipe from the sprinkler branch line down to the head, along the points I give"
+kind: action
+domain: revit.mep
+capability: CREATE_FLEX_PIPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates ONE flex pipe along the points given - the flex hose from a
+  sprinkler branch line to the head, or to a fixture. Rigid pipe cannot
+  express it, and until this fragment the library could make flex DUCT and no
+  flex pipe on a piping system.
+
+  **IT GUESSES NO ROUTE, DELIBERATELY.** Every point is given, in order, and
+  the order is the route. An invented path looks plausible on plan and is not
+  what anybody would have drawn.
+
+  **THE LENGTH LIMIT IS ENFORCED, NOT SUGGESTED.** A sprinkler flex hose is
+  listed for a maximum length, and the length is exceeded by accident - two
+  points further apart than they looked. The limit is a required input and a
+  route over it is REFUSED before anything is made.
+
+  **THE TYPE MUST BE A FLEX PIPE TYPE.** A rigid pipe type handed in is refused
+  by name before Revit is asked, rather than left to an exception.
+
+  **IT MAKES FLEX, NOT A CONNECTION.** Sharing an endpoint with a sprinkler or
+  a tee is not a connection in Revit. CONNECT_OPEN_ENDS joins it, and
+  TRACE_CONNECTIVITY proves it happened.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
+  entry, and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED OBJECTS, never ids (D-05).
+    - name: systemType
+      type: PipingSystemType
+      source: request
+    # MEPCurveType because the binder resolves that class by name today; a
+    # type that is not a FLEX pipe type is refused below, by name, before
+    # Revit is asked. FlexPipe.Create takes the id, so nothing narrower is
+    # needed to call it.
+    - name: flexPipeType
+      type: MEPCurveType
+      source: request
+    - name: level
+      type: Level
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    # Millimetres. A route longer than this is refused before anything is made.
+    - name: maxLengthMm
+      type: double
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: FlexPipe
+    - name: lengthMm
+      # How long the flex actually came out - 0 when nothing was made. The
+      # length of a refused route is in the refusal sentence, not here.
+      role: result
+      type: double
+    - name: refused
+      # Why it declined, in the modeller's words - never a thing it FOUND
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FlexPipe.Create(Document, ElementId,
+  ElementId, ElementId, IList<XYZ>)` and `FlexPipe.IsFlexPipeTypeId` are
+  present 2020 through 2027, read with tools/api-surface on 2026-10-14. The
+  resolved objects are asked for their `.Id`; no ElementId is built from a
+  number.
+
+# ROUTING - cross-referenced in CREATE_FLEX_DUCT and CREATE_PIPE.
+#
+#   "run a flexible pipe to that sprinkler"  -> here
+#   "make the flex drop to the head"         -> here
+#   "make the flex drop to that diffuser"    -> CREATE_FLEX_DUCT - flexible DUCT,
+#                                               on an air system
+#   "draw pipe between these points"         -> CREATE_PIPE, which makes RIGID pipe
+#   "is the sprinkler connected"             -> TRACE_CONNECTIVITY
+#
+# MEASURED 2026-10-14 on the trained backend (model2vec 0.10.0, potion-base-8M,
+# private stores): "run flex to that diffuser" - CREATE_FLEX_DUCT's routing
+# claim, never declared there - reaches THIS card by 0.0323 to 0.0319,
+# nearness #1 against #5; on main, with no flex pipe card, it reached the
+# duct. Rewording this card did not move it. It fails safe: `systemType` is a
+# PipingSystemType, so a duct system named here is refused by the binder.
+# The fix is declaring the sentence on CREATE_FLEX_DUCT, PROVEN - the owner's
+# call (NEEDS-CHECKING EC2).
+
+utterances:
+  - draw a flexible pipe along these points
+  - draw a flex hose down to that sprinkler head
+  - create flex pipe to the sprinkler on this route
+  - draw flex pipe from the branch to the head
+  - make the flex drop to the head

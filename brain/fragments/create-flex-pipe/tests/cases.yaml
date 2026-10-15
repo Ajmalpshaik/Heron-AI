@@ -1,0 +1,44 @@
+positive:
+  - given: >
+      two points 600 mm apart, straight down from a branch line to a pendent
+      sprinkler, the Fire Protection Wet system type, a flex pipe type and
+      Level 1, with a 1200 mm limit
+    expect: >
+      one flexible pipe created along them, 600 mm reported, on the wet
+      system, and the finding saying plainly that it is connected to NOTHING
+
+  - given: three points forming an offset drop, inside the limit
+    expect: >
+      the pipe following them in the order given, with no sorting or
+      simplification
+
+negative:
+  - given: a route of 2,400 mm with a 1,200 mm limit
+    expect: >
+      REFUSED before anything is created, both numbers stated, lengthMm 0 and
+      created null. THIS IS THE CASE THAT MATTERS - a drop over its listed
+      length is exceeded by accident
+
+  - given: a RIGID pipe type named as the flex pipe type
+    expect: >
+      refused by name before Revit is asked, pointed at CREATE_PIPE, and
+      nothing created
+
+  - given: a maximum length of zero
+    expect: >
+      refused. The limit is asked for rather than assumed
+
+  - given: any run at all
+    expect: >
+      NO CONNECTION MADE AND NO TRANSACTION OPENED. Joining it is
+      CONNECT_OPEN_ENDS, and undo is the caller's
+
+second_route:
+  - >
+    Revit's own Length on the created flex pipe in the Properties palette
+    against the reported millimetres. They must agree - a disagreement is a
+    units error
+  - >
+    TRACE_CONNECTIVITY on the sprinkler afterwards. It should report the head
+    still OPEN - if it reads as connected, something other than this fragment
+    joined it and the wording here is wrong

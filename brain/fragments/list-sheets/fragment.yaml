@@ -89,6 +89,13 @@ compatibility-note: >
 #   "make a sheet list schedule"       -> CREATE_SHEET_LIST - a schedule VIEW
 #                                        that prints on the cover. This is a
 #                                        READ that makes nothing
+# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in FIND_SHEETS.
+# The two cards overlap and neither named the other until then.
+#
+#   "which sheets are empty"           -> here - the view count is on every row
+#   "the m series sheets"              -> FIND_SHEETS - the sheets narrowed by number or
+#                                         by name, for whatever acts on them next
+
 utterances:
   - list the sheets
   - how many sheets are there

@@ -157,6 +157,9 @@ compatibility-note: >
 #   "put a damper in this duct"          -> PLACE_ACCESSORY_ON_RUN, which
 #                                           breaks, places and rejoins. This
 #                                           one only breaks
+#   "jump this pipe over the beam"       -> OFFSET_MEP_SECTION - two breaks, the
+#                                           stretch between moved up or down and a
+#                                           leg drawn at each end (2026-10-14)
 
 utterances:
   - split this duct

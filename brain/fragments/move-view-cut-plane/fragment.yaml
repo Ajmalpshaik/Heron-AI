@@ -92,3 +92,7 @@ utterances:
   - push this elevation back so it cuts through the wall
   - shift the section line 1 metre
   - move the cut plane of this section through this point
+  # ADDED 2026-10-14. Claimed by the routing table above and served on main
+  # by CREATE_WALL, and on the gap-pass branch by CREATE_WALL_ELEVATION - two
+  # writes that make something rather than move a cut (check-routing).
+  - push the elevation back to the wall

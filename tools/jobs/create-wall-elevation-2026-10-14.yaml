@@ -1,0 +1,60 @@
+# The proof of create-wall-elevation (CREATE_WALL_ELEVATION, FRG-VIEW-139),
+# written 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC11. NOT
+# RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/create-wall-elevation-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-wall-elevation-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test" (docs/needs-checking/group-ec.md):
+#   - part 1's wall: the ONLY wall in "FloorPlan: Level 1", straight, drawn at
+#     30 degrees to the project axes - at 30 degrees so the marker has to turn
+#   - part 6's pipe: the ONLY pipe in "FloorPlan: Level 2" - the negative
+#
+# `wall` IS ONE ELEMENT, "selected": the setup selects every element of the
+# category in the plan, so each plan must hold exactly one.
+#
+# THE NEGATIVE HANDS IN A PIPE AS THE WALL: refused as not a wall, nothing
+# made - created null.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - the finding "Read back: the view faces the wall square (n degrees off)",
+#     n under 0.5; a "DOES NOT FACE THE WALL SQUARE" refusal is a FAIL
+#   - the second route (EC11b): run it by hand with the write kept and open
+#     the view - the wall square on screen, both ends level
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) parts 1 and part 6 - one wall at 30 degrees alone in Level 1''s plan, one pipe alone in Level 2''s, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: create-wall-elevation
+    expect: created
+    set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+      planView: "FloorPlan: Level 1"
+      wall: selected
+      side: exterior
+      offsetMm: 3000
+      scale: 100
+    negative-set:
+      categoryName: Pipes
+      inViewOnly: "FloorPlan: Level 2"
+      planView: "FloorPlan: Level 1"
+      wall: selected
+      side: exterior
+      offsetMm: 3000
+      scale: 100
+    note: >
+      A wall at 30 degrees against a pipe handed in as the wall.

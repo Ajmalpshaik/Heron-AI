@@ -114,9 +114,15 @@ compatibility-note: >
 #   "fill this level with spaces"              -> PLACE_ROOMS - every enclosed
 #                                                 area, no names from a link
 #   "put a space here"                         -> PLACE_ROOM_AT_POINT
+#   "make the architecture link room bounding" -> SET_LINK_ROOM_BOUNDING - the
+#                                                 setting this card names when a
+#                                                 linked room has no space (2026-10-14)
 
 utterances:
   - create spaces from the linked rooms
   - update the spaces to match the architect's rooms
   - sync the space numbers and names with the room link
   - add spaces for the architect's new rooms
+  # ADDED 2026-10-14. It reached this card on main, and SET_LINK_ROOM_BOUNDING
+  # on the gap-pass branch once that card existed (lexical, scratch stores).
+  - place spaces in all rooms of the linked model

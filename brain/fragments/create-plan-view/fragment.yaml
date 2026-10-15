@@ -94,6 +94,8 @@ compatibility-note: >
 #   "make a section"                -> CREATE_SECTION_VIEW
 #   "make a drafting view"          -> CREATE_DRAFTING_VIEW
 #   "show me the floor below"        -> SET_VIEW_UNDERLAY
+#   "make the gross area plan for level 1" -> CREATE_AREA_PLAN - an AREA plan,
+#                                      in a named scheme (2026-10-14)
 
 utterances:
   - make the plan for this level

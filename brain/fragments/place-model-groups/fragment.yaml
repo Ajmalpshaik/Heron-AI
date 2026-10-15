@@ -1,0 +1,84 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-099
+semantic-identity: "place new instances of this model group type at these points"
+kind: action
+domain: revit.elements
+capability: PLACE_MODEL_GROUPS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places an instance of an existing model group type - the typical toilet
+  block, the repeated plant arrangement - once at each point given, on a level.
+  GROUP_ELEMENTS makes a group from elements; until this fragment nothing could
+  place another instance of one.
+
+  **THE GROUP TYPE IS NAMED** - as the Project Browser shows it under Groups >
+  Model. A name that matches no model group type is refused with the ones that
+  exist; a DETAIL group is refused, because it belongs to a view and is placed
+  differently.
+
+  **EACH POINT IS X AND Y ON THE PLAN, AND Z ABOVE THE LEVEL**, in
+  millimetres - the group's origin goes there. Each instance's level and offset
+  are read back from Revit after placing, never assumed.
+
+  **EACH ONE PLACED IS A GROUP, AND EVERY GROUP RULE COMES WITH IT.** Its
+  members refuse to move one by one and are changed for every instance at once - GROUP_ELEMENTS's
+  card says why that matters.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
+  entry, and the caller owns it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: groupTypeName
+      type: string
+      source: request
+    - name: level
+      type: Level
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: placed
+      role: result
+      type: IList<Element>
+    - name: refused
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Create.PlaceGroup(XYZ, GroupType)`,
+  `GROUP_LEVEL`, `GROUP_OFFSET_FROM_LEVEL` and the `OST_IOSModelGroups` /
+  `OST_IOSDetailGroups` categories are present 2020 through 2027, read with
+  tools/api-surface on 2026-10-14. No ElementId is built from a number.
+
+# ROUTING - the same rows are in GROUP_ELEMENTS and COPY_ELEMENTS.
+#
+#   "place the toilet block group here"     -> here
+#   "put another one of this model group down here" -> here
+#   "group these"                           -> GROUP_ELEMENTS - makes the group
+#   "copy this group up to the other floors"-> COPY_ELEMENTS - copies a placed
+#                                              group to other levels
+#   "what is in this group"                 -> SELECT_GROUP_MEMBERS
+
+utterances:
+  - place the toilet block group at these points
+  - put another one of this model group down here
+  - put down another typical plant group at these points
+  - place model group Typical Plant at these points

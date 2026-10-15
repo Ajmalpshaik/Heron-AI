@@ -1,0 +1,75 @@
+# The proof of select-group-members version 2 (SELECT_GROUP_MEMBERS, FRG-SEL-014),
+# written 2026-10-14 for FRAGMENT-ISSUES row 5b-470 - NEEDS-CHECKING Group EC,
+# row EC1. NOT RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/select-group-members-assembly-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/select-group-members-assembly-2026-10-14.yaml
+#
+# WHAT VERSION 2 CHANGED. Version 1 opened a model group and refused anything
+# else, pointing an assembly at GROUP_BY_ASSEMBLY - which walks nested
+# families and never opens an assembly. Version 2 opens an assembly the same
+# way it opens a group, and says which it opened in `containerKind`.
+#
+# A READ. No transaction is opened and nothing is changed, so there is no
+# `write:` below.
+#
+# THE MODEL - "Heron Gap Pass Test", the one test project for the whole gap
+# pass of 2026-10-14. docs/needs-checking/group-ec.md says how to make it. The
+# part this job needs, in "FloorPlan: Level 1":
+#
+#   ONE assembly, made with Create > Assembly from three pipes of one run, its
+#   naming category Pipes. Write down its member count from Edit Assembly.
+#   ONE straight wall nearby, for the negative.
+#
+# "Assemblies" IS THE CATEGORY NAME TAKEN ON TRUST. An assembly instance is
+# expected to report the Assemblies category; if select-by-category-name
+# finds none under that name, read the assembly's category in Properties and
+# put that name in `categoryName` - an arrangement fault, not a defect.
+#
+# `group` IS ONE ELEMENT, AND "selected" MEANS EXACTLY ONE. The setup selects
+# every element of one category in the plan, so the plan must hold exactly one
+# assembly and the negative's category exactly one wall in view - or the
+# binder refuses with the count it found, which is an arrangement fault.
+#
+# WHY A WALL FOR THE NEGATIVE. A wall is neither a group nor an assembly, so
+# version 2 must refuse it by name, leave `containerKind` empty and hand back
+# nothing - not its layers, not its hosted doors.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: members came back for the assembly and none for the wall
+#   - NEG NOT EMPTY: the wall was opened as if it were a container - a defect
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - containerKind says "assembly", not "group"
+#   - the member count equals the count Edit Assembly shows (the second route)
+#   - the report names the assembly type and "named by the Pipes category"
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) - one assembly of three pipes and one wall in "FloorPlan: Level 1", Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Assemblies
+    inViewOnly: "FloorPlan: Level 1"
+    group: selected
+
+  negative-set:
+    categoryName: Walls
+    inViewOnly: "FloorPlan: Level 1"
+    group: selected
+
+jobs:
+  - fragment: select-group-members
+    expect: [elements, containerKind]
+    note: >
+      THE PROOF OF VERSION 2. One assembly against one wall. Read
+      containerKind and the member count against Edit Assembly - the
+      verdict cannot.

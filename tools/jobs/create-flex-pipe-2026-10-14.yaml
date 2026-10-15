@@ -1,0 +1,58 @@
+# The proof of create-flex-pipe (CREATE_FLEX_PIPE, FRG-MEP-066), written
+# 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC2. NOT RUN -
+# written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/create-flex-pipe-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-flex-pipe-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK, so the
+# model is left as it was.
+#
+# THE MODEL - "Heron Gap Pass Test" (docs/needs-checking/group-ec.md). Nothing
+# needs modelling for this row: a new project from the default metric template
+# carries a Fire Protection Wet system type, a flex pipe type and Level 1.
+#
+# THE TWO NAMES TO CHECK FIRST, because they are the template's and not this
+# file's: the flex pipe TYPE (Project Browser > Families > Flex Pipes - open the
+# family and copy the type's name exactly) and the piping system type (Families
+# > Piping Systems). If either differs, change it in BOTH legs below. A name
+# that matches nothing is refused by the binder - an arrangement fault.
+#
+# THE NEGATIVE CHANGES ONLY THE ROUTE: the same system, type, level and limit,
+# a 2400 mm route against a 1200 mm limit. It must be refused before anything
+# is made - created null, lengthMm 0, both numbers in the sentence.
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - lengthMm 600 on the positive, and the findings naming the system
+#   - the "IT IS NOT CONNECTED TO ANYTHING" sentence is there
+#   - the second route (EC2b): run the positive by hand with `--write` kept,
+#     then read Length in the Properties palette - it must say 600
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) - a new project from the default metric template, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-flex-pipe
+    expect: [created, lengthMm]
+    set:
+      systemType: "Fire Protection Wet"
+      flexPipeType: "Flex Pipe - Round"
+      level: "Level 1"
+      points: "0,0,3000; 0,0,2400"
+      maxLengthMm: 1200
+    negative-set:
+      systemType: "Fire Protection Wet"
+      flexPipeType: "Flex Pipe - Round"
+      level: "Level 1"
+      points: "0,0,3000; 2400,0,3000"
+      maxLengthMm: 1200
+    note: >
+      A 600 mm drop against a 2400 mm route, the same 1200 mm limit. The
+      negative must make nothing.

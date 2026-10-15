@@ -1,0 +1,26 @@
+positive:
+  - given: >
+      a host model on its own internal coordinates, and a linked Revit model
+      whose shared coordinates put its origin at E 10000, N 20000 and turn
+      True North 30 degrees, linked in at a known spot
+    expect: >
+      acquired true; `before` reading the host's old position, `after` reading
+      the link's system - the two different; no element moved
+
+negative:
+  - given: a link that is NOT loaded
+    expect: >
+      NOTHING ACQUIRED - refused by name, pointed at RELOAD_LINKS, and `before`
+      and `after` both empty. THIS IS THE CASE THAT MATTERS: no coordinates are
+      taken from a model nobody can read
+
+  - given: a link that already shares this model's coordinates
+    expect: acquired true, before equal to after, and the finding saying so
+
+  - given: any run at all
+    expect: NO ELEMENT MOVED AND NO TRANSACTION OPENED
+
+second_route: >
+  Revit itself: Manage > Coordinates > Report Shared Coordinates on a point,
+  and a spot coordinate on a grid intersection - both reading the link's
+  values after, and the host's before

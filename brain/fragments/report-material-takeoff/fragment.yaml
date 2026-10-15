@@ -108,6 +108,14 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "what is the embodied carbon"           -> REPORT_EMBODIED_CARBON
+# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in READ_ELEMENT_MATERIAL.
+# The two cards overlap and neither named the other until then.
+#
+#   "give me a material takeoff"       -> here - the numbers a Material Takeoff schedule
+#                                         shows, paint included
+#   "what material is this"            -> READ_ELEMENT_MATERIAL - what each element is
+#                                         made of, with the volume of each
+
 utterances:
   - how much of each material is there
   - give me a material takeoff

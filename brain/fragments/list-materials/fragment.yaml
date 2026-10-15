@@ -205,3 +205,8 @@ utterances:
   - what materials are in this project
   - show me all the materials
   - list the materials with their thermal and physical properties
+  # ADDED 2026-10-14. Claimed by the routing table above and never declared;
+  # on the trained backend (model2vec 0.10.0, potion-base-8M, private stores)
+  # main reached it here and the gap-pass branch reached READ_ELEMENT_MATERIAL,
+  # whose answer is per element, not the project's list.
+  - how many materials are there

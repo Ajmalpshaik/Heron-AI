@@ -121,7 +121,10 @@ compatibility-note: >
 #   "which elements are in this group"  -> SELECT_GROUP_MEMBERS. A group is
 #                                          not a nested family and behaves
 #                                          differently
-#   "what is in this assembly"          -> GROUP_BY_ASSEMBLY
+#   "what is in this assembly"          -> SELECT_GROUP_MEMBERS, which opens an
+#                                          assembly. GROUP_BY_ASSEMBLY walks
+#                                          nested families, as this card does,
+#                                          and never an assembly (row 5b-470)
 
 utterances:
   - how many units are these really

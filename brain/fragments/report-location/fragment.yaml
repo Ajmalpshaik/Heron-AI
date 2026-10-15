@@ -242,3 +242,10 @@ utterances:
   - which city is the project site in
   - how far is true north rotated from project north
   - what is the project location set to
+  # ADDED 2026-10-14. The routing table above has claimed both since it was
+  # written; on a scratch store, lexical, through `find`, main served them with
+  # CHECK_LINK_COORDINATES (a read about LINKS) and the gap-pass branch with
+  # ACQUIRE_COORDINATES, an ADMIN write - a question answered by the tool that
+  # changes the shared coordinates (check-routing, claimed and not reached).
+  - what are the coordinates
+  - what are the shared coordinates of this

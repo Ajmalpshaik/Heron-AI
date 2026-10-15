@@ -83,6 +83,9 @@ compatibility-note: >
 #                                 reach anybody else
 #   "who owns this"            -> READ_ELEMENT_OWNERSHIP - a READ
 #   "can I edit these"         -> REPORT_ELEMENT_OWNERSHIP
+#   "make my workset editable" -> SET_WORKSHARING_OWNERSHIP - take or give
+#                                 ownership WITHOUT a sync (2026-10-14)
+#   "relinquish everything I own" -> SET_WORKSHARING_OWNERSHIP, give
 
 utterances:
   - sync with central

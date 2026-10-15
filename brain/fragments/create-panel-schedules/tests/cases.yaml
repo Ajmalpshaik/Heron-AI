@@ -1,0 +1,39 @@
+positive:
+  - given: >
+      two branch panelboards with no panel schedule view, selected, and
+      templateName empty
+    expect: >
+      two panel schedule views made, each named in findings with its panel,
+      on Revit's default template, and each showing that panel's circuits
+      when opened
+
+  - given: >
+      a switchboard and the name of a switchboard panel schedule template
+    expect: >
+      one view made on that template, and the template named in the finding
+
+negative:
+  - given: >
+      a panel that ALREADY has a panel schedule view
+    expect: >
+      nothing made for it - the panel and its existing view's name in
+      alreadyScheduled, and created empty. THIS IS THE CASE THAT MATTERS: a
+      second schedule for one panel is the duplicate this fragment exists not
+      to make
+
+  - given: a lighting fixture handed in beside a panel
+    expect: >
+      the fixture named and skipped as not electrical equipment; the panel
+      still scheduled
+
+  - given: a templateName that matches no template
+    expect: >
+      refused before anything is made, the templates that DO exist listed
+
+  - given: any run at all
+    expect: >
+      NO TRANSACTION OPENED. Undo is the caller's
+
+second_route: >
+  Revit itself: Project Browser > Panel Schedules - the new views are there,
+  each opens on its panel, and a panel scheduled twice is not

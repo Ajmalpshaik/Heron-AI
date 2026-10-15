@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      a workshared scratch model with its central reachable, user workset
+      "Heron Test Workset" owned by nobody, action take
+    expect: >
+      changed 1 and the report "Heron Test Workset: editable by <me>";
+      Collaborate > Worksets shows Editable Yes, Owner this user
+
+  - given: the same model afterwards, action give
+    expect: >
+      the workset given back - at least 1 counted - and Worksets showing it
+      Editable No
+
+negative:
+  - given: action take with a workset name that matches none
+    expect: >
+      NOTHING CHANGED - refused by name, changed 0. THIS IS THE CASE THAT
+      MATTERS: no workset is guessed by a near name
+
+  - given: a model that is not workshared
+    expect: refused by name, nothing changed
+
+  - given: a workset owned by another user
+    expect: >
+      reported "NOT taken - owned by <them>", not counted - what was asked is
+      not what was got
+
+second_route: >
+  Revit itself: Collaborate > Worksets - Editable and Owner for each workset
+  asked for, before and after

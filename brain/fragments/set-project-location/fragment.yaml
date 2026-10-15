@@ -184,6 +184,9 @@ compatibility-note: >
 #                                                same site and True North with
 #                                                nothing selected
 #   "what is the latitude of the site"        -> REPORT_LOCATION
+#   "acquire coordinates from the architecture link" -> ACQUIRE_COORDINATES -
+#                                                the shared coordinates from a
+#                                                link, not the site (2026-10-14)
 #   "where exactly is this duct"              -> REPORT_LOCATION - an
 #                                                element's position, not the
 #                                                project's

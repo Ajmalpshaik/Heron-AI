@@ -111,6 +111,14 @@ compatibility-note: >
 #                                           search backends until that read
 #                                           was written (row 146, 2026-10-09)
 
+# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in PLACE_VIEW_ON_SHEET.
+# The two cards overlap and neither named the other until then.
+#
+#   "put these views on a sheet"       -> here - laid out on a grid, and the distinct
+#                                         positions counted
+#   "put this view on a sheet"         -> PLACE_VIEW_ON_SHEET - at one point the
+#                                         modeller gives, nothing laid out
+
 utterances:
   - put these views on a sheet
   - place the plans on sheet a-101

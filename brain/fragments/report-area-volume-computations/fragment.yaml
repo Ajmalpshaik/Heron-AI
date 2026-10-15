@@ -161,3 +161,10 @@ utterances:
   - are volumes switched on in this project
   - is area and volume computation turned on
   - which room area computation does this project use
+  # ADDED 2026-10-14 with CREATE_AREA_PLAN. `areaSchemes` names each scheme's
+  # area plans, so this card answers the question - and on a scratch store,
+  # lexical hybrid, 2024 wall, "what area plans are there" reached it on main
+  # and reached CREATE_AREA_PLAN, a write, once that card existed.
+  - what area plans are there
+  - list the area plans
+  - which area plans do we have

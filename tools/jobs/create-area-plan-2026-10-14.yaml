@@ -1,0 +1,48 @@
+# The proof of create-area-plan (CREATE_AREA_PLAN, FRG-VIEW-137), written
+# 2026-10-14 in the gap pass - NEEDS-CHECKING Group EC, row EC5. NOT RUN -
+# written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/create-area-plan-2026-10-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-area-plan-2026-10-14.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# THE MODEL - "Heron Gap Pass Test", part 4 (docs/needs-checking/group-ec.md):
+#   - Level 1 HAS a Gross Building area plan - make one by hand (View > Area
+#     Plan > Gross Building, Level 1) if the template did not
+#   - Level 2 has NO Gross Building area plan - delete it if the template made one
+#   - read the scheme's exact name in Area and Volume Computations > Area
+#     Schemes; change "Gross Building" below in both legs if it differs
+#
+# THE NEGATIVE CHANGES ONLY THE LEVEL: Level 1 already has its plan, so
+# nothing may be made - created null, the existing plan named in `existing`.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - findings name the new plan and Level 2, and say no boundary was drawn
+#   - the second route (EC5b): run the positive by hand with the write kept;
+#     Project Browser > Area Plans (Gross Building) shows it under Level 2
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Gap Pass Test" (docs/needs-checking/group-ec.md) part 4 - a Gross Building area plan on Level 1 and none on Level 2, Revit 2024'
+
+defaults:
+  in: "Heron Gap Pass Test"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-area-plan
+    expect: created
+    set:
+      level: "Level 2"
+      areaSchemeName: "Gross Building"
+      viewName: ""
+    negative-set:
+      level: "Level 1"
+      areaSchemeName: "Gross Building"
+      viewName: ""
+    note: >
+      Level 2 (no area plan) against Level 1 (has one). The negative must
+      make nothing and name Level 1's plan.

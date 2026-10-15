@@ -76,6 +76,9 @@ compatibility-note: >
 #   "is the structural model in the right place" -> here
 #   "where is this project"                   -> REPORT_LOCATION
 #   "set the project location"                -> SET_PROJECT_LOCATION
+#   "acquire coordinates from the architecture link" -> ACQUIRE_COORDINATES - the
+#                                                ADMIN change; run this read first
+#                                                (2026-10-14)
 
 utterances:
   - check the links against our shared coordinates

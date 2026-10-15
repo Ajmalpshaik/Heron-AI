@@ -123,6 +123,15 @@ compatibility-note: >
 # "A VIEW CAN ONLY BE ON ONE SHEET" IS THE RULE BEHIND HALF THE REFUSALS HERE,
 # and duplicating is the answer to it.
 
+# ROUTING (2026-10-14, FRAGMENT-ISSUES row 5b-471) - repeated in PLACE_VIEWS_ON_SHEET.
+# The two cards overlap and neither named the other until then.
+#
+#   "put this view on a sheet"         -> here - each view at the point given, `at`
+#   "put these views on a sheet"       -> PLACE_VIEWS_ON_SHEET, which lays them out on a
+#                                         grid by itself and counts how many landed
+#                                         in DISTINCT positions - the job when no
+#                                         point is given
+
 utterances:
   - put this view on a sheet
   - place these views on the sheet

@@ -1,0 +1,54 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: clash-reroute
+name: Take a pipe or duct round a clash
+domain: revit.mep
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Finds where a pipe or duct hits a beam, a duct or anything handed in, takes
+  that stretch of the run over or under it with a leg at each end, fits the
+  four elbows, and proves the run is joined end to end again.
+
+# Written 2026-10-14 from the sentences OFFSET_MEP_SECTION declares, turned to
+# the whole job. None was heard on a clash job yet.
+utterances:
+  - take this pipe over the beam it clashes with
+  - reroute the duct under the beam and fit it
+  - fix this clash by dropping the pipe
+  - jump the pipe over the duct and put the elbows in
+
+# CAPABILITIES, never fragment ids. In order: find the clash and where along
+# the run it is, move the stretch, fit the joints on the five pieces, check the
+# run is one again.
+needs:
+  - FIND_CLASHES
+  - MEASURE_DISTANCE
+  - OFFSET_MEP_SECTION
+  - FIT_MEP_JOINTS
+  - TRACE_CONNECTIVITY
+
+preconditions:
+  - the run is ONE straight duct or pipe, level or nearly so, with nothing tapped into the stretch that moves
+  - the stretch starts and ends far enough either side of the obstruction for the legs and their elbows - at least the obstruction's width plus two elbow legs
+  - the offset clears the obstruction by the clearance the project asks for - stated for THIS job, never assumed
+  - the space the stretch moves into has been checked - a second clash is the usual result of a first fix
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-10-14 IN A CLOUD SESSION, NOT RUN. FIND_CLASHES says what hits
+  what; MEASURE_DISTANCE from the run's start to the obstruction gives the two
+  distances OFFSET_MEP_SECTION takes, measured from the run's OWN start - the
+  end it was drawn from. OFFSET_MEP_SECTION breaks, moves and draws and makes
+  no elbow; FIT_MEP_JOINTS on its five `runs` fits all four or rolls back and
+  names the one that would not. Run FIND_CLASHES again on the moved stretch
+  before keeping it. A rectangular duct's legs may come out turned - look at
+  them in a section. NEEDS-CHECKING Group EC, row EC7.

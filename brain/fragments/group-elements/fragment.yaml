@@ -116,6 +116,9 @@ compatibility-note: >
 #                                        MEMBER is a common cause and is not
 #                                        the same as pinned
 #   "select the group"                -> FILTER_ELEMENTS_BY_ID
+#   "place the toilet block group at these points"
+#                                     -> PLACE_MODEL_GROUPS - another copy of a
+#                                        group type already made (2026-10-14)
 #
 # GROUPED, PINNED AND OWNED ALL PRESENT AS "IT WILL NOT MOVE" and have three
 # different fixes. Reporting the wrong one sends somebody to the wrong place.

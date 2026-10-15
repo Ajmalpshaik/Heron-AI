@@ -1,0 +1,26 @@
+positive:
+  - given: >
+      one straight wall drawn at 30 degrees to the project axes, "FloorPlan:
+      Level 1", side exterior, offsetMm 3000, scale 100
+    expect: >
+      one elevation, the marker 3000 mm off the exterior face, and the read
+      back saying it faces the wall square - under half a degree off
+
+  - given: the same wall, side interior
+    expect: the marker on the other side, its view looking at the interior face
+
+negative:
+  - given: a curved wall
+    expect: >
+      NOTHING MADE - refused by name as not straight. THIS IS THE CASE THAT
+      MATTERS: no face is guessed for a wall that has none square
+
+  - given: a duct handed in as the wall
+    expect: refused as not a wall, nothing made
+
+  - given: any run at all
+    expect: NO CROP CHANGED AND NO TRANSACTION OPENED
+
+second_route: >
+  Revit itself: open the new elevation - the wall square on screen, its two
+  ends level with each other; in plan the marker's arrow points at the wall

@@ -84,7 +84,10 @@ compatibility-note: >
 #   "make an assembly of this pipe spool"     -> here
 #   "make the shop drawings for this assembly" -> CREATE_ASSEMBLY_VIEWS
 #   "group these"                             -> GROUP_ELEMENTS
-#   "select by assembly"                      -> GROUP_BY_ASSEMBLY
+#   "select by assembly"                      -> SELECT_GROUP_MEMBERS, which opens an
+#                                                assembly and hands its members out
+#                                                (row 5b-470). GROUP_BY_ASSEMBLY reads
+#                                                nested families, not assemblies
 
 utterances:
   - make an assembly from these elements

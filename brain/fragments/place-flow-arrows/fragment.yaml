@@ -107,6 +107,8 @@ compatibility-note: >
 #   "tag these ducts"                    -> TAG_ELEMENTS_IN_VIEW
 #   "which way does this run flow"       -> TRACE_CONNECTIVITY
 #   "the duct is not connected"          -> FIND_DEAD_ENDS
+#   "put the north arrow on this plan"   -> PLACE_DETAIL_COMPONENTS - any symbol or
+#                                           detail item at given points (2026-10-14)
 
 utterances:
   - show the flow direction on the drawing

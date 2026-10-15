@@ -117,6 +117,8 @@ compatibility-note: >
 #   "give it a fall of 1 in 100"     -> SET_MEP_SLOPE - the opposite
 #                                       instruction: a graded run, not a level one
 #   "raise the ducts 200"            -> MOVE_ELEMENTS - both ends together
+#   "jump this pipe over the beam"   -> OFFSET_MEP_SECTION - ONE STRETCH of a run
+#                                       moves, with a leg at each end (2026-10-14)
 
 #   "which services are stacked too close together" ->
 #                                        CHECK_VERTICAL_CLEARANCE - it FINDS

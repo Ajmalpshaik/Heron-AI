@@ -16,6 +16,14 @@ positive:
       the nested group returned as ONE element and counted in nestedGroups, not
       flattened into its own members
 
+  - given: >
+      an assembly made with Create > Assembly from a pipe spool of 9 elements
+      (version 2)
+    expect: >
+      all 9, containerKind "assembly", the assembly type name and its naming
+      category in the report. Count them in Revit with Edit Assembly - the two
+      numbers must agree
+
 negative:
   - given: >
       a whole-model COUNT_ELEMENTS run over a model containing this group
@@ -30,10 +38,13 @@ negative:
       Revit refusing it, or applying it to EVERY instance of the group type.
       The report has to have said so before that happens
 
-  - given: an element handed in that is not a group
+  - given: >
+      an element handed in that is neither a group nor an assembly - a pump
+      with nested families inside it
     expect: >
-      refused by name, with assemblies pointed at GROUP_BY_ASSEMBLY. Not an
-      empty member list
+      refused by name, containerKind empty, and nested families pointed at
+      GROUP_BY_ASSEMBLY. Not an empty member list, and not the pump's nested
+      parts
 
   - given: a group whose member list names a deleted element
     expect: >
@@ -42,4 +53,5 @@ negative:
 
 second_route: >
   Revit itself: select the group, Edit Group, and count what the edit mode
-  shows - that is the definition this fragment is claiming to match
+  shows - that is the definition this fragment is claiming to match. For an
+  assembly, Edit Assembly shows its members the same way

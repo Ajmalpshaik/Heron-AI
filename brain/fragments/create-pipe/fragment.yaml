@@ -123,6 +123,8 @@ compatibility-note: >
 #    connected"                     -> CONNECT_OPEN_ENDS
 #   "draw a cable tray"              -> CREATE_ELECTRICAL_RUN
 #   "draw a conduit"                 -> CREATE_ELECTRICAL_RUN
+#   "run a flexible pipe to that sprinkler" -> CREATE_FLEX_PIPE - FLEXIBLE pipe,
+#                                      the drop to a head (2026-10-14)
 
 utterances:
   - run a pipe from here to there
