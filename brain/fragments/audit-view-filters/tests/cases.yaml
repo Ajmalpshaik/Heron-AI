@@ -23,6 +23,24 @@ positive:
       `templateOwned` true and one finding at the top naming the template. It
       explains every other row on the view at once
 
+  # VERSION 2 - everyFilter true.
+  - given: everyFilter true on a view with three filters, on Revit 2021 or later
+    expect: >
+      `filterList` with three rows in the order Visibility/Graphics lists them,
+      each with its categories, its rule as the Filters dialog reads it, a
+      count of host elements caught in the view, and its override -
+      CHECKED against Visibility/Graphics, Filters tab, and Manage > Filters
+  - given: everyFilter true and a filter whose rule is "does not contain"
+    expect: the rule written NOT ... contains '...', never as plain contains
+  - given: everyFilter true and a filter with an OR group of rules
+    expect: >
+      the group bracketed and joined with OR - an OR written as AND would say
+      the filter catches far less than it does
+  - given: everyFilter true and a filter whose rule catches nothing in this view
+    expect: >
+      "catches 0 host element(s) drawn here" on its row - one of the two ways
+      version 2 adds for a filter to do nothing
+
 negative:
   - given: a filter added without an override being set
     expect: >
@@ -55,6 +73,22 @@ negative:
     expect: >
       identical findings, and nothing changed on the view. This is an audit;
       a repair here would be a write nobody asked for
+
+  # VERSION 2.
+  - given: everyFilter left out
+    expect: >
+      `filterList` EMPTY and every other output exactly what version 1
+      returned on the same view. THIS IS THE FIRST VERSION 2 CASE TO RUN -
+      every job file written before version 2 leaves it out
+  - given: everyFilter true on a view with no filters
+    expect: >
+      `filterList` empty and version 1's "No filters are applied" finding -
+      an empty answer reads as empty, not as a heading over nothing
+  - given: everyFilter true on Revit 2020
+    expect: >
+      the heading saying that release cannot give the dialog's order and has
+      no Enable Filter tick, and no "Enable Filter" on any row - never a
+      guessed order presented as the real one
 
 second_route:
   - >

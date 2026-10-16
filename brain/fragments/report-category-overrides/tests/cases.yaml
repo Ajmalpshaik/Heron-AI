@@ -23,6 +23,34 @@ positive:
       prints nothing read differently, which is the whole use of this as a
       read-back
 
+  # VERSION 2 - allCategories true.
+  - given: >
+      allCategories true on a view that overrides a category the HOST has none
+      of - Walls set grey and halftone in a plan of a model whose walls are all
+      in a linked model
+    expect: >
+      Walls in `modelCategoryList` with its override and no "in view" count,
+      while `overrideList` - version 1's, scoped to what the host draws - does
+      not name it. This is the case version 1 could not see: on 2026-10-15 it
+      said "7 of 16" where the view overrode 77 of 85
+  - given: allCategories true and a sub-category overridden in the view
+    expect: >
+      it in `subCategoryList` as "category > sub-category", with its own Object
+      Styles beside it - CHECKED against Visibility/Graphics with the category
+      row expanded
+  - given: allCategories true and a category hidden in the view
+    expect: >
+      its row in `modelCategoryList` (or `annotationCategoryList`) reading
+      HIDDEN
+  - given: allCategories true and two elements given the same per-element override
+    expect: >
+      one group in `elementOverrideList` - "2 x <category>: <the override>" -
+      with both ids
+  - given: allCategories true on a category whose Object Styles say weight 3 and whose override says weight 1
+    expect: >
+      both numbers on its row - "projection lines ... weight 1" before the bar,
+      "projection weight 3" after it. The comparison is the answer
+
 negative:
   - given: a view with NOTHING overridden at category level
     expect: >
@@ -43,6 +71,22 @@ negative:
 
   - given: a schedule or a sheet as the view
     expect: said plainly - that view type accepts no overrides at all
+
+  # VERSION 2.
+  - given: allCategories left out
+    expect: >
+      the four new strings EMPTY, and `findings`, `overriddenCategories` and
+      `overrideList` exactly what version 1 returned on the same view. THIS IS
+      THE FIRST VERSION 2 CASE TO RUN: every caller and job file written before
+      version 2 leaves it out, and the Companion parses `overrideList`
+  - given: allCategories true on a view where NOTHING is overridden or hidden
+    expect: >
+      `modelCategoryList` listing only the categories with host elements in
+      the view, each "V/G: no override"; `subCategoryList` and
+      `annotationCategoryList` reading 0; `elementOverrideList` saying no
+      element carries its own override. A version that called every Visible
+      tick an override would list every category - the trap version 1's header
+      names
 
 second_route:
   - Open the view's Visibility/Graphics and look down the Model Categories tab for a non-default row

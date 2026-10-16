@@ -270,6 +270,15 @@ DECLARED = [
      "5b-468: answered SET_WALL_CONSTRAINTS on every backend"),
     ("how many walls are on each level", "FILTER_ELEMENTS_BY_CATEGORY",
      "5b-468: answered SET_WALL_CONSTRAINTS on the model"),
+    # 5b-480: questions about a view's Visibility/Graphics, measured on main
+    # 874c42fe. REPORT_CATEGORY_OVERRIDES version 2 answers them with
+    # allCategories true.
+    ("show me the full visibility graphics of this view", "REPORT_CATEGORY_OVERRIDES",
+     "5b-480: answered SET_CATEGORY_VISIBILITY on lexical and the model"),
+    ("what colours, line weights and patterns does this view use", "REPORT_CATEGORY_OVERRIDES",
+     "5b-480: answered CREATE_LINE_STYLE on the model"),
+    ("which categories are greyed out in this view", "REPORT_CATEGORY_OVERRIDES",
+     "5b-480: answered REPORT_VIEW_TEMPLATE_CONTROL, a read that cannot say"),
 ]
 
 OWN = [

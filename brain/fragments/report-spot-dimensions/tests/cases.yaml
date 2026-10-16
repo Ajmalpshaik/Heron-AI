@@ -7,10 +7,22 @@ positive:
       Coordinates", the text exactly as the plan shows it, and the floor or
       column it is on
 
-negative:
-  - given: view set to a section with no spot dimensions in it
+  # VERSION 2 (2026-10-15, 5b-483).
+  - given: the same plan with five linear dimensions - wall to wall, grid to grid - and a string of 300 + 2400 mm
     expect: >
-      spotCount 0 and `spots` empty - not the plan's four
+      dimensionCount 6, and `dimensions` lists each with "Dimensions
+      (Linear)", its type, the value exactly as the plan shows it - the
+      string as "300 + 2400" - and what it measures between: a grid by its
+      name, a wall by category and id
+  - given: one of those dimensions with its value typed over as EQ
+    expect: >
+      its line reads "EQ" TYPED OVER and the value it actually measures
+
+negative:
+  - given: view set to a section with no spot dimensions and no dimensions in it
+    expect: >
+      spotCount 0 and `spots` empty - not the plan's four; dimensionCount 0
+      and `dimensions` empty - not the plan's six
 
   - given: the floor under one spot elevation deleted
     expect: >
