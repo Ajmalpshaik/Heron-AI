@@ -110,6 +110,10 @@ compatibility-note: >
 #
 #   "save these sheets as a set"         -> here
 #   "delete that print set"              -> here
+#   "rename the sheet set"               -> here. Declared 2026-10-16: once
+#                                           RENAME_ELEMENTS learned "rename this
+#                                           view", the trained search with no
+#                                           re-ranker sent this there (5b-485)
 #   "print these to PDF"                 -> EXPORT_SHEETS_TO_PDF, which prints
 #                                           a set once it exists
 #   "make the sheets"                    -> CREATE_SHEETS
@@ -139,3 +143,4 @@ utterances:
   - delete that sheet set
   - rename the print set
   - i need a set for the issue
+  - rename the sheet set
