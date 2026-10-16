@@ -41,7 +41,8 @@
 // instead, naming the ones that cannot take it.
 //
 // A NEW NAME OR A NEW RULE IS ALL OR NOTHING. If any filter named cannot take
-// what was asked, NOTHING is changed - not its categories either. A name goes
+// what was asked, or any name is no rule-based filter here, NOTHING is changed
+// - not the categories either. A name goes
 // on one filter only, and one already used by another filter is refused by
 // name; a name that differs from the filter's own only in capitals is a
 // rename.
@@ -51,7 +52,9 @@
 // not contain TRG_MEC", "begins with M_", "equals Level 1"; none means equals.
 // `parameterName` blank keeps the parameter the filter's rule already tests,
 // which is how "change the rule to does not contain TRG_MEC" is said. A filter
-// whose rule tests more than one parameter, or none, needs the parameter named.
+// whose rule tests more than one parameter, or none, or holds more than one
+// condition, needs the parameter named. A NEW RULE REPLACES EVERY CONDITION
+// the filter had, AND or OR; the read-back says what it holds afterwards.
 //
 // KEPT IN STEP WITH CREATE_VIEW_FILTERS_BY_RULE, BY HAND. A fragment is a
 // snippet compiled on its own and cannot call another one's code, so these
@@ -60,14 +63,15 @@
 // and the rest are (ElementId, string, bool) on 2020 to 2025 and (ElementId,
 // string) on 2023 to 2027 - the two-argument one is preferred where it
 // exists, the three-argument one passed `false`), the parameter matched by its
-// label or its built-in name, and the read-back's rule words.
+// label or its built-in name, and the read-back's rule words for every rule
+// CREATE_VIEW_FILTERS_BY_RULE can make.
 //
 // SETTING WHAT THE FILTER ALREADY HOLDS IS NOT A CHANGE. Categories are
-// compared as a set and the rule by the words the read-back gives it; what
-// already matches is reported in `alreadySet` and not written - so a second
-// run changes nothing and leaves nothing in the undo list. The words do not
-// carry 2020-2022's case-sensitive tick, so a rule differing only in that is
-// taken as already so.
+// compared as a set and the rule by an exact key - each parameter by its id,
+// each evaluator by its class, the case-sensitive tick where a release has
+// one - never by the words alone, since two parameters can share a label.
+// What already matches is reported in `alreadySet` and not written - so a
+// second run changes nothing and leaves nothing in the undo list.
 //
 // A SELECTION FILTER HAS NO CATEGORIES - it holds chosen elements - and is
 // named in `notFound` rather than being edited.
@@ -438,33 +442,33 @@ Func<ElementId, bool> answersToName = parameterId =>
         || (builtInName.ContainsKey(parameterId)
             && string.Equals(builtInName[parameterId], wanted, StringComparison.OrdinalIgnoreCase)));
 
-// A filter's rules in the read-back's words, walked without recursion - a
-// logical filter holds others. The same words CREATE_VIEW_FILTERS_BY_RULE's
-// read-back gives, and what "already so" is judged by.
-Func<ElementFilter, string> describeRule = held =>
+// A filter's rules in words. The read-back's are Revit's Filters dialog words
+// with each parameter by the label it shows - the same words
+// CREATE_VIEW_FILTERS_BY_RULE's read-back gives for every rule it can make,
+// and this one also says OR, and NOT for a filter Revit holds inverted, which
+// only a filter made elsewhere has. `exact` gives a KEY instead: each
+// parameter by its id, as text, each evaluator by its class, and the
+// case-sensitive tick where a release has one - so two parameters that share a
+// label ("Type Name" is two built-in ones) are never taken for one. The key is
+// what "already so" is judged by (a review of version 2's first draft found
+// the words alone let a rule moved onto the other "Type Name" read as already
+// so, 2026-10-16).
+Func<ElementFilter, bool, bool, string> ruleWords = null;
+ruleWords = (held, exact, top) =>
 {
-    var heldRules = new List<string>();
-    var pending = new List<ElementFilter>();
-    if (held != null) pending.Add(held);
-    while (pending.Count > 0)
+    if (held == null) return "NONE";
+    var parts = new List<string>();
+    var join = " AND ";
+
+    var logical = held as ElementLogicalFilter;
+    var byParameter = held as ElementParameterFilter;
+    if (logical != null)
     {
-        var next = pending[pending.Count - 1];
-        pending.RemoveAt(pending.Count - 1);
-
-        var logical = next as ElementLogicalFilter;
-        if (logical != null)
-        {
-            foreach (var inner in logical.GetFilters()) if (inner != null) pending.Add(inner);
-            continue;
-        }
-
-        var byParameter = next as ElementParameterFilter;
-        if (byParameter == null)
-        {
-            heldRules.Add(next.GetType().Name);
-            continue;
-        }
-
+        if (held is LogicalOrFilter) join = " OR ";
+        foreach (var inner in logical.GetFilters()) if (inner != null) parts.Add(ruleWords(inner, exact, false));
+    }
+    else if (byParameter != null)
+    {
         foreach (var outerRule in byParameter.GetRules())
         {
             // A "does not" rule is held as the positive one, inverted.
@@ -481,14 +485,32 @@ Func<ElementFilter, string> describeRule = held =>
             try
             {
                 var parameterId = heldRule.GetRuleParameter();
-                parameterText = parameterLabel.ContainsKey(parameterId)
-                    ? parameterLabel[parameterId]
-                    : parameterId.ToString();
+                parameterText = exact || !parameterLabel.ContainsKey(parameterId)
+                    ? parameterId.ToString()
+                    : parameterLabel[parameterId];
             }
             catch { }
 
             var textRule = heldRule as FilterStringRule;
-            if (textRule != null)
+            if (exact)
+            {
+                var key = string.Format("{0}:{1}{2}", parameterText, inverted ? "!" : "", heldRule.GetType().Name);
+                if (textRule != null)
+                {
+                    var evaluator = textRule.GetEvaluator();
+                    var tick = "";
+                    try
+                    {
+                        var caseSensitive = textRule.GetType().GetProperty("CaseSensitive");
+                        if (caseSensitive != null) tick = ":" + caseSensitive.GetValue(textRule, null);
+                    }
+                    catch { }
+                    key += string.Format(":{0}{1}:'{2}'", evaluator == null ? "?" : evaluator.GetType().Name,
+                        tick, textRule.RuleString);
+                }
+                parts.Add(key);
+            }
+            else if (textRule != null)
             {
                 // Revit's Filters dialog words, not the evaluator's class name.
                 var evaluator = textRule.GetEvaluator();
@@ -498,16 +520,47 @@ Func<ElementFilter, string> describeRule = held =>
                 else if (verb == "FilterStringBeginsWith") verb = inverted ? "does not begin with" : "begins with";
                 else if (verb == "FilterStringEndsWith") verb = inverted ? "does not end with" : "ends with";
                 else if (inverted) verb = "NOT " + verb;
-                heldRules.Add(string.Format("{0} {1} '{2}'", parameterText, verb, textRule.RuleString));
+                parts.Add(string.Format("{0} {1} '{2}'", parameterText, verb, textRule.RuleString));
             }
             else
             {
-                heldRules.Add(string.Format("{0} ({1}{2})", parameterText, inverted ? "NOT " : "",
+                parts.Add(string.Format("{0} ({1}{2})", parameterText, inverted ? "NOT " : "",
                     heldRule.GetType().Name));
             }
         }
     }
-    return heldRules.Count == 0 ? "NONE" : string.Join(" AND ", heldRules);
+    else
+    {
+        parts.Add(held.GetType().Name);
+    }
+
+    var said = parts.Count == 0 ? "NONE"
+        : parts.Count == 1 ? parts[0]
+        : top ? string.Join(join, parts)
+        : "(" + string.Join(join, parts) + ")";
+
+    var invertedFilter = false;
+    try { invertedFilter = held.Inverted; } catch { }
+    return invertedFilter ? "NOT (" + said + ")" : said;
+};
+Func<ElementFilter, string> describeRule = held => ruleWords(held, false, true);
+Func<ElementFilter, string> ruleKey = held => ruleWords(held, true, true);
+
+// How many conditions a filter's rule holds - the rules inside every logical
+// filter, each rule one, and anything else one.
+Func<ElementFilter, int> conditionCount = null;
+conditionCount = held =>
+{
+    if (held == null) return 0;
+    var logical = held as ElementLogicalFilter;
+    if (logical != null)
+    {
+        var count = 0;
+        foreach (var inner in logical.GetFilters()) count += conditionCount(inner);
+        return count;
+    }
+    var byParameter = held as ElementParameterFilter;
+    return byParameter != null ? byParameter.GetRules().Count : 1;
 };
 
 // ---- the rule factory, in whichever spelling this release has --------------
@@ -569,12 +622,19 @@ if (refused.Length == 0 && targets.Count > 0)
             ElementId ruleParameter = null;
             if (wanted.Length == 0)
             {
-                // The parameter the filter's rule tests today, kept.
+                // The parameter the filter's rule tests today, kept - only when
+                // the rule is ONE condition. Two conditions on one parameter
+                // ("equals SA OR equals EA") would be replaced by one, which the
+                // modeller did not say; naming the parameter says it.
                 var count = tested == null ? 0 : tested.Count;
-                if (count != 1)
+                var conditions = conditionCount(rule);
+                if (count != 1 || conditions != 1)
                 {
-                    refusals.Add(string.Format("'{0}' - its rule tests {1} parameters, so the new rule's "
-                        + "parameter has to be named", filter.Name, count == 0 ? "no" : count.ToString()));
+                    refusals.Add(count != 1
+                        ? string.Format("'{0}' - its rule tests {1} parameters, so the new rule's parameter has "
+                            + "to be named", filter.Name, count == 0 ? "no" : count.ToString())
+                        : string.Format("'{0}' - its rule has {1} conditions ({2}); name the parameter, and the "
+                            + "new rule replaces all of them", filter.Name, conditions, describeRule(rule)));
                     continue;
                 }
                 foreach (var parameterId in tested) ruleParameter = parameterId;
@@ -792,9 +852,10 @@ if (refused.Length == 0 && targets.Count > 0)
     }
 }
 
-// A new name or a new rule is all or nothing: one filter that cannot take it
-// leaves every filter as it was.
-var allOrNothing = (renameTo.Length > 0 || changingRule) && refusals.Count > 0;
+// A new name or a new rule is all or nothing: one filter that cannot take it,
+// or one name that is no rule-based filter here - a typo - leaves every filter
+// as it was.
+var allOrNothing = (renameTo.Length > 0 || changingRule) && (refusals.Count > 0 || notFound.Count > 0);
 if (allOrNothing)
 {
     plan.Clear();
@@ -816,7 +877,7 @@ if (refused.Length == 0 && targets.Count > 0)
             var currentSet = new HashSet<ElementId>(filter.GetCategories());
             var categoriesChange = !currentSet.SetEquals(plan[filter]);
             var ruleChange = newRule.ContainsKey(filter)
-                && describeRule(filter.GetElementFilter()) != describeRule(newRule[filter]);
+                && ruleKey(filter.GetElementFilter()) != ruleKey(newRule[filter]);
             var nameChange = renameTo.Length > 0 && oldName != renameTo;
 
             if (!categoriesChange && !ruleChange && !nameChange)
@@ -916,7 +977,7 @@ if (refused.Length == 0 && targets.Count > 0)
     if (allOrNothing)
     {
         said.Add(string.Format("NOTHING WAS CHANGED - a new name or rule changes every filter named or "
-            + "none: {0}", string.Join("; ", refusals)));
+            + "none{0}", refusals.Count == 0 ? ", and a name below is not one" : ": " + string.Join("; ", refusals)));
     }
     else
     {

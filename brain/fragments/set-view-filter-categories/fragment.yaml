@@ -93,6 +93,10 @@ contract:
       # equal, contains, does not contain, begins with, does not begin with,
       # ends with, does not end with ("does not contain TRG_MEC"). None means
       # equals. BLANK keeps the rule as it is.
+      # The new rule REPLACES every condition the filter had, AND or OR. With
+      # parameterName blank the filter's rule must be one condition on one
+      # parameter, else the parameter has to be named. A name in filterNames
+      # that is no rule-based filter stops a new rule or name for all of them.
       type: string
       source: request
   provides:
@@ -195,7 +199,9 @@ compatibility-note: >
   (returns bool), `ClearRules()`, `FilterElement.IsNameUnique(Document,
   string)`, `Element.Name { get; set; }`, `NamingUtils.IsValidName`,
   `Document.Settings.Categories`, `Category.GetCategory(Document, ElementId)`
-  and `ElementParameterFilter(FilterRule)`. The text rule factories are
+  `ElementParameterFilter(FilterRule)`, `LogicalOrFilter` and
+  `ElementFilter.Inverted { get; }`; a text rule's `CaseSensitive` is read
+  by reflection where a release has it. The text rule factories are
   reached BY REFLECTION exactly as CREATE_VIEW_FILTERS_BY_RULE version 2
   reaches them - CreateEqualsRule, CreateNotEqualsRule, CreateContainsRule,
   CreateNotContainsRule, CreateBeginsWithRule, CreateNotBeginsWithRule,

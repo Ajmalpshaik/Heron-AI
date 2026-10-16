@@ -63,6 +63,19 @@ negative:
       NOTHING changed - the category is not quietly taken off. refused names
       Levels and says it cannot be filtered by 'System Classification'. changed 0
 
+  - given: >
+      VERSION 2. A new rule for three filters, one of them a name with a typo
+    expect: >
+      NOTHING changed on any of them - a new rule is all or nothing - and the
+      typo named in notFound
+
+  - given: >
+      VERSION 2. parameterName blank and a new matchValue for a filter whose rule
+      holds two conditions on one parameter ("equals SA OR equals EA")
+    expect: >
+      NOTHING changed; refused says the rule has 2 conditions and asks for the
+      parameter, which replaces all of them. readBack says OR, not AND
+
 second_route:
   - Revit's own Manage, Filters dialog - the filter's name, the categories ticked and its rule, read on screen
   - REPORT_VIEW_FILTERS on a view carrying the renamed filter - the new name, the same overrides
