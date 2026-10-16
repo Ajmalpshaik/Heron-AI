@@ -465,7 +465,11 @@ ruleWords = (held, exact, top) =>
     if (logical != null)
     {
         if (held is LogicalOrFilter) join = " OR ";
-        foreach (var inner in logical.GetFilters()) if (inner != null) parts.Add(ruleWords(inner, exact, false));
+        // A group of ONE says its child as the child would at this level, so a
+        // filter Revit wraps in a single group gains no brackets.
+        var inners = new List<ElementFilter>();
+        foreach (var inner in logical.GetFilters()) if (inner != null) inners.Add(inner);
+        foreach (var inner in inners) parts.Add(ruleWords(inner, exact, top && inners.Count == 1));
     }
     else if (byParameter != null)
     {
