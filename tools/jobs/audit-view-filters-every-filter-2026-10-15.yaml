@@ -1,0 +1,62 @@
+# The proof of audit-view-filters version 2 (AUDIT_VIEW_FILTERS, FRG-VIEW-078),
+# written 2026-10-15 for FRAGMENT-ISSUES row 5b-480 - NEEDS-CHECKING Group ED,
+# row ED2. NOT RUN on the arranged model below.
+#
+#     python tools/batch-prove.py tools/jobs/audit-view-filters-every-filter-2026-10-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/audit-view-filters-every-filter-2026-10-15.yaml
+#
+# WHAT VERSION 2 CHANGED. `everyFilter` true leaves `filterList`: every filter
+# on the view in priority order, each with Enable Filter (2021 and later),
+# Visibility, its categories, its rule as the Filters dialog reads it, how many
+# host elements in the view it catches, and its whole override.
+#
+# A READ. No transaction is opened and nothing is changed, so there is no
+# `write:` below.
+#
+# THE MODEL - the one ED1 uses, docs/needs-checking/group-ed.md: four filters
+# on Ducts applied to "FloorPlan: Level 1" in this order - Heron VG Supply,
+# Heron VG Not Return, Heron VG Nothing, Heron VG Or (Visibility unticked) -
+# and three ducts, two Supply Air and one Return Air, Comments "A" on one
+# Supply duct.
+#
+# THE NEGATIVE IS THE SAME VIEW WITH `everyFilter` FALSE: `filterList` must
+# come back EMPTY and the audit be version 1's - the two job files written
+# before version 2 leave the flag out.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: filterList full on the positive, empty on the negative. PASS does
+#     not check the rows - the next block does
+#   - NEG NOT EMPTY: version 2 answered without being asked - a defect
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - four rows, in the order the Filters tab lists them. On Revit 2020 the
+#     heading says that release cannot give the order: compare by hand
+#   - Heron VG Supply catches 2; Heron VG Not Return reads NOT System
+#     Classification contains 'Return' and catches 2; Heron VG Nothing catches
+#     0; Heron VG Or reads (Comments equals 'A' OR Comments equals 'B') with
+#     Visibility OFF
+#   - ED4: WRITE DOWN Heron VG Or's catches, 0 or 1 - whether a view-scoped
+#     count includes an element a hidden filter hides
+#   - each row against the Filters tab of Visibility/Graphics (the second route)
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron VG Study Test" (docs/needs-checking/group-ed.md), four filters on "FloorPlan: Level 1", Revit 2020'
+
+defaults:
+  in: "Heron VG Study Test"
+
+jobs:
+  - fragment: audit-view-filters
+    expect: filterList
+    set:
+      view: "FloorPlan: Level 1"
+      everyFilter: "true"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      everyFilter: "false"
+    note: >
+      THE PROOF OF VERSION 2. The same view both ways: asked, every filter in
+      full; not asked, version 1 exactly. Read the four rules against Manage >
+      Filters - the NOT and the OR are the two a careless reader gets wrong.

@@ -118,6 +118,10 @@ compatibility-note: >
 #                                        A question about a drawing must not
 #                                        be answered by the fragment that
 #                                        switches things off
+#   "show me the full visibility graphics of this view" ->
+#                                        REPORT_CATEGORY_OVERRIDES - a READ, with
+#                                        allCategories true. It reached here on
+#                                        both search backends (5b-480)
 utterances:
   - turn off the rebar in this view
   - switch the ceilings off

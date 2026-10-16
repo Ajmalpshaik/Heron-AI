@@ -1,0 +1,64 @@
+# The proof of report-category-overrides version 2 (REPORT_CATEGORY_OVERRIDES,
+# FRG-VIEW-051), written 2026-10-15 for FRAGMENT-ISSUES row 5b-480 -
+# NEEDS-CHECKING Group ED, row ED1. NOT RUN on the arranged model below.
+#
+#     python tools/batch-prove.py tools/jobs/report-category-overrides-all-categories-2026-10-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-category-overrides-all-categories-2026-10-15.yaml
+#
+# WHAT VERSION 2 CHANGED. `allCategories` true reads the view's WHOLE
+# Visibility/Graphics: every model category hidden, overridden or drawn - one
+# with nothing in the host included, since its override acts on linked models -
+# the sub-categories and annotation categories hidden or overridden, and the
+# per-element overrides. Version 1 scanned only what the host draws.
+#
+# A READ. No transaction is opened and nothing is changed, so there is no
+# `write:` below.
+#
+# THE MODEL - MAKE IT FIRST, as docs/needs-checking/group-ed.md's table says:
+# "Heron VG Study Test" with "Heron VG Study Link" linked in, the overrides,
+# hidden categories, per-element overrides and filters set by hand on
+# "FloorPlan: Level 1". The test project has NO wall of its own: its walls are
+# all in the link, which is the case version 1 could not see.
+#
+# THE NEGATIVE IS THE SAME VIEW WITH `allCategories` FALSE. Every caller and
+# job file written before version 2 leaves the flag out, so the one thing that
+# must never happen is version 2's report arriving unasked: the four new
+# strings must come back EMPTY, and version 1's outputs as they were.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the four strings full on the positive, empty on the negative.
+#     PASS does not check WHAT is in them - the next block does
+#   - NEG NOT EMPTY: version 2 answered without being asked - a defect
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - modelCategoryList: Walls with colour 128,128,128, weight 1, halftone and
+#     NO "in view" count; Doors HIDDEN
+#   - overrideList (version 1's) does NOT name Walls - the host has none
+#   - subCategoryList: the Ducts sub-category with colour 255,0,0
+#   - annotationCategoryList: Reference Planes HIDDEN
+#   - elementOverrideList: one group "2 x Ducts: projection lines colour
+#     0,0,255" with both Supply ducts' ids
+#   - each row against Visibility/Graphics on the same view (the second route)
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron VG Study Test" with "Heron VG Study Link" linked in (docs/needs-checking/group-ed.md), "FloorPlan: Level 1" arranged by hand, Revit 2020'
+
+defaults:
+  in: "Heron VG Study Test"
+
+jobs:
+  - fragment: report-category-overrides
+    expect: [modelCategoryList, subCategoryList, annotationCategoryList, elementOverrideList]
+    set:
+      view: "FloorPlan: Level 1"
+      allCategories: "true"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      allCategories: "false"
+    note: >
+      THE PROOF OF VERSION 2. The same view both ways: asked, the whole
+      Visibility/Graphics; not asked, version 1 exactly. Read Walls in
+      modelCategoryList against overrideList - the first names it, the second
+      cannot.
