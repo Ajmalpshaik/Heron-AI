@@ -108,6 +108,15 @@ compatibility-note: >
 #
 #   "rename these"                     -> here
 #   "change SUP to SUPPLY"             -> here
+#   "rename this view" / "rename the view" / "rename these views" -> here
+#                                         A view, sheet, schedule or view
+#                                         template is an element, and its name
+#                                         is the Name this edits. The view
+#                                         comes from the selection or from
+#                                         FIND_VIEWS by its name. These three
+#                                         reached RENAME_WORKSET, RENAME_FAMILY
+#                                         or SET_VIEW_FILTER_CATEGORIES, none of
+#                                         which renames a view (5b-485)
 #   "set the comments on these"        -> WRITE_ELEMENT_PARAMETERS, a named
 #                                         parameter that is not the name
 #   "number them in order"             -> RENUMBER_SEQUENTIAL
@@ -141,3 +150,6 @@ utterances:
   - find and replace in the names
   - change SUP to SUPPLY on these
   - fix the naming on these
+  - rename this view
+  - rename the view
+  - rename these views
