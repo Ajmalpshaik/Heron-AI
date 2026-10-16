@@ -687,6 +687,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ec.md`](needs-checking/group-ec.md)
 
+## Group ED - a view's whole Visibility/Graphics read back: `REPORT_CATEGORY_OVERRIDES` and `AUDIT_VIEW_FILTERS` version 2 (2026-10-15)
+
+**Its own file:** [`needs-checking/group-ed.md`](needs-checking/group-ed.md)
+
 ## Group EE - an existing view filter renamed and its rule changed in place: `SET_VIEW_FILTER_CATEGORIES` version 2 (2026-10-15)
 
 **Its own file:** [`needs-checking/group-ee.md`](needs-checking/group-ee.md)

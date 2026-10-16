@@ -63,8 +63,11 @@ jobs:
       text: ZZZNOSUCH
       replacement: DETAIL B
 
+  # VERSION 2 (2026-10-15, FRAGMENT-ISSUES 5b-483) lists every dimension too,
+  # in `dimensions`: the plan's five, the 300 + 2400 string among them, and
+  # none in the section. NEEDS-CHECKING DL10.
   - fragment: report-spot-dimensions
-    expect: spots
+    expect: [spots, dimensions]
     set:
       viewName: "FloorPlan: Level 1"
     negative-set:
