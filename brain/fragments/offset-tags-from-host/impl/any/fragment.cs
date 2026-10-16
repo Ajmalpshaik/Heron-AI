@@ -1,10 +1,40 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `elements`, `tagCategories`,
-// `offsetRightMm`, `offsetUpMm` and `addLeader` are in scope, and leaves
-// `moved`, `leadersOn`, `report`, `viewportKept`, `alreadyThere`,
-// `fromBoxCentre`, `noHostLocation`, `leaderNotAsAsked`, `notTags`,
-// `otherCategory`, `notInView`, `notSupported` and `refused` behind.
+// `offsetRightMm`, `offsetUpMm`, `addLeader`, `orientHorizontal`,
+// `orientVertical`, `orientModel`, `orientToHost` and `keepHead` are in
+// scope, and leaves `moved`, `turned`, `leadersOn`, `report`, `viewportKept`,
+// `alreadyThere`, `fromBoxCentre`, `noHostLocation`, `noDirection`,
+// `offAxis`, `leaderNotAsAsked`, `notTags`, `otherCategory`, `notInView`,
+// `notSupported` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). A whole view's tags, one undo.
+//
+// VERSION 2 TURNS A TAG AS WELL AS MOVING IT. The four orient* switches are
+// ONE choice - Horizontal, Vertical, Model, or the way the tag's own element
+// runs in this view - and none of them said leaves each tag's orientation as
+// it is, exactly as version 1 did. keepHead leaves each head where it is, so
+// a tag can be turned, or its leader changed, without moving it. Every one is
+// an optional bool, so a caller that names none of them binds false and runs
+// version 1 unchanged: the binder refuses any other absent value.
+//
+// "THE WAY ITS ELEMENT RUNS" IS READ IN THE VIEW'S OWN PLANE. A family's hand
+// direction - which runs along the wall for a wall-hosted opening or door -
+// else its facing turned a quarter, else the line of a duct, pipe or wall,
+// else the wall an opening is cut in. Along the view's right is Horizontal,
+// along its up is Vertical, and the nearer of the two is taken for anything
+// between; more than a degree off it is named in offAxis, and exactly 45 is
+// left as it was. A room, a riser seen end-on, or an element with none of
+// those has no direction here: named in noDirection, orientation left.
+//
+// MODEL IS AN ELEMENT TAG's FROM 2022 ONLY. TagOrientation has no Model value
+// on 2020 and 2021 (the reference assemblies, 2026-10-15), so it is asked for
+// by NUMBER and only where Enum.IsDefined finds it - written by name, the
+// fragment would not compile on those releases. A room, space or area tag's
+// own orientation (SpatialElementTagOrientation) has Horizontal, Vertical and
+// Model on every release 2020 to 2027.
+//
+// THE ORIENTATION IS READ BACK, never assumed from the call returning. A tag
+// Revit keeps the other way - a tag family that turns with its element, for
+// one - is put back as it was, whole, and named in refused.
 //
 // MEASURED FROM THE TAG'S OWN ELEMENT, NEVER FROM WHERE THE HEAD IS NOW.
 //
@@ -55,12 +85,15 @@ const double MmToFeet = 1.0 / 304.8;
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
 
 int moved = 0;
+int turned = 0;
 int leadersOn = 0;
 int fromBoxCentre = 0;
 string report = "";
 string viewportKept = "";
 var alreadyThere = new List<ElementId>();
 var noHostLocation = new List<ElementId>();
+var noDirection = new List<ElementId>();
+var offAxis = new List<ElementId>();
 var leaderNotAsAsked = new List<ElementId>();
 var notTags = new List<ElementId>();
 var otherCategory = new List<ElementId>();
@@ -78,6 +111,19 @@ if (leaderWord == "true" || leaderWord == "yes" || leaderWord == "on") leaderMod
 else if (leaderWord == "false" || leaderWord == "no" || leaderWord == "off") leaderMode = 0;
 else if (leaderWord == "keep" || leaderWord == "as is" || leaderWord == "leave") leaderMode = -1;
 else leaderMode = -2;
+
+// -1 each left as it is, 0 Horizontal, 1 Vertical, 2 Model, 3 the way its
+// element runs. 0, 1 and 2 are both enums' own numbers on every release.
+var orientationsGiven = new List<string>();
+if (orientHorizontal) orientationsGiven.Add("orientHorizontal");
+if (orientVertical) orientationsGiven.Add("orientVertical");
+if (orientModel) orientationsGiven.Add("orientModel");
+if (orientToHost) orientationsGiven.Add("orientToHost");
+int orientMode = orientHorizontal ? 0 : orientVertical ? 1 : orientModel ? 2 : orientToHost ? 3 : -1;
+bool elementTagHasModel = Enum.IsDefined(typeof(TagOrientation), 2);
+
+Func<int, string> orientationName = value =>
+    value == 0 ? "Horizontal" : value == 1 ? "Vertical" : value == 2 ? "Model" : "unreadable";
 
 var wanted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 bool everyCategory = false;
@@ -98,6 +144,17 @@ else if (view.IsTemplate) refusal = "'" + view.Name + "' is a view template, whi
 else if (leaderMode == -2)
     refusal = "addLeader '" + addLeader + "' is not understood - say true (leader on, end attached), "
         + "false (no leader) or keep (leave each leader as it is)";
+else if (orientationsGiven.Count > 1)
+    refusal = string.Join(" and ", orientationsGiven.ToArray()) + " were each given as true, and they are one "
+        + "choice - give one of orientHorizontal, orientVertical, orientModel or orientToHost, or none to "
+        + "leave each tag turned as it is";
+else if (keepHead && (offsetRightMm != 0 || offsetUpMm != 0))
+    refusal = "keepHead leaves each tag's head where it is, so an offset of " + number(offsetRightMm)
+        + " mm right and " + number(offsetUpMm) + " mm up cannot also be kept - give both offsets as 0 "
+        + "with keepHead, or leave keepHead out to move the tags";
+else if (keepHead && orientMode == -1 && leaderMode == -1)
+    refusal = "keepHead with no orientation and addLeader keep asks for no change - say which way to turn "
+        + "the tags (orientHorizontal, orientVertical, orientModel or orientToHost) or what to do with the leader";
 else if (!everyCategory && wanted.Count == 0)
     refusal = "No tag category was named - say which, for example Air Terminal Tags, or all";
 else if (elements == null || elements.Count == 0)
@@ -162,6 +219,80 @@ else
         }
         if (point == null) return null;
         return toHost == null ? point : toHost.OfPoint(point);
+    };
+
+    // A model direction as it shows in the view's plane: { along right, along
+    // up }, one long, or null when less than a fifth of it shows - a thing
+    // seen end-on has no way it runs in this view.
+    Func<XYZ, Transform, double[]> inView = (vector, toHost) =>
+    {
+        if (vector == null) return null;
+        var turnedVector = toHost == null ? vector : toHost.OfVector(vector);
+        double alongRightPart = turnedVector.DotProduct(right);
+        double alongUpPart = turnedVector.DotProduct(up);
+        double shown = Math.Sqrt(alongRightPart * alongRightPart + alongUpPart * alongUpPart);
+        if (shown < 1e-9 || shown < 0.2 * turnedVector.GetLength()) return null;
+        return new[] { alongRightPart / shown, alongUpPart / shown };
+    };
+
+    Func<Element, Transform, double[]> lineOf = (runner, toHost) =>
+    {
+        Location location = null;
+        try { location = runner.Location; } catch { }
+        var asCurve = location as LocationCurve;
+        if (asCurve == null) return null;
+        try { return inView(asCurve.Curve.ComputeDerivatives(0.5, true).BasisX, toHost); } catch { return null; }
+    };
+
+    // The way the element runs in this view, or null. A family's hand first -
+    // along the wall for anything hosted in one - then its facing turned a
+    // quarter, then its own line, then the wall an opening or a family is
+    // hosted in.
+    Func<Element, Transform, double[]> directionOf = (host, toHost) =>
+    {
+        if (host == null) return null;
+        double[] found = null;
+        var instance = host as FamilyInstance;
+        if (instance != null)
+        {
+            try { found = inView(instance.HandOrientation, toHost); } catch { }
+            if (found == null)
+            {
+                double[] facing = null;
+                try { facing = inView(instance.FacingOrientation, toHost); } catch { }
+                if (facing != null) found = new[] { -facing[1], facing[0] };
+            }
+        }
+        if (found == null) found = lineOf(host, toHost);
+        if (found == null)
+        {
+            Element wall = null;
+            var opening = host as Opening;
+            if (opening != null) { try { wall = opening.Host; } catch { } }
+            else if (instance != null) { try { wall = instance.Host; } catch { } }
+            if (wall != null) found = lineOf(wall, toHost);
+        }
+        return found;
+    };
+
+    Func<IndependentTag, SpatialElementTag, int> orientationOf = (independentTag, spatialTag) =>
+    {
+        try { return independentTag != null ? (int)independentTag.TagOrientation : (int)spatialTag.TagOrientation; }
+        catch { return -1; }
+    };
+
+    Action<IndependentTag, SpatialElementTag, int> setOrientation = (independentTag, spatialTag, value) =>
+    {
+        if (independentTag != null) independentTag.TagOrientation = (TagOrientation)value;
+        else spatialTag.TagOrientation = (SpatialElementTagOrientation)value;
+    };
+
+    int horizontalNow = 0, verticalNow = 0, modelNow = 0;
+    Action<int> countOrientation = value =>
+    {
+        if (value == 0) horizontalNow++;
+        else if (value == 1) verticalNow++;
+        else if (value == 2) modelNow++;
     };
 
     // ---- the 2022 split, looked up at run time ----
@@ -320,12 +451,72 @@ else
             }
         }
 
-        var anchor = pointOf(host, toHost);
-        if (anchor == null) { noHostLocation.Add(element.Id); continue; }
-        if (usedBox) fromBoxCentre++;
+        // With keepHead the target is where the head already is, so the
+        // element's point is not needed - an orphan tag can still be turned.
+        XYZ anchor = null;
+        if (!keepHead)
+        {
+            anchor = pointOf(host, toHost);
+            if (anchor == null) { noHostLocation.Add(element.Id); continue; }
+            if (usedBox) fromBoxCentre++;
+        }
 
-        double wantRight = anchor.DotProduct(right) + alongRight;
-        double wantUp = anchor.DotProduct(up) + alongUp;
+        // ---- the orientation asked of THIS tag ----
+        int orientationBefore = orientationOf(independent, spatial);
+        int orientationWanted = -1;   // left as it is
+        if (orientMode == 0 || orientMode == 1)
+        {
+            orientationWanted = orientMode;
+        }
+        else if (orientMode == 2)
+        {
+            if (independent != null && !elementTagHasModel)
+            {
+                refused.Add(element.Id);
+                reasons.Add(element.Id + " is an element tag, and Revit gives an element tag no Model orientation "
+                    + "before 2022 - it was left as it was");
+                continue;
+            }
+            orientationWanted = 2;
+        }
+        else if (orientMode == 3)
+        {
+            double[] runs = null;
+            try { runs = directionOf(host, toHost); } catch { }
+            if (runs == null)
+            {
+                noDirection.Add(element.Id);
+                reasons.Add(element.Id + (host == null ? "'s element could not be found"
+                    : "'s element has no direction in this view - a room, or a run seen end-on")
+                    + ", so it was left turned as it was");
+            }
+            else
+            {
+                // 0 along the view's right, 90 along its up, whichever way the
+                // element was drawn.
+                double angle = Math.Atan2(Math.Abs(runs[1]), Math.Abs(runs[0])) * 180.0 / Math.PI;
+                if (Math.Abs(angle - 45.0) <= 0.5)
+                {
+                    noDirection.Add(element.Id);
+                    reasons.Add(element.Id + "'s element runs at 45 degrees in this view, where neither Horizontal "
+                        + "nor Vertical is nearer, so it was left turned as it was");
+                }
+                else
+                {
+                    orientationWanted = angle < 45.0 ? 0 : 1;
+                    double offBy = angle < 45.0 ? angle : 90.0 - angle;
+                    if (offBy > 1.0)
+                    {
+                        offAxis.Add(element.Id);
+                        reasons.Add(element.Id + "'s element runs " + number(offBy) + " degrees off the view's "
+                            + (angle < 45.0 ? "right" : "up") + ", so it was turned " + orientationName(orientationWanted)
+                            + ", the nearer - for an angle, orientModel sets Revit's own Model orientation "
+                            + "(element tags from Revit 2022)");
+                    }
+                }
+            }
+        }
+        bool orientationWasRight = orientationWanted == -1 || orientationBefore == orientationWanted;
 
         // ---- where it is now ----
         XYZ head = null;
@@ -346,14 +537,18 @@ else
             continue;
         }
 
+        double wantRight = keepHead ? head.DotProduct(right) : anchor.DotProduct(right) + alongRight;
+        double wantUp = keepHead ? head.DotProduct(up) : anchor.DotProduct(up) + alongUp;
+
         bool leaderWasRight = leaderMode == -1
             || (leaderMode == 0 && !hadLeader)
             || (leaderMode == 1 && hadLeader && wasAttached);
 
-        if (missBy(head, wantRight, wantUp) <= tolerance && leaderWasRight)
+        if (missBy(head, wantRight, wantUp) <= tolerance && leaderWasRight && orientationWasRight)
         {
             alreadyThere.Add(element.Id);
             if (hadLeader) leadersOn++;
+            countOrientation(orientationBefore);
             continue;
         }
 
@@ -365,6 +560,14 @@ else
         // refused tag is left as it was either way, never half-moved.
         Action putBack = () =>
         {
+            // The orientation first and on its own: turning may carry the
+            // head, which is put back after it.
+            try
+            {
+                if (orientationBefore >= 0 && orientationOf(independent, spatial) != orientationBefore)
+                    setOrientation(independent, spatial, orientationBefore);
+            }
+            catch { }
             try
             {
                 if (independent != null)
@@ -401,6 +604,10 @@ else
                     independent.HasLeader = false;
                 }
 
+                // Turned BEFORE the head is placed, so a head that turning
+                // carried is set where it was asked for.
+                if (!orientationWasRight) setOrientation(independent, null, orientationWanted);
+
                 independent.TagHeadPosition = target;
 
                 // Put the free end back. Whether it took is read back below,
@@ -413,6 +620,7 @@ else
                 // would start from the head it had just been moved to.
                 if (leaderMode == 1 && !spatial.HasLeader) spatial.HasLeader = true;
                 else if (leaderMode == 0 && spatial.HasLeader) spatial.HasLeader = false;
+                if (!orientationWasRight) setOrientation(null, spatial, orientationWanted);
                 spatial.TagHeadPosition = target;
             }
         }
@@ -446,9 +654,23 @@ else
             continue;
         }
 
+        // The orientation, read back. Kept the other way - a tag family that
+        // turns with its element, for one - is a refusal, put back whole.
+        int orientationNow = orientationOf(independent, spatial);
+        if (!orientationWasRight && orientationNow != orientationWanted)
+        {
+            putBack();
+            refused.Add(element.Id);
+            reasons.Add(element.Id + " was turned " + orientationName(orientationWanted) + " but reads back "
+                + orientationName(orientationNow) + ", so it was put back as it was");
+            continue;
+        }
+
         worstMiss = Math.Max(worstMiss, miss);
         moved++;
+        if (!orientationWasRight) turned++;
         if (leaderNow) leadersOn++;
+        countOrientation(orientationNow);
 
         // A kept free end must still be where it pointed. Read back, never
         // assumed from the call returning - a swallowed failure would let the
@@ -560,16 +782,30 @@ else
     string leaderSaid = leaderMode == 1 ? "leader on with its end attached"
         : leaderMode == 0 ? "no leader" : "each leader left as it was";
 
+    string orientationSaid = orientMode == -1 ? "each turned as it was"
+        : orientMode == 3 ? "each turned the way its own element runs in the view"
+        : "turned " + orientationName(orientMode);
+
+    string whereSaid = keepHead
+        ? string.Format(invariant, "{0} tag(s) changed with each head left where it was", moved)
+        : string.Format(invariant,
+            "{0} tag(s) moved to {1} mm right and {2} mm up on paper from their own element ({3} and {4} mm in the model at 1:{5})",
+            moved, number(offsetRightMm), number(offsetUpMm), number(alongRight / MmToFeet), number(alongUp / MmToFeet), scale);
+
     report = string.Format(invariant,
-        "{0} tag(s) moved to {1} mm right and {2} mm up on paper from their own element ({3} and {4} mm in the model at 1:{5}), {6}. "
-        + "{7} already there. Read back: every moved head within {8} mm of its target on paper; {9} with a leader on. "
+        "{0}, {1}, {2}. {3} turned. "
+        + "{4} already there. Read back: every moved head within {5} mm of its target on paper; {6} with a leader on; "
+        + "{7} Horizontal, {8} Vertical and {9} Model among the tags moved or already there. "
         + "Left alone: {10} of a category not asked for, {11} in another view, {12} not tags. "
         + "No element location: {13}. Measured from the element's box centre: {14}. "
-        + "Not supported: {15}. Leader not as asked: {16}. Refused: {17}. {18}",
-        moved, number(offsetRightMm), number(offsetUpMm), number(alongRight / MmToFeet), number(alongUp / MmToFeet), scale, leaderSaid,
+        + "No direction to follow: {15}. Turned to the nearer of Horizontal and Vertical while running off both: {16}. "
+        + "Not supported: {17}. Leader not as asked: {18}. Refused: {19}. {20}",
+        whereSaid, leaderSaid, orientationSaid, turned,
         alreadyThere.Count, number(worstMiss / scale / MmToFeet), leadersOn,
+        horizontalNow, verticalNow, modelNow,
         otherCategory.Count, notInView.Count, notTags.Count,
         noHostLocation.Count, fromBoxCentre,
+        noDirection.Count, offAxis.Count,
         notSupported.Count, leaderNotAsAsked.Count, refused.Count, viewportKept);
 
     if (reasons.Count > 0)
