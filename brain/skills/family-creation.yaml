@@ -84,7 +84,11 @@ purpose: >
      places" - the Admin switch - or the family started again from the
      Metric template, and the modeller chooses. A report with no units line,
      or one that could not read it, is followed by REPORT_PROJECT_UNITS, one
-     call. Then read the
+     call. SAVE FIRST WHEN IT HAS NO FILE: where REPORT_OPEN_DOCUMENTS lists
+     the family in front as NEVER SAVED and the build is large, ask the
+     modeller once to save it (Ctrl+S) before the first write - Heron cannot
+     save the family in front itself, and closed with no file it is lost.
+     Then read the
      thing before anything is built - from the picture, the
      sketch or the words. Say back, in one list: what it is and the category
      it belongs to; the FORMS it is made of, each as the form that builds it -
@@ -456,5 +460,10 @@ note: >
   round-ended slot, the hex nut's polygon and a row's own detailLevels, and
   step 12 CREATE_MATERIAL's transparency - each as that build wrote it and
   read it back, the closing straight line and the corner radius also as
-  CREATE_FAMILY_FORMS's code makes them. Every step is DRAFT until it
+  CREATE_FAMILY_FORMS's code makes them. Widened on 2026-10-16 after the
+  same build: REPORT_OPEN_DOCUMENTS version 2 lists each open family with
+  its file or NEVER SAVED - the chat could not tell the modeller whether the
+  60 inch family had been saved, and step 11 b's lost-answer check could not
+  see a family window - so step 0 asks once for Ctrl+S on a large build in a
+  family with no file (rows 5b-435 and 5b-487). Every step is DRAFT until it
   has been run on a real family with a negative case (D-30).

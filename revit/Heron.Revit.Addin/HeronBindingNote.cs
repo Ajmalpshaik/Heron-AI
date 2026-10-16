@@ -77,7 +77,8 @@ namespace Heron.Revit.Addin
         /// how a job runs against the wrong thing and reports success - so
         /// those still refuse, and so does a bool nobody marked optional. The
         /// three cards row 5b-227 found carrying the key on a View or a string
-        /// are refused exactly as they were.
+        /// are refused exactly as they were. A card that NAMES what leaving a
+        /// value out means is DeclaredAbsent's, asked first (row 5b-488).
         ///
         /// Returns the C# literal to bind, which the caller writes into the
         /// generated prologue. Nothing here touches an Autodesk type, so it is
@@ -89,6 +90,36 @@ namespace Heron.Revit.Addin
                 return null;
 
             return (type ?? "").Trim() == "bool" ? "false" : null;
+        }
+
+        /// <summary>
+        /// The text an ABSENT `source: request` need is read as when its card
+        /// SAYS what leaving it out means, or null when the card says nothing
+        /// and AbsentValue decides, as before.
+        ///
+        /// THE CARD'S OWN WORD, NEVER THE BINDER'S. AbsentValue refuses an
+        /// absent name or number because no value means "not asked" - and
+        /// inventing one is how a job runs against the wrong thing. A card can
+        /// know better for its own input: REPORT_FAMILY_FORMS' `which` left
+        /// out means every form, the answer "all" gives (FRAGMENT-ISSUES row
+        /// 5b-488; every call of a fixed-family build typed which=all). So a
+        /// need marked `optional: true` that also carries `absent: <text>` is
+        /// read as if the caller had typed that text - through the same
+        /// conversion and the same refusals as a value given. Without
+        /// `absent:` nothing changes, so row 5b-227's three cards are refused
+        /// exactly as they were.
+        ///
+        /// Both keys or neither: `absent:` on a need not marked optional is
+        /// ignored, because the card has not said the value may be left out.
+        /// The text is as written on the card, unquoted.
+        /// </summary>
+        internal static string DeclaredAbsent(string optional, string absent)
+        {
+            if (!string.Equals((optional ?? "").Trim(), "true", System.StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var text = (absent ?? "").Trim();
+            return text.Length == 0 ? null : text;
         }
 
         /// <summary>

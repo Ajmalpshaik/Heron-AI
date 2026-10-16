@@ -699,6 +699,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-eg.md`](needs-checking/group-eg.md)
 
+## Group EI - the families open in the Family Editor, and a value a card may leave out: `REPORT_OPEN_DOCUMENTS` version 2 and `REPORT_FAMILY_FORMS` version 2 (2026-10-16)
+
+**Its own file:** [`needs-checking/group-ei.md`](needs-checking/group-ei.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -231,16 +231,39 @@ def need_source(entry):
     return "fragment"
 
 
+def need_absent_text(entry):
+    """The text an absent request need is read as, because its CARD says so -
+    or None.
+
+    THE ADD-IN'S RULE, MIRRORED: HeronBindingNote.DeclaredAbsent. A need marked
+    `optional: true` that also carries `absent: <text>` is bound, when the
+    caller leaves it out, as if the caller had typed that text -
+    REPORT_FAMILY_FORMS' `which`, where left out means "all" (FRAGMENT-ISSUES
+    row 5b-488). `absent:` without `optional: true` is ignored there, so it is
+    ignored here.
+    """
+    if need_source(entry) != "request":
+        return None
+    if str(entry.get("optional")).strip().lower() != "true":
+        return None
+    text = str(entry.get("absent") if entry.get("absent") is not None else "").strip()
+    return text or None
+
+
 def need_may_be_absent(entry):
-    """Can this `source: request` need be left out, and bind false?
+    """Can this `source: request` need be left out?
 
     THE ADD-IN'S RULE, MIRRORED: HeronBindingNote.AbsentValue binds an absent
-    request need only when it is a `bool` marked `optional: true` - D-59's
-    `includeLinks`, where a switch not mentioned is a switch left off. Every
-    other request need is still refused when absent (FRAGMENT-ISSUES rows
-    5b-227 and 5b-252), so it answers False for them. One rule on both sides,
-    or the Python half calls runnable what Revit refuses - row 96's lesson.
+    request need when it is a `bool` marked `optional: true` - D-59's
+    `includeLinks`, where a switch not mentioned is a switch left off - and
+    HeronBindingNote.DeclaredAbsent binds one whose card names what leaving it
+    out means (`absent:`, need_absent_text). Every other request need is still
+    refused when absent (FRAGMENT-ISSUES rows 5b-227 and 5b-252), so it answers
+    False for them. One rule on both sides, or the Python half calls runnable
+    what Revit refuses - row 96's lesson.
     """
+    if need_absent_text(entry) is not None:
+        return True
     return (need_source(entry) == "request"
             and str(entry.get("type") or "").strip() == "bool"
             and str(entry.get("optional")).strip().lower() == "true")

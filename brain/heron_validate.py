@@ -192,7 +192,8 @@ def route_for(frag, table):
     for need in frag.needs():
         source = HF.need_source(need)
         # A switch the card lets be left out is not waited on - the add-in
-        # binds it false (HF.need_may_be_absent, row 5b-252).
+        # binds it false (HF.need_may_be_absent, row 5b-252) - and nor is a
+        # value whose card names its default (`absent:`, row 5b-488).
         if source == "request" and not HF.need_may_be_absent(need):
             wanted.append(need)
     if wanted:

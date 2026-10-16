@@ -9,7 +9,13 @@ semantic-identity: "what forms this open family is modelled from, with their ids
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_FORMS
-version: 1
+# Version 2 (2026-10-16, row 5b-488) changed the CARD, not the code: `which`
+# may be left out. impl/ is byte for byte what the 2026-10-03 proof sealed, so
+# its fingerprint and that proof still stand (D-30 seals impl/ alone) - and the
+# code already read a missing `which` as every form. What is NOT proved is the
+# add-in filling in the card's default: NEEDS-CHECKING EI3, after the add-in is
+# rebuilt and Revit restarted.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -36,9 +42,17 @@ contract:
     - name: doc
       type: Document
     # "all", or kinds and sides with commas between - "void", "solid, revolve".
+    # VERSION 2 (row 5b-488): may be left out, and is then read as "all" -
+    # every form. `optional: true` with `absent: all` is what lets it be left
+    # out (HeronBindingNote.DeclaredAbsent); the add-in reads the card's
+    # default exactly as a typed "all", and the binding note says "which not
+    # given - "all", the card's own default (optional)". Every call of a
+    # fixed-family build had typed which=all.
     - name: which
       type: string
       source: request
+      optional: true
+      absent: all
   provides:
     - name: formCount
       # How many forms matched `which`.

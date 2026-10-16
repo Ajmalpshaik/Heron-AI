@@ -101,6 +101,22 @@ namespace Heron.BindingNote.TestHost
             Check(HeronBindingNote.AbsentValue("double", "true") == null,
                   "an optional number is still refused - no number means 'not asked'");
 
+            // FRAGMENT-ISSUES row 5b-488: A CARD MAY NAME WHAT LEAVING A VALUE
+            // OUT MEANS. `absent:` beside `optional: true` is read as typed;
+            // without both, nothing is invented.
+            Check(HeronBindingNote.DeclaredAbsent("true", "all") == "all",
+                  "an optional need whose card says absent: all is read as \"all\"");
+            Check(HeronBindingNote.DeclaredAbsent(" True ", "  all ") == "all",
+                  "however the card spells true and spaces the text");
+            Check(HeronBindingNote.DeclaredAbsent(null, "all") == null,
+                  "absent: on a need NOT marked optional is ignored - the card never said it may be left out");
+            Check(HeronBindingNote.DeclaredAbsent("false", "all") == null,
+                  "and so is one marked optional: false");
+            Check(HeronBindingNote.DeclaredAbsent("true", null) == null,
+                  "an optional need with no absent: is AbsentValue's to decide, as before");
+            Check(HeronBindingNote.DeclaredAbsent("true", "   ") == null,
+                  "and a blank absent: says nothing, so it is not an empty default");
+
             // FRAGMENT-ISSUES row 5b-322: WHAT AN UNFILLED ELEMENT LIST BINDS.
             // A card that says nothing selected is a fine answer gets an empty
             // list; every other unfilled need is still refused.

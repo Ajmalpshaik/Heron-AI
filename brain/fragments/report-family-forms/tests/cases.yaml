@@ -12,6 +12,12 @@ positive:
   - given: the same family, which "void"
     expect: formCount 1, the void alone, and scanned still 2
 
+  - given: the same family, which LEFT OUT (version 2)
+    expect: >
+      the same answer as which "all" - formCount 2, scanned 2 - and the binding
+      note reads `which not given - "all", the card's own default (optional)`;
+      never refused for a missing value
+
 negative:
   - given: which "revolve" on the same family, which holds no revolve
     expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
