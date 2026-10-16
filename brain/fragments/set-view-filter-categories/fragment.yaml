@@ -216,6 +216,7 @@ compatibility-note: >
 # ROUTING - the same rows are in CREATE_VIEW_FILTERS_BY_RULE.
 #
 #   "rename this view filter"                -> here, with newName. RENAME_ELEMENTS renames what a finder hands it, never a filter
+#   "rename this view"                       -> RENAME_ELEMENTS, on the views (5b-485) - a view is not a filter
 #   "change the filter rule to does not contain TRG_MEC" -> here, with matchValue - the parameter kept
 #   "add grids to this filter"               -> here, with the WHOLE list - the ones it has and Grids
 #   "take the Duct Systems category off      -> here
@@ -239,6 +240,7 @@ utterances:
   - set which categories the filter applies to
   - rename this view filter
   - rename this filter
+  - rename the filter
   - change the filter rule to does not contain TRG_MEC
   - change the rule of this view filter
   - add grids to this filter
