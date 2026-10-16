@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "which categories are overridden in this view"
 kind: filter
 domain: revit.views
 capability: REPORT_CATEGORY_OVERRIDES
-version: 1
+# VERSION 2 (2026-10-15, FRAGMENT-ISSUES 5b-480): `allCategories` reads the
+# view's WHOLE Visibility/Graphics - every model category hidden, overridden or
+# drawn, sub-categories, annotation categories and per-element overrides, each
+# section one string. Version 1 scanned only the categories the HOST draws in
+# the view, so on a real HVAC project on Revit 2020 it said "7 of 16" while the
+# view overrode 77 of 85 model categories for the LINKED architecture. Left out
+# it is false and every version 1 output is computed exactly as before. DRAFT
+# until version 2 is run in Revit: NEEDS-CHECKING Group ED.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -38,6 +46,13 @@ purpose: >
   with no per-element override is grey because its CATEGORY is - and until this
   existed, nothing in the library could say that.
 
+  **The whole Visibility/Graphics of the view, with `allCategories`.** Every
+  category hidden, overridden or drawn - linked models included, since an
+  override acts on them too - with each override's colours, line weights and
+  patterns beside its Object Styles; the sub-categories and annotation
+  categories hidden or overridden; and the elements that carry their own
+  override. The view filters are AUDIT_VIEW_FILTERS'.
+
 contract:
   needs:
     - name: doc
@@ -45,6 +60,15 @@ contract:
     - name: view
       type: View
       source: request
+    # true reads the view's WHOLE Visibility/Graphics into the four strings
+    # below - every category the document has, not only those the host draws
+    # here. Absent is false: the four stay empty and findings,
+    # overriddenCategories and overrideList are version 1's, unchanged.
+    # `optional: true` is what lets it be left out (HeronBindingNote.AbsentValue).
+    - name: allCategories
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: findings
       type: IList<string>
@@ -64,7 +88,39 @@ contract:
       # the prose every proof record quotes. Empty when nothing is overridden.
       role: result
       type: string
+    # VERSION 2 - the four below are empty unless `allCategories` is true. Each
+    # is ONE STRING, a heading line and then one row per line, because a reply
+    # cuts a list to three items of sixty characters and a dictionary to a
+    # count, and on the view that found this the rows numbered in the hundreds.
+    - name: modelCategoryList
+      # Every MODEL category hidden, overridden or with host elements in the
+      # view: "Walls [shown, 12 in view] V/G: projection lines colour
+      # 128,128,128, weight 1; halftone | Object Styles: colour 0,0,0,
+      # projection weight 1, cut weight 3, pattern Solid". A category with
+      # nothing in the host is still listed when it is hidden or overridden -
+      # that override acts on the linked models.
+      role: result
+      type: string
+    - name: subCategoryList
+      # Every sub-category hidden or overridden, "category > sub-category",
+      # with its own Object Styles beside it.
+      role: result
+      type: string
+    - name: annotationCategoryList
+      # Every annotation category hidden or overridden.
+      role: result
+      type: string
+    - name: elementOverrideList
+      # Override Graphics in View > By Element: the elements in the view that
+      # carry their own override, grouped by category and identical override,
+      # each group's count and its first five ids.
+      role: result
+      type: string
 
+# THIS PROOF IS VERSION 1's AND IT IS STALE. It ran with no `allCategories`,
+# which version 2 still answers exactly the same way, but the implementation
+# changed and the fingerprint below no longer matches it. NEEDS-CHECKING Group
+# ED is the run that replaces it.
 proof:
   date: '2026-09-22'
   by: Ajmal PS
@@ -109,6 +165,17 @@ compatibility-note: >
   2026-09-22, is two more getters on the same class - compiled on all eight
   releases by tools/check-fragments-compile.py the day they were added.
 
+  Version 2 adds, read off the reference assemblies of all eight releases on
+  2026-10-15: `Category.AllowsVisibilityControl(View)` - an INDEXED property on
+  every release, so the call is `get_AllowsVisibilityControl(view)`, the trap
+  the 2026-10-15 probe hit on Revit 2020; `View.GetCategoryHidden`,
+  `View.GetElementOverrides`, `Category.SubCategories`, `CategoryType`,
+  `LineColor`, `GetLineWeight`, `GetLinePatternId` and `IsCuttable`; the
+  background-pattern and Visible-tick getters of `OverrideGraphicSettings`; and
+  `BuiltInParameter.VIS_GRAPHICS_MODEL` / `VIS_GRAPHICS_ANNOTATION`. No
+  `ElementId` number is read - it changes type at 2024 and loses
+  `IntegerValue` at 2026 - so categories are keyed by `ElementId` itself.
+
 # ROUTING - repeated in READ_GRAPHIC_OVERRIDES, SET_CATEGORY_GRAPHICS and
 # DIAGNOSE_VISIBILITY.
 #
@@ -128,9 +195,33 @@ compatibility-note: >
 #                                        one deliberately does NOT scope to the
 #                                        view: a hidden category has nothing in
 #                                        a view-scoped collector to find
+#
+# VERSION 2 - with allCategories true. A QUESTION ABOUT THE DIALOG GOES TO A
+# READ: SET_CATEGORY_VISIBILITY, SET_CATEGORY_GRAPHICS, SET_CATEGORY_SOLID_FILL
+# and APPLY_VIEW_FILTER change the view, and on 2026-10-15 the first of these
+# sentences reached SET_CATEGORY_VISIBILITY.
+#
+#   "show me the full visibility graphics of this view" -> here
+#   "what colours, line weights and patterns does this view use" -> here
+#   "which categories are greyed out in this view" -> here
+#   "which sub-categories are overridden in this view" -> here
+#   "which elements have their own override in this view" -> here, the whole
+#                                        view; READ_GRAPHIC_OVERRIDES reads the
+#                                        elements chosen
+#   "what are the filter rules on this view" -> AUDIT_VIEW_FILTERS, with
+#                                        everyFilter true
+#
+# The document's own Object Styles, with no view in the question, are
+# LIST_CATEGORIES version 2's; this card prints them only BESIDE the view's
+# override, because the comparison is the answer.
 utterances:
   - what category overrides are on this view
   - why is this whole category grey
   - which categories are overridden
   - read the category overrides
   - what has been overridden in this view
+  # VERSION 2 - the three sentences the 2026-10-15 study asked, answered with
+  # allCategories true. The first reached SET_CATEGORY_VISIBILITY, a write.
+  - show me the full visibility graphics of this view
+  - what colours, line weights and patterns does this view use
+  - which categories are greyed out in this view
