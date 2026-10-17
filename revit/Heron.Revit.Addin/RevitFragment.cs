@@ -724,19 +724,36 @@ namespace Heron.Revit.Addin
                     // WHICH, with the group still open (D-118). The whole run is
                     // one ExternalEvent callback, so nothing else reaches the
                     // model while the dialog is up.
+                    var keep = apply;
+                    Func<bool> putBack = null;
                     if (asking)
                     {
                         bool askedThem;
-                        var answered = KeepIfTheModellerSays(app, target, group, name,
-                                                             sendsOut, changed,
-                                                             out askedThem, out rolledBack,
-                                                             out selectionRestored);
-                        discarded = answered == HeronKeepQuestion.Answer.Discard;
-                        keptByModeller = askedThem && !discarded;
-                        nothingToAsk = !askedThem && !discarded;
+                        var answered = AskTheModeller(app, target, name, sendsOut, changed,
+                                                      out askedThem, out putBack);
+                        keep = answered == HeronKeepQuestion.Answer.Keep;
+                        keptByModeller = askedThem && keep;
+                        nothingToAsk = !askedThem && keep;
                     }
-                    else if (apply) group.Assimilate();
-                    else rolledBack = SafeRollBack(group);
+
+                    // AND AGAIN AFTER THE QUESTION: showing the change on screen
+                    // commits a transaction of its own, and a Revit dialog met
+                    // there stops the job exactly as one met in the fragment
+                    // does - rolled back, and the modeller's selection put back.
+                    if (HeronDialogWatch.Refused)
+                    {
+                        var stopped = DialogRefusal(name, SafeRollBack(group));
+                        if (putBack != null) putBack();
+                        return stopped;
+                    }
+
+                    if (keep) group.Assimilate();
+                    else
+                    {
+                        rolledBack = SafeRollBack(group);
+                        discarded = asking;
+                        if (putBack != null) selectionRestored = putBack();
+                    }
                 }
             }
 
@@ -1432,15 +1449,18 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// D-118: Revit itself asks the modeller whether to keep what this run
-        /// did, and the group is kept or rolled back on that answer. Called with
-        /// the group open and no transaction in it.
+        /// did. Called with the group open and no transaction in it. IT ASKS
+        /// AND NEVER DECIDES THE GROUP: Run keeps or rolls back on the answer,
+        /// in the one place that first asks whether a Revit dialog stopped the
+        /// job (HeronDialogWatch) - showing the change can meet one too.
         ///
         /// IN ORDER, AND EACH STEP HAS ITS REASON:
         ///
         ///   1. Stop collecting. What follows - isolating on screen - commits a
         ///      transaction of its own and is not part of the change.
-        ///   2. Nothing counted, nothing asked: the group holds no change, so it
-        ///      is kept as asked and the verdict says no question was put.
+        ///   2. Nothing counted, nothing asked: the group holds no change, so the
+        ///      answer is Keep with `asked` false, and the verdict says no
+        ///      question was put.
         ///   3. In the model in front only, save the modeller's selection, then
         ///      select what was added and changed (each set only up to D-60's
         ///      cap) and isolate it in the active view. A model that is not in
@@ -1450,19 +1470,21 @@ namespace Heron.Revit.Addin
         ///      back: a view's state survives a group's rollback (measured for a
         ///      view change, D-115), and ending it after Assimilate would be a
         ///      second undo entry.
-        ///   6. Keep assimilates - one undo entry - and leaves the changed
-        ///      elements selected, which D-60 says is what a modeller wants after
-        ///      a change lands. Discard rolls back and puts their own selection
-        ///      back.
+        ///
+        /// `putBack` restores the modeller's own selection, and Run calls it
+        /// after any rollback (D-60); TRUE when their selection is as they left
+        /// it. After a Keep it is not called: the changed elements stay
+        /// selected, which D-60 says is what a modeller wants after a change
+        /// lands.
         /// </summary>
-        private static HeronKeepQuestion.Answer KeepIfTheModellerSays(
-            UIApplication app, Document target, TransactionGroup group, string name,
-            bool sendsOut, RevitChangedSet changed,
-            out bool asked, out bool rolledBack, out bool selectionRestored)
+        private static HeronKeepQuestion.Answer AskTheModeller(
+            UIApplication app, Document target, string name, bool sendsOut,
+            RevitChangedSet changed, out bool asked, out Func<bool> putBack)
         {
             asked = false;
-            rolledBack = false;
-            selectionRestored = false;
+
+            // Nothing selected for the question leaves theirs untouched.
+            putBack = () => true;
 
             changed.End();
 
@@ -1471,7 +1493,6 @@ namespace Heron.Revit.Addin
             if (!HeronKeepQuestion.Asks(changed.Added.Count, changed.Changed.Count,
                                         changed.Deleted))
             {
-                group.Assimilate();
                 return HeronKeepQuestion.Answer.Keep;
             }
 
@@ -1496,6 +1517,9 @@ namespace Heron.Revit.Addin
                 {
                     theirs = front.Selection.GetElementIds();
                     front.Selection.SetElementIds(show);
+                    var shownIn = front;
+                    var saved = theirs;
+                    putBack = () => PutSelectionBack(shownIn, saved);
                     isolatedIn = Isolate(target, front.ActiveView, show);
                 }
                 catch (Exception ex)
@@ -1563,32 +1587,25 @@ namespace Heron.Revit.Addin
                     () => isolatedIn.DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate));
             }
 
-            if (answer == HeronKeepQuestion.Answer.Keep)
-            {
-                group.Assimilate();
-                return answer;
-            }
-
-            rolledBack = SafeRollBack(group);
-            if (theirs != null)
-            {
-                try
-                {
-                    front.Selection.SetElementIds(theirs);
-                    selectionRestored = true;
-                }
-                catch (Exception ex)
-                {
-                    HeronApplication.Log("Could not put the modeller's selection back: " + ex.Message);
-                }
-            }
-            else
-            {
-                // Nothing was selected for the question, so theirs was never
-                // touched and is exactly as they left it.
-                selectionRestored = true;
-            }
             return answer;
+        }
+
+        /// <summary>
+        /// The modeller's own selection, put back after a rollback - D-60.
+        /// TRUE when it is; a failure is logged and said, never hidden.
+        /// </summary>
+        private static bool PutSelectionBack(UIDocument front, ICollection<ElementId> theirs)
+        {
+            try
+            {
+                front.Selection.SetElementIds(theirs);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Could not put the modeller's selection back: " + ex.Message);
+                return false;
+            }
         }
 
         /// <summary>

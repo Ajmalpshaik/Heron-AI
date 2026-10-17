@@ -139,17 +139,29 @@ def wiring():
           "the collector is held in a `using`, so its handler comes off however the group ends")
     check(before(run, "group.Start();", "changed.Begin();"),
           "and it starts listening only once the group has started")
-    check(re.search(r"if\s*\(\s*asking\s*\)\s*\{[^}]*KeepIfTheModellerSays\(", run) is not None
-          and "else if (apply) group.Assimilate();" in run,
+    check(re.search(r"if\s*\(\s*asking\s*\)\s*\{[^}]*AskTheModeller\(", run) is not None
+          and "var keep = apply;" in run and "if (keep) group.Assimilate();" in run,
           "with the switch on the modeller decides; with it off a keep is kept as before")
+    # ONE PLACE KEEPS, AFTER A FRESH LOOK AT THE DIALOG WATCH (Group EL).
+    # Showing the change commits a transaction of its own, and a Revit dialog
+    # met there must stop the job like one met in the fragment.
+    asked_at = run.find("AskTheModeller(")
+    recheck = run.find("if (HeronDialogWatch.Refused)", asked_at)
+    kept_at = run.find("if (keep) group.Assimilate();")
+    check(0 < asked_at < recheck < kept_at,
+          "the question asks, the dialog watch is asked again, and only then is anything kept")
+    check(before(run, "rolledBack = SafeRollBack(group);", "selectionRestored = putBack();"),
+          "and on Discard their selection is put back after the rollback")
     check(before(run, "if (discarded)", "Remember(name, state"),
           "a Discard returns before anything is remembered for the next fragment")
     for error in ("modeller_discarded", "discard_unconfirmed"):
         check(re.search(r'Json\.Error\(\s*"%s"' % error, raw) is not None,
               "a Discard answers with its own code: %s" % error)
 
-    ask = NOTE_SUITE.body_of(executor, "HeronKeepQuestion.Answer KeepIfTheModellerSays(")
-    check(bool(ask), "KeepIfTheModellerSays is there")
+    ask = NOTE_SUITE.body_of(executor, "HeronKeepQuestion.Answer AskTheModeller(")
+    check(bool(ask), "AskTheModeller is there")
+    check("Assimilate(" not in ask and "SafeRollBack(" not in ask,
+          "and it only asks - it never keeps or rolls back the group itself")
     check(before(ask, "changed.End();", "Isolate("),
           "the collector stops before anything is shown, so showing is not counted as the change")
     check(re.search(r"if\s*\(\s*!HeronKeepQuestion\.Asks\(", ask) is not None
@@ -178,11 +190,9 @@ def wiring():
           "the dispatcher is told the modeller is asked, and told they answered whatever happens")
     shown_at = ask.find("dialog.Show()")
     ends = ask.find("DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate)")
-    check(shown_at < ends < ask.find("group.Assimilate();", shown_at)
-          and ends < ask.find("SafeRollBack(group)"),
-          "the isolation is ended INSIDE the group, before it is kept or rolled back (D-115)")
-    check(before(ask, "SafeRollBack(group)", "front.Selection.SetElementIds(theirs);"),
-          "and on Discard their selection is put back after the rollback")
+    check(0 < shown_at < ends and ends < ask.rfind("return answer;"),
+          "the isolation is ended INSIDE the group, before the answer goes back to be "
+          "kept or rolled back (D-115)")
 
     showing = NOTE_SUITE.body_of(executor, "View Isolate(")
     check("view.IsTemporaryHideIsolateActive()" in showing,
