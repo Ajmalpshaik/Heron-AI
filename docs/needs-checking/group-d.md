@@ -75,3 +75,5 @@ workshared. A failure forced in the middle of a move (golden G-12), an expired p
 that changed after the preview (G-14) and a preview approved in the wrong model (G-15) were not run here.
 And whether `write.enabled` should be on by default is D-19's question and the owner's decision -
 this run answers what a move does, not whether Heron should be allowed to make one.
+
+**The owner's answer, the same day.** Asked whether `write.enabled` should now be on by default, Ajmal PS answered from his phone: *"See these changes and admin and publish on off. I can do it from here with one click no problem."* Read as: the three ribbon switches - Changes, Admin, Publish - stay his to turn on and off with one click, so **the default is left as it is, `false`**, and [D-19](../DECISIONS.md) is unchanged. His own switch was already on, and stays as he set it.
