@@ -151,7 +151,7 @@ fi
 #
 # net10.0 because this image carries only the .NET 10 runtime. The suite asks
 # for the newest runtime it finds, and prints the build it wants when the host
-# is missing - follow that over this comment (FRAGMENT-ISSUES row 5b-881).
+# is missing - follow that over this comment (FRAGMENT-ISSUES row 5b-942).
 
 say "ready"
 exit 0

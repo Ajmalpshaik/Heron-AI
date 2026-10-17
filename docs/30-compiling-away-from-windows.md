@@ -206,7 +206,7 @@ python tests/test_bridge_roundtrip.py
 The framework is the newest runtime `dotnet --list-runtimes` shows, which the suite asks for itself -
 `net10.0` on a machine with only the .NET 10 SDK. When the host is missing the suite exits 3 and prints
 the exact build it wants; **run that one over this block**, which said `net8.0` until 2026-10-17
-([row 5b-881](fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-942](fragment-issues/section-5b-rows-401-425.md)).
 
 The separate output directory is not decoration. `AppendTargetFrameworkToOutputPath` is false repo-wide,
 so every target framework writes to the same `bin/x64/Debug` — and `check-compile.py` builds this project
