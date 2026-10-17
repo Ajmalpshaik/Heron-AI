@@ -751,6 +751,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
+## Group EU - Heron says when its own code changed under a chat, and changes nothing until the chat is reopened (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eu.md`](needs-checking/group-eu.md)
+
 ## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
@@ -766,6 +770,14 @@ Step 6 is finished, and not before. At that point:
 ## Group FP - a family placed at the height asked when its insertion point is not its own level: PLACE_FAMILY_INSTANCES version 3 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fp.md`](needs-checking/group-fp.md)
+
+## Group FU - one Object Styles row by name: `LIST_CATEGORIES` version 3, `categories` narrows the answer, a missing name gets the nearest names (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fu.md`](needs-checking/group-fu.md)
+
+## Group FY - every column of a schedule in one call, and a heading turned back to horizontal: `SET_SCHEDULE_APPEARANCE` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fy.md`](needs-checking/group-fy.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

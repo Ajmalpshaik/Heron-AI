@@ -167,6 +167,7 @@ namespace Heron.DialogNote.TestHost
 
             Console.WriteLine("\n4. the refusal says only what Revit confirmed");
             var read = later.Refusal("'load-family'", HeronDialogNote.Outcome.ReadOnly);
+            var uncounted = later.Refusal("This job", HeronDialogNote.Outcome.ReadUncounted);
             var undone = later.Refusal("'load-family'", HeronDialogNote.Outcome.RolledBack);
             var unsure = later.Refusal("'load-family'", HeronDialogNote.Outcome.RollbackUnconfirmed);
             var kept = later.Refusal("This job", HeronDialogNote.Outcome.NotUndone);
@@ -174,6 +175,13 @@ namespace Heron.DialogNote.TestHost
             Check(Json.ReadString(read, "error") == "dialog_refused"
                   && Has(Json.ReadString(read, "message"), "nothing in the model was changed"),
                   "a read: dialog_refused, and nothing changed");
+            Check(Has(Json.ReadString(read, "message"), "counted the model before and after"),
+                  "and it says so from the count it was reached after - row 5b-350");
+            Check(Json.ReadString(uncounted, "error") == "dialog_refused"
+                  && Has(Json.ReadString(uncounted, "message"), "not measured")
+                  && !Has(Json.ReadString(uncounted, "message"), "nothing in the model was changed"),
+                  "a job below MODIFY nothing counted: dialog_refused, and never 'nothing was changed' "
+                  + "- row 5b-350");
             Check(Json.ReadString(undone, "error") == "dialog_refused"
                   && Has(Json.ReadString(undone, "message"), "rolled back, so the model is exactly as it was"),
                   "a rolled-back write: dialog_refused, and the model is as it was");
@@ -185,7 +193,7 @@ namespace Heron.DialogNote.TestHost
                   && Has(Json.ReadString(kept, "message"), "MAY STILL BE IN THE MODEL")
                   && !Has(Json.ReadString(kept, "message"), "rolled back"),
                   "a write nothing undid: dialog_unconfirmed, and no rollback is claimed");
-            foreach (var refusal in new[] { read, undone, unsure, kept })
+            foreach (var refusal in new[] { read, uncounted, undone, unsure, kept })
             {
                 var said = Json.ReadString(refusal, "message");
                 Check(Has(said, "Catch_Basin new.rfa") && Has(said, "do this step in Revit yourself"),
@@ -217,10 +225,16 @@ namespace Heron.DialogNote.TestHost
                   && Has(listed[0]["message"], "saved in a later version"),
                   "and each dialog is listed with its id, kind, answer and words");
 
+            // NOT "NOTHING WAS CHANGED" - row 5b-350. Nothing counted the model
+            // around a job that reaches Attach this way: a fragment read makes
+            // its own refusal after the count, so this is one of Heron's own
+            // operations below MODIFY, and the sentence says it was not measured.
             var readOk = HeronDialogNote.Attach(success, later, false);
             Check(Json.ReadString(readOk, "error") == "dialog_refused"
-                  && Has(Json.ReadString(readOk, "message"), "nothing in the model was changed"),
-                  "a READ that came back a success after a declined dialog becomes the refusal");
+                  && Has(Json.ReadString(readOk, "message"), "not measured")
+                  && !Has(Json.ReadString(readOk, "message"), "nothing in the model was changed"),
+                  "a READ that came back a success after a declined dialog becomes the refusal, "
+                  + "which does not claim a count nobody took");
             var writeOk = HeronDialogNote.Attach(success, later, true);
             Check(Json.ReadString(writeOk, "error") == "dialog_unconfirmed"
                   && !Has(Json.ReadString(writeOk, "message"), "rolled back"),
