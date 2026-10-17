@@ -2035,12 +2035,22 @@ and **TAKEN ON MAIN**, an id an open pull request or this checkout adds that mai
 somebody else. A branch with no open pull request is never called TAKEN ON MAIN - it may be one that merged
 and was never deleted - so without gh only this checkout is judged, and the report says that too.
 
+**An id main holds in the very words the live work wrote is that work's own, merged** - since 2026-10-17,
+[row 5b-981](../docs/fragment-issues/section-5b-rows-401-425.md). A squash-merge puts a pull request on main as
+one new commit, so the session still on that branch goes on adding its ids against the commit where it left
+main, and was told TAKEN ON MAIN for its own row the moment it merged. So the id's entry at the work is compared
+with main's - a 5b row's whole table line, a group's own file `docs/needs-checking/group-xx.md`, a question's or
+a decision's heading line, line ends aside - and the same entry is printed as **MERGED** (`already_merged` in
+`--json`), never as a clash. Different words under the number stay TAKEN ON MAIN, and so does a merged entry
+main has edited since, which the files cannot tell from one.
+
 **It writes no register file and reserves nothing**: an id is free as of the run, and only a pushed branch holds
 it. It does not write the NEEDS-CHECKING index either - [heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)
 says why that cannot be generated. Exits **0** with an answer and **2** when it could not look - no git, a fetch
 that failed, no main, or a register with no id on main at all, which means the register moved.
 [`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids, a fake
-gh, a fork's `refs/pull/N/head`, and worktrees in folders whose names hold spaces - no network.
+gh, a fork's `refs/pull/N/head`, worktrees in folders whose names hold spaces, and a squash of this checkout's
+own ids onto main - no network.
 
 **An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id. A renamed decision's **Numbering:** line keeps its words and gains a sentence naming the old number, the date and why - main took it, or which branch holds it - and one with no Numbering line gets one under its **Status:** line; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
 

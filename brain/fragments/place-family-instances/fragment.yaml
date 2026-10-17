@@ -14,7 +14,13 @@ capability: PLACE_FAMILY_INSTANCES
 # cannot be lifted off it; every placement is read back. Version 1's proof
 # no longer described the code; version 2's tracking run in Project2 was signed
 # by Ajmal PS on 2026-10-06.
-version: 2
+#
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-590): a family's height is read
+# where its own level stands - what Elevation from Level and Offset from Host
+# measure to - and no longer at its insertion point. See "VERSION 3" below.
+# Version 3's tracking run in Project1, Revit 2020, was signed by Ajmal PS on
+# 2026-10-17 and replaced version 2's proof.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -53,6 +59,39 @@ purpose: >
 # where it was asked rolls the whole layout back. `readBack` says how each kind
 # ended up, in the Properties palette's names.
 #
+# VERSION 3 - WHERE A FAMILY STANDS IS WHERE ITS OWN LEVEL STANDS, NOT ITS
+# INSERTION POINT (FRAGMENT-ISSUES 5b-590). On 2026-10-15, on a real project
+# in Revit 2020, two cut-outs asked 2152 mm above 'PLAN AT EL. +106.832' were
+# refused - "Revit put ... 2014.5 mm above ... where it was asked 2152 mm
+# above" - and nothing was kept, with each one's centre, its Elevation from
+# Level, exactly where it was wanted. TRG_GEN_CutOut_Rectangular_HVAC, a
+# level-based Generic Model, ticks "Defines Origin" on the reference plane at
+# the BOTTOM of its opening, so its insertion point (LocationPoint) stands half
+# the opening's height below its own level, and moves with Object Height.
+# Version 2 compared the insertion point. Version 3 compares where the
+# instance's transform puts the family's own level - the height Elevation from
+# Level and Offset from Host hold, and the one Revit's own call uses when it
+# is given no level. Plan is still read off the insertion point, and
+# `readBack` adds "its insertion point N mm below that" only where the two
+# heights differ.
+#
+# MEASURED 2026-10-17, Revit 2020, scratch Project1, every run rolled back:
+# the cut-out with Elevation from Level 2152 had its centre at 2152 and its
+# insertion point at 2002, 1827 and 1627 for Object Height 250, 600 and 1000.
+# Version 2 and version 3 run side by side on the same placements: version 2
+# refused the cut-out ("2002 mm above 'Level 2' ... asked 2152", the shape
+# of the real refusal) and refused it even at the level's own height ("-300
+# mm"); version 3 placed both. On the fan coil unit at 2700 on Level 1 and
+# 6700 on Level 2, the hosted diffuser three times at 3000 and once at 6700,
+# the ceiling-mounted diffuser refused at 3000 and placed at its level's own
+# height, and an empty list, the two answered word for word the same. Each of
+# those families' insertion point IS its own level, so nothing reads
+# differently for them.
+#
+# THE TYPE'S "Default Elevation" PLAYS NO PART HERE: the cut-out's is 2500
+# and Revit's call wrote Elevation from Level from the point, as it does for
+# every level-based family (measured the same day).
+
 # THE PURPOSE IS VERSION 1'S, WORD FOR WORD, ON PURPOSE - and every sentence of
 # it is still true. Measured 2026-10-06 on private stores, these two paragraphs
 # written into the purpose sent "what level is this diffuser on" here on both
@@ -87,45 +126,44 @@ contract:
       # VERSION 2. How each kind ended up, read off Revit after the rebuild and
       # grouped - "3 x work plane-based, on 'Level 1''s own plane, standing
       # 3000 mm above it - Host 'Level 1', Level 'Level 1', Schedule Level
-      # 'Level 1', Offset from Host 3000 mm". A STRING, because a reply cuts a
+      # 'Level 1', Offset from Host 3000 mm". VERSION 3 adds ", its insertion
+      # point 150 mm below that" where a family's insertion point is not its
+      # own level. A STRING, because a reply cuts a
       # list to three items. Accounting: it describes what `placed` counts.
       role: accounting
       type: string
 
 proof:
-  date: '2026-10-06'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: Project2, Revit 2024, session 51820 - the count is NOT recorded because 1,813 elements
-    was measured on GM_PipeSupport_UBolt, the document in front, and this ran against another
-    one (row 15)
-  positive_case: 'run with points=2000,2000,3000 - the first of 4 tracked inputs - the arrangement
-    was re-made first by running load-family with this phase''s own values - run inside a
-    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    CloseEnough 0.00164041994750656, MillimetresPerFoot 304.8, askedAt 1 item(s) [(6.561679790,
-    6.561679790, 9.842519685)], carried Func`3, described Func`2, failed 0, heightId BuiltInParameter,
-    invariant CultureInfo, kindWords work plane-based, on ''Level 1''''s own plane, levelOf
-    Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM,
-    ...], levelPlane Reference, levelZ 0, made 1 item(s) [FamilyInstance], mm Func`2, named
-    M_Supply Diffuser - Hosted: Workplane-based Supply Diffuser, onLevelPlane true, placed
-    1 item(s) [427234], placement FamilyPlacementType, readBack 1 x work plane-based, on ''Level
-    1''''s own plane, standing 3000 mm above it - Host ''Level 1'', Level ''Level 1'', Schedule
-    Level ''Level 1'', Offset from Host 3000 mm, tally 1 entry(ies). inputs came symbol as
-    given; points as given (1); level as given. on Project2'
+  model: Project1 (3,240 elements), Revit 2020, session 51568
+  positive_case: 'run with points=1000,1000,6152 - the first of 4 tracked inputs - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    CloseEnough 0.00164041994750656, MillimetresPerFoot 304.8, askedAt 1 item(s) [(3.280839895,
+    3.280839895, 20.183727034)], carried Func`3, described Func`2, failed 0, heightId BuiltInParameter,
+    invariant CultureInfo, kindWords level-based, on ''Level 2'', levelOf Func`2, levelParameterOrder
+    5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], levelPlane (null),
+    levelZ 13.1233595800514, made 1 item(s) [FamilyInstance], mm Func`2, named TRG_GEN_CutOut_Rectangular_HVAC:
+    25mm Cutout Buffer, onLevelPlane false, placed 1 item(s) [923039], placement FamilyPlacementType,
+    readBack 1 x level-based, on ''Level 2'', standing 2152 mm above it - Level ''Level 2'',
+    Elevation from Level 2152 mm, its insertion point 150 mm below that, standsAt Func`2,
+    tally 1 entry(ies). inputs came symbol as given; points as given (1); level as given.
+    on Project1'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). place-family-instances\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 4 different inputs:\n\n      points=2000,2000,3000 -> placed 1 item(s) [427234]\n\
-    \      points=2000,2000,3000; 4000,2000,3000 -> placed 2 item(s) [428498, 428501]\n  \
-    \    points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000 -> placed 3 item(s) [429765,\
-    \ 429768, 429770]\n      points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000; 8000,2000,3000;\
-    \ 10000,2000,3000 -> placed 5 item(s) [431035, 431038, 431040, ...]\n\n    Different inputs,\
+    \ across 4 different inputs:\n\n      points=1000,1000,6152 -> placed 1 item(s) [923039]\n\
+    \      points=1000,1000,6152; 3000,1000,6127 -> placed 2 item(s) [923040, 923041]\n  \
+    \    points=1000,1000,6152; 3000,1000,6127; 5000,1000,6100 -> placed 3 item(s) [923042,\
+    \ 923043, 923044]\n      points=1000,1000,6152; 3000,1000,6127; 5000,1000,6100; 7000,1000,6075;\
+    \ 9000,1000,6050 -> placed 5 item(s) [923045, 923046, 923047, ...]\n\n    Different inputs,\
     \ exact matches every time. A fragment falling back to the active view, the whole model,\
     \ or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ce5229e730b44998
+  fingerprint: d9db040d807d158c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -141,7 +179,9 @@ compatibility-note: >
   `InternalDefinition.BuiltInParameter` and the INSTANCE_FREE_HOST_OFFSET_PARAM,
   INSTANCE_ELEVATION_PARAM and INSTANCE_SCHEDULE_ONLY_LEVEL_PARAM ids;
   tools/check-fragments-compile.py built it against all eight releases on
-  2026-10-06. Only Revit 2024 has run it.
+  2026-10-06. Only Revit 2024 has run it. Version 3 adds
+  `Instance.GetTransform()` (unchanged 2020 to 2027); built against all eight
+  releases on 2026-10-17 and run, rolled back, in Revit 2020.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #

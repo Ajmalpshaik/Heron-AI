@@ -42,14 +42,14 @@ on a scratch family made for it, never on a family somebody is building; with `H
 
 | # | Run | Look for |
 |---|---|---|
-| **DA1** | the job file: ten rows in the value, five extrusions and five revolves on all three template planes, two voids, one material, one visibility; negative the same with row 7's plane misnamed | positive: `formCount` 10, `formIds` ten ids, `built` ten entries with their extents and the solids' volumes; negative: refused naming row 7, `formCount` 0. Both legs ROLLED BACK - REPORT_FAMILY_FORMS reads the scratch family's form count unchanged afterwards |
-| **DA2** | DA1's ten rows in a file under `%TEMP%\heron-work`, one per line with a `#` comment line, `forms` its full path, `--write --apply` - **refused since D-117 for a DRAFT; kept through `try-once` instead, see *Run it* below** | the same ten built and KEPT; `REPORT_FAMILY_FORMS` lists ten forms with the same ids, in the same order; the undo list shows ONE entry for the call |
-| **DA3** | a row 0.5 mm deep; a `kind=blend` row; a file outside the temporary folder; a project in front | each refused with nothing built - the row named and the least depth said, a row is an extrusion or a revolve, the temporary folder named, `notAFamily` |
-| **DA4** | the second route: the same ten built one call at a time with the single-form tools on a second scratch family - **rolled back for now, see *Run it* below** | the two families' `REPORT_FAMILY_FORMS` read the same kinds, extents and volumes; ten undo entries there, one here |
-| **DA5** | a list the size of the pump set - about 100 rows | the time the call takes inside Revit (the audit log's `ms`), against the 11 batches it replaces |
-| **DA6** | DA1 to DA3 on **Revit 2020** and **2027** | the same answers - what Revit DOES has been measured on 2024 only, if at all |
-| **DA8** | [5b-430](../fragment-issues/section-5b-rows-401-425.md): on a PC where Revit's temporary folder is a GUID-named sub-folder of the user's (the owner's laptop - `%TEMP%` in a Revit-side read shows `...\Temp\<guid>\`), DA2 with the file under the chat's own `%TEMP%\heron-work`; negative the same rows in `%TEMP%\elsewhere\rows.txt` and in `%TEMP%\heron-workshop\rows.txt` | positive: built on the FIRST call, no copy into Revit's folder; negative: refused naming both folders read, `formCount` 0, nothing read. On the office PC, where the two folders are one, DA2 is the whole check |
-| **DA7** | the signature | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's record, on the owner's word only |
+| **DA1** | **RUN, BOTH HALVES HELD 2026-10-17 - Revit 2024.3 on the laptop, session 44252, "Heron Forms Scratch" (1,713 elements)**, through `batch-prove` (`PASS  positive: formCount 10`); the negative refused naming row 7 and `"Ref Lvl"`, `formCount 0`; both rolled back, and `report-family-forms` read `formCount 0` afterwards. The draft waits for DA7. the job file: ten rows in the value, five extrusions and five revolves on all three template planes, two voids, one material, one visibility; negative the same with row 7's plane misnamed | positive: `formCount` 10, `formIds` ten ids, `built` ten entries with their extents and the solids' volumes; negative: refused naming row 7, `formCount` 0. Both legs ROLLED BACK - REPORT_FAMILY_FORMS reads the scratch family's form count unchanged afterwards |
+| ~~**DA2**~~ | **RUN, PASS 2026-10-17 - Revit 2024.3, session 14196.** `try-once` printed *"KEPT  You were asked in Revit and pressed KEEP after seeing the result."*, `formCount 10` and ten ids; `report-family-forms` read `formCount 10`, `scanned 10`, every one of the ten ids on `formList`; Revit's Undo list, read through UI Automation, held ONE entry for the call, `Heron: create-family-forms`. Results below. DA1's ten rows in a file under `%TEMP%\heron-work`, one per line with a `#` comment line, `forms` its full path, `--write --apply` - **refused since D-117 for a DRAFT; kept through `try-once` instead, see *Run it* below** | the same ten built and KEPT; `REPORT_FAMILY_FORMS` lists ten forms with the same ids, in the same order; the undo list shows ONE entry for the call |
+| ~~**DA3**~~ | **RUN, PASS 2026-10-17 - Revit 2024.3, session 44252** - each refused as written below, `formCount 0`; the least depth Revit 2024 gave is 0.79 mm. The project in front was the owner's scratch `Project1`, which he offered. a row 0.5 mm deep; a `kind=blend` row; a file outside the temporary folder; a project in front | each refused with nothing built - the row named and the least depth said, a row is an extrusion or a revolve, the temporary folder named, `notAFamily` |
+| **DA4** | **RUN, THE ROLLED-BACK HALF PASS 2026-10-17 - Revit 2024.3, session 44252, "Heron Forms Scratch 2"** - all ten calls' `built` read the same extents and solid volumes as DA1's ten entries (call 9: 0.524 L, where the list wrote 523,598.7 mm³). The kept half is still owed. the second route: the same ten built one call at a time with the single-form tools on a second scratch family - **rolled back for now, see *Run it* below** | the two families' `REPORT_FAMILY_FORMS` read the same kinds, extents and volumes; ten undo entries there, one here |
+| ~~**DA5**~~ | **RUN, PASS 2026-10-17 - Revit 2024.3, session 44252:** `formCount 109` of the file's 109 rows, nothing refused, rolled back; the audit's `"ms": 3536`. Results below. a list the size of the pump set - about 100 rows | the time the call takes inside Revit (the audit log's `ms`), against the 11 batches it replaces |
+| ~~**DA6**~~ | **RUN, PASS 2026-10-17 on Revit 2020.2 (session 33916) and 2027.3 (session 42696)** - DA1's ten `built` entries word for word 2024's, and the same row-7 refusal; DA3's four refusals the same but for each Revit's own temporary folder; DA2 rolled back, `formCount 10`. DA1 to DA3 on **Revit 2020** and **2027** | the same answers - what Revit DOES has been measured on 2024 only, if at all |
+| ~~**DA8**~~ | **RUN, PASS 2026-10-17 - the laptop, Revit 2024.3, session 44252**, Revit's temporary folder `C:\Users\ajmal\AppData\Local\Temp\6d4c294e-0255-4e75-b39b-c9e7bd4a7520\`: `formCount 10` on the first call from `heron-work`, no `.txt` in the GUID folder afterwards; `elsewhere` and `heron-workshop` refused naming both folders, `formCount 0`. [5b-430](../fragment-issues/section-5b-rows-401-425.md): on a PC where Revit's temporary folder is a GUID-named sub-folder of the user's (the owner's laptop - `%TEMP%` in a Revit-side read shows `...\Temp\<guid>\`), DA2 with the file under the chat's own `%TEMP%\heron-work`; negative the same rows in `%TEMP%\elsewhere\rows.txt` and in `%TEMP%\heron-workshop\rows.txt` | positive: built on the FIRST call, no copy into Revit's folder; negative: refused naming both folders read, `formCount` 0, nothing read. On the office PC, where the two folders are one, DA2 is the whole check |
+| **DA7** | **NOT RUN - the owner's signature on DA1's draft, his to give.** the signature | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's record, on the owner's word only |
 
 ### Run it - inputs prepared 2026-10-17 in a cloud session, NONE OF IT RUN
 
@@ -241,3 +241,76 @@ first `ms`. Record all four, with the release and the PC.
 **Through the chat** (`revit_change`) the new capability needs its row in the shared knowledge store,
 which the store is given once this is merged to main and rebuilt from it; until then `heron_resolve`
 answers *Nothing provides CREATE_FAMILY_FORMS*.
+
+### Results - 2026-10-17, the owner's laptop: Revit 2024.3, 2020.2 and 2027.3
+
+**Which add-in ran which row.** DA1, DA3, DA4, DA5 and DA8 ran on the add-in deployed that morning
+(built from `76006767`). DA2, DA6, the warm-up and the `combine-family-forms` re-proof ran on one built
+from main at `4496d040` plus the one-line fix of [pull request #623](https://github.com/Ajmalpshaik/Heron-AI/pull/623), its row 5b-1000,
+deployed for 2020, 2024, 2026 and 2027 by `tools/setup.ps1`. Main alone compiled no fragment in Revit
+(row 5b-1000), and DA2's Keep needed [row 5b-621](../fragment-issues/section-5b-rows-401-425.md)'s fix,
+which the morning's add-in lacked: there a kept `create-family-revolution` came back
+`[operation_failed]` *"Corresponding button not found. Parameter name: defaultButton"*, nothing kept.
+
+**The arrangement as run.** Each release's scratch family was made by `create-family-document` (PROVEN)
+from that release's own `Metric Generic Model.rft`, saved under `%TEMP%\heron-work\da\r<release>\` and
+opened with `activate-document`. A template copied and renamed `.rfa` does not do: Revit 2024 refused it,
+*"File Heron Forms Scratch.rfa is not a valid .rfa file. Try changing the file's extension to .rft and
+opening it again."* DA3's project in front: on 2024 the owner's scratch `Project1`; on 2020 a copy of
+`rst_basic_sample_project.rvt` and on 2027 a copy of `Snowdon Towers Sample HVAC.rvt`, each from that
+release's `Samples` and saved as "Heron Forms Project Scratch". DA6's records are
+`%TEMP%\heron-work\da\da6-2020.json` and `da6-2027.json`, outside the repository as the command above says.
+
+**DA2 - the Undo list.** Read through UI Automation - the Undo button's history opened, read and
+closed, nothing in it clicked: `Shaded`, `Default 3D View`, `Heron: create-family-forms`, newest first.
+One entry for the call; the two above it were made after it, while the result was looked at. The family
+with the ten kept forms was then saved with `save-document` to
+`%TEMP%\heron-work\da\r2024\Heron Forms Scratch.rfa`.
+
+**DA5 against the pump set.** One call built 109 forms in 3,536 ms of Revit's own time (the audit's
+`ms`), rolled back. [Row 5b-378](../fragment-issues/section-5b-rows-376-400.md)'s pump set of 107 forms
+took 11 batches of up to ten single-form calls, about 112 s of profiles streamed as tool input and about
+83 s of round trips. What a chat spends writing 109 rows and reading one answer is not measured here -
+that is the build timing below, NOT RUN.
+
+**The warm-up, ON against OFF** - Revit 2024.3 on the laptop, the fixed add-in, "Heron Forms Scratch"
+open, `report-family-forms` twice, Revit closed and started again between halves with nothing run before
+the first read. **The switch was read from the Claude app's own copy of `heron.config`:** the app keeps a
+private copy of `%APPDATA%\Heron`, a Revit started from a chat's shell reads that copy, and one the owner
+starts reads the real file ([row 5b-1004](../fragment-issues/section-5b-rows-401-425.md)). Each half's
+log line below shows which way it was read.
+
+| Half | Revit | The log after `Heron loaded.` | First read | Second read | First read taken |
+|---|---|---|---|---|---|
+| OFF | pid 13124 | no `Fragment warm-up` line | 4,329 ms | 4 ms | 63 s after connecting |
+| ON | pid 14196 | *"Fragment warm-up compiled and emitted a throwaway script in 4049 ms, on Microsoft.CodeAnalysis.CSharp 4.8.0.0 from ...\Addins\2024\Heron\Microsoft.CodeAnalysis.CSharp.dll."* | 1,214 ms | 2 ms | 62 s after connecting |
+| OFF, early | pid 26160 | no `Fragment warm-up` line | 6,679 ms | 2 ms | 16 s after connecting - not the minute asked, so a second OFF sample and not the measurement |
+
+The warm-up took 3,115 ms off the first fragment after Revit starts (4,329 to 1,214 ms); the cached run
+is the same either way. [D-56](../decisions/D-56.md)'s baseline was 5,193 ms cold and 3 ms cached, on
+`find-views`. The warm-up also compiled on 2020.2 (3,534 ms) and on 2027.3 (2,269 ms, *"in Heron's own
+load context"*); neither was timed against OFF.
+
+**`combine-family-forms` re-proved** - its code changed after the 2026-10-08 signature, and a family
+build's cuts depend on it ([D-116](../decisions/D-116.md)). Revit 2024.3, session 14196, on DA2's kept
+forms and one void kept for it: a `create-family-revolution` (PROVEN) bore 100 mm across from -10 to
+510 mm through row 1's cylinder, kept through the Keep box. Both legs rolled back:
+
+- positive, row 1's solid and the bore: `cut` true, *"Cut 1 solid(s) with 1 void(s): 35.341 L before,
+  31.414 L after - 3.927 L taken away. Read back form by form: all 1 solid(s) are in the result - 2
+  point(s) inside them that no void covers, every one found in it."* - a bore 100 mm across and 500 mm
+  through the solid is 3.927 L;
+- negative, row 5's and row 7's voids alone: `refused` *"Nothing was joined or cut. Every form named is
+  a void. A void cuts a solid - name the solid it should cut as well."*, `cut` false, no combination.
+
+`report-family-forms` afterwards: 11 forms, no combination. Draft fingerprint `37adc81646c3aa9d`, the
+signature owed. The first try named row 5's void, which lies wholly inside row 1's cylinder; it threw
+- [row 5b-1001](../fragment-issues/section-5b-rows-401-425.md).
+
+**The build timing - NOT RUN.** A family built by a chat goes through `revit_change`, which runs a
+PROVEN capability only ([D-117](../decisions/D-117.md)); `create-family-forms` stays DRAFT until DA7 is
+signed and it is promoted, and `try-once`'s one keep for this version was DA2's.
+`tools/time-family-build.py` has no build to time until then.
+
+**Still owed:** DA7 and `combine-family-forms`' signature, both the owner's; DA4's kept half; the build
+timing; the warm-up OFF against ON on 2020 and 2027.

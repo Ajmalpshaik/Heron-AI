@@ -181,10 +181,14 @@ def show_door(text, cs, door_refusal):
 
     routed = re.search(r'case\s+"run_fragment_show"\s*:\s*return\s+([^;]+);',
                        read(OPERATIONS_CS))
+    # Since the run guard the executor also takes the registry's risk, so the
+    # read path is spelt with `false` as well - the same overload's meaning.
     check(routed is not None
-          and routed.group(1).replace(" ", "") == "RevitFragment.Run(app,request)",
-          "the add-in runs it through RevitFragment.Run(app, request) - the "
-          "overload that opens NO transaction, the read door's")
+          and routed.group(1).replace(" ", "") in (
+              "RevitFragment.Run(app,request)",
+              "RevitFragment.Run(app,request,false,HeronOperationRegistry.RiskOf(op))"),
+          "the add-in runs it through RevitFragment.Run with writing false - the "
+          "path that opens NO transaction, the read door's")
     executor = read(FRAGMENT_CS)
     check("if (ownsTransactions && !writing)" in executor,
           "and a fragment that opens transactions of its own is refused on "
