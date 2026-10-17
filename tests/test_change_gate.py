@@ -175,6 +175,9 @@ def routing_cards():
         ("the semantic-identity reworded",
          CARD.replace("count the x in this view", "count the x in this plan or section")),
         ("the purpose reworded", CARD.replace("Counts the x in", "Counts every x in")),
+        # On the owner's word, 2026-10-17: the re-ranker reads the domain and
+        # a lookup can filter by it; Revit never reads it.
+        ("the domain changed", CARD.replace("domain: revit.x", "domain: revit.views")),
         ("a comment reworded", CARD.replace("NAMES PLANS", "NAMES PLANS AND SECTIONS")),
         ("a routing row added to the comments",
          CARD.replace("#   \"how many x\"   -> here",
