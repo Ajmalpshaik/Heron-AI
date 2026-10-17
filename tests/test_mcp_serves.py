@@ -1376,6 +1376,26 @@ async def exercise_view_image(module):
               "a rollback the add-in could not confirm is said, loudly, and the "
               "promise is not")
 
+        # THE CAPTURE'S ROLLBACK IS CHECKED like every other since 2026-10-17
+        # (RevitFragment.RollBackAndCheck): a loss of the last kept job's
+        # elements comes back as `keptLost` and the add-in's own sentence.
+        loss = ("Rolling back this run removed 2 of 3 elements the last kept job made "
+                "('create-wall') - rebuild that stage.")
+        revit.reply = dict(PICTURE_REPLY, mode="elements", shown=1, keptLost=2,
+                           rollbackNote=loss)
+        said, images = await call({"elements": "310"})
+        check(loss in said and "Nothing was changed" not in said
+              and "temporary view is gone" not in said,
+              "a capture whose rollback took the last kept job's elements says so, "
+              "and never that nothing was changed")
+        gone = ("What the last kept job ('create-wall') made was already gone when this "
+                "run started - removed in Revit, not by this run.")
+        revit.reply = dict(PICTURE_REPLY, rollbackNote=gone)
+        said, images = await call({})
+        check(gone in said and "Nothing was changed." in said,
+              "a note about the job kept before, with nothing lost, rides beside "
+              "'nothing was changed'")
+
         revit.reply = dict(PICTURE_REPLY, widthClamped=True, pixelWidth=2400)
         said, _images = await call({"width": 9000})
         check("2400 was used" in said, "a width clamped by the add-in is said")

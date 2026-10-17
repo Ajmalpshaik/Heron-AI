@@ -262,9 +262,13 @@ def main():
     check(not re.search(r'ReadString\(request,\s*"apply"\)', capture),
           "and reads no `apply` from the request - there is nothing a caller can "
           "send to keep the view")
-    check(capture.count("SafeRollBack(group)") >= 3,
-          "every way out of a group rolls it back - %d SafeRollBack(group) calls"
-          % capture.count("SafeRollBack(group)"))
+    # THROUGH THE ONE HELPER since 2026-10-17: every group in Heron is rolled
+    # back by RevitFragment.RollBackAndCheck, which checks what the rollback
+    # left (tests/test_rollback_witness.py) - and never keeps one either.
+    undone = len(re.findall(r"RevitFragment\.RollBackAndCheck\(\s*group\b", capture))
+    check(undone >= 3 and "KeepAndWatch(" not in capture,
+          "every way out of a group rolls it back - %d RollBackAndCheck(group) calls, "
+          "and nothing kept through KeepAndWatch" % undone)
 
     print()
     print("Selecting is EXECUTE, not READ and not MODIFY")
