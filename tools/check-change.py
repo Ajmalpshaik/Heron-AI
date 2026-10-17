@@ -341,6 +341,89 @@ def contract_changed(diff):
         if mark in "+-" and top in CONTRACT_KEYS:
             return True
     return False
+
+
+# A CARD'S TOP-LEVEL KEYS THAT ONLY DECIDE WHICH CARD A SENTENCE REACHES.
+# The encoder indexes the identity, the utterances and the purpose
+# (heron_embed._text_for), the re-ranker reads the identity, and Revit reads
+# none of them - D-30's fingerprint is taken over impl/ alone
+# (heron_fragment.fingerprint). The purpose is prose; it is here because the
+# lookup reads it. The list names what IS routing, so a key nobody thought
+# about - contract, risk, revit, runtime, heron-status, proof, capability -
+# stays behaviour. Row 5b-862.
+ROUTING_KEYS = ("semantic-identity", "utterances", "purpose")
+
+
+def card_sides(diff):
+    """The before and after text of one file, rebuilt from a diff that carries
+    the whole file as context: a ' ' line is in both, '-' only before, '+'
+    only after. One diff serves every mode - working tree, --staged, --base
+    and --range - with no second way of asking git for a file."""
+    before, after = [], []
+    in_hunk = False
+    for line in diff.splitlines():
+        if line.startswith("diff --git"):
+            in_hunk = False
+            continue
+        if line.startswith("@@"):
+            in_hunk = True
+            continue
+        if not in_hunk or line.startswith("\\"):
+            continue
+        mark, text = line[:1], line[1:]
+        if mark in ("", " ", "-"):
+            before.append(text)
+        if mark in ("", " ", "+"):
+            after.append(text)
+    return "\n".join(before), "\n".join(after)
+
+
+def routing_only(diff):
+    """True when the one card DIFF describes changed nothing but ROUTING_KEYS
+    and comments. Parsed, not grepped: a comment is gone once parsed, and a
+    line moved under another key is not.
+
+    Fails CLOSED. No diff, no PyYAML, a side that will not parse or is not a
+    mapping - each is False, and the card keeps fragment-behaviour."""
+    if not diff.strip():
+        return False
+    try:
+        import yaml
+    except ImportError:
+        return False
+    before, after = card_sides(diff)
+    try:
+        was, now = yaml.safe_load(before), yaml.safe_load(after)
+    except yaml.YAMLError:
+        return False
+    if not isinstance(was, dict) or not isinstance(now, dict):
+        return False
+
+    def rest(card):
+        return dict((k, v) for k, v in card.items() if k not in ROUTING_KEYS)
+    return rest(was) == rest(now)
+
+
+def routing_only_cards(files, base, staged, rev_range):
+    """Each fragment.yaml whose change is routing text alone, with nothing
+    else in its fragment's folder changed. A card added, deleted, renamed or
+    untracked has no before to compare against, and impl/ or tests/ changed
+    beside a card is behaviour whatever the card says."""
+    folders = collections.OrderedDict()
+    for f in files:
+        parts = f["path"].split("/")
+        if f["path"].startswith("brain/fragments/") and len(parts) > 3:
+            folders.setdefault("/".join(parts[:3]), []).append(f)
+    found = []
+    for folder, changed in folders.items():
+        card = folder + "/fragment.yaml"
+        if [f["path"] for f in changed] != [card] or changed[0]["status"] != "M":
+            continue
+        if routing_only(diff_text(base, staged, rev_range, [card], context=100000)):
+            found.append(card)
+    return found
+
+
 PACKAGE_REF = re.compile(r'^\+.*<PackageReference\s', re.M)
 REQ_LINE = re.compile(r"^\+(?!#)\s*[A-Za-z0-9]", re.M)
 
@@ -383,10 +466,23 @@ def signals(files, base, staged, rev_range):
                  "which Revit releases it protects before removing it",
                  [f["path"] for f in files if f["status"] == "D"])
 
+    # A card whose routing text alone changed moves which card a sentence
+    # reaches and nothing a Revit runs, so a Revit run cannot prove anything
+    # about it - and owing one left 5b-485's utterances and 5b-510's identity
+    # at NEEDS REAL REVIT PROOF for ever. Row 5b-862.
+    words_only = routing_only_cards(files, base, staged, rev_range)
     raise_signal("fragment-behaviour",
                  "a fragment implementation or its lifecycle changed - "
                  "D-30 wants a run against a named model, not a compile",
-                 [p for p in paths if p.startswith("brain/fragments/")])
+                 [p for p in paths
+                  if p.startswith("brain/fragments/") and p not in words_only])
+    raise_signal("fragment-routing",
+                 "only a card's routing text changed - semantic-identity, "
+                 "utterances, comments, or purpose, which is prose but counts "
+                 "as routing because the lookup indexes it - and nothing under "
+                 "impl/ or tests/: which card a sentence reaches can move, "
+                 "what runs in Revit cannot",
+                 words_only)
 
     # The three that need the diff body rather than the path list.
     csprojs = [p for p in paths if p.endswith(".csproj")]
@@ -450,6 +546,9 @@ BY_SIGNAL = {
     "dependency": ["check-licence"],
     "public-contract": ["check-gaps"],
     "fragment-behaviour": ["check-routing", "REAL-REVIT-PROOF"],
+    # Routing text is measured by routing: whether every capability is still
+    # reached, and whether one card now crowds out another. Row 5b-862.
+    "fragment-routing": ["check-routing", "check-intrusion"],
     # Named for what it asks rather than for where the habit came from: read the
     # commit that introduced this, the fixes that followed it, and which Revit
     # releases it was protecting, BEFORE removing it.

@@ -24,8 +24,8 @@ WHAT THIS PROVES
      it states the count grep derives, and fast, with that rule set aside;
      with the rule in place it keeps it, whichever checkout this is - CI
      checks a push to main out on branch main. On any system but Windows it
-     ends by saying there is no Revit and no Heron tools here; asked as
-     Windows, the line is exactly what it was.
+     ends by saying there is no Revit here and Heron serves only its library
+     tools (D-132); asked as Windows, the line is exactly what it was.
   1. "HAS MAIN MOVED?" fires on a merge and a "ready" - by gh, by gh api, and
      by the GitHub MCP tools - fetches origin/main, and names the commits the
      branch does not have. It stays silent for everything else, including
@@ -40,9 +40,17 @@ WHAT THIS PROVES
      a reason for a hook to fail when it cannot be written. A call the hook
      had nothing to decide about writes nothing.
   5. THE WIRING. .claude/settings.json runs the session line at every
-     session start and the main-moved hook for the right tools, with the
+     session start, the main-moved hook for the right tools, with the
      matcher anchored so update_pull_request_branch is not mistaken for
-     update_pull_request, and the exact commands it gives run under bash.
+     update_pull_request, and the local-only note on every prompt - and the
+     exact commands it gives run under bash.
+  6. THE LOCAL-ONLY NOTE warns when a prompt is marked LOCAL and the session
+     is in a cloud container - by the documented CLAUDE_CODE_REMOTE, by the
+     two variables seen in one on 2026-10-17, or, failing both, by not being
+     Windows. The same prompt on Windows, an ordinary Revit question in the
+     cloud, a prompt that only QUOTES the marker, and a payload that will not
+     parse are all silence and exit 0. It never blocks, and the prompt's
+     words never reach the diary.
 
 Every repository here is a throwaway with its own local `origin`, so nothing
 in this suite ever needs the network.
@@ -71,6 +79,7 @@ BIN = os.path.join(SKILL, "bin")
 MOVED = os.path.join(BIN, "main_moved.py")
 LINE = os.path.join(BIN, "session_line.py")
 DIARY = os.path.join(BIN, "hook_log.py")
+LOCAL = os.path.join(BIN, "local_only.py")
 SETTINGS = os.path.join(ROOT, ".claude", "settings.json")
 
 sys.path.insert(0, BIN)
@@ -113,10 +122,14 @@ def clean_env(**extra):
     knowledge folder "could not be asked (ModuleNotFoundError)" and section 4
     failed on the import, not on the hook (row 5b-386). PYTHONUSERBASE names
     that folder directly, and no Heron path is resolved through it.
+
+    The three variables that say "cloud container" go too, because this suite
+    runs in one as often as not, and local_only.py reads them.
     """
     env = dict(os.environ)
     for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE",
-                 "CLAUDE_PROJECT_DIR"):
+                 "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_REMOTE",
+                 "CLAUDE_CODE_REMOTE_SDK_URL", "CCR_AGENT_PROXY_ENABLED"):
         env.pop(name, None)
     env.setdefault("PYTHONUSERBASE", site.getuserbase())
     env.update(extra)
@@ -321,9 +334,9 @@ def main():
         for line in FAILURES:
             print("  %s" % line)
         return 1
-    print("PASSED - the session line and the main-moved advice say what is")
-    print("true, neither ever blocks, and each decision is one diary line")
-    print("outside this repository.")
+    print("PASSED - the session line, the main-moved advice and the local-only")
+    print("note say what is true, none ever blocks, and each decision is one")
+    print("diary line outside this repository.")
     print()
     print("It does not prove the host runs it, or that Git Bash on Windows")
     print("expands the command the same way. That needs the owner's PC.")
@@ -365,8 +378,9 @@ def run_all(home):
     check(raw.isascii() if hasattr(raw, "isascii") else True,
           "every character of the output is ASCII")
 
-    # NOT WINDOWS. The heron MCP server exits on any system but Windows, so a
-    # session started there has no Revit and no Heron tools - and on
+    # NOT WINDOWS. Off Windows the heron MCP server serves its library alone
+    # and no revit_ tool (D-132; it exited there until 2026-10-17), so a
+    # session started there has no Revit - and on
     # 2026-10-17 a task marked LOCAL SESSION was started in a cloud session
     # with nothing at the start saying so. The piped hook answers for the
     # system running this suite; line_for() is asked for the other one, so
@@ -375,10 +389,11 @@ def run_all(home):
            "origin/main (as last fetched). Fragments: 2 PROVEN, 1 DRAFT of 3.")
     if os.name != "nt":
         check(text.startswith(was + " Not Windows:")
-              and "no Revit" in text and "no Heron tools" in text
-              and "NEEDS REAL REVIT" in text,
+              and "no Revit" in text and "only its library tools" in text
+              and "no revit_ tool" in text and "NEEDS REAL REVIT" in text,
               "on this machine, which is not Windows, the line ends by saying "
-              "there is no Revit and no Heron tools here: %s" % text)
+              "there is no Revit here and only the library tools are served: "
+              "%s" % text)
     else:
         check(text == was,
               "on this machine, which is Windows, the line is exactly what "
@@ -751,6 +766,181 @@ def run_all(home):
     else:
         print("  note  the settings command was not run: no bash here, or "
               "Windows - a real session on the PC proves that half")
+
+    prompts = [(m, one) for m, one in commands("UserPromptSubmit")
+               if "local_only.py" in one.get("command", "")]
+    check(len(prompts) == 1, "UserPromptSubmit runs local_only.py exactly once")
+    pmatcher, pentry = prompts[0] if prompts else ("", {})
+    pcommand = pentry.get("command", "")
+    check(pcommand.startswith("python ") and "$CLAUDE_PROJECT_DIR" in pcommand,
+          "as the same python command, found from $CLAUDE_PROJECT_DIR: %s"
+          % pcommand)
+    check(not pmatcher,
+          "with no matcher - the host runs a UserPromptSubmit hook on every "
+          "prompt and would ignore one")
+    check(0 < (pentry.get("timeout") or 0) <= 15,
+          "and a short timeout (%s s) - it runs before every prompt"
+          % pentry.get("timeout"))
+    if os.name != "nt" and shutil.which("bash") and pcommand:
+        got = subprocess.run(["bash", "-c", pcommand],
+                             input=json.dumps({"session_id": "s-5",
+                                               "prompt": "LOCAL SESSION - prove D3"}),
+                             capture_output=True, text=True, encoding="utf-8",
+                             env=dict(env, CLAUDE_PROJECT_DIR=ROOT,
+                                      CLAUDE_CODE_REMOTE="true"), timeout=120)
+        check(got.returncode == 0 and "cloud container" in got.stdout,
+              "and the exact command it gives warns under bash in a cloud "
+              "container")
+    else:
+        print("  note  the prompt hook's command was not run: no bash here, "
+              "or Windows - a real session on the PC proves that half")
+
+    print()
+    print("6. The local-only note - a LOCAL prompt in a cloud container, and only then")
+    print("-" * 72)
+    # The line the owner asked for, word for word - typed here rather than
+    # read from the script, so the suite does not share its answer.
+    cloud_said = ("This prompt is marked LOCAL (it needs Revit on the owner's "
+                  "PC) and this is a cloud container with no Revit. Say so in "
+                  "one line and stop. Tell the owner to start it on the Revit PC.")
+    # The prompt that was started in a cloud session on 2026-10-17, with a
+    # line of Arabic so the Windows code page case below has a byte to die on.
+    incident = (u"LOCAL SESSION — run this on the Windows PC with Revit "
+                u"2024.\n\nProve NEEDS-CHECKING D3 against the open model. "
+                u"في")
+    cloud = local_env(local, CLAUDE_CODE_REMOTE="true")
+    ask = {"session_id": "s-6", "hook_event_name": "UserPromptSubmit",
+           "cwd": work, "prompt": incident}
+
+    before = len(diary_lines(logs))
+    t0 = time.time()
+    parsed, raw, code = hook(LOCAL, ask, cloud)
+    took = time.time() - t0
+    check(code == 0, "it exits 0")
+    check(isinstance(parsed, dict) and (parsed.get("hookSpecificOutput") or {})
+          .get("hookEventName") == "UserPromptSubmit",
+          "the note is nested under hookSpecificOutput, naming UserPromptSubmit")
+    check(context_of(parsed) == cloud_said,
+          "the 2026-10-17 prompt, in a cloud container (CLAUDE_CODE_REMOTE=true), "
+          "gets exactly the one line: %s" % context_of(parsed))
+    check(no_decision(parsed), "and it decides nothing - the prompt goes ahead")
+    check(raw.isascii() if hasattr(raw, "isascii") else True,
+          "every character of the output is ASCII")
+    check(took < 5.0, "and it is fast: %.2f s, before every prompt" % took)
+    after = diary_lines(logs)
+    last = after[-1] if after else {}
+    check(len(after) == before + 1 and last.get("hook") == "heron-local-only"
+          and last.get("decision") == "warned-cloud"
+          and last.get("session") == "s-6",
+          "the diary records the warning and its session: %s" % last)
+    check("NEEDS-CHECKING" not in json.dumps(last),
+          "and never the prompt's own words")
+
+    observed = local_env(local, CLAUDE_CODE_REMOTE_SDK_URL=
+                         "https://example.invalid/v1/code/sessions/x",
+                         CCR_AGENT_PROXY_ENABLED="1")
+    parsed, raw, code = hook(LOCAL, ask, observed)
+    check(code == 0 and context_of(parsed) == cloud_said,
+          "with only the two variables seen in a cloud container on 2026-10-17 "
+          "- no CLAUDE_CODE_REMOTE - it is the same line")
+
+    for label, prompt in (
+            ("a heading '## LOCAL SESSION'", "## LOCAL SESSION\n\nProve D3."),
+            ("a prompt that starts 'Local:'", "Local: prove D3 on the open model"),
+            ("a bold '**Local:**'", "**Local:** prove D3"),
+            ("a line saying 'Run this on the Windows PC'",
+             "Prove D3.\nRun this on the Windows PC with Revit 2024 open."),
+            ("a line saying it must run on the Windows PC",
+             "This must run on the Windows PC, with the model open.")):
+        parsed, raw, code = hook(LOCAL, dict(ask, prompt=prompt), cloud)
+        check(code == 0 and context_of(parsed) == cloud_said
+              and no_decision(parsed),
+              "%s: warned, and not blocked" % label)
+
+    # The prompt that asked for this hook QUOTES the marker in the middle of a
+    # sentence. A plain "contains" would have stopped the very task that built
+    # the hook, so a marker counts only where a line begins.
+    this_task = (u"## Cloud session — no Revit needed\n\n## Why\n"
+                 u"On 2026-10-17 a suggested task that began \"LOCAL SESSION "
+                 u"— run this on the Windows PC with Revit 2024\" was "
+                 u"started as a cloud session.\n\n## Steps\n- **Local-only:** "
+                 u"the prompt starts with or contains `LOCAL SESSION`, starts "
+                 u"with `Local:`, or says it must run \"on the Windows PC\".\n")
+    for label, prompt in (
+            ("an ordinary Revit question", "Select all ducts in the active view"),
+            ("a question naming Revit AND the Windows PC",
+             "Why does Revit 2024 on the Windows PC not show the Heron ribbon?"),
+            ("'local session' in ordinary prose",
+             "In a local session, does the guard hook run?"),
+            ("a sentence that only mentions a LOCAL SESSION task",
+             "Why did the LOCAL SESSION task stop at its first step?"),
+            ("the prompt that asked for this hook, which quotes the marker "
+             "mid-sentence", this_task),
+            ("a cloud prompt with a LOCAL SESSION section for later",
+             "## Cloud part - no Revit needed\nWrite the fragment.\n\n"
+             "## LOCAL SESSION (the owner, later)\nProve it on the model."),
+            ("a cloud prompt whose later step says to run it on the Windows PC",
+             "Write the fragment at DRAFT.\n\n- Run this on the Windows PC "
+             "afterwards to prove it."),
+            ("an empty prompt", "")):
+        before = len(diary_lines(logs))
+        parsed, raw, code = hook(LOCAL, dict(ask, prompt=prompt), cloud)
+        check(code == 0 and raw == "" and len(diary_lines(logs)) == before,
+              "%s, in a cloud container: silent, and no diary line" % label)
+
+    # THE SAME PROMPT LOCALLY. Piped, the hook answers for the machine running
+    # this suite; advice_for() is asked for the other one, so both halves are
+    # proved on either machine - the way line_for() is asked in section 0.
+    parsed, raw, code = hook(LOCAL, ask, env)
+    if os.name == "nt":
+        check(code == 0 and raw == "",
+              "piped on this machine, which is Windows, with no cloud "
+              "variable: silent")
+    else:
+        check(code == 0 and "not Windows" in context_of(parsed),
+              "piped on this machine, which is not Windows, with no cloud "
+              "variable: the fallback line: %s" % context_of(parsed))
+    try:
+        import local_only as LOCAL_MODULE
+    except ImportError as exc:
+        check(False, "local_only.py can be imported (%s)" % exc)
+        LOCAL_MODULE = None
+    advise = getattr(LOCAL_MODULE, "advice_for", None)
+    asks = advise is not None and advise.__code__.co_argcount >= 3
+    check(asks, "advice_for() can be asked about an environment and a system "
+                "other than the ones it runs on")
+    if asks:
+        decision, said = advise(ask, {}, "nt")
+        check(said is None and decision == "local-here",
+              "the same prompt on Windows with no cloud variable - the owner's "
+              "PC - is SILENT (%s)" % decision)
+        decision, said = advise(ask, {"CLAUDE_CODE_REMOTE": "false"}, "nt")
+        check(said is None,
+              "CLAUDE_CODE_REMOTE set to anything but true is not a cloud")
+        decision, said = advise(ask, {"CLAUDE_CODE_REMOTE": "true"}, "nt")
+        check(said == cloud_said,
+              "a cloud session on Windows is still not the owner's PC: warned")
+        decision, said = advise(ask, {}, "posix")
+        check(decision == "warned-not-windows" and bool(said)
+              and "not Windows" in said and "no Revit" in said
+              and "cloud" not in said,
+              "with no cloud variable, not being Windows is the fallback - and "
+              "the line says so rather than claim a cloud: %s" % said)
+
+    for label, payload in (
+            ("a payload that will not parse", "this is not json"),
+            ("an empty stdin", ""),
+            ("a JSON list", "[1, 2]"),
+            ("a prompt that is not text",
+             json.dumps(dict(ask, prompt=["LOCAL SESSION"])))):
+        parsed, raw, code = hook(LOCAL, payload, cloud)
+        check(code == 0 and raw == "", "%s: silence and exit 0" % label)
+
+    parsed, raw, code = hook_utf8(LOCAL, ask,
+                                  dict(cloud, PYTHONIOENCODING="cp1252"))
+    check(code == 0 and context_of(parsed) == cloud_said,
+          "the real prompt sent as raw UTF-8, Arabic and all, is still read "
+          "under the Windows code page")
 
 
 if __name__ == "__main__":

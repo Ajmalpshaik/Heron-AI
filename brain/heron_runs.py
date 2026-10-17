@@ -35,7 +35,14 @@ D-30 promotes a fragment on one recorded proof. The proof names the
 release it was taken on - HERON-FRG-MTX-009 reads that, and it is read
 from there rather than re-parsed here.
 
-If that release also has recorded FAILURES, two records of the same code
+Since D-131 a PROVEN fragment can carry further releases, each an entry
+of `proof.releases`, and every FRESH one is checked exactly as the
+proof's own release is. HERON-FRG-MTX-009's `proven_releases` says
+which those are. A stale entry is not checked - it is evidence about
+code that no longer runs - and the answer names it rather than dropping
+it without a word.
+
+If one of those releases also has recorded FAILURES, two records of the same code
 on the same release disagree. The proof says it worked; the runs say it
 did not. Nothing here decides which is right: a proof is evidence a
 person recorded and a failure is evidence a machine recorded, and
@@ -43,8 +50,8 @@ picking a winner would be this agent overruling one of them.
 
 2. A PROOF STANDING ON A RELEASE NOBODY HAS RUN SINCE
 -------------------------------------------------------
-A proof is one recorded event. A release with a proof and no runs after
-it has evidence from one moment, which is what D-30 asks for and is not
+A proof is one recorded event. A release with a proof, or a fresh
+entry, and no runs after it has evidence from one moment, which is what D-30 asks for and is not
 the same as evidence that it still works.
 
 3. A RUN ON A RELEASE IT DOES NOT COMPILE ON
@@ -133,30 +140,50 @@ def measure(fragment, runs, matrix=None):
 
     by_release = dict((one["revit"], one) for one in counted["versions"])
 
-    # 1 and 2. THE PROOF, read by the agent that owns reading it.
-    standing, why_not = MTX.proof_release(fragment) \
-        if hasattr(fragment, "proof") else (None, "not a fragment object")
-    contradicted, unwatched = None, None
-    if standing:
-        here = by_release.get(standing)
+    # 1 and 2. THE PROOF, and every fresh entry of `proof.releases` (D-131),
+    # read by the agent that owns reading them. `proof_on` stays the proof's
+    # own release, so it means what it meant before an entry could exist.
+    if hasattr(fragment, "proof"):
+        standing, why_not = MTX.proof_release(fragment)
+        proven, stale = MTX.proven_releases(fragment)
+    else:
+        standing, why_not = None, "not a fragment object"
+        proven, stale = {}, []
+    entries = sorted(release for release, source in proven.items()
+                     if source == "proof.releases")
+    # The proof's own release first, so the first finding of each kind is
+    # the one `contradicted` and `unwatched_since_proof` always named.
+    checked = ([(standing, "proof")] if standing else []) + [
+        (release, "proof.releases") for release in entries]
+    contradicted_all, unwatched_all = [], []
+    for release, source in checked:
+        what = ("the proof" if source == "proof"
+                else "the proof.releases entry")
+        here = by_release.get(release)
         if here and here["failed"]:
-            contradicted = {
-                "revit": standing, "failed": here["failed"],
-                "runs": here["runs"],
-                "why": "the proof for '%s' was taken on %s and %d of %d "
+            contradicted_all.append({
+                "revit": release, "source": source,
+                "failed": here["failed"], "runs": here["runs"],
+                "why": "%s for '%s' was taken on %s and %d of %d "
                        "run(s) there failed. Two records of the same code "
                        "on the same release disagree - a proof is evidence "
                        "a person recorded and a failure is evidence a "
                        "machine recorded, and nothing here picks between "
-                       "them." % (who, standing, here["failed"],
-                                  here["runs"])}
+                       "them." % (what, who, release, here["failed"],
+                                  here["runs"])})
         elif not here:
-            unwatched = {
-                "revit": standing,
-                "why": "the proof for '%s' stands on %s and there are no "
+            unwatched_all.append({
+                "revit": release, "source": source,
+                "why": "%s for '%s' stands on %s and there are no "
                        "runs on %s at all. One recorded event is what D-30 "
                        "asks for; it is not the same as evidence that it "
-                       "still works." % (who, standing, standing)}
+                       "still works." % (what, who, release, release)})
+    contradicted = contradicted_all[0] if contradicted_all else None
+    unwatched = unwatched_all[0] if unwatched_all else None
+    found = contradicted_all + unwatched_all
+    named = (["the proof"] if standing else []) + (
+        ["the proof.releases entries on %s" % ", ".join(entries)]
+        if entries else [])
 
     # 3. THE MATRIX, when one was handed in.
     off_matrix, ready = [], []
@@ -184,20 +211,27 @@ def measure(fragment, runs, matrix=None):
         "never_succeeded": counted["never_succeeded"],
         "declared": declared, "of": counted["of"],
         "proof_on": standing, "no_proof_because": why_not,
+        "entries_on": entries, "stale_entries": stale,
         "contradicted": contradicted, "unwatched_since_proof": unwatched,
+        "contradicted_all": contradicted_all, "unwatched_all": unwatched_all,
         "ran_where_it_does_not_build": off_matrix,
         "ready_to_prove": ready,
-        "why": "'%s': %s%s"
+        "why": "'%s': %s%s%s"
                % (who, counted["why"],
                   " The proof stands on %s." % standing if standing
-                  else " No proof names a single release - %s." % why_not),
+                  else " No proof names a single release - %s." % why_not,
+                  " Fresh proof.releases entries stand on %s."
+                  % ", ".join(entries) if entries else ""),
         "unjudged": counted["unjudged"] + [
-            "%s" % (contradicted["why"] if contradicted else
-                    unwatched["why"] if unwatched else
-                    "the proof and the runs do not contradict each other "
-                    "on any release." if standing else
-                    "THERE IS NO PROOF STANDING ON ONE RELEASE (%s), so "
-                    "nothing here could be checked against it." % why_not),
+            "%s%s" % (" ".join(one["why"] for one in found) if found else
+                      "%s and the runs do not contradict each other on "
+                      "any release." % ", ".join(named) if named else
+                      "THERE IS NO PROOF STANDING ON ONE RELEASE (%s), so "
+                      "nothing here could be checked against it." % why_not,
+                      " STALE proof.releases ENTRIES, NOT CHECKED: %s - "
+                      "each was taken against code that has since moved, "
+                      "so HERON-FRG-MTX-009 records it and does not count "
+                      "it." % ", ".join(stale) if stale else ""),
             "%s" % ("%d RELEASE(S) CARRY RUNS BUT DO NOT BUILD ACCORDING "
                     "TO THE MATRIX: %s. Reported, never resolved - "
                     "HERON-FRG-MTX-009 owns what compiles and this agent "
@@ -245,8 +279,8 @@ def main(argv):
         print("  %-6s %d run(s), %d failed, rate %.2f"
               % (one["revit"], one["runs"], one["failed"],
                  one["failure_rate"]))
-    if answer["contradicted"]:
-        print("\n  CONTRADICTED  %s" % answer["contradicted"]["why"])
+    for one in answer["contradicted_all"]:
+        print("\n  CONTRADICTED  %s" % one["why"])
     for one in answer["ran_where_it_does_not_build"]:
         print("  OFF MATRIX    %s" % one["why"])
     print("  ready to prove: %s"

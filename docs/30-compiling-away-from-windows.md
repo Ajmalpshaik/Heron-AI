@@ -199,9 +199,14 @@ assembly. It is a two-minute answer and it is the only kind that is not a guess.
 
 ```bash
 dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 \
-  -p:HeronTfm=net8.0 -p:OutputPath=bin/x64/Debug-net8.0/
+  -p:HeronTfm=net10.0 -p:OutputPath=bin/x64/Debug-net10.0/
 python tests/test_bridge_roundtrip.py
 ```
+
+The framework is the newest runtime `dotnet --list-runtimes` shows, which the suite asks for itself -
+`net10.0` on a machine with only the .NET 10 SDK. When the host is missing the suite exits 3 and prints
+the exact build it wants; **run that one over this block**, which said `net8.0` until 2026-10-17
+([row 5b-942](fragment-issues/section-5b-rows-401-425.md)).
 
 The separate output directory is not decoration. `AppendTargetFrameworkToOutputPath` is false repo-wide,
 so every target framework writes to the same `bin/x64/Debug` — and `check-compile.py` builds this project
