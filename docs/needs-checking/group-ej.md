@@ -6,42 +6,37 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group EJ - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
 
-Found on 2026-10-03 loading `Catch_Basin new.rfa` into Family1 on Revit 2024: Revit opened its modal *"saved
-in a later version of Revit and cannot be retrieved in this version"* dialog inside `LOAD_FAMILY`, and the
-chat read `unknown_outcome`, then `revit_busy`, then `still_running` for over 90 s until somebody closed it
-by hand - [row 5b-300](../fragment-issues/section-5b-rows-276-300.md).
+Until 2026-10-17 a Heron tool waiting on Revit said nothing until Revit answered. A slow fragment, a family
+build or a modeller answering a prompt in Revit can take minutes, and in that time the chat could not tell
+a wait from a hang. [docs/04 §7.1](../04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)
+has what was built.
 
-**What changed.** The add-in subscribes to Revit's `DialogBoxShowing` at startup
-([`HeronDialogWatch`](../../revit/Heron.Revit.Addin/HeronDialogWatch.cs)), and the dispatcher arms it around
-`RevitOperations.Run` alone. While armed, a dialog is answered from
-[`HeronDialogRule`](../../revit/Heron.Revit.Addin/HeronDialogNote.cs): **Cancel, then Close if Revit will not
-take Cancel, and the job fails** - the fragment and move write paths roll their group back before they keep
-anything, and a read returns the refusal. The table holds **no row** yet: a row needs a DialogId Revit really
-reported, and none is recorded. The reply carries `dialogsAnswered` and `dialogs` (each dialog's id, kind,
-Revit's words and the answer); the audit line carries a `dialogs` number; both are absent when no dialog
-opened. The error is `dialog_refused` when Revit confirmed the rollback (or the job only read) and
-`dialog_unconfirmed` otherwise. A dialog already open before a job is untouched: Revit runs no job behind
-it, so the answer is still `revit_busy`. `HeronAsks()` stands the watch down for a prompt of Heron's own; no
-Heron prompt runs inside a job today.
+**What changed.** `revit_change`, `revit_read`, `revit_building_loads`, `revit_sprinkler_hydraulics` and
+`revit_sprinkler_layout` take the MCP SDK's `Context`, hidden from their arguments. While one of them waits
+on Revit, the bridge client's join loop calls back every `WAIT_NOTE_S`
+([`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py)), and the server sends an MCP progress
+notification saying *"Waiting for Revit - N s so far. The modeller may be answering a prompt in Revit."* -
+**only when the host sent a `progressToken`**. Nothing goes down the pipe: the add-in is unchanged and needs
+no rebuild.
 
-**What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027
-(`tools/check-compile.py`, 2026-10-17), and `tests/test_dialog_note.py` builds and runs the table, the record
-and the reply in `tests/Heron.DialogNote.TestHost`. **None of it has run in Revit.** It works only once the
-add-in is rebuilt, deployed for each Revit and Revit restarted. No fragment changed, so no fingerprint moved -
-but a PROVEN fragment that met a dialog before (EJ4) now stops where it used to wait.
+**What is tested and what is not run.** [`tests/test_mcp_stdio.py`](../../tests/test_mcp_stdio.py) runs the
+real server over stdio against [`tests/support/slow_revit_server.py`](../../tests/support/slow_revit_server.py),
+a stand-in Revit that takes the test's `SLOW_S` to answer: a host that sent a token gets a note every
+`WAIT_NOTE_S`, with its token, rising progress and the words, and none after the answer; a host that sent
+none gets nothing. Measured on Linux on 2026-10-17, SDK 2.2.0: a 90-second wait gave 8 notes, 10.0 s
+apart, and the host with no token got none in 30 s. **It has never run in a real chat or against a real Revit**, and Claude
+Code's docs do not say whether it sends a `progressToken` at all
+([WHAT-TO-INSTALL §5a](../WHAT-TO-INSTALL.md#5a-when-a-revit-job-runs-long--claude-codes-own-limits)).
 
-**SCRATCH FILES ONLY, never a working model.** Revit 2020 first: a project from the default metric template
-saved as *Heron Dialog Project.rvt*; a family from *Metric Generic Model.rft* with one extrusion, **saved in
-Revit 2024** as *Heron Later Release.rfa*. Changes ON for EJ1, EJ2 and EJ4.
+**A SCRATCH PROJECT, never a working model.** Any project with a few MEP Spaces, saved as *Heron Wait
+Check.rvt*, in Revit 2020 first. Restart the Claude app first so it starts the new server.
 
 | # | Run | Look for |
 |---|---|---|
-| **EJ1** | Row 300 reproduced. In Revit 2020, *Heron Dialog Project* in front: `revit_change` capability `LOAD_FAMILY` with *Heron Later Release.rfa* | **No dialog stays on screen**, and the answer arrives within seconds - not `unknown_outcome`, `revit_busy` or `still_running`. The error is `dialog_refused`; the message quotes Revit's words and says the job was rolled back; `dialogs` lists the dialog with its **id** (write the id down - it is the first real row's key), its kind and `answer` Cancel or Close; the project has no new family and no new Undo entry. The add-in log has one `Revit dialog during a Heron job` line. The D-30 positive |
-| **EJ2** | Whether `OverrideResult` works for that dialog. Read EJ1's `dialogs` entry | `answer` is Cancel or Close - Revit took the override. If it reads *none - Revit would not take an answer*, the dialog stayed open: close it by hand, record that here, and `BasicFileInfo.Extract` before `LoadFamily` (row 300's other fix) becomes the way for this dialog |
-| **EJ3** | Whether an add-in's own TaskDialog raises `DialogBoxShowing`. A throwaway read fragment, through `run_fragment_read`, whose whole body shows `TaskDialog.Show("Heron EJ3", "Close me if you can see me.")` and returns | **Either** the reply lists it in `dialogs` with its id and `dialog_refused` (it does raise the event - so any Heron prompt inside a job MUST sit inside `HeronAsks()`), **or** the dialog appears and waits for a click (it does not). Write down which, and the id if one came |
-| **EJ4** | "Duplicate Types" is cancelled and the rollback holds. Two scratch projects, each with a drafting view holding a filled region of a type named *Heron Dup* with a **different** fill pattern; `revit_change` capability `TRANSFER_VIEWS_BETWEEN_DOCUMENTS` from one into the other | If Revit asks "Duplicate Types": the reply is `dialog_refused` naming it, and the target project has **no** new view, its *Heron Dup* is unchanged and there is no new Undo entry - the rollback held. If no dialog appears, write that down: the API then answers duplicate types without asking, and this row is answered by that |
-| **EJ5** | The negative. `LOAD_FAMILY` with a family saved in Revit 2020, and any read such as `revit_health` | Neither reply carries `dialogsAnswered` or `dialogs`, the family loads as before, and the audit lines have no `dialogs` number - a job no dialog interrupted reads exactly as it did. **The D-30 negative** |
-| **EJ6** | The modeller's own dialogs are left alone. With no Heron job running, open any Revit dialog that asks something (Manage > Purge Unused, then Cancel) | It shows and waits for the modeller as always. Then, with that dialog still open, ask the chat for any read: the answer is `revit_busy` - the job never started, so nothing touched the open dialog |
-| **EJ7** | EJ1, EJ5 and EJ6 once on Revit 2024 and once on 2027 | The same answers - the watch is in the add-in every release loads |
+| **EJ1** | In a chat, a `revit_read` that takes longer than `WAIT_NOTE_S` - `revit_building_loads` on the scratch project, or a fragment's first run in a fresh Revit session, which compiles it | **The D-30 positive.** While it waits, Claude Code shows *"Waiting for Revit - N s so far ..."* on the tool line, N rising. Write down whether it showed at all: if nothing showed, Claude Code sent no `progressToken` and Heron rightly sent nothing - say so here, and that is the answer to WHAT-TO-INSTALL §5a's open question |
+| **EJ2** | The same chat: `heron_lookup` on any sentence, and a `revit_levels` | **The D-30 negative.** No note - neither tool carries the callback, and both answer at once |
+| **EJ3** | `revit_change` on a scratch-model change that shows a prompt in Revit, left unanswered for over a minute, then answered | Notes the whole time the prompt is open, then the change's own answer, and nothing after it. Undo the change |
+| **EJ4** | EJ1 with the call running past two minutes | Claude Code moves it to a background task; `/tasks` shows the latest note; the answer still arrives |
+| **EJ5** | EJ1 once on Revit 2024 and once on 2027 | The same. The notes are made outside Revit, so the release should not matter |

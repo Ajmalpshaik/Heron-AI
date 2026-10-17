@@ -143,7 +143,7 @@ A Revit dialog that opens **inside** a Heron job has nobody to answer it, so the
 froze `LOAD_FAMILY` for over 90 s). Since 2026-10-17 `HeronDialogWatch` answers it while the dispatcher
 has a job armed - **declined** (Cancel, then Close) unless a row in `HeronDialogRule` says otherwise -
 and the job stops, so its group rolls back and the reply quotes what Revit asked. Built, not yet run in
-Revit ([NEEDS-CHECKING group EJ](../../../docs/needs-checking/group-ej.md)).
+Revit ([NEEDS-CHECKING group EK](../../../docs/needs-checking/group-ek.md)).
 
 - **A prompt Heron itself shows during a job goes inside `using (HeronDialogWatch.HeronAsks())`**, or the
   watch answers Heron's own question for the modeller. `tests/test_dialog_note.py` fails a bare prompt in

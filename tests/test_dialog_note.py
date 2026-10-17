@@ -41,7 +41,7 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 sentence that names a call cannot satisfy a check about it.
 
 Neither half proves Revit takes the answer. That is the PC's, and
-NEEDS-CHECKING group EJ says what it owes.
+NEEDS-CHECKING group EK says what it owes.
 
 MEASURED AGAINST THE CODE AS IT STOOD: with revit/ as it was before this
 change, every wiring section fails and the host does not build - exit 1.
