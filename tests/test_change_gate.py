@@ -102,6 +102,243 @@ def classify(path, areas):
     return CHANGE.classify(path, set(areas), allowed, known)
 
 
+CARD = u"""heron-agent: HERON-REVIT-XXX-001
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-X-001
+# THE IDENTITY NAMES PLANS (a routing note).
+semantic-identity: "count the x in this view"
+kind: query
+domain: revit.x
+capability: REPORT_X
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Counts the x in the view it is handed.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: count
+      role: result
+      type: int
+
+proof:
+  date: '2026-09-13'
+  fingerprint: 0123456789abcdef
+
+revit: ["2024", "2025"]
+runtime: [net48, net8.0-windows]
+tests: tests/
+
+# ROUTING
+#   "how many x"   -> here
+utterances:
+  - how many x
+"""
+
+
+def routing_cards():
+    """Row 5b-862: a card whose routing text alone changed owed a Revit run.
+
+    Every changed path under brain/fragments/ raised fragment-behaviour, which
+    owes REAL-REVIT-PROOF, so an edit to a PROVEN card's identity (5b-510) or
+    utterances (5b-485) - text the lookup reads and Revit never does - stayed
+    NEEDS REAL REVIT PROOF for ever, a run nobody could make mean anything."""
+    import difflib
+
+    def diff_of(before, after, path="brain/fragments/x/fragment.yaml"):
+        """A diff carrying the whole file as context, the shape the tool asks
+        git for."""
+        lines = ["diff --git a/%s b/%s" % (path, path)]
+        lines += list(difflib.unified_diff(before.splitlines(), after.splitlines(),
+                                           "a/" + path, "b/" + path,
+                                           n=100000, lineterm=""))
+        return "\n".join(lines) + "\n"
+
+    print()
+    print("A card whose routing text alone changed owes routing, not a Revit run")
+    judge = getattr(CHANGE, "routing_only", None)
+    check(judge is not None, "check-change can tell a routing edit from a behaviour edit")
+    if judge is None:
+        judge = lambda diff: False                     # so the checks below still RUN
+
+    routing = (
+        ("an utterance added", CARD + "  - count the x here\n"),
+        ("the semantic-identity reworded",
+         CARD.replace("count the x in this view", "count the x in this plan or section")),
+        ("the purpose reworded", CARD.replace("Counts the x in", "Counts every x in")),
+        ("a comment reworded", CARD.replace("NAMES PLANS", "NAMES PLANS AND SECTIONS")),
+        ("a routing row added to the comments",
+         CARD.replace("#   \"how many x\"   -> here",
+                      "#   \"how many x\"   -> here\n#   \"rename x\"     -> RENAME_X")),
+        ("a comment added inside the contract",
+         CARD.replace("      role: result", "      # the number found\n      role: result")),
+    )
+    for what, after in routing:
+        check(judge(diff_of(CARD, after)), "%s is routing text only" % what)
+
+    behaviour = (
+        ("risk", CARD.replace("risk: READ", "risk: MODIFY")),
+        ("a provide's type", CARD.replace("      type: int", "      type: string")),
+        ("a need added", CARD.replace("  provides:",
+                                      "    - name: view\n      type: View\n  provides:")),
+        ("heron-status", CARD.replace("heron-status: PROVEN", "heron-status: DRAFT")),
+        ("the proof", CARD.replace("0123456789abcdef", "fedcba9876543210")),
+        ("the revit list", CARD.replace('["2024", "2025"]', '["2024", "2025", "2026"]')),
+        ("the runtime list", CARD.replace("[net48, net8.0-windows]", "[net48]")),
+        ("the capability", CARD.replace("REPORT_X", "REPORT_XS")),
+        ("an utterance AND risk", CARD.replace("risk: READ", "risk: MODIFY")
+         + "  - count the x here\n"),
+    )
+    for what, after in behaviour:
+        check(not judge(diff_of(CARD, after)),
+              "%s changed is NOT routing text - it keeps fragment-behaviour" % what)
+    check(not judge(diff_of(CARD, CARD + "utterances: [\n")),
+          "a card that no longer parses is not routing text either - it fails closed")
+    check(not judge(""), "and nor is an empty diff, which says nothing either way")
+
+    print()
+    print("...decided per card, against a real git diff")
+    real_root, real_layering = CHANGE.ROOT, CHANGE.layering
+    struct = CHANGE.layering()
+    folder = tempfile.mkdtemp(prefix="heron-routing-")
+
+    def git(*args):
+        return subprocess.run(["git", "-C", folder, "-c", "user.name=t",
+                               "-c", "user.email=t@t", "-c", "core.autocrlf=false"]
+                              + list(args), capture_output=True, text=True)
+
+    def put(rel, text):
+        path = os.path.join(folder, rel)
+        if not os.path.isdir(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        io.open(path, "w", encoding="utf-8", newline="\n").write(text)
+
+    def raised(rev_range=None):
+        files = CHANGE.changed_files(None, False, rev_range) or []
+        found = CHANGE.signals(files, None, False, rev_range)
+        return (sorted((found.get("fragment-routing") or {}).get("paths") or []),
+                sorted((found.get("fragment-behaviour") or {}).get("paths") or []))
+
+    def reset():
+        git("checkout", "--", ".")
+        git("clean", "-fdq")
+
+    x_card = "brain/fragments/count-x/fragment.yaml"
+    x_impl = "brain/fragments/count-x/impl/CountX.cs"
+    x_case = "brain/fragments/count-x/tests/cases.yaml"
+    y_impl = "brain/fragments/count-y/impl/CountY.cs"
+    try:
+        git("init", "-q")
+        put(x_card, CARD)
+        put(x_impl, u"// counts x\n")
+        put(x_case, u"positive: {}\n")
+        put("brain/fragments/count-y/fragment.yaml",
+            CARD.replace("FRG-X-001", "FRG-Y-001").replace("REPORT_X", "REPORT_Y"))
+        put(y_impl, u"// counts y\n")
+        git("add", ".")
+        git("commit", "-qm", "base")
+        CHANGE.ROOT = folder
+
+        put(x_card, CARD + "  - count the x here\n")
+        routed, behaved = raised()
+        check(routed == [x_card] and not behaved,
+              "an utterance added raises fragment-routing and not fragment-behaviour "
+              "(routing %s, behaviour %s)" % (routed, behaved))
+        owed = CHANGE.obliged("low", CHANGE.signals(
+            CHANGE.changed_files() or [], None, False, None))
+        check("REAL-REVIT-PROOF" not in owed and "check-routing" in owed,
+              "so the change owes check-routing and no Revit run (%s)" % ", ".join(owed))
+
+        put(x_impl, u"// counts x, and now y\n")
+        routed, behaved = raised()
+        check(not routed and behaved == [x_card, x_impl],
+              "the same card with its impl/ changed is fragment-behaviour, card and all "
+              "(routing %s, behaviour %s)" % (routed, behaved))
+        reset()
+
+        put(x_card, CARD + "  - count the x here\n")
+        put(x_case, u"positive: {view: Level 1}\n")
+        routed, behaved = raised()
+        check(not routed and x_case in behaved and x_card in behaved,
+              "and so is the card with its tests/ changed")
+        reset()
+
+        put(x_card, CARD.replace("risk: READ", "risk: MODIFY"))
+        routed, behaved = raised()
+        check(not routed and behaved == [x_card],
+              "a card whose risk changed is fragment-behaviour")
+        reset()
+
+        put("brain/fragments/count-z/fragment.yaml", CARD.replace("FRG-X-001", "FRG-Z-001"))
+        routed, behaved = raised()
+        check(not routed and behaved == ["brain/fragments/count-z/fragment.yaml"],
+              "a NEW card is fragment-behaviour - there is no before to compare with")
+        reset()
+
+        put(x_card, CARD.replace("Counts the x in", "Counts every x in"))
+        put(y_impl, u"// counts y twice\n")
+        routed, behaved = raised()
+        check(routed == [x_card] and behaved == [y_impl],
+              "two cards are judged apart: one routing, one behaviour "
+              "(routing %s, behaviour %s)" % (routed, behaved))
+        reset()
+
+        put(x_card, CARD.replace("count the x in this view", "count the x in this plan"))
+        git("commit", "-qam", "identity")
+        routed, behaved = raised("HEAD~1..HEAD")
+        check(routed == [x_card] and not behaved,
+              "and a committed range is read the same way as the working tree")
+
+        # The whole verdict, through main(): a routing-only change with every
+        # gate it owes run is a PASS, not NEEDS REAL REVIT PROOF.
+        CHANGE.layering = lambda: struct
+        record = os.path.join(folder, "record.json")     # untracked; --range never lists it
+        possible = set(CHANGE.ALWAYS)
+        for owed in list(CHANGE.BY_RISK.values()) + list(CHANGE.BY_SIGNAL.values()):
+            possible |= set(owed)
+        possible.discard("REAL-REVIT-PROOF")
+        io.open(record, "w", encoding="utf-8").write(json.dumps({
+            "commit": "0" * 12, "tests": {}, "counts": {},
+            "gates": dict((name, {"result": "PASS", "exit": 0, "source": "derived",
+                                  "detail": ""}) for name in possible)}))
+
+        def verdict(rev_range):
+            caught, held = io.StringIO(), sys.stdout
+            try:
+                sys.stdout = caught
+                code = CHANGE.main(["--intent", "x", "--area", "brain", "--risk", "low",
+                                    "--range", rev_range, "--evidence", record, "--json"])
+            finally:
+                sys.stdout = held
+            try:
+                return code, json.loads(caught.getvalue()).get("status")
+            except ValueError:
+                return code, caught.getvalue()[:200]
+
+        said = verdict("HEAD~1..HEAD")
+        check(said == (0, "PASS"),
+              "a routing-only change with its gates run is PASS, exit 0 (%s)" % (said,))
+        put(x_card, CARD.replace("count the x in this view", "count the x in this plan")
+            .replace("risk: READ", "risk: MODIFY"))
+        git("commit", "-qam", "risk")
+        said = verdict("HEAD~1..HEAD")
+        check(said == (3, "NEEDS REAL REVIT PROOF"),
+              "and a risk change with the same gates run still needs a Revit, exit 3 (%s)"
+              % (said,))
+    finally:
+        CHANGE.ROOT, CHANGE.layering = real_root, real_layering
+        shutil.rmtree(folder, ignore_errors=True)
+
+
 def main():
     print("Scope: a file is judged by the part that owns it, not by its words")
     check(classify("brain/heron_retrieve.py", ["brain"]) == CHANGE.REQUIRED,
@@ -153,6 +390,13 @@ def main():
     frag = CHANGE.obliged("low", {"fragment-behaviour": {}})
     check("REAL-REVIT-PROOF" in frag,
           "changing a fragment owes a run against a model (D-30), not a compile")
+    check("fragment-routing" in CHANGE.BY_SIGNAL,
+          "a card whose routing text alone changed has a signal of its own")
+    words = CHANGE.obliged("low", {"fragment-routing": {}})
+    check("check-routing" in words and "check-intrusion" in words,
+          "and it owes the routing gate and the intrusion measurement")
+    check("REAL-REVIT-PROOF" not in words,
+          "but not a run against a model - nothing that runs in Revit moved")
     pkg = CHANGE.obliged("medium", {"packaging": {}})
     check("check-package" in pkg, "touching delivery owes the packaging gate")
 
@@ -272,6 +516,15 @@ def main():
           "a gate run elsewhere is marked stated, never derived")
     check(EVIDENCE.stated_gates(["check-compile=PROBABLY"]) == {},
           "and a result that is not PASS, FAIL or NOT_RUN is refused")
+    # Row 5b-483 noticed it: the refusal asked for NOT_RUN and the check
+    # compared against the constant, which is "NOT RUN" - so the spelling the
+    # message asked for was the one spelling it refused.
+    for spelled in ("NOT_RUN", "not_run", "NOT RUN"):
+        stated = EVIDENCE.stated_gates(["check-compile=%s:no SDK here" % spelled])
+        check((stated.get("check-compile") or {}).get("result") == EVIDENCE.NOT_RUN,
+              "--stated check-compile=%s is recorded as NOT RUN" % spelled)
+    check((stated.get("check-compile") or {}).get("detail") == "no SDK here",
+          "and keeps its note")
 
     print()
     print("A gate that was already failing is not this change")
@@ -422,6 +675,8 @@ def main():
               "a reworded purpose is not")
         check(judge(full_diff({"purpose": ["-capability: REPORT_X", "+capability: REPORT_Y"]})),
               "and a changed top-level capability: still is")
+
+    routing_cards()
 
     print()
     print("What a child prints is read as UTF-8, whatever the machine's code page")

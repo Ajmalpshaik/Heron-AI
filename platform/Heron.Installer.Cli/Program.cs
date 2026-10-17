@@ -138,6 +138,20 @@ namespace Heron.Installer.Cli
                 return Refused;
             }
 
+            // INSIDE THE STORE CLAUDE'S PRIVATE COPY OF APPDATA, NOTHING LANDS
+            // WHERE IT IS NEEDED - Q-63, ClaudeAppCopy. Asked before anything
+            // else touches the PC: --from below makes a work folder under the
+            // user's temp, and from in here that lands in the copy, which would
+            // make the refusal's "Nothing was changed" untrue (review of #558).
+            // --list changes nothing, so it still lists, and says the same at
+            // its end.
+            var insideClaude = ClaudeAppCopy.Inside(new WindowsClaudeAppLook());
+            if (insideClaude && !asked.ListOnly)
+            {
+                Console.Error.WriteLine(ClaudeAppCopy.Refusal);
+                return Refused;
+            }
+
             // ROUTE 2 - HERON'S FILES ALREADY ON THIS PC, AND NO INTERNET.
             //
             // Q-PE-12 was answered on 2026-09-22: what a person is handed is
@@ -185,17 +199,6 @@ namespace Heron.Installer.Cli
                     Console.Error.WriteLine(verdict.Why);
                     return Refused;
                 }
-            }
-
-            // INSIDE THE STORE CLAUDE'S PRIVATE COPY OF APPDATA, NOTHING LANDS
-            // WHERE IT IS NEEDED - Q-63, ClaudeAppCopy. Asked before PowerShell
-            // runs, for the reason the source gate above gives. --list changes
-            // nothing, so it still lists, and says the same at its end.
-            var insideClaude = ClaudeAppCopy.Inside(new WindowsClaudeAppLook());
-            if (insideClaude && !asked.ListOnly)
-            {
-                Console.Error.WriteLine(ClaudeAppCopy.Refusal);
-                return Refused;
             }
 
             var revit = new PowerShellRevitEnvironment(root);
@@ -343,11 +346,9 @@ namespace Heron.Installer.Cli
 
             var setup = new PythonSetup(root, new ProcessProgramRunner());
             setup.OnStep = delegate (string step) { Console.Out.WriteLine("  " + step); };
-            var done = setup.Run();
+            var done = setup.RunAndSave(PythonSetup.LogPath());
 
-            foreach (var line in done.Lines) Console.Out.WriteLine("  " + line);
-            var saved = done.Save(PythonSetup.LogPath());
-            if (!done.Ready) Console.Out.WriteLine("  " + saved);
+            foreach (var line in done.Shown) Console.Out.WriteLine("  " + line);
             return done.Ready;
         }
 

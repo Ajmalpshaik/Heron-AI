@@ -779,9 +779,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fb.md`](needs-checking/group-fb.md)
 
+## Group FC - put one view where another is, on every sheet it is on: `PLACE_VIEW_ON_SHEET` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fc.md`](needs-checking/group-fc.md)
+
 ## Group FD - a text note's numbering, bullets, indent and bold set through Heron: `EDIT_TEXT_VALUES` mode format, and the read that checks it (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fd.md`](needs-checking/group-fd.md)
+
+## Group FE - change a value and keep a face where it is: `SET_PARAMETER_VALUES_BY_ID` version 3, `keepFace` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fe.md`](needs-checking/group-fe.md)
 
 ## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
 
@@ -794,6 +802,10 @@ Step 6 is finished, and not before. At that point:
 ## Group FY - every column of a schedule in one call, and a heading turned back to horizontal: `SET_SCHEDULE_APPEARANCE` version 3 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fy.md`](needs-checking/group-fy.md)
+
+## Group GW - Heron's own C# compiler on a .NET Revit, whatever another add-in loaded first (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gw.md`](needs-checking/group-gw.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
