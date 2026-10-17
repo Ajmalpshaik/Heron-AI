@@ -101,6 +101,89 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-10-17'
+  by: Ajmal PS
+  model: Heron Forms Scratch (1,713 elements), Revit 2024, session 44252
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s)
+    [X, Y, Z], axisOf Func`2, built 1 solid extrusion on "Ref. Level": X -150 to 150, Y -150
+    to 150, Z 0 to 500 mm, 35.341 L, material <By Category> || 2 solid extrusion on "Ref.
+    Level": X -300 to 300, Y -200 to 200, Z -20 to 0 mm, 4.643 L || 3 solid extrusion on "Center
+    (Front/Back)": X 0 to 600, Y -50 to 50, Z 0 to 400 mm, 9 L, shown in medium, fine | plan,
+    front/back, left/right || 4 solid extrusion on "Center (Left/Right)": X -100 to 100, Y
+    -60 to 60, Z 198.04 to 301.96 mm, 1.871 L || 5 void extrusion on "Ref. Level": X -20 to
+    20, Y -20 to 20, Z 100 to 400 mm || 6 solid revolve on "Center (Front/Back)": X -150 to
+    150, Y -150 to 150, Z 600 to 800 mm, 4.713 L || 7 void revolve on "Center (Front/Back)":
+    X -40 to 40, Y -40 to 40, Z 0 to 80 mm || 8 solid revolve on "Center (Left/Right)": X
+    -320 to 320, Y -320 to 320, Z 80 to 120 mm, 2.369 L || 9 solid revolve on "Center (Front/Back)":
+    X -50 to 50, Y -50 to 50, Z 900 to 1000 mm, 523598.7 mm³ || 10 solid revolve on "Center
+    (Front/Back)": X -260 to 260, Y 0 to 260, Z 0 to 40 mm, 1.734 L, datums 3 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    1, 0, Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)...,
+    (Autodesk.Revit.DB.Level, 2, 0, Ref. Level)], dbNamespace Autodesk.Revit.DB, fieldNames
+    12 item(s) [kind, workPlane, profile, ...], findings 4 item(s) [Built 10 form(s) in this
+    one call - 5 extrusion(s) and 5 rev..., 1 were given a material and 1 their visibility,
+    each read ba..., A void CUTS NOTHING by being made. In a family built through..., ...],
+    flags BindingFlags, formCount 10, formIds 908b0083-a312-44c5-9b53-5daee9877b02-00000b64,908b0083-a312-44c5-9b53-5daee9877b02-00000b69,908b0083-a312-44c5-9b53-5daee9877b02-00000b72,908b0083-a312-44c5-9b53-5daee9877b02-00000b7b,908b0083-a312-44c5-9b53-5daee9877b02-00000b84,908b0083-a312-44c5-9b53-5daee9877b02-00000b8b,908b0083-a312-44c5-9b53-5daee9877b02-00000b92,908b0083-a312-44c5-9b53-5daee9877b02-00000b9a,908b0083-a312-44c5-9b53-5daee9877b02-00000ba0,908b0083-a312-44c5-9b53-5daee9877b02-00000ba6,
+    halfMillimetre 0.00164041994750656, ignoreCase RegexOptions, inPlane 3 item(s) [System.Int32[],
+    System.Int32[], System.Int32[]], invariant CultureInfo, isMaterial Func`2, loopOf Func`3,
+    mm Func`2, mostRows 200, notAFamily false, number Func`2, ownName Func`2, pair Func`2,
+    plain Func`2, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, rowAxis
+    10 item(s) [(null), (null), (null), ...], rowByCategory 10 item(s) [True, False, False,
+    ...], rowCount 10, rowFrom 10 item(s) [0, -20, -50, ...], rowKind 10 item(s) [extrusion,
+    extrusion, extrusion, ...], rowLoops 10 item(s) [System.Collections.Generic.List`1[System.Collections.Generic...,
+    System.Collections.Generic.List`1[System.Collections.Generic..., System.Collections.Generic.List`1[System.Collections.Generic...,
+    ...], rowMaterial 10 item(s) [(null), (null), (null), ...], rowParameter 10 item(s) [(null),
+    (null), (null), ...], rowPlane 10 item(s) [(Autodesk.Revit.DB.Level, 2, 0, Ref. Level),
+    (Autodesk.Revit.DB.Level, 2, 0, Ref. Level), (Autodesk.Revit.DB.ReferencePlane, 1, 0,
+    Center (Front/Back)..., ...], rowShows 10 item(s) [(null), (null), System.Boolean[], ...],
+    rowSnapped 10 item(s) [0, 0, 0, ...], rowSolid 10 item(s) [True, True, True, ...], rowTo
+    10 item(s) [500, 0, 50, ...], sameKind Func`3, shortened Func`2, shortest 0.7803686370625,
+    squash Func`2, volumeWords Func`2. inputs came forms as given. on Heron Forms Scratch'
+  negative_case: 'run with forms=kind=extrusion workPlane=Ref. Level profile=circle 0,0 150
+    startMm=0 endMm=500 solid=true material=by category kind=extrusion workPlane=Ref. Level
+    profile=rect -300,-200 300,200 | circle 0,0 50 startMm=-20 endMm=0 solid=true kind=extrusion
+    workPlane=Center (Front/Back) profile=0,0; 600,0; 600,100; 100,100; 100,400; 0,400 startMm=-50
+    endMm=50 solid=true detailLevels=medium, fine kind=extrusion workPlane=Center (Left/Right)
+    profile=polygon 0,250 60 6 startMm=-100 endMm=100 solid=true kind=extrusion workPlane=Ref.
+    Level profile=rect -20,-20 20,20 startMm=100 endMm=400 solid=false kind=revolve workPlane=Center
+    (Front/Back) profile=0,600; 150,600; 0,800 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360
+    solid=true kind=revolve workPlane=Ref Lvl profile=0,0; 40,0; 40,80; 0,80 axisLine=0,0
+    0,100 startDegrees=0 endDegrees=360 solid=false kind=revolve workPlane=Center (Left/Right)
+    profile=circle 300,100 20 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+    kind=revolve workPlane=Center (Front/Back) profile=0,900; arc 50,950 0,1000 axisLine=0,0
+    0,1000 startDegrees=0 endDegrees=360 solid=true kind=revolve workPlane=Center (Front/Back)
+    profile=200,0; 260,0; 260,40; 200,40 axisLine=0,0 0,1000 startDegrees=0 endDegrees=180
+    solid=true instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned along Func`3, axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, built , datums
+    3 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane,
+    0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.Level, 2, 0, Ref. Level)], dbNamespace
+    Autodesk.Revit.DB, fieldNames 12 item(s) [kind, workPlane, profile, ...], findings 1 item(s)
+    [Nothing was built - none of the 10 row(s). Row 7: no referen...], flags BindingFlags,
+    formCount 0, formIds , halfMillimetre 0.00164041994750656, ignoreCase RegexOptions, inPlane
+    3 item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant CultureInfo, isMaterial
+    Func`2, loopOf Func`3, mm Func`2, mostRows 200, notAFamily false, number Func`2, ownName
+    Func`2, pair Func`2, plain Func`2, problems 1 item(s) [Row 7: no reference plane or level
+    is called "Ref Lvl". This...], refused Nothing was built - none of the 10 row(s). Row
+    7: no reference plane or level is called "Ref Lvl". This family has Center (Front/Back),
+    Center (Left/Right), Ref. Level., revitAssembly RuntimeAssembly, rowAxis 9 item(s) [(null),
+    (null), (null), ...], rowByCategory 9 item(s) [True, False, False, ...], rowCount 10,
+    rowFrom 9 item(s) [0, -20, -50, ...], rowKind 9 item(s) [extrusion, extrusion, extrusion,
+    ...], rowLoops 9 item(s) [System.Collections.Generic.List`1[System.Collections.Generic...,
+    System.Collections.Generic.List`1[System.Collections.Generic..., System.Collections.Generic.List`1[System.Collections.Generic...,
+    ...], rowMaterial 9 item(s) [(null), (null), (null), ...], rowParameter 9 item(s) [(null),
+    (null), (null), ...], rowPlane 9 item(s) [(Autodesk.Revit.DB.Level, 2, 0, Ref. Level),
+    (Autodesk.Revit.DB.Level, 2, 0, Ref. Level), (Autodesk.Revit.DB.ReferencePlane, 1, 0,
+    Center (Front/Back)..., ...], rowShows 9 item(s) [(null), (null), System.Boolean[], ...],
+    rowSnapped 9 item(s) [0, 0, 0, ...], rowSolid 9 item(s) [True, True, True, ...], rowTo
+    9 item(s) [500, 0, 50, ...], sameKind Func`3, shortened Func`2, shortest 0.7803686370625,
+    squash Func`2, volumeWords Func`2. inputs came forms as given. on Heron Forms Scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4bd9ebf8e66973be
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
