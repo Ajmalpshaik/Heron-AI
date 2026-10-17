@@ -257,6 +257,14 @@ QUESTIONS = [
     # at DRAFT and at PROVEN.
     ("which categories can be filtered",
      "5b-481: answered SET_VIEW_FILTER_CATEGORIES"),
+    # 5b-560: rewordings of the three questions LIST_VIEWS_ON_SHEET version 2
+    # declares, written before its wording was chosen. Each reached a write on
+    # the trained model on main 5fce1f2 and a read with version 2.
+    ("what sheets show this legend", "5b-560: answered CREATE_LEGEND_VIEW"),
+    ("where is this legend on each sheet", "5b-560: answered CREATE_LEGEND_VIEW"),
+    ("is the legend going off the sheet", "5b-560: answered CREATE_LEGEND_VIEW"),
+    ("do any viewports overlap on the sheets",
+     "5b-560: answered ALIGN_VIEWPORTS_ACROSS_SHEETS"),
 ]
 
 # A question about the project's own setup reaches the tool that READS it.
@@ -294,6 +302,14 @@ DECLARED = [
     # so no READ named them until LIST_VIEWS_ON_SHEET was written (2026-10-09).
     ("what views are on this sheet", "LIST_VIEWS_ON_SHEET",
      "146: answered PLACE_VIEWS_ON_SHEET on both"),
+    # 5b-560: version 2 reads every sheet a view is on, and each box against
+    # the title block and the other boxes - measured on main 5fce1f2.
+    ("which sheets is this legend on", "LIST_VIEWS_ON_SHEET",
+     "5b-560: answered CREATE_LEGEND_VIEW on both"),
+    ("does any view run off the sheet", "LIST_VIEWS_ON_SHEET",
+     "5b-560: answered CREATE_SHEET_LIST on spelling, CENTER_VIEWPORTS_ON_SHEETS on the model"),
+    ("check the sheets for overlapping viewports", "LIST_VIEWS_ON_SHEET",
+     "5b-560: answered ALIGN_VIEWPORTS_ACROSS_SHEETS on both"),
     # 5b-468: questions about walls and their levels, each answered by
     # SET_WALL_CONSTRAINTS - a write that re-hosts walls - on main 2e6fe29.
     ("which level are these walls on", "READ_ELEMENT_PARAMETERS",
