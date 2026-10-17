@@ -654,3 +654,86 @@ model, a file on a network folder), what the add-in's dialog watch does with one
 the model it works in, and the methods ask the modeller to save first.
 
 ---
+
+### 🟡 Q-70 — On a PC whose Claude app keeps its own copy of `%APPDATA%\Heron`, which `heron.config` should Heron believe, and should it say when the two differ? *(found 2026-10-17)*
+
+**What was seen**, on the owner's laptop on 2026-10-17, timing the fragment warm-up for
+[Group DA](../needs-checking/group-da.md) ([row 5b-1004](../fragment-issues/section-5b-rows-401-425.md)).
+The Claude desktop app there is a packaged Windows app, and it keeps a private copy of `%APPDATA%\Heron` -
+`config\heron.config` included - under its own `LocalCache` folder - the same copy Q-63,
+above, asks about for packages and data. So there are **two settings files on one PC**:
+
+| who | uses |
+|---|---|
+| Heron's MCP server, through `config_path()` in [`heron_config.py`](../../mcp/client/heron_config.py) | the copy |
+| a Revit started from a chat's shell | the copy |
+| a Revit the owner starts himself | the real file |
+
+Each side writes only its own. A switch on the ribbon - **Changes, Admin or Publish** - pressed in one kind of
+Revit is not seen by the other kind, nor by the server when the Revit is one the owner started. Measured
+both ways that day: `fragments.warmUp = false` written from the chat's shell landed in the copy and the real
+file kept `true`, and the Changes switch pressed in a chat-started Revit rewrote the copy and left the real
+file as it was.
+
+**What is still safe, read from the code - NOT RUN on the laptop as a case of its own.** The add-in decides
+every change from ITS OWN file: the permission gate loads `heron.config` fresh on every call
+([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 339), and its refusal names the
+file it read ([`HeronPermissions.Explain`](../../platform/Heron.Core/HeronPermissions.cs)). So the server's
+copy can never open a gate Revit has closed. What it can do is **say the wrong thing**:
+
+1. **`revit_health`'s write-gate line** is built from the server's file
+   ([`heron_mcp_server.py`](../../mcp/server/heron_mcp_server.py) `revit_health`,
+   [`heron_health.py`](../../mcp/server/heron_health.py) line 177). It can say *"closed - Heron cannot change the
+   model"* while the Revit in front has Changes on, or the reverse. `heron_diagnose.py` reads the same file.
+2. **The server's waiting times come from its file too** - `response_timeout`, `fragment_timeout` and
+   `try_once_timeout` are worked out from `revit.operationTimeoutSeconds`, `revit.askTimeoutSeconds` and
+   `write.askBeforeKeeping`, so that the server always waits longer than the add-in. If the two files differ
+   on one of those, that can turn round: the server gives up first and reports "no answer" while Revit is
+   still working, or while the Keep or Discard box is still open - and a change is sent so that it cannot be
+   asked twice. This is the failure `heron_config.py` was written to prevent. Reasoned from the code, not
+   seen; nobody has edited a timeout on the laptop.
+3. **Two Revits on one PC disagree with each other** when one was started from a chat and one by the owner.
+   The add-in re-reads the Companion switch every two seconds because *"another Revit ... may have flipped
+   the shared setting"* ([`HeronLiveState.cs`](../../revit/Heron.Revit.Addin/HeronLiveState.cs)); on this PC
+   the setting is not shared.
+
+**What does NOT help:** pointing `HERON_CONFIG` at the real file's path. The app redirects the path itself -
+the row's `warmUp = false` was written to the real path, spelled in full, and landed in the copy.
+Reasoned from that, not tried.
+
+**The shapes the owner chooses between:**
+
+1. **Heron names the file it read, in `revit_health`.** One line under the write gate, e.g. *"read from
+   ...\LocalCache\Roaming\Heron\config\heron.config"*. **Cost:** the Python side only - one line and its test;
+   no add-in rebuild, no protocol change. **What it leaves:** the owner has to notice the `LocalCache` in the
+   path and know what it means; the line can still be wrong about the Revit in front, and the waiting times
+   (2) and the two Revits (3) are untouched.
+2. **The add-in reports its own switches and the server warns when they differ - recommended.** The bridge's
+   `info` reply ([`BridgeServer.cs`](../../revit/Heron.Bridge/BridgeServer.cs) line 633) gains the file the add-in
+   read and the values it holds for the switches and the timeouts. `info` already answers without taking the
+   Revit and outside the gate, so it is no new operation - the `ping`, `info`, `release` allow-list in
+   [`tests/test_tool_registry.py`](../../tests/test_tool_registry.py) stays three. `revit_health` then states
+   the gate as **Revit** has it, and says plainly when the server's file differs and which file each side read.
+   **Cost:** a C# change in `Heron.Bridge`, rebuilt and redeployed for every release 2020 to 2027, and a run on
+   the laptop with both kinds of Revit; an older add-in sends nothing, so the server must say *"not reported"*
+   rather than guess. Taking the server's waiting times from Revit's reported values as well (2) is a second
+   step of the same change, and is more work: one of them, `RESPONSE_TIMEOUT_S` in
+   [`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py), is read once when the client starts,
+   before any Revit has answered. Settles (1)
+   and, with the second step, (2); not (3) - two Revits still read two files.
+3. **Change nothing, and write it down.** A paragraph in [WHAT-TO-INSTALL §1b](../WHAT-TO-INSTALL.md), where
+   the Store build is already described: press the switches in a Revit you started yourself, and do not
+   trust the write-gate line from a chat on such a PC. **Cost:** nothing to build. All three problems above
+   stay true, and the rule has to be remembered by whoever is at the PC.
+
+Q-63's shape 3 - Heron's data kept outside `%APPDATA%` - would settle this too, if `heron.config` moved with it,
+since both sides would then read one file. That is a decision about the platform boundary and costs what
+Q-63 says; it is not repeated here as a fourth shape.
+
+**Not checked:** whether the office PC has a copy at all - a PC where Claude is not a packaged app has
+none; and which other keys of `heron.config` differ between the two files on the laptop today.
+
+**Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: the add-in still decides every
+change from its own file, and `revit_health` still reports the server's.
+
+---
