@@ -400,6 +400,33 @@ decision to make it.
 
 ---
 
+### ✅ Q-64 — Is a picture of a Revit view "model data" under D-82, or may it be handed to the chat? → **Not model data** *(found and answered 2026-10-17)*
+
+**What is asked.** The owner asked on 2026-10-17 for a read-only tool that returns a PNG of a Revit view
+into the chat, so the AI can check its own work. It is built as `revit_view_image` and the add-in's
+`capture_view` - [D-123](../decisions/D-123.md), **Proposed** - and it is not merged.
+[D-82](../decisions/D-82.md) says *"Revit models, families, model data - never leave the PC"*;
+[D-26](../decisions/D-26.md) put element data - counts, sizes, parameters - in the conversation. A
+picture sits between the two, and neither was written with one in mind.
+
+**The two answers, and what each does:**
+
+1. **Not model data.** It cannot be opened or rebuilt into a model, and it is what the model shows, the
+   same kind of thing as a count. The tool ships as D-123 describes.
+2. **Model data.** It shows the geometry and layout of the building at a glance, and in the conversation
+   it has gone to the cloud. **The tool does not ship**: its pull request is closed, or the tool and
+   `capture_view` are taken out of it before merge.
+
+D-123 holds the second thing to accept with the first - that `capture_view` is the first ANALYZE
+operation to open a transaction, always rolled back - and [NEEDS-CHECKING group ER](../needs-checking/group-er.md)
+the run that would prove it.
+
+**Answer: NOT MODEL DATA — 2026-10-17. See [D-123](../decisions/D-123.md), now Accepted.** The owner:
+*"A picture is not model data, ship it"*. `revit_view_image` ships as D-123 describes; it is still
+DRAFT until [NEEDS-CHECKING group ER](../needs-checking/group-er.md) is run in Revit.
+
+---
+
 ### 🟠 Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
 
 **What was found**, preparing [NEEDS-CHECKING Group EQ](../needs-checking/group-eq.md) - a core set of PROVEN
