@@ -30,8 +30,29 @@ with `--require-hashes` into a fresh environment and `tests/test_mcp_serves.py` 
 pinned package arrives as a hash-matched Windows wheel for Python 3.11 to 3.14 (`pip download
 --platform win_amd64`); the installer, its window and `heron-install` build; `tests/Heron.Installer.TestHost`
 runs every decision against fakes and starts the real `ProcessProgramRunner`. **Nothing here has run on
-Windows**: not pip into a real user folder, not heron-ready there, not the window's new lines, not the
-identity test inside a Store-built Claude.
+a person's Windows PC**: not the window's new lines, not an install into a real Revit's add-ins folder,
+not the identity test inside a Store-built Claude.
+
+**What runs on Windows in CI, since 2026-10-17.** [`.github/workflows/windows.yml`](../../.github/workflows/windows.yml)
+runs on every pull request that touches the installer projects, the lock, `tools/heron-ready.py` or
+`tools/build-release-assets.py`, and on demand - on a GitHub `windows-latest` runner, with no Revit and no
+person. Every suite there must exit 0; a 3 fails the job.
+
+- **EP7's measurable half**, on Python 3.12 and on 3.13: `python -m pip install --user --require-hashes -r
+  requirements-lock.txt` into the runner's real user folder, failing if pip builds anything from source;
+  then `tests/test_mcp_serves.py`; then `tools/heron-ready.py --check`, which must exit 1 with exactly one
+  FIX - *the Heron add-in is not installed for any Revit*. That is the true answer on a machine with no
+  Revit, so section 7 is checked as a negative on a real `%APPDATA%`; a second FIX, a different one, or
+  READY fails the job. heron-ready is not edited and no add-in is faked to make it pass.
+- **`tests/test_installer_engine.py` on Windows**, where the host also checks
+  `WindowsClaudeAppLook.SameEntry` against real folders: a folder and a junction to it answer `true`, two
+  different folders `false`, a missing path `null`. `ProcessProgramRunner` starts `dotnet` and `cmd` there.
+- **Both executables publish on Windows** through `build-release-assets.py`'s own `build_installers`, and
+  `heron-install --help` exits 0.
+
+**EP7 stays a row**: CI installs from a checkout, not from an unzipped `heron-project.zip`, on a runner
+rather than a modeller's PC. **EP1 to EP6 and EP8 still need the owner's PC** - each needs a Revit, the
+window, a Store-built Claude, or a person to watch.
 
 **Build the installer from this branch first** - `python tools/build-release-assets.py --out dist` on a PC
 with the .NET 10 SDK, or a `workflow_dispatch` rehearsal of `release.yml` - and unzip
