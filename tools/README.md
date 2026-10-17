@@ -2386,6 +2386,7 @@ contents.
 python tools/time-family-build.py CHAT.jsonl --audit AUDIT          # the report
 python tools/time-family-build.py CHAT.jsonl --audit AUDIT --json   # for a machine
 python tools/time-family-build.py CHAT.jsonl --since 2026-10-09T13:33:00Z --until 2026-10-09T13:55:00Z
+python tools/time-family-build.py CHAT.jsonl --audit AUDIT --journal journal.0016.txt --journal-utc-offset +03:00
 python tools/time-family-build.py --form-cards                      # which capabilities build forms
 ```
 
@@ -2416,9 +2417,28 @@ hand-back's characters both come from it ([row 5b-1030](../docs/fragment-issues/
 server alone is always NOT MEASURED:** it keeps each call's seconds in memory only
 (`heron_companion.Activity`).
 
+**Since [D-126](../docs/DECISIONS.md), Revit's own time holds the modeller's Keep box.** The audit's `ms`
+runs round the whole job, and the *"Keep what Heron just did?"* box is answered inside it
+([row 5b-1031](../docs/FRAGMENT-ISSUES.md)). `--journal` (repeatable) reads the box from Revit's own
+`journal.NNNN.txt`, UTF-16 LE or latin-1: the `TaskDialog "Keep what Heron just did?"` line it is shown
+on, the `"TaskDialogResult"` line it is answered on and the button text after it, each line at the last
+stamp at or before it. It reports the boxes in the whole journal, the boxes in the chat's minutes and
+their seconds shown to answered, how many were not kept (any answer but *Keep it* - D-126 makes Esc and
+the close button a Discard too), the boxes answered inside this chat's runs - between an audit line's
+`at` less its `ms` and its `at` - and **Revit's own time less the boxes**: in all, for the first runs, and
+run by run, each run with its audit line and its box's journal lines. A shown stamp earlier than its run
+began is cut to the run's start, and the run says so. The stamps are the PC's local time with no zone,
+so `--journal-utc-offset +03:00` says how far that clock is from UTC (one behind it is written
+`--journal-utc-offset=-05:00`); without it only the whole journal's boxes are counted and the rest is NOT
+MEASURED, and without `--journal` all of it is. A build timed before D-126 had no box, so its Revit time
+compares with *less the boxes*, not with the figure the box is inside.
+
 **A report, not a gate: it exits 0 whatever it finds**, and 2 only when a file it was named is not there.
 [`tests/test_time_family_build.py`](../tests/test_time_family_build.py) holds it to synthetic transcripts
 and audit lines shaped like both builds, with a negative case - a transcript with no Heron call reports
-zero calls and NOT MEASURED for Revit's time, and to a reply in that JSON-wrapped shape. Run once on the
-owner's own transcript, on 2026-10-17 ([docs/04 §8.7](../docs/04-heron-mcp.md)) - the run that found row
-5b-1030; not re-run there since the fix.
+zero calls and NOT MEASURED for Revit's time - to a reply in that JSON-wrapped shape, and to synthetic
+journals: two boxes inside two runs, one in the chat's minutes outside every call and one before it, and
+a journal with no box, which leaves Revit's own time as it was. Run on the owner's own transcript on
+2026-10-17 ([docs/04 §8.7](../docs/04-heron-mcp.md)) - the run that found rows 5b-1030 and 5b-1031 - and
+again the same day with both fixes and that build's real journal: 10 Keep boxes, 80.9 s, Revit's own time
+less the boxes 20.7 s of 101.6 s, 44 forms ([row 5b-1031](../docs/FRAGMENT-ISSUES.md) names the run).
