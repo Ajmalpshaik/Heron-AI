@@ -45,6 +45,7 @@ IT EXITS 3 WHEN .NET IS ABSENT AND THE WIRING PASSED, and that is NOT a pass:
 the rule was not run.
 """
 
+import glob
 import io
 import os
 import re
@@ -205,6 +206,44 @@ def wiring():
     check(0 < shown_at < ends < ask.find("return Keep;"),
           "the isolation is ended INSIDE the group, before the answer goes back to be "
           "kept or rolled back (D-115)")
+
+    # ROW 5b-621: Revit's DefaultButton setter refuses a button the box does
+    # not have yet. Set in the TaskDialog's initializer, before AddCommandLink,
+    # it threw "Corresponding button not found" on the first kept change in
+    # Revit 2024 - and threw from outside the guard round Show, so the
+    # isolation was never ended and the chat got the raw .NET sentence.
+    print("\n3b. the box is built where a failure to build it is a Discard, its default set last")
+    made = ask.find("new TaskDialog(")
+    link1 = ask.find("AddCommandLink(TaskDialogCommandLinkId.CommandLink1")
+    link2 = ask.find("AddCommandLink(TaskDialogCommandLinkId.CommandLink2")
+    default = ask.find("DefaultButton = TaskDialogResult.CommandLink2")
+    check(0 <= made < link1 < link2 < default,
+          "Discard is made the default only AFTER both command links are added - "
+          "Revit refuses a default the box does not have yet")
+    check(ask.count("DefaultButton") == 1,
+          "and it is set in one place only, never also in the initializer")
+    tries = [m.start() for m in re.finditer(r"\btry\s*\{", ask) if m.start() < made]
+    guard = tries[-1] if made >= 0 and tries else -1
+    caught = ask.find("catch", guard) if guard >= 0 else -1
+    check(guard >= 0 and 0 <= made < shown_at < caught
+          and ask.find("catch", guard, shown_at) < 0,
+          "the box is built inside the same try that guards box.Show(), so a box that "
+          "cannot be built is answered as Closed - rolled back, nothing kept")
+    check(0 <= caught < ends,
+          "and the isolation is ended after that guard, whichever way it went")
+    # EVERY TASKDIALOG IN THE ADD-IN, NOT JUST THIS ONE: the same setter
+    # refuses the same mistake in any box with command links.
+    for path in sorted(glob.glob(os.path.join(ROOT, "revit", "**", "*.cs"), recursive=True)):
+        if os.sep + "obj" + os.sep in path or os.sep + "bin" + os.sep in path:
+            continue
+        text = code(path)
+        for hit in re.finditer(r"DefaultButton\s*=\s*TaskDialogResult\.(CommandLink\d)", text):
+            box_at = text.rfind("new TaskDialog(", 0, hit.start())
+            added = text.find("AddCommandLink(TaskDialogCommandLinkId." + hit.group(1),
+                              box_at, hit.start()) if box_at >= 0 else -1
+            check(box_at >= 0 and added > box_at,
+                  "%s: DefaultButton = %s comes after that link is added to its box"
+                  % (os.path.relpath(path, ROOT).replace(os.sep, "/"), hit.group(1)))
 
     showing = NOTE_SUITE.body_of(executor, "View Isolate(")
     check("view.IsTemporaryHideIsolateActive()" in showing,

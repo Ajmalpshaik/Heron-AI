@@ -9,7 +9,7 @@ semantic-identity: "which of these actually intersect those"
 kind: action
 domain: revit.qa
 capability: FIND_CLASHES
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -49,7 +49,20 @@ purpose: >
   CARRIED** - `clashes`, `clashing`, `clear` and `notChecked` stay this
   model's own (FRAGMENT-ISSUES row 75). Only model elements are read from a
   link, never its views or sheets. Links nested inside a link are not read,
-  and are counted in the answer. This is version 2, and DRAFT until proved.
+  and are counted in the answer.
+
+  **WHAT EACH ONE PASSES THROUGH, AND A PARAMETER AGAINST IT (version 3).**
+  `passedThrough` names, element by element, everything its solid passes
+  through - in the links, in `against`, and with `includeHost` in this
+  model - with the category, 'Family: Type', its thickness (a wall's width,
+  a floor's layers, anything else its depth along the element's facing or
+  run) and which side of the element's centre it sits. `categories` says
+  what is looked for: left out, the building list above; `all`, any model
+  category; or names. `compareParameter` names a length on the element, and
+  `comparison` lists every element whose value differs from the thickness
+  it passes through - `mismatched` holds them, this model's own. An element
+  with no solid is tested by its bounding box, and says so. Version 3, and
+  DRAFT until proved.
 
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the
@@ -79,6 +92,39 @@ contract:
       type: bool
       source: request
       optional: true
+    # VERSION 3. What is looked for in the links and, with includeHost, in
+    # this model. Left out: "building" - version 2's walls, floors, roofs,
+    # ceilings, columns, beams, foundations and stairs. "all" is every model
+    # category but rooms, spaces, areas and link instances. Or names as
+    # Visibility/Graphics shows them, or API names - "Walls, Air Terminals",
+    # OST_Walls - comma separated. One name this model does not know reads
+    # NOTHING and says which. A STRING ON PURPOSE: the binder refuses a blank
+    # IList<BuiltInCategory> and has no word for "all" (row 5b-481's reason).
+    - name: categories
+      type: string
+      source: request
+      optional: true
+      absent: building
+    # VERSION 3. true also searches THIS model, with `categories` and the
+    # same solid test, the elements handed in left out. Lines only, in
+    # passedThrough and comparison - `clashes` stays `against`'s. Absent is
+    # false. It exists because `against` takes the selection or nothing.
+    - name: includeHost
+      type: bool
+      source: request
+      optional: true
+    # VERSION 3. A LENGTH parameter on each element - instance first, then its
+    # type; a Length, or one Revit shows in a length unit, as a duct's Width
+    # (a Duct Size) - compared with the thickness of everything it passes
+    # through.
+    # Left out: "none" - nothing compared. Two parameters by the name read
+    # NOT READ (D-54 s3, 5b-203); one that is not a length is named, never
+    # compared.
+    - name: compareParameter
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: clashes
       role: result
@@ -116,6 +162,27 @@ contract:
       # value (D-54 s3, FRAGMENT-ISSUES 5b-203).
       role: accounting
       type: IList<string>
+    - name: passedThrough
+      # VERSION 3. The first line says where it looked and for what, then one
+      # line per element that passes through something: each hit's place (a
+      # link by its title, or this model), category, 'Family: Type', id,
+      # thickness and side. Then the elements through nothing and the ones NOT
+      # tested. Text: a linked id is never carried (row 75).
+      role: accounting
+      type: IList<string>
+    - name: mismatched
+      # VERSION 3. This model's elements whose compareParameter differs from
+      # the thickness of something they pass through, by more than Revit's
+      # vertex tolerance. Their own ids, so selecting them is safe. Empty
+      # when no parameter is named.
+      role: result
+      type: IList<ElementId>
+    - name: comparison
+      # VERSION 3. The first line counts differ, agree, nothing to compare
+      # with, not read and NOT tested; then one line per difference - the
+      # element, its value, by how much, and what it passes through.
+      role: accounting
+      type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -125,6 +192,9 @@ compatibility-note: >
   One implementation for every release. `ElementIntersectsElementFilter` and
   the `FilteredElementCollector(Document, ICollection<ElementId>)` constructor
   are unchanged 2020 to 2027, and no ElementId is built from an integer.
+  Version 3's length check reaches `Definition.GetDataType` (2022 on) or
+  `Definition.ParameterType` (2020 to 2022) by name, because the add-in
+  compiles fragments with no release symbols (5b-181).
 
 # TRAP - OBSERVED ELSEWHERE, AND FIXED HERE. Added 2026-09-23.
 #
@@ -161,6 +231,18 @@ compatibility-note: >
 #                                        AUDIT_MEP_OPENINGS - openings against
 #                                        services, not services against each
 #                                        other
+#   "check the cut-out wall width against the walls" -> here, version 3 -
+#                                        categories Walls, compareParameter
+#                                        Wall Width, includeLinks. The wall is
+#                                        usually a link
+#   "what does each opening cut through in the links" -> here, version 3 -
+#                                        categories all, includeLinks; the
+#                                        answer is passedThrough
+#   "are the sleeves big enough for the pipes" -> CHECK_SLEEVE_SIZE - the
+#                                        hole against what goes THROUGH it,
+#                                        not against what it goes through
+#   "what is touching this beam"     -> SELECT_TOUCHING - ONE element
+#                                        against the model
 utterances:
   - which ducts clash with the beams
   - find the clashes
@@ -173,3 +255,11 @@ utterances:
   # clash" reached JOIN_GEOMETRY, a WRITE that joins walls and floors, on
   # both - a question answered by the tool that changes the model.
   - which of these clash
+  # ADDED 2026-10-17 with version 3 (row 5b-760). The first is the job's own
+  # shape; the second is what each opening passes through, any category; the
+  # third is the owner's own words on 4355-BHVD-3D-21P60-ST001I, which reached
+  # CREATE_OPENING - a write - on his PC's backend (the trained model with the
+  # re-ranker), measured on main 5fce1f2.
+  - check the cut-out wall width against the walls
+  - what does each opening cut through in the links
+  - check all the cut-out wall width
