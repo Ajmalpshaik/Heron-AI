@@ -136,6 +136,26 @@ No stack traces, no exception class names, no developer jargon.
 
 Use a status line, a results list, or the log for anything that is merely informative.
 
+### Revit's own dialogs during a job
+
+A Revit dialog that opens **inside** a Heron job has nobody to answer it, so the job hangs behind it
+([row 5b-300](../../../docs/fragment-issues/section-5b-rows-276-300.md): a family from a later release
+froze `LOAD_FAMILY` for over 90 s). Since 2026-10-17 `HeronDialogWatch` answers it while the dispatcher
+has a job armed - **declined** (Cancel, then Close) unless a row in `HeronDialogRule` says otherwise -
+and the job stops, so its group rolls back and the reply quotes what Revit asked. Built, not yet run in
+Revit ([NEEDS-CHECKING group EJ](../../../docs/needs-checking/group-ej.md)).
+
+- **A prompt Heron itself shows during a job goes inside `using (HeronDialogWatch.HeronAsks())`**, or the
+  watch answers Heron's own question for the modeller. `tests/test_dialog_note.py` fails a bare prompt in
+  any `Revit*.cs` file.
+- **A new write path asks `HeronDialogWatch.Refused` before it keeps its group**, and rolls back when it
+  is true. The same suite checks every `Assimilate()` under `revit/`.
+- **Prefer the API's own answer where one exists** - `IFamilyLoadOptions` for a family already loaded,
+  `CopyPasteOptions.SetDuplicateTypeNamesHandler` for duplicate type names. Revit's failures belong to
+  the failures preprocessor, never to the watch.
+- **A `HeronDialogRule` row needs the DialogId a real run reported and that run named in `Evidence`.**
+  Never a guessed id, and never an answer other than Cancel or Close without one.
+
 ## Logging
 
 Log with `DateTime.UtcNow`, never `DateTime.Now`. The `u` format stamps a trailing `Z`, so local time
