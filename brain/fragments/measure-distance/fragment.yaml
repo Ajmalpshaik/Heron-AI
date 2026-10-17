@@ -91,6 +91,13 @@ compatibility-note: >
 #   "how far is the nearest thing"       -> PROBE_AROUND_ELEMENTS, which
 #                                           casts a ray. This one measures
 #                                           between two named elements
+#   "how much headroom is left"      -> here, between the run and what is
+#                                       above it. Declared 2026-10-17 (row
+#                                       5b-943): SET_MEP_JUSTIFICATION's row
+#                                       sent it here, and the search did not -
+#                                       READ_ELEMENT_MATERIAL on main, and
+#                                       SHOW_ANALYSIS_HEATMAP, a change, once
+#                                       a card elsewhere changed status
 
 utterances:
   - how far apart are these two
@@ -98,3 +105,4 @@ utterances:
   - measure the distance between these two elements
   - how much clearance is there between them
   - what is the vertical distance between these
+  - how much headroom is left

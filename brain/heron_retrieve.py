@@ -159,6 +159,9 @@ class Candidate(object):
         # warm-up finishing after the search. See ran().
         self.vector_backend = None
         self.vector_why = None
+        # THE UTTERANCES A RE-RANKER READS, from the store's `rerank_said`.
+        # Empty until _carry_said fills it, and on a store indexed before it.
+        self.said = ""
 
     @property
     def score(self):
@@ -593,17 +596,21 @@ def ran(ranked):
 
 
 def _fragment_passage(candidate):
-    """What a re-ranker is given about a fragment.
+    """What a re-ranker is given about a fragment: its identity, its first
+    declared utterances, its capability and its domain.
 
-    LESS THAN THE ENCODER IS GIVEN, and the reason is a cost rather than an
-    oversight. heron_embed._text_for() also folds in the fragment's utterances
-    and purpose, which live in its YAML and arrive via FRAG.load_all() - the
-    whole library, read to describe twenty rows. The encoder pays that once at
-    index time. A re-ranker would pay it on every question.
+    THE UTTERANCES COME FROM THE STORE, NEVER FROM THE LIBRARY. They live in a
+    card's YAML, and reading them here would mean FRAG.load_all() - the whole
+    library, read to describe twenty rows - on every question. So
+    heron_search.index writes them into `rerank_said` once, capped by
+    heron_rerank.passage_said, and _carry_said copies them onto the shortlist.
 
-    So this reads the three columns the store already holds. If a measurement
-    ever shows the utterances change a re-ranked order, the fix is to carry
-    them into the store, not to load the library per query.
+    UNTIL 2026-10 THIS READ THE IDENTITY, CAPABILITY AND DOMAIN ALONE, and its
+    own text said: if a measurement ever shows the utterances change a
+    re-ranked order, carry them into the store. Rows 5b-467, 5b-483, 5b-484,
+    5b-485 and 5b-510 measured it - a sentence a card declared reached it by
+    identity, and its paraphrases went elsewhere on the owner's PC, so PROVEN
+    identities were reworded to buy them back.
 
     EVERY VALUE IS GUARDED, because this runs BEFORE anything knows whether a
     re-ranker exists - so a null column here would raise on every query on
@@ -611,8 +618,38 @@ def _fragment_passage(candidate):
     way this seam could break R-41 while appearing to honour it.
     """
     row = candidate.row
-    return " ".join([row["semantic_identity"] or "", row["capability"] or "",
+    said = getattr(candidate, "said", "") or ""
+    identity = row["semantic_identity"] or ""
+    if said:
+        identity = "%s. %s." % (identity, said) if identity else said + "."
+    return " ".join([identity, row["capability"] or "",
                      row["domain"] or ""]).strip()
+
+
+def _carry_said(store, ranked):
+    """Copy each shortlisted candidate's `rerank_said` onto it, from the store.
+
+    Only the shortlist the re-ranker will read, in one query. A store indexed
+    before `rerank_said` existed has no table, and then every passage is the
+    identity, capability and domain it always was - nothing raises.
+    """
+    head = ranked[:RERANK.SHORTLIST]
+    if not head:
+        return
+    try:
+        got = store.execute(
+            "SELECT id, said FROM rerank_said WHERE id IN (%s)"
+            % ",".join("?" * len(head)), [c.id for c in head]).fetchall()
+    except sqlite3.OperationalError as exc:
+        # Only the table not being there yet. Anything else is a broken store,
+        # and a passage quietly short of its sentences is D-52's plausible
+        # wrong answer.
+        if "no such table" not in str(exc):
+            raise
+        return
+    by_id = dict((r["id"], r["said"]) for r in got)
+    for candidate in head:
+        candidate.said = by_id.get(candidate.id) or ""
 
 
 def _chunk_passage(candidate):
@@ -784,6 +821,7 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
                                    c.id))
 
     # -- stage 4b: read the shortlist again, if anything can ----------------
+    _carry_said(store, ranked)
     ranked = _rerank(text, ranked, _fragment_passage)
 
     return ranked[:limit], excluded
