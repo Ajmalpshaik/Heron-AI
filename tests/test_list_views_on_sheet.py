@@ -39,6 +39,18 @@ reversed, and the typed number no longer trimmed. Each is a confident wrong
 answer about a drawing set, and each compiles. This file holds every rule
 the card promises, so that reversing or deleting any one of them reads FAIL.
 
+VERSION 2 (row 5b-560, 2026-10-17) widened the card: every sheet, one view
+by name across sheets, each box corner to corner, and the two checks - a
+box past the title block, two boxes overlapping. Sixteen breaks of the new
+code were made by hand before it was pushed - a side's sign flipped, the
+tolerance raised, a box compared with itself, an overlap needing only one
+way, the viewport's label box taken for its box, a schedule's box read off
+the model instead of the sheet, a sheet with no title block passed, a view
+matched by part of its name, "all" ignored, a count taken from what fitted
+in the reply, an unasked viewport written, a box's corners swapped, a
+placeholder read. Fifteen read FAIL on the first draft of section 8; the
+swapped corners did not, and the rule that catches it was added.
+
 WHAT IT HOLDS
 -------------
   1. THE SHEET ASKED FOR, AND NO OTHER. The typed number is trimmed, once,
@@ -65,14 +77,30 @@ WHAT IT HOLDS
   6. ONE ORDER FOR DETAIL NUMBERS. Numbers first, in number order (9 before
      10), then detail numbers that are text, in text order ignoring case.
   7. A READ. No transaction of any kind, and the card says READ.
+  1b. ONE VIEW BY NAME. viewName is trimmed once; only a blank or "all"
+     keeps every view; a viewport or schedule is the one asked about only by
+     its whole name, ignoring case; one not asked about is measured but never
+     written as a row; a name that matched nothing is said in viewProblem.
+  8. THE BOXES AND THE TWO CHECKS. A viewport's box is GetBoxOutline, a
+     schedule's and the title block's their extent on THIS sheet, every box
+     minimum corner first; the revision schedule gives no box; two title
+     blocks make one paper; each side past the paper is its edge OUTSIDE the
+     paper's, said past 0.5 mm only and only for a box asked about; a sheet
+     with no title block is named not checked; every pair is compared once,
+     overlapping only past the tolerance both ways and said when either is
+     asked about; every count is the whole list, and a list past 60000
+     characters says how many rows it left out.
 
 WHAT IT CANNOT DO
 -----------------
 Run the fragment. Reading the code as text says which rule the code was
 written to; whether Revit hands back what the code expects is a question for
-a real model - the proof plan is
-tools/jobs/list-views-on-sheet-project1-2026-10-09.yaml, and it is owed. Only
-a Revit run can say: that VIEW_SCALE on a placed view is the number its
+a real model - the proof plans are
+tools/jobs/list-views-on-sheet-project1-2026-10-09.yaml and, for version 2,
+tools/jobs/list-views-on-sheet-v2-scratch-2026-10-17.yaml, and both are
+owed. Only a Revit run can say: that GetBoxOutline and a schedule's or a
+title block's bounding box in the sheet are where they show on the paper, in
+the sheet's own coordinates (NEEDS-CHECKING group FG); that VIEW_SCALE on a placed view is the number its
 Properties show; that GetBoxCenter is where the viewport sits on the sheet;
 that ScheduleSheetInstance.Point is where a schedule was placed; that
 IsTitleblockRevisionSchedule and OwnerViewId pick out what this file assumes;
@@ -284,7 +312,7 @@ def main():
                        r"\(\s*doc\s*\)\s*\.OfClass\(\s*typeof\(\s*ViewSheet\s*\)\s*\)", code)
     loop = block_span(code, sheets.end())[0] if sheets else None
     skip = re.search(r"if\s*\(([^{};]*)\)\s*continue\s*;", loop or "")
-    chosen_at = (loop or "").find("target = ")
+    chosen_at = (loop or "").find("targets.Add(")
     check(sheets is not None and skip is not None
           and squash(skip.group(1)) == "%s == null || %s.IsTemplate"
           % (sheets.group(1), sheets.group(1))
@@ -292,45 +320,88 @@ def main():
           "a sheet view template is skipped before any sheet is chosen - never read "
           "as the sheet - got %r" % (squash(skip.group(1)) if skip else None))
 
-    targets = assigned(code, "target")
-    check(squash(" | ".join(targets)) == "null | candidate",
-          "`target` is only ever null or the matching candidate - got %s"
-          % (targets or "nothing"))
-    chosen = re.search(r"if\s*\(([^{};]*)\)\s*\{\s*target\s*=\s*candidate\s*;", code)
+    every = assigned(code, "everySheet")
+    check(every == ['string.Equals(wantedNumber, "all", StringComparison.OrdinalIgnoreCase)'],
+          'every sheet is read only when the number given is "all", ignoring case - got %s'
+          % (every or "nothing"))
+    chosen = re.search(r"if\s*\(([^{};]*)\)\s*targets\.Add\(\s*candidate\s*\)\s*;", loop or "")
     check(chosen is not None
-          and squash(chosen.group(1)) == "string.Equals(candidate.SheetNumber, "
-                                         "wantedNumber, StringComparison.OrdinalIgnoreCase)",
-          "a sheet is chosen ONLY by its whole number equalling the one given, "
+          and squash(chosen.group(1)) == "everySheet || string.Equals(candidate.SheetNumber, "
+                                         "wantedNumber, StringComparison.OrdinalIgnoreCase)"
+          and code.count("targets.Add(") == 1,
+          "otherwise a sheet is chosen ONLY by its whole number equalling the one given, "
           "ignoring case - got %r" % (squash(chosen.group(1)) if chosen else None))
     check(re.search(r"\bActive(?:View|UIDocument)\b", code) is None,
           "the sheet in front is never asked for")
 
-    missing = block_after(code, "if (target == null)")
+    missing = block_after(code, "if (targets.Count == 0)")
     check(missing is not None
-          and re.search(r'sheetProblem\s*=\s*"[^"]+"\s*\+\s*wantedNumber\b', missing) is not None,
-          "a number no sheet carries is said in sheetProblem, naming the number")
+          and re.search(r'"no sheet numbered \'"\s*\+\s*wantedNumber\b', missing) is not None
+          and re.search(r"\bsheetProblem\s*=", missing) is not None
+          and "GetAllViewports" not in missing,
+          "a number no sheet carries is said in sheetProblem, naming the number, and "
+          "nothing is read")
 
-    placeholder = list(re.finditer(r"else\s+if\s*\(([^{};]*IsPlaceholder[^{};]*)\)\s*\{", code))
-    check(len(placeholder) == 1 and squash(placeholder[0].group(1)) == "target.IsPlaceholder"
-          and len(re.findall(r"\bIsPlaceholder\b", code)) == 1,
-          "the one placeholder test is `target.IsPlaceholder`, not reversed - got %s"
-          % [squash(m.group(1)) for m in placeholder])
-    refused, _, refused_end = (block_span(code, placeholder[0].start())
-                               if placeholder else (None, -1, -1))
+    split = re.search(r"if\s*\(\s*(\w+)\.IsPlaceholder\s*\)\s*placeholders\.Add\([^;]*\)\s*;"
+                      r"\s*else\s+readable\.Add\(\s*(\w+)\s*\)\s*;", code)
+    check(split is not None and split.group(1) == split.group(2)
+          and len(re.findall(r"\bIsPlaceholder\b", code)) == 1
+          and code.count("readable.Add(") == 1,
+          "the one placeholder test sends a placeholder aside and every other sheet to be "
+          "read - not reversed")
+    refused, _, refused_end = block_span(code, code.find("else if (readable.Count == 0)"))
     check(refused is not None
           and re.search(r'sheetProblem\s*=(?!=)[^;]*"[^"]*placeholder[^"]*"[^;]*;', refused)
           is not None
           and "GetAllViewports" not in refused
           and "FilteredElementCollector" not in refused,
-          "a placeholder sheet is refused, with a reason in sheetProblem, and nothing "
-          "on it is read")
+          "a sheet that is only a placeholder is refused, with a reason in sheetProblem, "
+          "and nothing on it is read")
     after = code[refused_end + 1:] if refused_end >= 0 else ""
     otherwise = (block_span(after, 0)[0]
                  if re.match(r"\s*else\s*\{", after) else None)
-    check(otherwise is not None and "target.GetAllViewports()" in otherwise
+    check(otherwise is not None
+          and re.search(r"foreach\s*\(\s*var\s+target\s+in\s+readable\s*\)", otherwise) is not None
+          and "target.GetAllViewports()" in otherwise
           and "OfClass(typeof(ScheduleSheetInstance))" in otherwise
           and len(re.findall(r"\bGetAllViewports\b", code)) == 1,
-          "a sheet that is NOT a placeholder - the else after it - is the one read")
+          "the sheets read - the else after it - are the readable ones, and only those")
+
+    # ------------------------------------------------------------------
+    print("1b. One view by name, and every view when none is named")
+    view_typed = assigned(code, "wantedView")
+    check(view_typed == ['(viewName ?? "").Trim()']
+          and len(re.findall(r"\bviewName\b", code)) == 1,
+          "the typed view name is trimmed, once, and nothing reads it untrimmed - got %s"
+          % (view_typed or "nothing"))
+    every_view = assigned(code, "everyView")
+    check(every_view == ['wantedView.Length == 0 || string.Equals(wantedView, "all", '
+                         'StringComparison.OrdinalIgnoreCase)'],
+          'every view is kept only for a name left blank or "all" - got %s'
+          % (every_view or "nothing"))
+    asked = assigned(code, "asked")
+    check(asked == ["everyView || string.Equals(shown, wantedView, StringComparison.OrdinalIgnoreCase)",
+                    "everyView || string.Equals(nameOf[scheduleId], wantedView, "
+                    "StringComparison.OrdinalIgnoreCase)"],
+          "a viewport or a schedule is the one asked about only by its WHOLE name, ignoring "
+          "case - got %s" % asked)
+    port_loop = block_after(code, "foreach (var portId in target.GetAllViewports())")
+    shown = assigned(port_loop or "", "shown")
+    gate = (port_loop or "").find("if (!asked) continue;")
+    check(shown == ['view == null ? "" : view.Name']
+          and 0 <= gate < (port_loop or "").find("rows.Add("),
+          "a viewport not asked about is measured but never written as a row")
+    kept = block_after(code, "foreach (var scheduleId in pieces.Keys)")
+    check(kept is not None
+          and re.search(r"if\s*\(\s*!everyView\s*&&\s*!string\.Equals\(\s*nameOf\[scheduleId\]\s*,"
+                        r"\s*wantedView\s*,\s*StringComparison\.OrdinalIgnoreCase\s*\)\s*\)", kept)
+          is not None
+          and kept.find("continue;") < kept.find("sheetSchedules.Add("),
+          "a schedule not asked about is never written as a row either")
+    missing_view = block_after(code, "if (!everyView && viewCount == 0 && scheduleCount == 0)")
+    check(missing_view is not None and re.search(r"\bviewProblem\s*=", missing_view) is not None
+          and "wantedView" in missing_view,
+          "a name that matched nothing is said in viewProblem, naming it")
 
     # ------------------------------------------------------------------
     print("2. A sheet's schedules are its own")
@@ -351,9 +422,11 @@ def main():
           and re.findall(r"\bpieces\[(\w+)\]\s*\+\+", code) == ["scheduleId"],
           "pieces of one split schedule are counted under the schedule they show")
     per_schedule = block_after(code, "foreach (var scheduleId in pieces.Keys)")
-    check(per_schedule is not None and "scheduleRows.Add(" in per_schedule
-          and code.count("scheduleRows.Add(") == 1,
-          "one row per SCHEDULE, written in the loop over the schedules")
+    check(per_schedule is not None and "sheetSchedules.Add(" in per_schedule
+          and code.count("sheetSchedules.Add(") == 1
+          and code.count("scheduleRows.AddRange(sheetSchedules)") == 1
+          and "scheduleRows.Add(" not in code,
+          "one row per SCHEDULE on each sheet, written in the loop over the schedules")
     counted = assigned(code, "scheduleCount")
     check(counted == ["0", "scheduleRows.Count"]
           and re.search(r"\bscheduleCount\s*(?:\+\+|\+=|-=)", code) is None,
@@ -415,7 +488,7 @@ def main():
           and switch.group(1) == type_params[0],
           "the words are chosen by the ViewType of the view handed to typeWords")
     given = calls(code, "typeWords")
-    check(given == ["view"],
+    check(given and set(given) == {"view"},
           "typeWords is handed the viewport's view, never the sheet - got %s" % given)
     cases = re.findall(r'case\s+ViewType\.(\w+)\s*:\s*return\s+"([^"]*)"\s*;', type_body or "")
     table = dict(cases)
@@ -453,12 +526,21 @@ def main():
           % (xs, ys))
     where = sorted(squash(arg) for arg in
                    re.findall(r'\bmillimetres\((.*?)\)\s*\+\s*"\) mm"', code))
+    _corner_params, corner_body = lambda_of(code, "corners")
     check(where == ["point", "port.GetBoxCenter()"]
-          and len(re.findall(r"\bmillimetres\(", code)) == 2
+          and sorted(calls(corner_body or "", "millimetres")) == ["high", "low"]
+          and len(re.findall(r"\bmillimetres\(", code)) == 4
           and re.search(r'"\s*centre \("\s*\+\s*millimetres\(port\.GetBoxCenter\(\)\)', code)
           is not None,
-          "the viewport's centre and the schedule's placement point are the two things "
-          "written in millimetres - got %s" % where)
+          "the viewport's centre, the schedule's insertion point and a box's two corners are "
+          "the things written in millimetres - got %s" % where)
+    check(_corner_params == ["low", "high"]
+          and (corner_body or "").find("millimetres(low)") < (corner_body or "").find("millimetres(high)"),
+          "a box is written lower left first, then upper right")
+    pairs = sorted(squash(arg) for arg in re.findall(r"\bcorners\(([^()]*)\)", code))
+    check(pairs == ["b.Item2, b.Item3", "box.MinimumPoint, box.MaximumPoint",
+                    "extent.Min, extent.Max", "paperLow, paperHigh"],
+          "and every box handed to it is minimum, then maximum - got %s" % pairs)
 
     # ------------------------------------------------------------------
     print("6. One order for detail numbers")
@@ -485,10 +567,13 @@ def main():
     keyed = re.search(r"rows\.Add\(\s*new\s+KeyValuePair<\s*string\s*,\s*string\s*>\(\s*detail\s*,",
                       code)
     sorted_at = code.find("rows.Sort(byDetail);")
-    joined_at = code.find("viewsOnSheet = string.Join(")
+    added_at = code.find("viewRows.AddRange(rows.Select(r => r.Value));")
+    joined_at = code.find("viewsOnSheet = joined(viewRows);")
     check(keyed is not None and code.count("rows.Sort(") == 1
-          and keyed.start() < sorted_at < joined_at,
-          "the rows are keyed by detail number and sorted that way before they are written")
+          and code.count("viewRows.Add") == 1
+          and keyed.start() < sorted_at < added_at < joined_at,
+          "each sheet's rows are keyed by detail number and sorted that way before they are "
+          "written")
 
     # ------------------------------------------------------------------
     print("7. A read")
@@ -497,6 +582,95 @@ def main():
     risk = re.search(r"^risk:\s*(\S+)", card, re.M)
     check(risk is not None and risk.group(1) == "READ",
           "the card says risk READ - got %s" % (risk.group(1) if risk else None))
+
+    # ------------------------------------------------------------------
+    print("8. The boxes, and the two checks made on them")
+    port_box = assigned(code, "box")
+    check(port_box == ["null", "port.GetBoxOutline()"]
+          and "GetLabelOutline" not in code
+          and re.search(r"\bport\.get_BoundingBox\b", code) is None,
+          "a viewport's box is GetBoxOutline - the view without its title - got %s" % port_box)
+    extents = assigned(code, "extent")
+    check(extents == ["null", "instance.get_BoundingBox(target)", "null",
+                      "block.get_BoundingBox(target)"],
+          "a schedule's box and the title block's are each one's extent ON THIS SHEET - got %s"
+          % extents)
+    measured = [squash(arg) for arg in
+                re.findall(r"boxes\.Add\(\s*Tuple\.Create\(([^;]*)\)\s*\)\s*;", code)]
+    check(len(measured) == 2
+          and measured[0].endswith("box.MinimumPoint, box.MaximumPoint, asked")
+          and measured[1].endswith("extent.Min, extent.Max, asked"),
+          "every box measured is kept minimum corner, then maximum - the checks read them "
+          "that way round - got %s" % measured)
+    sched_loop = block_after(code, "foreach (var instance in schedulesInModel)") or ""
+    check(0 <= sched_loop.find("revisionSchedules++") < sched_loop.find("boxes.Add("),
+          "a title block's revision schedule is set aside before any box is taken from it")
+    paper = re.search(r"new\s+FilteredElementCollector\(\s*doc\s*,\s*target\.Id\s*\)\s*"
+                      r"\.OfCategory\(\s*BuiltInCategory\.OST_TitleBlocks\s*\)\s*"
+                      r"\.WhereElementIsNotElementType\(\)", code)
+    check(paper is not None,
+          "the paper is the title blocks standing on THIS sheet, never their types")
+    lows = assigned(code, "paperLow")
+    highs = assigned(code, "paperHigh")
+    check(len(lows) == 2 and "Math.Min(paperLow.X, extent.Min.X)" in lows[1]
+          and "Math.Min(paperLow.Y, extent.Min.Y)" in lows[1]
+          and len(highs) == 2 and "Math.Max(paperHigh.X, extent.Max.X)" in highs[1]
+          and "Math.Max(paperHigh.Y, extent.Max.Y)" in highs[1],
+          "two title blocks on one sheet are taken as the one box around both")
+
+    slack = assigned(code, "slack")
+    check(slack == ["0.5"], "half a millimetre is the tolerance, and only one - got %s" % slack)
+    sides = dict((name, assigned(code, name)) for name in
+                 ("leftBy", "rightBy", "belowBy", "aboveBy"))
+    check(sides == {"leftBy": ["(paperLow.X - b.Item2.X) * 304.8"],
+                    "rightBy": ["(b.Item3.X - paperHigh.X) * 304.8"],
+                    "belowBy": ["(paperLow.Y - b.Item2.Y) * 304.8"],
+                    "aboveBy": ["(b.Item3.Y - paperHigh.Y) * 304.8"]},
+          "each side is how far the box's edge lies OUTSIDE the title block's, in "
+          "millimetres - got %s" % sides)
+    compared = re.findall(r"if\s*\(\s*(\w+By)\s*>\s*slack\s*\)\s*past\.Add\(", code)
+    check(sorted(compared) == ["aboveBy", "belowBy", "leftBy", "rightBy"],
+          "and a side is said only when it is past by more than the tolerance - got %s" % compared)
+    off_loop = block_after(code, "foreach (var b in boxes)") or ""
+    check(re.match(r"\s*if\s*\(\s*!b\.Item4\s*\)\s*continue\s*;", off_loop) is not None,
+          "only a box asked about is said to run off")
+    no_paper = block_after(code, "if (paperLow == null || paperHigh == null)") or ""
+    check("withoutPaper.Add(" in no_paper and "offRows" not in no_paper
+          and assigned(code, "notChecked") == ['""', 'string.Join(" || ", withoutPaper.ToArray())'],
+          "a sheet with no title block is named as not checked, never passed as clean")
+
+    pair_outer = re.search(r"for\s*\(\s*var\s+i\s*=\s*0\s*;\s*i\s*<\s*boxes\.Count\s*;", code)
+    pair_inner = re.search(r"for\s*\(\s*var\s+j\s*=\s*i\s*\+\s*1\s*;\s*j\s*<\s*boxes\.Count\s*;",
+                           code)
+    check(pair_outer is not None and pair_inner is not None,
+          "every pair of boxes on a sheet is compared once, and never a box with itself")
+    wide = assigned(code, "wide")
+    high = assigned(code, "high")
+    check(wide == ["(Math.Min(one.Item3.X, other.Item3.X) - Math.Max(one.Item2.X, other.Item2.X)) * 304.8"]
+          and high == ["(Math.Min(one.Item3.Y, other.Item3.Y) - Math.Max(one.Item2.Y, other.Item2.Y)) * 304.8"],
+          "the overlap is the shared width and height, in millimetres - got %s, %s" % (wide, high))
+    check(re.search(r"if\s*\(\s*wide\s*<=\s*slack\s*\|\|\s*high\s*<=\s*slack\s*\)\s*continue\s*;",
+                    code) is not None
+          and re.search(r"if\s*\(\s*!one\.Item4\s*&&\s*!other\.Item4\s*\)\s*continue\s*;", code)
+          is not None,
+          "two boxes overlap only past the tolerance both ways, and a pair is said when "
+          "EITHER is the one asked about")
+
+    counts = dict((name, assigned(code, name)) for name in
+                  ("viewCount", "offTitleBlockCount", "overlapCount"))
+    check(counts == {"viewCount": ["0", "viewRows.Count"],
+                     "offTitleBlockCount": ["0", "offRows.Count"],
+                     "overlapCount": ["0", "overlapRows.Count"]},
+          "every count is the whole list, never what fitted in the reply - got %s" % counts)
+    limit = assigned(code, "mostCharacters")
+    _join_params, join_body = lambda_of(code, "joined")
+    check(limit == ["60000"] and join_body is not None
+          and "kept.Count < list.Count" in join_body and '"... and "' in join_body,
+          "a list past 60000 characters is cut and says how many rows it left out")
+    for name, rows in (("viewsOnSheet", "viewRows"), ("schedulesOnSheet", "scheduleRows"),
+                       ("offTitleBlock", "offRows"), ("overlaps", "overlapRows")):
+        check(assigned(code, name) == ['""', "joined(%s)" % rows],
+              "%s is written once, from %s, through the cut" % (name, rows))
 
     print("")
     if FAILURES:

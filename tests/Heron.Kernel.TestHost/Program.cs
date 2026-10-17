@@ -82,6 +82,7 @@ namespace Heron.Kernel.TestHost
 
             Units();
             Paths();
+            Runs();
             Identity();
             Stop();
             AtomicWrite();
@@ -89,6 +90,7 @@ namespace Heron.Kernel.TestHost
             Config();
             Permissions();
             ShowDoor();
+            SourceScan();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -192,6 +194,117 @@ namespace Heron.Kernel.TestHost
         }
 
         // ------------------------------------------------------------------
+        // HeronPaths.Runs and HeronRuns - the run records a fragment write
+        // leaves for heron_run_record (FRAGMENT-ISSUES 5b-407). DERIVED, so a
+        // cleanup may take them; never DATA, which no cleanup may reach.
+        //
+        // THE ONLY CHECKS HERE THAT WRITE UNDER DERIVED, and they write into
+        // a scratch folder of their own inside it and delete it after. A
+        // prune is guarded by IsSafeToDelete, and that guard answers yes only
+        // under DERIVED - so a prune can only be shown deleting anything from
+        // there. DERIVED is the folder docs/06 calls safe to delete at any
+        // moment; nothing here touches DATA or the real runs folder's files.
+        // ------------------------------------------------------------------
+        private static void Runs()
+        {
+            Console.WriteLine();
+            Console.WriteLine("2b. HeronPaths.Runs and HeronRuns - the run records, DERIVED and pruned");
+
+            var derived = Path.GetFullPath(HeronPaths.Derived);
+            var data = Path.GetFullPath(HeronPaths.Data);
+            var runs = Path.GetFullPath(HeronPaths.Runs);
+
+            Check(runs == Path.Combine(derived, "runs"),
+                  "Runs is the `runs` folder under DERIVED - the one the bridge client "
+                  + "names as RUNS_DIR (" + runs + ")");
+            Check(!runs.StartsWith(data + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                  && runs != data,
+                  "and is not under DATA, where the audit trail it is linked to lives");
+            Check(Directory.Exists(runs), "the path manager makes it, as it makes the others");
+            Check(HeronPaths.IsSafeToDelete(runs)
+                  && HeronPaths.IsSafeToDelete(Path.Combine(runs, "wf-20261009-133432-0042-a1b2.json")),
+                  "IsSafeToDelete says yes to it and to a record in it - a prune is allowed");
+
+            Check(HeronRuns.IsRunId("wf-20261009-133432-0042-a1b2")
+                  && HeronRuns.IsRunId(HeronIdentity.NewWorkflowId()),
+                  "a workflow id, as HeronIdentity mints one, is a run id");
+            var refused = new[] { null, "", "wf-", "../wf-1", "wf-1/../../x", "wf-1.json",
+                                  "C:wf-1", "wf 1", "run-1", "wf-1\\x" };
+            var allRefused = true;
+            foreach (var id in refused)
+            {
+                if (HeronRuns.IsRunId(id) || HeronRuns.PathFor(runs, id) != null) allRefused = false;
+            }
+            Check(allRefused,
+                  "and nothing that could be a path out of the folder is one - a separator, a "
+                  + "dot, a drive, a space, another prefix");
+
+            var scratch = Path.Combine(derived, "kernel-runs-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            try
+            {
+                const string id = "wf-20261009-133432-0042-a1b2";
+                Check(HeronRuns.Write(scratch, id, "{\"record\": 1}"),
+                      "a record is written, folder and all");
+                var path = HeronRuns.PathFor(scratch, id);
+                Check(path != null && File.ReadAllText(path) == "{\"record\": 1}"
+                      && !File.Exists(path + ".tmp"),
+                      "whole, through HeronAtomicWrite, with no .tmp left behind");
+                Check(!HeronRuns.Write(scratch, "../escape", "{}")
+                      && !File.Exists(Path.Combine(derived, "escape.json")),
+                      "an id that is not a run id writes nothing and says so");
+                Check(!HeronRuns.Write(scratch, "wf-empty", ""),
+                      "and an empty record is not written at all");
+
+                var now = new DateTime(2026, 10, 17, 12, 0, 0, DateTimeKind.Utc);
+                var old = HeronRuns.PathFor(scratch, "wf-20260901-000000-0001-aaaa");
+                var fresh = HeronRuns.PathFor(scratch, "wf-20261016-000000-0002-bbbb");
+                var stranger = Path.Combine(scratch, "notes.json");
+                var oddName = Path.Combine(scratch, "wf-..json");
+                foreach (var one in new[] { old, fresh, stranger, oddName })
+                {
+                    File.WriteAllText(one, "{}");
+                }
+                File.SetLastWriteTimeUtc(old, now.AddDays(-30));
+                File.SetLastWriteTimeUtc(fresh, now.AddDays(-1));
+                File.SetLastWriteTimeUtc(stranger, now.AddDays(-30));
+                File.SetLastWriteTimeUtc(oddName, now.AddDays(-30));
+                File.SetLastWriteTimeUtc(path, now.AddDays(-30));
+
+                Check(HeronRuns.Prune(scratch, 0, now) == 0 && File.Exists(old),
+                      "retainDays below 1 prunes nothing - zero must not mean keep nothing");
+                var deleted = HeronRuns.Prune(scratch, 14, now);
+                Check(deleted == 2 && !File.Exists(old) && !File.Exists(path),
+                      "a prune at 14 days deletes the two records older than that - found "
+                      + deleted);
+                Check(File.Exists(fresh), "and keeps the one written yesterday");
+                Check(File.Exists(stranger) && File.Exists(oddName),
+                      "and never touches a file that is not a record, however old");
+
+                // OUTSIDE DERIVED, A PRUNE DELETES NOTHING - the guard, not the
+                // name, decides. The temp folder stands in for anywhere that is
+                // not Heron's own: DATA is not written to check it.
+                var outside = Path.Combine(Path.GetTempPath(),
+                                           "heron-runs-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+                try
+                {
+                    Check(HeronRuns.Write(outside, id, "{}"), "a record can be written anywhere it is told");
+                    File.SetLastWriteTimeUtc(HeronRuns.PathFor(outside, id), now.AddDays(-30));
+                    Check(HeronRuns.Prune(outside, 14, now) == 0
+                          && File.Exists(HeronRuns.PathFor(outside, id)),
+                          "but a prune outside DERIVED deletes nothing, because IsSafeToDelete says no");
+                }
+                finally
+                {
+                    try { Directory.Delete(outside, true); } catch (IOException) { }
+                }
+            }
+            finally
+            {
+                try { Directory.Delete(scratch, true); } catch (IOException) { }
+            }
+        }
+
+        // ------------------------------------------------------------------
         // HeronIdentity - row 6. One minter, and the property the format is
         // for.
         // ------------------------------------------------------------------
@@ -239,8 +352,16 @@ namespace Heron.Kernel.TestHost
             Console.WriteLine("4. HeronStop - set by a person, cleared by a person");
 
             Check(!HeronStop.IsStopped, "starts clear");
+
+            // D-129. The run clock reads the COUNT, not the flag, so a stop
+            // asked while already stopped still reaches a running fragment,
+            // and a read begun while stopped is not tripped by the old one.
+            var asked = HeronStop.Requests;
             Check(HeronStop.Stop(), "Stop() reports that THIS call changed it");
+            Check(HeronStop.Requests == asked + 1, "and the stop count moved by one");
             Check(!HeronStop.Stop(), "and a second Stop() reports that it did not");
+            Check(HeronStop.Requests == asked + 2,
+                  "while the count moves again - a second stop is still a stop asked for");
             Check(HeronStop.IsStopped, "stopped");
 
             // ROW 2. The message used to send the reader to "Heron AI >
@@ -256,7 +377,20 @@ namespace Heron.Kernel.TestHost
             Check(HeronStop.Message.IndexOf("Nothing was sent to Revit", StringComparison.Ordinal) >= 0,
                   "and says plainly that nothing was sent");
 
+            // THE KILL SWITCH WAS BUILT ON 2026-10-17, SO THE WAY OUT IS
+            // NAMED (D-129). HeronStop's own rule: whoever builds what sets
+            // the flag owns this sentence, the same day. A restart is the one
+            // thing that clears it - nothing over the bridge resumes.
+            Check(HeronStop.Message.IndexOf("until Revit is restarted", StringComparison.Ordinal) >= 0,
+                  "and it names the one way out there is: restarting Revit");
+            Check(HeronStop.Message.EndsWith(HeronStop.StaysStopped, StringComparison.Ordinal),
+                  "in the same words every other answer about a stop uses");
+            Check(HeronStop.StaysStopped.IndexOf("Nothing was sent", StringComparison.OrdinalIgnoreCase) < 0,
+                  "and that shared half claims nothing about this request - a job the run "
+                  + "clock stopped part way DID reach Revit");
+
             Check(HeronStop.Resume(), "Resume() reports that THIS call changed it");
+            Check(HeronStop.Requests == asked + 2, "and resuming leaves the stop count alone");
             Check(!HeronStop.Resume(), "and a second Resume() reports that it did not");
             Check(!HeronStop.IsStopped, "clear again, and left that way for whatever runs next");
         }
@@ -762,6 +896,83 @@ namespace Heron.Kernel.TestHost
                      < HeronOperationRegistry.RiskOf("run_fragment_write"),
                   "and run_fragment_show sits between the read door and the write door - above "
                   + "Analyze, below Modify");
+        }
+
+        // ------------------------------------------------------------------
+        // HeronSourceScan - what a fragment opens, read before it runs. The
+        // read and show paths refuse a fragment that opens a transaction of
+        // its own, and so does any that declared noTransactionOpen (D-125).
+        // ------------------------------------------------------------------
+        private static void SourceScan()
+        {
+            Console.WriteLine();
+            Console.WriteLine("10. A fragment that opens a transaction of its own is seen before it runs");
+
+            Check(HeronSourceScan.OpensTransaction(
+                      "using (var t = new Transaction(doc, \"x\")) { t.Start(); t.Commit(); }")
+                  == "Transaction", "new Transaction(...) is seen");
+            Check(HeronSourceScan.OpensTransaction("var g = new TransactionGroup(doc, \"g\");")
+                  == "TransactionGroup", "a TransactionGroup is seen");
+            Check(HeronSourceScan.OpensTransaction("var s = new  SubTransaction (doc);")
+                  == "SubTransaction", "a SubTransaction is seen");
+            Check(HeronSourceScan.OpensTransaction("Transaction t = new(doc, \"x\");")
+                  == "Transaction", "and a target-typed new(...) is seen");
+
+            Check(HeronSourceScan.OpensTransaction(
+                      "// IT CANNOT RUN INSIDE A TRANSACTION.\n// new Transaction(doc, \"x\")\nvar a = 1;")
+                  == null, "a line comment naming one is not one");
+            Check(HeronSourceScan.OpensTransaction("/* new Transaction(doc, \"x\") */ var a = 1;")
+                  == null, "nor is a block comment");
+            Check(HeronSourceScan.OpensTransaction(
+                      "var s = \"new Transaction(doc)\"; var v = @\"new TransactionGroup(\"\"g\"\")\";"
+                      + " var i = $\"{1} new SubTransaction(doc)\";")
+                  == null, "nor a regular, verbatim or interpolated string");
+            Check(HeronSourceScan.OpensTransaction(
+                      "if (transaction.Commit() == TransactionStatus.Committed) { }") == null,
+                  "and using one's status, or a variable named for one, is not opening one");
+            Check(HeronSourceScan.OpensTransaction(null) == null
+                  && HeronSourceScan.OpensTransaction("") == null, "no source opens nothing");
+
+            var lines = "a // c\nb /* x\ny */ c\n\"s\ns\"";
+            Check(HeronSourceScan.CodeOnly(lines).Split('\n').Length == lines.Split('\n').Length,
+                  "blanking keeps every line where it was");
+
+            // OVER THE LIBRARY: every fragment the read or show door may run -
+            // declared READ, ANALYZE, SUGGEST or EXECUTE, and not one of D-112's
+            // edit-mode fragments - opens none, so the refusal costs nothing
+            // that works today. Found from this file up; skipped, and said, when
+            // the host runs somewhere the library is not.
+            var root = AppContext.BaseDirectory;
+            while (root != null && !Directory.Exists(Path.Combine(root, "brain", "fragments")))
+                root = Path.GetDirectoryName(root.TrimEnd(Path.DirectorySeparatorChar));
+            if (root == null)
+            {
+                Console.WriteLine("  NOT RUN  the fragment library was not found from {0}",
+                                  AppContext.BaseDirectory);
+                return;
+            }
+
+            var risky = new Regex(@"^risk:\s*(READ|ANALYZE|SUGGEST|EXECUTE)\s*$", RegexOptions.Multiline);
+            var looked = 0;
+            var opening = new List<string>();
+            foreach (var card in Directory.GetFiles(Path.Combine(root, "brain", "fragments"),
+                                                    "fragment.yaml", SearchOption.AllDirectories))
+            {
+                var text = File.ReadAllText(card);
+                if (!risky.IsMatch(text) || text.Contains("editScopeFailures")) continue;
+                var impl = Path.Combine(Path.GetDirectoryName(card), "impl");
+                if (!Directory.Exists(impl)) continue;
+                foreach (var code in Directory.GetFiles(impl, "fragment.cs", SearchOption.AllDirectories))
+                {
+                    looked++;
+                    var opens = HeronSourceScan.OpensTransaction(File.ReadAllText(code));
+                    if (opens != null)
+                        opening.Add(Path.GetFileName(Path.GetDirectoryName(card)) + " (" + opens + ")");
+                }
+            }
+            Check(looked > 0 && opening.Count == 0,
+                  "every one of the " + looked + " READ to EXECUTE fragment sources opens no "
+                  + "transaction of its own" + (opening.Count == 0 ? "" : " - " + string.Join(", ", opening)));
         }
     }
 }

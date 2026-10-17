@@ -5,7 +5,26 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-005
-semantic-identity: "find and replace part of these elements' names"
+# THE IDENTITY NAMES VIEWS, SHEETS AND THE REST (2026-10-16, FRAGMENT-ISSUES 5b-510).
+# It said only "find and replace part of these elements' names", and the
+# re-ranker reads a card's identity, capability and domain and nothing else -
+# so on the live backend "rename the plan", "rename these sheets" and "rename
+# the schedule" went to RENAME_FAMILY and EDIT_REVISION_NUMBERING_SEQUENCE,
+# neither of which renames a view or a sheet; 5b-485's declared sentences
+# reached here and no paraphrase did. Chosen from sixty-nine wordings scored
+# against the re-ranker, then on four backends. It keeps "replacing part of their
+# names" - the job is still find and replace. "plans and other views" rather
+# than "views" alone: "views ... sheets" took "rename the view title on the
+# sheet" from SET_VIEWPORT_TITLE_LINE. Without "types", "which views have SUP in
+# the name" (a question) reached this write on the model alone. Without
+# "templates", five template renames stayed on other tools. "a filter is not"
+# pulled every filter rename here - a re-ranker reads a negation as the word.
+# The cost, on the spelling backend only: a longer identity is quieter on
+# words, so the bare "change SUP to SUPPLY" in the routing table below now goes
+# to LINK_FAMILY_PARAMETER there (with a re-ranker it went wrong before and
+# after). Declaring it pulled "which views have SUP in the name" - a question -
+# here on the model, so it is recorded in the row, not declared.
+semantic-identity: "rename these elements by replacing part of their names - plans and other views, sheets, schedules, templates and types are elements too"
 kind: action
 domain: revit.parameters
 capability: RENAME_ELEMENTS

@@ -1,7 +1,7 @@
 # COPY_ELEMENTS version 3 - in a workshared model the copies go on each
 # original's own workset, or on a workset the modeller names, and the reply
-# reads every copy's workset back. NEEDS-CHECKING Group FC; FRAGMENT-ISSUES
-# row 5b-540.
+# reads every copy's workset back. NEEDS-CHECKING Group GC; FRAGMENT-ISSUES
+# row 5b-650.
 #
 #     python tools/batch-prove.py tools/jobs/copy-elements-v3-worksets-2026-10-17.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/copy-elements-v3-worksets-2026-10-17.yaml
@@ -39,10 +39,10 @@
 # workset out and they are copied as before. Nothing was copied." A run that
 # made four copies there is the failure D-30's negative exists for.
 #
-# BOTH LEGS ARE ROLLED BACK (`write: true`). Group FC's other rows - a named
+# BOTH LEGS ARE ROLLED BACK (`write: true`). Group GC's other rows - a named
 # workset, mixed worksets in one call, onto levels, and toWorkset left out -
-# are run by hand with `heron_bridge_client.py validate`; this file runs FC1
-# and FC2.
+# are run by hand with `heron_bridge_client.py validate`; this file runs GC1
+# and GC2.
 
 model: Heron Copy Worksets WS.rvt (positive) and Heron Copy Worksets Plain.rvt (negative), two new projects from the default metric template, Revit 2020
 
@@ -80,4 +80,4 @@ jobs:
       refused and copies 0 there. In the positive read onWorksets whole - the
       active workset named, every copy read back on Heron Openings, none
       left on Workset1 - and select the copies afterwards in a copy of the
-      model to see the same in the Properties palette (FC3).
+      model to see the same in the Properties palette (GC3).

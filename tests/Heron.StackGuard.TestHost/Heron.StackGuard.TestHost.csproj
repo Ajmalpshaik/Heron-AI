@@ -33,6 +33,13 @@
     `#if` script can be RUN with and without the symbols and seen to
     answer differently. tests/test_fragment_symbols.py builds this host
     once per release and reads the answer.
+
+    AND THE RUN CLOCK (D-129). The guard now puts HeronRunClock.Check()
+    into every loop and every body, so a guarded script names that type -
+    and HeronRunClock.cs names no Revit type either, only HeronStop from
+    Heron.Core, so both are linked by source as the guard is. That lets a
+    guarded `while (true) {}` be RUN here against a 200 ms deadline and
+    seen to stop, which is the clock's whole claim, with no Revit at all.
   -->
 
   <PropertyGroup>
@@ -48,6 +55,10 @@
              Link="HeronStackGuard.cs" />
     <Compile Include="..\..\revit\Heron.Revit.Addin\HeronFragmentSymbols.cs"
              Link="HeronFragmentSymbols.cs" />
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronRunClock.cs"
+             Link="HeronRunClock.cs" />
+    <Compile Include="..\..\platform\Heron.Core\HeronStop.cs"
+             Link="HeronStop.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -751,9 +751,25 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
-## Group FC - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
+## Group EU - Heron says when its own code changed under a chat, and changes nothing until the chat is reopened (2026-10-17)
 
-**Its own file:** [`needs-checking/group-fc.md`](needs-checking/group-fc.md)
+**Its own file:** [`needs-checking/group-eu.md`](needs-checking/group-eu.md)
+
+## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
+
+## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
+
+## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fg.md`](needs-checking/group-fg.md)
+
+## Group GC - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gc.md`](needs-checking/group-gc.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
