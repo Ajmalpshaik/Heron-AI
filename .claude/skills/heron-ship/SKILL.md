@@ -510,9 +510,25 @@ stays one. **Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `pyth
 before `BZ`), 5b rows in row-number order. Never take one side: a dropped group line leaves its
 `group-xx.md` on disk with nothing pointing at it, and the group silently leaves the register.
 `check-docs` §10 now fails on exactly that - a `docs/needs-checking/group-*.md` its index never names.
-**If both sides used the same group letter or row number**, the side merging second takes the next
-free one and renames everything that says it (`git grep` the old id): `tests/test_open_defects.py`
-fails on a 5b number used twice, and two `group-xx.md` files collide as an add/add conflict.
+**If both sides took the same id - a group, a 5b row, a `Q-nn` or a `D-nnn`** - the side merging
+second takes the next free one, and renames it with [`tools/renumber.py`](../../../tools/renumber.py)
+**before it merges main**, so the merge has nothing to collide on:
+
+```bash
+python tools/renumber.py --next                                   # the free id (next-id.py's answer)
+python tools/renumber.py --from D-116 --to D-131 --dry-run        # every change it would make
+python tools/renumber.py --from D-116 --to D-131                  # make them; Q-64, "Group EJ", 5b-489 the same
+```
+
+It renames only what this branch added since its merge-base with `origin/main` - headings, index rows,
+anchors, items (`EJ1`), the row's number cell, every reference, and the files named for the id
+(`decisions/D-116.md`, `group-ej.md`) - and **never main's own use of the same id**. It stages
+nothing, and refuses while a merge is half done. Exit **1** means it left something for you, named: a
+line of main's this branch edited, or a bare group letter, which can be a word. Not `git grep`: a grep
+cannot tell this branch's D-116 from main's. The gates still catch a clash left in:
+`check-docs` a number defined twice, `check-decision-titles` a number reused with another title,
+`tests/test_open_defects.py` a 5b number used twice, and two `group-xx.md` files collide as an add/add
+conflict.
 
 ## What this deliberately does not do
 
