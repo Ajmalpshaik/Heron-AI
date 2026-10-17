@@ -7,15 +7,20 @@
 # See docs/29-metadata-standard.md
 
 """
-Which id is free, in each append-only register - on main AND on every branch.
+Which id is free, in each append-only register - on main, on every branch,
+in every open pull request and in every worktree's working files here.
 
-    python tools/next-id.py               # fetch every branch, then answer
-    python tools/next-id.py --no-fetch    # answer from what was last fetched, and say so
+    python tools/next-id.py               # fetch, list the open pull requests, then answer
+    python tools/next-id.py --no-fetch    # no network: the branches as last fetched, and it says so
     python tools/next-id.py --json        # the same answer, for a machine
+    python tools/next-id.py --github OWNER/NAME   # when the remote's URL is not github.com's
 
-Exits 0 with an answer, and 2 when it could not look: no git, a fetch that
-failed, no main, or a register in which main holds no id at all - which means
-the register moved and this tool is reading the wrong place.
+Exits 0 with an answer, and 2 when it could not look at main: no git, a fetch
+that failed, no main, or a register in which main holds no id at all - which
+means the register moved and this tool is reading the wrong place. A source it
+could not read - no gh, a gh that is not logged in, a worktree whose folder is
+gone - is SAID in the report and never changes the exit code: this is a
+report, and nothing it finds is a failure.
 
 WHY THIS EXISTS
 ---------------
@@ -32,15 +37,26 @@ the same day. Every rename cost a merge, a fresh gate run and a CI cycle of
 about fourteen minutes. Nobody chose carelessly; every one of them read a
 checkout that was right about main and blind to everything else.
 
-So this reads every branch on the remote, as well as main and this checkout,
-and answers with the id above the highest one used ANYWHERE - and names the
-branches holding ids above main's highest, because those are the pull requests
-a new id is racing.
+And the same day showed what reading branches alone missed. PR #549 held
+5b-489, pushed; PR #553, opened later, took 489 too and merged first, so #549
+renumbered. Once sessions began picking round numbers to stay clear of each
+other - 540, 550, 610 - main's highest passed them, and three pull requests
+held 5b-540 below it with nothing to say so: only ids ABOVE main's highest were
+compared. And a dozen sessions on one PC each type a row into a worktree long
+before they push it.
+
+So this reads every branch on the remote, main and this checkout; the open
+pull requests, through gh, to know which branches are live and to read one
+from a fork; and the working files of every worktree of this repository. It
+answers with the id above the highest one used ANYWHERE, lists what each piece
+of work ADDS that main has not got, and names two kinds of collision at any
+number: an id two pieces of work both add (HELD TWICE), and an id an open pull
+request or this checkout adds that main has since taken (TAKEN ON MAIN).
 
 WHAT IT READS, AND HOW
 ----------------------
 Committed files at each branch's head, through `git ls-tree` and one
-`git cat-file --batch` - never the working tree, and never a checkout:
+`git cat-file --batch` - never a checkout:
 
   group  every `Group XX` heading in docs/NEEDS-CHECKING.md, in each
          docs/needs-checking/group-xx.md and docs/needs-checking-archive/
@@ -58,6 +74,25 @@ Committed files at each branch's head, through `git ls-tree` and one
 A heading inside a fenced block is an example, not an id: DECISIONS.md's own
 Format section carries `## D-NN` as a template.
 
+What a piece of work ADDS is the ids at its head less the ids at the commit
+where it left main (`git merge-base`); with no such commit here - a clone cut
+too short - it is compared with main itself, and the report says so. A
+worktree in the middle of a merge is compared with where the commit it is
+merging (MERGE_HEAD) left main as well: its working files already hold what
+that brought, and those ids are main's, not its own.
+
+Open pull requests: `gh api repos/OWNER/NAME/pulls?state=open`, the REST call,
+because `gh pr list` asks GraphQL and a Claude Code cloud session refuses
+GraphQL (HTTP 403, measured 2026-10-17). The repository is named to gh with
+--github or read from the remote's URL, never left for gh to infer from the
+folder. A pull request whose head is a branch this run already read is that
+branch, labelled with its number; any other - from a fork, or pushed since the
+fetch - is fetched as `refs/pull/N/head` and read the same way.
+
+Worktrees: `git worktree list --porcelain`, read line by line - a path holds
+spaces ("Heron Ai") and is everything after `worktree `. Each worktree's
+register files are read FROM DISK, saved or not, committed or not.
+
 WHAT IT DOES NOT DO
 -------------------
 It writes no register file and it reserves nothing. An id is free AS OF THIS
@@ -73,9 +108,20 @@ It fills no gap. Rows and groups are appended in order, so the next id is one
 above the highest; a gap below it may be an id a branch is holding, or one a
 rename left behind.
 
-It sees only what was pushed. An id typed in another session and not pushed
-is invisible here, as it is to everyone else - which is the case for pushing
-early, not a defect this can fix.
+It calls TAKEN ON MAIN only for an open pull request and for this checkout. A
+branch with no open pull request that adds an id main has may be one that
+merged and was never deleted - its rows are main's now - and the files cannot
+tell that from a clash, so it is not called one. Without gh, only this
+checkout is judged, and the report says so.
+
+A branch that has merged main in AFTER main took its id carries the number
+twice on one tree, and adds nothing main lacks; tests/test_open_defects.py
+section 7 refuses a 5b number used twice on one tree, which is where that one
+is caught.
+
+It sees only what was pushed, or what is on this machine. An id typed in a
+session on another machine and not pushed is invisible here, as it is to
+everyone else - which is the case for pushing early, not a defect this can fix.
 """
 
 import argparse
@@ -95,6 +141,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 NL = chr(10)
 CR = chr(13)
+TAB = chr(9)
 FENCE = "`" * 3
 # The same three dashes tools/check-decision-titles.py accepts in a heading.
 DASHES = chr(0x2014) + chr(0x2013) + "-"
@@ -103,14 +150,18 @@ GIT_TIMEOUT = 300
 
 
 class CouldNot(Exception):
-    """This tool could not look. Exit 2, never an answer."""
+    """This tool could not look. Exit 2, never an answer - unless the thing it
+    could not look at is one source among several, which the report names."""
 
 
 def git(root, args, data=None):
-    """git's stdout as bytes, or CouldNot naming the command and its last line."""
+    """git's stdout as bytes, or CouldNot naming the command and its last line.
+    GIT_OPTIONAL_LOCKS=0 stops git refreshing an index on the way past, so
+    reading a worktree writes nothing in it."""
+    env = dict(os.environ, GIT_OPTIONAL_LOCKS="0")
     try:
         done = subprocess.run(["git", "-C", root] + list(args), input=data,
-                              capture_output=True, timeout=GIT_TIMEOUT)
+                              capture_output=True, timeout=GIT_TIMEOUT, env=env)
     except OSError as exc:
         raise CouldNot("git could not be run: %s" % exc)
     except subprocess.TimeoutExpired:
@@ -121,6 +172,17 @@ def git(root, args, data=None):
         raise CouldNot("git %s failed: %s"
                        % (" ".join(args[:2]), said[-1] if said else "no message"))
     return done.stdout
+
+
+def run_gh(args, root):
+    """(exit code, stdout, stderr) of gh. OSError when there is no gh at all."""
+    try:
+        done = subprocess.run(["gh"] + list(args), cwd=root, capture_output=True,
+                              timeout=GIT_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return 1, "", "gh took longer than %d seconds" % GIT_TIMEOUT
+    return (done.returncode, done.stdout.decode("utf-8", "replace"),
+            done.stderr.decode("utf-8", "replace"))
 
 
 # --------------------------------------------------------------------------
@@ -245,6 +307,21 @@ PATHS = ["docs/NEEDS-CHECKING.md", "docs/needs-checking", "docs/needs-checking-a
          "docs/DECISIONS.md", "docs/decisions"]
 
 
+def ids_in(files):
+    """{register key: set of ids} in FILES, an iterable of (path, text)."""
+    found = {reg.key: set() for reg in REGISTERS}
+    for path, text in files:
+        for reg in REGISTERS:
+            for pattern, read, named in reg.sources:
+                m = pattern.match(path)
+                if not m:
+                    continue
+                found[reg.key] |= read(text)
+                if named is not None:
+                    found[reg.key].add(named(m.group(1)))
+    return found
+
+
 # --------------------------------------------------------------------------
 # Reading the branches
 # --------------------------------------------------------------------------
@@ -272,6 +349,22 @@ def branches(root, remote):
 def head_commit(root):
     try:
         return git(root, ["rev-parse", "--verify", "-q", "HEAD^{commit}"]).decode().strip()
+    except CouldNot:
+        return None
+
+
+def current_branch(root):
+    """The branch this checkout is on, or None when its HEAD is detached."""
+    try:
+        return git(root, ["symbolic-ref", "--short", "-q", "HEAD"]).decode().strip() or None
+    except CouldNot:
+        return None
+
+
+def merge_base(root, one, other):
+    """The commit where ONE left OTHER, or None when this clone has none."""
+    try:
+        return git(root, ["merge-base", one, other]).decode().strip() or None
     except CouldNot:
         return None
 
@@ -312,25 +405,149 @@ def ids_at(root, commit, cache):
     listed = files_at(root, commit)
     missing = [sha for _, sha in listed if sha not in cache]
     cache.update(read_blobs(root, missing))
-    found = {reg.key: set() for reg in REGISTERS}
-    for path, sha in listed:
-        for reg in REGISTERS:
-            for pattern, read, named in reg.sources:
-                m = pattern.match(path)
-                if not m:
-                    continue
-                found[reg.key] |= read(cache[sha])
-                if named is not None:
-                    found[reg.key].add(named(m.group(1)))
+    return ids_in((path, cache[sha]) for path, sha in listed)
+
+
+# --------------------------------------------------------------------------
+# Open pull requests, through gh
+# --------------------------------------------------------------------------
+
+# https://github.com/O/N(.git), git@github.com:O/N.git, ssh://git@github.com/O/N
+GITHUB_URL = re.compile(r"^(?:https?://(?:[^@/]+@)?github\.com/|git@github\.com:"
+                        r"|ssh://git@github\.com/)([^/]+)/([^/]+?)(?:\.git)?/?$")
+# One open pull request per line: number, head branch, head commit, head repo.
+PULLS_JQ = ('.[] | "\\(.number)\\t\\(.head.ref)\\t\\(.head.sha)'
+            '\\t\\(.head.repo.full_name // "")"')
+
+
+def github_repo(url):
+    """OWNER/NAME of a github.com remote URL, or None for any other URL."""
+    m = GITHUB_URL.match(url.strip())
+    return "%s/%s" % (m.group(1), m.group(2)) if m else None
+
+
+def parse_pulls(text):
+    """[{number, branch, sha, repo}] from gh's PULLS_JQ lines. A line in any
+    other shape means gh answered something this tool does not read, and it
+    says so rather than skipping it."""
+    found = []
+    for line in text.replace(CR, "").split(NL):
+        if not line.strip():
+            continue
+        parts = line.split(TAB)
+        if len(parts) != 4 or not parts[0].isdigit() or not parts[2]:
+            raise CouldNot("gh answered a line this tool does not read: %r" % line[:120])
+        found.append({"number": int(parts[0]), "branch": parts[1],
+                      "sha": parts[2], "repo": parts[3]})
     return found
+
+
+def first_line(text):
+    for line in text.replace(CR, "").split(NL):
+        if line.strip():
+            return line.strip()
+    return "no message"
+
+
+def open_pulls(gh, root, repo):
+    """[{number, branch, sha, repo}] of REPO's open pull requests, or CouldNot
+    saying in plain words why gh did not answer."""
+    try:
+        code, out, err = gh(["api", "--paginate", "repos/%s/pulls?state=open&per_page=100"
+                             % repo, "--jq", PULLS_JQ], root)
+    except OSError as exc:
+        raise CouldNot("gh could not be run - it is not installed, or not on PATH (%s)" % exc)
+    if code != 0:
+        raise CouldNot("gh did not list them (exit %d): %s" % (code, first_line(err or out)))
+    return parse_pulls(out)
+
+
+def fetch_pull(root, remote, number):
+    """The head commit of pull request NUMBER, fetched from REMOTE."""
+    git(root, ["fetch", "--no-tags", remote, "refs/pull/%d/head" % number])
+    return git(root, ["rev-parse", "--verify", "-q", "FETCH_HEAD^{commit}"]).decode().strip()
+
+
+# --------------------------------------------------------------------------
+# Worktrees, and their working files
+# --------------------------------------------------------------------------
+
+def parse_worktrees(text):
+    """[{path, head, branch, bare, prunable}] from `git worktree list
+    --porcelain`. A path is the rest of its line, spaces and all."""
+    found, one = [], None
+    for line in text.replace(CR, "").split(NL):
+        if line.startswith("worktree "):
+            one = {"path": line[len("worktree "):], "head": None, "branch": None,
+                   "bare": False, "prunable": False}
+            found.append(one)
+        elif one is None:
+            continue
+        elif line.startswith("HEAD "):
+            one["head"] = line[len("HEAD "):]
+        elif line.startswith("branch "):
+            ref = line[len("branch "):]
+            one["branch"] = ref[len("refs/heads/"):] if ref.startswith("refs/heads/") else ref
+        elif line == "bare":
+            one["bare"] = True
+        elif line == "prunable" or line.startswith("prunable "):
+            one["prunable"] = True
+    return found
+
+
+def merge_head(folder):
+    """The commit the worktree at FOLDER is merging, or None."""
+    try:
+        return git(folder, ["rev-parse", "--verify", "-q", "MERGE_HEAD^{commit}"]
+                   ).decode().strip() or None
+    except CouldNot:
+        return None
+
+
+def files_on_disk(folder):
+    """(path, text) of every register file under FOLDER, as it is on disk."""
+    for rel in PATHS:
+        full = os.path.join(folder, *rel.split("/"))
+        if os.path.isfile(full):
+            found = [full]
+        elif os.path.isdir(full):
+            found = []
+            for here, dirs, names in os.walk(full):
+                dirs.sort()
+                found.extend(os.path.join(here, name) for name in sorted(names))
+        else:
+            continue
+        for path in found:
+            with open(path, "rb") as handle:
+                text = handle.read().decode("utf-8", "replace")
+            yield os.path.relpath(path, folder).replace(os.sep, "/"), text
+
+
+def same_folder(one, other):
+    return (os.path.normcase(os.path.realpath(one))
+            == os.path.normcase(os.path.realpath(other)))
 
 
 # --------------------------------------------------------------------------
 # The answer
 # --------------------------------------------------------------------------
 
-def answer(root, remote="origin", base="main", fetched=True):
-    """Everything this tool says, as one dict. Raises CouldNot."""
+class Holder(object):
+    """One piece of work that may hold ids: a branch, this checkout's HEAD, a
+    pull request read on its own, or a worktree's working files. OWNER is the
+    work it belongs to - a branch name - so a branch, its pull request and the
+    worktree it is checked out in are one piece of work, never three."""
+
+    def __init__(self, name, owner, commit, ids=None, merging=None):
+        self.name, self.owner, self.commit, self.ids = name, owner, commit, ids
+        self.merging = merging
+        self.adds, self.compared_with = None, None
+
+
+def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=None,
+           worktrees=True):
+    """Everything this tool says, as one dict. Raises CouldNot when it could
+    not look at main; a source it could not read is named in the dict."""
     if fetched:
         fetch(root, remote)
     refs = branches(root, remote)
@@ -341,99 +558,284 @@ def answer(root, remote="origin", base="main", fetched=True):
                        % (base_name, "the fetch did not bring one" if fetched
                           else "run without --no-fetch"))
 
+    cache, at_commit = {}, {}
+
+    def ids_of(commit):
+        if commit not in at_commit:
+            at_commit[commit] = ids_at(root, commit, cache)
+        return at_commit[commit]
+
+    prefix = remote + "/"
+    mine = current_branch(root) or "HEAD"
+    holders = [Holder(name, name[len(prefix):], sha) for name, sha in refs]
+
     # This checkout counts too, when it holds commits no branch on the remote
     # has: an id committed here and not yet pushed is still taken.
-    sources = list(refs)
     head = head_commit(root)
     if head is not None and head not in {sha for _, sha in refs}:
-        sources.append(("HEAD", head))
+        holders.append(Holder("HEAD", mine, head))
+    for one in holders:
+        one.ids = ids_of(one.commit)
 
-    cache = {}
-    held = {name: ids_at(root, sha, cache) for name, sha in sources}
-    others = [name for name, _ in refs if name != base_name]
+    pulls = {"read": False, "repo": None, "why_not": None, "open": []}
+    if not fetched:
+        pulls["why_not"] = "--no-fetch reads nothing from the network"
+    else:
+        pulls["repo"] = github
+        if pulls["repo"] is None:
+            try:
+                url = git(root, ["remote", "get-url", remote]).decode("utf-8", "replace")
+            except CouldNot:
+                url = ""
+            pulls["repo"] = github_repo(url)
+        if pulls["repo"] is None:
+            pulls["why_not"] = ("%s is not a github.com remote - name the repository with "
+                                "--github OWNER/NAME" % remote)
+        else:
+            try:
+                listed = open_pulls(gh, root, pulls["repo"])
+            except CouldNot as exc:
+                pulls["why_not"] = str(exc)
+            else:
+                pulls["read"] = True
+                for pr in listed:
+                    pulls["open"].append(read_pull(root, remote, pr, pulls["repo"],
+                                                   holders, ids_of))
+
+    trees = read_worktrees(root, mine, holders) if worktrees else None
+
+    # What each piece of work adds: the ids at its head less those where it
+    # left main. Main itself adds nothing.
+    for one in holders:
+        if one.name == base_name:
+            one.adds = {reg.key: set() for reg in REGISTERS}
+            continue
+        start = merge_base(root, one.commit, base_commit) if one.commit else None
+        one.compared_with = "merge-base" if start else "main"
+        before = ids_of(start or base_commit)
+        if one.merging:
+            also = ids_of(merge_base(root, one.merging, base_commit) or base_commit)
+            before = {reg.key: before[reg.key] | also[reg.key] for reg in REGISTERS}
+        one.adds = {reg.key: one.ids[reg.key] - before[reg.key] for reg in REGISTERS}
+
+    pr_of = {}
+    for pr in pulls["open"]:
+        pr_of.setdefault(pr["owner"], pr["number"])
+    # Live: work that will merge as it stands - an open pull request - and this
+    # checkout. Only live work is called TAKEN ON MAIN.
+    live = set(pr_of) | {mine}
 
     result = {
         "remote": remote,
         "base": base_name,
         "base_commit": base_commit,
         "fetched": fetched,
-        "branches": others,
-        "this_checkout": "HEAD" in held,
+        "branches": [name for name, _ in refs if name != base_name],
+        "this_checkout": any(one.name == "HEAD" for one in holders),
+        "pull_requests": pulls,
+        "worktrees": trees,
+        "holders": {one.name: {"owner": one.owner, "pr": pr_of.get(one.owner),
+                               "this_checkout": one.owner == mine,
+                               "compared_with": one.compared_with}
+                    for one in holders if one.name != base_name},
         "registers": {},
     }
+    main_ids = next(one.ids for one in holders if one.name == base_name)
     for reg in REGISTERS:
-        on_main = held[base_name][reg.key]
+        on_main = main_ids[reg.key]
         if not on_main:
             raise CouldNot("%s holds no %s at all - the register moved, so this "
                            "tool is reading the wrong place. Fix this tool, do "
                            "not trust it." % (base_name, reg.name))
         main_high = max(on_main, key=reg.order)
         everywhere = set()
-        for ids in held.values():
-            everywhere |= ids[reg.key]
+        for one in holders:
+            everywhere |= one.ids[reg.key]
         high = max(everywhere, key=reg.order)
 
-        above, holders = {}, {}
-        for name, _ in sources:
-            ahead = sorted((i for i in held[name][reg.key]
+        above, holds, adders, taken = {}, {}, {}, {}
+        for one in holders:
+            ahead = sorted((i for i in one.ids[reg.key]
                             if reg.order(i) > reg.order(main_high)), key=reg.order)
             if ahead:
-                above[name] = [reg.show(i) for i in ahead]
-                if name != "HEAD":
-                    for i in ahead:
-                        holders.setdefault(i, []).append(name)
+                above[one.name] = [reg.show(i) for i in ahead]
+            new = sorted(one.adds[reg.key] - on_main, key=reg.order)
+            if new:
+                holds[one.name] = [reg.show(i) for i in new]
+            for i in new:
+                adders.setdefault(i, []).append(one)
+            if one.owner in live:
+                for i in sorted(one.adds[reg.key] & on_main, key=reg.order):
+                    taken.setdefault(i, []).append(one.name)
         result["registers"][reg.key] = {
             "name": reg.name,
             "next": reg.show(reg.after(high)),
             "main_highest": reg.show(main_high),
             "highest_anywhere": reg.show(high),
             "above_main": above,
-            # Two branches above main with the same id: one of them renames
+            # What each piece of work adds that main has not got, at any
+            # number - below main's highest as well as above it.
+            "holds": holds,
+            # Two pieces of work adding the same id: one of them renames
             # before it merges, and the sooner it knows the cheaper that is.
-            "held_twice": {reg.show(i): names for i, names in
-                           sorted(holders.items(), key=lambda kv: reg.order(kv[0]))
-                           if len(names) > 1},
+            "held_twice": {reg.show(i): [one.name for one in ones] for i, ones in
+                           sorted(adders.items(), key=lambda kv: reg.order(kv[0]))
+                           if len({one.owner for one in ones}) > 1},
+            # Live work adding an id main has taken since it left main.
+            "taken_on_main": {reg.show(i): names for i, names in
+                              sorted(taken.items(), key=lambda kv: reg.order(kv[0]))},
         }
     return result
 
 
+def read_pull(root, remote, pr, repo, holders, ids_of):
+    """One open pull request: the branch already read at its head, or its head
+    fetched as refs/pull/N/head and read as a holder of its own."""
+    fork = pr["repo"] != repo
+    owner = "PR #%d" % pr["number"] if fork else pr["branch"]
+    entry = {"number": pr["number"], "branch": pr["branch"], "from_fork": fork,
+             "owner": owner, "read_as": None, "why_not": None}
+    for one in holders:
+        if one.commit == pr["sha"] and one.owner == owner:
+            entry["read_as"] = one.name
+            return entry
+    try:
+        commit = fetch_pull(root, remote, pr["number"])
+    except CouldNot as exc:
+        entry["why_not"] = "its head is not a branch this run read, and %s" % exc
+        return entry
+    one = Holder("PR #%d" % pr["number"], owner, commit, ids_of(commit))
+    holders.append(one)
+    entry["read_as"] = one.name
+    return entry
+
+
+def read_worktrees(root, mine, holders):
+    """Every worktree of this repository, read from disk; each one read is a
+    holder of its own."""
+    trees = []
+    try:
+        listed = parse_worktrees(git(root, ["worktree", "list", "--porcelain"])
+                                 .decode("utf-8", "replace"))
+        top = git(root, ["rev-parse", "--show-toplevel"]).decode("utf-8", "replace").strip()
+    except CouldNot as exc:
+        return [{"path": None, "branch": None, "this_checkout": False, "read": False,
+                 "why_not": "git worktree list did not answer: %s" % exc}]
+    for wt in listed:
+        this = same_folder(wt["path"], top)
+        entry = {"path": wt["path"], "branch": wt["branch"], "this_checkout": this,
+                 "read": False, "why_not": None}
+        trees.append(entry)
+        if wt["bare"]:
+            entry["why_not"] = "a bare repository has no working files"
+            continue
+        if wt["prunable"] or not os.path.isdir(wt["path"]):
+            entry["why_not"] = "its folder is gone"
+            continue
+        try:
+            ids = ids_in(files_on_disk(wt["path"]))
+        except OSError as exc:
+            entry["why_not"] = "its files could not be read: %s" % exc
+            continue
+        owner = wt["branch"] or (mine if this else "worktree " + wt["path"])
+        holders.append(Holder("worktree " + wt["path"], owner, wt["head"], ids,
+                              merging=merge_head(wt["path"])))
+        entry["read"] = True
+    return trees
+
+
+def label(result, name):
+    """NAME with what it is: its pull request, or none, and whether it is
+    this checkout's."""
+    one = result["holders"].get(name, {})
+    bits = []
+    if one.get("pr"):
+        bits.append("#%d" % one["pr"])
+    elif result["pull_requests"]["read"] and name.startswith(result["remote"] + "/"):
+        bits.append("no open PR")
+    if one.get("this_checkout"):
+        bits.append("this checkout")
+    return name + (" (%s)" % ", ".join(bits) if bits else "")
+
+
 def report(result):
     out = sys.stdout.write
-    out("Next free id in each register - %s (%s) and %d other branch%s%s, %s\n\n"
-        % (result["base"], result["base_commit"][:8], len(result["branches"]),
-           "" if len(result["branches"]) == 1 else "es",
-           " and this checkout's HEAD" if result["this_checkout"] else "",
+    pulls, trees = result["pull_requests"], result["worktrees"]
+    many = lambda n, one, more: "%d %s" % (n, one if n == 1 else more)
+    out("Next free id in each register - %s (%s), %s, %s and %s, %s\n\n"
+        % (result["base"], result["base_commit"][:8],
+           many(len(result["branches"]), "other branch", "other branches"),
+           many(len(pulls["open"]), "open pull request", "open pull requests")
+           if pulls["read"] else "NO pull request",
+           many(sum(1 for t in trees or [] if t["read"]), "worktree", "worktrees"),
            "fetched just now" if result["fetched"]
            else "AS LAST FETCHED - this run did not fetch"))
     for reg in REGISTERS:
         one = result["registers"][reg.key]
         out("  %-24s next %-8s main's highest %s\n"
             % (one["name"], one["next"], one["main_highest"]))
-        if not one["above_main"]:
-            out("      no branch holds one above main's highest\n")
-        for name in sorted(one["above_main"]):
-            out("      %-44s %s\n" % (name, ", ".join(one["above_main"][name])))
+        if not one["holds"]:
+            out("      nothing read adds one main has not got\n")
+        for name in sorted(one["holds"]):
+            out("      %-56s %s\n" % (label(result, name), ", ".join(one["holds"][name])))
         for gid, names in one["held_twice"].items():
-            out("      HELD TWICE  %s is on %s - one of them renames before it merges\n"
-                % (gid, " and ".join(names)))
+            out("      HELD TWICE  %s is added by %s - one of them renames before it merges\n"
+                % (gid, " and ".join(label(result, n) for n in names)))
+        for gid, names in one["taken_on_main"].items():
+            out("      TAKEN ON MAIN  %s is on main already, and %s adds it too - renames "
+                "before it merges\n" % (gid, " and ".join(label(result, n) for n in names)))
         out("\n")
-    out("Free as of this run, and reserved by nothing: push the branch that takes\n"
+
+    out("What was read\n")
+    out("  main            %s at %s\n" % (result["base"], result["base_commit"][:8]))
+    out("  branches        %d, %s\n" % (len(result["branches"]),
+                                       "fetched just now" if result["fetched"]
+                                       else "as last fetched"))
+    if pulls["read"]:
+        fetched = [p for p in pulls["open"] if p["read_as"] and p["read_as"].startswith("PR #")]
+        missed = [p for p in pulls["open"] if not p["read_as"]]
+        out("  pull requests   %d open on %s - %d read at their branch, %d fetched as "
+            "refs/pull/N/head, %d NOT READ\n"
+            % (len(pulls["open"]), pulls["repo"], len(pulls["open"]) - len(fetched) - len(missed),
+               len(fetched), len(missed)))
+        for p in missed:
+            out("                  #%d NOT READ - %s\n" % (p["number"], p["why_not"]))
+    else:
+        out("  pull requests   NOT READ - %s\n" % pulls["why_not"])
+        out("                  so TAKEN ON MAIN judges this checkout alone: a branch whose id\n"
+            "                  main took since cannot be told from one that merged\n")
+    if trees is None:
+        out("  worktrees       not read - --no-worktrees\n")
+    for t in trees or []:
+        out("  worktree        %s%s%s\n"
+            % (t["path"], " (%s)" % t["branch"] if t["branch"] else " (detached)",
+               ", this checkout" if t["this_checkout"] else ""))
+        if not t["read"]:
+            out("                  NOT READ - %s\n" % t["why_not"])
+    out("\nFree as of this run, and reserved by nothing: push the branch that takes\n"
         "one early, and run this again before the pull request merges.\n")
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description="The next id free on main and on every branch, in each "
-                    "append-only register. Reads; writes no register file.")
+        description="The next id free on main, on every branch, in every open pull "
+                    "request and every worktree here, in each append-only register. "
+                    "Reads; writes no register file.")
     parser.add_argument("--no-fetch", action="store_true",
-                        help="answer from the branches as last fetched")
+                        help="no network: the branches as last fetched, no pull request")
     parser.add_argument("--json", action="store_true", help="the answer as JSON")
     parser.add_argument("--remote", default="origin")
     parser.add_argument("--base", default="main", help="the branch ids merge into")
+    parser.add_argument("--github", default=None, metavar="OWNER/NAME",
+                        help="the repository whose open pull requests are read "
+                             "(default: from the remote's URL)")
+    parser.add_argument("--no-worktrees", action="store_true",
+                        help="leave the worktrees' working files unread")
     parser.add_argument("--repo", default=ROOT, help="the checkout to ask (default: this one)")
     args = parser.parse_args(argv)
     try:
-        result = answer(args.repo, args.remote, args.base, fetched=not args.no_fetch)
+        result = answer(args.repo, args.remote, args.base, fetched=not args.no_fetch,
+                        github=args.github, worktrees=not args.no_worktrees)
     except CouldNot as exc:
         if args.json:
             sys.stdout.write(json.dumps({"error": str(exc)}, indent=2) + "\n")
