@@ -522,9 +522,14 @@ python tools/renumber.py --from D-116 --to D-131                  # make them; Q
 
 It renames only what this branch added since its merge-base with `origin/main` - headings, index rows,
 anchors, items (`EJ1`), the row's number cell, every reference, and the files named for the id
-(`decisions/D-116.md`, `group-ej.md`) - and **never main's own use of the same id**. It stages
-nothing, and refuses while a merge is half done. Exit **1** means it left something for you, named: a
-line of main's this branch edited, or a bare group letter, which can be a word. Not `git grep`: a grep
+(`decisions/D-116.md`, `group-ej.md`) - and **never main's own use of the same id**. A renamed
+decision's **Numbering:** line is history, so its words stay and the tool adds *"Renumbered from D-116
+to D-131 on <date> with `tools/renumber.py`, because `main` had given D-116 to another decision
+first"* (or names the branch that holds it); one with no Numbering line gets one under its Status line.
+Do not rewrite that line by hand to say the new number was "found free". It stages nothing, and refuses
+while a merge is half done. Exit **1** means it left something for you, named: a line of main's this
+branch edited, a bare group letter, which can be a word, or a decision with no Status line to write
+its Numbering line under. Not `git grep`: a grep
 cannot tell this branch's D-116 from main's. The gates still catch a clash left in:
 `check-docs` a number defined twice, `check-decision-titles` a number reused with another title,
 `tests/test_open_defects.py` a 5b number used twice, and two `group-xx.md` files collide as an add/add

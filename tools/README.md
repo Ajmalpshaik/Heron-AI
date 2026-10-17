@@ -1457,10 +1457,12 @@ declared** — the diff outranks the label. Touching a fragment owes a run again
 [D-30](../docs/DECISIONS.md) is not satisfied by a compile.
 
 **Except a card whose routing text alone changed.** The card is parsed before and after: when only
-`semantic-identity`, `utterances`, `purpose` or a YAML comment moved, and nothing else in that
+`semantic-identity`, `utterances`, `purpose`, `domain` or a YAML comment moved, and nothing else in that
 fragment's folder did, the signal is `fragment-routing` - it owes `check-routing` and `check-intrusion`,
 not a Revit run, because Revit reads none of that text and D-30's fingerprint covers `impl/` alone.
-`purpose` is prose, and counts as routing because the lookup indexes it. Any other key - contract,
+`purpose` is prose, and counts as routing because the lookup indexes it; `domain` is the re-ranker's
+and a lookup's filter, so a wrong one can hide a card - `check-routing` measures that, a Revit run
+cannot (added on the owner's word, 2026-10-17). Any other key - contract,
 risk, revit, runtime, status, proof, capability - or anything under `impl/` or `tests/`, or a card that
 is new or will not parse, keeps `fragment-behaviour`. [Row 5b-862](../docs/FRAGMENT-ISSUES.md).
 
@@ -2039,7 +2041,7 @@ that failed, no main, or a register with no id on main at all, which means the r
 [`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids, a fake
 gh, a fork's `refs/pull/N/head`, and worktrees in folders whose names hold spaces - no network.
 
-**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
+**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id. A renamed decision's **Numbering:** line keeps its words and gains a sentence naming the old number, the date and why - main took it, or which branch holds it - and one with no Numbering line gets one under its **Status:** line; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
 
 ---
 

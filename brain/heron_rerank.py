@@ -103,6 +103,17 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 # rather than a target: a shortlist of five costs five pairs, not twenty.
 SHORTLIST = 20
 
+# WHAT A FRAGMENT'S PASSAGE CARRIES BESIDE ITS IDENTITY: its first declared
+# utterances, at most this many, and at most this many words of them. Rows
+# 5b-467, 5b-483, 5b-484, 5b-485 and 5b-510 measured the re-ranker reading a
+# card's identity alone and sending paraphrases of what the card declares to
+# other cards. The cap keeps a passage well inside the default model's
+# 512-token window - tests/test_rerank.py measures the longest passage the
+# library builds against it. Read once, at index time, by heron_search.index -
+# never per question.
+PASSAGE_UTTERANCES = 8
+PASSAGE_WORDS = 64
+
 ABSENT = "absent"
 CROSS_ENCODER = "cross-encoder"
 
@@ -148,6 +159,26 @@ def announcement():
         "fusion produced and every answer says the re-ranker did not run.",
         "Slower to be right, never broken.",
     ])
+
+
+def passage_said(utterances):
+    """A card's utterances as its passage carries them: the first ones, capped.
+
+    In the order the card declares them, stopping before the utterance that
+    would pass PASSAGE_WORDS, so a sentence is never cut in half. Joined with
+    ". " so the model reads separate sentences rather than one run-on line.
+    """
+    kept, words = [], 0
+    for said in (utterances or [])[:PASSAGE_UTTERANCES]:
+        said = " ".join(str(said or "").split())
+        if not said:
+            continue
+        size = len(said.split())
+        if words + size > PASSAGE_WORDS:
+            break
+        kept.append(said)
+        words += size
+    return ". ".join(kept)
 
 
 def warm():

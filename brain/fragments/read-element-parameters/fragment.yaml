@@ -272,8 +272,8 @@ utterances:
   # twelve wordings of this card's identity were measured instead (5b-980): on
   # main c2f2765a none moves it, or any other of the 89 sentences in
   # tests/data/text-note-questions.tsv, on lexical or the trained model, so the
-  # identity was left as it is. The re-ranker, which reads the identity most,
-  # is owed on the owner's PC.
+  # identity was left as it is. The re-ranker, where the identity weighs most
+  # (D-134), is owed on the owner's PC.
   - read what the text notes in this view say
   - what does this text note say
   # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
