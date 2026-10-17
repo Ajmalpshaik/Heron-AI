@@ -210,6 +210,42 @@ Design for it from the start:
 
 If this is not designed in early it becomes very expensive to retrofit, because it changes every tool signature.
 
+### 7.1 The first half is built — Heron says it is still waiting (2026-10-17)
+
+**What is built is the "still working" note, and nothing else in the list above.** No job id, no
+`heron_job_status`, no percentage, no cancelling. A tool still blocks until Revit answers; what changed
+is that the host is told, while it blocks, that the wait goes on.
+
+- **Five tools carry the SDK's `Context`**: `revit_change`, `revit_read`, `revit_building_loads`,
+  `revit_sprinkler_hydraulics` and `revit_sprinkler_layout` — the ones that send a fragment and can wait
+  minutes on a slow fragment, a family build, or a modeller answering a prompt in Revit. The SDK finds
+  `ctx` by its type, through `_recorded`'s `functools.wraps`, and leaves it out of every tool's arguments.
+- **The bridge client's join loop does the timing.** `Bridge.request(..., on_wait=)` hands the callback
+  to `_read_line`, which calls it every `WAIT_NOTE_S` with the seconds waited, until the answer or the
+  deadline. The server's callback (`_waiting`) sends an MCP progress notification with
+  `anyio.from_thread.run`, because the SDK runs a plain tool on a worker thread. The words are
+  `WAITING_ON_REVIT` in `heron_mcp_server.py`.
+- **Only a host that sent a `progressToken` is told** (`_progress_token`): no token, no callback, and
+  the wait runs exactly as it did before.
+- **A fault in a note never costs the answer.** The client drops the callback for the rest of that read.
+- **Nothing goes down the pipe.** The protocol is unchanged, and Revit is asked nothing more.
+
+`tests/test_mcp_stdio.py` holds it over real stdio, on any system, against
+`tests/support/slow_revit_server.py` — the real server in front of a Revit that takes the test's `SLOW_S`
+seconds to answer:
+a note every `WAIT_NOTE_S` for the host that asked, none for the host that did not. **What Claude Code
+does with the notes** — the docs read on 2026-10-17 — is in
+[WHAT-TO-INSTALL §5a](WHAT-TO-INSTALL.md#5a-when-a-revit-job-runs-long--claude-codes-own-limits). **Seeing
+one in a real chat with a real Revit** is [NEEDS-CHECKING Group EJ](needs-checking/group-ej.md).
+
+**The follow-up, not built: a heartbeat from Revit itself.** The note today says only that *this side*
+is still waiting. It cannot say whether Revit is working, has queued the request behind something else,
+or is showing the modeller a prompt — only the add-in knows that. Having the add-in write a heartbeat line
+down the pipe while it works would let the note say which, but every reader of the pipe expects exactly
+one line per request, so it is a change to the protocol and needs a `PROTOCOL_VERSION` bump on both sides
+(`heron_bridge_client.PROTOCOL_VERSION`, and the add-in's). The job id, `heron_job_status` and cancelling
+in the list above are still not built either.
+
 ---
 
 ## 8. **[NOTE]** What every chat gets from the server — built 2026-09-23
