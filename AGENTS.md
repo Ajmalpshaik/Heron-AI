@@ -6,10 +6,11 @@ none of it is repeated here, because two copies of a rule is how one of them goe
 > **Serving a modeller's Revit request rather than changing Heron? Stop reading here.** *"Create a
 > family"*, *"select all ducts"* are answered through Heron's own tools — `heron_lookup`, and
 > `heron_method` for a job of several steps, a family above all — **never by reading this repository**.
-> The reading order below is for changing Heron. **If no `heron` tools are listed, Heron is not
-> connected:** say so in one line, ask the modeller to run `python tools/heron-ready.py` in this folder,
-> and stop. Working a job out from these files instead is what turned a one-minute family into seven
-> on a new laptop.
+> The reading order below is for changing Heron. **If no `revit_` tool is listed, Heron cannot reach
+> Revit from here:** say so in one line, ask the modeller to run `python tools/heron-ready.py` in this
+> folder, and stop. Off Windows - a cloud session - Heron lists only its library tools and never a
+> `revit_` one, because no Revit can be there ([D-132](docs/DECISIONS.md)). Working a job out from these
+> files instead is what turned a one-minute family into seven on a new laptop.
 
 ---
 
