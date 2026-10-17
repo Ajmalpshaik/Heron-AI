@@ -334,7 +334,8 @@ The rows go to the page. **Claude receives the one line above**, nothing more.
 ### 8.2 How the rows are read — a new READ fragment
 
 **`READ_ELEMENT_TABLE`** (new, `risk: READ`, starts `DRAFT`), run through `run_fragment_read` exactly
-as `revit_read` runs a fragment: no transaction, so Revit itself refuses any change, and it works with
+as `revit_read` runs a fragment: no transaction, so Revit refuses a change, and the add-in counts the model
+around every read, because that refusal once let an element through ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)); it works with
 Changes OFF.
 
 - **Inputs:** `elements` (the selection, or the chain), `view` (by name, as `"ViewType: Name"`, the way
