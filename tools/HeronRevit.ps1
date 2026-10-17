@@ -251,21 +251,25 @@ function Write-PythonAdvice {
     }
 
     # Both are named in one go: a PC missing both would otherwise be sent round
-    # twice. PyYAML's line is requirements.txt's own, so a package added there
-    # is installed by the same command (row 5b-201).
+    # twice (row 5b-201). ONE line installs both - requirements-lock.txt's own,
+    # every version pinned and hashed, the file HeronInstaller.exe installs
+    # from. Unpinned, `pip install mcp` pulled a cryptography that broke on
+    # import on 2026-09-16 (row 5b-944). The lock is for Python 3.11 to 3.14,
+    # as its header says, so a Python outside that is told so first.
     $missing = @()
     if (-not $Python.HasYaml) { $missing += "PyYAML" }
     if (-not $Python.HasMcp)  { $missing += "the MCP package" }
     if ($missing.Count -gt 0) {
         $verb = if ($missing.Count -gt 1) { "are" } else { "is" }
         Write-Host "    Python is here ($($Python.Version)) but $($missing -join ' and ') $verb not." -ForegroundColor Yellow
-        Write-Host "    Install into your own profile, in the Heron folder - no administrator rights required:"
-        if (-not $Python.HasYaml) {
-            Write-Host "        $($Python.Command) -m pip install --user -r requirements.txt" -ForegroundColor White
+        if ("$($Python.Version)" -notmatch '^Python 3\.(1[1-4])(\.|$)') {
+            Write-Host "    Heron's pinned packages are for Python 3.11 to 3.14 - install one for yourself first:"
+            Write-Host "        winget install Python.Python.3.12 --scope user" -ForegroundColor White
+            Write-Host "    then, in a NEW terminal, in the Heron folder:"
+        } else {
+            Write-Host "    Install into your own profile, in the Heron folder - no administrator rights required:"
         }
-        if (-not $Python.HasMcp) {
-            Write-Host "        $($Python.Command) -m pip install --user mcp" -ForegroundColor White
-        }
+        Write-Host "        $($Python.Command) -m pip install --user --require-hashes -r requirements-lock.txt" -ForegroundColor White
         Write-Host "    Then run this again."
         return $false
     }
