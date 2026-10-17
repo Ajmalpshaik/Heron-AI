@@ -761,6 +761,47 @@ def main():
     else:
         check(False, "_what_to_type can be lifted out of the server")
 
+    # --- 11. a text note's marks and its view's chain, where a chat reads ---
+    #
+    # FRAGMENT-ISSUES 5b-975. EDIT_TEXT_VALUES v4 takes \r, \v and \\ in a
+    # note's wording and READ_ELEMENT_PARAMETERS v3 shows a note in the same
+    # marks, and both said so only in YAML comments no chat sees. A chat's
+    # values arrive one per line, so without the marks it cannot type a note
+    # of two paragraphs. Said in the notes above each value, never in the
+    # searched `purpose`, which would move routing.
+    print()
+    print("A text note's marks and the chain for one view reach the caller")
+
+    def note_under(lines, name):
+        for at, line in enumerate(lines[:-1]):
+            if line.split()[:1] == [name] and lines[at + 1].startswith(" " * 8):
+                return lines[at + 1].strip()
+        return ""
+
+    marks = ("\\r", "\\v", "\\\\")
+    chain = ("SELECT_VISIBLE_IN_VIEW", "categories=Text Notes",
+             'expect_from="select-visible-in-view"')
+    for capability, folder, wants in (
+            ("EDIT_TEXT_VALUES", "edit-text-values",
+             (("field", chain), ("text", marks), ("replacement", marks))),
+            ("READ_ELEMENT_PARAMETERS", "read-element-parameters",
+             (("parameterName", marks + chain + ("parameterName=Text",)),))):
+        block = contract_lines(space, capability) if space is not None else []
+        for name, parts in wants:
+            note = note_under(block, name)
+            check(note and all(part in note for part in parts),
+                  "heron_resolve %s prints under `%s` every one of %r: %r"
+                  % (capability, name, parts, note))
+        frag = HF.load(os.path.join(ROOT, "brain", "fragments", folder))
+        searched = " ".join([str(frag.data.get("purpose") or "")]
+                            + [str(u) for u in frag.utterances()])
+        check(not any(mark in searched for mark in marks),
+              "%s's searched purpose and utterances carry none of the marks"
+              % capability)
+        check(not any("THE COMMENT DIRECTLY ABOVE" in line for line in block),
+              "%s's note about its notes sits above a value nobody types, "
+              "and is never printed" % capability)
+
     print()
     if FAILURES:
         print("%d FAILURE(S):" % len(FAILURES))
