@@ -125,17 +125,24 @@ import heron_brain as brain                         # noqa: E402
 # must be a loud failure, never a silent one - which is why the final except
 # re-raises with the install line rather than leaving an ImportError that names
 # a module the user never typed.
+#
+# Context comes from the same module as the server class, in both SDKs, so it
+# is looked up beside it rather than on its own.
 try:                                                       # noqa: E402
     from mcp.server.mcpserver import MCPServer as _Server   # SDK 2.x
+    from mcp.server.mcpserver import Context as _Context
 except ImportError:
     try:
         from mcp.server.fastmcp import FastMCP as _Server   # SDK 1.x
+        from mcp.server.fastmcp import Context as _Context
     except ImportError as exc:
         raise ImportError(
             "Heron's MCP server needs the MCP SDK, and this one has neither "
             "mcp.server.mcpserver (2.x) nor mcp.server.fastmcp (1.x): %s\n"
             "Install it with:  pip install --user mcp" % exc
         )
+
+import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
 NEWLINE = chr(10)
 
@@ -385,6 +392,70 @@ def _note(tool, started, seconds, reply=None, error=None, outcome=None):
                                             outcome=outcome)
     except Exception:                                # noqa: BLE001 - display only
         pass
+
+
+# WHAT A HOST IS TOLD WHILE A TOOL WAITS ON REVIT. A tool that sends a
+# fragment can wait minutes - a slow fragment, a family build, a modeller
+# answering a prompt in Revit - and with nothing said in that time a host
+# cannot tell a wait from a hang. So every bridge.WAIT_NOTE_S the tool sends
+# the host an MCP progress notification (docs/04 section 7's "Working...", the
+# first half of it: no job id, no heron_job_status). Plain words, never a
+# percentage: nobody here knows how far Revit has got.
+WAITING_ON_REVIT = ("Waiting for Revit - %d s so far. The modeller may be "
+                    "answering a prompt in Revit.")
+
+
+def _progress_token(ctx):
+    """
+    The progressToken the host sent with this call, or None.
+
+    ONLY A HOST THAT ASKED IS TOLD - the MCP rule, kept here rather than left
+    to the SDK, so a call with no token costs the wait nothing at all. SDK 2.x
+    keeps the request's _meta as a dict keyed `progress_token`; 1.x as a model
+    with `progressToken`. A Context with no request behind it - a call through
+    the SDK's own dispatch, in-process - raises ValueError, and means no token.
+    """
+    if ctx is None:
+        return None
+    try:
+        meta = ctx.request_context.meta
+    except (AttributeError, ValueError):
+        return None
+    if isinstance(meta, dict):
+        token = meta.get("progress_token", meta.get("progressToken"))
+    else:
+        token = getattr(meta, "progressToken", None)
+    # A bool is an int to Python and never a token to MCP.
+    return None if isinstance(token, bool) else token
+
+
+def _waiting(ctx):
+    """
+    The `on_wait` a tool hands the bridge client, or None when the host gave
+    no progressToken.
+
+    The client calls it from the thread the tool runs on - SDK 2.x runs a
+    plain tool on a worker thread - so the notification is sent on the event
+    loop with anyio.from_thread.run. A fault in sending drops the notes for
+    the rest of that wait (the client's rule) and never the answer. An SDK
+    that runs a plain tool on the event loop itself, as 1.x did, makes
+    from_thread.run refuse, so there the wait stays as silent as it was.
+
+    THE CLOCK IS THIS CALLBACK'S, NOT THE CLIENT'S. The client counts the
+    seconds of one read, and a read that lost its answer is sent again with a
+    clock of its own - so its count starts again at WAIT_NOTE_S. MCP requires
+    progress to rise with every note, and the seconds since this callback
+    was made always do.
+    """
+    if _progress_token(ctx) is None:
+        return None
+    began = time.monotonic()
+
+    def note(_read_waited):
+        waited = time.monotonic() - began
+        anyio.from_thread.run(ctx.report_progress, round(waited, 1), None,
+                              WAITING_ON_REVIT % waited)
+    return note
 
 
 server = _Labelled("heron", instructions=_host_instructions())
@@ -1503,7 +1574,8 @@ def _matched_line(request, capability):
 
 @server.tool()
 def revit_change(capability: str = "", values: str = "",
-                 expect_from: str = "", request: str = "") -> str:
+                 expect_from: str = "", request: str = "",
+                 ctx: _Context = None) -> str:
     """
     Change the open Revit model, and KEEP the change.
 
@@ -1701,7 +1773,8 @@ def revit_change(capability: str = "", values: str = "",
     # Modify and below, run_fragment_publish or run_fragment_admin above it.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
-                            response_timeout=configuration.fragment_timeout())
+                            response_timeout=configuration.fragment_timeout(),
+                            on_wait=_waiting(ctx))
     session.close()
     _ctx_reply(reply)
 
@@ -2599,7 +2672,8 @@ def _proof_line(capability, folder):
 
 @server.tool()
 def revit_read(capability: str = "", values: str = "",
-               expect_from: str = "", request: str = "") -> str:
+               expect_from: str = "", request: str = "",
+               ctx: _Context = None) -> str:
     """
     Answer a question about the open Revit model with one of Heron's
     capabilities that READS - and change nothing.
@@ -2713,7 +2787,7 @@ def revit_read(capability: str = "", values: str = "",
     # compiling it.
     reply = session.request("run_fragment_read", op_args=args,
                             response_timeout=configuration.fragment_timeout(),
-                            idempotent=not consumes)
+                            idempotent=not consumes, on_wait=_waiting(ctx))
     session.close()
     _ctx_reply(reply)
 
@@ -2935,7 +3009,7 @@ def _open_companion(companion_page):
 
 @server.tool()
 def revit_building_loads(inputs: str = "", expect_from: str = "",
-                         include_links: bool = False) -> str:
+                         include_links: bool = False, ctx: _Context = None) -> str:
     """
     Calculate the heating and cooling load of every MEP Space in the open
     model - docs/44. Heron reads every Space's walls, roofs, floors and
@@ -2982,7 +3056,8 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
                 "Heron tab.")
     out = {}
     said = _through(revit_read, reply_out=out)(
-        "REPORT_SPACE_ENVELOPE", "includeLinks=true" if include_links else "", expect_from)
+        "REPORT_SPACE_ENVELOPE", "includeLinks=true" if include_links else "", expect_from,
+        ctx=ctx)
     reply = out.get("reply")
     # revit_read has already refused, classified any failure and checked the
     # pin; when it did not get a good reply, its own sentence is the answer,
@@ -3025,7 +3100,7 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
 
 @server.tool()
 def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
-                               expect_from: str = "") -> str:
+                               expect_from: str = "", ctx: _Context = None) -> str:
     """
     Run the hydraulic calculation of one sprinkler system in the open model -
     docs/46. Heron reads the fire protection piping system from Revit
@@ -3072,7 +3147,7 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
     out = {}
     said = _through(revit_read, reply_out=out)(
         "REPORT_SPRINKLER_NETWORK", "systemName=" + ((system or "").strip() or "*"),
-        expect_from)
+        expect_from, ctx=ctx)
     reply = out.get("reply")
     if not isinstance(reply, dict) or not reply.get("ok"):
         return _ended(out.get("ended"), said)
@@ -3104,7 +3179,7 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
 
 
 @server.tool()
-def revit_sprinkler_layout(spaces: str = "", inputs: str = "") -> str:
+def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = None) -> str:
     """
     Lay sprinklers out in the selected Spaces or Rooms of any shape - docs/47.
     Heron reads the rooms from Revit (REPORT_SPRINKLER_LAYOUT_SPACES, which
@@ -3148,7 +3223,8 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "") -> str:
                 "To turn it on, click the arrow under the Companion button on the Heron tab.")
     out = {}
     said = _through(revit_read, reply_out=out)(
-        "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + ((spaces or "").strip() or "*"))
+        "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + ((spaces or "").strip() or "*"),
+        ctx=ctx)
     reply = out.get("reply")
     # Labelled as revit_building_loads labels its endings (row 5b-389).
     if not isinstance(reply, dict) or not reply.get("ok"):

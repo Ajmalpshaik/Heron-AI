@@ -42,8 +42,12 @@ purpose: >
      whether it is mirrored, every INSTANCE and every TYPE parameter with its
      value and, for a shared one, its GUID, and every tag on it - its view,
      tag type, head position and leader. Keep it whole: steps 4, 6 and 7 read
-     it. Hand it the old units only - the record is not capped, and 535
-     elements made 6 MB.
+     it. Hand it the old units only. SINCE VERSION 3 (row 5b-489) THE RECORD
+     HOLDS AT MOST 50 ELEMENTS AND STOPS AT maxChars - 60000 when left out,
+     and one unit of about 330 parameters (DI3) is some 30000 by itself - so pass
+     maxChars=1000000 here and in step 6. A record that ends in a "RECORD
+     CUT" line is NOT whole: ask again for the ids that line names before
+     going on.
      A PROJECT CAN HOLD TWO SHARED PARAMETERS WITH THE SAME NAME. Seen
      2026-10-12: two called "Equipment Tag", GUID e133774c... filled and GUID
      cb0704fc... empty - a by-name read showed the empty one. `sameNameTwice`
