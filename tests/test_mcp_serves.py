@@ -289,7 +289,9 @@ async def exercise(server):
     # The arguments, from the generated schema rather than from the signature.
     expected = {
         "heron_resolve": ["capability"],
-        "heron_lookup": ["request"],
+        # `question` since 2026-10-17: the host's word that a request is a
+        # question, which leaves out every capability that writes (D-128).
+        "heron_lookup": ["request", "question"],
         "revit_use_session": ["session"],
         "revit_select_by_category": ["category"],
         "revit_preview_move": ["category", "distance"],
@@ -365,6 +367,45 @@ async def exercise(server):
           "and names it")
     check("heron_scope.py --rebuild" in drifted,
           "and that a rebuild is needed - this store is the suite's own")
+
+    # D-128, THROUGH THE DISPATCH A HOST USES. "what scale is this view" is a
+    # question a write declares (D-86's own example), so without the flag it
+    # answers by identity with SET_VIEW_SCALE; with `question` the write is
+    # not offered and the reply says what was left out.
+    print()
+    print("  a question, through the SDK's own dispatch - D-128")
+    import heron_brain as BRAIN
+    import heron_tools as TOOLS
+    ceiling = getattr(BRAIN, "question_ceiling", None)
+    check(callable(ceiling), "the brain has a word for a question's ceiling")
+    if callable(ceiling):
+        level = TOOLS.level_named(ceiling())
+        check(level is not None and level + 1 == TOOLS.risk_of("revit_change"),
+              "the ceiling is the level just below the change door's, read "
+              "from the registry (%s)" % ceiling())
+        found = BRAIN.lookup("what scale is this view", question=True)
+        answered = TOOLS.level_named(found.get("risk"))
+        check(found.get("question") is True and found.get("left_out", 0) > 0
+              and answered is not None
+              and answered < TOOLS.risk_of("revit_change"),
+              "lookup(question=True) answers below the write line and counts "
+              "what it left out (%s, %s, %s left out)"
+              % (found.get("capability"), found.get("risk"),
+                 found.get("left_out")))
+    try:
+        plain = text_of(await server.call_tool(
+            "heron_lookup", {"request": "what scale is this view"}))
+        asked = text_of(await server.call_tool(
+            "heron_lookup", {"request": "what scale is this view",
+                             "question": True}))
+    except Exception as exc:                                    # noqa: BLE001
+        plain = asked = "(raised %s: %s)" % (type(exc).__name__, exc)
+    check("Asked as a question" not in plain,
+          "without `question` the reply is the lookup it always was")
+    check("Asked as a question" in asked and "D-128" in asked
+          and "would need   SET_VIEW_SCALE" not in asked,
+          "with it, the write is not the answer and the reply says what was "
+          "not offered")
 
     print()
     print("  the HVAC engine, called through the SDK's own dispatch")

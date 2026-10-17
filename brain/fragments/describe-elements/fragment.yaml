@@ -97,3 +97,14 @@ utterances:
   - tell me what I have selected
   - what category is this
   - what is this
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-477, 5b-478). This card reads category,
+  # family and type from the element's type. Measured reaching
+  # SET_CURTAIN_WALL_MULLIONS and SET_FAMILY_CATEGORY - writes. Row 477 named
+  # READ_ELEMENT_PARAMETERS for the wall's type; this card owns "what family
+  # and type is this", and his word put it here. A family loaded but never
+  # placed has no instance to select, so the second needs one placed. Nothing
+  # on any frozen set became riskier (retrieval-history.md, 2026-10-17).
+  - what type is this wall
+  - what category is this family

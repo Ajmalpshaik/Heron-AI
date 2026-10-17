@@ -167,3 +167,9 @@ utterances:
   - is there a total on this schedule
   - why is the level column not showing
   - what is this schedule set up to do
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-478). Measured reaching
+  # SET_SCHEDULE_FILTERS, a write, on the trained backend. Nothing on any
+  # frozen set became riskier (brain/retrieval-history.md, 2026-10-17).
+  - is this schedule filtered
