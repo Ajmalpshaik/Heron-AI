@@ -109,6 +109,11 @@ namespace Heron.Revit.Addin
 
         private ExternalEvent _event;
 
+        // How many jobs Revit's thread is inside right now - 0 or 1, since
+        // there is one thread. Read by the stop on a listener thread, which
+        // must not ask Revit, to say whether anything was there to stop.
+        private int _running;
+
         public RevitDispatcher(Action<string> log, string session, HeronActivityBanner banner)
         {
             _log = log ?? delegate { };
@@ -124,6 +129,12 @@ namespace Heron.Revit.Addin
                 Math.Max(1, config.GetInt("revit.busyTimeoutSeconds", 10)));
             _operationTimeout = TimeSpan.FromSeconds(
                 Math.Max(1, config.GetInt("revit.operationTimeoutSeconds", 60)));
+
+            // THE RUN CLOCK IS GIVEN THIS WAIT, NOT ITS OWN READING OF THE
+            // KEY (D-116). It has to stop a fragment inside the time this
+            // class waits, and two readings of heron.config can disagree once
+            // the file is edited with Revit open.
+            HeronRunClock.OperationLimit = _operationTimeout;
         }
 
         /// <summary>
@@ -196,6 +207,29 @@ namespace Heron.Revit.Addin
         /// </summary>
         public string Dispatch(string request)
         {
+            var op = Json.ReadString(request, "op");
+
+            // THE STOP IS ANSWERED HERE, BEFORE THE QUEUE - D-116. It exists
+            // for the moment Revit's thread is held by a job that will not
+            // end, and anything queued would wait behind that very job. So it
+            // never touches the Revit API and never waits: it sets the flag
+            // the running fragment's next check reads, and answers.
+            //
+            // A SECOND PLACE OUTSIDE THE GATE, and the only one. Gate runs on
+            // Revit's thread inside Execute, so nothing answered here reaches
+            // it - the same bypass BridgeServer's ping, info and release have.
+            // It is safe for the reason theirs is: `stop` is declared Read,
+            // changes no model, and the gate would have let it through.
+            // tests/test_tool_registry.py names what Dispatch answers itself
+            // and fails on a second name, so adding one is a conversation.
+            //
+            // AFTER THE LEASE, which BridgeServer has already claimed: only
+            // the chat that holds this Revit can stop it - from a second pipe
+            // while its first waits on the job (the bridge client's `stop`,
+            // with that chat's HERON_CLIENT_ID). Another chat is refused
+            // `session_in_use` before it gets here, as for anything else.
+            if (op == "stop") return AnswerStop();
+
             var raiser = _event;
             if (raiser == null)
             {
@@ -228,7 +262,6 @@ namespace Heron.Revit.Addin
             // switch made in the gap between these two lines and Revit
             // picking the job up is corrected when the banner settles
             // rather than left standing.
-            var op = Json.ReadString(request, "op");
             string model;
             lock (_modelLock) { model = _activeModel; }
             _banner.Begin(DescribeJob(op, request), HeronOperationRegistry.Writes(op), model);
@@ -283,9 +316,16 @@ namespace Heron.Revit.Addin
 
             if (!job.WaitForFinish(_operationTimeout))
             {
-                // It IS running - Revit picked it up. Nothing can safely
-                // interrupt it, and calling this "busy" would invite a retry of
-                // something already in progress.
+                // It IS running - Revit picked it up. Calling this "busy"
+                // would invite a retry of something already in progress.
+                //
+                // A FRAGMENT SHOULD NOT GET HERE ANY MORE (D-116). The run
+                // clock stops one, rolled back, a margin inside this wait, so
+                // its answer arrives first. What still does: an operation
+                // that is not a fragment, a fragment inside one long Revit API
+                // call - a Regenerate, a LoadFamily, an export - which no
+                // check can interrupt, and a rollback that took longer than
+                // the margin. Nothing from here can interrupt any of those.
                 //
                 // THE BANNER IS DELIBERATELY LEFT UP. This caller has stopped
                 // waiting; the work has not stopped, and Revit is still frozen
@@ -300,6 +340,47 @@ namespace Heron.Revit.Addin
             }
 
             return job.Response;
+        }
+
+        /// <summary>
+        /// The `stop` operation, on a listener thread: Heron stops, and a
+        /// fragment Revit is running stops at its next check - D-116.
+        ///
+        /// IT SAYS WHAT IT CAN AND CANNOT REACH. The flag is read by the run
+        /// clock inside a fragment's loops and calls, so a fragment stops
+        /// within one pass and is rolled back; a single long Revit API call
+        /// is not a fragment's loop and finishes first. Saying so is the same
+        /// rule HeronStop opens with: a stop believed to be an abort is worse
+        /// than none, because the user stops reaching for Ctrl+Z.
+        ///
+        /// RECORDED, like every refusal, because "who stopped Heron, and was
+        /// anything running" is a question the trail will be asked.
+        /// </summary>
+        private string AnswerStop()
+        {
+            var changed = HeronStop.Stop();
+            var running = Volatile.Read(ref _running) > 0;
+
+            HeronAudit.Record(HeronIdentity.NewWorkflowId(), "stop", true,
+                new[]
+                {
+                    new KeyValuePair<string, string>("session", _session),
+                    new KeyValuePair<string, string>("running", running ? "true" : "false"),
+                    new KeyValuePair<string, string>("changed", changed ? "true" : "false"),
+                });
+            _log("Stop asked over the bridge" + (running ? " while a job was running." : "."));
+
+            var now = running
+                ? "Revit is running a job now: a fragment stops at its next pass through a loop " +
+                  "or a call and is rolled back, and the chat waiting for it is told so. A single " +
+                  "long Revit command cannot be cut short - it finishes first. "
+                : "Nothing was running. ";
+
+            return Json.Ok(
+                Json.Bool("stopped", true),
+                Json.Bool("changed", changed),
+                Json.Bool("running", running),
+                Json.Str("message", "Heron is stopped. " + now + HeronStop.StaysStopped));
         }
 
         /// <summary>
@@ -322,6 +403,7 @@ namespace Heron.Revit.Addin
                 var clock = Stopwatch.StartNew();
                 string response = null;
                 string document = null;
+                Interlocked.Increment(ref _running);
                 try
                 {
                     var op = Json.ReadString(job.Request, "op") ?? "(none)";
@@ -438,6 +520,7 @@ namespace Heron.Revit.Addin
                     // interlocked flag from D-50, and on the normal path it
                     // has already been taken, so this says nothing; Finish on
                     // an answered job re-sets an event that is already set.
+                    Interlocked.Decrement(ref _running);
                     clock.Stop();
                     if (response == null)
                     {
@@ -581,6 +664,10 @@ namespace Heron.Revit.Addin
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                // Not "undone": whether Revit confirmed the rollback is in the
+                // chat's sentence, and a glance line cannot carry the doubt.
+                case "ran_too_long":    return "Ran too long - Heron stopped it";
+                case "stopped_mid_run": return "Stopped part way";
                 default:                return "Did not finish";
             }
         }

@@ -352,3 +352,45 @@ into ranking, where it may find a different writer. **Build the READ, then move 
 [row 113](../FRAGMENT-ISSUES.md), [14 — Golden Rules](../14-golden-rules.md)
 
 ---
+
+### 🟡 Q-64 — Should a stop survive a restart of Revit? *(found 2026-10-17)*
+
+**Two sources disagree, and neither is edited to match the other.**
+
+- [21 §4](../21-resilience-and-operations.md), requirement 3, from the Part 2 specification: *"It must be
+  sticky. After an emergency stop, Heron stays stopped until a person restarts it. It does not quietly
+  resume on the next request or after a restart."*
+- [`HeronStop.cs`](../../platform/Heron.Core/HeronStop.cs), written at Step 6 and never a decision: *"IT
+  DOES NOT PERSIST. Restarting Revit clears it. That is deliberate: the stop exists for a situation
+  happening right now, and a flag left on disk from a bad afternoon three weeks ago would surface as Heron
+  mysteriously refusing to work, with no memory of why."*
+
+**Why it matters now and did not before.** Until 2026-10-17 nothing could set the stop ([D-46](../decisions/D-46.md)),
+so whether it outlived a restart was a question about a switch nobody could press. [D-116](../decisions/D-116.md)
+gave it a trigger - the bridge's `stop` operation, which also stops a fragment already running - and so the
+answer is now something a modeller meets.
+
+**What the code does until this is answered:** exactly what it did. The stop lives in memory; restarting Revit
+clears it; and `HeronStop.Message` says so - *"Heron stays stopped until Revit is restarted"* - which is
+true today. D-116 chose a pipe operation over the file 21 §4 names partly so as not to settle this by
+accident: a file on disk would have made the stop survive a restart by construction.
+
+**The two answers, and what each costs.**
+
+1. **A restart clears it - today's code.** The restart is a deliberate act a person makes at the machine,
+   and nothing lingers from a stop nobody remembers. It leaves 21 §4's requirement 3 unmet, and a decision
+   would have to amend it.
+2. **It survives a restart.** The stop is written to Heron's data folder and read when Revit starts. It
+   needs something a PERSON uses to clear it, and nothing does today: the `stop` operation cannot resume, on
+   purpose, and `EmergencyStopCommand` - the only caller of `Resume()` - has been on no ribbon since D-46.
+   So this answer also means choosing that control - the command back on the ribbon, or the Heron button
+   clearing it on connect - which is a ribbon change and needs its own check in Revit.
+
+**Recommended: the first.** A stop that outlives a restart with no button to clear it would leave a
+modeller editing a file to make Heron work again, and the reason it was removed from the ribbon was that the
+owner did not want a second control.
+
+**The owner decides.** Until then a restart clears it, and the message says so.
+
+→ [D-116](../decisions/D-116.md), [D-46](../decisions/D-46.md), [21 §4](../21-resilience-and-operations.md),
+[NEEDS-CHECKING Group EJ](../needs-checking/group-ej.md)
