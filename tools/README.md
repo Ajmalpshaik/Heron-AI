@@ -2233,8 +2233,8 @@ python tools/hook-report.py --log FILE      # another diary file
 ```
 
 Every hook in [`.claude/settings.json`](../.claude/settings.json) - the
-[guard](../.claude/skills/heron-guard/SKILL.md), the session line and the "has main moved?" advice of
-[`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
+[guard](../.claude/skills/heron-guard/SKILL.md), the session line, the "has main moved?" advice and the
+LOCAL-prompt note of [`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
 outside this repository, found through Heron's own path helpers and never a typed path. This counts it:
 per hook, how many decisions in how many sessions, each kind of decision, **how often it spoke at all**,
 and the things it said most.
