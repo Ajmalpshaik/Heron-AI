@@ -255,12 +255,17 @@ def lock_on_windows():
     check("breaks on import" in out and pips == [LOCK_LINE],
           "a broken MCP import is repaired with the lock line too - the "
           "measured versions put back, never an unpinned --upgrade: %s" % pips)
-    out = section(windows=True, minor=10)
-    pips = pip_lines(out)
-    check("3.11 or later" in out and len(pips) == 2
-          and all(line == LOCK_LINE for line in pips),
-          "on a Windows Python older than 3.11 it says the lock needs 3.11 or "
-          "later, and still names no unpinned line: %s" % pips)
+    for minor in (10, 15):
+        out = section(windows=True, minor=minor)
+        pips = pip_lines(out)
+        check("3.11 to 3.14" in out and len(pips) == 2
+              and all(line == LOCK_LINE for line in pips),
+              "on a Windows Python 3.%d it says the lock is for 3.11 to 3.14 - "
+              "the lock's own header - and still names no unpinned line: %s"
+              % (minor, pips))
+    out = section(windows=True, minor=14)
+    check("3.11 to 3.14" not in out,
+          "and on 3.14, inside that range, it says nothing about the Python")
 
     out = section(windows=False, minor=12)
     check(OFF_WINDOWS["yaml"] in out and OFF_WINDOWS["mcp"] in out

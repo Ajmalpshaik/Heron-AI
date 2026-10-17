@@ -1654,8 +1654,9 @@ address, memory text and a chat and checking none comes out.
 head and the installer runs - for PyYAML missing, the MCP package missing, and the MCP package breaking
 on import. **Off Windows the unpinned lines stay**, because the lock cannot install there: it pins
 `pywin32`, and pip refuses the whole file for that one line (*"No matching distribution found for
-pywin32==312"*, measured on Linux that day). On a Windows Python older than 3.11 it says the lock needs
-3.11 first. `install_lines()` holds the rule; section 6 of the suite holds it on both platforms.
+pywin32==312"*, measured on Linux that day). On a Windows Python outside 3.11 to 3.14 - the range the
+lock's header gives - it says so first. `install_lines()` holds the rule; section 6 of the suite holds it
+on both platforms.
 
 ## `lock-python.py` — the pinned packages, regenerated and audited
 
@@ -1686,8 +1687,8 @@ Monday as its own job, outside the gates.
 
 **What its first run found, 2026-10-17:** two advisories on `pyjwt 2.14.0`, `PYSEC-2026-4141` and
 `PYSEC-2026-4183`, both fixed in 2.15.0, both in JWT verification - Heron's own Python never imports
-`jwt`. Left pinned, as a question for the owner: `--upgrade pyjwt` moves only that pin (2.15.1 that
-day), and the lock must then be measured again.
+`jwt`. **Moved on the owner's word the same day**: `--upgrade pyjwt` took it to 2.15.1 and moved nothing
+else, the lock was measured again the way its header says, and `--audit` then found no advisory.
 
 ## `owner-queue.py` — what is waiting on the OWNER, derived rather than typed
 

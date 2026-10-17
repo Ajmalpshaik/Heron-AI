@@ -143,9 +143,11 @@ def _same_file(a, b):
 #: requirements-lock.txt names at its own head.
 LOCK_LINE = "python -m pip install --user --require-hashes -r requirements-lock.txt"
 
-#: The oldest Python the lock installs on: rpds-py, which jsonschema needs,
-#: starts at 3.11 - the lock's header, and PythonSetup.OldestMinor.
+#: The Pythons the lock installs on: rpds-py, which jsonschema needs, starts at
+#: 3.11, and 3.14 is the newest its Windows wheels were downloaded for - the
+#: lock's header, and PythonSetup.OldestMinor and NewestMinor.
 LOCK_OLDEST_MINOR = 11
+LOCK_NEWEST_MINOR = 14
 
 
 def install_lines(job, windows=None, minor=None):
@@ -166,9 +168,9 @@ def install_lines(job, windows=None, minor=None):
         return [{"yaml": "pip install --user -r requirements.txt",
                  "mcp": "pip install --user mcp",
                  "repair": "pip install --user --upgrade mcp cryptography cffi"}[job]]
-    if minor < LOCK_OLDEST_MINOR:
-        return ["The pinned packages need Python 3.%d or later - install it with"
-                % LOCK_OLDEST_MINOR,
+    if not LOCK_OLDEST_MINOR <= minor <= LOCK_NEWEST_MINOR:
+        return ["The pinned packages are for Python 3.%d to 3.%d - install one with"
+                % (LOCK_OLDEST_MINOR, LOCK_NEWEST_MINOR),
                 "winget install Python.Python.3.12 --scope user, then in a NEW "
                 "terminal, in the Heron folder:",
                 LOCK_LINE]
