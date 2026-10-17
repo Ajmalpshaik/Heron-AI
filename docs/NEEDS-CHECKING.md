@@ -763,6 +763,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
 
+## Group EX - the run guard: a running job cannot save, sync, export or print what its operation does not allow (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ex.md`](needs-checking/group-ex.md)
+
 ## Group EY - the family method looks at what it built: `revit_show` and `revit_view_image` in a family, and `family-creation` step 13 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ey.md`](needs-checking/group-ey.md)

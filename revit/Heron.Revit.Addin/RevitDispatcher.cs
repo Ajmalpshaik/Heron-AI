@@ -494,10 +494,24 @@ namespace Heron.Revit.Addin
                     // caller is told revit_busy as before.
                     HeronDialogWatch.Arm();
                     HeronDialogNote dialogs = null;
+
+                    // THE RUN GUARD, armed for this job and for nothing else
+                    // (Constitution Article 10). While it is armed a save, a
+                    // sync, an export or a print the operation's risk does not
+                    // allow is cancelled, a new document is refused, and a
+                    // change to another open model is caught - HeronRunPolicy
+                    // decides which. Armed INSIDE the try, so a guard that
+                    // cannot arm refuses the job rather than letting it run
+                    // unguarded; disarmed in the finally, so it is never left
+                    // armed over the modeller's own Ctrl+S. Inside the dialog
+                    // watch, so a dialog raised while it closes what the job
+                    // left open is answered too.
+                    HeronRunPolicy guarded = null;
                     try
                     {
                         try
                         {
+                            HeronRunGuard.Arm(app, op);
                             // So AwaitingModeller can find this job - see _running.
                             _running = job;
                             _runningBanner = _banner;
@@ -519,6 +533,11 @@ namespace Heron.Revit.Addin
                             // The box is answered or the job is over: the
                             // banner comes back to say how it ended (D-126).
                             if (job.AskedModeller) _banner.StepAside(false);
+
+                            // Closes what the job left open in the background
+                            // before it lets go - after every path out of Run,
+                            // a throw included.
+                            guarded = HeronRunGuard.Disarm(app);
                         }
                     }
                     finally
@@ -533,6 +552,14 @@ namespace Heron.Revit.Addin
                     // job a dialog stopped is turned into the refusal here.
                     response = HeronDialogNote.Attach(response, dialogs,
                                                       HeronOperationRegistry.Writes(op));
+
+                    // WHAT THE RUN GUARD STOPPED, ON THE REPLY: every act,
+                    // every refused document, every change elsewhere, what was
+                    // closed. The refusal's own words are the executor's;
+                    // these are the record behind them, for anything reading
+                    // the reply. AFTER the dialog note, which can replace a
+                    // reply whole - spliced last, so neither record is lost.
+                    if (guarded != null) response = guarded.Splice(response);
 
                     // THE RUN RECORD, for a fragment write that got as far as
                     // describing what it changed - and taken for EVERY
@@ -646,6 +673,14 @@ namespace Heron.Revit.Addin
                     // means none opened, never that nobody looked.
                     if (dialogs.Count > 0)
                         numbers.Add(new KeyValuePair<string, long>("dialogs", dialogs.Count));
+
+                    // AND WHAT THE RUN GUARD STOPPED AND CLOSED, by the same
+                    // rule: every job is armed, so absent means it stopped or
+                    // closed nothing, never that nobody watched.
+                    if (guarded != null && guarded.BlockedCount > 0)
+                        numbers.Add(new KeyValuePair<string, long>("blocked", guarded.BlockedCount));
+                    if (guarded != null && guarded.ClosedCount > 0)
+                        numbers.Add(new KeyValuePair<string, long>("closed", guarded.ClosedCount));
 
                     HeronAudit.Record(job.WorkflowId, op,
                         failure == null,
@@ -926,6 +961,9 @@ namespace Heron.Revit.Addin
                 // chat's sentence, and a glance line cannot carry the doubt.
                 case "ran_too_long":    return "Ran too long - Heron stopped it";
                 case "stopped_mid_run": return "Stopped part way";
+                case "run_guard":       return "Refused - it tried to save, export or start a file";
+                case "changed_other_model": return "It changed another model - look at it";
+                case "permission_withdrawn": return "Switched off while running - not kept";
                 default:                return "Did not finish";
             }
         }

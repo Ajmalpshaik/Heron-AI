@@ -525,7 +525,13 @@ namespace Heron.Revit.Addin
                 options.PixelSize = width;
                 options.SetViewsAndSheets(new List<ElementId> { view.Id });
 
-                doc.ExportImage(options);
+                // HERON'S OWN EXPORT, into its own folder, so the run guard
+                // armed round this job lets it through - a fragment that
+                // exports is still cancelled. See HeronRunGuard.HeronExports.
+                using (HeronRunGuard.HeronExports())
+                {
+                    doc.ExportImage(options);
+                }
 
                 var written = Directory.GetFiles(folder, "*.png");
                 if (written.Length == 0) failure = "Revit exported the view and wrote no picture.";
