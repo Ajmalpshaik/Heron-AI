@@ -230,10 +230,12 @@ def stated_gates(pairs):
         name, _, rest = pair.partition("=")
         value, _, note = rest.partition(":")
         name, value = name.strip(), value.strip().upper()
-        if value not in (PASS, FAIL, NOT_RUN, "NOT RUN"):
+        # NOT_RUN IS "NOT RUN", so naming the constant twice accepted only the
+        # space - and refused the underscore this message asks for. Row 5b-862.
+        if value not in (PASS, FAIL, NOT_RUN, "NOT_RUN"):
             w("Ignored --stated %s: the result must be PASS, FAIL or NOT_RUN\n" % pair)
             continue
-        results[name] = {"result": NOT_RUN if value in ("NOT_RUN", "NOT RUN") else value,
+        results[name] = {"result": NOT_RUN if value in ("NOT_RUN", NOT_RUN) else value,
                          "exit": None, "source": "stated",
                          "detail": note.strip() or "stated, not measured here"}
     return results

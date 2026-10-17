@@ -25,6 +25,31 @@ from one source tree.
 > **Never extrapolate the table forward.** Autodesk moved the runtime at 2025 and again at 2027. A
 > release this table does not list is an error, not a guess.
 
+**The table is the BUILD target, and a running Revit 2026 can be on .NET 10.** Measured 2026-10-17 on the
+owner's laptop: Revit **2026.5** - every `*.runtimeconfig.json` in its install folder says `net10.0`, and
+the running process loaded `coreclr.dll` from `Microsoft.NETCore.App\10.0.12`. Heron's `net8.0-windows`
+2026 build loaded and ran on it (roll-forward), so the 2026 row's target is unchanged until the Autodesk
+SDK says otherwise. What it does change: the framework assemblies another add-in sees as "preloaded" on
+that Revit are 10.0, not 8.0.
+
+**On every .NET release (2025 on) all add-ins share Revit's default load context, so an assembly NAME is
+loaded once, by whichever add-in asks first.** On .NET Framework (2020-2024) two versions of one assembly
+load side by side. Measured 2026-10-17
+([row 5b-575](../../../docs/fragment-issues/section-5b-rows-401-425.md)): the owner's AJ Tools add-in
+loaded the C# compiler 4.14 before Heron, Heron's own 4.8 C# layer was then bound to AJ Tools' 4.14 core,
+and every fragment failed on Revit 2026 - while 2020 and 2024 showed the same journal conflict line and
+were unaffected. A dependency another add-in may also ship is a 2025+ hazard, not a 2020-2024 one.
+
+**Heron's answer, for the C# compiler: a load context of its own, on 2025 and later only.**
+[`HeronScriptHost`](../../../revit/Heron.Revit.Addin/HeronScriptHost.cs) loads `Heron.Scripting.dll` (the engine
+and the stack guard) into an `AssemblyLoadContext` that takes `Microsoft.CodeAnalysis*` from Heron's folder and
+hands every other name - the Revit API above all - back to the default context, so a fragment still sees the
+types Revit hands it. Not `<ManifestSettings>`: that isolates only 2026 on, and crashes 2025 or older. On
+2025+ the add-in has no compile-time Roslyn reference, so a Roslyn type named outside the two engine files
+fails check-compile there. Proved off Revit by `tests/test_script_isolation.py`; **not yet run in Revit**
+([NEEDS-CHECKING group GW](../../../docs/needs-checking/group-gw.md)). **A new dependency another add-in may
+also ship goes the same way** - into Heron's context, never the default one.
+
 `Directory.Build.props` enforces that: an unlisted version fails the build with a plain-English message
 telling you to confirm the target in the Autodesk SDK and add a row. That guard replaced a condition
 reading `>= 2027`, which silently claimed every future release was .NET 10 and would have produced an
