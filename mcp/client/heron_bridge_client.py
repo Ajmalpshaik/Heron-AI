@@ -1160,6 +1160,51 @@ def write_operation(root, name):
     return None
 
 
+# WHAT `run_fragment_read` MAY CARRY FROM THIS FILE - everything below MODIFY.
+#
+# Until 2026-10-17 a MODIFY fragment went down the read path whenever --write
+# was left off, on purpose: no transaction is open there, Revit refuses the
+# change, and the run shows how far the C# gets. Row 5b-350 is that run
+# leaving a real element in the model - place-nested-family, twice, while
+# reporting Revit's refusal. Row 73 is the same shape from the other side:
+# unload-links, run this way, unloaded six links for real with no undo. A
+# run that may change the model goes with --write, inside a TransactionGroup
+# that is rolled back unless --apply says otherwise - the same refusals, and
+# a rollback behind them.
+#
+# EXECUTE STAYS, and it is not an oversight. `set-selection` arranges every
+# selection-based proof on this path, and the eight EXECUTE fragments are
+# proved on it (generate-jobs emits `write: true` from MODIFY up). Changing
+# the selection changes what is highlighted, not what exists - and the add-in
+# now counts the model around every read, so an EXECUTE fragment that did
+# create something would be answered read_changed_model rather than as a read.
+# revit_read's door is stricter, and is about a chat, not a proof.
+READ_PATH_RISKS = ("READ", "ANALYZE", "SUGGEST", "EXECUTE")
+
+
+def read_path_refusal(root, name):
+    """The refusal for a fragment that may not go down `run_fragment_read`, or None.
+
+    Read from the fragment's own card, like `risk_refusal`, and asked AFTER
+    it on every path that sends a read: that one decides whether this file
+    may send the fragment at all, this one whether it may send it as a read.
+    An unreadable risk is refused here too, so the answer never depends on
+    the order the two were asked in.
+    """
+    risk = fragment_risk(os.path.join(root, "brain", "fragments", name,
+                                      "fragment.yaml"))
+    if risk in READ_PATH_RISKS:
+        return None
+    if risk is None:
+        return ("%s does not say what risk it carries, so it will not be run as a "
+                "read. Nothing was sent to Revit." % name)
+    return ("%s is declared risk: %s, so it is not run as a read: a read run of a "
+            "change once reported Revit's refusal and still left a real element "
+            "in the model (FRAGMENT-ISSUES row 5b-350). Nothing was sent to Revit. "
+            "Add --write: it runs inside a transaction group and is rolled back "
+            "unless you also say --apply." % (name, risk))
+
+
 def caller_values(pairs):
     """
     Turn `--set view=Level 1` into what the executor reads.
@@ -1303,9 +1348,11 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     the check and the run. The client reads the file it just checked and sends
     exactly that text.
 
-    READ BY DEFAULT. `run_fragment_read` opens no transaction, so Revit
-    refuses anything that would change the model - the guarantee is Revit's
-    rather than ours.
+    READ BY DEFAULT, AND ONLY FOR WHAT READS. `run_fragment_read` opens no
+    transaction, so Revit refuses a change - not always completely: row
+    5b-350 is a read run that left an element behind. So a fragment declared
+    MODIFY or above is refused without `writing` (`read_path_refusal`), and
+    the add-in counts the model around every read it runs.
 
     `writing` switches to `run_fragment_write`, which is the same executor
     inside a TransactionGroup, and is what lets a fragment at risk: MODIFY run
@@ -1345,6 +1392,8 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     # or ADMIN fragment passes only on the write path, where it goes as its
     # own operation and the add-in decides by the owner's switch (D-106).
     refusal = risk_refusal(root, name, switched=writing)
+    if refusal is None and not writing:
+        refusal = read_path_refusal(root, name)
     if refusal is not None:
         print(refusal)
         return 2
@@ -1516,8 +1565,9 @@ def cmd_prove(names, in_document=None, values=None, session=None):
             return 2
 
         # WHAT IT IS ALLOWED TO BE. Refused before it is read, so a batch that
-        # names one cannot send it and then discover the problem.
-        refusal = risk_refusal(root, name)
+        # names one cannot send it and then discover the problem. Every run
+        # here is a read, so a MODIFY fragment is refused too (row 5b-350).
+        refusal = risk_refusal(root, name) or read_path_refusal(root, name)
         if refusal is not None:
             print(refusal)
             return 2
@@ -1855,6 +1905,19 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         if refusal:
             print("setup: %s" % refusal)
             return 2
+
+    # A READ PROOF CARRIES NOTHING THAT CHANGES THE MODEL - row 5b-350. Without
+    # --write the fragment and every setup step go down run_fragment_read, and
+    # a MODIFY step there is not deferred into a group (deferred_setup below
+    # is a write phase's), so it would run with no transaction open: the run
+    # that left an element behind. With --write the fragment goes as a write
+    # and a MODIFY step travels inside its group, so nothing is refused here.
+    if not writing:
+        for one in [name] + list(setup or []):
+            refusal = read_path_refusal(root, one)
+            if refusal:
+                print("%s%s" % ("" if one == name else "setup: ", refusal))
+                return 2
 
     # THE OPERATION THE FRAGMENT RUNS AS on a --write proof, read from its own
     # card. Modify and below go as run_fragment_write, as they always did.

@@ -60,6 +60,18 @@ through only while the owner's **Publish** or **Admin** switch is on in the ribb
   `export-views-to-dwg` declared `MODIFY` until 2026-09-28. A job file that proved one of them as
   `MODIFY` is refused now - `batch-prove` passes `--write` and never `--allow-publish`.
 
+### A MODIFY fragment never runs as a read
+
+**Since 2026-10-17** `fragment` and `validate` without `--write`, and every `prove`, refuse a fragment
+or setup step declared `MODIFY` or above before Revit is asked. A read run of `place-nested-family`
+reported Revit's refusal and still left a real instance in the family, twice
+([row 5b-350](../../../docs/fragment-issues/section-5b-rows-326-350.md)). To see a MODIFY fragment's
+refusals, run it with `--write` and no `--apply`: the same refusals, and a rollback behind them. A
+NEEDS-CHECKING row that says "without `--write`" for a MODIFY fragment was written before this.
+
+**A read that changes the model comes back `read_changed_model`**, naming how many elements appeared.
+It is never evidence for anything: look at the model, remove what appeared, and record it on the row.
+
 ## The five rules
 
 Each was learned by breaking it. The full account of every one, with what was passed and what came

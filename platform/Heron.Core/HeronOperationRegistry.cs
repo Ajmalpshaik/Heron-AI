@@ -166,14 +166,20 @@ namespace Heron.Core
 
                 // ANALYZE - runs a fragment's own C# against the model and
                 // reports what it left behind. It is here rather than at
-                // Modify for a structural reason, not a hopeful one: the
-                // executor opens NO TRANSACTION, and Revit refuses every model
-                // change made outside one. The guarantee is Revit's, not a
-                // check of ours that could be forgotten.
+                // Modify for a structural reason: the executor opens NO
+                // TRANSACTION, and Revit refuses a model change made outside
+                // one.
                 //
-                // Running a fragment that WRITES is the row below. This one
-                // stays at Analyze on the same structural grounds: no
-                // transaction, so Revit itself refuses any change.
+                // THAT REFUSAL IS NOT THE WHOLE GUARANTEE, and this comment
+                // said it was until 2026-10-17. Row 5b-350 is a read run of
+                // place-nested-family that reported Revit's refusal and still
+                // left a real instance in the family, twice - cause not
+                // established, NEEDS-CHECKING CP1. So the executor also counts
+                // the model before and after every read and answers one that
+                // moved it read_changed_model, and the command line no longer
+                // sends a fragment declared MODIFY or above this way.
+                //
+                // Running a fragment that WRITES is the row below.
                 { "run_fragment_read",  HeronRisk.Analyze },
 
                 // MODIFY - the same executor, inside a TransactionGroup, so a

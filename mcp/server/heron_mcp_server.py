@@ -40,9 +40,10 @@ own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
 it through only while the owner's Publish or Admin switch is on as well.
 
 ONE tool runs a fragment and changes nothing: revit_read, through the add-in's
-run_fragment_read. It opens no transaction, so Revit itself refuses any change;
-it works with Changes OFF; and it refuses a fragment declared above ANALYZE
-before anything is sent.
+run_fragment_read. It opens no transaction, so Revit refuses a change, and the
+add-in counts the model around every read because that refusal once let an
+element through (FRAGMENT-ISSUES row 5b-350); it works with Changes OFF; and it
+refuses a fragment declared above ANALYZE before anything is sent.
 
 EVERY CHAT IS TOLD THE RULES, AND EVERY TOOL CARRIES ITS LABELS. The server's
 instructions are the Instruction Registry's `host.chat`, with the Constitution's
@@ -2598,9 +2599,11 @@ def revit_read(capability: str = "", values: str = "",
     `capability`, when given, always wins.
 
     It works with Changes OFF. The fragment runs with no transaction open, so
-    Revit itself refuses any change it attempts. A capability declared above
-    ANALYZE - one that selects, changes, publishes or administers - is refused
-    here before anything is sent: a change is revit_change's.
+    Revit refuses a change it attempts, and Heron counts the model before and
+    after: a read that moved it is reported as such, never answered. A
+    capability declared above ANALYZE - one that selects, changes, publishes
+    or administers - is refused here before anything is sent: a change is
+    revit_change's.
 
     `values` is one "name=value" per line, e.g. view=Level 1
 
@@ -2704,9 +2707,10 @@ def revit_read(capability: str = "", values: str = "",
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The read reached Revit but its answer was lost, so Heron cannot "
-                      "tell whether %s ran. Nothing in the model was changed - a read "
-                      "opens no transaction - but if it ran, the result %s left has "
-                      "been used up. Run %s again, then this read."
+                      "tell whether %s ran. A read opens no transaction, so the model "
+                      "is not expected to have changed - but the count that would have "
+                      "said so was in the lost answer. If it ran, the result %s left "
+                      "has been used up. Run %s again, then this read."
                       % (capability, consumes, consumes))
 
     # THE ADD-IN'S REPLY SAYS HOW IT ENDED - an expect_from or binding refusal
@@ -2746,8 +2750,20 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
-    lines.append("Nothing in the model was changed: this runs with no transaction "
-                 "open, so Revit itself refuses any change.")
+    # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
+    # 5b-350 is a read that reported Revit's refusal and left an element. An
+    # add-in that counted sends `elementsCounted` (a read that moved the count
+    # never reaches here: it comes back read_changed_model); one that sends
+    # nothing never counted, and this does not claim it did.
+    counted = reply.get("elementsCounted")
+    if isinstance(counted, int):
+        lines.append("Nothing in the model was changed: Heron counted %s element(s) "
+                     "before this read and the same after it." % "{:,}".format(counted))
+    else:
+        lines.append("Nothing in the model should have changed: this runs with no "
+                     "transaction open. This add-in does not count the model around a "
+                     "read, so that is not measured - update it (FRAGMENT-ISSUES row "
+                     "5b-350).")
     return _ended("ok", "\n".join(lines))
 
 
