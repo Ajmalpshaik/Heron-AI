@@ -1553,7 +1553,7 @@ touched, every proof stands - and measured the same way:
 | save the current selection as a selection set | `CREATE_SELECTION_FILTER` / the same | unchanged - already right |
 | load a saved selection set and select its elements | **`UPDATE_SAVED_SET`** / `SELECT_FROM_SAVED_SET` | `SELECT_FROM_SAVED_SET`, identity |
 | create a view/sheet set with these sheets for DWG export | **`EXPORT_VIEWS_TO_DWG`** (PUBLISH), both | `MANAGE_SHEET_SETS`, identity |
-| add sheets to an existing print set | `MANAGE_SHEET_SETS`, both | unchanged; its `mode` note now names the gap, row 5b-466 |
+| add sheets to an existing print set | `MANAGE_SHEET_SETS`, both | unchanged; #574 then gave it an `add` mode (DRAFT) |
 | how many view/sheet sets are there in the model | `LIST_SHEET_SETS`, both | unchanged - PR #530 holds |
 
 Bold is a write or an export answering what the row did not ask for.
@@ -1582,6 +1582,14 @@ cards, and both are declared there now (row 5b-387's repair); every number above
 *find the revision dated 12-Mar-2025* (`EDIT_REVISION`, both), *what date is revision 2* (`EDIT_REVISION`,
 both), *find revision with date 01/02/2026* (`EDIT_REVISION`, `model`; now `LIST_REVISIONS` on lexical),
 *how many saved selection sets are in the model* (`UPDATE_SAVED_SET`, lexical).
+
+**Measured again after merging `main` `2c1b4786`** - #574 (sheet sets version 2, modes `add` and `remove`)
+and #616 (the re-ranker reads a card's first declared sentences, D-134) among the commits - on fresh
+stores, the same way: the eight as above on both backends; his 79, the 120, claimed-and-not-reached, risk
+crossings, skill winners and `test_routing_phrases` unchanged against that `main`. Held out, 2 moved on
+lexical and 4 on `model` (*make a sheet set for the IFC issue* and *add these sheets to the issue set* no
+longer move, #574's card having changed under them), none towards a write. No re-ranker was installed in
+either run, so #616's change is not exercised here.
 
 **Found on `main`, not this change:** plain question #70, *which schedules are not on a sheet*, reaches
 `PLACE_SCHEDULE_ON_SHEET` (MODIFY) on `model` at 571 fragments; the recorded run at 569 had a read.
