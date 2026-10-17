@@ -64,12 +64,13 @@ namespace Heron.Core
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
 
                 // HOW MUCH LONGER A JOB MAY TAKE ONCE IT HAS ASKED THE MODELLER
-                // (D-119). A DRAFT run with "apply": "ask" stops on a Keep or
-                // Discard box in Revit, and a person reading their model is
-                // not a slow operation - so this is added to the operation
-                // timeout, and only for a job that has put the box up. The
-                // client's own deadline adds it too, so the ordering above
-                // still holds.
+                // (D-119, D-126). A job that stops on a Keep or Discard box in
+                // Revit - a DRAFT run with "apply": "ask", or a keep from a chat
+                // while write.askBeforeKeeping is on - is waiting for a person
+                // reading their model, which is not a slow operation - so this
+                // is added to the operation timeout, and only for a job that
+                // has put the box up. The client's own deadline adds it too,
+                // so the ordering above still holds.
                 { "revit.askTimeoutSeconds", "300" },
 
                 // MUST be declared here, not only read by HeronPermissions.
@@ -91,6 +92,15 @@ namespace Heron.Core
                 // a key missing from this table is silently ignored.
                 { "admin.enabled", "false" },
                 { "publish.enabled", "false" },
+
+                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-126): the
+                // changed elements are shown and a dialog asks Keep or Discard.
+                // ON by default, unlike the switches above, because ON is the
+                // safe side here - it narrows what Changes lets through, and
+                // off puts back D-99, a change kept with nobody asked. The
+                // owner's alone: read inside the add-in, never sent on a
+                // request (Golden Rule 19).
+                { "write.askBeforeKeeping", "true" },
 
                 { "log.retainDays", "14" },
 
