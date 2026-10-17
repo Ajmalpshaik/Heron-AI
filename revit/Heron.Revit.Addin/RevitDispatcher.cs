@@ -325,8 +325,20 @@ namespace Heron.Revit.Addin
                 try
                 {
                     var op = Json.ReadString(job.Request, "op") ?? "(none)";
+
+                    // THE RUN GUARD, armed for this job and for nothing else
+                    // (Constitution Article 10). While it is armed a save, a
+                    // sync, an export or a print the operation's risk does not
+                    // allow is cancelled, a new document is refused, and a
+                    // change to another open model is caught - HeronRunPolicy
+                    // decides which. Armed INSIDE the try, so a guard that
+                    // cannot arm refuses the job rather than letting it run
+                    // unguarded; disarmed in the finally, so it is never left
+                    // armed over the modeller's own Ctrl+S.
+                    HeronRunPolicy guarded = null;
                     try
                     {
+                        HeronRunGuard.Arm(app, op);
                         response = RevitOperations.Run(app, job.Request);
                     }
                     catch (Exception ex)
@@ -337,6 +349,19 @@ namespace Heron.Revit.Addin
                         _log("Operation failed: " + ex);
                         response = Json.Error("operation_failed", ex.Message);
                     }
+                    finally
+                    {
+                        // Closes what the job left open in the background
+                        // before it lets go - after every path out of Run,
+                        // a throw included.
+                        guarded = HeronRunGuard.Disarm(app);
+                    }
+
+                    // WHAT IT STOPPED, ON THE REPLY: every act, every refused
+                    // document, every change elsewhere, what was closed. The
+                    // refusal's own words are the executor's; these are the
+                    // record behind them, for anything reading the reply.
+                    if (guarded != null) response = guarded.Splice(response);
                     clock.Stop();
 
                     // WHICH MODEL THE WORK ACTUALLY RAN AGAINST, read out
@@ -410,6 +435,18 @@ namespace Heron.Revit.Addin
                     var warnings = fragmentRun ? Json.ReadLong(response, "warnings") : null;
                     if (warnings.HasValue)
                         numbers.Add(new KeyValuePair<string, long>("warnings", warnings.Value));
+
+                    // AND WHAT THE RUN GUARD STOPPED AND CLOSED, on every job
+                    // it watched. Written as 0 when it stopped nothing,
+                    // because it watched every job and 0 is what it saw -
+                    // unlike `warnings` above, which a read never measures.
+                    // Absent only when the guard never armed, and then the
+                    // job never ran either.
+                    if (guarded != null)
+                    {
+                        numbers.Add(new KeyValuePair<string, long>("blocked", guarded.BlockedCount));
+                        numbers.Add(new KeyValuePair<string, long>("closed", guarded.ClosedCount));
+                    }
 
                     HeronAudit.Record(job.WorkflowId, op,
                         failure == null,
@@ -581,6 +618,9 @@ namespace Heron.Revit.Addin
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                case "run_guard":       return "Refused - it tried to save, export or start a file";
+                case "changed_other_model": return "It changed another model - look at it";
+                case "permission_withdrawn": return "Switched off while running - not kept";
                 default:                return "Did not finish";
             }
         }

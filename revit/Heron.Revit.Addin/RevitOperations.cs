@@ -208,8 +208,12 @@ namespace Heron.Revit.Addin
                 case "list_annotation":
                     return RevitAnnotation.List(app);
 
+                // THE RISK GOES WITH IT, from the registry by name and never
+                // from the request - the executor asks the switches again
+                // just before it keeps anything (Article 13), and needs to
+                // know which switches this operation answers to.
                 case "run_fragment_read":
-                    return RevitFragment.Run(app, request);
+                    return RevitFragment.Run(app, request, false, HeronOperationRegistry.RiskOf(op));
 
                 // THE WRITE PATH FOR FRAGMENTS. It stays in RevitFragment
                 // rather than moving to RevitWrite.cs, and that is the one
@@ -222,7 +226,7 @@ namespace Heron.Revit.Addin
                 // hundred. The gate is unchanged and sits above this switch:
                 // the risk comes from the tool registry, by name.
                 case "run_fragment_write":
-                    return RevitFragment.Run(app, request, true);
+                    return RevitFragment.Run(app, request, true, HeronOperationRegistry.RiskOf(op));
 
                 // THE SAME WRITE EXECUTOR, reached under the two levels above
                 // Modify (D-106). Nothing about the run differs from the case
@@ -236,7 +240,7 @@ namespace Heron.Revit.Addin
                 // Changes, and nothing in the request could have said so.
                 case "run_fragment_publish":
                 case "run_fragment_admin":
-                    return RevitFragment.Run(app, request, true);
+                    return RevitFragment.Run(app, request, true, HeronOperationRegistry.RiskOf(op));
 
                 default:
                     // Step 6 added the write path. It lives in its own file so

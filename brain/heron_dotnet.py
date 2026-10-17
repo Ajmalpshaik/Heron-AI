@@ -136,6 +136,9 @@ PROJECTS = [
     "tests/Heron.FailureNote.TestHost/Heron.FailureNote.TestHost.csproj",
     "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
     "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
+    # The run guard's policy, linked by source like the failure note -
+    # tests/test_run_guard.py builds and runs it.
+    "tests/Heron.RunGuard.TestHost/Heron.RunGuard.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
 ]
 

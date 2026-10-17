@@ -198,8 +198,12 @@ def main():
           "the operations above Modify are exactly those two - found %s" % above)
 
     operations = read(os.path.join(ADDIN, "RevitOperations.cs"))
+    # The fourth argument is the registry's risk for the operation, which the
+    # executor uses only to ask the switches again before it keeps anything
+    # (the run guard, Article 13) - the executor itself is unchanged.
     routed = re.search(r'case "run_fragment_publish":\s*case "run_fragment_admin":\s*'
-                       r'return RevitFragment\.Run\(app, request, true\);', operations)
+                       r'return RevitFragment\.Run\(app, request, true, '
+                       r'HeronOperationRegistry\.RiskOf\(op\)\);', operations)
     check(routed is not None,
           "both are routed to the SAME write executor run_fragment_write uses - "
           "one TransactionGroup, kept only on apply")

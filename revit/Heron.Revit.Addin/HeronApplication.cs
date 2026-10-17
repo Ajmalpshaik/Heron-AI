@@ -198,6 +198,13 @@ namespace Heron.Revit.Addin
                 application.ViewActivated += OnViewActivated;
                 application.ControlledApplication.DocumentClosing += OnDocumentClosing;
 
+                // THE RUN GUARD (Constitution Article 10): saves, syncs,
+                // exports and prints, new and opened documents, and changes
+                // to any open model - heard for the whole session, acted on
+                // only while the dispatcher has a job armed. Before the
+                // bridge can start, so no job can ever run unguarded.
+                HeronRunGuard.Attach(application, Log);
+
                 // WHAT THE COMPANION PAGE READS (D-108): the model, view and
                 // selection, written to a file only while the bridge is
                 // connected. Before BuildRibbon, whose SetBridgeIcon(false)
@@ -302,6 +309,7 @@ namespace Heron.Revit.Addin
                 // dispatcher has already been dropped.
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+                HeronRunGuard.Detach(application);
                 HeronLiveState.Detach(application);
 
                 Dispatcher = null;

@@ -257,6 +257,26 @@ _KNOWN = {
                           "an arrangement step could not be given what it needs, so nothing "
                           "was run and the model is as it was"),
 
+    # --- the run guard, Constitution Article 10 ------------------------------
+    #
+    # A job did something its operation may not: saved, synced, exported or
+    # printed a model that was already open, started a new file, or changed
+    # another open model. The add-in's message says which, and what it could
+    # and could not stop. TWO OUTCOMES, because the next step differs: the
+    # model the job ran in was rolled back, but a change committed in ANOTHER
+    # model is beyond any rollback of Heron's, so somebody has to look at it.
+    "run_guard":         (ROLLED_BACK, FIX_FIRST,
+                          "the job tried to save, sync, export or print a model that was "
+                          "open, or to start a new file, which its kind of job may not - "
+                          "what could be stopped was, and on the write path its group was "
+                          "rolled back; the message says if anything could not be stopped"),
+    "permission_withdrawn": (ROLLED_BACK, FIX_FIRST,
+                          "the switch that let it through was turned off, or Heron was "
+                          "stopped, while it ran - so it was rolled back rather than kept"),
+    "changed_other_model": (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "it changed another open model - Heron rolled back the model it "
+                          "ran in and cannot undo the other, so somebody has to look at it"),
+
     # `handler_failed` IS DELIBERATELY ABSENT, and that is the one judgement
     # in this table that a row would get wrong. It is raised in BridgeServer
     # when an exception escapes Dispatch - from anywhere, at any depth - so
