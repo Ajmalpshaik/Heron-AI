@@ -28,10 +28,10 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 it is not, and the words - HeronRollbackWitness.cs, which names
                 no Autodesk type and is linked by source into
                 tests/Heron.RollbackWitness.TestHost. Built and RUN here.
-  THE WIRING    that EVERY rollback of a write job's transaction group, in
-                RevitFragment and in RevitWrite's move, goes through the one
-                helper that checks; that no other file in revit/ opens a group
-                unless it is named below as not yet watched; that every write job is watched from before its group
+  THE WIRING    that EVERY rollback of a transaction group - RevitFragment's
+                write path, RevitWrite's move and RevitCapture's picture - goes
+                through the one helper that checks; that no other file in
+                revit/ opens a group unless it is watched; that every write job is watched from before its group
                 starts; that the listener is subscribed for the add-in's whole
                 life; and that the reply speaks from what was checked. That
                 half calls the Revit API, so it is read as TEXT - a weak test
@@ -62,6 +62,7 @@ sys.path.append(os.path.join(ROOT, "brain"))
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
 MOVER = os.path.join(ADDIN, "RevitWrite.cs")
+CAPTURE = os.path.join(ADDIN, "RevitCapture.cs")
 STARTUP = os.path.join(ADDIN, "HeronApplication.cs")
 WITNESS = os.path.join(ADDIN, "HeronRollbackWitness.cs")
 HOST = os.path.join(ROOT, "tests", "Heron.RollbackWitness.TestHost")
@@ -72,13 +73,8 @@ COULD_NOT_RUN = 3
 # rollbacks go through RollBackAndCheck, checked in sections 1 and 2 - or named
 # here, with why it is not yet. A new file that opens a group fails this suite
 # until it is one or the other.
-WATCHED = ("RevitFragment.cs", "RevitWrite.cs")
-NOT_YET_WATCHED = {
-    "RevitCapture.cs":
-        "revit_view_image's picture (D-123, Group ER): a temporary view in a group "
-        "it ALWAYS rolls back, through a SafeRollBack of its own. Merged while the "
-        "rollback check was open; bringing it under the check is a follow-up",
-}
+WATCHED = ("RevitFragment.cs", "RevitWrite.cs", "RevitCapture.cs")
+NOT_YET_WATCHED = {}
 
 # A build's output folders, skipped by whole folder name below revit/.
 BUILD_OUTPUT = ("bin", "obj")
@@ -225,6 +221,9 @@ NOT_A_ROLLBACK = [
      "RunSetupSteps: no step to run, or every step ran - nothing to roll back"),
     (r"^return\s+setupError\s*;$",
      "RunSetupSteps rolled the group back through the helper before answering"),
+    (r"^return\s+Exported\(",
+     "RevitCapture.Exported rolls the group back in its own finally, through the "
+     "helper - section 2 checks that finally"),
 ]
 LEFT_OPEN = "IsModifiable"   # a transaction the fragment left open: Heron cannot roll it back at all
 
@@ -249,10 +248,14 @@ def wiring():
     raw = read(EXECUTOR)
     raw_mover = read(MOVER)
     raw_startup = read(STARTUP)
-    check(raw is not None and raw_mover is not None and raw_startup is not None,
-          "RevitFragment.cs, RevitWrite.cs and HeronApplication.cs are there to read")
+    raw_capture = read(CAPTURE)
+    check(raw is not None and raw_mover is not None and raw_startup is not None
+          and raw_capture is not None,
+          "RevitFragment.cs, RevitWrite.cs, RevitCapture.cs and HeronApplication.cs "
+          "are there to read")
     code = code_only(raw or "")
     mover = code_only(raw_mover or "")
+    capture = code_only(raw_capture or "")
     startup = code_only(raw_startup or "")
 
     helper = body_of(code, "RollBackAndCheck(TransactionGroup")
@@ -268,7 +271,8 @@ def wiring():
     check(bool(group_rollback) and "TransactionStatus.RolledBack" in group_rollback,
           "SafeRollBack still answers Revit's own status after the attempt")
     for name, text, cut in (("RevitFragment.cs", code, (helper, group_rollback, step_rollback)),
-                            ("RevitWrite.cs", mover, ())):
+                            ("RevitWrite.cs", mover, ()),
+                            ("RevitCapture.cs", capture, ())):
         rest = without(text, *cut)
         check(re.search(r"SafeRollBack\s*\(\s*group\b", rest) is None,
               "%s rolls no group back except through the helper" % name)
@@ -283,22 +287,35 @@ def wiring():
                   % (name, text.count("\n", 0, at) + 1))
 
     print("\n2. every write job is watched, from before its group starts")
-    for name, text in (("RevitFragment.cs", code), ("RevitWrite.cs", mover)):
+    for name, text in (("RevitFragment.cs", code), ("RevitWrite.cs", mover),
+                       ("RevitCapture.cs", capture)):
         groups = [m.start() for m in re.finditer(r"new\s+TransactionGroup\s*\(", text)]
         check(len(groups) > 0, "%s opens %d transaction group(s)" % (name, len(groups)))
         for at in groups:
             line = text.count("\n", 0, at) + 1
-            check(re.search(r"using\s*\(\s*var\s+watch\s*=\s*(RevitFragment\s*\.\s*)?Watch\s*\("
-                            r"[^;]*\)\s*\)\s*using\s*\(\s*var\s+group\s*=\s*$",
-                            text[max(0, at - 160):at]) is not None,
+            # A `using` watch opened in the statements just before the group -
+            # directly, or around a group that a read-only model cannot have.
+            check(re.search(r"using\s*\(\s*var\s+watch\s*=[^;{]*?Watch\s*\([^;]*\)\s*\)",
+                            text[max(0, at - 200):at]) is not None,
                   "%s: the group opened near code line %d has a watch opened just "
                   "before it, disposed with it" % (name, line))
             returns_roll_back(text, block_after(text, at), "%s group" % name)
         assimilated = [m.start() for m in re.finditer(r"\.\s*Assimilate\s*\(", without(text, keep))]
         check(not assimilated,
               "%s assimilates a group only through KeepAndWatch, which records what to watch" % name)
-        check(re.search(r"\bKeepAndWatch\s*\(\s*group\s*,", text) is not None,
-              "%s keeps a job through KeepAndWatch" % name)
+        if name == "RevitCapture.cs":
+            check(re.search(r"\bKeepAndWatch\s*\(", text) is None,
+                  "%s never keeps a group - its picture is always undone (D-123)" % name)
+        else:
+            check(re.search(r"\bKeepAndWatch\s*\(\s*group\s*,", text) is not None,
+                  "%s keeps a job through KeepAndWatch" % name)
+    exported = body_of(capture, "string Exported(")
+    finally_at = exported.rfind("finally")
+    check(finally_at >= 0
+          and re.search(r"RevitFragment\.RollBackAndCheck\(\s*group\b",
+                        block_after(exported, finally_at)) is not None,
+          "RevitCapture.Exported rolls the group back through the helper in its finally, "
+          "before anything is said about it")
     setup = body_of(code, "string RunSetupSteps(")
     signature = code[code.find("string RunSetupSteps("):code.find(setup) if setup else 0]
     check(bool(setup) and re.search(r"HeronRollbackWitness\.Watch\s+watch", signature) is not None,
