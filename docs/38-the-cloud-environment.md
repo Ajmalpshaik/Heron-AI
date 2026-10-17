@@ -143,9 +143,14 @@ defect. Build it in-session instead, fresh:
 
 ```bash
 dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 \
-  -p:HeronTfm=net8.0 -p:OutputPath=bin/x64/Debug-net8.0/
+  -p:HeronTfm=net10.0 -p:OutputPath=bin/x64/Debug-net10.0/
 python tests/test_bridge_roundtrip.py
 ```
+
+The suite picks the framework from the newest runtime `dotnet --list-runtimes` shows - .NET 10 on this
+image - and when the host is missing it exits 3 and prints the exact build it wants. **Run the command
+it prints over this one.** This block said `net8.0` until 2026-10-17, and that build left the suite
+exiting 3 ([row 5b-942](fragment-issues/section-5b-rows-401-425.md)).
 
 **It does not exit non-zero, ever.** A setup script that exits non-zero fails the session outright.
 
@@ -170,6 +175,7 @@ real edit does.
 | Every test suite but the three below | yes |
 | `test_bridge_roundtrip` — 32 checks | yes, after the build in §3 |
 | `test_mcp_serves`, `test_served_claims` | yes — the script installs `mcp` |
+| The `heron` server's library tools - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, `heron_standards` | yes - served from 2026-10-17, and no `revit_` tool ([D-132](DECISIONS.md)) |
 | The brain: lookup, gaps, routing, retrieval | yes |
 | **Proving a fragment or skill against a model** | **no. Needs Revit** |
 | **Add-in load, upgrade, rollback, manifest discovery** | **no. Needs a real Windows install** |
@@ -194,6 +200,15 @@ first time it is seen, and it is not one.** The server's own code is still teste
 `tests/test_mcp_serves.py` and `tests/test_served_claims.py` import it and call its tools directly.
 Measured 2026-09-23 and again 2026-10-08, both in cloud sessions
 ([row 5b-162](fragment-issues/section-5b-rows-151-175.md)).
+
+**Since 2026-10-17 the server starts here, with its library alone** ([D-132](DECISIONS.md), answering
+Q-67). Off Windows it registers `heron_tools.LIBRARY` and nothing else, so the host lists those five
+`heron_` tools and **no `revit_` tool** - which is how a chat in a cloud session knows there is no Revit
+here - and its instructions and a lookup's version line say *"No Revit on this machine (it is not
+Windows)"*. The paragraph above is what was true before, kept as it was. A session that started before
+the change, or on a branch without it, still shows `CONNECTION_CLOSED`. `tests/test_mcp_stdio.py` starts
+the real server here over stdio and holds the list. **Seen in a real cloud session's host list on
+2026-10-17**: the five library tools, no `revit_` tool, and a lookup that answered ([D-132](decisions/D-132.md)).
 
 ---
 

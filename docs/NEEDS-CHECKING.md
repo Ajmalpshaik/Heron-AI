@@ -727,6 +727,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
+## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-69` asks for (2026-10-17)
+
+**Its own file:** [`needs-checking/group-en.md`](needs-checking/group-en.md)
+
 ## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
 
 **Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
@@ -771,9 +775,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fb.md`](needs-checking/group-fb.md)
 
+## Group FC - put one view where another is, on every sheet it is on: `PLACE_VIEW_ON_SHEET` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fc.md`](needs-checking/group-fc.md)
+
 ## Group FD - a text note's numbering, bullets, indent and bold set through Heron: `EDIT_TEXT_VALUES` mode format, and the read that checks it (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fd.md`](needs-checking/group-fd.md)
+
+## Group FE - change a value and keep a face where it is: `SET_PARAMETER_VALUES_BY_ID` version 3, `keepFace` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fe.md`](needs-checking/group-fe.md)
 
 ## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
 
@@ -790,6 +802,10 @@ Step 6 is finished, and not before. At that point:
 ## Group GP - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
 
 **Its own file:** [`needs-checking/group-gp.md`](needs-checking/group-gp.md)
+
+## Group GW - Heron's own C# compiler on a .NET Revit, whatever another add-in loaded first (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gw.md`](needs-checking/group-gw.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

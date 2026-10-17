@@ -202,6 +202,7 @@ an edit.
 | [D-129](#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ✅ Accepted · 2026-10-17 |
 | [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
 | [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
+| [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1142,3 +1143,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`RELEASE_REQUIRED`, `release_problems`), [`heron_validate.py`](../brain/heron_validate.py) (`draft` and `accept` with `--release` and `--second-route`), [`heron_matrix.py`](../brain/heron_matrix.py) (`proven_releases`), [`batch-prove.py`](../tools/batch-prove.py) (`--release`), [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md), [Group EQ](needs-checking/group-eq.md)
 
 **Full record:** [`decisions/D-131.md`](decisions/D-131.md)
+
+## D-132 — Off Windows the Heron server serves its library alone, and no Revit tool
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"yes"*, to Q-67 put to him in plain words · **Answers:** [Q-67](open-questions/tier-2.md)
+**Keeps:** [D-02](#d-02--mcp--add-in-transport-named-pipes) - the bridge is a Windows named pipe, and nothing here reaches it · [D-01](#d-01--execution-host-claude-code-plugin) · every tool on Windows, exactly as before
+**Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (`LIBRARY`), [`AGENTS.md`](../AGENTS.md), [38 §4](38-the-cloud-environment.md), the [`heron-session`](../.claude/skills/heron-session/SKILL.md) start-up line, [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py), [`tests/test_tool_registry.py`](../tests/test_tool_registry.py)
+
+**Full record:** [`decisions/D-132.md`](decisions/D-132.md)

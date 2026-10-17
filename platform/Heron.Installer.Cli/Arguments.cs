@@ -259,7 +259,7 @@ namespace Heron.Installer.Cli
                 "After the add-in, when a product that talks to a chat went in, it also" + n +
                 "sets up Heron's Python side for your user: the pinned packages in" + n +
                 "requirements-lock.txt (no administrator rights), the knowledge store, and" + n +
-                "a final heron-ready check. It needs Python 3." + PythonSetup.OldestMinor + " or later on the plain" + n +
+                "a final heron-ready check. It needs Python 3." + PythonSetup.OldestMinor + " to 3." + PythonSetup.NewestMinor + " on the plain" + n +
                 "command `python`; it never installs Python itself." + n +
                 n +
                 "Run it from your own terminal, never from inside the Claude app's shell:" + n +

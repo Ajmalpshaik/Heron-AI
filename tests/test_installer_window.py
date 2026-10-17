@@ -329,7 +329,7 @@ def main():
     check("new PythonSetup" not in window_code and "ShouldRun" not in window_code,
           "the window neither runs it nor decides whether it runs")
     worker = entry_code.find("new Thread(")
-    runs = entry_code.find("setup.Run()")
+    runs = entry_code.find("setup.RunAndSave(")
     check(worker != -1 and runs > worker,
           "it runs on the worker thread, after the add-in - pip takes minutes")
     check("PythonSetup.ShouldRun(report, manifest)" in entry_code,

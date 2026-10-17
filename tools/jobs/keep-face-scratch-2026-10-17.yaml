@@ -1,0 +1,57 @@
+# The proof of set-parameter-values-by-id (SET_PARAMETER_VALUES_BY_ID,
+# FRG-PAR-027) at version 3 - keepFace, "keep this face where it is" -
+# NEEDS-CHECKING Group FE, row FE2. FRAGMENT-ISSUES 5b-610.
+#
+#     python tools/batch-prove.py tools/jobs/keep-face-scratch-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/keep-face-scratch-2026-10-17.yaml
+#
+# A NEW SCRATCH PROJECT, NEVER A WORKING MODEL - and never any 4355-* model.
+# Group FE row FE1 is the arrangement, typed once there:
+#   - Revit 2020, a new project from the default metric template, saved as
+#     "Heron Keep Face Test". Project Units > Length rounded to 10 mm, so a
+#     value of 255.5 SHOWS as 260 - the trap of the first job.
+#   - A 250 mm exterior wall on Level 1, and a STRUCTURAL floor (Structural
+#     ticked) on one side of it only - the inside.
+#   - A 250 mm interior wall with that floor on BOTH sides.
+#   - A Generic Model box family whose depth is an instance length "Wall
+#     Width", equal about its origin; one placed in each wall at mid-height,
+#     depth across the wall, Wall Width 255.5. Mark BOX-OUT in the exterior
+#     wall, BOX-MID in the interior one.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# Read BOX-OUT's Wall Width and its outside face afterwards rather than
+# assuming it: rollback has failed before on the owner's PC (Group BD).
+#
+# POSITIVE: BOX-OUT to 100 with keepFace=outside. `written` 1, and read the
+# answer's resultJson: the readBack entry's `face` must say side outside,
+# writeMovedItMm -77.75 (half of 155.5 - the STORED value, not the 80 the
+# shown 260 would give), movedBackMm 77.75, offByMm 0, and signs.slab naming
+# the floor on the inside. The other two signs say "not used" here - no link,
+# no ducts - which is the point: one sign voting, none against, is enough.
+#
+# NEGATIVE: BOX-MID, the SAME change and the same keepFace. The floor is on
+# both sides, so no sign votes and the row is refused by name - `written` 0,
+# `refused` saying none of the three signs of the outside applies. Same kind
+# of element, same parameter, same value: the negative differs only in the
+# one thing keepFace=outside depends on.
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# "Heron Keep Face Test" to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands. HERON_CLIENT_ID is pinned by
+# batch-prove itself.
+
+model: Heron Keep Face Test (a new scratch project), Revit 2020 - BOX-OUT in an exterior wall, BOX-MID in an interior wall
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: set-parameter-values-by-id
+    expect: written
+    set:
+      rows: "key=Mark|in=Generic Models;BOX-OUT|Wall Width=100"
+      keepFace: outside
+    negative-set:
+      rows: "key=Mark|in=Generic Models;BOX-MID|Wall Width=100"
+      keepFace: outside

@@ -1,0 +1,296 @@
+name: Windows
+
+# WHAT THIS IS FOR. Every other job in this folder runs on ubuntu-latest, so
+# the installer's Windows half had run nowhere but by hand. PR #558 added the
+# one-step install - platform/Heron.Installer/PythonSetup.cs, ClaudeAppCopy.cs,
+# and in WindowsAdapters.cs the two adapters that reach Windows for it,
+# WindowsClaudeAppLook and ProcessProgramRunner - and requirements-lock.txt,
+# which is pinned and hashed for Windows alone. docs/needs-checking/group-ep.md
+# lists what that owes on Windows. The part of it that needs no Revit and no
+# person runs here, on a real Windows, every time one of those files changes.
+#
+# THREE JOBS, AND WHAT EACH MEASURES:
+#
+#   lock         EP7's measurable half. pip installs the lock with
+#                --require-hashes into the user folder on Python 3.12 and on
+#                3.13, builds nothing from source, then test_mcp_serves passes
+#                and heron-ready --check gives exactly the answer a PC with no
+#                Revit must give.
+#   test-host    tests/Heron.Installer.TestHost, built and run on Windows - the
+#                only place WindowsClaudeAppLook.SameEntry can answer, here
+#                against two real folders, a junction and a missing path.
+#   executables  HeronInstaller.exe and heron-install.exe published on Windows
+#                by build-release-assets' own build_installers, and
+#                heron-install --help exits 0.
+#
+# WHAT IT CANNOT MEASURE. No Revit, no person, no Store-built Claude. EP1 to
+# EP6 and EP8 stay with the owner's PC: an install into a real Revit's add-ins
+# folder, the window, the refusal from inside Claude, the wait for Revit to
+# close. A green run here is not an install and must never be reported as one.
+#
+# THIS IS NOT THE GATES FILE. brain/heron_tag.py and brain/heron_qa.py parse
+# .github/workflows/gates.yml alone to decide which checks block a release or
+# a change; neither reads this one, so nothing here invents a gate. Read the
+# long comment at the top of gates.yml before moving any step there.
+#
+# EXIT 3 IS NOT A PASS (tests/README.md). Every suite here must exit 0. This
+# workflow exists to BE the machine those suites wait for, so one that says
+# COULD NOT RUN here fails the job rather than being let through.
+
+on:
+  pull_request:
+    paths:
+      - 'platform/Heron.Installer*/**'
+      - 'requirements-lock.txt'
+      - 'tools/heron-ready.py'
+      - 'tools/build-release-assets.py'
+      # What runs the checks, and this file: a change to either is a change
+      # to what is measured here, and nothing else runs them on Windows.
+      - 'tests/Heron.Installer.TestHost/**'
+      - 'tests/test_installer_engine.py'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# UTF-8 ON EVERY PIPE. A step's output here is a pipe, and Python on Windows
+# writes a pipe in the console's code page, where a character it cannot map
+# is an exception that has nothing to do with the code under test.
+# ProcessProgramRunner sets the same variable for the same reason when the
+# installer runs pip and heron-ready.
+env:
+  PYTHONIOENCODING: utf-8
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lock:
+    name: The lock installs and Heron serves, Python ${{ matrix.python }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      # Both versions report, whichever fails first: the point is to know
+      # which Pythons the lock works on, not to stop at the first that
+      # does not.
+      fail-fast: false
+      matrix:
+        python: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+
+      # THE INSTALLER'S OWN COMMAND, word for word - PythonSetup.cs runs
+      # exactly this, and the lock's header gives it as the one line to run.
+      # --only-binary=:all: joined PythonSetup's pip line on 2026-10-17
+      # (row 5b-882), so it is here too: the runner refuses a source archive
+      # exactly as a modeller's PC does.
+      #
+      # NO SOURCE BUILD is EP7's other half: a modeller's PC has no compiler,
+      # so a package pip had to build here is one that fails there. pip
+      # says "Building wheel" when it builds one, and that fails the step -
+      # kept beside --only-binary, so the check still bites if that flag is
+      # ever dropped from the line above.
+      - name: pip installs the lock, hashed, into the user folder
+        run: |
+          python -m pip install --user --require-hashes --only-binary=:all: -r requirements-lock.txt 2>&1 \
+            | tee "$RUNNER_TEMP/pip.txt"
+
+          if grep -qi 'Building wheel' "$RUNNER_TEMP/pip.txt"; then
+            echo "::error::pip built a package from source. A modeller's PC has no compiler, so the lock must arrive as wheels only."
+            grep -i 'Building wheel' "$RUNNER_TEMP/pip.txt"
+            exit 1
+          fi
+
+          python -m pip list --user
+
+      - name: tests/test_mcp_serves.py - exit 3 is not a pass
+        run: |
+          code=0
+          python tests/test_mcp_serves.py || code=$?
+
+          # The lock was installed one step up, so the SDK this suite waits
+          # for is here. A 3 now is the lock not doing its job.
+          if [ "$code" -eq 3 ]; then
+            echo "::error::test_mcp_serves.py could not run (exit 3) after the lock went in. NOT RUN is not a pass."
+            exit 1
+          fi
+          exit "$code"
+
+      # THE ONE FIX THIS EXPECTS, AND WHY IT IS NOT EXCUSED BLINDLY.
+      #
+      # Section 7 looks for Heron.addin under
+      # %APPDATA%\Autodesk\Revit\Addins. A runner has no Revit and nothing
+      # here installs the add-in, so the TRUE answer is a FIX and exit 1 -
+      # section 7 working, on a real Windows APPDATA, is that FIX. So this
+      # demands it exactly: exit 1, the FIX list exactly that one line, and
+      # section 3 saying the server loaded. Exit 0, any other code, a
+      # second FIX or a different one fails the job.
+      #
+      # heron-ready is never edited to pass here, and no Heron.addin is
+      # faked to turn it READY: that would measure the fake.
+      - name: heron-ready --check - READY but for the add-in a runner has not got
+        run: |
+          code=0
+          python tools/heron-ready.py --check > "$RUNNER_TEMP/ready.raw" 2>&1 || code=$?
+          tr -d '\r' < "$RUNNER_TEMP/ready.raw" > "$RUNNER_TEMP/ready.txt"
+          cat "$RUNNER_TEMP/ready.txt"
+
+          expected='  FIX  the Heron add-in is not installed for any Revit'
+          fixes=$(grep '^  FIX ' "$RUNNER_TEMP/ready.txt" || true)
+          status=0
+
+          if [ "$code" -eq 0 ]; then
+            echo "::error::heron-ready said READY on a runner with no Revit. Section 7 found a Heron.addin that cannot be here, or no longer looks."
+            status=1
+          elif [ "$code" -ne 1 ]; then
+            echo "::error::heron-ready exited $code, which is neither READY nor NOT READY."
+            status=1
+          fi
+
+          if [ "$fixes" != "$expected" ]; then
+            echo "::error::heron-ready's FIX list is not exactly the missing add-in. What it said:"
+            echo "${fixes:-(no FIX line at all)}"
+            status=1
+          fi
+
+          if ! grep -q 'it loads, with every tool registered' "$RUNNER_TEMP/ready.txt"; then
+            echo "::error::Section 3 did not say Heron's MCP server loads."
+            status=1
+          fi
+
+          {
+            echo "### heron-ready --check, Python ${{ matrix.python }}"
+            echo
+            echo "Exit ${code}. Expected exit 1 with one FIX, the missing add-in - this runner has no Revit."
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/ready.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$status"
+
+  test-host:
+    name: The installer test host, on Windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      # The .NET 10 SDK, as gates.yml and release.yml install it. The host
+      # targets net8.0 and rolls forward to the newest runtime present.
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      # THE WINDOWS CHECKS MUST HAVE RUN, not only the run have passed. The
+      # host checks SameEntry against a junction only when it is on
+      # Windows, so a green run that never took that branch would read
+      # exactly like one that did. The three lines are demanded by name, and
+      # the one only printed off Windows must be absent.
+      - name: tests/test_installer_engine.py - exit 3 is not a pass
+        run: |
+          code=0
+          python tests/test_installer_engine.py > "$RUNNER_TEMP/engine.raw" 2>&1 || code=$?
+          tr -d '\r' < "$RUNNER_TEMP/engine.raw" > "$RUNNER_TEMP/engine.txt"
+          cat "$RUNNER_TEMP/engine.txt"
+
+          if [ "$code" -eq 3 ]; then
+            echo "::error::test_installer_engine.py could not run (exit 3) with the .NET SDK installed one step up. NOT RUN is not a pass."
+            exit 1
+          fi
+          if [ "$code" -ne 0 ]; then
+            exit "$code"
+          fi
+
+          status=0
+          for line in \
+              'a folder and a junction to it are ONE thing on disk - true' \
+              'two different folders are two - false' \
+              'a path that is not there cannot tell - null, which reads as outside'; do
+            if ! grep -qF "  ok    ${line}" "$RUNNER_TEMP/engine.txt"; then
+              echo "::error::The Windows check did not pass, or did not run: ${line}"
+              status=1
+            fi
+          done
+          if grep -qF 'off Windows the identity test' "$RUNNER_TEMP/engine.txt"; then
+            echo "::error::The host thinks it is not on Windows."
+            status=1
+          fi
+          exit "$status"
+
+  executables:
+    name: The installers publish on Windows, and heron-install answers --help
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      # THROUGH build_installers ITSELF, not a copy of its flags. The
+      # publish line - runtime, single file, self-contained, Release - lives
+      # in tools/build-release-assets.py, and a second spelling of it here
+      # is the one that would drift. release.yml says the same of itself:
+      # a rule written in YAML is a rule no test can reach.
+      - name: Publish HeronInstaller.exe and heron-install.exe
+        run: |
+          python - "$RUNNER_TEMP/installers" <<'PY'
+          import importlib.util
+          import os
+          import sys
+
+          stage = sys.argv[1]
+          os.makedirs(stage, exist_ok=True)
+          spec = importlib.util.spec_from_file_location(
+              "build_release_assets", os.path.join("tools", "build-release-assets.py"))
+          tool = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(tool)
+
+          failed = tool.build_installers(stage)
+          for csproj, why in failed:
+              print("FAILED  %s" % csproj)
+              print(why)
+          for csproj in tool.INSTALLERS:
+              name = tool.installer_name(csproj)
+              there = os.path.exists(os.path.join(stage, name))
+              print("  %-4s %s" % ("ok" if there else "FAIL", name))
+          sys.exit(1 if failed else 0)
+          PY
+
+      - name: heron-install --help exits 0
+        run: |
+          code=0
+          "$RUNNER_TEMP/installers/heron-install.exe" --help > "$RUNNER_TEMP/help.raw" 2>&1 || code=$?
+          tr -d '\r' < "$RUNNER_TEMP/help.raw" > "$RUNNER_TEMP/help.txt"
+          cat "$RUNNER_TEMP/help.txt"
+
+          if [ "$code" -ne 0 ]; then
+            echo "::error::heron-install --help exited $code."
+            exit 1
+          fi
+          # Exit 0 with nothing said is not an answer to --help.
+          if ! grep -q '^heron-install - install Heron' "$RUNNER_TEMP/help.txt"; then
+            echo "::error::heron-install --help exited 0 but did not print its usage."
+            exit 1
+          fi

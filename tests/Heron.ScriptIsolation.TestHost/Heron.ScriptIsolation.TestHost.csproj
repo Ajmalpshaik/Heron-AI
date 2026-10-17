@@ -1,0 +1,86 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves row 5b-575's repair WITHOUT Revit: that on a .NET Revit Heron
+    compiles on its OWN C# compiler whatever another add-in loaded first, and
+    that the compiled fragment still sees the same types the host hands it.
+
+    THIS PROCESS PLAYS REVIT. Revit's default load context is this one's:
+    it holds no Roslyn of its own, and "another add-in" is a newer Roslyn
+    loaded into it by path before Heron compiles - Microsoft.CodeAnalysis and
+    Microsoft.CodeAnalysis.Scripting, the two AJ Tools had loaded on Revit
+    2026.5, or all four, as on 2027.3. That Roslyn is DOWNLOADED, never
+    referenced (PackageDownload), so it is nowhere on this process's trusted
+    list - exactly as another add-in's copy is nowhere on Revit's.
+
+    HERON IS THE FOLDER THIS BUILDS INTO. HeronScriptHost.cs is linked by
+    source, the one door the add-in uses, and Heron.Scripting.targets is
+    imported - the same file the add-in imports on 2025 and later - so
+    Heron.Scripting.dll and Roslyn 4.8 land beside this assembly the way they
+    land beside Heron.Revit.Addin.dll - and the host looks for them in the
+    folder its own assembly came from, which here is this one.
+
+    HeronRunClock.cs is linked as the stack guard's host links it, because a
+    guarded script names it - and naming it is the point: the script must
+    reach THIS copy, the default context's, or the run clock would time a
+    different class from the one the dispatcher started.
+
+    Build with -p:RevitVersion=2026 (any release from 2025 gives the .NET
+    branch) and HeronTfm set to a framework this machine runs;
+    tests/test_script_isolation.py works that out and runs every case.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.ScriptIsolation.TestHost</RootNamespace>
+    <AssemblyName>Heron.ScriptIsolation.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!--
+    2020 TO 2024 BUILD A STUB (Program.cs, at its foot): there is no load
+    context on .NET Framework and no defect to arrange. tools/check-compile.py
+    builds every project on every release, so the stub keeps this one honest
+    there rather than leaving it out.
+  -->
+  <PropertyGroup>
+    <HeronDotNetRelease Condition="'$(RevitVersion)' &gt;= '2025'">true</HeronDotNetRelease>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(HeronDotNetRelease)' == 'true'">
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronScriptHost.cs"
+             Link="HeronScriptHost.cs" />
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronRunClock.cs"
+             Link="HeronRunClock.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\platform\Heron.Core\Heron.Core.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\revit\Heron.Scripting\Heron.Scripting.targets"
+          Condition="'$(HeronDotNetRelease)' == 'true'" />
+
+  <!--
+    THE OTHER ADD-IN'S COMPILER. 4.14.0 is the version measured on the
+    owner's laptop; it needs System.Collections.Immutable 9, so it runs on
+    .NET 9 and later - Revit 2026.5 there ran .NET 10. 4.13.0 is the newest
+    whose .NET 8 build needs only what .NET 8 has, for a machine whose
+    newest runtime is 8. Program.cs picks by the runtime it finds.
+  -->
+  <ItemGroup Condition="'$(HeronDotNetRelease)' == 'true'">
+    <PackageDownload Include="Microsoft.CodeAnalysis.Common" Version="[4.14.0];[4.13.0]" />
+    <PackageDownload Include="Microsoft.CodeAnalysis.CSharp" Version="[4.14.0];[4.13.0]" />
+    <PackageDownload Include="Microsoft.CodeAnalysis.Scripting.Common" Version="[4.14.0];[4.13.0]" />
+    <PackageDownload Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="[4.14.0];[4.13.0]" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>NuGetPackageRoot</_Parameter1>
+      <_Parameter2>$(NuGetPackageRoot)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
