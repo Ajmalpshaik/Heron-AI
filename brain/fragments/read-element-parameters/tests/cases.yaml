@@ -45,6 +45,14 @@ positive:
       every note in values and one line each in `noteWording`; a note in no
       list says "no list"
 
+  - given: >
+      VERSION 4. A text note whose three paragraphs are a bulleted list,
+      paragraph 2 bold and paragraph 3 underlined, parameterName Text
+    expect: >
+      its `noteWording` line ends "lists: 1-3 Bullet || bold 2; underline 3",
+      and a plain note beside it says "no list" and nothing about styles. NOT
+      RUN: it needs Revit (NEEDS-CHECKING FD3)
+
 negative:
   - given: the same 4 ducts, reading a parameter name that does not exist
     expect: >

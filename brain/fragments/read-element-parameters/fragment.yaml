@@ -9,7 +9,7 @@ semantic-identity: "reads one named parameter off every element"
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_PARAMETERS
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -42,7 +42,8 @@ purpose: >
   the edge where the user is.
 
   **"Text" on a text note is what the note says** (version 3): its wording,
-  with each paragraph's list type.
+  with each paragraph's list type - and (version 4) whether it is a numbered
+  or bulleted list and which paragraphs are bold, italic or underlined.
 
 # VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-520). Kept out of the purpose on
 # purpose: the purpose is searched, and a paragraph about notes and lists would
@@ -69,6 +70,17 @@ purpose: >
 #
 #   Version 2's proof below no longer describes the code and is kept as a
 #   record; the card is DRAFT until the version 3 proof is signed.
+
+# VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-737). EDIT_TEXT_VALUES version 5's
+# mode format can now SET a note's lists and its bold, italic and underline, so
+# the check reads all of it: `noteWording` adds each paragraph's bold, italic
+# and underline - "bold 1; partly bold 3; underline 5-6" - and every list's own
+# start number, where version 3 read the first paragraph's only. A note with
+# none of the three says nothing about them. NOT RUN IN REVIT: compiled for all
+# eight releases; GetBoldStatus, GetItalicStatus and GetUnderlineStatus read the
+# same in RevitAPI 2020 to 2027 (tools/api-surface, one release at a time).
+# Version 3's proof draft, made 2026-10-17 on the owner's PC, no longer
+# describes this code; the proof plan is NEEDS-CHECKING group FD.
 
 contract:
   needs:
@@ -111,7 +123,9 @@ contract:
     - name: noteWording
       # Version 3. Every text note read with parameterName Text, one line each:
       # the wording with \r and \v showing, each paragraph's list type, and any
-      # character not typed plainly. Null when no note was read.
+      # character not typed plainly. Version 4 adds each list's start number and
+      # the paragraphs that are bold, italic or underlined. Null when no note
+      # was read.
       role: result
       type: string
 
@@ -154,6 +168,10 @@ compatibility-note: >
 #   "what is the Mark on these"           -> here
 #   "read what the text notes in this view say" -> here, parameterName Text (version 3, 5b-520)
 #   "change the wording of this note but keep the numbering" -> EDIT_TEXT_VALUES
+#   "is this note numbered" / "which paragraphs of this note are bold" -> here,
+#                                           parameterName Text (version 4, 5b-737)
+#   "number the paragraphs of this note" / "make the first line bold" ->
+#                                           EDIT_TEXT_VALUES, mode format
 #
 #   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
 #   with view=<the view> and categories=Text Notes, then this with
@@ -279,3 +297,31 @@ utterances:
   - which walls are room bounding
   - what is the height of this wall
   - what is the top constraint of this wall
+  # ADDED 2026-10-17, 5b-737 - version 4 reads each paragraph's list and its
+  # bold, italic and underline, so a CHECK of a note's formatting is a read.
+  # Measured that day: once EDIT_TEXT_VALUES version 5 could format a note,
+  # these three questions reached it, a write - on main they reached
+  # CREATE_TEXT_NOTE, a write too. A check never needs the write (D-86).
+  - is this note numbered
+  - which paragraphs of this note are bold
+  - check the numbering of this note
+  # ADDED 2026-10-17, 5b-737 - ONE VALUE OFF AN ELEMENT again: measured on
+  # lexical reaching SET_AIR_TERMINAL_FLOW, a write, once the three above were
+  # declared, as row 520 measured it when two note questions were. Level is
+  # this card's special case.
+  - what level are these air terminals on
+  # ADDED 2026-10-17, 5b-737 - a QUESTION reaching EDIT_TEXT_VALUES, a write,
+  # on lexical and on the trained model, on main as on this branch. Row 520
+  # left it undeclared because declaring it then moved "what level are these
+  # air terminals on" onto a write; that one is declared above now.
+  - show me the wording of the text notes
+  # ADDED 2026-10-17, 5b-737 - four QUESTIONS measured on this branch reaching
+  # a write once the above were in: the first EDIT_TEXT_VALUES on the trained
+  # model, the other three CREATE_TEXT_NOTE (the trained model, and the trained
+  # model with the re-ranker). On main they reached two date reads and an
+  # ordering read - wrong reads, never this one. Written in this session, not
+  # said by the owner: a check of a note's lists and styles is this card's.
+  - does the first paragraph of this note use bold
+  - does this note have bullets
+  - tell me if this text note has a numbered list
+  - is the first line of this note bold
