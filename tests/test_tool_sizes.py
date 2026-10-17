@@ -47,10 +47,12 @@ WHAT IT DOES NOT
   tests/test_mcp_serves.py proves through a real SDK that the description a
   host is served is the one measured here.
 
-IS IT A GATE OR A REPORT? A gate, as written: a tool over budget exits 1.
-Whether it should stay one is the owner's call (D-100 asked the same of the
-routing score and he answered "report only"); the pull request that added
-this asks him.
+IS IT A GATE OR A REPORT? A GATE - D-116. A tool over budget exits 1 and
+stops a pull request. The owner decided it on 2026-10-17, asked as D-100 was
+asked of the routing score (which stays a report): a size is exact and this
+suite takes a second, so two of D-100's three reasons do not hold, and the
+third - a gate teaches people to cut words to buy the number back - is what
+section 4 is for. Making it a report needs a decision that supersedes D-116.
 """
 
 import ast
@@ -113,10 +115,18 @@ def check(condition, what):
 
 
 def arguments(path=SERVER):
-    """{tool: [argument names]} for every `@server.tool()`, read with ast."""
+    """
+    {tool: [argument names]} for every `@server.tool()`, read with ast.
+
+    Not an argument annotated `_Context`: the SDK fills that in itself and a
+    host never sees it (tests/test_mcp_serves.py holds that no served schema
+    shows a `ctx`), so there is nothing for a description to explain.
+    """
     with io.open(path, encoding="utf-8") as fh:
         tree = ast.parse(fh.read(), path)
-    return dict((node.name, [a.arg for a in node.args.args])
+    return dict((node.name, [a.arg for a in node.args.args
+                             if not (a.annotation is not None
+                                     and ast.unparse(a.annotation) == "_Context")])
                 for node in tree.body
                 if isinstance(node, ast.FunctionDef)
                 and any(ast.unparse(d) == "server.tool()" for d in node.decorator_list))

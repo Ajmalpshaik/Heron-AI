@@ -509,8 +509,9 @@ other tool cost; §8.6's *about 9,000 characters* was a sentence.
 - **[`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py)** holds the ALWAYS_LOADED descriptions
   together, and every tool alone, to a budget - and holds that no trim drops an argument's name or the
   sentences the two doors stand on, because a budget teaches people to cut words to buy the number back
-  (D-100's first reason). **It is a gate as written. Whether it stays one is the owner's call**, asked in
-  the pull request that added it, as D-100 asked it of the routing score.
+  (D-100's first reason). **It is a gate: a tool over budget stops a pull request -
+  [D-116](DECISIONS.md#d-116--a-tool-description-over-its-budget-stops-a-pull-request)**, the owner's
+  answer of 2026-10-17 to the question D-100 settled the other way for the routing score.
 - **The description served is the docstring cleaned, on every Python.** Python 3.12 - the owner's - served
   every line indented four spaces, so the same list cost more on his PC than in a container
   ([row 5b-489](fragment-issues/section-5b-rows-401-425.md)).

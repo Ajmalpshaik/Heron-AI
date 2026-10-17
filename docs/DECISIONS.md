@@ -187,6 +187,7 @@ an edit.
 | [D-113](#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about) | A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about | ⏳ Proposed · 2026-10-06 |
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
+| [D-116](#d-116--a-tool-description-over-its-budget-stops-a-pull-request) | A tool description over its budget stops a pull request | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -983,3 +984,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** `open-view` only. Nothing in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) or [`heron_fragment.py`](../brain/heron_fragment.py) changes
 
 **Full record:** [`decisions/D-115.md`](decisions/D-115.md)
+
+## D-116 — A tool description over its budget stops a pull request
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Source:** Ajmal PS, 2026-10-17, in conversation, answering the question put in the pull request that added the budget: *"keep it a gate"*
+**Keeps:** [D-03](#d-03--mcp-tool-granularity-thick-and-specific) - the tool list's cost is accepted and kept down by a small core set · [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) - the routing score stays a report; this decides a different number
+**Affects:** [`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py), [`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py) (`--sizes`), [`.github/workflows/gates.yml`](../.github/workflows/gates.yml), which runs every suite
+
+**Full record:** [`decisions/D-116.md`](decisions/D-116.md)
