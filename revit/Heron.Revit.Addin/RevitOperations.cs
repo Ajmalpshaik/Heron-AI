@@ -225,9 +225,10 @@ namespace Heron.Revit.Addin
                     return RevitFragment.Run(app, request);
 
                 // THE SHOW DOOR. The read path exactly - no transaction, so
-                // Revit refuses any model change - reached under Execute
-                // rather than Analyze, so a fragment that selects, zooms or
-                // opens a view runs with Changes OFF. The gate above read the
+                // Revit refuses a change, and the model counted before and
+                // after (row 5b-350) - reached under Execute rather than
+                // Analyze, so a fragment that selects, zooms or opens a view
+                // runs with Changes OFF. The gate above read the
                 // level for the NAME; nothing in the request could have said it.
                 case "run_fragment_show":
                     return RevitFragment.Run(app, request);

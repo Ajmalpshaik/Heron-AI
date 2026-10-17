@@ -863,6 +863,7 @@ a checker written from a build order can only ever ask whether the build order w
 python tools/batch-prove.py tools/jobs/example.yaml --dry-run   # read it, run nothing
 python tools/batch-prove.py my-jobs.yaml                        # run it against Revit
 python tools/batch-prove.py my-jobs.yaml --only set-mep-size
+python tools/batch-prove.py my-jobs.yaml --release 2025 --session <pid>   # PROVEN ones, on one more release
 ```
 
 Proving fragments one at a time costs a round trip each. On 2026-09-09 a throwaway script proved
@@ -885,6 +886,14 @@ reported six passes for it. A fragment at `PROVEN` or `PRODUCTION` is now refuse
 and never sent to Revit. There is deliberately **no flag to override that** — re-proving after the code
 changes is a staleness question, and [`tests/test_golden.py`](../tests/test_golden.py) already answers
 it by recomputing fingerprints.
+
+**`--release <year>` turns that rule round rather than off** ([D-131](../docs/decisions/D-131.md)). A proof
+on 2024 is evidence about 2024 only, so with `--release` it runs ONLY a fragment that is PROVEN on a proof
+still matching its code, and only on a release neither its proof nor a fresh `proof.releases` entry names -
+the rest are `ALREADY` or `NOT PROVEN`. Its run record and draft are `<slug>@<year>`, a record naming
+another Revit is `WRONG RELEASE` and exits 1, and the drafts are signed with `heron_validate.py accept
+--release`, which adds one entry and leaves `proof:` and `heron-status` as they were.
+[`tests/test_release_proofs.py`](../tests/test_release_proofs.py) holds it.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
@@ -912,7 +921,8 @@ library rather than typed, so it cannot go stale.
 
 **The exit code follows the batch, not the fragments.** Fourteen failures is the output — the thing it
 was run to find out — and exiting non-zero on them would make a successful proving run
-indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run.
+indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run, or
+a `--release` batch that ran on another Revit.
 
 ---
 

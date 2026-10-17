@@ -771,6 +771,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fg.md`](needs-checking/group-fg.md)
 
+## Group FU - one Object Styles row by name: `LIST_CATEGORIES` version 3, `categories` narrows the answer, a missing name gets the nearest names (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fu.md`](needs-checking/group-fu.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
