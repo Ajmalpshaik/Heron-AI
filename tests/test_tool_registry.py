@@ -377,8 +377,12 @@ def main():
     # whole of the guarantee, and it is read here rather than trusted.
     operations_cs = io.open(HANDLER_FILES[0], encoding="utf-8").read()
     routed = re.search(r'case\s+"run_fragment_show"\s*:\s*return\s+([^;]+);', operations_cs)
+    # Since the run guard the executor also takes the registry's risk, so the
+    # read path is spelt with `false` as well - the same overload's meaning.
     check(routed is not None
-          and routed.group(1).replace(" ", "") == "RevitFragment.Run(app,request)",
+          and routed.group(1).replace(" ", "") in (
+              "RevitFragment.Run(app,request)",
+              "RevitFragment.Run(app,request,false,HeronOperationRegistry.RiskOf(op))"),
           "run_fragment_show routes to RevitFragment.Run(app, request) - the overload "
           "that opens no transaction - found: %s"
           % (routed.group(1) if routed else "no route"))
