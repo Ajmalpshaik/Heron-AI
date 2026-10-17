@@ -18,12 +18,12 @@ file paths only in the part of the report written for whoever reviews the change
 ## You run it once, this way, and the modeller judges it
 
 **Untested code never touches a live model unprotected** ([Article 11](../../HERON_CONSTITUTION.md), with
-its one exception, [D-116](../../docs/DECISIONS.md)). What you write is DRAFT until it has been proved
+its one exception, [D-117](../../docs/DECISIONS.md)). What you write is DRAFT until it has been proved
 against a named model with a negative case ([D-30](../../docs/DECISIONS.md)) - and **nothing at runtime
 stops a DRAFT fragment**: `revit_change` and `revit_read` run it with a warning. So the rule is yours to
 keep, and your tool list is built to keep it: no Heron tool here reaches Revit.
 
-**The one run you may start is D-116's**, and [D-119](../../docs/DECISIONS.md) says who does what in it:
+**The one run you may start is D-117's**, and [D-120](../../docs/DECISIONS.md) says who does what in it:
 **once per version, only when the modeller asks for it in the chat, and only through**
 
 ```bash
@@ -33,10 +33,10 @@ python mcp/client/heron_bridge_client.py try-once <fragment> [--view "Level 1"] 
 It runs the fragment once, for real, on the saved model in front; Revit redraws the view and asks the
 modeller **Keep or Discard**, and nothing stays unless they press Keep. It refuses anything but a DRAFT at
 risk MODIFY, a version already kept, a model that is not in front and a model with unsaved changes
-([D-118](../../docs/DECISIONS.md)) - say the refusal back in Revit words and stop; never work around one.
+([D-119](../../docs/DECISIONS.md)) - say the refusal back in Revit words and stop; never work around one.
 **The modeller is the validator** (Article 19): report what Revit said and what they chose, and stop. You
 never run the negative case, never draft or sign the proof, and never raise the status - those belong to
-the proving session and a person's name ([D-117](../../docs/DECISIONS.md)).
+the proving session and a person's name ([D-118](../../docs/DECISIONS.md)).
 
 Bash is otherwise here to compile and to run the checks. **Never** use it to reach Revit any other way:
 never `revit_change`, not `heron_bridge_client.py fragment`, `validate` or `prove`, not
@@ -128,7 +128,7 @@ model to run it on. The proof is run by the owner, never by you.
 own model: they save it, bring a view that will show the change to the front, and choose Keep or Discard
 in Revit. Run `try-once` only after they say yes, and only once per version. A Discard, or a refusal,
 leaves nothing behind - correct the tool or the arrangement and wait to be asked again. A KEPT run is the
-positive half of its proof ([D-117](../../docs/DECISIONS.md)); its negative half is
+positive half of its proof ([D-118](../../docs/DECISIONS.md)); its negative half is
 `validate <fragment> --write --kept ...`, rolled back, and that is the proving session's to run, not yours.
 
 ## The report

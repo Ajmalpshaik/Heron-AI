@@ -231,8 +231,8 @@ That is not what `batch-prove` does. Prove those one at a time with `validate`, 
 
 ## A run the modeller kept is the positive half
 
-**[D-117](../../../docs/DECISIONS.md), accepted 2026-10-17.** A MODIFY DRAFT that ran once on the
-modeller's own saved model through `try-once` ([D-116](../../../docs/DECISIONS.md)) and was **kept** -
+**[D-118](../../../docs/DECISIONS.md), accepted 2026-10-17.** A MODIFY DRAFT that ran once on the
+modeller's own saved model through `try-once` ([D-117](../../../docs/DECISIONS.md)) and was **kept** -
 they saw the result in Revit and pressed Keep - is its positive case. The run is recorded at
 `brain/proof-drafts/runs/<fragment>.once.json`. Prove the rest without running the positive again:
 

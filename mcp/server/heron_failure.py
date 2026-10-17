@@ -179,7 +179,7 @@ _KNOWN = {
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
                           "Revit took it and has not finished; it is still working"),
-    # D-116: the run is done and the Keep or Discard box is still open in
+    # D-117: the run is done and the Keep or Discard box is still open in
     # Revit. What the modeller presses there stands; asking again is wrong.
     "awaiting_modeller": (RUNNING, WAIT,
                           "Revit is still waiting for the modeller to choose Keep or "
@@ -233,7 +233,7 @@ _KNOWN = {
     "worksets_unreadable": (REFUSED, FIX_FIRST,
                           "Revit would not list the worksets - nothing was changed"),
 
-    # --- a DRAFT's one run behind Keep or Discard (D-116), refused above the
+    # --- a DRAFT's one run behind Keep or Discard (D-117), refused above the
     # transaction group, so each knows nothing was written ---------------------
     "ask_needs_change_path": (REFUSED, STOP,
                           "Keep or Discard is offered only for a change to the model, never "

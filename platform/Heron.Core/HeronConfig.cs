@@ -64,7 +64,7 @@ namespace Heron.Core
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
 
                 // HOW MUCH LONGER A JOB MAY TAKE ONCE IT HAS ASKED THE MODELLER
-                // (D-116). A DRAFT run with "apply": "ask" stops on a Keep or
+                // (D-117). A DRAFT run with "apply": "ask" stops on a Keep or
                 // Discard box in Revit, and a person reading their model is
                 // not a slow operation - so this is added to the operation
                 // timeout, and only for a job that has put the box up. The

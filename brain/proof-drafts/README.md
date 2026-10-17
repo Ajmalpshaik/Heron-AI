@@ -24,8 +24,8 @@ both gitignored, so an empty folder means nothing has been run *on this machine*
 
 `runs/<fragment>.once.json` is different from the rest: it is a DRAFT's **one run on the modeller's own
 saved model**, through `heron_bridge_client.py try-once`, where Revit showed the result and asked **Keep
-or Discard** ([D-116](../../docs/DECISIONS.md)). A kept one is the positive case of the proof
-([D-117](../../docs/DECISIONS.md)): `validate <fragment> --write --kept` runs only the negative, rolled back,
+or Discard** ([D-117](../../docs/DECISIONS.md)). A kept one is the positive case of the proof
+([D-118](../../docs/DECISIONS.md)): `validate <fragment> --write --kept` runs only the negative, rolled back,
 and writes the ordinary `runs/<fragment>.json` with the kept run in the positive's place. `draft` and
 `accept` refuse it if it was discarded, or if the fragment's code has changed since it ran.
 
