@@ -629,8 +629,8 @@ async def exercise_door(module):
     check(assemble is not None and given == assemble(),
           "and they are the registry's host.chat, as assembled from the "
           "Constitution now")
-    for phrase in ("Revit's own Undo", "Show before you change", "D-99",
-                   "Never call a model, a system or a design"):
+    for phrase in ("Revit's own Undo", "Show before you change", "D-126",
+                   "Keep or Discard", "Never call a model, a system or a design"):
         check(phrase in given, "they include: %s" % phrase)
 
     print()
@@ -640,7 +640,7 @@ async def exercise_door(module):
              "documentPath": "C:/jobs/Project1.rvt", "projectKey": "key-1",
              "wasActiveDocument": True, "bound": "all as given",
              "provides": {"found": "2 item(s) [Level 1, Level 2]"},
-             "providesCount": 1}
+             "providesCount": 1, "elementsCounted": 1234}
     revit = StandIn(reply)
 
     def resolve():
@@ -673,7 +673,17 @@ async def exercise_door(module):
         expect = "CODE HAS CHANGED SINCE" if proof and proof["stale"] else "has not changed since"
         check("PROVEN" in said and expect in said,
               "and how far it is proven, from its own files")
-        check("Nothing in the model was changed" in said, "and that nothing was changed")
+        check("Nothing in the model was changed" in said and "1,234" in said,
+              "and that nothing was changed, from the add-in's own count")
+
+        # AN ADD-IN THAT NEVER COUNTED MUST NOT BE SAID TO HAVE - row 5b-350.
+        revit.asked[:] = []
+        revit.reply = {k: v for k, v in reply.items() if k != "elementsCounted"}
+        said = await ask(server, {"capability": capability})
+        check("Nothing in the model was changed" not in said
+              and "not measured" in said,
+              "an answer with no count says the model was not measured")
+        revit.reply = reply
 
         revit.asked[:] = []
         revit.reply = dict(reply, wasActiveDocument=False)

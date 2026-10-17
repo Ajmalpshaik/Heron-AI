@@ -14,7 +14,9 @@ replaceable.
 **Running one is a bridge operation rather than an MCP tool**, and the two are not the same door.
 [D-28](../docs/DECISIONS.md)'s in-process Roslyn landed on 2026-09-06 as
 [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs). `run_fragment_read` opens no
-transaction, so Revit itself refuses any change. **`run_fragment_write` exists too** — declared `MODIFY`
+transaction, so Revit refuses a change - not always completely: one read run left an element behind
+([row 5b-350](../docs/fragment-issues/section-5b-rows-326-350.md)), so every read is now counted before
+and after, and one that moved the model is never answered as a read. **`run_fragment_write` exists too** — declared `MODIFY`
 in [`HeronOperationRegistry`](../platform/Heron.Core/HeronOperationRegistry.cs), gated by
 `write.enabled` which defaults to false ([D-19](../docs/DECISIONS.md)), and rolled back unless the
 caller passes `apply` ([D-55](../docs/DECISIONS.md)).
