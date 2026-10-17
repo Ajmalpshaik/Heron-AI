@@ -823,6 +823,8 @@ key, with the day he gave it.
 | 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 11 | 5 | 31 | 1 (0) | 11 | 5 of 7 | `11-42----1---21.-252-----w---4----1111-4---11-4222111-231w1w121-3w2---w-w-w1221` |
 | 2026-10-17 | 569 | `lexical` | any | `88c7eadd` | 18 | 7 | 4 | 35 | 1 (0) | 9 | 4 of 7 | `151-1----1-4-11.-112-----w-------411-1-2---11--242111-241w1w12---w2---w3w-w2--1` |
 | 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 12 | 5 | 30 | 1 (0) | 9 | 5 of 7 | `11-42----1---21.-212-----w---4----1111-4--411-4222111-231w1w121-3w2---w-w-w2221` |
+| 2026-10-17 | 571 | `lexical` | any | `88c7eadd` | 18 | 9 | 4 | 33 | 1 (0) | 8 | 4 of 7 | `15131----1-3-11.-112-----w-------41151-2---11--242111-241w1w12---w2---w3w-w2--1` |
+| 2026-10-17 | 571 | `model` | any | `88c7eadd` | 17 | 11 | 3 | 33 | 1 (0) | 8 | 5 of 7 | `11-------1---21.-212-----w---4----1111-4---11-4222121-231w1w121-3w2---w-w-w1221` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -849,6 +851,8 @@ their own table and are never added into his numbers.
 | 2026-10-17 | 569 | `model` | any | `30b3da1f` | 120 | 32 | 24 | 17 of 41 | 30 of 41 | `11..www...11..w...w1..1.........www.www.w1..1.www....1.11....ww1...w...ww..w.....www1..1w....w..ww.....www......11...1.w` |
 | 2026-10-17 | 569 | `lexical` | any | `b5734ccb` | 120 | 13 | 47 | 40 of 41 | 41 of 41 | `11..111...11..1...11..1.........ww1..11w11..1.111....1.11....111...1w..w1..w....ww111..11.w..1...w....w111......11.w.1.w` |
 | 2026-10-17 | 569 | `model` | any | `b5734ccb` | 120 | 9 | 47 | 40 of 41 | 41 of 41 | `11..111...11..1...11..1.........ww1.w11.11..1.111....1.11....111...1...w1..w.....w111..11....1..ww.....111......11...1.w` |
+| 2026-10-17 | 571 | `lexical` | any | `e21ad1a0` | 124 | 12 | 50 | 44 of 45 | 45 of 45 | `11..111...11..1...11..1.........ww1..11w11..1.111....1.11....111...1w..w1..w....ww111..11.w..1...w....w111......11...1.w1111` |
+| 2026-10-17 | 571 | `model` | any | `e21ad1a0` | 124 | 10 | 50 | 44 of 45 | 45 of 45 | `11..111...11..1...11..1.........ww1.w11.11..1.111....1.11....111...1.w.w1..w.....w111..11....1..ww.....111......11...1.w1111` |
 
 ---
 
@@ -1493,6 +1497,58 @@ decides.
 - **Nothing met Revit.** The measurements before the owner's word lived in scratch copies; what he
   approved is in the repository, and the host's flags are one agent's calls on one day, not a host
   watched over real work.
+
+---
+
+## 2026-10-17 — eight sentences of 2026-10-14, Revit 2020, and four more plain questions (row 5b-978)
+
+[Row 5b-978](../docs/fragment-issues/section-5b-rows-401-425.md). Ajmal PS listed eight sentences measured
+on 2026-10-14 with the Revit 2020 filter, four of which reached a write or an export. **Re-measured first
+on `main` `c2f2765a`, 571 fragments**, through `heron_brain.lookup` behind the 2020 wall, each backend on
+its own private store: `lexical` (`python -s`, no model2vec) and `model` (model2vec 0.10.0,
+`minishlab/potion-base-8M`, no re-ranker). Then repaired with utterances and comments only - no `impl/`
+touched, every proof stands - and measured the same way:
+
+| sentence | `main`, lexical / model | this change, both |
+|---|---|---|
+| list the revisions in the project with their dates | `LIST_REVISIONS` / **`CREATE_REVISIONS_FROM_SHEET_DATES`** | `LIST_REVISIONS`, identity |
+| find the revision with date 04-Jun-2026 | **`EDIT_REVISION`** / `FIND_DATES_IN_VIEWS` | `LIST_REVISIONS`, identity |
+| list the saved selection sets in the model | **`UPDATE_SAVED_SET`** / `SELECT_FROM_SAVED_SET` | `REPORT_VIEW_FILTERS`, identity |
+| save the current selection as a selection set | `CREATE_SELECTION_FILTER` / the same | unchanged - already right |
+| load a saved selection set and select its elements | **`UPDATE_SAVED_SET`** / `SELECT_FROM_SAVED_SET` | `SELECT_FROM_SAVED_SET`, identity |
+| create a view/sheet set with these sheets for DWG export | **`EXPORT_VIEWS_TO_DWG`** (PUBLISH), both | `MANAGE_SHEET_SETS`, identity |
+| add sheets to an existing print set | `MANAGE_SHEET_SETS`, both | unchanged; its `mode` note now names the gap, row 5b-466 |
+| how many view/sheet sets are there in the model | `LIST_SHEET_SETS`, both | unchanged - PR #530 holds |
+
+Bold is a write or an export answering what the row did not ask for.
+
+**What else moved, `main` against this change, the same stores:**
+
+| | `lexical` | `model` |
+|---|---|---|
+| his 79, `--revit 2020` and with no filter | identical, question by question | identical |
+| the 120 plain questions | identical, question by question; 12 to a write | identical; 10 to a write |
+| the four joining them (n 121-124) | all four first | all four first |
+| 60 held-out sentences written before any card changed - revisions, selection sets, sheet sets, other domains | 2 moved, both to `LIST_REVISIONS`: one from `EDIT_REVISION`, one from `FIND_DATES_IN_VIEWS` | 6 moved: 2 writes to the right read, 1 write to a read, 1 read to the right read, 1 read to the right change, 1 read to a read |
+| the 10 from other domains | identical, top five and all | identical |
+| `check-routing`, claimed and not reached | identical | identical |
+| `check-risk-crossings --revit 2020` | the same crossings | the same |
+| `check-skill-routing` | the same winners | the same winners; one runner-up #12 -> #13 |
+| `tests/test_routing_phrases.py` | - | PASSED, as on `main` |
+
+**The first try moved two claims, and they were repaired before this was recorded.** With only the
+eight declared, the trained model served *"create revisions for the dates on the sheets"* - a change,
+claimed by five cards' tables - to `LIST_REVISIONS`, and *"the filter list is full of rubbish"* to
+`REPORT_VIEW_FILTERS` instead of `FIND_UNUSED_DEFINITIONS`. Both were undeclared claims of their own
+cards, and both are declared there now (row 5b-387's repair); every number above is after that.
+
+**Still reaching a write, the same as `main`, and left alone - they are the held-out sentences:**
+*find the revision dated 12-Mar-2025* (`EDIT_REVISION`, both), *what date is revision 2* (`EDIT_REVISION`,
+both), *find revision with date 01/02/2026* (`EDIT_REVISION`, `model`; now `LIST_REVISIONS` on lexical),
+*how many saved selection sets are in the model* (`UPDATE_SAVED_SET`, lexical).
+
+**Found on `main`, not this change:** plain question #70, *which schedules are not on a sheet*, reaches
+`PLACE_SCHEDULE_ON_SHEET` (MODIFY) on `model` at 571 fragments; the recorded run at 569 had a read.
 
 ---
 

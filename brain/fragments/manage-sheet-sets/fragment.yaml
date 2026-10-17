@@ -48,7 +48,10 @@ contract:
     - name: setName
       type: string
       source: request
-    # "create" | "rename" | "delete"
+    # "create" | "rename" | "delete". No mode adds sheets to a set that
+    # already exists or takes them out - FRAGMENT-ISSUES row 5b-466, not yet
+    # built. Until it is, delete the set and create it again under its name,
+    # given every sheet it should hold.
     - name: mode
       type: string
       source: request
@@ -129,7 +132,13 @@ compatibility-note: >
 #                                           empty ones flagged
 #   "add these sheets to the set"        -> NOT YET. No mode here adds to or
 #                                           takes from an existing set - row
-#                                           5b-466
+#                                           5b-466. The `mode` note says so,
+#                                           because the host reads that and
+#                                           never this table (row 5b-978)
+#   "create a view/sheet set with these sheets for DWG export" -> here - the
+#                                           set is made first, and
+#                                           EXPORT_VIEWS_TO_DWG exports from
+#                                           it after. Row 5b-978
 #   "save these elements as a set"       -> CREATE_SELECTION_FILTER. A
 #                                           selection set and a sheet set are
 #                                           different things with one word
@@ -140,6 +149,10 @@ compatibility-note: >
 utterances:
   - save these sheets as a named set
   - make a print set
+  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-978: asked on 2026-10-14 with the
+  # Revit 2020 filter, it reached EXPORT_VIEWS_TO_DWG, a PUBLISH, on both
+  # backends. Making the set is this card's job; the export comes after.
+  - create a view/sheet set with these sheets for DWG export
   - delete that sheet set
   - rename the print set
   - i need a set for the issue

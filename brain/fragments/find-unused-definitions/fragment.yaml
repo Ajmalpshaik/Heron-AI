@@ -125,5 +125,10 @@ utterances:
   # elements to act on rather than answering the question.
   - which view templates are unused
   - the filter list is full of old filters
+  # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-10-17 (row
+  # 5b-978). Undeclared, ranking decided, and once REPORT_VIEW_FILTERS
+  # declared "list the saved selection sets in the model" the trained model
+  # served it there - a read, but not the one that finds what nothing uses.
+  - the filter list is full of rubbish
   - what can i purge from the templates
   - unused view filters

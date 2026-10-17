@@ -382,7 +382,7 @@ separate them. Numbers in
 python tools/score-routing.py            # score, and say what moved since the last comparable run
 python tools/score-routing.py --record   # ...and append the row to brain/retrieval-history.md
 python tools/score-routing.py --list     # the answer key; asks nothing
-python tools/score-routing.py --list-plain   # the 120 plain questions; asks nothing
+python tools/score-routing.py --list-plain   # the plain questions; asks nothing
 ```
 
 The two tools above ask sentences written **for** the library. This one asks the 79 questions the
@@ -410,10 +410,11 @@ to catch.
 **A drop is reported and never stops a pull request** — the owner decided so on 2026-09-23
 ([D-100](../docs/DECISIONS.md)), and `exit_code()` in the tool names the decision.
 
-**Since 2026-10-17 it asks a second set after his**, and never adds it into his numbers: the 120 plain
-questions frozen out of FRAGMENT-ISSUES rows 5b-477 and 5b-478 into
-[`tests/data/plain-questions.yaml`](../tests/data/plain-questions.yaml) - a session's words, written
-before any card was read. Every one is a question, so its headline is how many reach a write; where the
+**Since 2026-10-17 it asks a second set after his**, and never adds it into his numbers: the plain
+questions frozen out of FRAGMENT-ISSUES rows into
+[`tests/data/plain-questions.yaml`](../tests/data/plain-questions.yaml) - rows 5b-477 and 5b-478's 120,
+a session's words written before any card was read, and the four of row 5b-978 the owner asked to join
+them the same day. Every one is a question, so its headline is how many reach a write; where the
 row names the read that answers one, where that read came back is scored too. It has its own table in
 `brain/retrieval-history.md`, its own fingerprint and its own comparison, and `--record` writes both
 rows or neither.

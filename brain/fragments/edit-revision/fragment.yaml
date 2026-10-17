@@ -229,6 +229,9 @@ compatibility-note: >
 #   "make a new revision"                -> CREATE_REVISION
 #   "list the revisions"                 -> LIST_REVISIONS, which is where the
 #                                           sequence number comes from
+#   "find the revision with date 04-Jun-2026" -> LIST_REVISIONS - a question,
+#                                           and this answered it on the
+#                                           spelling route. Row 5b-978
 #   "delete that revision"               -> DELETE_REVISION, which renumbers
 #                                           every later one and needs confirm
 #   "put that revision on these sheets"  -> SET_SHEET_REVISIONS

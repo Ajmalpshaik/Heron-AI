@@ -82,9 +82,10 @@ Exit 2 means it could not do its job: nothing was scored, which is not a pass.
 
 AND A SECOND SET BESIDE HIS, NEVER INSIDE IT
 --------------------------------------------
-tests/data/plain-questions.yaml holds 120 plain questions a session wrote on
-2026-10-14 before reading any card - frozen on 2026-10-17 out of
-FRAGMENT-ISSUES rows 5b-477 and 5b-478, where they lived only as row text.
+tests/data/plain-questions.yaml holds plain questions frozen out of
+FRAGMENT-ISSUES rows, where they lived only as row text: the 120 a session
+wrote on 2026-10-14 before reading any card (rows 5b-477 and 5b-478, frozen on
+2026-10-17), and the four of row 5b-978 the owner asked to join them.
 They are asked after his, through the same lookup, and get their own report,
 their own table in brain/retrieval-history.md and their own comparison.
 Every one is a question, so the headline is how many reach a write; where the
@@ -151,11 +152,12 @@ LANDED_CHANGE = "w"    # a tool or gap row that landed on a change
 LANDED_OTHER = "."     # a tool or gap row that landed on anything else
 LANDED_NOTHING = "0"   # the search matched nothing at all
 
-# THE SECOND SET, SCORED BESIDE HIS AND NEVER MIXED WITH IT. 120 plain
-# questions a session wrote before reading any card, frozen out of
-# FRAGMENT-ISSUES rows 5b-477 and 5b-478, where they had lived only as row
-# text no tool could read. Every one is a question, so its headline is not a
-# judgement call: how many reach something at or above the write line. Where
+# THE SECOND SET, SCORED BESIDE HIS AND NEVER MIXED WITH IT. Plain
+# questions frozen out of FRAGMENT-ISSUES rows - 5b-477 and 5b-478's 120,
+# which a session wrote before reading any card, and 5b-978's four - where
+# they had lived only as row text no tool could read. Every one is a
+# question, so its headline is not a judgement call: how many reach
+# something at or above the write line. Where
 # the row names the read that answers one, where that read came back is
 # scored too. Its own table, its own key fingerprint, its own comparison.
 PLAIN = os.path.join(ROOT, "tests", "data", "plain-questions.yaml")
@@ -840,7 +842,7 @@ def compare(history_path, stamp, codes, summary, kinds, rows):
 # ---------------------------------------------------------------------------
 
 def load_plain(path=PLAIN):
-    """(doc, rows, problems) - the 120 plain questions, and what is wrong with
+    """(doc, rows, problems) - the plain questions, and what is wrong with
     their SHAPE. Whether a named read exists is `unknown_plain`'s question."""
     import yaml
 
@@ -994,13 +996,25 @@ def plain_history_row(stamp, summary, codes):
     return "| " + " | ".join(cells) + " |"
 
 
+def plain_sources(rows):
+    """'rows 5b-477, 5b-478 and 5b-978' - read off the rows, never typed, so a
+    row that joins the set is named the day it does."""
+    found = sorted(set(r.get("row") for r in rows if r.get("row")), key=str)
+    names = ["5b-%s" % n for n in found]
+    if not names:
+        return "no row"
+    if len(names) == 1:
+        return "row " + names[0]
+    return "rows " + ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def report_plain(results, summary):
     """Print the plain questions' run."""
     out = sys.stdout.write
     by_row = ", ".join("row %s: %d" % kv for kv in sorted(
         summary["writes_by_row"].items(), key=lambda kv: str(kv[0])))
-    out("\nTHE PLAIN QUESTIONS - %d asked, every one a question (rows 5b-477 "
-        "and 5b-478):\n\n" % summary["asked"])
+    out("\nTHE PLAIN QUESTIONS - %d asked, every one a question (%s):\n\n"
+        % (summary["asked"], plain_sources(results)))
     out("  answered by something that CHANGES THE MODEL   %3d%s\n"
         % (summary["writes"], "   (%s)" % by_row if by_row else ""))
     out("  answered by an exact declared phrase           %3d   tests a "
@@ -1256,9 +1270,10 @@ def main(argv=None):
     plain_stamp = dict(stamp, backend=backend_of(plain),
                        key=plain_fingerprint(plain_rows))
     print("\n" + "=" * 72)
-    print("Plain questions: %d, set %s, frozen from FRAGMENT-ISSUES rows 5b-477 "
-          "and 5b-478 -\na session's words, never mixed with his. Backend: %s"
-          % (len(plain_rows), plain_stamp["key"], plain_stamp["backend"]))
+    print("Plain questions: %d, set %s, frozen from FRAGMENT-ISSUES %s -\n"
+          "never mixed with his. Backend: %s"
+          % (len(plain_rows), plain_stamp["key"], plain_sources(plain_rows),
+             plain_stamp["backend"]))
     report_plain(plain, plain_summary)
     plain_drop = compare_plain(args.history, plain_stamp, plain_codes,
                                plain_summary, plain_kind, plain_rows)

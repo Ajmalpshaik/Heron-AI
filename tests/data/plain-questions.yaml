@@ -1,4 +1,4 @@
-# 120 PLAIN QUESTIONS A MODELLER ASKS, FROZEN - AND THE READ EACH ONE SHOULD REACH.
+# PLAIN QUESTIONS A MODELLER ASKS, FROZEN - AND THE READ EACH ONE SHOULD REACH.
 #
 # Read by tools/score-routing.py, which asks every question through the same
 # function heron_lookup uses - beside the owner's own questions in
@@ -13,6 +13,13 @@
 # which no tool reads. They were copied here by a script that splits the row
 # text on its separator - never retyped - in the rows' order: n 1-60 are row
 # 477's, n 61-120 are row 478's.
+#
+# n 121 ON ARE ROW 5b-978's, "The four, frozen:" in it. Ajmal PS listed them
+# on 2026-10-17 as sentences measured on 2026-10-14 with the Revit 2020
+# filter, and asked for these four - the questions among eight - to join this
+# set. For #124 row 5b-465 records that he asked "how many sets are there" and
+# this is the wording heron_lookup was given; for the other three the record
+# does not say who worded them. They are not in owner-questions.yaml.
 #
 # THEY ARE A SESSION'S WORDS, NOT THE OWNER'S. owner-questions.yaml is his;
 # this is not, and its numbers are never mixed with his.
@@ -47,7 +54,7 @@
 # comparable with the runs before it.
 
 source:
-  rows: [477, 478]
+  rows: [477, 478, 978]
   written: "2026-10-14, by the gap-pass session, before any card was read"
   frozen: "2026-10-17"
 
@@ -529,3 +536,27 @@ questions:
     row: 478
     question: "what export settings are there"
     named: no-read
+  # ROW 5b-978. The read each names is the row's: the first three are declared
+  # on it in the same change, at the owner's word ("fix with utterances and
+  # comments first", 2026-10-17); #124 reaches LIST_SHEET_SETS by ranking
+  # alone, on both backends, since PR #530.
+  - n: 121
+    row: 978
+    question: "list the revisions in the project with their dates"
+    answer: [LIST_REVISIONS]
+    named: declared
+  - n: 122
+    row: 978
+    question: "find the revision with date 04-Jun-2026"
+    answer: [LIST_REVISIONS]
+    named: declared
+  - n: 123
+    row: 978
+    question: "list the saved selection sets in the model"
+    answer: [REPORT_VIEW_FILTERS]
+    named: declared
+  - n: 124
+    row: 978
+    question: "how many view/sheet sets are there in the model"
+    answer: [LIST_SHEET_SETS]
+    named: ranked
