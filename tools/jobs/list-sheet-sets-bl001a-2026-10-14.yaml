@@ -53,6 +53,11 @@
 #     ticked, and findings counts the same number EMPTY
 #   - on the negative, findings says no set is saved and that the in-session
 #     set is not one
+#   - VERSION 2 (2026-10-17, NEEDS-CHECKING Group FA, row FA5): if the
+#     seventh set is still saved, it and the first set of 8 sheets are each
+#     marked "SAME sheets and views as" the other and paired in sameSets,
+#     and a finding names both. No other pair is, unless the Print dialog
+#     shows two sets ticking exactly the same sheets and views
 #
 # NOT `--session` HERE: with two Revits connected to Heron, add
 # `--session <process id>` to both commands.

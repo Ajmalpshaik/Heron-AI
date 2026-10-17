@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `doc` is in scope, and leaves `sheetSets`,
-// `setCount`, `emptySets` and `findings` behind.
+// `setCount`, `emptySets`, `sameSets` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -25,6 +25,15 @@
 // deleted still sits in the print dialog under its name and prints nothing.
 // That is the row somebody choosing a set before an issue needs to see.
 //
+// TWO SETS HOLDING EXACTLY THE SAME SHEETS AND VIEWS ARE FLAGGED (version 2,
+// 2026-10-14 finding, FRAGMENT-ISSUES 5b-545). On a real job two sets held the
+// same 8 sheets and this read named both without a word: one is usually left
+// over, and an issue printed from the wrong one looks right. Members are
+// compared by ElementId's own equality, as sets - the print ORDER a set keeps
+// from 2023 is not read, so two sets with the same members in a different
+// order are still the same. Empty sets are flagged EMPTY instead, and a set
+// whose members could not be read is compared with nothing.
+//
 // SORTED BY NAME, as the dialog lists them; sheets inside a set by number,
 // views by name. A collector's order is creation order and means nothing.
 //
@@ -36,6 +45,7 @@ var findings = new List<string>();
 var sheetSets = "";
 var setCount = 0;
 var emptySets = "";
+var sameSets = "";
 
 // The view type in the words the Project Browser uses. Anything not named
 // here is said as Revit names it, never dropped.
@@ -77,6 +87,9 @@ var rows = new List<string>();
 var empties = new List<string>();
 var unread = new List<string>();
 int sheetsOnly = 0, viewsOnly = 0, mixed = 0;
+// For the same-members check: each listed set's row, name, member ids, and
+// its counts in words ("8 sheets, 0 views").
+var compared = new List<Tuple<int, string, HashSet<ElementId>, string>>();
 
 foreach (var set in sets)
 {
@@ -130,8 +143,14 @@ foreach (var set in sets)
     else if (sheets.Count == 0) viewsOnly++;
     else mixed++;
 
+    var ids = new HashSet<ElementId>();
+    foreach (var sheet in sheets) ids.Add(sheet.Id);
+    foreach (var view in views) ids.Add(view.Id);
+
     var row = name + " - " + sheets.Count + " sheet" + (sheets.Count == 1 ? "" : "s")
         + ", " + views.Count + " view" + (views.Count == 1 ? "" : "s");
+    compared.Add(Tuple.Create(rows.Count, name, ids, row.Substring(name.Length + 3)));
+
     if (sheets.Count > 0)
         row += " - sheets: " + string.Join("; ",
             sheets.Select(s => (s.SheetNumber ?? "") + " - " + (s.Name ?? "")).ToArray());
@@ -141,9 +160,41 @@ foreach (var set in sets)
     rows.Add(row);
 }
 
+// Groups of sets holding exactly the same members, in name order. A set
+// joins the first group whose members are its members; one group is one row
+// of `sameSets`.
+var groups = new List<List<Tuple<int, string, HashSet<ElementId>, string>>>();
+foreach (var entry in compared)
+{
+    List<Tuple<int, string, HashSet<ElementId>, string>> home = null;
+    foreach (var group in groups)
+    {
+        var first = group[0].Item3;
+        if (first.Count == entry.Item3.Count && first.SetEquals(entry.Item3)) { home = group; break; }
+    }
+    if (home == null) groups.Add(new List<Tuple<int, string, HashSet<ElementId>, string>> { entry });
+    else home.Add(entry);
+}
+
+var sameRows = new List<string>();
+foreach (var group in groups)
+{
+    if (group.Count < 2) continue;
+    var names = group.Select(g => g.Item2).ToList();
+    sameRows.Add(string.Join(" = ", names.ToArray()));
+    for (int i = 0; i < group.Count; i++)
+    {
+        var others = names.Where((n, j) => j != i).ToArray();
+        // The flag goes straight after the set's name, where EMPTY goes.
+        rows[group[i].Item1] = group[i].Item2 + " - SAME sheets and views as " + string.Join(", ", others)
+            + rows[group[i].Item1].Substring(group[i].Item2.Length);
+    }
+}
+
 setCount = sets.Count;
 sheetSets = string.Join(" || ", rows.ToArray());
 emptySets = string.Join(", ", empties.ToArray());
+sameSets = string.Join("; ", sameRows.ToArray());
 
 if (setCount == 0)
 {
@@ -159,6 +210,13 @@ else
     if (empties.Count > 0)
         findings.Add("Holding nothing - listed in the print dialog and printing nothing: "
             + emptySets + ".");
+    foreach (var group in groups)
+    {
+        if (group.Count < 2) continue;
+        findings.Add("Holding exactly the same sheets and views, member for member ("
+            + group[0].Item4 + " each): " + string.Join(", ", group.Select(g => g.Item2).ToArray())
+            + ". Printing any of them prints the same drawings.");
+    }
     if (unread.Count > 0)
         findings.Add("Revit would not hand back the members of: " + string.Join(", ", unread.ToArray())
             + ". They are counted as sets and their contents are not claimed.");

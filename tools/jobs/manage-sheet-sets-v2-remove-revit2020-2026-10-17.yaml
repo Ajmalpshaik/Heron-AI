@@ -1,0 +1,54 @@
+# MANAGE_SHEET_SETS version 2's REMOVE mode (manage-sheet-sets, FRG-SHT-015),
+# written 2026-10-17 for FRAGMENT-ISSUES rows 5b-466 and 5b-545 - NEEDS-CHECKING
+# Group FA, row FA2. NOT RUN - written and read back with --dry-run only.
+#
+#     python tools/batch-prove.py tools/jobs/manage-sheet-sets-v2-remove-revit2020-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/manage-sheet-sets-v2-remove-revit2020-2026-10-17.yaml
+#
+# RUN THIS BEFORE tools/jobs/manage-sheet-sets-v2-revit2020-2026-10-17.yaml,
+# on the same project, made by hand as that file's header says ("Heron Sheet
+# Sets FA": sheets A101 to A105; "HERON FA SET" = A101, A102 and the Level 1
+# floor plan; "HERON FA SHEETS" and "HERON FA SHEETS COPY" = A101 and A102;
+# Print Range left on Current window). It is its own file because every run of
+# one fragment writes the same record, and the one signed is that file's add.
+#
+# `write: true` ROLLS BOTH LEGS BACK. The elements are all five sheets, by the
+# list-sheets -> set-selection chain.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   positive on "HERON FA SET": changed 2, unchanged the ids of A103, A104
+#     and A105, memberCount 1 (the floor plan left), done true, printRange
+#     "Print range put back to Current window, as it was before."
+#   negative on "HERON FA SHEETS" (A101 and A102 only): done false, changed 0,
+#     refused "Taking these out would leave 'HERON FA SHEETS' holding nothing,
+#     so nothing was taken out. To remove the whole set, use mode delete."
+#   afterwards, File, Print: Print Range on Current window, and both sets
+#     holding what they held before
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Sheet Sets FA (a NEW project from Revit 2020's default metric template, made by hand), Revit 2020
+
+defaults:
+  in: "Heron Sheet Sets FA"
+  write: true
+  setup:
+    - list-sheets
+    - set-selection
+
+jobs:
+  - fragment: manage-sheet-sets
+    expect: changed
+    set:
+      setName: "HERON FA SET"
+      mode: "remove"
+      newName: ""
+    negative-set:
+      setName: "HERON FA SHEETS"
+      mode: "remove"
+      newName: ""
+    note: >
+      FA2. Take all five sheets out of a set holding two of them and a plan:
+      the two come out and the plan stays. The negative would empty a set of
+      only sheets, and is refused.
