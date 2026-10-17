@@ -126,3 +126,9 @@ utterances:
   # does this connector carry": SET_FAMILY_CONNECTOR_ROLES on the trained
   # backend answered it.
   - what flow does this connector carry
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-477). Measured reaching
+  # SET_AIR_TERMINAL_FLOW, a write, on both backends. Nothing on any frozen set
+  # became riskier (brain/retrieval-history.md, 2026-10-17).
+  - which air terminals have no flow

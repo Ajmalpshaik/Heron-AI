@@ -43,6 +43,12 @@ rebuilt, and the SHARED store is never rebuilt from a worktree or from the
 main folder on a feature branch (rows 5b-229 and 5b-233). It stops each run
 at the first step after the guard, so it asks no question.
 
+Section 8, added 2026-10-17: the 120 plain questions frozen out of
+FRAGMENT-ISSUES rows 5b-477 and 5b-478 into tests/data/plain-questions.yaml.
+They are checked against the rows' own text, pinned, held to the library, and
+a drop is planted in their arithmetic - a question first answered by a read
+and then by a change has to be named as having fallen.
+
 Exit 0 passed, 1 failed, 3 could not run for want of PyYAML.
 """
 
@@ -58,6 +64,9 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "score-routing.py")
 KEY = os.path.join(ROOT, "tests", "data", "owner-questions.yaml")
+PLAIN_KEY = os.path.join(ROOT, "tests", "data", "plain-questions.yaml")
+PLAIN_ROWS = os.path.join(ROOT, "docs", "fragment-issues",
+                          "section-5b-rows-401-425.md")
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
@@ -72,6 +81,11 @@ for _stream in (sys.stdout, sys.stderr):
 # (FRAGMENT-ISSUES row 113, D-34); if one must change, it is on his word,
 # recorded in the key's `corrections`, and this pin moves in the same change.
 QUESTIONS_PIN = "ba1e6f01ddecbc9d78d767cd116f1ae1a39d9826cd1818b6b168fd9493733bf6"
+
+# THE 120 PLAIN QUESTIONS, PINNED THE SAME WAY. They are a session's words,
+# frozen out of rows 5b-477 and 5b-478; section 8 also checks them against
+# the rows' own text, so this pin moves only with the register.
+PLAIN_PIN = "707ee54960688742d7104f035215c5f2f0a021ef0c927329f098a270a5abab49"
 
 FAILURES = []
 
@@ -292,6 +306,172 @@ def store_guard(tool):
               "and it says the branch is why")
     finally:
         shutil.rmtree(top, ignore_errors=True)
+
+
+def _frozen_from_rows():
+    """{477: [...], 478: [...]} - each row's "The 60, frozen:" list, split the
+    way the yaml was made from it, so the file is checked against the
+    register's own words rather than against a second copy of them."""
+    import re
+    out = {}
+    with io.open(PLAIN_ROWS, encoding="utf-8") as handle:
+        lines = handle.read().splitlines()
+    for n in (477, 478):
+        line = [x for x in lines if x.startswith("| **%d** |" % n)]
+        found = re.search(r"\*\*The 60, frozen:\*\* (.*?)\. \|",
+                          line[0]) if line else None
+        out[n] = ([q.strip().strip("*").strip()
+                   for q in found.group(1).split(" · ")] if found else [])
+    return out
+
+
+def plain_questions(tool, capabilities):
+    """Section 8. Every name is asked for before it is called, so a tool that
+    has none of it fails here once per claim rather than raising once."""
+    load_plain = getattr(tool, "load_plain", None)
+    check(callable(load_plain), "the tool reads the plain questions at all")
+    if not callable(load_plain):
+        return
+    doc, rows, problems = load_plain(PLAIN_KEY)
+    check(not problems, "the plain set is well formed%s"
+          % ("" if not problems else ": " + "; ".join(problems[:3])))
+    check(len(rows) == 120 and [r["n"] for r in rows] == list(range(1, 121)),
+          "120 questions, numbered 1 to 120 in order")
+    blob = "\n".join(" ".join(r["question"].split()) for r in rows)
+    check(hashlib.sha256(blob.encode("utf-8")).hexdigest() == PLAIN_PIN,
+          "the questions are pinned - a reworded one fails here")
+    frozen = _frozen_from_rows()
+    check([r["question"] for r in rows if r.get("row") == 477] == frozen[477]
+          and len(frozen[477]) == 60,
+          "n 1-60 are row 5b-477's sixty, word for word and in its order")
+    check([r["question"] for r in rows if r.get("row") == 478] == frozen[478]
+          and len(frozen[478]) == 60,
+          "n 61-120 are row 5b-478's sixty, word for word and in its order")
+    missing = tool.unknown_plain(rows, capabilities)
+    check(not missing, "every named read is a capability Heron has%s"
+          % ("" if not missing else ": " + "; ".join(
+              "#%s %s" % m for m in missing[:3])))
+    check(all(not r.get("answer") for r in rows
+              if r.get("named") == "no-read"),
+          "a question no read answers names none - the rows forbid declaring "
+          "it on one that does not")
+
+    work = tempfile.mkdtemp(prefix="heron-plain-key-")
+    try:
+        bad = os.path.join(work, "plain.yaml")
+        with io.open(bad, "w", encoding="utf-8") as handle:
+            handle.write("questions:\n"
+                         "  - n: 1\n    question: ask\n    named: no-read\n"
+                         "    answer: [SOMETHING]\n"
+                         "  - n: 2\n    question: ask two\n"
+                         "    named: owners-call\n"
+                         "  - n: 4\n    question: ask three\n    named: guess\n")
+        _d, _r, shape = load_plain(bad)
+        check(len(shape) == 4, "a no-read row naming a read, an owner's call "
+              "naming none, a number out of order and an unknown `named` are "
+              "all four named: %s" % shape)
+        quiet = io.StringIO()
+        with contextlib.redirect_stderr(quiet), contextlib.redirect_stdout(quiet):
+            code = tool.main(["--plain-questions", bad, "--list-plain"])
+        check(code == 2, "and a malformed plain set is exit 2, not a score")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+    listed = io.StringIO()
+    with contextlib.redirect_stdout(listed):
+        code = tool.main(["--list-plain"])
+    check(code == 0 and len(listed.getvalue().strip().splitlines()) == 120,
+          "--list-plain prints the 120 and asks nothing")
+
+    fingerprint = tool.plain_fingerprint(rows)
+    moved_read = [dict(r) for r in rows]
+    moved_read[4]["answer"] = ["SOMETHING_ELSE"]
+    check(tool.plain_fingerprint(moved_read) != fingerprint,
+          "a named read changed moves the set's fingerprint")
+    check(tool.plain_fingerprint(rows) != tool.key_fingerprint(
+        tool.load_key(KEY)[1]), "and it is not his key's fingerprint")
+
+    def one(n, answer, got_risk="READ", place_=None, got="X", route="hybrid",
+            row=477):
+        return {"n": n, "row": row, "question": "q%d" % n, "answer": answer,
+                "error": None, "route": route, "got": got,
+                "got_risk": got_risk, "order": [], "place": place_,
+                "writes": got_risk in ("MODIFY", "PUBLISH", "ADMIN")}
+
+    results = [one(1, ["A"], place_=1, route="identity"),
+               one(2, ["A"], place_=3),
+               one(3, ["A"]),
+               one(4, ["A"], got_risk="MODIFY", place_=2, row=478),
+               one(5, [], got_risk="ANALYZE"),
+               one(6, [], got_risk="ADMIN", row=478),
+               one(7, [], got=None, got_risk=None)]
+    codes = "".join(tool.plain_code(r) for r in results)
+    check(codes == "13-w.w0", "one character per plain row: %r" % codes)
+    summary = tool.summarise_plain(results)
+    check((summary["writes"], summary["exact"], summary["named"],
+           summary["named_first"], summary["named_top3"]) == (2, 1, 4, 1, 3),
+          "writes, exact phrases, and the named read 1st and in the top 3 are "
+          "counted apart - a write with the read 2nd still showed it in the "
+          "top three: %s" % summary)
+    check(summary["writes_by_row"] == {478: 2},
+          "and the writes are split by the row each question came from")
+
+    kinds7 = [tool.NAMED] * 4 + [tool.UNNAMED] * 3
+    planted = "w3-w..0"              # #1 answered by a change; #6 safe now
+    falls = tool.moved(codes, planted, kinds7)
+    check([(m[0], m[3]) for m in falls] == [(0, "down"), (5, "up")],
+          "a named read first becoming a change is DOWN, a change becoming a "
+          "read is UP: %s" % falls)
+    check([m[3] for m in tool.moved(".", "w", [tool.UNNAMED])] == ["down"],
+          "an unnamed question reaching a change is DOWN")
+    check([m[3] for m in tool.moved("2", "-", [tool.NAMED])] == ["down"],
+          "a named read falling out of the shortlist is DOWN")
+
+    stamp = {"date": "2026-01-01", "fragments": 500, "backend": "lexical",
+             "revit": None, "key": "feed1234"}
+    line = tool.plain_history_row(stamp, summary, codes)
+    table = "\n".join([tool.PLAIN_HEADER, "|" + "---|" * len(tool.PLAIN_COLUMNS),
+                       line, ""])
+    parsed = tool.history_rows(table, tool.PLAIN_HEADER, tool.PLAIN_COLUMNS)
+    check(parsed is not None and parsed[0]["Per question"] == codes
+          and parsed[0]["Reached a write"] == "2",
+          "a plain row reads back as it was written")
+    check(tool.history_rows(table) is None,
+          "and his table's reader does not mistake it for his")
+    with io.open(os.path.join(ROOT, "brain", "retrieval-history.md"),
+                 encoding="utf-8") as handle:
+        held = handle.read()
+    check(tool.history_rows(held, tool.PLAIN_HEADER, tool.PLAIN_COLUMNS)
+          is not None, "brain/retrieval-history.md carries the plain table")
+
+    work = tempfile.mkdtemp(prefix="heron-plain-hist-")
+    try:
+        history = os.path.join(work, "history.md")
+        with io.open(history, "w", encoding="utf-8") as handle:
+            handle.write(table)
+        spoken = io.StringIO()
+        worse = dict(summary, writes=3)
+        with contextlib.redirect_stdout(spoken):
+            said = tool.compare_plain(history, stamp, planted, worse, kinds7,
+                                      [{"n": r["n"], "question": "plain %d"
+                                        % r["n"]} for r in results])
+        check(said and "THE PLAIN QUESTIONS DROPPED" in spoken.getvalue()
+              and "plain 1" in spoken.getvalue(),
+              "compare_plain() says the plain questions dropped, and names "
+              "the one that fell")
+        check(tool.exit_code(said) == 0, "and it still exits 0 (D-100)")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+    backends = [{"route": "hybrid", "error": None,
+                 "backends": {"nearness": "lexical"}},
+                {"route": "hybrid", "error": None,
+                 "backends": {"nearness": "not used"}}]
+    check(tool.backend_of(backends) == "lexical",
+          "an answer the meaning route found nothing for is no vote - the "
+          "run is not called mixed for it")
+    check(tool.backend_of(backends[1:]) == "not used",
+          "and a run where no answer carried a rank says so")
 
 
 def main():
@@ -650,6 +830,12 @@ def main():
     print("7. The store it scores over is check-routing's guard - rows 5b-229 "
           "and 5b-233")
     store_guard(tool)
+
+    # ------------------------------------------------------------------
+    print()
+    print("8. The plain questions - rows 5b-477 and 5b-478, frozen and scored "
+          "beside his")
+    plain_questions(tool, capabilities)
 
     return finish()
 

@@ -20,6 +20,9 @@ WHAT IT PROVES
      one route loves.
   4. What was excluded is reported, with a reason.
   5. The short circuit obeys the filter too. There is no door in the wall.
+  9. A question's risk ceiling is a wall as well (D-128): a write that
+     declares the question's exact words is not offered under it, a view
+     change is, and with only writes matching the answer is nothing.
 """
 
 import os
@@ -40,12 +43,106 @@ def check(condition, what):
 
 
 def add(store, fid, capability, identity, status="DRAFT", revit="2020,2024",
-        kind="filter", domain="test"):
+        kind="filter", domain="test", risk="READ"):
     store.execute(
         "INSERT OR REPLACE INTO fragments (id, capability, semantic_identity, "
         "kind, status, domain, risk, folder, revit) VALUES (?,?,?,?,?,?,?,?,?)",
-        (fid, capability, identity, kind, status, domain, "READ", "x", revit))
+        (fid, capability, identity, kind, status, domain, risk, "x", revit))
     store.db.commit()
+
+
+def question_ceiling():
+    """Section 9 - D-128: a question's ceiling is a wall too. Its own store,
+    because section 8 has already taken HERON_KNOWLEDGE away."""
+    print("9. A QUESTION'S CEILING LEAVES OUT EVERY WRITE - D-128")
+    home = tempfile.mkdtemp(prefix="heron-retrieve-ceiling-")
+    os.environ["HERON_KNOWLEDGE"] = home
+    import heron_scope as SCOPE
+    import heron_search as SEARCH
+    import heron_embed as EMBED
+    import heron_retrieve as R
+
+    walled = getattr(R, "above_ceiling", None)
+    check(callable(walled), "retrieval has a word for a risk ceiling at all")
+    if not callable(walled):
+        shutil.rmtree(home, ignore_errors=True)
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        return
+    try:
+        store = SCOPE.open_scope(SCOPE.EXPERIMENTAL)
+        try:
+            SEARCH.ensure_tables(store)
+            # One sentence, three cards that share its words: a write that
+            # DECLARES it, a view change, and a read.
+            add(store, "FRG-QA-901", "WIDGET_RESIZE", "what size is this widget",
+                status="PROVEN", risk="MODIFY")
+            add(store, "FRG-QA-902", "WIDGET_SHOW", "show this widget size",
+                risk="EXECUTE")
+            add(store, "FRG-QA-903", "WIDGET_READ", "read this widget size")
+            SEARCH.index(store, force=True)
+            EMBED.index(store, force=True)
+
+            plain = R.find(store, "what size is this widget", revit="2024")
+            check(plain.route == "identity" and plain.fragment_id == "FRG-QA-901",
+                  "with no ceiling the declared write answers by identity, as "
+                  "it always has (%s %s)" % (plain.route, plain.fragment_id))
+
+            asked = R.find(store, "what size is this widget", revit="2024",
+                           ceiling="EXECUTE")
+            ids = [c["id"] for c in asked.candidates]
+            check(asked.route == "hybrid" and asked.fragment_id != "FRG-QA-901"
+                  and "FRG-QA-901" not in ids,
+                  "under the ceiling the write is not offered at all - not as "
+                  "the answer, not in the shortlist (%s %s %s)"
+                  % (asked.route, asked.fragment_id, ids))
+            check("FRG-QA-902" in ids and "FRG-QA-903" in ids,
+                  "and the view change and the read are both still there - "
+                  "EXECUTE changes a view, not the model")
+
+            rows, excluded = R.eligible(store, "2024", ceiling="EXECUTE")
+            gone = [e for e in excluded if e.id == "FRG-QA-901"]
+            check(len(gone) == 1 and gone[0].reason.startswith(R.QUESTION_REASON)
+                  and "D-128" in gone[0].reason,
+                  "what was left out is reported, with a reason a caller can "
+                  "count: %s" % (gone[0].reason if gone else "nothing"))
+            rows, _ = R.eligible(store, "2024", ceiling="READ")
+            check(sorted(r["id"] for r in rows) == ["FRG-QA-903"],
+                  "a READ ceiling leaves out the view change as well")
+            rows, excluded = R.eligible(store, "2024")
+            check(len(rows) == 3 and not any(
+                e.reason.startswith(R.QUESTION_REASON) for e in excluded),
+                "no ceiling leaves out nothing - the default is the old lookup")
+            check(walled(None, "EXECUTE") and not walled("read", "EXECUTE"),
+                  "a risk nobody can read counts as above the ceiling, and the "
+                  "word is read whatever its case")
+            try:
+                walled("READ", "WRITE")
+                raised = False
+            except ValueError:
+                raised = True
+            check(raised, "a ceiling that is not on the ladder is refused")
+        finally:
+            store.close()
+
+        only = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            SEARCH.ensure_tables(only)
+            add(only, "FRG-QA-904", "WIDGET_DELETE", "delete the widget",
+                risk="MODIFY")
+            SEARCH.index(only, force=True)
+            EMBED.index(only, force=True)
+            none = R.find(only, "which widget is deleted", revit="2024",
+                          ceiling="EXECUTE")
+            check(none.route == "nothing" and "asked as a question" in none.note,
+                  "when only a write matches, a question gets NOTHING and is "
+                  "told why - not the nearest thing that acts (%s: %s)"
+                  % (none.route, none.note))
+        finally:
+            only.close()
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+        os.environ.pop("HERON_KNOWLEDGE", None)
+    print()
 
 
 def main():
@@ -414,6 +511,8 @@ def main():
               "otherwise Heron filters the library to the Revit release called "
               "'--rebuild' and reports the empty result as a measurement")
     print()
+
+    question_ceiling()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
