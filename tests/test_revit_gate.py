@@ -396,8 +396,8 @@ def main():
 
         # AND AN EXECUTE ONE IS NEITHER (2026-10-17). It is not a read and it
         # is not a change: the show door runs it with no transaction open, so
-        # Revit's own refusal still covers the model, and what is left to it
-        # is the screen. Answering it with the writer's sentence - "YES, by
+        # Revit's refusal and the add-in's count around the run (row 5b-350)
+        # still cover the model, and what is left to it is the screen. Answering it with the writer's sentence - "YES, by
         # design" - said it could change the model, which the show door makes
         # untrue, and the reader's sentence would hide the selection moving.
         make(work, "showsthings", UIDOC_ONLY % ("FRG-T-090", "EXECUTE"),
