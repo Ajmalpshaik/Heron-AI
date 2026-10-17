@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -129,7 +129,9 @@ compatibility-note: >
   for 5b-405 - `SubTransaction`, `SolidUtils.Clone`, `Solid.IntersectWithCurve`,
   `Face.Triangulate`, `Face.Project` and `Face.ComputeNormal` - compiles on
   every release 2020 to 2027 (tools/check-fragments-compile.py, 2026-10-08);
-  how it behaves was measured on Revit 2024 only.
+  how it behaves was measured on Revit 2024 only. The spare directions a ray
+  Revit cannot cast is replaced by (5b-1001) compile on every release too
+  (the same tool, 2026-10-17); measured on Revit 2024 only.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
