@@ -49,7 +49,7 @@ on a scratch family made for it, never on a family somebody is building; with `H
 | ~~**DA5**~~ | **RUN, PASS 2026-10-17 - Revit 2024.3, session 44252:** `formCount 109` of the file's 109 rows, nothing refused, rolled back; the audit's `"ms": 3536`. Results below. a list the size of the pump set - about 100 rows | the time the call takes inside Revit (the audit log's `ms`), against the 11 batches it replaces |
 | ~~**DA6**~~ | **RUN, PASS 2026-10-17 on Revit 2020.2 (session 33916) and 2027.3 (session 42696)** - DA1's ten `built` entries word for word 2024's, and the same row-7 refusal; DA3's four refusals the same but for each Revit's own temporary folder; DA2 rolled back, `formCount 10`. DA1 to DA3 on **Revit 2020** and **2027** | the same answers - what Revit DOES has been measured on 2024 only, if at all |
 | ~~**DA8**~~ | **RUN, PASS 2026-10-17 - the laptop, Revit 2024.3, session 44252**, Revit's temporary folder `C:\Users\ajmal\AppData\Local\Temp\6d4c294e-0255-4e75-b39b-c9e7bd4a7520\`: `formCount 10` on the first call from `heron-work`, no `.txt` in the GUID folder afterwards; `elsewhere` and `heron-workshop` refused naming both folders, `formCount 0`. [5b-430](../fragment-issues/section-5b-rows-401-425.md): on a PC where Revit's temporary folder is a GUID-named sub-folder of the user's (the owner's laptop - `%TEMP%` in a Revit-side read shows `...\Temp\<guid>\`), DA2 with the file under the chat's own `%TEMP%\heron-work`; negative the same rows in `%TEMP%\elsewhere\rows.txt` and in `%TEMP%\heron-workshop\rows.txt` | positive: built on the FIRST call, no copy into Revit's folder; negative: refused naming both folders read, `formCount` 0, nothing read. On the office PC, where the two folders are one, DA2 is the whole check |
-| **DA7** | **NOT RUN - the owner's signature on DA1's draft, his to give.** the signature | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's record, on the owner's word only |
+| ~~**DA7**~~ | **DONE 2026-10-17 - signed by Ajmal PS and promoted to PROVEN, merged in [pull request #624](https://github.com/Ajmalpshaik/Heron-AI/pull/624)** (`proof: by: Ajmal PS`, `date: '2026-10-17'` in `create-family-forms`' `fragment.yaml`; `combine-family-forms`' re-proof the same). the signature | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's record, on the owner's word only |
 
 ### Run it - inputs prepared 2026-10-17 in a cloud session, NONE OF IT RUN
 
@@ -271,7 +271,7 @@ with the ten kept forms was then saved with `save-document` to
 `ms`), rolled back. [Row 5b-378](../fragment-issues/section-5b-rows-376-400.md)'s pump set of 107 forms
 took 11 batches of up to ten single-form calls, about 112 s of profiles streamed as tool input and about
 83 s of round trips. What a chat spends writing 109 rows and reading one answer is not measured here -
-that is the build timing below, NOT RUN.
+that is the build timing below, RUN 2026-10-17.
 
 **The warm-up, ON against OFF** - Revit 2024.3 on the laptop, the fixed add-in, "Heron Forms Scratch"
 open, `report-family-forms` twice, Revit closed and started again between halves with nothing run before
@@ -307,10 +307,23 @@ forms and one void kept for it: a `create-family-revolution` (PROVEN) bore 100 m
 signature owed. The first try named row 5's void, which lies wholly inside row 1's cylinder; it threw
 - [row 5b-1001](../fragment-issues/section-5b-rows-401-425.md).
 
-**The build timing - NOT RUN.** A family built by a chat goes through `revit_change`, which runs a
-PROVEN capability only ([D-117](../decisions/D-117.md)); `create-family-forms` stays DRAFT until DA7 is
-signed and it is promoted, and `try-once`'s one keep for this version was DA2's.
-`tools/time-family-build.py` has no build to time until then.
+**Later the same day: that signature went stale, on purpose.** The owner signed `37adc81646c3aa9d` and
+promoted the card; 5b-1001's fix then changed the code - the `holds` check on a void's body threw where
+a line ran through one of the void's edges, and now tries a spare direction. The card is DRAFT again.
+Rolled back on a copy of the same family, Revit 2024.3, session 51856: row 5's void now cuts row 1's
+cylinder (0.48 L taken away), the bore cuts as above, the two voids alone are refused as above. The new
+draft is fingerprint `ca69cfbd3677c569`; **the owner's signature and promotion are owed again.** Ajmal PS signed it the same day and set the card to PROVEN himself.
 
-**Still owed:** DA7 and `combine-family-forms`' signature, both the owner's; DA4's kept half; the build
-timing; the warm-up OFF against ON on 2020 and 2027.
+**The build timing - RUN 2026-10-17, after `create-family-forms` was promoted** ([pull request #624](https://github.com/Ajmalpshaik/Heron-AI/pull/624)).
+Until then it could not run: a family built by a chat goes through `revit_change`, which runs a PROVEN
+capability only ([D-117](../decisions/D-117.md)). Revit 2024.3, session 51856: a fixed end-suction pump set
+built by a chat, 44 forms in five `CREATE_FAMILY_FORMS` calls and three `COMBINE_FAMILY_FORMS` cuts, every
+write kept through the Keep box. `tools/time-family-build.py` timed it from the owner's request to the 3D
+picture: 479.0 s, the model's own turns 74.5%, Revit's own time 101.6 s. Revit's journal puts 80.9 s of
+that in ten Keep boxes the owner answered ([row 5b-1031](../fragment-issues/section-5b-rows-401-425.md)).
+The tool reports forms built and seconds a form as NOT MEASURED
+([row 5b-1030](../fragment-issues/section-5b-rows-401-425.md)). The whole report is in
+[docs/04 §8.7](../04-heron-mcp.md).
+
+**Still owed:** DA4's kept half; the warm-up OFF against ON on 2020 and 2027. DA7 and `combine-family-forms`'
+signature were given and both cards promoted in pull request #624; `combine-family-forms`' second signature, after 5b-1001's fix, was given the same day (above).
