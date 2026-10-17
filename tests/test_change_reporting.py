@@ -36,7 +36,7 @@ field name and nothing else.
 
 AND ONE THING IT NO LONGER SAYS AFTER THE FACT. "Not PROVEN" was a line
 under the result of a change already kept. Article 11 says untested code
-never touches a live model, so since D-116 that is said INSTEAD of sending
+never touches a live model, so since D-117 that is said INSTEAD of sending
 anything - and the last section here holds the refusal before the send.
 
 AND IT MUST FAIL ON THE OLD KEY, or it is decoration. Row 111's own state line
@@ -163,7 +163,7 @@ def main():
           "by review on PR #198, and it is row 117's own mistake made twice")
 
     # ------------------------------------------------------------------
-    # ARTICLE 11 (D-116). "Not PROVEN" used to be said AFTER the change was
+    # ARTICLE 11 (D-117). "Not PROVEN" used to be said AFTER the change was
     # kept - a line under the result. It is said instead of sending anything.
     # ------------------------------------------------------------------
     start = server.find("\ndef revit_change(")

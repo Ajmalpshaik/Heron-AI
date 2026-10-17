@@ -699,7 +699,7 @@ will undo the move first.
 | **The page lives only as long as the chat** | An unapplied table lost when Claude Code closes | Stated on the page; nothing half-applied, because nothing is sent until Apply |
 | **A same-user program or agent presses Apply** | A change the modeller did not make | The Changes switch in Revit still gates it; one Ctrl+Z still undoes it |
 | **Revit refuses a view override** (a view template, a schedule, a sheet) | Rows not editable | The reader marks them with the reason before the modeller edits; **whether a view template blocks element overrides is NOT_VERIFIED** and is a proof row |
-| **The two new fragments are unproven** | A wrong write on a live model | Article 11: first runs on a test copy. An Apply goes through `revit_change`, which refuses to keep a change from a fragment that is not PROVEN, before anything is sent ([D-116](DECISIONS.md#d-116--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)) |
+| **The two new fragments are unproven** | A wrong write on a live model | Article 11: first runs on a test copy. An Apply goes through `revit_change`, which refuses to keep a change from a fragment that is not PROVEN, before anything is sent ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)) |
 | **`tableJson` in one string** is a workaround | Large tables slow; a format two places must agree on | `maxRows` 2,000; `format: 1`; replaced by the central reply fix when that lands |
 
 ---

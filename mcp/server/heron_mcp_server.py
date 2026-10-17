@@ -1599,7 +1599,7 @@ def revit_change(capability: str = "", values: str = "",
     When one is off the reply names it and says where to turn it on. Tell the
     user that; never try another capability to get round it.
 
-    ONLY A PROVEN CAPABILITY RUNS HERE (Constitution Article 11, D-116). One
+    ONLY A PROVEN CAPABILITY RUNS HERE (Constitution Article 11, D-117). One
     whose own file says DRAFT, or whose proof was taken before its code last
     changed, is refused before anything is sent, and the reply names it and
     its status. Tell the user that; never try another capability to get round
@@ -1671,7 +1671,7 @@ def revit_change(capability: str = "", values: str = "",
     # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
     # here KEEPS what it does. So a fragment its own files do not call PROVEN,
     # or whose proof no longer describes its code (D-30), is refused HERE -
-    # before its code is read or a session is bound. Until D-116 it ran, and a
+    # before its code is read or a session is bound. Until D-117 it ran, and a
     # line printed after the result said it was not proven: a warning given
     # once the change was already in the model.
     #
@@ -1853,7 +1853,7 @@ def revit_change(capability: str = "", values: str = "",
         lines.append(str(verdict))
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
-    # a fragment that is not PROVEN is now refused before it is sent (D-116).
+    # a fragment that is not PROVEN is now refused before it is sent (D-117).
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.

@@ -1192,7 +1192,7 @@ def write_operation(root, name):
 
 
 # THE STATUSES WHOSE PROOF LETS A CHANGE BE KEPT - Constitution Article 11,
-# "untested code never touches a live model", and D-116. Read from the
+# "untested code never touches a live model", and D-117. Read from the
 # fragment's own files, and only while that proof still describes its code.
 KEEPABLE_STATUSES = ("PROVEN", "PRODUCTION")
 
@@ -1223,7 +1223,7 @@ def unproven_refusal(what, found):
     its code, or None. `found` is `proof_of`'s answer - None when it could not
     be read, and that is refused too: "could not tell" is never "proven".
 
-    ARTICLE 11 WAS ENFORCED NOWHERE until this (D-116). `revit_change` ran a
+    ARTICLE 11 WAS ENFORCED NOWHERE until this (D-117). `revit_change` ran a
     DRAFT and kept it, and only a line printed after the run said it was not
     proven - a warning given once the change was already in the model.
 
@@ -1415,7 +1415,7 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     at all. It still keeps nothing unless `apply_it` is set: the default runs
     the change for real and rolls it back, which is a record of what happened
     rather than a prediction of what would. `apply_it` is refused for a
-    fragment no current proof stands behind - `unproven_refusal`, D-116.
+    fragment no current proof stands behind - `unproven_refusal`, D-117.
 
     A PUBLISH OR ADMIN FRAGMENT GOES AS ITS OWN OPERATION when `writing` is
     set - `run_fragment_publish` or `run_fragment_admin`, chosen from its own
@@ -1453,7 +1453,7 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         print(refusal)
         return 2
 
-    # AND WHETHER WHAT IT DOES MAY BE KEPT - Article 11, D-116. Only with
+    # AND WHETHER WHAT IT DOES MAY BE KEPT - Article 11, D-117. Only with
     # --apply: without it the run is rolled back, which is how a DRAFT is
     # proved at all.
     if writing and apply_it:

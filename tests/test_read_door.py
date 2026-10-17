@@ -52,7 +52,7 @@ MCP SDK, so CI runs it:
      after `_runs_as_matched` has checked the door would run the matched
      provider and that its proof is not stale, and every candidate it hands
      back carries its contract.
-  8. ARTICLE 11 IS THE CHANGE DOOR'S, NOT THIS ONE'S (D-116). revit_change
+  8. ARTICLE 11 IS THE CHANGE DOOR'S, NOT THIS ONE'S (D-117). revit_change
      refuses a fragment no current proof stands behind before it binds a
      session; revit_read never asks, because a read keeps nothing.
 
@@ -421,7 +421,7 @@ def main():
           "and every candidate handed back carries its contract, not only the first")
 
     print()
-    print("9. Article 11 is asked at the change door, and not at this one (D-116)")
+    print("9. Article 11 is asked at the change door, and not at this one (D-117)")
     # A READ MAY RUN A DRAFT: it opens no transaction, so Revit itself refuses
     # any change, and its answer says DRAFT (section 6). A CHANGE KEEPS what
     # it does, so a DRAFT, or a proof its code has moved past, is refused

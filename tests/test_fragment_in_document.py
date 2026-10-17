@@ -105,7 +105,7 @@ class FakeBridge(object):
 
 
 def kept_one():
-    """The first MODIFY fragment whose proof stands - one D-116 lets be kept -
+    """The first MODIFY fragment whose proof stands - one D-117 lets be kept -
     or None. Asked of the client's own proof reader, never typed here."""
     proof_of = getattr(CLIENT, "proof_of", None)
     folder = os.path.join(ROOT, "brain", "fragments")
@@ -176,7 +176,7 @@ def main():
 
     print()
     print("3. cmd_fragment sends it as `document` and says where the run landed")
-    # A KEPT WRITE NEEDS A PROOF THAT STANDS (D-116), so the fragment kept
+    # A KEPT WRITE NEEDS A PROOF THAT STANDS (D-117), so the fragment kept
     # here is one whose files say so, found rather than typed. The one sent
     # on 2026-10-04, `set-family-connector-roles`, is DRAFT and now refused.
     kept = kept_one()

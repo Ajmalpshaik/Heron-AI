@@ -837,7 +837,7 @@ async def exercise_activity(module):
         check(got == ["refused"],
               "revit_change: the add-in's chain_empty is 'refused' - found %r" % got)
 
-        # ARTICLE 11 (D-116). revit_change KEEPS what it does, so a fragment no
+        # ARTICLE 11 (D-117). revit_change KEEPS what it does, so a fragment no
         # current proof stands behind is refused before anything reaches Revit.
         draft, _folder = first_with("MODIFY", "DRAFT")
         revit.asked[:] = []

@@ -36,7 +36,7 @@ add-in's gate, the MCP tool and the ribbon are read as TEXT, because running
 them needs Revit and the MCP SDK - that half is NEEDS-CHECKING group BF, on
 the owner's PC.
 
-SECTION 7 IS ARTICLE 11 ON THE SAME PATH (D-116). The fake Revit also writes
+SECTION 7 IS ARTICLE 11 ON THE SAME PATH (D-117). The fake Revit also writes
 down what each run carried, so "no DRAFT is sent to be KEPT" is observed over
 every write fragment in the library, and so is the other half: a DRAFT run
 WITHOUT --apply is still sent, rolled back, because that is how one is proved.
@@ -180,7 +180,7 @@ def current(found):
 
 def article_11(names):
     """Section 7 - a fragment no current proof stands behind is never sent to
-    be KEPT (Constitution Article 11, D-116)."""
+    be KEPT (Constitution Article 11, D-117)."""
     print()
     print("7. Article 11: what no current proof stands behind is never sent to be kept")
 
