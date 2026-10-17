@@ -433,7 +433,7 @@ needs:
   - REPORT_FAMILY_FORMS
   # Step 13's look at what was built - the 3D view opened and zoomed to the
   # forms through revit_show, and shaded at Fine; the picture itself is the
-  # revit_view_image tool, which is not a capability (row 5b-522).
+  # revit_view_image tool, which is not a capability (row 5b-591).
   - OPEN_VIEW
   - SET_VIEW_PROPERTIES
   - SELECT_FAMILY_FORMS
