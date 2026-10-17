@@ -32,11 +32,19 @@ WHAT IT PROVES
   6. THE PROOF'S RELEASE IS READ BY HERON-FRG-MTX-009, not re-parsed.
 
   7. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED.
+
+  8. A RELEASE AN ENTRY OF proof.releases PROVES IS CHECKED TOO (D-131) -
+     contradicted by failed runs, or unwatched with none - while
+     `proof_on` and `contradicted` keep meaning the proof's own release.
+     A stale entry, or one on a fragment no longer PROVEN, is not
+     checked, and the answer says which.
 """
 
 import io
 import os
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -65,6 +73,30 @@ def fragment(proof_model=None, **changes):
         data["proof"] = {"model": proof_model}
     return FRAG.Fragment(data, os.path.join(ROOT, "brain", "fragments",
                                             "a-test-fragment"))
+
+
+def proven(folder, entries, proof_model="Tower A, Revit 2023",
+           status="PROVEN"):
+    """A fragment at `status` with real code in `folder`, its proof on the
+    release `proof_model` names, and one `proof.releases` entry per
+    (release, fingerprint) - None meaning the code's own, so it is fresh.
+
+    The code is real because an entry is held against it: with nothing to
+    hash, every entry reads stale and section 8 would prove nothing."""
+    impl = os.path.join(folder, "impl", "any")
+    if not os.path.isdir(impl):
+        os.makedirs(impl)
+        with io.open(os.path.join(impl, "fragment.cs"), "w",
+                     encoding="utf-8") as fh:
+            fh.write(u"// the test fragment's code\n")
+    data = card(**{"heron-status": status})
+    data["proof"] = {"model": proof_model}
+    frag = FRAG.Fragment(data, folder)
+    here = frag.fingerprint()
+    data["proof"]["releases"] = [
+        {"release": release, "fingerprint": here if mark is None else mark}
+        for release, mark in entries]
+    return frag
 
 
 def check(condition, what):
@@ -213,6 +245,100 @@ def main():
     check(not unreached,
           "and every one was reached above%s"
           % ("" if not unreached else ": %s" % ", ".join(unreached)))
+
+    print("\n8. a release an entry of proof.releases proves is checked too "
+          "(D-131)")
+    scratch = tempfile.mkdtemp(prefix="heron-test-runs-")
+    try:
+        folder = os.path.join(scratch, "a-test-fragment")
+        check(proven(folder, []).fingerprint() is not None,
+              "the fixture has code to hold an entry against")
+
+        # The proof on 2023, where every run passed; a fresh entry on 2024,
+        # where one of two failed.
+        told = RUNS.measure(proven(folder, [("2024", None)]), some)
+        check(told["proof_on"] == "2023",
+              "proof_on is still the proof's own release, not an entry's")
+        check(told.get("entries_on") == ["2024"],
+              "the fresh entry on 2024 is named as checked")
+        got = told["contradicted"]
+        check(got is not None and got["revit"] == "2024"
+              and got["failed"] == 1 and got["runs"] == 2,
+              "failed runs on a release proven ONLY by an entry are "
+              "reported as contradicted, both counts named")
+        check((got or {}).get("source") == "proof.releases"
+              and "proof.releases entry" in (got or {}).get("why", ""),
+              "and the finding says it was the entry, not the proof, the "
+              "runs contradict")
+        check("nothing here picks between them" in (got or {}).get("why", ""),
+              "with neither record overruled, as for the proof")
+        check(told["unwatched_since_proof"] is None,
+              "2023 has runs, so nothing is unwatched")
+
+        # The proof on 2023 again; a fresh entry on 2025, where nothing ran.
+        quiet = RUNS.measure(proven(folder, [("2025", None)]), some)
+        lone = quiet["unwatched_since_proof"]
+        check(lone is not None and lone["revit"] == "2025"
+              and (lone or {}).get("source") == "proof.releases",
+              "a release proven only by an entry, with no runs at all, is "
+              "reported as unwatched")
+        check("not the same as evidence that it still works"
+              in (lone or {}).get("why", ""),
+              "with the reason: one recorded event is what D-30 asks for")
+        check(quiet["contradicted"] is None,
+              "and it is not also contradicted - nothing ran there")
+
+        # The proof on 2024 and an entry on 2023, both with a failure: the
+        # proof's own finding comes first, so `contradicted` is still the one
+        # a caller always got.
+        both = RUNS.measure(proven(folder, [("2023", None)],
+                                   proof_model="Tower A, Revit 2024"),
+                            some + [{"revit": "2023", "outcome": "failed"}])
+        every = both.get("contradicted_all") or []
+        check([(one["revit"], one.get("source")) for one in every]
+              == [("2024", "proof"), ("2023", "proof.releases")],
+              "every contradicted release is listed, the proof's own first")
+        check(both["contradicted"] is not None
+              and both["contradicted"]["revit"] == "2024",
+              "and `contradicted` is the proof's own, as before an entry "
+              "could exist")
+        check(len(every) == 2
+              and all(one["why"] in both["unjudged"][4] for one in every),
+              "the answer's own line names both, not only the first")
+        check(not set(one["revit"] for one in every)
+              & set(one["revit"] for one in both.get("unwatched_all") or []),
+              "no release is both contradicted and unwatched")
+
+        # A STALE entry is recorded and not counted - HERON-FRG-MTX-009's
+        # rule - so the failures on 2024 do not contradict it.
+        old = RUNS.measure(proven(folder, [("2024", "0" * 16)]), some)
+        check(old["contradicted"] is None
+              and old.get("entries_on") == [],
+              "an entry against code that has since moved is not checked")
+        check(old.get("stale_entries") == ["2024"]
+              and "STALE" in old["unjudged"][4],
+              "and the answer names it as stale rather than dropping it "
+              "without a word")
+
+        # A fragment set back to DRAFT: its entry is history, as the proof's
+        # own release is everywhere but here.
+        back = RUNS.measure(proven(folder, [("2024", None)], status="DRAFT"),
+                            some)
+        check(back["contradicted"] is None
+              and back.get("entries_on") == [],
+              "an entry on a fragment no longer PROVEN is not checked")
+        check(back["proof_on"] == "2023",
+              "and proof_on still reads the proof, as it always did")
+
+        # The entries are read by the agent that owns them.
+        frag = proven(folder, [("2025", None), ("2024", None)])
+        owned = MTX.proven_releases(frag)[0]
+        check(RUNS.measure(frag, some).get("entries_on")
+              == sorted(release for release, source in owned.items()
+                        if source == "proof.releases"),
+              "entries_on is exactly MTX.proven_releases's fresh entries")
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
     print()
     if FAILURES:
