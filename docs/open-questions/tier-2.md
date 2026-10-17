@@ -394,12 +394,12 @@ API opened is still open - *"Operation is not permitted when there is any open s
 transaction, or transaction group"*, the same words for `Document.Save` and `Document.SaveAs` (RevitAPI.xml
 2024; 2020 and 2027 read the same on 2026-10-07, row 5b-365). Every fragment `revit_change` runs goes to
 the add-in's write path, which opens ONE `TransactionGroup` in the document for the whole run
-([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 559) and assimilates or rolls it
-back at the end (line 678) - Article 8's one undo entry. So a fragment can never save the document it runs
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 566) and assimilates or rolls it
+back at the end (line 695) - Article 8's one undo entry. So a fragment can never save the document it runs
 in, however it is written.
 
 **What would work, read from the code - NOT RUN.** In the same request, AFTER that group is closed (lines
-678 to 686, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
+695 to 703, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
 the add-in could run the save itself at that point, on the fragment's behalf: `SAVE_DOCUMENT` version 3
 asks for it - the document it works in, by its own file for a Save, or a full `.rvt` or `.rfa` path the
 modeller typed for a Save As of a model that has none - and the add-in does it once the group has closed,
@@ -420,7 +420,11 @@ entry, and the save is not in it - a save is not a model change and cannot be un
    - its proof records a rolled-back group and `saved true` - so the library has never said which is
    right. Either a preview saves too, or the add-in saves only when the group was KEPT and says so on a
    preview; the second keeps a preview free of anything irreversible, and means a proof of this route must
-   be run with `--apply`.
+   be run with `--apply`. **And [D-117](../decisions/D-117.md), merged the same day, refuses `--apply` -
+   and `revit_change` - for a fragment that is DRAFT**, which version 3 would be until proved. So with a
+   preview that does not save, the route could not be proved at all until D-117's in-Revit Keep/Discard
+   prompt exists; with a preview that saves, it can be proved today, on a scratch model, the way version 2
+   was.
 3. **A Save As renames the model, and the chat's model pin would read that as a DIFFERENT model** -
    Golden Rule 20's guard, Articles 12a and 12b. The pin compares the model's own id where both sides have
    one ([`heron_write.py`](../../mcp/server/heron_write.py) line 255), and only a match on it or on the file
@@ -429,7 +433,7 @@ entry, and the save is not in it - a save is not a model change and cannot be un
    ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 628, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
-   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1784)
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1804)
    about a model it has just saved. The next call is then aimed at the old title (line 1352) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
@@ -440,9 +444,11 @@ entry, and the save is not in it - a save is not a model change and cannot be un
    still rests on the modeller pressing Ctrl+S, which is how both builds were lost.
 2. **Save after the group, from the add-in - recommended.** As above: `SAVE_DOCUMENT` version 3, an
    optional switch for a Save As of a never-saved model and one for replacing a file, and the add-in saving
-   once the group has closed. With it, two choices: a preview does not save (D-55 kept whole), and the pin
-   accepts a new title only when the reply says THIS run did the Save As of the pinned document. One new
-   decision for the after-the-group act; nothing in Article 8 changes.
+   once the group has closed. With it, two choices: a preview saves too, as version 2's save of another
+   document already does - the only way it can be proved while D-117 refuses a DRAFT kept for real, and
+   D-55 then gains one sentence saying a save is not rolled back - and the pin accepts a new title only
+   when the reply says THIS run did the Save As of the pinned document. One new decision for the
+   after-the-group act; nothing in Article 8 changes.
 3. **A save operation of its own**, beside `move_elements`, declared Publish in the operation registry and
    run by the add-in with no group at all. No change to the fragment executor, but a new tool for the chat,
    a new entry in the registry and the permission gate, and the same pin change as 2.
@@ -454,7 +460,8 @@ name.
 word only: a scratch fragment on the read path - no transaction and no group anywhere - calling
 `SaveAs` on a NEVER-SAVED scratch project, to see whether Revit lets an ExternalEvent callback save at all.
 **Not measured:** any of it. Whether a save from the callback raises Revit's own dialogs (a workshared
-model, a file on a network folder), and how long the request runs for a big model - the add-in answers
+model, a file on a network folder), what the add-in's dialog watch does with one met after the group
+([Group EL](../needs-checking/group-el.md), merged the same day), and how long the request runs for a big model - the add-in answers
 *still_running* after 60 seconds (`revit.operationTimeoutSeconds`) and the save carries on.
 
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: `SAVE_DOCUMENT` still refuses
