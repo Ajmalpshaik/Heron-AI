@@ -759,6 +759,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
 
+## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
