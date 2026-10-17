@@ -215,6 +215,13 @@ namespace Heron.Revit.Addin
         /// </summary>
         private int _active;
 
+        /// <summary>
+        /// 1 while Revit asks the modeller something and the card must not
+        /// cover it - see StepAside. An int for Volatile, set from Revit's
+        /// thread and read on the banner's.
+        /// </summary>
+        private int _aside;
+
         /// <summary>The newest job raised, and how the last one ended.</summary>
         private Raised _raised;
         private Ended _ended;
@@ -360,6 +367,22 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Out of the way while Revit asks the modeller something - D-126's
+        /// Keep or Discard - and back afterwards.
+        ///
+        /// THE CARD IS TOPMOST, so it would sit over the dialog it is waiting
+        /// on. Hidden rather than moved: there is no place over Revit where a
+        /// card centred on its window is sure to miss a dialog centred on it
+        /// too. Called from Revit's thread; posted, like Begin and End.
+        /// </summary>
+        public void StepAside(bool aside)
+        {
+            if (!_enabled) return;
+            Volatile.Write(ref _aside, aside ? 1 : 0);
+            OnUi(Render);
+        }
+
+        /// <summary>
         /// One job less in flight, and never fewer than none.
         ///
         /// Every Begin is matched by exactly one End - RevitJob.TakeBannerEnd
@@ -385,6 +408,14 @@ namespace Heron.Revit.Addin
         /// </summary>
         private void Render()
         {
+            // STEPPED ASIDE: nothing is drawn until the question is answered.
+            // The next render after StepAside(false) shows the card again.
+            if (Volatile.Read(ref _aside) != 0)
+            {
+                if (_window != null && _window.IsVisible) _window.Hide();
+                return;
+            }
+
             if (Volatile.Read(ref _active) > 0)
             {
                 var job = Volatile.Read(ref _raised);

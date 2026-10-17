@@ -747,6 +747,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-es.md`](needs-checking/group-es.md)
 
+## Group ET - Revit asks Keep or Discard before a change from a chat is kept: D-126 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
+
 ## Group EY - the family method looks at what it built: `revit_show` and `revit_view_image` in a family, and `family-creation` step 13 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ey.md`](needs-checking/group-ey.md)
