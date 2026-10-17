@@ -1,0 +1,79 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# THE ARRANGEMENT, made by hand in Revit on a saved scratch copy before any run
+# (NEEDS-CHECKING Group FB says it step by step): three revisions -
+#   Seq A  "FB ISSUED AS-BUILT"   date FB-DATE-1
+#   Seq B  "FB DRAFT AS-BUILT"    date FB-DATE-1
+#   Seq C  "FB LATER"             date FB-DATE-2
+# Seq A ticked on four sheets; Seq C ALSO ticked on two of those four, so A is
+# no longer their latest; Seq B ticked on one other sheet; one sheet with a
+# revision cloud for Seq A in a view placed on it and nothing ticked.
+
+positive:
+  - given: revisionSequence = Seq A's sequence number, every other input left out
+    expect: >
+      the four sheets ticked with Seq A AND the sheet whose view carries the
+      Seq A cloud - five - ordered by sheet number, including the two whose
+      latest revision is Seq C. revisionsMatched names Seq A alone, "on 5
+      sheet(s)". This is the case the card exists for: a filter on Current
+      Revision returns three of the five
+
+  - given: revisionDescription = "FB ISSUED AS-BUILT", typed whole
+    expect: >
+      the same five sheets. Whole beats part: "FB DRAFT AS-BUILT" is not chosen
+      although it contains "AS-BUILT"
+
+  - given: sheetNumbers = three existing sheet numbers, comma separated, nothing else
+    expect: >
+      exactly those three, whether or not they carry a revision; notFound,
+      listedWithoutRevision and refused empty
+
+  - given: >
+      revisionSequence = Seq A's, sheetNumbers = two Seq A sheets, one sheet
+      carrying only Seq B, and one number no sheet has
+    expect: >
+      the two Seq A sheets in elements; the Seq B sheet's number in
+      listedWithoutRevision; the made-up number in notFound
+
+  - given: revisionDate = FB-DATE-1 typed as the dialog shows it
+    expect: >
+      the sheets carrying Seq A or Seq B - both revisions named in
+      revisionsMatched, each with its count. A date may choose several
+
+negative:
+  - given: revisionDescription = "as-built" with nothing else
+    expect: >
+      REFUSED, elements empty - "2 revisions fit description 'as-built'",
+      naming Seq A and Seq B with their sequences. Picking the sheets of both
+      is the silent wrong issue set this refuses
+
+  - given: revisionSequence = Seq B's
+    expect: >
+      only the one Seq B sheet - none of Seq A's five. A sheet carrying another
+      revision must not be picked
+
+  - given: >
+      sheetNumbers = the leading digits of a longer sheet number (for "179",
+      "17"), where no sheet is numbered "17"
+    expect: >
+      elements empty and "17" in notFound - the longer sheet NOT returned.
+      Whole numbers, never a part
+
+  - given: revisionSequence = a number no revision has (one past the last)
+    expect: >
+      refused names that sequence and lists every revision in the project;
+      elements empty; no exception
+
+  - given: every input left out
+    expect: refused - nothing to pick by - and elements empty, not every sheet
+
+second_route:
+  - >
+    open each picked sheet's Revisions on Sheet dialog (Sheet Issues/Revisions
+    column on the sheet) and confirm Seq A is ticked or clouded there, and is
+    not on any sheet left out
+  - >
+    a sheet list schedule showing Current Revision: the two Seq A sheets
+    whose current revision reads Seq C's are the ones a Current Revision
+    filter misses, and this card does not
+  - LIST_REVISIONS' revisionTable reports the same sheets against Seq A

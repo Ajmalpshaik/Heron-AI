@@ -110,3 +110,11 @@ utterances:
   - how many sprinklers on level 2
   - how many sprinklers
   - give me the number of fire dampers
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-477). Beside "how many pipes are there".
+  # Measured reaching CONNECT_AIR_TERMINALS and PLACE_WALL_SWEEPS - writes.
+  # Their words moved one of the owner's 79 on lexical, read to read: #2
+  # GROUP_AND_COUNT 4th -> 5th. Nothing on any frozen set became riskier.
+  - how many air terminals are there
+  - how many walls are there
