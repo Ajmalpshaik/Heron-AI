@@ -71,6 +71,18 @@ namespace Heron.Installer.Cli
         public bool NoCheck { get; private set; }
 
         /// <summary>
+        /// Leave Heron's Python side alone - install the add-in and nothing
+        /// else.
+        ///
+        /// The one-step install sets up the Python packages, the knowledge
+        /// store and the heron-ready check after the add-in, when a product
+        /// that talks to a chat went in (PythonSetup). This is the way out for
+        /// a PC whose Python is managed by somebody else, and for a machine
+        /// with no internet and no packages yet, where pip could only fail.
+        /// </summary>
+        public bool NoPython { get; private set; }
+
+        /// <summary>
         /// Why the line cannot be acted on, or null when it can.
         ///
         /// Plain English, and it says what to do next - docs/14. "Error" is
@@ -108,6 +120,10 @@ namespace Heron.Installer.Cli
 
                     case "--no-check":
                         read.NoCheck = true;
+                        break;
+
+                    case "--no-python":
+                        read.NoPython = true;
                         break;
 
                     case "--source":
@@ -233,10 +249,22 @@ namespace Heron.Installer.Cli
                 "  --releases <a,b>    Only these Revit releases. Default: all found." + n +
                 "  --list              Say what would happen and change nothing." + n +
                 "  --no-check          Do not check online whether a newer version exists." + n +
+                "  --no-python         Install the add-in only. Leave Heron's Python packages," + n +
+                "                      knowledge store and heron-ready check for later." + n +
                 "  --help              This." + n +
                 n +
                 "Close Revit before installing. If it is open, heron-install says which" + n +
                 "one and waits for it." + n +
+                n +
+                "After the add-in, when a product that talks to a chat went in, it also" + n +
+                "sets up Heron's Python side for your user: the pinned packages in" + n +
+                "requirements-lock.txt (no administrator rights), the knowledge store, and" + n +
+                "a final heron-ready check. It needs Python 3." + PythonSetup.OldestMinor + " or later on the plain" + n +
+                "command `python`; it never installs Python itself." + n +
+                n +
+                "Run it from your own terminal, never from inside the Claude app's shell:" + n +
+                "the Microsoft Store Claude keeps a private copy of AppData that Revit" + n +
+                "never looks in, so heron-install refuses to run there." + n +
                 n +
                 "With internet it also says whether a newer version is published. It only" + n +
                 "reads the version to do that - it never downloads Heron again to find out," + n +
@@ -248,7 +276,8 @@ namespace Heron.Installer.Cli
                 "When it finishes:" + n +
                 "  0  did what was asked" + n +
                 "  1  refused before touching anything" + n +
-                "  2  ran, and something failed - the lines above say which" + n +
+                "  2  ran, and something failed - the lines above say which, the Python" + n +
+                "     side included" + n +
                 "  3  could not run: Revit stayed open. Nothing was changed.";
         }
     }

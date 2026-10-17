@@ -75,8 +75,14 @@ ADDIN_SRC = "revit"
 # something else is refused rather than ignored: an unknown key is either a
 # typo for a real field - in which case the real field is silently missing -
 # or a setting somebody expects to do something, and nothing reads it.
+#
+# needsPython joined on 2026-10-17 with the one-step installer: true where
+# installing the product also sets up Heron's Python side. A field and never
+# a product id in the installer's code - R-3 - and required here like every
+# other, so a row cannot leave it out and have it read as a silent false.
 FIELDS = ("id", "name", "description", "tab", "addin", "assembly", "addInId",
-          "folder", "revit", "requires", "version", "partOf", "state")
+          "folder", "revit", "requires", "version", "partOf", "state",
+          "needsPython")
 
 # The four an entry needs to install itself. A heading carries none of them.
 #
@@ -268,6 +274,17 @@ def check_one(p, index, known, supported, version, problems):
                 "as an error" % (where, field, target))
         elif target == p["id"]:
             problems.append("%s: partOf names itself" % where)
+
+    # A BOOLEAN, NOT A WORD. "true" in quotes is a string the installer reads
+    # as false, and the AI connector would then install with no Python side
+    # and nothing would say why.
+    if not isinstance(p["needsPython"], bool):
+        problems.append("%s: needsPython must be true or false, not %r"
+                        % (where, p["needsPython"]))
+    elif p["needsPython"] and p["folder"] is None:
+        problems.append("%s: needsPython is true on an entry that installs "
+                        "nothing of its own. Put it on the piece that talks "
+                        "to a chat" % where)
 
     if not isinstance(p["requires"], list):
         problems.append("%s: requires must be a list, empty if nothing is "

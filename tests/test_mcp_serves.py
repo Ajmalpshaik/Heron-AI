@@ -84,6 +84,12 @@ WHAT IT PROVES, when an SDK is installed
      tests/support/live_revit_guard.py refuses any named-pipe open and fails the run
      if the real folder was so much as listed. Until then this file opened a
      live Revit's pipe 1,842 times a run and passed.
+ 13. THE TOOLS THAT WAIT ON REVIT ARE HANDED THE SDK'S CONTEXT, so they can
+     tell a host the wait goes on (docs/04 section 7.1) - through
+     _recorded's functools.wraps - and NO tool shows the host a `ctx`
+     argument. A call with no request behind it, as every call here is, has
+     no progressToken and so no callback. That the notes reach a host over
+     stdio is tests/test_mcp_stdio.py's.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -228,6 +234,9 @@ async def exercise(server):
         "heron_hvac": ["calculation", "inputs"],
         "heron_fire": ["calculation", "inputs"],
         "heron_earlier_answers": ["use"],
+        "revit_building_loads": ["inputs", "expect_from", "include_links"],
+        "revit_sprinkler_hydraulics": ["system", "inputs", "expect_from"],
+        "revit_sprinkler_layout": ["spaces", "inputs"],
     }
     for name, args in sorted(expected.items()):
         if name not in served:
@@ -402,6 +411,39 @@ async def exercise(server):
           "a host is told about what the tool can do")
 
     return answers
+
+
+# The tools that can wait minutes on Revit, and so are handed the SDK's
+# Context to say so. Typed here on purpose: this is the claim being checked,
+# and docs/04 section 7.1 names the same five.
+WAITS_ON_REVIT = ("revit_change", "revit_read", "revit_building_loads",
+                  "revit_sprinkler_hydraulics", "revit_sprinkler_layout")
+
+
+def exercise_waiting(module):
+    server = module.server
+    print()
+    print("  the tools that wait on Revit, handed the SDK's Context (docs/04 7.1)")
+    tools = asyncio.run(server.list_tools())
+    shown = sorted(t.name for t in tools
+                   if set(schema_of(t).get("properties", {})) & {"ctx", "context"})
+    check(not shown, "no served tool shows the host a ctx argument%s"
+          % ("" if not shown else " - shown on %s" % ", ".join(shown)))
+    # Read off the SDK's own record of each tool - `context_kwarg`, which both
+    # 1.x and 2.x keep - so this is what the dispatch will do, not what the
+    # source says.
+    manager = getattr(server, "_tool_manager", None)
+    for name in WAITS_ON_REVIT:
+        tool = manager.get_tool(name) if manager is not None else None
+        check(getattr(tool, "context_kwarg", None) == "ctx",
+              "%s is handed the SDK's Context as ctx, through _recorded" % name)
+    waiting = getattr(module, "_waiting", None)
+    check(waiting is not None, "the server has a callback for saying the wait goes on")
+    if waiting is not None:
+        check(waiting(None) is None,
+              "no Context, no callback - a body run on the Companion's behalf")
+        check(waiting(module._Context()) is None,
+              "a Context with no request behind it carries no progressToken, so no callback")
 
 
 class StandIn(object):
@@ -804,6 +846,31 @@ async def exercise_activity(module):
                                            "expect_from": "find-views"})
         check(got == ["refused"],
               "revit_change: the add-in's chain_empty is 'refused' - found %r" % got)
+
+        # ARTICLE 11 (D-117). revit_change KEEPS what it does, so a fragment no
+        # current proof stands behind is refused before anything reaches Revit.
+        draft, _folder = first_with("MODIFY", "DRAFT")
+        revit.asked[:] = []
+        got = await ended("revit_change", {"capability": draft})
+        said = module.revit_change(capability=draft)
+        check(got == ["refused"] and not revit.asked,
+              "revit_change: a DRAFT (%s) is 'refused', and nothing reached Revit - "
+              "found %r, %d request(s)" % (draft, got, len(revit.asked)))
+        check(draft in said and "DRAFT" in said and "Article 11" in said
+              and "Nothing was sent to Revit" in said,
+              "and the reply names it, its status and the Article")
+        real_status = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(real_status(folder) or {},
+                                                        stale=True)
+        try:
+            revit.asked[:] = []
+            got = await ended("revit_change", {"capability": writer})
+            said = module.revit_change(capability=writer)
+        finally:
+            module.brain.proof_status = real_status
+        check(got == ["refused"] and not revit.asked and "D-30" in said,
+              "and so is a PROVEN one (%s) whose proof is stale - found %r, "
+              "%d request(s)" % (writer, got, len(revit.asked)))
 
         # A TOOL SPEAKS ONLY FOR ITSELF.
         say = getattr(module, "_ended", None)
@@ -1239,6 +1306,7 @@ def main():
               % (type(server).__module__, type(server).__name__))
 
         asyncio.run(exercise(server))
+        exercise_waiting(server_module)
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_words(server_module))
         asyncio.run(exercise_activity(server_module))

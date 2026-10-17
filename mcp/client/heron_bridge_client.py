@@ -175,6 +175,14 @@ HERON_VERSION = "0.1.0"
 RETRY_ATTEMPTS = 3
 RETRY_BACKOFF_S = 0.15
 
+#: HOW OFTEN A CALLER WAITING ON REVIT IS TOLD THE WAIT GOES ON. A reply can
+#: be minutes away for a reason nobody can see from here - a slow fragment, a
+#: family build, a modeller answering a prompt in Revit - and a host told
+#: nothing in that time cannot tell a wait from a hang. Only a caller that
+#: passes `on_wait` is told; nothing goes down the pipe, so the protocol is
+#: unchanged and Revit is asked nothing more.
+WAIT_NOTE_S = 10.0
+
 
 def newest_log():
     """The add-in writes one log file per day so retention can mean something.
@@ -247,7 +255,7 @@ class Bridge(object):
                     return None
                 time.sleep(0.05)
 
-    def _read_line(self, handle, timeout):
+    def _read_line(self, handle, timeout, on_wait=None):
         """
         One newline-terminated response, or None if it never arrives.
 
@@ -255,6 +263,12 @@ class Bridge(object):
         deadline of its own here. On timeout the caller closes the handle, which
         unblocks the thread - it is a daemon, so it can never hold the process
         open either way.
+
+        `on_wait`, when given, is called every WAIT_NOTE_S with the seconds
+        waited so far, from THIS thread - the one that sent the request - and
+        never after the answer or the deadline. It is told, never asked: what
+        it returns is ignored, and a fault in it silences it for the rest of
+        this read without costing the read its answer.
         """
         result = {}
 
@@ -275,13 +289,27 @@ class Bridge(object):
         worker = threading.Thread(target=reader)
         worker.daemon = True
         worker.start()
-        worker.join(timeout)
+        if on_wait is None:
+            worker.join(timeout)
+        else:
+            started = time.time()
+            deadline = started + timeout
+            while worker.is_alive():
+                left = deadline - time.time()
+                if left <= 0:
+                    break
+                worker.join(min(WAIT_NOTE_S, left))
+                if worker.is_alive() and time.time() < deadline and on_wait is not None:
+                    try:
+                        on_wait(time.time() - started)
+                    except Exception:                  # noqa: BLE001 - see docstring
+                        on_wait = None
         if worker.is_alive():
             return None            # still waiting; the caller closes the handle
         return result.get("line") or None
 
     def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
-                op_args=None, idempotent=True):
+                op_args=None, idempotent=True, on_wait=None):
         """
         Send one request, return the parsed response. None if unreachable.
 
@@ -301,6 +329,9 @@ class Bridge(object):
         `idempotent` defaults to True. Step 6 writes MUST pass False - repeating
         a move because the answer went missing would move the same ducts twice,
         and "it looked like it failed" is exactly how that happens.
+
+        `on_wait` is _read_line's: called while the answer is awaited, so a
+        caller can say the wait goes on. It changes nothing that is sent.
         """
         body = {"op": op, "token": self.token, "client": CLIENT_ID}
         if op_args:
@@ -346,7 +377,7 @@ class Bridge(object):
                 self.close()
                 continue
 
-            line = self._read_line(handle, response_timeout)
+            line = self._read_line(handle, response_timeout, on_wait)
 
             if line is None:
                 self.close()
@@ -1205,6 +1236,78 @@ def read_path_refusal(root, name):
             "unless you also say --apply." % (name, risk))
 
 
+# THE STATUSES WHOSE PROOF LETS A CHANGE BE KEPT - Constitution Article 11,
+# "untested code never touches a live model", and D-117. Read from the
+# fragment's own files, and only while that proof still describes its code.
+KEEPABLE_STATUSES = ("PROVEN", "PRODUCTION")
+
+
+def proof_of(name):
+    """How far one fragment is proven - `heron_brain.proof_status`, asked.
+
+    ASKED, NOT REIMPLEMENTED. Whether a proof is stale is D-30's fingerprint,
+    worked out by the brain's fragment reader, and a second copy here is how
+    two answers to "is this proven" would drift apart. It is imported HERE and
+    not at the top because this client is stdlib only and that reader needs
+    PyYAML: only a run that would KEEP a change asks, and a machine that cannot
+    answer gets None - which `unproven_refusal` refuses.
+    """
+    server = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "server")
+    if server not in sys.path:
+        sys.path.insert(0, server)
+    try:
+        import heron_brain
+    except ImportError:
+        return None
+    return heron_brain.proof_status(name)
+
+
+def unproven_refusal(what, found):
+    """The refusal for KEEPING what a fragment does when no proof stands behind
+    its code, or None. `found` is `proof_of`'s answer - None when it could not
+    be read, and that is refused too: "could not tell" is never "proven".
+
+    ARTICLE 11 WAS ENFORCED NOWHERE until this (D-117). `revit_change` ran a
+    DRAFT and kept it, and only a line printed after the run said it was not
+    proven - a warning given once the change was already in the model.
+
+    ONLY A KEPT CHANGE IS ASKED ABOUT. A run that is rolled back (D-55) leaves
+    nothing in the model, and it is how every proof is taken: refusing it would
+    leave nothing able to become PROVEN at all.
+
+    A GUARD ON THIS SIDE, LIKE `risk_refusal`. The add-in never sees the card
+    (RevitFragment.Run is handed the source and the contract), and Golden Rule
+    19 forbids sending a status for it to trust - the caller would be vouching
+    for its own request. WHEN THE IN-REVIT KEEP/DISCARD PROMPT LANDS this stops
+    being a refusal: the request goes with `unproven: "true"`, a field that can
+    only ADD caution - the add-in makes its prompt mandatory and says the code
+    was never proved - and a request without it lowers nothing. Until then
+    there is no prompt to make mandatory, so this refuses.
+    """
+    if found is None:
+        return ("How far %s is proven could not be read, so Heron will not let it "
+                "change the model - \"could not tell\" is not \"proven\". Nothing "
+                "was sent to Revit." % what)
+
+    status = found.get("status")
+    if status not in KEEPABLE_STATUSES:
+        said = "is %s" % status if status else "states no status"
+        return ("%s %s - no recorded proof stands behind its code, so Heron will "
+                "not let it change a live model (Constitution Article 11). Nothing "
+                "was sent to Revit. It is proved first on a test model, with a "
+                "negative case, and then it can be asked for again." % (what, said))
+
+    if found.get("stale"):
+        when = " on %s" % found["date"] if found.get("date") else ""
+        return ("%s was %s%s, but its code has changed since, so that proof no "
+                "longer describes what would run (D-30) and Heron will not let it "
+                "change a live model (Constitution Article 11). Nothing was sent "
+                "to Revit. It is proved again on a test model, and then it can be "
+                "asked for again." % (what, status, when))
+    return None
+
+
 def caller_values(pairs):
     """
     Turn `--set view=Level 1` into what the executor reads.
@@ -1358,7 +1461,8 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     inside a TransactionGroup, and is what lets a fragment at risk: MODIFY run
     at all. It still keeps nothing unless `apply_it` is set: the default runs
     the change for real and rolls it back, which is a record of what happened
-    rather than a prediction of what would.
+    rather than a prediction of what would. `apply_it` is refused for a
+    fragment no current proof stands behind - `unproven_refusal`, D-117.
 
     A PUBLISH OR ADMIN FRAGMENT GOES AS ITS OWN OPERATION when `writing` is
     set - `run_fragment_publish` or `run_fragment_admin`, chosen from its own
@@ -1397,6 +1501,17 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     if refusal is not None:
         print(refusal)
         return 2
+
+    # AND WHETHER WHAT IT DOES MAY BE KEPT - Article 11, D-117. Only with
+    # --apply: without it the run is rolled back, which is how a DRAFT is
+    # proved at all.
+    if writing and apply_it:
+        refusal = unproven_refusal(name, proof_of(name))
+        if refusal is not None:
+            print(refusal)
+            print("Without --apply it still runs, and is rolled back - which is how "
+                  "it is proved.")
+            return 2
 
     # WHICH OPERATION, from the fragment's own card - never from the request.
     operation = write_operation(root, name) if writing else "run_fragment_read"
@@ -2694,7 +2809,9 @@ def main(argv):
             print("  --write                 run a MODIFY fragment, in a transaction. A")
             print("                          PUBLISH or ADMIN one goes as its own operation,")
             print("                          refused unless its switch is on in Revit")
-            print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it)")
+            print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it).")
+            print("                          Refused unless it is PROVEN and its code has")
+            print("                          not changed since (Article 11)")
             print("  --expect-from <fragment>  consume what THAT fragment left, instead")
             print("                          of resetting. Refused if something else")
             print("                          left it. Add \"where k=v\" to check its")

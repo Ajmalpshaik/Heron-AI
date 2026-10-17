@@ -52,6 +52,15 @@ installed.
 **Why `mcp` is on the optional list:** Heron's own tools and tests run without it. You need it the
 moment you want to ask Heron something from Claude.
 
+**From the next release, the installer does rows 4 and 5 and section 1a for you** - built 2026-10-17,
+**not yet run on Windows** ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)). When you install the
+AI Bridge connector, `HeronInstaller.exe` also installs Heron's Python packages at the pinned versions in
+[`requirements-lock.txt`](../requirements-lock.txt) - for your Windows user, no administrator rights,
+every file checked against its hash - then builds Heron's knowledge store and runs `heron-ready --check`,
+saying each step as it goes. It needs row 3 first: **it never installs Python itself**, and says so with
+the one command when `python` does not answer. `heron-install --no-python` leaves this half out.
+**v0.1.0 does not do this** - on it, rows 4 and 5 and section 1a are still done by hand.
+
 ## 1a. Every new PC — one command before the first chat
 
 Once on every PC, after the list above, in the Heron folder:
@@ -59,6 +68,9 @@ Once on every PC, after the list above, in the Heron folder:
 ```bash
 python tools/heron-ready.py
 ```
+
+From the next release the installer runs it for you, twice - to build, then `--check` as the verdict
+(above). By hand it is the same command, and still worth running after anything changes.
 
 It checks the list above and **builds what a first chat would otherwise build while you wait** —
 Heron's knowledge store, and the search model if you installed it. It installs nothing; anything
@@ -95,7 +107,11 @@ every package Claude had installed was in the copy and none was in the real fold
 `heron-ready --check` said **READY** inside Claude and **NOT READY** in his own terminal.
 
 1. **Install Python packages from your own terminal** — Windows Terminal or PowerShell, opened outside
-   Claude. Never ask Claude to install them for you: they would land only in its copy again.
+   Claude. Never ask Claude to install them for you: they would land only in its copy again. **Or let
+   the installer do it**: double-click `HeronInstaller.exe` in File Explorer, or run `heron-install` from
+   your own terminal. Since 2026-10-17 both refuse to run from inside Claude, because an add-in installed
+   from there would land where Revit never looks ([row 5b-495](fragment-issues/section-5b-rows-401-425.md),
+   not yet run on Windows).
 2. **Install the versions Claude's copy already holds.** `python tools/heron-ready.py`, run in your own
    terminal, prints the `pip install --user` line with each version pinned. A *different* version would
    leave two copies of one package mixed together in Claude's view. Leaving a package out is safe.
@@ -109,8 +125,9 @@ every package Claude had installed was in the copy and none was in the real fold
    its note inside Claude's copy ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Not yet
    tried in Revit.
 
-**Where Heron should run and keep its files on such a PC is not decided** — [Q-63](OPEN-QUESTIONS.md),
-the owner's to answer.
+**Installing is settled: from outside Claude, by the installer** — [Q-63](OPEN-QUESTIONS.md),
+2026-10-17. **Where Heron keeps what it writes while a chat runs is not decided** — points 3 to 5 above
+are unchanged by it, and that half of Q-63 is the owner's to answer.
 
 ## 2. Optional — the two search add-ons
 
@@ -187,6 +204,45 @@ python tools/check-dependencies.py
 
 It names every Python package Heron can use, whether this PC has it, what it buys, and what happens
 without it. It fails only when a **required** one is missing.
+
+## 5a. When a Revit job runs long — Claude Code's own limits
+
+**With Claude Code's defaults, nothing here needs changing.** This section is for a PC where somebody
+has set a tool timeout lower.
+
+A Heron tool that sends a fragment can wait minutes on Revit — a slow fragment, a family build, or you
+answering a prompt in Revit. Since 2026-10-17 Heron tells Claude every few seconds that it is still
+waiting for Revit — how often is `WAIT_NOTE_S` in
+[`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) ([docs/04 §7.1](04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)).
+**That has been tested against a stand-in Revit only. It has not been seen in a real chat yet**
+([NEEDS-CHECKING EJ](needs-checking/group-ej.md)).
+
+What Claude Code does with those notes, from [its MCP docs](https://code.claude.com/docs/en/mcp),
+[its environment variables page](https://code.claude.com/docs/en/env-vars) and
+[its changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md), read on 2026-10-17:
+
+| | What Claude Code does | The setting |
+|---|---|---|
+| **Shows them** | *"The task's entry shows the latest progress the server has reported."* Changelog 2.1.153 fixed the notes not showing in the collapsed tool view, and 2.1.283 fixed them being dropped once a call moved to the background | — |
+| **Keeps the idle timer from firing** | A call that sends *"no response and no progress notification"* for the idle window is stopped with an error. For a server like Heron's that window is 30 minutes, and each note starts it again | `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT`, in milliseconds |
+| **Does NOT extend the overall limit** | *"progress notifications from the server don't extend it."* Unset, that limit is about 28 hours | `MCP_TOOL_TIMEOUT`, in milliseconds, or a `"timeout"` in milliseconds on the `heron` entry in `.mcp.json` |
+| **Moves a long call aside** | A call still running after two minutes becomes a background task, so you can keep typing. The limits above still apply to it | `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS` |
+
+**If `MCP_TOOL_TIMEOUT` or the `heron` entry's `"timeout"` is set on this PC, keep it above Heron's own
+wait for a fragment.** Heron gives up on Revit at
+`python -c "import sys; sys.path.insert(0, 'mcp/client'); import heron_config; print(heron_config.fragment_timeout())"`
+seconds, run in the Heron folder. It never drops below `FRAGMENT_FLOOR_S` in
+[`heron_config.py`](../mcp/client/heron_config.py), and it grows when `revit.operationTimeoutSeconds` is
+raised in Heron's settings. A limit below it stops Claude waiting while
+Revit is still working, and a change sent to Revit may still be kept. To raise it for every Claude Code
+session, put it under `env` in Claude Code's `settings.json` — for 30 minutes:
+
+```json
+{ "env": { "MCP_TOOL_TIMEOUT": "1800000" } }
+```
+
+**Not known yet:** whether Claude Code sends the `progressToken` that Heron waits for before it sends a
+note. Its docs do not say, and Heron sends nothing without one. EJ1 is the run that answers it.
 
 ## 6. Where everything lives on your PC
 

@@ -251,13 +251,19 @@ def pack(product, release, out_dir):
 # rather than anything Heron does for a modeller - brain/skills/ is that, and
 # it is included.
 #
-# EXCEPT THREE FILES OF tools/, NAMED ONE BY ONE - row 5b-371. The installers
+# EXCEPT FOUR FILES OF tools/, NAMED ONE BY ONE - row 5b-371. The installers
 # drive deploy-addin.ps1 and HeronRevit.ps1 from the folder they sit in, and
 # docs/WHAT-TO-INSTALL.md tells a new person to run check-dependencies.py
 # against the requirements files beside it. Without them the download held an
 # installer step and a check step that could not run on the PC they were
 # written for. A file named here, never the folder: the rest of tools/ is
 # still how Heron is developed.
+#
+# heron-ready.py JOINED ON 2026-10-17, with requirements-lock.txt, for the
+# one-step install. WHAT-TO-INSTALL section 1a had told every new PC to run
+# `python tools/heron-ready.py` since 2026-10-09, and no release carried it -
+# the same shape as row 5b-371. PythonSetup now runs it twice after the
+# add-in, and installs the pinned packages from the lock beside it.
 #
 # The first cut errs WIDE on purpose: docs/ is 5.8 MB and the AI reads it.
 # Shipping more than needed is recoverable; shipping less is a user whose
@@ -270,10 +276,12 @@ WORKSPACE_KEEP = [
     "README.md",
     "requirements.txt",             # WHAT-TO-INSTALL step 4 installs from it
     "requirements-optional.txt",    # and check-dependencies reads both
+    "requirements-lock.txt",        # the pinned packages PythonSetup installs
     os.path.join("platform", "heron-products.json"),   # the installer's own list
     os.path.join("tools", "deploy-addin.ps1"),         # what an installer drives
     os.path.join("tools", "HeronRevit.ps1"),           # and what that dot-sources
     os.path.join("tools", "check-dependencies.py"),    # WHAT-TO-INSTALL section 5
+    os.path.join("tools", "heron-ready.py"),           # PythonSetup's build and verdict
 ]
 
 # THE INSTALLERS RIDE IN THE DOWNLOAD - row 5b-371.
