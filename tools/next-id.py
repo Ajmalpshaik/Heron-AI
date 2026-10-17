@@ -76,7 +76,10 @@ Format section carries `## D-NN` as a template.
 
 What a piece of work ADDS is the ids at its head less the ids at the commit
 where it left main (`git merge-base`); with no such commit here - a clone cut
-too short - it is compared with main itself, and the report says so.
+too short - it is compared with main itself, and the report says so. A
+worktree in the middle of a merge is compared with where the commit it is
+merging (MERGE_HEAD) left main as well: its working files already hold what
+that brought, and those ids are main's, not its own.
 
 Open pull requests: `gh api repos/OWNER/NAME/pulls?state=open`, the REST call,
 because `gh pr list` asks GraphQL and a Claude Code cloud session refuses
@@ -492,6 +495,15 @@ def parse_worktrees(text):
     return found
 
 
+def merge_head(folder):
+    """The commit the worktree at FOLDER is merging, or None."""
+    try:
+        return git(folder, ["rev-parse", "--verify", "-q", "MERGE_HEAD^{commit}"]
+                   ).decode().strip() or None
+    except CouldNot:
+        return None
+
+
 def files_on_disk(folder):
     """(path, text) of every register file under FOLDER, as it is on disk."""
     for rel in PATHS:
@@ -526,8 +538,9 @@ class Holder(object):
     work it belongs to - a branch name - so a branch, its pull request and the
     worktree it is checked out in are one piece of work, never three."""
 
-    def __init__(self, name, owner, commit, ids=None):
+    def __init__(self, name, owner, commit, ids=None, merging=None):
         self.name, self.owner, self.commit, self.ids = name, owner, commit, ids
+        self.merging = merging
         self.adds, self.compared_with = None, None
 
 
@@ -600,6 +613,9 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
         start = merge_base(root, one.commit, base_commit) if one.commit else None
         one.compared_with = "merge-base" if start else "main"
         before = ids_of(start or base_commit)
+        if one.merging:
+            also = ids_of(merge_base(root, one.merging, base_commit) or base_commit)
+            before = {reg.key: before[reg.key] | also[reg.key] for reg in REGISTERS}
         one.adds = {reg.key: one.ids[reg.key] - before[reg.key] for reg in REGISTERS}
 
     pr_of = {}
@@ -722,7 +738,8 @@ def read_worktrees(root, mine, holders):
             entry["why_not"] = "its files could not be read: %s" % exc
             continue
         owner = wt["branch"] or (mine if this else "worktree " + wt["path"])
-        holders.append(Holder("worktree " + wt["path"], owner, wt["head"], ids))
+        holders.append(Holder("worktree " + wt["path"], owner, wt["head"], ids,
+                              merging=merge_head(wt["path"])))
         entry["read"] = True
     return trees
 

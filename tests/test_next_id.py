@@ -53,8 +53,10 @@ WHAT THIS PROVES
      and not committed, in a folder whose name holds spaces; a worktree on a
      pushed branch is that branch's work, never a second holder; two
      worktrees typing the same row are HELD TWICE; this checkout's own
-     uncommitted row that main has taken is TAKEN ON MAIN; a worktree whose
-     folder is gone is NOT READ; and the run leaves every worktree as it was.
+     uncommitted row that main has taken is TAKEN ON MAIN; a worktree in the
+     middle of merging main is not, for the rows that merge brought; a
+     worktree whose folder is gone is NOT READ; and the run leaves every
+     worktree as it was.
 
 WHAT IT DOES NOT PROVE. That the real registers keep the shapes it reads.
 Running the tool on this repository and reading the ids it names is that
@@ -610,6 +612,10 @@ def section_12(home):
     other = os.path.join(home, "other")
     git(work, "worktree", "add", "-q", "-b", "claude/other", other, "origin/main")
     write(other, {rows_file: rows + "| **70** | typed in another worktree | open |\n"})
+    # A worktree of a pull request that will merge main in, once main has moved.
+    merging = os.path.join(home, "merging")
+    git(work, "worktree", "add", "-q", "-b", "claude/merging", merging, "origin/main")
+    git(merging, "push", "-q", "origin", "claude/merging")
     # A worktree whose folder has gone.
     gone = os.path.join(home, "gone")
     git(work, "worktree", "add", "-q", "-b", "claude/gone", gone, "origin/main")
@@ -620,9 +626,11 @@ def section_12(home):
     commit(seed, {rows_file: rows + "| **80** | merged first by somebody else | open |\n"},
            "main takes 80")
     git(seed, "push", "-q", "origin", "main")
+    git(work, "fetch", "-q", "origin")
+    git(merging, "merge", "-q", "--no-commit", "--no-ff", "origin/main")
 
     states = {where: (snapshot(where), git(where, "status", "--porcelain"))
-              for where in (work, spaced, pushed, other)}
+              for where in (work, spaced, pushed, other, merging)}
     got = ask(work, gh=FakeGh(missing=True))
     regs, trees = got.get("registers", {}), got.get("worktrees") or []
     by_path = {os.path.normcase(os.path.realpath(t["path"])): t for t in trees if t.get("path")}
@@ -652,6 +660,13 @@ def section_12(home):
     check(all((snapshot(where), git(where, "status", "--porcelain")) == states[where]
               for where in states),
           "every worktree's files and git status are what they were before the run")
+    gh = FakeGh(out=pull_line(21, "claude/merging", git(work, "rev-parse", "origin/claude/merging"),
+                              "acme/heron"))
+    got = ask(work, gh=gh, github="acme/heron")
+    taken = got.get("registers", {}).get("5b", {}).get("taken_on_main", {})
+    check(taken.get("5b-80") == ["worktree " + by_path.get(key(work), {}).get("path", work)],
+          "a pull request's worktree in the middle of merging main holds main's 80 on disk, "
+          "and is not called TAKEN ON MAIN for it: %s" % taken)
     code, text = run("--repo", work, "--no-fetch")
     check(code == 0 and "Heron Ai" in text and "NOT READ - its folder is gone" in text,
           "the plain report names each worktree read, spaces kept, and the one not read")
