@@ -265,6 +265,38 @@ def main():
           "at all and the install is already finished")
 
     print()
+    print("  ONE STEP - Heron's Python side follows the add-in (2026-10-17)")
+    # What runs, in what order and what it says is PythonSetup's, run against
+    # a fake in tests/Heron.Installer.TestHost. What can only be read here is
+    # that this door wires it in the right place.
+    door = code(ENTRY)
+    installed = door.index("engine.Install(")
+    python = door.find("SetUpPython(root)")
+    check(python != -1, "the door sets up Heron's Python side at all")
+    check(python != -1 and installed < python < door.index("if (report.Abandoned)"),
+          "AFTER the add-in went in, and before the exit code is worked out")
+    check("PythonSetup.ShouldRun(report, manifest)" in door,
+          "only when PythonSetup says a product that talks to a chat went in")
+    check("pythonFailed ? SomethingFailed" in door,
+          "and a Python side that is not READY is exit 2, not a quiet 0")
+    told = door.find("PythonSetup.WhatInstallAlsoDoes")
+    check(told != -1 and told < door.index("if (asked.ListOnly)"),
+          "what it will install is SAID before --list returns and before anything "
+          "is done - Q-39, confirm never automatic")
+    check("asked.NoPython" in door and '"--no-python"' in code(ARGS),
+          "and --no-python leaves it out")
+
+    print()
+    print("  INSIDE THE STORE CLAUDE IT REFUSES, BEFORE ANYTHING RUNS - Q-63")
+    inside = door.find("ClaudeAppCopy.Inside(")
+    check(inside != -1, "the door asks whether it is inside the Store Claude's copy")
+    check(inside != -1 and inside < door.index("new PowerShellRevitEnvironment"),
+          "before PowerShell is run - a refusal that ran something first is not one")
+    check("ClaudeAppCopy.Refusal" in door and "return Refused" in
+          door[inside:door.index("new PowerShellRevitEnvironment")],
+          "and refuses with ClaudeAppCopy's sentence, exit 1, changing nothing")
+
+    print()
     print("  release-independent, and nowhere near Revit")
     check("Heron.Core" not in code(PROJ),
           "it does not reference Heron.Core, which follows the Revit release "

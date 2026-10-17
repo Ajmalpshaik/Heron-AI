@@ -187,6 +187,17 @@ namespace Heron.Installer.Cli
                 }
             }
 
+            // INSIDE THE STORE CLAUDE'S PRIVATE COPY OF APPDATA, NOTHING LANDS
+            // WHERE IT IS NEEDED - Q-63, ClaudeAppCopy. Asked before PowerShell
+            // runs, for the reason the source gate above gives. --list changes
+            // nothing, so it still lists, and says the same at its end.
+            var insideClaude = ClaudeAppCopy.Inside(new WindowsClaudeAppLook());
+            if (insideClaude && !asked.ListOnly)
+            {
+                Console.Error.WriteLine(ClaudeAppCopy.Refusal);
+                return Refused;
+            }
+
             var revit = new PowerShellRevitEnvironment(root);
             var releases = revit.InstalledReleases();
 
@@ -254,9 +265,19 @@ namespace Heron.Installer.Cli
 
             Console.Out.WriteLine(Listing(screen, products, forReleases, files, handover));
 
+            // SAID BEFORE IT IS DONE - Q-39 and the Dependency Agent's "confirm,
+            // never automatic". The caller reads what the run will install on
+            // this PC before a single package arrives.
+            if (!asked.NoPython && PythonSetup.Wanted(products, manifest))
+            {
+                Console.Out.WriteLine();
+                Console.Out.WriteLine(PythonSetup.WhatInstallAlsoDoes);
+            }
+
             if (asked.ListOnly)
             {
                 Console.Out.WriteLine();
+                if (insideClaude) Console.Out.WriteLine(ClaudeAppCopy.Refusal);
                 Console.Out.WriteLine("--list was asked for, so nothing was changed.");
                 return Done;
             }
@@ -285,6 +306,13 @@ namespace Heron.Installer.Cli
             Console.Out.WriteLine();
             Console.Out.WriteLine(Told(report, manifest));
 
+            // THE OTHER HALF OF ONE INSTALL - PythonSetup. Only when a product
+            // that talks to a chat went in, and after it did: packages for a
+            // connector that failed to install would serve nothing.
+            var pythonFailed = !asked.NoPython
+                               && PythonSetup.ShouldRun(report, manifest)
+                               && !SetUpPython(root);
+
             // AFTERWARDS, NEVER BEFORE - R-55, and the ordering is the rule
             // rather than a preference. An update notice printed first reads
             // as a condition of installing, and somebody mid-delivery would
@@ -298,7 +326,29 @@ namespace Heron.Installer.Cli
             SayIfNewer(asked, manifest, files);
 
             if (report.Abandoned) return CouldNotRun;
-            return report.Failed > 0 ? SomethingFailed : Done;
+            return report.Failed > 0 || pythonFailed ? SomethingFailed : Done;
+        }
+
+        /// <summary>
+        /// Heron's Python side, step by step, said as it goes. True when the
+        /// final heron-ready check said READY.
+        ///
+        /// WIRING ONLY. Which steps, in what order, when to stop and every
+        /// sentence printed are PythonSetup's, tested against a fake runner.
+        /// </summary>
+        private static bool SetUpPython(string root)
+        {
+            Console.Out.WriteLine();
+            Console.Out.WriteLine("Heron's Python side:");
+
+            var setup = new PythonSetup(root, new ProcessProgramRunner());
+            setup.OnStep = delegate (string step) { Console.Out.WriteLine("  " + step); };
+            var done = setup.Run();
+
+            foreach (var line in done.Lines) Console.Out.WriteLine("  " + line);
+            var saved = done.Save(PythonSetup.LogPath());
+            if (!done.Ready) Console.Out.WriteLine("  " + saved);
+            return done.Ready;
         }
 
         /// <summary>

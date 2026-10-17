@@ -1113,6 +1113,12 @@ namespace Heron.Installer.TestHost
             // rather than read.
             ReleaseDownloadChecks.Run(Check, Names);
 
+            // ================================================== ONE STEP
+            // Heron's Python side after the add-in, and the Store-Claude
+            // refusal - PythonSetupChecks, against a fake runner and a fake
+            // look, plus the real runner started on this machine.
+            PythonSetupChecks.Run(Check, Names);
+
             Console.WriteLine();
             Console.WriteLine("The install location is per user, and says why that matters");
             Check(Names(InstallerScreen.InstallLocation, "APPDATA"),
