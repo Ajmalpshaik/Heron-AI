@@ -727,7 +727,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
-## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-68` asks for (2026-10-17)
+## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-69` asks for (2026-10-17)
 
 **Its own file:** [`needs-checking/group-en.md`](needs-checking/group-en.md)
 
@@ -754,6 +754,14 @@ Step 6 is finished, and not before. At that point:
 ## Group ET - Revit asks Keep or Discard before a change from a chat is kept: D-126 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
+
+## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
+
+## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

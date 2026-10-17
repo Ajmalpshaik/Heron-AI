@@ -508,7 +508,7 @@ themselves, by hand in Revit) can still be run and recorded in Group EQ; only EQ
 
 ---
 
-### 🟡 Q-68 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
+### 🟡 Q-69 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and
 Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
@@ -521,12 +521,12 @@ API opened is still open - *"Operation is not permitted when there is any open s
 transaction, or transaction group"*, the same words for `Document.Save` and `Document.SaveAs` (RevitAPI.xml
 2024; 2020 and 2027 read the same on 2026-10-07, row 5b-365). Every fragment `revit_change` runs goes to
 the add-in's write path, which opens ONE `TransactionGroup` in the document for the whole run
-([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 656) and assimilates or rolls it
-back at the end (line 824) - Article 8's one undo entry. So a fragment can never save the document it runs
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 684) and assimilates or rolls it
+back at the end (line 878) - Article 8's one undo entry. So a fragment can never save the document it runs
 in, however it is written.
 
 **What would work, read from the code - NOT RUN.** In the same request, AFTER that group is closed (lines
-824 to 836, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
+878 to 894, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
 the add-in could run the save itself at that point, on the fragment's behalf: `SAVE_DOCUMENT` version 3
 asks for it - the document it works in, by its own file for a Save, or a full `.rvt` or `.rfa` path the
 modeller typed for a Save As of a model that has none - and the add-in does it once the group has closed,
@@ -535,7 +535,7 @@ by Heron; `SaveAsOptions.OverwriteExistingFile` left at Revit's own default, fal
 said to replace the file. The group itself does not change: one request, one `TransactionGroup`, one undo
 entry, and the save is not in it - a save is not a model change and cannot be undone. Where Revit asks
 the modeller Keep or Discard ([D-126](../decisions/D-126.md)), the box is answered inside the group, before
-that point (line 803), so a save there could only ever follow a Keep.
+that point (line 857), so a save there could only ever follow a Keep.
 
 **Why it was NOT built - three things need the owner, and the third is a guard:**
 
@@ -563,8 +563,8 @@ that point (line 803), so a save there could only ever follow a Keep.
    ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 663, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
-   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1850)
-   about a model it has just saved. The next call is then aimed at the old title (line 1392) and refused
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1859)
+   about a model it has just saved. The next call is then aimed at the old title (line 1393) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**
