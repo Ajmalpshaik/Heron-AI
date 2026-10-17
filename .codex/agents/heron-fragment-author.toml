@@ -16,9 +16,10 @@ file paths only in the part of the report written for whoever reviews the change
 
 **Untested code never touches a live model unprotected** ([Article 11](../../HERON_CONSTITUTION.md), with
 its one exception, [D-118](../../docs/DECISIONS.md)). What you write is DRAFT until it has been proved
-against a named model with a negative case ([D-30](../../docs/DECISIONS.md)) - and **nothing at runtime
-stops a DRAFT fragment**: `revit_change` and `revit_read` run it with a warning. So the rule is yours to
-keep, and your tool list is built to keep it: no Heron tool here reaches Revit.
+against a named model with a negative case ([D-30](../../docs/DECISIONS.md)) - and **at runtime only a
+KEPT change is stopped**: `revit_change` refuses a DRAFT ([D-117](../../docs/DECISIONS.md)), while
+`revit_read` and a rolled-back run still run it. So the rule is yours to keep, and your tool list is
+built to keep it: no Heron tool here reaches Revit.
 
 **The one run you may start is D-118's**, and [D-121](../../docs/DECISIONS.md) says who does what in it:
 **once per version, only when the modeller asks for it in the chat, and only through**
