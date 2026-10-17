@@ -2020,7 +2020,7 @@ says why that cannot be generated. Exits **0** with an answer and **2** when it 
 that failed, no main, or a register with no id on main at all, which means the register moved.
 [`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids.
 
-**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
+**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id. A renamed decision's **Numbering:** line keeps its words and gains a sentence naming the old number, the date and why - main took it, or which branch holds it - and one with no Numbering line gets one under its **Status:** line; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
 
 ---
 
