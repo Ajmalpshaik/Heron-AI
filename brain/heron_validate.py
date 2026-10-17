@@ -571,7 +571,7 @@ NOT_ESTABLISHED = "NOT ESTABLISHED"
 
 
 def source_hash(frag):
-    """The hash of a fragment's C# as the client SENDS it, or None. D-119.
+    """The hash of a fragment's C# as the client SENDS it, or None. D-120.
 
     The bridge client records this over the text it sent when a run is kept
     through the box in Revit (`try-once`). Read here the same way - text mode,
@@ -596,7 +596,7 @@ def source_hash(frag):
 
 
 def kept_problem(frag, phase):
-    """Why a positive phase taken from a KEPT run cannot stand, or None. D-119.
+    """Why a positive phase taken from a KEPT run cannot stand, or None. D-120.
 
     A phase that carries `kept` came from the fragment's one run on the live
     model, through the box in Revit. It is the positive case only when the
@@ -609,12 +609,12 @@ def kept_problem(frag, phase):
         return None
     if phase.get("kept") is not True:
         return ("the positive phase is a run the modeller did NOT keep, so it is no "
-                "evidence the fragment works (D-119)")
+                "evidence the fragment works (D-120)")
     current = source_hash(frag)
     if not phase.get("source_hash") or phase.get("source_hash") != current:
         return ("the kept run was taken against different code - it ran %s and the "
                 "fragment is now %s. A kept run is evidence for the code that ran and "
-                "no other (D-119)" % (phase.get("source_hash"), current))
+                "no other (D-120)" % (phase.get("source_hash"), current))
     return None
 
 
@@ -634,7 +634,7 @@ def draft_from_record(frag, record):
 
     gaps = []
 
-    # D-119: a positive taken from a kept run stands only if it was kept, and
+    # D-120: a positive taken from a kept run stands only if it was kept, and
     # only for the code that ran.
     kept_wrong = kept_problem(frag, positive)
     if positive and positive.get("ok") and kept_wrong:

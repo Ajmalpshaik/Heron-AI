@@ -46,7 +46,7 @@ namespace Heron.Revit.Addin
     ///
     /// HERON NEVER ANSWERS ITS OWN QUESTION. A prompt Heron puts up for the
     /// modeller during a job - the Keep or Discard question, RevitFragment's
-    /// AskTheModeller (D-118) - must be shown inside HeronAsks(), which stands this down until the
+    /// AskTheModeller (D-119) - must be shown inside HeronAsks(), which stands this down until the
     /// prompt has its answer. Whether Revit raises this event for an
     /// add-in's own TaskDialog at all is not known yet (NEEDS-CHECKING EL3);
     /// HeronAsks makes the answer not matter.

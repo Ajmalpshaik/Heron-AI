@@ -321,7 +321,7 @@ namespace Heron.Revit.Addin
                 }
             }
 
-            // "apply": "ask" - D-118. Run it once for real, show the modeller
+            // "apply": "ask" - D-119. Run it once for real, show the modeller
             // what it did, and let THEM keep it or discard it in Revit. A
             // DRAFT fragment's one run on a live model, behind that prompt.
             //
@@ -557,7 +557,7 @@ namespace Heron.Revit.Addin
             var rolledBack = false;
 
             // What the modeller chose, and whether the view was redrawn for
-            // them to choose by. Only set when `asking` - D-118.
+            // them to choose by. Only set when `asking` - D-119.
             string answered = null;
             var refreshed = false;
 
@@ -710,7 +710,7 @@ namespace Heron.Revit.Addin
                     if (HeronDialogWatch.Refused)
                         return DialogRefusal(name, SafeRollBack(group));
 
-                    // D-118: THE MODELLER DECIDES, here, with the work done and
+                    // D-119: THE MODELLER DECIDES, here, with the work done and
                     // the group still open - so Keep and Discard are exactly
                     // `apply` and its absence, chosen by a person who has seen
                     // the result rather than sent by a caller who has not.
@@ -742,14 +742,14 @@ namespace Heron.Revit.Addin
             return asking ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
 
-        /// <summary>The modeller's three possible answers to the box (D-118).</summary>
+        /// <summary>The modeller's three possible answers to the box (D-119).</summary>
         private const string Keep = "keep";
         private const string Discard = "discard";
         private const string Closed = "closed";
 
         /// <summary>
         /// Why this run cannot be offered as Keep or Discard, or null when it
-        /// can. Every condition is D-118's or D-120's, and every refusal
+        /// can. Every condition is D-119's or D-121's, and every refusal
         /// returns before anything is bound, compiled or run.
         /// </summary>
         private static string AskRefusal(string request, UIApplication app, Document target)
@@ -789,7 +789,7 @@ namespace Heron.Revit.Addin
                     + "to the front and ask again.");
             }
 
-            // SAVED, AND NOTHING UNSAVED - D-120. A never-proved fragment that
+            // SAVED, AND NOTHING UNSAVED - D-121. A never-proved fragment that
             // loops for ever freezes Revit until Revit is ended, and saving
             // first is what makes that cost a reopen instead of lost work. A
             // model never saved has no file to reopen, whatever IsModified says.
@@ -817,7 +817,7 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// Show the modeller what the fragment did and ask: keep it, or put
-        /// the model back. Returns Keep, Discard or Closed. D-118.
+        /// the model back. Returns Keep, Discard or Closed. D-119.
         ///
         /// MODAL, AND THAT IS BOTH ITS GUARANTEE AND ITS LIMIT. Nothing on the
         /// wire can answer it - only a person at this Revit - and while it is

@@ -52,7 +52,7 @@ WHAT IT PROVES
      `heron-fragment-author` writes new fragments at DRAFT, and nothing at
      runtime stops a DRAFT fragment from running. Article 11 is kept by its
      tool list, so no `revit_*` tool may appear on it - reads included,
-     because `revit_read` executes a fragment too. Its one exception, D-118's
+     because `revit_read` executes a fragment too. Its one exception, D-119's
      Keep or Discard run, goes through the command line and not a tool.
 
 WHAT IT DOES NOT PROVE

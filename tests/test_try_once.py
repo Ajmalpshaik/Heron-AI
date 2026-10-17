@@ -7,7 +7,7 @@
 # See docs/29-metadata-standard.md
 
 """
-A DRAFT fragment's one run on the live model, behind Keep or Discard (D-118 to D-121).
+A DRAFT fragment's one run on the live model, behind Keep or Discard (D-119 to D-122).
 
     python tests/test_try_once.py
 
@@ -122,7 +122,7 @@ def test_the_add_in():
     check("ActiveUIDocument" in refusal and ".Equals(target)" in refusal,
           "only on the model in front, so the modeller can see it")
     check("IsModified" in refusal and "PathName" in refusal,
-          "only on a saved model with nothing unsaved (D-120)")
+          "only on a saved model with nothing unsaved (D-121)")
     for code in ("ask_needs_change_path", "ask_needs_model_in_front",
                  "ask_needs_saved_model"):
         check(code in refusal, "refuses as %s" % code)
@@ -580,7 +580,7 @@ def test_the_author():
         check("You never run it" not in text, "%s: \"You never run it\" is gone" % host)
         check("try-once" in text, "%s: names try-once as the one route" % host)
         check("only when the modeller asks" in text, "%s: only when the modeller asks" % host)
-        check("D-121" in text and "D-118" in text, "%s: cites D-118 and D-121" % host)
+        check("D-122" in text and "D-119" in text, "%s: cites D-119 and D-122" % host)
         check("never" in text and "revit_change" in text,
               "%s: still never through revit_change" % host)
 
