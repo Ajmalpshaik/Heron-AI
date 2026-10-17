@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,16 +89,16 @@ contract:
 proof:
   date: '2026-10-17'
   by: Ajmal PS
-  model: Heron Forms Scratch (1,804 elements), Revit 2024, session 14196
+  model: Heron Forms Scratch (1,804 elements), Revit 2024, session 51856
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned act combine, combinationId 1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000bc3,
-    combined Cut 1 solid(s) with 1 void(s): 35.341 L before, 31.414 L after - 3.927 L taken
+    the transaction group ROLLED BACK afterwards. returned act combine, combinationId a3f316f2-d6c6-47ae-88f9-a0714f62e35f-00000bcc,
+    combined Cut 1 solid(s) with 1 void(s): 35.341 L before, 34.861 L after - 480000 mm³ taken
     away. Read back form by form: all 1 solid(s) are in the result - 2 point(s) inside them
     that no void covers, every one found in it., cut true, describe Func`2, findings 3 item(s)
-    [Cut 1 solid(s) with 1 void(s): 35.341 L before, 31.414 L aft..., Combined: solid extrusion
+    [Cut 1 solid(s) with 1 void(s): 35.341 L before, 34.861 L aft..., Combined: solid extrusion
     1ef4c208-2cb8-4dd3-9b96-5273b6d73b..., Undo, or Revit''s Unjoin Geometry and Uncut Geometry,
-    take it...], invariant CultureInfo, members 2 item(s) [Extrusion, Void Revolve], notAFamily
-    false, partOfVolume 1E-09, problems 0 item(s), refused (null), separateText , spoken 1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b64,1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000bbc,
+    take it...], invariant CultureInfo, members 2 item(s) [Extrusion, Void Extrusion], notAFamily
+    false, partOfVolume 1E-09, problems 0 item(s), refused (null), separateText , spoken 1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b64,1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b84,
     volume Func`3, volumeOf Func`2. inputs came forms as given. on Heron Forms Scratch'
   negative_case: run with forms=1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b84,1ef4c208-2cb8-4dd3-9b96-5273b6d73b00-00000b92
     instead - chosen because it should not contain what this fragment reports - run inside
@@ -113,7 +113,7 @@ proof:
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 37adc81646c3aa9d
+  fingerprint: ca69cfbd3677c569
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
