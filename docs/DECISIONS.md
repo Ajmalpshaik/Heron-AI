@@ -189,6 +189,7 @@ an edit.
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
 | [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
 | [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) | A change is kept only from a fragment whose proof still stands | ✅ Accepted · 2026-10-17 |
+| [D-118](#d-118--a-tool-description-over-its-budget-stops-a-pull-request) | A tool description over its budget stops a pull request | ✅ Accepted · 2026-10-17 |
 | [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so | ✅ Accepted · 2026-10-17 |
 | [D-120](#d-120--a-run-the-modeller-kept-after-checking-it-is-the-positive-case-of-a-proof-and-the-negative-case-is-still-its-own-rolled-back-run) | A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run | ✅ Accepted · 2026-10-17 |
 | [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
@@ -1008,6 +1009,15 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`proof_of`, `unproven_refusal`, `cmd_fragment`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`), [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) (the Enforcement table), the `heron-fragment-author` agent on both hosts
 
 **Full record:** [`decisions/D-117.md`](decisions/D-117.md)
+
+## D-118 — A tool description over its budget stops a pull request
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Source:** Ajmal PS, 2026-10-17, in conversation, answering the question put in the pull request that added the budget: *"keep it a gate"*
+**Numbering:** written and accepted as D-116; renumbered D-118 on 2026-10-17 while merging `main`, where #546 and #547 had already given D-116 and D-117 to other decisions. Nothing on `main` ever cited it as D-116.
+**Keeps:** [D-03](#d-03--mcp-tool-granularity-thick-and-specific) - the tool list's cost is accepted and kept down by a small core set · [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) - the routing score stays a report; this decides a different number
+**Affects:** [`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py), [`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py) (`--sizes`), [`.github/workflows/gates.yml`](../.github/workflows/gates.yml), which runs every suite
+
+**Full record:** [`decisions/D-118.md`](decisions/D-118.md)
 
 ## D-119 — A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so
 
