@@ -691,6 +691,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ed.md`](needs-checking/group-ed.md)
 
+## Group EE - an existing view filter renamed and its rule changed in place: `SET_VIEW_FILTER_CATEGORIES` version 2 (2026-10-15)
+
+**Its own file:** [`needs-checking/group-ee.md`](needs-checking/group-ee.md)
+
 ## Group EF - a family instance dimensioned by its own references and faces: `CREATE_LINEAR_DIMENSION` version 3 (2026-10-15)
 
 **Its own file:** [`needs-checking/group-ef.md`](needs-checking/group-ef.md)

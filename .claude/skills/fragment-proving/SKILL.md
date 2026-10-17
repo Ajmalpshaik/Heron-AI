@@ -142,6 +142,13 @@ Three things the shape of the file is doing:
   `select-in-region → set-selection` works without the flag and hides the problem. With it:
   `values from read-element-parameters (25)`. The flag is deliberately opt-in — see `cmd_validate`
   and defect row 11 — because a kept chain outranks the selection.
+- **A setup step that CHANGES the model takes the run's own values, never `setup-set:`.** `validate`
+  refuses the job before Revit is asked - *"setup values cannot reach a setup step that CHANGES the
+  model"* - because such a step runs inside the fragment's own transaction group and the add-in binds it
+  from the run's values. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
+  (row 5b-481): what worked was ONE value list both steps read - the names they share (`filterNames`,
+  `categories`, `parameterName`) must then mean the same for both - or arranging on something the model
+  already holds. A read-only setup chain (`select-by-category-name`) takes `setup-set:` as before.
 - **A job with no `negative-set:` or `negative-in:` is refused.** Without one, `validate` stops and
   waits for somebody at the keyboard, which in a batch is a hang. It is also the leg D-30 exists for.
 

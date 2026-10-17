@@ -4,18 +4,37 @@ positive:
       Terminals, Duct Accessories, Duct Fittings, Duct Systems, Ducts and Flex
       Ducts, with a System Classification rule - and categories "Air Terminals,
       Ducts, Flex Ducts, Duct Fittings, Duct Accessories, Duct Insulations,
-      Duct Linings, Duct Placeholders"
+      Duct Linings, Duct Placeholders"; newName, parameterName and matchValue
+      blank
     expect: >
       each filter changed. Duct Systems taken off because the list does not name
       it; every named category that System Classification can filter put on;
       any that cannot named in leftOut with the reason and the rest still set.
       readBack gives each filter's categories and rule as Revit holds them
-      afterwards. The rule is unchanged and no view is touched
+      afterwards. The name and the rule are unchanged and no view is touched
 
   - given: the same call again, straight after
     expect: >
       changed 0 and alreadySet naming all three - nothing written, and no new
       entry in the undo list
+
+  - given: >
+      VERSION 2, ALL THREE IN ONE CALL. filterNames one Levels filter whose rule
+      is Name does not contain 'Level 1'; newName a name no filter has;
+      categories "Levels, Grids"; parameterName blank; matchValue "does not
+      contain Level"
+    expect: >
+      changed 1. readBack names the filter by its NEW name, "renamed from" the
+      old one, categories Grids and Levels, rule Name does not contain 'Level' -
+      the parameter kept - and what it catches today. One entry in the undo
+      list; the views it was on still carry it
+
+  - given: >
+      VERSION 2, RENAME ONLY. One filter, newName a name no filter has,
+      categories, parameterName and matchValue blank
+    expect: >
+      changed 1, readBack under the new name with its categories and rule
+      exactly as before
 
 negative:
   - given: filterNames naming no filter in the project
@@ -29,5 +48,34 @@ negative:
   - given: the name of a selection filter
     expect: named in notFound as a selection filter - it holds chosen elements, not categories - and left alone
 
+  - given: >
+      VERSION 2. newName the name ANOTHER filter already has, together with
+      categories and a new rule
+    expect: >
+      NOTHING changed - not the categories or the rule either. refused names the
+      name as already used by another filter. changed 0
+
+  - given: >
+      VERSION 2. categories blank and a new rule on a parameter one of the
+      filter's categories cannot be filtered by - parameterName "System
+      Classification" on a Levels filter
+    expect: >
+      NOTHING changed - the category is not quietly taken off. refused names
+      Levels and says it cannot be filtered by 'System Classification'. changed 0
+
+  - given: >
+      VERSION 2. A new rule for three filters, one of them a name with a typo
+    expect: >
+      NOTHING changed on any of them - a new rule is all or nothing - and the
+      typo named in notFound
+
+  - given: >
+      VERSION 2. parameterName blank and a new matchValue for a filter whose rule
+      holds two conditions on one parameter ("equals SA OR equals EA")
+    expect: >
+      NOTHING changed; refused says the rule has 2 conditions and asks for the
+      parameter, which replaces all of them. readBack says OR, not AND
+
 second_route:
-  - Revit's own Manage, Filters dialog - the categories ticked for each filter, read on screen, and the rule unchanged
+  - Revit's own Manage, Filters dialog - the filter's name, the categories ticked and its rule, read on screen
+  - REPORT_VIEW_FILTERS on a view carrying the renamed filter - the new name, the same overrides

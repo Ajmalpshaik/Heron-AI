@@ -211,6 +211,16 @@ compatibility-note: >
 #   "take the Duct Systems category off     -> SET_VIEW_FILTER_CATEGORIES.
 #    these view filters"                       This never edits a filter that
 #                                              exists - it skips the name
+#   "rename this view filter"               -> SET_VIEW_FILTER_CATEGORIES, with newName
+#   "change the filter rule to does not contain TRG_MEC" -> SET_VIEW_FILTER_CATEGORIES, with matchValue
+#   "add grids to this filter"              -> SET_VIEW_FILTER_CATEGORIES, with the whole list
+#
+# KEPT IN STEP BY HAND WITH SET_VIEW_FILTER_CATEGORIES VERSION 2 (2026-10-15,
+# FRAGMENT-ISSUES 5b-481), which builds a filter's NEW rule from the same
+# operator-led value: the operator words, their factory methods reached by
+# reflection, the parameter matched by label or built-in name, and the
+# read-back's rule words are a copy there. A fragment cannot call another's
+# code, so a change to any of them here is made there too.
 #   "what filters already exist"            -> REPORT_VIEW_FILTERS, before
 #                                              making a near-duplicate
 #   "which parameters can I filter ducts    -> REPORT_FILTERABLE_PARAMETERS.
