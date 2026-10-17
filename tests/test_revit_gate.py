@@ -394,6 +394,22 @@ def main():
         check(reader[1] != writer[1],
               "the two answers are genuinely different text")
 
+        # AND AN EXECUTE ONE IS NEITHER (2026-10-17). It is not a read and it
+        # is not a change: the show door runs it with no transaction open, so
+        # Revit's own refusal still covers the model, and what is left to it
+        # is the screen. Answering it with the writer's sentence - "YES, by
+        # design" - said it could change the model, which the show door makes
+        # untrue, and the reader's sentence would hide the selection moving.
+        make(work, "showsthings", UIDOC_ONLY % ("FRG-T-090", "EXECUTE"),
+             "var done = 0;\n")
+        shower = verdicts_for(tool, work, "showsthings")[12]
+        check("show door" in shower[1] and "NO TRANSACTION OPEN" in shower[1]
+              and "selection" in shower[1],
+              "an EXECUTE is answered by the show door opening none - and by "
+              "what it can still change, the selection, camera or view")
+        check(shower[1] != reader[1] and shower[1] != writer[1],
+              "and that answer is neither the reader's nor the writer's")
+
         print()
         print("5. No fifth verdict is ever invented")
         print("-" * 66)

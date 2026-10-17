@@ -141,10 +141,12 @@ def _md5(path):
 # "which parameters are empty" as a danger, when that fragment IS the right
 # answer to that question.
 #
-# EXECUTE IS THE HONEST MIDDLE and is counted separately. `isolate-elements`
-# and `zoom-to-elements` change what a VIEW shows - real, visible, and undone
-# by Reset Temporary Hide/Isolate. That is not the failure this tool exists to
-# catch, which is a question answered by a change to the MODEL.
+# EXECUTE IS THE HONEST MIDDLE and is counted separately. `zoom-to-elements`
+# and `set-selection` change what the SCREEN shows - real, visible, and
+# nothing to undo. That is not the failure this tool exists to catch, which is
+# a question answered by a change to the MODEL. (`isolate-elements` was the
+# first example here until D-125, 2026-10-17: its code needs Heron's
+# transaction, so it is declared MODIFY now, though it changes only a view.)
 # IMPORTED FOR THE REASON THE BLOCK ABOVE GIVES ABOUT THE FINGERPRINT. These
 # two tuples decide this tool's whole verdict, and an identical pair sat in
 # check-skill-routing.py - the second copy of one rule, in the file that says
@@ -217,8 +219,9 @@ QUESTIONS = [
     #
     # IT MAY NOT REGISTER AS A CROSSING, AND THAT IS WORTH WATCHING RATHER
     # THAN TUNING. The discriminator below is "was a READ beaten", and the
-    # right answer here is ISOLATE_ELEMENTS - an EXECUTE, a view change,
-    # which `reads` deliberately excludes along with the writes. So a sweep
+    # right answer here is ISOLATE_ELEMENTS - a view change, declared MODIFY
+    # since D-125 because its code needs Heron's transaction, and excluded
+    # from `reads` along with the other writes. So a sweep
     # can report this sentence under "reached a write with nothing safe
     # close" while row 109 calls it the clearest crossing found by hand.
     # If that is what happens, the honest reading is that the DISCRIMINATOR

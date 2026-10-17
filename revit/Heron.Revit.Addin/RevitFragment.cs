@@ -375,6 +375,18 @@ namespace Heron.Revit.Addin
             // one undo (Golden Rule 16) that rolls back on a preview.
             var ownsTransactions = DeclaresNeed(needs, EditScopeNeed);
 
+            // A FRAGMENT THAT MUST RUN WITH NO TRANSACTION OPEN AND OPENS NONE -
+            // D-125. Revit changes no view inside a transaction (D-115), so
+            // OPEN_VIEW has to run with none open; it declared D-112's switch
+            // for that, and so was refused below on the read and show paths,
+            // where no transaction is open anyway. This need says only "run
+            // me with none open": on the write path it runs inside the group
+            // as an edit-mode fragment does, and on the read and show paths
+            // nothing changes, because nothing there is open to begin with.
+            // It promises the fragment opens NONE of its own, so it grants
+            // nothing those paths did not already allow.
+            var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
+
             // NEVER ON THE READ PATH. That path's whole guarantee is that no
             // transaction is open, so Revit itself refuses every change - and
             // a fragment that opens its own would walk straight through it.
@@ -640,9 +652,12 @@ namespace Heron.Revit.Addin
                     // where ownsTransactions is read. Whatever it opened it
                     // must have closed - a transaction left open is a group
                     // that can be neither kept nor rolled back, so it is named.
-                    if (ownsTransactions)
+                    if (ownsTransactions || wantsNoTransaction)
                     {
-                        globals.__heron[EditScopeNeed] = new FailureDiscipline(said, null);
+                        // The discipline is the edit-mode fragment's to hand
+                        // on; a fragment that opens none has nothing to give it.
+                        if (ownsTransactions)
+                            globals.__heron[EditScopeNeed] = new FailureDiscipline(said, null);
 
                         threw = RunScript(script, globals, name, out state);
 
@@ -2307,6 +2322,17 @@ namespace Heron.Revit.Addin
                          .Append("\"];\n");
                     how.Add(name + " - Heron's failure discipline, for the fragment's own "
                             + "edit mode");
+                    continue;
+                }
+
+                // D-125: the switch that says "run me with no transaction
+                // open". There is nothing to hand the fragment, so it is bound
+                // as a constant it can ignore - the declaration is the point.
+                if (name == NoTransactionNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("bool ").Append(name).Append(" = true;\n");
+                    how.Add(name + " - run with no transaction open (D-125)");
                     continue;
                 }
 
@@ -4094,7 +4120,7 @@ namespace Heron.Revit.Addin
         /// ELEMENT TYPES TOO, in the one walk: an id an earlier answer printed
         /// may be a type's, and the walk stops as soon as every id is found.
         /// </summary>
-        private static object ElementsWithTypedIds(Document doc, List<string> typed,
+        internal static object ElementsWithTypedIds(Document doc, List<string> typed,
                                                    out string problem)
         {
             problem = null;
@@ -5471,6 +5497,15 @@ namespace Heron.Revit.Addin
         /// The same name is in brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string EditScopeNeed = "editScopeFailures";
+
+        /// <summary>
+        /// The ambient need that says a fragment must run with NO transaction
+        /// open and opens none of its own - D-125, for a call Revit refuses
+        /// inside one, such as changing the active view. Unlike EditScopeNeed
+        /// it is allowed on the read and show paths. The same name is in
+        /// brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string NoTransactionNeed = "noTransactionOpen";
 
         /// <summary>
         /// The ambient need that hands a reloading fragment its answer to
