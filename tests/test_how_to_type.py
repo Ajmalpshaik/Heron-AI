@@ -736,7 +736,7 @@ def main():
         check(bare and not any("polygon CX,CY R N" in line for line in bare),
               "and a runner-up in a candidate list is listed without notes")
 
-    for door in ("revit_change", "revit_read"):
+    for door in ("revit_change", "revit_read", "revit_show"):
         body = re.search(r"\ndef %s\(.*?\n(?=\S)" % door, server, re.S)
         check(body is not None
               and "_ended(_failure_ended(failure), explain(failure))"

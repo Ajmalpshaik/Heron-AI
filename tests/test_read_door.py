@@ -55,6 +55,16 @@ MCP SDK, so CI runs it:
   8. ARTICLE 11 IS THE CHANGE DOOR'S, NOT THIS ONE'S (D-117). revit_change
      refuses a fragment no current proof stands behind before it binds a
      session; revit_read never asks, because a read keeps nothing.
+  9. THE SHOW DOOR, OVER THE WHOLE LIBRARY (2026-10-17). `revit_show` is
+     EXECUTE through `run_fragment_show`, which the add-in declares EXECUTE
+     and routes to the executor's no-transaction overload. Every fragment
+     declared READ, ANALYZE, SUGGEST or EXECUTE may go through it and every
+     one above is refused; an EXECUTE fragment refused at revit_read is sent
+     to revit_show, never to revit_change. D-124: selecting or zooming
+     inside a link is not touching it, so a fragment that works inside one
+     (its contract takes `linkName`) goes through with no question first -
+     counted over the library. And its wiring, read as text, in the order
+     revit_read keeps.
 
 WHAT IT CANNOT DO
 -----------------
@@ -140,6 +150,200 @@ def lifted(text, name):
     except BaseException:                                 # noqa: BLE001
         return None
     return namespace.get(name)
+
+
+SHOW = "revit_show"
+OPERATIONS_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitOperations.cs")
+FRAGMENT_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
+SHOWN = ("READ", "ANALYZE", "SUGGEST", "EXECUTE")
+
+
+def show_door(text, cs, door_refusal):
+    """Section 9 - the show door, held to the read door's rules one level up."""
+    print()
+    print("10. The show door: revit_show runs what changes only the screen")
+    declared = TOOLS.TOOLS.get(SHOW)
+    check(declared == (TOOLS.EXECUTE, "run_fragment_show"),
+          "%s is declared EXECUTE, calling run_fragment_show - found %r"
+          % (SHOW, declared))
+    check(declared is not None and not TOOLS.writes(SHOW),
+          "and so it does not count as a write")
+    check(cs.get("run_fragment_show") == "Execute",
+          "and the add-in declares run_fragment_show Execute - AT its read-only "
+          "ceiling, so it runs with Changes OFF")
+    # NOT GIVEN BEFORE THE CHAT ASKS: ALWAYS_LOADED's budget had no room for
+    # a third door (D-118, heron_tools' comment on it). So a chat finds it by
+    # a search, or by revit_read's refusal naming it - checked below.
+    check(SHOW not in getattr(TOOLS, "ALWAYS_LOADED", (SHOW,)),
+          "and it is one search away rather than in ALWAYS_LOADED - the "
+          "budget's answer, so revit_read's refusal must name it")
+
+    routed = re.search(r'case\s+"run_fragment_show"\s*:\s*return\s+([^;]+);',
+                       read(OPERATIONS_CS))
+    check(routed is not None
+          and routed.group(1).replace(" ", "") == "RevitFragment.Run(app,request)",
+          "the add-in runs it through RevitFragment.Run(app, request) - the "
+          "overload that opens NO transaction, the read door's")
+    executor = read(FRAGMENT_CS)
+    check("if (ownsTransactions && !writing)" in executor,
+          "and a fragment that opens transactions of its own is refused on "
+          "every path but the write path - the show door's included")
+
+    # D-125: A FRAGMENT THAT MUST RUN WITH NONE OPEN, AND OPENS NONE, IS NOT
+    # THAT FRAGMENT. OPEN_VIEW declared editScopeFailures to get a group with
+    # no transaction, and so the show door refused it (5b-498). Its own
+    # switch is let through there, and still runs with none open when written.
+    check('NoTransactionNeed = "noTransactionOpen"' in executor
+          and "if (ownsTransactions || wantsNoTransaction)" in executor
+          and "wantsNoTransaction && !writing" not in executor,
+          "noTransactionOpen is a switch of its own: the write path runs it with "
+          "no transaction open, and nothing refuses it on the read or show path")
+    opener = os.path.join(FRAGMENTS, "open-view", "fragment.yaml")
+    opener_needs = [n.get("name") for n in (CLIENT.fragment_needs(opener) or [])]
+    check("noTransactionOpen" in opener_needs and "editScopeFailures" not in opener_needs,
+          "OPEN_VIEW declares noTransactionOpen, not editScopeFailures, so the show "
+          "door opens a view with Changes OFF - found %s" % opener_needs)
+
+    # ASKED, NOT CALLED (heron-ship 2a): door_refusal raises for a door the
+    # registry does not declare, and on the code as it stood revit_show is
+    # not declared - so the loop is skipped and the checks below FAIL on
+    # empty lists rather than one traceback ending the run.
+    usable = door_refusal is not None and SHOW in TOOLS.TOOLS
+    allowed, refused, sent_on, in_links = [], [], [], []
+    for name in sorted(os.listdir(FRAGMENTS)):
+        card = os.path.join(FRAGMENTS, name, "fragment.yaml")
+        if not os.path.isfile(card) or not usable:
+            continue
+        risk = CLIENT.fragment_risk(card)
+        capability = card_line(card, "capability") or name
+        said = door_refusal(SHOW, risk, capability)
+        if risk in SHOWN:
+            allowed.append((name, risk, said))
+        elif risk is not None:
+            refused.append((name, risk, said))
+        if risk == "EXECUTE":
+            sent_on.append((name, door_refusal(DOOR, risk, capability)))
+
+        needs = CLIENT.fragment_needs(card) or []
+        if risk in SHOWN and "linkName" in [n.get("name") for n in needs]:
+            in_links.append((name, risk, said))
+
+    check(len(allowed) > 100 and any(r == "EXECUTE" for _, r, _ in allowed),
+          "the library has fragments the show door may run, EXECUTE among them "
+          "- %d" % len(allowed))
+    check(all(said is None for _, _, said in allowed),
+          "every READ, ANALYZE, SUGGEST and EXECUTE fragment may go through - "
+          "refused: %r" % [n for n, _, s in allowed if s is not None][:5])
+    check(len(refused) > 100 and all(said for _, _, said in refused),
+          "every fragment above EXECUTE is refused - %d, let through: %r"
+          % (len(refused), [n for n, _, s in refused if not s][:5]))
+    check("MODIFY" in set(r for _, r, _ in refused),
+          "and the refused include MODIFY - a change needs Changes, and the show "
+          "door has no switch in front of it")
+    check(all("Nothing has been sent to Revit" in said
+              for _, _, said in refused if said),
+          "and every refusal says nothing was sent")
+    check(bool(sent_on) and all(said and "revit_show" in said
+                                and "revit_change" not in said
+                                for _, said in sent_on),
+          "an EXECUTE fragment refused at revit_read is sent to revit_show, never "
+          "to revit_change - which would need Changes for a job that changes "
+          "only the screen (%d)" % len(sent_on))
+
+    print()
+    print("   D-124 - selecting or zooming inside a link is not touching it")
+    # THE OWNER'S ANSWER TO Q-65, 2026-10-17: no confirmation. So a fragment
+    # the show door may run goes through it whether or not it works inside a
+    # link, and nothing in the door asks first.
+    check(any(name == "zoom-to-linked-elements" and risk == "EXECUTE"
+              for name, risk, _ in in_links),
+          "ZOOM_TO_LINKED_ELEMENTS is an EXECUTE fragment that works inside a "
+          "link - found: %r" % [n for n, _, _ in in_links])
+    check(bool(in_links) and all(said is None for _, _, said in in_links),
+          "and it, and every fragment the show door may run that takes linkName, "
+          "goes through with no refusal (%d)" % len(in_links))
+    check(not hasattr(TOOLS, "link_refusal") and not hasattr(TOOLS, "LINK_NEEDS"),
+          "heron_tools holds nothing back for a link - the hold Q-65 asked for "
+          "is gone, not left switched off")
+
+    print()
+    print("   Its wiring, read as text")
+    body = body_of(text, SHOW)
+    check(body is not None and ("@server.tool()\ndef %s(" % SHOW) in text,
+          "%s is a tool in the server" % SHOW)
+    body = body or ""
+    ceiling = body.find("tools.door_refusal(")
+    bind = body.find("binding.resolve(")
+    source = body.find("fh.read()")
+    check(min(ceiling, bind, source) > 0,
+          "the ceiling, the session and the source read are where this suite "
+          "looks for them")
+    check(min(ceiling, bind, source) > 0 and ceiling < bind and ceiling < source,
+          "it refuses on its ceiling BEFORE binding a session or reading any code")
+    code = "\n".join(line for line in body.splitlines()
+                     if not line.lstrip().startswith("#"))
+    check('"run_fragment_show"' in code and "run_fragment_write" not in code
+          and '"apply"' not in code,
+          "it sends run_fragment_show, never the write operation and never `apply`")
+    check("_aim_at_pin(args)" in body
+          and 'writes=tools.writes("revit_show")' in body
+          and "idempotent=not consumes" in body,
+          "it aims at the pin, classifies a failure by its own registry row, and "
+          "marks a run that consumes the chain not safe to ask twice")
+    check("undeclared_values(" in body and "_ignored_lines(undeclared, takeable)" in body
+          and '_provides_lines(reply.get("provides"))' in body,
+          "it names an ignored value and what a fragment did not send, through the "
+          "one copy each door uses")
+    check("_proof_line(capability, folder)" in body
+          and "Nothing in the model was changed" in body,
+          "and says how far it is proven and that nothing in the model was changed")
+    check('_by_words(request, "revit_show", values)' in body,
+          "the user's words reach it through the same path as the other doors")
+    check("unproven_refusal(" not in code,
+          "and D-117's refusal of an unproven fragment is not asked - its items 3 "
+          "and 4: a run that keeps nothing, like a read, runs a DRAFT and says DRAFT")
+    signature = re.search(r"def revit_show\((.*?)\)", text, re.S)
+    check(signature is not None and "link_confirmed" not in signature.group(1)
+          and "link_refusal" not in body,
+          "and it asks for no confirmation before a link - D-124")
+    said = body_of(text, "_cannot_run") or ""
+    check("revit_show" in said,
+          "_cannot_run names the show door beside the other two")
+
+    # ONE SEARCH AWAY, SO THE CHANGE DOOR SAYS WHERE IT IS. With revit_show
+    # outside ALWAYS_LOADED, a chat that sends a screen-only job to
+    # revit_change meets a refusal first - not proven, or Changes off - and
+    # that refusal names the door that runs it.
+    change = body_of(text, "revit_change") or ""
+    asked = change.find("elsewhere = _shown_elsewhere(root, folder, capability)")
+    gate = change.find("unproven_refusal(")
+    check(asked > 0 and gate > 0 and asked < gate
+          and "unproven += elsewhere" in change,
+          "revit_change's refusal of an unproven capability names revit_show "
+          "when the capability changes only what is shown")
+    check('+ (elsewhere if failure.code == "write_disabled" else "")' in change,
+          "and so does its refusal with Changes off, and no other failure")
+    helper = body_of(text, "_shown_elsewhere") or ""
+    namespace = {"os": os, "tools": TOOLS, "bridge": CLIENT}
+    try:
+        exec(helper, namespace)                           # noqa: S102
+        shown = namespace.get("_shown_elsewhere")
+    except BaseException:                                 # noqa: BLE001
+        shown = None
+    check(shown is not None, "_shown_elsewhere is a helper of its own, run here")
+    if shown is not None:
+        executes = shown(ROOT, "zoom-to-linked-elements", "ZOOM_TO_LINKED_ELEMENTS")
+        modifies = shown(ROOT, "isolate-elements", "ISOLATE_ELEMENTS")
+        unknown = shown(ROOT, "no-such-fragment", "NOTHING")
+        check("revit_show" in executes and "Changes off" in executes,
+              "an EXECUTE capability is sent to revit_show - %r" % executes)
+        check(modifies == "" and unknown == "",
+              "and a MODIFY one, or one whose risk cannot be read, is sent "
+              "nowhere - %r, %r" % (modifies, unknown))
+    method = body_of(text, "heron_method") or ""
+    check("EXECUTE through revit_show" in method,
+          "heron_method's list of a job's capabilities says EXECUTE runs "
+          "through revit_show")
 
 
 def main():
@@ -447,6 +651,8 @@ def main():
                        proof_status(pick.get("PROVEN") or "")) is None,
               "while the PROVEN read %s, whose code has not moved, would not"
               % pick.get("PROVEN"))
+
+    show_door(text, cs, door_refusal)
 
     print()
     if FAILURES:

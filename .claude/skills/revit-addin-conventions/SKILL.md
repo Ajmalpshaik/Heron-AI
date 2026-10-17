@@ -236,9 +236,14 @@ solve overlapping problems and are genuinely worth reading — but **nothing you
   comment whose argument is *"that other repository does it this way"* is worthless the day that
   happens. Put the reasoning in the file that needs it.
 
-What that looks like in practice is `RevitWrite.SafeRollBack` and `RevitWrite.TryRefresh`: both exist
+What that looks like in practice is `RevitFragment.SafeRollBack` and `RevitWrite.TryRefresh`: both exist
 because of what that study revealed, and neither shares a line with what it came from — the hazard is
-explained here, in terms of what `TransactionGroup` actually guarantees.
+explained there, in terms of what `TransactionGroup` actually guarantees. (`SafeRollBack` lived in
+`RevitWrite` too until 2026-10-17; since then **every write job's transaction group is rolled back
+through `RevitFragment.RollBackAndCheck`**, which calls it and then checks what the rollback left, and
+`tests/test_rollback_witness.py` fails a file that opens a group and does not. `RevitCapture`'s
+always-rolled-back picture keeps a `SafeRollBack` of its own, and that suite names it as the one file not
+yet watched.)
 
 ## The bridge is a boundary, not a pipe
 

@@ -727,6 +727,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
+## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
+
 ## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
@@ -738,6 +742,10 @@ Step 6 is finished, and not before. At that point:
 ## Group ER - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
 **Its own file:** [`needs-checking/group-er.md`](needs-checking/group-er.md)
+
+## Group ES - "show me / zoom to / isolate these" with Changes OFF: `revit_show`, the temporary isolate, and `ZOOM_TO_LINKED_ELEMENTS` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-es.md`](needs-checking/group-es.md)
 
 ## Group EX - the run guard: a running job cannot save, sync, export or print what its operation does not allow (2026-10-17)
 

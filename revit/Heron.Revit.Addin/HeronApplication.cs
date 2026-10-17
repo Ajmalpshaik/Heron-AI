@@ -205,6 +205,12 @@ namespace Heron.Revit.Addin
                 // bridge can start, so no job can ever run unguarded.
                 HeronRunGuard.Attach(application, Log);
 
+                // WHAT A ROLLBACK MUST NOT TAKE: the elements each write job
+                // adds, and the modeller's own undos, as Revit reports them.
+                // Permanent, because a Ctrl+Z between two jobs is exactly the
+                // moment no request is running. See RevitFragment.Listen.
+                RevitFragment.Listen(application.ControlledApplication);
+
                 // A REVIT DIALOG THAT OPENS INSIDE A JOB IS ANSWERED, not left
                 // for a modeller who is not there - FRAGMENT-ISSUES 5b row 300.
                 // Inert until the dispatcher arms it around a job, so a dialog
@@ -316,6 +322,7 @@ namespace Heron.Revit.Addin
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
                 HeronRunGuard.Detach(application);
+                RevitFragment.StopListening(application.ControlledApplication);
                 HeronDialogWatch.Detach(application);
                 HeronLiveState.Detach(application);
 

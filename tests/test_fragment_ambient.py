@@ -37,7 +37,7 @@ LOAD_FAMILY = os.path.join(ROOT, "brain", "fragments", "load-family")
 
 # The add-in's constants for the ambient needs it binds by name. `doc`, `uidoc`
 # and `app` are fields on the globals object and need no constant.
-CONSTANTS = ("EditScopeNeed", "FamilyLoadNeed")
+CONSTANTS = ("EditScopeNeed", "FamilyLoadNeed", "NoTransactionNeed")
 
 
 def executor_names():

@@ -250,35 +250,37 @@ def dispatcher():
 def executor():
     print("\n4. the risk is passed in, and asked again before anything is kept")
     operations = strip(read(OPERATIONS) or "")
-    for op in ("run_fragment_read", "run_fragment_write", "run_fragment_publish",
-               "run_fragment_admin"):
+    for op in ("run_fragment_read", "run_fragment_show", "run_fragment_write",
+               "run_fragment_publish", "run_fragment_admin"):
         raw = read(OPERATIONS) or ""
         at = raw.find('case "%s":' % op)
         statement = raw[at:raw.find(";", at)] if at >= 0 else ""
         check("HeronOperationRegistry.RiskOf(op)" in statement,
               "%s hands the executor the registry's risk for the operation" % op)
-    check("RevitFragment.Run(app, request)" not in operations.replace("  ", " "),
+    check(re.search(r"RevitFragment\.Run\(\s*app\s*,\s*request\s*\)", operations) is None,
           "no route reaches the executor without a risk")
 
     code = strip(read(EXECUTOR) or "")
     check("HeronRunGuard.Target(" in code,
           "the executor names the model it chose, so its own changes are never 'elsewhere'")
 
-    keep = code.find("group.Assimilate()")
-    check(keep > 0, "the write path still assimilates its group")
+    keep = code.find("KeepAndWatch(group")
+    check(keep > 0, "the write path still keeps its group, through KeepAndWatch")
     before = code[max(0, keep - 2500):keep]
     check("HeronRunGuard.Policy" in before,
           "the guard's record is read before the group is kept")
-    recheck = before.rfind("KeepWithdrawn(")
+    recheck = before.rfind("WhyNotKept(")
     check(recheck >= 0 and before.rfind("AskTheModeller(") < recheck,
           "the switches are asked again right before the group is kept - AFTER the "
           "modeller's Keep or Discard, which can come minutes later")
-    asked = block(code, "static string KeepWithdrawn(")
+    check("RollBackAndCheck(" in before[recheck:] if recheck >= 0 else False,
+          "and a refusal there rolls the group back through the one rollback helper")
+    asked = block(code, "static string WhyNotKept(")
     check("HeronRunPolicy.Withdrawn(" in asked and "HeronConfig.Load()" in asked
-          and "HeronStop.IsStopped" in asked and "SafeRollBack(group)" in asked,
-          "and that reads heron.config FRESH, asks the stop again, and rolls back when "
-          "either refuses - Article 13, never a cached permission")
-    check(code.count("group.Assimilate()") == 1,
+          and "HeronStop.IsStopped" in asked,
+          "and that reads heron.config FRESH and asks the stop again - Article 13, "
+          "never a cached permission")
+    check(code.count("group.Assimilate()") == 1 and code.count("KeepAndWatch(group") == 1,
           "and there is one place a group is kept, so nothing skips the check")
 
     raw = read(EXECUTOR) or ""
