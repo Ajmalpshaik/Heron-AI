@@ -65,6 +65,13 @@ inputs cannot show is printed NOT MEASURED, with why - never estimated:
     batch's share. Heron's SERVER alone is NOT MEASURED: it keeps each call's
     seconds in memory only (heron_companion.Activity, for the Companion page)
     and writes them nowhere.
+  * A REPLY'S TEXT. Claude Code stores a reply from Heron's server as the
+    JSON text {"result": "..."} - one string whose newlines are written as
+    backslash-n. A tool result whose text parses as an object holding a
+    string under "result" is read as that string; any other text as it is.
+    The revit_change hand-back is the characters of the text read that way,
+    so an escaped newline or quote counts once, not twice, and FORMS BUILT
+    below reads its formCount from the same text (row 5b-1030).
   * FORMS BUILT. A successful run of a card that provides `formId` built one;
     a card that provides `formCount` (CREATE_FAMILY_FORMS) built what its
     reply's `formCount` line says. Which cards those are is read from
@@ -224,13 +231,26 @@ def read_transcript(path, since=None, until=None):
 
 
 def _text_of(block):
+    """A tool result's text as the tool wrote it. Claude Code stores a reply
+    from Heron's server as the JSON text {"result": "..."}, its newlines
+    written as backslash-n, so a text that parses as an object holding a
+    string under "result" is that string. Any other text is kept as it is
+    (row 5b-1030)."""
     content = block.get("content")
     if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return "".join(str(part.get("text") or "") for part in content
+        text = content
+    elif isinstance(content, list):
+        text = "".join(str(part.get("text") or "") for part in content
                        if isinstance(part, dict) and part.get("type") == "text")
-    return ""
+    else:
+        return ""
+    try:
+        reply = json.loads(text)
+    except ValueError:
+        return text
+    if isinstance(reply, dict) and isinstance(reply.get("result"), str):
+        return reply["result"]
+    return text
 
 
 class Chat(object):
@@ -532,7 +552,8 @@ def measure(chat, audit_paths, audit_entries, cards_error=None, cards=None):
         q["revit_change_handback_chars"] = measured(
             sum(len(c["text"] or "") for c in answered),
             [source(t, [c["result"].n for c in answered])] if answered else [searched],
-            "characters of every revit_change result", "characters")
+            "characters of every revit_change result, a {\"result\": ...} wrapper decoded",
+            "characters")
     else:
         for key in ("heron_calls", "revit_change_calls", "heron_batches",
                     "revit_change_handback_chars"):

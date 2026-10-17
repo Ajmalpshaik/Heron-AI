@@ -2408,11 +2408,16 @@ another chat's, and is counted apart. Thinking tokens, thinking seconds and effo
 the transcript records them (`output_tokens_details`, `thinkingDurationMs`, `effort`), and `output_tokens`
 is never passed off as thinking. Which capabilities build forms is read from the cards: a card that
 provides `formId` builds one a run, one that provides `formCount` builds what its reply says - and a
-reply that does not print it leaves the total NOT MEASURED rather than counting the rows sent. **Heron's
+reply that does not print it leaves the total NOT MEASURED rather than counting the rows sent. Claude
+Code stores a reply from Heron's server as the JSON text `{"result": "..."}`, so a result that parses as
+an object holding a string under `result` is read as that string - the `formCount` line and the
+hand-back's characters both come from it ([row 5b-1030](../docs/fragment-issues/section-5b-rows-401-425.md)). **Heron's
 server alone is always NOT MEASURED:** it keeps each call's seconds in memory only
 (`heron_companion.Activity`).
 
 **A report, not a gate: it exits 0 whatever it finds**, and 2 only when a file it was named is not there.
 [`tests/test_time_family_build.py`](../tests/test_time_family_build.py) holds it to synthetic transcripts
 and audit lines shaped like both builds, with a negative case - a transcript with no Heron call reports
-zero calls and NOT MEASURED for Revit's time. Not yet run on the owner's own transcripts.
+zero calls and NOT MEASURED for Revit's time, and to a reply in that JSON-wrapped shape. Run once on the
+owner's own transcript, on 2026-10-17 ([docs/04 §8.7](../docs/04-heron-mcp.md)) - the run that found row
+5b-1030; not re-run there since the fix.
