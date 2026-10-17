@@ -40,9 +40,10 @@ own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
 it through only while the owner's Publish or Admin switch is on as well.
 
 ONE tool runs a fragment and changes nothing: revit_read, through the add-in's
-run_fragment_read. It opens no transaction, so Revit itself refuses any change;
-it works with Changes OFF; and it refuses a fragment declared above ANALYZE
-before anything is sent.
+run_fragment_read. It opens no transaction, so Revit refuses a change, and the
+add-in counts the model around every read because that refusal once let an
+element through (FRAGMENT-ISSUES row 5b-350); it works with Changes OFF; and it
+refuses a fragment declared above ANALYZE before anything is sent.
 
 A SECOND changes only what is on screen: revit_show, through run_fragment_show
 - the same executor, the same missing transaction, declared EXECUTE so a
@@ -2736,10 +2737,11 @@ def revit_read(capability: str = "", values: str = "",
     names the earlier fragment whose result this read acts on, as in
     revit_change; empty, the read starts clean.
 
-    It works with Changes OFF: no transaction is open, so Revit itself refuses
-    any change. A capability declared above ANALYZE is refused before anything
-    is sent - a change is revit_change's. The answer names the pinned model
-    and how far the capability is proven.
+    It works with Changes OFF: no transaction is open, and the model is counted
+    before and after - a read that moved it is reported, never answered. A
+    capability declared above ANALYZE is refused before anything is sent - a
+    change is revit_change's. The answer names the pinned model and how far
+    the capability is proven.
     """
     # Trimmed 2026-10-17 with revit_change (docs/04 s8.8). The answer says how
     # far the capability is proven in one of three ways: PROVEN on a named model,
@@ -2837,9 +2839,10 @@ def revit_read(capability: str = "", values: str = "",
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The read reached Revit but its answer was lost, so Heron cannot "
-                      "tell whether %s ran. Nothing in the model was changed - a read "
-                      "opens no transaction - but if it ran, the result %s left has "
-                      "been used up. Run %s again, then this read."
+                      "tell whether %s ran. A read opens no transaction, so the model "
+                      "is not expected to have changed - but the count that would have "
+                      "said so was in the lost answer. If it ran, the result %s left "
+                      "has been used up. Run %s again, then this read."
                       % (capability, consumes, consumes))
 
     # THE ADD-IN'S REPLY SAYS HOW IT ENDED - an expect_from or binding refusal
@@ -2879,8 +2882,20 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
-    lines.append("Nothing in the model was changed: this runs with no transaction "
-                 "open, so Revit itself refuses any change.")
+    # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
+    # 5b-350 is a read that reported Revit's refusal and left an element. An
+    # add-in that counted sends `elementsCounted` (a read that moved the count
+    # never reaches here: it comes back read_changed_model); one that sends
+    # nothing never counted, and this does not claim it did.
+    counted = reply.get("elementsCounted")
+    if isinstance(counted, int):
+        lines.append("Nothing in the model was changed: Heron counted %s element(s) "
+                     "before this read and the same after it." % "{:,}".format(counted))
+    else:
+        lines.append("Nothing in the model should have changed: this runs with no "
+                     "transaction open. This add-in does not count the model around a "
+                     "read, so that is not measured - update it (FRAGMENT-ISSUES row "
+                     "5b-350).")
     return _ended("ok", "\n".join(lines))
 
 
