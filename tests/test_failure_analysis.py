@@ -277,6 +277,25 @@ def main():
           "and no row classifies a code the add-in cannot produce%s"
           % ("" if not orphans else " - ORPHANED: " + ", ".join(orphans)))
 
+    # ONE ROW PER CODE, READ OFF THE SOURCE. A dict literal keeps the LAST of
+    # two equal keys and says nothing, so a second row for one code is a row
+    # nobody reads - "no_view" was written twice, by two changes on one day,
+    # and the first sentence never reached anybody (row 5b-593).
+    import ast
+    with io.open(os.path.join(ROOT, "mcp", "server", "heron_failure.py"),
+                 encoding="utf-8") as fh:
+        tree = ast.parse(fh.read())
+    keys = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == "_KNOWN"
+                for target in node.targets) and isinstance(node.value, ast.Dict):
+            keys = [k.value for k in node.value.keys if isinstance(k, ast.Constant)]
+    doubled = sorted(set(k for k in keys if keys.count(k) > 1))
+    check(len(keys) > 0 and not doubled,
+          "and every code has ONE row in _KNOWN's source, none silently overwritten%s"
+          % ("" if not doubled else " - TWICE: " + ", ".join(doubled)))
+
     print()
     if FAILURES:
         print("FAILED")
