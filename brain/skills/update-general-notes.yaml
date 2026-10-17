@@ -1,0 +1,145 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: update-general-notes
+name: Update general notes and keep their numbering
+domain: revit.annotation
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Changes the wording of the general notes on a view or a legend and keeps
+  their 1-2-3 numbering, bullets and indents. Five steps, in this order:
+
+  1. SELECT_VISIBLE_IN_VIEW through revit_read, view=<the view or legend, by
+     its name in the Project Browser>, categories=Text Notes. The PROVEN way
+     to collect one view's notes: measured 2026-10-17 on a scratch copy of
+     Autodesk's rst_basic sample, Revit 2020 - 109 notes in the drafting
+     view "Spread Footing". A legend has not been measured yet.
+
+  2. READ_ELEMENT_PARAMETERS through revit_read, parameterName=Text,
+     expect_from="select-visible-in-view". Its noteWording gives one line
+     per note: the note's id, its wording with \r where a paragraph ends
+     (Enter) and \v where a line breaks inside one (Shift+Enter), each
+     paragraph's list type and indent, each list's start number, which
+     paragraphs are bold, italic or underlined, and any character a keyboard
+     does not type plainly - a curly apostrophe (U+2019) above all. Find the
+     general notes here. Words to be replaced are typed exactly as shown: a
+     curly apostrophe as the curly one, never as a straight '.
+
+  3. SHOW THE MODELLER AND WAIT. The note's id, the exact old wording and the
+     exact new wording, \r and \v included, and the list each paragraph keeps.
+     On a real project nothing goes further without their yes for this one
+     change (Article 9).
+
+  4. EDIT_TEXT_VALUES, field=Text, on notes collected again after the read
+     (THE CHAIN NAMES THE LAST RUN, below), with one of the two modes that
+     change wording:
+       replace  text=<the old words, as step 2 showed them>,
+                replacement=<the new words>. Safe across every note of the
+                view: a note without those words is left untouched.
+       set      text=<the whole new wording>, \r between paragraphs, \v for
+                a Shift+Enter. It writes that wording into EVERY note it is
+                handed, so hand it the ONE note, never the view's whole set.
+                New paragraph N takes old paragraph N's list and indent;
+                extra paragraphs take the last one's.
+     Its noteFormatting reads every paragraph's list back. A note whose list
+     or indent came back different is `unverified`, never `changed`; a
+     paragraph that was only partly bold or italic comes back plain and is
+     named NOT KEPT. A value that ends in a space loses it through
+     revit_change (row 5b-215): include the word after the space as well.
+
+  5. READ AGAIN - steps 1 and 2 - and compare each paragraph's list type with
+     what step 2 showed before. The agreed wording and every list the same is
+     done. Anything else is told to the modeller; one Undo in Revit puts the
+     note back, or a list that came back wrong is set again with
+     EDIT_TEXT_VALUES mode format, text="numbers 1-8" for paragraphs 1 to 8
+     (FRAGMENT-ISSUES row 5b-737, not run in Revit).
+
+  BOTH CARDS ARE DRAFT. READ_ELEMENT_PARAMETERS and EDIT_TEXT_VALUES stay
+  DRAFT until Ajmal PS signs them. FRAGMENT-ISSUES row 5b-520 (pull request
+  #570) left two proof drafts; row 5b-737 (#586) widened both cards the same
+  day, so those drafts no longer describe the code, and the proof now owed is
+  NEEDS-CHECKING group FD. A read runs while DRAFT and says so; it changes
+  nothing. The edit is different: revit_change refuses a DRAFT (D-117), so on
+  a real model the ONLY way step 4 runs is try-once, behind Revit's Keep or
+  Discard (D-119), and only when the modeller asks for it (D-122):
+
+    python mcp/client/heron_bridge_client.py try-once edit-text-values
+      --set field=Text --set mode=replace --set text=<old> --set replacement=<new>
+
+  On a SAVED model with nothing unsaved (D-121) - the add-in refuses anything
+  else - and with the view or legend in front, so the modeller sees what
+  changed before choosing. Nothing stays unless they press Keep. A version
+  kept once is not run again, and a kept run is not a proof: the card is
+  PROVEN only when it is signed.
+
+  TRY-ONCE EDITS WHAT IS SELECTED IN REVIT. It starts a clean chain and takes
+  no expect_from, so step 4 acts on the notes selected in the window. Select
+  them first: for a replace, step 1 again and then SET_SELECTION through
+  revit_show with expect_from="select-visible-in-view"; for a set, the one
+  note alone - FILTER_ELEMENTS_BY_ID elementIds=<its id from step 2> and then
+  SET_SELECTION with expect_from="filter-elements-by-id", or clicked by the
+  modeller. Once both cards are PROVEN, step 4 goes through revit_change
+  instead, the same way: step 1 again and expect_from="select-visible-in-view"
+  for a replace, FILTER_ELEMENTS_BY_ID and expect_from="filter-elements-by-id"
+  for a set.
+
+  THE CHAIN NAMES THE LAST RUN. Every run, step 2's read included, becomes
+  what the chain carries, so expect_from="select-visible-in-view" sent after
+  step 2 is refused as chain_mismatch. Collect again - step 1 again - right
+  before anything that names it.
+
+# The owner's brief of 2026-10-17 said "update a view's or a legend's general
+# notes and keep their numbering". These keep its words and leave out three
+# things on purpose: a lookup names a method by the words it shares with the
+# request: "view" is a word of most questions about a view, and
+# heron_skill._words reads "this" as "thi" and never drops it, and splits
+# "view's" into "view" and "s". Each would offer this change beside requests
+# that are not it.
+utterances:
+  - update the general notes and keep their numbering
+  - update the general notes in the legend and keep the numbering
+  - change the wording of the general notes but keep the numbering
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+# READ_ELEMENT_PARAMETERS, the read in steps 2 and 5, is left off on purpose,
+# as delete-by-id leaves off its read-back: a lookup names a method whose
+# needs hold one of its answers. Measured 2026-10-17 on 24 sentences, the
+# spelling backend: with it here, "read what the text notes in the open view
+# say" and "update the parameters of these walls" were offered this change,
+# and so were 10 of the 24 asked as questions; without it, those two and all
+# 10 were not, and every sentence of the job that named it still did (row
+# 5b-940). SET_SELECTION and FILTER_ELEMENTS_BY_ID, which only pick the notes
+# for try-once, are left off for the same reason.
+needs:
+  - SELECT_VISIBLE_IN_VIEW
+  - EDIT_TEXT_VALUES
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - the view or legend that holds the notes is known by its name in the Project Browser
+  - the modeller has seen the exact old and new wording and said yes to this change, for a real project
+  - while EDIT_TEXT_VALUES is DRAFT, the model is saved with nothing unsaved and the view or legend is in front (D-119, D-121)
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-17 from the owner's brief, on FRAGMENT-ISSUES row 5b-940:
+  the steps of row 5b-520 (pull request #570) were spread over two cards'
+  comments and nothing served them as one job. No new capability. Row
+  5b-520's versions of the two cards ran in Revit 2020 only, every run rolled
+  back on a scratch copy; the versions row 5b-737 made have not run in Revit
+  at all, and 2021 to 2027 are compiled only. A legend is one view placed on many
+  sheets, so a note changed in it changes on every sheet that shows it.
+  Two things here are read from the code and have not been run: that
+  try-once edits the notes selected in Revit - it resets the chain, and the
+  add-in then binds a list of elements from the selection - and that the
+  read in step 2 takes the chain over - the add-in writes every run's name
+  as the chain's maker, reads included.
