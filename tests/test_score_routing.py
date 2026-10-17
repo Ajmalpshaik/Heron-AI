@@ -67,6 +67,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -501,8 +502,9 @@ def _construct(offline):
 
 
 def _overlap(question, passage):
-    return float(len(set(question.lower().split())
-                     & set(passage.lower().split())))
+    import re
+    return float(len(set(re.findall(r"[a-z0-9]+", question.lower()))
+                     & set(re.findall(r"[a-z0-9]+", passage.lower()))))
 '''
 
 # AND NO TRAINED ENCODER, whatever the machine running the test has - so the
@@ -527,8 +529,11 @@ SECTION_9_NAMES = ("load_sentences", "parse_expect", "backend_problems",
 
 
 def _overlap(question, passage):
-    return float(len(set(question.lower().split())
-                     & set(passage.lower().split())))
+    """The fake's own count, in this process. WORDS, NOT SPACE-SPLIT PIECES:
+    since D-134 a passage reads "identity. sentences. capability domain", and
+    "frotz." is not "frotz"."""
+    return float(len(set(re.findall(r"[a-z0-9]+", question.lower()))
+                     & set(re.findall(r"[a-z0-9]+", passage.lower()))))
 
 
 def _fixture_tree(top, cards=FIXTURE_CARDS):
