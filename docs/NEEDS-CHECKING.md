@@ -727,6 +727,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
+## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-69` asks for (2026-10-17)
+
+**Its own file:** [`needs-checking/group-en.md`](needs-checking/group-en.md)
+
 ## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
 
 **Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
@@ -766,6 +770,14 @@ Step 6 is finished, and not before. At that point:
 ## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
+
+## Group FB - the sheets of one revision, latest on the sheet or not, and a typed list of sheet numbers: `FIND_SHEETS_BY_REVISION_OR_NUMBER` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fb.md`](needs-checking/group-fb.md)
+
+## Group FD - a text note's numbering, bullets, indent and bold set through Heron: `EDIT_TEXT_VALUES` mode format, and the read that checks it (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fd.md`](needs-checking/group-fd.md)
 
 ## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
 
