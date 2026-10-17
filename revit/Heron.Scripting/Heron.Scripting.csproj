@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Heron's C# compiler door, as an assembly of its own - FRAGMENT-ISSUES row
+    5b-575.
+
+    ON REVIT 2025 AND LATER the add-in loads THIS assembly into a load context
+    of Heron's own (HeronScriptHost.CompilerContext), so that
+    Microsoft.CodeAnalysis means the copy in Heron's folder whatever another
+    add-in has loaded into Revit's shared default context. On 2020 to 2024 the
+    same two files are built into the add-in itself, as they always were, and
+    this assembly is built but not shipped.
+
+    NO SOURCE OF ITS OWN. Both files live in Heron.Revit.Addin and are linked
+    here, so there is exactly one copy of the guard and one of the engine -
+    the rule the test hosts already follow. Neither names a Revit type, which
+    is what lets this project build with no Revit API reference at all; keep
+    it that way, because a type from RevitAPI compiled in here would be a
+    second copy of it inside Heron's load context.
+
+    CopyLocalLockFileAssemblies puts the compiler beside this assembly in its
+    own output, which is the folder Heron.Revit.Addin.csproj copies from on
+    2025 and later.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Revit.Addin</RootNamespace>
+    <AssemblyName>Heron.Scripting</AssemblyName>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Heron.Revit.Addin\HeronScriptEngine.cs" Link="HeronScriptEngine.cs" />
+    <Compile Include="..\Heron.Revit.Addin\HeronStackGuard.cs" Link="HeronStackGuard.cs" />
+  </ItemGroup>
+
+  <!-- The add-in's version, and the add-in's only: one compiler in Heron's folder. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.8.0" />
+  </ItemGroup>
+
+</Project>
