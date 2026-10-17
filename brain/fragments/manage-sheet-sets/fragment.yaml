@@ -23,16 +23,23 @@ version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# ADD AND REMOVE KEEP THE SET AND ITS NAME. The sheets and views given go
+# into it, or come out of it; the rest of it stays. One already in it (add),
+# or never in it (remove), is reported in `unchanged` and left alone. A call
+# that would change nothing is refused, and so is one that would leave the
+# set holding nothing - deleting the set is its own mode.
+#
+# KEPT OUT OF THE PURPOSE ON PURPOSE (2026-10-17, row 5b-545). Measured on
+# fresh scratch stores, main against this branch, both backends: with this
+# paragraph in the purpose, "which sheets to print" - a row in
+# SET_PRINT_SETTINGS' routing table that names this card - left it behind the
+# 2020 wall, for SET_PRINT_SETTINGS (trained model) and
+# REPORT_SHEET_TITLE_BLOCKS (spelling route). Without it that sentence comes
+# back here on both - row 5b-545 has the whole before and after.
 purpose: >
   Creates, renames or deletes the named sheet sets that appear in Revit's print
   and export dialogs - the saved lists an issue is printed from - and adds
   sheets to a set that already exists, or takes them out of it.
-
-  **ADD AND REMOVE KEEP THE SET AND ITS NAME.** The sheets and views given go
-  into it, or come out of it; the rest of it stays. One already in it (add),
-  or never in it (remove), is reported and left alone. A call that would
-  change nothing is refused, and so is one that would leave the set holding
-  nothing - deleting the set is its own mode.
 
   **EVERY ROUTE GOES THROUGH THE PRINT MANAGER, AND THERE IS NO OTHER ONE.** A
   sheet set is an element, and it cannot be built with a constructor, renamed
