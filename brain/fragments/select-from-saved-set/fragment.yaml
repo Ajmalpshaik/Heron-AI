@@ -117,6 +117,10 @@ compatibility-note: >
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER - showing it, rather
 #                                       than reading it
 #   "add these to the saved set"         -> UPDATE_SAVED_SET
+#   "load a saved selection set and select its elements" -> here. Row 5b-1005
+#   "list the saved selection sets in the model" -> REPORT_VIEW_FILTERS - every
+#                                        set's name; this reads ONE set's
+#                                        elements. Row 5b-1005
 
 utterances:
   - what is in that filter i saved
@@ -124,3 +128,8 @@ utterances:
   - select the elements in that filter
   - use that saved set again
   - read a selection filter
+  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-1005: asked on 2026-10-14 with the
+  # Revit 2020 filter, it reached CREATE_SELECTION_FILTER; on main 2026-10-17
+  # the spelling route sent it to UPDATE_SAVED_SET - writes both. Reading a
+  # saved set back as its elements is this card's whole job.
+  - load a saved selection set and select its elements
