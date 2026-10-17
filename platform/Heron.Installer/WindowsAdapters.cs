@@ -134,6 +134,13 @@ namespace Heron.Installer
             var outText = new StringBuilder();
             var errText = new StringBuilder();
 
+            // ONE LOCK FOR BOTH BUFFERS. The readers append on thread-pool
+            // threads, and on the ceiling path below the text is read while a
+            // reader may still be appending - StringBuilder is not safe for
+            // that, and pip at fifteen minutes or heron-ready at thirty is a
+            // ceiling that can be met mid-line (review of #558).
+            var gate = new object();
+
             try
             {
                 using (var process = Process.Start(start))
@@ -162,11 +169,11 @@ namespace Heron.Installer
                     // no ceiling, on the one path where something went wrong.
                     process.OutputDataReceived += delegate (object s, DataReceivedEventArgs e)
                     {
-                        if (e.Data != null) outText.AppendLine(e.Data);
+                        if (e.Data != null) lock (gate) outText.AppendLine(e.Data);
                     };
                     process.ErrorDataReceived += delegate (object s, DataReceivedEventArgs e)
                     {
-                        if (e.Data != null) errText.AppendLine(e.Data);
+                        if (e.Data != null) lock (gate) errText.AppendLine(e.Data);
                     };
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
@@ -176,8 +183,11 @@ namespace Heron.Installer
                         try { process.Kill(true); } catch { /* already gone */ }
                         result.ExitCode = -1;
                         result.TimedOut = true;
-                        result.StandardOutput = outText.ToString();
-                        result.Output = Both(outText, errText) + "\nIt did not finish in time.";
+                        lock (gate)
+                        {
+                            result.StandardOutput = outText.ToString();
+                            result.Output = Both(outText, errText) + "\nIt did not finish in time.";
+                        }
                         return result;
                     }
 
@@ -201,8 +211,11 @@ namespace Heron.Installer
                 return result;
             }
 
-            result.StandardOutput = outText.ToString();
-            result.Output = Both(outText, errText);
+            lock (gate)
+            {
+                result.StandardOutput = outText.ToString();
+                result.Output = Both(outText, errText);
+            }
             return result;
         }
 

@@ -24,8 +24,8 @@ WHAT THIS PROVES
      it states the count grep derives, and fast, with that rule set aside;
      with the rule in place it keeps it, whichever checkout this is - CI
      checks a push to main out on branch main. On any system but Windows it
-     ends by saying there is no Revit and no Heron tools here; asked as
-     Windows, the line is exactly what it was.
+     ends by saying there is no Revit here and Heron serves only its library
+     tools (D-132); asked as Windows, the line is exactly what it was.
   1. "HAS MAIN MOVED?" fires on a merge and a "ready" - by gh, by gh api, and
      by the GitHub MCP tools - fetches origin/main, and names the commits the
      branch does not have. It stays silent for everything else, including
@@ -378,8 +378,9 @@ def run_all(home):
     check(raw.isascii() if hasattr(raw, "isascii") else True,
           "every character of the output is ASCII")
 
-    # NOT WINDOWS. The heron MCP server exits on any system but Windows, so a
-    # session started there has no Revit and no Heron tools - and on
+    # NOT WINDOWS. Off Windows the heron MCP server serves its library alone
+    # and no revit_ tool (D-132; it exited there until 2026-10-17), so a
+    # session started there has no Revit - and on
     # 2026-10-17 a task marked LOCAL SESSION was started in a cloud session
     # with nothing at the start saying so. The piped hook answers for the
     # system running this suite; line_for() is asked for the other one, so
@@ -388,10 +389,11 @@ def run_all(home):
            "origin/main (as last fetched). Fragments: 2 PROVEN, 1 DRAFT of 3.")
     if os.name != "nt":
         check(text.startswith(was + " Not Windows:")
-              and "no Revit" in text and "no Heron tools" in text
-              and "NEEDS REAL REVIT" in text,
+              and "no Revit" in text and "only its library tools" in text
+              and "no revit_ tool" in text and "NEEDS REAL REVIT" in text,
               "on this machine, which is not Windows, the line ends by saying "
-              "there is no Revit and no Heron tools here: %s" % text)
+              "there is no Revit here and only the library tools are served: "
+              "%s" % text)
     else:
         check(text == was,
               "on this machine, which is Windows, the line is exactly what "

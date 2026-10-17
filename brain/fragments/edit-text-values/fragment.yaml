@@ -342,3 +342,7 @@ utterances:
   - make this note a numbered list
   - turn the bullets into numbers
   - make the first line bold
+  # ADDED 2026-10-17, 5b-930 - the owner's words, measured main against branch on the
+  # lexical and trained backends: reaches here on both, where on main lexical
+  # sent it to READ_ELEMENT_PARAMETERS.
+  - turn this note into a numbered list

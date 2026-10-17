@@ -1456,6 +1456,14 @@ can be checked in one look. Touching a permission file owes a human review **wha
 declared** — the diff outranks the label. Touching a fragment owes a run against a real model, because
 [D-30](../docs/DECISIONS.md) is not satisfied by a compile.
 
+**Except a card whose routing text alone changed.** The card is parsed before and after: when only
+`semantic-identity`, `utterances`, `purpose` or a YAML comment moved, and nothing else in that
+fragment's folder did, the signal is `fragment-routing` - it owes `check-routing` and `check-intrusion`,
+not a Revit run, because Revit reads none of that text and D-30's fingerprint covers `impl/` alone.
+`purpose` is prose, and counts as routing because the lookup indexes it. Any other key - contract,
+risk, revit, runtime, status, proof, capability - or anything under `impl/` or `tests/`, or a card that
+is new or will not parse, keeps `fragment-behaviour`. [Row 5b-862](../docs/FRAGMENT-ISSUES.md).
+
 **It sets the homework and does not mark it.** Which gates ran is read out of an evidence record; this
 tool runs none of them. A tool that did both would one day mark its own.
 
@@ -1522,7 +1530,8 @@ than counted. Two unknowns are not a match.
 
 `--stated check-compile=PASS:ran on the PC` records a gate that ran somewhere this container is not —
 a .NET SDK, a Windows machine, a Revit. It is stored marked **stated**, never **derived**, and printed
-that way. A record that let an assertion sit beside a measurement in identical type is a record in
+that way. The result is `PASS`, `FAIL` or `NOT_RUN` (`NOT RUN` is accepted too; until row 5b-862 only
+that one was). A record that let an assertion sit beside a measurement in identical type is a record in
 which the assertion eventually gets believed as one.
 
 ### It cannot change anything, and that is the safety property

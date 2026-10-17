@@ -62,9 +62,9 @@ Asked in this order, and the first that answers wins:
   2. CLAUDE_CODE_REMOTE_SDK_URL and CCR_AGENT_PROXY_ENABLED are both set -
      OBSERVED in a cloud container on 2026-10-17, on Linux, and documented
      nowhere. Kept for a release that stops setting the first.
-  3. Not Windows - the FALLBACK. The heron MCP server exits on any system but
-     Windows (session_line.py makes the same os.name test), so there is no
-     Revit here either way. The line then says "this machine is not Windows"
+  3. Not Windows - the FALLBACK. Off Windows the heron MCP server serves its
+     library alone and no revit_ tool (D-132; session_line.py makes the same
+     os.name test), so there is no Revit here either way. The line then says "this machine is not Windows"
      rather than claim a cloud it cannot see.
 
 A cloud session on Windows still warns: LOCAL means the owner's PC, and a
