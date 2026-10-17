@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -18,8 +18,8 @@ capability: PLACE_FAMILY_INSTANCES
 # VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-590): a family's height is read
 # where its own level stands - what Elevation from Level and Offset from Host
 # measure to - and no longer at its insertion point. See "VERSION 3" below.
-# DRAFT until the version 3 proof is signed; version 2's proof below is kept
-# as a record and no longer describes the code.
+# Version 3's tracking run in Project1, Revit 2020, was signed by Ajmal PS on
+# 2026-10-17 and replaced version 2's proof.
 version: 3
 source: OFFICIAL
 risk: MODIFY
@@ -134,39 +134,36 @@ contract:
       type: string
 
 proof:
-  date: '2026-10-06'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: Project2, Revit 2024, session 51820 - the count is NOT recorded because 1,813 elements
-    was measured on GM_PipeSupport_UBolt, the document in front, and this ran against another
-    one (row 15)
-  positive_case: 'run with points=2000,2000,3000 - the first of 4 tracked inputs - the arrangement
-    was re-made first by running load-family with this phase''s own values - run inside a
-    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    CloseEnough 0.00164041994750656, MillimetresPerFoot 304.8, askedAt 1 item(s) [(6.561679790,
-    6.561679790, 9.842519685)], carried Func`3, described Func`2, failed 0, heightId BuiltInParameter,
-    invariant CultureInfo, kindWords work plane-based, on ''Level 1''''s own plane, levelOf
-    Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM,
-    ...], levelPlane Reference, levelZ 0, made 1 item(s) [FamilyInstance], mm Func`2, named
-    M_Supply Diffuser - Hosted: Workplane-based Supply Diffuser, onLevelPlane true, placed
-    1 item(s) [427234], placement FamilyPlacementType, readBack 1 x work plane-based, on ''Level
-    1''''s own plane, standing 3000 mm above it - Host ''Level 1'', Level ''Level 1'', Schedule
-    Level ''Level 1'', Offset from Host 3000 mm, tally 1 entry(ies). inputs came symbol as
-    given; points as given (1); level as given. on Project2'
+  model: Project1 (3,240 elements), Revit 2020, session 51568
+  positive_case: 'run with points=1000,1000,6152 - the first of 4 tracked inputs - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    CloseEnough 0.00164041994750656, MillimetresPerFoot 304.8, askedAt 1 item(s) [(3.280839895,
+    3.280839895, 20.183727034)], carried Func`3, described Func`2, failed 0, heightId BuiltInParameter,
+    invariant CultureInfo, kindWords level-based, on ''Level 2'', levelOf Func`2, levelParameterOrder
+    5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], levelPlane (null),
+    levelZ 13.1233595800514, made 1 item(s) [FamilyInstance], mm Func`2, named TRG_GEN_CutOut_Rectangular_HVAC:
+    25mm Cutout Buffer, onLevelPlane false, placed 1 item(s) [923039], placement FamilyPlacementType,
+    readBack 1 x level-based, on ''Level 2'', standing 2152 mm above it - Level ''Level 2'',
+    Elevation from Level 2152 mm, its insertion point 150 mm below that, standsAt Func`2,
+    tally 1 entry(ies). inputs came symbol as given; points as given (1); level as given.
+    on Project1'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). place-family-instances\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 4 different inputs:\n\n      points=2000,2000,3000 -> placed 1 item(s) [427234]\n\
-    \      points=2000,2000,3000; 4000,2000,3000 -> placed 2 item(s) [428498, 428501]\n  \
-    \    points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000 -> placed 3 item(s) [429765,\
-    \ 429768, 429770]\n      points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000; 8000,2000,3000;\
-    \ 10000,2000,3000 -> placed 5 item(s) [431035, 431038, 431040, ...]\n\n    Different inputs,\
+    \ across 4 different inputs:\n\n      points=1000,1000,6152 -> placed 1 item(s) [923039]\n\
+    \      points=1000,1000,6152; 3000,1000,6127 -> placed 2 item(s) [923040, 923041]\n  \
+    \    points=1000,1000,6152; 3000,1000,6127; 5000,1000,6100 -> placed 3 item(s) [923042,\
+    \ 923043, 923044]\n      points=1000,1000,6152; 3000,1000,6127; 5000,1000,6100; 7000,1000,6075;\
+    \ 9000,1000,6050 -> placed 5 item(s) [923045, 923046, 923047, ...]\n\n    Different inputs,\
     \ exact matches every time. A fragment falling back to the active view, the whole model,\
     \ or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ce5229e730b44998
+  fingerprint: d9db040d807d158c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
