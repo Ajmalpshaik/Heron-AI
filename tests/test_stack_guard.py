@@ -63,6 +63,13 @@ loops on, a one-statement body, a recursion with no loop - and a stop asked
 from another thread mid-run, and holds each to stopping within the deadline.
 What that cannot say - a rollback in Revit, Revit coming back, a second pipe
 - is NEEDS-CHECKING Group EZ's.
+
+AND IT COMPILES WITH THE ADD-IN'S OWN REFERENCES (FRAGMENT-ISSUES row
+5b-1000). The host once kept a reference list of its own, which carried the
+run clock's assembly when `RevitFragment.BuildOptions` did not - so this suite
+passed while every fragment failed in Revit with CS0400. Both now compile
+`HeronFragmentReferences`, and the host checks a guarded script compiles with
+it and, with the run clock's entry taken out, fails with that CS0400.
 """
 
 import os
