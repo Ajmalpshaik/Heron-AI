@@ -39,7 +39,7 @@ negative:
     expect: >
       `elements`, `onNoSheets` and `revisionTable` empty, and one finding that
       it is a family and a family holds no revisions - never Revit's "ccda is
-      not a project document", which it threw until that day (row 5b-760)
+      not a project document", which it threw until that day (row 5b-880)
 
 second_route:
   - Revit's own Revisions dialog with "Show" set, or a Sheet List schedule with a revision column, compared sheet for sheet
