@@ -72,8 +72,18 @@ purpose: >
 
 contract:
   needs:
+    # THE COMMENT DIRECTLY ABOVE `parameterName` is printed under it by
+    # heron_resolve and heron_lookup (heron_fragment.need_notes), and is never
+    # searched, so it moves no routing (FRAGMENT-ISSUES 5b-880). This one sits
+    # above `elements`, which nobody types, and is never printed.
     - name: elements
       type: IList<Element>
+    # The parameter's name. Text on a text note reads what the note says:
+    # noteWording shows \r at a paragraph end, \v at a Shift+Enter line break
+    # and \\ for one backslash - typed the same way into EDIT_TEXT_VALUES. The
+    # text notes of one view: run SELECT_VISIBLE_IN_VIEW with view=<the view>
+    # and categories=Text Notes first, then this with parameterName=Text and
+    # expect_from="select-visible-in-view".
     - name: parameterName
       type: string
       source: request

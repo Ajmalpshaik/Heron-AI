@@ -101,17 +101,36 @@ contract:
   needs:
     - name: doc
       type: Document
+    # THE COMMENT DIRECTLY ABOVE A VALUE THE CALLER TYPES - field, text,
+    # replacement - is printed under that value by heron_resolve and
+    # heron_lookup (heron_fragment.need_notes), and is never searched, so it
+    # moves no routing (FRAGMENT-ISSUES 5b-880). This one sits above
+    # `elements`, which nobody types, and is never printed.
     - name: elements
       type: IList<Element>
+    # A parameter's name, Name for the element's own name, or Text for what a
+    # text note says. The text notes of one view: run SELECT_VISIBLE_IN_VIEW
+    # with view=<the view> and categories=Text Notes first, then this with
+    # expect_from="select-visible-in-view". Read the wording first with
+    # READ_ELEMENT_PARAMETERS parameterName=Text, and type the words to
+    # replace exactly as it shows them.
     - name: field
       type: string
       source: request
     - name: mode
       type: string
       source: request
+    # replace: the words to look for. prefix or suffix: the words to add. set
+    # (text notes only): the note's whole new wording. On a text note \r ends
+    # a paragraph, \v is a Shift+Enter line break and \\ is one backslash -
+    # the marks READ_ELEMENT_PARAMETERS shows a note in. Each value is one
+    # line, so two paragraphs are typed text=First paragraph\rSecond paragraph
     - name: text
       type: string
       source: request
+    # replace: the words that go in their place. On a text note the same
+    # marks as text: \r a paragraph end, \v a Shift+Enter line break, \\ one
+    # backslash.
     - name: replacement
       type: string
       source: request
