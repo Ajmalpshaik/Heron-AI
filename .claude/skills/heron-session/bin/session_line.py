@@ -29,8 +29,9 @@ and from each fragment's own `heron-status:` line.
 
 NOT WINDOWS
 -----------
-On any system but Windows the line ends by saying there is no Revit and no
-Heron tools here: the heron MCP server exits on every other system, so a task
+On any system but Windows the line ends by saying there is no Revit here and
+Heron serves only its library tools: the heron MCP server registers no revit_
+tool on any other system (D-132; until 2026-10-17 it exited there), so a task
 marked LOCAL or NEEDS REAL REVIT cannot run. On 2026-10-17 such a task was
 started in a cloud session by mistake and spent its first steps finding that
 out, because nothing at the start said so. Derived from os.name - the same test
@@ -147,12 +148,14 @@ def fragment_part(top):
 
 def machine_part(system):
     """The sentence that stops a Revit task on a machine with no Revit, or None
-    on Windows. `system` is an os.name; the heron MCP server exits on anything
-    but "nt", so nothing in this session can reach a model."""
+    on Windows. `system` is an os.name; off "nt" the heron MCP server serves
+    its library alone and no revit_ tool (D-132), so nothing in this session
+    can reach a model."""
     if system == "nt":
         return None
-    return ("Not Windows: no Revit and no Heron tools in this session - "
-            "anything marked LOCAL or NEEDS REAL REVIT cannot run here")
+    return ("Not Windows: no Revit in this session - Heron serves only its "
+            "library tools, no revit_ tool - anything marked LOCAL or NEEDS "
+            "REAL REVIT cannot run here")
 
 
 def modeller_checkout(where):
