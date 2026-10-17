@@ -29,12 +29,14 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 the bridge's Json.cs. Built and RUN here, and the JSON it
                 writes is read back by Python's own reader, which did not
                 write it.
-  THE WIRING    that RevitFragment listens from the moment its group starts
-                to the moment it is described, counts only a commit of the
-                target, reads nothing heavy inside the event, describes
-                BEFORE Assimilate or the rollback, and is let go on every way
-                out; that the dispatcher writes the record and links it to
-                the audit line by workflow id. That half calls the Revit API,
+  THE WIRING    that RevitFragment's one collector - D-126's RevitChangedSet,
+                extended rather than a second beside it - listens from the
+                moment its group starts to the moment it is described,
+                counts only a commit of the target, reads nothing heavy
+                inside the event, describes BEFORE the Keep or Discard box,
+                Assimilate or the rollback, and is let go on every way out;
+                that the dispatcher writes the record and links it to the
+                audit line by workflow id. That half calls the Revit API,
                 so it is read as TEXT, with comments and strings removed.
 
 Neither half proves Revit raises DocumentChanged for every commit inside a
@@ -70,6 +72,7 @@ EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
 DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
 APPLICATION = os.path.join(ADDIN, "HeronApplication.cs")
 REPORT = os.path.join(ADDIN, "HeronChangeReport.cs")
+COLLECTOR = os.path.join(ADDIN, "RevitChangedSet.cs")
 HOST = os.path.join(ROOT, "tests", "Heron.ChangeReport.TestHost")
 COULD_NOT_RUN = 3
 
@@ -100,36 +103,49 @@ def wiring():
           "the first thing Run does is drop any element list an earlier run left, so a "
           "refusal or a read never hands the dispatcher another job's list")
     started = at(run, "group.Start();")
-    watch = at(run, "ChangeWatch.Begin(", max(started, 0))
+    watch = at(run, "changed.Begin();", max(started, 0))
     setup = at(run, "RunSetupSteps(", max(started, 0))
     check(0 <= started < watch < setup,
-          "the collector is registered right after group.Start() and before the setup steps "
-          "run, so a setup step's commits are seen too")
-    check(re.search(r"using\s+var\s+changes\s*=\s*ChangeWatch\.Begin\(", run) is not None,
-          "as a using declaration, so it is let go however the group's block is left - "
-          "every early return included")
-    described = at(run, "described = changes.Describe();")
+          "the collector starts listening right after group.Start() and before the setup "
+          "steps run, so a setup step's commits are seen too")
+    check(re.search(r"using\s*\(\s*var\s+changed\s*=\s*new\s+RevitChangedSet\("
+                    r"app\.Application,\s*target,\s*label\)\)", run) is not None,
+          "D-126's collector, made for EVERY write and held in a using, so its handler is "
+          "taken off however the group's block is left - every early return included")
+    check("if (changed != null) changed.Begin();" not in run,
+          "and never only when a question is asked - a write nobody is asked about is "
+          "still counted")
+    described = at(run, "described = changed.Describe();")
     asked = at(run, "AskTheModeller(")
     kept = at(run, "if (apply) keptNote = KeepAndWatch(")
     check(0 < described < asked < kept,
           "what changed is described BEFORE the modeller is asked and before Assimilate or "
           "the rollback, while every added element still exists to be asked its category")
-    check(re.search(r"else\s+rolledBack\s*=\s*RollBackAndCheck\(", run[max(described, 0):]) is not None,
-          "and the rollback that makes the default a preview comes after it too")
+    check(re.search(r"else\s*\{?\s*rolledBack\s*=\s*RollBackAndCheck\(",
+                    run[max(described, 0):]) is not None,
+          "and the rollback that a Discard and a preview make comes after it too")
     check("Elements = described == null ? null : described.ElementsField();" in run,
           "the full element list is left for the dispatcher's record")
     check(re.search(r"WithVerdict\([^;]*,\s*described\)", run) is not None,
           "and the verdict is handed what changed")
 
-    print("\n2. the handler counts a commit of the target, and reads nothing heavy")
-    watcher = NOTE.body_of(code, "class ChangeWatch")
-    check(bool(watcher), "ChangeWatch is there")
-    handler = NOTE.body_of(watcher, "void Changed(")
+    print("\n2. one collector: the handler counts a commit of the target, and reads nothing heavy")
+    collector = NOTE.code_only(NOTE.read(COLLECTOR) or "")
+    check(bool(collector), "RevitChangedSet.cs is there - D-126's Keep or Discard collector")
+    check("class ChangeWatch" not in code
+          and len(re.findall(r"new\s+HeronChangeReport\(", code)) == 0
+          and len(re.findall(r"new\s+HeronChangeReport\(label\)", collector)) == 1,
+          "the report is built on the Keep or Discard collector, not beside it - the brief: "
+          "extend a collector that exists, never add a second")
+    handler = NOTE.body_of(collector, "void OnChanged(")
     check("UndoOperation.TransactionCommitted" in handler,
           "only a commit is counted - a rollback, an undo or a redo names elements with the "
           "meaning reversed or repeated")
-    check(".Equals(_target)" in handler,
+    check(".Equals(_document)" in handler,
           "only the target document's - another open model's change is not this job's")
+    check("_report.Committed(args.GetTransactionNames()" in handler,
+          "every commit reaches the report with its transaction names, which is what tells "
+          "a setup step from the fragment")
     check("GetElement(" not in handler and ".Category" not in handler,
           "nothing is read inside the event: no element, no category - Revit is still "
           "finishing the transaction")
@@ -137,23 +153,15 @@ def wiring():
           is not None,
           "and nothing escapes into Revit's event: an event it cannot read is COUNTED as "
           "unreadable, so the report can say its numbers are incomplete")
-    check("DocumentChanged +=" not in watcher and "DocumentChanged -=" not in watcher,
-          "it holds NO subscription of its own - one listener, the rollback witness's, "
-          "serves both (the brief: extend a collector that exists, never add a second)")
-    listener = NOTE.body_of(code, "void OnDocumentChanged(")
-    fed = at(listener, "ChangeWatch.Current")
-    first_return = at(listener, "return;")
-    check(fed > 0 and ".Changed(e)" in listener and (first_return < 0 or fed < first_return),
-          "the permanent listener feeds the collector, BEFORE any of its own early returns, "
-          "so a job the witness is not watching is still counted")
-    disposed = NOTE.body_of(watcher, "public void Dispose()")
-    check("Current = null" in disposed and "ReferenceEquals(Current, this)" in disposed,
-          "and letting it go unregisters it - only itself, never a later job's")
-    describe = NOTE.body_of(watcher, "Describe()")
-    check(at(describe, "Dispose();") >= 0
-          and at(describe, "Dispose();") < at(describe, "_report.Describe("),
+    ended = NOTE.body_of(collector, "public void End()")
+    check("_report.Seal();" in ended and "DocumentChanged -= OnChanged" in ended
+          and "End();" in NOTE.body_of(collector, "public void Dispose()"),
+          "and ending it - Dispose included - takes the handler off and seals the report")
+    describe = NOTE.body_of(collector, "Describe()")
+    check(at(describe, "End();") >= 0
+          and at(describe, "End();") < at(describe, "_report.Describe("),
           "and Describe stops listening before it reads, so nothing after it is counted")
-    category = NOTE.body_of(watcher, "string CategoryOf(")
+    category = NOTE.body_of(collector, "string CategoryOf(")
     check("_ids.TryGetValue(" in category and "GetElement(id)" in category,
           "a category is read from the ElementId Revit handed over - no ElementId is built "
           "from a number (5b-441)")

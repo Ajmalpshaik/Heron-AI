@@ -17,7 +17,7 @@ the variables that hold code. This cuts the rest of what repeats:
 
   * THE CHANGE REPORT. The add-in now counts what Revit says the job changed -
     added, modified and deleted, by category, the fragment's apart from its
-    setup steps' (RevitFragment.ChangeWatch, HeronChangeReport) - and the chat
+    setup steps' (RevitChangedSet, HeronChangeReport) - and the chat
     is given those counts on two lines. Every element id is on disk instead.
   * THE RUN RECORD. One file per fragment write under HeronPaths.Runs, named
     by its workflow id - the same id as its audit line - holding every element
@@ -235,6 +235,10 @@ def _ended(reply):
         return "KEPT"
     if kind == "rolledBack":
         return "rolled back, nothing kept"
+    if kind == "discarded":
+        # D-126's Discard. Whether its rollback held is the verdict's to say,
+        # in the modeller's words - this line only names who decided.
+        return "DISCARDED by the modeller - the verdict says whether the rollback held"
     if kind == "notHeld":
         return "THE ROLLBACK DID NOT HOLD - the model still holds part of it"
     if kind == "notConfirmed":

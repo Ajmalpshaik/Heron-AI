@@ -11,12 +11,12 @@
 Two family builds on 2026-10-09 carried 322,725 characters of `revit_change` replies back into the
 chat, about 70% of it repeated: the fragment's helpers and the same KEPT paragraph, word for word
 ([row 5b-407](../fragment-issues/section-5b-rows-401-425.md)). Nothing in Heron tracked a change at all.
-(EJ to ES were taken by other groups, merged or open, when this was written, so this group is EV.)
+(EJ to ET were taken by other groups, merged or open, when this was written, so this group is EV.)
 
 **What changed.** `RevitFragment` collects what `DocumentChanged` reports from `group.Start()` until it
 describes the job - before the Keep-or-Discard box asks and before Assimilate or the rollback - through
-the one permanent listener the rollback witness already subscribes at start-up (Group EO), never a
-second subscription; it counts only `TransactionCommitted` on the target document and reads nothing
+`RevitChangedSet`, the collector D-126's Keep-or-Discard box already uses (Group ET), extended rather
+than a second beside it; it counts only `TransactionCommitted` on the target document and reads nothing
 inside the event. `HeronChangeReport` counts each element once per part,
 tells a setup step's transaction (`label - stepName`) from the fragment's (`label`), and reads each
 surviving element's `Category.Name` once. The reply carries `changes` - counts by category, the first
@@ -39,7 +39,7 @@ against a stand-in Revit in `tests/test_mcp_serves.py`. **None of it has run in 
 is PROVEN, and no claim about what Revit raises is made from these suites.
 
 **A replay, not a chat.** 172 kept changes in 39 batches, shaped from `CREATE_FAMILY_EXTRUSION`'s own
-code, printed 213,332 characters through the real `revit_change` on `main` (80f4fcd) and 160,364 on
+code, printed 213,332 characters through the real `revit_change` on `main` (ec400a37, re-measured after D-126) and 160,364 on
 this change, 24.8% less (`tests/test_change_reporting.py` replays the same set without the SDK). An add-in from
 before the change, replying to this server, prints byte for byte what it printed before. The 2026-10-09
 transcript is on the owner's PC, so the figure for a real build is EV6's.

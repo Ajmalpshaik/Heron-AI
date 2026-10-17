@@ -141,6 +141,10 @@ PROJECTS = [
     # linked by source the same way; tests/test_change_report.py runs it.
     "tests/Heron.ChangeReport.TestHost/Heron.ChangeReport.TestHost.csproj",
     "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
+    # Revit's Keep or Discard question (D-126) - its words, the rule that only
+    # the Keep link keeps, and D-60's cap - linked by source like FailureNote.
+    # tests/test_keep_question.py builds and runs it.
+    "tests/Heron.KeepQuestion.TestHost/Heron.KeepQuestion.TestHost.csproj",
     "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
     # Whether a rollback took the last kept job's work, and whether it held -
     # linked by source like the failure note; tests/test_rollback_witness.py

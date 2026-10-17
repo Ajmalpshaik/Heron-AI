@@ -78,6 +78,14 @@ namespace Heron.Revit.Addin
         [ThreadStatic]
         private static RevitJob _running;
 
+        /// <summary>
+        /// The banner of the job running now, for the same reason as _running:
+        /// AwaitingModeller has to move it out of the way of the box, and the
+        /// box's code is never handed the dispatcher (D-126).
+        /// </summary>
+        [ThreadStatic]
+        private static HeronActivityBanner _runningBanner;
+
         private readonly Action<string> _log;
         private readonly string _session;
 
@@ -163,6 +171,12 @@ namespace Heron.Revit.Addin
         {
             var job = _running;
             if (job != null) job.MarkAskedModeller();
+
+            // AND THE BANNER STEPS ASIDE (D-126). It is Topmost, so it would
+            // sit over the box it is waiting on; Execute brings it back the
+            // moment the job returns, before it says how the job ended.
+            var banner = _runningBanner;
+            if (banner != null) banner.StepAside(true);
         }
 
         /// <summary>
@@ -400,6 +414,7 @@ namespace Heron.Revit.Addin
                         {
                             // So AwaitingModeller can find this job - see _running.
                             _running = job;
+                            _runningBanner = _banner;
                             response = RevitOperations.Run(app, job.Request);
                         }
                         catch (Exception ex)
@@ -413,6 +428,11 @@ namespace Heron.Revit.Addin
                         finally
                         {
                             _running = null;
+                            _runningBanner = null;
+
+                            // The box is answered or the job is over: the
+                            // banner comes back to say how it ended (D-126).
+                            if (job.AskedModeller) _banner.StepAside(false);
                         }
                     }
                     finally
@@ -455,7 +475,8 @@ namespace Heron.Revit.Addin
                     // and the screen must follow the model, not the client.
                     var failure = Json.ReadString(response, "error");
                     if (job.TakeBannerEnd())
-                        _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds, document);
+                        _banner.End(failure == null, Ended(failure, response),
+                                    clock.ElapsedMilliseconds, document);
 
                     // One line per request, whatever happened. A trail that
                     // only records successes answers the wrong question later.
@@ -748,6 +769,24 @@ namespace Heron.Revit.Addin
                 if (kept.Length == 44) { kept.Append('\u2026'); break; }
             }
             return kept.ToString().Trim();
+        }
+
+        /// <summary>
+        /// The banner's last line for a finished job: the modeller's own Keep
+        /// or Discard when the job asked them one (D-126), otherwise Explain's
+        /// line for the error code.
+        /// </summary>
+        private static string Ended(string failure, string response)
+        {
+            // A KEEP OR DISCARD THE MODELLER ANSWERED IS NO FAILURE, and "Done"
+            // over a change they just discarded would read as kept (D-126).
+            if (failure == null)
+            {
+                var answered = Json.ReadString(response, "modellerAnswer");
+                if (answered == "discard" || answered == "closed") return "Discarded - nothing was kept";
+                if (answered == "keep") return "Kept - one undo step";
+            }
+            return Explain(failure);
         }
 
         /// <summary>

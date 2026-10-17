@@ -312,6 +312,12 @@ def batching(runs):
           "whole every time")
     check("DID NOT HOLD" in runs.page({"reply": unheld}, "wf-1", 0, 5).splitlines()[0],
           "and a record's header says when the rollback did not hold")
+    discarded = reply_with(verdict="NOTHING WAS KEPT ...", verdictKind="discarded",
+                           verdictShort=None)
+    check(runs.verdict_line(discarded, b) == discarded["verdict"]
+          and "DISCARDED by the modeller"
+              in runs.page({"reply": discarded}, "wf-1", 0, 5).splitlines()[0],
+          "a Discard (D-126) is printed whole, and its record's header names who decided")
     after_rollback = runs.Batch()
     after_rollback.turn(1.0, 1.1)
     runs.verdict_line(rolled, after_rollback)

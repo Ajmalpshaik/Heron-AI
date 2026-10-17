@@ -157,9 +157,10 @@ TOOLS = {
     # The gate lives on the far side of the pipe on purpose: a client deciding
     # its own permission is not a permission.
     #
-    # NO PREVIEW, AND THAT IS NOW A DECISION RATHER THAN A SILENCE. Article 9
-    # asks for one; the owner chose, on 2026-09-23, to keep the change at once
-    # and record the exception - D-99, which names what stands in for it.
+    # NO PREVIEW WAS A DECISION RATHER THAN A SILENCE - D-99, 2026-09-23 - and
+    # D-126 supersedes it: Revit shows the change and asks the modeller Keep
+    # or Discard before it is kept, inside the add-in, under the owner's
+    # write.askBeforeKeeping. Nothing in this row decides whether it asks.
     #
     # ITS ROW IS ITS OWN LEVEL, AND ALSO_REACHES BELOW SAYS WHAT ELSE IT CAN
     # SEND (D-106): a PUBLISH or ADMIN fragment goes as its own operation.

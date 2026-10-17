@@ -747,6 +747,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-es.md`](needs-checking/group-es.md)
 
+## Group ET - Revit asks Keep or Discard before a change from a chat is kept: D-126 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
+
 ## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
