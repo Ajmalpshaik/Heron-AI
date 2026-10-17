@@ -195,6 +195,8 @@ an edit.
 | [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
 | [D-122](#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
 | [D-123](#d-123--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
+| [D-124](#d-124--selecting-or-zooming-to-elements-inside-a-linked-model-is-not-touching-it-and-asks-for-no-confirmation) | Selecting or zooming to elements inside a linked model is not touching it, and asks for no confirmation | ✅ Accepted · 2026-10-17 |
+| [D-125](#d-125--a-fragment-says-what-transaction-it-needs-notransactionopen-for-one-that-must-run-with-none-and-modify-for-one-that-needs-herons) | A fragment says what transaction it needs: noTransactionOpen for one that must run with none, and MODIFY for one that needs Heron's | ✅ Accepted · 2026-10-17 |
 | [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model) | A request the host calls a question is never offered a capability that changes the model | ✅ Accepted · 2026-10-17 |
 
 ## Format
@@ -1066,6 +1068,25 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs) (new), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`Captures`), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [NEEDS-CHECKING group ER](needs-checking/group-er.md)
 
 **Full record:** [`decisions/D-123.md`](decisions/D-123.md)
+
+## D-124 — Selecting or zooming to elements inside a linked model is not touching it, and asks for no confirmation
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"Q-64: selecting/zooming linked elements is not touching, no confirmation"* · **Source:** [Q-65](open-questions/tier-2.md), raised the same day by the show door's first linked fragment, `ZOOM_TO_LINKED_ELEMENTS`
+**Numbering:** written and accepted as D-118, and pushed as D-119; renumbered D-124 on 2026-10-17 while merging `main`, where #557, #554 and #556 had already given D-118 to D-123 to other decisions. Its question was written as Q-64 and is [Q-65](open-questions/tier-2.md) since #556 gave Q-64 to another; the owner's words quoted above name it by that first number.
+**Answers:** [Q-65](open-questions/tier-2.md)
+**Keeps:** Constitution Article 7 for everything that CHANGES a link - unloading, reloading, a path type, room bounding - and its explicit confirmation for each · [D-59](#d-59--reading-spans-loaded-links-only-when-the-modeller-asks-and-the-answer-says-how-many-it-read) - reading a link
+**Affects:** [`heron_tools.py`](../mcp/server/heron_tools.py) and [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_show` - the link hold removed), `zoom-to-linked-elements`
+
+**Full record:** [`decisions/D-124.md`](decisions/D-124.md)
+
+## D-125 — A fragment says what transaction it needs: noTransactionOpen for one that must run with none, and MODIFY for one that needs Heron's
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation, on the rows this decision closes: *"do it all the work dont keep anyting not finished okkey"* · **Source:** [FRAGMENT-ISSUES 5b-498 and 5b-499](fragment-issues/section-5b-rows-401-425.md), found building the show door
+**Takes:** [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view)'s first alternative - *"a second ambient need with an honest name"* - which it left for the owner
+**Keeps:** [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group) - `editScopeFailures` for a fragment that opens its own transactions, refused everywhere but the write path · the read and show doors' guarantee that Heron opens no transaction there · Golden Rule 16
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (`NoTransactionNeed`), [`heron_fragment.py`](../brain/heron_fragment.py) (`AMBIENT`), [`check-revit-gate.py`](../tools/check-revit-gate.py), `open-view` (version 3), `isolate-elements` (risk)
+
+**Full record:** [`decisions/D-125.md`](decisions/D-125.md)
 
 ## D-128 — A request the host calls a question is never offered a capability that changes the model
 

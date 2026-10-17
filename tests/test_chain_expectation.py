@@ -219,6 +219,16 @@ def main():
           "and so does revit_read, whose default of 'a read is safe to ask "
           "twice' is false for a read that consumes the chain")
 
+    # AND THE SHOW DOOR, for the same reason: zooming twice is harmless, but a
+    # zoom that consumed the chain has used it up. Found absent, the check
+    # fails rather than raising (heron-ship 2a).
+    at = server.find("def revit_show(")
+    shower = server[at:] if at >= 0 else ""
+    shower = shower[:shower.find("\n@server.tool()")] if "\n@server.tool()" in shower else shower
+    check(at >= 0 and "idempotent=not consumes" in shower,
+          "and so does revit_show - selecting or zooming twice is harmless, a "
+          "run that consumed the chain is not")
+
     if FAILURES:
         print("FAILED")
         for failure in FAILURES:

@@ -309,7 +309,14 @@ def ask(fid, name, doc, raw, code):
     # 4 and 5 - transactions
     opens_own = code is not None and "new transaction(" in code.lower()
     edit_mode = "editScopeFailures" in names
-    if opens_own and edit_mode:
+    none_open = "noTransactionOpen" in names
+    if none_open and not opens_own:
+        say(BY_DESIGN,
+            "declares noTransactionOpen - D-125: Revit refuses what it does "
+            "inside a transaction, so it runs with none open on every path, "
+            "inside the fragment's TransactionGroup on the write path, and "
+            "opens none of its own")
+    elif opens_own and edit_mode:
         say(BY_DESIGN,
             "opens its own transactions because it works in one of Revit's "
             "edit modes, and declares editScopeFailures to say so - D-112. "
@@ -323,7 +330,8 @@ def ask(fid, name, doc, raw, code):
     else:
         say(BY_DESIGN,
             "no fragment opens a transaction. RevitFragment.Run decides: a "
-            "read runs with none open at all, and a write runs inside ONE "
+            "read - and, through the show door, an EXECUTE fragment - runs "
+            "with none open at all, and a write runs inside ONE "
             "TransactionGroup named for the fragment, so one Ctrl+Z puts the "
             "model back (Golden Rule 16)")
     say(BY_DESIGN, "same answer as 4 - the scope is the executor's, not the "
@@ -493,6 +501,18 @@ def ask(fid, name, doc, raw, code):
             "declared %s, and a read runs with NO TRANSACTION OPEN - so Revit "
             "itself refuses any model change. Enforced by the host, not "
             "asserted here" % risk)
+    elif risk == "EXECUTE":
+        # THE SHOW DOOR, 2026-10-17. revit_show sends run_fragment_show, the
+        # read path one level up: no transaction, so the guarantee is still
+        # Revit's - and what is left for an EXECUTE fragment to change is
+        # what it is declared to change, the session and never the model.
+        say(BY_DESIGN,
+            "declared EXECUTE, and the show door runs it with NO TRANSACTION "
+            "OPEN - Revit itself refuses any model change, so what it can "
+            "change is the selection, the camera or the active view; one that "
+            "needs a transaction fails there in Revit's own words. Sent "
+            "through revit_change instead it runs inside the write path's "
+            "transaction like any change, behind the Changes switch")
     else:
         say(BY_DESIGN,
             "declared %s, so YES - by design, and that is the point of the "
