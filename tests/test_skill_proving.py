@@ -38,6 +38,7 @@ WHAT IT DOES NOT PROVE
 import io
 import os
 import re
+import shutil
 import sys
 import tempfile
 
@@ -69,10 +70,41 @@ def fake_skill(risk, needs, utterances=("one", "two")):
     }, "fixture.yaml")
 
 
+def fresh_store_block(PS, skill_id):
+    """prove-skill's index block, from its own main() for one skill on an
+    empty scratch folder. `heron_brain.lookup` is stood in for, so nothing
+    is ranked; HERON_KNOWLEDGE, sys.argv and the lookup are put back."""
+    import contextlib
+    import heron_brain as brain
+
+    home = tempfile.mkdtemp(prefix="heron-skillproof-fresh-")
+    kept = (os.environ.get("HERON_KNOWLEDGE"), list(sys.argv), brain.lookup)
+    os.environ["HERON_KNOWLEDGE"] = home
+    sys.argv = ["prove-skill.py", "--skill", skill_id]
+    brain.lookup = lambda *a, **k: {}
+    said = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+            PS.main()
+    except BaseException as raised:                      # noqa: BLE001
+        said.write("\nraised %s: %s\n" % (type(raised).__name__, raised))
+    finally:
+        if kept[0] is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = kept[0]
+        sys.argv, brain.lookup = kept[1], kept[2]
+        shutil.rmtree(home, ignore_errors=True)
+    text = said.getvalue()
+    at = text.find("THE INDEX THIS RAN AGAINST")
+    return text[at:at + 600] if at >= 0 else text[-600:]
+
+
 def main():
     # The brain refuses to do anything without somewhere to keep knowledge, and
     # a container has no %APPDATA%. Nothing here reads the store - the plan half
-    # is read from disk on purpose - but importing the brain still asks.
+    # is read from disk on purpose - but importing the brain still asks. The
+    # one exception is fresh_store_block() (row 5b-980), on a folder of its own.
     os.environ.setdefault("HERON_KNOWLEDGE",
                           tempfile.mkdtemp(prefix="heron-skillproof-"))
 
@@ -415,6 +447,17 @@ def main():
          "built_from": None})
     check(any("NOT RECORDED" in line for line in lines),
           "and a store that was asked and has no answer says NOT RECORDED")
+
+    print()
+    print("On an empty scratch folder the index block counts a store - row "
+          "5b-980")
+    block = fresh_store_block(PS, sorted(SKILL.load_all()[0])[0])
+    counted = re.search(r"identities (\d+)", block)
+    check("unreadable" not in block and "COULD NOT BE READ" not in block
+          and counted is not None and int(counted.group(1)) > 0,
+          "the store is built before the fingerprint, so the block counts it "
+          "rather than describing a store not made yet: %s"
+          % " ".join(block.split())[:160])
 
     print()
     if FAILURES:
