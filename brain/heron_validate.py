@@ -14,6 +14,10 @@ The Fragment Validation Agent. It gathers evidence for a proof. It never signs o
     python brain/heron_validate.py draft <slug> --from <run-record.json>
     python brain/heron_validate.py review [<slug>]      read the drafts
     python brain/heron_validate.py accept <slug> --by "Your Name"
+    python brain/heron_validate.py draft <slug> --release 2025 --from <record>
+    python brain/heron_validate.py accept <slug> --release 2025 --by "Your Name"
+    python brain/heron_validate.py draft <slug> --second-route --from <record>
+    python brain/heron_validate.py accept <slug> --second-route --by "Your Name"
     python brain/heron_validate.py restamp              fix platform-skewed fingerprints
     python brain/heron_validate.py audit --file <a.jsonl>
 
@@ -33,7 +37,10 @@ That rule is enforced three ways rather than promised once:
    `write_draft` refuses a path under the fragment library, so the agent has no
    route into the library at all.
 2. `accept` writes only the `proof:` key. It reads the file back afterwards and
-   restores it if `heron-status` moved by so much as a character.
+   restores it if `heron-status` moved by so much as a character. Its two
+   D-131 forms write less still: `--release` one entry of `proof.releases`,
+   `--second-route` the one `second_route` line - and each restores the file
+   if any other field of the proof read back different.
 3. A draft's `by:` field is left EMPTY. `proof_problems` in heron_fragment.py
    requires it, so a draft copied in without a person putting their name on it
    cannot pass validation, cannot be promoted, and fails loudly rather than
@@ -85,6 +92,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import heron_fragment as HF                                       # noqa: E402
+# Which releases a proof and its entries name. The matrix owns reading that,
+# prose and field alike, and a second reader here would be a second answer.
+import heron_matrix as MX                                         # noqa: E402
 
 try:
     import yaml
@@ -1366,6 +1376,390 @@ def read_draft(slug):
         return yaml.safe_load(fh.read())
 
 
+# ---------------------------------------------------------------------------
+# D-131 - a further release, and a second route, on a fragment already PROVEN
+# ---------------------------------------------------------------------------
+#
+# `proof:` stays the record that made the fragment PROVEN. A run on another
+# release becomes one entry of `proof.releases`; a second route fills the one
+# `second_route` line. Each is drafted and signed exactly as a proof is, and
+# each has its OWN draft and run record, named `<slug>@<release>` and
+# `<slug>@second-route`, so neither can be mistaken for - or overwrite - the
+# record the proof was signed on. Both names sit where the gitignore already
+# covers drafts and runs, and every reader that opens a record by its slug
+# keeps finding only the proof's.
+
+SECOND_ROUTE_KEY = "second-route"
+RELEASE_SHAPE = re.compile(r"^20\d\d$")
+
+
+def proof_key(slug, release=None, second_route=False):
+    """The name a draft and its run record carry: slug, slug@2025, slug@second-route."""
+    if release:
+        return "%s@%s" % (slug, release)
+    if second_route:
+        return "%s@%s" % (slug, SECOND_ROUTE_KEY)
+    return slug
+
+
+def run_record_path(key):
+    """Where the run record for `key` is read back from at `accept`."""
+    return os.path.join(DRAFTS_DIR, "runs", key + ".json")
+
+
+def record_release(record):
+    """(release, None) for the one Revit release a run record names, or (None, why).
+
+    The client writes the release into `model:` - "..., Revit 2025, session
+    123" - so it is read with the matrix's own pattern, and a record naming
+    none or two is refused rather than guessed at.
+    """
+    found = sorted(set(MX.RELEASE_IN_PROSE.findall(str(record.get("model") or ""))))
+    if not found:
+        return None, "the run record names no Revit release"
+    if len(found) > 1:
+        return None, "the run record names more than one release (%s)" % ", ".join(found)
+    return found[0], None
+
+
+def release_draft(frag, record, release):
+    """A draft of one `proof.releases` entry, from the same judgement a proof gets.
+
+    It is `draft_from_record`'s draft with the second route taken out - that
+    is the fragment's, not the release's - and the release and the record's
+    own reading of it added, so a run on the wrong Revit is a gap on the page
+    before anybody types a name.
+    """
+    draft = draft_from_record(frag, record)
+    proof = draft["proof-draft"]
+    gaps = [g for g in draft["gaps"] if g != "no second route was run"]
+    named, why = record_release(record)
+    if named != release:
+        gaps.append("the run is for Revit %s, and %s" % (
+            release, why if why else "the run record says it ran on Revit %s" % named))
+    draft["gaps"] = gaps
+    draft["release"] = release
+    draft["proof-draft"] = {
+        "release": release,
+        "date": proof["date"],
+        "by": "",
+        "model": proof["model"],
+        "positive_case": proof["positive_case"],
+        "negative_case": proof["negative_case"],
+        "fingerprint": proof["fingerprint"],
+    }
+    return draft
+
+
+def second_route_draft(frag, record):
+    """A draft of the `second_route` line, from a run that recorded one.
+
+    The route's answer is set BESIDE the fragment's own answer from the same
+    run, because a route is only evidence when the two can be compared - and
+    the comparison is the person's to make before signing, not this file's.
+    """
+    phases = {p.get("phase"): p for p in record.get("phases", [])}
+    positive, cross = phases.get("positive"), phases.get("second_route")
+    gaps = []
+    if not (cross and cross.get("ok")):
+        text = (NOT_ESTABLISHED + " - the run record holds no second route that "
+                "ran. Run the fragment with `validate --cross`")
+        gaps.append("no second route was run")
+    elif not (positive and positive.get("ok") and positive.get("provides")):
+        text = (NOT_ESTABLISHED + " - the fragment's own answer is not in the "
+                "same run, so there is nothing to set the route beside")
+        gaps.append("the positive case did not run")
+    else:
+        provides = positive["provides"]
+        text = ("%s. In the same run the fragment returned %s"
+                % (describe_phase(cross), ", ".join(
+                    "%s %s" % (k, provides[k]) for k in sorted(provides))))
+    return {
+        "fragment": frag.slug,
+        "capability": frag.data.get("capability"),
+        "drafted_by": "Fragment Validation Agent (HERON-FRG-VAL-001)",
+        "drafted_from": record.get("run_record") or "(unnamed run record)",
+        "confirmed": False,
+        "gaps": gaps,
+        "proof-draft": {
+            "date": record.get("date") or "",
+            "by": "",
+            "model": record.get("model") or NOT_ESTABLISHED,
+            "second_route": text,
+            "fingerprint": frag.fingerprint(),
+        },
+    }
+
+
+def _child_indent(lines, start, end):
+    """The indent of the keys directly inside the block at lines[start:end]."""
+    for index in range(start + 1, end):
+        line = lines[index]
+        if line.strip() and not line.lstrip().startswith("#"):
+            return line[:len(line) - len(line.lstrip())]
+    return "  "
+
+
+def splice_proof_key(text, key, value):
+    """`text` with ONE key of its proof block replaced, or added at its end.
+
+    The text-edit rule above, one level down: every other line of the proof -
+    the signed record itself - stays exactly where it was. `releases` is a
+    list D-131 writes and only D-131 reads, so it is rendered whole; the
+    caller reads the file back and refuses anything that moved besides `key`.
+    """
+    bounds = _block_bounds(text, "proof")
+    if not bounds:
+        raise ValueError("this fragment.yaml has no proof block to add %s to. "
+                         "Nothing was written." % key)
+    start, end = bounds
+    lines = text.split("\n")
+    indent = _child_indent(lines, start, end)
+    rendered = [indent + line for line in yaml.safe_dump(
+        {key: value}, allow_unicode=True, sort_keys=False,
+        default_flow_style=False, width=88).rstrip("\n").split("\n")]
+
+    first = None
+    for index in range(start + 1, end):
+        if lines[index].startswith(indent + key + ":"):
+            first = index
+            break
+
+    if first is None:
+        last = end
+        while last > start + 1 and not lines[last - 1].strip():
+            last -= 1
+        return "\n".join(lines[:last] + rendered + lines[last:])
+
+    stop = first + 1
+    while stop < end:
+        line = lines[stop]
+        if not line.strip():
+            stop += 1
+            continue
+        lead = len(line) - len(line.lstrip())
+        if lead > len(indent) or (lead == len(indent) and line.lstrip().startswith("- ")):
+            stop += 1
+            continue
+        break
+    while stop > first + 1 and not lines[stop - 1].strip():
+        stop -= 1
+    return "\n".join(lines[:first] + rendered + lines[stop:])
+
+
+def _write_into_proof(frag, key, value):
+    """Write one key of a fragment's proof, and prove nothing else moved.
+
+    Returns (code, problem) - (0, None) when written. On any difference but
+    `key` - the status, another field of the proof, another top-level key -
+    the file is put back as it was and nothing is saved.
+    """
+    path = os.path.join(frag.folder, "fragment.yaml")
+    with io.open(path, "r", encoding="utf-8") as fh:
+        before = fh.read()
+    base = HF.load(frag.folder)
+
+    try:
+        after_text = splice_proof_key(before, key, value)
+    except ValueError as exc:
+        return 2, str(exc)
+    with io.open(path, "w", encoding="utf-8") as fh:
+        fh.write(after_text)
+
+    def without(mapping, name):
+        return dict((k, v) for k, v in (mapping or {}).items() if k != name)
+
+    moved = []
+    try:
+        after = HF.load(frag.folder)
+    except ValueError as exc:
+        after = None
+        moved.append("the file no longer reads: %s" % exc)
+    if after is not None:
+        if after.status != base.status:
+            moved.append("the status moved from %s to %s" % (base.status, after.status))
+        if without(after.data, "proof") != without(base.data, "proof"):
+            moved.append("a key outside the proof changed")
+        if without(after.proof, key) != without(base.proof, key):
+            moved.append("another field of the proof changed")
+        if (after.proof or {}).get(key) != value:
+            moved.append("%s did not read back as written" % key)
+    if moved:
+        with io.open(path, "w", encoding="utf-8") as fh:
+            fh.write(before)
+        return 1, ("%s while writing proof.%s. Nothing was saved - this writes "
+                   "one key and must leave every other one alone"
+                   % ("; ".join(moved), key))
+    return 0, None
+
+
+def _proven_fragment(slug, by, library, what):
+    """(frag, None) for a PROVEN fragment whose proof still stands, or (None, (code, why))."""
+    if not by or not by.strip():
+        return None, (2, "accept needs a person's name: --by \"Your Name\"")
+    library = library if library is not None else load_library()
+    match = [f for f in library if f.slug == slug]
+    if not match:
+        return None, (2, "no fragment called '%s'" % slug)
+    frag = match[0]
+    if frag.status not in HF.NEEDS_PROOF or not isinstance(frag.proof, dict):
+        return None, (2, (
+            "'%s' is %s. %s is recorded on a fragment already PROVEN - its first "
+            "proof is `accept %s --by` without it (D-131)"
+            % (slug, frag.status, what, slug)))
+    if frag.proof_is_stale():
+        return None, (2, (
+            "'%s' has a proof the code has moved under. %s on top of a proof "
+            "that no longer describes what runs would be evidence about two "
+            "different codes - prove it again first (D-30, D-131)" % (slug, what)))
+    return frag, None
+
+
+def accept_release(slug, release, by, library=None):
+    """A PERSON confirms a run on one more Revit release. D-131.
+
+    Writes one entry of `proof.releases` and nothing else. Refused for a
+    release already recorded by evidence that still stands - the proof's own
+    release, or an entry whose fingerprint still matches - so a good record is
+    never overwritten. An entry gone STALE is replaced, which is the same rule
+    `accept` keeps for a stale proof.
+    """
+    release = str(release or "").strip()
+    if not RELEASE_SHAPE.match(release):
+        return 2, "--release takes a year, e.g. --release 2025"
+    frag, refused = _proven_fragment(slug, by, library,
+                                     "A proof on another release")
+    if refused:
+        return refused
+
+    if release not in frag.supported:
+        return 2, ("'%s' does not claim Revit %s - its `revit:` is %s"
+                   % (slug, release, ", ".join(frag.supported)))
+    fresh, _stale = MX.proven_releases(frag)
+    if release in fresh:
+        return 2, ("Revit %s is already recorded on '%s', by %s, and it still "
+                   "matches the code. Signing it again would overwrite a good "
+                   "record with the same thing" % (
+                       release, slug, "its proof" if fresh[release] == "proof"
+                       else "an entry of proof.releases"))
+
+    key = proof_key(slug, release=release)
+    draft = read_draft(key)
+    if draft is None:
+        return 2, ("no draft for '%s' on Revit %s in brain/proof-drafts/ - run it "
+                   "there, then `draft %s --release %s --from %s`"
+                   % (slug, release, slug, release,
+                      os.path.relpath(run_record_path(key), ROOT)))
+    entry = dict(draft.get("proof-draft") or {})
+    if str(entry.get("release") or "") != release:
+        return 2, ("the draft is for Revit %s, not %s"
+                   % (entry.get("release") or "no release", release))
+    missing = [k for k in HF.RELEASE_REQUIRED if k != "by" and not entry.get(k)]
+    if missing:
+        return 2, ("the draft is not complete - no %s. A draft with a gap in it "
+                   "is a finding to act on, not a proof to accept"
+                   % ", ".join(missing))
+    for phase_name in ("positive_case", "negative_case"):
+        if NOT_ESTABLISHED in str(entry.get(phase_name) or ""):
+            return 2, ("the %s says NOT ESTABLISHED. A phase that did not run is "
+                       "an absence, and an absence cannot be signed."
+                       % phase_name.replace("_", " "))
+    problem = _stale_draft_refusal(frag, entry)
+    if problem:
+        return 2, problem
+
+    record_path = run_record_path(key)
+    try:
+        with io.open(record_path, "r", encoding="utf-8") as fh:
+            named, why = record_release(json.load(fh))
+    except (ValueError, OSError):
+        named, why = None, None
+    if why or (named and named != release):
+        return 2, ("%s, so it is no evidence about Revit %s. Run it on that "
+                   "release - `--session <pid>` names which Revit"
+                   % (why or "the run record says it ran on Revit %s" % named,
+                      release))
+    problem = _record_refusal(frag, record_path)
+    if problem:
+        return 2, problem
+
+    entry["by"] = by.strip()
+    ordered = dict((k, entry[k]) for k in HF.RELEASE_REQUIRED)
+    rows = [row for row in MX.release_entries(frag)
+            if str(row.get("release")) != release]
+    code, problem = _write_into_proof(frag, "releases", rows + [ordered])
+    if code:
+        return code, problem
+
+    os.remove(draft_path(key))
+    return 0, ("Revit %s recorded on %s by %s, as an entry of proof.releases. "
+               "The proof itself and the status (%s) are as they were"
+               % (release, slug, by.strip(), frag.status))
+
+
+def accept_second_route(slug, by, library=None):
+    """A PERSON confirms a second route on a fragment already PROVEN. D-131.
+
+    Writes the one `second_route` line of the proof, from a recorded run,
+    and only where the proof says NOT ESTABLISHED: a route already written is
+    never replaced. Nothing here judges whether the route AGREES - the draft
+    sets the two answers side by side, and that is what the name signs.
+    """
+    frag, refused = _proven_fragment(slug, by, library, "A second route")
+    if refused:
+        return refused
+
+    written = str(frag.proof.get("second_route") or "").strip()
+    if written and NOT_ESTABLISHED not in written:
+        return 2, ("'%s' already has a second route: %s ... Writing another would "
+                   "overwrite it" % (slug, written[:80]))
+
+    key = proof_key(slug, second_route=True)
+    draft = read_draft(key)
+    if draft is None:
+        return 2, ("no second-route draft for '%s' in brain/proof-drafts/ - run it "
+                   "with `validate --cross`, then `draft %s --second-route --from %s`"
+                   % (slug, slug, os.path.relpath(run_record_path(key), ROOT)))
+    proof = dict(draft.get("proof-draft") or {})
+    text = str(proof.get("second_route") or "").strip()
+    if not text or NOT_ESTABLISHED in text:
+        return 2, ("the draft's second route says %s. A route that did not run "
+                   "cannot be signed" % (text or "nothing"))
+    problem = _stale_draft_refusal(frag, proof)
+    if problem:
+        return 2, problem
+
+    record_path = run_record_path(key)
+    try:
+        with io.open(record_path, "r", encoding="utf-8") as fh:
+            record = json.load(fh)
+    except (ValueError, OSError) as exc:
+        return 2, ("no run record to re-check at %s (%s). The draft is a sentence; "
+                   "the record is the evidence" % (record_path, exc))
+    phases = {p.get("phase"): p for p in record.get("phases", [])}
+    cross, positive = phases.get("second_route"), phases.get("positive")
+    if not (cross and cross.get("ok")):
+        return 2, "the run record holds no second route that ran"
+    if not (positive and positive.get("ok") and positive.get("provides")):
+        return 2, ("the run record holds no answer of the fragment's to set the "
+                   "route beside")
+    kept_wrong = kept_problem(frag, positive)
+    if kept_wrong:
+        return 2, kept_wrong
+
+    value = ("%s. Run %s on %s. Signed by %s through `accept --second-route` "
+             "(D-131)" % (text, proof.get("date") or record.get("date") or "?",
+                          proof.get("model") or record.get("model") or "?",
+                          by.strip()))
+    code, problem = _write_into_proof(frag, "second_route", value)
+    if code:
+        return code, problem
+
+    os.remove(draft_path(key))
+    return 0, ("second route recorded on %s by %s. Every other line of the proof "
+               "and the status (%s) are as they were" % (slug, by.strip(), frag.status))
+
+
 def _evidence_refusal(slug, frag, proof):
     """Why this draft must not be signed, or None.
 
@@ -1408,7 +1802,20 @@ def _evidence_refusal(slug, frag, proof):
                 "current code. Signing it again would overwrite a good proof "
                 "with the same thing and change nothing. The draft left in "
                 "brain/proof-drafts/ is a leftover from when it WAS proved, "
-                "not work waiting to be done." % (slug, frag.status))
+                "not work waiting to be done. A proof on ANOTHER Revit release "
+                "is `accept --release`, and a second route `accept "
+                "--second-route` - neither touches this proof (D-131)."
+                % (slug, frag.status))
+
+    stale = _stale_draft_refusal(frag, proof)
+    if stale:
+        return stale
+
+    return _record_refusal(frag, os.path.join(DRAFTS_DIR, "runs", slug + ".json"))
+
+
+def _stale_draft_refusal(frag, proof):
+    """Why a draft taken against other code cannot be signed, or None."""
 
     # A DRAFT TAKEN AGAINST CODE THAT HAS SINCE CHANGED CANNOT BE USED, AND
     # SIGNING IT SPENDS THE ONE THING ONLY A PERSON CAN GIVE. `accept` writes
@@ -1434,8 +1841,16 @@ def _evidence_refusal(slug, frag, proof):
                 "never be promoted and the signature would be spent for "
                 "nothing. Re-run the fragment and draft it again."
                 % (recorded, current))
+    return None
 
-    record_path = os.path.join(DRAFTS_DIR, "runs", slug + ".json")
+
+def _record_refusal(frag, record_path):
+    """Why the run record at `record_path` is no evidence, or None.
+
+    The half of `_evidence_refusal` that reads the RECORD rather than the
+    draft - split out so a release entry (D-131) is judged by exactly the
+    questions a proof is, against its own record.
+    """
     if not os.path.isfile(record_path):
         return ("no run record at %s, so the evidence cannot be re-checked. "
                 "The draft's wording is a sentence for a person; the record is "
@@ -1596,6 +2011,14 @@ def accept(slug, by, library=None):
         return 2, problem
 
     proof["by"] = by.strip()
+
+    # D-131. A proof taken again after the code moved replaces the record of
+    # the old code, as before - but the releases already recorded are not
+    # this draft's to drop. Each entry keeps the fingerprint it was taken
+    # against, so the matrix stops counting it until it is proved again.
+    earlier = (frag.proof or {}).get("releases") if isinstance(frag.proof, dict) else None
+    if earlier and "releases" not in proof:
+        proof["releases"] = earlier
 
     path = os.path.join(frag.folder, "fragment.yaml")
     with io.open(path, "r", encoding="utf-8") as fh:
@@ -1814,6 +2237,11 @@ def main(argv=None):
     p_draft = sub.add_parser("draft", help="turn a run record into a proof draft")
     p_draft.add_argument("slug")
     p_draft.add_argument("--from", dest="record", required=True)
+    one_of = p_draft.add_mutually_exclusive_group()
+    one_of.add_argument("--release", help="a run on one more Revit release of a "
+                                          "PROVEN fragment (D-131), e.g. 2025")
+    one_of.add_argument("--second-route", action="store_true",
+                        help="a recorded second route for a PROVEN fragment (D-131)")
 
     p_review = sub.add_parser("review", help="read the drafts")
     p_review.add_argument("slug", nargs="?")
@@ -1821,6 +2249,12 @@ def main(argv=None):
     p_accept = sub.add_parser("accept", help="a PERSON confirms a draft")
     p_accept.add_argument("slug")
     p_accept.add_argument("--by", required=True, help="your name. This is the signature")
+    one_of = p_accept.add_mutually_exclusive_group()
+    one_of.add_argument("--release", help="write one entry of proof.releases on a "
+                                          "PROVEN fragment (D-131), e.g. 2025")
+    one_of.add_argument("--second-route", action="store_true",
+                        help="write proof.second_route on a PROVEN fragment, from "
+                             "its recorded run (D-131)")
 
     p_stamp = sub.add_parser("restamp", help="fix platform-skewed fingerprints")
     p_stamp.add_argument("--apply", action="store_true",
@@ -1849,16 +2283,40 @@ def main(argv=None):
         if not match:
             print("No fragment called '%s'." % args.slug)
             return 2
+        if args.release and not RELEASE_SHAPE.match(args.release):
+            print("--release takes a year, e.g. --release 2025")
+            return 2
+        key = proof_key(args.slug, args.release, args.second_route)
+        if key != args.slug and (os.path.abspath(args.record)
+                                 != os.path.abspath(run_record_path(key))):
+            # `accept` re-reads the evidence from where this name says it is,
+            # so a record anywhere else would be drafted and then refused -
+            # and the default `validate --out` is the PROOF's record.
+            print("A %s draft is re-checked at accept against %s, and this record "
+                  "is %s. Run it with `validate --out %s`."
+                  % ("release" if args.release else "second-route",
+                     os.path.relpath(run_record_path(key), ROOT), args.record,
+                     os.path.relpath(run_record_path(key), ROOT)))
+            return 2
         with io.open(args.record, "r", encoding="utf-8") as fh:
             record = json.loads(fh.read())
-        draft = draft_from_record(match[0], record)
-        path = write_draft(args.slug, draft)
+        if args.release:
+            draft = release_draft(match[0], record, args.release)
+            how = "--release %s " % args.release
+        elif args.second_route:
+            draft = second_route_draft(match[0], record)
+            how = "--second-route "
+        else:
+            draft = draft_from_record(match[0], record)
+            how = ""
+        path = write_draft(key, draft)
         print("Drafted %s" % os.path.relpath(path, ROOT))
         for gap in draft["gaps"]:
             print("  gap: %s" % gap)
         print("")
         print("Nothing has been promoted. Read it, then:")
-        print("  python brain/heron_validate.py accept %s --by \"Your Name\"" % args.slug)
+        print("  python brain/heron_validate.py accept %s %s--by \"Your Name\""
+              % (args.slug, how))
         return 0
 
     if args.command == "review":
@@ -1882,7 +2340,12 @@ def main(argv=None):
         return 0
 
     if args.command == "accept":
-        code, message = accept(args.slug, args.by)
+        if args.release:
+            code, message = accept_release(args.slug, args.release, args.by)
+        elif args.second_route:
+            code, message = accept_second_route(args.slug, args.by)
+        else:
+            code, message = accept(args.slug, args.by)
         print(message)
         return code
 

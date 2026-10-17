@@ -307,8 +307,8 @@ def main():
     # up to the transaction, so the thing that separates them is this pair of
     # declarations and nothing else.
     check(declared_cs.get("run_fragment_read") == "ANALYZE",
-          "run_fragment_read is ANALYZE - it opens no transaction, so Revit itself refuses "
-          "any change")
+          "run_fragment_read is ANALYZE - it opens no transaction, so Revit refuses a "
+          "change, and the add-in counts the model around every read (row 5b-350)")
     check(declared_cs.get("run_fragment_write") == "MODIFY",
           "run_fragment_write is MODIFY - it opens one, so the permission gate and the amber "
           "banner both have to know")
