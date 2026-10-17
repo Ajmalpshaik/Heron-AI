@@ -521,6 +521,18 @@ synthetic transcripts shaped like both builds, with a negative case. **Not yet r
 transcripts**, which are on the laptop; its first real use is the re-timing of `CREATE_FAMILY_FORMS`
 ([D-116](DECISIONS.md)).
 
+**MEASURED 2026-10-17 - one `CREATE_FAMILY_FORMS` call and the fragment warm-up; the chat re-timing NOT
+RUN.** On the laptop's Revit 2024.3 one call built 109 forms - a list the size of the pump set - in 3,536 ms
+of Revit's own time, rolled back ([Group DA](needs-checking/group-da.md), DA5), where the pump set's 107 forms
+one call each had taken 11 batches ([row 5b-378](FRAGMENT-ISSUES.md)). The warm-up took the first fragment
+after a Revit start from 4,329 ms to 1,214 ms - OFF against ON, `report-family-forms`, each read a minute
+after connecting, the cached run 2 to 4 ms either way ([D-56](decisions/D-56.md)'s baseline: 5,193 ms cold).
+A family built by a chat with `CREATE_FAMILY_FORMS` is **NOT RUN**: `revit_change` runs a PROVEN capability
+only ([D-117](decisions/D-117.md)) and the card stays DRAFT until its proof is signed, so
+`tools/time-family-build.py` has still not timed a build. The group's results say which add-in each run
+used and why the warm-up's switch was read from the Claude app's own copy of `heron.config`
+([row 5b-1004](fragment-issues/section-5b-rows-401-425.md)).
+
 ### 8.8 What the tool list costs a chat — built 2026-10-17
 
 **What the owner asked:** cut what Heron's tool list costs in every chat. [D-03](DECISIONS.md) accepted

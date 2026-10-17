@@ -35,6 +35,36 @@ positive:
       'Level 1', Elevation from Level 2700 mm", and on Level 2 also 2700 mm
       above it, written back by version 2. RAN: exactly that
 
+  # VERSION 3, 2026-10-17 - FRAGMENT-ISSUES 5b-590. RUN in scratch Project1,
+  # Revit 2020, every leg rolled back. Level 2 is at 4000 mm.
+  - given: >
+      TRG_GEN_CutOut_Rectangular_HVAC: 25mm Cutout Buffer - level-based, with
+      "Defines Origin" ticked on the plane at the BOTTOM of its opening - at
+      z 6152 and z 6127 on Level 2: the shape of the real refusal of
+      2026-10-15, 2152 and 2127 mm above the level
+    expect: >
+      placed 2; readBack "level-based, on 'Level 2', standing 2152 mm above it
+      - Level 'Level 2', Elevation from Level 2152 mm, its insertion point
+      150 mm below that", and the same at 2127. Version 2 refused it "2002 mm
+      above 'Level 2' ... where it was asked 2152 mm above" and kept nothing.
+      RAN: exactly that, tracked across 1, 2, 3 and 5 points
+
+  - given: >
+      the same family, 50mm Cutout Buffer, at z 0 on Level 1 - the level's
+      own height
+    expect: >
+      placed 1, standing 0 mm above 'Level 1', its insertion point 300 mm
+      below that. Version 2 refused it "-300 mm above". RAN: exactly that
+
+  - given: >
+      every version 2 case above - the fan coil unit at 2700 on Level 1 and
+      6700 on Level 2, the hosted diffuser three times at 3000 and once at
+      6700, the ceiling-mounted diffuser at its level's own height - run by
+      version 2 and version 3 side by side on the same placements
+    expect: >
+      word for word the same `placed`, `failed` and `readBack` from both: each
+      of those families' insertion point is its own level. RAN: the same, twice
+
   - given: the same three hosted diffusers, tracked across 1, 2, 3 and 5 points
     expect: >
       placed 1, 2, 3 and 5, each read back at 3000 mm on Level 1's plane - the
@@ -78,6 +108,16 @@ negative:
       rule. RAN: placed and read back as said; the filter itself was run on the
       hosted diffusers, not on this one
 
+  # VERSION 3 - the refusal is unchanged.
+  - given: >
+      M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted asked at
+      3000 mm above Level 1, run by version 2 and version 3 side by side
+    expect: >
+      both refuse with the same words and keep nothing - reading the height
+      where the family's own level stands does not let a family that cannot
+      be lifted through. RAN: the same, twice (Revit 2020, rolled back)
+
 second_route:
   - a schedule of that family, counted against the number asked for
   - one Ctrl+Z removes the whole layout in a single step (Golden Rule 16)
+  - in a section through a placed cut-out, its centre on the height asked, and Elevation from Level in Properties the same number (version 3)

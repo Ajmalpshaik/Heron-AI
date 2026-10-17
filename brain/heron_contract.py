@@ -94,10 +94,12 @@ import sys
 try:
     import yaml
 except ImportError:                                          # pragma: no cover
+    import heron_install as INSTALL
     sys.stderr.write(
-        "Heron's brain needs PyYAML to read an agent contract.\n"
-        "  pip install --user pyyaml\n"
-        "It installs per-user and needs no administrator rights - D-01.\n")
+        "Heron's brain needs PyYAML to read an agent contract. In the Heron folder:\n"
+        "  %s\n"
+        "It installs per-user and needs no administrator rights - D-01.\n"
+        % INSTALL.install_line("pip install --user pyyaml"))
     raise
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

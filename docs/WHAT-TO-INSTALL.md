@@ -33,8 +33,8 @@
 | 1 | **Revit** | Heron works inside it | You have it already. `heron-install --list` names the releases Heron finds on the PC | Revit opens |
 | 2 | **Claude Code** | Where you type. Claude decides what you meant; Heron does the Revit work | From Anthropic. It is a program of its own and does not need Node ([Q-39](open-questions/answered.md)) | Open the Heron folder in it: `/mcp` lists `heron` |
 | 3 | **Python** | Heron's brain, and its connection to Claude, are written in Python | `winget install Python.Python.3.12 --scope user`, or Python from the Microsoft Store | `python --version` in a new terminal. Claude Code starts Heron with the plain command `python`, so that command has to answer |
-| 4 | **PyYAML** — Heron's only *required* Python package | Every Heron tool is described in a file Heron reads with it | In the Heron folder: `pip install --user -r requirements.txt` | `python tools/check-dependencies.py` |
-| 5 | **The MCP package** (`mcp`) | It is the line between Claude Code and Heron | `pip install --user mcp` | the same command |
+| 4 | **PyYAML** — Heron's only *required* Python package | Every Heron tool is described in a file Heron reads with it | In the Heron folder: `python -m pip install --user --require-hashes -r requirements-lock.txt` — one line for rows 4 and 5, every package pinned and hashed, the versions the installer puts on a PC. Python 3.11 to 3.14. [`requirements.txt`](../requirements.txt) stays the list of what Heron needs | `python tools/check-dependencies.py` |
+| 5 | **The MCP package** (`mcp`) | It is the line between Claude Code and Heron | The same line as row 4. Never `mcp` on its own and unpinned: that pulled a `cryptography` which broke on import, on 2026-09-16 ([README](../README.md)) | the same command |
 | 6 | **Heron itself** | The Heron tab in Revit | **Close Revit first**, then double-click `HeronInstaller.exe` in the Heron folder | The Heron tab appears the next time Revit opens |
 
 **The Heron folder is the download.** On the [Releases page](https://github.com/Ajmalpshaik/Heron-AI/releases),
@@ -43,7 +43,10 @@ at the top of the zip, beside the files rows 2 and 4 use. The other zips on that
 itself, one per Revit release; the installer fetches those, so you do not need to. Nothing is signed
 yet, so Windows says *"Windows protected your PC"* the first time: *More info*, then *Run anyway*.
 
-**Install both 4 and 5.** Installing `mcp` does not bring PyYAML with it (measured 2026-09-24).
+**Install both 4 and 5** — the one line does. Installing `mcp` on its own does not bring PyYAML with it
+(measured 2026-09-24). **Not on v0.1.0:** its download has no `requirements-lock.txt`, which came on
+2026-10-17; the next release's download is built to carry it, not yet downloaded and run
+([Group EP](needs-checking/group-ep.md)).
 Heron's setup check looked only for `mcp` until 2026-10-09 and asks for both since - changed in the
 script and **not yet run on Windows** ([row 5b-201](FRAGMENT-ISSUES.md)). Without PyYAML, Heron
 still talks to Revit, but every question to its knowledge answers *"needs PyYAML"* until it is
