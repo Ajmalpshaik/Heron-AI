@@ -763,7 +763,7 @@ def main():
 
     # --- 11. a text note's marks and its view's chain, where a chat reads ---
     #
-    # FRAGMENT-ISSUES 5b-880. EDIT_TEXT_VALUES v4 takes \r, \v and \\ in a
+    # FRAGMENT-ISSUES 5b-975. EDIT_TEXT_VALUES v4 takes \r, \v and \\ in a
     # note's wording and READ_ELEMENT_PARAMETERS v3 shows a note in the same
     # marks, and both said so only in YAML comments no chat sees. A chat's
     # values arrive one per line, so without the marks it cannot type a note

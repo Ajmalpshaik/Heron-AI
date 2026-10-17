@@ -148,7 +148,7 @@ contract:
     # THE COMMENT DIRECTLY ABOVE A VALUE THE CALLER TYPES - field, text,
     # replacement - is printed under that value by heron_resolve and
     # heron_lookup (heron_fragment.need_notes), and is never searched, so it
-    # moves no routing (FRAGMENT-ISSUES 5b-880). This one sits above
+    # moves no routing (FRAGMENT-ISSUES 5b-975). This one sits above
     # `elements`, which nobody types, and is never printed.
     - name: elements
       type: IList<Element>
