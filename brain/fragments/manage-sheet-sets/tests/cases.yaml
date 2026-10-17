@@ -19,6 +19,29 @@ positive:
       `memberCount` matching what the dialog shows - read from the set, not
       counted from what was sent
 
+  # Version 2 (2026-10-17, rows 5b-466 and 5b-545). The proof plan is
+  # tools/jobs/manage-sheet-sets-v2-revit2020-2026-10-17.yaml, NEEDS-CHECKING
+  # Group FA.
+  - given: mode "add", an existing set's name, and three sheets not in it
+    expect: >
+      `changed` 3, `memberCount` the set's old count plus 3, the same set
+      under the same name in File - Print - Settings with the three ticked
+      and every sheet it had still ticked. LIST_SHEET_SETS read before and
+      after names the same set with three more sheets
+
+  - given: mode "remove", an existing set's name, and two of its sheets
+    expect: >
+      `changed` 2, `memberCount` its old count minus 2, the rest still ticked
+
+  - given: mode "add" with two sheets already in the set and one that is not
+    expect: >
+      `changed` 1, the two in `unchanged`, the set holding one more
+
+  - given: the Print dialog's range on "Current window" before any mode runs
+    expect: >
+      `printRange` saying it was put back to Current window, and File - Print
+      showing Current window again - after the run, and after the rollback
+
 negative:
   - given: the print range left as it was
     expect: >
@@ -28,8 +51,11 @@ negative:
 
   - given: a transaction that rolls back afterwards
     expect: >
-      the print RANGE still changed. The print manager is application state,
-      not document state, and an undo does not put it back
+      the print RANGE as it was before the run. The print manager is
+      application state, not document state, and an undo does not put it
+      back - so since version 2 the fragment puts it back itself, before it
+      returns, and `printRange` says so. Version 1 left it on "Selected
+      views/sheets" (found 2026-10-14)
 
   - given: a set name that does not exist, for rename or delete
     expect: >
@@ -43,7 +69,32 @@ negative:
     expect: >
       `refused`, not an empty set created quietly
 
+  # Version 2.
+  - given: mode "add" with every sheet given already in the set
+    expect: >
+      `refused` saying nothing was added, `done` false, `changed` 0, and the
+      set exactly as it was. Revit's Save throws on a set that is unchanged,
+      so this is refused before Save is asked
+
+  - given: mode "remove" with sheets none of which is in the set
+    expect: >
+      `refused` saying nothing was taken out, every one in `unchanged`
+
+  - given: mode "remove" with every sheet the set holds
+    expect: >
+      `refused` - a set left holding nothing is what LIST_SHEET_SETS flags
+      EMPTY, and deleting the set is mode delete. The set unchanged
+
+  - given: mode "add" or "remove" and a set name that does not exist
+    expect: >
+      `refused` naming it, nothing changed, and no new set made under that
+      name - add never creates
+
 second_route:
   - >
     open File - Print in Revit and look at the saved set list, then select the
     set and check the sheets it selects
+  - >
+    LIST_SHEET_SETS on the same model, before and after an add or a remove:
+    the set's sheets by number, read by a different card through the
+    element rather than the print manager

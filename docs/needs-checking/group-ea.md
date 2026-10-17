@@ -19,6 +19,12 @@ and an empty set marked EMPTY - with `setCount`, `emptySets` and `findings`. The
 set is not saved in the model and is not counted. `LIST_SHEETS` and `MANAGE_SHEET_SETS` are untouched
 below their routing tables, so both stay PROVEN.
 
+**2026-10-17: both sheet-set cards are version 2** ([Group FA](group-fa.md), [row 5b-545](../fragment-issues/section-5b-rows-401-425.md)).
+`MANAGE_SHEET_SETS` is DRAFT again - it adds sheets to and takes them out of an existing set, and puts the
+print range back. This card now also flags two sets holding the same sheets and views, in a new `sameSets`.
+EA1 below proved version 1 and was signed; version 2 makes that proof stale, so the card is DRAFT again on
+Ajmal PS's choice that day, and [FA5](group-fa.md) is its re-proof.
+
 **Declared 2020 to 2027 and compiles on all eight** (`tools/check-fragments-compile.py`). Nothing has been
 run in Revit through this card. A scratch read with the same collector and member walk answered on the
 owner's Revit 2020 that day - six sets, one empty - and that is the observation that asked for the card,
