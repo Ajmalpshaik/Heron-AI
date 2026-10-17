@@ -73,6 +73,12 @@
 // typed with a straight one finds nothing. Past 20,000 characters the rest are
 // counted, not printed.
 //
+// VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-737) adds what EDIT_TEXT_VALUES
+// version 5 can now SET, so a check reads exactly what a format wrote: each
+// paragraph's bold, italic and underline - "bold 1; partly bold 3; underline
+// 5-6", all of a paragraph, part of it, or left out when none - and every
+// list's own start number, where version 3 read the first paragraph's only.
+//
 // Not a text note, or not "Text": everything above, exactly as version 2.
 
 var values = new Dictionary<ElementId, string>();
@@ -122,6 +128,7 @@ foreach (var e in elements)
 
         var pieces = wording.Split('\r');
         var lists = new List<string>();
+        var styles = new List<string>();
         if (shape == null) lists.Add("unreadable - Revit gave no formatted text");
         else
         {
@@ -142,14 +149,68 @@ foreach (var e in elements)
                 kinds.Add(kind);
                 at += pieces[k].Length + 1;
             }
-            int startNumber = -1;
-            try { startNumber = shape.GetListStartNumber(new TextRange(0, pieces[0].Length + 1)); } catch { }
+            // Each run's own start number (version 4): a note can hold two
+            // lists, and the second can start anywhere. -1 off a bullet or no list.
+            Func<int, int> startOf = k =>
+            {
+                int startsAt = 0;
+                for (int j = 0; j < k; j++) startsAt += pieces[j].Length + 1;
+                try { return shape.GetListStartNumber(new TextRange(startsAt, pieces[k].Length + 1)); }
+                catch { return -1; }
+            };
             for (int k = 1; k <= kinds.Count; k++)
             {
                 if (k < kinds.Count && kinds[k] == kinds[first]) continue;
+                var startNumber = startOf(first);
                 lists.Add((k - 1 == first ? (first + 1).ToString() : (first + 1) + "-" + k) + " "
-                    + kinds[first] + (first == 0 && startNumber > 0 ? " from " + startNumber : ""));
+                    + kinds[first] + (startNumber > 0 ? " from " + startNumber : ""));
                 first = k;
+            }
+
+            // Version 4: bold, italic and underline, paragraph by paragraph -
+            // "bold 1; partly bold 3; underline 5-6". A paragraph is all one
+            // way, partly, or not at all, as Revit's FormatStatus says.
+            at = 0;
+            var all = new List<int>[3];
+            var part = new List<int>[3];
+            for (int s = 0; s < 3; s++) { all[s] = new List<int>(); part[s] = new List<int>(); }
+            for (int k = 0; k < pieces.Length; k++)
+            {
+                if (pieces[k].Length > 0)
+                {
+                    var chars = new TextRange(at, pieces[k].Length);
+                    for (int s = 0; s < 3; s++)
+                    {
+                        var status = FormatStatus.None;
+                        try
+                        {
+                            status = s == 0 ? shape.GetBoldStatus(chars)
+                                : s == 1 ? shape.GetItalicStatus(chars) : shape.GetUnderlineStatus(chars);
+                        }
+                        catch { }
+                        if (status == FormatStatus.All) all[s].Add(k + 1);
+                        else if (status == FormatStatus.Mixed) part[s].Add(k + 1);
+                    }
+                }
+                at += pieces[k].Length + 1;
+            }
+            Func<List<int>, string> runsOf = numbers =>
+            {
+                var said = new List<string>();
+                for (int a = 0; a < numbers.Count; a++)
+                {
+                    int b = a;
+                    while (b + 1 < numbers.Count && numbers[b + 1] == numbers[b] + 1) b++;
+                    said.Add(b == a ? numbers[a].ToString() : numbers[a] + "-" + numbers[b]);
+                    a = b;
+                }
+                return string.Join(", ", said);
+            };
+            string[] styleWords = { "bold", "italic", "underline" };
+            for (int s = 0; s < 3; s++)
+            {
+                if (all[s].Count > 0) styles.Add(styleWords[s] + " " + runsOf(all[s]));
+                if (part[s].Count > 0) styles.Add("partly " + styleWords[s] + " " + runsOf(part[s]));
             }
         }
 
@@ -164,9 +225,10 @@ foreach (var e in elements)
         // A note in no list at all - most of them - says so in two words.
         var listed = lists.Count == 1 && lists[0].EndsWith(" no list") ? "no list"
             : "lists: " + string.Join(", ", lists);
-        var line = string.Format("note {0}, {1} paragraph(s): {2} || {3}{4}", e.Id, pieces.Length,
+        var line = string.Format("note {0}, {1} paragraph(s): {2} || {3}{4}{5}", e.Id, pieces.Length,
             wording.Replace("\\", "\\\\").Replace("\r", "\\r").Replace("\v", "\\v"),
             listed,
+            styles.Count > 0 ? " || " + string.Join("; ", styles) : "",
             unusual.Count > 0 ? " || not typed plainly: " + string.Join(", ", unusual) : "");
         noteWording = noteWording == null ? line : noteWording + "\n" + line;
         continue;

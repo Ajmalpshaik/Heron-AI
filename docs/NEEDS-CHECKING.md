@@ -771,6 +771,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fb.md`](needs-checking/group-fb.md)
 
+## Group FD - a text note's numbering, bullets, indent and bold set through Heron: `EDIT_TEXT_VALUES` mode format, and the read that checks it (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fd.md`](needs-checking/group-fd.md)
+
 ## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fg.md`](needs-checking/group-fg.md)
