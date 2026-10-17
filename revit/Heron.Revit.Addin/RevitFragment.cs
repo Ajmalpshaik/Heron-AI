@@ -27,11 +27,17 @@ namespace Heron.Revit.Addin
     ///
     /// TWO PATHS THROUGH ONE METHOD, and only one of them can write.
     ///
-    ///   run_fragment_read   opens NO transaction. Revit refuses every model
-    ///                       change made outside one, so a fragment run this
-    ///                       way CANNOT alter the model - the enforcement is
-    ///                       Revit's, not a check of ours that could be
-    ///                       forgotten.
+    ///   run_fragment_read   opens NO transaction, and Revit refuses a model
+    ///                       change made outside one - NOT ALWAYS COMPLETELY.
+    ///                       Row 5b-350 is a read run of place-nested-family
+    ///                       that reported Revit's refusal and still left a
+    ///                       real instance in the family, twice; why is not
+    ///                       established (NEEDS-CHECKING CP1). So Revit's
+    ///                       refusal is the first guard and not the only one:
+    ///                       every read run is MEASURED before and after, and
+    ///                       one that moved the model is answered
+    ///                       read_changed_model, never as a read - see
+    ///                       ReadFootprint.
     ///   run_fragment_write  opens ONE TransactionGroup, so the whole job is
     ///                       one undo, and inside it one Transaction for each
     ///                       setup step that writes and one for the fragment.
@@ -387,9 +393,10 @@ namespace Heron.Revit.Addin
             // nothing those paths did not already allow.
             var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
 
-            // NEVER ON THE READ PATH. That path's whole guarantee is that no
-            // transaction is open, so Revit itself refuses every change - and
-            // a fragment that opens its own would walk straight through it.
+            // NEVER ON THE READ PATH. That path's guarantee is that no
+            // transaction is open, so Revit refuses a change - not always
+            // completely (row 5b-350), which is why a read is also measured -
+            // and a fragment that opens its own would walk straight through it.
             if (ownsTransactions && !writing)
             {
                 return Json.Error("needs_write_path",
@@ -560,6 +567,26 @@ namespace Heron.Revit.Addin
                 && string.Equals(Json.ReadString(request, "apply"), "true",
                                  StringComparison.OrdinalIgnoreCase);
 
+            // AND BEFORE A CHANGE IS KEPT, REVIT ASKS THE MODELLER - D-126, the
+            // same box as D-119's "ask" above. The owner's switch, read fresh
+            // here and never taken from the request (Golden Rule 19): a caller
+            // may ask to keep, and only the modeller says yes. A run that keeps
+            // nothing is never asked - it is rolled back whatever anybody would
+            // answer.
+            var askToKeep = apply && HeronPermissions.AsksBeforeKeeping();
+
+            // Said in the question, not decided by it: what a publish sent out
+            // of the model - an export, a save - is done, and Discard cannot
+            // take it back. The gate already chose by this same name.
+            var sendsOut = string.Equals(Json.ReadString(request, "op"), "run_fragment_publish",
+                                         StringComparison.Ordinal);
+
+            // A keep from a chat that Revit counted no change in is kept without
+            // the box, and the verdict says so (D-126). And whether the
+            // modeller's own selection is as they left it after a Discard.
+            var nothingToAsk = false;
+            var selectionRestored = true;
+
             ScriptState<object> state = null;
             string threw = null;
 
@@ -585,14 +612,31 @@ namespace Heron.Revit.Addin
             // which opens no transaction for Revit to post anything to.
             var said = new HeronFailureNote();
 
+            // What the read path counted before the run - null on the write
+            // path, which keeps what it changes on purpose and says so.
+            ReadFootprint counted = null;
+
             if (!writing)
             {
+                // MEASURED, NOT TRUSTED - row 5b-350. Before the run and after
+                // it, whether or not it threw: in that row the fragment's own
+                // answer was Revit's refusal and an element stayed anyway. A
+                // change found here is returned before the chain remembers
+                // anything or the answer is built, so it cannot be read as a
+                // clean read further down.
+                counted = ReadFootprint.Of(target);
                 threw = RunScript(script, globals, name, out state);
+                var changed = ReadChangedModel(name, target, counted, threw);
+                if (changed != null) return changed;
 
                 // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
                 // built around a question nobody answered is not the answer
                 // that was asked for. Ahead of `threw`, because a call the
                 // Cancel refused is often what threw. See HeronDialogWatch.
+                //
+                // AFTER THE COUNT, NOT BEFORE IT: this refusal says "nothing
+                // in the model was changed", which only the count above can
+                // vouch for on a read (row 5b-350).
                 var stoppedRead = DialogRefusal(name, null);
                 if (stoppedRead != null) return stoppedRead;
             }
@@ -610,8 +654,15 @@ namespace Heron.Revit.Addin
                 // HeronRollbackWitness.
                 using (var watch = Watch(target, name, label))
                 using (var group = new TransactionGroup(target, label))
+                using (var changed = asking || askToKeep
+                                         ? new RevitChangedSet(app.Application, target) : null)
                 {
                     group.Start();
+
+                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-126.
+                    // From here, so the setup steps count too: Keep keeps them.
+                    // The `using` takes the handler off however this block ends.
+                    if (changed != null) changed.Begin();
 
                     // SETUP THAT HAS TO CHANGE THE MODEL, inside this group.
                     //
@@ -738,24 +789,44 @@ namespace Heron.Revit.Addin
                     if (HeronDialogWatch.Refused)
                         return Stopped(name, RollBackAndCheck(group, target, watch));
 
-                    // D-119: THE MODELLER DECIDES, here, with the work done and
-                    // the group still open - so Keep and Discard are exactly
-                    // `apply` and its absence, chosen by a person who has seen
-                    // the result rather than sent by a caller who has not.
+                    // D-119 AND D-126: THE MODELLER DECIDES, here, with the work
+                    // done and the group still open - so Keep and Discard are
+                    // exactly `apply` and its absence, chosen by a person who
+                    // has seen the result rather than sent by a caller who has
+                    // not. One box for both doors: a DRAFT's one run ("ask") and
+                    // a keep from a chat while the owner's switch is on.
                     // AFTER the dialog check above: a job a Revit dialog
                     // stopped is rolled back, and nobody is asked to keep it.
-                    if (asking)
+                    Func<bool> putBack = null;
+                    if (asking || askToKeep)
                     {
-                        answered = AskTheModeller(app.ActiveUIDocument, name, out refreshed);
-                        apply = answered == Keep;
+                        answered = AskTheModeller(app, target, name, asking, sendsOut, changed,
+                                                  out refreshed, out putBack);
+                        if (answered != null) apply = answered == Keep;
+                        else nothingToAsk = true;
+                    }
+
+                    // AND AGAIN AFTER THE BOX: showing the change on screen
+                    // commits a transaction of its own, and a Revit dialog met
+                    // there stops the job exactly as one met in the fragment
+                    // does - rolled back, and the modeller's selection put back.
+                    if (HeronDialogWatch.Refused)
+                    {
+                        var stopped = Stopped(name, RollBackAndCheck(group, target, watch));
+                        if (putBack != null) putBack();
+                        return stopped;
                     }
 
                     // ASSIMILATE, so the whole group collapses to ONE undo step
                     // rather than leaving the inner transaction visible as its
                     // own. Rolling back instead is what makes the default a
-                    // preview.
+                    // preview - and what a Discard does.
                     if (apply) keptNote = KeepAndWatch(group, target, watch);
-                    else rolledBack = RollBackAndCheck(group, target, watch);
+                    else
+                    {
+                        rolledBack = RollBackAndCheck(group, target, watch);
+                        if (putBack != null) selectionRestored = putBack();
+                    }
                 }
             }
 
@@ -765,9 +836,11 @@ namespace Heron.Revit.Addin
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
-            if (!writing) return answer;
-            var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said);
-            return asking ? WithAnswer(verdict, answered, refreshed) : verdict;
+            if (!writing) return WithCount(answer, counted);
+            var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
+                                      nothingToAsk, answered != null && answered != Keep,
+                                      selectionRestored);
+            return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
 
         /// <summary>The modeller's three possible answers to the box (D-119).</summary>
@@ -845,72 +918,157 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// Show the modeller what the fragment did and ask: keep it, or put
-        /// the model back. Returns Keep, Discard or Closed. D-119.
+        /// the model back. Returns Keep, Discard or Closed - or null when there
+        /// was nothing to ask about. D-119, and D-126 for a keep from a chat.
         ///
         /// MODAL, AND THAT IS BOTH ITS GUARANTEE AND ITS LIMIT. Nothing on the
         /// wire can answer it - only a person at this Revit - and while it is
         /// open the modeller sees the view in front but cannot pan, zoom or
-        /// select. A change that cannot be judged from that view is discarded
-        /// and asked for again with a view that shows it.
+        /// select. So the change is put where they can see it first: what it
+        /// added and changed is selected and isolated in the active view, each
+        /// set only up to D-60's cap, and only in the model in front.
+        ///
+        /// IT ASKS AND NEVER DECIDES THE GROUP. Run keeps or rolls back on the
+        /// answer, in the one place that first asks the job's dialog watch
+        /// again - showing the change can meet a Revit dialog too.
+        ///
+        /// IN ORDER, AND EACH STEP HAS ITS REASON:
+        ///
+        ///   1. Stop collecting. Isolating commits a transaction of its own and
+        ///      is not part of the change.
+        ///   2. Nothing counted, nothing asked - for a keep from a chat only
+        ///      (null). A DRAFT's one run is always asked: its Keep is its
+        ///      proof's positive case.
+        ///   3. Save the modeller's selection, then select and isolate.
+        ///      `putBack` restores it, and Run calls it after any rollback
+        ///      (D-60); after a Keep the changed elements stay selected.
+        ///   4. REDRAW, or the box would sit over a view showing the model as it
+        ///      was. If the redraw fails the box says so, rather than inviting a
+        ///      Keep on a picture that may not show the change.
+        ///   5. Ask, with the dispatcher waiting for a person and the job's
+        ///      dialog watch stood down.
+        ///   6. End the isolation INSIDE the group, before it is kept or rolled
+        ///      back: a view's state survives a group's rollback (measured for a
+        ///      view change, D-115), and ending it after Assimilate would be a
+        ///      second undo entry.
         ///
         /// DISCARD IS THE DEFAULT, and so is every way out that is not Keep:
         /// Enter on the default, Escape, and the window's close button.
         /// </summary>
-        private static string AskTheModeller(UIDocument active, string name, out bool refreshed)
+        private static string AskTheModeller(UIApplication app, Document target, string name,
+                                             bool neverProved, bool sendsOut,
+                                             RevitChangedSet changed, out bool refreshed,
+                                             out Func<bool> putBack)
         {
-            // REDRAW FIRST, or the box would sit over a view showing the model
-            // as it was. The fragment's transaction is committed inside the
-            // still-open group, so there is something to draw. If the redraw
-            // fails the box says so, rather than inviting a Keep on a picture
-            // that may not show the change.
             refreshed = false;
+
+            // Nothing selected for the question leaves theirs untouched.
+            putBack = () => true;
+
+            changed.End();
+
+            // WHETHER TO ASK IS REVIT'S WHOLE COUNT - a view or a type made is a
+            // change too. What can be SHOWN is the narrower list below.
+            if (!neverProved
+                && !HeronKeepQuestion.Asks(changed.Added.Count, changed.Changed.Count,
+                                           changed.Deleted))
+            {
+                return null;
+            }
+
+            var added = Showable(target, changed.Added);
+            var altered = Showable(target, changed.Changed);
+
+            UIDocument front = null;
+            try { front = app.ActiveUIDocument; } catch { front = null; }
+            var inFront = front != null && front.Document != null && front.Document.Equals(target);
+
+            var addedShown = inFront && HeronKeepQuestion.Highlights(added.Count);
+            var alteredShown = inFront && HeronKeepQuestion.Highlights(altered.Count);
+
+            View isolatedIn = null;
+            if (addedShown || alteredShown)
+            {
+                var show = new List<ElementId>();
+                if (addedShown) show.AddRange(added);
+                if (alteredShown) show.AddRange(altered);
+                try
+                {
+                    var theirs = front.Selection.GetElementIds();
+                    front.Selection.SetElementIds(show);
+                    var shownIn = front;
+                    putBack = () => PutSelectionBack(shownIn, theirs);
+                    isolatedIn = Isolate(target, front.ActiveView, show);
+                }
+                catch (Exception ex)
+                {
+                    // NOT SHOWN IS SAID, NOT GUESSED: the question then tells
+                    // the modeller nothing is selected rather than pointing at a
+                    // selection that is not there.
+                    HeronApplication.Log("Could not show the change on screen: " + ex.Message);
+                    addedShown = false;
+                    alteredShown = false;
+                }
+            }
+
             try
             {
-                if (active != null)
+                if (inFront)
                 {
-                    active.RefreshActiveView();
+                    front.RefreshActiveView();
                     refreshed = true;
                 }
             }
             catch { refreshed = false; }
 
-            // So the dispatcher waits for a person rather than timing out.
+            // So the dispatcher waits for a person rather than timing out, and
+            // the activity banner steps out of the box's way.
             RevitDispatcher.AwaitingModeller();
 
             var shown = RevitDispatcher.Clean(name);
-            var undo = "Heron: " + shown;
 
-            var box = new TaskDialog("Heron - keep this change?")
+            var box = new TaskDialog(HeronKeepQuestion.Title)
             {
-                MainInstruction = "'" + shown + "' has never been proved. Keep what it did?",
-                MainContent = (refreshed
-                        ? "Heron ran it once, for real, on this model, and the view now shows "
-                          + "the result. Look at it before you choose."
-                        : "Heron ran it once, for real, on this model, but COULD NOT REDRAW THE "
-                          + "VIEW - what you see may not show the change. Discard unless you "
-                          + "can see it.")
-                    + "\n\nNothing is kept until you choose. You cannot move around the "
-                    + "model while this is open: if this view does not show the change, "
-                    + "Discard, open a view that does, and ask again.",
+                MainInstruction = HeronKeepQuestion.Headline(shown, neverProved),
+                MainContent = HeronKeepQuestion.Content(
+                    shown, target.Title, changed.Added.Count, changed.Changed.Count,
+                    changed.Deleted,
+                    HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
+                                               addedShown, alteredShown, isolatedIn != null),
+                    sendsOut, neverProved, refreshed),
                 AllowCancellation = true,
                 CommonButtons = TaskDialogCommonButtons.None,
                 DefaultButton = TaskDialogResult.CommandLink2,
             };
             box.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
-                "Keep it",
-                "I have checked it and it is right. It stays as one undo step, \"" + undo + "\".");
+                HeronKeepQuestion.KeepLink, HeronKeepQuestion.KeepNote(shown));
             box.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
-                "Discard it",
-                "Put the model back exactly as it was.");
+                HeronKeepQuestion.DiscardLink, HeronKeepQuestion.DiscardNote);
 
             // HERON NEVER ANSWERS ITS OWN QUESTION: the dialog watch armed
             // around this job stands down while the box is up, so only the
-            // modeller can answer it - HeronDialogWatch.HeronAsks.
-            TaskDialogResult result;
-            using (HeronDialogWatch.HeronAsks())
+            // modeller can answer it - HeronDialogWatch.HeronAsks. A box that
+            // could not be shown at all is not a yes.
+            var result = TaskDialogResult.Cancel;
+            try
             {
-                result = box.Show();
+                using (HeronDialogWatch.HeronAsks())
+                {
+                    result = box.Show();
+                }
             }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("The Keep or Discard box could not be shown: " + ex.Message);
+                result = TaskDialogResult.Cancel;
+            }
+
+            if (isolatedIn != null)
+            {
+                InItsOwnTransaction(target, "Heron: stop showing the change",
+                    () => isolatedIn.DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate));
+            }
+
             if (result == TaskDialogResult.CommandLink1) return Keep;
             if (result == TaskDialogResult.CommandLink2) return Discard;
             return Closed;
@@ -1521,6 +1679,138 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// What a read run is measured by, before and after - row 5b-350.
+        ///
+        /// THE READ PATH'S GUARANTEE WAS ONE SENTENCE: no transaction is open,
+        /// so Revit refuses every change. On 2026-10-06 a read run of
+        /// place-nested-family reported that very refusal - "Attempt to modify
+        /// the model outside of transaction" - and a real AngleBar instance
+        /// stayed in the family each time, twice. Why it survives is not
+        /// established (NEEDS-CHECKING CP1). So the sentence is no longer taken
+        /// on trust: the model is counted, and a run that moved the count is
+        /// never answered as a read.
+        ///
+        /// WHAT IT CAN SEE. An element that appeared or disappeared, placed or
+        /// a type, and a model Revit had not marked changed that it marks
+        /// changed afterwards. WHAT IT CANNOT: an element edited in place in a
+        /// model that was already unsaved, and any document other than the one
+        /// the fragment ran in - a family opened by EditFamily is its own
+        /// document. Said here so that a clean measurement is read as "nothing
+        /// appeared", not as "nothing happened".
+        ///
+        /// Two element counts each way. Measured as cheap enough on the
+        /// strength of count_elements, which makes the same count on every
+        /// proof; a model where it is not would show it here first.
+        /// </summary>
+        private sealed class ReadFootprint
+        {
+            public long Placed;
+            public long Types;
+            public bool Modified;
+
+            public static ReadFootprint Of(Document doc)
+            {
+                return new ReadFootprint
+                {
+                    Placed = new FilteredElementCollector(doc)
+                        .WhereElementIsNotElementType().GetElementCount(),
+                    Types = new FilteredElementCollector(doc)
+                        .WhereElementIsElementType().GetElementCount(),
+                    Modified = doc.IsModified,
+                };
+            }
+        }
+
+        /// <summary>
+        /// The refusal for a read run that changed the model, or null when the
+        /// second measurement agrees with the first.
+        ///
+        /// IT OUTRANKS WHATEVER THE FRAGMENT SAID, a throw included. In row
+        /// 5b-350 the fragment's own answer was Revit's refusal, which reads as
+        /// "nothing happened" - the one sentence that must not reach the chat
+        /// when an element is sitting at the origin. The fragment's words are
+        /// kept, after the change.
+        ///
+        /// NOTHING IS UNDONE HERE, AND THE REPLY DOES NOT PRETEND OTHERWISE.
+        /// No transaction recorded the change, so there may be no undo step for
+        /// it - in 5b-350 both instances were deleted by hand. Whether wrapping
+        /// the read in a TransactionGroup and rolling it back would remove such
+        /// an element is CP1's second question; D-115 keeps "nothing on the
+        /// read path opens a transaction", so it is not done on a guess.
+        /// </summary>
+        private static string ReadChangedModel(string name, Document target,
+                                               ReadFootprint before, string threw)
+        {
+            if (!target.IsValidObject)
+            {
+                return Json.Error("read_unverified",
+                    "'" + name + "' ran as a read, and the model it ran in is no longer open, "
+                    + "so Heron cannot say whether the run changed it. Its answer is not given.");
+            }
+
+            var after = ReadFootprint.Of(target);
+            var placed = after.Placed - before.Placed;
+            var types = after.Types - before.Types;
+            var marked = !before.Modified && after.Modified;
+            if (placed == 0 && types == 0 && !marked) return null;
+
+            var what = new List<string>();
+            if (placed != 0) what.Add(Moved(placed, "element"));
+            if (types != 0) what.Add(Moved(types, "type"));
+            if (marked) what.Add("Revit now marks the model as changed");
+
+            var title = "";
+            try { title = target.Title; } catch { }
+
+            var message = new StringBuilder()
+                .Append("THIS READ CHANGED THE MODEL: ").Append(string.Join("; ", what))
+                .Append(" in \"").Append(title).Append("\" while '").Append(name)
+                .Append("' ran with no transaction open. A read must leave the model as it was, ")
+                .Append("so its answer is not given (FRAGMENT-ISSUES row 5b-350). ")
+                .Append("No transaction recorded this, so Undo may not take it back - ")
+                .Append("look at the model and remove what appeared by hand.");
+
+            var said = threw == null ? null : Json.ReadString(threw, "message");
+            if (!string.IsNullOrEmpty(said)) message.Append(" The run itself said: ").Append(said);
+
+            // Json.Error, then the counts: one way of writing a refusal in
+            // the add-in, which is the way heron_failure's table is checked.
+            var refusal = Json.Error("read_changed_model", message.ToString());
+            return refusal.Substring(0, refusal.Length - 1)
+                + ", " + Json.Str("document", title)
+                + ", " + Json.Num("elementsAppeared", placed)
+                + ", " + Json.Num("typesAppeared", types)
+                + ", " + Json.Bool("markedChanged", marked) + "}";
+        }
+
+        /// <summary>
+        /// A clean read's answer, carrying the count it was measured by.
+        ///
+        /// SO "NOTHING WAS CHANGED" IS SAID FROM A MEASUREMENT. The chat's
+        /// revit_read said it on every answer, on the strength of no
+        /// transaction being open - the sentence row 5b-350 broke. With this
+        /// field the server can say the model was counted; without it, it is
+        /// talking to an add-in that never counted, and must not.
+        /// </summary>
+        private static string WithCount(string answer, ReadFootprint counted)
+        {
+            if (counted == null || string.IsNullOrEmpty(answer)
+                || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Num("elementsCounted", counted.Placed) + "}";
+        }
+
+        /// <summary>"1 element appeared", "2 types disappeared".</summary>
+        private static string Moved(long delta, string noun)
+        {
+            var count = Math.Abs(delta);
+            return count.ToString(CultureInfo.InvariantCulture) + " " + noun
+                + (count == 1 ? "" : "s") + (delta > 0 ? " appeared" : " disappeared");
+        }
+
+        /// <summary>
         /// Run the compiled script, or return the refusal. Pulled out because
         /// the write path needs it INSIDE a transaction and the read path
         /// needs it outside one, and a second copy would be the half that
@@ -1711,6 +2001,99 @@ namespace Heron.Revit.Addin
                 if (transaction.GetStatus() == TransactionStatus.Started) transaction.RollBack();
             }
             catch { }
+        }
+
+        /// <summary>
+        /// The modeller's own selection, put back after a rollback - D-60.
+        /// TRUE when it is; a failure is logged and said, never hidden.
+        /// </summary>
+        private static bool PutSelectionBack(UIDocument front, ICollection<ElementId> theirs)
+        {
+            try
+            {
+                front.Selection.SetElementIds(theirs);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Could not put the modeller's selection back: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// The ids a modeller can be shown: still in the model, and neither a
+        /// type nor a view - a type has no place on screen and a view cannot be
+        /// isolated in another. An element with no category is Revit's own
+        /// bookkeeping and is left out too.
+        /// </summary>
+        private static List<ElementId> Showable(Document doc, ICollection<ElementId> ids)
+        {
+            var kept = new List<ElementId>();
+            foreach (var id in ids)
+            {
+                Element element = null;
+                try { element = doc.GetElement(id); } catch { element = null; }
+                if (element == null || element is ElementType || element is View) continue;
+                if (element.Category == null) continue;
+                kept.Add(id);
+            }
+            return kept;
+        }
+
+        /// <summary>
+        /// Isolate `show` in `view` for the question, or null when that view
+        /// cannot: a template, a view with no temporary hide and isolate (a
+        /// schedule, a sheet), or one the modeller has ALREADY isolated or
+        /// hidden in - ending ours afterwards would end theirs too.
+        /// </summary>
+        private static View Isolate(Document doc, View view, ICollection<ElementId> show)
+        {
+            try
+            {
+                if (view == null || view.IsTemplate) return null;
+                if (!view.CanUseTemporaryVisibilityModes() || view.IsTemporaryHideIsolateActive())
+                    return null;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Could not ask the view about isolating: " + ex.Message);
+                return null;
+            }
+
+            return InItsOwnTransaction(doc, "Heron: show the change",
+                                       () => view.IsolateElementsTemporary(show))
+                ? view : null;
+        }
+
+        /// <summary>
+        /// One small change made in a transaction of its own, inside whatever
+        /// group is open, under Heron's failure rule like every other
+        /// transaction in this file. TRUE when Revit kept it.
+        ///
+        /// FOR THE QUESTION'S ON-SCREEN HALF ONLY - isolating and ending it.
+        /// Whether IsolateElementsTemporary needs a transaction at all is not
+        /// measured (NEEDS-CHECKING ET7); inside one it is allowed either way,
+        /// so it is given one rather than guessed at.
+        /// </summary>
+        private static bool InItsOwnTransaction(Document doc, string label, Action work)
+        {
+            using (var transaction = new Transaction(doc, label))
+            {
+                try
+                {
+                    transaction.Start();
+                    Discipline(transaction, new HeronFailureNote(), label);
+                    work();
+                    return transaction.Commit() == TransactionStatus.Committed;
+                }
+                catch (Exception ex)
+                {
+                    SafeRollBack(transaction);
+                    HeronApplication.Log(label + " did not happen: " + ex.Message);
+                    return false;
+                }
+            }
         }
 
         /// <summary>
@@ -1927,7 +2310,9 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string WithVerdict(string answer, bool applied, string name,
                                           HeronRollbackWitness.Outcome rolledBack,
-                                          string keptNote, HeronFailureNote said)
+                                          string keptNote, HeronFailureNote said,
+                                          bool nothingToAsk, bool discardedByModeller,
+                                          bool selectionRestored)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
@@ -1999,6 +2384,22 @@ namespace Heron.Revit.Addin
                         + "the model is untouched. IF anything was written, all of it is ONE "
                         + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
                         + "would undo whatever you did before this.";
+
+                // D-126: KEPT WITH NOBODY ASKED BECAUSE REVIT COUNTED NO CHANGE,
+                // said first rather than left for the reader to infer. Who
+                // answered a box that was shown is WithAnswer's to say.
+                if (nothingToAsk) verdict = HeronKeepQuestion.NothingToAskSentence + " " + verdict;
+            }
+            else if (discardedByModeller)
+            {
+                // THE MODELLER'S DISCARD IS NOT A ROLLBACK TO TRY AGAIN, and the
+                // plain rollback's "send it again with apply" would invite one
+                // (Article 25). Its own sentence, with Revit's rollback status.
+                // "NOTHING WAS KEPT" ONLY WHEN IT HELD - Revit's status and
+                // nothing the run added still standing - like every rollback.
+                verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored)
+                        + (rolledBack != null && rolledBack.Standing > 0
+                            ? " " + rolledBack.SomeStanding() + " still in it." : "");
             }
             else if (held)
             {

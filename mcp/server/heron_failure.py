@@ -331,6 +331,18 @@ _KNOWN = {
                           "an arrangement step could not be given what it needs, so nothing "
                           "was run and the model is as it was"),
 
+    # --- a read that did not leave the model as it was - row 5b-350 ---------
+    # Not "it only reads, so it is merely a refusal", which is what an
+    # unknown code on a read falls to below: the add-in counted the model
+    # around the run and the count moved, with no transaction to roll back.
+    "read_changed_model": (UNKNOWN, LOOK_AT_THE_MODEL,
+                           "a read ran with no transaction open and the model's count or "
+                           "its changed flag moved anyway, so something may be in the "
+                           "model that nothing can undo"),
+    "read_unverified":   (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "the model a read ran in closed before it could be counted "
+                          "again, so whether the read changed it is not known"),
+
     # --- a Revit dialog opened inside the job -------------------------------
     #
     # HeronDialogWatch answers it - Cancel, or Close - rather than let the job

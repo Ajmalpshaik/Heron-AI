@@ -194,14 +194,34 @@ def main():
     writers = sorted(t for t in tools.TOOLS if tools.writes(t))
     # revit_change was added 2026-09-15 at the owner's explicit instruction,
     # and typing it here is the deliberate act this test exists to require. It
-    # is the first writer with NO preview in front of it - since 2026-09-23 a
-    # recorded exception to Article 9, D-99, which names what stands in for
-    # the preview: the owner's ribbon switch (write.enabled, read by
-    # HeronPermissions inside the add-in), the refusal of anything above
-    # Modify, one undo entry and the pin. A THIRD writer still fails here.
+    # was the first writer with NO preview in front of it - from 2026-09-23 a
+    # recorded exception to Article 9, D-99. Since D-126 (2026-10-17) Revit
+    # shows its change and asks the modeller Keep or Discard before it is
+    # kept, under the owner's write.askBeforeKeeping, read by HeronPermissions
+    # inside the add-in beside write.enabled. A THIRD writer still fails here.
     check(writers == ["revit_apply_move", "revit_change"],
           "the writing tools are exactly revit_apply_move and revit_change "
           "- found: %s" % (writers or "none"))
+
+    # WHETHER REVIT ASKS IS NOT A RISK LEVEL, AND NOT THE CALLER'S (D-126,
+    # Golden Rule 19). It is the owner's switch, read where write.enabled is
+    # read - so neither registry may carry it, and the tool that keeps a
+    # change stays exactly MODIFY whether the question is on or off. A row
+    # that let a caller choose "keep without asking" would be a second
+    # permission level smuggled in as a flag.
+    permissions = io.open(os.path.join(ROOT, "platform", "Heron.Core", "HeronPermissions.cs"),
+                          encoding="utf-8").read()
+    tools_py = io.open(os.path.join(ROOT, "mcp", "server", "heron_tools.py"),
+                       encoding="utf-8").read()
+    registry = io.open(REGISTRY_CS, encoding="utf-8").read()
+    check('AskBeforeKeepingKey = "write.askBeforeKeeping"' in permissions,
+          "the switch for Revit's Keep or Discard is the owner's, in HeronPermissions "
+          "beside write.enabled")
+    check("askBeforeKeeping" not in registry
+          and "askBeforeKeeping" not in tools_py.replace("write.askBeforeKeeping", ""),
+          "and neither registry carries it as anything a caller could send")
+    check(tools.TOOLS.get("revit_change", (None,))[0] == tools.MODIFY,
+          "revit_change is MODIFY, the question on or off")
 
     cs_writers = sorted(op for op, level in declared_cs.items() if level == "MODIFY")
     check(cs_writers == ["move_elements", "run_fragment_write"],
