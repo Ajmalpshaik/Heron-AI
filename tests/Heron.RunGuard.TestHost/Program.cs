@@ -23,7 +23,7 @@ namespace Heron.RunGuard.TestHost
     /// judgement - risk x what happened x where the document came from - and
     /// the sentence the modeller reads, are what this checks. Whether Revit
     /// raises the events, lets them be cancelled and closes what it is told
-    /// to is the PC's to prove: docs/needs-checking/group-em.md.
+    /// to is the PC's to prove: docs/needs-checking/group-er.md.
     ///
     /// EVERY LEVEL IS WALKED, not a sample. HeronRisk is an ordered enum, and
     /// the policy's answers change at two of its values (Admin and Publish) -

@@ -328,6 +328,23 @@ namespace Heron.Revit.Addin
                 }
             }
 
+            // "apply": "ask" - D-119. Run it once for real, show the modeller
+            // what it did, and let THEM keep it or discard it in Revit. A
+            // DRAFT fragment's one run on a live model, behind that prompt.
+            //
+            // ITS CONDITIONS ARE CHECKED HERE, for the reason the guard above
+            // gives: above the binding and the compile, and above the
+            // TransactionGroup, below which there is nothing left to refuse -
+            // only something to undo.
+            var asking = writing
+                && string.Equals(Json.ReadString(request, "apply"), "ask",
+                                 StringComparison.OrdinalIgnoreCase);
+            if (asking)
+            {
+                var notAskable = AskRefusal(request, app, target);
+                if (notAskable != null) return notAskable;
+            }
+
             var globals = new HeronFragmentGlobals
             {
                 doc = target,
@@ -546,6 +563,11 @@ namespace Heron.Revit.Addin
             // for one - see SafeRollBack.
             var rolledBack = false;
 
+            // What the modeller chose, and whether the view was redrawn for
+            // them to choose by. Only set when `asking` - D-119.
+            string answered = null;
+            var refreshed = false;
+
             // WHAT REVIT SAID WHILE THE JOB RAN - every setup step that writes
             // and the fragment itself - and what Heron did about each. Filled
             // by the preprocessor Discipline puts on every transaction below,
@@ -699,8 +721,8 @@ namespace Heron.Revit.Addin
                         }
                     }
 
-                    // THE LAST LOOK BEFORE ANYTHING IS KEPT, in three parts: the
-                    // run guard, the switches, and Revit's dialogs.
+                    // THE LAST LOOK BEFORE ANYTHING IS KEPT: the run guard,
+                    // Revit's dialogs, the modeller, and the switches.
                     //
                     // THE RUN GUARD'S RECORD. A save, sync, export or print it
                     // cancelled, a new document it refused, a change to
@@ -714,25 +736,6 @@ namespace Heron.Revit.Addin
                         return Guarded(null, GroupState(SafeRollBack(group)));
                     }
 
-                    // AND THE SWITCHES, READ AGAIN, FRESH. The gate read them
-                    // before the job started, and that answer is as old as
-                    // the job; a modeller who turns Changes off - or Admin, or
-                    // Publish - while it runs has said not to keep it. Article
-                    // 13: never cache a permission decision. Asked only when
-                    // keeping, because a preview is rolled back whatever the
-                    // switches say.
-                    var stoppedNow = HeronStop.IsStopped;
-                    var withdrawn = apply
-                        ? HeronRunPolicy.Withdrawn(risk, HeronConfig.Load(), stoppedNow)
-                        : null;
-                    if (withdrawn != null)
-                    {
-                        return Json.Error("permission_withdrawn",
-                            HeronRunPolicy.WithdrawnRefusal(name, withdrawn,
-                                stoppedNow && risk >= HeronRisk.Modify,
-                                GroupState(SafeRollBack(group))));
-                    }
-
                     // A REVIT DIALOG HERON DECLINED STOPS THE JOB HERE, before
                     // anything is kept. The fragment ran on past it - a Cancel
                     // makes the call that asked return or throw, and a
@@ -742,6 +745,28 @@ namespace Heron.Revit.Addin
                     // never a yes. See HeronDialogWatch.
                     if (HeronDialogWatch.Refused)
                         return DialogRefusal(name, SafeRollBack(group));
+
+                    // D-119: THE MODELLER DECIDES, here, with the work done and
+                    // the group still open - so Keep and Discard are exactly
+                    // `apply` and its absence, chosen by a person who has seen
+                    // the result rather than sent by a caller who has not.
+                    // AFTER the dialog check above: a job a Revit dialog
+                    // stopped is rolled back, and nobody is asked to keep it.
+                    if (asking)
+                    {
+                        answered = AskTheModeller(app.ActiveUIDocument, name, out refreshed);
+                        apply = answered == Keep;
+                    }
+
+                    // AND THE SWITCHES, ASKED AGAIN, LAST - after the modeller,
+                    // whose Keep can come minutes later. Article 13; see
+                    // KeepWithdrawn. Only when keeping: a preview is rolled
+                    // back whatever the switches say.
+                    if (apply)
+                    {
+                        var withdrawn = KeepWithdrawn(name, risk, group);
+                        if (withdrawn != null) return withdrawn;
+                    }
 
                     // ASSIMILATE, so the whole group collapses to ONE undo step
                     // rather than leaving the inner transaction visible as its
@@ -758,7 +783,180 @@ namespace Heron.Revit.Addin
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
-            return writing ? WithVerdict(answer, apply, name, rolledBack, said) : answer;
+            if (!writing) return answer;
+            var verdict = WithVerdict(answer, apply, name, rolledBack, said);
+            return asking ? WithAnswer(verdict, answered, refreshed) : verdict;
+        }
+
+        /// <summary>The modeller's three possible answers to the box (D-119).</summary>
+        private const string Keep = "keep";
+        private const string Discard = "discard";
+        private const string Closed = "closed";
+
+        /// <summary>
+        /// Why this run cannot be offered as Keep or Discard, or null when it
+        /// can. Every condition is D-119's or D-121's, and every refusal
+        /// returns before anything is bound, compiled or run.
+        /// </summary>
+        private static string AskRefusal(string request, UIApplication app, Document target)
+        {
+            // ONLY A CHANGE TO THE MODEL. A publish writes a file that no
+            // rollback unwrites, so Discard would promise what it cannot keep;
+            // an admin change keeps its own switch and Article 7's question.
+            // The op is the operation registry's word, already gated on it.
+            if (!string.Equals(Json.ReadString(request, "op"), "run_fragment_write",
+                               StringComparison.Ordinal))
+            {
+                return Json.Error("ask_needs_change_path",
+                    "Keep or Discard is offered only for a change to the model. This is an "
+                    + "export or a project setup change, which Discard could not fully take "
+                    + "back. Nothing was run.");
+            }
+
+            var title = "";
+            try { title = target.Title; } catch { }
+
+            // THE MODEL IN FRONT, because the modeller has to SEE what it did
+            // before choosing to keep it - and the box can only redraw the
+            // view on screen.
+            var inFront = false;
+            try
+            {
+                var active = app.ActiveUIDocument;
+                inFront = active != null && active.Document != null
+                    && active.Document.Equals(target);
+            }
+            catch { inFront = false; }
+            if (!inFront)
+            {
+                return Json.Error("ask_needs_model_in_front",
+                    "\"" + title + "\" is not the model in front, so you could not see what "
+                    + "this did before choosing to keep it. Nothing was run. Bring that model "
+                    + "to the front and ask again.");
+            }
+
+            // SAVED, AND NOTHING UNSAVED - D-121. A never-proved fragment that
+            // loops for ever freezes Revit until Revit is ended, and saving
+            // first is what makes that cost a reopen instead of lost work. A
+            // model never saved has no file to reopen, whatever IsModified says.
+            var path = "";
+            var unsaved = true;
+            try
+            {
+                path = target.PathName;
+                unsaved = target.IsModified;
+            }
+            catch { }
+            if (string.IsNullOrEmpty(path) || unsaved)
+            {
+                return Json.Error("ask_needs_saved_model",
+                    (string.IsNullOrEmpty(path)
+                        ? "\"" + title + "\" has never been saved"
+                        : "\"" + title + "\" has changes that are not saved")
+                    + ", and a tool that has never been proved runs only on a saved model - so "
+                    + "if it froze Revit, reopening the model would lose nothing. Nothing was "
+                    + "run. Save the model, then ask again.");
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Show the modeller what the fragment did and ask: keep it, or put
+        /// the model back. Returns Keep, Discard or Closed. D-119.
+        ///
+        /// MODAL, AND THAT IS BOTH ITS GUARANTEE AND ITS LIMIT. Nothing on the
+        /// wire can answer it - only a person at this Revit - and while it is
+        /// open the modeller sees the view in front but cannot pan, zoom or
+        /// select. A change that cannot be judged from that view is discarded
+        /// and asked for again with a view that shows it.
+        ///
+        /// DISCARD IS THE DEFAULT, and so is every way out that is not Keep:
+        /// Enter on the default, Escape, and the window's close button.
+        /// </summary>
+        private static string AskTheModeller(UIDocument active, string name, out bool refreshed)
+        {
+            // REDRAW FIRST, or the box would sit over a view showing the model
+            // as it was. The fragment's transaction is committed inside the
+            // still-open group, so there is something to draw. If the redraw
+            // fails the box says so, rather than inviting a Keep on a picture
+            // that may not show the change.
+            refreshed = false;
+            try
+            {
+                if (active != null)
+                {
+                    active.RefreshActiveView();
+                    refreshed = true;
+                }
+            }
+            catch { refreshed = false; }
+
+            // So the dispatcher waits for a person rather than timing out.
+            RevitDispatcher.AwaitingModeller();
+
+            var shown = RevitDispatcher.Clean(name);
+            var undo = "Heron: " + shown;
+
+            var box = new TaskDialog("Heron - keep this change?")
+            {
+                MainInstruction = "'" + shown + "' has never been proved. Keep what it did?",
+                MainContent = (refreshed
+                        ? "Heron ran it once, for real, on this model, and the view now shows "
+                          + "the result. Look at it before you choose."
+                        : "Heron ran it once, for real, on this model, but COULD NOT REDRAW THE "
+                          + "VIEW - what you see may not show the change. Discard unless you "
+                          + "can see it.")
+                    + "\n\nNothing is kept until you choose. You cannot move around the "
+                    + "model while this is open: if this view does not show the change, "
+                    + "Discard, open a view that does, and ask again.",
+                AllowCancellation = true,
+                CommonButtons = TaskDialogCommonButtons.None,
+                DefaultButton = TaskDialogResult.CommandLink2,
+            };
+            box.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                "Keep it",
+                "I have checked it and it is right. It stays as one undo step, \"" + undo + "\".");
+            box.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                "Discard it",
+                "Put the model back exactly as it was.");
+
+            // HERON NEVER ANSWERS ITS OWN QUESTION: the dialog watch armed
+            // around this job stands down while the box is up, so only the
+            // modeller can answer it - HeronDialogWatch.HeronAsks.
+            TaskDialogResult result;
+            using (HeronDialogWatch.HeronAsks())
+            {
+                result = box.Show();
+            }
+            if (result == TaskDialogResult.CommandLink1) return Keep;
+            if (result == TaskDialogResult.CommandLink2) return Discard;
+            return Closed;
+        }
+
+        /// <summary>
+        /// The modeller's answer, on the reply beside WithVerdict's. The
+        /// verdict's own sentence already says whether the group was kept or
+        /// rolled back, from Revit's status; this says WHO decided, so a
+        /// reader never takes a Keep for a caller's `apply`.
+        /// </summary>
+        private static string WithAnswer(string answer, string answered, bool refreshed)
+        {
+            if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            var said = answered == Keep
+                ? "You were asked in Revit and pressed KEEP after seeing the result."
+                : answered == Discard
+                    ? "You were asked in Revit and pressed DISCARD."
+                    : "You were asked in Revit and closed the box, which discards.";
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Bool("asked", true)
+                 + "," + Json.Str("modellerAnswer", answered)
+                 + "," + Json.Bool("kept", answered == Keep)
+                 + "," + Json.Bool("viewRefreshed", refreshed)
+                 + "," + Json.Str("asking", said) + "}";
         }
 
         /// <summary>
@@ -1453,6 +1651,28 @@ namespace Heron.Revit.Addin
             return policy.ChangedOtherModel
                 ? Json.Error("changed_other_model", said)
                 : Json.Error("run_guard", said);
+        }
+
+        /// <summary>
+        /// The switches and the stop, read AGAIN, fresh, just before a group
+        /// is kept - null when it may be kept; otherwise the group is rolled
+        /// back and this is the refusal.
+        ///
+        /// The gate read them before the job started, and that answer is as
+        /// old as the job; a modeller who turns Changes off - or Admin, or
+        /// Publish - while it runs has said not to keep it. Constitution
+        /// Article 13: never cache a permission decision. The decision itself
+        /// is HeronRunPolicy.Withdrawn, proved without Revit.
+        /// </summary>
+        private static string KeepWithdrawn(string name, HeronRisk risk, TransactionGroup group)
+        {
+            var stopped = HeronStop.IsStopped;
+            var why = HeronRunPolicy.Withdrawn(risk, HeronConfig.Load(), stopped);
+            if (why == null) return null;
+
+            return Json.Error("permission_withdrawn",
+                HeronRunPolicy.WithdrawnRefusal(name, why, stopped && risk >= HeronRisk.Modify,
+                                                GroupState(SafeRollBack(group))));
         }
 
         /// <summary>The read path's half of what Guarded says about the model.</summary>

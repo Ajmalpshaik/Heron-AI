@@ -163,7 +163,7 @@ each job, cancels a save, Save As, sync, export or print of a model that was ope
 unless the operation is `run_fragment_publish` - refuses a new document unless it is `run_fragment_admin`,
 refuses a job that changes another open model, and closes what the job left open in the background.
 Every decision is `HeronRunPolicy`'s, proved without Revit by `tests/test_run_guard.py`. Built, not yet
-run in Revit ([NEEDS-CHECKING group EM](../../../docs/needs-checking/group-em.md)).
+run in Revit ([NEEDS-CHECKING group ER](../../../docs/needs-checking/group-er.md)).
 
 - **Never call `Cancel()` on a Revit event without asking `e.Cancellable` first** - it throws on one that
   cannot be cancelled. The suite reads every call.

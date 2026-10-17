@@ -37,7 +37,7 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 behaviour and a strong one of a missing line.
 
 Neither proves Revit raises the events, lets them be cancelled, or closes
-what it is told to. That is the PC's: docs/needs-checking/group-em.md.
+what it is told to. That is the PC's: docs/needs-checking/group-er.md.
 
 IT EXITS 3 WHEN .NET IS ABSENT AND THE WIRING PASSED, which is NOT a pass:
 the policy was not run.
@@ -247,13 +247,18 @@ def executor():
 
     keep = code.find("group.Assimilate()")
     check(keep > 0, "the write path still assimilates its group")
-    before = code[max(0, keep - 1500):keep]
+    before = code[max(0, keep - 2500):keep]
     check("HeronRunGuard.Policy" in before,
           "the guard's record is read before the group is kept")
-    check("HeronRunPolicy.Withdrawn(" in before and "HeronConfig.Load()" in before
-          and "HeronStop.IsStopped" in before,
-          "the switches are read FRESH and the stop asked again before the group is kept - "
-          "Article 13, never a cached permission")
+    recheck = before.rfind("KeepWithdrawn(")
+    check(recheck >= 0 and before.rfind("AskTheModeller(") < recheck,
+          "the switches are asked again right before the group is kept - AFTER the "
+          "modeller's Keep or Discard, which can come minutes later")
+    asked = block(code, "static string KeepWithdrawn(")
+    check("HeronRunPolicy.Withdrawn(" in asked and "HeronConfig.Load()" in asked
+          and "HeronStop.IsStopped" in asked and "SafeRollBack(group)" in asked,
+          "and that reads heron.config FRESH, asks the stop again, and rolls back when "
+          "either refuses - Article 13, never a cached permission")
     check(code.count("group.Assimilate()") == 1,
           "and there is one place a group is kept, so nothing skips the check")
 

@@ -179,6 +179,11 @@ _KNOWN = {
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
                           "Revit took it and has not finished; it is still working"),
+    # D-119: the run is done and the Keep or Discard box is still open in
+    # Revit. What the modeller presses there stands; asking again is wrong.
+    "awaiting_modeller": (RUNNING, WAIT,
+                          "Revit is still waiting for the modeller to choose Keep or "
+                          "Discard - whatever they press stands"),
     "move_failed":       (ROLLED_BACK, FIX_FIRST,
                           "it ran, failed, and was rolled back completely"),
     "operation_failed":  (ROLLED_BACK, FIX_FIRST,
@@ -227,6 +232,18 @@ _KNOWN = {
                           "the operation is declared and not built yet"),
     "worksets_unreadable": (REFUSED, FIX_FIRST,
                           "Revit would not list the worksets - nothing was changed"),
+
+    # --- a DRAFT's one run behind Keep or Discard (D-119), refused above the
+    # transaction group, so each knows nothing was written ---------------------
+    "ask_needs_change_path": (REFUSED, STOP,
+                          "Keep or Discard is offered only for a change to the model, never "
+                          "an export or a project setup change - nothing ran"),
+    "ask_needs_model_in_front": (REFUSED, FIX_FIRST,
+                          "that model is not the one in front, so its result could not be "
+                          "seen before keeping it - nothing ran"),
+    "ask_needs_saved_model": (REFUSED, FIX_FIRST,
+                          "the model has never been saved or has unsaved changes, and a "
+                          "never-proved tool runs only on a saved model - nothing ran"),
 
     # --- the chain: what an earlier fragment left, or did not ---------------
     "chain_empty":       (REFUSED, FIX_FIRST,
