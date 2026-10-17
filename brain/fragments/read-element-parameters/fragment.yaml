@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "reads one named parameter off every element"
 kind: action
 domain: revit.parameters
 capability: READ_ELEMENT_PARAMETERS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -41,6 +41,35 @@ purpose: >
   is labelled rather than something read off an element, and D-20 keeps that at
   the edge where the user is.
 
+  **"Text" on a text note is what the note says** (version 3): its wording,
+  with each paragraph's list type.
+
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-520). Kept out of the purpose on
+# purpose: the purpose is searched, and a paragraph about notes and lists would
+# pull other cards' questions.
+#
+#   NO HERON TOOL READ WHAT A TEXT NOTE SAYS. Asked "read what the text notes in
+#   the open view say", the lookup answered LIST_DATES_ON_SHEETS and
+#   EXTRACT_DATES_FROM_TEXT, and the chat had to send scratch code. This card
+#   could not do it either: MEASURED 2026-10-17, Revit 2020, LookupParameter
+#   ("Text") on a TextNote is null and GetParameters("Text") is empty, so every
+#   note answered `absent`.
+#
+#   So parameterName Text on a TEXT NOTE reads the note itself, by the rule
+#   EDIT_TEXT_VALUES writes it by - its plain text without the closing carriage
+#   return Revit always adds. `values` holds that wording, `resolvedFrom` says
+#   "note", and `noteWording` (a string, because a dictionary reaches a chat as
+#   a count) shows each note on one line: paragraph ends as \r, soft line
+#   breaks (Shift+Enter) as \v and a backslash as \\ - the marks
+#   EDIT_TEXT_VALUES takes back - then each paragraph's list type, indent and
+#   start number, then any character a keyboard does not type plainly (the
+#   curly apostrophe U+2019 that was in the real note). Past 20,000 characters
+#   the rest are counted, not printed. Anything that is not a text note, and
+#   any other name, reads exactly as version 2 did.
+#
+#   Version 2's proof below no longer describes the code and is kept as a
+#   record; the card is DRAFT until the version 3 proof is signed.
+
 contract:
   needs:
     - name: elements
@@ -65,9 +94,16 @@ contract:
     - name: resolvedFrom
       # Whether each value came off the instance or off its type. "THEY SHARE
       # ONE VALUE" AND "THEY EACH CARRY THE SAME VALUE" ARE DIFFERENT FINDINGS
-      # WITH DIFFERENT FIXES, and this is what tells them apart.
+      # WITH DIFFERENT FIXES, and this is what tells them apart. "note" for a
+      # text note's own wording (version 3), "level" for the Level case.
       role: result
       type: IDictionary<ElementId, string>
+    - name: noteWording
+      # Version 3. Every text note read with parameterName Text, one line each:
+      # the wording with \r and \v showing, each paragraph's list type, and any
+      # character not typed plainly. Null when no note was read.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-08'
@@ -106,6 +142,16 @@ compatibility-note: >
 #                                           this one second: this reads a
 #                                           parameter you can already name
 #   "what is the Mark on these"           -> here
+#   "read what the text notes in this view say" -> here, parameterName Text (version 3, 5b-520)
+#   "change the wording of this note but keep the numbering" -> EDIT_TEXT_VALUES
+#
+#   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
+#   with view=<the view> and categories=Text Notes, then this with
+#   parameterName=Text and expect_from select-visible-in-view. Measured
+#   2026-10-17 on the scratch copy "Heron note scratch", Revit 2020: 109 notes
+#   in the drafting view "Spread Footing", all 109 read. SELECT_BY_CATEGORY_NAME
+#   categoryName=Text Notes inViewOnly=<the view> hands on the same 109 and is
+#   DRAFT. FILTER_ELEMENTS_BY_CATEGORY takes a LEVEL and a note has none.
 #   "which level are these walls on"      -> here, Level (5b-468)
 #   "what is the base constraint of these walls" -> here, Base Constraint
 #   "change the walls' base level"        -> SET_WALL_CONSTRAINTS, which
@@ -187,3 +233,13 @@ utterances:
   # level, and this card is the PROVEN one that reads a wall's level.
   - which level are these walls on
   - what is the base constraint of these walls
+  # ADDED 2026-10-17, 5b-520 - version 3 reads a text note's wording. The
+  # second is a QUESTION measured on main that day reaching a WRITE,
+  # CREATE_TEXT_NOTE, on all four backends. Two more measured the same way -
+  # "show me the wording of the text notes" and "read the text of these notes",
+  # both reaching EDIT_TEXT_VALUES - are NOT declared: declaring them sent "what
+  # level are these air terminals on" to SET_AIR_TERMINAL_FLOW on lexical and
+  # "read the comments parameter" to EDIT_PARAMETER_TEXT on model. Recorded in
+  # 5b-520 instead.
+  - read what the text notes in this view say
+  - what does this text note say

@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
 // `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
-// `readOnly`, `absent`, `ambiguous`, `unverified` and `refused` behind.
+// `readOnly`, `absent`, `ambiguous`, `unverified`, `refused` and
+// `noteFormatting` behind.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16 wants
 // one user action to be one undo entry, and that belongs to the operation's
@@ -14,8 +15,9 @@
 // THE ELEMENT'S NAME IS JUST ANOTHER FIELD - AND SO IS A TEXT NOTE'S WORDING.
 //
 // `field` of "Name" edits Element.Name; `field` of "Text" on a text note edits
-// the note's own wording, TextNote.Text, which is no parameter at all (version
-// 2, 2026-10-12, the gap fill); anything else is a parameter. The
+// the note's own wording, which is no parameter at all (version 3, 2026-10-12,
+// the gap fill; written through its FormattedText since version 4, below);
+// anything else is a parameter. The
 // earlier library had a rename fragment and a prefix/suffix fragment carrying
 // the same four transformations twice - so a fix to the replace rule could
 // reach one and miss the other.
@@ -60,6 +62,52 @@
 // Where a refusal is decided after looking, the list the unusable input filled
 // is CLEARED. `absent: 7` on a run that did nothing reads as a finding, and it
 // is not one - the count is in the refusal, which is where it belongs.
+//
+// ===========================================================================
+// VERSION 4 - A TEXT NOTE IS EDITED THROUGH ITS FORMATTED TEXT, SO ITS
+// NUMBERING SURVIVES
+// ===========================================================================
+//
+// Version 3 wrote a note's wording with `note.Text = wanted`, and Autodesk's own
+// reference says what that costs: "all previous formating ... will be lost".
+// MEASURED 2026-10-17, Revit 2020, rolled back: on a real project's note whose
+// 8 paragraphs were a 1-2-3 list, a one-word replace came back with list type
+// None on EVERY paragraph; on a scratch copy of the rst_basic sample the same
+// write also turned one bold word into a whole bold note and dropped an
+// underlined and an italic paragraph. So every mode on a text note now goes
+// through note.GetFormattedText(), an edit of that copy, and SetFormattedText:
+//
+//   replace   SetPlainText on each matched range, last match first so the
+//             earlier positions do not move. MEASURED: list type, indent, list
+//             start number, bold, italic, underline and all caps all kept; the
+//             new words take the formatting of the first character they
+//             replace (bold "DETAIL A" -> bold "DETAIL B"). A match that runs
+//             over a paragraph end joins the two paragraphs, which keep the
+//             first one's list
+//   prefix    inserted at 0 - it takes the first character's formatting
+//   suffix    inserted before the closing carriage return - it takes the last
+//             character's
+//   set       SetPlainText over the whole wording, then EACH NEW PARAGRAPH IS
+//             GIVEN BACK the formatting of the old paragraph in the same place,
+//             and every extra new paragraph the old LAST one's: list type,
+//             indent, and bold/italic/underline/all caps where the old paragraph
+//             was all one way. MEASURED: SetPlainText alone kept the list type
+//             but put every paragraph at indent 0 and spread the first word's
+//             bold over the whole note, so the rule is applied rather than left
+//             to Revit. A paragraph that was PARTLY bold (or italic, ...) cannot
+//             say which new word should be, so it is written plain and the
+//             reply says so. The first paragraph keeps the list's start number.
+//
+// A PARAGRAPH BREAK IS TYPED `\r` AND A SOFT LINE BREAK `\v`, for a text note
+// only, and a backslash itself `\\` - the marks READ_ELEMENT_PARAMETERS shows a
+// note's wording in. A chat's values arrive one per line, so a real paragraph
+// break cannot be typed at all; without these a whole new wording could only
+// ever be one paragraph. Anything else after a backslash is left as typed.
+//
+// IT READS THE FORMATTING BACK. After the write, each paragraph's list type
+// and indent (and the start number) are read again and compared with what the
+// rule above meant them to be; a note where any differs goes in `unverified`,
+// never `changed`, and `noteFormatting` names the paragraph.
 
 var changed = new List<ElementId>();
 var untouched = new List<ElementId>();
@@ -69,6 +117,10 @@ var absent = new List<ElementId>();
 var ambiguous = new List<ElementId>();
 var unverified = new List<ElementId>();
 string refused = null;
+// One line per text note edited: what happened to its paragraphs' list,
+// indent and text style, read back after the write. A string, because a list
+// in the reply is cut to three items of 60 characters.
+string noteFormatting = null;
 
 bool editingName = string.Equals((field ?? "").Trim(), "Name",
                                  StringComparison.OrdinalIgnoreCase);
@@ -201,13 +253,260 @@ foreach (var element in elements)
     Parameter parameter = null;
     var note = askingText ? element as TextNote : null;
 
+    // A TEXT NOTE'S WORDING, version 4: read, edited and written back through
+    // its FormattedText, so its list, indent and text style survive - see the
+    // header. Everything for a note happens in this block; the parameter and
+    // Name paths below are version 3's, unchanged.
+    if (note != null)
+    {
+        // `\r` a paragraph end, `\v` a soft line break, `\\` a backslash. A real
+        // line feed can only mean a new paragraph: Revit allows none in a note.
+        Func<string, string> typed = raw =>
+        {
+            var given = (raw ?? "").Replace("\r\n", "\r").Replace('\n', '\r');
+            var built = new System.Text.StringBuilder();
+            for (int c = 0; c < given.Length; c++)
+            {
+                if (given[c] == '\\' && c + 1 < given.Length)
+                {
+                    var mark = given[c + 1];
+                    if (mark == 'r') { built.Append('\r'); c++; continue; }
+                    if (mark == 'v') { built.Append('\v'); c++; continue; }
+                    if (mark == '\\') { built.Append('\\'); c++; continue; }
+                }
+                built.Append(given[c]);
+            }
+            return built.ToString();
+        };
+
+        // Each paragraph of `words` as {start, length, list type, indent, bold,
+        // italic, underline, all caps}; -1 where Revit gave no answer. A
+        // paragraph's list and indent are read over it WITH its closing
+        // carriage return, so an empty paragraph has a range too; a style needs
+        // at least one character.
+        Func<FormattedText, string, List<int[]>> paragraphsOf = (shape, words) =>
+        {
+            var found = new List<int[]>();
+            int at = 0;
+            foreach (var piece in words.Split('\r'))
+            {
+                var row = new[] { at, piece.Length, -1, -1, -1, -1, -1, -1 };
+                var whole = new TextRange(at, piece.Length + 1);
+                try { row[2] = (int)shape.GetListType(whole); } catch { }
+                try { row[3] = shape.GetIndentLevel(whole); } catch { }
+                if (piece.Length > 0)
+                {
+                    var chars = new TextRange(at, piece.Length);
+                    try { row[4] = (int)shape.GetBoldStatus(chars); } catch { }
+                    try { row[5] = (int)shape.GetItalicStatus(chars); } catch { }
+                    try { row[6] = (int)shape.GetUnderlineStatus(chars); } catch { }
+                    try { row[7] = (int)shape.GetAllCapsStatus(chars); } catch { }
+                }
+                found.Add(row);
+                at += piece.Length + 1;
+            }
+            return found;
+        };
+        Func<int, string> listName = value =>
+            value < 0 ? "unreadable" : value == (int)ListType.None ? "no list" : ((ListType)value).ToString();
+        // "1-8 ArabicNumbers from 1" - runs of paragraphs with the same list and indent.
+        Func<List<int[]>, int, string> listsOf = (rows, startNumber) =>
+        {
+            var runs = new List<string>();
+            int first = 0;
+            for (int k = 1; k <= rows.Count; k++)
+            {
+                if (k < rows.Count && rows[k][2] == rows[first][2] && rows[k][3] == rows[first][3]) continue;
+                var span = k - 1 == first ? (first + 1).ToString() : (first + 1) + "-" + k;
+                runs.Add(span + " " + listName(rows[first][2])
+                    + (rows[first][3] > 0 ? " indent " + rows[first][3] : "")
+                    + (first == 0 && startNumber > 0 ? " from " + startNumber : ""));
+                first = k;
+            }
+            return string.Join(", ", runs);
+        };
+        string[] styleNames = { "", "", "", "", "bold", "italic", "underline", "all caps" };
+
+        FormattedText shaped = null;
+        string plain = null;
+        try { shaped = note.GetFormattedText(); plain = shaped.GetPlainText(); }
+        catch (Exception ex)
+        {
+            readOnly.Add(element.Id);
+            noteFormatting = (noteFormatting == null ? "" : noteFormatting + " ## ")
+                + string.Format("note {0}: Revit would not hand over its formatted text ({1}), so it "
+                    + "was NOT edited", element.Id, ex.Message);
+            continue;
+        }
+
+        var wording = noteText(plain);
+        var find = typed(text);
+        var putIn = typed(replacement);
+        if (wording.Length == 0 && how != "set") { blank.Add(element.Id); continue; }
+
+        string wantedNote = how == "prefix" ? find + wording
+            : how == "suffix" ? wording + find
+            : how == "set" ? find
+            : (find.Length == 0 ? wording : wording.Replace(find, putIn));
+        if (wantedNote == wording) { untouched.Add(element.Id); continue; }
+
+        var before = paragraphsOf(shaped, wording);
+        int startBefore = -1;
+        try { startBefore = shaped.GetListStartNumber(new TextRange(0, before[0][1] + 1)); } catch { }
+        var notKept = new List<string>();
+
+        string writeFailed = null;
+        try
+        {
+            if (how == "replace")
+            {
+                // Every match, left to right as String.Replace finds them, then
+                // written last first so the earlier positions still hold.
+                var hits = new List<int>();
+                int searchFrom = 0;
+                while (searchFrom <= wording.Length - find.Length)
+                {
+                    int hit = wording.IndexOf(find, searchFrom, StringComparison.Ordinal);
+                    if (hit < 0) break;
+                    hits.Add(hit);
+                    searchFrom = hit + find.Length;
+                }
+                for (int h = hits.Count - 1; h >= 0; h--)
+                    shaped.SetPlainText(new TextRange(hits[h], find.Length), putIn);
+            }
+            else if (how == "prefix") shaped.SetPlainText(new TextRange(0, 0), find);
+            else if (how == "suffix") shaped.SetPlainText(new TextRange(wording.Length, 0), find);
+            else
+            {
+                shaped.SetPlainText(new TextRange(0, wording.Length), find);
+                int at = 0;
+                var pieces = find.Split('\r');
+                for (int k = 0; k < pieces.Length; k++)
+                {
+                    // New paragraph k wears old paragraph k; extra ones the last.
+                    var old = before[Math.Min(k, before.Count - 1)];
+                    var whole = new TextRange(at, pieces[k].Length + 1);
+                    if (old[2] >= 0 && old[2] != (int)ListType.Mixed) shaped.SetListType(whole, (ListType)old[2]);
+                    if (old[3] >= 0) shaped.SetIndentLevel(whole, old[3]);
+                    if (pieces[k].Length > 0)
+                    {
+                        var chars = new TextRange(at, pieces[k].Length);
+                        for (int s = 4; s < 8; s++)
+                        {
+                            if (old[s] < 0) continue;
+                            bool on = old[s] == (int)FormatStatus.All;
+                            if (old[s] == (int)FormatStatus.Mixed && k < before.Count)
+                                notKept.Add(string.Format("paragraph {0} was partly {1} and is now not {1}",
+                                    k + 1, styleNames[s]));
+                            if (s == 4) shaped.SetBoldStatus(chars, on);
+                            else if (s == 5) shaped.SetItalicStatus(chars, on);
+                            else if (s == 6) shaped.SetUnderlineStatus(chars, on);
+                            else shaped.SetAllCapsStatus(chars, on);
+                        }
+                    }
+                    at += pieces[k].Length + 1;
+                }
+                if (startBefore > 0)
+                {
+                    try { shaped.SetListStartNumber(new TextRange(0, pieces[0].Length + 1), startBefore); }
+                    catch { }
+                }
+            }
+            note.SetFormattedText(shaped);
+        }
+        catch (Exception ex) { writeFailed = ex.Message; }
+
+        if (writeFailed != null)
+        {
+            readOnly.Add(element.Id);
+            noteFormatting = (noteFormatting == null ? "" : noteFormatting + " ## ")
+                + string.Format("note {0}: Revit would not take the edit ({1}), so it was NOT changed",
+                    element.Id, writeFailed);
+            continue;
+        }
+
+        // READ BACK - the wording first, then every paragraph's formatting
+        // against what the rule above meant it to be.
+        FormattedText back = null;
+        string backPlain = null;
+        try { back = note.GetFormattedText(); backPlain = back.GetPlainText(); } catch { }
+        if (backPlain == null || noteText(backPlain) != wantedNote)
+        {
+            unverified.Add(element.Id);
+            noteFormatting = (noteFormatting == null ? "" : noteFormatting + " ## ")
+                + string.Format("note {0}: Revit took the edit but its wording READS BACK DIFFERENT "
+                    + "from what was asked", element.Id);
+            continue;
+        }
+
+        var after = paragraphsOf(back, wantedNote);
+        int startAfter = -1;
+        try { startAfter = back.GetListStartNumber(new TextRange(0, after[0][1] + 1)); } catch { }
+        var drift = new List<string>();
+        if (how == "set" || after.Count == before.Count)
+        {
+            for (int k = 0; k < after.Count; k++)
+            {
+                var old = before[Math.Min(k, before.Count - 1)];
+                if (old[2] != after[k][2])
+                    drift.Add(string.Format("paragraph {0} was {1} and reads back {2}", k + 1,
+                        listName(old[2]), listName(after[k][2])));
+                if (old[3] != after[k][3])
+                    drift.Add(string.Format("paragraph {0} was at indent {1} and reads back {2}", k + 1,
+                        old[3], after[k][3]));
+                for (int s = 4; s < 8; s++)
+                {
+                    if (old[s] < 0 || after[k][s] < 0) continue;
+                    // A partly styled paragraph may change by the edit itself
+                    // (replaced words take the first one's style); under set it
+                    // is written plain, as said in `notKept`.
+                    int expected = how == "set"
+                        ? (old[s] == (int)FormatStatus.All ? (int)FormatStatus.All : (int)FormatStatus.None)
+                        : old[s];
+                    if (how != "set" && old[s] == (int)FormatStatus.Mixed) continue;
+                    if (expected != after[k][s])
+                        drift.Add(string.Format("paragraph {0}'s {1} reads back {2}", k + 1, styleNames[s],
+                            ((FormatStatus)after[k][s]).ToString()));
+                }
+            }
+        }
+        else
+        {
+            // A replace that ran over a paragraph end, or put one in: the
+            // paragraphs no longer pair one to one, so each must at least wear
+            // a list some paragraph had before.
+            var had = new List<int>();
+            foreach (var row in before) if (!had.Contains(row[2])) had.Add(row[2]);
+            for (int k = 0; k < after.Count; k++)
+                if (!had.Contains(after[k][2]))
+                    drift.Add(string.Format("paragraph {0} reads back {1}, which no paragraph had before",
+                        k + 1, listName(after[k][2])));
+        }
+        if (startBefore > 0 && startAfter != startBefore)
+            drift.Add(string.Format("the list started at {0} and now starts at {1}", startBefore, startAfter));
+
+        string said;
+        if (drift.Count > 0)
+        {
+            unverified.Add(element.Id);
+            said = string.Format("note {0}: the wording is as asked but its formatting READS BACK "
+                + "DIFFERENT - {1}", element.Id, string.Join("; ", drift));
+        }
+        else
+        {
+            changed.Add(element.Id);
+            said = string.Format("note {0}: {1} paragraph(s) before, {2} after; read back {3}; indent "
+                + "and text style {4}", element.Id, before.Count, after.Count, listsOf(after, startAfter),
+                how == "set" ? "given back paragraph by paragraph" : "kept");
+            if (notKept.Count > 0) said += "; NOT KEPT: " + string.Join("; ", notKept);
+        }
+        noteFormatting = (noteFormatting == null ? "" : noteFormatting + " ## ") + said;
+        continue;
+    }
+
     if (editingName)
     {
         try { current = element.Name; } catch { }
-    }
-    else if (note != null)
-    {
-        try { current = noteText(note.Text); } catch { }
     }
     else
     {
@@ -248,15 +547,15 @@ foreach (var element in elements)
         try { current = parameter.AsString(); } catch { }
     }
 
-    // A blank stays blank - except a note's wording being SET, which is the
-    // whole of what was asked and creates nothing the modeller did not type.
-    if (string.IsNullOrEmpty(current) && !(note != null && how == "set"))
+    // A blank stays blank. (A note's wording being SET, the one exception,
+    // was handled with the rest of the note above.)
+    if (string.IsNullOrEmpty(current))
     {
         blank.Add(element.Id);
         continue;
     }
     if (current == null) current = "";
-    if (note == null && how == "set") { absent.Add(element.Id); continue; }
+    if (how == "set") { absent.Add(element.Id); continue; }
 
     string wanted = transform(current);
     if (wanted == current) { untouched.Add(element.Id); continue; }
@@ -265,7 +564,6 @@ foreach (var element in elements)
     try
     {
         if (editingName) { element.Name = wanted; accepted = true; }
-        else if (note != null) { note.Text = wanted; accepted = true; }
         else accepted = parameter.Set(wanted);
     }
     catch { readOnly.Add(element.Id); continue; }
@@ -278,7 +576,6 @@ foreach (var element in elements)
     try
     {
         if (editingName) now = element.Name;
-        else if (note != null) now = noteText(note.Text);
         else now = parameter.AsString();
     }
     catch { }
