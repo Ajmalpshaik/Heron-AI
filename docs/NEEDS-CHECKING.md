@@ -723,6 +723,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
 
+## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
+
 ## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)

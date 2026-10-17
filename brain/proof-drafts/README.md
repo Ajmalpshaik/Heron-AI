@@ -20,6 +20,15 @@ machine can make. **Is that answer right for this building?**
 write, and [`tools/generate-jobs.py`](../../tools/generate-jobs.py) reads to skip what has already been run - are
 both gitignored, so an empty folder means nothing has been run *on this machine*, not that nothing was ever run.
 
+## A run the modeller kept
+
+`runs/<fragment>.once.json` is different from the rest: it is a DRAFT's **one run on the modeller's own
+saved model**, through `heron_bridge_client.py try-once`, where Revit showed the result and asked **Keep
+or Discard** ([D-119](../../docs/DECISIONS.md)). A kept one is the positive case of the proof
+([D-120](../../docs/DECISIONS.md)): `validate <fragment> --write --kept` runs only the negative, rolled back,
+and writes the ordinary `runs/<fragment>.json` with the kept run in the positive's place. `draft` and
+`accept` refuse it if it was discarded, or if the fragment's code has changed since it ran.
+
 ## Why they live here and not in the fragment
 
 The agent has **no write path into `brain/fragments/`**. `write_draft` refuses a path under the library,
