@@ -27,11 +27,17 @@ namespace Heron.Revit.Addin
     ///
     /// TWO PATHS THROUGH ONE METHOD, and only one of them can write.
     ///
-    ///   run_fragment_read   opens NO transaction. Revit refuses every model
-    ///                       change made outside one, so a fragment run this
-    ///                       way CANNOT alter the model - the enforcement is
-    ///                       Revit's, not a check of ours that could be
-    ///                       forgotten.
+    ///   run_fragment_read   opens NO transaction, and Revit refuses a model
+    ///                       change made outside one - NOT ALWAYS COMPLETELY.
+    ///                       Row 5b-350 is a read run of place-nested-family
+    ///                       that reported Revit's refusal and still left a
+    ///                       real instance in the family, twice; why is not
+    ///                       established (NEEDS-CHECKING CP1). So Revit's
+    ///                       refusal is the first guard and not the only one:
+    ///                       every read run is MEASURED before and after, and
+    ///                       one that moved the model is answered
+    ///                       read_changed_model, never as a read - see
+    ///                       ReadFootprint.
     ///   run_fragment_write  opens ONE TransactionGroup, so the whole job is
     ///                       one undo, and inside it one Transaction for each
     ///                       setup step that writes and one for the fragment.
@@ -392,9 +398,10 @@ namespace Heron.Revit.Addin
             // nothing those paths did not already allow.
             var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
 
-            // NEVER ON THE READ PATH. That path's whole guarantee is that no
-            // transaction is open, so Revit itself refuses every change - and
-            // a fragment that opens its own would walk straight through it.
+            // NEVER ON THE READ PATH. That path's guarantee is that no
+            // transaction is open, so Revit refuses a change - not always
+            // completely (row 5b-350), which is why a read is also measured -
+            // and a fragment that opens its own would walk straight through it.
             if (ownsTransactions && !writing)
             {
                 return Json.Error("needs_write_path",
@@ -594,16 +601,33 @@ namespace Heron.Revit.Addin
             // DocumentChanged - see ChangeWatch. Null on the read path, which
             // opens no transaction for anything to change in, and on every
             // refusal below, which returns before it is described.
-            HeronChangeReport.Described changed = null;
+            HeronChangeReport.Described described = null;
+
+            // What the read path counted before the run - null on the write
+            // path, which keeps what it changes on purpose and says so.
+            ReadFootprint counted = null;
 
             if (!writing)
             {
+                // MEASURED, NOT TRUSTED - row 5b-350. Before the run and after
+                // it, whether or not it threw: in that row the fragment's own
+                // answer was Revit's refusal and an element stayed anyway. A
+                // change found here is returned before the chain remembers
+                // anything or the answer is built, so it cannot be read as a
+                // clean read further down.
+                counted = ReadFootprint.Of(target);
                 threw = RunScript(script, globals, name, out state);
+                var changed = ReadChangedModel(name, target, counted, threw);
+                if (changed != null) return changed;
 
                 // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
                 // built around a question nobody answered is not the answer
                 // that was asked for. Ahead of `threw`, because a call the
                 // Cancel refused is often what threw. See HeronDialogWatch.
+                //
+                // AFTER THE COUNT, NOT BEFORE IT: this refusal says "nothing
+                // in the model was changed", which only the count above can
+                // vouch for on a read (row 5b-350).
                 var stoppedRead = DialogRefusal(name, null);
                 if (stoppedRead != null) return stoppedRead;
             }
@@ -764,7 +788,7 @@ namespace Heron.Revit.Addin
                     // and so the event is let go before a modal box opens. After this the report is sealed:
                     // a rollback names the same elements again with the
                     // meaning reversed, and it is not the fragment's work.
-                    changed = changes.Describe();
+                    described = changes.Describe();
 
                     // D-119: THE MODELLER DECIDES, here, with the work done and
                     // the group still open - so Keep and Discard are exactly
@@ -791,14 +815,14 @@ namespace Heron.Revit.Addin
 
             // EVERY ELEMENT, for the dispatcher's run record. The reply only
             // counts them; the list is what the record is for.
-            Elements = changed == null ? null : changed.ElementsField();
+            Elements = described == null ? null : described.ElementsField();
 
             Remember(name, state, target, bound, client, globals.__heron, ranWith);
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
-            if (!writing) return answer;
-            var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said, changed);
+            if (!writing) return WithCount(answer, counted);
+            var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said, described);
             return asking ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
 
@@ -1710,6 +1734,138 @@ namespace Heron.Revit.Addin
             object original;
             if (!handedIn.TryGetValue(name, out original)) return false;
             return ReferenceEquals(original, value);
+        }
+
+        /// <summary>
+        /// What a read run is measured by, before and after - row 5b-350.
+        ///
+        /// THE READ PATH'S GUARANTEE WAS ONE SENTENCE: no transaction is open,
+        /// so Revit refuses every change. On 2026-10-06 a read run of
+        /// place-nested-family reported that very refusal - "Attempt to modify
+        /// the model outside of transaction" - and a real AngleBar instance
+        /// stayed in the family each time, twice. Why it survives is not
+        /// established (NEEDS-CHECKING CP1). So the sentence is no longer taken
+        /// on trust: the model is counted, and a run that moved the count is
+        /// never answered as a read.
+        ///
+        /// WHAT IT CAN SEE. An element that appeared or disappeared, placed or
+        /// a type, and a model Revit had not marked changed that it marks
+        /// changed afterwards. WHAT IT CANNOT: an element edited in place in a
+        /// model that was already unsaved, and any document other than the one
+        /// the fragment ran in - a family opened by EditFamily is its own
+        /// document. Said here so that a clean measurement is read as "nothing
+        /// appeared", not as "nothing happened".
+        ///
+        /// Two element counts each way. Measured as cheap enough on the
+        /// strength of count_elements, which makes the same count on every
+        /// proof; a model where it is not would show it here first.
+        /// </summary>
+        private sealed class ReadFootprint
+        {
+            public long Placed;
+            public long Types;
+            public bool Modified;
+
+            public static ReadFootprint Of(Document doc)
+            {
+                return new ReadFootprint
+                {
+                    Placed = new FilteredElementCollector(doc)
+                        .WhereElementIsNotElementType().GetElementCount(),
+                    Types = new FilteredElementCollector(doc)
+                        .WhereElementIsElementType().GetElementCount(),
+                    Modified = doc.IsModified,
+                };
+            }
+        }
+
+        /// <summary>
+        /// The refusal for a read run that changed the model, or null when the
+        /// second measurement agrees with the first.
+        ///
+        /// IT OUTRANKS WHATEVER THE FRAGMENT SAID, a throw included. In row
+        /// 5b-350 the fragment's own answer was Revit's refusal, which reads as
+        /// "nothing happened" - the one sentence that must not reach the chat
+        /// when an element is sitting at the origin. The fragment's words are
+        /// kept, after the change.
+        ///
+        /// NOTHING IS UNDONE HERE, AND THE REPLY DOES NOT PRETEND OTHERWISE.
+        /// No transaction recorded the change, so there may be no undo step for
+        /// it - in 5b-350 both instances were deleted by hand. Whether wrapping
+        /// the read in a TransactionGroup and rolling it back would remove such
+        /// an element is CP1's second question; D-115 keeps "nothing on the
+        /// read path opens a transaction", so it is not done on a guess.
+        /// </summary>
+        private static string ReadChangedModel(string name, Document target,
+                                               ReadFootprint before, string threw)
+        {
+            if (!target.IsValidObject)
+            {
+                return Json.Error("read_unverified",
+                    "'" + name + "' ran as a read, and the model it ran in is no longer open, "
+                    + "so Heron cannot say whether the run changed it. Its answer is not given.");
+            }
+
+            var after = ReadFootprint.Of(target);
+            var placed = after.Placed - before.Placed;
+            var types = after.Types - before.Types;
+            var marked = !before.Modified && after.Modified;
+            if (placed == 0 && types == 0 && !marked) return null;
+
+            var what = new List<string>();
+            if (placed != 0) what.Add(Moved(placed, "element"));
+            if (types != 0) what.Add(Moved(types, "type"));
+            if (marked) what.Add("Revit now marks the model as changed");
+
+            var title = "";
+            try { title = target.Title; } catch { }
+
+            var message = new StringBuilder()
+                .Append("THIS READ CHANGED THE MODEL: ").Append(string.Join("; ", what))
+                .Append(" in \"").Append(title).Append("\" while '").Append(name)
+                .Append("' ran with no transaction open. A read must leave the model as it was, ")
+                .Append("so its answer is not given (FRAGMENT-ISSUES row 5b-350). ")
+                .Append("No transaction recorded this, so Undo may not take it back - ")
+                .Append("look at the model and remove what appeared by hand.");
+
+            var said = threw == null ? null : Json.ReadString(threw, "message");
+            if (!string.IsNullOrEmpty(said)) message.Append(" The run itself said: ").Append(said);
+
+            // Json.Error, then the counts: one way of writing a refusal in
+            // the add-in, which is the way heron_failure's table is checked.
+            var refusal = Json.Error("read_changed_model", message.ToString());
+            return refusal.Substring(0, refusal.Length - 1)
+                + ", " + Json.Str("document", title)
+                + ", " + Json.Num("elementsAppeared", placed)
+                + ", " + Json.Num("typesAppeared", types)
+                + ", " + Json.Bool("markedChanged", marked) + "}";
+        }
+
+        /// <summary>
+        /// A clean read's answer, carrying the count it was measured by.
+        ///
+        /// SO "NOTHING WAS CHANGED" IS SAID FROM A MEASUREMENT. The chat's
+        /// revit_read said it on every answer, on the strength of no
+        /// transaction being open - the sentence row 5b-350 broke. With this
+        /// field the server can say the model was counted; without it, it is
+        /// talking to an add-in that never counted, and must not.
+        /// </summary>
+        private static string WithCount(string answer, ReadFootprint counted)
+        {
+            if (counted == null || string.IsNullOrEmpty(answer)
+                || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            return answer.Substring(0, answer.Length - 1)
+                 + "," + Json.Num("elementsCounted", counted.Placed) + "}";
+        }
+
+        /// <summary>"1 element appeared", "2 types disappeared".</summary>
+        private static string Moved(long delta, string noun)
+        {
+            var count = Math.Abs(delta);
+            return count.ToString(CultureInfo.InvariantCulture) + " " + noun
+                + (count == 1 ? "" : "s") + (delta > 0 ? " appeared" : " disappeared");
         }
 
         /// <summary>

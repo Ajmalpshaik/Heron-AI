@@ -108,7 +108,7 @@ def wiring():
     check(re.search(r"using\s+var\s+changes\s*=\s*ChangeWatch\.Begin\(", run) is not None,
           "as a using declaration, so it is let go however the group's block is left - "
           "every early return included")
-    described = at(run, "changed = changes.Describe();")
+    described = at(run, "described = changes.Describe();")
     asked = at(run, "AskTheModeller(")
     kept = at(run, "if (apply) keptNote = KeepAndWatch(")
     check(0 < described < asked < kept,
@@ -116,9 +116,9 @@ def wiring():
           "the rollback, while every added element still exists to be asked its category")
     check(re.search(r"else\s+rolledBack\s*=\s*RollBackAndCheck\(", run[max(described, 0):]) is not None,
           "and the rollback that makes the default a preview comes after it too")
-    check("Elements = changed == null ? null : changed.ElementsField();" in run,
+    check("Elements = described == null ? null : described.ElementsField();" in run,
           "the full element list is left for the dispatcher's record")
-    check(re.search(r"WithVerdict\([^;]*,\s*changed\)", run) is not None,
+    check(re.search(r"WithVerdict\([^;]*,\s*described\)", run) is not None,
           "and the verdict is handed what changed")
 
     print("\n2. the handler counts a commit of the target, and reads nothing heavy")
