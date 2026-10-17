@@ -800,6 +800,18 @@ async def exercise_show(module):
               "revit_reset_temporary sends reset_temporary with the pin, and says "
               "the isolate is off")
 
+        # THE RESET A WRONG-MODEL ISOLATE TELLS THE CHAT TO RUN is the job done
+        # there, not a second mistake - row 5b-593.
+        revit.reply = {"ok": True, "reset": True, "view": "Level 1",
+                       "document": "Project2", "projectKey": "key-2",
+                       "said": "The Temporary Hide/Isolate in \"Level 1\" is off."}
+        said = await call("revit_reset_temporary", {})
+        check(said.startswith("Reset the temporary hide/isolate in \"Level 1\" of Project2")
+              and "is not the model this chat works on" in said
+              and "before it could tell" not in said,
+              "and a reset in another model says which model, and that the isolate there "
+              "is ended - not that Heron failed - found %r" % said[:120])
+
         revit.reply = {"ok": False, "error": "not_this_view",
                        "message": "\"A101\" cannot hide or isolate temporarily."}
         said = await call("revit_isolate_temporary", {"category": "ducts"})
