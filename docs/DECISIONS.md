@@ -198,6 +198,10 @@ an edit.
 | [D-124](#d-124--selecting-or-zooming-to-elements-inside-a-linked-model-is-not-touching-it-and-asks-for-no-confirmation) | Selecting or zooming to elements inside a linked model is not touching it, and asks for no confirmation | ✅ Accepted · 2026-10-17 |
 | [D-125](#d-125--a-fragment-says-what-transaction-it-needs-notransactionopen-for-one-that-must-run-with-none-and-modify-for-one-that-needs-herons) | A fragment says what transaction it needs: noTransactionOpen for one that must run with none, and MODIFY for one that needs Heron's | ✅ Accepted · 2026-10-17 |
 | [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ✅ Accepted · 2026-10-17 |
+| [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model) | A request the host calls a question is never offered a capability that changes the model | ✅ Accepted · 2026-10-17 |
+| [D-129](#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ✅ Accepted · 2026-10-17 |
+| [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
+| [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1007,7 +1011,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-117 — A change is kept only from a fragment whose proof still stands
 
 **Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 and merge the PR"* · **Source:** the after-the-run warning in [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py)'s `revit_change`, and the [Constitution](../HERON_CONSTITUTION.md)'s Enforcement table naming no place Article 11 is enforced
-**Numbering:** written and accepted as D-116; renumbered D-117 on 2026-10-17 while merging `main`, where #546 had already given D-116 to another decision. The owner's words quoted above name it by that first number.
+**Numbering:** written and accepted as D-116; renumbered D-129 on 2026-10-17 while merging `main` - in the hours this branch was open `main` gave D-116 to D-126 to other decisions (#546, #547, #557, #554, #556, #555, #559) and open pull requests claimed D-127 and D-128, so it took the first number no branch held. The owner's words quoted above name it by its first number.
 **Enforces:** [Constitution Article 11](../HERON_CONSTITUTION.md) · [Golden Rule 18](14-golden-rules.md)
 **Supersedes:** one row of [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)'s table - *"a warning line when the fragment is not `PROVEN`"*, said after the change. It is now a refusal, said instead of sending anything
 **Keeps:** [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - no preview in front of a proven change · [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back) - the rolled-back run · [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) · [Golden Rule 19](14-golden-rules.md)
@@ -1018,7 +1022,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-118 — A tool description over its budget stops a pull request
 
 **Status:** Accepted · **Date:** 2026-10-17 · **Source:** Ajmal PS, 2026-10-17, in conversation, answering the question put in the pull request that added the budget: *"keep it a gate"*
-**Numbering:** written and accepted as D-116; renumbered D-118 on 2026-10-17 while merging `main`, where #546 and #547 had already given D-116 and D-117 to other decisions. Nothing on `main` ever cited it as D-116.
+**Numbering:** written and accepted as D-116; renumbered D-129 on 2026-10-17 while merging `main` - in the hours this branch was open `main` gave D-116 to D-126 to other decisions (#546, #547, #557, #554, #556, #555, #559) and open pull requests claimed D-127 and D-128, so it took the first number no branch held. The owner's words quoted above name it by its first number.
 **Keeps:** [D-03](#d-03--mcp-tool-granularity-thick-and-specific) - the tool list's cost is accepted and kept down by a small core set · [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) - the routing score stays a report; this decides a different number
 **Affects:** [`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py), [`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py) (`--sizes`), [`.github/workflows/gates.yml`](../.github/workflows/gates.yml), which runs every suite
 
@@ -1098,3 +1102,43 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs), [`RevitChangedSet.cs`](../revit/Heron.Revit.Addin/RevitChangedSet.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronDialogWatch.cs`](../revit/Heron.Revit.Addin/HeronDialogWatch.cs), [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs), [`HeronChangesWindow.cs`](../revit/Heron.Revit.Addin/HeronChangesWindow.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`host.chat.yaml`](../brain/instructions/host.chat.yaml), [Constitution Article 9](../HERON_CONSTITUTION.md), [Golden Rule 17](14-golden-rules.md)
 
 **Full record:** [`decisions/D-126.md`](decisions/D-126.md)
+
+## D-128 — A request the host calls a question is never offered a capability that changes the model
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"do it the best only"* - choosing option B of [the work note](work-notes/investigations/2026-10-17-plain-questions-owner-call.md), the one advised · **Source:** [FRAGMENT-ISSUES 5b-477 and 5b-478](fragment-issues/section-5b-rows-401-425.md) - of 120 plain questions, 32 reached a write on the trained backend and 27 on lexical
+**Numbering:** written as D-116 on 2026-10-17 and renumbered D-128 the same day, before it merged: main had given D-116 to D-123 to other work while this was open, and open pull requests claim D-124 to D-127. The owner's words name no number
+**Supersedes:** [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) item 2, *"Resolution, proposed and not built"* - its item 1, the reporting, stands unchanged
+**Keeps:** [D-01](#d-01--execution-host-claude-code-plugin) - the host decides what the user meant, and Heron never classifies it · [D-65](#d-65--heron-keeps-the-degraded-result-rule-and-hands-routing-to-the-host) - routing is the host's · [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) - which questions a write may declare · Golden Rule 19 - a risk is read from the registry, never typed
+**Affects:** [`heron_retrieve.py`](../brain/heron_retrieve.py) (`eligible`, `retrieve`, `find`: `ceiling`), [`heron_brain.py`](../mcp/server/heron_brain.py) (`lookup(question=...)`, `question_ceiling`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_lookup`'s `question`)
+
+**Full record:** [`decisions/D-128.md`](decisions/D-128.md)
+
+## D-129 — A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 and mark the PR ready"* · **Source:** the owner's task of 2026-10-17: *"A fragment that loops forever must stop, roll back and say so before the dispatcher gives up"*
+**Numbering:** written and accepted as D-116; renumbered D-129 on 2026-10-17 while merging `main` - in the hours this branch was open `main` gave D-116 to D-126 to other decisions (#546, #547, #557, #554, #556, #555, #559) and open pull requests claimed D-127 and D-128, so it took the first number no branch held. The owner's words quoted above name it by its first number.
+**Updates:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays)'s stated costs - four of the five are smaller now. D-46 itself is unchanged: there is still no Emergency Stop button
+**Keeps:** [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) · Golden Rule 16 · [row 5b-14](fragment-issues/section-5b-rows-001-025.md)'s named allow-list outside the gate · [Q-68](open-questions/from-master-specification-part-2.md), answered as [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it)
+**Affects:** [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs) (new), [`HeronStackGuard.cs`](../revit/Heron.Revit.Addin/HeronStackGuard.cs), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) (`stop`), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py)
+
+**Full record:** [`decisions/D-129.md`](decisions/D-129.md)
+
+## D-130 — A stop lasts until Revit restarts, and a restart clears it
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"Q-64: restart clears it, accept your recommendation"* · **Answers:** [Q-68](open-questions/from-master-specification-part-2.md)
+**Numbering:** written and accepted as D-117, answering a question then numbered Q-64; renumbered D-130 and Q-68 on 2026-10-17 while merging `main`, past every number `main` or an open pull request held. The owner's words quoted above name the question by its first number.
+**Amends:** [21 §4](21-resilience-and-operations.md) requirement 3 - sticky until Revit restarts, not past it
+**Keeps:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) - no second control · [D-129](#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) item 7 - nothing over the bridge resumes
+**Affects:** [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) (comments only), [21 §4](21-resilience-and-operations.md), [D-129](decisions/D-129.md)
+
+**Full record:** [`decisions/D-130.md`](decisions/D-130.md)
+
+## D-131 — A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation - asked to accept Q-66's recommended answer or choose another, he chose *"Accept recommended (Recommended)"* · **Source:** [Q-66](open-questions/tier-2.md), found preparing [NEEDS-CHECKING Group EQ](needs-checking/group-eq.md)
+**Numbering:** written when `origin/main` ended at D-126 and open pull requests already named D-127 to D-130, so this took D-131; `tools/next-id.py` found D-131 held by this branch alone when `main` was merged in, by then ending at D-130.
+**Answers:** [Q-66](open-questions/tier-2.md)
+**Keeps:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - the evidence a proof needs, a person's signature, and a proof going stale made visible · the rule that nothing in the proving tools writes `heron-status`
+**Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`RELEASE_REQUIRED`, `release_problems`), [`heron_validate.py`](../brain/heron_validate.py) (`draft` and `accept` with `--release` and `--second-route`), [`heron_matrix.py`](../brain/heron_matrix.py) (`proven_releases`), [`batch-prove.py`](../tools/batch-prove.py) (`--release`), [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md), [Group EQ](needs-checking/group-eq.md)
+
+**Full record:** [`decisions/D-131.md`](decisions/D-131.md)

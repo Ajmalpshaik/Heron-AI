@@ -1,0 +1,62 @@
+# The proof of list-categories (LIST_CATEGORIES, FRG-DOC-031) version 3: Object
+# Styles narrowed BY NAME - one subcategory asked, one row back; a name the
+# family has not got, the nearest names and no table. NEEDS-CHECKING Group FU,
+# FRAGMENT-ISSUES row 5b-630. A READ: nothing is changed, so no `write:`.
+#
+#     python tools/batch-prove.py tools/jobs/list-categories-narrowed-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-categories-narrowed-2026-10-17.yaml
+#
+# THE ARRANGEMENT is version 2's (list-categories-object-styles-2026-10-14.yaml),
+# made before the run on TEST COPIES only - never a working family, never the
+# modeller's own signature family and never the 4355 job model:
+#
+#   "Heron Object Styles Test"   a new family from the Metric Generic
+#                                Annotation template, with ONE subcategory
+#                                made under Generic Annotations in Manage >
+#                                Object Styles > Annotation Objects: "Signature",
+#                                Line Color 0,0,255, Line Weight 2, Solid.
+#   "Heron No Subcategory Test"  a new family from the Metric Generic Model
+#                                template whose Object Styles > Model Objects
+#                                shows Generic Models with NOTHING under it.
+#
+# POSITIVE: styleRows 1, and objectStyles reading "Object Styles, 1 row(s), read
+# off each category - not a view's override. Only the name(s) asked: Generic
+# Annotations > Signature.", the column line, and ONE row: "Generic Annotations
+# > Signature | 0,0,255 | 2 | - | Solid".
+#
+# NEGATIVE: styleRows 0 and familySubcategories 0, and objectStyles ONE line -
+# "Object Styles: NO ROW - nothing in this document is named as asked (Generic
+# Models > Signature). Generic Models has no subcategory "Signature" - it has no
+# subcategories at all; its own row is "Generic Models". ..." - with NO column
+# line under it (D-30).
+#
+# EXPECT THE RUNNER TO SAY "NEG NOT EMPTY", AND READ WHY BEFORE BELIEVING IT.
+# batch-prove judges the negative on every declared result, and this card's
+# names, bindable and objectStyles are filled in every document - version 2's
+# job has the same shape. What decides this proof is the negative's styleRows 0,
+# familySubcategories 0 and objectStyles' one line, read in the run record by
+# eye. Recorded in row 5b-630: whether always-filled results become
+# `role: accounting` is the owner's call, because it changes what version 1
+# declared.
+#
+# BY HAND AFTERWARDS (Group FU): "Generic Annotations" alone (2 rows),
+# "  generic   annotations>SIGNATURE " (the same 1 row), "Signiture" (nearest
+# names, no table), and Object Styles read by eye against the one row.
+
+model: Heron Object Styles Test (a Generic Annotation family with one subcategory, Signature, 0,0,255, weight 2) and Heron No Subcategory Test (a Generic Model family with none), Revit 2020 first, then 2024 and 2027
+
+jobs:
+  - fragment: list-categories
+    in: "Heron Object Styles Test"
+    negative-in: "Heron No Subcategory Test"
+    expect: styleRows
+    set:
+      everySubcategory: false
+      categories: "Generic Annotations > Signature"
+    negative-set:
+      everySubcategory: false
+      categories: "Generic Models > Signature"
+    note: >
+      Both legs name both values: a negative inherits no value from the
+      positive. The count is what the runner judges; the colour and weights in
+      the one row are what a person checks against Object Styles.

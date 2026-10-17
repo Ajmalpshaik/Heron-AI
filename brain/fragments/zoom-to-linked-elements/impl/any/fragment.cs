@@ -213,10 +213,24 @@ if (link != null)
             }
             else if (references.Count > 0)
             {
-                setReferences.Invoke(uidoc.Selection, new object[] { references });
-                selected = references.Count;
-                findings.Add("Selected " + selected + " of them, as linked elements - the "
-                    + "selection that was there before is replaced");
+                // A REFUSED SELECTION IS A FINDING, NOT THE RUN'S END. The
+                // camera has already moved by now, and an exception from
+                // Revit - wrapped by Invoke - would lose that and every
+                // finding above it, the way the 2020 to 2022 branch never does.
+                try
+                {
+                    setReferences.Invoke(uidoc.Selection, new object[] { references });
+                    selected = references.Count;
+                    findings.Add("Selected " + selected + " of them, as linked elements - the "
+                        + "selection that was there before is replaced");
+                }
+                catch (System.Reflection.TargetInvocationException error)
+                {
+                    var said = error.InnerException != null ? error.InnerException.Message
+                                                            : error.Message;
+                    findings.Add("The selection was NOT changed: Revit would not select them as "
+                        + "linked elements - it said: " + said + ". The zoom above stands");
+                }
             }
 
             if (unreferenced > 0)

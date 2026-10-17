@@ -14,8 +14,9 @@ The read-only door: `revit_read` runs what reads, and nothing else.
 WHAT WAS MISSING
 ----------------
 The add-in has had `run_fragment_read` since D-28 - declared ANALYZE, opening
-no transaction, so Revit itself refuses any change - and only the command
-line ever sent it. A chat could reach a READ or ANALYZE fragment through
+no transaction, so Revit refuses a change, and since FRAGMENT-ISSUES row
+5b-350 counting the model around every read - and only the command line
+ever sent it. A chat could reach a READ or ANALYZE fragment through
 `revit_change` alone: with Changes switched ON, inside the executor that opens
 a transaction. A question about the model needed write permission. And the
 server's own text told every chat "Heron can now RUN a read-only fragment",
@@ -345,6 +346,88 @@ def show_door(text, cs, door_refusal):
           "heron_method's list of a job's capabilities says EXECUTE runs "
           "through revit_show")
 
+    disk_doors(text, cs)
+
+
+def disk_doors(text, cs):
+    """
+    Section 11 - what the two switch-off doors refuse beyond a risk word: code
+    that writes to disk (row 5b-591) and code that opens a transaction of its
+    own (row 5b-592). Asked, not called, on the code as it stood.
+    """
+    print()
+    print("11. Nothing written to disk, and no transaction of a fragment's own")
+    disk = getattr(TOOLS, "disk_refusal", None)
+    writes = getattr(TOOLS, "writes_to_disk", None)
+    check(disk is not None and writes is not None,
+          "heron_tools has writes_to_disk and disk_refusal to ask")
+    if disk is not None and writes is not None:
+        check(writes("familyDocument.SaveAs(path, options);") == ".SaveAs"
+              and writes("System.IO.File.WriteAllText(p, s);") == "File.WriteAllText"
+              and writes("using (var w = new StreamWriter(p)) { }") == "new StreamWriter",
+              "a SaveAs, a File write and a StreamWriter are each seen")
+        check(writes("// it calls SaveAs(path) after\nvar s = \"File.Delete(\";") is None
+              and writes("var v = @\"x.Export(\"\"y\"\")\";") is None,
+              "a comment or a string that names one is not one")
+        refused = disk("revit_show", "SOMETHING", "doc.Export(folder, name, options);")
+        check(bool(refused) and "Nothing has been sent to Revit" in refused
+              and "revit_show" in refused and "Publish" in refused,
+              "the refusal names the door, says nothing was sent, and names Publish")
+
+        # OVER THE LIBRARY: every fragment either door may run that writes to
+        # disk is refused at both - and OPEN_FAMILY_FOR_EDITING, which writes
+        # a .rfa with overwrite on, is one of them.
+        writing = []
+        for folder in sorted(os.listdir(FRAGMENTS)):
+            card = os.path.join(FRAGMENTS, folder, "fragment.yaml")
+            code = os.path.join(FRAGMENTS, folder, "impl", "any", "fragment.cs")
+            if not (os.path.isfile(card) and os.path.isfile(code)):
+                continue
+            level = TOOLS.level_named(CLIENT.fragment_risk(card))
+            if level is None or level > TOOLS.EXECUTE:
+                continue
+            source = read(code)
+            if writes(source):
+                writing.append(folder)
+                check(bool(disk("revit_read", folder, source))
+                      and bool(disk("revit_show", folder, source)),
+                      "%s writes to disk, and both switch-off doors refuse it" % folder)
+        check("open-family-for-editing" in writing,
+              "OPEN_FAMILY_FOR_EDITING is among them - found %s" % writing)
+
+    for door in ("revit_read", "revit_show"):
+        body = body_of(text, door) or ""
+        asked = body.find('tools.disk_refusal("%s", capability, source)' % door)
+        bind = body.find("binding.resolve(")
+        check(asked > 0 and bind > 0 and asked < bind,
+              "%s asks disk_refusal with its own name BEFORE it binds a session" % door)
+
+    # THE ADD-IN'S HALF, for any caller: a source that opens a transaction is
+    # refused on the read and show paths, and wherever noTransactionOpen is
+    # declared - before the script runs.
+    executor = read(FRAGMENT_CS)
+    asked = executor.find("HeronSourceScan.OpensTransaction(source)")
+    gate = executor.find("opens != null && !ownsTransactions && (!writing || wantsNoTransaction)")
+    first_run = executor.find("RunScript(script, globals, name, out state)")
+    check(asked > 0 and gate > asked and first_run > gate,
+          "RevitFragment reads the source for a transaction of its own and refuses it on "
+          "the read and show paths, or under noTransactionOpen, before anything runs")
+    check('"opens_own_transaction"' in executor
+          and "opens_own_transaction" in read(os.path.join(
+              ROOT, "mcp", "server", "heron_failure.py")),
+          "and the refusal has a code of its own, which heron_failure classifies")
+    check(cs.get("run_fragment_show") == "Execute",
+          "(the show path it guards is still run_fragment_show, at Execute)")
+
+    # THE ISOLATE HINT ONLY UNDER AN ISOLATE: under any other change it would
+    # read as a way round the refusal.
+    hint = "revit_isolate_temporary"
+    other = TOOLS.door_refusal("revit_show", "MODIFY", "DELETE_ELEMENTS") or ""
+    isolate = TOOLS.door_refusal("revit_show", "MODIFY", "ISOLATE_ELEMENTS") or ""
+    check(hint in isolate and hint not in other,
+          "revit_show's refusal of a MODIFY capability names revit_isolate_temporary for "
+          "ISOLATE_ELEMENTS and for no other change")
+
 
 def main():
     # ASK BEFORE CALLING - heron-ship 2a. On the code as it stood these names
@@ -531,8 +614,18 @@ def main():
 
     print()
     print("7. What it did not send, it says")
+    # revit_change hands _provides_lines the values heron_run_records left it
+    # after counting those the last reply of the batch already showed word for
+    # word (5b-407) - still the reply's own `provides`, still the one copy of
+    # how they are printed. tests/test_run_records.py holds what it leaves out.
+    printed_through = {
+        "revit_read": ('_provides_lines(reply.get("provides"))',),
+        "revit_change": ("runs.shown_values(reply, capability, _BATCH)",
+                         "_provides_lines(shown)"),
+    }
     for door in ("revit_read", "revit_change"):
-        check('_provides_lines(reply.get("provides"))' in (body_of(text, door) or ""),
+        door_body = body_of(text, door) or ""
+        check(all(part in door_body for part in printed_through[door]),
               "%s prints what a fragment left through _provides_lines - both "
               "doors, one copy" % door)
     provides_lines = lifted(text, "_provides_lines")
@@ -626,10 +719,11 @@ def main():
 
     print()
     print("9. Article 11 is asked at the change door, and not at this one (D-117)")
-    # A READ MAY RUN A DRAFT: it opens no transaction, so Revit itself refuses
-    # any change, and its answer says DRAFT (section 6). A CHANGE KEEPS what
-    # it does, so a DRAFT, or a proof its code has moved past, is refused
-    # there before anything is sent.
+    # A READ MAY RUN A DRAFT: it opens no transaction, so Revit refuses a
+    # change, the add-in counts the model around it (row 5b-350), and its
+    # answer says DRAFT (section 6). A CHANGE KEEPS what it does, so a DRAFT,
+    # or a proof its code has moved past, is refused there before anything
+    # is sent.
     unproven = getattr(CLIENT, "unproven_refusal", None)
     check(unproven is not None, "the client has unproven_refusal to ask")
     read_code = "\n".join(line for line in body.splitlines()

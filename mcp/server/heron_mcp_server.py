@@ -120,6 +120,17 @@ import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
+import heron_run_records as runs                    # noqa: E402
+import heron_running_code as running_code           # noqa: E402
+
+# WHAT THIS CHAT IS RUNNING, fingerprinted now - before a pull can land under
+# it. A git pull changes the files and not this process, and on 2026-09-07 that
+# had revit_apply_move answering from code a fix had already replaced
+# (NEEDS-CHECKING B8). heron_running_code says how, and what is decided when
+# the two differ: every reply says so, and nothing changes the model.
+RUNNING = running_code.RunningCode.of_checkout(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
 # `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
 # run - resolved to 1.x when this server was written and resolves to 2.x now.
@@ -309,7 +320,10 @@ def _through(tool, reply_out=None, origin="chat"):
         # the caller's own word, still standing from before the call.
         _ctx.reply_out, _ctx.origin, _ctx.outcome = reply_out, origin, None
         try:
-            return body(*a, **k)
+            # The page's Apply is a write from this same process, so old code
+            # refuses it here exactly as _recorded refuses the chat's.
+            refused = _refused_for_old_code(body.__name__)
+            return refused if refused is not None else body(*a, **k)
         finally:
             if reply_out is not None:
                 reply_out["ended"] = getattr(_ctx, "outcome", None)
@@ -371,6 +385,12 @@ def _recorded(fn):
     exception pass through untouched, and a fault in the recording is
     dropped: the list is display, and must never cost a tool its answer. A
     tool called from inside another is not listed twice.
+
+    AND THE ONE PLACE A CHAT HEARS THAT ITS CODE IS OLD. While RUNNING finds
+    a file changed since it was loaded, a tool that changes the model is
+    refused before its body runs, and every answer ends with one line saying
+    to reopen the chat - a read still answers in full (heron_running_code has
+    the decision). Nothing changed, nothing is added: a stat per file.
     """
     @functools.wraps(fn)
     def run(*a, **k):
@@ -386,7 +406,9 @@ def _recorded(fn):
         kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
         started, clock = time.strftime("%H:%M:%S"), time.time()
         try:
-            reply = fn(*a, **k)
+            reply = _refused_for_old_code(fn.__name__)
+            if reply is None:
+                reply = fn(*a, **k)
         except Exception as error:
             if outer:
                 _note(fn.__name__, started, time.time() - clock, error=error)
@@ -397,8 +419,49 @@ def _recorded(fn):
                 _depth.busy = False
         if outer:
             _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
+            reply = _said_old_code(reply)
         return reply
     return run
+
+
+def _changes_model(tool):
+    """heron_tools.writes, and a tool nobody declared is never harmless."""
+    try:
+        return tools.writes(tool)
+    except tools.NotDeclared:
+        return True
+
+
+def _old_code():
+    """What RUNNING finds changed - and nothing when the watch itself faults,
+    which leaves a tool as it was before the watch existed rather than
+    costing every tool its answer."""
+    try:
+        return RUNNING.changed()
+    except Exception:                                # noqa: BLE001 - never cost a tool its answer
+        return []
+
+
+def _refused_for_old_code(tool):
+    """The refusal, said as one, when `tool` would change the model and this
+    process is not running the code on disk - else None."""
+    if _changes_model(tool) and _old_code():
+        return _ended("refused", running_code.REFUSED)
+    return None
+
+
+def _said_old_code(reply):
+    """The reply with one line after it while this process is not running the
+    code on disk, and untouched otherwise. A refusal for it already says so."""
+    if not _old_code():
+        return reply
+    if isinstance(reply, str):
+        if running_code.REFUSED in reply:
+            return reply
+        return reply + NEWLINE + NEWLINE + running_code.SAID
+    if isinstance(reply, (list, tuple)):
+        return list(reply) + [running_code.SAID]
+    return reply
 
 
 def _note(tool, started, seconds, reply=None, error=None, outcome=None):
@@ -1624,6 +1687,9 @@ def revit_change(capability: str = "", values: str = "",
     Ctrl+Z in Revit undoes what this did to the model, never a save, a sync or
     an export.
     """
+    # THE RUN RECORD IS NOT NAMED HERE, and that is the budget's call (D-118):
+    # every reply's own `record:` line names heron_run_record and the run, at
+    # the one moment a chat needs it.
     # WHAT THIS DESCRIPTION SAID AT LENGTH UNTIL 2026-10-17, and where the host
     # hears it now - every chat paid for it before its first call
     # (tests/test_tool_sizes.py, docs/04 s8.8):
@@ -1651,6 +1717,11 @@ def revit_change(capability: str = "", values: str = "",
     #     for. The refusal says so itself (tests/test_mcp_serves.py).
     # The Changes switch is read inside the add-in, never here - a client
     # deciding its own permission is not a permission.
+    # WHEN THIS CALL BEGAN, for the batch rule (heron_run_records.Batch): a change
+    # that starts within seconds of the last one ending is the same batch of
+    # calls, and what it already printed is not printed again.
+    started = time.monotonic()
+
     matched = ""
     if not (capability or "").strip() and (request or "").strip():
         capability, handed_back = _by_words(request, "revit_change", values)
@@ -1851,6 +1922,9 @@ def revit_change(capability: str = "", values: str = "",
     if wrong_model is not None:
         return wrong_model
 
+    # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
+    _BATCH.turn(started, time.monotonic())
+
     lines = ["%s ran in %s." % (capability, reply.get("document"))]
     if matched:
         lines.append(_matched_line(request, matched))
@@ -1863,6 +1937,12 @@ def revit_change(capability: str = "", values: str = "",
     bound = reply.get("bound")
     if bound:
         lines.append("  inputs: %s" % bound)
+
+    # WHAT REVIT SAYS THE JOB CHANGED - the short change report (5b-407).
+    # Counts by category, the fragment's apart from its setup steps', and the
+    # run record that holds every element id. Nothing for an add-in from
+    # before the report, which sends no `changes`.
+    lines.extend(runs.change_lines(reply))
 
     # AND WHAT NOTHING READ. The other half of the line above: that one says
     # where each input came from, and without this one a value that reached
@@ -1885,7 +1965,13 @@ def revit_change(capability: str = "", values: str = "",
     # A REFUSAL IS THE CASE THIS EXISTS FOR. A fragment that declined says so
     # in its results and nowhere else, and "it ran" is the one sentence that
     # makes a refusal look like a success.
-    lines.extend(_provides_lines(reply.get("provides")))
+    #
+    # AND WHAT THE LAST REPLY OF THIS CAPABILITY ALREADY SHOWED IS COUNTED,
+    # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
+    # only when the reply names a run record, where every value can be read.
+    shown, same = runs.shown_values(reply, capability, _BATCH)
+    lines.extend(_provides_lines(shown) or ([""] if same else []))
+    lines.extend(runs.unchanged_line(same))
 
     # THE VERDICT IS THE ADD-IN'S TO WRITE, NOT THIS TOOL'S. It is the only
     # side that saw whether the transaction group actually held, and on
@@ -1893,10 +1979,16 @@ def revit_change(capability: str = "", values: str = "",
     # Repeating the claim from here would put that failure back - which is
     # also why the fix above reads the add-in's `verdict` rather than
     # composing a sentence here from `applied`.
-    verdict = reply.get("verdict")
-    if verdict:
+    #
+    # ONCE PER BATCH, AND STILL THE ADD-IN'S WORDS (5b-407). The KEPT paragraph
+    # was 24.5% of what two family builds sent back, word for word in 170 of
+    # 172 replies. The add-in now writes it twice - whole, and as one sentence
+    # carrying the undo rule unshortened - and this prints the paragraph on the
+    # first kept change of a batch and the sentence on the rest. A rollback, an
+    # unconfirmed one, or a reply without the short form prints whole, always.
+    if reply.get("verdict"):
         lines.append("")
-        lines.append(str(verdict))
+        lines.append(runs.verdict_line(reply, _BATCH))
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
@@ -1914,6 +2006,10 @@ def revit_change(capability: str = "", values: str = "",
         _offer_change(capability, folder, values, reply.get("document"))
 
     return _ended("ok", "\n".join(lines))
+
+
+#: What this chat has already printed in the current batch - see heron_run_records.Batch.
+_BATCH = runs.Batch()
 
 
 #: A need Revit fills itself, never the caller - the only kind an
@@ -2807,6 +2903,12 @@ def revit_read(capability: str = "", values: str = "",
     with io.open(source_path, "r", encoding="utf-8") as fh:
         source = fh.read()
 
+    # NOTHING WRITTEN TO DISK, EITHER: no transaction is needed to write a
+    # file, so the missing one does not stop it (heron_tools.disk_refusal).
+    on_disk = tools.disk_refusal("revit_read", capability, source)
+    if on_disk:
+        return _ended("refused", on_disk)
+
     needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
                                                folder, "fragment.yaml"))
     if needs is None:
@@ -2824,9 +2926,11 @@ def revit_read(capability: str = "", values: str = "",
         return _ended("refused", str(unbound))
 
     # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
-    # transaction, which is the whole of this door's guarantee. The chain
-    # resets unless the caller names what it means to consume - revit_change's
-    # rule and reason, and the add-in's refusal of the two together.
+    # transaction, and the add-in counts the model around it - that pair is
+    # this door's guarantee, since Revit's refusal alone once let an element
+    # through (row 5b-350). The chain resets unless the caller names what it
+    # means to consume - revit_change's rule and reason, and the add-in's
+    # refusal of the two together.
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
     _aim_at_pin(args)
 
@@ -2854,8 +2958,9 @@ def revit_read(capability: str = "", values: str = "",
     _ctx_reply(reply)
 
     # The client's unknown_outcome sentence is written for a change. Here the
-    # model cannot have changed - no transaction is open - but the chain may
-    # have, so say that instead.
+    # model is not expected to have changed - no transaction is open, though
+    # the count that would say so (row 5b-350) was in the lost answer - but
+    # the chain may have, so say that instead.
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The read reached Revit but its answer was lost, so Heron cannot "
@@ -2929,9 +3034,10 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     structural link". To isolate in the active view use
     revit_isolate_temporary; revit_reset_temporary ends it.
 
-    It works with Changes OFF: no transaction is open, so Revit itself refuses
-    any change to the model. A capability declared above EXECUTE is refused
-    before anything is sent - a change is revit_change's.
+    It works with Changes OFF: no transaction is open, and the model is counted
+    before and after - a run that moved it is reported, never answered. A
+    capability declared above EXECUTE is refused before anything is sent - a
+    change is revit_change's.
 
     `request`, `capability`, `values` and `expect_from` work as in revit_read.
     Inside a linked model too, with no question first (D-124). The answer
@@ -3000,6 +3106,12 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     with io.open(source_path, "r", encoding="utf-8") as fh:
         source = fh.read()
 
+    # NOTHING WRITTEN TO DISK, EITHER: no transaction is needed to write a
+    # file, so the missing one does not stop it (heron_tools.disk_refusal).
+    on_disk = tools.disk_refusal("revit_show", capability, source)
+    if on_disk:
+        return _ended("refused", on_disk)
+
     # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
     # called from the client exactly as both other doors call it.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
@@ -3009,8 +3121,9 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     except NotBound as unbound:
         return _ended("refused", str(unbound))
 
-    # NO "apply", EVER. run_fragment_show opens no transaction, exactly as
-    # run_fragment_read does, and that is the whole of this door's guarantee.
+    # NO "apply", EVER. run_fragment_show opens no transaction and is counted
+    # around, exactly as run_fragment_read is, and that pair is the whole of
+    # this door's guarantee (row 5b-350).
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
     _aim_at_pin(args)
 
@@ -3036,15 +3149,22 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The request reached Revit but its answer was lost, so Heron "
-                      "cannot tell whether %s ran. Nothing in the model was changed - "
-                      "no transaction is open - but if it ran, the result %s left has "
-                      "been used up. Run %s again, then this."
+                      "cannot tell whether %s ran. No transaction is open, so the model "
+                      "is not expected to have changed - but the count that would have "
+                      "said so was in the lost answer. If it ran, the result %s left "
+                      "has been used up. Run %s again, then this."
                       % (capability, consumes, consumes))
 
     failure = analyse(reply, writes=tools.writes("revit_show"))
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
+
+    # SAID FROM THE ADD-IN'S COUNT, as revit_read says it - row 5b-350. This
+    # door runs on the same counted read path, so a run that moved the model
+    # came back read_changed_model above and never reaches here; a reply with
+    # no `elementsCounted` is from an add-in that never counted.
+    counted = reply.get("elementsCounted")
 
     # GOLDEN RULE 20. The add-in refused a different model on `expectProject`
     # before running; this is the first call's pin. When it fires after a
@@ -3057,10 +3177,14 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
             return _ended("failed",
                           "%s ran in %s before Heron could tell that it is not the model "
                           "this chat works on (%s). Only what is shown can have changed - "
-                          "the selection, the camera or the active view; nothing in either "
-                          "model was changed. Press Esc in Revit to clear a selection, or "
-                          "say 'use this model' to move this chat onto %s deliberately."
+                          "the selection, the camera or the active view; %s. Press Esc in "
+                          "Revit to clear a selection, or say 'use this model' to move this "
+                          "chat onto %s deliberately."
                           % (capability, reply.get("document"), pinned.title,
+                             "nothing in either model was changed"
+                             if isinstance(counted, int) else
+                             "nothing in either model should have changed, though this "
+                             "add-in does not count the model around a run",
                              reply.get("document")))
         return _ended("refused", wrong_model)
 
@@ -3087,9 +3211,16 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
-    lines.append("Nothing in the model was changed: this runs with no transaction "
-                 "open, so Revit itself refuses any change. Only what is shown can "
-                 "have changed - the selection, the camera or the active view.")
+    if isinstance(counted, int):
+        lines.append("Nothing in the model was changed: Heron counted %s element(s) "
+                     "before this ran and the same after it. Only what is shown can "
+                     "have changed - the selection, the camera or the active view."
+                     % "{:,}".format(counted))
+    else:
+        lines.append("Only what is shown should have changed - the selection, the "
+                     "camera or the active view: this runs with no transaction open. "
+                     "This add-in does not count the model around a run, so that is "
+                     "not measured - update it (FRAGMENT-ISSUES row 5b-350).")
     return _ended("ok", "\n".join(lines))
 
 
@@ -3166,6 +3297,8 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
                      "another level, outside its range or hidden by its own settings, "
                      "and isolating cannot show them here."
                      % ("{:,}".format(seen), "{:,}".format(isolated)))
+    # WHOSE IT WAS IS NOT KNOWN - the modeller's, or an earlier Heron call's,
+    # a resend after a lost answer included - so it is not said.
     if reply.get("replacedEarlier"):
         lines.append("  A temporary isolate was already on in this view, and this "
                      "replaced it rather than adding to it.")
@@ -3201,15 +3334,22 @@ def revit_reset_temporary() -> str:
     if not reply.get("ok"):
         return reply.get("message") or reply.get("error") or "The request was refused."
 
+    # THE WRONG MODEL, SAID - BUT NOT AS A FAILURE when it reset something. An
+    # isolate that landed in the wrong model's view tells the chat to call
+    # this to end it, so ending it there is the job done, not a mistake. When
+    # nothing was on, the pin's own sentence is used, as every tool here uses
+    # it (row 5b-594 records what that sentence gets wrong after the act).
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         if reply.get("reset"):
-            _ended("failed")
-            return ("Heron reset the temporary hide/isolate in \"%s\" of %s before it could "
-                    "tell that %s is not the model this chat works on (%s). Only that "
-                    "view's temporary display changed; nothing in either model was changed."
+            _ended("ok")
+            return ("Reset the temporary hide/isolate in \"%s\" of %s. %s is not the model "
+                    "this chat works on (%s) - if that isolate was the one Heron made in the "
+                    "wrong model, it is ended now. Only that view's temporary display "
+                    "changed; nothing in either model was changed. Say 'use this model' to "
+                    "move this chat onto %s."
                     % (reply.get("view"), reply.get("document"), reply.get("document"),
-                       pinned.title))
+                       pinned.title, reply.get("document")))
         return _ended("refused", wrong_model)
 
     return "%s (%s, Revit %s, session %s)" % (
@@ -3748,9 +3888,9 @@ def _cannot_run():
     """
     return (
         "A capability that READS runs through revit_read - D-28's executor "
-        "compiles it inside Revit with no transaction open, so Revit itself "
-        "refuses any change; it needs no Changes switch, and it refuses "
-        "anything declared above ANALYZE. "
+        "compiles it inside Revit with no transaction open, so Revit refuses a "
+        "change, and the add-in counts the model around every read; it needs "
+        "no Changes switch, and it refuses anything declared above ANALYZE. "
         "One that only changes what is SHOWN - the selection, the camera, the "
         "active view - runs through revit_show, the same executor with no "
         "transaction open, also with Changes off; it refuses anything declared "
@@ -4171,18 +4311,17 @@ def heron_resolve(capability: str) -> str:
 
 
 @server.tool()
-def heron_lookup(request: str) -> str:
+def heron_lookup(request: str, question: bool = False) -> str:
     """
-    Work out which capability would serve a request written in the user's own
-    words - "select all the ducts", "how many air terminals".
+    Which capability serves a request in the user's own words. Answers with
+    it and the values it needs typed, for revit_read or revit_change next.
 
-    Use when the user asks for Revit work and you need to know whether Heron
-    has a way of doing it. It answers with the capability AND the values it
-    needs typed, so the next call can be revit_read or revit_change itself.
-    Touches nothing.
+    question: true only when the user wants to find something out - "what size
+    is this pipe"; every capability that changes the model is left out.
+    Selecting or zooming is not a change. False for a change, even asked as
+    a question - "how many sprinklers do I need" - and when unsure.
 
-    To run it as well, skip this: revit_read or revit_change with `request`
-    set to the user's words does this lookup inside the same call.
+    revit_read or revit_change with `request` does this lookup itself.
     """
     # A plan never depends on which fragment happens to serve it today, which is
     # why the answer names a capability and never a fragment id. No heron_resolve
@@ -4190,17 +4329,31 @@ def heron_lookup(request: str) -> str:
     revit, how = _revit_version()
 
     try:
-        found = brain.lookup(request, revit=revit)
+        found = brain.lookup(request, revit=revit, question=question)
     except brain.BrainUnavailable as why:
         return str(why)
 
+    # D-128. Said on every answer to a question, found or not: what was not
+    # offered is part of the answer, and a reply that hid it would read as
+    # Heron knowing nothing that writes.
+    asked = []
+    if found.get("question"):
+        asked = ["  Asked as a question, so the %d fragments that change the "
+                 "model (above %s) were not offered (D-128). If the user wants "
+                 "a change, ask again without `question`."
+                 % (found.get("left_out") or 0, found.get("ceiling"))]
+
     if not found["capability"]:
-        lines = ["Heron has no way of doing that."]
+        lines = ["Heron has no way of doing that."
+                 if not found.get("question") else
+                 "Nothing in Heron that leaves the model unchanged matches "
+                 "that."]
         blocked = [e for e in found["excluded"] if "Revit" in e["reason"]]
         if blocked:
             lines.append("%d fragment(s) were excluded because they are not "
                          "declared for Revit %s. They exist - they are just "
                          "not for this release." % (len(blocked), revit))
+        lines.extend(line.strip() for line in asked)
         lines.extend(_drift_lines(found, indent="", gap=False))
         lines.append("Run heron_capabilities to see what it does know.")
         return "\n".join(lines)
@@ -4214,6 +4367,7 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+    lines.extend(asked)
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
     # a store that is not this checkout's library - row 5b-233.
     lines.extend(_drift_lines(found))
@@ -4917,6 +5071,45 @@ def heron_gaps(days: int = 0) -> str:
                      "nothing is missing.")
 
     return "\n".join(lines)
+
+
+@server.tool()
+def heron_run_record(run: str = "", offset: int = 0, limit: int = 40) -> str:
+    """
+    Read back what a change did in full - every element id it added, modified
+    or deleted, and every value it left - a page at a time.
+
+    `revit_change` replies in short: counts by category and a `record:` line
+    naming the run, e.g. run=wf-20261009-133432-0042-a1b2. Pass that run here.
+    `offset` and `limit` page through it (limit at most 200); a page that has
+    more ends by naming the next offset. Leave `run` empty to list the newest
+    records on this PC.
+
+    Reads Heron's own files on this PC - never the model, never Revit - so it
+    needs no Changes switch and Revit need not be running. Records are pruned
+    after runs.retainDays (14 by default).
+    """
+    if not (run or "").strip():
+        found = runs.recent()
+        if not found:
+            return ("There are no run records on this PC yet. One is written for "
+                    "every change revit_change makes, by an add-in new enough to "
+                    "write them - so either nothing has been changed since, or the "
+                    "add-in in Revit is older than this server.")
+        lines = ["The newest run records, newest first:"]
+        for one in found:
+            lines.append("  %s  %-28s %s, %s change(s), %s"
+                         % (one["run"], one["fragment"] or "?", one["document"] or "?",
+                            "?" if one["total"] is None else one["total"],
+                            one["kind"] or "outcome not recorded"))
+        lines.append("")
+        lines.append("Read one with heron_run_record run=<the id>.")
+        return "\n".join(lines)
+
+    record, why = runs.read(run.strip())
+    if record is None:
+        return why
+    return runs.page(record, run.strip(), offset, limit)
 
 
 @server.tool()
@@ -6834,4 +7027,7 @@ if __name__ == "__main__":
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 
+    # One more look, so what start-up imported is fingerprinted before the
+    # first call rather than at it.
+    _old_code()
     server.run()

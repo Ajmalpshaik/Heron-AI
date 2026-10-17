@@ -106,6 +106,22 @@ namespace Heron.Core
         /// <summary>DERIVED - logs. Verbose, rotated, disposable.</summary>
         public static string Logs { get { return Ensure(Path.Combine(Derived, "logs")); } }
 
+        /// <summary>
+        /// DERIVED - one record per fragment write, named by its workflow id:
+        /// every element it changed and its whole reply, which the chat is
+        /// given only in short (FRAGMENT-ISSUES 5b-407). Paged back from disk
+        /// by the MCP server's heron_run_record; pruned by runs.retainDays.
+        ///
+        /// DERIVED, NOT DATA, and the difference is the point. The audit
+        /// trail under DATA is the evidence and is never pruned; this is the
+        /// detail behind one of its lines, kept for a while so a chat can
+        /// read what it was not sent - and IsSafeToDelete must be able to say
+        /// yes to it, which it never does for anything under DATA.
+        /// mcp/client/heron_bridge_client.py names the same folder as
+        /// RUNS_DIR, and tests/test_bridge_paths.py holds the two together.
+        /// </summary>
+        public static string Runs { get { return Ensure(Path.Combine(Derived, "runs")); } }
+
         /// <summary>DATA - configuration the user or an admin owns.</summary>
         public static string Config { get { return Ensure(Path.Combine(Data, "config")); } }
 

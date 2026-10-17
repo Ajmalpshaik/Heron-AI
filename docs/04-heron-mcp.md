@@ -257,7 +257,9 @@ to drift. The tool list itself is `python mcp/server/heron_tools.py`, never a li
 ### 8.1 A door that only reads — `revit_read`
 
 The add-in has had `run_fragment_read` since [D-28](DECISIONS.md): it runs a fragment with **no transaction
-open**, so Revit itself refuses any change, and it is declared `ANALYZE`, below the read-only ceiling —
+open**, so Revit refuses a change, and the add-in counts the model around every read - a read that moved it
+is answered `read_changed_model`, never as a read ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)).
+It is declared `ANALYZE`, below the read-only ceiling —
 so it runs with **Changes OFF**. Until this tool nothing but the command line sent it, and a chat could
 reach a read only through `revit_change`, with Changes ON, inside a transaction.
 
@@ -466,6 +468,16 @@ hand-back, 322,725 characters across the two builds and about 70% of it helpers 
 setting its chat runs - which this section never considered and `heron-ready --snapshot` does not record
 ([Q-61](OPEN-QUESTIONS.md)).
 
+**THE `revit_change` HAND-BACK IS A SHORT CHANGE REPORT SINCE 2026-10-17** ([row 5b-407](fragment-issues/section-5b-rows-401-425.md)).
+Each reply says what Revit reported the write changed - added, modified and deleted, by category, a
+setup step's apart from the fragment's - and names a **run record**, one file per write under
+`HeronPaths.Runs` holding every element id and the whole reply, which `heron_run_record` pages back from
+disk without Revit. The KEPT paragraph is printed once per batch of calls and the add-in's one sentence,
+carrying the undo rule whole, on the rest; a value the last reply of the same capability showed word for
+word is counted rather than printed again. Replayed through the real tool, 172 kept changes shaped from
+`CREATE_FAMILY_EXTRUSION`'s code went from 213,332 characters to 160,364, 24.8% less. **NOT RUN IN REVIT** - whether
+`DocumentChanged` reaches every commit the write path makes is [Group EV](needs-checking/group-ev.md).
+
 **MEASURED 2026-10-11 on the same laptop** - a 165-form generator (156 extrusions, 5 sweeps, 4 revolves)
 built in one chat, `claude-opus-5-5` at effort *xhigh* on every request. 1,423 s from request to finish,
 and the model's own turns were 95% of it; one planning turn before the first form took 617 s and 60,600
@@ -584,14 +596,16 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
 ([row 5b-497](fragment-issues/section-5b-rows-401-425.md)).
 
 - **`revit_show` is the third door.** It sends `run_fragment_show`, declared `EXECUTE` in the add-in and
-  routed to the read door's executor with **no transaction open** — so Revit still refuses any change to
-  the model, and what an `EXECUTE` fragment can change is the selection, the camera and the active view.
+  routed to the read door's executor with **no transaction open** — so Revit refuses a change to the
+  model, and the add-in counts the model around the run as it does a read
+  ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) - and what an `EXECUTE` fragment can change is
+  the selection, the camera and the active view.
   Its ceiling is its own row, through the same `door_refusal`: `MODIFY` and above are refused before
   anything is sent, and `revit_read` now sends an `EXECUTE` fragment here rather than to `revit_change`.
   Everything else is §8.1's: the pin, the proof line, the words path, `expect_from`.
-- **It is one search away, not given before the chat asks.** `heron_tools.ALWAYS_LOADED`'s six came to
-  4,435 characters of description on 2026-10-17 against §8.8's budget of 4,500, and a door cannot be
-  described in what was left; raising the budget is [D-118](DECISIONS.md)'s to decide. `revit_read`'s
+- **It is one search away, not given before the chat asks.** `heron_tools.ALWAYS_LOADED`'s six left less
+  of §8.8's budget than a door's description takes when this was built - `python mcp/server/heron_tools.py
+  --sizes` prints what they cost today - and raising the budget is [D-118](DECISIONS.md)'s to decide. `revit_read`'s
   refusal of an `EXECUTE` capability names it, and its description was trimmed to fit its own budget.
   So do `revit_change`'s two refusals a screen-only job meets first - not proven, and Changes off - and
   `heron_method`'s list of a job's capabilities says `EXECUTE` runs through it.
@@ -608,6 +622,13 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
   confirmation before *"anything touching a linked model"*, and selecting or zooming to linked elements is
   not touching it — the owner's answer to [Q-65](OPEN-QUESTIONS.md), [D-124](DECISIONS.md). So
   `ZOOM_TO_LINKED_ELEMENTS` runs through `revit_show` like any other `EXECUTE` fragment.
+
+**Two things a risk word cannot say, and both doors with the switches off refuse them** (rows
+[5b-591](fragment-issues/section-5b-rows-401-425.md) and [5b-592](fragment-issues/section-5b-rows-401-425.md)):
+code that writes to disk - `heron_tools.disk_refusal`, at `revit_read` and `revit_show`, before a session
+is bound - and code that opens a transaction of its own, which the add-in refuses on the read and show
+paths and under `noTransactionOpen` (`Heron.Core`'s `HeronSourceScan`). Both read the code with comments
+and strings blanked, and neither sees what is done through reflection.
 
 **Opening a view, and what still needs Changes ([D-125](DECISIONS.md)):** `OPEN_VIEW` declares
 `noTransactionOpen` - *run me with none open* - which the show door lets through, where the edit-scope need

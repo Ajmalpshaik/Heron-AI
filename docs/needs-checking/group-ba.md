@@ -75,7 +75,10 @@ merge without `confirm`, with `confirm=yes`, and with `confirm=1` for Seq. 2; de
 `confirm=2` for Seq. 1; two revisions handed to EDIT_REVISION; a show word and a sequence that do not exist;
 an empty description; arc length 0; `Numeric` deleted while Seq. 1 and Seq. 2 use it (refused, naming both);
 a custom list on a numeric sequence; a new sequence named `Numeric`. The same runs caught one defect before it
-shipped: [row 5b-245](../FRAGMENT-ISSUES.md).
+shipped: [row 5b-245](../FRAGMENT-ISSUES.md). *Note 2026-10-17, [row 5b-350](../fragment-issues/section-5b-rows-326-350.md): "nothing could change" here
+leaned on Revit refusing every change with no transaction open - LIST_REVISIONS afterwards is what showed the
+model unchanged. That refusal is not the whole guarantee, and the command line now refuses a MODIFY fragment
+without `--write`; these runs stand as recorded, and a repeat uses `--write` and no `--apply`, rolled back.*
 
 **Routing, measured 2026-09-28** through `heron_retrieve.find` on a scratch store built from this change: all
 eleven sentences in the owner's brief reach their tool by identity - *set issued to*, *tick issued* (EDIT_REVISION),
@@ -137,8 +140,8 @@ declared by anybody, so not tuned here; a register row is owed.
 | # | Check | Expected |
 |---|---|---|
 | **BA7** | **Revit 2020, the two legs ([D-30](../DECISIONS.md)) for version 2.** On "Project2", a scratch project, in front: LIST_REVISIONS first - the alphanumeric list must read A, B, C … Z and no ISSUED revision may be numbered alphanumeric. Then `python tools/batch-prove.py tools/jobs/edit-revision-numbering-revit-2020-2026-10-10.yaml --dry-run`, then with `--session <the Revit 2020 pid>` and without `--dry-run` | `PASS`: the positive `changed` *custom sequence A, B, C … Z (26 values) -> AA, BB, CC … ZZ (26 values)*, read back in `findings`; the negative (`AA, BB, CC, AA`) `refused` naming 'AA' 2 times with `changed` empty. Then LIST_REVISIONS: still A … Z (both legs rolled back), and every revision's numbering column as before |
-| **BA8** | Revit 2020, the refusals - `fragment` runs on Project2 WITHOUT `--write`, so nothing can change: `name=Numeric customSequence=A, B`; `name=Alphanumeric newName=Letters`; `name=Numeric minimumDigits=2`; `customSequence=AA, , CC`; `customSequence=AA, BB, ..., ZZ`; `customSequence=<blank>`; `name=Nonesuch` | Each `refused` by name, ending "Nothing was changed." - the last one naming Numeric and Alphanumeric. A valid call without `--write` reports Revit's own missing-transaction words instead, which is the measurement |
-| **BA9** | Revit 2020, the issued-revision refusal: on Project2, one revision numbered alphanumeric and ticked Issued BY HAND in the dialog (a setup step may not change the model), then BA7's positive values without `--write`. Un-tick it afterwards | `refused` *"'Alphanumeric' numbers ISSUED revision(s) Seq. N …"*, nothing changed |
+| **BA8** | Revit 2020, the refusals - `fragment` runs on Project2 with `--write` and no `--apply`, so whatever a run does is rolled back: `name=Numeric customSequence=A, B`; `name=Alphanumeric newName=Letters`; `name=Numeric minimumDigits=2`; `customSequence=AA, , CC`; `customSequence=AA, BB, ..., ZZ`; `customSequence=<blank>`; `name=Nonesuch` | Each `refused` by name, ending "Nothing was changed." - the last one naming Numeric and Alphanumeric. A valid call goes through and the group is ROLLED BACK instead, which is the measurement. (Written for runs WITHOUT `--write`, where a valid call came back in Revit's missing-transaction words; the command line refuses that for a MODIFY fragment since 2026-10-17 - [row 5b-350](../fragment-issues/section-5b-rows-326-350.md)) |
+| **BA9** | Revit 2020, the issued-revision refusal: on Project2, one revision numbered alphanumeric and ticked Issued BY HAND in the dialog, then BA7's positive values with `--write` and no `--apply` - not without `--write`, which the command line refuses for a MODIFY fragment since 2026-10-17 ([row 5b-350](../fragment-issues/section-5b-rows-326-350.md)). Un-tick it afterwards | `refused` *"'Alphanumeric' numbers ISSUED revision(s) Seq. N …"*, nothing changed, and the group rolled back |
 
 **2026-10-10 - EDIT_REVISION version 3: several revisions in one call. DRAFT, compiled, never run.** On the
 owner's job `4355-BHVD-3D-50C10-BL001A` (Revit 2020) seven revisions "IFI - Issued for Information" were issued

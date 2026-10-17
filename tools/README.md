@@ -382,6 +382,7 @@ separate them. Numbers in
 python tools/score-routing.py            # score, and say what moved since the last comparable run
 python tools/score-routing.py --record   # ...and append the row to brain/retrieval-history.md
 python tools/score-routing.py --list     # the answer key; asks nothing
+python tools/score-routing.py --list-plain   # the 120 plain questions; asks nothing
 ```
 
 The two tools above ask sentences written **for** the library. This one asks the 79 questions the
@@ -408,6 +409,14 @@ to catch.
 **It exits 0 whatever it finds**, like every routing check here, and exit 2 means nothing was scored.
 **A drop is reported and never stops a pull request** — the owner decided so on 2026-09-23
 ([D-100](../docs/DECISIONS.md)), and `exit_code()` in the tool names the decision.
+
+**Since 2026-10-17 it asks a second set after his**, and never adds it into his numbers: the 120 plain
+questions frozen out of FRAGMENT-ISSUES rows 5b-477 and 5b-478 into
+[`tests/data/plain-questions.yaml`](../tests/data/plain-questions.yaml) - a session's words, written
+before any card was read. Every one is a question, so its headline is how many reach a write; where the
+row names the read that answers one, where that read came back is scored too. It has its own table in
+`brain/retrieval-history.md`, its own fingerprint and its own comparison, and `--record` writes both
+rows or neither.
 **Nothing it reports is answered by rewording a question, changing an answer to match the search, or
 adding or weakening an utterance** — [row 113](../docs/FRAGMENT-ISSUES.md)'s forbidden move. It keeps its
 79 lookups out of the owner's audit trail by pointing `HERON_AUDIT` at a throwaway folder for the run.
@@ -863,6 +872,7 @@ a checker written from a build order can only ever ask whether the build order w
 python tools/batch-prove.py tools/jobs/example.yaml --dry-run   # read it, run nothing
 python tools/batch-prove.py my-jobs.yaml                        # run it against Revit
 python tools/batch-prove.py my-jobs.yaml --only set-mep-size
+python tools/batch-prove.py my-jobs.yaml --release 2025 --session <pid>   # PROVEN ones, on one more release
 ```
 
 Proving fragments one at a time costs a round trip each. On 2026-09-09 a throwaway script proved
@@ -885,6 +895,14 @@ reported six passes for it. A fragment at `PROVEN` or `PRODUCTION` is now refuse
 and never sent to Revit. There is deliberately **no flag to override that** — re-proving after the code
 changes is a staleness question, and [`tests/test_golden.py`](../tests/test_golden.py) already answers
 it by recomputing fingerprints.
+
+**`--release <year>` turns that rule round rather than off** ([D-131](../docs/decisions/D-131.md)). A proof
+on 2024 is evidence about 2024 only, so with `--release` it runs ONLY a fragment that is PROVEN on a proof
+still matching its code, and only on a release neither its proof nor a fresh `proof.releases` entry names -
+the rest are `ALREADY` or `NOT PROVEN`. Its run record and draft are `<slug>@<year>`, a record naming
+another Revit is `WRONG RELEASE` and exits 1, and the drafts are signed with `heron_validate.py accept
+--release`, which adds one entry and leaves `proof:` and `heron-status` as they were.
+[`tests/test_release_proofs.py`](../tests/test_release_proofs.py) holds it.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
@@ -912,7 +930,8 @@ library rather than typed, so it cannot go stale.
 
 **The exit code follows the batch, not the fragments.** Fourteen failures is the output — the thing it
 was run to find out — and exiting non-zero on them would make a successful proving run
-indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run.
+indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run, or
+a `--release` batch that ran on another Revit.
 
 ---
 
@@ -1968,6 +1987,29 @@ Standard library only, so a reader never breaks because a writer changed. **A mi
 a heading naming a file that is not there, or a file that does not hold that heading, stops it with
 `RegisterBroken` rather than returning a shorter register - *"a count that quietly omits a whole group is worse
 than no count"*, as the register says of itself.
+
+## `next-id.py` - which id is free, on main and on every branch
+
+```bash
+python tools/next-id.py               # fetch every branch, then the next free id in each register
+python tools/next-id.py --no-fetch    # from the branches as last fetched, and it says so
+python tools/next-id.py --json        # the same answer, for a machine
+```
+
+Four registers take an id a person picks: a NEEDS-CHECKING group, a FRAGMENT-ISSUES 5b row, an open question
+`Q-nn` and a decision `D-nnn`. A session that picks "the next free one" from its own checkout cannot see a branch
+that has not merged, so on 2026-10-17 one pull request renamed its group, row and question three times
+(EK → EL → EQ, 489 → 491 → 511, Q-64 → Q-66) as other pull requests took each id first. This fetches every branch
+on the remote, reads the ids each one holds - from the committed files at its head, never the working tree - and
+prints, per register, **the id above the highest used anywhere**, main's highest, and **which branches hold ids
+above it**. An id two branches both hold is printed as **HELD TWICE**: one of them renames before it merges.
+This checkout's HEAD counts too when it holds commits no remote branch has.
+
+**It writes no register file and reserves nothing**: an id is free as of the run, and only a pushed branch holds
+it. It does not write the NEEDS-CHECKING index either - [heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)
+says why that cannot be generated. Exits **0** with an answer and **2** when it could not look - no git, a fetch
+that failed, no main, or a register with no id on main at all, which means the register moved.
+[`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids.
 
 ---
 

@@ -127,3 +127,9 @@ utterances:
   - are they all tagged
   - tag the ones that are not tagged yet
   - tag the ones that are missing
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-477). Beside "which ducts have no tag".
+  # Measured reaching TAG_ELEMENTS_IN_VIEW, a write, on both backends. Nothing
+  # on any frozen set became riskier (brain/retrieval-history.md, 2026-10-17).
+  - which doors have no tag
