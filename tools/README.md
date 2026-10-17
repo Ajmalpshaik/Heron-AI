@@ -413,7 +413,7 @@ to catch.
 **Since 2026-10-17 it asks a second set after his**, and never adds it into his numbers: the plain
 questions frozen out of FRAGMENT-ISSUES rows into
 [`tests/data/plain-questions.yaml`](../tests/data/plain-questions.yaml) - rows 5b-477 and 5b-478's 120,
-a session's words written before any card was read, and the four of row 5b-978 the owner asked to join
+a session's words written before any card was read, and the four of row 5b-1005 the owner asked to join
 them the same day. Every one is a question, so its headline is how many reach a write; where the
 row names the read that answers one, where that read came back is scored too. It has its own table in
 `brain/retrieval-history.md`, its own fingerprint and its own comparison, and `--record` writes both

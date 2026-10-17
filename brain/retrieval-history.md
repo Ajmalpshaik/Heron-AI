@@ -1536,9 +1536,9 @@ owner was shown both and chose eight.
 
 ---
 
-## 2026-10-17 — eight sentences of 2026-10-14, Revit 2020, and four more plain questions (row 5b-978)
+## 2026-10-17 — eight sentences of 2026-10-14, Revit 2020, and four more plain questions (row 5b-1005)
 
-[Row 5b-978](../docs/fragment-issues/section-5b-rows-401-425.md). Ajmal PS listed eight sentences measured
+[Row 5b-1005](../docs/fragment-issues/section-5b-rows-401-425.md). Ajmal PS listed eight sentences measured
 on 2026-10-14 with the Revit 2020 filter, four of which reached a write or an export. **Re-measured first
 on `main` `c2f2765a`, 571 fragments**, through `heron_brain.lookup` behind the 2020 wall, each backend on
 its own private store: `lexical` (`python -s`, no model2vec) and `model` (model2vec 0.10.0,

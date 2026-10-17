@@ -45,7 +45,7 @@ at the first step after the guard, so it asks no question.
 
 Section 8, added 2026-10-17: the plain questions frozen out of
 FRAGMENT-ISSUES rows 5b-477 and 5b-478 into tests/data/plain-questions.yaml,
-and row 5b-978's four that joined them the same day.
+and row 5b-1005's four that joined them the same day.
 They are checked against the rows' own text, pinned, held to the library, and
 a drop is planted in their arithmetic - a question first answered by a read
 and then by a change has to be named as having fallen.
@@ -84,7 +84,7 @@ for _stream in (sys.stdout, sys.stderr):
 QUESTIONS_PIN = "ba1e6f01ddecbc9d78d767cd116f1ae1a39d9826cd1818b6b168fd9493733bf6"
 
 # THE PLAIN QUESTIONS, PINNED THE SAME WAY. Frozen out of rows 5b-477 and
-# 5b-478 (a session's 120) and 5b-978 (four, 2026-10-17); section 8 also
+# 5b-478 (a session's 120) and 5b-1005 (four, 2026-10-17); section 8 also
 # checks them against the rows' own text, so this pin moves only with the
 # register.
 PLAIN_PIN = "515b1f482d1b32ec84ee30bc29c9c3830d4472a657baf06153f12637a27c10ea"
@@ -93,7 +93,7 @@ PLAIN_PIN = "515b1f482d1b32ec84ee30bc29c9c3830d4472a657baf06153f12637a27c10ea"
 # holds - in the yaml's order. A row joins the set here and in its register
 # text in the same change, or section 8 fails.
 PLAIN_SOURCES = ((477, "The 60, frozen:", 60), (478, "The 60, frozen:", 60),
-                 (978, "The four, frozen:", 4))
+                 (1005, "The four, frozen:", 4))
 
 FAILURES = []
 
@@ -317,7 +317,7 @@ def store_guard(tool):
 
 
 def _frozen_from_rows():
-    """{477: [...], 478: [...], 978: [...]} - each row's frozen list, split the
+    """{477: [...], 478: [...], 1005: [...]} - each row's frozen list, split the
     way the yaml was made from it, so the file is checked against the
     register's own words rather than against a second copy of them."""
     import re
@@ -849,7 +849,7 @@ def main():
 
     # ------------------------------------------------------------------
     print()
-    print("8. The plain questions - rows 5b-477, 5b-478 and 5b-978, frozen "
+    print("8. The plain questions - rows 5b-477, 5b-478 and 5b-1005, frozen "
           "and scored beside his")
     plain_questions(tool, capabilities)
 

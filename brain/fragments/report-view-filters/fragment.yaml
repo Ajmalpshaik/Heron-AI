@@ -308,7 +308,7 @@ compatibility-note: >
 #   "save these as a set"            -> CREATE_SELECTION_FILTER
 #   "list the saved selection sets in the model" -> here - a saved selection
 #                                       set is a filter too, reported as "a
-#                                       SAVED LIST". Row 5b-978
+#                                       SAVED LIST". Row 5b-1005
 
 #   "copy the view filters from this view to the other views" -> COPY_VIEW_FILTERS
 #                                        - a WRITE. This one only says what is
@@ -327,7 +327,7 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "read the
   # filter settings back": COPY_VIEW_FILTERS on lexical answered it.
   - read the filter settings back
-  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-978: asked on 2026-10-14 with the
+  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-1005: asked on 2026-10-14 with the
   # Revit 2020 filter, it reached UPDATE_SAVED_SET, a write. Every saved
   # selection set is listed here as "a SAVED LIST" with the views using it.
   - list the saved selection sets in the model

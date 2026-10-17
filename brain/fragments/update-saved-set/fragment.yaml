@@ -126,10 +126,10 @@ compatibility-note: >
 #   "select what is in that set"        -> SELECT_FROM_SAVED_SET
 #   "load a saved selection set and select its elements" -> SELECT_FROM_SAVED_SET
 #                                          - this answered it on the spelling
-#                                          route. Row 5b-978
+#                                          route. Row 5b-1005
 #   "list the saved selection sets in the model" -> REPORT_VIEW_FILTERS - a
 #                                          question; this answered it on the
-#                                          spelling route. Row 5b-978
+#                                          spelling route. Row 5b-1005
 #   "select these in Revit"             -> SET_SELECTION, which is the current
 #                                          selection and not saved anywhere
 #   "hide these while i work"           -> ISOLATE_ELEMENTS or HIDE_ELEMENTS,

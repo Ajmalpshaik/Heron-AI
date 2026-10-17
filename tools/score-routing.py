@@ -85,7 +85,7 @@ AND A SECOND SET BESIDE HIS, NEVER INSIDE IT
 tests/data/plain-questions.yaml holds plain questions frozen out of
 FRAGMENT-ISSUES rows, where they lived only as row text: the 120 a session
 wrote on 2026-10-14 before reading any card (rows 5b-477 and 5b-478, frozen on
-2026-10-17), and the four of row 5b-978 the owner asked to join them.
+2026-10-17), and the four of row 5b-1005 the owner asked to join them.
 They are asked after his, through the same lookup, and get their own report,
 their own table in brain/retrieval-history.md and their own comparison.
 Every one is a question, so the headline is how many reach a write; where the
@@ -154,7 +154,7 @@ LANDED_NOTHING = "0"   # the search matched nothing at all
 
 # THE SECOND SET, SCORED BESIDE HIS AND NEVER MIXED WITH IT. Plain
 # questions frozen out of FRAGMENT-ISSUES rows - 5b-477 and 5b-478's 120,
-# which a session wrote before reading any card, and 5b-978's four - where
+# which a session wrote before reading any card, and 5b-1005's four - where
 # they had lived only as row text no tool could read. Every one is a
 # question, so its headline is not a judgement call: how many reach
 # something at or above the write line. Where
@@ -997,7 +997,7 @@ def plain_history_row(stamp, summary, codes):
 
 
 def plain_sources(rows):
-    """'rows 5b-477, 5b-478 and 5b-978' - read off the rows, never typed, so a
+    """'rows 5b-477, 5b-478 and 5b-1005' - read off the rows, never typed, so a
     row that joins the set is named the day it does."""
     found = sorted(set(r.get("row") for r in rows if r.get("row")), key=str)
     names = ["5b-%s" % n for n in found]

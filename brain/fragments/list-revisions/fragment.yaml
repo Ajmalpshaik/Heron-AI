@@ -191,9 +191,9 @@ compatibility-note: >
 #                                         PDF); this answers the question for
 #                                         every revision. Row 5b-550
 #   "list the revisions in the project with their dates" -> here - the
-#                                         dates are in revisionTable. Row 5b-978
+#                                         dates are in revisionTable. Row 5b-1005
 #   "find the revision with date 04-Jun-2026" -> here - a question; it
-#                                         changes no revision. Row 5b-978
+#                                         changes no revision. Row 5b-1005
 
 utterances:
   - which sheets have this revision
@@ -213,7 +213,7 @@ utterances:
   # a write. This read answers it, so it is declared here and answered by
   # identity (rows 116 and 146).
   - what revisions are in the project
-  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-978: asked on 2026-10-14 with the
+  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-1005: asked on 2026-10-14 with the
   # Revit 2020 filter, these reached writes - the first CREATE_REVISIONS_FROM_
   # SHEET_DATES on the trained model, the second EDIT_REVISION on the spelling
   # route. Every revision's date is in revisionTable, so this read answers
