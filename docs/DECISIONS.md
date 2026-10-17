@@ -188,7 +188,7 @@ an edit.
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
 | [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
-| [D-117](#d-117--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
+| [D-118](#d-118--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -994,11 +994,11 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-116.md`](decisions/D-116.md)
 
-## D-117 — A picture of a view, taken for the chat and deleted, is ANALYZE and not an export
+## D-118 — A picture of a view, taken for the chat and deleted, is ANALYZE and not an export
 
 **Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"A picture is not model data, ship it"* · **Source:** the owner's brief of 2026-10-17 for `revit_view_image` - *"a read-only tool that returns a PNG of a Revit view into the chat, so the AI can check its own work"*
 **Keeps:** [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) - every `export-*` stays PUBLISH, `export-view-image` included · [D-26](#d-26--the-model-file-is-never-uploaded) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) - Changes stays off · [Constitution Articles 8 and 10](../HERON_CONSTITUTION.md) · Golden Rule 19 - the risk is the registry's, by name · the read path's guarantee that nothing on `run_fragment_read` opens a transaction
 **Asks:** whether a view's picture is *model data* under [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope), put as [Q-64](OPEN-QUESTIONS.md) - answered: **not model data**
 **Affects:** [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs) (new), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`Captures`), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [NEEDS-CHECKING group EM](needs-checking/group-em.md)
 
-**Full record:** [`decisions/D-117.md`](decisions/D-117.md)
+**Full record:** [`decisions/D-118.md`](decisions/D-118.md)

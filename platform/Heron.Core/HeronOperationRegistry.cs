@@ -159,7 +159,7 @@ namespace Heron.Core
                 { "preview_move",       HeronRisk.Analyze },
 
                 // ANALYZE - a picture of one view, handed back to the chat so
-                // it can look at what it did (D-117, RevitCapture.cs). Given
+                // it can look at what it did (D-118, RevitCapture.cs). Given
                 // element ids it makes a temporary 3D view, which needs a
                 // transaction - the first Analyze operation to open one. What
                 // keeps it at Analyze is that the TransactionGroup around it

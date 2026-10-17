@@ -17,7 +17,7 @@ using Heron.Core;
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// A picture of one view, handed back to the chat - capture_view, D-117.
+    /// A picture of one view, handed back to the chat - capture_view, D-118.
     ///
     /// ============================ NEVER RUN ============================
     /// Written on a machine with no Revit. It COMPILES on 2020 through 2027

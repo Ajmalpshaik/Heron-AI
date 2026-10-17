@@ -241,7 +241,7 @@ def main():
           "and so the preview tool does not count as a write")
 
     print()
-    print("A picture for the chat is ANALYZE, and its group can never be kept (D-117)")
+    print("A picture for the chat is ANALYZE, and its group can never be kept (D-118)")
     # capture_view is the one Analyze operation that opens a transaction:
     # given element ids it makes a temporary 3D view. What keeps it at
     # Analyze is that the TransactionGroup around it is ALWAYS rolled back,
