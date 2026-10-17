@@ -18,8 +18,16 @@ group back and puts the modeller's own selection back. The owner's switch is `wr
 **What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027
 (`tools/check-compile.py`, 2026-10-17), and every Revit member it calls exists on all eight
 (`tools/check-api-surface.py`). `tests/test_keep_question.py` runs the Revit-free half - the words, the rule
-that only the Keep link keeps, and D-60's cap - in its test host, and reads the wiring as text. **None of it
-has run in Revit.** Nothing here is PROVEN.
+that only the Keep link keeps, and D-60's cap - in its test host, and reads the wiring as text. Nothing here is PROVEN.
+
+**THE FIRST REVIT RUN CRASHED BEFORE THE BOX, and the fix has not run in Revit.** 2026-10-17, Revit 2024.3 on
+the owner's laptop, add-in `main` at `76006767`: a PROVEN `CREATE_DUCT` kept through `revit_change` came back
+to the chat as *"Corresponding button not found. Parameter name: defaultButton"*, the log named
+`TaskDialog.set_DefaultButton` inside `RevitFragment.AskTheModeller`, and no box appeared. The model was
+left unchanged - it failed closed - but no row below could have passed on that add-in.
+[Row 5b-621](../fragment-issues/section-5b-rows-401-425.md) has the reply, the log and the cause: Discard
+was made the default before the box had its two links. Fixed in the add-in the same day and compiled for
+all eight releases, **NOT YET RUN IN REVIT** - **ET13 first**, then the rest.
 
 **Before any row: rebuild the add-in, deploy it for each Revit, restart Revit, and restart the Claude app**
 - the question lives in the add-in, and the client's longer wait for a change that keeps lives in the
@@ -43,3 +51,4 @@ South elevation for ET1 to ET4.
 | **ET10** | With the switch on, ask the chat to open the South elevation (`OPEN_VIEW`) while a plan is in front | **No dialog** - Revit reports no change to the model - and the verdict says *"the modeller was not asked"*. The view opens |
 | **ET11** | ET1 and ET2 once on Revit 2024 and once on 2027 | The same answers - the question is in the add-in every release loads |
 | **ET12** | *Watching, not a proof.* On every row above that shows the question | It waits for a click. If it ever closes by itself, or the chat reports `dialog_refused` or a Discard nobody chose, the job's dialog watch (Group EL) is answering Heron's own question and `HeronDialogWatch.HeronAsks()` is not standing it down - write down the row and what the chat said |
+| **ET13** | **Run first, after the 5b-621 fix.** Close every Revit, deploy the add-in LOCALLY for each release, restart Revit 2024 and the Claude app. In a SCRATCH copy of `rme_basic_sample_project.rvt`, ask the chat for the same duct the crash met: `CREATE_DUCT`, `systemType=Supply Air`, `ductType=Rectangular Duct: Mitered Elbows / Tees`, `level=Level 1`, `points=0,-28000,3000; 8000,-28000,3000`. When the box appears, press **Enter** without clicking. Ask again and choose **Keep it**. Then ET1 on 2020 and 2027 | **The box appears** - no *"Corresponding button not found"* in the chat, and no `set_DefaultButton` in the day's add-in log. **Discard it** is the highlighted link, so Enter discards: the element count is as before, no new `Heron:` undo entry, the view is not left isolated, and the selection is the modeller's own. Keep: one duct, one `Heron: CREATE_DUCT` undo entry. If the box still does not appear, the chat must say nothing was kept, the view must not be left isolated and the selection must be put back - write down the log line that starts *"The Keep or Discard box could not be built or shown"* |
