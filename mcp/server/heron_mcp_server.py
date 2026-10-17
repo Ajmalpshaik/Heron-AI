@@ -5078,10 +5078,6 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
         return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
 
     if not reply.get("ok"):
-        # A capture that RAN and failed is not a refusal, whatever the
-        # general rule for an unknown code on a read says.
-        if reply.get("error") == "capture_failed":
-            _ended("failed")
         return reply.get("message") or reply.get("error") or "The request was refused."
 
     wrong_model = pinned.check(reply)

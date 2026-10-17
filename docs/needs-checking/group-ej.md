@@ -10,8 +10,8 @@
 
 Asked for by the owner on 2026-10-17: a read-only tool that returns a PNG of a Revit view **into the
 chat**, so the AI can check its own work. [D-116](../DECISIONS.md#d-116--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export)
-is the decision, **Proposed** - and **if the owner answers that a picture is model data under D-82, the
-tool does not ship and these rows are not run.**
+is the decision, **Accepted** 2026-10-17: the owner answered that a picture is not model data under
+D-82 - *"A picture is not model data, ship it"*.
 
 **What changed.** A new add-in operation, `capture_view`
 ([`RevitCapture.cs`](../../revit/Heron.Revit.Addin/RevitCapture.cs)), declared ANALYZE, and the MCP tool

@@ -326,7 +326,7 @@ namespace Heron.Revit.Addin
             var threeD = IsometricType(doc);
             if (threeD == null)
             {
-                return Json.Error("no_3d_type",
+                return Json.Error("no_isometric_type",
                     "\"" + doc.Title + "\" has no 3D view type to make a temporary view from. "
                     + "Name an existing view instead. Nothing was pictured.");
             }

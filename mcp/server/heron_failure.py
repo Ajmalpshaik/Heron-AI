@@ -242,6 +242,41 @@ _KNOWN = {
                           "the request both resets the chain and expects to consume from "
                           "it, so it could only fail"),
 
+    # --- a picture for the chat (capture_view, D-116) ----------------------
+    #
+    # Every one of these returns before the TransactionGroup is started, so
+    # nothing was made - the temporary 3D view of the elements way included.
+    "both_given":        (REFUSED, FIX_FIRST,
+                          "a view name and element ids were both given - one picture is one "
+                          "or the other, and nothing was pictured"),
+    "no_view":           (REFUSED, FIX_FIRST,
+                          "Revit had no view in front to picture, and none was named"),
+    "no_such_view":      (REFUSED, FIX_FIRST, "no view in that model has that name"),
+    "ambiguous_view":    (REFUSED, FIX_FIRST,
+                          "more than one view has that name; the answer lists each one as it "
+                          "can be typed back"),
+    "not_printable":     (REFUSED, FIX_FIRST,
+                          "that view is a template, or of a kind Revit cannot export as a "
+                          "picture"),
+    "bad_ids":           (REFUSED, FIX_FIRST, "the element ids could not be read"),
+    "no_such_elements":  (REFUSED, FIX_FIRST,
+                          "some of those ids name no placed element in the model in front"),
+    "nothing_to_frame":  (REFUSED, FIX_FIRST,
+                          "none of those elements has a 3D extent that is not a datum, a link "
+                          "or annotation"),
+    "no_isometric_type": (REFUSED, STOP,
+                          "the model has no 3D view type to make a temporary view from"),
+    # THESE TWO RAN: the picture was taken, or Revit failed part way, and the
+    # group around it was rolled back before the answer. Whether Revit
+    # CONFIRMED the rollback is in the add-in's own message, which is passed
+    # on unchanged.
+    "capture_failed":    (ROLLED_BACK, FIX_FIRST,
+                          "Revit could not take the picture, and what it made for it was "
+                          "rolled back"),
+    "picture_too_large": (ROLLED_BACK, FIX_FIRST,
+                          "the picture was too large to hand to the chat; a smaller width "
+                          "will fit, and what was made for it was rolled back"),
+
     # --- the line itself, refused before anything read it -------------------
     "request_too_long":  (NEVER_RAN, FIX_FIRST,
                           "the request was longer than the bridge will read on one line, so "

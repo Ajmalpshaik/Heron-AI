@@ -374,7 +374,7 @@ is the whole of the response.
 
 ---
 
-### 🟡 Q-64 — Is a picture of a Revit view "model data" under D-82, or may it be handed to the chat? *(found 2026-10-17)*
+### ✅ Q-64 — Is a picture of a Revit view "model data" under D-82, or may it be handed to the chat? → **Not model data** *(found and answered 2026-10-17)*
 
 **What is asked.** The owner asked on 2026-10-17 for a read-only tool that returns a PNG of a Revit view
 into the chat, so the AI can check its own work. It is built as `revit_view_image` and the add-in's
@@ -395,6 +395,8 @@ D-116 holds the second thing to accept with the first - that `capture_view` is t
 operation to open a transaction, always rolled back - and [NEEDS-CHECKING group EJ](../needs-checking/group-ej.md)
 the run that would prove it.
 
-**Ajmal PS decides**, in the pull request that adds the tool. Until then nothing in Heron sends a picture.
+**Answer: NOT MODEL DATA — 2026-10-17. See [D-116](../decisions/D-116.md), now Accepted.** The owner:
+*"A picture is not model data, ship it"*. `revit_view_image` ships as D-116 describes; it is still
+DRAFT until [NEEDS-CHECKING group EJ](../needs-checking/group-ej.md) is run in Revit.
 
 ---
