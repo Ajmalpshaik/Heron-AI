@@ -120,6 +120,7 @@ import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
+import heron_run_records as runs                    # noqa: E402
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
 # `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
 # run - resolved to 1.x when this server was written and resolves to 2.x now.
@@ -1624,6 +1625,9 @@ def revit_change(capability: str = "", values: str = "",
     Ctrl+Z in Revit undoes what this did to the model, never a save, a sync or
     an export.
     """
+    # THE RUN RECORD IS NOT NAMED HERE, and that is the budget's call (D-118):
+    # every reply's own `record:` line names heron_run_record and the run, at
+    # the one moment a chat needs it.
     # WHAT THIS DESCRIPTION SAID AT LENGTH UNTIL 2026-10-17, and where the host
     # hears it now - every chat paid for it before its first call
     # (tests/test_tool_sizes.py, docs/04 s8.8):
@@ -1651,6 +1655,11 @@ def revit_change(capability: str = "", values: str = "",
     #     for. The refusal says so itself (tests/test_mcp_serves.py).
     # The Changes switch is read inside the add-in, never here - a client
     # deciding its own permission is not a permission.
+    # WHEN THIS CALL BEGAN, for the batch rule (heron_run_records.Batch): a change
+    # that starts within seconds of the last one ending is the same batch of
+    # calls, and what it already printed is not printed again.
+    started = time.monotonic()
+
     matched = ""
     if not (capability or "").strip() and (request or "").strip():
         capability, handed_back = _by_words(request, "revit_change", values)
@@ -1851,6 +1860,9 @@ def revit_change(capability: str = "", values: str = "",
     if wrong_model is not None:
         return wrong_model
 
+    # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
+    _BATCH.turn(started, time.monotonic())
+
     lines = ["%s ran in %s." % (capability, reply.get("document"))]
     if matched:
         lines.append(_matched_line(request, matched))
@@ -1863,6 +1875,12 @@ def revit_change(capability: str = "", values: str = "",
     bound = reply.get("bound")
     if bound:
         lines.append("  inputs: %s" % bound)
+
+    # WHAT REVIT SAYS THE JOB CHANGED - the short change report (5b-407).
+    # Counts by category, the fragment's apart from its setup steps', and the
+    # run record that holds every element id. Nothing for an add-in from
+    # before the report, which sends no `changes`.
+    lines.extend(runs.change_lines(reply))
 
     # AND WHAT NOTHING READ. The other half of the line above: that one says
     # where each input came from, and without this one a value that reached
@@ -1885,7 +1903,13 @@ def revit_change(capability: str = "", values: str = "",
     # A REFUSAL IS THE CASE THIS EXISTS FOR. A fragment that declined says so
     # in its results and nowhere else, and "it ran" is the one sentence that
     # makes a refusal look like a success.
-    lines.extend(_provides_lines(reply.get("provides")))
+    #
+    # AND WHAT THE LAST REPLY OF THIS CAPABILITY ALREADY SHOWED IS COUNTED,
+    # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
+    # only when the reply names a run record, where every value can be read.
+    shown, same = runs.shown_values(reply, capability, _BATCH)
+    lines.extend(_provides_lines(shown) or ([""] if same else []))
+    lines.extend(runs.unchanged_line(same))
 
     # THE VERDICT IS THE ADD-IN'S TO WRITE, NOT THIS TOOL'S. It is the only
     # side that saw whether the transaction group actually held, and on
@@ -1893,10 +1917,16 @@ def revit_change(capability: str = "", values: str = "",
     # Repeating the claim from here would put that failure back - which is
     # also why the fix above reads the add-in's `verdict` rather than
     # composing a sentence here from `applied`.
-    verdict = reply.get("verdict")
-    if verdict:
+    #
+    # ONCE PER BATCH, AND STILL THE ADD-IN'S WORDS (5b-407). The KEPT paragraph
+    # was 24.5% of what two family builds sent back, word for word in 170 of
+    # 172 replies. The add-in now writes it twice - whole, and as one sentence
+    # carrying the undo rule unshortened - and this prints the paragraph on the
+    # first kept change of a batch and the sentence on the rest. A rollback, an
+    # unconfirmed one, or a reply without the short form prints whole, always.
+    if reply.get("verdict"):
         lines.append("")
-        lines.append(str(verdict))
+        lines.append(runs.verdict_line(reply, _BATCH))
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
@@ -1914,6 +1944,10 @@ def revit_change(capability: str = "", values: str = "",
         _offer_change(capability, folder, values, reply.get("document"))
 
     return _ended("ok", "\n".join(lines))
+
+
+#: What this chat has already printed in the current batch - see heron_run_records.Batch.
+_BATCH = runs.Batch()
 
 
 #: A need Revit fills itself, never the caller - the only kind an
@@ -4943,6 +4977,45 @@ def heron_gaps(days: int = 0) -> str:
 
 
 @server.tool()
+def heron_run_record(run: str = "", offset: int = 0, limit: int = 40) -> str:
+    """
+    Read back what a change did in full - every element id it added, modified
+    or deleted, and every value it left - a page at a time.
+
+    `revit_change` replies in short: counts by category and a `record:` line
+    naming the run, e.g. run=wf-20261009-133432-0042-a1b2. Pass that run here.
+    `offset` and `limit` page through it (limit at most 200); a page that has
+    more ends by naming the next offset. Leave `run` empty to list the newest
+    records on this PC.
+
+    Reads Heron's own files on this PC - never the model, never Revit - so it
+    needs no Changes switch and Revit need not be running. Records are pruned
+    after runs.retainDays (14 by default).
+    """
+    if not (run or "").strip():
+        found = runs.recent()
+        if not found:
+            return ("There are no run records on this PC yet. One is written for "
+                    "every change revit_change makes, by an add-in new enough to "
+                    "write them - so either nothing has been changed since, or the "
+                    "add-in in Revit is older than this server.")
+        lines = ["The newest run records, newest first:"]
+        for one in found:
+            lines.append("  %s  %-28s %s, %s change(s), %s"
+                         % (one["run"], one["fragment"] or "?", one["document"] or "?",
+                            "?" if one["total"] is None else one["total"],
+                            one["kind"] or "outcome not recorded"))
+        lines.append("")
+        lines.append("Read one with heron_run_record run=<the id>.")
+        return "\n".join(lines)
+
+    record, why = runs.read(run.strip())
+    if record is None:
+        return why
+    return runs.page(record, run.strip(), offset, limit)
+
+
+@server.tool()
 def heron_compatibility(release: str = "") -> str:
     """
     Which Revit versions Heron's tools actually work on, and how well checked.
@@ -5577,13 +5650,23 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
                      % reply.get("pixelWidth"))
 
     # THE TWO PROMISES, SAID ONLY WHEN THE ADD-IN SAYS THEY WERE KEPT.
+    #
+    # AND "NOTHING WAS CHANGED" NEVER OVER A LOSS: the capture's rollback is
+    # checked like every other (RevitFragment.RollBackAndCheck), and when it
+    # took elements the last kept job made, `keptLost` counts them and
+    # `rollbackNote` is the add-in's sentence for it, said in its place.
+    note = reply.get("rollbackNote")
     if reply.get("rolledBack") is False:
         lines.append("! Revit did NOT confirm the temporary view was taken away. Look under "
                      "3D Views in the Project Browser, and at Undo, before going on.")
+    elif reply.get("keptLost"):
+        lines.append("! %s" % note)
     elif reply.get("mode") == "elements":
         lines.append("The temporary view is gone - Revit rolled it back. Nothing was changed.")
     else:
         lines.append("Nothing was changed.")
+    if note and not (reply.get("keptLost") and reply.get("rolledBack") is not False):
+        lines.append(note)
     if reply.get("fileDeleted") is False:
         lines.append("! The picture's file could not be deleted from Heron's captures "
                      "folder on this PC. That folder is safe to empty.")

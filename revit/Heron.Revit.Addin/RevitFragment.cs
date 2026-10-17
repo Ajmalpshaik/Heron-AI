@@ -108,6 +108,11 @@ namespace Heron.Revit.Addin
         /// </summary>
         public static string Run(UIApplication app, string request, bool writing)
         {
+            // NOTHING FROM AN EARLIER RUN IS HANDED ON. The dispatcher takes
+            // what the last write changed straight after this returns, and a
+            // refusal or a read must not leave it the list a previous job made.
+            Elements = null;
+
             var source = Json.ReadString(request, "source");
             var name = Json.ReadString(request, "name") ?? "(unnamed)";
 
@@ -612,6 +617,12 @@ namespace Heron.Revit.Addin
             // which opens no transaction for Revit to post anything to.
             var said = new HeronFailureNote();
 
+            // WHAT THE JOB CHANGED, element by element, read off Revit's own
+            // DocumentChanged - see RevitChangedSet. Null on the read path, which
+            // opens no transaction for anything to change in, and on every
+            // refusal below, which returns before it is described.
+            HeronChangeReport.Described described = null;
+
             // What the read path counted before the run - null on the write
             // path, which keeps what it changes on purpose and says so.
             ReadFootprint counted = null;
@@ -654,15 +665,16 @@ namespace Heron.Revit.Addin
                 // HeronRollbackWitness.
                 using (var watch = Watch(target, name, label))
                 using (var group = new TransactionGroup(target, label))
-                using (var changed = asking || askToKeep
-                                         ? new RevitChangedSet(app.Application, target) : null)
+                using (var changed = new RevitChangedSet(app.Application, target, label))
                 {
                     group.Start();
 
-                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-126.
-                    // From here, so the setup steps count too: Keep keeps them.
-                    // The `using` takes the handler off however this block ends.
-                    if (changed != null) changed.Begin();
+                    // WHAT REVIT SAYS THIS RUN TOUCHED, for D-126's question and
+                    // for the change report (5b-407) - one collector for both,
+                    // made for every write. From here, so the setup steps count
+                    // too: Keep keeps them. The `using` takes the handler off
+                    // however this block ends.
+                    changed.Begin();
 
                     // SETUP THAT HAS TO CHANGE THE MODEL, inside this group.
                     //
@@ -789,6 +801,14 @@ namespace Heron.Revit.Addin
                     if (HeronDialogWatch.Refused)
                         return Stopped(name, RollBackAndCheck(group, target, watch));
 
+                    // WHAT IT CHANGED, READ NOW - before the modeller is asked,
+                    // and before Assimilate or the rollback, while every
+                    // element it added still exists to be asked its category.
+                    // Describe stops the listening as the question does, so the
+                    // transaction that shows the change on screen is never
+                    // counted as part of it, and the report is sealed.
+                    described = changed.Describe();
+
                     // D-119 AND D-126: THE MODELLER DECIDES, here, with the work
                     // done and the group still open - so Keep and Discard are
                     // exactly `apply` and its absence, chosen by a person who
@@ -832,6 +852,10 @@ namespace Heron.Revit.Addin
 
             if (threw != null) return threw;
 
+            // EVERY ELEMENT, for the dispatcher's run record. The reply only
+            // counts them; the list is what the record is for.
+            Elements = described == null ? null : described.ElementsField();
+
             Remember(name, state, target, bound, client, globals.__heron, ranWith);
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
@@ -839,8 +863,29 @@ namespace Heron.Revit.Addin
             if (!writing) return WithCount(answer, counted);
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
                                       nothingToAsk, answered != null && answered != Keep,
-                                      selectionRestored);
+                                      selectionRestored, described);
             return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
+        }
+
+        /// <summary>
+        /// What the last write changed, element by element, as the run
+        /// record's `elements` field - or null when the last run was not a
+        /// write that got as far as being described. Set by Run, taken by
+        /// RevitDispatcher straight after it, on the same thread: every
+        /// operation arrives on the Revit API thread, one at a time, which is
+        /// what Note below relies on too.
+        /// </summary>
+        private static string Elements;
+
+        /// <summary>
+        /// The element list the last run left, handed over once and cleared,
+        /// so the record of one job can never be written under the next.
+        /// </summary>
+        internal static string TakeElements()
+        {
+            var taken = Elements;
+            Elements = null;
+            return taken;
         }
 
         /// <summary>The modeller's three possible answers to the box (D-119).</summary>
@@ -1874,10 +1919,10 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// Roll a write job's group back, check what that left, and say it -
-        /// THE ONE WAY A WRITE JOB'S GROUP IS ROLLED BACK, from this file and
-        /// from RevitWrite's move. tests/test_rollback_witness.py fails a
-        /// rollback made any other way, and names the one file not yet
-        /// watched - RevitCapture's picture, always rolled back by its own.
+        /// THE ONE WAY ANY GROUP IN HERON IS ROLLED BACK - this file's write
+        /// path, RevitWrite's move and RevitCapture's picture, which is never
+        /// kept. tests/test_rollback_witness.py fails a file that opens a
+        /// group and rolls it back any other way.
         ///
         /// SafeRollBack answers Revit's status. Then two things are looked for
         /// again, because section 1c showed that status and the model can
@@ -1973,10 +2018,17 @@ namespace Heron.Revit.Addin
             // is untouched - 2026-09-09 showed Revit's bookkeeping and the
             // model can disagree - but "Revit says RolledBack" is a fact, and
             // the sentence it supports is one that was checked.
+            //
+            // A GROUP THAT NEVER STARTED COUNTS AS UNDONE: Start is the line
+            // that failed, so nothing was made inside it. RevitCapture's rule,
+            // brought here with its rollbacks on 2026-10-17. The write paths
+            // call this only after Start succeeded, so for them nothing moves.
             try
             {
                 if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
-                return group.GetStatus() == TransactionStatus.RolledBack;
+                var status = group.GetStatus();
+                return status == TransactionStatus.RolledBack
+                    || status == TransactionStatus.Uninitialized;
             }
             catch
             {
@@ -2293,6 +2345,15 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// ARTICLE 8's INSTRUCTION, in the one form both verdicts use. Row
+        /// 117 made it conditional and PR #198 had to make it conditional
+        /// twice, because two copies of a sentence drift.
+        /// </summary>
+        private const string UndoRule =
+            "IF anything was written, all of it is ONE undo step; if nothing was, there is "
+            + "no new undo entry and Ctrl+Z would undo whatever you did before this.";
+
+        /// <summary>
         /// Say, on the answer itself, whether the model was left changed.
         ///
         /// A WRITE THAT WAS ROLLED BACK LOOKS EXACTLY LIKE ONE THAT WAS KEPT -
@@ -2306,7 +2367,8 @@ namespace Heron.Revit.Addin
                                           HeronRollbackWitness.Outcome rolledBack,
                                           string keptNote, HeronFailureNote said,
                                           bool nothingToAsk, bool discardedByModeller,
-                                          bool selectionRestored)
+                                          bool selectionRestored,
+                                          HeronChangeReport.Described changed)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
@@ -2327,6 +2389,8 @@ namespace Heron.Revit.Addin
             // the status did not give - it can only take it away.
             var held = rolledBack != null && rolledBack.Held;
             string verdict;
+            string kind;
+            string brief = null;
             if (applied)
             {
                 // ROW 117. THIS BRANCH USED TO SAY "the model was CHANGED", AND IT SAID IT
@@ -2371,18 +2435,48 @@ namespace Heron.Revit.Addin
                 // modeller told to press Ctrl+Z then undoes whatever they did
                 // BEFORE running this. Saying "if anything was written" costs
                 // one clause and cannot send anybody backwards.
+                //
+                // SETUP CHANGES ARE COUNTED NOW, APART, and the sentence says
+                // so only when they were: `changed` is Revit's own account of
+                // the job, read off DocumentChanged, with a setup step's
+                // transactions told from the fragment's by name. Until it was,
+                // this sentence had to admit that anything a setup step did
+                // was not counted anywhere. When no event arrived at all the
+                // old admission stands word for word, because a report that
+                // saw nothing cannot say what was done. And counts of zero
+                // still do not prove the model untouched: whether Revit raises
+                // the event for every commit inside a group is NEEDS-CHECKING's
+                // to settle, not this sentence's.
+                var setupCounted = changed != null && changed.Witnessed
+                    ? "what its setup steps did is counted apart under changes, and counts "
+                      + "of zero"
+                    : "anything a setup step did was kept in the same group and is not "
+                      + "counted here, so counts of zero";
                 verdict = "'" + name + "' was KEPT: Revit accepted the transaction rather than "
                         + "rolling it back. THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID and "
-                        + "nothing more - anything a setup step did was kept in the same group "
-                        + "and is not counted here, so counts of zero do not by themselves mean "
-                        + "the model is untouched. IF anything was written, all of it is ONE "
-                        + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
-                        + "would undo whatever you did before this.";
+                        + "nothing more - " + setupCounted + " do not by themselves mean "
+                        + "the model is untouched. " + UndoRule;
+                kind = "kept";
+
+                // THE SAME VERDICT IN ONE SENTENCE AND THE UNDO RULE WHOLE, for
+                // a reader that has already printed the paragraph above once
+                // in the same batch of calls (5b-407: it was 24.5% of what two
+                // family builds sent back, word for word in 170 of 172
+                // replies). Article 8's half is the rule, and the rule is
+                // never shortened: told to press Ctrl+Z after a run that did
+                // nothing, a modeller undoes whatever came before. Only this
+                // case has a short form - a rollback, and above all one that
+                // did not report success, is printed whole every time.
+                brief = "'" + name + "' was KEPT. " + UndoRule;
 
                 // D-126: KEPT WITH NOBODY ASKED BECAUSE REVIT COUNTED NO CHANGE,
                 // said first rather than left for the reader to infer. Who
                 // answered a box that was shown is WithAnswer's to say.
-                if (nothingToAsk) verdict = HeronKeepQuestion.NothingToAskSentence + " " + verdict;
+                if (nothingToAsk)
+                {
+                    verdict = HeronKeepQuestion.NothingToAskSentence + " " + verdict;
+                    brief = HeronKeepQuestion.NothingToAskSentence + " " + brief;
+                }
             }
             else if (discardedByModeller)
             {
@@ -2394,6 +2488,7 @@ namespace Heron.Revit.Addin
                 verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored)
                         + (rolledBack != null && rolledBack.Standing > 0
                             ? " " + rolledBack.SomeStanding() + " still in it." : "");
+                kind = "discarded";
             }
             else if (held)
             {
@@ -2402,6 +2497,7 @@ namespace Heron.Revit.Addin
                         + (rolledBack.Checked > 0 ? ", and " + rolledBack.NoneStanding() : "")
                         + ", so the counts above are what it actually did rather than a guess. "
                         + "Send it again with apply to keep it.";
+                kind = "rolledBack";
             }
             else if (rolledBack != null && rolledBack.Reported)
             {
@@ -2412,6 +2508,7 @@ namespace Heron.Revit.Addin
                         + rolledBack.SomeStanding() + " still in the model - so THE MODEL STILL "
                         + "HOLDS PART OF THIS CHANGE. Check the thing that was written before "
                         + "trusting anything here, and do not save until you have.";
+                kind = "notHeld";
             }
             else
             {
@@ -2422,6 +2519,7 @@ namespace Heron.Revit.Addin
                         + "here, and do not save until you have."
                         + (rolledBack != null && rolledBack.Standing > 0
                             ? " " + rolledBack.SomeStanding() + " still in it." : "");
+                kind = "notConfirmed";
             }
 
             // WHAT THE ROLLBACK TOOK FROM THE JOB KEPT BEFORE THIS ONE, said
@@ -2429,14 +2527,41 @@ namespace Heron.Revit.Addin
             // modeller believes is safe. And what the start of the run found.
             // Both "" almost always, so an ordinary verdict reads as it did.
             var also = applied ? keptNote : (rolledBack == null ? "" : rolledBack.Also());
-            if (!string.IsNullOrEmpty(also)) verdict += " " + also;
+            if (!string.IsNullOrEmpty(also))
+            {
+                verdict += " " + also;
+                // THIS RUN'S OWN NEWS, so the short form carries it as well.
+                if (brief != null) brief += " " + also;
+            }
 
             // WHAT REVIT RAISED AND HERON DISMISSED, on the verdict itself -
             // the one sentence the chat prints whole, so it reaches the
             // modeller without the server having to learn a new field. Empty
             // when nothing was raised, so a clean run reads exactly as it did.
             var dismissed = said == null ? "" : said.DismissedSentence();
-            if (dismissed.Length > 0) verdict += " " + dismissed;
+            if (dismissed.Length > 0)
+            {
+                verdict += " " + dismissed;
+                if (brief != null) brief += " " + dismissed;
+            }
+
+            // AND THE SHORT FORM BESIDE IT, never instead of it: which of the
+            // three this was, and the one sentence a reader that printed the
+            // whole paragraph earlier in the batch may print in its place,
+            // this run's dismissed warnings included. `verdict` stays whole,
+            // so a reader that knows neither field prints exactly what it
+            // printed before. Both are written here, by the side that saw
+            // whether the group held - the server only chooses between them.
+            var fields = new List<string>
+            {
+                Json.Str("verdictKind", kind),
+                Json.Str("verdictShort", brief),
+            };
+
+            // WHAT REVIT SAID THE JOB CHANGED: counts by category, the first
+            // ids, the totals - and the three whole-job numbers the audit
+            // line reads. Every element is in the run record instead.
+            if (changed != null) fields.AddRange(changed.ReplyFields());
 
             // AND EVERY ONE OF THEM, for anything reading the reply rather than
             // the sentence: the sentence quotes a few kinds and counts the rest,
@@ -2481,7 +2606,8 @@ namespace Heron.Revit.Addin
                  + check
                  + "," + Json.Num("warnings", said == null ? 0 : said.DismissedCount)
                  + "," + Json.Arr("warningsDismissed", listed)
-                 + "," + Json.Str("verdict", verdict) + "}";
+                 + "," + Json.Str("verdict", verdict)
+                 + "," + string.Join(",", fields) + "}";
         }
 
         /// <summary>How many generated lines sit in front of the snippet.</summary>

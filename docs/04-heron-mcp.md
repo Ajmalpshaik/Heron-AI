@@ -468,6 +468,16 @@ hand-back, 322,725 characters across the two builds and about 70% of it helpers 
 setting its chat runs - which this section never considered and `heron-ready --snapshot` does not record
 ([Q-61](OPEN-QUESTIONS.md)).
 
+**THE `revit_change` HAND-BACK IS A SHORT CHANGE REPORT SINCE 2026-10-17** ([row 5b-407](fragment-issues/section-5b-rows-401-425.md)).
+Each reply says what Revit reported the write changed - added, modified and deleted, by category, a
+setup step's apart from the fragment's - and names a **run record**, one file per write under
+`HeronPaths.Runs` holding every element id and the whole reply, which `heron_run_record` pages back from
+disk without Revit. The KEPT paragraph is printed once per batch of calls and the add-in's one sentence,
+carrying the undo rule whole, on the rest; a value the last reply of the same capability showed word for
+word is counted rather than printed again. Replayed through the real tool, 172 kept changes shaped from
+`CREATE_FAMILY_EXTRUSION`'s code went from 213,332 characters to 160,364, 24.8% less. **NOT RUN IN REVIT** - whether
+`DocumentChanged` reaches every commit the write path makes is [Group EV](needs-checking/group-ev.md).
+
 **MEASURED 2026-10-11 on the same laptop** - a 165-form generator (156 extrusions, 5 sweeps, 4 revolves)
 built in one chat, `claude-opus-5-5` at effort *xhigh* on every request. 1,423 s from request to finish,
 and the model's own turns were 95% of it; one planning turn before the first form took 617 s and 60,600

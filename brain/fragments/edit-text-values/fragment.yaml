@@ -9,7 +9,7 @@ semantic-identity: "change the text that is already there, rather than replacing
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -56,6 +56,46 @@ purpose: >
   Such an element goes in `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES
   5b-203). This is version 2; version 1's proof no longer describes the code and
   is kept as a record, and the fragment is DRAFT until it is proved again.
+
+# VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-520) - A TEXT NOTE IS EDITED THROUGH
+# ITS FORMATTED TEXT. Kept out of the purpose on purpose: the purpose is
+# searched, and these words would pull questions about lists and styles.
+#
+#   Version 3 wrote `note.Text = wanted`, and Autodesk's reference says that
+#   loses "all previous formating". MEASURED 2026-10-17, Revit 2020, rolled back:
+#   on a real project's note (read only, never written) whose 8 paragraphs were
+#   a 1-2-3 list, a one-word replace came back with list type None on every
+#   paragraph; on a scratch copy of Autodesk's rst_basic sample the same write
+#   also made the whole note bold from one bold word and dropped an underlined
+#   and an italic paragraph. Now every mode on a note goes through
+#   GetFormattedText -> edit -> SetFormattedText:
+#
+#     replace  SetPlainText on each match, last first. Kept: list type, indent,
+#              list start number, bold, italic, underline, all caps; the new
+#              words take the style of the first character they replace. A
+#              match over a paragraph end joins the two paragraphs
+#     prefix   inserted at 0, taking the first character's style
+#     suffix   inserted before the closing carriage return, taking the last's
+#     set      the whole wording, then NEW PARAGRAPH N IS GIVEN OLD PARAGRAPH
+#              N's list type, indent and bold/italic/underline/all caps, and
+#              every extra one the old LAST paragraph's; the first keeps the
+#              list's start number. MEASURED: SetPlainText alone kept the list
+#              type but put every paragraph at indent 0 and spread the first
+#              word's bold over the note. A paragraph that was PARTLY bold
+#              (italic, ...) is written plain, and `noteFormatting` says
+#              "NOT KEPT" for it
+#
+#   A PARAGRAPH BREAK IS TYPED \r, A SOFT LINE BREAK (Shift+Enter) \v, AND A
+#   BACKSLASH \\ - on a text note only, and the same marks
+#   READ_ELEMENT_PARAMETERS shows a note's wording in. A chat's values arrive one
+#   per line, so without them a new wording could only ever be one paragraph.
+#   A real line feed counts as a paragraph break: Revit allows none in a note.
+#
+#   IT READS THE FORMATTING BACK: each paragraph's list type and indent (and
+#   the start number) are re-read and compared with what the rule meant; a note
+#   where any differs is `unverified`, never `changed`. Proved rolled back on
+#   the scratch copy "Heron note scratch", Revit 2020: replace, set 8 -> 3 and
+#   8 -> 4 paragraphs, prefix and suffix, each with its negative.
 
 contract:
   needs:
@@ -120,6 +160,13 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    - name: noteFormatting
+      # Version 4. One line per text note it edited: paragraphs before and
+      # after, each paragraph's list as READ BACK, and anything NOT KEPT. The
+      # read-back that puts a note in `unverified` is said here. A sentence
+      # about the edit, never a thing it found (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -152,7 +199,13 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `TextElement.Text` (read and
   written for a text note, version 3) is present 2020 through 2027 - read off
-  RevitAPI.xml for all eight releases on 2026-10-12. `Element.Name`, `LookupParameter`,
+  RevitAPI.xml for all eight releases on 2026-10-12. Version 4's
+  `TextNote.GetFormattedText` / `SetFormattedText` and FormattedText's
+  `SetPlainText(TextRange, string)`, `GetListType`, `SetListType`,
+  `GetIndentLevel`, `SetIndentLevel`, `GetListStartNumber`,
+  `SetListStartNumber` and the four style get/set pairs date from 2017 and were
+  read off RevitAPI.xml for 2020, 2024, 2026 and 2027 on 2026-10-17; the
+  fragment compiles for all eight releases. `Element.Name`, `LookupParameter`,
   `Parameter.AsString` and `Parameter.Set(string)` are unchanged 2020 to 2027,
   and no units call is made - this only ever touches text, which is what keeps
   it clear of the 2021 units move entirely. Only string-storage parameters are
@@ -174,6 +227,18 @@ compatibility-note: >
 #    parameter"
 #   "find and replace in the text notes" -> here, field Text (version 3)
 #   "change the wording of this note"    -> here, field Text, mode set
+#   "change the wording of this note but keep the numbering" -> here, field Text (version 4, 5b-520)
+#   "read what the text notes in this view say" -> READ_ELEMENT_PARAMETERS, parameterName Text
+#
+#   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
+#   with view=<the view> and categories=Text Notes, then this with
+#   expect_from select-visible-in-view. Measured 2026-10-17 on the scratch copy
+#   "Heron note scratch": it handed 109 notes on in the drafting view "Spread
+#   Footing". SELECT_BY_CATEGORY_NAME categoryName=Text Notes inViewOnly=<the
+#   view> collects the same 109, and is DRAFT. Read the wording first with
+#   READ_ELEMENT_PARAMETERS parameterName=Text: a curly apostrophe or a soft
+#   line break inside the words to replace is shown there, and typed here as
+#   it is shown.
 #   "change part of the name"            -> EDIT_PARAMETER_TEXT for a
 #                                           parameter, RENAME_ELEMENTS for a
 #                                           name. Neither is a text note
@@ -189,3 +254,4 @@ utterances:
   - change the wording of this text note
   - find and replace in the text notes
   - change the wording of this note
+  - change the wording of this note but keep the numbering

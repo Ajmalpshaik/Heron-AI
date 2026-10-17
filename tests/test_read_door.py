@@ -532,8 +532,18 @@ def main():
 
     print()
     print("7. What it did not send, it says")
+    # revit_change hands _provides_lines the values heron_run_records left it
+    # after counting those the last reply of the batch already showed word for
+    # word (5b-407) - still the reply's own `provides`, still the one copy of
+    # how they are printed. tests/test_run_records.py holds what it leaves out.
+    printed_through = {
+        "revit_read": ('_provides_lines(reply.get("provides"))',),
+        "revit_change": ("runs.shown_values(reply, capability, _BATCH)",
+                         "_provides_lines(shown)"),
+    }
     for door in ("revit_read", "revit_change"):
-        check('_provides_lines(reply.get("provides"))' in (body_of(text, door) or ""),
+        door_body = body_of(text, door) or ""
+        check(all(part in door_body for part in printed_through[door]),
               "%s prints what a fragment left through _provides_lines - both "
               "doors, one copy" % door)
     provides_lines = lifted(text, "_provides_lines")

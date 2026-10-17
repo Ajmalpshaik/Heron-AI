@@ -309,6 +309,14 @@ TOOLS = {
     # judgement, and whoever adds one should revisit this line.
     "heron_gaps":               (READ,    None),
 
+    # The run records (FRAGMENT-ISSUES 5b-407). READ, no operation: it pages a
+    # file the add-in wrote under HeronPaths.Runs - every element a change
+    # touched, and the whole reply revit_change only summarised - and sends
+    # nothing to Revit. Like heron_gaps it reads Heron's own trail, which names
+    # documents and element ids; an id says which element, never what is in
+    # it, and the reply it pages is one this chat was already sent in short.
+    "heron_run_record":         (READ,    None),
+
     # The Compatibility Matrix (HERON-FRG-MTX-009). READ, no operation:
     # it reads the fragment files, the build's runtime table and the last
     # compile record. Nothing here reaches a model or a Revit session.
