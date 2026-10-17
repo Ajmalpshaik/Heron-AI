@@ -27,6 +27,16 @@ positive:
       it IS listed, marked EMPTY, and named in emptySets - it still sits in
       the print dialog under its name and prints nothing
 
+  # Version 2 (2026-10-17, row 5b-545) - NEEDS-CHECKING Group FA.
+  - given: >
+      two sets holding exactly the same sheets - BL001A had one on
+      2026-10-14: a set of 8 sheets, and a seventh made the same day with
+      the same 8 numbers
+    expect: >
+      both rows marked "SAME sheets and views as" the other's name, the pair
+      in sameSets as "A = B", and a finding naming both with "8 sheets, 0
+      views each"
+
 negative:
   - given: >
       "Heron Sheet Sets Empty", a new project from Revit 2020's default
@@ -42,6 +52,21 @@ negative:
     expect: >
       NOT counted. It is not saved in the model and is not an element; a
       model whose only set is the in-session one answers 0
+
+  # Version 2.
+  - given: two sets with the same sheets but one more view in one of them
+    expect: >
+      NOT flagged. The same sheets is not the same set; sameSets empty for
+      that pair and no SAME in either row
+
+  - given: two EMPTY sets
+    expect: >
+      both in emptySets and NOT in sameSets - holding nothing is flagged
+      once, as EMPTY
+
+  - given: two sets with the same members in a different print order (2023+)
+    expect: >
+      flagged SAME. The order is not read; what prints is the same drawings
 
 second_route:
   - >
