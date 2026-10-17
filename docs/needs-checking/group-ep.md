@@ -50,6 +50,10 @@ person. Every suite there must exit 0; a 3 fails the job.
 - **Both executables publish on Windows** through `build-release-assets.py`'s own `build_installers`, and
   `heron-install --help` exits 0.
 
+First green run, every job above, on [PR #597](https://github.com/Ajmalpshaik/Heron-AI/pull/597):
+[run 39035516875](https://github.com/Ajmalpshaik/Heron-AI/actions/runs/39035516875), 2026-10-17 -
+on Python 3.12, heron-ready's section 3 loaded the server in 0.1 s and its one FIX was the missing add-in.
+
 **EP7 stays a row**: CI installs from a checkout, not from an unzipped `heron-project.zip`, on a runner
 rather than a modeller's PC. **EP1 to EP6 and EP8 still need the owner's PC** - each needs a Revit, the
 window, a Store-built Claude, or a person to watch.
