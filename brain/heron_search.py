@@ -61,6 +61,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_scope as SCOPE                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_rerank as RERANK                                 # noqa: E402
 
 # Only these may be executed off an exact identity match without asking.
 RUNNABLE_UNASKED = ("PROVEN", "PRODUCTION")
@@ -166,6 +167,10 @@ def ensure_tables(store):
             phrase      TEXT PRIMARY KEY,
             fragment_id TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS rerank_said (
+            id   TEXT PRIMARY KEY,
+            said TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS index_state (
             name   TEXT PRIMARY KEY,
             digest TEXT NOT NULL
@@ -201,7 +206,9 @@ ROW_SEP = chr(30)
 # version wrote - and `_Open` never passes `force=True`, so the old tables
 # would be served until some unrelated fragment happened to change. Named by
 # review on PR #198.
-INDEX_FORMAT = 2
+#
+# 3: `rerank_said`, the utterances a re-ranker reads beside a card's identity.
+INDEX_FORMAT = 3
 
 
 def library_digest(store):
@@ -347,14 +354,17 @@ def index(store, force=False):
         # declarations sat in the files, and even an explicit rebuild would not
         # have brought them back. Found by review on PR #198.
         if have and have["digest"] == want:
+            # `rerank_said` is a third independent output, for the same reason.
             rows = store.execute(
                 "SELECT (SELECT COUNT(*) FROM fragment_text) AS texts, "
-                "(SELECT COUNT(*) FROM identities) AS ids").fetchone()
-            if rows and rows["texts"] and rows["ids"]:
+                "(SELECT COUNT(*) FROM identities) AS ids, "
+                "(SELECT COUNT(*) FROM rerank_said) AS said").fetchone()
+            if rows and rows["texts"] and rows["ids"] and rows["said"]:
                 return 0, rows["texts"]
 
     store.execute("DELETE FROM fragment_text")
     store.execute("DELETE FROM identities")
+    store.execute("DELETE FROM rerank_said")
 
     on_disk, _ = FRAG.load_all()
 
@@ -385,6 +395,15 @@ def index(store, force=False):
             "domain, purpose) VALUES (?,?,?,?,?)",
             (row["id"], " ".join([row["semantic_identity"]] + said),
              row["capability"], row["domain"], purpose))
+
+        # WHAT THE RE-RANKER READS BESIDE THE IDENTITY, written here so a
+        # question never loads the library to find it (heron_retrieve's
+        # _fragment_passage). Rows 5b-467 to 5b-510: a paraphrase of a
+        # declared sentence never reached its card while the re-ranker read
+        # the identity alone.
+        store.execute(
+            "INSERT OR REPLACE INTO rerank_said (id, said) VALUES (?, ?)",
+            (row["id"], RERANK.passage_said(said)))
 
         for phrase in [row["semantic_identity"]] + said:
             key = normalise(phrase)

@@ -1496,6 +1496,42 @@ decides.
 
 ---
 
+## 2026-10-17 — the re-ranker reads a card's first declared sentences (D-134)
+
+Measured in a cloud session that reached huggingface.co, on `main` `e309c81` and again on `c2f2765`,
+**571 fragments**, `heron_retrieve.find` at Revit 2024 and `score-routing` through `heron_brain.lookup`,
+every run on its own scratch store, one at a time. Backends: `lexical` (PyYAML only), `model`
+(model2vec 0.10.0, `minishlab/potion-base-8M`), `model+rerank` (the same with
+`cross-encoder/ms-marco-MiniLM-L-6-v2`, sentence-transformers 6.1.0 - the owner's PC) and
+`lexical+rerank`. [Row 5b-978](../docs/fragment-issues/section-5b-rows-401-425.md) has the frozen
+sentences, every sentence that moved onto a change, and the costs.
+
+**The change:** the passage the cross-encoder reads for a fragment is its identity, its first eight
+utterances (64 words at most, whole sentences), its capability and its domain - the utterances carried in
+the store's `rerank_said` at index time. Before it was the identity, capability and domain.
+
+| `main` -> branch, on `e309c81` | `model+rerank` | `lexical+rerank` |
+|---|---|---|
+| his 79: first / top three | 12 -> **17** / 18 -> **27** | 12 -> **17** / 25 -> **32** |
+| his 79: asked for no change, handed one | 16 -> **11** | 17 -> **11** |
+| plain questions answered by a change, of 120 | 34 -> **24** | 30 -> **23** |
+| `check-routing` claimed and not reached | 115 -> **41** | 114 -> **42** |
+| `check-risk-crossings --revit 2024`, a write over a read | 11 -> **9** | 15 -> **6** |
+
+**On `lexical` and on `model` nothing moved**: the same 359 answers, and all six tools printed the same
+on both trees. Three utterances instead of eight helped his 79 as much and gained no paraphrase; the
+owner was shown both and chose eight.
+
+### What this does not establish
+
+- **The 120 plain questions and the 120 row sentences are sessions' words**; his 79 decide, and they are
+  one sample on one day.
+- **It is one cross-encoder and one encoder.** Another re-ranker model reads the same passage
+  differently.
+- **Nothing met Revit**, and the timings are this container's, not his laptop's.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:

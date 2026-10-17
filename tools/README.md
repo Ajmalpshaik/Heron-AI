@@ -1502,10 +1502,12 @@ declared** — the diff outranks the label. Touching a fragment owes a run again
 [D-30](../docs/DECISIONS.md) is not satisfied by a compile.
 
 **Except a card whose routing text alone changed.** The card is parsed before and after: when only
-`semantic-identity`, `utterances`, `purpose` or a YAML comment moved, and nothing else in that
+`semantic-identity`, `utterances`, `purpose`, `domain` or a YAML comment moved, and nothing else in that
 fragment's folder did, the signal is `fragment-routing` - it owes `check-routing` and `check-intrusion`,
 not a Revit run, because Revit reads none of that text and D-30's fingerprint covers `impl/` alone.
-`purpose` is prose, and counts as routing because the lookup indexes it. Any other key - contract,
+`purpose` is prose, and counts as routing because the lookup indexes it; `domain` is the re-ranker's
+and a lookup's filter, so a wrong one can hide a card - `check-routing` measures that, a Revit run
+cannot (added on the owner's word, 2026-10-17). Any other key - contract,
 risk, revit, runtime, status, proof, capability - or anything under `impl/` or `tests/`, or a card that
 is new or will not parse, keeps `fragment-behaviour`. [Row 5b-862](../docs/FRAGMENT-ISSUES.md).
 
