@@ -41,6 +41,12 @@ jobs:
     set:
       filterNames: Supply Air, Return Air
       categories: Air Terminals, Ducts
+      newName: ""
+      parameterName: ""
+      matchValue: ""
     negative-set:
       filterNames: Supply Air, Return Air
       categories: Walls
+      newName: ""
+      parameterName: ""
+      matchValue: ""

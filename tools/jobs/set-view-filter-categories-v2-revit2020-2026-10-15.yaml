@@ -1,0 +1,67 @@
+# The proof of SET_VIEW_FILTER_CATEGORIES version 2 (set-view-filter-categories,
+# FRG-VIEW-112) - NEEDS-CHECKING Group EE, row EE1. FRAGMENT-ISSUES 5b-481.
+#
+#     python tools/batch-prove.py tools/jobs/set-view-filter-categories-v2-revit2020-2026-10-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-view-filter-categories-v2-revit2020-2026-10-15.yaml --session 25244
+#
+# WHY. On 2026-10-15 the owner asked, on a live project, for the filter
+# OUTSEL_TRG_MECH_Level to become OUTSEL_TRG_MECH_Level_Grid, cover Grids as
+# well as Levels, and test Type Name does not contain 'TRG_MEC' instead of
+# 'TRG_MEC_Level'. No tool could rename a filter or change its rule, so it was
+# done by making a second filter and swapping it onto two views - six undo
+# steps and a filter left behind. Version 2 does all three in one call. This
+# job is such a call, on a model that is not his.
+#
+# THE MODEL: A NEW, UNSAVED PROJECT, never 4355-* nor any project of his. In
+# Revit 2020: File, New, Project, the Systems template - it carries the
+# Domestic and Sanitary filters this needs. Revit titles it "Project1",
+# "Project2" and so on; set `in:` to the title it gives. Written for
+# "Project2", the second new project of 2026-10-15, open beside two live 4355
+# models in the same Revit: `in:` reaches it by name, so neither of those is
+# ever the target, and a name that is not open is refused.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# Open Manage, Filters afterwards: Domestic must still be called Domestic,
+# with its four pipe categories and its rule, rather than assuming the
+# rollback held.
+#
+# NO SETUP, ON PURPOSE. The owner's own case wants a Levels filter made first,
+# and a setup step that CHANGES the model cannot be given values of its own -
+# the add-in binds it from the run's values (validate refuses `setup-set:` on
+# one). So the template's Domestic filter is used as it stands: four pipe
+# categories, rule System Classification contains 'Domestic'. His Levels and
+# Grids case is EE2, run the other way the header of that row says.
+#
+# POSITIVE: ALL THREE CHANGES IN ONE CALL. A new name, two of its four
+# categories, and "does not contain Sanitary" with `parameterName` BLANK - the
+# parameter the rule tests now, System Classification, is kept. `changed` must
+# be 1 and `readBack` must read
+#   'HERON PROOF Domestic Pipes' (changed - renamed from 'Domestic', categories
+#   set, rule set): categories Pipe Fittings, Pipes; rule System Classification
+#   does not contain 'Sanitary'
+# A readBack still saying "contains 'Domestic'", or still called Domestic, is a
+# FAIL whatever the verdict says.
+#
+# NEGATIVE: THE SAME CALL, RENAMING IT TO A NAME ANOTHER FILTER HAS - Sanitary,
+# from the template. A new name is all or nothing, so NOTHING may change, not
+# the categories or the rule either: `changed` 0, `refused` saying 'Sanitary'
+# is already the name of another filter.
+model: Project2 (a NEW, unsaved project from Revit 2020's Systems template), Revit 2020, session 25244
+defaults:
+  in: Project2
+  write: true
+jobs:
+  - fragment: set-view-filter-categories
+    expect: changed
+    set:
+      filterNames: Domestic
+      newName: HERON PROOF Domestic Pipes
+      categories: Pipes, Pipe Fittings
+      parameterName: ""
+      matchValue: does not contain Sanitary
+    negative-set:
+      filterNames: Domestic
+      newName: Sanitary
+      categories: Pipes, Pipe Fittings
+      parameterName: ""
+      matchValue: does not contain Sanitary
