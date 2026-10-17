@@ -196,45 +196,41 @@ def main():
           "and a refusal is told to the activity list as one")
 
     # ------------------------------------------------------------------
-    # D-118. REVIT ASKS KEEP OR DISCARD BEFORE A CHANGE IS KEPT, and the
-    # reply must say which the modeller chose - a change somebody looked at
-    # and a change kept with nobody asked read the same otherwise.
+    # D-123. REVIT ASKS KEEP OR DISCARD BEFORE A CHANGE IS KEPT - D-119's box,
+    # one box for both doors - and the reply must say who decided: a change
+    # somebody looked at and a change kept with nobody asked read the same
+    # otherwise.
     # ------------------------------------------------------------------
     # READ SO THAT ITS ABSENCE FAILS RATHER THAN CRASHES (heron-ship 2a):
-    # against the code from before D-118 every check below must say so.
+    # against the code from before D-123 every check below must say so.
     asked_path = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepQuestion.cs")
     question = (io.open(asked_path, encoding="utf-8").read()
                 if os.path.exists(asked_path) else "")
     check(bool(question), "HeronKeepQuestion.cs holds the words the modeller and the chat read")
-    check('Json.Bool("keptByModeller", keptByModeller)' in fragment,
-          "the add-in emits `keptByModeller` on every write's reply")
-    check("verdict = HeronKeepQuestion.KeptSentence + \" \" + verdict" in fragment
-          and '"The modeller chose Keep in Revit."' in question,
-          "and a Keep puts 'The modeller chose Keep in Revit.' in front of the KEPT "
-          "verdict - the sentence the chat prints whole")
+    check("return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;" in fragment,
+          "a reply the modeller answered carries D-119's asked, modellerAnswer and kept - "
+          "for a keep from a chat as for a DRAFT's one run")
     check("HeronKeepQuestion.NothingToAskSentence" in fragment
           and "was not asked." in question,
           "and a run kept with no question - Revit counted no change - says it was "
           "not asked, so a question that never appeared is not read as answered")
 
-    # A DISCARD IS ITS OWN CODE, so revit_change reports it through
-    # heron_failure.explain - which prints the add-in's own message - and the
-    # activity list says refused rather than failed.
-    check(re.search(r'Json\.Error\(\s*"modeller_discarded"', fragment) is not None,
-          "a Discard comes back as `modeller_discarded`, not as a verdict on an ok reply")
-    check("NOTHING WAS KEPT" in question and "MAY STILL HOLD" in question,
-          "and its message says NOTHING WAS KEPT only when Revit reported the "
-          "rollback - otherwise that the model may still hold the change")
-    failure = io.open(os.path.join(ROOT, "mcp", "server", "heron_failure.py"),
-                      encoding="utf-8").read()
-    check(re.search(r'"modeller_discarded":\s*\(REFUSED,\s*STOP', failure) is not None,
-          "heron_failure reads a Discard as the modeller refusing it - never a fault "
-          "to retry (Article 25)")
-    check("When the reply says the modeller chose Discard, that is their answer" in server
-          and "never send it again" in server,
-          "and revit_change tells the chat so in its own description")
-    check("THERE IS NO PREVIEW" not in server,
-          "and no longer says there is no preview - D-118 superseded D-99")
+    # A DISCARD IS THE MODELLER'S ANSWER, NOT A ROLLBACK TO TRY AGAIN. Its
+    # verdict is its own - never the plain rollback's "send it again with
+    # apply" - and revit_change ends it as refused, with no after-change table.
+    check("verdict = HeronKeepQuestion.Discarded(name, rolledBack, selectionRestored);" in fragment,
+          "a Discard's verdict is HeronKeepQuestion.Discarded, with Revit's rollback status")
+    check("NOTHING WAS KEPT" in question and "MAY STILL HOLD" in question
+          and "send it again only if they ask" in question,
+          "which says NOTHING WAS KEPT only when Revit reported the rollback, otherwise "
+          "that the model may still hold the change - and never to resend it unasked")
+    discard = server.find('if reply.get("asked") and not reply.get("kept"):')
+    offer = server.find("_offer_change(capability, folder, values")
+    check(0 < discard < offer,
+          "revit_change ends a box the modeller did not keep as refused, before any "
+          "after-change table is offered")
+    check("There is no preview (D-99)" not in server and "THERE IS NO PREVIEW" not in server,
+          "and its description no longer says there is no preview - D-123 superseded D-99")
 
     if FAILURES:
         print("FAILED")

@@ -176,31 +176,14 @@ _KNOWN = {
                           "two open models share that name, so naming one cannot say which "
                           "was meant - nothing was written"),
 
-    # --- the modeller was asked in Revit (D-118) ----------------------------
-    #
-    # A DISCARD IS AN ANSWER, NOT A FAILURE. The change ran, Revit showed it,
-    # and the modeller chose Discard - so REFUSED, which is what the activity
-    # list calls it and what touched_the_model reads as nothing kept, and STOP,
-    # because sending it again would put the same question to somebody who has
-    # just answered it. Article 25: it never goes back round on its own.
-    "modeller_discarded": (REFUSED, STOP,
-                          "the modeller chose Discard when Revit asked, so the change was "
-                          "rolled back and nothing was kept - their decision, not a fault "
-                          "to retry"),
-    # The same answer, but Revit did not report the rollback as done - the one
-    # case of the three where a person has to look before anything else.
-    "discard_unconfirmed": (UNKNOWN, LOOK_AT_THE_MODEL,
-                          "the modeller chose Discard, and Revit did not report the change "
-                          "rolled back - the model may still hold it"),
-    # The bridge stopped waiting while the dialog was still up: it ran, and is
-    # neither kept nor discarded until the modeller answers in Revit.
-    "awaiting_modeller": (RUNNING, WAIT,
-                          "Revit is still asking the modeller to Keep or Discard the change; "
-                          "nothing is kept until they choose Keep"),
-
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
                           "Revit took it and has not finished; it is still working"),
+    # D-119: the run is done and the Keep or Discard box is still open in
+    # Revit. What the modeller presses there stands; asking again is wrong.
+    "awaiting_modeller": (RUNNING, WAIT,
+                          "Revit is still waiting for the modeller to choose Keep or "
+                          "Discard - whatever they press stands"),
     "move_failed":       (ROLLED_BACK, FIX_FIRST,
                           "it ran, failed, and was rolled back completely"),
     "operation_failed":  (ROLLED_BACK, FIX_FIRST,
@@ -249,6 +232,18 @@ _KNOWN = {
                           "the operation is declared and not built yet"),
     "worksets_unreadable": (REFUSED, FIX_FIRST,
                           "Revit would not list the worksets - nothing was changed"),
+
+    # --- a DRAFT's one run behind Keep or Discard (D-119), refused above the
+    # transaction group, so each knows nothing was written ---------------------
+    "ask_needs_change_path": (REFUSED, STOP,
+                          "Keep or Discard is offered only for a change to the model, never "
+                          "an export or a project setup change - nothing ran"),
+    "ask_needs_model_in_front": (REFUSED, FIX_FIRST,
+                          "that model is not the one in front, so its result could not be "
+                          "seen before keeping it - nothing ran"),
+    "ask_needs_saved_model": (REFUSED, FIX_FIRST,
+                          "the model has never been saved or has unsaved changes, and a "
+                          "never-proved tool runs only on a saved model - nothing ran"),
 
     # --- the chain: what an earlier fragment left, or did not ---------------
     "chain_empty":       (REFUSED, FIX_FIRST,

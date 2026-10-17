@@ -47,15 +47,15 @@ DEFAULTS = {
     "bridge.leaseMinutes": "5",
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
-    # How long the add-in waits for the modeller to answer Revit's Keep or
-    # Discard (D-118) - added to the wait for a change that keeps, never to a read.
+    # The extra wait for a job that has put a Keep or Discard box up: a DRAFT's
+    # one run (D-119), or a keep from a chat while the owner asks (D-123).
     "revit.askTimeoutSeconds": "300",
     "write.enabled": "false",
     # The two switches above Changes (D-106): each lets one more level
     # through, and only while write.enabled is on as well.
     "admin.enabled": "false",
     "publish.enabled": "false",
-    # D-118: Revit asks the modeller Keep or Discard before a change is kept.
+    # D-123: Revit asks the modeller Keep or Discard before a change is kept.
     # On by default - off puts back D-99. Read by the add-in; this side reads
     # it only to know how long a change it keeps may take to answer.
     "write.askBeforeKeeping": "true",
@@ -201,14 +201,8 @@ def busy_timeout(values=None):
     return max(1.0, _number(values, "revit.busyTimeoutSeconds", 10))
 
 
-def ask_timeout(values=None):
-    """What the add-in will wait for the modeller's Keep or Discard (D-118)."""
-    values = load() if values is None else values
-    return max(1.0, _number(values, "revit.askTimeoutSeconds", 300))
-
-
 def asks_before_keeping(values=None):
-    """Whether Revit asks Keep or Discard before keeping a change (D-118)."""
+    """Whether Revit asks Keep or Discard before keeping a change (D-123)."""
     values = load() if values is None else values
     return truthy(values, "write.askBeforeKeeping")
 
@@ -241,13 +235,14 @@ def fragment_timeout(values=None, keeping=False):
     How long to wait for a FRAGMENT to come back. Never below the add-in's.
 
     `keeping` IS A RUN SENT WITH apply - one the add-in may stop and ASK the
-    modeller about (D-118). While the dialog is up the add-in waits for the
-    answer, up to revit.askTimeoutSeconds, and then gives the rest of the job
-    a fresh operation timeout, so this side waits for both on top of its
-    usual deadline. Without them the client gave up on a modeller still
-    looking at the change, and their answer reached nobody. A read, a run
-    that rolls back, or a change with the owner's switch off never asks, so
-    it keeps the deadline it always had.
+    modeller about (D-123). A job that puts the Keep or Discard box up is
+    given revit.askTimeoutSeconds on top of its operation timeout, so this
+    side adds it too - exactly what try_once_timeout adds for a DRAFT's one
+    run (D-119), because it is the same box and the same wait. Without it the
+    client gave up on a modeller still looking at the change, and their
+    answer reached nobody. A read, a run that rolls back, or a change with
+    the owner's switch off never asks, so it keeps the deadline it always
+    had.
 
     Same rule as response_timeout, for the same reason: the far side is the
     one that gets to answer, because only it knows whether Revit took the
@@ -269,10 +264,29 @@ def fragment_timeout(values=None, keeping=False):
     model changed.
     """
     values = load() if values is None else values
-    waited = response_timeout(values)
+    waited = max(FRAGMENT_FLOOR_S, response_timeout(values))
     if keeping and asks_before_keeping(values):
-        waited += ask_timeout(values) + operation_timeout(values)
-    return max(FRAGMENT_FLOOR_S, waited)
+        waited += ask_timeout(values)
+    return waited
+
+
+def ask_timeout(values=None):
+    """What the add-in adds to its wait once a job has asked the modeller (D-119)."""
+    values = load() if values is None else values
+    return max(1.0, _number(values, "revit.askTimeoutSeconds", 300))
+
+
+def try_once_timeout(values=None):
+    """
+    How long to wait for a DRAFT's one run, which ends on a person (D-119).
+
+    The fragment's own deadline PLUS the add-in's ask timeout, because the
+    add-in waits for both one after the other. Below that, this side would
+    give up while the Keep or Discard box is still open in Revit - and the
+    request is not safe to send twice, so the answer would be lost.
+    """
+    values = load() if values is None else values
+    return fragment_timeout(values) + ask_timeout(values)
 
 
 def writing_enabled(values=None):

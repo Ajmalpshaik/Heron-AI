@@ -410,6 +410,23 @@ async def exercise(server):
           "and each keeps its safety labels - loading early changes nothing "
           "a host is told about what the tool can do")
 
+    # THE DESCRIPTION SERVED IS THE ONE --sizes MEASURES (row 5b-491). The
+    # budget in tests/test_tool_sizes.py is held on descriptions read off the
+    # source with no SDK, so that it runs in CI - and it is a budget on what a
+    # host is handed only while the two are the same text. Until 2026-10-17
+    # they were not: the SDK served the raw docstring, which Python 3.12 keeps
+    # indented four spaces a line.
+    print()
+    print("  the description a host is served, against what --sizes measures")
+    measure = getattr(registry, "descriptions", None)
+    measured = measure() if measure else {}
+    differ = sorted(n for n, t in served.items()
+                    if (t.description or "") != measured.get(n))
+    check(measured and not differ,
+          "every served description is the docstring heron_tools measures, "
+          "cleaned (%d tools)%s" % (len(served), "" if not differ else
+                                    " - differs on %s" % ", ".join(differ[:5])))
+
     return answers
 
 
@@ -507,7 +524,7 @@ async def exercise_door(module):
     check(assemble is not None and given == assemble(),
           "and they are the registry's host.chat, as assembled from the "
           "Constitution now")
-    for phrase in ("Revit's own Undo", "Show before you change", "D-118",
+    for phrase in ("Revit's own Undo", "Show before you change", "D-123",
                    "Keep or Discard", "Never call a model, a system or a design"):
         check(phrase in given, "they include: %s" % phrase)
 

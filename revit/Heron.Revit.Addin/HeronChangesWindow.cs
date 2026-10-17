@@ -175,12 +175,12 @@ namespace Heron.Revit.Addin
         /// granting permission and a person guessing. If any of them ever
         /// stops being true, this list is the first thing that must change.
         ///
-        /// THE FIRST WAS UNTRUE FROM 2026-09-23 TO D-118. D-99 kept a change
+        /// THE FIRST WAS UNTRUE FROM 2026-09-23 TO D-123. D-99 kept a change
         /// from a chat at once, with no preview, while this said "you see a
-        /// preview first". D-118 makes it true again in Revit's own words: the
+        /// preview first". D-123 makes it true again in Revit's own words: the
         /// change is shown, and Revit asks Keep or Discard before anything is
         /// kept - unless the owner turns write.askBeforeKeeping off, which is
-        /// the owner's to do and is said in D-118.
+        /// the owner's to do and is said in D-123.
         /// </summary>
         private UIElement Promises()
         {

@@ -16,7 +16,7 @@ namespace Heron.Revit.Addin
     /// <summary>
     /// Which elements a fragment write added, changed and deleted, as Revit
     /// itself reported them - collected so the Keep or Discard question
-    /// (D-118) can show them before anything is kept.
+    /// (D-123) can show them before anything is kept.
     ///
     /// REVIT'S OWN LIST, NOT THE FRAGMENT'S. A fragment reports what it meant
     /// to do in its `provides`; DocumentChanged reports what every committed

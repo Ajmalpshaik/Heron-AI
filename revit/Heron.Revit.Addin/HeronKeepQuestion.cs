@@ -5,28 +5,30 @@
 // Heron-Layer:  revit
 // See docs/29-metadata-standard.md
 
-using System;
 using System.Globalization;
 
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// What Revit asks the modeller before a change from a chat is kept, and
-    /// what each answer means - D-118.
+    /// The words of Revit's Keep or Discard question, and D-60's highlight
+    /// cap - D-123, which makes one question of two.
     ///
-    /// D-99 kept every revit_change at once, with no preview. D-118 puts
-    /// Revit itself in front of the keep: the run has happened inside Heron's
-    /// TransactionGroup, the changed elements are selected and isolated, and a
-    /// TaskDialog asks Keep or Discard. Keep assimilates the group - one undo
-    /// entry - and Discard rolls it back.
+    /// ONE QUESTION, TWO DOORS. D-119 put a Keep or Discard box in front of a
+    /// DRAFT fragment's one run on a live model ("apply": "ask"). D-123 puts
+    /// the same box in front of every change a chat keeps through
+    /// revit_change, while the owner's write.askBeforeKeeping is on. Either
+    /// way the run has happened inside Heron's TransactionGroup, the changed
+    /// elements are selected and isolated, and RevitFragment.AskTheModeller
+    /// shows this file's words. Keep assimilates the group - one undo entry -
+    /// and Discard rolls it back.
     ///
-    /// THIS FILE NAMES NO AUTODESK TYPE, on purpose. The words the modeller
-    /// reads, the rule that turns a dialog result into Keep or Discard, and
-    /// D-60's highlight cap are the half that can be wrong without Revit, so
+    /// THIS FILE NAMES NO AUTODESK TYPE, on purpose. The words and the cap
+    /// are the half that can be wrong without Revit, so
     /// tests/Heron.KeepQuestion.TestHost links this file by source and checks
-    /// them on any machine. RevitFragment shows the dialog, selects and
-    /// isolates; whether Revit then does what it is told is the PC's to
-    /// prove (NEEDS-CHECKING Group EO).
+    /// them on any machine. Which dialog result keeps is RevitFragment's -
+    /// only the Keep link, read there and checked by tests/test_try_once.py.
+    /// Whether Revit then does what it is told is the PC's to prove
+    /// (NEEDS-CHECKING Groups EM and EO).
     /// </summary>
     internal static class HeronKeepQuestion
     {
@@ -38,29 +40,9 @@ namespace Heron.Revit.Addin
         /// added.
         ///
         /// D-60 calls 500 "the default of a setting". No setting reads it yet,
-        /// so it is a constant here, and D-118 records that gap.
+        /// so it is a constant here, and D-123 records that gap.
         /// </summary>
         public const int HighlightCap = 500;
-
-        public enum Answer
-        {
-            Keep,
-            Discard,
-        }
-
-        /// <summary>
-        /// The dialog's result as Keep or Discard.
-        ///
-        /// ONLY THE KEEP LINK KEEPS. Esc, the close button, the Discard link
-        /// and any result nobody expected are all Discard, because the safe
-        /// answer is the one a modeller gets without choosing. Both values are
-        /// Revit's TaskDialogResult as numbers - the caller casts, so this file
-        /// stays free of Revit.
-        /// </summary>
-        public static Answer Decide(int shown, int keepLink)
-        {
-            return shown == keepLink ? Answer.Keep : Answer.Discard;
-        }
 
         /// <summary>
         /// Is there anything to ask about? Not when Revit reported nothing
@@ -68,7 +50,8 @@ namespace Heron.Revit.Addin
         /// rename that matched nothing. The group holds no change, so Keep and
         /// Discard would leave the model the same, and a question with no
         /// difference between its answers is one a modeller learns to click
-        /// through.
+        /// through. A DRAFT's one run (D-119) is asked whatever it counted:
+        /// its Keep is its proof's positive case.
         /// </summary>
         public static bool Asks(int added, int changed, int deleted)
         {
@@ -82,15 +65,26 @@ namespace Heron.Revit.Addin
         }
 
         public const string Title = "Heron - keep this change?";
-        public const string Headline = "Keep what Heron just did?";
-        public const string KeepLink = "Keep";
-        public const string DiscardLink = "Discard";
-        public const string DiscardNote = "Put the model back as it was. Nothing is kept.";
+        public const string KeepLink = "Keep it";
+        public const string DiscardLink = "Discard it";
+        public const string DiscardNote = "Put the model back exactly as it was. Nothing is kept.";
+
+        /// <summary>
+        /// The question in one line. A DRAFT's one run says it has never been
+        /// proved, because that is the reason it is being asked at all.
+        /// </summary>
+        public static string Headline(string name, bool neverProved)
+        {
+            return neverProved
+                ? "'" + Named(name) + "' has never been proved. Keep what it did?"
+                : "Keep what Heron just did?";
+        }
 
         /// <summary>The Keep link's second line: what Ctrl+Z will be called.</summary>
         public static string KeepNote(string name)
         {
-            return "One entry in Revit's undo list: Heron: " + Named(name) + ".";
+            return "I have checked it and it is right. It stays as one undo step, \"Heron: "
+                 + Named(name) + "\".";
         }
 
         /// <summary>
@@ -107,12 +101,27 @@ namespace Heron.Revit.Addin
         /// <param name="onScreen">What OnScreen said is drawn.</param>
         /// <param name="sendsOut">Did the run send something out of the model -
         /// an export, a save, a sync? Discard cannot take that back.</param>
+        /// <param name="neverProved">A DRAFT's one run (D-119)?</param>
+        /// <param name="redrawn">Was the view redrawn after the change? When it
+        /// was not, what is on screen may not show the change, and the box
+        /// says so rather than invite a Keep on an old picture.</param>
         public static string Content(string name, string model, int added, int changed,
-                                     int deleted, string onScreen, bool sendsOut)
+                                     int deleted, string onScreen, bool sendsOut,
+                                     bool neverProved, bool redrawn)
         {
-            var text = "'" + Named(name) + "' ran in " + Named(model) + ". Revit counts "
-                     + Count(added, "element") + " added, " + Count(changed, "element")
-                     + " changed and " + Count(deleted, "element") + " deleted.";
+            var text = "";
+            if (neverProved)
+            {
+                text = redrawn
+                    ? "Heron ran it once, for real, on this model, and the view now shows the "
+                      + "result. Look at it before you choose.\n\n"
+                    : "Heron ran it once, for real, on this model, but COULD NOT REDRAW THE VIEW - "
+                      + "what you see may not show the change. Discard unless you can see it.\n\n";
+            }
+
+            text += "'" + Named(name) + "' ran in " + Named(model) + ". Revit counts "
+                  + Count(added, "element") + " added, " + Count(changed, "element")
+                  + " changed and " + Count(deleted, "element") + " deleted.";
 
             if (!string.IsNullOrEmpty(onScreen)) text += "\n\n" + onScreen;
 
@@ -123,7 +132,9 @@ namespace Heron.Revit.Addin
             }
 
             text += "\n\nNothing is kept until you choose Keep. Discard, Esc or closing this "
-                  + "window puts the model back as it was.";
+                  + "window puts the model back as it was. You cannot move around the model "
+                  + "while this is open: if this view does not show the change, Discard, open "
+                  + "a view that does, and ask again.";
             return text;
         }
 
@@ -173,13 +184,6 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// The modeller chose Keep. Put in front of the add-in's KEPT verdict,
-        /// so the chat can tell a change the modeller looked at from one kept
-        /// with nobody asked.
-        /// </summary>
-        public const string KeptSentence = "The modeller chose Keep in Revit.";
-
-        /// <summary>
         /// Kept without a question because Revit reported no change - said, so
         /// a question that did not appear is never read as one that was
         /// answered. If the run plainly did change something, this sentence is
@@ -190,12 +194,14 @@ namespace Heron.Revit.Addin
             + "was not asked.";
 
         /// <summary>
-        /// The modeller chose Discard - the message the chat reads.
+        /// The verdict when the modeller chose Discard - or closed the box,
+        /// which discards.
         ///
         /// "NOTHING WAS KEPT" ONLY WHEN REVIT REPORTED THE GROUP ROLLED BACK,
         /// for the reason WithVerdict gives: on 2026-09-09 a rollback did not
         /// hold while Heron said it had. Otherwise it says the model may still
-        /// hold the change.
+        /// hold the change. And never "send it again with apply", which the
+        /// plain rollback's verdict says: the modeller has just answered.
         /// </summary>
         public static string Discarded(string name, bool rolledBack, bool selectionRestored)
         {
@@ -214,19 +220,6 @@ namespace Heron.Revit.Addin
                        ? "Their own selection was put back. "
                        : "Their own selection could not be put back. ")
                  + "This was their decision, not a failure - send it again only if they ask.";
-        }
-
-        /// <summary>
-        /// The bridge stopped waiting while the dialog was still up. The run
-        /// is neither kept nor discarded yet, and only the modeller can say
-        /// which it will be.
-        /// </summary>
-        public static string StillAsking(int seconds)
-        {
-            return "Revit is asking the modeller to Keep or Discard the change, and nobody has "
-                 + "answered in " + seconds.ToString(CultureInfo.InvariantCulture) + " seconds. "
-                 + "Nothing is kept until they choose Keep in Revit. Do not send it again - ask "
-                 + "them which they chose.";
         }
 
         private static string TooMany(int count, string which)

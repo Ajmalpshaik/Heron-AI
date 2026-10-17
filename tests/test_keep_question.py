@@ -14,7 +14,7 @@ Revit asks the modeller Keep or Discard before a change from a chat is kept.
 
 WHY THIS EXISTS
 ---------------
-D-99 kept every revit_change at once, with no preview. D-118 supersedes it:
+D-99 kept every revit_change at once, with no preview. D-123 supersedes it:
 the change runs inside Heron's TransactionGroup, Revit selects and isolates
 what it touched, and a TaskDialog asks Keep or Discard. Keep is one undo entry;
 Discard rolls the group back and puts the modeller's selection back.
@@ -37,7 +37,7 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
 Neither half proves Revit then does what it is told. That is the PC's, and
 NEEDS-CHECKING Group EO says what it owes.
 
-MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-118 every
+MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-123 every
 wiring section fails and the host does not build, and this suite exits 1 rather
 than raising.
 
@@ -114,10 +114,17 @@ def wiring():
     check(os.path.exists(COLLECTOR), "the change collector is there - RevitChangedSet.cs")
 
     print("\n2. who decides to ask: the owner's switch, read in the add-in")
-    check("var asking = apply && HeronPermissions.AsksBeforeKeeping();" in executor,
-          "the executor asks only on a run that keeps, and only when the owner's switch says so")
-    check(re.search(r'Json\.Read\w+\(\s*request\s*,\s*"[^"]*[Aa]sk', raw) is None,
-          "and nothing in the request is read to decide it (Golden Rule 19)")
+    check("var askToKeep = apply && HeronPermissions.AsksBeforeKeeping();" in executor,
+          "a keep from a chat is asked only on a run that keeps, and only when the owner's "
+          "switch says so")
+    # THE ONE REQUEST WORD THAT ASKS IS D-119's "ask" - a narrowing, never a
+    # widening: it asks for a DRAFT's one run to be shown to the modeller.
+    # Nothing on the wire may turn the owner's question OFF.
+    asked_words = re.findall(r'Json\.Read\w+\(\s*request\s*,\s*"([^"]*)"\)\s*,\s*"ask"', raw)
+    check(re.search(r'Json\.Read\w+\(\s*request\s*,\s*"[^"]*[Aa]sk[^"]*"', raw) is None,
+          "no request field named for asking is read (Golden Rule 19)")
+    check(asked_words == ["apply"],
+          "the only request word that asks is D-119's apply = \"ask\" - found %s" % asked_words)
     permissions = code(PERMISSIONS)
     check(re.search(r'GetBool\(\s*AskBeforeKeepingKey\s*,\s*true\s*\)', permissions) is not None,
           "the switch is read fresh, and a value nobody can read means ASK")
@@ -132,65 +139,66 @@ def wiring():
         check("askBeforeKeeping" not in said.replace("write.askBeforeKeeping", ""),
               "%s sends no field that could skip the question" % os.path.basename(path))
 
-    print("\n3. inside the group, in order: collect, show, ask, end the showing, decide")
+    print("\n3. one box for both doors, inside the group: collect, show, ask, end the showing, decide")
     run = NOTE_SUITE.body_of(executor, "public static string Run(UIApplication app, string request, bool writing)")
-    check(re.search(r"using\s*\(\s*var\s+changed\s*=\s*asking\s*\?\s*new\s+RevitChangedSet\(", run)
-          is not None,
-          "the collector is held in a `using`, so its handler comes off however the group ends")
+    check(re.search(r"using\s*\(\s*var\s+changed\s*=\s*asking\s*\|\|\s*askToKeep\s*\?\s*new\s+RevitChangedSet\(",
+                    run) is not None,
+          "the collector is held in a `using` for either door, so its handler comes off "
+          "however the group ends")
     check(before(run, "group.Start();", "changed.Begin();"),
           "and it starts listening only once the group has started")
-    check(re.search(r"if\s*\(\s*asking\s*\)\s*\{[^}]*AskTheModeller\(", run) is not None
-          and "var keep = apply;" in run and "if (keep) group.Assimilate();" in run,
-          "with the switch on the modeller decides; with it off a keep is kept as before")
+    check(re.search(r"if\s*\(\s*asking\s*\|\|\s*askToKeep\s*\)\s*\{[^}]*answered\s*=\s*AskTheModeller\(",
+                    run) is not None,
+          "one box for both: a DRAFT's one run (D-119) and a keep from a chat (D-123)")
+    check(run.count("AskTheModeller(") == 1,
+          "and it is asked from one place only")
+    check("if (answered != null) apply = answered == Keep;" in run,
+          "the modeller's answer, when there was a box, is what sets apply")
     # ONE PLACE KEEPS, AFTER A FRESH LOOK AT THE DIALOG WATCH (Group EL).
     # Showing the change commits a transaction of its own, and a Revit dialog
     # met there must stop the job like one met in the fragment.
-    asked_at = run.find("AskTheModeller(")
+    asked_at = run.find("answered = AskTheModeller(")
     recheck = run.find("if (HeronDialogWatch.Refused)", asked_at)
-    kept_at = run.find("if (keep) group.Assimilate();")
+    kept_at = run.find("if (apply) group.Assimilate();")
     check(0 < asked_at < recheck < kept_at,
-          "the question asks, the dialog watch is asked again, and only then is anything kept")
+          "the box asks, the dialog watch is asked again, and only then is anything kept")
     check(before(run, "rolledBack = SafeRollBack(group);", "selectionRestored = putBack();"),
           "and on Discard their selection is put back after the rollback")
-    check(before(run, "if (discarded)", "Remember(name, state"),
-          "a Discard returns before anything is remembered for the next fragment")
-    for error in ("modeller_discarded", "discard_unconfirmed"):
-        check(re.search(r'Json\.Error\(\s*"%s"' % error, raw) is not None,
-              "a Discard answers with its own code: %s" % error)
+    check("WithAnswer(verdict, answered, refreshed)" in run
+          and "answered != null && answered != Keep" in run,
+          "the reply says who decided (D-119's fields), and a Discard's verdict is its own")
 
-    ask = NOTE_SUITE.body_of(executor, "HeronKeepQuestion.Answer AskTheModeller(")
+    ask = NOTE_SUITE.body_of(executor, "private static string AskTheModeller(")
     check(bool(ask), "AskTheModeller is there")
     check("Assimilate(" not in ask and "SafeRollBack(" not in ask,
           "and it only asks - it never keeps or rolls back the group itself")
     check(before(ask, "changed.End();", "Isolate("),
           "the collector stops before anything is shown, so showing is not counted as the change")
-    check(re.search(r"if\s*\(\s*!HeronKeepQuestion\.Asks\(", ask) is not None
-          and before(ask, "HeronKeepQuestion.Asks(", "dialog.Show()"),
-          "a run Revit counted no change in is kept without a question")
+    check(re.search(r"if\s*\(\s*!neverProved\s*&&\s*!HeronKeepQuestion\.Asks\(", ask) is not None
+          and before(ask, "HeronKeepQuestion.Asks(", "box.Show()"),
+          "a keep from a chat that Revit counted no change in is not asked - a DRAFT's run always is")
     check("front.Document.Equals(target)" in ask,
           "it draws on the model only when that model is the one in front")
-    check(before(ask, "theirs = front.Selection.GetElementIds();",
+    check(before(ask, "var theirs = front.Selection.GetElementIds();",
                  "front.Selection.SetElementIds(show);"),
           "the modeller's own selection is saved BEFORE it is replaced (D-60)")
-    check("AllowCancellation = true" in ask
-          and "CommonButtons = TaskDialogCommonButtons.None" in ask
-          and "dialog.DefaultButton = TaskDialogResult.CommandLink2;" in ask,
-          "two command links, Esc allowed, and Enter on Discard")
-    check("HeronKeepQuestion.Decide((int)shown, (int)TaskDialogResult.CommandLink1)" in ask,
-          "and the answer is read through the one rule the host proves")
+    check(before(ask, "Isolate(", "RefreshActiveView()") and before(ask, "RefreshActiveView()", "box.Show()"),
+          "the view is redrawn after the change is isolated, and before the box")
+    check("HeronKeepQuestion.Headline(shown, neverProved)" in ask
+          and "HeronKeepQuestion.Content(" in ask,
+          "the box's words come from HeronKeepQuestion, which the host proves")
     # THE JOB'S DIALOG WATCH (Group EL) declines every Revit dialog a job
-    # meets. This question is the modeller's, so it is shown with the watch
+    # meets. This box is the modeller's, so it is shown with the watch
     # stood down - or Heron would answer its own question with Cancel.
-    check(re.search(r"using\s*\(\s*HeronDialogWatch\.HeronAsks\(\)\s*\)\s*\{\s*shown\s*=\s*dialog\.Show\(\);",
+    check(re.search(r"using\s*\(\s*HeronDialogWatch\.HeronAsks\(\)\s*\)\s*\{\s*result\s*=\s*box\.Show\(\);",
                     ask) is not None,
-          "the question is shown inside HeronDialogWatch.HeronAsks(), so the job's "
-          "dialog watch never answers it")
-    check(before(ask, "RevitDispatcher.Asking(true);", "dialog.Show()")
-          and re.search(r"finally\s*\{\s*RevitDispatcher\.Asking\(false\);", ask) is not None,
-          "the dispatcher is told the modeller is asked, and told they answered whatever happens")
-    shown_at = ask.find("dialog.Show()")
+          "the box is shown inside HeronDialogWatch.HeronAsks(), so the job's dialog "
+          "watch never answers it")
+    check(before(ask, "RevitDispatcher.AwaitingModeller()", "box.Show()"),
+          "the dispatcher is told a person is being waited for, before the box")
+    shown_at = ask.find("box.Show()")
     ends = ask.find("DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate)")
-    check(0 < shown_at < ends and ends < ask.rfind("return answer;"),
+    check(0 < shown_at < ends < ask.find("return Keep;"),
           "the isolation is ended INSIDE the group, before the answer goes back to be "
           "kept or rolled back (D-115)")
 
@@ -203,34 +211,28 @@ def wiring():
     check(before(own, "new Transaction(", "Discipline(") and before(own, "Discipline(", ".Commit("),
           "under Heron's failure rule before it commits")
 
-    print("\n4. the verdict says who kept it")
+    print("\n4. the verdict says what happened")
     verdict = NOTE_SUITE.body_of(executor, "string WithVerdict(")
-    check("HeronKeepQuestion.KeptSentence" in verdict,
-          "a Keep says the modeller chose it")
     check("HeronKeepQuestion.NothingToAskSentence" in verdict,
-          "and a run kept with no question says why none was put")
-    check(re.search(r'Json\.Bool\(\s*"keptByModeller"', raw) is not None,
-          "the reply carries keptByModeller")
+          "a run kept with no question says why none was put")
+    check("HeronKeepQuestion.Discarded(name, rolledBack, selectionRestored)" in verdict,
+          "and a Discard has its own verdict - never the plain rollback's \"send it again with apply\"")
 
     print("\n5. the dispatcher waits for the modeller, and the banner steps aside")
     dispatcher = code(DISPATCHER)
-    raw_dispatcher = read(DISPATCHER) or ""
-    check('GetInt("revit.askTimeoutSeconds"' in raw_dispatcher.replace(" ", ""),
-          "it reads revit.askTimeoutSeconds")
-    check(re.search(r"if\s*\(\s*!finished\s*&&\s*job\.Asked\s*\)", dispatcher) is not None
-          and "job.WaitForAnswer(_askTimeout)" in dispatcher,
-          "a job whose modeller is being asked waits for the answer, not the operation clock")
-    check(re.search(r'Json\.Error\(\s*"awaiting_modeller"', raw_dispatcher) is not None,
-          "and a question still open when the wait ends says so - never 'still running'")
-    for error in ("modeller_discarded", "discard_unconfirmed"):
-        check('case "%s"' % error in raw_dispatcher,
-              "the banner has a line for %s" % error)
+    awaiting = NOTE_SUITE.body_of(dispatcher, "internal static void AwaitingModeller()")
+    check("job.MarkAskedModeller()" in awaiting and "banner.StepAside(true)" in awaiting,
+          "AwaitingModeller marks the job and moves the banner out of the box's way")
     execute = NOTE_SUITE.body_of(dispatcher, "public void Execute(UIApplication app)")
-    check("_runningJob = job;" in execute and "_runningJob = null;" in execute,
-          "the running job is set for Asking, and cleared when it ends")
-    asking = NOTE_SUITE.body_of(dispatcher, "internal static void Asking(bool open)")
-    check("job.Asking(open)" in asking and "_banner.StepAside(open)" in asking,
-          "Asking reaches the job and the banner")
+    check("_runningBanner = _banner;" in execute and "_runningBanner = null;" in execute
+          and "if (job.AskedModeller) _banner.StepAside(false);" in execute,
+          "the banner comes back when the job returns")
+    check(before(execute, "_banner.StepAside(false)", "_banner.End(failure == null, Ended(failure, response)"),
+          "before it says how the job ended")
+    # RAW TEXT: the field name is a string, and code_only blanks strings.
+    ended = NOTE_SUITE.body_of(read(DISPATCHER) or "", "private static string Ended(")
+    check('"modellerAnswer"' in ended,
+          "and it says Discarded or Kept from the modeller's own answer, not Done")
     banner = code(BANNER)
     check("public void StepAside(bool aside)" in banner, "the banner can step aside")
     render = NOTE_SUITE.body_of(banner, "private void Render()")
@@ -254,7 +256,7 @@ def wiring():
             values["revit.operationTimeoutSeconds"] = str(operation)
             values["revit.askTimeoutSeconds"] = str(ask_for)
             longest = (CFG.busy_timeout(values) + CFG.operation_timeout(values)
-                       + ask_timeout(values) + CFG.operation_timeout(values))
+                       + ask_timeout(values))
             waits = CFG.fragment_timeout(values, keeping=True)
             check(waits > longest,
                   "operation=%s ask=%s -> the add-in answers within %g, a keeping run waits %g"
@@ -262,6 +264,9 @@ def wiring():
     values = dict(CFG.DEFAULTS)
     check(CFG.fragment_timeout(values) == 180.0,
           "a read still waits exactly the 180 it always did")
+    check(CFG.fragment_timeout(values, keeping=True) == CFG.try_once_timeout(values),
+          "and a keep the owner's switch asks about waits what D-119's try-once waits - "
+          "the same box, the same wait")
     values["write.askBeforeKeeping"] = "false"
     check(CFG.fragment_timeout(values, keeping=True) == 180.0,
           "and with the owner's question off, a keep does not wait for one")
@@ -273,17 +278,14 @@ def wiring():
           "and so does the command line's --write --apply")
 
     print("\n7. a Discard is an answer, never a failure to retry (Article 25)")
-    for error, outcome, step in (("modeller_discarded", FAIL.REFUSED, FAIL.STOP),
-                                 ("discard_unconfirmed", FAIL.UNKNOWN, FAIL.LOOK_AT_THE_MODEL),
-                                 ("awaiting_modeller", FAIL.RUNNING, FAIL.WAIT)):
-        failure = FAIL.analyse({"ok": False, "error": error, "message": "m"}, writes=True)
-        check(failure is not None and failure.outcome == outcome and failure.next_step == step,
-              "%s is %s / %s" % (error, outcome, step))
-        check(failure is not None and not failure.may_retry,
-              "and %s is never sent again on its own" % error)
-    discard = FAIL.analyse({"ok": False, "error": "modeller_discarded"}, writes=True)
-    check(discard is not None and discard.touched_the_model is False,
-          "a Discard Revit rolled back left nothing in the model")
+    check('if reply.get("asked") and not reply.get("kept"):' in server
+          and 'return _ended("refused", "\\n".join(lines))' in server,
+          "revit_change reports a box the modeller did not keep as refused, and offers "
+          "no after-change table")
+    waiting = FAIL.analyse({"ok": False, "error": "awaiting_modeller", "message": "m"}, writes=True)
+    check(waiting is not None and waiting.outcome == FAIL.RUNNING
+          and waiting.next_step == FAIL.WAIT and not waiting.may_retry,
+          "a box still open is RUNNING / WAIT, never sent again on its own")
 
 
 def rule():

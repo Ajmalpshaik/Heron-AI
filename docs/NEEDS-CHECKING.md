@@ -723,7 +723,11 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
 
-## Group EO - Revit asks Keep or Discard before a change from a chat is kept: D-118 (2026-10-17)
+## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
+
+## Group EO - Revit asks Keep or Discard before a change from a chat is kept: D-123 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
 

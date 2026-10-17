@@ -63,12 +63,14 @@ namespace Heron.Core
                 { "revit.busyTimeoutSeconds", "10" },    // Revit never picked the request up
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
 
-                // HOW LONG THE BRIDGE WAITS FOR THE MODELLER to answer Revit's
-                // Keep or Discard question (D-118). Their time is theirs, not
-                // the job's, so it is added to the wait rather than counted
-                // inside the operation timeout - and the client's own deadline
-                // for a change it keeps is derived from it, so the bridge is
-                // still the side that answers.
+                // HOW MUCH LONGER A JOB MAY TAKE ONCE IT HAS ASKED THE MODELLER
+                // (D-119, D-123). A job that stops on a Keep or Discard box in
+                // Revit - a DRAFT run with "apply": "ask", or a keep from a chat
+                // while write.askBeforeKeeping is on - is waiting for a person
+                // reading their model, which is not a slow operation - so this
+                // is added to the operation timeout, and only for a job that
+                // has put the box up. The client's own deadline adds it too,
+                // so the ordering above still holds.
                 { "revit.askTimeoutSeconds", "300" },
 
                 // MUST be declared here, not only read by HeronPermissions.
@@ -91,7 +93,7 @@ namespace Heron.Core
                 { "admin.enabled", "false" },
                 { "publish.enabled", "false" },
 
-                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-118): the
+                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-123): the
                 // changed elements are shown and a dialog asks Keep or Discard.
                 // ON by default, unlike the switches above, because ON is the
                 // safe side here - it narrows what Changes lets through, and

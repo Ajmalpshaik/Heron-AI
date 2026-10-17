@@ -62,20 +62,29 @@ namespace Heron.Revit.Addin
         private readonly TimeSpan _operationTimeout;
 
         /// <summary>
-        /// How long the modeller has to answer Revit's Keep or Discard (D-118)
-        /// before this side stops waiting and says so - revit.askTimeoutSeconds.
+        /// The extra wait for a job that has asked the modeller to keep or
+        /// discard a DRAFT's change (D-119). See AwaitingModeller.
         /// </summary>
         private readonly TimeSpan _askTimeout;
 
         /// <summary>
-        /// The job Revit's thread is running now, and the dispatcher running
-        /// it - so RevitFragment, which knows nothing about jobs, can say "the
-        /// modeller is being asked" through Asking. ThreadStatic because Execute
-        /// is the only writer and runs on Revit's thread; anything calling
-        /// Asking from another thread finds null and changes nothing.
+        /// The job Revit's thread is running now, so code deep inside it can
+        /// say "I am waiting for a person" without being handed the job.
+        ///
+        /// [ThreadStatic] ON PURPOSE: only Revit's own thread runs a job, so
+        /// only that thread ever finds one here. A call from anywhere else
+        /// finds null and changes nothing, which is the safe answer.
         /// </summary>
-        [ThreadStatic] private static RevitJob _runningJob;
-        [ThreadStatic] private static RevitDispatcher _runningHere;
+        [ThreadStatic]
+        private static RevitJob _running;
+
+        /// <summary>
+        /// The banner of the job running now, for the same reason as _running:
+        /// AwaitingModeller has to move it out of the way of the box, and the
+        /// box's code is never handed the dispatcher (D-123).
+        /// </summary>
+        [ThreadStatic]
+        private static HeronActivityBanner _runningBanner;
 
         private readonly Action<string> _log;
         private readonly string _session;
@@ -146,21 +155,28 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// Revit's own thread, from RevitFragment: the modeller is being asked
-        /// Keep or Discard (true), or has answered (false) - D-118.
+        /// Revit's own thread, from inside a running job: the job is about to
+        /// show the modeller a Keep or Discard box and wait for them (D-119).
         ///
-        /// TWO THINGS FOLLOW, and this class is the one that knows both the job
-        /// and the banner. The job's caller stops counting the modeller's time
-        /// against the operation (Dispatch), and the banner, which is Topmost,
-        /// steps out of the way of the dialog. A call outside a running job -
-        /// a ribbon command - does neither.
+        /// THE AWAITING-THE-MODELLER EXEMPTION. Dispatch gives up on a job
+        /// that has not finished within revit.operationTimeoutSeconds and
+        /// answers "still running" - right for slow work, wrong for a person
+        /// reading their model before they choose. A job marked here is given
+        /// revit.askTimeoutSeconds more before the caller stops waiting.
+        ///
+        /// It only ever LENGTHENS a wait, and only for the job running now.
+        /// It cannot shorten one, start one, or answer the box.
         /// </summary>
-        internal static void Asking(bool open)
+        internal static void AwaitingModeller()
         {
-            var job = _runningJob;
-            var here = _runningHere;
-            if (job != null) job.Asking(open);
-            if (here != null) here._banner.StepAside(open);
+            var job = _running;
+            if (job != null) job.MarkAskedModeller();
+
+            // AND THE BANNER STEPS ASIDE (D-123). It is Topmost, so it would
+            // sit over the box it is waiting on; Execute brings it back the
+            // moment the job returns, before it says how the job ended.
+            var banner = _runningBanner;
+            if (banner != null) banner.StepAside(true);
         }
 
         /// <summary>
@@ -318,32 +334,24 @@ namespace Heron.Revit.Addin
                     "or a command may be running. Finish what is open in Revit and ask again.");
             }
 
-            var finished = job.WaitForFinish(_operationTimeout);
+            // THE MODELLER IS NOT A TIMEOUT (D-119). A job that put a Keep or
+            // Discard box up is waiting for a person, so it gets the ask
+            // timeout on top - asked AFTER the first wait ran out, because the
+            // box can go up at any moment of it.
+            var finished = job.WaitForFinish(_operationTimeout)
+                || (job.AskedModeller && job.WaitForFinish(_askTimeout));
 
-            // THE MODELLER IS BEING ASKED, OR WAS (D-118). Their time to look at
-            // the change is theirs, not the job's, so it is not counted against
-            // the operation: wait for the answer, then give the rest of the job
-            // a fresh operation timeout. Without this every Keep or Discard
-            // that took longer than a minute came back "still running" - and
-            // the chat lost the answer to a question the modeller DID answer.
-            //
-            // Only a job that has opened the question by the time the first wait
-            // ends gets this. One still working at that moment is answered
-            // "still running" exactly as before.
-            if (!finished && job.Asked)
+            if (!finished && job.AskedModeller)
             {
-                finished = job.WaitForAnswer(_askTimeout) && job.WaitForFinish(_operationTimeout);
-
-                if (!finished && !job.Answered)
-                {
-                    // THE DIALOG IS STILL UP. Nothing is kept until they choose
-                    // Keep, and only they can say which it will be. The banner
-                    // is stepped aside and Execute brings it back and down when
-                    // the job really ends.
-                    RecordRefusal(job.WorkflowId, request, "awaiting_modeller");
-                    return Json.Error("awaiting_modeller",
-                        HeronKeepQuestion.StillAsking((int)_askTimeout.TotalSeconds));
-                }
+                // The box is still open in Revit, and it still decides. This
+                // caller stops waiting; whatever the modeller presses stands,
+                // and the banner comes down when they do.
+                RecordRefusal(job.WorkflowId, request, "awaiting_modeller");
+                return Json.Error("awaiting_modeller",
+                    "Revit is still waiting for you to choose Keep or Discard, and Heron " +
+                    "has stopped waiting for the answer. Whatever you press in Revit stands - " +
+                    "Discard puts the model back exactly as it was. This run is not recorded; " +
+                    "do not repeat the request while the box is open.");
             }
 
             if (!finished)
@@ -384,10 +392,6 @@ namespace Heron.Revit.Addin
 
                 if (!job.TryStart()) continue;   // the caller already gave up
 
-                // So Asking can reach this job and this banner - see there.
-                _runningJob = job;
-                _runningHere = this;
-
                 var clock = Stopwatch.StartNew();
                 string response = null;
                 string document = null;
@@ -408,6 +412,9 @@ namespace Heron.Revit.Addin
                     {
                         try
                         {
+                            // So AwaitingModeller can find this job - see _running.
+                            _running = job;
+                            _runningBanner = _banner;
                             response = RevitOperations.Run(app, job.Request);
                         }
                         catch (Exception ex)
@@ -417,6 +424,15 @@ namespace Heron.Revit.Addin
                             // exception is Revit's problem, not just Heron's.
                             _log("Operation failed: " + ex);
                             response = Json.Error("operation_failed", ex.Message);
+                        }
+                        finally
+                        {
+                            _running = null;
+                            _runningBanner = null;
+
+                            // The box is answered or the job is over: the
+                            // banner comes back to say how it ended (D-123).
+                            if (job.AskedModeller) _banner.StepAside(false);
                         }
                     }
                     finally
@@ -453,7 +469,8 @@ namespace Heron.Revit.Addin
                     // and the screen must follow the model, not the client.
                     var failure = Json.ReadString(response, "error");
                     if (job.TakeBannerEnd())
-                        _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds, document);
+                        _banner.End(failure == null, Ended(failure, response),
+                                    clock.ElapsedMilliseconds, document);
 
                     // One line per request, whatever happened. A trail that
                     // only records successes answers the wrong question later.
@@ -539,18 +556,6 @@ namespace Heron.Revit.Addin
                     // has already been taken, so this says nothing; Finish on
                     // an answered job re-sets an event that is already set.
                     clock.Stop();
-
-                    // A QUESTION OPENED AND NEVER CLOSED - only if something
-                    // threw past RevitFragment's own finally. The banner must
-                    // not stay hidden for every job after this one.
-                    if (job.Asked && !job.Answered)
-                    {
-                        job.Asking(false);
-                        _banner.StepAside(false);
-                    }
-                    _runningJob = null;
-                    _runningHere = null;
-
                     if (response == null)
                     {
                         response = Json.Error("operation_failed",
@@ -609,9 +614,14 @@ namespace Heron.Revit.Addin
                 // and a trial that rolls back is still Revit doing the work.
                 case "run_fragment_write":
                     var writing = Clean(Json.ReadString(request, "name"));
-                    var keeping = string.Equals(Json.ReadString(request, "apply"), "true",
+                    var applyWord = Json.ReadString(request, "apply");
+                    var keeping = string.Equals(applyWord, "true",
                                                 StringComparison.OrdinalIgnoreCase);
-                    var verb = keeping ? "Changing the model" : "Trying a change";
+                    // D-119: it runs, and the modeller decides in Revit.
+                    var asking = string.Equals(applyWord, "ask",
+                                               StringComparison.OrdinalIgnoreCase);
+                    var verb = asking ? "Trying a new tool - you choose Keep or Discard"
+                             : keeping ? "Changing the model" : "Trying a change";
                     return writing.Length == 0 ? verb : verb + ": " + writing;
 
                 // THE TWO ABOVE MODIFY SAY WHICH KIND OF CHANGE, because the
@@ -643,7 +653,7 @@ namespace Heron.Revit.Addin
         /// it is nothing. It can never say more than a name, whatever it
         /// contains.
         /// </summary>
-        private static string Clean(string text)
+        internal static string Clean(string text)
         {
             if (string.IsNullOrEmpty(text)) return string.Empty;
 
@@ -655,6 +665,24 @@ namespace Heron.Revit.Addin
                 if (kept.Length == 44) { kept.Append('\u2026'); break; }
             }
             return kept.ToString().Trim();
+        }
+
+        /// <summary>
+        /// The banner's last line for a finished job: the modeller's own Keep
+        /// or Discard when the job asked them one (D-123), otherwise Explain's
+        /// line for the error code.
+        /// </summary>
+        private static string Ended(string failure, string response)
+        {
+            // A KEEP OR DISCARD THE MODELLER ANSWERED IS NO FAILURE, and "Done"
+            // over a change they just discarded would read as kept (D-123).
+            if (failure == null)
+            {
+                var answered = Json.ReadString(response, "modellerAnswer");
+                if (answered == "discard" || answered == "closed") return "Discarded - nothing was kept";
+                if (answered == "keep") return "Kept - one undo step";
+            }
+            return Explain(failure);
         }
 
         /// <summary>
@@ -693,13 +721,11 @@ namespace Heron.Revit.Addin
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                case "ask_needs_change_path": return "That job cannot be tried this way";
+                case "ask_needs_model_in_front": return "Bring that model to the front first";
+                case "ask_needs_saved_model": return "Save the model first - nothing was run";
                 case "dialog_refused":  return "A Revit dialog stopped the job - nothing kept";
                 case "dialog_unconfirmed": return "A Revit dialog stopped the job - check the model";
-
-                // D-118. The modeller's own answer, so it is not a failure -
-                // and the second says the rollback did not report success.
-                case "modeller_discarded": return "Discarded - nothing was kept";
-                case "discard_unconfirmed": return "Discarded - check the model";
                 default:                return "Did not finish";
             }
         }
@@ -728,15 +754,9 @@ namespace Heron.Revit.Addin
 
             private readonly ManualResetEventSlim _started = new ManualResetEventSlim(false);
             private readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
-            private readonly ManualResetEventSlim _answered = new ManualResetEventSlim(false);
             private int _state = Queued;
             private int _bannerEnded;
-
-            // D-118: 0 never asked, 1 the modeller is being asked, 2 answered.
-            private const int NotAsked = 0;
-            private const int QuestionOpen = 1;
-            private const int QuestionAnswered = 2;
-            private int _asking = NotAsked;
+            private int _askedModeller;
 
             public RevitJob(string request, string workflowId)
             {
@@ -797,32 +817,17 @@ namespace Heron.Revit.Addin
                 return true;
             }
 
+            /// <summary>
+            /// Set on Revit's thread when the job puts a Keep or Discard box
+            /// up, read on the listener thread that is waiting for it. Never
+            /// cleared: a job that asked once is a job a person is part of.
+            /// </summary>
+            public void MarkAskedModeller() { Interlocked.Exchange(ref _askedModeller, 1); }
+
+            public bool AskedModeller { get { return Volatile.Read(ref _askedModeller) == 1; } }
+
             public bool WaitForStart(TimeSpan timeout) { return _started.Wait(timeout); }
             public bool WaitForFinish(TimeSpan timeout) { return _finished.Wait(timeout); }
-
-            /// <summary>
-            /// AWAITING THE MODELLER - D-118. Revit's thread opens the question
-            /// and closes it; the caller's thread reads it to decide whether the
-            /// wait it is in is the job's or the modeller's.
-            /// </summary>
-            public void Asking(bool open)
-            {
-                if (open)
-                {
-                    Volatile.Write(ref _asking, QuestionOpen);
-                    return;
-                }
-                Volatile.Write(ref _asking, QuestionAnswered);
-                _answered.Set();
-            }
-
-            /// <summary>Has this job asked the modeller anything?</summary>
-            public bool Asked { get { return Volatile.Read(ref _asking) != NotAsked; } }
-
-            /// <summary>Has the modeller answered what was asked?</summary>
-            public bool Answered { get { return Volatile.Read(ref _asking) == QuestionAnswered; } }
-
-            public bool WaitForAnswer(TimeSpan timeout) { return _answered.Wait(timeout); }
         }
     }
 }
