@@ -531,7 +531,10 @@ are listed, Heron is not connected"* - say so, ask for `python tools/heron-ready
 server lists `heron` tools where no Revit can ever be, so that sentence would read as *connected* when it is
 not. A yes therefore owes two things with it: the Revit tools **not listed** off Windows - never listed and
 then hanging or failing late - and the AGENTS.md line reworded to the test that still holds, *no `revit_`
-tool listed means no Revit here*.
+tool listed means no Revit here*. The session-start line [#573](https://github.com/Ajmalpshaik/Heron-AI/pull/573)
+added says, off Windows, *"no Revit and no Heron tools in this session"*
+([`session_line.py`](../../.claude/skills/heron-session/bin/session_line.py)); a yes changes it to say the
+library tools are there and the Revit ones are not.
 
 **Recommended - reasoned, not built:** **yes**, on non-Windows only, with the library tools served and every
 tool that needs the bridge left unregistered, so the host's own tool list says there is no Revit here. Which
