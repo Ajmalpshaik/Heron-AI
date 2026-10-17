@@ -38,7 +38,10 @@ WHAT IS PROVED
      that would move;
   9. CRLF in, CRLF out, and still byte for byte;
  10. check-docs.py, owner-queue.py, check-gaps.py, balance-of-work.py and
-     archive-needs-checking.py each read the register through the one reader.
+     archive-needs-checking.py each read the register through the one reader;
+ 11. a group file that holds more than one section keeps them all, and a new
+     group beside it still moves - byte for byte, the readers the same, no
+     other file rewritten (rows 5b-425 and 5b-493).
 """
 
 import contextlib
@@ -383,6 +386,42 @@ def run(work):
     b8 = SPLIT.B8.search(real)
     check(b8 is not None and SPLIT.PASSED.search(b8.group(0)) is not None,
           "and B8's dated PASSED is still found in the real register, read through it")
+
+    print()
+    print("11. A group file that holds more than one section keeps them, and a new group still moves")
+    # Rows 5b-425 and 5b-493: group-ac.md holds three dated sections under the
+    # index's one stub. Every run that moved anything rebuilt the index with
+    # the later two in full while group-ac.md still held them, the register
+    # read back holding them twice, and every new group was refused.
+    held = make_root(work, original, "held")
+    SPLIT.write(SPLIT.plan(index_of(held), folder_of(held), "2026-09-23", held))
+    with io.open(os.path.join(folder_of(held), "group-ac.md"), "a", encoding="utf-8", newline="") as handle:
+        handle.write(NL.join(["", "## 2026-10-08 " + DASH + " a later stage, written into group-ac.md", "",
+                              "| **AC3** | Release it | open |", "",
+                              "## 2026-10-10 " + DASH + " and a note after it, with no row", "",
+                              "Published.", ""]))
+    with io.open(index_of(held), "a", encoding="utf-8", newline="") as handle:
+        handle.write(NL.join(["## Group D " + DASH + " written after a file took two more sections", "",
+                              "| **D1** | One dummy row | open |", ""]))
+    names = sorted(os.listdir(folder_of(held)))
+    files_then = dict((n, read(os.path.join(folder_of(held), n))) for n in names)
+    whole_then = NCR.register_text(held)
+    readers_then = readers_at(held)
+    kept = SPLIT.layout_split(index_of(held), whole_then, "2026-09-30")
+    check(kept[0] == read(index_of(held)) and kept[1].get("group-ac.md") == files_then["group-ac.md"],
+          "the archive tool's layout keeps all three sections in group-ac.md and none on the page")
+    d = SPLIT.plan(index_of(held), folder_of(held), "2026-09-30", held)
+    check(not d.problems, "a new group beside it plans cleanly (%s)" % ("; ".join(d.problems) or "no problem"))
+    check([n for _, n in d.moving] == ["group-d.md"], "and only the new group moves")
+    check(not [h for h, _ in d.staying if h.startswith(("## 2026-10-08", "## 2026-10-10"))],
+          "the sections group-ac.md holds are not listed as staying on the page")
+    wrote = SPLIT.write(d) == SPLIT.OK
+    check(wrote and os.path.exists(os.path.join(folder_of(held), "group-d.md")), "it writes group-d.md")
+    check(NCR.register_text(held) == whole_then, "read back, it is the register byte for byte")
+    check(readers_at(held) == readers_then, "owner-queue, check-gaps, balance-of-work and B8 read it the same")
+    check(all(read(os.path.join(folder_of(held), n)) == files_then[n] for n in names),
+          "no group file it was not moving is rewritten")
+    check(read(index_of(held)).count("## 2026-10-08") == 0, "and the later sections are not copied onto the page")
 
 
 if __name__ == "__main__":
