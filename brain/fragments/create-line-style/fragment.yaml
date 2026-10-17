@@ -49,6 +49,19 @@ risk: MODIFY
 # READ BACK: colour, weight and pattern off the style after one regeneration;
 # a value asked for that Revit does not hold is named NOT KEPT.
 #
+# IT COVERS A RECOLOUR, SO A CHAT NEED NOT READ AGAIN AFTER ONE (checked
+# 2026-10-17, row 5b-540). With familyCategory and updateExisting - "make the
+# signature lines blue in this family" - readBack is Generic Annotations >
+# Signature's own colour, weight and pattern as Revit holds them after the
+# change, and the finding reads "Updated subcategory "Signature" of Generic
+# Annotations: colour 0,0,255, weight 2, pattern Solid (read back)."; a value
+# Revit did not keep is named NOT KEPT beside it. readBack is a declared string
+# result, so revit_change prints it whole. So LIST_CATEGORIES after the change
+# repeats this line and is not needed. What readBack does NOT say is the value
+# BEFORE the change - for that, LIST_CATEGORIES with categories "Generic
+# Annotations > Signature" is one row (version 3) where version 2 was every
+# Object Styles row. Not yet run in Revit.
+#
 # REMAP_LINE_STYLES moves lines from one style to another; this makes or
 # changes a style.
 #
