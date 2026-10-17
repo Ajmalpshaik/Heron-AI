@@ -274,6 +274,21 @@ _KNOWN = {
                           "an arrangement step could not be given what it needs, so nothing "
                           "was run and the model is as it was"),
 
+    # --- a Revit dialog opened inside the job -------------------------------
+    #
+    # HeronDialogWatch answers it - Cancel, or Close - rather than let the job
+    # hang behind it, and the job stops (FRAGMENT-ISSUES section 5b row 300).
+    # The add-in says `dialog_refused` ONLY when Revit confirmed the rollback,
+    # or when the job only read; any other case is `dialog_unconfirmed`, which
+    # is a person looking at the model and never a retry.
+    "dialog_refused":    (ROLLED_BACK, FIX_FIRST,
+                          "Revit showed a dialog during the job and Heron declined it rather "
+                          "than answer for the modeller, so the job stopped - rolled back, or "
+                          "a read that changed nothing"),
+    "dialog_unconfirmed": (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "Revit showed a dialog during the job and Heron declined it, and "
+                          "Revit did not confirm the change was undone"),
+
     # `handler_failed` IS DELIBERATELY ABSENT, and that is the one judgement
     # in this table that a row would get wrong. It is raised in BridgeServer
     # when an exception escapes Dispatch - from anywhere, at any depth - so

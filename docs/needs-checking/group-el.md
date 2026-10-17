@@ -4,46 +4,44 @@
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
 > for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
 > reads it back into the register for every tool that reads the register, so a row here is seen
-> exactly as it was seen there. Written by
-> [`tools/split-needs-checking.py`](../../tools/split-needs-checking.py).
+> exactly as it was seen there.
 
-## Group EL - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
 
-Built for [D-117 to D-120](../DECISIONS.md#d-117--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so),
-all four **accepted by the owner on 2026-10-17** - this group is run once the add-in carrying them is
-deployed.
+Found on 2026-10-03 loading `Catch_Basin new.rfa` into Family1 on Revit 2024: Revit opened its modal *"saved
+in a later version of Revit and cannot be retrieved in this version"* dialog inside `LOAD_FAMILY`, and the
+chat read `unknown_outcome`, then `revit_busy`, then `still_running` for over 90 s until somebody closed it
+by hand - [row 5b-300](../fragment-issues/section-5b-rows-276-300.md).
 
-**What changed.** `run_fragment_write` takes `"apply": "ask"`
-([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs)): refused unless the model is in front,
-saved and with nothing unsaved, and only on the change path; otherwise the fragment runs inside Heron's
-one `TransactionGroup`, the view is redrawn, and a box asks **Keep it** or **Discard it** - Discard the
-default, Escape and the close button discarding too. Keep assimilates the group into one undo entry named
-`Heron: <fragment>`; anything else rolls it back. The dispatcher waits `revit.askTimeoutSeconds` (300)
-more for a job that put the box up ([`RevitDispatcher.cs`](../../revit/Heron.Revit.Addin/RevitDispatcher.cs)).
-`heron_bridge_client.py try-once <fragment>` sends it, only for a DRAFT at risk MODIFY, and records the run
-at `brain/proof-drafts/runs/<fragment>.once.json`; `validate <fragment> --write --kept` runs only the
-negative and puts the kept run in the positive's place, and `heron_validate` refuses a kept phase that was
-discarded or whose code moved.
+**What changed.** The add-in subscribes to Revit's `DialogBoxShowing` at startup
+([`HeronDialogWatch`](../../revit/Heron.Revit.Addin/HeronDialogWatch.cs)), and the dispatcher arms it around
+`RevitOperations.Run` alone. While armed, a dialog is answered from
+[`HeronDialogRule`](../../revit/Heron.Revit.Addin/HeronDialogNote.cs): **Cancel, then Close if Revit will not
+take Cancel, and the job fails** - the fragment and move write paths roll their group back before they keep
+anything, and a read returns the refusal. The table holds **no row** yet: a row needs a DialogId Revit really
+reported, and none is recorded. The reply carries `dialogsAnswered` and `dialogs` (each dialog's id, kind,
+Revit's words and the answer); the audit line carries a `dialogs` number; both are absent when no dialog
+opened. The error is `dialog_refused` when Revit confirmed the rollback (or the job only read) and
+`dialog_unconfirmed` otherwise. A dialog already open before a job is untouched: Revit runs no job behind
+it, so the answer is still `revit_busy`. `HeronAsks()` stands the watch down for a prompt of Heron's own; no
+Heron prompt runs inside a job today.
 
-**What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027 and every
-Revit member it calls exists in all eight (`tools/check-compile.py`, `tools/check-api-surface.py`,
-2026-10-17). `tests/test_try_once.py` runs the client and the brain against a Revit that is not there, and
-reads the add-in as text. **None of it has run in Revit**: whether Revit redraws the change inside an open
-group before the box, and whether Keep leaves exactly one undo entry and Discard none, are what this group
-is for.
+**What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027
+(`tools/check-compile.py`, 2026-10-17), and `tests/test_dialog_note.py` builds and runs the table, the record
+and the reply in `tests/Heron.DialogNote.TestHost`. **None of it has run in Revit.** It works only once the
+add-in is rebuilt, deployed for each Revit and Revit restarted. No fragment changed, so no fingerprint moved -
+but a PROVEN fragment that met a dialog before (EL4) now stops where it used to wait.
 
-**A SCRATCH PROJECT, never a working model.** In Revit 2020 first: a project from the default metric
-template with a few walls or ducts in a plan view, saved as *Heron Try Once.rvt*, with Changes on. The
-fragment is a DRAFT at risk MODIFY with no proof block whose change shows in a plan - `python
-tools/check-signatures.py` and the card say which; `color-by-parameter` or `override-graphics-in-view`
-are the shape. Note the Undo list (the arrow beside Undo) before each row.
+**SCRATCH FILES ONLY, never a working model.** Revit 2020 first: a project from the default metric template
+saved as *Heron Dialog Project.rvt*; a family from *Metric Generic Model.rft* with one extrusion, **saved in
+Revit 2024** as *Heron Later Release.rfa*. Changes ON for EL1, EL2 and EL4.
 
 | # | Run | Look for |
 |---|---|---|
-| **EL1** | The plan in front, saved. `try-once <fragment>` with the values it needs; when the box opens, look at the view, then press **Keep it** | The view shows the change BEFORE the box is answered; the box reads *"'<fragment>' has never been proved. Keep what it did?"*; after Keep the change stays, the Undo list has exactly ONE new entry `Heron: <fragment>`, and the command line prints KEPT and writes `<fragment>.once.json` with `kept: true`. One Ctrl+Z takes the whole change back |
-| **EL2** | Save again. The same fragment, corrected or with other values so it is a run the modeller would not keep; press **Discard it**. Then once more, closing the box with Escape | Both times the model is exactly as before - **the Undo list is unchanged**, no `Heron:` entry - the reply says `rolledBack` true and DISCARDED, and the record says `kept: false`. Ctrl+Z undoes whatever was done BEFORE the run, never this |
-| **EL3** | After EL1's Keep: `validate <fragment> --write --kept` with a negative arrangement that must find nothing, then `heron_validate.py draft`, `review` and `accept --by "Ajmal PS"` | Only the negative runs (one rolled-back write); the draft's positive case is the kept run, *"the modeller saw the result in Revit and pressed Keep"*, the negative comes back empty, and `accept` writes the proof with the status still DRAFT. Edit one character of the fragment's `impl/` and re-run `validate --kept`: refused, *"taken against different code"* |
-| **EL4** | Refusals, each before anything runs: (a) make one unsaved change, then `try-once`; (b) open a second model in front, then `try-once --in "Heron Try Once"`; (c) `try-once` on a PROVEN or READ fragment | (a) `ask_needs_saved_model` - *"Save the model, then ask again"*; (b) `ask_needs_model_in_front`; (c) refused by the command line, nothing sent. In every case the Undo list is unchanged |
-| **EL5** | `try-once`, and leave the box open for two minutes before pressing Keep | The answer arrives - no *"still running"* at 60 s. Then set `revit.askTimeoutSeconds = 60`, restart Revit, and leave the box open three minutes: the command line says the box is still open and the run is not recorded; pressing Discard afterwards still puts the model back |
-| **EL6** | EL1 and EL2 once on Revit 2024 and once on Revit 2027 | The same - one undo entry on Keep, none on Discard |
-| **EL7** | *Not a proof - a check on the old add-in.* Before deploying, `try-once` against the add-in that is installed now | *"older than the Keep or Discard box"* - it ran as a preview, rolled back, nothing recorded, and no box appeared |
+| **EL1** | Row 300 reproduced. In Revit 2020, *Heron Dialog Project* in front: `revit_change` capability `LOAD_FAMILY` with *Heron Later Release.rfa* | **No dialog stays on screen**, and the answer arrives within seconds - not `unknown_outcome`, `revit_busy` or `still_running`. The error is `dialog_refused`; the message quotes Revit's words and says the job was rolled back; `dialogs` lists the dialog with its **id** (write the id down - it is the first real row's key), its kind and `answer` Cancel or Close; the project has no new family and no new Undo entry. The add-in log has one `Revit dialog during a Heron job` line. The D-30 positive |
+| **EL2** | Whether `OverrideResult` works for that dialog. Read EL1's `dialogs` entry | `answer` is Cancel or Close - Revit took the override. If it reads *none - Revit would not take an answer*, the dialog stayed open: close it by hand, record that here, and `BasicFileInfo.Extract` before `LoadFamily` (row 300's other fix) becomes the way for this dialog |
+| **EL3** | Whether an add-in's own TaskDialog raises `DialogBoxShowing`. A throwaway read fragment, through `run_fragment_read`, whose whole body shows `TaskDialog.Show("Heron EL3", "Close me if you can see me.")` and returns | **Either** the reply lists it in `dialogs` with its id and `dialog_refused` (it does raise the event - so any Heron prompt inside a job MUST sit inside `HeronAsks()`), **or** the dialog appears and waits for a click (it does not). Write down which, and the id if one came |
+| **EL4** | "Duplicate Types" is cancelled and the rollback holds. Two scratch projects, each with a drafting view holding a filled region of a type named *Heron Dup* with a **different** fill pattern; `revit_change` capability `TRANSFER_VIEWS_BETWEEN_DOCUMENTS` from one into the other | If Revit asks "Duplicate Types": the reply is `dialog_refused` naming it, and the target project has **no** new view, its *Heron Dup* is unchanged and there is no new Undo entry - the rollback held. If no dialog appears, write that down: the API then answers duplicate types without asking, and this row is answered by that |
+| **EL5** | The negative. `LOAD_FAMILY` with a family saved in Revit 2020, and any read such as `revit_health` | Neither reply carries `dialogsAnswered` or `dialogs`, the family loads as before, and the audit lines have no `dialogs` number - a job no dialog interrupted reads exactly as it did. **The D-30 negative** |
+| **EL6** | The modeller's own dialogs are left alone. With no Heron job running, open any Revit dialog that asks something (Manage > Purge Unused, then Cancel) | It shows and waits for the modeller as always. Then, with that dialog still open, ask the chat for any read: the answer is `revit_busy` - the job never started, so nothing touched the open dialog |
+| **EL7** | EL1, EL5 and EL6 once on Revit 2024 and once on 2027 | The same answers - the watch is in the add-in every release loads |

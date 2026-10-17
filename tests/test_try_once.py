@@ -40,7 +40,7 @@ WHAT IT PROVES
 WHAT IT CANNOT SAY
 ------------------
 That Revit draws the change before the box, that Keep leaves one undo entry
-and Discard none. That is NEEDS-CHECKING Group EL, on a real Revit.
+and Discard none. That is NEEDS-CHECKING Group EM, on a real Revit.
 """
 
 import contextlib
@@ -132,6 +132,11 @@ def test_the_add_in():
           "the view is redrawn before the box is shown")
     check(before(ask, "RevitDispatcher.AwaitingModeller()", "box.Show()"),
           "the dispatcher is told a person is being waited for, before the box")
+    check("using (HeronDialogWatch.HeronAsks())" in ask
+          and before(ask, "using (HeronDialogWatch.HeronAsks())", "result = box.Show();"),
+          "the box is shown inside HeronAsks, so Heron's own dialog watch never answers it")
+    check(before(run, "if (HeronDialogWatch.Refused)", "answered = AskTheModeller("),
+          "a job a Revit dialog stopped is rolled back before anybody is asked to keep it")
     check("DefaultButton = TaskDialogResult.CommandLink2" in ask,
           "Discard is the default button")
     check("AllowCancellation = true" in ask,
