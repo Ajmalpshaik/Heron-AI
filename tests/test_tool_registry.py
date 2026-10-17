@@ -288,6 +288,51 @@ def main():
     check(declared_cs.get("select_by_category") == "EXECUTE",
           "selecting alters what is highlighted, never what exists")
 
+    # THE SHOW DOOR AND THE TEMPORARY ISOLATE (2026-10-17). Each is EXECUTE,
+    # at the add-in's read-only ceiling, so it runs with Changes OFF - and
+    # each must stay there: one re-declared at Modify would need Changes for
+    # a job that changes only what is on screen, and one declared lower than
+    # what it does would be a door labelled read-only.
+    print()
+    print("Showing is EXECUTE too - the show door and Revit's temporary isolate")
+    for op in ("run_fragment_show", "isolate_temporary", "reset_temporary"):
+        check(declared_cs.get(op) == "EXECUTE",
+              "%s is EXECUTE - found %s" % (op, declared_cs.get(op)))
+    for tool, op in (("revit_show", "run_fragment_show"),
+                     ("revit_isolate_temporary", "isolate_temporary"),
+                     ("revit_reset_temporary", "reset_temporary")):
+        check(tools.TOOLS.get(tool) == (tools.EXECUTE, op),
+              "%s is EXECUTE and calls %s - found %r" % (tool, op, tools.TOOLS.get(tool)))
+
+    # THE SHOW EXECUTOR IS THE READ EXECUTOR, AND MUST STAY IT. They share
+    # RevitFragment.Run; the two-argument overload is the one that opens no
+    # transaction, and `, true)` is the write path. So the routing line is the
+    # whole of the guarantee, and it is read here rather than trusted.
+    operations_cs = io.open(HANDLER_FILES[0], encoding="utf-8").read()
+    routed = re.search(r'case\s+"run_fragment_show"\s*:\s*return\s+([^;]+);', operations_cs)
+    check(routed is not None
+          and routed.group(1).replace(" ", "") == "RevitFragment.Run(app,request)",
+          "run_fragment_show routes to RevitFragment.Run(app, request) - the overload "
+          "that opens no transaction - found: %s"
+          % (routed.group(1) if routed else "no route"))
+
+    # THE ONE TRANSACTION AN EXECUTE OPERATION OPENS is the temporary
+    # isolate's, in its own file, and it calls Revit's three temporary-view
+    # methods and nothing a caller sends.
+    temporary_cs = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitTemporaryView.cs")
+    temporary = (io.open(temporary_cs, encoding="utf-8").read()
+                 if os.path.isfile(temporary_cs) else "")
+    check(bool(temporary), "the temporary isolate has its own file, RevitTemporaryView.cs")
+    check(all(call in temporary for call in ("IsolateElementsTemporary(",
+                                              "IsolateCategoriesTemporary(",
+                                              "DisableTemporaryViewMode(")),
+          "and it calls Revit's own temporary isolate, and DisableTemporaryViewMode "
+          "by name on reset")
+    check("RevitFragment.Run(" not in temporary and "Script" not in temporary,
+          "and runs no fragment - the transaction is around fixed code only")
+    check("new Transaction(" not in operations_cs,
+          "RevitOperations.cs itself still opens no transaction")
+
     print()
     print("Undeclared fails closed, in both directions")
     try:

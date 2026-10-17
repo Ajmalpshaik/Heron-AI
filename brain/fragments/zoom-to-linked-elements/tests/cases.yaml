@@ -1,0 +1,49 @@
+positive:
+  - given: >
+      a loaded structural link, categories Structural Framing, a 3D view in
+      front, alsoSelect left out
+    expect: >
+      the 3D view zooms to a box round the link's beams and stays the view on
+      screen. shown equals the beam count SELECT_FROM_LINK gives for the same
+      link and category, selected is 0, and the selection is untouched
+
+  - given: the same on Revit 2023 or later, with alsoSelect true
+    expect: >
+      the same zoom, and the beams selected as linked elements - Revit's
+      Properties palette names the link. selected equals shown
+
+  - given: the same on Revit 2020, 2021 or 2022, with alsoSelect true
+    expect: >
+      the same zoom, selected 0, and a finding that this release cannot select
+      inside a link from code. Nothing is thrown
+
+  - given: a link placed with a rotation, and one beam far from the link's origin
+    expect: >
+      the zoom lands on the beams where they are DRAWN in the host - not where
+      they would be with no transform. That is the case the eight corners exist
+      for
+
+negative:
+  - given: >
+      the same view, linkName naming the architectural link, categories
+      Structural Framing - a link with no beams in it
+    expect: >
+      shown 0, the camera does not move, and a finding that the link has
+      nothing of those categories. The beams in the OTHER link are not zoomed to
+
+  - given: a linkName that matches nothing
+    expect: refused, with every link in the model listed, and nothing zoomed to
+
+  - given: '"structural" in a model with two structural links'
+    expect: refused as AMBIGUOUS with both named, and nothing zoomed to
+
+  - given: a link that is present but unloaded
+    expect: said to be NOT LOADED - never a zero - and nothing zoomed to
+
+  - given: a sheet, a schedule or a drafting view in front
+    expect: refused by name, with nothing zoomed to and the selection untouched
+
+second_route: >
+  Select one of the same beams in the view by hand with Tab, then use Revit's own
+  Zoom to Fit or Selection Box: the view should arrive where this put it, and
+  the Properties palette should name the same link.

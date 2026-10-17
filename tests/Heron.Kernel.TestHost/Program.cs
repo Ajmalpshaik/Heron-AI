@@ -56,6 +56,12 @@ namespace Heron.Kernel.TestHost
     /// eight - and only running it answers that. Section 8 does, through the
     /// overloads that take a config built in memory, so the owner's own
     /// heron.config is never read or written to check it.
+    ///
+    /// HeronOperationRegistry is RUN here too since 2026-10-17, in section 9,
+    /// for one question its text suites cannot answer: whether the show door
+    /// and the temporary isolate really pass the gate with every switch off.
+    /// That is the registry's level and section 8's rule together, and only
+    /// running both says it.
     /// </summary>
     internal static class Program
     {
@@ -82,6 +88,7 @@ namespace Heron.Kernel.TestHost
             Append();
             Config();
             Permissions();
+            ShowDoor();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -692,6 +699,90 @@ namespace Heron.Kernel.TestHost
             Check(publishWhat.Contains("export") && publishWhat.Contains("save")
                   && publishWhat.Contains("sync with central"),
                   "Publish's refusal says what it covers - export, save, sync with central");
+        }
+
+        // ------------------------------------------------------------------
+        // The show door and the temporary isolate - the registry's EXECUTE
+        // operations through the gate's own rule, every combination.
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// "Show me / zoom to / isolate these" must work with Changes OFF,
+        /// because it changes only what is shown. The add-in decides that from
+        /// two facts: the level HeronOperationRegistry declares for the NAME,
+        /// and HeronPermissions.ReadOnlyCeiling. Section 8 holds the levels;
+        /// this holds the names to them, by running both - so a show operation
+        /// re-declared at Modify, or the ceiling lowered under Execute, fails
+        /// here rather than as "write_disabled" over somebody's selection.
+        /// </summary>
+        private static void ShowDoor()
+        {
+            Console.WriteLine();
+            Console.WriteLine("9. The show door and the temporary isolate, through the gate - every combination");
+
+            Check(HeronPermissions.ReadOnlyCeiling == HeronRisk.Execute,
+                  "the read-only ceiling is Execute - \"changes what is shown, never what exists\"");
+
+            var shows = new[] { "run_fragment_show", "isolate_temporary", "reset_temporary",
+                                "select_by_category" };
+            foreach (var op in shows)
+            {
+                var declared = HeronOperationRegistry.IsDeclared(op);
+                Check(declared, op + " is declared in the tool registry");
+                if (!declared) continue;
+                Check(HeronOperationRegistry.RiskOf(op) == HeronRisk.Execute
+                      && !HeronOperationRegistry.Writes(op),
+                      op + " is Execute, and does not count as a write");
+            }
+
+            // EVERY SWITCH COMBINATION, EVERY DECLARED OPERATION. The rule is
+            // written once here: at or below the ceiling, always; above it,
+            // whatever section 8's rule says - so this only has to hold that
+            // nothing at or below the ceiling is ever refused, and that the
+            // write executor still is with Changes off.
+            var wrong = 0;
+            foreach (var changes in new[] { false, true })
+            foreach (var admin in new[] { false, true })
+            foreach (var publish in new[] { false, true })
+            {
+                var config = Switches(changes, admin, publish);
+                foreach (var op in HeronOperationRegistry.Operations)
+                {
+                    var risk = HeronOperationRegistry.RiskOf(op);
+                    if (risk > HeronPermissions.ReadOnlyCeiling) continue;
+                    if (HeronPermissions.Allows(risk, config)
+                        && HeronPermissions.RefusedBy(risk, config) == null) continue;
+                    wrong++;
+                    Check(false, Said(changes, admin, publish) + ": " + op + " (" + risk
+                                 + ") was refused - it changes only what is shown");
+                }
+            }
+            Check(wrong == 0,
+                  "with every one of the 8 combinations, every operation at or below Execute - "
+                  + "the show door, the temporary isolate and its reset among them - passes the gate");
+
+            var allOff = Switches(false, false, false);
+            foreach (var op in shows)
+            {
+                if (!HeronOperationRegistry.IsDeclared(op)) continue;
+                Check(HeronPermissions.Allows(HeronOperationRegistry.RiskOf(op), allOff),
+                      op + " runs with Changes, Admin and Publish all OFF");
+            }
+            Check(!HeronPermissions.Allows(HeronOperationRegistry.RiskOf("run_fragment_write"), allOff)
+                  && HeronPermissions.RefusedBy(HeronOperationRegistry.RiskOf("run_fragment_write"),
+                                                allOff) == HeronPermissions.WriteEnabledKey,
+                  "while run_fragment_write is still refused with Changes off, by Changes - the "
+                  + "same executor, one level up, and the switch still stands in front of it");
+            // ASKED, NOT CALLED, on a registry that may not have the name:
+            // RiskOf throws for an undeclared operation, and a throw here
+            // would end the run instead of failing this one line.
+            Check(HeronOperationRegistry.IsDeclared("run_fragment_show")
+                  && HeronOperationRegistry.RiskOf("run_fragment_show")
+                     > HeronOperationRegistry.RiskOf("run_fragment_read")
+                  && HeronOperationRegistry.RiskOf("run_fragment_show")
+                     < HeronOperationRegistry.RiskOf("run_fragment_write"),
+                  "and run_fragment_show sits between the read door and the write door - above "
+                  + "Analyze, below Modify");
         }
     }
 }

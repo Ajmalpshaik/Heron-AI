@@ -176,6 +176,28 @@ _KNOWN = {
                           "two open models share that name, so naming one cannot say which "
                           "was meant - nothing was written"),
 
+    # --- Revit's temporary isolate, in the active view (RevitTemporaryView) -
+    #
+    # The first four return before its transaction opens, so nothing in the
+    # view changed. The last two are Revit refusing inside it: rolled back,
+    # and a temporary isolate never touches the model in any case.
+    "ambiguous_request": (REFUSED, FIX_FIRST,
+                          "element ids and a category were both given - two different "
+                          "requests - so nothing was isolated"),
+    "nothing_to_isolate": (REFUSED, FIX_FIRST,
+                          "nothing was named to isolate - no element ids and no category"),
+    "no_view":           (REFUSED, FIX_FIRST,
+                          "the model in front has no active view to work in"),
+    "not_this_view":     (REFUSED, FIX_FIRST,
+                          "the active view has no temporary hide/isolate - a sheet, a "
+                          "schedule or a legend - so nothing was done"),
+    "isolate_failed":    (ROLLED_BACK, FIX_FIRST,
+                          "Revit refused the temporary isolate, and the view's own "
+                          "visibility settings were not touched"),
+    "reset_failed":      (ROLLED_BACK, FIX_FIRST,
+                          "Revit refused to end the temporary hide/isolate; nothing in the "
+                          "model was touched"),
+
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
                           "Revit took it and has not finished; it is still working"),

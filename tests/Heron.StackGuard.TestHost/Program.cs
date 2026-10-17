@@ -232,7 +232,7 @@ namespace Heron.StackGuard.TestHost
                 Console.WriteLine("or that a runaway loop there is stopped and rolled back "
                                   + "while Revit stays responsive.");
                 Console.WriteLine("Those need a model and are NEEDS-CHECKING's to hold "
-                                  + "(J9, and Group ES).");
+                                  + "(J9, and Group ET).");
                 return 0;
             }
 

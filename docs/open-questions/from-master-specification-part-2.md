@@ -399,4 +399,4 @@ on Q-64 to Q-66 had it renumbered Q-67 when `main` was merged. Nothing in the co
 amended to match, with a note beside it rather than an edit to its words.
 
 → [D-126](../decisions/D-126.md), [D-46](../decisions/D-46.md), [21 §4](../21-resilience-and-operations.md),
-[NEEDS-CHECKING Group ES](../needs-checking/group-es.md)
+[NEEDS-CHECKING Group ET](../needs-checking/group-et.md)

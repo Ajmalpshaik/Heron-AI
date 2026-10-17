@@ -62,7 +62,7 @@ CSharpScript on a 200 ms deadline - `while(true){}`,
 loops on, a one-statement body, a recursion with no loop - and a stop asked
 from another thread mid-run, and holds each to stopping within the deadline.
 What that cannot say - a rollback in Revit, Revit coming back, a second pipe
-- is NEEDS-CHECKING Group ES's.
+- is NEEDS-CHECKING Group ET's.
 """
 
 import os

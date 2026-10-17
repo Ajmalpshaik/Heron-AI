@@ -30,6 +30,10 @@ namespace Heron.Revit.Addin
     /// is not tidiness: it means the whole set of things that can change a
     /// model is one file a reviewer can read end to end, and it keeps the
     /// proven read path from being edited every time the write path moves.
+    ///
+    /// Revit's Temporary Hide/Isolate is the one EXECUTE job that needs a
+    /// transaction, and it lives in RevitTemporaryView for the same reason:
+    /// still nothing in THIS file opens one.
     /// </summary>
     internal static class RevitOperations
     {
@@ -218,6 +222,28 @@ namespace Heron.Revit.Addin
 
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
+
+                // THE SHOW DOOR. The read path exactly - no transaction, so
+                // Revit refuses any model change - reached under Execute
+                // rather than Analyze, so a fragment that selects, zooms or
+                // opens a view runs with Changes OFF. The gate above read the
+                // level for the NAME; nothing in the request could have said it.
+                case "run_fragment_show":
+                    return RevitFragment.Run(app, request);
+
+                // Revit's Temporary Hide/Isolate in the active view, and its
+                // reset. The one transaction either opens is in
+                // RevitTemporaryView, its own file for RevitWrite's reason: it
+                // is the only thing reached from this switch that opens one,
+                // and a reviewer should find it in one piece.
+                case "isolate_temporary":
+                    return RevitTemporaryView.Isolate(app,
+                                                      Json.ReadString(request, "ids"),
+                                                      Json.ReadString(request, "category"),
+                                                      Json.ReadString(request, "expectProject"));
+
+                case "reset_temporary":
+                    return RevitTemporaryView.Reset(app, Json.ReadString(request, "expectProject"));
 
                 // THE WRITE PATH FOR FRAGMENTS. It stays in RevitFragment
                 // rather than moving to RevitWrite.cs, and that is the one

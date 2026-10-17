@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the rollback check's bookkeeping WITHOUT Revit.
+
+    The same source-linking pattern Heron.FailureNote.TestHost uses, and for
+    the reason its project file states: HeronRollbackWitness.cs names no
+    Autodesk type - it keeps strings, and asks the caller whether an id still
+    resolves - so it is linked here BY SOURCE rather than through a project
+    reference. Referencing Heron.Revit.Addin would drag in RevitAPI.dll and
+    make the one testable piece untestable on any machine without Revit.
+
+    Linking the source keeps exactly ONE copy of the rule: what is watched,
+    when a loss is blamed on a rollback and when it is not, and the sentences
+    the modeller reads. A second copy written to test the first is how two
+    halves come to agree on paper and not in a running model (FRAGMENT-ISSUES
+    row 96).
+
+    Why it exists at all: a preview is the run rolled back (D-55), and section
+    1c of FRAGMENT-ISSUES holds three rollbacks that did not hold while the
+    reply said they had. Whether a rollback also took the last KEPT job's work
+    was checked by nothing.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.RollbackWitness.TestHost</RootNamespace>
+    <AssemblyName>Heron.RollbackWitness.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!--
+    AND THE BRIDGE'S JSON WRITER AND READER, linked the same way: a refusal
+    the rollback check adds a sentence to is re-read and re-written by them,
+    and the round trip is checked here. Json.cs is in Heron.Bridge, which
+    never references Revit, and names nothing outside System - the reason
+    Heron.FailureNote.TestHost gives for linking it by source rather than
+    referencing Heron.Bridge.
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronRollbackWitness.cs"
+             Link="HeronRollbackWitness.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
+             Link="Json.cs" />
+  </ItemGroup>
+
+</Project>
