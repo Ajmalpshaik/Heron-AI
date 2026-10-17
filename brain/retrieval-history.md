@@ -819,6 +819,36 @@ key, with the day he gave it.
 | 2026-09-23 | 398 | `lexical` | any | `88c7eadd` | 18 | 7 | 4 | 35 | 1 (0) | 5 | 5 of 7 | `1-1-1---31-1-11.-112---4-w------2-15-1-1---11--24311--122w1w14---w1---w1w-w2--1` |
 | 2026-09-23 | 398 | `model` | any | `88c7eadd` | 19 | 11 | 4 | 30 | 1 (0) | 9 | 5 of 7 | `11341----1---11.--32-----.---5--2-1111-2--311-522211--121w1w141-2w1---w-w-w1221` |
 | 2026-09-24 | 398 | `model+rerank` | any | `88c7eadd` | 12 | 14 | 10 | 28 | 1 (0) | 15 | 4 of 7 | `1--51--431---41.43-32-5--.-----24-1213-4--311-312-115--1-w1w143-2w3-1-w-w-w22-4` |
+| 2026-10-17 | 569 | `lexical` | any | `88c7eadd` | 18 | 7 | 4 | 35 | 1 (0) | 9 | 4 of 7 | `141-1----1-4-11.-112-----w-------411-1-2---11--242111-241w1w12---w2---w3w-w2--1` |
+| 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 11 | 5 | 31 | 1 (0) | 11 | 5 of 7 | `11-42----1---21.-252-----w---4----1111-4---11-4222111-231w1w121-3w2---w-w-w1221` |
+| 2026-10-17 | 569 | `lexical` | any | `88c7eadd` | 18 | 7 | 4 | 35 | 1 (0) | 9 | 4 of 7 | `151-1----1-4-11.-112-----w-------411-1-2---11--242111-241w1w12---w2---w3w-w2--1` |
+| 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 12 | 5 | 30 | 1 (0) | 9 | 5 of 7 | `11-42----1---21.-212-----w---4----1111-4--411-4222111-231w1w121-3w2---w-w-w2221` |
+
+### The plain questions — rows 5b-477 and 5b-478, scored beside his
+
+**120 questions a session wrote on 2026-10-14 before reading any card**, frozen out of
+[rows 5b-477 and 5b-478](../docs/fragment-issues/section-5b-rows-401-425.md) into
+[`tests/data/plain-questions.yaml`](../tests/data/plain-questions.yaml) on 2026-10-17, where they had
+lived only as row text. `score-routing.py` asks them after his 79, through the same function, and
+`--record` appends one row here beside his. **They are a session's words, not his**, so they have
+their own table and are never added into his numbers.
+
+- **Every one is a question**, so **Reached a write** is not a judgement call: an answer at or above
+  the write line, read from the operation registry, is [D-86](../docs/DECISIONS.md)'s harm.
+- **Exact** counts answers by a declared phrase, which test a declaration rather than the search.
+- **Named read 1st / in the top 3**: only for the rows whose register row names the read that answers
+  them - the yaml's `answer`, and `named` says how the row named it. The rest are scored on read
+  against write alone.
+- **Per question**, in the file's order: `w` answered by a change; for a row with a named read, `1`–`5`
+  its place and `-` not in the shortlist; for a row with none, `.` a read or a view change; `0`
+  nothing; `?` not scored.
+
+| Date | Fragments | Backend | Revit | Answer key | Asked | Reached a write | Exact | Named read 1st | Named read in the top 3 | Per question |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-17 | 569 | `lexical` | any | `30b3da1f` | 120 | 27 | 24 | 20 of 41 | 32 of 41 | `11..-1w...11..-...w1..1.........www..1www1..1.w2-....1.11....ww1...1w..ww..w....ww-w1..12.w..w...w....wwww......11.w.1.w` |
+| 2026-10-17 | 569 | `model` | any | `30b3da1f` | 120 | 32 | 24 | 17 of 41 | 30 of 41 | `11..www...11..w...w1..1.........www.www.w1..1.www....1.11....ww1...w...ww..w.....www1..1w....w..ww.....www......11...1.w` |
+| 2026-10-17 | 569 | `lexical` | any | `b5734ccb` | 120 | 13 | 47 | 40 of 41 | 41 of 41 | `11..111...11..1...11..1.........ww1..11w11..1.111....1.11....111...1w..w1..w....ww111..11.w..1...w....w111......11.w.1.w` |
+| 2026-10-17 | 569 | `model` | any | `b5734ccb` | 120 | 9 | 47 | 40 of 41 | 41 of 41 | `11..111...11..1...11..1.........ww1.w11.11..1.111....1.11....111...1...w1..w.....w111..11....1..ww.....111......11...1.w` |
 
 ---
 
@@ -1352,6 +1382,117 @@ instead.
   written to look for a pattern in what it moved.
 - **One encoder.** Every `model` number is `potion-base-8M`.
 - **Nothing here met Revit.** The filter is PROVEN on its own proof; a room list through it was not run.
+
+---
+
+## 2026-10-17 — 120 plain questions frozen and scored, the owner's call and D-101 measured
+
+Measured on `main` `37ccfbd0`, **569 fragments**, no Revit filter, through `heron_brain.lookup`, on
+**`lexical`** and **`model`** (model2vec 0.10.0, `minishlab/potion-base-8M`, from a venv outside the
+repository), no re-ranker, every run on its own scratch store.
+
+**The 120 plain questions of [rows 5b-477 and 5b-478](../docs/fragment-issues/section-5b-rows-401-425.md)
+are frozen** into [`tests/data/plain-questions.yaml`](../tests/data/plain-questions.yaml) and scored by
+`score-routing.py` beside his 79; the first two rows of their table above are these runs.
+
+| | `lexical` | `model` |
+|---|---|---|
+| plain questions answered by a write, of 120 | **27** (row 477: 9, row 478: 18) | **32** (15, 17 - the rows' own figures, reproduced) |
+| answered by an exact declared phrase | 24 | 24 |
+| the read the row names, first / top 3, of 41 | 20 / 32 | 17 / 30 |
+
+**His 79 have slipped since the last recorded run** (2026-09-23, 398 fragments; the rows dated today in
+his table): handed a change **5 → 9** on `lexical` and **9 → 11** on `model`, first place 19 → 17 on
+`model`. 171 fragments arrived between the two. The tool names every question that moved; reported,
+not acted on here (D-100).
+
+### The owner's call - 23 sentences measured, not declared
+
+Rows 477 and 478 leave 24 questions as *"a PROVEN read answers it, so declaring there is the owner's
+call."* The 23 advised in [the work note](../docs/work-notes/investigations/2026-10-17-plain-questions-owner-call.md)
+were declared in a scratch copy only - **nothing is declared in the repository until he rules**:
+
+| | `lexical` | `model` |
+|---|---|---|
+| plain questions answered by a write | 27 → **13** | 32 → **9** |
+| his 79, handed a change | 9 → 9 | 11 → **9** |
+| his 79, moved down | #2, 4th → 5th, read to read | #76, 1st → 2nd, read to read |
+| any answer on any set riskier than before | none | none |
+
+### D-101's second half - a risk ceiling, measured as a scratch filter
+
+`heron_retrieve.eligible` patched in a scratch copy to drop fragments above a ceiling, every set asked
+with and without it, and his 79 scored with the filter applied only to the rows a policy flags:
+
+| His 79 | handed a change, `lexical` / `model` | 1st | right answers lost |
+|---|---|---|---|
+| no filter | 9 / 11 | 18 / 17 | - |
+| a host never wrong about "no change wanted", ceiling READ | 2 / 2 | 18 / 17 | 1 / 0 |
+| the same, ceiling at the write line | **0 / 0** | 18 / 18 | 1 / 0 |
+| Heron flags by the first word or a `?` | 6 / 5 | 16-17 / 15-16 | 4-5 / 3 |
+
+The first-word test flags 23 of his 79 and six of them want a change, his *"How many sprinklers do I
+need?"* among them; it misses 14 of his read requests phrased as instructions. The never-wrong host is a
+ceiling, not a forecast - how often the real one is right was not measured.
+
+### The sweep reproduces
+
+`check-risk-crossings.py --revit 2024`, three runs per backend after one change in
+`heron_scope.Store._create`, which re-wrote the store's `meta` rows on every open: byte-identical
+reports, and the store's md5 the same before and after every run (4 crossings on `lexical`, 2 on
+`model`). The identity misses of 2026-09-17 were another checkout's rebuild landing between this one's
+rebuild and its read - reproduced on that day's code; [row 116](../docs/fragment-issues/section-5-rows-101-125.md)
+carries it.
+
+### Applied the same day - the 23 declared, and D-128 built
+
+The owner chose the advice (*"do it the best only"*): the 23 sentences are declared on their cards, and
+D-101's half is [D-128](../docs/DECISIONS.md) - `heron_lookup(question=true)` leaves out every fragment
+above the level just below the change door's. Before it was built, the host's own calls were measured: a
+fresh agent given only the tool's description and 349 shuffled sentences, never the answer key, set the
+flag on each - on three wordings, because D-118's budget for the always-loaded tools left about seventy
+characters: one of 750 (his 79 handed a change 9 → 2 and 9 → 1), a short one (9 → 3 and 9 → 3), and the shipped one,
+the short one with *"selecting, isolating or zooming is not a change"* back. The shipped wording
+flagged all 120 plain questions, 36 of his 79 (none wanting a change) and 1 of 150 write-card
+utterances. Measured on the
+finished tree, scratch stores:
+
+| | `lexical` | `model` |
+|---|---|---|
+| plain questions answered by a write - flag off / on | 13 / **0** | 9 / **0** |
+| the named read first, of 41 - flag off / on | 40 / 41 | 40 / 41 |
+| his 79, handed a change - flag off / with the host's flags | 9 / **1** | 9 / **1** |
+| his 79, first place - flag off / with the host's flags | 18 / 18 | 17 / 19 |
+| the material questions answered by a write - flag off / on | 24 / 0 | 16 / 0 |
+| `check-risk-crossings --revit 2024` (flag off) | 4, as before | 2, as before |
+
+`score-routing.py --record` measured the flag-off path - the rows dated today in both tables, the plain
+set under its new key `b5734ccb` (three answers changed on his word) - and named the same four movements
+the scratch copy had predicted: #2 and #76 down a place, read to read; #19 and #43 up.
+`tests/test_routing_phrases.py` on the trained backend fails the same four checks as on `main`.
+
+**Re-measured after merging `main`'s #555** (570 fragments; row 5b-499 made `ISOLATE_ELEMENTS` a
+MODIFY), with *"isolating"* taken out of the shipped wording - it now says *"Selecting or zooming is not a
+change"*. The host's flags: all 120 plain questions, 32 of his 79, 1 of 150 write-card utterances. His
+79, handed a change flag off → with the host's flags: **8 → 1** on both backends; first place 18 → 18 and
+17 → 17; in the top three 27 → 29 and 28 → 32. Plain questions to a write, flag off / on: 13 / 0 and
+9 / 0, as before. `check-risk-crossings --revit 2024` reports 6 on lexical, the same six as a clean
+`main` - #555's isolate re-rating, not this change.
+
+**One move outside the frozen sets, found by `check-routing`, recorded and not fixed.** On `lexical`
+only, `PLACE_HOSTED_FAMILY`'s routing-table claim *"put doors in the walls at these points"* now reaches
+`CREATE_WALL` - a change to a different change, on a near tie; `CREATE_WALL` was second before. Measured
+one card at a time, it is *"which doors have no tag"* on `FIND_UNTAGGED_ELEMENTS`: one more card saying
+"doors". On `model` it still reaches `PLACE_HOSTED_FAMILY`. Declaring it on its own card is the usual
+repair and is closed here: `tests/test_routing_phrases.py` holds that no card declares it, so ranking
+decides.
+
+### What this does not establish
+
+- **The 120 are a session's sentences**; his 79 decide. One encoder for every `model` figure.
+- **Nothing met Revit.** The measurements before the owner's word lived in scratch copies; what he
+  approved is in the repository, and the host's flags are one agent's calls on one day, not a host
+  watched over real work.
 
 ---
 
