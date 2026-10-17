@@ -1,0 +1,60 @@
+# REPORT_PARAMETER_INVENTORY version 3 - up to 50 elements described fully in
+# one read, ids typed or selected, a link's ids too, in a size it says.
+# NEEDS-CHECKING Group EJ; FRAGMENT-ISSUES row 5b-489.
+#
+# NOT RUN. Written 2026-10-17 in a cloud session with no Revit: version 3 is
+# compiled for 2020 to 2027 and nothing more. Run it on a TEST COPY - a copy
+# of Snowdon-scratch_ajmal.al saved as "Heron Record WS.rvt", worksets enabled
+# on the copy if Collaborate > Worksets says it has none. It only reads.
+#
+# What this file runs is EJ1's selection half and EJ4's negative. The typed
+# 50 ids of EJ1, the cut of EJ2, the link of EJ5 and the rest of Group EJ need
+# ids read off the model first (Manage > IDs of Selection), so they are run by
+# hand with `heron_bridge_client.py validate` - this file cannot know them.
+#
+#   positive  ducts, pipes, walls, mechanical equipment, duct tags and air
+#             terminals in FloorPlan: M1, from the selection chain, the
+#             record whole (maxChars 1000000). More than 50 is a pass too:
+#             the header must then read "FIRST 50 OF N"
+#   negative  the SAME selection, with two ids typed that name nothing. Typed
+#             ids decide over the selection, so nothing is described:
+#             parameterNames 0, both ids in missing, the selection NOT read
+
+model: Heron Record WS.rvt - a workshared copy of Snowdon-scratch_ajmal.al, Revit 2024 (a test copy; this job only reads)
+
+defaults:
+  in: "Heron Record WS"
+
+jobs:
+  - fragment: report-parameter-inventory
+    expect: parameterNames
+    keep-chain: true
+    setup:
+      - select-by-categories
+    setup-set:
+      categories: "Ducts, Pipes, Walls, Mechanical Equipment, Duct Tags, Air Terminals"
+      inViewOnly: "FloorPlan: M1"
+    negative-setup-set:
+      categories: "Ducts, Pipes, Walls, Mechanical Equipment, Duct Tags, Air Terminals"
+      inViewOnly: "FloorPlan: M1"
+    set:
+      sampleOnly: "false"
+      includeTypeParameters: "true"
+      fullRecord: "true"
+      includeTags: "true"
+      maxChars: "1000000"
+    negative-set:
+      sampleOnly: "false"
+      includeTypeParameters: "true"
+      fullRecord: "true"
+      includeTags: "true"
+      maxChars: "1000000"
+      elementIds: "999999999, 999999998"
+    note: >
+      The negative changes one value: two ids typed that name nothing in the
+      model. Read missing (2, both ids) and the finding that the selected
+      elements were NOT read - a read that fell back to the selection would
+      describe them and fail here. In the positive, read the record by eye:
+      every block has its unique id, level, workset and owner view; the ducts,
+      pipes and walls a length in mm; every parameter its built-in name and
+      raw value; and no "RECORD CUT" line.

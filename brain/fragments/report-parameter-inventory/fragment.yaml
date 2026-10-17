@@ -9,7 +9,7 @@ semantic-identity: "every parameter this element actually has, before you know a
 kind: action
 domain: revit.parameters
 capability: REPORT_PARAMETER_INVENTORY
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -85,13 +85,45 @@ purpose: >
 # by the parameter itself, a shared one carries its GUID, and `sameNameTwice`
 # names every name an element or type carries more than once - read, copy and
 # compare those by GUID.
+#
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES row 5b-489, NEEDS-CHECKING Group EJ) -
+# ONE READ-ONLY CALL THAT DESCRIBES UP TO 50 ELEMENTS FULLY. Widened, not
+# added: same capability, same FRG id.
+#
+# - **IDS TYPED AS DIGITS.** `elementIds` takes ids as Revit shows them,
+#   comma separated, and the ids decide over the selection. An id that names
+#   nothing lands in `missing` and the rest are still described.
+# - **A LINK'S IDS.** `linkName` names a placed link - its id, or any part of
+#   its name - and the ids are looked up in that link's own document. Its
+#   locations are given in the link's coordinates with this model's beside
+#   them; tags are not read there. Version 2's ids from a link found nothing.
+# - **FIRST 50 OF N.** The record holds at most 50 elements and says how many
+#   it left out and which id is next.
+# - **PER ELEMENT, NEW:** unique id; level - LevelId, then the five level
+#   parameters READ_ELEMENT_PARAMETERS asks, naming which one answered; owner
+#   view by name; workset by name in a workshared model only; a curve's
+#   length in mm; for a placed link, the linked model's title.
+# - **PER PARAMETER, NEW:** sorted by name ignoring case; the built-in name
+#   (FAMILY_LEVEL_PARAM); and the RAW value by storage type, labelled as
+#   Revit's internal units (feet, radians), beside the value as shown.
+# - **A SIZE IT SAYS.** 50 elements of about 150 parameters at about 100
+#   characters a line is some 750,000 characters, and 535 elements came back
+#   as 6.2 MB (Group DI). The record stops at `maxChars` - 60,000 left out -
+#   with a last line naming every element not written and how to get it;
+#   `parameterFilter` keeps only parameters whose name or built-in name holds
+#   one of its words.
 
 contract:
   needs:
     - name: doc
       type: Document
     - name: elements
+      # Version 3. OPTIONAL: with ids typed in elementIds and nothing
+      # selected it binds EMPTY (HeronBindingNote.EmptyWhenAbsent) and the
+      # ids decide. With neither, the answer says nothing was handed in. A
+      # selection still fills it exactly as before.
       type: IList<Element>
+      optional: true
     - name: sampleOnly
       type: bool
       source: request
@@ -112,6 +144,43 @@ contract:
       type: bool
       source: request
       optional: true
+    # VERSION 3. Element ids as Revit shows them, digits only, comma separated
+    # - "8453537, 8453556". Typed ids decide over the selection. Each is
+    # matched as TEXT against every element's own id in the model looked in,
+    # so no ElementId is built from a number; one that names nothing goes to
+    # `missing` and the rest are described. A STRING ON PURPOSE: the add-in's
+    # typed-id list (row 5b-441) refuses the whole call for one unknown id and
+    # looks only in the host. Left out: "none" - the selection is read.
+    - name: elementIds
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 3. The placed link whose OWN ids elementIds are - its id, or any
+    # part of its name ("Structural", "Structural.rvt"). Left out: "host" -
+    # this model. A link not loaded, or words matching two different linked
+    # models, look nothing up and say why. Read only with elementIds.
+    - name: linkName
+      type: string
+      source: request
+      optional: true
+      absent: host
+    # VERSION 3. The most characters `record` may hold. Past it, the last line
+    # names every element not written. Below 5000 it is raised to 5000.
+    - name: maxChars
+      type: int
+      source: request
+      optional: true
+      absent: "60000"
+    # VERSION 3. Comma-separated words; the record keeps a parameter whose
+    # name or built-in name holds any of them, ignoring case - "level, mark,
+    # offset". Left out: "*" - every parameter. The inventory in `findings`
+    # is not filtered.
+    - name: parameterFilter
+      type: string
+      source: request
+      optional: true
+      absent: "*"
   provides:
     - name: findings
       type: IList<string>
@@ -149,11 +218,20 @@ contract:
       # and includeTags are both true.
       role: result
       type: int
+    - name: missing
+      # VERSION 3. Each value typed in elementIds that named no element in the
+      # model looked in - the host, or the link linkName named - as typed; a
+      # part that is not an id says so. TEXT, because an id that names nothing
+      # cannot become an ElementId without building one from a number. What
+      # it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
 
-# VERSION 2 RAN 2026-10-12 on 4355-BHVD-3D-60A10-BL003A (Revit 2020), read only,
-# both legs held - NEEDS-CHECKING DI, row 5b-443. NOT YET SIGNED. The proof below
-# is version 1's, kept as it was signed: the code has changed since, so it reads
-# STALE until version 2 is signed (D-30).
+# VERSION 3 HAS NOT RUN IN REVIT - compiled only; NEEDS-CHECKING Group EJ is its
+# proof plan. VERSION 2 RAN 2026-10-12 on 4355-BHVD-3D-60A10-BL003A (Revit 2020),
+# read only, both legs held - NEEDS-CHECKING DI, row 5b-443 - and was never
+# signed. The proof below is version 1's, kept as it was signed: the code has
+# changed since, so it reads STALE until version 3 is signed (D-30).
 proof:
   date: '2026-09-08'
   by: Ajmal PS
@@ -201,6 +279,17 @@ compatibility-note: >
   on 2020 and 2021. Both are looked up by name at run time rather than by a
   `#if` (row 5b-181), as `COPY_TAGS_TO_REPLACEMENTS` does.
 
+  Version 3 adds `Element.UniqueId`, `LevelId`, `OwnerViewId` and
+  `WorksetId`, `Document.IsWorkshared`, `GetWorksetTable`,
+  `WorksetTable.GetWorkset(WorksetId)`, `Workset.Name`, `Curve.Length`,
+  `RevitLinkInstance.GetLinkDocument` and `GetTotalTransform`,
+  `Transform.OfPoint`, `Parameter.AsDouble`, `AsInteger` and `AsElementId`,
+  and `ElementIsElementTypeFilter` with `LogicalOrFilter` for the id walk -
+  each read off the reference assemblies as the same on all eight releases
+  with `tools/api-surface --members` (2026-10-17). A typed id is matched by
+  `ElementId.ToString()`, never built with the constructor that became
+  `long` at 2024, and no `IntegerValue` is read.
+
   **`Definition.ParameterGroup` is NOT named, and that is a version decision
   rather than an omission.** It exists on 2020 and is GONE by 2027; the
   replacement `Definition.GetGroupTypeId` does not exist on 2020. Naming either
@@ -209,7 +298,9 @@ compatibility-note: >
 
   No units API is called. Values come back through `AsValueString`, which is
   Revit's own formatting in the project's units - the same reason
-  `READ_SCHEDULE_CONTENTS` reads printed text.
+  `READ_SCHEDULE_CONTENTS` reads printed text. The raw value beside it is
+  Revit's internal number, never converted; points, lengths and boxes are
+  feet times 304.8, millimetres (D-20, D-71).
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -235,6 +326,22 @@ compatibility-note: >
 #    view filter on"                        Present on the element and
 #                                           legal in a filter are different
 #                                           questions
+#   "describe these elements fully"      -> here, with fullRecord (version 3).
+#                                           Every field of up to 50 elements.
+#                                           NOT an utterance, measured
+#                                           2026-10-17: declaring it, or any
+#                                           other sentence, tipped "what
+#                                           parameters does this duct have"
+#                                           to READ_ELEMENT_PARAMETERS, which
+#                                           declares that sentence too while
+#                                           its own table gives it here. Owed
+#                                           to the owner - rows 5b-473, 5b-489
+#   "what is this" / "what family and    -> DESCRIBE_ELEMENTS - category,
+#    type is this"                          family, type and id, nothing more.
+#                                           Identity, not the full record
+#   "the elements carrying these ids"    -> FILTER_ELEMENTS_BY_ID, which HANDS
+#                                           them on to the next step. Typed ids
+#                                           here are described, never handed on
 
 utterances:
   - list every parameter that exists on this element
