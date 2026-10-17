@@ -96,8 +96,11 @@ WHAT IT PROVES, when an SDK is installed
      and a reply with no readable picture, or a refusal, gives no image.
  15. `revit_show` AND THE TEMPORARY ISOLATE, against a stand-in Revit. A
      MODIFY capability is refused before a session is bound; an EXECUTE one
-     goes as run_fragment_show with no `apply`; a capability that works
-     inside a link goes the same way with no question first (D-124);
+     goes as run_fragment_show with no `apply`, and its answer says nothing
+     in the model changed only from the add-in's count (row 5b-350) - with
+     no count, or a lost answer, it says that was not measured; a
+     capability that works inside a link goes the same way with no question
+     first (D-124);
      revit_isolate_temporary and revit_reset_temporary
      send their fixed operations with the pin, and an add-in refusal
      reaches the chat in its own words.
@@ -709,7 +712,8 @@ async def exercise_show(module):
     reply = {"ok": True, "ran": "x", "document": "Project1",
              "documentPath": "C:/jobs/Project1.rvt", "projectKey": "key-1",
              "wasActiveDocument": True, "bound": "elements from the selection (3)",
-             "provides": {"shown": "3", "viewAfter": "{3D}"}, "providesCount": 2}
+             "provides": {"shown": "3", "viewAfter": "{3D}"}, "providesCount": 2,
+             "elementsCounted": 1234}
     revit = StandIn(reply)
     resolved = []
 
@@ -743,6 +747,28 @@ async def exercise_show(module):
               and "Only what is shown can have changed" in said,
               "the answer names the model, and says only the screen can have "
               "changed")
+        check("1,234" in said and "itself refuses" not in said,
+              "and says the model was unchanged from the add-in's own count, not "
+              "from Revit's refusal (row 5b-350)")
+
+        # AN ADD-IN THAT NEVER COUNTED MUST NOT BE SAID TO HAVE - revit_read's
+        # rule, on the same counted read path.
+        revit.reply = {k: v for k, v in reply.items() if k != "elementsCounted"}
+        said = await call("revit_show", {"capability": "ZOOM_TO_ELEMENTS"})
+        check("Nothing in the model was changed" not in said
+              and "not measured" in said,
+              "an answer with no count says the model was not measured")
+
+        # A LOST ANSWER CARRIED THE COUNT AWAY WITH IT.
+        revit.reply = {"ok": False, "error": "unknown_outcome",
+                       "message": "The request reached Revit but the answer was lost."}
+        said = await call("revit_show", {"capability": "ZOOM_TO_ELEMENTS",
+                                         "expect_from": "find-views"})
+        check("find-views" in said and "lost answer" in said
+              and "Nothing in the model was changed" not in said,
+              "a consuming show whose answer was lost says the count went with it, "
+              "and never that nothing was changed")
+        revit.reply = reply
 
         revit.asked[:] = []
         resolved[:] = []

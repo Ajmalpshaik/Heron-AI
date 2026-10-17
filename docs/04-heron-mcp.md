@@ -257,7 +257,9 @@ to drift. The tool list itself is `python mcp/server/heron_tools.py`, never a li
 ### 8.1 A door that only reads — `revit_read`
 
 The add-in has had `run_fragment_read` since [D-28](DECISIONS.md): it runs a fragment with **no transaction
-open**, so Revit itself refuses any change, and it is declared `ANALYZE`, below the read-only ceiling —
+open**, so Revit refuses a change, and the add-in counts the model around every read - a read that moved it
+is answered `read_changed_model`, never as a read ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)).
+It is declared `ANALYZE`, below the read-only ceiling —
 so it runs with **Changes OFF**. Until this tool nothing but the command line sent it, and a chat could
 reach a read only through `revit_change`, with Changes ON, inside a transaction.
 
@@ -584,8 +586,10 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
 ([row 5b-497](fragment-issues/section-5b-rows-401-425.md)).
 
 - **`revit_show` is the third door.** It sends `run_fragment_show`, declared `EXECUTE` in the add-in and
-  routed to the read door's executor with **no transaction open** — so Revit still refuses any change to
-  the model, and what an `EXECUTE` fragment can change is the selection, the camera and the active view.
+  routed to the read door's executor with **no transaction open** — so Revit refuses a change to the
+  model, and the add-in counts the model around the run as it does a read
+  ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) - and what an `EXECUTE` fragment can change is
+  the selection, the camera and the active view.
   Its ceiling is its own row, through the same `door_refusal`: `MODIFY` and above are refused before
   anything is sent, and `revit_read` now sends an `EXECUTE` fragment here rather than to `revit_change`.
   Everything else is §8.1's: the pin, the proof line, the words path, `expect_from`.

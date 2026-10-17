@@ -1841,7 +1841,8 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// The refusal for a job a Revit dialog stopped, or null when none
         /// did. `rolledBack` is null on the read path, where no transaction
-        /// was open and so nothing can have changed; otherwise it is what
+        /// was open and the count before and after found nothing moved - it
+        /// is asked only after that count (row 5b-350); otherwise it is what
         /// SafeRollBack reported, and the sentence says the model is as it
         /// was ONLY when Revit confirmed it - WithVerdict's rule.
         /// </summary>

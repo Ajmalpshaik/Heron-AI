@@ -17,7 +17,8 @@ ON, inside a transaction. A request that changes only the screen needed write pe
 
 **What changed.** `revit_show` (EXECUTE) sends `run_fragment_show`, declared EXECUTE in
 `HeronOperationRegistry.cs` and routed to `RevitFragment.Run(app, request)` - the read path's overload,
-**no transaction open** - so Revit itself still refuses any change to the model, and what an EXECUTE
+**no transaction open** - so Revit refuses a change to the model, and the add-in counts the model around
+the run ([row 5b-350](../fragment-issues/section-5b-rows-326-350.md)) - and what an EXECUTE
 fragment can change is the selection, the camera and the active view. `heron_tools.door_refusal` refuses
 anything above EXECUTE before it is sent. Revit's Temporary Hide/Isolate needs a transaction, so it is
 **not** a fragment: `revit_isolate_temporary` and `revit_reset_temporary` call the fixed operations
