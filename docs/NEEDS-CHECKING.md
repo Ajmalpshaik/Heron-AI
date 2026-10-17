@@ -727,6 +727,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
+## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-69` asks for (2026-10-17)
+
+**Its own file:** [`needs-checking/group-en.md`](needs-checking/group-en.md)
+
 ## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
 
 **Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
