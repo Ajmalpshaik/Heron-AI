@@ -169,9 +169,10 @@ TOOLS = {
 
     # THE READ-ONLY DOOR (package C2, 2026-09-23). The same executor as the
     # row above, reached through `run_fragment_read`, which opens NO
-    # transaction - so Revit itself refuses any change the fragment attempts,
-    # and it runs with Changes OFF because the add-in's gate lets ANALYZE
-    # through without the switch.
+    # transaction - so Revit refuses a change the fragment attempts, and the
+    # add-in counts the model around every read because that refusal once let
+    # an element through (row 5b-350) - and it runs with Changes OFF because
+    # the add-in's gate lets ANALYZE through without the switch.
     #
     # ANALYZE, because that is what `run_fragment_read` is declared in
     # HeronOperationRegistry.cs, and a tool's risk must equal its operation's
@@ -186,12 +187,13 @@ TOOLS = {
     "revit_read":               (ANALYZE, "run_fragment_read"),
 
     # THE SHOW DOOR (2026-10-17). The read door's executor and the read door's
-    # guarantee - `run_fragment_show` opens NO transaction, so Revit itself
-    # refuses any change to the model - one level higher, so a fragment that
-    # selects, zooms or opens a view runs with Changes OFF. The add-in's
-    # read-only ceiling is EXECUTE ("changes what is shown, never what
-    # exists"); until this row only the MCP side held EXECUTE back, because
-    # revit_read's ceiling is its own ANALYZE and revit_change needs Changes.
+    # guarantee - `run_fragment_show` opens NO transaction, so Revit refuses
+    # a change, and the add-in counts the model around it (row 5b-350) - one
+    # level higher, so a fragment that selects, zooms or opens a view runs
+    # with Changes OFF. The add-in's read-only ceiling is EXECUTE ("changes
+    # what is shown, never what exists"); until this row only the MCP side
+    # held EXECUTE back, because revit_read's ceiling is its own ANALYZE and
+    # revit_change needs Changes.
     #
     # EXECUTE, because that is what `run_fragment_show` is declared in
     # HeronOperationRegistry.cs, and door_refusal reads the ceiling from this
