@@ -106,22 +106,35 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-08'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
-  positive_case: run as it would normally be run. returned absent 0 item(s), askingForLevel
-    false, blank 0 item(s), readValue Func`2, resolvedFrom 307 entry(ies), values 307 entry(ies).
-    inputs came elements from the selection (307); parameterName as given. on Snowdon-scratch_ajmal.al
+  model: Heron note scratch, Revit 2020, session 47508 - the count is NOT recorded because
+    21,528 elements was measured on 4355-BHVD-3D-50B10-SR001I, the document in front, and
+    this ran against another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    scratch-numbered-notes with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s), askingForLevel
+    false, askingText true, blank 0 item(s), noteWording note 1474158, 8 paragraph(s): PROVIDE
+    ACCESS PANEL TO ALL CONCEALED DAMPERS\rALL DUCT DIMENSIONS ARE CLEAR INTERNAL\rCONTRACTOR’S
+    SHOP DRAWINGS TO BE APPROVED\vBEFORE FABRICATION\vAND INSTALLATION\rREFER TO DETAIL A
+    FOR HANGERS\rFIRE DAMPERS AS PER DETAIL A\rINSULATE ALL SUPPLY DUCTS\rSEAL ALL JOINTS\rCOORDINATE
+    WITH SERVICES || lists: 1-8 ArabicNumbers from 1 || not typed plainly: ’ (U+2019)
+
+    note 1474159, 4 paragraph(s): GENERAL\rSUB ITEM ONE\rSUB ITEM TWO\rLAST || lists: 1 Bullet,
+    2-3 Bullet indent 1, 4 Bullet, readValue Func`2, resolvedFrom 2 entry(ies), values 2 entry(ies).
+    inputs came elements from scratch-numbered-notes (2); parameterName as given. on Heron
+    note scratch'
   negative_case: run with parameterName=ZZZNOTHINGHERE instead - chosen because it should
-    not contain what this fragment reports. returned absent 307 item(s) [1395899, 1395935,
-    1395946, ...], askingForLevel false, blank 0 item(s), readValue Func`2, resolvedFrom 0
-    entry(ies), values 0 entry(ies). inputs came elements from the selection (307); parameterName
-    as given. on Snowdon-scratch_ajmal.al
+    not contain what this fragment reports - the arrangement was re-made first by running
+    scratch-numbered-notes with this phase's own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned absent 2 item(s) [1474160,
+    1474161], askingForLevel false, askingText false, blank 0 item(s), noteWording (null),
+    readValue Func`2, resolvedFrom 0 entry(ies), values 0 entry(ies). inputs came elements
+    from scratch-numbered-notes (2); parameterName as given. on Heron note scratch
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 85a606210e00a7df
-
+  fingerprint: e38bb43230ec3776
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

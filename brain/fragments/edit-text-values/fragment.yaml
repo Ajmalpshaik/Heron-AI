@@ -169,29 +169,35 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: test projject (3,489 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    list-sheets, set-selection with this phase's own values - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s),
-    blank 0 item(s), changed 1 item(s) [926022], editingName false, handed 2, how replace,
-    namesOnHand Func`2, notText 0, readOnly 0 item(s), refused (null), transform Func`2, untouched
-    1 item(s) [926119], unverified 0 item(s). inputs came elements from the selection (2);
-    field as given; mode as given; text as given; replacement as given. on test projject
-  negative_case: run with field=Sheet Name, mode=replace, text=ZZZNOSUCH, replacement=OSPREY
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running list-sheets, set-selection with this phase's own values -
-    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned absent 0 item(s), blank 0 item(s), changed 0 item(s), editingName false, handed
-    2, how replace, namesOnHand Func`2, notText 0, readOnly 0 item(s), refused (null), transform
-    Func`2, untouched 2 item(s) [926022, 926119], unverified 0 item(s). inputs came elements
-    from the selection (2); field as given; mode as given; text as given; replacement as given.
-    on test projject
+  model: Heron note scratch, Revit 2020, session 47508 - the count is NOT recorded because
+    21,528 elements was measured on 4355-BHVD-3D-50B10-SR001I, the document in front, and
+    this ran against another one (row 15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    scratch-numbered-notes with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s), ambiguous
+    0 item(s), askingText true, blank 0 item(s), changed 1 item(s) [1474134], editingName
+    false, handed 2, how replace, namesOnHand Func`2, notText 0, noteFormatting note 1474134:
+    8 paragraph(s) before, 8 after; read back 1-8 ArabicNumbers from 1; indent and text style
+    kept, noteText Func`2, readOnly 0 item(s), refused (null), transform Func`2, untouched
+    1 item(s) [1474135], unverified 0 item(s). inputs came elements from scratch-numbered-notes
+    (2); field as given; mode as given; text as given; replacement as given. on Heron note
+    scratch'
+  negative_case: run with field=Text, mode=replace, text=ZZZNOSUCH, replacement=DETAIL B instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running scratch-numbered-notes with this phase's own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    absent 0 item(s), ambiguous 0 item(s), askingText true, blank 0 item(s), changed 0 item(s),
+    editingName false, handed 2, how replace, namesOnHand Func`2, notText 0, noteFormatting
+    (null), noteText Func`2, readOnly 0 item(s), refused (null), transform Func`2, untouched
+    2 item(s) [1474136, 1474137], unverified 0 item(s). inputs came elements from scratch-numbered-notes
+    (2); field as given; mode as given; text as given; replacement as given. on Heron note
+    scratch
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f9789f67a49950aa
+  fingerprint: fdd5c3deb8af077b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
