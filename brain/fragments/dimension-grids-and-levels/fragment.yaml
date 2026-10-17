@@ -175,6 +175,8 @@ compatibility-note: >
 #   "dimension this opening from the level and the grid" -> CREATE_LINEAR_DIMENSION
 #                                            (5b-482) - a datum to an element's
 #                                            own face, not datum to datum
+#   "dimension the linked cut-outs to the grid" -> CREATE_LINEAR_DIMENSION
+#                                            (5b-486) - the openings are in a LINK
 #   "dimension the room"                  -> DIMENSION_ROOMS
 #   "how far apart are the grids"         -> REPORT_LEVEL_ELEVATIONS for
 #                                            levels, or a measure - a NUMBER,

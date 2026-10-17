@@ -31,6 +31,45 @@ positive:
       box's left side
     expect: one dimension reading 2000 mm
 
+  # VERSION 4 (5b-486, NEEDS-CHECKING Group EH) - inside a loaded link. A
+  # new project linking a saved one: in the link a N-S wall at x = 0, a box
+  # 300 x 1000 x 600 mm in it 1000 mm up, grid LC at y = -2000, plane RP at
+  # y = -1500, a model line at y = -1000; in the host grid C at y = -2500.
+  - given: >
+      the floor plan and "grid C | link LINKID face BOXID bottom | link LINKID
+      face BOXID top", a line along the wall
+    expect: >
+      one chained string reading "2000 mm + 1000 mm", and a finding that 2 of
+      its references read back as elements of a linked model
+
+  - given: >
+      "grid C | link LINKID grid LC | link LINKID plane RP | link LINKID line
+      LINEID | link LINKID face BOXID bottom | link LINKID face BOXID top"
+    expect: >
+      "500 mm + 500 mm + 500 mm + 500 mm + 1000 mm" - a linked grid, plane and
+      model line, each where it was drawn
+
+  - given: >
+      "link LINKID wall WALLID exterior | link LINKID wall WALLID interior"
+    expect: one dimension reading the linked wall's thickness
+
+  - given: >
+      a section looking at the box and "link LINKID level Level 1 | link LINKID
+      face BOXID top", the same point twice beside it
+    expect: one dimension reading 1600 mm, the linked level to the box's top
+
+  - given: >
+      the link rotated 90 degrees in the host and "grid V | link LINKID face
+      BOXID left | link LINKID face BOXID right"
+    expect: >
+      left and right OF THE VIEW, not of the link - "1000 mm + 2000 mm" with
+      grid V at x = 2500
+
+  - given: >
+      the link said by its model's name, "link HeronLinkSource face BOXID
+      bottom", and in quotes with ".rvt"
+    expect: the same dimension as by its id
+
 negative:
   - given: >
       "grid A | grid Nope" - a name the model does not have
@@ -70,7 +109,34 @@ negative:
       refused saying none of the references says which way the string runs,
       and asking for two different points; nothing created
 
+  - given: >
+      "grid C | link Nope face BOXID left" - a link the model does not place
+    expect: refused naming every link it does place, with its id; nothing created
+
+  - given: >
+      "grid C | link LINKID face 99999999 left" - an id not in that link
+    expect: refused naming the link; nothing created
+
+  - given: >
+      "grid C | face BOXID bottom" - a linked element's id without `link`
+    expect: >
+      refused, saying the id is in that link and how to say it -
+      "link LINKID ..."; nothing created
+
+  - given: the link unloaded, or hidden in the view
+    expect: refused saying which, by the link's name and id; nothing created
+
+  - given: >
+      "link LINKID link LINKID face BOXID bottom", or "link LINKID" with
+      nothing known after it
+    expect: >
+      refused - a link inside a link is not reached, and a link with no word
+      after it is asked for one; nothing created
+
 second_route:
   - >
       Revit's own Annotate then Aligned dimension picked on the same two faces,
       and the two values compared
+  - >
+      the same, picked on the linked box's faces with Tab through the link in
+      the host plan (version 4)

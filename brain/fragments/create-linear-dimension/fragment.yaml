@@ -33,7 +33,27 @@ capability: CREATE_LINEAR_DIMENSION
 # its "a face ... is not offered" means a face picked with the mouse; a face
 # named by its side is offered since version 3. DRAFT until version 3 is run
 # in Revit: NEEDS-CHECKING Group EF.
-version: 3
+#
+# VERSION 4 (2026-10-15, FRAGMENT-ISSUES 5b-486): `between` reaches INTO A
+# LOADED LINK. On the same real project the openings were Generic Model
+# cut-outs in a LINKED model, tagged in the host's builders-work plans, and
+# every word above looked only in the host - so none could be named. One word
+# more, in front of any other:
+#   link LINK WORD ...   LINK is the placed link's id as Revit shows it, its
+#                        unique id, or the linked model's name with or without
+#                        ".rvt" (in "quotes" when it holds one of these words);
+#                        WORD is grid, level, plane, line, wall, family or
+#                        face, read exactly as above but inside the link's own
+#                        document - "link 6347789 face 6667244 left",
+#                        "grid C | link Structure face 6667244 bottom".
+# The face is judged in THIS view's directions through the link's placement,
+# and the reference found is carried across with Reference.CreateLinkReference.
+# A link not loaded, or hidden in the view, is refused naming the links the
+# model places; an id not in the link is refused naming where it IS when it is
+# anywhere - this model or another loaded link. Every version 3 word reads as
+# it did; the purpose is still version 2's, word for word. DRAFT until
+# NEEDS-CHECKING Group EH runs it on a new project linking a saved test one.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -87,6 +107,9 @@ contract:
     # plane's name - and on any element "face 345678 top" - its flat face
     # toward left, right, top or bottom of this view: "grid D | face 345678
     # left", "level Level 1 | face 345678 bottom | face 345678 top".
+    # Inside a loaded link, the link first - its id or its model's name - then
+    # any of those words, read in the link: "grid C | link 456789 face 345678
+    # bottom | link 456789 face 345678 top", "link Structure grid 4".
     - name: between
       type: string
       source: request
@@ -119,8 +142,9 @@ contract:
 
 # THIS PROOF IS VERSION 2's AND IT IS STALE. It ran grids in a floor plan and
 # never reached a family instance, a solid face or a string run through one
-# point - none of which version 2 had. The fingerprint below no longer matches
-# the implementation; Group EF is the run that replaces it.
+# point - none of which version 2 had - nor a link, which version 4 reaches.
+# The fingerprint below no longer matches the implementation; Groups EF and EH
+# are the runs that replace it.
 proof:
   date: '2026-10-03'
   by: Ajmal PS
@@ -169,6 +193,13 @@ compatibility-note: >
   matching its Id.ToString(), never by constructing an ElementId - the int
   and long constructors split at 2024 and 2026.
 
+  Version 4's are the same on every release as well, read the same way on
+  2026-10-15: Reference.CreateLinkReference(RevitLinkInstance) and
+  Reference.LinkedElementId, RevitLinkInstance.GetLinkDocument and
+  GetTotalTransform, Options.DetailLevel, all present 2020 through 2027. A
+  linked element is found by the same Id.ToString() match, inside the link's
+  own document.
+
 # ROUTING - repeated in CREATE_DIMENSION and DIMENSION_GRIDS_AND_LEVELS.
 #
 #   "dimension from this to that"    -> here
@@ -177,6 +208,8 @@ compatibility-note: >
 #   "dimension the opening's width and height in this section" -> here
 #                                       (reached by ranking on the spelling
 #                                       backend only - not declared, see below)
+#   "dimension the linked cut-outs to the grid" -> here, version 4: a
+#                                       reference inside a loaded link
 #   "dimension the duct spacing"     -> DIMENSION_MEP_RUNS - centrelines of
 #                                       parallel MEP runs, and only that
 #   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
@@ -210,3 +243,7 @@ utterances:
   # card on the spelling backend by ranking, and stays where main sends it on
   # the trained ones: LABEL_FAMILY_DIMENSION, DIMENSION_WALL_OPENINGS.
   - dimension this opening from the level and the grid
+  # ADDED 2026-10-15, row 5b-486 - version 4's job: openings in a LINKED
+  # model, tagged in the host's builders-work plans, dimensioned from a grid.
+  - dimension the linked cut-outs to the grid
+  - dimension the openings in the electrical link from the grid
