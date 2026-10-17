@@ -40,6 +40,16 @@ loaded the C# compiler 4.14 before Heron, Heron's own 4.8 C# layer was then boun
 and every fragment failed on Revit 2026 - while 2020 and 2024 showed the same journal conflict line and
 were unaffected. A dependency another add-in may also ship is a 2025+ hazard, not a 2020-2024 one.
 
+**Heron's answer, for the C# compiler: a load context of its own, on 2025 and later only.**
+[`HeronScriptHost`](../../../revit/Heron.Revit.Addin/HeronScriptHost.cs) loads `Heron.Scripting.dll` (the engine
+and the stack guard) into an `AssemblyLoadContext` that takes `Microsoft.CodeAnalysis*` from Heron's folder and
+hands every other name - the Revit API above all - back to the default context, so a fragment still sees the
+types Revit hands it. Not `<ManifestSettings>`: that isolates only 2026 on, and crashes 2025 or older. On
+2025+ the add-in has no compile-time Roslyn reference, so a Roslyn type named outside the two engine files
+fails check-compile there. Proved off Revit by `tests/test_script_isolation.py`; **not yet run in Revit**
+([NEEDS-CHECKING group GW](../../../docs/needs-checking/group-gw.md)). **A new dependency another add-in may
+also ship goes the same way** - into Heron's context, never the default one.
+
 `Directory.Build.props` enforces that: an unlisted version fails the build with a plain-English message
 telling you to confirm the target in the Autodesk SDK and add a row. That guard replaced a condition
 reading `>= 2027`, which silently claimed every future release was .NET 10 and would have produced an
