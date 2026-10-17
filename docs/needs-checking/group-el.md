@@ -9,7 +9,7 @@
 ## Group EL - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
 Asked for by the owner on 2026-10-17: a read-only tool that returns a PNG of a Revit view **into the
-chat**, so the AI can check its own work. [D-116](../DECISIONS.md#d-116--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export)
+chat**, so the AI can check its own work. [D-117](../DECISIONS.md#d-117--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export)
 is the decision, **Accepted** 2026-10-17: the owner answered that a picture is not model data under
 D-82 - *"A picture is not model data, ship it"*.
 

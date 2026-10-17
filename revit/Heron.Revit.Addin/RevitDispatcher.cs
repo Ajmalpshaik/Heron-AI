@@ -488,7 +488,7 @@ namespace Heron.Revit.Addin
                 // THE READING COLOUR, AND THE WORDS SAY WHY. Given element ids
                 // it makes a 3D view somebody watching may glimpse in the
                 // Project Browser, and the group around it is always undone
-                // (D-116) - so the card says a picture, never a change.
+                // (D-117) - so the card says a picture, never a change.
                 case "capture_view":
                     return "Taking a picture of a view for the chat";
 

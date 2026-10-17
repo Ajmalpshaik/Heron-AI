@@ -242,7 +242,7 @@ _KNOWN = {
                           "the request both resets the chain and expects to consume from "
                           "it, so it could only fail"),
 
-    # --- a picture for the chat (capture_view, D-116) ----------------------
+    # --- a picture for the chat (capture_view, D-117) ----------------------
     #
     # Every one of these returns before the TransactionGroup is started, so
     # nothing was made - the temporary 3D view of the elements way included.
