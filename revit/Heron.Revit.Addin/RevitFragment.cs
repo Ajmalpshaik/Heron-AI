@@ -428,6 +428,28 @@ namespace Heron.Revit.Addin
                     + "a read, where nothing is allowed to open one. Nothing was run.");
             }
 
+            // AND ONE THAT OPENS A TRANSACTION WITHOUT SAYING SO. The check
+            // above trusts the declaration; a fragment that opens its own and
+            // declares nothing - or declares noTransactionOpen, a promise to
+            // open none - would start and commit one on the read or show path,
+            // where none is open to stop it, or inside the write path's group
+            // with no failure discipline handed to it. Read off the source as
+            // code before anything runs - see HeronSourceScan for what it can
+            // and cannot see.
+            var opens = HeronSourceScan.OpensTransaction(source);
+            if (opens != null && !ownsTransactions && (!writing || wantsNoTransaction))
+            {
+                return Json.Error("opens_own_transaction",
+                    "'" + name + "' opens a Revit " + opens + " of its own, and it runs where "
+                    + "none may be opened - "
+                    + (wantsNoTransaction
+                        ? "it declares noTransactionOpen, a promise to open none (D-125). "
+                        : "a read, or a run that changes only what is on screen. ")
+                    + "Nothing was run. A fragment that changes the model is declared MODIFY "
+                    + "and runs through revit_change; one that must open its own transactions "
+                    + "declares editScopeFailures (D-112).");
+            }
+
             // THE CALLER'S HALF. A contract may declare a need as
             // `source: request` - a view, a category, a name to match, a
             // distance - and nothing could supply one, so 288 of the 308

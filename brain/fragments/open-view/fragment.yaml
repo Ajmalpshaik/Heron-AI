@@ -69,7 +69,10 @@ purpose: >
   says "none open" where `editScopeFailures` said "opens its own", which the
   add-in refuses everywhere but the write path (FRAGMENT-ISSUES 5b-498). Its
   `impl/` did not move, so its proof stands. Its code's header still names
-  `editScopeFailures`: editing it would make that proof stale.
+  `editScopeFailures`: editing it would make that proof stale. **THAT PROOF
+  WAS TAKEN ON THE WRITE PATH**, inside a group; the show door runs it with
+  none, and is NEEDS-CHECKING Group ES's ES9 until it has been seen there - so
+  a PROVEN line from `revit_show` speaks for this code, not yet for that path.
 
 contract:
   needs:
