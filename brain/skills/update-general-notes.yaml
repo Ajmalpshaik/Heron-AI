@@ -109,7 +109,7 @@ utterances:
 # say" and "update the parameters of these walls" were offered this change,
 # and so were 10 of the 24 asked as questions; without it, those two and all
 # 10 were not, and every sentence of the job that named it still did (row
-# 5b-900). SET_SELECTION and FILTER_ELEMENTS_BY_ID, which only pick the notes
+# 5b-940). SET_SELECTION and FILTER_ELEMENTS_BY_ID, which only pick the notes
 # for try-once, are left off for the same reason.
 needs:
   - SELECT_VISIBLE_IN_VIEW
@@ -125,7 +125,7 @@ preconditions:
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
-  Written 2026-10-17 from the owner's brief, on FRAGMENT-ISSUES row 5b-900:
+  Written 2026-10-17 from the owner's brief, on FRAGMENT-ISSUES row 5b-940:
   the steps of row 5b-520 (pull request #570) were spread over two cards'
   comments and nothing served them as one job. No new capability. Only
   Revit 2020 has run these cards, every run rolled back on a scratch copy;

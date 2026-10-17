@@ -622,7 +622,7 @@ def main():
                   "its one ranked capability - %s"
                   % [m["id"] for m in asked.get("methods") or []])
 
-            # GENERAL NOTES, 2026-10-17 (row 5b-900). Row 5b-520's steps -
+            # GENERAL NOTES, 2026-10-17 (row 5b-940). Row 5b-520's steps -
             # collect a view's notes, read them, edit, read again - sat in two
             # cards' comments and nothing served them as one job. The
             # capabilities are the ones the live lookup returned for these
