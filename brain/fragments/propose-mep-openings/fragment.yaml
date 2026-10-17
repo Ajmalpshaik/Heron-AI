@@ -199,3 +199,8 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "propose the
   # sleeves": CHECK_SLEEVE_SIZE on lexical answered it.
   - propose the sleeves
+  # ADDED 2026-10-17, row 5b-760. "the ducts" beside "these ducts" above: on
+  # lexical it was a coin toss on main 5fa14fd8 (0.2 of one fusion rank over
+  # CREATE_OPENING, a write), and FIND_CLASHES version 3's "what does each
+  # opening cut through in the links" tipped it to the write.
+  - propose openings for the ducts
