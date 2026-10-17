@@ -1978,6 +1978,29 @@ a heading naming a file that is not there, or a file that does not hold that hea
 `RegisterBroken` rather than returning a shorter register - *"a count that quietly omits a whole group is worse
 than no count"*, as the register says of itself.
 
+## `next-id.py` - which id is free, on main and on every branch
+
+```bash
+python tools/next-id.py               # fetch every branch, then the next free id in each register
+python tools/next-id.py --no-fetch    # from the branches as last fetched, and it says so
+python tools/next-id.py --json        # the same answer, for a machine
+```
+
+Four registers take an id a person picks: a NEEDS-CHECKING group, a FRAGMENT-ISSUES 5b row, an open question
+`Q-nn` and a decision `D-nnn`. A session that picks "the next free one" from its own checkout cannot see a branch
+that has not merged, so on 2026-10-17 one pull request renamed its group, row and question three times
+(EK → EL → EQ, 489 → 491 → 511, Q-64 → Q-66) as other pull requests took each id first. This fetches every branch
+on the remote, reads the ids each one holds - from the committed files at its head, never the working tree - and
+prints, per register, **the id above the highest used anywhere**, main's highest, and **which branches hold ids
+above it**. An id two branches both hold is printed as **HELD TWICE**: one of them renames before it merges.
+This checkout's HEAD counts too when it holds commits no remote branch has.
+
+**It writes no register file and reserves nothing**: an id is free as of the run, and only a pushed branch holds
+it. It does not write the NEEDS-CHECKING index either - [heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)
+says why that cannot be generated. Exits **0** with an answer and **2** when it could not look - no git, a fetch
+that failed, no main, or a register with no id on main at all, which means the register moved.
+[`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids.
+
 ---
 
 ## `split-register.py` - one file per section, the register's page as its index
