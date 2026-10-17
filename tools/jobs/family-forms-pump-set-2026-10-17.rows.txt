@@ -1,0 +1,124 @@
+# CREATE_FAMILY_FORMS (create-family-forms, FRG-GEO-060) - NEEDS-CHECKING DA5, the timing.
+#
+# A list the size of the duty/standby booster pump set of row 5b-378, which was
+# built one form a call: the skid's channels, cross members and anchor holes;
+# two vertical multistage pumps with their motors, fins, valves and branches;
+# the suction and discharge headers on posts; a diaphragm tank; a control
+# panel; gauges and lifting lugs. Extrusions and revolves on the metric Generic
+# Model template's three planes, some voids, some with a material or shown at
+# Fine only. EVERY ROW IS MEANT TO BUILD - a refusal here is a finding, not
+# the timing. How many rows it holds is what tests/test_family_forms_rows.py
+# prints; it is not typed here.
+#
+# Copied under C:/Users/ajmal/AppData/Local/Temp/heron-work/da/ and its full
+# path given as `forms`. The command, and where its time is read, are beside
+# the row in docs/needs-checking/group-da.md. Lines starting # are not read.
+kind=extrusion workPlane=Center (Left/Right) profile=-600,0; -500,0; -500,10; -590,10; -590,140; -500,140; -500,150; -600,150 startMm=-1200 endMm=1200 solid=true material=by category
+kind=extrusion workPlane=Center (Left/Right) profile=600,0; 500,0; 500,10; 590,10; 590,140; 500,140; 500,150; 600,150 startMm=-1200 endMm=1200 solid=true material=by category
+kind=extrusion workPlane=Center (Front/Back) profile=rect -1150,0 -1050,150 startMm=-500 endMm=500 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect -650,0 -550,150 startMm=-500 endMm=500 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect -50,0 50,150 startMm=-500 endMm=500 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect 550,0 650,150 startMm=-500 endMm=500 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect 1050,0 1150,150 startMm=-500 endMm=500 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle -1150,-550 12 startMm=0 endMm=150 solid=false
+kind=extrusion workPlane=Ref. Level profile=circle 1150,-550 12 startMm=0 endMm=150 solid=false
+kind=extrusion workPlane=Ref. Level profile=circle -1150,550 12 startMm=0 endMm=150 solid=false
+kind=extrusion workPlane=Ref. Level profile=circle 1150,550 12 startMm=0 endMm=150 solid=false
+kind=extrusion workPlane=Ref. Level profile=rect -800,-200 -400,200 startMm=150 endMm=170 solid=true material=by category
+kind=extrusion workPlane=Ref. Level profile=circle -770,-170 9 startMm=150 endMm=170 solid=false
+kind=extrusion workPlane=Ref. Level profile=circle -430,170 9 startMm=150 endMm=170 solid=false
+kind=revolve workPlane=Center (Front/Back) profile=-600,170; -460,170; -460,420; -600,420 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true material=by category
+kind=revolve workPlane=Center (Front/Back) profile=-600,420; -490,420; -490,900; -600,900 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-500,480; -480,480; -480,500; -500,500 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-500,580; -480,580; -480,600; -500,600 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-500,680; -480,680; -480,700; -500,700 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-500,780; -480,780; -480,800; -500,800 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-600,900; -470,900; -470,980; -600,980 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-600,980; -500,980; -500,1100; -600,1100 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-600,1100; -450,1100; -450,1130; -600,1130 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=-600,1130; -470,1130; -470,1500; -600,1500 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true material=by category
+kind=revolve workPlane=Center (Front/Back) profile=-475,1180; -460,1180; -460,1188; -475,1188 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=-475,1240; -460,1240; -460,1248; -475,1248 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=-475,1300; -460,1300; -460,1308; -475,1308 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=-475,1360; -460,1360; -460,1368; -475,1368 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=-475,1420; -460,1420; -460,1428; -475,1428 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=-475,1470; -460,1470; -460,1478; -475,1478 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=-600,1500; -465,1500; -465,1600; arc -536.36,1663.64 -600,1690 axisLine=-600,0 -600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect -680,1250 -520,1400 startMm=130 endMm=230 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,300 40 startMm=-400 endMm=-140 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,300 75 startMm=-160 endMm=-140 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,300 60 startMm=-300 endMm=-220 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle -600,-260 10 startMm=360 endMm=520 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle -600,-260 80 | circle -600,-260 70 startMm=520 endMm=530 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,800 40 startMm=140 endMm=400 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,800 75 startMm=140 endMm=160 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,800 65 startMm=200 endMm=280 solid=true material=by category
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,800 60 startMm=300 endMm=360 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle -600,330 10 startMm=860 endMm=1000 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle -600,330 80 | circle -600,330 70 startMm=1000 endMm=1010 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -600,200 12 startMm=-150 endMm=-130 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect 400,-200 800,200 startMm=150 endMm=170 solid=true material=by category
+kind=extrusion workPlane=Ref. Level profile=circle 430,-170 9 startMm=150 endMm=170 solid=false
+kind=extrusion workPlane=Ref. Level profile=circle 770,170 9 startMm=150 endMm=170 solid=false
+kind=revolve workPlane=Center (Front/Back) profile=600,170; 740,170; 740,420; 600,420 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true material=by category
+kind=revolve workPlane=Center (Front/Back) profile=600,420; 710,420; 710,900; 600,900 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=700,480; 720,480; 720,500; 700,500 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=700,580; 720,580; 720,600; 700,600 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=700,680; 720,680; 720,700; 700,700 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=700,780; 720,780; 720,800; 700,800 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=600,900; 730,900; 730,980; 600,980 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=600,980; 700,980; 700,1100; 600,1100 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=600,1100; 750,1100; 750,1130; 600,1130 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=600,1130; 730,1130; 730,1500; 600,1500 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true material=by category
+kind=revolve workPlane=Center (Front/Back) profile=725,1180; 740,1180; 740,1188; 725,1188 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=725,1240; 740,1240; 740,1248; 725,1248 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=725,1300; 740,1300; 740,1308; 725,1308 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=725,1360; 740,1360; 740,1368; 725,1368 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=725,1420; 740,1420; 740,1428; 725,1428 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=725,1470; 740,1470; 740,1478; 725,1478 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true detailLevels=fine
+kind=revolve workPlane=Center (Front/Back) profile=600,1500; 735,1500; 735,1600; arc 663.64,1663.64 600,1690 axisLine=600,0 600,2000 startDegrees=0 endDegrees=360 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect 520,1250 680,1400 startMm=130 endMm=230 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,300 40 startMm=-400 endMm=-140 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,300 75 startMm=-160 endMm=-140 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,300 60 startMm=-300 endMm=-220 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle 600,-260 10 startMm=360 endMm=520 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle 600,-260 80 | circle 600,-260 70 startMm=520 endMm=530 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,800 40 startMm=140 endMm=400 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,800 75 startMm=140 endMm=160 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,800 65 startMm=200 endMm=280 solid=true material=by category
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,800 60 startMm=300 endMm=360 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle 600,330 10 startMm=860 endMm=1000 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle 600,330 80 | circle 600,330 70 startMm=1000 endMm=1010 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 600,200 12 startMm=-150 endMm=-130 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=circle -400,300 80 startMm=-1000 endMm=1000 solid=true material=by category
+kind=extrusion workPlane=Center (Left/Right) profile=circle -400,300 85 startMm=-1010 endMm=-1000 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=circle -400,300 85 startMm=1000 endMm=1010 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=circle 400,800 80 startMm=-1000 endMm=1000 solid=true material=by category
+kind=extrusion workPlane=Center (Left/Right) profile=circle 400,800 85 startMm=-1010 endMm=-1000 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=circle 400,800 85 startMm=1000 endMm=1010 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect -930,-430 -870,-370 startMm=150 endMm=220 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect 870,-430 930,-370 startMm=150 endMm=220 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect -930,370 -870,430 startMm=150 endMm=720 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect 870,370 930,430 startMm=150 endMm=720 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=circle -400,300 130 startMm=-1030 endMm=-1010 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=circle 400,800 130 startMm=1010 endMm=1030 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=circle 400,800 130 | circle 400,800 50 startMm=1030 endMm=1040 solid=false
+kind=revolve workPlane=Center (Front/Back) profile=0,400; 180,400; 180,850; arc 127.28,977.28 0,1030 axisLine=0,0 0,2000 startDegrees=0 endDegrees=360 solid=true material=by category
+kind=revolve workPlane=Center (Front/Back) profile=0,400; 180,400; arc 127.28,272.72 0,220 axisLine=0,0 0,2000 startDegrees=0 endDegrees=360 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect -135,-75 -105,-45 startMm=150 endMm=300 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect 105,-75 135,-45 startMm=150 endMm=300 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect -15,115 15,145 startMm=150 endMm=300 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle 0,0 25 startMm=1020 endMm=1090 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect -1180,900 -880,1700 startMm=-150 endMm=100 solid=true material=by category
+kind=extrusion workPlane=Center (Front/Back) profile=rect -1170,910 -890,1690 startMm=100 endMm=110 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=rect -1150,1350 -1130,1450 startMm=110 endMm=130 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect -1180,-140 -1140,-100 startMm=150 endMm=900 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect -920,-140 -880,-100 startMm=150 endMm=900 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle -200,-400 6 startMm=380 endMm=440 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle -200,490 50 startMm=-415 endMm=-385 solid=true
+kind=extrusion workPlane=Ref. Level profile=circle 200,400 6 startMm=880 endMm=940 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=circle 200,990 50 startMm=385 endMm=415 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=rect -620,50 -600,140 startMm=-1190 endMm=-1170 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=rect 600,50 620,140 startMm=-1190 endMm=-1170 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=rect -620,50 -600,140 startMm=1170 endMm=1190 solid=true
+kind=extrusion workPlane=Center (Left/Right) profile=rect 600,50 620,140 startMm=1170 endMm=1190 solid=true

@@ -49,10 +49,34 @@
     had none loaded. Re-check that before assuming it holds for another
     release - Dynamo carries its own, and a conflict here is an add-in that
     dies at OnStartup.
+
+    THAT CONFLICT ARRIVED ON 2026-10-17, from another add-in rather than from
+    Revit (FRAGMENT-ISSUES row 5b-575): on a .NET Revit every add-in shares
+    one default load context, and another add-in's Roslyn 4.14 loaded first
+    left Heron's 4.8 C# layer bound to a core it was not built for. So the
+    reference below is for 2020 to 2024 only, where .NET Framework loads both
+    side by side. From 2025 the compiler lives in Heron.Scripting.dll, which
+    HeronScriptHost loads into a load context of Heron's own; this project
+    then has NO compile-time reference to Roslyn at all, so a Roslyn type
+    named anywhere in the add-in fails the 2025-2027 build instead of binding
+    to whichever copy another add-in loaded.
   -->
-  <ItemGroup>
+  <ItemGroup Condition="'$(RevitVersion)' &lt; '2025'">
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.8.0" />
   </ItemGroup>
+
+  <!--
+    2025 AND LATER: the engine and the guard are built into Heron.Scripting,
+    not here, and that assembly and the compiler beside it are copied into
+    this output - the folder HeronScriptHost loads them from. The copy is
+    Heron.Scripting.targets, shared with the test host that proves it. Not
+    referenced for compiling, so nothing in the add-in can call the engine
+    except through HeronScriptHost.
+  -->
+  <ItemGroup Condition="'$(RevitVersion)' &gt;= '2025'">
+    <Compile Remove="HeronScriptEngine.cs;HeronStackGuard.cs" />
+  </ItemGroup>
+  <Import Project="..\Heron.Scripting\Heron.Scripting.targets" Condition="'$(RevitVersion)' &gt;= '2025'" />
 
   <!-- Option 1: NuGet, when RevitApiDir is not supplied. -->
   <ItemGroup Condition="'$(RevitApiDir)' == ''">

@@ -10,7 +10,7 @@
 # than re-worded here.
 
 agent: HERON-FRG-PRF-002
-version: 1.0.0
+version: 1.1.0
 
 input:
   fragment:
@@ -68,19 +68,42 @@ output:
     description: >
       Why no single release could be named - no proof, none named, or
       more than one, which is ambiguous rather than good news.
+  entries_on:
+    type: list
+    description: >
+      The releases a fresh entry of `proof.releases` stands on (D-131),
+      read by HERON-FRG-MTX-009's `proven_releases`. Each is checked
+      against the runs exactly as the proof's own release is.
+  stale_entries:
+    type: list
+    description: >
+      The releases whose `proof.releases` entry was taken against code
+      that has since moved. Recorded, and not checked.
   contradicted:
     type: map
     description: >
-      Set when the proof's release also carries failures. Two records of
-      the same code on the same release disagree; nothing here picks
-      between them, because a proof is evidence a person recorded and a
-      failure is evidence a machine recorded.
+      The first of `contradicted_all` - the proof's own release when that
+      is contradicted, else the lowest entry release. Two records of the
+      same code on the same release disagree; nothing here picks between
+      them, because a proof is evidence a person recorded and a failure
+      is evidence a machine recorded.
+  contradicted_all:
+    type: list
+    description: >
+      Every release the proof or a fresh entry stands on that also
+      carries failures, the proof's own first, each with its `source`.
   unwatched_since_proof:
     type: map
     description: >
-      Set when the proof stands on a release with no runs at all. One
-      recorded event is what D-30 asks for; it is not evidence that it
-      still works.
+      The first of `unwatched_all` - the proof's own release when it has
+      no runs, else the lowest entry release with none. One recorded
+      event is what D-30 asks for; it is not evidence that it still
+      works.
+  unwatched_all:
+    type: list
+    description: >
+      Every release the proof or a fresh entry stands on with no runs at
+      all, the proof's own first, each with its `source`.
   ran_where_it_does_not_build:
     type: list
     description: >
