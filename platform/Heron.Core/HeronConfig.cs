@@ -63,6 +63,15 @@ namespace Heron.Core
                 { "revit.busyTimeoutSeconds", "10" },    // Revit never picked the request up
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
 
+                // HOW MUCH LONGER A JOB MAY TAKE ONCE IT HAS ASKED THE MODELLER
+                // (D-116). A DRAFT run with "apply": "ask" stops on a Keep or
+                // Discard box in Revit, and a person reading their model is
+                // not a slow operation - so this is added to the operation
+                // timeout, and only for a job that has put the box up. The
+                // client's own deadline adds it too, so the ordering above
+                // still holds.
+                { "revit.askTimeoutSeconds", "300" },
+
                 // MUST be declared here, not only read by HeronPermissions.
                 // Load() adopts a file value ONLY for a key in this table, so
                 // an undeclared key is silently ignored - and a setting that

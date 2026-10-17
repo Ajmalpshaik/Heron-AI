@@ -74,6 +74,7 @@ WHAT IT REFUSES TO DO, AND WHY EACH ONE IS HERE
 """
 
 import argparse
+import hashlib
 import io
 import re
 import json
@@ -569,6 +570,54 @@ DRAFT_HEADER = {
 NOT_ESTABLISHED = "NOT ESTABLISHED"
 
 
+def source_hash(frag):
+    """The hash of a fragment's C# as the client SENDS it, or None. D-117.
+
+    The bridge client records this over the text it sent when a run is kept
+    through the box in Revit (`try-once`). Read here the same way - text mode,
+    universal newlines, sixteen characters - so the same file gives the same
+    answer on both sides; tests/test_try_once.py holds the two together,
+    because the client is stdlib only and cannot import this.
+
+    NOT `frag.fingerprint()`. That hashes every file under impl/ with their
+    paths, which is the right question for a proof going stale; this one asks
+    a narrower thing - is this the code that RAN - and the run sent one file.
+    """
+    folder = getattr(frag, "folder", None)
+    if not folder:
+        return None
+    path = os.path.join(folder, "impl", "any", "fragment.cs")
+    try:
+        with io.open(path, "r", encoding="utf-8") as fh:
+            text = fh.read()
+    except (OSError, UnicodeDecodeError):
+        return None
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def kept_problem(frag, phase):
+    """Why a positive phase taken from a KEPT run cannot stand, or None. D-117.
+
+    A phase that carries `kept` came from the fragment's one run on the live
+    model, through the box in Revit. It is the positive case only when the
+    modeller pressed Keep, and only for the code that ran - so a discarded run,
+    or code that has moved since, is refused here, by `draft` and by `accept`
+    alike. A phase without `kept` is an ordinary run and is not this
+    function's business.
+    """
+    if not phase or "kept" not in phase:
+        return None
+    if phase.get("kept") is not True:
+        return ("the positive phase is a run the modeller did NOT keep, so it is no "
+                "evidence the fragment works (D-117)")
+    current = source_hash(frag)
+    if not phase.get("source_hash") or phase.get("source_hash") != current:
+        return ("the kept run was taken against different code - it ran %s and the "
+                "fragment is now %s. A kept run is evidence for the code that ran and "
+                "no other (D-117)" % (phase.get("source_hash"), current))
+    return None
+
+
 def draft_from_record(frag, record):
     """A proof draft, built only from what the record actually contains.
 
@@ -585,7 +634,13 @@ def draft_from_record(frag, record):
 
     gaps = []
 
-    if positive and positive.get("ok"):
+    # D-117: a positive taken from a kept run stands only if it was kept, and
+    # only for the code that ran.
+    kept_wrong = kept_problem(frag, positive)
+    if positive and positive.get("ok") and kept_wrong:
+        positive_text = NOT_ESTABLISHED + " - " + kept_wrong
+        gaps.append("the kept run cannot be the positive case")
+    elif positive and positive.get("ok"):
         positive_text = describe_phase(positive)
     else:
         positive_text = NOT_ESTABLISHED + " - " + phase_failure(positive)
@@ -1391,6 +1446,9 @@ def _evidence_refusal(slug, frag, proof):
     positive = phases.get("positive")
     if positive is None:
         return "the run record has no positive phase in it"
+    kept_wrong = kept_problem(frag, positive)
+    if kept_wrong:
+        return kept_wrong
     reason, detail = positive_worked(positive, frag)
     flipped = _flag_flipped(positive, phases.get("negative"), frag)
     if reason and flipped:
