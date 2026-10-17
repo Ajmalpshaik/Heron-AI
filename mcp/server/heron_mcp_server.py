@@ -132,20 +132,10 @@ RUNNING = running_code.RunningCode.of_checkout(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # WHAT A PERSON IS TOLD TO INSTALL, when the SDK is missing or has no image
-# type (row 5b-944). On Windows it is requirements-lock.txt's own line: every
-# package pinned and hashed, the file HeronInstaller.exe installs from, for
-# Python 3.11 to 3.14. Unpinned, `pip install mcp` pulled a cryptography that
-# broke on import on 2026-09-16 (README.md). Off Windows the lock cannot
-# install at all - it pins pywin32, which has no wheel there - so the unpinned
-# line stays. tools/heron-ready.py install_lines() makes the same split;
-# tests/test_install_lines.py holds this one to the lock's head.
-LOCK_LINE = "python -m pip install --user --require-hashes -r requirements-lock.txt"
-
-
-def install_line(unpinned, windows=None):
-    """The pip line for Heron's packages: the lock on Windows, `unpinned` elsewhere."""
-    windows = (os.name == "nt") if windows is None else windows
-    return LOCK_LINE if windows else unpinned
+# type: requirements-lock.txt's own line on Windows, the unpinned one elsewhere
+# (rows 5b-944, 5b-979). brain/heron_install.py says it for every part of
+# Heron; heron_brain, imported above, has put brain/ on the path.
+from heron_install import install_line                     # noqa: E402
 
 
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.

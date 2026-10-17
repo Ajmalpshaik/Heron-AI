@@ -99,8 +99,9 @@ import heron_matrix as MX                                         # noqa: E402
 try:
     import yaml
 except ImportError:                                          # pragma: no cover
-    sys.stderr.write("This agent reads fragment.yaml, so it needs PyYAML:\n"
-                     "  pip install --user pyyaml\n")
+    import heron_install as INSTALL
+    sys.stderr.write("This agent reads fragment.yaml, so it needs PyYAML. In the "
+                     "Heron folder:\n  %s\n" % INSTALL.install_line("pip install --user pyyaml"))
     raise
 
 ROOT = HF.ROOT

@@ -7,52 +7,56 @@
 # See docs/29-metadata-standard.md
 
 """
-What Heron's MCP server tells a person to install is the pinned lock, on Windows.
+Every pip line Heron prints for its own packages is the pinned lock, on Windows.
 
     python tests/test_install_lines.py
 
-Row 5b-944. Unpinned, `pip install mcp` pulled a cryptography that broke on
-import on 2026-09-16 (README.md), which is why requirements-lock.txt exists:
-every version pinned, every file hashed, the file HeronInstaller.exe installs
-from. tools/heron-ready.py and tools/HeronRevit.ps1 name it on Windows
-(tests/test_heron_ready.py, tests/test_setup_script.py). The server names a
-pip line in two places of its own - when it cannot load the MCP SDK at all,
-and when revit_view_image meets an SDK with no image type - and this holds
-those two:
+Rows 5b-944 and 5b-979. Unpinned, `pip install mcp` pulled a cryptography that
+broke on import on 2026-09-16 (README.md), which is why requirements-lock.txt
+exists: every version pinned, every file hashed, the file HeronInstaller.exe
+installs from. One function says what to print - brain/heron_install.py's
+install_line() - and this holds it and everything that prints such a line:
 
-  1. The line the server names on Windows is the one requirements-lock.txt
-     names at its own head, so the two cannot drift apart.
-  2. install_line() gives that line on Windows, and the unpinned one
+  1. heron_install.LOCK_LINE is the line requirements-lock.txt names at its
+     own head, so the two cannot drift apart.
+  2. install_line() gives that line on Windows, and the caller's unpinned one
      elsewhere - the lock pins pywin32, which has no wheel off Windows, so
      there it cannot install at all.
-  3. Every string in the server that holds a pip line goes through
-     install_line() - none is typed around it.
-  4. Loaded with an MCP package that has neither SDK's server module, the
-     server stops with the line install_line() gives on this platform.
+  3. In brain/, mcp/ and tools/, every string that names a pip line for a
+     package the lock pins - PyYAML, mcp, cryptography, cffi, or
+     requirements.txt - is handed to install_line(), never printed around
+     it. Docstrings are prose and are left out; brain/fragments/ and tests/
+     are not scanned.
+  4. The MCP server, loaded with an MCP package that has neither SDK's
+     server module, stops with the line install_line() gives here.
+  5. A brain module, and a tool that does not put brain/ on its path, each
+     with no PyYAML, print the line install_line() gives here.
 
-Read from the server's source rather than by importing it, so it runs with no
-MCP SDK installed - which is CI's case.
-
-WHAT IT CANNOT DO: see the Windows line printed on a real Windows. Section 4
-runs on whatever runs this suite; the Windows answer is held by 2 and 3.
+WHAT IT CANNOT DO: see the Windows line printed on a real Windows. Sections 4
+and 5 run on whatever runs this suite; the Windows answer is held by 2 and 3.
 """
 
 import ast
+import contextlib
+import importlib.util
 import io
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BRAIN = os.path.join(ROOT, "brain")
 SERVER_DIR = os.path.join(ROOT, "mcp", "server")
-SERVER = os.path.join(SERVER_DIR, "heron_mcp_server.py")
+HELPER = os.path.join(BRAIN, "heron_install.py")
 LOCK = os.path.join(ROOT, "requirements-lock.txt")
 
-#: The two unpinned lines the server named before row 5b-944, and still names
-#: off Windows.
-UNPINNED = ("pip install --user mcp", "pip install --user --upgrade mcp")
+#: A pip line for a package the lock pins. Optional add-ons (model2vec and the
+#: like) are not in the lock and stay their own lines.
+LOCKED = re.compile(r"pip install[^\n]*?(\bpyyaml\b|\bmcp\b|\bcryptography\b|"
+                    r"\bcffi\b|-r\s+requirements\.txt)", re.I)
 
 FAILURES = []
 
@@ -77,45 +81,51 @@ def lock_line():
     return None
 
 
-def server_parts(tree):
-    """{'LOCK_LINE': value, 'install_line': function} lifted out of the
-    server's source, run on their own - nothing else of the server is run."""
-    nodes = [node for node in tree.body
-             if (isinstance(node, ast.Assign)
-                 and any(getattr(t, "id", None) == "LOCK_LINE" for t in node.targets))
-             or (isinstance(node, ast.FunctionDef) and node.name == "install_line")]
-    space = {"os": os}
-    exec(compile(ast.Module(body=nodes, type_ignores=[]), SERVER, "exec"), space)
-    return space
+def load(path, name):
+    """A file as a module, or None when it is not there."""
+    if not os.path.exists(path):
+        return None
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def pip_strings(tree):
-    """Every string constant in the server that holds a pip line, with whether
-    it is the first argument of a call to install_line()."""
-    wrapped = set()
+def scanned():
+    """The tracked Python files of brain/ (fragments aside), mcp/ and tools/."""
+    done = subprocess.run(["git", "ls-files", "brain/*.py", "mcp/*.py", "tools/*.py"],
+                          cwd=ROOT, stdout=subprocess.PIPE, encoding="utf-8")
+    return [os.path.join(ROOT, f) for f in done.stdout.split()
+            if not f.startswith("brain/fragments/")]
+
+
+def loose_lines(path):
+    """file:line of every string naming a locked package's pip line that is not
+    the first argument of a call to install_line()."""
+    tree = ast.parse(read(path), path)
+    docs, handed = set(), set()
     for node in ast.walk(tree):
-        if (isinstance(node, ast.Call) and getattr(node.func, "id", None) == "install_line"
-                and node.args and isinstance(node.args[0], ast.Constant)):
-            wrapped.add(id(node.args[0]))
-    found = []
-    for node in ast.walk(tree):
-        if (isinstance(node, ast.Constant) and isinstance(node.value, str)
-                and "pip install" in node.value):
-            found.append((node.value, id(node) in wrapped))
-    return found
+        if (isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                              ast.AsyncFunctionDef))
+                and node.body and isinstance(node.body[0], ast.Expr)
+                and isinstance(node.body[0].value, ast.Constant)):
+            docs.add(id(node.body[0].value))
+        if isinstance(node, ast.Call) and node.args:
+            name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+            if name == "install_line":
+                handed.add(id(node.args[0]))
+    where = os.path.relpath(path, ROOT).replace(os.sep, "/")
+    return ["%s:%d" % (where, node.lineno) for node in ast.walk(tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+            and id(node) not in docs and id(node) not in handed
+            and LOCKED.search(node.value)]
 
 
-def load_without_sdk(work):
-    """The server's start-up with an MCP package that has neither SDK's server
-    module: (exit code, what it printed)."""
-    fake = os.path.join(work, "fake")
-    os.makedirs(os.path.join(fake, "mcp", "server"))
-    for part in (("mcp",), ("mcp", "server")):
-        io.open(os.path.join(fake, *(part + ("__init__.py",))), "w").close()
-    code = ("import sys; sys.path[:0] = [%r, %r]; import heron_mcp_server"
-            % (fake, SERVER_DIR))
+def run_python(code, work, **env):
+    """(exit code, everything printed) of `python -c code` in `work`."""
     environ = dict(os.environ, HERON_KNOWLEDGE=os.path.join(work, "store"),
                    PYTHONUTF8="1")
+    environ.update(env)
     done = subprocess.run([sys.executable, "-c", code], cwd=work, env=environ,
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           timeout=300)
@@ -123,26 +133,26 @@ def load_without_sdk(work):
 
 
 def main():
-    for path in (SERVER, LOCK):
-        if not os.path.exists(path):
-            check(False, "%s exists" % os.path.relpath(path, ROOT))
-            return 1
-    tree = ast.parse(read(SERVER), SERVER)
+    if not os.path.exists(LOCK):
+        check(False, "requirements-lock.txt exists")
+        return 1
     wanted = lock_line()
+    helper = load(HELPER, "heron_install_under_test")
 
-    print("1. The server's Windows line is the lock's own")
+    print("1. The Windows line is the lock's own")
     check(wanted is not None,
           "requirements-lock.txt names its install line at its head: %s" % wanted)
-    space = server_parts(tree)
-    have = space.get("LOCK_LINE")
+    check(helper is not None, "brain/heron_install.py is there to say it")
+    have = getattr(helper, "LOCK_LINE", None)
     check(have is not None and have == wanted,
-          "the server's LOCK_LINE is that line: %s" % have)
+          "and its LOCK_LINE is that line: %s" % have)
 
     print()
-    print("2. install_line() - the lock on Windows, the unpinned line elsewhere")
-    line = space.get("install_line")
-    check(line is not None, "the server defines install_line()")
-    for unpinned in UNPINNED:
+    print("2. install_line() - the lock on Windows, the caller's line elsewhere")
+    line = getattr(helper, "install_line", None)
+    check(line is not None, "heron_install defines install_line()")
+    for unpinned in ("pip install --user pyyaml", "pip install --user mcp",
+                     "pip install --user --upgrade mcp"):
         on = line(unpinned, windows=True) if line else None
         off = line(unpinned, windows=False) if line else None
         check(on == wanted,
@@ -152,31 +162,53 @@ def main():
               % (unpinned, off))
 
     print()
-    print("3. Every pip line the server prints goes through install_line()")
-    found = pip_strings(tree)
-    loose = sorted(set(text for text, wrapped in found
-                       if not wrapped and text != wanted))
-    check(not loose, "no pip line is typed around it%s"
-          % ("" if not loose else " - typed: %s" % loose))
-    passed = sorted(set(text for text, wrapped in found if wrapped))
-    check(passed == sorted(UNPINNED),
-          "and it is handed the two the server names - the SDK missing, and "
-          "the SDK with no image type: %s" % passed)
+    print("3. No pip line for a locked package is printed around install_line()")
+    files = scanned()
+    check(len(files) > 0, "brain/, mcp/ and tools/ hold Python files: %d" % len(files))
+    loose = []
+    for path in files:
+        loose.extend(loose_lines(path))
+    check(not loose, "every one goes through install_line()%s"
+          % ("" if not loose else " - not: %s" % ", ".join(loose)))
 
-    print()
-    print("4. With no SDK server module, the server stops naming this platform's line")
     work = tempfile.mkdtemp(prefix="heron-install-lines-")
+    expected = wanted if os.name == "nt" else None      # None: the unpinned line
     try:
-        code, said = load_without_sdk(work)
+        print()
+        print("4. With no SDK server module, the server stops naming this platform's line")
+        fake = os.path.join(work, "fake")
+        os.makedirs(os.path.join(fake, "mcp", "server"))
+        for part in (("mcp",), ("mcp", "server")):
+            io.open(os.path.join(fake, *(part + ("__init__.py",))), "w").close()
+        code, said = run_python("import sys; sys.path[:0] = [%r, %r]; "
+                                "import heron_mcp_server" % (fake, SERVER_DIR), work)
+        mine = expected or "pip install --user mcp"
+        check(code != 0 and "neither" in said,
+              "it does not start, and says the SDK has neither module (exit %d)" % code)
+        check(mine in said, "and names %s" % mine)
+
+        print()
+        print("5. With no PyYAML, a brain module and a tool name this platform's line")
+        shadow = os.path.join(work, "shadow")
+        os.makedirs(shadow)
+        io.open(os.path.join(shadow, "yaml.py"), "w").write(
+            "raise ImportError('PyYAML is not installed here')\n")
+        mine = expected or "pip install --user pyyaml"
+        code, said = run_python("import sys; sys.path[:0] = [%r, %r]; "
+                                "import heron_agents" % (shadow, BRAIN), work)
+        check(code != 0 and mine in said,
+              "brain/heron_agents.py stops and names %s (exit %d)" % (mine, code))
+        tool = os.path.join(ROOT, "tools", "resign-machine-proofs.py")
+        code, said = run_python(
+            "import importlib.util, sys; sys.path[:0] = [%r]; "
+            "spec = importlib.util.spec_from_file_location('t', %r); "
+            "t = importlib.util.module_from_spec(spec); spec.loader.exec_module(t); "
+            "t._yaml()" % (shadow, tool), work)
+        check(code != 0 and mine in said,
+              "tools/resign-machine-proofs.py, which puts no brain/ on its path, "
+              "names %s too (exit %d)" % (mine, code))
     finally:
         shutil.rmtree(work, ignore_errors=True)
-    expected = wanted if os.name == "nt" else UNPINNED[0]
-    check(code != 0 and "neither" in said,
-          "it does not start, and says the SDK has neither module (exit %d)" % code)
-    check(bool(expected) and expected in said,
-          "and names %s - %s"
-          % (expected, "the lock, on Windows" if os.name == "nt"
-             else "the unpinned line, off Windows"))
 
     print()
     if FAILURES:
@@ -184,8 +216,9 @@ def main():
         for one in FAILURES:
             print("  - %s" % one)
         return 1
-    print("PASSED - on Windows the server names requirements-lock.txt's own line,")
-    print("and off Windows the unpinned one. Not seen printed on a real Windows.")
+    print("PASSED - every pip line Heron prints for a locked package goes through")
+    print("install_line(): requirements-lock.txt's own line on Windows, the")
+    print("unpinned one elsewhere. Not seen printed on a real Windows.")
     return 0
 
 

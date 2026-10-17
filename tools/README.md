@@ -1655,8 +1655,9 @@ head and the installer runs - for PyYAML missing, the MCP package missing, and t
 on import. **Off Windows the unpinned lines stay**, because the lock cannot install there: it pins
 `pywin32`, and pip refuses the whole file for that one line (*"No matching distribution found for
 pywin32==312"*, measured on Linux that day). On a Windows Python outside 3.11 to 3.14 - the range the
-lock's header gives - it says so first. `install_lines()` holds the rule; section 6 of the suite holds it
-on both platforms.
+lock's header gives - it says so first. `install_lines()` holds the rule, taking each line from
+[`brain/heron_install.py`](../brain/heron_install.py) - the one place every part of Heron asks what pip line to
+print; section 6 of the suite holds it on both platforms, `tests/test_install_lines.py` everything else.
 
 ## `lock-python.py` — the pinned packages, regenerated and audited
 

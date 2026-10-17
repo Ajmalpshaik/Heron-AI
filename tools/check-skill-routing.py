@@ -386,7 +386,9 @@ def declared_by_fragments():
     try:
         import yaml
     except ImportError:
-        sys.stderr.write("This needs PyYAML: pip install --user pyyaml\n")
+        import heron_install as INSTALL
+        sys.stderr.write("This needs PyYAML - in the Heron folder: %s\n"
+                         % INSTALL.install_line("pip install --user pyyaml"))
         raise SystemExit(2)
 
     fragments = os.path.join(ROOT, "brain", "fragments")

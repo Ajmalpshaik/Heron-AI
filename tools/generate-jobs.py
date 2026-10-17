@@ -106,8 +106,9 @@ import heron_bridge_client as CLIENT                            # noqa: E402
 try:
     import yaml
 except ImportError:                                          # pragma: no cover
-    sys.stderr.write("A job file is YAML, so this needs PyYAML:\n"
-                     "  pip install --user pyyaml\n")
+    import heron_install as INSTALL
+    sys.stderr.write("A job file is YAML, so this needs PyYAML. In the Heron folder:\n"
+                     "  %s\n" % INSTALL.install_line("pip install --user pyyaml"))
     raise
 
 RUNS = os.path.join(ROOT, "brain", "proof-drafts", "runs")

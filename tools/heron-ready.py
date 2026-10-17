@@ -82,6 +82,8 @@ for folder in (SERVER, CLIENT, BRAIN):
     if folder not in sys.path:
         sys.path.insert(0, folder)
 
+import heron_install as INSTALL                         # noqa: E402 - brain/, os alone
+
 OK, FIX, NOTE = "ok", "FIX", "--"
 
 MISSING = []
@@ -140,8 +142,8 @@ def _same_file(a, b):
 
 #: The line a person types on Windows for any of Heron's packages: every one
 #: pinned and hashed, the file HeronInstaller.exe installs from - the line
-#: requirements-lock.txt names at its own head.
-LOCK_LINE = "python -m pip install --user --require-hashes -r requirements-lock.txt"
+#: requirements-lock.txt names at its own head. brain/heron_install.py owns it.
+LOCK_LINE = INSTALL.LOCK_LINE
 
 #: The Pythons the lock installs on: rpds-py, which jsonschema needs, starts at
 #: 3.11, and 3.14 is the newest its Windows wheels were downloaded for - the
@@ -164,17 +166,20 @@ def install_lines(job, windows=None, minor=None):
     """
     windows = (os.name == "nt") if windows is None else windows
     minor = sys.version_info[1] if minor is None else minor
-    if not windows:
-        return [{"yaml": "pip install --user -r requirements.txt",
-                 "mcp": "pip install --user mcp",
-                 "repair": "pip install --user --upgrade mcp cryptography cffi"}[job]]
-    if not LOCK_OLDEST_MINOR <= minor <= LOCK_NEWEST_MINOR:
+    if job == "yaml":
+        line = INSTALL.install_line("pip install --user -r requirements.txt", windows)
+    elif job == "mcp":
+        line = INSTALL.install_line("pip install --user mcp", windows)
+    else:
+        line = INSTALL.install_line("pip install --user --upgrade mcp cryptography cffi",
+                                    windows)
+    if windows and not LOCK_OLDEST_MINOR <= minor <= LOCK_NEWEST_MINOR:
         return ["The pinned packages are for Python 3.%d to 3.%d - install one with"
                 % (LOCK_OLDEST_MINOR, LOCK_NEWEST_MINOR),
                 "winget install Python.Python.3.12 --scope user, then in a NEW "
                 "terminal, in the Heron folder:",
-                LOCK_LINE]
-    return [LOCK_LINE]
+                line]
+    return [line]
 
 
 def packages(windows=None, minor=None):
