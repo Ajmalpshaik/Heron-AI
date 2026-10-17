@@ -65,6 +65,7 @@ import heron_search as SEARCH                                 # noqa: E402
 import heron_embed as EMBED                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
 import heron_rerank as RERANK                                 # noqa: E402
+import heron_capability as CAP                                # noqa: E402
 
 # The constant in reciprocal rank fusion. 60 is the value the technique is
 # normally used with; what it does is stop rank 1 from dwarfing everything
@@ -469,12 +470,38 @@ QUALITY_SPAN = (max(QUALITY[s] for s in OFFERABLE)
                 - min(QUALITY[s] for s in OFFERABLE))
 
 
-def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE):
+# The words every ceiling exclusion opens with, so a caller can count them
+# without parsing the rest of the sentence.
+QUESTION_REASON = "asked as a question"
+
+
+def above_ceiling(risk, ceiling):
+    """True when a fragment's declared `risk` sits above `ceiling` on the ladder.
+
+    A risk nobody can read counts as above: under a ceiling, "could not tell"
+    must not be offered as "safe". A ceiling that is not on the ladder is a
+    caller's mistake and raises.
+    """
+    order = CAP.RISK_ORDER
+    if ceiling not in order:
+        raise ValueError("%r is not a risk on the ladder %s"
+                         % (ceiling, ", ".join(order)))
+    word = (risk or "").strip().upper()
+    return word not in order or order.index(word) > order.index(ceiling)
+
+
+def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE,
+             ceiling=None):
     """(rows, excluded). Everything allowed to be an answer, and what was not.
 
     This is a SQL WHERE, not a search, and it runs FIRST. Most of the corpus
     disappears here for nothing, and - far more importantly - the rules that
     must never be a matter of degree are applied where degree does not exist.
+
+    `ceiling` is a risk on the ladder, or None. D-128: when the host says a
+    request is a QUESTION, every fragment above it is left out here, the way
+    the Revit wall leaves out the wrong release - not ranked lower, not
+    offered at all. None, the default, filters nothing.
     """
     rows, excluded = [], []
     for row in store.fragments():
@@ -498,6 +525,16 @@ def eligible(store, revit=None, domain=None, kind=None, statuses=OFFERABLE):
 
         if kind and row["kind"] != kind:
             excluded.append(Excluded(row["id"], "kind is %s" % row["kind"]))
+            continue
+
+        # LAST, so a fragment the walls above already removed keeps their
+        # reason - the server counts the Revit wall's by its words.
+        if ceiling is not None and above_ceiling(row["risk"], ceiling):
+            excluded.append(Excluded(
+                row["id"], "%s: declared %s, above %s - a question is not "
+                "answered by a change (D-128)"
+                % (QUESTION_REASON, row["risk"] or "with no readable risk",
+                   ceiling)))
             continue
 
         rows.append(row)
@@ -658,7 +695,7 @@ def _rerank(text, ranked, passage):
 # ---------------------------------------------------------------------------
 
 def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
-             pool=20):
+             pool=20, ceiling=None):
     """The full stack. Returns (candidates, excluded).
 
     `pool` is how deep each route is asked before fusing - docs/05 s4's "top
@@ -666,8 +703,10 @@ def retrieve(store, text, revit=None, domain=None, kind=None, limit=5,
     is built to find: a fragment ranked 1st by words and 8th by nearness is a
     better answer than one ranked 2nd by words and nowhere by nearness, and
     that is invisible if nearness is only asked for three.
+
+    `ceiling` is eligible()'s: a question's risk ceiling, or None (D-128).
     """
-    allowed, excluded = eligible(store, revit, domain, kind)
+    allowed, excluded = eligible(store, revit, domain, kind, ceiling=ceiling)
     if not allowed:
         return [], excluded
 
@@ -1133,7 +1172,7 @@ def librarian(text, scopes=None, project=None, limit=5, project_name=None):
     return out
 
 
-def find(store, text, revit=None, limit=5):
+def find(store, text, revit=None, limit=5, ceiling=None):
     """What the rest of Heron calls. Identity and cache first, then the stack.
 
     Steps 9's two one-lookup routes still come first and still mean what they
@@ -1145,9 +1184,14 @@ def find(store, text, revit=None, limit=5):
     match on a fragment that does not support this Revit is still a fragment
     that does not support this Revit, and the wall does not have a door in it
     for convenience.
+
+    AND SO DOES A QUESTION'S CEILING (D-128). A write that declares the exact
+    words of a question is still a write, so under a ceiling it falls through
+    to the ranked search over what is left - and if nothing below the ceiling
+    matches, the answer is "nothing", which is the honest one.
     """
     SEARCH.ensure_tables(store)
-    allowed, _ = eligible(store, revit)
+    allowed, _ = eligible(store, revit, ceiling=ceiling)
     keep = set(row["id"] for row in allowed)
 
     fid, status = SEARCH.short_circuit(store, text)
@@ -1168,7 +1212,8 @@ def find(store, text, revit=None, limit=5):
                                   "a decision" % hits)
 
     pool = 20
-    ranked, excluded = retrieve(store, text, revit=revit, limit=limit, pool=pool)
+    ranked, excluded = retrieve(store, text, revit=revit, limit=limit, pool=pool,
+                                ceiling=ceiling)
     if not ranked:
         note = "nothing matched"
         blocked = [e for e in excluded if "Revit" in e.reason]
@@ -1176,6 +1221,10 @@ def find(store, text, revit=None, limit=5):
             note += (". %d fragment(s) were excluded by the Revit version "
                      "filter - they exist, they are just not for this release"
                      % len(blocked))
+        asked = [e for e in excluded if e.reason.startswith(QUESTION_REASON)]
+        if asked:
+            note += (". %d fragment(s) that change the model were left out, "
+                     "because this was asked as a question (D-128)" % len(asked))
         return SEARCH.Answer("nothing", note=note, candidates=[])
 
     best = ranked[0]
