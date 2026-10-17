@@ -137,9 +137,12 @@ purpose: >
 #   in `unverified`, said in `noteFormatting`. A note already as asked is
 #   `untouched`, and nothing is written to it.
 #
-#   NOT RUN IN REVIT. Compiled for all eight releases; the proof plan is in
-#   tests/cases.yaml and NEEDS-CHECKING group FD. Version 1's proof below no
-#   longer describes the code and is kept as a record.
+#   RUN 2026-10-17 IN REVIT 2020, every run rolled back, on "Heron Note Format
+#   Test" (a copy of the rst_basic sample): NEEDS-CHECKING group FD rows FD1-FD3
+#   and FD5-FD9 answered as looked for. The proof draft is FD1/FD2; the
+#   signature is owed (FD10). Compiled for all eight releases; not run on
+#   2021-2027. Version 1's proof below no longer describes the code and is
+#   kept as a record.
 
 contract:
   needs:

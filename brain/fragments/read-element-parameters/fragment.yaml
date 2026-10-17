@@ -76,11 +76,14 @@ purpose: >
 # the check reads all of it: `noteWording` adds each paragraph's bold, italic
 # and underline - "bold 1; partly bold 3; underline 5-6" - and every list's own
 # start number, where version 3 read the first paragraph's only. A note with
-# none of the three says nothing about them. NOT RUN IN REVIT: compiled for all
-# eight releases; GetBoldStatus, GetItalicStatus and GetUnderlineStatus read the
-# same in RevitAPI 2020 to 2027 (tools/api-surface, one release at a time).
-# Version 3's proof draft, made 2026-10-17 on the owner's PC, no longer
-# describes this code; the proof plan is NEEDS-CHECKING group FD.
+# none of the three says nothing about them. RUN 2026-10-17 IN REVIT 2020,
+# rolled back, on "Heron Note Format Test" (a copy of the rst_basic sample):
+# NEEDS-CHECKING group FD row FD3 answered as looked for - "lists: 1-3 Bullet
+# || bold 2; underline 3" - and is the proof draft; the signature is owed
+# (FD10). Compiled for all eight releases; GetBoldStatus, GetItalicStatus and
+# GetUnderlineStatus read the same in RevitAPI 2020 to 2027 (tools/api-surface,
+# one release at a time); not run on 2021-2027. Version 3's proof draft, made
+# earlier on 2026-10-17, no longer describes this code.
 
 contract:
   needs:
