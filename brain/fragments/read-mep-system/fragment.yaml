@@ -102,3 +102,14 @@ utterances:
   # whether the system is complete. Declared so it resolves by `identity`
   # before any ranking runs. FRAGMENT-ISSUES row 133.
   - check the system is complete
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-477, 5b-478). The system name and type,
+  # and every element on no system. Measured reaching CREATE_MEP_SYSTEM,
+  # SET_MEP_SYSTEM_TYPE and CREATE_MEP_SYSTEM_TYPE - writes. Their words moved
+  # one of the owner's 79 on the trained backend, read to read: #76 "Find the
+  # VCDs.", SELECT_BY_FAMILY 1st -> 2nd. Nothing on any frozen set became
+  # riskier (brain/retrieval-history.md, 2026-10-17).
+  - which system is this duct on
+  - which pipes are not in a system
+  - what is the system classification of this pipe

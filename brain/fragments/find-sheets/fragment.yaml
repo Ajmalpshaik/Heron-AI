@@ -104,6 +104,10 @@ compatibility-note: >
 #   "the m series sheets"              -> here - narrowed by number or by name
 #   "which sheets are empty"           -> LIST_SHEETS - every sheet, with how many views
 #                                         each one carries
+#   "these sheets: 179, 180, 181"      -> FIND_SHEETS_BY_REVISION_OR_NUMBER - whole
+#                                         numbers; "17" here also finds 170 and 179
+#   "sheets on revision 15"            -> FIND_SHEETS_BY_REVISION_OR_NUMBER - any
+#                                         revision on the sheet. Row 5b-550
 
 utterances:
   - which sheets are in this model

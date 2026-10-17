@@ -136,6 +136,13 @@ utterances:
 # print-set step is added (row 5b-466 asks MANAGE_SHEET_SETS for an add mode
 # first), LIST_SHEET_SETS is its read-back and goes in this list beside it.
 #
+# NOT NAMED EITHER (2026-10-17, row 5b-550): FIND_SHEETS_BY_REVISION_OR_NUMBER,
+# which picks the sheets of one revision, or a typed list of sheet numbers,
+# for an issue. Every sheet here is made by step 1, so its number is already
+# known, and no step issues a revision or saves a set. It goes in beside
+# MANAGE_SHEET_SETS when that print-set step is added - the find first, the
+# set from its elements.
+#
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   # Step 0's check that the model has a file to go back to.

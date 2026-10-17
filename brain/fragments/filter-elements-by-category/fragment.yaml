@@ -236,3 +236,12 @@ utterances:
   # the size-breakdown chain, grouped by level instead of by size.
   - list the walls on level 2
   - how many walls are on each level
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-477, 5b-478). Row 5b-401's shape:
+  # category Rooms, levelId the level named. Measured reaching SET_ROOM_LIMITS
+  # and PLACE_ROOMS - writes. The two rows named REPORT_ROOM_SPACE_DATA, which
+  # refuses an empty selection; his word settled the two sources this way.
+  # Nothing on any frozen set became riskier (retrieval-history.md, that day).
+  - how many rooms are on level 1
+  - which rooms are on level 2
