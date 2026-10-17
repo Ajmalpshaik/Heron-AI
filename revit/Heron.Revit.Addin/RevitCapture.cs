@@ -17,12 +17,12 @@ using Heron.Core;
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// A picture of one view, handed back to the chat - capture_view, D-119.
+    /// A picture of one view, handed back to the chat - capture_view, D-123.
     ///
     /// ============================ NEVER RUN ============================
     /// Written on a machine with no Revit. It COMPILES on 2020 through 2027
     /// and that is the whole of what is known about it. NEEDS-CHECKING group
-    /// EM is the run that would say more.
+    /// ER is the run that would say more.
     /// ===================================================================
     ///
     /// WHAT IT IS FOR. A chat that has just placed a duct, built a family or

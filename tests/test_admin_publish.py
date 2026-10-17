@@ -593,7 +593,7 @@ def main():
 
     # ------------------------------------------------------------------
     print()
-    print("8. A picture for the chat is not an export, and does not move one (D-119)")
+    print("8. A picture for the chat is not an export, and does not move one (D-123)")
     # capture_view writes a PNG too, and could be mistaken for a way round
     # the Publish switch. What makes it not an export is WHERE the file goes
     # and what becomes of it - so those are read here, and the export that
