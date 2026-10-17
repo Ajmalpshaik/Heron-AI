@@ -52,9 +52,9 @@ source:
   frozen: "2026-10-17"
 
 # {n, was, now, date, said} - one entry per answer the owner's word changed.
-# He was shown the table in docs/work-notes/investigations/2026-10-17-plain-
-# questions-owner-call.md, with these three marked as differing from the row,
-# and chose its advice.
+# He was shown a table in a work note, 2026-10-17-plain-questions-owner-call.md
+# (retired once #565 merged; git history holds it at 5fa14fd8), with these
+# three marked as differing from the row, and chose its advice.
 corrections:
   - n: 15
     was: [REPORT_ROOM_SPACE_DATA]
