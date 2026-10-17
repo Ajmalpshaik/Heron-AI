@@ -711,9 +711,13 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ei.md`](needs-checking/group-ei.md)
 
-## Group EJ - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ej.md`](needs-checking/group-ej.md)
+
+## Group EK - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

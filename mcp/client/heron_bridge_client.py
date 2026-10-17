@@ -180,6 +180,14 @@ HERON_VERSION = "0.1.0"
 RETRY_ATTEMPTS = 3
 RETRY_BACKOFF_S = 0.15
 
+#: HOW OFTEN A CALLER WAITING ON REVIT IS TOLD THE WAIT GOES ON. A reply can
+#: be minutes away for a reason nobody can see from here - a slow fragment, a
+#: family build, a modeller answering a prompt in Revit - and a host told
+#: nothing in that time cannot tell a wait from a hang. Only a caller that
+#: passes `on_wait` is told; nothing goes down the pipe, so the protocol is
+#: unchanged and Revit is asked nothing more.
+WAIT_NOTE_S = 10.0
+
 
 def newest_log():
     """The add-in writes one log file per day so retention can mean something.
@@ -252,7 +260,7 @@ class Bridge(object):
                     return None
                 time.sleep(0.05)
 
-    def _read_line(self, handle, timeout):
+    def _read_line(self, handle, timeout, on_wait=None):
         """
         One newline-terminated response, or None if it never arrives.
 
@@ -260,6 +268,12 @@ class Bridge(object):
         deadline of its own here. On timeout the caller closes the handle, which
         unblocks the thread - it is a daemon, so it can never hold the process
         open either way.
+
+        `on_wait`, when given, is called every WAIT_NOTE_S with the seconds
+        waited so far, from THIS thread - the one that sent the request - and
+        never after the answer or the deadline. It is told, never asked: what
+        it returns is ignored, and a fault in it silences it for the rest of
+        this read without costing the read its answer.
         """
         result = {}
 
@@ -280,13 +294,27 @@ class Bridge(object):
         worker = threading.Thread(target=reader)
         worker.daemon = True
         worker.start()
-        worker.join(timeout)
+        if on_wait is None:
+            worker.join(timeout)
+        else:
+            started = time.time()
+            deadline = started + timeout
+            while worker.is_alive():
+                left = deadline - time.time()
+                if left <= 0:
+                    break
+                worker.join(min(WAIT_NOTE_S, left))
+                if worker.is_alive() and time.time() < deadline and on_wait is not None:
+                    try:
+                        on_wait(time.time() - started)
+                    except Exception:                  # noqa: BLE001 - see docstring
+                        on_wait = None
         if worker.is_alive():
             return None            # still waiting; the caller closes the handle
         return result.get("line") or None
 
     def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
-                op_args=None, idempotent=True):
+                op_args=None, idempotent=True, on_wait=None):
         """
         Send one request, return the parsed response. None if unreachable.
 
@@ -306,6 +334,9 @@ class Bridge(object):
         `idempotent` defaults to True. Step 6 writes MUST pass False - repeating
         a move because the answer went missing would move the same ducts twice,
         and "it looked like it failed" is exactly how that happens.
+
+        `on_wait` is _read_line's: called while the answer is awaited, so a
+        caller can say the wait goes on. It changes nothing that is sent.
         """
         body = {"op": op, "token": self.token, "client": CLIENT_ID}
         if op_args:
@@ -351,7 +382,7 @@ class Bridge(object):
                 self.close()
                 continue
 
-            line = self._read_line(handle, response_timeout)
+            line = self._read_line(handle, response_timeout, on_wait)
 
             if line is None:
                 self.close()
