@@ -911,8 +911,14 @@ def print_sizes(as_json=False):
         print()
         print("  NOT MEASURED - %s: %s" % (what, reason))
         if what == "schemas":
+            brain = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+                os.path.abspath(__file__)))), "brain")
+            if brain not in sys.path:
+                sys.path.insert(0, brain)
+            import heron_install as INSTALL
             print("  The descriptions above are read off the source and need no SDK;")
-            print("  a schema is written by the SDK, so it needs one:  pip install --user mcp")
+            print("  a schema is written by the SDK, so it needs one:  %s"
+                  % INSTALL.install_line("pip install --user mcp"))
     print()
     print("Descriptions from heron_mcp_server.py's own docstrings; schemas and the whole")
     print("tool from the SDK's own list. The budget is tests/test_tool_sizes.py.")

@@ -274,9 +274,9 @@ WORKSPACE_KEEP = [
     "docs",                         # what the AI reads to answer
     ".mcp.json",                    # Claude Code reads this from the folder it opens
     "README.md",
-    "requirements.txt",             # WHAT-TO-INSTALL step 4 installs from it
+    "requirements.txt",             # the list check-dependencies reads
     "requirements-optional.txt",    # and check-dependencies reads both
-    "requirements-lock.txt",        # the pinned packages PythonSetup installs
+    "requirements-lock.txt",        # the pinned packages PythonSetup and WHAT-TO-INSTALL step 4 install
     os.path.join("platform", "heron-products.json"),   # the installer's own list
     os.path.join("tools", "deploy-addin.ps1"),         # what an installer drives
     os.path.join("tools", "HeronRevit.ps1"),           # and what that dot-sources

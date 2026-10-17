@@ -53,13 +53,15 @@ import hashlib
 try:
     import yaml
 except ImportError:                                          # pragma: no cover
+    import heron_install as INSTALL
     sys.stderr.write(
-        "Heron's brain needs PyYAML to read fragment.yaml.\n"
-        "  pip install --user pyyaml\n"
+        "Heron's brain needs PyYAML to read fragment.yaml. In the Heron folder:\n"
+        "  %s\n"
         "It installs per-user and needs no administrator rights, which is the\n"
         "install promise D-01 makes. The BRIDGE CLIENT stays dependency-free -\n"
         "that rule is about mcp/client, which has to run on a locked-down\n"
-        "machine with nothing on it. This layer is not that layer.\n")
+        "machine with nothing on it. This layer is not that layer.\n"
+        % INSTALL.install_line("pip install --user pyyaml"))
     raise
 
 # For repo_relative() and nothing else. The rule it answers with lives in
