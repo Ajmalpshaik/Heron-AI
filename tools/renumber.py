@@ -74,15 +74,32 @@ WHAT IT REFUSES
   - a rename onto a file that is already there;
   - a merge half done, or a folder with no merge-base with --base.
 
-It does not write a **Numbering:** line or reorder rows. A renamed 5b row
-stays where it was in its file; heron-ship section 6a has the order rows are
-kept in when main is merged.
+A DECISION'S **Numbering:** LINE SAYS WHAT HAPPENED
+----------------------------------------------------
+A Numbering line is history, so the renamed decision's own one is never
+renamed in - "next-id found D-133 free" stays true. A sentence is added to it
+instead, in DECISIONS.md and in decisions/D-nnn.md alike:
+
+    Renumbered from D-133 to D-134 on 2026-10-17 with `tools/renumber.py`,
+    because `main` had given D-133 to another decision first.
+
+- or "because claude/some-branch holds D-133 too", naming every other branch
+that defines it as last fetched; with neither, no reason is given. A decision
+with no Numbering line gets one, under its **Status:** line; with no Status
+line either, that is left for a person and named. The line names the old
+number, which is what tools/check-decision-titles.py asks of a decision whose
+title moved number. Another decision's Numbering line that names the old id
+is left as written, and named. The date is this machine's.
+
+It does not reorder rows. A renamed 5b row stays where it was in its file;
+heron-ship section 6a has the order rows are kept in when main is merged.
 
 --next is tools/next-id.py's answer, unchanged - it reads main AND every
 branch on the remote, so its "next" is free everywhere, not only on main.
 """
 
 import argparse
+import datetime
 import importlib.util
 import io
 import os
@@ -370,6 +387,84 @@ def checkout_texts(root):
 
 
 # --------------------------------------------------------------------------
+# A decision's Numbering line
+# --------------------------------------------------------------------------
+
+NUMBERING = "**Numbering:**"
+STATUS = "**Status:**"
+
+
+def is_ancestor(root, sha):
+    try:
+        NI.git(root, ["merge-base", "--is-ancestor", sha, "HEAD"])
+        return True
+    except CouldNot:
+        return False
+
+
+def shown(ref):
+    """origin/main -> main, the way a Numbering line names a branch."""
+    return ref.partition("/")[2] or ref
+
+
+def why_renumbered(root, old, base, base_commit):
+    """Why OLD was given up: BASE had it, or which other branches hold it."""
+    cache = {}
+    if old.value in NI.ids_at(root, base_commit, cache)["D"]:
+        return ", because `%s` had given %s to another decision first" % (shown(base), old.show)
+    holders = []
+    for name, sha in NI.branches(root, base.partition("/")[0]):
+        if name == base or is_ancestor(root, sha):
+            continue          # main, and this branch's own pushed copy
+        if old.value in NI.ids_at(root, sha, cache)["D"]:
+            holders.append(shown(name))
+    if holders:
+        return ", because %s hold%s %s too" % (" and ".join(holders),
+                                               "s" if len(holders) == 1 else "", old.show)
+    return ""
+
+
+class NumberingLine(object):
+    def __init__(self, old, new, why, date):
+        self.old, self.new, self.why, self.date = old, new, why, date
+
+    def sentence(self):
+        return ("Renumbered from %s to %s on %s with `tools/renumber.py`%s."
+                % (self.old.show, self.new.show, self.date, self.why))
+
+    def added_to(self, line):
+        core = line.rstrip(chr(13))
+        return core.rstrip() + " " + self.sentence() + line[len(core):]
+
+    def written(self, like):
+        """A Numbering line of its own, ending the way LIKE ends (CR or not)."""
+        text = ("%s written as %s; renumbered %s on %s with `tools/renumber.py`%s."
+                % (NUMBERING, self.old.show, self.new.show, self.date, self.why))
+        return text + like[len(like.rstrip(chr(13))):]
+
+
+def decision_lines(body, old, added):
+    """Line numbers in BODY under this branch's own heading of decision OLD,
+    up to the next heading - where check-decision-titles.py reads a Numbering
+    line. A heading this branch did not add is main's, and is skipped."""
+    found, inside, fenced = set(), False, False
+    for number, line in enumerate(body, 1):
+        if line.lstrip().startswith(NI.FENCE):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        if line.startswith("#"):
+            m = NI.DECISION.match(line)
+            inside = bool(m and int(m.group(1)) == old.value
+                          and (added is None or number in added))
+            continue
+        if inside:
+            found.add(number)
+    return found
+
+
+# --------------------------------------------------------------------------
 # The plan, and doing it
 # --------------------------------------------------------------------------
 
@@ -378,6 +473,7 @@ class Plan(object):
         self.edits = {}        # path -> (new text, [(line, column, said, written, new line)])
         self.renames = []      # (old path, new path)
         self.left = []         # (path, line, why, the line)
+        self.numbering = []    # (path, line, what was done, the line written)
 
 
 def plan(root, old_typed, new_typed, base="origin/main"):
@@ -416,6 +512,11 @@ def plan(root, old_typed, new_typed, base="origin/main"):
         raise CouldNot("this checkout already has %s - take the id `--next` prints"
                        % new.show)
 
+    numbering = None
+    if old.kind == "D":
+        numbering = NumberingLine(old, new, why_renumbered(root, old, base, base_commit),
+                                  datetime.date.today().isoformat())
+
     result = Plan()
     for rel in sorted(branch):
         info, text = branch[rel], texts[rel]
@@ -427,11 +528,22 @@ def plan(root, old_typed, new_typed, base="origin/main"):
             continue
         body = text.split(NL)
         numbers = range(1, len(body) + 1) if info["lines"] is None else sorted(info["lines"])
-        changed = []
+        added = None if info["lines"] is None else set(info["lines"])
+        own = decision_lines(body, old, added) if numbering else set()
+        changed, wrote = [], False
         for number in numbers:
             if number > len(body):
                 continue
             line = body[number - 1]
+            if numbering and line.startswith(NUMBERING):
+                if number in own:
+                    body[number - 1] = numbering.added_to(line)
+                    result.numbering.append((rel, number, "added to", numbering.sentence()))
+                    wrote = True
+                elif renamer.carries(line, rel):
+                    result.left.append((rel, number, "another decision's Numbering line - it is "
+                                        "history, so %s in it is left as written" % old.show, line))
+                continue
             renamed, hits = renamer.line(line, rel)
             main_side = None if info["lines"] is None else info["lines"][number]
             if hits and main_side and renamer.carries(main_side, rel):
@@ -446,7 +558,19 @@ def plan(root, old_typed, new_typed, base="origin/main"):
                 body[number - 1] = renamed
                 changed.extend((number, col, said, written, renamed)
                                for col, said, written in hits)
-        if changed:
+        if own and not wrote:
+            status = [n for n in sorted(own) if body[n - 1].startswith(STATUS)
+                      and (added is None or n in added)]
+            if status:
+                line = numbering.written(body[status[0] - 1])
+                body.insert(status[0], line)
+                result.numbering.append((rel, status[0] + 1, "written", line))
+                wrote = True
+            else:
+                result.left.append((rel, min(own) - 1, "%s has no %s line to write its %s line "
+                                    "under - a person writes it" % (old.show, STATUS, NUMBERING),
+                                    body[min(own) - 2] if min(own) > 1 else ""))
+        if changed or wrote:
             result.edits[rel] = (NL.join(body), changed)
 
     targets = set()
@@ -490,6 +614,8 @@ def report(result, dry_run):
                                               snippet(line, column, len(written))))
     for was, now in result.renames:
         out("  renamed  %s -> %s\n" % (was, now))
+    for rel, number, what, line in result.numbering:
+        out("  numbering  %s:%d  %s: %s\n" % (rel, number, what, line.rstrip(chr(13))))
     if not count and not result.renames:
         out("  nothing of this branch's own says %s\n" % result.old.show)
     if result.left:
@@ -497,10 +623,11 @@ def report(result, dry_run):
         for rel, number, why, line in result.left:
             out("  %s:%d  %s\n      %s\n" % (rel, number, why, snippet(line, 0, 0)))
     touched = sorted(set(result.edits) | {p for pair in result.renames for p in pair})
-    out("\n%d use%s in %d file%s, %d file%s renamed%s.\n"
+    out("\n%d use%s in %d file%s, %d file%s renamed, %d Numbering line%s%s.\n"
         % (count, "" if count == 1 else "s", len(result.edits),
            "" if len(result.edits) == 1 else "s", len(result.renames),
-           "" if len(result.renames) == 1 else "s",
+           "" if len(result.renames) == 1 else "s", len(result.numbering),
+           "" if len(result.numbering) == 1 else "s",
            " - nothing was written" if dry_run else ""))
     if touched and not dry_run:
         out("Nothing was staged. Stage these by name:\n  git add -- %s\n" % " ".join(touched))

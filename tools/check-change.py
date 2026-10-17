@@ -345,13 +345,16 @@ def contract_changed(diff):
 
 # A CARD'S TOP-LEVEL KEYS THAT ONLY DECIDE WHICH CARD A SENTENCE REACHES.
 # The encoder indexes the identity, the utterances and the purpose
-# (heron_embed._text_for), the re-ranker reads the identity, and Revit reads
-# none of them - D-30's fingerprint is taken over impl/ alone
+# (heron_embed._text_for), the re-ranker reads the identity and the domain
+# (heron_retrieve._fragment_passage), a lookup can filter by the domain, and
+# Revit reads none of them - D-30's fingerprint is taken over impl/ alone
 # (heron_fragment.fingerprint). The purpose is prose; it is here because the
-# lookup reads it. The list names what IS routing, so a key nobody thought
-# about - contract, risk, revit, runtime, heron-status, proof, capability -
-# stays behaviour. Row 5b-862.
-ROUTING_KEYS = ("semantic-identity", "utterances", "purpose")
+# lookup reads it. The domain is here on the owner's word (2026-10-17): a
+# wrong one can hide a card from a filtered lookup, which check-routing
+# measures and a Revit run cannot. The list names what IS routing, so a key
+# nobody thought about - contract, risk, revit, runtime, heron-status, proof,
+# capability - stays behaviour. Row 5b-862.
+ROUTING_KEYS = ("semantic-identity", "utterances", "purpose", "domain")
 
 
 def card_sides(diff):
@@ -478,10 +481,10 @@ def signals(files, base, staged, rev_range):
                   if p.startswith("brain/fragments/") and p not in words_only])
     raise_signal("fragment-routing",
                  "only a card's routing text changed - semantic-identity, "
-                 "utterances, comments, or purpose, which is prose but counts "
-                 "as routing because the lookup indexes it - and nothing under "
-                 "impl/ or tests/: which card a sentence reaches can move, "
-                 "what runs in Revit cannot",
+                 "utterances, domain, comments, or purpose, which is prose "
+                 "but counts as routing because the lookup indexes it - and "
+                 "nothing under impl/ or tests/: which card a sentence "
+                 "reaches can move, what runs in Revit cannot",
                  words_only)
 
     # The three that need the diff body rather than the path list.

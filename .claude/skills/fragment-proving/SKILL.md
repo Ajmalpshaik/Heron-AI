@@ -158,10 +158,21 @@ Three things the shape of the file is doing:
   `select-in-region → set-selection` works without the flag and hides the problem. With it:
   `values from read-element-parameters (25)`. The flag is deliberately opt-in — see `cmd_validate`
   and defect row 11 — because a kept chain outranks the selection.
+- **On a write proof, every setup step that only reads comes before every step that CHANGES the
+  model - or the job is refused.** A change step runs inside the fragment's own transaction group,
+  after the read steps, so a selector typed after it looked at the model before the change existed:
+  two text notes made, then `select-by-category-name`, handed on 0 (measured 2026-10-17, Revit 2020,
+  [row 5b-520](../../../docs/fragment-issues/section-5b-rows-401-425.md)). Since
+  [row 5b-917](../../../docs/fragment-issues/section-5b-rows-401-425.md) `validate --write` refuses
+  that order before anything is sent, and `batch-prove --dry-run` says `REFUSED`. A selection of
+  what a setup step MAKES cannot be arranged this way at all - the change step has to leave the
+  value the fragment takes itself.
 - **A setup step that CHANGES the model takes the run's own values, never `setup-set:`.** `validate`
   refuses the job before Revit is asked - *"setup values cannot reach a setup step that CHANGES the
   model"* - because such a step runs inside the fragment's own transaction group and the add-in binds it
-  from the run's values. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
+  from the run's values; `batch-prove --dry-run` says `REFUSED` for it. Both only since
+  [row 5b-917](../../../docs/fragment-issues/section-5b-rows-401-425.md): until then `validate` asked
+  Revit for a count first and the dry run said `WOULD RUN`. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
   (row 5b-481): what worked was ONE value list both steps read - the names they share (`filterNames`,
   `categories`, `parameterName`) must then mean the same for both - or arranging on something the model
   already holds. A read-only setup chain (`select-by-category-name`) takes `setup-set:` as before.
