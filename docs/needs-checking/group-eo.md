@@ -13,13 +13,17 @@ than it keeps. [Section 1c](../fragment-issues/section-1c.md) holds three rollba
 the reply said they had, and nothing checked whether a rollback had also taken the elements the **last kept**
 job made - the job on screen truly kept nothing, said so, and the stage before it could be gone without a word.
 
-**What changed.** Every transaction group in Heron - the fragment write path in
+**What changed.** Every write job's transaction group - the fragment write path in
 [`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) and the move in
 [`RevitWrite.cs`](../../revit/Heron.Revit.Addin/RevitWrite.cs) - is now rolled back through one helper,
 `RollBackAndCheck`, and assimilated through one, `KeepAndWatch` - the rollbacks a declined Revit dialog causes
 ([Group EL](group-el.md)) included, whose refusal now says what the check found beside Revit's status. A
 modeller's Keep in the Keep-or-Discard box ([Group EM](group-em.md)) is kept the same way, so its elements
-are watched like any `apply`, and a Discard is a rollback like any preview's. A permanent `DocumentChanged` listener, subscribed in
+are watched like any `apply`, and a Discard is a rollback like any preview's. **Not yet watched:**
+`RevitCapture`'s picture of a view ([Group ER](group-er.md)), which merged while this was open, makes a
+temporary view inside a group it ALWAYS rolls back, through a `SafeRollBack` of its own - so a capture's
+rollback is not yet checked for the last kept job's elements. `tests/test_rollback_witness.py` names it as
+the one exception, so no other file can open a group outside the check without failing it. A permanent `DocumentChanged` listener, subscribed in
 `OnStartup`, counts the elements each write job adds while it runs and samples up to 200 by UniqueId. When a job
 is **kept**, that sample is kept under the model's identity strings (CreationGUID from 2024, path, title - never
 the Document). When the next write job **starts**, the sample is narrowed to what still resolves, so what the

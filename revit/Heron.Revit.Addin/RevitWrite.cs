@@ -541,8 +541,8 @@ namespace Heron.Revit.Addin
         // ------------------------------------------------------------ helpers
 
         // THE MOVE'S OWN SafeRollBack LIVED HERE until 2026-10-17, a copy of
-        // RevitFragment's. Every group in Heron is now rolled back through
-        // RevitFragment.RollBackAndCheck, which calls the one SafeRollBack left
+        // RevitFragment's. Every write job's group is now rolled back through
+        // RevitFragment.RollBackAndCheck, which calls the SafeRollBack left there
         // - and that one carries this copy's reasoning: why a rollback must
         // never throw, why it answers Revit's status (FRAGMENT-ISSUES row 10),
         // and why both of its guards stay.

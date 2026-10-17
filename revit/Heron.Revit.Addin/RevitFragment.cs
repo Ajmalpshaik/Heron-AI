@@ -1568,9 +1568,10 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// Roll a write job's group back, check what that left, and say it -
-        /// THE ONE WAY ANY GROUP IN HERON IS ROLLED BACK, from this file and
+        /// THE ONE WAY A WRITE JOB'S GROUP IS ROLLED BACK, from this file and
         /// from RevitWrite's move. tests/test_rollback_witness.py fails a
-        /// rollback made any other way.
+        /// rollback made any other way, and names the one file not yet
+        /// watched - RevitCapture's picture, always rolled back by its own.
         ///
         /// SafeRollBack answers Revit's status. Then two things are looked for
         /// again, because section 1c showed that status and the model can

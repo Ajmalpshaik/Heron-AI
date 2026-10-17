@@ -85,6 +85,8 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import base64
+import binascii
 import functools
 import inspect
 import io
@@ -153,6 +155,18 @@ try:                                                       # noqa: E402
     from mcp.types import ToolAnnotations as _Annotations
 except ImportError:
     _Annotations = None
+
+# A PICTURE GOES BACK AS THE SDK'S OWN IMAGE HELPER, and it moved with the
+# server class - so it is looked up the same way, newest first (D-45). Both
+# SDKs carry it beside the class above; None means an SDK without one, and
+# then revit_view_image says so rather than the server failing to start.
+try:                                                       # noqa: E402
+    from mcp.server.mcpserver import Image as _Image       # SDK 2.x
+except ImportError:
+    try:
+        from mcp.server.fastmcp import Image as _Image     # SDK 1.x
+    except ImportError:
+        _Image = None
 
 _TAKES_LABELS = (_Annotations is not None
                  and "annotations" in inspect.signature(_Server.tool).parameters)
@@ -379,6 +393,11 @@ def _recorded(fn):
 
 
 def _note(tool, started, seconds, reply=None, error=None, outcome=None):
+    # A TOOL THAT ANSWERS WITH A PICTURE ANSWERS WITH A LIST - its words, then
+    # the image (revit_view_image). The list shows the words, never the repr
+    # of an image object.
+    if isinstance(reply, (list, tuple)):
+        reply = next((part for part in reply if isinstance(part, str)), "")
     try:
         _companion_module().ACTIVITY.record(tool, started, seconds, reply=reply, error=error,
                                             outcome=outcome)
@@ -5080,6 +5099,104 @@ def revit_views() -> str:
                  "schedule instance, so schedules are not reported as unplaced. "
                  "Nothing was changed.")
     return "\n".join(lines)
+
+
+@server.tool()
+def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> list:
+    """
+    Take a picture of a Revit view and LOOK at it - so you can check what you
+    just did the way a modeller glances at the screen, instead of trusting a
+    count.
+
+    Say what to picture in one of two ways:
+
+    - `view`: a view or sheet name as the Project Browser shows it. Empty
+      means the view in front. It is pictured exactly as it stands - its
+      template, crop and filters - and nothing about it is changed. If two
+      views share the name, the answer lists each as "ViewType: Name" to type
+      back.
+    - `elements`: element ids, comma separated, as Heron's answers print them.
+      Heron frames just those in a temporary isometric 3D view - a section box
+      round them with a margin, model categories only, levels, grids and links
+      left out of the box - and takes the view away again.
+
+    `width` is the picture's width in pixels, 320 to 2400 (default 1280).
+
+    IT CHANGES NOTHING. The temporary view is made inside a group Revit always
+    rolls back - there is no way to keep it - and the picture is written into
+    Heron's own folder on this PC, read back and deleted. Nothing is exported
+    anywhere another person reads. Use revit_views first if you need a view's
+    name.
+    """
+    if _Image is None:
+        return _ended("refused",
+                      "This MCP SDK has no image type, so Heron cannot hand a picture to the "
+                      "chat. Update it with:  pip install --user --upgrade mcp. Nothing has "
+                      "been sent to Revit.")
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # THE PIN TRAVELS WITH THE REQUEST, as for a selection: given element ids
+    # the add-in makes a view before it answers, so the guard has to stand in
+    # front of that, not behind it. Empty when this chat has pinned nothing.
+    reply = session.request("capture_view",
+                            op_args={"view": (view or "").strip(),
+                                     "elementIds": (elements or "").strip(),
+                                     "pixelWidth": width,
+                                     "expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_view_image", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return _ended("refused", wrong_model)
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    try:
+        picture = base64.b64decode(reply.get("png") or "", validate=True)
+    except (TypeError, ValueError, binascii.Error):
+        picture = b""
+    if not picture.startswith(b"\x89PNG"):
+        _ended("failed")
+        return ("%s answered without a picture Heron can read, so there is nothing to "
+                "look at. Ask again; if it repeats, the add-in may be older than this "
+                "server." % where)
+
+    if reply.get("mode") == "elements":
+        lines = ["A picture of %d element(s) in %s, in a temporary 3D view, %s px wide."
+                 % (reply.get("shown", 0), where, reply.get("pixelWidth"))]
+        if reply.get("leftOut"):
+            lines.append("Left out of the frame: %s." % reply.get("leftOut"))
+    else:
+        lines = ["A picture of %r (%s) in %s, %s px wide."
+                 % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth"))]
+    if reply.get("widthClamped"):
+        lines.append("The width asked for was outside 320 to 2400 px, so %s was used."
+                     % reply.get("pixelWidth"))
+
+    # THE TWO PROMISES, SAID ONLY WHEN THE ADD-IN SAYS THEY WERE KEPT.
+    if reply.get("rolledBack") is False:
+        lines.append("! Revit did NOT confirm the temporary view was taken away. Look under "
+                     "3D Views in the Project Browser, and at Undo, before going on.")
+    elif reply.get("mode") == "elements":
+        lines.append("The temporary view is gone - Revit rolled it back. Nothing was changed.")
+    else:
+        lines.append("Nothing was changed.")
+    if reply.get("fileDeleted") is False:
+        lines.append("! The picture's file could not be deleted from Heron's captures "
+                     "folder on this PC. That folder is safe to empty.")
+
+    return [NEWLINE.join(lines), _Image(data=picture, format="png")]
 
 
 def _schedules_counted(sheets):

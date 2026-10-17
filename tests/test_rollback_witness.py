@@ -28,9 +28,10 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 it is not, and the words - HeronRollbackWitness.cs, which names
                 no Autodesk type and is linked by source into
                 tests/Heron.RollbackWitness.TestHost. Built and RUN here.
-  THE WIRING    that EVERY rollback of a transaction group, in RevitFragment
-                and in RevitWrite's move, goes through the one helper that
-                checks; that every write job is watched from before its group
+  THE WIRING    that EVERY rollback of a write job's transaction group, in
+                RevitFragment and in RevitWrite's move, goes through the one
+                helper that checks; that no other file in revit/ opens a group
+                unless it is named below as not yet watched; that every write job is watched from before its group
                 starts; that the listener is subscribed for the add-in's whole
                 life; and that the reply speaks from what was checked. That
                 half calls the Revit API, so it is read as TEXT - a weak test
@@ -66,6 +67,21 @@ WITNESS = os.path.join(ADDIN, "HeronRollbackWitness.cs")
 HOST = os.path.join(ROOT, "tests", "Heron.RollbackWitness.TestHost")
 HOST_PROJECT = "tests/Heron.RollbackWitness.TestHost/Heron.RollbackWitness.TestHost.csproj"
 COULD_NOT_RUN = 3
+
+# Every file in revit/ that opens a transaction group is either WATCHED - its
+# rollbacks go through RollBackAndCheck, checked in sections 1 and 2 - or named
+# here, with why it is not yet. A new file that opens a group fails this suite
+# until it is one or the other.
+WATCHED = ("RevitFragment.cs", "RevitWrite.cs")
+NOT_YET_WATCHED = {
+    "RevitCapture.cs":
+        "revit_view_image's picture (D-123, Group ER): a temporary view in a group "
+        "it ALWAYS rolls back, through a SafeRollBack of its own. Merged while the "
+        "rollback check was open; bringing it under the check is a follow-up",
+}
+
+# A build's output folders, skipped by whole folder name below revit/.
+BUILD_OUTPUT = ("bin", "obj")
 
 FAILURES = []
 
@@ -341,6 +357,30 @@ def wiring():
               or re.search(r"rolledBack\s*\?\s*\"The move failed and was rolled back completely",
                            text) is not None,
               "%s says \"rolled back completely\" only on the checked answer" % name)
+
+    print("\n4b. no other file opens a transaction group unwatched")
+    base = os.path.join(ROOT, "revit")
+    openers = []
+    for folder, _, names in os.walk(base):
+        below = os.path.relpath(folder, base).split(os.sep)
+        if any(part in BUILD_OUTPUT for part in below):
+            continue
+        for found in sorted(names):
+            if found.endswith(".cs") and re.search(
+                    r"new\s+TransactionGroup\s*\(", code_only(read(os.path.join(folder, found)) or "")):
+                openers.append(found)
+    check(set(WATCHED) <= set(openers),
+          "the walk reached the watched writers - %s" % ", ".join(openers or ["nothing"]))
+    for found in openers:
+        check(found in WATCHED or found in NOT_YET_WATCHED,
+              "%s opens a transaction group and is %s" % (
+                  found, "watched" if found in WATCHED
+                  else ("named as not yet watched: " + NOT_YET_WATCHED[found])
+                  if found in NOT_YET_WATCHED else "NEITHER watched nor named"))
+    for found in NOT_YET_WATCHED:
+        check(found in openers,
+              "%s, named as not yet watched, still opens a group - a name that "
+              "outlives its reason is taken off the list" % found)
 
     print("\n5. the rule lives in one Revit-free file, built for every release")
     witness = read(WITNESS)
