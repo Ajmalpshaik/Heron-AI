@@ -328,13 +328,21 @@ def main():
                            "requirements-optional.txt"):
                 check(needed in names, "it carries %s" % needed)
 
+            # AND WHAT THE ONE-STEP INSTALL RUNS FROM IT - 2026-10-17.
+            # PythonSetup refuses a folder missing either, by name, so a
+            # release without them is an installer whose second half can only
+            # say "download Heron again" on the PC it was downloaded to.
+            for needed in ("tools/heron-ready.py", "requirements-lock.txt"):
+                check(needed in names, "it carries %s, which PythonSetup runs"
+                      % needed)
+
             # AND WHAT IT MUST NOT CARRY. tests/ is 171 MB and revit/ is 315 MB
             # of source; .git is every file ever deleted; __pycache__ differs
             # between machines. None of it does anything on a modeller's PC.
-            # tools/ is how Heron is developed: only the three files above may
+            # tools/ is how Heron is developed: only the four files above may
             # come from it, each named, never the folder.
             allowed = ("tools/deploy-addin.ps1", "tools/HeronRevit.ps1",
-                       "tools/check-dependencies.py")
+                       "tools/check-dependencies.py", "tools/heron-ready.py")
             for never in ("tests/", "revit/", "tools/", ".git/"):
                 offenders = [n for n in names
                              if n.startswith(never) and n not in allowed]

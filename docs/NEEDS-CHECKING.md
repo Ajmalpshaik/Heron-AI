@@ -719,9 +719,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
 
-## Group EL - Revit asks Keep or Discard before a change from a chat is kept: D-117 (2026-10-17)
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
 
 **Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
+
+## Group EO - Revit asks Keep or Discard before a change from a chat is kept: D-118 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
+
+## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

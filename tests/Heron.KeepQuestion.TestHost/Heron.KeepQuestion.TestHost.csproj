@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Proves Revit's Keep or Discard question (D-117) WITHOUT Revit.
+    Proves Revit's Keep or Discard question (D-118) WITHOUT Revit.
 
     The source-linking pattern Heron.FailureNote.TestHost uses, for the same
     reason: HeronKeepQuestion.cs names no Autodesk type - it holds the words

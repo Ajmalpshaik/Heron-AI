@@ -507,7 +507,7 @@ async def exercise_door(module):
     check(assemble is not None and given == assemble(),
           "and they are the registry's host.chat, as assembled from the "
           "Constitution now")
-    for phrase in ("Revit's own Undo", "Show before you change", "D-117",
+    for phrase in ("Revit's own Undo", "Show before you change", "D-118",
                    "Keep or Discard", "Never call a model, a system or a design"):
         check(phrase in given, "they include: %s" % phrase)
 
@@ -836,6 +836,31 @@ async def exercise_activity(module):
                                            "expect_from": "find-views"})
         check(got == ["refused"],
               "revit_change: the add-in's chain_empty is 'refused' - found %r" % got)
+
+        # ARTICLE 11 (D-117). revit_change KEEPS what it does, so a fragment no
+        # current proof stands behind is refused before anything reaches Revit.
+        draft, _folder = first_with("MODIFY", "DRAFT")
+        revit.asked[:] = []
+        got = await ended("revit_change", {"capability": draft})
+        said = module.revit_change(capability=draft)
+        check(got == ["refused"] and not revit.asked,
+              "revit_change: a DRAFT (%s) is 'refused', and nothing reached Revit - "
+              "found %r, %d request(s)" % (draft, got, len(revit.asked)))
+        check(draft in said and "DRAFT" in said and "Article 11" in said
+              and "Nothing was sent to Revit" in said,
+              "and the reply names it, its status and the Article")
+        real_status = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(real_status(folder) or {},
+                                                        stale=True)
+        try:
+            revit.asked[:] = []
+            got = await ended("revit_change", {"capability": writer})
+            said = module.revit_change(capability=writer)
+        finally:
+            module.brain.proof_status = real_status
+        check(got == ["refused"] and not revit.asked and "D-30" in said,
+              "and so is a PROVEN one (%s) whose proof is stale - found %r, "
+              "%d request(s)" % (writer, got, len(revit.asked)))
 
         # A TOOL SPEAKS ONLY FOR ITSELF.
         say = getattr(module, "_ended", None)

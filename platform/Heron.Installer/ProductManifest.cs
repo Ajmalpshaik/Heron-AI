@@ -35,6 +35,18 @@ namespace Heron.Installer
         public IReadOnlyList<string> Requires { get; set; }
 
         /// <summary>
+        /// Whether installing this also sets up Heron's Python side - the
+        /// packages, the knowledge store and the heron-ready check.
+        ///
+        /// A FIELD, NEVER AN ID IN CODE - R-3. The AI connector is the other
+        /// end of a pipe Heron's Python server answers; the tools are not, and
+        /// Q-PE-2 made the connector optional. PythonSetup.ShouldRun reads
+        /// this and nothing else. Absent reads as false, so a manifest from
+        /// before 2026-10-17 asks for no Python rather than failing to load.
+        /// </summary>
+        public bool NeedsPython { get; set; }
+
+        /// <summary>
         /// A heading is a tab built by its pieces, so it installs nothing of
         /// its own. D-93: this is DERIVED from partOf and is never a field
         /// somebody could set wrongly - an entry is a heading exactly when
@@ -203,7 +215,14 @@ namespace Heron.Installer
                 State = Str(e, "state"),
                 Revit = Strings(e, "revit"),
                 Requires = Strings(e, "requires"),
+                NeedsPython = Flag(e, "needsPython"),
             };
+        }
+
+        private static bool Flag(JsonElement e, string name)
+        {
+            JsonElement v;
+            return e.TryGetProperty(name, out v) && v.ValueKind == JsonValueKind.True;
         }
 
         private static string Str(JsonElement e, string name)

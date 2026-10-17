@@ -531,7 +531,7 @@ namespace Heron.Revit.Addin
                 && string.Equals(Json.ReadString(request, "apply"), "true",
                                  StringComparison.OrdinalIgnoreCase);
 
-            // AND BEFORE IT IS KEPT, REVIT ASKS THE MODELLER - D-117. The owner's
+            // AND BEFORE IT IS KEPT, REVIT ASKS THE MODELLER - D-118. The owner's
             // switch, read fresh here and never taken from the request (Golden
             // Rule 19): a caller may ask to keep, and only the modeller says
             // yes. A run that keeps nothing is never asked - it is rolled back
@@ -570,6 +570,13 @@ namespace Heron.Revit.Addin
             if (!writing)
             {
                 threw = RunScript(script, globals, name, out state);
+
+                // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
+                // built around a question nobody answered is not the answer
+                // that was asked for. Ahead of `threw`, because a call the
+                // Cancel refused is often what threw. See HeronDialogWatch.
+                var stoppedRead = DialogRefusal(name, null);
+                if (stoppedRead != null) return stoppedRead;
             }
             else
             {
@@ -582,7 +589,7 @@ namespace Heron.Revit.Addin
                 {
                     group.Start();
 
-                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-117.
+                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-118.
                     // From here, so the setup steps count too: Keep keeps them.
                     // The `using` takes the handler off however this block ends.
                     if (changed != null) changed.Begin();
@@ -653,8 +660,8 @@ namespace Heron.Revit.Addin
                         }
                         if (threw != null)
                         {
-                            SafeRollBack(group);
-                            return threw;
+                            var unwound = SafeRollBack(group);
+                            return DialogRefusal(name, unwound) ?? threw;
                         }
                     }
                     else
@@ -672,8 +679,8 @@ namespace Heron.Revit.Addin
                         if (threw != null)
                         {
                             SafeRollBack(transaction);
-                            SafeRollBack(group);
-                            return threw;
+                            var unwound = SafeRollBack(group);
+                            return DialogRefusal(name, unwound) ?? threw;
                         }
 
                         // NOT COMMITTED MEANS DISCIPLINE ROLLED IT BACK, almost
@@ -698,13 +705,23 @@ namespace Heron.Revit.Addin
                         }
                     }
 
+                    // A REVIT DIALOG HERON DECLINED STOPS THE JOB HERE, before
+                    // anything is kept. The fragment ran on past it - a Cancel
+                    // makes the call that asked return or throw, and a
+                    // fragment that caught it carried on - so this is the last
+                    // point where the whole job can still be undone, setup
+                    // steps included. Article 7: a question nobody answered is
+                    // never a yes. See HeronDialogWatch.
+                    if (HeronDialogWatch.Refused)
+                        return DialogRefusal(name, SafeRollBack(group));
+
                     // ASSIMILATE, so the whole group collapses to ONE undo step
                     // rather than leaving the inner transaction visible as its
                     // own. Rolling back instead is what makes the default a
                     // preview.
                     //
                     // AND WHEN THE OWNER'S SWITCH SAYS ASK, THE MODELLER DECIDES
-                    // WHICH, with the group still open (D-117). The whole run is
+                    // WHICH, with the group still open (D-118). The whole run is
                     // one ExternalEvent callback, so nothing else reaches the
                     // model while the dialog is up.
                     if (asking)
@@ -1351,6 +1368,24 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// The refusal for a job a Revit dialog stopped, or null when none
+        /// did. `rolledBack` is null on the read path, where no transaction
+        /// was open and so nothing can have changed; otherwise it is what
+        /// SafeRollBack reported, and the sentence says the model is as it
+        /// was ONLY when Revit confirmed it - WithVerdict's rule.
+        /// </summary>
+        private static string DialogRefusal(string name, bool? rolledBack)
+        {
+            var met = HeronDialogWatch.Armed;
+            if (met == null || !met.Refused) return null;
+
+            var outcome = rolledBack == null ? HeronDialogNote.Outcome.ReadOnly
+                        : rolledBack.Value   ? HeronDialogNote.Outcome.RolledBack
+                        :                      HeronDialogNote.Outcome.RollbackUnconfirmed;
+            return met.Refusal("'" + name + "'", outcome);
+        }
+
+        /// <summary>
         /// Roll back without letting the rollback itself become the failure.
         ///
         /// The same hazard RevitWrite.SafeRollBack exists for, and for the same
@@ -1396,7 +1431,7 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// D-117: Revit itself asks the modeller whether to keep what this run
+        /// D-118: Revit itself asks the modeller whether to keep what this run
         /// did, and the group is kept or rolled back on that answer. Called with
         /// the group open and no transaction in it.
         ///
@@ -1500,7 +1535,14 @@ namespace Heron.Revit.Addin
             RevitDispatcher.Asking(true);
             try
             {
-                shown = dialog.Show();
+                // HERON NEVER ANSWERS ITS OWN QUESTION. The job's dialog watch
+                // is armed and declines every Revit dialog it meets; this one is
+                // the modeller's to answer, so the watch stands down until it
+                // has an answer (HeronDialogWatch.HeronAsks).
+                using (HeronDialogWatch.HeronAsks())
+                {
+                    shown = dialog.Show();
+                }
             }
             catch (Exception ex)
             {
@@ -1601,7 +1643,7 @@ namespace Heron.Revit.Addin
         ///
         /// FOR THE QUESTION'S ON-SCREEN HALF ONLY - isolating and ending it.
         /// Whether IsolateElementsTemporary needs a transaction at all is not
-        /// measured (NEEDS-CHECKING EL7); inside one it is allowed either way,
+        /// measured (NEEDS-CHECKING EO7); inside one it is allowed either way,
         /// so it is given one rather than guessed at.
         /// </summary>
         private static bool InItsOwnTransaction(Document doc, string label, Action work)
@@ -1905,7 +1947,7 @@ namespace Heron.Revit.Addin
                         + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
                         + "would undo whatever you did before this.";
 
-                // D-117: KEPT BECAUSE THE MODELLER SAID SO, and said first, so
+                // D-118: KEPT BECAUSE THE MODELLER SAID SO, and said first, so
                 // the chat can tell a change somebody looked at from one kept
                 // with nobody asked - the owner's switch off, or a run Revit
                 // counted no change in, which says so rather than staying quiet.

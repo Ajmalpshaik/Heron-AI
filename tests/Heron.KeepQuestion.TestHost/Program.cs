@@ -12,7 +12,7 @@ using Heron.Revit.Addin;
 namespace Heron.KeepQuestion.TestHost
 {
     /// <summary>
-    /// Revit's Keep or Discard question - D-117 - checked without Revit.
+    /// Revit's Keep or Discard question - D-118 - checked without Revit.
     ///
     /// Three things can be wrong here with no Revit anywhere near, and each
     /// would cost a modeller something real:

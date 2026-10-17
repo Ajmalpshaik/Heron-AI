@@ -139,7 +139,7 @@ TOOLS = {
     # its own permission is not a permission.
     #
     # NO PREVIEW WAS A DECISION RATHER THAN A SILENCE - D-99, 2026-09-23 - and
-    # D-117 supersedes it: Revit shows the change and asks the modeller Keep
+    # D-118 supersedes it: Revit shows the change and asks the modeller Keep
     # or Discard before it is kept, inside the add-in, under the owner's
     # write.askBeforeKeeping. Nothing in this row decides whether it asks.
     #

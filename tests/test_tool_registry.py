@@ -195,7 +195,7 @@ def main():
     # revit_change was added 2026-09-15 at the owner's explicit instruction,
     # and typing it here is the deliberate act this test exists to require. It
     # was the first writer with NO preview in front of it - from 2026-09-23 a
-    # recorded exception to Article 9, D-99. Since D-117 (2026-10-17) Revit
+    # recorded exception to Article 9, D-99. Since D-118 (2026-10-17) Revit
     # shows its change and asks the modeller Keep or Discard before it is
     # kept, under the owner's write.askBeforeKeeping, read by HeronPermissions
     # inside the add-in beside write.enabled. A THIRD writer still fails here.
@@ -203,7 +203,7 @@ def main():
           "the writing tools are exactly revit_apply_move and revit_change "
           "- found: %s" % (writers or "none"))
 
-    # WHETHER REVIT ASKS IS NOT A RISK LEVEL, AND NOT THE CALLER'S (D-117,
+    # WHETHER REVIT ASKS IS NOT A RISK LEVEL, AND NOT THE CALLER'S (D-118,
     # Golden Rule 19). It is the owner's switch, read where write.enabled is
     # read - so neither registry may carry it, and the tool that keeps a
     # change stays exactly MODIFY whether the question is on or off. A row

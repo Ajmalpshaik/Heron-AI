@@ -77,7 +77,7 @@ Never leave a model partially modified.
 **9. Show before you change.**
 Any `MODIFY` operation that does not use a `PRODUCTION` fragment requires a preview the user has
 accepted — what will change, how many elements, what will be skipped.
-**How a change asked for in a chat meets it, [D-117](docs/DECISIONS.md#d-117--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), superseding D-99's exception:** `revit_change`
+**How a change asked for in a chat meets it, [D-118](docs/DECISIONS.md#d-118--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), superseding D-99's exception:** `revit_change`
 runs the change inside one named `TransactionGroup`, Revit selects and isolates what it touched, and a
 dialog asks the modeller Keep or Discard. Nothing is kept until they choose Keep; Discard, Esc or
 closing it rolls the change back. **The one recorded exception is the owner's switch for that
@@ -203,7 +203,7 @@ a partial result as complete.
 
 | Article | Enforced in code at | Also injected into agent instructions |
 |---|---|---|
-| 7, 8, 9, 10, 11, 12 | Revit add-in permission gate + transaction wrapper. **9:** the move's preview is enforced there, as a one-use approval re-counted before it writes; `revit_change`'s Keep or Discard is asked by the add-in inside the open transaction group, under the owner's `write.askBeforeKeeping` — [D-117](docs/DECISIONS.md#d-117--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), and with that switch off the recorded exception D-99 described. **7:** on `revit_change` the Changes switch is all that stands — no per-operation confirmation exists in code ([FRAGMENT-ISSUES 5b-161](docs/FRAGMENT-ISSUES.md)) | every chat: 7, 8, 9, 10, 12 · assembled, not given: 11 |
+| 7, 8, 9, 10, 11, 12 | Revit add-in permission gate + transaction wrapper. **9:** the move's preview is enforced there, as a one-use approval re-counted before it writes; `revit_change`'s Keep or Discard is asked by the add-in inside the open transaction group, under the owner's `write.askBeforeKeeping` — [D-118](docs/DECISIONS.md#d-118--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), and with that switch off the recorded exception D-99 described. **7:** on `revit_change` the Changes switch is all that stands — no per-operation confirmation exists in code ([FRAGMENT-ISSUES 5b-161](docs/FRAGMENT-ISSUES.md)). **11:** not in the add-in, which never sees a fragment's card — in the client, which refuses to keep a change from a fragment that is not PROVEN or whose proof its code has moved past, on `revit_change` and `fragment --write --apply`, before anything is sent; a rolled-back run is not refused ([D-117](docs/DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)) | every chat: 7, 8, 9, 10, 12 · assembled, not given: 11 |
 | 12a, 12b, 12c | Session binding and document pinning in the bridge; preview re-validation before execute | every chat: 12a, 12b, 12c |
 | 13, 14, 15, 16, 17 | Permission layer, credential store, egress filter | every chat: 14 · assembled, not given: 16 · no: 13, 15, 17 |
 | 1, 2, 4, 20, 21 | Lifecycle gates in the registries | no: 1, 2, 4, 20, 21 |
@@ -248,7 +248,7 @@ and the compensating control. Articles are never weakened silently, and never by
 *Amended by the route above: **Article 9** gained one recorded exception on 2026-09-23, the
 owner's choice when he was asked — [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) — and on 2026-10-17 that exception was
 narrowed to the owner's switch for Revit's Keep or Discard question —
-[D-117](docs/DECISIONS.md#d-117--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), proposed, the owner to confirm.*
+[D-118](docs/DECISIONS.md#d-118--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), accepted by the owner the same day.*
 
 > **Three stale statements were corrected on acceptance, and they are worth naming rather than quietly
 > fixing.** This file described its own basis as *"Golden Rules 1–15 (official) and 16–19 (proposed)"* —

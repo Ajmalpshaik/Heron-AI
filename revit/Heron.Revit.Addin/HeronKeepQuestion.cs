@@ -12,9 +12,9 @@ namespace Heron.Revit.Addin
 {
     /// <summary>
     /// What Revit asks the modeller before a change from a chat is kept, and
-    /// what each answer means - D-117.
+    /// what each answer means - D-118.
     ///
-    /// D-99 kept every revit_change at once, with no preview. D-117 puts
+    /// D-99 kept every revit_change at once, with no preview. D-118 puts
     /// Revit itself in front of the keep: the run has happened inside Heron's
     /// TransactionGroup, the changed elements are selected and isolated, and a
     /// TaskDialog asks Keep or Discard. Keep assimilates the group - one undo
@@ -26,7 +26,7 @@ namespace Heron.Revit.Addin
     /// tests/Heron.KeepQuestion.TestHost links this file by source and checks
     /// them on any machine. RevitFragment shows the dialog, selects and
     /// isolates; whether Revit then does what it is told is the PC's to
-    /// prove (NEEDS-CHECKING Group EL).
+    /// prove (NEEDS-CHECKING Group EO).
     /// </summary>
     internal static class HeronKeepQuestion
     {
@@ -38,7 +38,7 @@ namespace Heron.Revit.Addin
         /// added.
         ///
         /// D-60 calls 500 "the default of a setting". No setting reads it yet,
-        /// so it is a constant here, and D-117 records that gap.
+        /// so it is a constant here, and D-118 records that gap.
         /// </summary>
         public const int HighlightCap = 500;
 

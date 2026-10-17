@@ -14,7 +14,7 @@ Revit asks the modeller Keep or Discard before a change from a chat is kept.
 
 WHY THIS EXISTS
 ---------------
-D-99 kept every revit_change at once, with no preview. D-117 supersedes it:
+D-99 kept every revit_change at once, with no preview. D-118 supersedes it:
 the change runs inside Heron's TransactionGroup, Revit selects and isolates
 what it touched, and a TaskDialog asks Keep or Discard. Keep is one undo entry;
 Discard rolls the group back and puts the modeller's selection back.
@@ -35,9 +35,9 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 missing line or a line in the wrong place.
 
 Neither half proves Revit then does what it is told. That is the PC's, and
-NEEDS-CHECKING Group EL says what it owes.
+NEEDS-CHECKING Group EO says what it owes.
 
-MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-117 every
+MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-118 every
 wiring section fails and the host does not build, and this suite exits 1 rather
 than raising.
 
@@ -166,6 +166,13 @@ def wiring():
           "two command links, Esc allowed, and Enter on Discard")
     check("HeronKeepQuestion.Decide((int)shown, (int)TaskDialogResult.CommandLink1)" in ask,
           "and the answer is read through the one rule the host proves")
+    # THE JOB'S DIALOG WATCH (Group EL) declines every Revit dialog a job
+    # meets. This question is the modeller's, so it is shown with the watch
+    # stood down - or Heron would answer its own question with Cancel.
+    check(re.search(r"using\s*\(\s*HeronDialogWatch\.HeronAsks\(\)\s*\)\s*\{\s*shown\s*=\s*dialog\.Show\(\);",
+                    ask) is not None,
+          "the question is shown inside HeronDialogWatch.HeronAsks(), so the job's "
+          "dialog watch never answers it")
     check(before(ask, "RevitDispatcher.Asking(true);", "dialog.Show()")
           and re.search(r"finally\s*\{\s*RevitDispatcher\.Asking\(false\);", ask) is not None,
           "the dispatcher is told the modeller is asked, and told they answered whatever happens")

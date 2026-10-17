@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves how Heron answers a Revit dialog met inside a job, WITHOUT Revit.
+
+    The source-linking pattern Heron.FailureNote.TestHost uses, for the reason
+    its project file states: HeronDialogNote.cs names no Autodesk type - it
+    holds the table and the words - so it is linked here BY SOURCE rather than
+    through a project reference. Referencing Heron.Revit.Addin would drag in
+    RevitAPI.dll and make the one testable piece untestable on any machine
+    without Revit. One copy of the rule, so a test cannot agree with a copy
+    the add-in does not run.
+
+    What it covers: which answer a dialog gets (decline, and fail the run,
+    unless a row with evidence says otherwise), what the modeller is told,
+    and what the reply carries - `dialogsAnswered` and each dialog's id and
+    words. Whether Revit then takes the answer is the PC's to prove
+    (NEEDS-CHECKING group EL). FRAGMENT-ISSUES section 5b row 300.
+
+    The bridge's JSON writer and reader are linked beside it, as they are in
+    Heron.FailureNote.TestHost: the reply is built and read back with the
+    same code the add-in and the dispatcher use.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.DialogNote.TestHost</RootNamespace>
+    <AssemblyName>Heron.DialogNote.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronDialogNote.cs"
+             Link="HeronDialogNote.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
+             Link="Json.cs" />
+  </ItemGroup>
+
+</Project>

@@ -31,7 +31,7 @@ TWO tools write, and the command marks them. revit_apply_move cannot run on
 its own - it applies a preview the user has already seen, once, and the add-in
 re-checks the model before it writes. revit_change carries a fragment straight
 to Revit, and Revit shows what it did and asks the modeller Keep or Discard
-before anything is kept - D-117, which supersedes D-99's change kept with no
+before anything is kept - D-118, which supersedes D-99's change kept with no
 preview, and Article 9's exception says so. The owner's switch for the
 question is write.askBeforeKeeping, read in the add-in. Around it stand the
 owner's ribbon switch, one undo entry and the pin. Writing is switched off
@@ -1600,7 +1600,13 @@ def revit_change(capability: str = "", values: str = "",
     When one is off the reply names it and says where to turn it on. Tell the
     user that; never try another capability to get round it.
 
-    REVIT ASKS BEFORE IT KEEPS (D-117, which supersedes D-99). The change runs,
+    ONLY A PROVEN CAPABILITY RUNS HERE (Constitution Article 11, D-117). One
+    whose own file says DRAFT, or whose proof was taken before its code last
+    changed, is refused before anything is sent, and the reply names it and
+    its status. Tell the user that; never try another capability to get round
+    it. It is proved first on a test model, and then it can be asked for.
+
+    REVIT ASKS BEFORE IT KEEPS (D-118, which supersedes D-99). The change runs,
     Revit selects and isolates what it touched, and a dialog asks the modeller
     Keep or Discard. Keep is one entry in Revit's undo list; Discard, Esc or
     closing the dialog puts the model back. The owner can turn the question
@@ -1631,7 +1637,7 @@ def revit_change(capability: str = "", values: str = "",
             return handed_back
         matched = capability
 
-    folder, status = _fragment_for(capability)
+    folder, _status = _fragment_for(capability)
     if folder is None:
         return _ended("refused",
                       "Heron has nothing that does '%s', so nothing has been sent to "
@@ -1671,6 +1677,20 @@ def revit_change(capability: str = "", values: str = "",
         return _ended("refused",
                       "'%s' does not say what risk it carries in a form Heron can read, "
                       "so nothing has been sent to Revit." % capability)
+
+    # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
+    # here KEEPS what it does. So a fragment its own files do not call PROVEN,
+    # or whose proof no longer describes its code (D-30), is refused HERE -
+    # before its code is read or a session is bound. Until D-117 it ran, and a
+    # line printed after the result said it was not proven: a warning given
+    # once the change was already in the model.
+    #
+    # THE CLIENT'S RULE, CALLED - the one `fragment --write --apply` asks -
+    # for the reason `risk_refusal` above is called rather than copied. The
+    # status is read from the fragment's own files, never from the index.
+    unproven = bridge.unproven_refusal(capability, brain.proof_status(folder))
+    if unproven:
+        return _ended("refused", unproven)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
@@ -1733,7 +1753,7 @@ def revit_change(capability: str = "", values: str = "",
         # the recorded proofs was taken. This line is what lets a run outlive
         # itself, and it is why this tool is MODIFY in the registry.
         #
-        # ASKING IS NOT KEEPING (D-117). With the owner's switch on - the
+        # ASKING IS NOT KEEPING (D-118). With the owner's switch on - the
         # default - Revit shows the change and the MODELLER says Keep or
         # Discard; this flag only makes the question possible. The switch is
         # read inside the add-in and nothing sent from here can skip it.
@@ -1768,7 +1788,7 @@ def revit_change(capability: str = "", values: str = "",
     # THE OPERATION FROM THE FRAGMENT'S OWN CARD - run_fragment_write for
     # Modify and below, run_fragment_publish or run_fragment_admin above it.
     # `keeping`, because Revit may stop and ask the modeller Keep or Discard
-    # before this is kept (D-117), and their time to look is added to the wait.
+    # before this is kept (D-118), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
                             response_timeout=configuration.fragment_timeout(keeping=True),
@@ -1849,11 +1869,8 @@ def revit_change(capability: str = "", values: str = "",
         lines.append("")
         lines.append(str(verdict))
 
-    if status and status not in ("PROVEN", "PRODUCTION"):
-        lines.append("")
-        lines.append("'%s' is %s, not PROVEN - it has no recorded proof carrying a "
-                     "negative case. Look at what it did before trusting it."
-                     % (capability, status))
+    # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
+    # a fragment that is not PROVEN is now refused before it is sent (D-117).
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
@@ -3383,7 +3400,7 @@ def _cannot_run():
         "anything declared above ANALYZE. "
         "A fragment that WRITES reaches Revit through revit_change, and Revit "
         "shows the modeller what it did and asks Keep or Discard before "
-        "anything is kept (D-117), only while the owner has "
+        "anything is kept (D-118), only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
         "HeronPermissions refuses it by name and nothing is sent. One declared "
         "ADMIN - a project or global parameter, a workset, a new family file - "
