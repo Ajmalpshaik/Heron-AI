@@ -43,17 +43,21 @@ WHAT THIS PROVES
   7. A WINDOW, A FOLDER OF AUDIT FILES (the brain's own file left out), a torn
      audit line, and a transcript that is not there.
   8. WHICH CAPABILITIES BUILD FORMS IS READ FROM THE CARDS, not typed.
-  9. THE KEEP BOX, FROM REVIT'S JOURNAL (row 5b-1031): two boxes inside two
+  9. A REPLY STORED AS CLAUDE CODE STORES HERON'S - the JSON text
+     {"result": "..."}, as the content itself and as one text part: its
+     formCount is read and its hand-back counted from the reply inside, and
+     a wrapped reply with no count is still NOT MEASURED (row 5b-1030).
+ 10. THE KEEP BOX, FROM REVIT'S JOURNAL (row 5b-1031): two boxes inside two
      runs, one in the chat's minutes outside every call, one before the
      chat - counted apart, a Discard counted, and Revit's own time less the
      boxes run by run. A shown stamp earlier than its run is cut to the
      run's start, and says so.
- 10. THE NEGATIVE CASE: a journal with no Keep box - 0 boxes, and Revit's
+ 11. THE NEGATIVE CASE: a journal with no Keep box - 0 boxes, and Revit's
      own time the same with the journal as without it.
- 11. NO JOURNAL, NO OFFSET, TWO JOURNALS: NOT MEASURED with the flag named;
+ 12. NO JOURNAL, NO OFFSET, TWO JOURNALS: NOT MEASURED with the flag named;
      without --journal-utc-offset only the whole journal's boxes are
      counted; a DRAFT's box is read too; a journal that is not there exits 2.
- 12. THE BOX'S WORDS ARE THE ADD-IN'S: the tool reads the headline and the
+ 13. THE BOX'S WORDS ARE THE ADD-IN'S: the tool reads the headline and the
      Keep link HeronKeepQuestion.cs shows.
 """
 
@@ -132,11 +136,19 @@ def call(ident, name, **arguments):
     return {"type": "tool_use", "id": ident, "name": name, "input": arguments}
 
 
-def result(clock, ident, text):
+def result(clock, ident, text, as_string=False):
+    """A tool's answer. Its content is a list of text parts, or - as_string -
+    the text itself, the two shapes a transcript stores."""
     return {"type": "user", "timestamp": ts(clock), "isSidechain": False,
             "message": {"role": "user", "content": [
                 {"type": "tool_result", "tool_use_id": ident,
-                 "content": [{"type": "text", "text": text}]}]}}
+                 "content": text if as_string else [{"type": "text", "text": text}]}]}}
+
+
+def wrapped(text):
+    """A reply as Claude Code stores one from Heron's server: the JSON text
+    {"result": "..."}, its newlines written as backslash-n (row 5b-1030)."""
+    return json.dumps({"result": text})
 
 
 def audit(clock, op, ms, fragment=None, session="S1", ok=True, error=None):
@@ -224,7 +236,14 @@ def build_a(folder):
     return transcript, trail
 
 
-def build_b(folder, says_count=True):
+FORMS_REPLY = "Kept in Family1.\n\n  formCount  12\n  formIds    a,b,c"
+FORMS_REPLY_NO_COUNT = "Kept in Family1.\n\n  formIds    a,b,c"
+EXTRUSION_REPLY = "Kept in Family1.\n\n  formId  d"
+#: Parses as JSON, but holds no string under "result" - kept as it is.
+NOT_A_WRAPPER = json.dumps({"result": 12, "note": "not a reply's text"})
+
+
+def build_b(folder, says_count=True, shape=None):
     """2026-10-11's shape, from a transcript too old to carry thinking tokens,
     thinking seconds or effort:
 
@@ -237,9 +256,17 @@ def build_b(folder, says_count=True):
         7  620.0  model   9.8  "Built."
 
     request to finish 620.0; model 617.8; tool 2.2; 13 forms.
+
+    shape None writes both replies as plain text. "string" and "parts" write
+    the FORMS reply wrapped as Claude Code stores Heron's - the content the
+    JSON text itself, or that text as one text part - and the extrusion's
+    reply as NOT_A_WRAPPER, which is JSON and no wrapper.
     """
-    reply = ("Kept in Family1.\n\n  formCount  12\n  formIds    a,b,c" if says_count
-             else "Kept in Family1.\n\n  formIds    a,b,c")
+    reply = FORMS_REPLY if says_count else FORMS_REPLY_NO_COUNT
+    other = EXTRUSION_REPLY
+    if shape:
+        reply, other = wrapped(reply), NOT_A_WRAPPER
+    as_string = shape == "string"
     transcript = write(os.path.join(folder, "chat-b.jsonl"), [
         prompt("11:00:00.000", "build the generator"),
         assistant("11:10:00.000", "B1", thought(), 50000, effort=None, speed=None),
@@ -247,11 +274,11 @@ def build_b(folder, says_count=True):
                                              capability="CREATE_FAMILY_FORMS",
                                              values="forms=C:\\Temp\\heron-work\\rows.txt"),
                   50000, effort=None, speed=None),
-        result("11:10:03.000", "f1", reply),
+        result("11:10:03.000", "f1", reply, as_string),
         assistant("11:10:10.000", "B2", call("f2", HERON + "revit_change",
                                              capability="CREATE_FAMILY_EXTRUSION"),
                   300, effort=None, speed=None),
-        result("11:10:10.200", "f2", "Kept in Family1.\n\n  formId  d"),
+        result("11:10:10.200", "f2", other, as_string),
         assistant("11:10:20.000", "B3", said("Built."), 20, effort=None, speed=None),
     ])
     trail = write(os.path.join(folder, "audit-b-202601.jsonl"), [
@@ -685,13 +712,48 @@ def section_cards():
     check("report-family-forms" not in one + many, "a READ that counts forms builds none")
 
 
+def section_wrapped(folder):
+    print()
+    print("9. A reply stored as Claude Code stores Heron's - the JSON text {\"result\": ...}")
+    print("-" * 72)
+    # Row 5b-1030: five real CREATE_FAMILY_FORMS replies printed formCount
+    # and the tool counted none, because the text it read was the wrapper,
+    # with each newline written as two characters.
+    for shape, how in (("string", "the content a string"), ("parts", "one text part")):
+        sub = os.path.join(folder, shape)
+        os.makedirs(sub)
+        transcript, trail = build_b(sub, shape=shape)
+        code, r = as_json([transcript, "--audit", trail])
+        check(code == 0 and r is not None, "%s: exit 0" % how)
+        if r is None:
+            continue
+        check(value(r, "forms_built") == 13,
+              "%s: 13 forms - formCount 12 read from inside the wrapper, and 1 extrusion" % how)
+        check(lines_from(r, "forms_built", "chat-b.jsonl") == [4],
+              "%s: ... the 12 from transcript line 4" % how)
+        check(near(value(r, "seconds_per_form"), 620.0 / 13), "%s: 47.7 s a form" % how)
+        check(value(r, "revit_change_handback_chars") == len(FORMS_REPLY) + len(NOT_A_WRAPPER),
+              "%s: the hand-back counts the reply's own characters, not the wrapper's, and "
+              "keeps JSON with no \"result\" string as it is" % how)
+
+    sub = os.path.join(folder, "no-count")
+    os.makedirs(sub)
+    transcript, trail = build_b(sub, says_count=False, shape="string")
+    _, r = as_json([transcript, "--audit", trail])
+    why = ((r or {}).get("quantities", {}).get("forms_built") or {}).get("why") or ""
+    check(status(r, "forms_built") == "NOT MEASURED" and value(r, "forms_built") is None,
+          "a wrapped reply with no formCount: forms built still NOT MEASURED")
+    check("formCount" in why and "does not print a value" in why,
+          "... with the tool's own reason")
+
+
 def quantity(report, key):
     return (report or {}).get("quantities", {}).get(key) or {}
 
 
 def section_keep_box(folder):
     print()
-    print("9. The Keep box, from Revit's journal (row 5b-1031)")
+    print("10. The Keep box, from Revit's journal (row 5b-1031)")
     print("-" * 72)
     transcript, trail, journal = build_k(folder)
     code, r = as_json([transcript, "--audit", trail, "--journal", journal,
@@ -773,7 +835,7 @@ def section_keep_box(folder):
 
 def section_keep_box_none(folder):
     print()
-    print("10. The negative case - a journal with no Keep box")
+    print("11. The negative case - a journal with no Keep box")
     print("-" * 72)
     transcript, trail, journal = build_k_without_box(folder)
     _, without = as_json([transcript, "--audit", trail])
@@ -800,7 +862,7 @@ def section_keep_box_none(folder):
 
 def section_keep_box_flags(folder):
     print()
-    print("11. No journal, no offset, two journals, a journal that is not there")
+    print("12. No journal, no offset, two journals, a journal that is not there")
     print("-" * 72)
     transcript, trail, journal = build_k(folder)
     _, r = as_json([transcript, "--audit", trail])
@@ -847,7 +909,7 @@ def section_keep_box_flags(folder):
 
 def section_keep_box_words():
     print()
-    print("12. The box's words are the add-in's")
+    print("13. The box's words are the add-in's")
     print("-" * 72)
     with open(TOOL, encoding="utf-8") as fh:
         tool = fh.read()
@@ -875,8 +937,9 @@ def main():
     try:
         for i, section in enumerate((section_a, section_b, section_b2, section_none,
                                      section_no_audit, section_sources, section_edges,
-                                     section_cards, section_keep_box, section_keep_box_none,
-                                     section_keep_box_flags, section_keep_box_words)):
+                                     section_cards, section_wrapped, section_keep_box,
+                                     section_keep_box_none, section_keep_box_flags,
+                                     section_keep_box_words)):
             sub = os.path.join(folder, str(i))
             os.makedirs(sub)
             if section in (section_cards, section_keep_box_words):

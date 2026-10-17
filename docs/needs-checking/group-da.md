@@ -326,5 +326,4 @@ The tool reports forms built and seconds a form as NOT MEASURED
 [docs/04 §8.7](../04-heron-mcp.md).
 
 **Still owed:** DA4's kept half; the warm-up OFF against ON on 2020 and 2027. DA7 and `combine-family-forms`'
-signature were given and both cards promoted in pull request #624, and `combine-family-forms` was signed
-again for 5b-1001's fix (`ca69cfbd3677c569`) in pull request #631.
+signature were given and both cards promoted in pull request #624; `combine-family-forms`' second signature, after 5b-1001's fix, was given the same day (above).
