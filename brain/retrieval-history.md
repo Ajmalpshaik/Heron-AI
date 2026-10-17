@@ -1409,7 +1409,7 @@ not acted on here (D-100).
 ### The owner's call - 23 sentences measured, not declared
 
 Rows 477 and 478 leave 24 questions as *"a PROVEN read answers it, so declaring there is the owner's
-call."* The 23 advised in [the work note](../docs/work-notes/investigations/2026-10-17-plain-questions-owner-call.md)
+call."* The 23 advised in the work note `2026-10-17-plain-questions-owner-call.md` (retired once #565 merged; git history holds it at `5fa14fd8`)
 were declared in a scratch copy only - **nothing is declared in the repository until he rules**:
 
 | | `lexical` | `model` |
