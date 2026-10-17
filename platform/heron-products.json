@@ -62,6 +62,11 @@
     "This block said 'Q-PE-2 and the owner has not ruled' until 2026-09-21, which was true when it",
     "was written and is the opposite of true now (FRAGMENT-ISSUES row 5b-76).",
     "",
+    "needsPython is true where installing the product also sets up Heron's Python side - the",
+    "pinned packages, the knowledge store and a heron-ready check (PythonSetup, 2026-10-17). It is",
+    "true only for the AI connector: the connector is one end of a pipe Heron's Python server",
+    "answers, and the tools work without it (Q-PE-2), so a tools-only install asks for no Python.",
+    "",
     "Checked by tools/check-products.py. Run it after every edit to this file."
   ],
 
@@ -77,6 +82,7 @@
       "addInId": null,
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
+      "needsPython": false,
       "version": "0.1.0",
       "partOf": null,
       "state": "SHIPPED"
@@ -92,6 +98,7 @@
       "addInId": "7A1F4C62-9D3E-4B18-8E52-1C0A6F2D5B41",
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
+      "needsPython": true,
       "version": "0.1.0",
       "partOf": "heron",
       "state": "SHIPPED"
@@ -107,6 +114,7 @@
       "addInId": "876D9C3C-2EF6-4336-BCE0-3A6AE34D23B3",
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
+      "needsPython": false,
       "version": "0.1.0",
       "partOf": "heron",
       "state": "PROVING"
@@ -122,6 +130,7 @@
       "addInId": "DA03C073-C76C-4AF8-96FA-0802727B6220",
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
+      "needsPython": false,
       "version": "0.1.0",
       "partOf": null,
       "state": "PROVING"
@@ -137,6 +146,7 @@
       "addInId": "236E814D-EBBA-45AD-A92B-1B55FDDACB89",
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
+      "needsPython": false,
       "version": "0.1.0",
       "partOf": null,
       "state": "PLANNED"
