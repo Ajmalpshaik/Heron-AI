@@ -15,7 +15,7 @@
     unless a row with evidence says otherwise), what the modeller is told,
     and what the reply carries - `dialogsAnswered` and each dialog's id and
     words. Whether Revit then takes the answer is the PC's to prove
-    (NEEDS-CHECKING group EK). FRAGMENT-ISSUES section 5b row 300.
+    (NEEDS-CHECKING group EL). FRAGMENT-ISSUES section 5b row 300.
 
     The bridge's JSON writer and reader are linked beside it, as they are in
     Heron.FailureNote.TestHost: the reply is built and read back with the

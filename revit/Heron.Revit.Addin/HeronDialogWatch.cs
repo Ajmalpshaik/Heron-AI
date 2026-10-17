@@ -48,7 +48,7 @@ namespace Heron.Revit.Addin
     /// modeller during a job - a Keep or Discard question, when one is built -
     /// must be shown inside HeronAsks(), which stands this down until the
     /// prompt has its answer. Whether Revit raises this event for an
-    /// add-in's own TaskDialog at all is not known yet (NEEDS-CHECKING EK3);
+    /// add-in's own TaskDialog at all is not known yet (NEEDS-CHECKING EL3);
     /// HeronAsks makes the answer not matter.
     ///
     /// REVIT'S THREAD ONLY, and so no lock. DialogBoxShowing is raised on

@@ -40,7 +40,7 @@ namespace Heron.Revit.Addin
     /// right, and none has been recorded: the ids are not published, and a
     /// guessed id is a row that never matches - or worse, matches something
     /// else. Every dialog met is recorded on the reply with its id, so the
-    /// first rows come from real runs (NEEDS-CHECKING group EK).
+    /// first rows come from real runs (NEEDS-CHECKING group EL).
     ///
     /// THE NUMBERS ARE REVIT'S. TaskDialogResult is None=0, Ok=1, Cancel=2,
     /// Retry=4, Yes=6, No=7, Close=8, CommandLink1..4=1001..1004 on all eight
