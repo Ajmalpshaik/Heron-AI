@@ -1,0 +1,65 @@
+# The proof of create-text-note version 2 (CREATE_TEXT_NOTE, FRG-VIEW-022) -
+# a note of several paragraphs made a numbered list - NEEDS-CHECKING Group HE,
+# FRAGMENT-ISSUES row 5b-930. NOT RUN - written in a cloud session with no
+# Revit.
+#
+#     python tools/batch-prove.py tools/jobs/create-text-note-lists-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-text-note-lists-2026-10-17.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK. Look at
+# the Level 1 plan afterwards anyway: no note may be left on it - rollback has
+# failed on a PC before (BD1).
+#
+# THE MODEL - "Heron Note List Test" (docs/needs-checking/group-he.md): a NEW
+# scratch project from the default metric template, never a working project
+# and never any 4355-* model. It needs nothing drawn: the Level 1 floor plan
+# and the template's own "2.5mm Arial" text type. If the template names the
+# text type differently, read it off Annotate > Text > the Type Selector and
+# change textTypeId in both legs.
+#
+# THE MARKS ARE TYPED, NOT PRESSED: \r is a paragraph end, \v a soft line
+# break (Shift+Enter). They are in SINGLE quotes below on purpose - in double
+# quotes YAML itself would turn \r into a real carriage return before Heron
+# sees it.
+#
+# THE NEGATIVE CHANGES ONLY THE LIST: two different lists on the two
+# paragraphs side by side, which Revit would make one list. It must make
+# NOTHING - created null, unverified null, refused naming paragraphs 1 and 2.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - noteFormatting reads "4 paragraph(s); read back 1 no list, 2-4
+#     ArabicNumbers from 1"
+#   - the second route (HE2): the positive again by hand with the note kept,
+#     and the note opened in Revit's text editor
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Note List Test" (docs/needs-checking/group-he.md) - a new project from the default metric template, Revit 2020 first, then 2024 and 2027'
+
+defaults:
+  in: "Heron Note List Test"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: create-text-note
+    expect: created
+    set:
+      view: "FloorPlan: Level 1"
+      at: "0,0,0"
+      noteText: 'GENERAL NOTES\rALL DIMENSIONS ARE IN MM\rDO NOT SCALE\vFROM THIS DRAWING\rSEE DETAIL A'
+      textTypeId: "2.5mm Arial"
+      listType: "None, ArabicNumbers"
+      listStartNumber: "1"
+    negative-set:
+      view: "FloorPlan: Level 1"
+      at: "0,0,0"
+      noteText: 'FIRST POINT\rSECOND POINT'
+      textTypeId: "2.5mm Arial"
+      listType: "Bullet, ArabicNumbers"
+      listStartNumber: "1"
+    note: >
+      A heading kept out of a 1-2-3 list, a soft line break inside paragraph 3,
+      against a bullet straight after a number. The negative must make nothing
+      and say why.
