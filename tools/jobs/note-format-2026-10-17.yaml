@@ -1,0 +1,82 @@
+# The proofs of a text note's lists and styles - NEEDS-CHECKING Group FD,
+# FRAGMENT-ISSUES 5b-560:
+#
+#   edit-text-values (v5)        EDIT_TEXT_VALUES            FRG-PAR-009   mode format
+#   read-element-parameters (v4) READ_ELEMENT_PARAMETERS     FRG-PAR-001   parameterName Text
+#
+#     python tools/batch-prove.py tools/jobs/note-format-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/note-format-2026-10-17.yaml
+#
+# NEVER ON A WORKING PROJECT, and never on the 4355 model. In a NEW SCRATCH
+# PROJECT from the default metric template, saved as "Heron Note Format Test",
+# by hand, in the Level 1 floor plan, exactly two text notes and nothing else
+# that is a text note:
+#
+#   NOTE A - four paragraphs, Enter after each of the first three, no list, no
+#            bold, italic or underline:
+#              GENERAL NOTES
+#              ALL DIMENSIONS ARE IN MM
+#              DO NOT SCALE FROM THIS DRAWING
+#              SEE DETAIL A
+#   NOTE B - three paragraphs as a bulleted list (the editor's Bullets
+#            button), paragraph 2 bold, paragraph 3 underlined:
+#              FIRST POINT
+#              SECOND POINT
+#              THIRD POINT
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK. Look
+# at the two notes afterwards anyway: they must read exactly as typed.
+
+model: a scratch project from the default metric template, "Heron Note Format Test", Revit 2020 first, then 2024 and 2027
+
+defaults:
+  in: "Heron Note Format Test"
+
+jobs:
+  # POSITIVE: numbers on paragraphs 2-4 and paragraph 1 bold. Note A changed,
+  # read back "1 no list, 2-4 ArabicNumbers from 1; bold 1". Note B has three
+  # paragraphs, so paragraph 4 is not there: it is NOT edited and is in
+  # `absent`, said in noteFormatting - the per-note range check.
+  # NEGATIVE: paragraphs 2-5, past the last paragraph of both notes - REFUSED,
+  # NOTHING WAS CHANGED, `changed` empty.
+  - fragment: edit-text-values
+    expect: changed
+    write: true
+    keep-chain: true
+    setup:
+      - select-by-categories
+    setup-set:
+      categories: Text Notes
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categories: Text Notes
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      field: Text
+      mode: format
+      text: numbers 2-4; bold 1
+      replacement: ""
+    negative-set:
+      field: Text
+      mode: format
+      text: numbers 2-5
+      replacement: ""
+
+  # VERSION 4 reads what a format sets. POSITIVE: both notes, Note A "no list",
+  # Note B "lists: 1-3 Bullet || bold 2; underline 3". NEGATIVE: a name no note
+  # carries - both absent, noteWording null.
+  - fragment: read-element-parameters
+    expect: values
+    keep-chain: true
+    setup:
+      - select-by-categories
+    setup-set:
+      categories: Text Notes
+      inViewOnly: "FloorPlan: Level 1"
+    negative-setup-set:
+      categories: Text Notes
+      inViewOnly: "FloorPlan: Level 1"
+    set:
+      parameterName: Text
+    negative-set:
+      parameterName: ZZZNOTHINGHERE

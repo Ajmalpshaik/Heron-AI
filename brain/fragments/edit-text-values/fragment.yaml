@@ -9,7 +9,7 @@ semantic-identity: "change the text that is already there, rather than replacing
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -97,6 +97,50 @@ purpose: >
 #   the scratch copy "Heron note scratch", Revit 2020: replace, set 8 -> 3 and
 #   8 -> 4 paragraphs, prefix and suffix, each with its negative.
 
+# VERSION 5 (2026-10-17, FRAGMENT-ISSUES 5b-560) - MODE "format" SETS A NOTE'S
+# LISTS AND STYLES. KEPT OUT OF THE PURPOSE ON PURPOSE, as version 4 was:
+# MEASURED that day on four backends, a purpose paragraph naming numbers,
+# bullets and bold sent up to six QUESTIONS about a note ("is the first line of
+# this note bold") to this write on the trained model; without it, none. The
+# owner's four sentences below reach it by their own words on every backend.
+# Version 4 kept formatting that was there; nothing could set it, so an
+# as-built legend whose numbering a wording edit had lost could not get it back
+# through Heron. Field Text only, and never a character of the wording changed:
+#
+#   text         what to set, several joined with ';', each followed by the
+#                paragraphs it is for - "numbers 2-4; bold 1". The words:
+#                numbers, bullets, lowercase letters, uppercase letters, no
+#                list; start N; indent N, no indent; bold, italic, underline;
+#                not bold, not italic, not underlined
+#   replacement  the paragraphs for an instruction that names none: "2-11",
+#                "1, 3", "2 to last", "first", "last", "all"; empty is every
+#                paragraph. Folded into the two strings the card already takes,
+#                so no new input
+#
+#   A PARAGRAPH IS WHAT ENTER ENDS - "the first line" is paragraph 1, and a
+#   line Revit wraps by itself is not one. Each instruction covers whole
+#   paragraphs with their closing carriage return, where a list's own number
+#   takes its bold from (RevitAPI's SetBoldStatus remarks).
+#
+#   CHECKED BEFORE ANYTHING IS APPLIED, per note: a paragraph past the last
+#   one (the note goes in `absent`, and when that is every note the run is
+#   refused, NOTHING WAS CHANGED), an indent past GetMaximumIndentLevel, a
+#   start number outside Revit's range or on a paragraph that is not numbered
+#   or lettered (`readOnly`). The edits are made on GetFormattedText's copy and
+#   only SetFormattedText reaches the note, so a note that will not take every
+#   instruction is left exactly as it was.
+#
+#   EVERY PARAGRAPH IS READ BACK, NAMED OR NOT. RevitAPI's SetListType remarks:
+#   consecutive list paragraphs at one indent are one list, and a list type
+#   change reaches all of them even outside the range. A paragraph that reads
+#   back other than meant - named, or renumbered with its list - puts the note
+#   in `unverified`, said in `noteFormatting`. A note already as asked is
+#   `untouched`, and nothing is written to it.
+#
+#   NOT RUN IN REVIT. Compiled for all eight releases; the proof plan is in
+#   tests/cases.yaml and NEEDS-CHECKING group FD. Version 1's proof below no
+#   longer describes the code and is kept as a record.
+
 contract:
   needs:
     - name: doc
@@ -120,9 +164,10 @@ contract:
       role: result
       type: IList<ElementId>
     - name: untouched
-      # Elements whose text did not contain the search term. The purpose is
-      # explicit that counting these as successes would report work that did
-      # not happen (D-52).
+      # Elements whose text did not contain the search term - or, for mode
+      # format, a note already formatted as asked, to which nothing is written.
+      # The purpose is explicit that counting these as successes would report
+      # work that did not happen (D-52).
       role: accounting
       type: IList<ElementId>
     - name: blank
@@ -132,13 +177,16 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: readOnly
-      # Elements whose parameter will not take a write. Given and unusable,
-      # never an edit it made (D-52).
+      # Elements whose parameter will not take a write - or a text note that
+      # will not take a format instruction (an indent or start number out of
+      # Revit's range, a start on a paragraph that is not numbered), left as it
+      # was. Given and unusable, never an edit it made (D-52).
       role: accounting
       type: IList<ElementId>
     - name: absent
-      # Elements not carrying that field at all. Given and unusable, never an
-      # edit it made (D-52).
+      # Elements not carrying that field at all - for mode format, anything
+      # that is not a text note, or a note without a paragraph the request
+      # names. Given and unusable, never an edit it made (D-52).
       role: accounting
       type: IList<ElementId>
     - name: ambiguous
@@ -163,8 +211,10 @@ contract:
     - name: noteFormatting
       # Version 4. One line per text note it edited: paragraphs before and
       # after, each paragraph's list as READ BACK, and anything NOT KEPT. The
-      # read-back that puts a note in `unverified` is said here. A sentence
-      # about the edit, never a thing it found (D-52).
+      # read-back that puts a note in `unverified` is said here. Version 5: for
+      # mode format, each note's lists and bold/italic/underline as read back,
+      # or why it was not edited. A sentence about the edit, never a thing it
+      # found (D-52).
       role: accounting
       type: string
 
@@ -205,7 +255,12 @@ compatibility-note: >
   `GetIndentLevel`, `SetIndentLevel`, `GetListStartNumber`,
   `SetListStartNumber` and the four style get/set pairs date from 2017 and were
   read off RevitAPI.xml for 2020, 2024, 2026 and 2027 on 2026-10-17; the
-  fragment compiles for all eight releases. `Element.Name`, `LookupParameter`,
+  fragment compiles for all eight releases. Version 5 adds
+  `GetMinimumListStartNumber`, `GetMaximumListStartNumber` and
+  `GetMaximumIndentLevel`; every FormattedText member, the ListType and
+  FormatStatus values, TextRange and TextNote's Get/SetFormattedText read the
+  same in the shipped RevitAPI.dll of each release 2020 to 2027, taken one
+  release at a time with tools/api-surface on 2026-10-17 - so no #if. `Element.Name`, `LookupParameter`,
   `Parameter.AsString` and `Parameter.Set(string)` are unchanged 2020 to 2027,
   and no units call is made - this only ever touches text, which is what keeps
   it clear of the 2021 units move entirely. Only string-storage parameters are
@@ -228,6 +283,12 @@ compatibility-note: >
 #   "find and replace in the text notes" -> here, field Text (version 3)
 #   "change the wording of this note"    -> here, field Text, mode set
 #   "change the wording of this note but keep the numbering" -> here, field Text (version 4, 5b-520)
+#   "number the paragraphs of this note" -> here, field Text, mode format,
+#                                           text numbers (version 5, 5b-560)
+#   "turn the bullets into numbers"      -> here, mode format, text numbers
+#   "make the first line bold"           -> here, mode format, text bold 1
+#   "is this note numbered" / "which paragraphs are bold" -> READ_ELEMENT_PARAMETERS,
+#                                           parameterName Text - a check is a read
 #   "read what the text notes in this view say" -> READ_ELEMENT_PARAMETERS, parameterName Text
 #
 #   THE TEXT NOTES OF ONE VIEW, as a chain: SELECT_VISIBLE_IN_VIEW (PROVEN)
@@ -255,3 +316,8 @@ utterances:
   - find and replace in the text notes
   - change the wording of this note
   - change the wording of this note but keep the numbering
+  # ADDED 2026-10-17, 5b-560 - version 5's mode format, the owner's words.
+  - number the paragraphs of this note
+  - make this note a numbered list
+  - turn the bullets into numbers
+  - make the first line bold
