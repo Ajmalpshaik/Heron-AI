@@ -35,11 +35,34 @@ WHAT THIS PROVES
      are the same after a run as before it.
   8. IT SAYS WHEN IT COULD NOT LOOK: no such main, a main with no register,
      and a folder that is not a repository each exit 2 - in --json too.
+  9. WHAT A SOURCE LOOKS LIKE: a github.com URL in each spelling gives its
+     OWNER/NAME and a local path gives none; gh's lines are read, and a line
+     in another shape is refused; a worktree's path is the rest of its line,
+     spaces and all.
+ 10. OPEN PULL REQUESTS, through a fake gh: a pull request whose head is a
+     branch read is that branch, labelled; one from a fork is fetched as
+     refs/pull/N/head and read; the repository is NAMED to gh, never
+     inferred. An id two pull requests add BELOW main's highest is HELD
+     TWICE, and an id an open pull request adds that main has taken since is
+     TAKEN ON MAIN - a branch with no open pull request never is.
+ 11. WITHOUT gh: not installed, not logged in, a remote that is not
+     github.com, and --no-fetch each answer, exit 0, and say plainly that
+     the pull requests were NOT READ - and gh is never called for the last
+     two.
+ 12. WORKTREES: every worktree's working files are read from disk, saved
+     and not committed, in a folder whose name holds spaces; a worktree on a
+     pushed branch is that branch's work, never a second holder; two
+     worktrees typing the same row are HELD TWICE; this checkout's own
+     uncommitted row that main has taken is TAKEN ON MAIN; a worktree whose
+     folder is gone is NOT READ; and the run leaves every worktree as it was.
 
 WHAT IT DOES NOT PROVE. That the real registers keep the shapes it reads.
 Running the tool on this repository and reading the ids it names is that
 check, and a register that moves is caught there: a main with no id in a
-register exits 2 rather than answering.
+register exits 2 rather than answering. Nor that the real gh answers in the
+shape the fake one does - the lines its --jq asks for: a run on this
+repository with gh logged in, naming each open pull request's number, is
+that check. And Windows paths are parsed here, not walked on Windows.
 """
 
 import importlib.util
@@ -355,6 +378,289 @@ def section_8(home, seed, work):
     check(code == 2 and "could not look" in text, "not a repository: exit 2 (%s)" % code)
 
 
+# --------------------------------------------------------------------------
+# Pull requests and worktrees
+# --------------------------------------------------------------------------
+
+def named(name, default):
+    """NAME from the tool, or DEFAULT when the tool has no such name - so a
+    check against a tool without it still RUNS and FAILS."""
+    found = getattr(NI, name, None)
+    check(found is not None, "the tool has %s at all" % name)
+    return found if found is not None else default
+
+
+def ask(root, **kw):
+    """NI.answer with the keywords a tool without them would refuse, as a
+    failure rather than a traceback."""
+    try:
+        return NI.answer(root, **kw)
+    except TypeError as exc:
+        check(False, "answer() takes %s (%s)" % (sorted(kw), exc))
+    except NI.CouldNot as exc:
+        check(False, "answer() could look (%s)" % exc)
+    return {"registers": {}, "pull_requests": {}, "worktrees": [], "holders": {}}
+
+
+class FakeGh(object):
+    """gh, answering from a script: what it was asked, and what it says."""
+
+    def __init__(self, code=0, out="", err="", missing=False):
+        self.code, self.out, self.err, self.missing = code, out, err, missing
+        self.calls = []
+
+    def __call__(self, args, root):
+        self.calls.append(list(args))
+        if self.missing:
+            raise OSError(2, "No such file or directory: 'gh'")
+        return self.code, self.out, self.err
+
+
+def pull_line(number, branch, sha, repo):
+    return "%d\t%s\t%s\t%s\n" % (number, branch, sha, repo)
+
+
+def section_9():
+    print("\n9. what a source looks like")
+    github_repo = named("github_repo", lambda url: None)
+    for url in ("https://github.com/Ajmalpshaik/Heron-AI",
+                "https://github.com/Ajmalpshaik/Heron-AI.git\n",
+                "https://someone@github.com/Ajmalpshaik/Heron-AI/",
+                "git@github.com:Ajmalpshaik/Heron-AI.git",
+                "ssh://git@github.com/Ajmalpshaik/Heron-AI.git"):
+        check(github_repo(url) == "Ajmalpshaik/Heron-AI",
+              "%r names Ajmalpshaik/Heron-AI (got %r)" % (url.strip(), github_repo(url)))
+    for url in ("/home/someone/origin.git", "C:/Users/Ajmal PS/origin.git",
+                "https://gitlab.com/a/b.git"):
+        check(github_repo(url) is None, "%r is not a github.com remote" % url)
+
+    parse_pulls = named("parse_pulls", lambda text: [])
+    got = parse_pulls(pull_line(590, "claude/x", "abc123", "Ajmalpshaik/Heron-AI")
+                      + "\n" + pull_line(7, "main", "def456", ""))
+    check(got == [{"number": 590, "branch": "claude/x", "sha": "abc123",
+                   "repo": "Ajmalpshaik/Heron-AI"},
+                  {"number": 7, "branch": "main", "sha": "def456", "repo": ""}],
+          "gh's lines are read, a deleted fork's empty repository too: %s" % got)
+    try:
+        parse_pulls('[{"number": 590}]\n')
+        refused = False
+    except Exception as exc:
+        refused = "does not read" in str(exc)
+    check(refused, "an answer in another shape is refused, not skipped")
+
+    parse_worktrees = named("parse_worktrees", lambda text: [])
+    porcelain = ("worktree C:/Users/Ajmal PS/Heron Ai\r\nHEAD " + "a" * 40 + "\r\n"
+                 "branch refs/heads/main\r\n\r\n"
+                 "worktree C:/Users/Ajmal PS/Heron Ai/.claude/worktrees/two words\n"
+                 "HEAD " + "b" * 40 + "\ndetached\n\n"
+                 "worktree /srv/gone\nHEAD " + "c" * 40 + "\nbranch refs/heads/claude/x\n"
+                 "prunable gitdir file points to non-existent location\n\n"
+                 "worktree /srv/bare.git\nbare\n")
+    got = parse_worktrees(porcelain)
+    check([w["path"] for w in got] == ["C:/Users/Ajmal PS/Heron Ai",
+                                       "C:/Users/Ajmal PS/Heron Ai/.claude/worktrees/two words",
+                                       "/srv/gone", "/srv/bare.git"],
+          "every path is the rest of its line, spaces kept: %s" % [w["path"] for w in got])
+    check([w["branch"] for w in got] == ["main", None, "claude/x", None]
+          and [w["prunable"] for w in got] == [False, False, True, False]
+          and [w["bare"] for w in got] == [False, False, False, True],
+          "and its branch, detached, prunable and bare are read")
+
+
+def section_10_and_11(home):
+    os.makedirs(home)
+    origin, seed, work = world(home)
+    sha = lambda ref: git(seed, "rev-parse", ref)
+
+    # Main moves on after the branches were cut: another pull request merged
+    # 5b-31 - the row feat/one holds - and main's highest passes 50.
+    rows = MAIN["docs/fragment-issues/section-5b-rows-026-050.md"]
+    commit(seed, {"docs/fragment-issues/section-5b-rows-026-050.md":
+                  rows + "| **31** | another pull request's row, merged first | open |\n"
+                         "| **60** | a round number, merged | open |\n"},
+           "another pull request merges 31 and 60")
+    git(seed, "push", "-q", "origin", "main")
+    # THREE and FOUR both take 50 - below main's highest now, the race that
+    # comparing above main's highest alone never saw.
+    for name in ("feat/three", "feat/four"):
+        branch(seed, name, {"docs/fragment-issues/section-5b-rows-026-050.md":
+                            rows + "| **50** | %s's row | open |\n" % name}, "%s takes 50" % name)
+    # A fork's pull request: its head is on the remote only as refs/pull/7/head.
+    git(seed, "checkout", "-q", "-b", "fork-work", "main")
+    commit(seed, {"docs/needs-checking/group-bc.md": "# Needs checking — Group BC\n",
+                  "docs/fragment-issues/section-5b-rows-026-050.md":
+                  rows + "| **45** | the fork's row | open |\n"}, "a fork takes BC and 45")
+    git(seed, "push", "-q", "origin", "fork-work:refs/pull/7/head")
+    fork_sha = sha("fork-work")
+    git(seed, "checkout", "-q", "main")
+    git(work, "fetch", "-q", "origin")
+
+    print("\n10. open pull requests, through a fake gh")
+    code, got = as_json("--repo", work)
+    check(code == 0 and got.get("registers", {}).get("5b", {}).get("held_twice", {}).get("5b-50")
+          == ["origin/feat/four", "origin/feat/three"],
+          "from the branches alone, with no gh: 50, added by two branches BELOW main's "
+          "highest 60, is HELD TWICE (got %s)"
+          % got.get("registers", {}).get("5b", {}).get("held_twice"))
+    gh = FakeGh(out=pull_line(11, "feat/one", sha("origin/feat/one"), "acme/heron")
+                + pull_line(12, "feat/two", sha("origin/feat/two"), "acme/heron")
+                + pull_line(13, "feat/three", sha("origin/feat/three"), "acme/heron")
+                + pull_line(14, "feat/four", sha("origin/feat/four"), "acme/heron")
+                + pull_line(7, "main", fork_sha, "someone/heron"))
+    got = ask(work, gh=gh, github="acme/heron")
+    pulls, regs = got.get("pull_requests", {}), got.get("registers", {})
+    check(pulls.get("read") is True and len(pulls.get("open", [])) == 5,
+          "five open pull requests are read: %s" % pulls.get("why_not"))
+    check(len(gh.calls) == 1 and "repos/acme/heron/pulls?state=open&per_page=100" in gh.calls[0]
+          and gh.calls[0][0] == "api",
+          "gh is asked once, through the REST api, with the repository NAMED: %s" % gh.calls)
+    by_number = {p["number"]: p for p in pulls.get("open", [])}
+    check(by_number.get(11, {}).get("read_as") == "origin/feat/one",
+          "a pull request whose head is a branch read is that branch")
+    check(got.get("holders", {}).get("origin/feat/one", {}).get("pr") == 11,
+          "and the branch is labelled with its number")
+    check(by_number.get(7, {}).get("read_as") == "PR #7" and by_number.get(7, {}).get("from_fork"),
+          "the fork's is fetched as refs/pull/7/head and read as PR #7")
+    holds = regs.get("5b", {}).get("holds", {})
+    check(holds.get("PR #7") == ["5b-45"] and regs.get("group", {}).get("holds", {})
+          .get("PR #7") == ["BC"], "and what it adds is read: %s" % holds.get("PR #7"))
+    check(regs.get("group", {}).get("next") == "BD",
+          "the next group is above the fork's BC too (got %s)" % regs.get("group", {}).get("next"))
+    check(regs.get("5b", {}).get("held_twice", {}).get("5b-50") ==
+          ["origin/feat/four", "origin/feat/three"],
+          "50, added by two pull requests BELOW main's highest 60, is HELD TWICE: %s"
+          % regs.get("5b", {}).get("held_twice"))
+    check(regs.get("5b", {}).get("taken_on_main") == {"5b-31": ["origin/feat/one"]},
+          "31, which feat/one (#11) adds and main has since merged, is TAKEN ON MAIN: %s"
+          % regs.get("5b", {}).get("taken_on_main"))
+    check("5b-31" not in holds.get("origin/feat/one", []),
+          "and it is not listed among what feat/one holds, since main has it")
+    gh_no_two = FakeGh(out=pull_line(11, "feat/one", sha("origin/feat/one"), "acme/heron"))
+    commit(seed, {"docs/fragment-issues/section-5b-rows-026-050.md":
+                  rows + "| **31** | another pull request's row, merged first | open |\n"
+                         "| **33** | two's row, as it merged | open |\n"
+                         "| **60** | a round number, merged | open |\n"}, "two merges 33")
+    git(seed, "push", "-q", "origin", "main")
+    got = ask(work, gh=gh_no_two, github="acme/heron")
+    taken = got.get("registers", {}).get("5b", {}).get("taken_on_main", {})
+    check("5b-33" not in taken and taken.get("5b-31") == ["origin/feat/one"],
+          "feat/two has no open pull request - it may be one that merged - so its 33 "
+          "on main is not TAKEN ON MAIN: %s" % taken)
+    code, text = run_with(work, gh, github="acme/heron")
+    check("HELD TWICE  5b-50" in text and "TAKEN ON MAIN  5b-31" in text
+          and "origin/feat/one (#11)" in text and "PR #7" in text,
+          "the plain report names the clash, the taken row, the labels and the fork")
+
+    print("\n11. without gh")
+    for fake, said in ((FakeGh(missing=True), "not installed"),
+                       (FakeGh(code=4, err="To get started with GitHub CLI, please run:  "
+                                           "gh auth login\n"), "gh auth login"),
+                       (FakeGh(code=1, err="HTTP 401: Bad credentials\n"), "Bad credentials")):
+        got = ask(work, gh=fake, github="acme/heron")
+        pulls = got.get("pull_requests", {})
+        check(pulls.get("read") is False and said in (pulls.get("why_not") or "")
+              and got.get("registers", {}).get("5b", {}).get("next") == "5b-61",
+              "%s: still answers, and says why the pull requests were not read (%s)"
+              % (said, pulls.get("why_not")))
+    fake = FakeGh(out=pull_line(11, "feat/one", "x", "acme/heron"))
+    got = ask(work, gh=fake)
+    check(fake.calls == [] and "github.com" in (got.get("pull_requests", {}).get("why_not") or ""),
+          "a remote that is not github.com: gh is never called, and it says to name one")
+    got = ask(work, gh=fake, github="acme/heron", fetched=False)
+    check(fake.calls == [] and "--no-fetch" in (got.get("pull_requests", {}).get("why_not") or ""),
+          "--no-fetch: gh is never called either")
+    code, text = run("--repo", work)
+    check(code == 0 and "pull requests   NOT READ" in text and "this checkout alone" in text,
+          "the plain report says NOT READ, and what that leaves unjudged, exit %s" % code)
+
+
+def run_with(root, gh, github=None):
+    """The plain report, from the module with a fake gh, and the exit code."""
+    out, saved = io.StringIO(), sys.stdout
+    sys.stdout = out
+    try:
+        result = ask(root, gh=gh, github=github)
+        if result.get("registers"):
+            NI.report(result)
+    finally:
+        sys.stdout = saved
+    return 0, out.getvalue()
+
+
+def section_12(home):
+    os.makedirs(home)
+    origin, seed, work = world(home)
+    rows_file = "docs/fragment-issues/section-5b-rows-026-050.md"
+    rows = MAIN[rows_file]
+    index = MAIN["docs/NEEDS-CHECKING.md"]
+
+    print("\n12. worktrees")
+    git(work, "fetch", "-q", "origin")
+    spaced = os.path.join(home, "Heron Ai", "two words")
+    os.makedirs(os.path.dirname(spaced))
+    git(work, "worktree", "add", "-q", "-b", "claude/local", spaced, "origin/main")
+    # Saved, not committed: a new group's file and its heading, and a row.
+    write(spaced, {"docs/needs-checking/group-bd.md": "# Needs checking — Group BD\n",
+                   "docs/NEEDS-CHECKING.md": index + "\n## Group BD - typed, not committed\n",
+                   rows_file: rows + "| **70** | typed in the spaced worktree | open |\n"})
+    # A worktree on a branch already pushed: its 33 is feat/two's, once.
+    pushed = os.path.join(home, "on two")
+    git(work, "worktree", "add", "-q", "-b", "feat/two", pushed, "origin/feat/two")
+    # Another worktree typing the same row 70.
+    other = os.path.join(home, "other")
+    git(work, "worktree", "add", "-q", "-b", "claude/other", other, "origin/main")
+    write(other, {rows_file: rows + "| **70** | typed in another worktree | open |\n"})
+    # A worktree whose folder has gone.
+    gone = os.path.join(home, "gone")
+    git(work, "worktree", "add", "-q", "-b", "claude/gone", gone, "origin/main")
+    shutil.rmtree(gone)
+    # This checkout's own row, typed while main merged the same number.
+    git(work, "checkout", "-q", "-b", "claude/here", "origin/main")
+    write(work, {rows_file: rows + "| **80** | typed here | open |\n"})
+    commit(seed, {rows_file: rows + "| **80** | merged first by somebody else | open |\n"},
+           "main takes 80")
+    git(seed, "push", "-q", "origin", "main")
+
+    states = {where: (snapshot(where), git(where, "status", "--porcelain"))
+              for where in (work, spaced, pushed, other)}
+    got = ask(work, gh=FakeGh(missing=True))
+    regs, trees = got.get("registers", {}), got.get("worktrees") or []
+    by_path = {os.path.normcase(os.path.realpath(t["path"])): t for t in trees if t.get("path")}
+    key = lambda path: os.path.normcase(os.path.realpath(path))
+    check(by_path.get(key(spaced), {}).get("read") is True,
+          "the worktree in a folder whose name holds spaces is read: %s"
+          % [t.get("path") for t in trees])
+    name = "worktree " + by_path.get(key(spaced), {}).get("path", spaced)
+    check(regs.get("group", {}).get("holds", {}).get(name) == ["BD"]
+          and "5b-70" in regs.get("5b", {}).get("holds", {}).get(name, []),
+          "its saved, uncommitted group BD and row 70 are what it holds")
+    check(regs.get("group", {}).get("next") == "BE" and regs.get("5b", {}).get("next") == "5b-81",
+          "and the next group and row are above them (got %s, %s)"
+          % (regs.get("group", {}).get("next"), regs.get("5b", {}).get("next")))
+    held = regs.get("5b", {}).get("held_twice", {})
+    check("5b-33" not in held,
+          "the worktree on pushed feat/two is that branch's work, not a second holder: %s" % held)
+    check(len(held.get("5b-70", [])) == 2,
+          "two worktrees typing row 70 are HELD TWICE: %s" % held.get("5b-70"))
+    check(regs.get("5b", {}).get("taken_on_main", {}).get("5b-80") ==
+          ["worktree " + by_path.get(key(work), {}).get("path", work)],
+          "this checkout's uncommitted 80, which main has since taken, is TAKEN ON MAIN: %s"
+          % regs.get("5b", {}).get("taken_on_main"))
+    check(by_path.get(key(gone), {}).get("read") is False
+          and "gone" in (by_path.get(key(gone), {}).get("why_not") or ""),
+          "a worktree whose folder is gone is NOT READ, and says why")
+    check(all((snapshot(where), git(where, "status", "--porcelain")) == states[where]
+              for where in states),
+          "every worktree's files and git status are what they were before the run")
+    code, text = run("--repo", work, "--no-fetch")
+    check(code == 0 and "Heron Ai" in text and "NOT READ - its folder is gone" in text,
+          "the plain report names each worktree read, spaces kept, and the one not read")
+    got = ask(work, gh=FakeGh(missing=True), worktrees=False)
+    check(got.get("worktrees") is None
+          and "5b-70" not in str(got.get("registers", {}).get("5b", {}).get("holds")),
+          "--no-worktrees leaves the working files unread")
+
+
 def main():
     print("tools/next-id.py")
     section_1()
@@ -363,6 +669,9 @@ def main():
     try:
         _, seed, work = section_3_to_7(home)
         section_8(home, seed, work)
+        section_9()
+        section_10_and_11(os.path.join(home, "pulls"))
+        section_12(os.path.join(home, "trees"))
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print("\n%s" % ("%d FAILED" % len(FAILURES) if FAILURES else "all passed"))
