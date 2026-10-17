@@ -771,6 +771,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fu.md`](needs-checking/group-fu.md)
 
+## Group FY - every column of a schedule in one call, and a heading turned back to horizontal: `SET_SCHEDULE_APPEARANCE` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fy.md`](needs-checking/group-fy.md)
+
 ## Group GP - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
 
 **Its own file:** [`needs-checking/group-gp.md`](needs-checking/group-gp.md)
