@@ -34,6 +34,12 @@ WHAT THIS PROVES
      branch only refers to, a rename onto a file that is there, a merge half
      done, and a folder that is not a repository - each exits 2.
   6. --next IS next-id's answer.
+  7. A DECISION'S NUMBERING LINE SAYS WHAT HAPPENED: its words stay as
+     history and a sentence names the old number, the date and why - main
+     took it (3, 4) or which other branch holds it, never this branch's own
+     pushed copy. One with no Numbering line gets one under its Status line
+     (4, 7); one with no Status line either, and another decision's Numbering
+     line naming the old id, are left alone, named, and exit 1.
 
 WHAT IT DOES NOT PROVE. That every form a real document writes an id in is
 one of the forms it renames. A form it misses stays as it was, so the gate
@@ -41,6 +47,7 @@ that caught the clash - check-docs.py, check-decision-titles.py or
 test_open_defects.py - goes on catching it after the run.
 """
 
+import datetime
 import importlib.util
 import io
 import json
@@ -154,10 +161,19 @@ START = {
     "docs/HANDOVER.md": "# Handover\n\nNothing yet.\n",
 }
 
+TODAY = datetime.date.today().isoformat()
+NEXT_ID_SAID = "**Numbering:** `tools/next-id.py` found D-116 free."
+MAIN_NUMBERING = "**Numbering:** main's own D-116, found free on main."
+BECAUSE_MAIN = ", because `main` had given D-116 to another decision first."
+# What the branch's Numbering line says once D-116 is D-131: its words kept, as history.
+RENUMBERED = (NEXT_ID_SAID + " Renumbered from D-116 to D-131 on " + TODAY
+              + " with `tools/renumber.py`" + BECAUSE_MAIN)
+
 # Main takes all four first, and pushes.
 MAIN_ADDS = {
     "docs/DECISIONS.md": START["docs/DECISIONS.md"] + (
-        "\n## D-116 — Main's sixteen\n\n**Full record:** [`decisions/D-116.md`](decisions/D-116.md)\n"),
+        "\n## D-116 — Main's sixteen\n\n**Status:** Accepted\n" + MAIN_NUMBERING + "\n"
+        "**Full record:** [`decisions/D-116.md`](decisions/D-116.md)\n"),
     "docs/decisions/D-116.md": "# D-116 — Main's sixteen\n",
     "docs/NEEDS-CHECKING.md": START["docs/NEEDS-CHECKING.md"] + (
         "\n## Group EJ - main's group\n\n"
@@ -173,8 +189,10 @@ BRANCH_ADDS = {
     "docs/DECISIONS.md": START["docs/DECISIONS.md"].replace(
         "| Accepted |\n", "| Accepted |\n"
         "| [D-116](#d-116--the-branchs-sixteen) | The branch's sixteen | Accepted |\n") + (
-        "\n## D-116 — The branch's sixteen\n\n**Full record:** [`decisions/D-116.md`](decisions/D-116.md)\n"),
-    "docs/decisions/D-116.md": "# D-116 — The branch's sixteen\n\nIt keeps [D-115](D-115.md).\n",
+        "\n## D-116 — The branch's sixteen\n\n**Status:** Accepted · **Date:** 2026-10-17\n"
+        + NEXT_ID_SAID + "\n**Full record:** [`decisions/D-116.md`](decisions/D-116.md)\n"),
+    "docs/decisions/D-116.md": ("# D-116 — The branch's sixteen\n\n**Status:** Accepted · **Date:** 2026-10-17\n"
+                                + NEXT_ID_SAID + "\n\nIt keeps [D-115](D-115.md).\n"),
     "docs/NEEDS-CHECKING.md": START["docs/NEEDS-CHECKING.md"] + (
         "\n## Group EJ - the branch's group\n\n"
         "**Its own file:** [`needs-checking/group-ej.md`](needs-checking/group-ej.md)\n"),
@@ -270,8 +288,15 @@ def section_3(work):
     check(all(line in decisions.split("\n") for line in START["docs/DECISIONS.md"].split("\n")),
           "and every line it had before the fork - D-115's - is untouched")
     check(not exists(work, "docs/decisions/D-116.md")
-          and read(work, "docs/decisions/D-131.md").startswith("# D-131 — The branch's sixteen\n\nIt keeps [D-115]"),
+          and read(work, "docs/decisions/D-131.md").startswith("# D-131 — The branch's sixteen\n")
+          and "It keeps [D-115](D-115.md)." in read(work, "docs/decisions/D-131.md"),
           "the committed decisions/D-116.md is now D-131.md, and its title says so")
+    for rel in ("docs/DECISIONS.md", "docs/decisions/D-131.md"):
+        lines = read(work, rel).split("\n")
+        check(RENUMBERED in lines and NEXT_ID_SAID not in lines,
+              "%s: its Numbering line keeps D-116 as history and says it was renumbered, and why" % rel)
+    check("numbering  docs/DECISIONS.md:" in text and "added to: Renumbered from D-116 to D-131" in text,
+          "and it prints the Numbering line it wrote")
     check(not exists(work, NOTE) and exists(work, NOTE.replace("d-116", "d-131"))
           and read(work, NOTE.replace("d-116", "d-131")) == "# Notes on D-131\n",
           "an untracked note named for it is renamed too")
@@ -347,7 +372,7 @@ def merged_world(home):
         "docs/DECISIONS.md": MAIN_ADDS["docs/DECISIONS.md"].replace(
             "| Accepted |\n", "| Accepted |\n"
             "| [D-116](#d-116--the-branchs-sixteen) | The branch's sixteen | Accepted |\n") + (
-            "\n## D-116 — The branch's sixteen\n\nIts words, inline.\n"),
+            "\n## D-116 — The branch's sixteen\n\n**Status:** Accepted\n\nIts words, inline.\n"),
         "docs/NEEDS-CHECKING.md": MAIN_ADDS["docs/NEEDS-CHECKING.md"] + (
             "\n## Group EJ - the branch's group\n\n| **EJ1** | run it | look |\n"),
         ROWS: MAIN_ADDS[ROWS] + BRANCH_ADDS[ROWS].splitlines(True)[-1],
@@ -368,7 +393,7 @@ def section_4(home):
         "docs/open-questions/tier-1.md": MAIN_ADDS["docs/open-questions/tier-1.md"],
     }
     main_lines = ["## D-116 — Main's sixteen", "## Group EJ - main's group",
-                  "| **489** | main's row 489, see D-116 | open |",
+                  "| **489** | main's row 489, see D-116 | open |", MAIN_NUMBERING,
                   "Main took D-116, Q-64, Group EJ and row 5b-489."]
     for old, new in (("Q-64", "Q-69"), ("5b-489", "5b-652"), ("Group EJ", "Group FZ")):
         code, text = run(work, "--from", old, "--to", new)
@@ -394,6 +419,11 @@ def section_4(home):
           and "## Group FZ - the branch's group" in whole and "| **FZ1** | run it" in whole
           and "| **652** | the branch's row, see [D-131]" in whole,
           "while every line of the branch's own is renamed")
+    written = ("**Numbering:** written as D-116; renumbered D-131 on " + TODAY
+               + " with `tools/renumber.py`" + BECAUSE_MAIN)
+    check("## D-131 — The branch's sixteen\n\n**Status:** Accepted\n" + written + "\n\nIts words, inline." in whole,
+          "a decision with no Numbering line gets one, under its Status line")
+    check(whole.count("**Numbering:**") == 2, "and main's decision gets none from it")
     check("### \U0001F535 Q-69 — the branch's question" in read(work, "docs/open-questions/tier-2.md"),
           "and its question, in the file main never touched")
     check(git(work, "diff", "--stat", "origin/main", "--", *sorted(mains)) == "",
@@ -441,6 +471,52 @@ def section_6(home):
           "and --json gives it for a machine")
 
 
+def section_7(home):
+    print("\n7. the Numbering line, when another branch holds the id and main does not")
+    origin = os.path.join(home, "held-origin.git")
+    seed = os.path.join(home, "held-seed")
+    work = os.path.join(home, "held-work")
+    git(home, "init", "-q", "--bare", origin)
+    git(origin, "symbolic-ref", "HEAD", "refs/heads/main")
+    git(home, "clone", "-q", origin, seed)
+    configure(seed)
+    git(seed, "checkout", "-q", "-b", "main")
+    commit(seed, START, "the registers")
+    git(seed, "push", "-q", "origin", "main")
+    git(seed, "checkout", "-q", "-b", "feat/other")
+    commit(seed, {"docs/decisions/D-116.md": "# D-116 — Another branch's sixteen\n"}, "other takes D-116")
+    git(seed, "push", "-q", "origin", "feat/other")
+    git(home, "clone", "-q", origin, work)
+    configure(work)
+    git(work, "checkout", "-q", "-b", "feat/clash")
+    sibling = "**Numbering:** took D-117, because D-116 is this branch's other decision."
+    commit(work, {
+        "docs/DECISIONS.md": START["docs/DECISIONS.md"] + (
+            "\n## D-116 — The branch's sixteen\n\n**Full record:** [`decisions/D-116.md`](decisions/D-116.md)\n"
+            "\n## D-117 — Its sibling\n\n**Status:** Accepted\n" + sibling + "\n"),
+        "docs/decisions/D-116.md": "# D-116 — The branch's sixteen\n\n**Status:** Accepted\n\nIts words.\n",
+    }, "the branch takes D-116 and D-117")
+    # Pushed, so the remote holds this branch's own copy of D-116 too - and it is no reason.
+    git(work, "push", "-q", "-u", "origin", "feat/clash")
+    git(work, "fetch", "-q", "origin")
+
+    code, text = run(work, "--from", "D-116", "--to", "D-131")
+    check(code == 1, "it exits 1: two lines are left for a person (%d)" % code)
+    record = read(work, "docs/decisions/D-131.md")
+    check(record == ("# D-131 — The branch's sixteen\n\n**Status:** Accepted\n"
+                     "**Numbering:** written as D-116; renumbered D-131 on " + TODAY
+                     + " with `tools/renumber.py`, because feat/other holds D-116 too.\n\nIts words.\n"),
+          "a record with no Numbering line gets one under its Status line, naming the branch "
+          "that holds D-116 and not this one: %r" % record)
+    log = read(work, "docs/DECISIONS.md")
+    check("## D-131 — The branch's sixteen\n\n**Full record:**" in log,
+          "the index's section with no Status line is given no Numbering line")
+    check("docs/DECISIONS.md:" in text and "has no **Status:** line" in text,
+          "and that is named for a person")
+    check(sibling in log and "another decision's Numbering line" in text,
+          "another decision's Numbering line naming D-116 is left as written, and named")
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-renumber-")
     try:
@@ -451,6 +527,7 @@ def main():
         section_4(home)
         section_5(home)
         section_6(home)
+        section_7(home)
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print()
