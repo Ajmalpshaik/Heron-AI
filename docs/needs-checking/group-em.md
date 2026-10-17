@@ -1,4 +1,4 @@
-# Needs checking — Group EL
+# Needs checking — Group EM
 
 > One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-17 so that it can be read
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
@@ -6,7 +6,7 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group EL - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
+## Group EM - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
 Asked for by the owner on 2026-10-17: a read-only tool that returns a PNG of a Revit view **into the
 chat**, so the AI can check its own work. [D-117](../DECISIONS.md#d-117--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export)
@@ -35,12 +35,12 @@ ceiling plan also called *Level 1*. Note the ducts' ids (Manage > IDs of Selecti
 
 | # | Run | Look for |
 |---|---|---|
-| **EL1** | `revit_view_image` with `view` empty, *Level 1* floor plan in front | **The picture shows in Claude** - the chat describes the walls and ducts it sees, and the words name 'Level 1', FloorPlan and *Heron Capture Test*. The D-30 positive for a named view |
-| **EL2** | Count the model's elements (`revit_use_this_model` answers with the count) and note Undo's list; then `revit_view_image` with `elements` = the three duct ids and the level's id; then count again and open Undo's list | The picture is of the three ducts in 3D, close up, with no level line or annotation in it; the words say 3 framed and the level *is a datum*. **The element count is the same before and after, and Undo's list has no new entry** |
-| **EL3** | After EL2, the Project Browser's 3D Views | **No new 3D view** - the temporary view is gone. The words said *"The temporary view is gone - Revit rolled it back"*; if they said Revit did NOT confirm it, write that down here |
-| **EL4** | `revit_view_image` with `view` = `Levle 1` (misspelt), then with `view` = `Level 1` | **The negative case.** The first is refused - *"There is no view called 'Levle 1'"*, no picture, nothing made. The second is refused as ambiguous, naming `CeilingPlan: Level 1` and `FloorPlan: Level 1`; typing one of those back pictures that view |
-| **EL5** | `revit_view_image` with `elements` = an id that is not in the model, and with `elements` = a duct id and `view` = `Level 1` together | Each refused before anything is made - the first naming the id, the second saying one or the other. Element count and Undo unchanged |
-| **EL6** | EL1, EL2 and EL3 again on **Revit 2027** | The same answers - **both ways work on 2020 and 2027** |
-| **EL7** | After EL1 to EL6, the folder `HeronPaths.Captures` names (Heron's `captures` folder under Derived) | Empty, or not there: every capture deleted its own folder. A folder left in it is a capture that did not finish, and is safe to delete |
-| **EL8** | `revit_view_image` with `width` = 9000 | The picture comes back 2400 px wide and the words say the width was clamped |
-| **EL9** | *Watching, not a proof.* The activity banner over Revit during EL2 | It shows the reading colour and *"Taking a picture of a view for the chat"*, never a change |
+| **EM1** | `revit_view_image` with `view` empty, *Level 1* floor plan in front | **The picture shows in Claude** - the chat describes the walls and ducts it sees, and the words name 'Level 1', FloorPlan and *Heron Capture Test*. The D-30 positive for a named view |
+| **EM2** | Count the model's elements (`revit_use_this_model` answers with the count) and note Undo's list; then `revit_view_image` with `elements` = the three duct ids and the level's id; then count again and open Undo's list | The picture is of the three ducts in 3D, close up, with no level line or annotation in it; the words say 3 framed and the level *is a datum*. **The element count is the same before and after, and Undo's list has no new entry** |
+| **EM3** | After EM2, the Project Browser's 3D Views | **No new 3D view** - the temporary view is gone. The words said *"The temporary view is gone - Revit rolled it back"*; if they said Revit did NOT confirm it, write that down here |
+| **EM4** | `revit_view_image` with `view` = `Levle 1` (misspelt), then with `view` = `Level 1` | **The negative case.** The first is refused - *"There is no view called 'Levle 1'"*, no picture, nothing made. The second is refused as ambiguous, naming `CeilingPlan: Level 1` and `FloorPlan: Level 1`; typing one of those back pictures that view |
+| **EM5** | `revit_view_image` with `elements` = an id that is not in the model, and with `elements` = a duct id and `view` = `Level 1` together | Each refused before anything is made - the first naming the id, the second saying one or the other. Element count and Undo unchanged |
+| **EM6** | EM1, EM2 and EM3 again on **Revit 2027** | The same answers - **both ways work on 2020 and 2027** |
+| **EM7** | After EM1 to EM6, the folder `HeronPaths.Captures` names (Heron's `captures` folder under Derived) | Empty, or not there: every capture deleted its own folder. A folder left in it is a capture that did not finish, and is safe to delete |
+| **EM8** | `revit_view_image` with `width` = 9000 | The picture comes back 2400 px wide and the words say the width was clamped |
+| **EM9** | *Watching, not a proof.* The activity banner over Revit during EM2 | It shows the reading colour and *"Taking a picture of a view for the chat"*, never a change |

@@ -399,11 +399,11 @@ picture sits between the two, and neither was written with one in mind.
    `capture_view` are taken out of it before merge.
 
 D-117 holds the second thing to accept with the first - that `capture_view` is the first ANALYZE
-operation to open a transaction, always rolled back - and [NEEDS-CHECKING group EL](../needs-checking/group-el.md)
+operation to open a transaction, always rolled back - and [NEEDS-CHECKING group EM](../needs-checking/group-em.md)
 the run that would prove it.
 
 **Answer: NOT MODEL DATA — 2026-10-17. See [D-117](../decisions/D-117.md), now Accepted.** The owner:
 *"A picture is not model data, ship it"*. `revit_view_image` ships as D-117 describes; it is still
-DRAFT until [NEEDS-CHECKING group EL](../needs-checking/group-el.md) is run in Revit.
+DRAFT until [NEEDS-CHECKING group EM](../needs-checking/group-em.md) is run in Revit.
 
 ---

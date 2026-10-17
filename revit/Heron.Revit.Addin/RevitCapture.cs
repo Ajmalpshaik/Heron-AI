@@ -22,7 +22,7 @@ namespace Heron.Revit.Addin
     /// ============================ NEVER RUN ============================
     /// Written on a machine with no Revit. It COMPILES on 2020 through 2027
     /// and that is the whole of what is known about it. NEEDS-CHECKING group
-    /// EL is the run that would say more.
+    /// EM is the run that would say more.
     /// ===================================================================
     ///
     /// WHAT IT IS FOR. A chat that has just placed a duct, built a family or
