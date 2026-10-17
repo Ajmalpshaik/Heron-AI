@@ -14,7 +14,7 @@ Revit asks the modeller Keep or Discard before a change from a chat is kept.
 
 WHY THIS EXISTS
 ---------------
-D-99 kept every revit_change at once, with no preview. D-124 supersedes it:
+D-99 kept every revit_change at once, with no preview. D-126 supersedes it:
 the change runs inside Heron's TransactionGroup, Revit selects and isolates
 what it touched, and a TaskDialog asks Keep or Discard. Keep is one undo entry;
 Discard rolls the group back and puts the modeller's selection back.
@@ -37,7 +37,7 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
 Neither half proves Revit then does what it is told. That is the PC's, and
 NEEDS-CHECKING Group EO says what it owes.
 
-MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-124 every
+MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-126 every
 wiring section fails and the host does not build, and this suite exits 1 rather
 than raising.
 
@@ -149,7 +149,7 @@ def wiring():
           "and it starts listening only once the group has started")
     check(re.search(r"if\s*\(\s*asking\s*\|\|\s*askToKeep\s*\)\s*\{[^}]*answered\s*=\s*AskTheModeller\(",
                     run) is not None,
-          "one box for both: a DRAFT's one run (D-119) and a keep from a chat (D-124)")
+          "one box for both: a DRAFT's one run (D-119) and a keep from a chat (D-126)")
     check(run.count("AskTheModeller(") == 1,
           "and it is asked from one place only")
     check("if (answered != null) apply = answered == Keep;" in run,

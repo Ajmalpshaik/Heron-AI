@@ -33,6 +33,10 @@ Normal BIM operations can be automated. High-risk operations require confirmatio
 
 The important boundary is `EXECUTE | MODIFY`. Everything above it changes something the user cares about and cannot always undo.
 
+**[NOTE]** Built 2026-10-17: `EXECUTE` runs with Changes off from a chat — `revit_show`, and Revit's
+temporary isolate as fixed operations ([04 §8.9](04-heron-mcp.md)). A selection or a zoom inside a linked
+model is the same: not touching the link, so no confirmation ([D-124](DECISIONS.md)).
+
 ---
 
 ## 2. High-risk operations (§53)

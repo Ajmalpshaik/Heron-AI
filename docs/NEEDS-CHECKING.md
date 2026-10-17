@@ -727,7 +727,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
-## Group EO - Revit asks Keep or Discard before a change from a chat is kept: D-124 (2026-10-17)
+## Group EO - Revit asks Keep or Discard before a change from a chat is kept: D-126 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
 
@@ -742,6 +742,10 @@ Step 6 is finished, and not before. At that point:
 ## Group ER - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
 **Its own file:** [`needs-checking/group-er.md`](needs-checking/group-er.md)
+
+## Group ES - "show me / zoom to / isolate these" with Changes OFF: `revit_show`, the temporary isolate, and `ZOOM_TO_LINKED_ELEMENTS` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-es.md`](needs-checking/group-es.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

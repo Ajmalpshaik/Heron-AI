@@ -24,10 +24,14 @@ risk: READ
 # member is relied on.
 #
 # READ ONLY - opens no transaction.
+# THE PURPOSE NAMES NO TYPE AND NOT THE WORD "LINE" (FRAGMENT-ISSUES 5b-501):
+# with "Title w Line" and "extension line" in it, "line the viewports up" - a
+# request to MOVE them - reached this read on the trained model ahead of
+# ALIGN_VIEWPORTS_ACROSS_SHEETS. Title w Line and No Title are what it lists.
 purpose: >
-  Lists the viewport types - Title w Line, No Title and the rest - with each
-  one's title family, whether the title and extension line show, and how many
-  viewports on sheets use it.
+  Lists the viewport types - the title styles a viewport on a sheet can carry -
+  with each one's title family, whether its title and its extension show, and
+  how many viewports on sheets use it.
 
 contract:
   needs:

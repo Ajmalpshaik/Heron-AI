@@ -170,7 +170,7 @@ an edit.
 | [D-96](#d-96--a-downloaded-heron-is-installed-by-the-installer-and-only-by-the-installer) | A downloaded Heron is installed by the installer, and only by the installer | ✅ Accepted · 2026-09-21 |
 | [D-97](#d-97--the-library-is-built-out-first-and-proved-in-one-pass-later) | The library is built out first, and proved in one pass later | ✅ Accepted · 2026-08-30 |
 | [D-98](#d-98--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) | A context fragment is consumed by the host, not by another fragment | ⏳ Proposed · 2026-08-31 |
-| [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) | A change asked for in a chat is kept at once, with no preview, and Article 9 says so | ✅ Accepted · 2026-09-23 · superseded by D-124 · 2026-10-17 |
+| [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) | A change asked for in a chat is kept at once, with no preview, and Article 9 says so | ✅ Accepted · 2026-09-23 · superseded by D-126 · 2026-10-17 |
 | [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) | A drop in the score of the owner's own questions is reported, never a gate | ✅ Accepted · 2026-09-23 |
 | [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) | Risk is part of routing, not only part of permission | ⏳ Proposed · 2026-08-31 |
 | [D-102](#d-102--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) | Several fragments may jointly feed one, and the orphan check asks per need | ✅ Accepted · 2026-08-31 |
@@ -195,7 +195,9 @@ an edit.
 | [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
 | [D-122](#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
 | [D-123](#d-123--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
-| [D-124](#d-124--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ✅ Accepted · 2026-10-17 |
+| [D-124](#d-124--selecting-or-zooming-to-elements-inside-a-linked-model-is-not-touching-it-and-asks-for-no-confirmation) | Selecting or zooming to elements inside a linked model is not touching it, and asks for no confirmation | ✅ Accepted · 2026-10-17 |
+| [D-125](#d-125--a-fragment-says-what-transaction-it-needs-notransactionopen-for-one-that-must-run-with-none-and-modify-for-one-that-needs-herons) | A fragment says what transaction it needs: noTransactionOpen for one that must run with none, and MODIFY for one that needs Heron's | ✅ Accepted · 2026-10-17 |
+| [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -862,7 +864,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-09-23 · **Source:** Ajmal PS, 2026-09-23, asked as decision D1 of the earlier-brain plan
 **Amends:** [Constitution Article 9](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 17](14-golden-rules.md) · **Keeps:** [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
-**Superseded by:** [D-124](#d-124--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), accepted by the owner 2026-10-17 - Revit asks the modeller Keep or Discard before a change from a chat is kept, and D-99's behaviour remains only as the owner's switch for that question
+**Superseded by:** [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), accepted by the owner 2026-10-17 - Revit asks the modeller Keep or Discard before a change from a chat is kept, and D-99's behaviour remains only as the owner's switch for that question
 
 **Full record:** [`decisions/D-99.md`](decisions/D-99.md)
 
@@ -1068,12 +1070,31 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-123.md`](decisions/D-123.md)
 
-## D-124 — Revit asks the modeller Keep or Discard before a change from a chat is kept
+## D-124 — Selecting or zooming to elements inside a linked model is not touching it, and asks for no confirmation
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"Q-64: selecting/zooming linked elements is not touching, no confirmation"* · **Source:** [Q-65](open-questions/tier-2.md), raised the same day by the show door's first linked fragment, `ZOOM_TO_LINKED_ELEMENTS`
+**Numbering:** written and accepted as D-118, and pushed as D-119; renumbered D-124 on 2026-10-17 while merging `main`, where #557, #554 and #556 had already given D-118 to D-123 to other decisions. Its question was written as Q-64 and is [Q-65](open-questions/tier-2.md) since #556 gave Q-64 to another; the owner's words quoted above name it by that first number.
+**Answers:** [Q-65](open-questions/tier-2.md)
+**Keeps:** Constitution Article 7 for everything that CHANGES a link - unloading, reloading, a path type, room bounding - and its explicit confirmation for each · [D-59](#d-59--reading-spans-loaded-links-only-when-the-modeller-asks-and-the-answer-says-how-many-it-read) - reading a link
+**Affects:** [`heron_tools.py`](../mcp/server/heron_tools.py) and [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_show` - the link hold removed), `zoom-to-linked-elements`
+
+**Full record:** [`decisions/D-124.md`](decisions/D-124.md)
+
+## D-125 — A fragment says what transaction it needs: noTransactionOpen for one that must run with none, and MODIFY for one that needs Heron's
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation, on the rows this decision closes: *"do it all the work dont keep anyting not finished okkey"* · **Source:** [FRAGMENT-ISSUES 5b-498 and 5b-499](fragment-issues/section-5b-rows-401-425.md), found building the show door
+**Takes:** [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view)'s first alternative - *"a second ambient need with an honest name"* - which it left for the owner
+**Keeps:** [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group) - `editScopeFailures` for a fragment that opens its own transactions, refused everywhere but the write path · the read and show doors' guarantee that Heron opens no transaction there · Golden Rule 16
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (`NoTransactionNeed`), [`heron_fragment.py`](../brain/heron_fragment.py) (`AMBIENT`), [`check-revit-gate.py`](../tools/check-revit-gate.py), `open-view` (version 3), `isolate-elements` (risk)
+
+**Full record:** [`decisions/D-125.md`](decisions/D-125.md)
+
+## D-126 — Revit asks the modeller Keep or Discard before a change from a chat is kept
 
 **Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-117 and mark the PR ready"* · **Source:** Ajmal PS agreed it should be added, in the task that asked for it on 2026-10-17
-**Numbering:** drafted as D-116; renumbered D-117, D-118, D-123 and then D-124 on 2026-10-17 while merging `main`, where #546, #547, #557, #554 and #556 had given D-116 to D-123 to other decisions. The owner's words quoted above name it by the number it had when it was accepted, D-117
+**Numbering:** drafted as D-116; renumbered D-117, D-118, D-123, D-124 and then D-126 on 2026-10-17 while merging `main`, where #546, #547, #557, #554, #556 and #555 had given D-116 to D-125 to other decisions. The owner's words quoted above name it by the number it had when it was accepted, D-117
 **One box with D-119:** merged into [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)'s Keep or Discard prompt on the owner's instruction, 2026-10-17, when #554 had built that prompt in the same code first: *"Unify into one"*. Items 2, 4 and 9 below say how it was built after that, and are marked so
 **Supersedes:** [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - a change asked for in a chat is no longer kept at once; Revit shows it and the modeller keeps it · **Keeps:** [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-60](#d-60--a-preview-selects-what-it-would-change-and-what-it-would-skip-up-to-500), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on), [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group), [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) - one prompt for both doors, Golden Rules 16 and 19, Constitution Article 7
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs), [`RevitChangedSet.cs`](../revit/Heron.Revit.Addin/RevitChangedSet.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronDialogWatch.cs`](../revit/Heron.Revit.Addin/HeronDialogWatch.cs), [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs), [`HeronChangesWindow.cs`](../revit/Heron.Revit.Addin/HeronChangesWindow.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`host.chat.yaml`](../brain/instructions/host.chat.yaml), [Constitution Article 9](../HERON_CONSTITUTION.md), [Golden Rule 17](14-golden-rules.md)
 
-**Full record:** [`decisions/D-124.md`](decisions/D-124.md)
+**Full record:** [`decisions/D-126.md`](decisions/D-126.md)

@@ -123,7 +123,7 @@ namespace Heron.Core
         public const string PublishEnabledKey = "publish.enabled";
 
         /// <summary>
-        /// Config key for D-124: Revit asks the modeller Keep or Discard before
+        /// Config key for D-126: Revit asks the modeller Keep or Discard before
         /// a change from a chat is kept. It lets nothing through - it only
         /// decides whether a change Changes already allowed is asked about.
         /// </summary>
@@ -380,7 +380,7 @@ namespace Heron.Core
         }
 
         /// <summary>
-        /// Whether Revit asks Keep or Discard before keeping a change - D-124.
+        /// Whether Revit asks Keep or Discard before keeping a change - D-126.
         /// Read fresh, like every switch here, so the owner's edit to the file
         /// counts from the next change without a restart.
         ///

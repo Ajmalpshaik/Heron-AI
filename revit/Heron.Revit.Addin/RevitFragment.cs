@@ -375,6 +375,18 @@ namespace Heron.Revit.Addin
             // one undo (Golden Rule 16) that rolls back on a preview.
             var ownsTransactions = DeclaresNeed(needs, EditScopeNeed);
 
+            // A FRAGMENT THAT MUST RUN WITH NO TRANSACTION OPEN AND OPENS NONE -
+            // D-125. Revit changes no view inside a transaction (D-115), so
+            // OPEN_VIEW has to run with none open; it declared D-112's switch
+            // for that, and so was refused below on the read and show paths,
+            // where no transaction is open anyway. This need says only "run
+            // me with none open": on the write path it runs inside the group
+            // as an edit-mode fragment does, and on the read and show paths
+            // nothing changes, because nothing there is open to begin with.
+            // It promises the fragment opens NONE of its own, so it grants
+            // nothing those paths did not already allow.
+            var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
+
             // NEVER ON THE READ PATH. That path's whole guarantee is that no
             // transaction is open, so Revit itself refuses every change - and
             // a fragment that opens its own would walk straight through it.
@@ -548,7 +560,7 @@ namespace Heron.Revit.Addin
                 && string.Equals(Json.ReadString(request, "apply"), "true",
                                  StringComparison.OrdinalIgnoreCase);
 
-            // AND BEFORE A CHANGE IS KEPT, REVIT ASKS THE MODELLER - D-124, the
+            // AND BEFORE A CHANGE IS KEPT, REVIT ASKS THE MODELLER - D-126, the
             // same box as D-119's "ask" above. The owner's switch, read fresh
             // here and never taken from the request (Golden Rule 19): a caller
             // may ask to keep, and only the modeller says yes. A run that keeps
@@ -563,7 +575,7 @@ namespace Heron.Revit.Addin
                                          StringComparison.Ordinal);
 
             // A keep from a chat that Revit counted no change in is kept without
-            // the box, and the verdict says so (D-124). And whether the
+            // the box, and the verdict says so (D-126). And whether the
             // modeller's own selection is as they left it after a Discard.
             var nothingToAsk = false;
             var selectionRestored = true;
@@ -611,7 +623,7 @@ namespace Heron.Revit.Addin
                 {
                     group.Start();
 
-                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-124.
+                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-126.
                     // From here, so the setup steps count too: Keep keeps them.
                     // The `using` takes the handler off however this block ends.
                     if (changed != null) changed.Begin();
@@ -667,9 +679,12 @@ namespace Heron.Revit.Addin
                     // where ownsTransactions is read. Whatever it opened it
                     // must have closed - a transaction left open is a group
                     // that can be neither kept nor rolled back, so it is named.
-                    if (ownsTransactions)
+                    if (ownsTransactions || wantsNoTransaction)
                     {
-                        globals.__heron[EditScopeNeed] = new FailureDiscipline(said, null);
+                        // The discipline is the edit-mode fragment's to hand
+                        // on; a fragment that opens none has nothing to give it.
+                        if (ownsTransactions)
+                            globals.__heron[EditScopeNeed] = new FailureDiscipline(said, null);
 
                         threw = RunScript(script, globals, name, out state);
 
@@ -737,7 +752,7 @@ namespace Heron.Revit.Addin
                     if (HeronDialogWatch.Refused)
                         return DialogRefusal(name, SafeRollBack(group));
 
-                    // D-119 AND D-124: THE MODELLER DECIDES, here, with the work
+                    // D-119 AND D-126: THE MODELLER DECIDES, here, with the work
                     // done and the group still open - so Keep and Discard are
                     // exactly `apply` and its absence, chosen by a person who
                     // has seen the result rather than sent by a caller who has
@@ -866,7 +881,7 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// Show the modeller what the fragment did and ask: keep it, or put
         /// the model back. Returns Keep, Discard or Closed - or null when there
-        /// was nothing to ask about. D-119, and D-124 for a keep from a chat.
+        /// was nothing to ask about. D-119, and D-126 for a keep from a chat.
         ///
         /// MODAL, AND THAT IS BOTH ITS GUARANTEE AND ITS LIMIT. Nothing on the
         /// wire can answer it - only a person at this Revit - and while it is
@@ -2086,7 +2101,7 @@ namespace Heron.Revit.Addin
                         + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
                         + "would undo whatever you did before this.";
 
-                // D-124: KEPT WITH NOBODY ASKED BECAUSE REVIT COUNTED NO CHANGE,
+                // D-126: KEPT WITH NOBODY ASKED BECAUSE REVIT COUNTED NO CHANGE,
                 // said first rather than left for the reader to infer. Who
                 // answered a box that was shown is WithAnswer's to say.
                 if (nothingToAsk) verdict = HeronKeepQuestion.NothingToAskSentence + " " + verdict;
@@ -2547,6 +2562,17 @@ namespace Heron.Revit.Addin
                          .Append("\"];\n");
                     how.Add(name + " - Heron's failure discipline, for the fragment's own "
                             + "edit mode");
+                    continue;
+                }
+
+                // D-125: the switch that says "run me with no transaction
+                // open". There is nothing to hand the fragment, so it is bound
+                // as a constant it can ignore - the declaration is the point.
+                if (name == NoTransactionNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("bool ").Append(name).Append(" = true;\n");
+                    how.Add(name + " - run with no transaction open (D-125)");
                     continue;
                 }
 
@@ -4334,7 +4360,7 @@ namespace Heron.Revit.Addin
         /// ELEMENT TYPES TOO, in the one walk: an id an earlier answer printed
         /// may be a type's, and the walk stops as soon as every id is found.
         /// </summary>
-        private static object ElementsWithTypedIds(Document doc, List<string> typed,
+        internal static object ElementsWithTypedIds(Document doc, List<string> typed,
                                                    out string problem)
         {
             problem = null;
@@ -5711,6 +5737,15 @@ namespace Heron.Revit.Addin
         /// The same name is in brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string EditScopeNeed = "editScopeFailures";
+
+        /// <summary>
+        /// The ambient need that says a fragment must run with NO transaction
+        /// open and opens none of its own - D-125, for a call Revit refuses
+        /// inside one, such as changing the active view. Unlike EditScopeNeed
+        /// it is allowed on the read and show paths. The same name is in
+        /// brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string NoTransactionNeed = "noTransactionOpen";
 
         /// <summary>
         /// The ambient need that hands a reloading fragment its answer to

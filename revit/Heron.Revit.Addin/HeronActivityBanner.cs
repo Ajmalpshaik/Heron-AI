@@ -367,7 +367,7 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// Out of the way while Revit asks the modeller something - D-124's
+        /// Out of the way while Revit asks the modeller something - D-126's
         /// Keep or Discard - and back afterwards.
         ///
         /// THE CARD IS TOPMOST, so it would sit over the dialog it is waiting

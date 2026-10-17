@@ -81,7 +81,7 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// The banner of the job running now, for the same reason as _running:
         /// AwaitingModeller has to move it out of the way of the box, and the
-        /// box's code is never handed the dispatcher (D-124).
+        /// box's code is never handed the dispatcher (D-126).
         /// </summary>
         [ThreadStatic]
         private static HeronActivityBanner _runningBanner;
@@ -172,7 +172,7 @@ namespace Heron.Revit.Addin
             var job = _running;
             if (job != null) job.MarkAskedModeller();
 
-            // AND THE BANNER STEPS ASIDE (D-124). It is Topmost, so it would
+            // AND THE BANNER STEPS ASIDE (D-126). It is Topmost, so it would
             // sit over the box it is waiting on; Execute brings it back the
             // moment the job returns, before it says how the job ended.
             var banner = _runningBanner;
@@ -431,7 +431,7 @@ namespace Heron.Revit.Addin
                             _runningBanner = null;
 
                             // The box is answered or the job is over: the
-                            // banner comes back to say how it ended (D-124).
+                            // banner comes back to say how it ended (D-126).
                             if (job.AskedModeller) _banner.StepAside(false);
                         }
                     }
@@ -499,7 +499,8 @@ namespace Heron.Revit.Addin
                     // and the warning count below can never disagree about
                     // which runs are fragment runs.
                     var fragmentRun =
-                        op == "run_fragment_read" || op == "run_fragment_write"
+                        op == "run_fragment_read" || op == "run_fragment_show"
+                        || op == "run_fragment_write"
                         || op == "run_fragment_publish" || op == "run_fragment_admin";
 
                     // AND WHAT REVIT RAISED, read off the reply as a NUMBER.
@@ -613,6 +614,19 @@ namespace Heron.Revit.Addin
                     var name = Clean(Json.ReadString(request, "name"));
                     return name.Length == 0 ? "Running a job" : "Running a job: " + name;
 
+                // WHAT IS SHOWN, NOT WHAT EXISTS - the show door changes the
+                // selection, the camera or the view, and the banner says that
+                // rather than the read's "Running a job".
+                case "run_fragment_show":
+                    var showing = Clean(Json.ReadString(request, "name"));
+                    return showing.Length == 0 ? "Showing on screen" : "Showing on screen: " + showing;
+
+                case "isolate_temporary":
+                    return "Isolating in the active view, temporarily";
+
+                case "reset_temporary":
+                    return "Resetting the temporary hide/isolate";
+
                 // THE BANNER MUST NOT SAY THE SAME THING FOR BOTH. Its colour
                 // already differs - amber, from the tool registry - but the
                 // words are what somebody actually reads, and "Running a job"
@@ -676,13 +690,13 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// The banner's last line for a finished job: the modeller's own Keep
-        /// or Discard when the job asked them one (D-124), otherwise Explain's
+        /// or Discard when the job asked them one (D-126), otherwise Explain's
         /// line for the error code.
         /// </summary>
         private static string Ended(string failure, string response)
         {
             // A KEEP OR DISCARD THE MODELLER ANSWERED IS NO FAILURE, and "Done"
-            // over a change they just discarded would read as kept (D-124).
+            // over a change they just discarded would read as kept (D-126).
             if (failure == null)
             {
                 var answered = Json.ReadString(response, "modellerAnswer");
