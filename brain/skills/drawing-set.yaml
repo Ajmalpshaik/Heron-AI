@@ -65,7 +65,12 @@ purpose: >
      needs the modeller's yes for that one delete. One element in a section
      or elevation - an opening from its level and grid, its own width and
      height - is CREATE_LINEAR_DIMENSION (DRAFT, version 3 of 2026-10-15),
-     "face ID top" and "family ID Left" among its references.
+     "face ID top" and "family ID Left" among its references. An element in
+     a LINKED model - a builders-work opening in a structural or electrical
+     link, tagged in this model's plans - is the same tool with the link
+     first (version 4): "grid C | link MODEL face ID bottom | link MODEL
+     face ID top" - MODEL the linked model's name as LIST_LINKED_MODELS
+     gives it, or the placed link's id when the model is linked twice.
   9. PLACE_VIEW_ON_SHEET (PROVEN), each plan and elevation on its own sheet,
      at a point on the sheet in millimetres inside the title block's drawing
      area ((390, 300) on "A1 metric"). A view goes on one sheet only.

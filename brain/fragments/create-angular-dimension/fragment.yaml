@@ -129,3 +129,9 @@ utterances:
   - put an angular dimension here
   - dimension this splay
   - show the angle on the drawing
+  # ADDED 2026-10-16, row 5b-486. Undeclared, this plain request was a coin
+  # toss on the spelling backend - it reached here on main by a fraction of a
+  # rank, and the sentences CREATE_LINEAR_DIMENSION version 4 declares for
+  # linked openings tipped it to CREATE_DIMENSION, the duct-spacing write.
+  # Declared, it answers here by identity whatever its neighbours say.
+  - add an angular dimension

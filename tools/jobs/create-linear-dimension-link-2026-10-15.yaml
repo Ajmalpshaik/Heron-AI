@@ -1,0 +1,162 @@
+# The proof of create-linear-dimension version 4 (CREATE_LINEAR_DIMENSION,
+# FRG-VIEW-101), written 2026-10-15 for FRAGMENT-ISSUES row 5b-486 -
+# NEEDS-CHECKING Group EH, rows EH1 to EH5. NOT RUN as a proof. The same
+# words were run in Revit 2020 the same day on scratch projects made with no
+# window (EH0 in the group) - that measured the route, and is not a proof.
+#
+#     python tools/batch-prove.py tools/jobs/create-linear-dimension-link-2026-10-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-linear-dimension-link-2026-10-15.yaml
+#
+# WHAT VERSION 4 CHANGED. `between` takes one word more, in front of any
+# other - `link LINK WORD ...`, LINK the placed link's id or the linked
+# model's name - and the word after it is read inside that link's own
+# document, then carried into this model.
+#
+# MODIFY: every leg runs inside a transaction group and is ROLLED BACK.
+#
+# THE MODELS - MAKE THEM FIRST, in Revit 2020 (any release 2020 to 2027).
+# NEW projects, never a real one: the case that asked for this is a real
+# BIM 360 project and is not written to.
+#
+#   1. THE BOX: "Heron Dim Box" from Group EF's job file
+#      (create-linear-dimension-family-face-2026-10-15.yaml, step 1) - one
+#      extrusion 1000 x 300 x 600 mm round its two centre planes, nothing else.
+#   2. THE LINK SOURCE - a new project from the default metric template,
+#      SAVED as "HeronLinkSource.rvt" in a test folder. In "FloorPlan: Level 1":
+#        - a wall, Basic Wall 200 mm thick, its location line from 0,-4000 to
+#          0,4000 (a north-south wall on x = 0)
+#        - "Heron Dim Box" at 0,0 on Level 1, ROTATED 90 degrees, 1000 mm up:
+#          it is then x -150 to 150, y -500 to 500, z 1000 to 1600 mm
+#        - grid "LC" from -3000,-2000 to 3000,-2000
+#        - a reference plane named "RP" from -3000,-1500 to 3000,-1500
+#        - a model line from -3000,-1000 to 3000,-1000
+#      Read the ids of the box, the wall and the model line (Manage > IDs of
+#      Selection) BEFORE closing it, then save and close it.
+#   3. THE HOST - a new project from the default metric template, NOT saved.
+#      Insert > Link Revit > HeronLinkSource.rvt, Positioning "Auto - Origin
+#      to Origin". Grid "C" from -3000,-2500 to 3000,-2500 in "FloorPlan:
+#      Level 1". Read the placed link's id (select it, Manage > IDs of
+#      Selection). A section named "Heron Link Section" drawn from x = -4000
+#      to x = 4000 at y = -1000, LOOKING NORTH (+y) at the box, its far clip
+#      past y = 500.
+#
+# EDIT BEFORE THE RUN - batch-prove has no way to fill these in:
+#   - every LINKID below: the placed link's id from step 3
+#   - every BOXID, WALLID and LINEID: the ids read in step 2
+#   - `in:` below: the title Revit shows for the host - "Project1", "Project2"
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: a dimension was made and read back on the positive, and the
+#     negative made none. PASS does not check the NUMBERS - the next block does
+#   - NEG NOT EMPTY: a dimension was drawn from words that should be refused -
+#     a defect, not an arrangement fault
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - EH1 measured "2500 mm": grid C to the box's own centre plane, inside
+#     the link. Its negative names what the box publishes - CenterLeftRight
+#     and CenterFrontBack - and offers `link LINKID face BOXID ...`
+#   - EH2 measured "500 mm + 500 mm + 500 mm": a linked grid, plane and line,
+#     the link said by its name. Its negative names the links the host places
+#   - EH3 measured "200 mm", or whatever the wall's thickness is. Its
+#     negative says the box's id is in link HeronLinkSource and how to say it
+#   - EH4 measured "1600 mm": the linked level to the box's top, and a finding
+#     "The string runs through 2000,-1000,800 mm"
+#   - EH5 measured "2000 mm + 1000 mm": grid C to the box's bottom face, then
+#     its length along the wall - the real job's shape - and a finding that 2
+#     of its references read back as elements of a linked model
+#   - the second route (EH6): Revit's own Annotate > Aligned dimension picked
+#     on the same linked faces (Tab into the link) in the host plan, the
+#     values compared
+#
+# THE JOBS WRITE ONE RUN RECORD. All five are this one fragment, so each
+# overwrites brain/proof-drafts/runs/create-linear-dimension.json and the
+# proof draft is the LAST - EH5, the faces from a grid, the one the real job
+# needs. Add `--report <a path in your temp folder>` to keep every answer.
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands, naming the one with the host.
+
+model: 'a new, unsaved project from the default metric template linking the saved project "HeronLinkSource.rvt" origin to origin - in the link a 200 mm wall on x = 0, "Heron Dim Box" rotated 90 degrees 1000 mm up, grid LC, reference plane RP and a model line; in the host grid C at y = -2500 and the section "Heron Link Section" looking north, Revit 2020'
+
+defaults:
+  in: "Project1"
+  write: true
+  set:
+    view: "FloorPlan: Level 1"
+  # The negative inherits nothing from `set` - the view is said again.
+  negative-set:
+    view: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: create-linear-dimension
+    expect: [created, measured]
+    set:
+      between: "grid C | link LINKID family BOXID CenterLeftRight"
+      lineFrom: "1000,-3000,0"
+      lineTo: "1000,3000,0"
+    negative-set:
+      between: "grid C | link LINKID family BOXID Left"
+      lineFrom: "1000,-3000,0"
+      lineTo: "1000,3000,0"
+    note: >
+      EH1 - a family's own reference inside a link. Grid C to the box's
+      centre plane. The negative asks for a Left the box does not publish.
+
+  - fragment: create-linear-dimension
+    expect: [created, measured]
+    set:
+      between: "grid C | link HeronLinkSource grid LC | link HeronLinkSource plane RP | link HeronLinkSource line LINEID"
+      lineFrom: "1000,-3000,0"
+      lineTo: "1000,3000,0"
+    negative-set:
+      between: "grid C | link Nope grid LC"
+      lineFrom: "1000,-3000,0"
+      lineTo: "1000,3000,0"
+    note: >
+      EH2 - a linked grid, reference plane and model line, the link said by
+      its model's name. The negative names a link the host does not place.
+
+  - fragment: create-linear-dimension
+    expect: [created, measured]
+    set:
+      between: "link LINKID wall WALLID exterior | link LINKID wall WALLID interior"
+      lineFrom: "-1000,3000,0"
+      lineTo: "1000,3000,0"
+    negative-set:
+      between: "grid C | face BOXID bottom"
+      lineFrom: "1000,-3000,0"
+      lineTo: "1000,3000,0"
+    note: >
+      EH3 - a linked wall's two faces. The negative names the box without
+      `link`, and must say which link it is in.
+
+  - fragment: create-linear-dimension
+    expect: [created, measured]
+    set:
+      view: "Heron Link Section"
+      between: "link LINKID level Level 1 | link LINKID face BOXID top"
+      lineFrom: "2000,-1000,800"
+      lineTo: "2000,-1000,800"
+    negative-set:
+      view: "Heron Link Section"
+      between: "link LINKID level Nope | link LINKID face BOXID top"
+      lineFrom: "2000,-1000,800"
+      lineTo: "2000,-1000,800"
+    note: >
+      EH4 - a linked level, in a section, one point given twice. The
+      negative names a level the link does not have.
+
+  - fragment: create-linear-dimension
+    expect: [created, measured]
+    set:
+      between: "grid C | link LINKID face BOXID bottom | link LINKID face BOXID top"
+      lineFrom: "1000,-3000,0"
+      lineTo: "1000,3000,0"
+    negative-set:
+      between: "grid C | link LINKID face 99999999 left"
+      lineFrom: "1000,-3000,0"
+      lineTo: "1000,3000,0"
+    note: >
+      EH5 - the real job's shape: a grid of this model to both faces of an
+      opening in a link, along the wall. The negative names an id the link
+      does not hold.
