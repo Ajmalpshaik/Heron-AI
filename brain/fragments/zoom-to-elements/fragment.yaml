@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,24 +9,7 @@ semantic-identity: "take me to these on screen, wherever they are"
 kind: action
 domain: revit.selection
 capability: ZOOM_TO_ELEMENTS
-# VERSION 2 (2026-10-17, FRAGMENT-ISSUES 5b-512): it runs with NO TRANSACTION
-# OPEN. revit_read refuses anything above ANALYZE, so revit_change is the only
-# door a chat has for this EXECUTE fragment - and it ran version 1 inside
-# Heron's transaction, where Revit changes no view: "The active view can only
-# be changed when there is no open transaction" (RevitAPIUI.xml 2024,
-# UIDocument.ActiveView and RequestViewChange), measured for RequestViewChange
-# on Revit 2020 (5b-456). Show moves to another view whenever the one in front
-# cannot see the elements, so the card declares the ambient
-# `editScopeFailures` need, the switch D-115 names for exactly this. Whether
-# Show itself is refused inside a transaction is NOT measured; with the switch
-# the answer is the same either way. Revit's words now come first when Show is
-# refused, and `shown` stays 0. Nothing else changed: the same input, the same
-# answer. Version 1 was proved on the old read path, in a project's {3D}, and
-# never in the Family Editor - where the code asks nothing about the kind of
-# document, and the family method opens "View 1" first so Show zooms the 3D
-# view (NEEDS-CHECKING Group ES). DRAFT until version 2 is run in Revit -
-# and until then revit_change refuses it before sending it (D-117).
-version: 2
+version: 1
 source: OFFICIAL
 risk: EXECUTE
 
@@ -78,14 +61,6 @@ contract:
     - name: alsoSelect
       type: bool
       source: request
-    - name: editScopeFailures
-      # NEVER USED BY THE CODE. Declaring it is the switch that has the add-in
-      # run this inside the job's TransactionGroup with NO transaction open
-      # (D-112, D-115) - Revit changes no view inside one (5b-456), and Show
-      # can change the view. It also refuses this fragment on the read path,
-      # which revit_read already does for anything declared EXECUTE.
-      type: IFailuresPreprocessor
-      source: ambient
   provides:
     - name: shown
       role: result
@@ -104,11 +79,6 @@ contract:
     - name: findings
       type: IList<string>
 
-# THIS PROOF IS VERSION 1's AND IT IS STALE. It ran on the read path, with no
-# transaction anywhere, in a project's {3D} - never through revit_change, where
-# version 1 ran inside Heron's transaction, and never in the Family Editor. The
-# fingerprint below no longer matches the implementation; Group ES is the run
-# that replaces it.
 proof:
   date: '2026-09-13'
   by: Ajmal PS
@@ -140,9 +110,7 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `UIDocument.ShowElements(ICollection<ElementId>)`,
   `UIDocument.Selection.SetElementIds` and `UIDocument.ActiveView` are unchanged
-  2020 to 2027. Version 2 adds no member. Revit 2020 measured refusing a view
-  change inside a transaction (5b-456); the other releases are not measured,
-  and the switch makes the answer the same on all of them.
+  2020 to 2027.
 
   `UIDocument` comes from the Revit UI namespace the fragment wrapper already
   imports, so it is not written out in full - a fully qualified name would
@@ -168,13 +136,10 @@ compatibility-note: >
 #                                             another level that looks like an
 #                                             empty result
 #   "hide these"                           -> HIDE_ELEMENTS
-#   "show me the whole family in 3D"       -> OPEN_VIEW "View 1" FIRST, then
-#                                             here with the family's forms
-#                                             (SELECT_FAMILY_FORMS). Show zooms
-#                                             the view in front when it can
-#                                             see them, and opens no view by
-#                                             name - so the 3D view is opened
-#                                             by the tool that does
+#   "zoom to the beams in the structural
+#    link"                                 -> ZOOM_TO_LINKED_ELEMENTS. Show takes
+#                                             host ids, and a linked element's
+#                                             id means nothing in the host
 #
 # TWO FRAGMENTS ANSWER "SHOW ME THESE" AND THE DIFFERENCE IS WHY THEY CANNOT BE
 # SEEN. Off the screen is this one. Hidden by the view is SHOW_ELEMENTS. The

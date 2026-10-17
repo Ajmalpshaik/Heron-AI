@@ -306,15 +306,17 @@ purpose: >
       read back right while a part sits on the wrong side, floats off the
       body or is missing - that is found here, never by the modeller. In
       this order, since a call between the select and the zoom clears what
-      the select left: OPEN_VIEW "View 1", the family's 3D view;
-      SET_VIEW_PROPERTIES views "View 1", visualStyle "Shaded with Edges",
-      detailLevel Fine, scale 0 (left as it is), so a part shown only at
-      Fine is in the picture; SELECT_FAMILY_FORMS forms "solid" through
-      revit_read; ZOOM_TO_ELEMENTS through revit_change with expect_from
-      "select-family-forms" and alsoSelect false, so the modeller's screen
-      shows the whole family too - until its version 2 is proved,
-      revit_change refuses it as DRAFT (D-117): say so, ask the modeller to
-      press ZF in View 1, and go on; then revit_view_image with view
+      the select left: OPEN_VIEW "View 1", the family's 3D view, through
+      revit_show; SET_VIEW_PROPERTIES views "View 1", visualStyle "Shaded
+      with Edges", detailLevel Fine, scale 0 (left as it is), through
+      revit_change, so a part shown only at Fine is in the picture;
+      SELECT_FAMILY_FORMS forms "solid" through revit_read; ZOOM_TO_ELEMENTS
+      through revit_show with expect_from "select-family-forms" and
+      alsoSelect false, so the modeller's screen shows the whole family too.
+      revit_show changes only what is on screen and opens no transaction,
+      and Revit moves no view inside one (D-125). If revit_show is not
+      offered, or Revit's Heron does not know it yet, ask the modeller to
+      open View 1 and press ZF, and go on. Then revit_view_image with view
       "View 1" - and again with view "Front" for a product with a front,
       such as a monitor, a panel or a unit. The picture comes into this
       chat; LOOK at it: every part from step 0's list is there, on the side
@@ -429,9 +431,9 @@ needs:
   # A fixed family's colours, before SET_FAMILY_FORM_MATERIAL - see step 12.
   - CREATE_MATERIAL
   - REPORT_FAMILY_FORMS
-  # Step 13's look at what was built - the 3D view opened, shaded at Fine
-  # and zoomed to the forms; the picture itself is the revit_view_image tool,
-  # which is not a capability (row 5b-512).
+  # Step 13's look at what was built - the 3D view opened and zoomed to the
+  # forms through revit_show, and shaded at Fine; the picture itself is the
+  # revit_view_image tool, which is not a capability (row 5b-522).
   - OPEN_VIEW
   - SET_VIEW_PROPERTIES
   - SELECT_FAMILY_FORMS

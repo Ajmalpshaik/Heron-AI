@@ -6,48 +6,52 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group ES - the family method looks at what it built: `ZOOM_TO_ELEMENTS` version 2, `revit_view_image` in a family, and `family-creation` step 13 (2026-10-17)
+## Group ES - "show me / zoom to / isolate these" with Changes OFF: `revit_show`, the temporary isolate, and `ZOOM_TO_LINKED_ELEMENTS` (2026-10-17)
 
-Found on 2026-10-14 building two fixed monitor families on Revit 2020. Both were checked by
-`REPORT_FAMILY_FORMS`, every size as planned, and then by a desktop screen grab of the Revit window taken
-outside Heron - which showed the 55 inch family half off the screen, because the 3D view had never been
-zoomed. A part on the wrong side, a missing part or one floating off the body reads back with the right
-sizes. [Row 5b-512](../fragment-issues/section-5b-rows-401-425.md) has the whole of it.
+**What was wrong.** The add-in has always let EXECUTE through with Changes off -
+`HeronPermissions.ReadOnlyCeiling` is Execute, *"changes what is shown, never what exists"* - and only the
+MCP side held it back: `revit_read`'s ceiling is its own ANALYZE, so `ZOOM_TO_ELEMENTS`, `SET_SELECTION`
+and every other EXECUTE fragment could reach Revit from a chat only through `revit_change`, with Changes
+ON, inside a transaction. A request that changes only the screen needed write permission.
+[Row 5b-497](../fragment-issues/section-5b-rows-401-425.md).
 
-**What changed.**
-[`ZOOM_TO_ELEMENTS`](../../brain/fragments/zoom-to-elements/fragment.yaml) (FRG-SEL-030, DRAFT, version 2)
-declares the ambient `editScopeFailures` need, so the add-in runs it inside the job's group with **no
-transaction open** ([D-115](../DECISIONS.md)): `revit_change` is the only door a chat has for it, and that
-door ran version 1 inside Heron's transaction, where Revit changes no view (row 5b-456). When Show is
-refused, Revit's words now come first and `shown` stays 0. No new input; nothing in the add-in changed.
-`family-creation` step 13 now opens "View 1", shades it at Fine with `SET_VIEW_PROPERTIES`, zooms it to
-every solid form, and takes its picture with `revit_view_image` (and of "Front") - the read-only tool
-[D-123](../DECISIONS.md) made for exactly this, merged the same day - and the agent looks at it in the chat
-before telling the modeller it is done. [Group ER](group-er.md) checks that tool itself; the rows here
-check it in a family, where it has never run either.
+**What changed.** `revit_show` (EXECUTE) sends `run_fragment_show`, declared EXECUTE in
+`HeronOperationRegistry.cs` and routed to `RevitFragment.Run(app, request)` - the read path's overload,
+**no transaction open** - so Revit itself still refuses any change to the model, and what an EXECUTE
+fragment can change is the selection, the camera and the active view. `heron_tools.door_refusal` refuses
+anything above EXECUTE before it is sent. Revit's Temporary Hide/Isolate needs a transaction, so it is
+**not** a fragment: `revit_isolate_temporary` and `revit_reset_temporary` call the fixed operations
+`isolate_temporary` and `reset_temporary` in `RevitTemporaryView.cs`, which open one transaction round
+`IsolateElementsTemporary`, `IsolateCategoriesTemporary` or `DisableTemporaryViewMode` and nothing else.
+`ZOOM_TO_LINKED_ELEMENTS` (FRG-SEL-039, DRAFT) zooms the active view to elements inside a loaded link,
+their boxes put through the link's transform, and selects them with `Selection.SetReferences` - looked up
+by reflection, because it arrived at Revit 2023. It asks for no confirmation first: a selection or a zoom
+inside a link is not touching it ([D-124](../DECISIONS.md), the owner's answer to Q-65).
 
-**What is compiled and what is not run.** The fragments compile on every release they claim
-(`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** `ZOOM_TO_ELEMENTS`'
-`impl/` moved, so its 2026-09-13 proof is stale and marked so; ES3 and ES4 are the runs that replace it.
-**Until version 2 is signed, a chat cannot run the zoom:** [D-117](../DECISIONS.md) refuses a DRAFT through `revit_change` before it is sent, so ES3 to ES5 run through the proving client, rolled back, and step 13 says to ask the modeller for ZF meanwhile.
+**What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027 and every
+fragment compiles on each (`tools/check-compile.py`, `tools/check-fragments-compile.py`, 2026-10-17).
+`tests/Heron.Kernel.TestHost` runs the gate over every switch combination; `tests/test_read_door.py` holds
+the show door's ceiling over every fragment in the library; `tests/test_mcp_serves.py` calls all three
+tools through a real SDK against a stand-in Revit. **None of it has run in Revit.** It works only once the
+add-in is rebuilt, deployed for each Revit, Revit restarted and the Claude app restarted.
 
-**ONE SCRATCH FAMILY, never a working model.** Make it before ES1, in Revit 2020 first: a family from
-*Metric Generic Model.rft* saved as *Heron Look Scratch.rfa* under `%TEMP%\heron-work`, with a box body
-400 x 100 x 300 mm on Ref. Level, a bracket box 200 x 60 x 200 mm against its back, and one small cylinder
-on its front set to show at Fine only (`CREATE_FAMILY_FORMS`, `detailLevels=fine` on its row). Leave
-"Ref. Level" (the floor plan) in front. Changes switched on in Revit's ribbon; Publish is not needed.
+**A SCRATCH COPY, never a working model.** ES1 to ES4 on any project with ducts in a plan view - a copy of
+*Snowdon Towers Sample HVAC* serves. ES5 to ES8 on the copy SELECT_FROM_LINK was proved on,
+*Snowdon-scratch_ajmal.al*, with its six links loaded: [the job file](../../tools/jobs/zoom-to-linked-elements-2026-10-17.yaml).
+**Changes OFF in Revit's Heron ribbon for every row**, and Admin and Publish off.
 
 | # | Run | Look for |
 |---|---|---|
-| **ES1** | `revit_change` capability `OPEN_VIEW`, `viewName=View 1`, with Ref. Level in front | View 1 on screen once the call has ended; `opened` true. OPEN_VIEW is PROVEN in a project and has never run in a family |
-| **ES2** | `revit_change` capability `SET_VIEW_PROPERTIES`, `views=View 1`, `visualStyle=Shaded with Edges`, `detailLevel=Fine`, `scale=0` | View 1 shaded with edges and at Fine - the small cylinder now shows; the style and detail read back; the scale untouched. **Write down the style View 1 had BEFORE** - which one a family template starts in is not known |
-| **ES3** | Pan and zoom View 1 by hand so half the family is off the screen. **Through the proving client, rolled back** - a DRAFT is refused by `revit_change` (D-117), and a view change survives a rolled-back group (D-115): `validate zoom-to-elements --write`, `--setup select-family-forms --setup-set forms=solid --keep-chain`, `--set alsoSelect=false` | The whole family on screen, nothing cut off at an edge; `viewAfter` "View 1"; `shown` equals the select's count (3); the selection untouched; the binding note names `editScopeFailures` and the elements as from select-family-forms. **The D-30 positive** for version 2 |
-| **ES4** | ES3's negative, two parts. (a) The proving client running `zoom-to-elements` **without** `--write`. (b) Ref. Level in front instead of View 1, then ES3's run | (a) Refused before anything runs - the add-in's words that it runs only as a change (`needs_write_path`) - and the screen does not move. (b) `viewAfter` names Ref. Level or a view Revit chose, and it is NOT View 1: this tool opens no view by name, which is why the method opens it first |
-| **ES5** | A scratch PROJECT with three walls on Level 2 and the Level 1 plan in front, through the proving client as ES3: `validate zoom-to-elements --write`, `--setup filter-elements-by-category --setup-set category=Walls --setup-set levelId=` Level 2's id `--keep-chain`, `--set alsoSelect=false` | The screen moves to them and `viewAfter` names the view Revit chose - version 1's own first case, with no transaction open. Through `revit_change` version 1 ran inside Heron's transaction; this is the case most likely to show the difference |
-| **ES6** | Back in the family, View 1 zoomed as ES3 left it: `revit_view_image` with `view` "View 1", then with `view` "Front" | Two pictures in the chat: View 1 shaded with edges with the small cylinder in it, Front showing the body with the bracket behind it; nothing changed in the family - no new view in the Project Browser, View 1's style as ES2 left it. **The positive for `revit_view_image` in a family** |
-| **ES7** | ES6's negative: `revit_view_image` with `view` "View 9", then with `view` "Ref. Level" | "View 9": refused, no such view, nothing pictured. "Ref. Level", where the template has both a floor plan and a ceiling plan of that name - refused as ambiguous, each written as "ViewType: Name" to type back; nothing pictured |
-| **ES8** | *An observation.* Pan View 1 so half the family is off the screen, then `revit_view_image` with `view` "View 1" | Whether the picture shows the whole family anyway. Write down which: it says whether the zoom in step 13 is for the picture or only for the modeller's screen |
-| **ES9** | ES3 and ES6 once on Revit 2024 and once on 2027 | The same answers |
-| **ES10** | Second route: Zoom to Fit (ZF) in View 1 by hand, and look at the screen | The same framing as ES3, and what ES6's picture showed |
-| **ES11** | *Watching, not a proof - once ES3 and ES4 are signed.* A chat builds a small fixed family - six or so forms - with one part placed on the WRONG side on purpose (the bracket in front of the body), then reaches step 13 | It opens View 1, shades it, zooms, takes the picture with `revit_view_image`, and says the bracket is on the wrong side BEFORE telling the modeller it is done. It never uses `EXPORT_VIEW_IMAGE` for the look and never offers to send the picture anywhere |
-| **ES12** | **Before version 2 is signed**: `revit_change` capability `ZOOM_TO_ELEMENTS`, anything at all | Refused as DRAFT before anything is sent (D-117), naming the capability - the step 13 fallback: the chat says so and asks for ZF |
+| **ES1** | **Selection and zoom work with Changes OFF.** In a chat: `revit_read` capability `SELECT_BY_CATEGORY_NAME` with `categoryName=Ducts`, then `revit_show` capability `SET_SELECTION` with `expect_from=select-by-category-name`; then `revit_show` capability `ZOOM_TO_ELEMENTS` with `alsoSelect=false` and the same `expect_from` | The ducts highlighted, then the camera on them - neither refused for Changes; the banner reads *Showing on screen: set-selection*; Revit's Undo list gains **no** entry; the model's element count before and after the same. **The D-30 positive for the door** |
+| **ES2** | **A MODIFY fragment sent through the show door is refused, twice over.** (a) `revit_show` capability `HIDE_ELEMENTS` (MODIFY) with `view=` the plan in front and `permanent=true`. (b) The add-in's own guarantee, from a Python prompt in the Heron folder with the ducts still selected: `heron_bridge_client.discover()`, then on the one bridge `request("run_fragment_show", ...)` with that fragment's `name`, `source`, `needs` and the same `values` - the client's checks skipped on purpose | (a) refused BEFORE anything is sent: *"is declared MODIFY, and revit_show runs nothing above EXECUTE"*. (b) Revit's own refusal of a change made outside a transaction, in its words, and every selected duct STILL SHOWN in the plan, with no Undo entry. **The D-30 negative**: the guarantee is Revit's, not the client's |
+| **ES3** | **Whether the temporary isolate lands in Revit's undo list.** `revit_isolate_temporary` with `category=ducts` in a plan; open Revit's Undo drop-down; then Ctrl+Z once; then `revit_reset_temporary` | Write down what the Undo drop-down shows - an entry *Heron: isolate Ducts temporarily*, or none - and whether Ctrl+Z ends the isolate. Either is an answer; it is the one thing `RevitTemporaryView.cs` says it does not know. Then the reset: the coloured border gone, and the reply *is off* |
+| **ES4** | The isolate's edges: `revit_isolate_temporary` with `ids=` two duct ids from ES1's answer - one in this plan, one on another level; then with both `ids` and `category`; then on a sheet in front; then `revit_reset_temporary` twice | *Only 1 of the 2 are in this view at all*; both at once refused (*two different requests*) with nothing isolated; the sheet refused by name (*no Temporary Hide/Isolate*); the second reset *nothing to reset* and no Undo entry for it |
+| **ES5** | `python tools/batch-prove.py tools/jobs/zoom-to-linked-elements-2026-10-17.yaml` on Revit 2024, `{3D}` in front with the structural link visible. Before it, the same in a chat: `revit_show` capability `ZOOM_TO_LINKED_ELEMENTS`, `linkName=Structural`, `categories=Structural Framing`, `alsoSelect=true` | It runs in that one call, with no question first (D-124). The camera on the structural beams; `selected` equal to `shown`, and Properties naming the link; `shown` equal to SELECT_FROM_LINK's `elements` for the same link and category. The negative (architectural link, Ducts): `shown` 0, nothing zoomed, the selection untouched |
+| **ES6** | **Linked zoom on 2020 and on 2023 or later.** ES5's chat run once on Revit 2020 and once on 2023 (or 2027) | On 2020: the same camera move, `selected` 0 and the finding *this release of Revit cannot select inside a link from code* - nothing thrown. On 2023 and later: selected as in ES5. The reflection lookup is the one line that differs between them |
+| **ES7** | A link placed with a rotation: in a scratch host, link any model with Positioning *Auto - Origin to Origin*, then rotate the link instance 30 degrees about the origin; ES5's call on one of its categories | The camera lands where the elements are DRAWN in the host, not where they would be unrotated - the case the eight transformed corners exist for |
+| **ES8** | Second route: Tab onto one of ES5's beams by hand, then Revit's own Zoom to Fit on the selection | The view arrives where `ZOOM_TO_LINKED_ELEMENTS` put it, and Properties names the same link |
+| **ES9** | **`OPEN_VIEW` with Changes OFF (D-125).** After the add-in is rebuilt and deployed: `revit_show` capability `OPEN_VIEW` with `viewName=` a plan that is not on screen, then the same with a view template's name | The plan opens and is the view on screen, with no Undo entry and Changes still off; the template is refused by name, nothing opened - **the negative**. Until 2026-10-17 the add-in refused it on this door (*runs only as a change*) because it declared `editScopeFailures` ([row 5b-498](../fragment-issues/section-5b-rows-401-425.md)) |
+| **ES10** | *Not a proof - an observation.* Two projects open, the chat pinned to the one BEHIND: ES1's `ZOOM_TO_ELEMENTS` through `revit_show` | What Revit does with a selection and a Show aimed at a document that is not in front - brings it to the front, shows nothing, or refuses - and that the answer says *is not the model in front*. The executor builds a UIDocument for a document behind; nothing has measured what Show does with one |
+| **ES11** | *Not a proof - an observation.* `revit_show` capability `ISOLATE_ELEMENTS` on ES1's ducts, then `revit_change` with the same, Changes ON | The first refused BEFORE anything is sent - it is MODIFY since D-125 - and the refusal names `revit_isolate_temporary`; the second isolates as it always did, one Undo entry ([row 5b-499](../fragment-issues/section-5b-rows-401-425.md)) |
+| **ES12** | *Not a proof - on the owner's PC, with the re-ranker installed.* `python tests/test_routing_phrases.py` | PASSED. It passed on 2026-10-17 on the trained model with NO re-ranker, after [row 5b-501](../fragment-issues/section-5b-rows-401-425.md)'s repairs; whether the re-ranker keeps all four sentences where they now land is not measured |
+| **ES13** | *Not a proof - an observation, in a NEW chat.* With Changes OFF and no Heron tool searched for yet, ask *"zoom to the beams in the structural link"* | The chat sends it to `revit_change` (`revit_show` is not given before it asks), is refused - not proven - by a sentence naming `revit_show`, and then finds and calls `revit_show` itself, with nothing changed in the model. If it stops at the refusal instead, the pointer is not enough and `revit_show` belongs in `ALWAYS_LOADED`, which is D-118's budget to decide |

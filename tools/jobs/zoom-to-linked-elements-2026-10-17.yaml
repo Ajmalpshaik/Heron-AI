@@ -1,0 +1,51 @@
+# The proof of zoom-to-linked-elements (ZOOM_TO_LINKED_ELEMENTS, FRG-SEL-039),
+# written 2026-10-17 with the show door - NEEDS-CHECKING Group ES, rows ES5
+# to ES7. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/zoom-to-linked-elements-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/zoom-to-linked-elements-2026-10-17.yaml
+#
+# EXECUTE: it opens no transaction, moves the camera of the ACTIVE view and,
+# with alsoSelect, the selection. Nothing in the model or the link changes.
+#
+# THE MODEL: the copy SELECT_FROM_LINK was proved on, with its six links
+# loaded - "Snowdon-scratch_ajmal.al", Revit 2024. A SCRATCH COPY, never a
+# working model. BEFORE THE RUN, put a 3D view in front - "{3D}" - with the
+# Structural link visible in it: this zooms the view on screen and never
+# opens another.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the positive zoomed to beams (`shown` above zero) and the
+#     negative zoomed to nothing - the architectural link has no ducts
+#   - NEG NOT EMPTY: something was zoomed to in a link that should have
+#     none of that category - a defect, not an arrangement fault
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - that the camera LANDED on the structural beams, seen on screen
+#   - `selected` equal to `shown` on Revit 2024, and the Properties palette
+#     naming the link with the beams selected; on Revit 2020 to 2022 the
+#     same run with `selected` 0 and the finding that it cannot select
+#   - `shown` equal to SELECT_FROM_LINK's `elements` for the same link and
+#     category, run beside it
+#   - the second route (ES8): Tab onto one beam by hand and Zoom to Fit
+
+model: 'Snowdon-scratch_ajmal.al, the six links loaded, a 3D view in front, Revit 2024'
+
+defaults:
+  in: "Snowdon-scratch_ajmal.al"
+
+jobs:
+  - fragment: zoom-to-linked-elements
+    expect: [shown]
+    set:
+      linkName: Structural
+      categories: Structural Framing
+      alsoSelect: "true"
+    negative-set:
+      linkName: Architectural
+      categories: Ducts
+      alsoSelect: "true"
+    note: >
+      ES5 - the beams of the structural link, selected as linked elements.
+      The negative asks the architectural link for ducts, which it has none
+      of: shown 0, nothing zoomed to, the selection untouched.

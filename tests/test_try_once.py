@@ -147,7 +147,10 @@ def test_the_add_in():
 
     check(before(run, "transaction.Commit() != TransactionStatus.Committed",
                  "answered = AskTheModeller(")
-          and before(run, "answered = AskTheModeller(", "if (apply) group.Assimilate();"),
+          # Assimilate is KeepAndWatch's since 2026-10-17 - the one place a group
+          # is kept, so the rollback check can watch what it added.
+          and before(run, "answered = AskTheModeller(",
+                     "if (apply) keptNote = KeepAndWatch(group"),
           "the box comes after the fragment's transaction commits and before Assimilate")
     check("apply = answered == Keep;" in run,
           "the modeller's Keep is what sets apply - nothing on the wire can")

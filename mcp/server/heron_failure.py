@@ -176,6 +176,28 @@ _KNOWN = {
                           "two open models share that name, so naming one cannot say which "
                           "was meant - nothing was written"),
 
+    # --- Revit's temporary isolate, in the active view (RevitTemporaryView) -
+    #
+    # The first four return before its transaction opens, so nothing in the
+    # view changed. The last two are Revit refusing inside it: rolled back,
+    # and a temporary isolate never touches the model in any case.
+    "ambiguous_request": (REFUSED, FIX_FIRST,
+                          "element ids and a category were both given - two different "
+                          "requests - so nothing was isolated"),
+    "nothing_to_isolate": (REFUSED, FIX_FIRST,
+                          "nothing was named to isolate - no element ids and no category"),
+    "no_view":           (REFUSED, FIX_FIRST,
+                          "the model in front has no active view to work in"),
+    "not_this_view":     (REFUSED, FIX_FIRST,
+                          "the active view has no temporary hide/isolate - a sheet, a "
+                          "schedule or a legend - so nothing was done"),
+    "isolate_failed":    (ROLLED_BACK, FIX_FIRST,
+                          "Revit refused the temporary isolate, and the view's own "
+                          "visibility settings were not touched"),
+    "reset_failed":      (ROLLED_BACK, FIX_FIRST,
+                          "Revit refused to end the temporary hide/isolate; nothing in the "
+                          "model was touched"),
+
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
                           "Revit took it and has not finished; it is still working"),
@@ -308,6 +330,18 @@ _KNOWN = {
     "setup_failed":      (ROLLED_BACK, FIX_FIRST,
                           "an arrangement step could not be given what it needs, so nothing "
                           "was run and the model is as it was"),
+
+    # --- a read that did not leave the model as it was - row 5b-350 ---------
+    # Not "it only reads, so it is merely a refusal", which is what an
+    # unknown code on a read falls to below: the add-in counted the model
+    # around the run and the count moved, with no transaction to roll back.
+    "read_changed_model": (UNKNOWN, LOOK_AT_THE_MODEL,
+                           "a read ran with no transaction open and the model's count or "
+                           "its changed flag moved anyway, so something may be in the "
+                           "model that nothing can undo"),
+    "read_unverified":   (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "the model a read ran in closed before it could be counted "
+                          "again, so whether the read changed it is not known"),
 
     # --- a Revit dialog opened inside the job -------------------------------
     #

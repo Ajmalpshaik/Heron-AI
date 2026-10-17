@@ -1,0 +1,130 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-039
+semantic-identity: "take me to these elements in the linked model, on screen"
+kind: action
+domain: revit.selection
+capability: ZOOM_TO_LINKED_ELEMENTS
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Zooms the active view to elements INSIDE A LOADED REVIT LINK - "zoom to the
+  beams in the structural link" - and, when asked, selects them as linked
+  elements, so the person can see what SELECT_FROM_LINK found.
+
+  **ZOOM_TO_ELEMENTS CANNOT DO THIS, AND THE REASON IS THE WHOLE FRAGMENT.**
+  Revit's Show takes ids in the host document, and a linked element's id means
+  nothing there - or names an unrelated host element that shares the number. So
+  the boxes are read off the linked elements, put through the link's own
+  transform into host coordinates, and the active view is zoomed to the box
+  round all of them with `UIView.ZoomAndCenterRectangle`. All eight corners of
+  each box are transformed, because once a link is rotated the far corner in
+  the link is not the far corner in the host.
+
+  **IT ZOOMS THE VIEW ON SCREEN AND NEVER JUMPS TO ANOTHER.** Show picks a view;
+  nothing in Revit finds a view that shows a linked element, so a sheet, a
+  schedule, a legend or a drafting view is refused by name. Whether each element
+  is DRAWN once the camera is there is the view's - its crop, its view range or
+  section box, and its visibility settings for the link - and the answer says so.
+
+  **SELECTING INSIDE A LINK NEEDS REVIT 2023 OR LATER.** `Selection.SetReferences`
+  arrived at 2023, so it is looked up by reflection when `alsoSelect` is true and
+  one source compiles on every release. On 2020 to 2022 the camera still moves
+  and a finding says the selection could not be set. The references are made
+  with `Reference.CreateLinkReference`, present 2020 to 2027. Selecting replaces
+  the selection that was there.
+
+  **THE LINK IS FOUND BY SELECT_FROM_LINK'S RULES.** A name matching nothing is
+  refused with every link listed, one matching several is AMBIGUOUS and refused,
+  and an unloaded link is said to be unloaded - never answered with a zero. A
+  category list is required: everything in a link includes its levels and
+  grids, and a box round those is the whole site.
+
+  **NOTHING IS CHANGED, IN THIS MODEL OR IN THE LINK.** No transaction is opened
+  or needed; it moves the camera and, when asked, the selection. So it asks for
+  no confirmation first: a zoom or a selection inside a link is not touching it
+  in Constitution Article 7's sense - the owner's answer to Q-65, D-124.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    - name: linkName
+      # Part of the link's name as the Project Browser's Revit Links shows it -
+      # "Structural". Matched as SELECT_FROM_LINK matches it.
+      type: string
+      source: request
+    - name: categories
+      # What to zoom to inside the link - "Structural Framing", "Ducts, Duct
+      # Fittings". Required: every category of a link is its whole site.
+      type: IList<BuiltInCategory>
+      source: request
+    - name: alsoSelect
+      # true also selects them, as linked elements, on Revit 2023 and later;
+      # left out, the camera moves and the selection is untouched.
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: shown
+      role: result
+      type: int
+    - name: selected
+      # How many were put in the selection - 0 when alsoSelect was not asked
+      # for, and 0 on a release that cannot select inside a link.
+      role: result
+      type: int
+    - name: skipped
+      # Elements of those categories with no geometry to box. Counted, never
+      # dropped in silence (D-52).
+      role: accounting
+      type: int
+    - name: viewAfter
+      # The view that was zoomed - always the active one; this never jumps.
+      role: result
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RevitLinkInstance`, `GetLinkDocument`,
+  `GetTotalTransform`, `UIDocument.GetOpenUIViews`, `UIView.ZoomAndCenterRectangle`
+  and `Reference.CreateLinkReference` are present 2020 to 2027.
+  `Selection.SetReferences` is 2023 to 2027 only (tools/api-surface, read
+  2026-10-17), so it is found by reflection when it is wanted and its absence is
+  a finding, not a compile error - no version `#if` (D-05).
+
+# ROUTING - repeated in ZOOM_TO_ELEMENTS and SELECT_FROM_LINK.
+#
+#   "zoom to the beams in the
+#    structural link"                    -> here
+#   "take me to the ducts in the MEP
+#    link"                               -> here
+#   "zoom to these" / "where is it"      -> ZOOM_TO_ELEMENTS, when they are the
+#                                           HOST model's own elements. Its Show
+#                                           cannot reach inside a link
+#   "how many beams are in the
+#    structural link"                    -> SELECT_FROM_LINK. That one READS
+#                                           and moves nothing on screen
+#   "copy those grids into ours"         -> COPY_FROM_LINK
+
+utterances:
+  - zoom to the beams in the structural link
+  - take me to the ducts in the mep link
+  - show me the linked elements on screen
+  - zoom to the elements inside the linked model
+  - select and zoom to the walls in the architectural link
+  # MOVED HERE 2026-10-17 from SELECT_FROM_LINK, which reads the elements and
+  # selects nothing - this is the one that puts them in the selection
+  # (FRAGMENT-ISSUES 5b-500).
+  - select elements inside a linked model
