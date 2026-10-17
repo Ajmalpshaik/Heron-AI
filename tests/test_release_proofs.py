@@ -705,6 +705,66 @@ def test_a_batch_on_the_wrong_revit_says_so():
         shutil.rmtree(workspace, ignore_errors=True)
 
 
+# ---------------------------------------------------------------------------
+# 10. A run record on another drive is named whole, never a crash
+# ---------------------------------------------------------------------------
+
+def test_a_record_on_another_drive_is_named_whole():
+    """On Windows os.path.relpath RAISES across drives, and the owner's PC keeps
+    the repository on D: and the temp folder on C:. This suite's own drafts
+    folder is a temp folder, so `accept --release` refusing "no draft" crashed
+    there while formatting its sentence (found 2026-10-17). The condition is
+    FORCED, as tests/test_relpath.py forces it, so it fails on every machine."""
+    print("10. a run record on another drive is named whole")
+    real = os.path.relpath
+
+    def inside(path, folder):
+        path, folder = os.path.abspath(path), os.path.abspath(folder)
+        return path == folder or path.startswith(folder.rstrip(os.sep) + os.sep)
+
+    with Workspace() as ws:
+        frag = ws.fragment()
+
+        # ONLY THE DRAFTS FOLDER is on the other drive, as the temp folder is
+        # on the owner's PC. Forcing the whole workspace would move the card's
+        # own files too, and its fingerprint with them, so a refusal for a
+        # stale proof would answer before the one this is about (seen on
+        # Linux CI, 2026-10-17).
+        far = HV.DRAFTS_DIR
+
+        def relpath(path, start=os.curdir):
+            if inside(path, far) != inside(start, far):
+                raise ValueError("path is on mount 'C:', start on mount 'D:'")
+            return real(path, start)
+
+        os.path.relpath = relpath
+        try:
+            for name, call, key in (
+                    ("accept --release",
+                     lambda: HV.accept_release("sample", "2026", "A Reviewer", library=[frag]),
+                     HV.proof_key("sample", release="2026")),
+                    ("accept --second-route",
+                     lambda: HV.accept_second_route("sample", "A Reviewer", library=[frag]),
+                     HV.proof_key("sample", second_route=True))):
+                try:
+                    code, message = call()
+                except ValueError as exc:
+                    check(False, "%s with no draft, its record on another drive, "
+                          "refuses rather than raising: %s" % (name, exc))
+                    continue
+                check(code != 0 and "no " in message
+                      and os.path.abspath(HV.run_record_path(key)) in message,
+                      "%s with no draft, its record on another drive, refuses and "
+                      "names the record whole: %s" % (name, message))
+        finally:
+            os.path.relpath = real
+
+    source = io.open(HV.__file__, encoding="utf-8").read()
+    check("os.path.relpath(" not in source,
+          "brain/heron_validate.py writes every path through heron_relpath's rule, "
+          "never a raw os.path.relpath")
+
+
 def main():
     for test in (test_an_entry_is_validated_like_a_proof,
                  test_a_release_entry_is_accepted,
@@ -716,7 +776,8 @@ def main():
                  test_a_second_route_is_written_signed_and_never_overwritten,
                  test_the_matrix_marks_only_the_recorded_release,
                  test_batch_prove_runs_only_what_is_proven_elsewhere,
-                 test_a_batch_on_the_wrong_revit_says_so):
+                 test_a_batch_on_the_wrong_revit_says_so,
+                 test_a_record_on_another_drive_is_named_whole):
         # A SECTION THAT CANNOT RUN FAILS, AND THE NEXT ONE STILL RUNS. Against
         # code without D-131, `proof_key` and `accept_release` are simply not
         # there, and one traceback would hide every other section's answer.
