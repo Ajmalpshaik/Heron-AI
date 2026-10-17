@@ -37,8 +37,11 @@
 # NOT RUN ON WINDOWS ON A MODELLER'S PC - from the unzipped heron-project.zip,
 # by HeronInstaller.exe. That is NEEDS-CHECKING Group EP, on the owner's PC.
 #
-# PYTHON 3.11 OR LATER. rpds-py, which jsonschema needs, starts at 3.11, so the
-# installer refuses an older Python by name rather than letting pip fail on it.
+# PYTHON 3.11 TO 3.14. rpds-py, which jsonschema needs, starts at 3.11, and 3.14
+# is the newest Python the Windows wheels above were downloaded for, so the
+# installer refuses any other Python by name rather than letting pip fail on it;
+# it also installs with --only-binary=:all:, so no PC builds a package from
+# source (review of #558).
 #
 # REGENERATE IT - never edit a line by hand, because a hand-edited version no
 # longer matches its hashes and pip refuses the whole file:
