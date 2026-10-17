@@ -29,6 +29,9 @@ WHAT IT PROVES
   7. The SHARED store gains a card the main checkout gains and loses one it
      loses (5b-406) - from main on branch main only, never a worktree's card,
      never a planted row, never in a private store.
+  8. Opening a store to read it writes nothing - not even the meta rows it
+     re-wrote on every open until 2026-10-17, which moved the file's md5 on
+     every lookup with no row changed (FRAGMENT-ISSUES row 116).
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
 resolver is handed the same facts the bridge would report; nothing here has
@@ -1261,6 +1264,36 @@ def main():
         except ValueError:
             bad = True
         check(bad, "'clients' is not a scope and is refused")
+
+        print()
+        print("8. Opening a store to READ it writes nothing - FRAGMENT-ISSUES "
+              "row 116")
+        S.open_scope(S.GLOBAL).close()
+        path = S.scope_path(S.GLOBAL)
+        with open(path, "rb") as handle:
+            first = handle.read()
+        for _ in range(3):
+            S.open_scope(S.GLOBAL).close()
+        with open(path, "rb") as handle:
+            again = handle.read()
+        # Bytes 24-27 are SQLite's file change counter: every committed write
+        # moves it, whether or not any row changed - which is how the meta
+        # rows' re-write on every open showed up as a new md5 each run.
+        check(again == first, "three more opens leave the file byte for byte "
+              "as it was (change counter %d -> %d)"
+              % (int.from_bytes(first[24:28], "big"),
+                 int.from_bytes(again[24:28], "big")))
+        raw = sqlite3.connect(path)
+        raw.execute("UPDATE meta SET value = 'stale' WHERE key = 'schema'")
+        raw.commit()
+        raw.close()
+        S.open_scope(S.GLOBAL).close()
+        raw = sqlite3.connect(path)
+        healed = raw.execute(
+            "SELECT value FROM meta WHERE key = 'schema'").fetchone()[0]
+        raw.close()
+        check(healed == str(S.SCHEMA_VERSION),
+              "and a meta value that DIFFERS is still written on open")
 
     finally:
         shutil.rmtree(home, ignore_errors=True)

@@ -2926,9 +2926,11 @@ def revit_read(capability: str = "", values: str = "",
         return _ended("refused", str(unbound))
 
     # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
-    # transaction, which is the whole of this door's guarantee. The chain
-    # resets unless the caller names what it means to consume - revit_change's
-    # rule and reason, and the add-in's refusal of the two together.
+    # transaction, and the add-in counts the model around it - that pair is
+    # this door's guarantee, since Revit's refusal alone once let an element
+    # through (row 5b-350). The chain resets unless the caller names what it
+    # means to consume - revit_change's rule and reason, and the add-in's
+    # refusal of the two together.
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
     _aim_at_pin(args)
 
@@ -2956,8 +2958,9 @@ def revit_read(capability: str = "", values: str = "",
     _ctx_reply(reply)
 
     # The client's unknown_outcome sentence is written for a change. Here the
-    # model cannot have changed - no transaction is open - but the chain may
-    # have, so say that instead.
+    # model is not expected to have changed - no transaction is open, though
+    # the count that would say so (row 5b-350) was in the lost answer - but
+    # the chain may have, so say that instead.
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The read reached Revit but its answer was lost, so Heron cannot "
@@ -3031,9 +3034,10 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     structural link". To isolate in the active view use
     revit_isolate_temporary; revit_reset_temporary ends it.
 
-    It works with Changes OFF: no transaction is open, so Revit itself refuses
-    any change to the model. A capability declared above EXECUTE is refused
-    before anything is sent - a change is revit_change's.
+    It works with Changes OFF: no transaction is open, and the model is counted
+    before and after - a run that moved it is reported, never answered. A
+    capability declared above EXECUTE is refused before anything is sent - a
+    change is revit_change's.
 
     `request`, `capability`, `values` and `expect_from` work as in revit_read.
     Inside a linked model too, with no question first (D-124). The answer
@@ -3117,8 +3121,9 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     except NotBound as unbound:
         return _ended("refused", str(unbound))
 
-    # NO "apply", EVER. run_fragment_show opens no transaction, exactly as
-    # run_fragment_read does, and that is the whole of this door's guarantee.
+    # NO "apply", EVER. run_fragment_show opens no transaction and is counted
+    # around, exactly as run_fragment_read is, and that pair is the whole of
+    # this door's guarantee (row 5b-350).
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
     _aim_at_pin(args)
 
@@ -3144,15 +3149,22 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The request reached Revit but its answer was lost, so Heron "
-                      "cannot tell whether %s ran. Nothing in the model was changed - "
-                      "no transaction is open - but if it ran, the result %s left has "
-                      "been used up. Run %s again, then this."
+                      "cannot tell whether %s ran. No transaction is open, so the model "
+                      "is not expected to have changed - but the count that would have "
+                      "said so was in the lost answer. If it ran, the result %s left "
+                      "has been used up. Run %s again, then this."
                       % (capability, consumes, consumes))
 
     failure = analyse(reply, writes=tools.writes("revit_show"))
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
+
+    # SAID FROM THE ADD-IN'S COUNT, as revit_read says it - row 5b-350. This
+    # door runs on the same counted read path, so a run that moved the model
+    # came back read_changed_model above and never reaches here; a reply with
+    # no `elementsCounted` is from an add-in that never counted.
+    counted = reply.get("elementsCounted")
 
     # GOLDEN RULE 20. The add-in refused a different model on `expectProject`
     # before running; this is the first call's pin. When it fires after a
@@ -3165,10 +3177,14 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
             return _ended("failed",
                           "%s ran in %s before Heron could tell that it is not the model "
                           "this chat works on (%s). Only what is shown can have changed - "
-                          "the selection, the camera or the active view; nothing in either "
-                          "model was changed. Press Esc in Revit to clear a selection, or "
-                          "say 'use this model' to move this chat onto %s deliberately."
+                          "the selection, the camera or the active view; %s. Press Esc in "
+                          "Revit to clear a selection, or say 'use this model' to move this "
+                          "chat onto %s deliberately."
                           % (capability, reply.get("document"), pinned.title,
+                             "nothing in either model was changed"
+                             if isinstance(counted, int) else
+                             "nothing in either model should have changed, though this "
+                             "add-in does not count the model around a run",
                              reply.get("document")))
         return _ended("refused", wrong_model)
 
@@ -3195,9 +3211,16 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
-    lines.append("Nothing in the model was changed: this runs with no transaction "
-                 "open, so Revit itself refuses any change. Only what is shown can "
-                 "have changed - the selection, the camera or the active view.")
+    if isinstance(counted, int):
+        lines.append("Nothing in the model was changed: Heron counted %s element(s) "
+                     "before this ran and the same after it. Only what is shown can "
+                     "have changed - the selection, the camera or the active view."
+                     % "{:,}".format(counted))
+    else:
+        lines.append("Only what is shown should have changed - the selection, the "
+                     "camera or the active view: this runs with no transaction open. "
+                     "This add-in does not count the model around a run, so that is "
+                     "not measured - update it (FRAGMENT-ISSUES row 5b-350).")
     return _ended("ok", "\n".join(lines))
 
 
@@ -3865,9 +3888,9 @@ def _cannot_run():
     """
     return (
         "A capability that READS runs through revit_read - D-28's executor "
-        "compiles it inside Revit with no transaction open, so Revit itself "
-        "refuses any change; it needs no Changes switch, and it refuses "
-        "anything declared above ANALYZE. "
+        "compiles it inside Revit with no transaction open, so Revit refuses a "
+        "change, and the add-in counts the model around every read; it needs "
+        "no Changes switch, and it refuses anything declared above ANALYZE. "
         "One that only changes what is SHOWN - the selection, the camera, the "
         "active view - runs through revit_show, the same executor with no "
         "transaction open, also with Changes off; it refuses anything declared "
@@ -4288,18 +4311,17 @@ def heron_resolve(capability: str) -> str:
 
 
 @server.tool()
-def heron_lookup(request: str) -> str:
+def heron_lookup(request: str, question: bool = False) -> str:
     """
-    Work out which capability would serve a request written in the user's own
-    words - "select all the ducts", "how many air terminals".
+    Which capability serves a request in the user's own words. Answers with
+    it and the values it needs typed, for revit_read or revit_change next.
 
-    Use when the user asks for Revit work and you need to know whether Heron
-    has a way of doing it. It answers with the capability AND the values it
-    needs typed, so the next call can be revit_read or revit_change itself.
-    Touches nothing.
+    question: true only when the user wants to find something out - "what size
+    is this pipe"; every capability that changes the model is left out.
+    Selecting or zooming is not a change. False for a change, even asked as
+    a question - "how many sprinklers do I need" - and when unsure.
 
-    To run it as well, skip this: revit_read or revit_change with `request`
-    set to the user's words does this lookup inside the same call.
+    revit_read or revit_change with `request` does this lookup itself.
     """
     # A plan never depends on which fragment happens to serve it today, which is
     # why the answer names a capability and never a fragment id. No heron_resolve
@@ -4307,17 +4329,31 @@ def heron_lookup(request: str) -> str:
     revit, how = _revit_version()
 
     try:
-        found = brain.lookup(request, revit=revit)
+        found = brain.lookup(request, revit=revit, question=question)
     except brain.BrainUnavailable as why:
         return str(why)
 
+    # D-128. Said on every answer to a question, found or not: what was not
+    # offered is part of the answer, and a reply that hid it would read as
+    # Heron knowing nothing that writes.
+    asked = []
+    if found.get("question"):
+        asked = ["  Asked as a question, so the %d fragments that change the "
+                 "model (above %s) were not offered (D-128). If the user wants "
+                 "a change, ask again without `question`."
+                 % (found.get("left_out") or 0, found.get("ceiling"))]
+
     if not found["capability"]:
-        lines = ["Heron has no way of doing that."]
+        lines = ["Heron has no way of doing that."
+                 if not found.get("question") else
+                 "Nothing in Heron that leaves the model unchanged matches "
+                 "that."]
         blocked = [e for e in found["excluded"] if "Revit" in e["reason"]]
         if blocked:
             lines.append("%d fragment(s) were excluded because they are not "
                          "declared for Revit %s. They exist - they are just "
                          "not for this release." % (len(blocked), revit))
+        lines.extend(line.strip() for line in asked)
         lines.extend(_drift_lines(found, indent="", gap=False))
         lines.append("Run heron_capabilities to see what it does know.")
         return "\n".join(lines)
@@ -4331,6 +4367,7 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+    lines.extend(asked)
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
     # a store that is not this checkout's library - row 5b-233.
     lines.extend(_drift_lines(found))
