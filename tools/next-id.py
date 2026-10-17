@@ -114,6 +114,17 @@ merged and was never deleted - its rows are main's now - and the files cannot
 tell that from a clash, so it is not called one. Without gh, only this
 checkout is judged, and the report says so.
 
+Nor does it call TAKEN ON MAIN an id whose ENTRY at the live work is the very
+entry main has: a 5b row's whole table line, a group's own file
+docs/needs-checking/group-xx.md, a question's or a decision's heading line.
+That is the work's own id, merged. A squash-merge puts it on main as a new
+commit, so the session still on that branch goes on adding it against the
+commit where it left main - seen 2026-10-17, when 5b-941 was called TAKEN ON
+MAIN on its own branch the moment #599 merged. It is listed as MERGED instead.
+Different words under the same number stay TAKEN ON MAIN, and so does an
+entry main has edited since it merged, which the files cannot tell from a
+clash. Line ends are not words: a worktree's CRLF is read as git's LF.
+
 A branch that has merged main in AFTER main took its id carries the number
 twice on one tree, and adds nothing main lacks; tests/test_open_defects.py
 section 7 refuses a 5b number used twice on one tree, which is where that one
@@ -220,20 +231,23 @@ def table_rows(text):
     return {int(m.group(1)) for m in map(ROW.match, outside_fences(text)) if m}
 
 
-def page_rows_5b(text):
-    """The rows written on the register's page inside section 5b - where a
-    branch cut before 2026-09-23's split still keeps every one of them. The
-    section ends at the next `## ` heading, so section 5's rows, which have
-    their own numbers from 1, are never read as 5b's."""
-    found, inside = set(), False
+def page_row_lines_5b(text):
+    """(number, line) of each row written on the register's page inside
+    section 5b - where a branch cut before 2026-09-23's split still keeps every
+    one of them. The section ends at the next `## ` heading, so section 5's
+    rows, which have their own numbers from 1, are never read as 5b's."""
+    inside = False
     for line in outside_fences(text):
         if line.startswith("## "):
             inside = line.startswith(SECTION_5B)
             continue
         m = ROW.match(line) if inside else None
         if m:
-            found.add(int(m.group(1)))
-    return found
+            yield int(m.group(1)), line
+
+
+def page_rows_5b(text):
+    return {n for n, _ in page_row_lines_5b(text)}
 
 
 def archived_rows(text):
@@ -246,6 +260,30 @@ def question_ids(text):
 
 def decision_ids(text):
     return {int(m.group(1)) for m in map(DECISION.match, outside_fences(text)) if m}
+
+
+# What an id IS at one tree - its ENTRY - so an id a piece of work adds can be
+# told from the same id merged onto main from that work. Each reader takes a
+# file's text and the match of its path, and gives (id, entry).
+
+def lines_of(pattern):
+    """A reader whose entry for each id is the whole line PATTERN matched."""
+    def read(text, path_match):
+        for line in outside_fences(text):
+            m = pattern.match(line)
+            if m:
+                yield int(m.group(1)), line
+    return read
+
+
+def page_lines_5b(text, path_match):
+    return page_row_lines_5b(text)
+
+
+def group_file(text, path_match):
+    """A group's entry is its own file, whole, with its line ends as git keeps
+    them - a worktree on Windows has the same file on disk with CRLF."""
+    yield path_match.group(1).upper(), text.replace(CR, "")
 
 
 # --------------------------------------------------------------------------
@@ -271,33 +309,54 @@ def group_next(gid):
 
 
 class Register(object):
-    def __init__(self, key, name, sources, show, order, after):
+    def __init__(self, key, name, sources, show, order, after, entries):
         self.key, self.name, self.sources = key, name, sources
         self.show, self.order, self.after = show, order, after
+        self.entries = entries
 
+
+FI_PAGE = re.compile(r"^docs/FRAGMENT-ISSUES\.md$")
+FI_ROWS = re.compile(r"^docs/fragment-issues/section-5b-rows-[0-9-]+\.md$")
+FI_ARCHIVE = re.compile(r"^docs/fragment-issues-archive/reading-defects-5b-[0-9-]+\.md$")
+OQ_PAGE = re.compile(r"^docs/OPEN-QUESTIONS\.md$")
+OQ_FILES = re.compile(r"^docs/open-questions/[^/]+\.md$")
+D_PAGE = re.compile(r"^docs/DECISIONS\.md$")
+D_FILES = re.compile(r"^docs/decisions/D-([0-9]+)\.md$")
 
 # Each source is (a path pattern, how its text is read, how a name caught by
-# the pattern becomes an id - or None when the name carries no id).
+# the pattern becomes an id - or None when the name carries no id). Each entry
+# source is (a path pattern, how its text gives each id's entry).
 REGISTERS = [
     Register("group", "NEEDS-CHECKING group", [
         (re.compile(r"^docs/NEEDS-CHECKING\.md$"), group_ids, None),
         (re.compile(r"^docs/needs-checking(?:-archive)?/group-([a-z]{1,3})\.md$"),
          group_ids, lambda name: name.upper()),
-    ], show=lambda gid: gid, order=group_key, after=group_next),
+    ], show=lambda gid: gid, order=group_key, after=group_next, entries=[
+        (re.compile(r"^docs/needs-checking/group-([a-z]{1,3})\.md$"), group_file),
+    ]),
     Register("5b", "FRAGMENT-ISSUES 5b row", [
-        (re.compile(r"^docs/FRAGMENT-ISSUES\.md$"), page_rows_5b, None),
-        (re.compile(r"^docs/fragment-issues/section-5b-rows-[0-9-]+\.md$"), table_rows, None),
-        (re.compile(r"^docs/fragment-issues-archive/reading-defects-5b-[0-9-]+\.md$"),
-         archived_rows, None),
-    ], show=lambda n: "5b-%d" % n, order=lambda n: n, after=lambda n: n + 1),
+        (FI_PAGE, page_rows_5b, None),
+        (FI_ROWS, table_rows, None),
+        (FI_ARCHIVE, archived_rows, None),
+    ], show=lambda n: "5b-%d" % n, order=lambda n: n, after=lambda n: n + 1, entries=[
+        (FI_PAGE, page_lines_5b),
+        (FI_ROWS, lines_of(ROW)),
+        (FI_ARCHIVE, lines_of(ARCHIVED_ROW)),
+    ]),
     Register("Q", "open question", [
-        (re.compile(r"^docs/OPEN-QUESTIONS\.md$"), question_ids, None),
-        (re.compile(r"^docs/open-questions/[^/]+\.md$"), question_ids, None),
-    ], show=lambda n: "Q-%d" % n, order=lambda n: n, after=lambda n: n + 1),
+        (OQ_PAGE, question_ids, None),
+        (OQ_FILES, question_ids, None),
+    ], show=lambda n: "Q-%d" % n, order=lambda n: n, after=lambda n: n + 1, entries=[
+        (OQ_PAGE, lines_of(QUESTION)),
+        (OQ_FILES, lines_of(QUESTION)),
+    ]),
     Register("D", "decision", [
-        (re.compile(r"^docs/DECISIONS\.md$"), decision_ids, None),
-        (re.compile(r"^docs/decisions/D-([0-9]+)\.md$"), decision_ids, int),
-    ], show=lambda n: "D-%d" % n, order=lambda n: n, after=lambda n: n + 1),
+        (D_PAGE, decision_ids, None),
+        (D_FILES, decision_ids, int),
+    ], show=lambda n: "D-%d" % n, order=lambda n: n, after=lambda n: n + 1, entries=[
+        (D_PAGE, lines_of(DECISION)),
+        (D_FILES, lines_of(DECISION)),
+    ]),
 ]
 
 # Everything the sources above can match, so one ls-tree per branch is enough.
@@ -319,6 +378,22 @@ def ids_in(files):
                 found[reg.key] |= read(text)
                 if named is not None:
                     found[reg.key].add(named(m.group(1)))
+    return found
+
+
+def entries_in(files):
+    """{register key: {id: set of entries}} in FILES, an iterable of (path,
+    text). A set, because one id can be written in two places on one tree - a
+    decision's heading on the log's page and in its own file."""
+    found = {reg.key: {} for reg in REGISTERS}
+    for path, text in files:
+        for reg in REGISTERS:
+            for pattern, read in reg.entries:
+                m = pattern.match(path)
+                if not m:
+                    continue
+                for i, entry in read(text, m):
+                    found[reg.key].setdefault(i, set()).add(entry)
     return found
 
 
@@ -399,13 +474,18 @@ def read_blobs(root, shas):
     return texts
 
 
-def ids_at(root, commit, cache):
-    """{register key: set of ids} at COMMIT. CACHE holds blobs already read,
-    since most branches share most files with main."""
+def texts_at(root, commit, cache):
+    """[(path, text)] of every register file at COMMIT. CACHE holds blobs
+    already read, since most branches share most files with main."""
     listed = files_at(root, commit)
     missing = [sha for _, sha in listed if sha not in cache]
     cache.update(read_blobs(root, missing))
-    return ids_in((path, cache[sha]) for path, sha in listed)
+    return [(path, cache[sha]) for path, sha in listed]
+
+
+def ids_at(root, commit, cache):
+    """{register key: set of ids} at COMMIT."""
+    return ids_in(texts_at(root, commit, cache))
 
 
 # --------------------------------------------------------------------------
@@ -538,9 +618,9 @@ class Holder(object):
     work it belongs to - a branch name - so a branch, its pull request and the
     worktree it is checked out in are one piece of work, never three."""
 
-    def __init__(self, name, owner, commit, ids=None, merging=None):
+    def __init__(self, name, owner, commit, ids=None, merging=None, folder=None):
         self.name, self.owner, self.commit, self.ids = name, owner, commit, ids
-        self.merging = merging
+        self.merging, self.folder = merging, folder
         self.adds, self.compared_with = None, None
 
 
@@ -558,12 +638,26 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
                        % (base_name, "the fetch did not bring one" if fetched
                           else "run without --no-fetch"))
 
-    cache, at_commit = {}, {}
+    cache, at_commit, at_entries = {}, {}, {}
 
     def ids_of(commit):
         if commit not in at_commit:
             at_commit[commit] = ids_at(root, commit, cache)
         return at_commit[commit]
+
+    def entries_of(one):
+        """ONE's entries - a worktree's from its files on disk, anything else's
+        from its commit - read only when one of its ids needs comparing."""
+        key = ("folder", one.folder) if one.folder else one.commit
+        if key not in at_entries:
+            try:
+                at_entries[key] = entries_in(files_on_disk(one.folder) if one.folder
+                                             else texts_at(root, one.commit, cache))
+            except OSError:
+                # A worktree's file gone since its ids were read: nothing to
+                # compare, so nothing is let off TAKEN ON MAIN.
+                at_entries[key] = {reg.key: {} for reg in REGISTERS}
+        return at_entries[key]
 
     prefix = remote + "/"
     mine = current_branch(root) or "HEAD"
@@ -640,7 +734,8 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
                     for one in holders if one.name != base_name},
         "registers": {},
     }
-    main_ids = next(one.ids for one in holders if one.name == base_name)
+    main_holder = next(one for one in holders if one.name == base_name)
+    main_ids = main_holder.ids
     for reg in REGISTERS:
         on_main = main_ids[reg.key]
         if not on_main:
@@ -653,7 +748,7 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
             everywhere |= one.ids[reg.key]
         high = max(everywhere, key=reg.order)
 
-        above, holds, adders, taken = {}, {}, {}, {}
+        above, holds, adders, taken, merged = {}, {}, {}, {}, {}
         for one in holders:
             ahead = sorted((i for i in one.ids[reg.key]
                             if reg.order(i) > reg.order(main_high)), key=reg.order)
@@ -666,7 +761,14 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
                 adders.setdefault(i, []).append(one)
             if one.owner in live:
                 for i in sorted(one.adds[reg.key] & on_main, key=reg.order):
-                    taken.setdefault(i, []).append(one.name)
+                    # The very entry main has is this work's own, merged - a
+                    # squash leaves its branch adding it against the old
+                    # merge-base. Other words under the number are a clash.
+                    its = entries_of(one)[reg.key].get(i)
+                    if its and its == entries_of(main_holder)[reg.key].get(i):
+                        merged.setdefault(i, []).append(one.name)
+                    else:
+                        taken.setdefault(i, []).append(one.name)
         result["registers"][reg.key] = {
             "name": reg.name,
             "next": reg.show(reg.after(high)),
@@ -684,6 +786,9 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
             # Live work adding an id main has taken since it left main.
             "taken_on_main": {reg.show(i): names for i, names in
                               sorted(taken.items(), key=lambda kv: reg.order(kv[0]))},
+            # Live work adding an id main has with the same entry: its own.
+            "already_merged": {reg.show(i): names for i, names in
+                               sorted(merged.items(), key=lambda kv: reg.order(kv[0]))},
         }
     return result
 
@@ -739,7 +844,7 @@ def read_worktrees(root, mine, holders):
             continue
         owner = wt["branch"] or (mine if this else "worktree " + wt["path"])
         holders.append(Holder("worktree " + wt["path"], owner, wt["head"], ids,
-                              merging=merge_head(wt["path"])))
+                              merging=merge_head(wt["path"]), folder=wt["path"]))
         entry["read"] = True
     return trees
 
@@ -784,6 +889,9 @@ def report(result):
         for gid, names in one["taken_on_main"].items():
             out("      TAKEN ON MAIN  %s is on main already, and %s adds it too - renames "
                 "before it merges\n" % (gid, " and ".join(label(result, n) for n in names)))
+        for gid, names in one["already_merged"].items():
+            out("      MERGED  %s is on main exactly as %s adds it - its own, not a clash\n"
+                % (gid, " and ".join(label(result, n) for n in names)))
         out("\n")
 
     out("What was read\n")

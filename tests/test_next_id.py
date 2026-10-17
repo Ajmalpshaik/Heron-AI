@@ -57,6 +57,12 @@ WHAT THIS PROVES
      middle of merging main is not, for the rows that merge brought; a
      worktree whose folder is gone is NOT READ; and the run leaves every
      worktree as it was.
+ 13. A SQUASH-MERGE: this checkout's ids merged onto main as one new commit,
+     so its branch still adds them against its old merge-base. In each
+     register the id main holds with the same entry - a 5b row's line, a
+     group's own file, a question's or a decision's heading - is NOT TAKEN
+     ON MAIN and is named as already merged, CRLF on disk or not; the id main
+     took with a DIFFERENT entry still is.
 
 WHAT IT DOES NOT PROVE. That the real registers keep the shapes it reads.
 Running the tool on this repository and reading the ids it names is that
@@ -676,6 +682,81 @@ def section_12(home):
           "--no-worktrees leaves the working files unread")
 
 
+def section_13(home):
+    os.makedirs(home)
+    origin, seed, work = world(home)
+    rows_file = "docs/fragment-issues/section-5b-rows-026-050.md"
+    rows = MAIN[rows_file]
+    questions = MAIN["docs/open-questions/tier-2.md"]
+
+    print("\n13. this checkout's own ids, squash-merged")
+    git(work, "fetch", "-q", "origin")
+    git(work, "checkout", "-q", "-b", "claude/squashed", "origin/main")
+    # In each register the first id merges as written and the second is
+    # merged by somebody else first, in other words.
+    mine = {
+        "docs/NEEDS-CHECKING.md": MAIN["docs/NEEDS-CHECKING.md"]
+        + "\n## Group BB - mine\n\n## Group BC - mine too\n",
+        "docs/needs-checking/group-bb.md": "# Needs checking — Group BB\n\nmine\n",
+        "docs/needs-checking/group-bc.md": "# Needs checking — Group BC\n\nmine too\n",
+        rows_file: rows + "| **35** | my row | open |\n| **36** | my other row | open |\n",
+        "docs/open-questions/tier-2.md": questions
+        + "\n### \U0001F535 Q-20 — my question\n\n### \U0001F535 Q-21 — my other question\n",
+        "docs/decisions/D-50.md": "# D-50 — my decision\n",
+        "docs/decisions/D-51.md": "# D-51 — my other decision\n",
+    }
+    commit(work, mine, "this session takes BB, BC, 35, 36, Q-20, Q-21, D-50 and D-51")
+    git(work, "push", "-q", "origin", "claude/squashed")
+    # The squash: one new commit on main, never a merge, so the branch still
+    # adds every one of these against the commit where it left main.
+    squash = dict(mine)
+    squash["docs/needs-checking/group-bc.md"] = "# Needs checking — Group BC\n\nsomebody else's\n"
+    squash[rows_file] = rows + "| **35** | my row | open |\n| **36** | somebody else's row | open |\n"
+    squash["docs/open-questions/tier-2.md"] = (
+        questions + "\n### \U0001F535 Q-20 — my question\n\n"
+        "### \U0001F535 Q-21 — somebody else's question\n")
+    squash["docs/decisions/D-51.md"] = "# D-51 — somebody else's decision\n"
+    commit(seed, squash, "squash: mine merged, and the second of each taken first by somebody else")
+    git(seed, "push", "-q", "origin", "main")
+    git(work, "fetch", "-q", "origin")
+
+    got = ask(work, gh=FakeGh(missing=True))
+    regs = got.get("registers", {})
+    branch_name = "origin/claude/squashed"
+    for key, same, other in (("group", "BB", "BC"), ("5b", "5b-35", "5b-36"),
+                             ("Q", "Q-20", "Q-21"), ("D", "D-50", "D-51")):
+        taken = regs.get(key, {}).get("taken_on_main", {})
+        check(same not in taken,
+              "%s: %s merged onto main exactly as this checkout wrote it, so it is NOT "
+              "TAKEN ON MAIN: %s" % (key, same, taken))
+        check(branch_name in taken.get(other, []),
+              "%s: %s, which main took in other words, still IS: %s" % (key, other, taken))
+        merged = regs.get(key, {}).get("already_merged") or {}
+        check(branch_name in merged.get(same, []) and other not in merged,
+              "%s: the answer says %s is this checkout's own, merged: %s" % (key, same, merged))
+
+    # Windows checks the files out with CRLF; the same entry on disk is still
+    # the same entry.
+    for rel in ("docs/needs-checking/group-bb.md", rows_file):
+        path = os.path.join(work, *rel.split("/"))
+        with io.open(path, "r", encoding="utf-8") as handle:
+            text = handle.read()
+        with io.open(path, "w", encoding="utf-8", newline="\r\n") as handle:
+            handle.write(text)
+    got = ask(work, gh=FakeGh(missing=True))
+    regs = got.get("registers", {})
+    check("BB" not in regs.get("group", {}).get("taken_on_main", {})
+          and "5b-35" not in regs.get("5b", {}).get("taken_on_main", {}),
+          "a worktree whose files are on disk with CRLF line ends is read as the same "
+          "entry: %s, %s" % (regs.get("group", {}).get("taken_on_main"),
+                             regs.get("5b", {}).get("taken_on_main")))
+
+    code, text = run("--repo", work, "--no-fetch")
+    check(code == 0 and "TAKEN ON MAIN  5b-36" in text and "TAKEN ON MAIN  5b-35" not in text
+          and "MERGED  5b-35" in text,
+          "the plain report calls 36 TAKEN ON MAIN and says 35 is merged, exit %s" % code)
+
+
 def main():
     print("tools/next-id.py")
     section_1()
@@ -687,6 +768,7 @@ def main():
         section_9()
         section_10_and_11(os.path.join(home, "pulls"))
         section_12(os.path.join(home, "trees"))
+        section_13(os.path.join(home, "squash"))
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print("\n%s" % ("%d FAILED" % len(FAILURES) if FAILURES else "all passed"))
