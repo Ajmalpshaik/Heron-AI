@@ -1,0 +1,122 @@
+# QUESTIONS ABOUT WHAT A TEXT NOTE SAYS, ONE-PARAMETER QUESTIONS, AND CHANGE REQUESTS ON THE SAME WORDS.
+#
+# A HELD-OUT SET, kept so that a change to READ_ELEMENT_PARAMETERS - its identity
+# above all - or to EDIT_TEXT_VALUES, CREATE_TEXT_NOTE or the date readers can be
+# measured against sentences nothing was tuned to. Written 2026-10-17 for
+# FRAGMENT-ISSUES row 5b-980, BEFORE any wording was tried. A session's
+# sentences, not the owner's: tests/data/owner-questions.yaml is his set, and it
+# stays the one that decides.
+#
+# FORMAT: TAG <TAB> sentence. '#' lines are comments.
+#   QN  a question about what a text note says        -> READ_ELEMENT_PARAMETERS, parameterName Text
+#   QD  a question READ_ELEMENT_PARAMETERS DECLARES    -> answered by identity; watches that it still is
+#   QP  a one-parameter question no card declares     -> a READ (READ_ELEMENT_PARAMETERS or a nearer read)
+#   CN  asking to change or add a note's wording      -> EDIT_TEXT_VALUES or CREATE_TEXT_NOTE
+#   CP  asking to change a parameter's value          -> a write
+# Some lines outside QD are declared on a card too, so identity answers them -
+# on main c2f2765a three QN lines, "what level are these air terminals on", and
+# three CN/CP lines; "what parameters does this duct have" (QD) is declared on
+# two cards and so is ranked. Read the route of each answer rather than this
+# list. A Q line answered by a card that WRITES is the finding this file counts.
+#
+# MEASURED ON main c2f2765a, 571 fragments, Revit 2020 cards, question flag off:
+# 14 of the 66 Q lines reach a card that WRITES on the lexical backend and 14 on
+# the trained one (model2vec potion-base-8M, no re-ranker). Row 5b-980 says what
+# twelve wordings of READ_ELEMENT_PARAMETERS' identity did to them.
+#
+# Ask each sentence through heron_brain.lookup (mcp/server/heron_brain.py), the
+# function heron_lookup calls, on a SCRATCH store (HERON_KNOWLEDGE set; never
+# %APPDATA%, row 5b-233), on every backend you can, the tree before and after.
+#
+# NEVER DECLARE ANOTHER SENTENCE FROM THIS FILE ON A CARD. It would win by its
+# exact phrase and the file would stop measuring it. The lines a card declares
+# today were declared by other changes; this file declared none of them.
+QN	show me the wording of the text notes
+QN	read the text of these notes
+QN	read what the text notes in this view say
+QN	what does this text note say
+QN	what do the notes on this sheet say
+QN	what is written in these text notes
+QN	list the text of every note in this view
+QN	what text is in this note
+QN	show me what the general notes say
+QN	read the notes in the open view
+QN	what does the note on this drawing say
+QN	tell me the wording of this note
+QN	get the text from the selected notes
+QN	what is written on this text note
+QN	show the contents of the text notes
+QN	read out the general notes
+QN	is this note numbered 1 2 3
+QN	what list type does this note use
+QD	what is the Mark on these
+QD	what is the system name on these
+QD	read the mark values
+QD	get the size parameter
+QD	which ones have no value
+QD	what is missing its mark
+QD	what size is this duct
+QD	what is the diameter of this pipe
+QD	what workset is this on
+QD	what is the airflow in this duct
+QD	what is the flow rate in this pipe
+QD	what level are they on
+QD	which level is each duct on
+QD	what parameters does this duct have
+QD	what is the insulation thickness
+QD	what is the sill height of these windows
+QD	which level are these walls on
+QD	what is the base constraint of these walls
+QD	what size is this pipe
+QD	what is the flow in this duct
+QD	what is the insulation on this pipe
+QD	what is the sheet number of this sheet
+QD	who drew this sheet
+QD	what is the name of this room
+QD	what is the voltage of this outlet
+QD	which walls are room bounding
+QD	what is the height of this wall
+QD	what is the top constraint of this wall
+QP	what level are these air terminals on
+QP	read the comments parameter
+QP	what is the mark on this door
+QP	what is the comments value on these ducts
+QP	show me the type mark of these windows
+QP	what system is this pipe on
+QP	what is the width of this duct
+QP	read the fire rating of these walls
+QP	which elements have no mark
+QP	what is the reference level of these pipes
+QP	what is the offset of this duct
+QP	what is the length of these pipes
+QP	what phase are these walls in
+QP	get the manufacturer of this equipment
+QP	show me the value of the Comments parameter
+QP	what does the Mark parameter say on these doors
+QP	what is the room number
+QP	read one parameter off every element
+QP	what is the value of this parameter on each element
+QP	read the parameter value of these elements
+CN	change the wording of this note but keep the numbering
+CN	change the text of these notes
+CN	replace the word in the text notes
+CN	add a prefix to the text notes
+CN	edit the wording of the text notes
+CN	rewrite this note
+CN	set the text of this note to GENERAL NOTES
+CN	fix the spelling in the notes
+CN	put a new text note on this view
+CN	add a note to this sheet
+CP	set the comments parameter to checked
+CP	change the mark on these
+CP	fill in the mark values
+CP	set the size of this duct
+CP	change the level of these air terminals
+CP	set the flow on these air terminals
+CP	change the airflow in this duct
+CP	change the insulation thickness
+CP	set the sill height of these windows
+CP	change the base constraint of these walls
+CP	rename this room
+CP	write the comments parameter on these
+CP	change the sheet number of this sheet

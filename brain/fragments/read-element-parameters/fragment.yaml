@@ -268,7 +268,12 @@ utterances:
   # both reaching EDIT_TEXT_VALUES - are NOT declared: declaring them sent "what
   # level are these air terminals on" to SET_AIR_TERMINAL_FLOW on lexical and
   # "read the comments parameter" to EDIT_PARAMETER_TEXT on model. Recorded in
-  # 5b-520 instead.
+  # 5b-520 instead. The first is declared below since 5b-737. For the second,
+  # twelve wordings of this card's identity were measured instead (5b-980): on
+  # main c2f2765a none moves it, or any other of the 89 sentences in
+  # tests/data/text-note-questions.tsv, on lexical or the trained model, so the
+  # identity was left as it is. The re-ranker, which reads the identity most,
+  # is owed on the owner's PC.
   - read what the text notes in this view say
   - what does this text note say
   # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
