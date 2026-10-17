@@ -1,0 +1,73 @@
+# EDIT_REVISION version 3 (FRG-SHT-016) - ONE revision, 2026-10-17. NEEDS-CHECKING
+# Group BA. A file of its own because batch-prove keys its run record by
+# fragment name, and edit-revision-several-project1-2026-10-17.yaml proves the
+# count.
+#
+#     python tools/batch-prove.py tools/jobs/edit-revision-one-project1-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/edit-revision-one-project1-2026-10-17.yaml --session <the Revit 2020 pid>
+#
+# RUN ON "Project1" ONLY - a new project the owner made on 2026-10-17 from
+# Revit 2020's mechanical template, never saved, a scratch - NEVER a job model.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK;
+# run LIST_REVISIONS afterwards rather than assuming it.
+#
+# WHAT IT HELD BEFORE THE RUN (LIST_REVISIONS, 2026-10-17), the rows made BY
+# HAND by the owner in Manage - Sheet Issues/Revisions:
+#   Seq. 1-3  'HERON PROOF several', dates 'Date 1' to 'Date 3', not issued
+#   Seq. 4-6  'HERON PROOF several issued', 'Date 4' to 'Date 6', ISSUED
+#   all Numeric, issued by and issued to blank, on no sheet; Per Project
+#
+# THE FIND: Revision Sequence equals 1 - exactly one revision.
+#
+# POSITIVE: Seq. 1 takes issued by, issued to and the Issued tick - what version
+# 2 did, through version 3's code, with `confirmCount` SENT BLANK (row 5b-227).
+#
+# NEGATIVE: the same revision, asked for the description and date it already
+# holds. `changed` empty, both named in `alreadyThat` - nothing written. A tool
+# that wrote without comparing would report them changed.
+
+model: '"Project1" (a new scratch project, never saved), Revit 2020'
+
+jobs:
+  - fragment: edit-revision
+    in: "Project1"
+    write: true
+    expect: changed
+    setup:
+      - select-by-parameter-value
+    keep-chain: true
+    setup-set:
+      parameterName: Revision Sequence
+      matchText: "1"
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"
+    # POSITIVE: Seq. 1 takes issued by, issued to and the Issued tick.
+    set:
+      confirmCount: ""
+      description: ""
+      revisionDate: ""
+      issuedBy: M.Sagheer
+      issuedTo: A.Rahmani
+      show: ""
+      numbering: ""
+      issueState: issue
+    # NEGATIVE: the same revision, asked for what it already holds.
+    negative-set:
+      confirmCount: ""
+      description: HERON PROOF several
+      revisionDate: Date 1
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: ""
+      issueState: ""
+    # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT (row 5b-242).
+    negative-setup-set:
+      parameterName: Revision Sequence
+      matchText: "1"
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+      includeLinks: "false"
