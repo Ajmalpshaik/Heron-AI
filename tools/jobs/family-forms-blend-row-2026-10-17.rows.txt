@@ -1,0 +1,20 @@
+# CREATE_FAMILY_FORMS (create-family-forms, FRG-GEO-060) - NEEDS-CHECKING DA3, a refusal.
+#
+# The ten rows of family-forms-ten-2026-10-17.rows.txt with ROW 10 kind=blend.
+# Refused naming row 10 - a row is an extrusion or a revolve; none built.
+#
+# Copied under C:/Users/ajmal/AppData/Local/Temp/heron-work/da/ and its full
+# path given as `forms`. The commands, and what each run must answer, are
+# beside the row in docs/needs-checking/group-da.md. Lines starting # are not
+# read; tests/test_family_forms_rows.py reads this file with the fragment's
+# own reader.
+kind=extrusion workPlane=Ref. Level profile=circle 0,0 150 startMm=0 endMm=500 solid=true material=by category
+kind=extrusion workPlane=Ref. Level profile=rect -300,-200 300,200 | circle 0,0 50 startMm=-20 endMm=0 solid=true
+kind=extrusion workPlane=Center (Front/Back) profile=0,0; 600,0; 600,100; 100,100; 100,400; 0,400 startMm=-50 endMm=50 solid=true detailLevels=medium, fine
+kind=extrusion workPlane=Center (Left/Right) profile=polygon 0,250 60 6 startMm=-100 endMm=100 solid=true
+kind=extrusion workPlane=Ref. Level profile=rect -20,-20 20,20 startMm=100 endMm=400 solid=false
+kind=revolve workPlane=Center (Front/Back) profile=0,600; 150,600; 0,800 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=0,0; 40,0; 40,80; 0,80 axisLine=0,0 0,100 startDegrees=0 endDegrees=360 solid=false
+kind=revolve workPlane=Center (Left/Right) profile=circle 300,100 20 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+kind=revolve workPlane=Center (Front/Back) profile=0,900; arc 50,950 0,1000 axisLine=0,0 0,1000 startDegrees=0 endDegrees=360 solid=true
+kind=blend workPlane=Center (Front/Back) profile=200,0; 260,0; 260,40; 200,40 axisLine=0,0 0,1000 startDegrees=0 endDegrees=180 solid=true
