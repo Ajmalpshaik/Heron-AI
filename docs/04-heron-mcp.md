@@ -398,8 +398,9 @@ ordinary case.
 - **Five tools are given to the chat before it asks** - `heron_lookup`, `revit_read`, `revit_change`,
   `revit_health`, `revit_levels` (`heron_tools.ALWAYS_LOADED`), served with Claude Code's documented
   `_meta["anthropic/alwaysLoad"]`. Most Revit chats spent their first turn searching for a Heron tool
-  (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat; every other tool is
-  still one search away, and nothing about what a tool may do changes.
+  (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat (measured since by a
+  command, §8.8); every other tool is still one search away, and nothing about what a tool may do
+  changes.
 - **A connection check is answered and nothing more is done.** The owner, 2026-10-01: when he asks
   first whether Heron is connected he wants that answer and then to say what is next - *"only need to
   check the connected or not"*. The chat's rules (`host.chat`) and `revit_health`'s own description
@@ -472,7 +473,7 @@ disk without Revit. The KEPT paragraph is printed once per batch of calls and th
 carrying the undo rule whole, on the rest; a value the last reply of the same capability showed word for
 word is counted rather than printed again. Replayed through the real tool, 172 kept changes shaped from
 `CREATE_FAMILY_EXTRUSION`'s code went from 213,332 characters to 160,364, 24.8% less. **NOT RUN IN REVIT** - whether
-`DocumentChanged` reaches every commit the write path makes is [Group EO](needs-checking/group-eo.md).
+`DocumentChanged` reaches every commit the write path makes is [Group ES](needs-checking/group-es.md).
 
 **MEASURED 2026-10-11 on the same laptop** - a 165-form generator (156 extrusions, 5 sweeps, 4 revolves)
 built in one chat, `claude-opus-5-5` at effort *xhigh* on every request. 1,423 s from request to finish,
@@ -502,3 +503,82 @@ left short is [5b-429](fragment-issues/section-5b-rows-401-425.md).
 
 **NOT MEASURED:** what the 617 s turn spent its thinking on - the thinking text is not stored - and the
 office PC ([Q-61](OPEN-QUESTIONS.md)).
+
+### 8.8 What the tool list costs a chat — built 2026-10-17
+
+**What the owner asked:** cut what Heron's tool list costs in every chat. [D-03](DECISIONS.md) accepted
+the cost in so many words - *"MCP tool schemas cost context on every request"* - and mitigated it with a
+small core set, which since §8.6 is `heron_tools.ALWAYS_LOADED`. Nothing measured what that set or any
+other tool cost; §8.6's *about 9,000 characters* was a sentence.
+
+- **`python mcp/server/heron_tools.py --sizes`** prints every tool's description, input schema and whole
+  served JSON, largest first, with the ALWAYS_LOADED totals and the size of the instructions every chat
+  is given. Descriptions are read off the source with `ast` and need no SDK; schemas are written by the
+  SDK and say **NOT MEASURED** without one. `--json` is for a machine, and
+  [`change-evidence.py`](../tools/change-evidence.py) now records the description totals in every capture.
+- **[`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py)** holds the ALWAYS_LOADED descriptions
+  together, and every tool alone, to a budget - and holds that no trim drops an argument's name or the
+  sentences the two doors stand on, because a budget teaches people to cut words to buy the number back
+  (D-100's first reason). **It is a gate: a tool over budget stops a pull request -
+  [D-118](DECISIONS.md#d-118--a-tool-description-over-its-budget-stops-a-pull-request)**, the owner's
+  answer of 2026-10-17 to the question D-100 settled the other way for the routing score.
+- **The description served is the docstring cleaned, on every Python.** Python 3.12 - the owner's - served
+  every line indented four spaces, so the same list cost more on his PC than in a container
+  ([row 5b-491](fragment-issues/section-5b-rows-401-425.md)).
+- **What left a description is said where it is needed**, and kept as a comment under the docstring,
+  which no host is served:
+
+  | what | where the host hears it now |
+  |---|---|
+  | `expect_from`'s `where k=v` form, and why empty is the safe default | `_contract_lines`, under any capability that takes a value from the fragment before it |
+  | D-106's Admin and Publish switches, and what each covers | the refusal names the switch that is off (`heron_failure`); one line in `revit_change` says so, and not to route round it |
+  | Articles 7, 9 and 10 in full | `host.chat`, every chat's instructions; `revit_change` keeps a one-line pointer to 7 and 10 |
+  | `heron_hvac` and `heron_fire`'s lists of calculations | the catalogue an empty `calculation` returns |
+  | the questions an ASK ONCE answer asks | that answer, which names them |
+  | the full `inputs` shapes of the loads and sprinkler tools | their top-level keys stay; every question names its own path or its project or profile |
+
+**MEASURED 2026-10-17 through the SDK's own `list_tools`**, 45 tools, characters:
+
+| | `main`, Python 3.12 (the owner's) | `main`, Python 3.13 | this change, either |
+|---|---|---|---|
+| every description | 47,170 | 44,246 | **36,560** |
+| the whole list as served | 69,349 | 66,425 | **58,394** |
+| ALWAYS_LOADED's six descriptions | 7,258 | 6,814 | **4,292** |
+| ALWAYS_LOADED as served | 10,595 | 10,151 | **7,546** |
+
+The ten largest descriptions, read off the source (so without 3.12's indentation):
+
+| tool | before | after |
+|---|---|---|
+| `revit_change` | 2,870 | 1,309 |
+| `heron_fire` | 2,349 | 1,375 |
+| `revit_sprinkler_hydraulics` | 2,075 | 1,412 |
+| `revit_building_loads` | 2,008 | 1,325 |
+| `revit_sprinkler_layout` | 1,826 | 1,211 |
+| `heron_hvac` | 1,773 | 1,094 |
+| `revit_read` | 1,520 | 1,040 |
+| `heron_check` | 1,256 | 808 |
+| `revit_export_check` | 1,201 | 650 |
+| `heron_research` | 1,190 | 690 |
+
+SDK 2.3.0 on Python 3.12.3 and 2.2.0 on 3.13.16, in a cloud container. *As served* is the tool's whole JSON
+- name, description, input schema, output schema, safety labels and `_meta`; what reaches the model is at
+least the name, description and input schema, and the rest is the host's to pass or not. Run
+`python mcp/server/heron_tools.py --sizes` for today's figures rather than reading these.
+
+**Not changed, and why:**
+
+- **The Companion ANALYZE tools as `heron_method` jobs** - `revit_building_loads`, the two sprinkler tools,
+  `revit_edit_table`. Considered and not done: none is in ALWAYS_LOADED, so each costs a chat only once a
+  search loads it, and each opens a Companion panel and hands it the reply, which a method - a list of
+  steps for the chat to run - cannot do. Removing a tool the modeller's chats call is the owner's decision.
+- **Every tool is served with an `outputSchema`**, because each is declared `-> str` -
+  6,343 characters across the list - and each result carries the answer twice, as text and as
+  `structuredContent` (`tests/test_mcp_serves.py`'s `text_of` reads the pair). Whether Claude Code puts
+  either in the model's context was **not measured**. `structured_output=False` would drop both, and it
+  changes the shape of every reply, so it is a question rather than part of this change.
+- **`host.chat`** - [`tests/test_instructions.py`](../tests/test_instructions.py) already holds its word
+  budget.
+
+**NOT MEASURED, AND IT NEEDS A REAL CHAT:** whether Claude Code chooses the right Heron tool as often from
+the shorter descriptions. Nothing in a container can show it.

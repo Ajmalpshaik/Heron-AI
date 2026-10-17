@@ -97,6 +97,10 @@ WHAT IT PROVES, when an SDK is installed
      argument. A call with no request behind it, as every call here is, has
      no progressToken and so no callback. That the notes reach a host over
      stdio is tests/test_mcp_stdio.py's.
+ 14. revit_view_image HANDS BACK A PICTURE (D-123): one image/png block
+     beside its words, holding exactly what the stand-in sent, with no
+     output schema; the request is capture_view with the pin and no path;
+     and a reply with no readable picture, or a refusal, gives no image.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -184,20 +188,19 @@ def schema_of(tool):
     return getattr(tool, "inputSchema", None) or getattr(tool, "input_schema", None) or {}
 
 
-def text_of(result):
-    """Flatten whatever call_tool returned into text.
+def blocks_of(result):
+    """The content blocks whatever call_tool returned, as one list.
 
     1.x hands back a list of content blocks; 2.x hands back a result object
     carrying `.content`. Both are read here rather than one being assumed,
     for exactly the reason this file exists.
 
     And a later 1.x - 1.28.1, measured - hands back a PAIR for a tool whose
-    return is annotated, which is every Heron tool (`-> str`): that list, and
-    the same answer again as structured content, {"result": ...}. Only the
-    list is text. Read whole, the pair was flattened as a Python repr, so
-    every reply was read twice and without one real newline, and the check
-    that counts a sentence failed on a reply that says it once (FRAGMENT-ISSUES
-    row 5b-263).
+    return is annotated `-> str`: that list, and the same answer again as
+    structured content, {"result": ...}. Only the list is content. Read
+    whole, the pair was flattened as a Python repr, so every reply was read
+    twice and without one real newline, and the check that counts a sentence
+    failed on a reply that says it once (FRAGMENT-ISSUES row 5b-263).
     """
     if (isinstance(result, tuple) and len(result) == 2
             and isinstance(result[1], dict)):
@@ -205,7 +208,44 @@ def text_of(result):
     blocks = getattr(result, "content", None)
     if blocks is None:
         blocks = result if isinstance(result, (list, tuple)) else [result]
-    return "\n".join(getattr(b, "text", str(b)) for b in blocks)
+    return list(blocks)
+
+
+def is_image(block):
+    return getattr(block, "type", None) == "image"
+
+
+def text_of(result):
+    """Flatten whatever call_tool returned into text - its TEXT blocks only.
+
+    AN IMAGE BLOCK IS NOT TEXT, and revit_view_image answers with one beside
+    its words (D-123). Read the old way, str() of the block put the whole
+    picture's base64 into the text, so a sentence check searched a few
+    megabytes of letters and could find a short word in them by chance.
+    images_of() reads the pictures.
+    """
+    return "\n".join(getattr(b, "text", str(b)) for b in blocks_of(result)
+                     if not is_image(b))
+
+
+def images_of(result):
+    """Every image block in a call_tool result, as (mime type, raw bytes).
+
+    The mime type's attribute is `mimeType` in 1.x and `mime_type` in 2.x.
+    Bytes that are not valid base64 come back as None, never as a crash.
+    """
+    import base64
+    found = []
+    for block in blocks_of(result):
+        if not is_image(block):
+            continue
+        mime = getattr(block, "mime_type", None) or getattr(block, "mimeType", None)
+        try:
+            data = base64.b64decode(getattr(block, "data", "") or "", validate=True)
+        except ValueError:
+            data = None
+        found.append((mime, data))
+    return found
 
 
 async def exercise(server):
@@ -244,6 +284,7 @@ async def exercise(server):
         "revit_building_loads": ["inputs", "expect_from", "include_links"],
         "revit_sprinkler_hydraulics": ["system", "inputs", "expect_from"],
         "revit_sprinkler_layout": ["spaces", "inputs"],
+        "revit_view_image": ["elements", "view", "width"],
     }
     for name, args in sorted(expected.items()):
         if name not in served:
@@ -417,6 +458,23 @@ async def exercise(server):
           "and each keeps its safety labels - loading early changes nothing "
           "a host is told about what the tool can do")
 
+    # THE DESCRIPTION SERVED IS THE ONE --sizes MEASURES (row 5b-491). The
+    # budget in tests/test_tool_sizes.py is held on descriptions read off the
+    # source with no SDK, so that it runs in CI - and it is a budget on what a
+    # host is handed only while the two are the same text. Until 2026-10-17
+    # they were not: the SDK served the raw docstring, which Python 3.12 keeps
+    # indented four spaces a line.
+    print()
+    print("  the description a host is served, against what --sizes measures")
+    measure = getattr(registry, "descriptions", None)
+    measured = measure() if measure else {}
+    differ = sorted(n for n, t in served.items()
+                    if (t.description or "") != measured.get(n))
+    check(measured and not differ,
+          "every served description is the docstring heron_tools measures, "
+          "cleaned (%d tools)%s" % (len(served), "" if not differ else
+                                    " - differs on %s" % ", ".join(differ[:5])))
+
     return answers
 
 
@@ -469,6 +527,18 @@ class StandIn(object):
 
     def close(self):
         pass
+
+
+# A REAL ONE-PIXEL PNG, as the add-in's capture_view sends a picture: base64
+# in the reply, never a path (D-123). Small so a failure prints readably.
+PNG_1PX = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9"
+           "awAAAABJRU5ErkJggg==")
+
+PICTURE_REPLY = {"ok": True, "mode": "view", "view": "Level 1", "viewType": "FloorPlan",
+                 "pixelWidth": 1280, "widthClamped": False, "bytes": 70, "shown": 0,
+                 "leftOut": None, "rolledBack": True, "fileDeleted": True,
+                 "document": "Project1", "documentPath": "C:/jobs/Project1.rvt",
+                 "projectKey": "key-1", "png": PNG_1PX}
 
 
 def first_with(risk, status):
@@ -1084,7 +1154,8 @@ async def exercise_single_purpose(module, server, newest):
              ("revit_views", {}), ("revit_sheets", {}), ("revit_rooms", {}),
              ("revit_schedules", {}), ("revit_families", {}), ("revit_export_check", {}),
              ("revit_imports", {}), ("revit_annotation", {}), ("revit_systems", {}),
-             ("revit_parameters", {"category": "ducts"}), ("revit_groups", {}))
+             ("revit_parameters", {"category": "ducts"}), ("revit_groups", {}),
+             ("revit_view_image", {}))
     with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
                  encoding="utf-8") as fh:
         shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', fh.read()))
@@ -1167,7 +1238,11 @@ async def exercise_single_purpose(module, server, newest):
             "revit_select_by_category": {"ok": True, "document": "Pump Failed Retrofit",
                                          "projectKey": "key-9", "selected": 3,
                                          "category": "ducts", "categories": 1,
-                                         "scope": "the whole model"}}
+                                         "scope": "the whole model"},
+            # A GOOD PICTURE IS ONE THAT CARRIES ONE: a reply with no image
+            # is the tool's own failure, not an ok (exercise_view_image).
+            "revit_view_image": dict(PICTURE_REPLY, document="Pump Failed Retrofit",
+                                     documentPath=None, projectKey="key-9")}
     try:
         refused, failed, fine, pinned_out = [], [], [], []
         for tool, arguments in tools:
@@ -1258,6 +1333,108 @@ async def exercise_single_purpose(module, server, newest):
                 os.environ.pop("HERON_CONFIG", None)
             else:
                 os.environ["HERON_CONFIG"] = had_config
+    finally:
+        del module.binding.resolve
+        module.pinned.forget()
+
+
+async def exercise_view_image(module):
+    """
+    Section 14: revit_view_image hands the chat a PICTURE, through the SDK's
+    own dispatch, against a stand-in Revit that answers as capture_view does
+    (D-123). What a host is given is an image block beside the words - not a
+    path, not base64 inside the text - and a reply that carries no picture
+    gives no image and says so.
+    """
+    import base64
+    server = module.server
+    print()
+    print("  revit_view_image hands back a picture, as an image block (D-123)")
+
+    listed = dict((t.name, t) for t in await server.list_tools())
+    tool = listed.get("revit_view_image")
+    check(tool is not None, "revit_view_image is served")
+    if tool is None:
+        return
+    schema = getattr(tool, "outputSchema", None) or getattr(tool, "output_schema", None)
+    check(not schema,
+          "it declares NO output schema - so neither SDK wraps the answer as "
+          "structured content, which an image cannot be - found %r" % (schema,))
+
+    async def call(arguments):
+        """(text, images) - or the reason it could not be called, as text."""
+        try:
+            result = await server.call_tool("revit_view_image", arguments)
+        except Exception as exc:                                # noqa: BLE001
+            return "(revit_view_image could not be called: %s: %s)" % (
+                type(exc).__name__, exc), []
+        return text_of(result) or "", images_of(result)
+
+    revit = StandIn(dict(PICTURE_REPLY))
+    module.binding.resolve = lambda: revit
+    module.pinned.forget()
+    try:
+        said, images = await call({"view": " Level 1 ", "width": 900})
+        check(len(images) == 1 and images[0][0] == "image/png",
+              "a named view comes back as ONE image/png block - found %r"
+              % [mime for mime, _data in images])
+        check(images and images[0][1] == base64.b64decode(PNG_1PX),
+              "and the block holds exactly the picture the add-in sent")
+        first = (said.splitlines() or [""])[0]
+        check("'Level 1'" in first and "FloorPlan" in first and "Project1" in first,
+              "the words name the view, its type and the model: %r" % first)
+        check(PNG_1PX[:24] not in said,
+              "and the picture's base64 is NOT in the words")
+        check("Nothing was changed." in said, "and they say nothing was changed")
+
+        op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "capture_view" and len(revit.asked) == 1,
+              "one request, as capture_view - found %r" % [a[0] for a in revit.asked])
+        check(args.get("view") == "Level 1" and args.get("elementIds") == ""
+              and args.get("pixelWidth") == 900 and "expectProject" in args,
+              "carrying the view trimmed, no ids, the width and the pin - found %r" % args)
+        check(idempotent is True, "sent as a read, safe to ask again")
+        check(not [k for k in args if "path" in k.lower() or "folder" in k.lower()],
+              "and no path or folder travels with it: the add-in picks its own")
+
+        revit.reply = dict(PICTURE_REPLY, mode="elements", view="{3D}", viewType="ThreeD",
+                           shown=2, leftOut="311 is a datum (Levels)")
+        said, images = await call({"elements": "310, 311, 312"})
+        check(len(images) == 1, "elements by id come back as one picture too")
+        check(revit.asked[-1][1].get("elementIds") == "310, 311, 312",
+              "the ids go to the add-in as typed - it reads them, not this server")
+        check("2 element(s)" in said and "311 is a datum" in said
+              and "temporary view is gone" in said,
+              "and the words say how many were framed, which were left out and why, "
+              "and that the temporary view is gone")
+
+        revit.reply = dict(PICTURE_REPLY, mode="elements", rolledBack=False, shown=1)
+        said, images = await call({"elements": "310"})
+        check("did NOT confirm" in said and "temporary view is gone" not in said,
+              "a rollback the add-in could not confirm is said, loudly, and the "
+              "promise is not")
+
+        revit.reply = dict(PICTURE_REPLY, widthClamped=True, pixelWidth=2400)
+        said, _images = await call({"width": 9000})
+        check("2400 was used" in said, "a width clamped by the add-in is said")
+
+        revit.reply = dict(PICTURE_REPLY, fileDeleted=False)
+        said, _images = await call({})
+        check("could not be deleted" in said,
+              "a picture file left on this PC is said, never left unannounced")
+
+        # THE NEGATIVES: what comes back with no picture in it.
+        revit.reply = dict(PICTURE_REPLY, png="not a picture at all")
+        said, images = await call({})
+        check(not images and "without a picture" in said,
+              "a reply whose picture is not a PNG gives NO image and says so")
+        revit.reply = {"ok": False, "error": "no_such_view",
+                       "message": "There is no view called 'Levle 1' in \"Project1\". "
+                                  "Nothing was pictured."}
+        said, images = await call({"view": "Levle 1"})
+        check(not images and said.startswith("There is no view called 'Levle 1'"),
+              "a view that is not there is the add-in's refusal, word for word, "
+              "with no image")
     finally:
         del module.binding.resolve
         module.pinned.forget()
@@ -1461,6 +1638,7 @@ def main():
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
         asyncio.run(exercise_change_report(server_module))
+        asyncio.run(exercise_view_image(server_module))
 
         guard.stop()
         print()

@@ -89,6 +89,9 @@ export to a shared location.
 
 **11. Untested code never touches a live model.**
 Generated or newly imported code runs in a sandbox or against a detached copy first.
+**One recorded exception, [D-119](docs/DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so):** a DRAFT fragment may run once on the saved model in
+front, as one named undo step behind Heron's Keep or Discard prompt in Revit - that prompt and that one
+group are its sandbox. Nothing it did stays unless the modeller, having seen the result, presses Keep.
 *(Golden Rule 18)*
 
 **12. Element ownership is a normal outcome, not an error.**
@@ -200,7 +203,7 @@ a partial result as complete.
 
 | Article | Enforced in code at | Also injected into agent instructions |
 |---|---|---|
-| 7, 8, 9, 10, 11, 12 | Revit add-in permission gate + transaction wrapper. **9:** the move's preview is enforced there, as a one-use approval re-counted before it writes; `revit_change` keeps its change with no preview — the recorded exception, [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so). **7:** on `revit_change` the Changes switch is all that stands — no per-operation confirmation exists in code ([FRAGMENT-ISSUES 5b-161](docs/FRAGMENT-ISSUES.md)). **11:** not in the add-in, which never sees a fragment's card — in the client, which refuses to keep a change from a fragment that is not PROVEN or whose proof its code has moved past, on `revit_change` and `fragment --write --apply`, before anything is sent; a rolled-back run is not refused ([D-117](docs/DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)) | every chat: 7, 8, 9, 10, 12 · assembled, not given: 11 |
+| 7, 8, 9, 10, 11, 12 | Revit add-in permission gate + transaction wrapper. **9:** the move's preview is enforced there, as a one-use approval re-counted before it writes; `revit_change` keeps its change with no preview — the recorded exception, [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so). **7:** on `revit_change` the Changes switch is all that stands — no per-operation confirmation exists in code ([FRAGMENT-ISSUES 5b-161](docs/FRAGMENT-ISSUES.md)). **11:** not in the add-in, which never sees a fragment's card — in the client, which refuses to keep a change from a fragment that is not PROVEN or whose proof its code has moved past, on `revit_change` and `fragment --write --apply`, before anything is sent; a rolled-back run is not refused ([D-117](docs/DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)). The one way a DRAFT's change is kept: `"apply": "ask"` - one group held behind the Keep or Discard prompt in Revit, refused unless the model is saved and in front - the recorded exception, [D-119](docs/DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | every chat: 7, 8, 9, 10, 12 · assembled, not given: 11 |
 | 12a, 12b, 12c | Session binding and document pinning in the bridge; preview re-validation before execute | every chat: 12a, 12b, 12c |
 | 13, 14, 15, 16, 17 | Permission layer, credential store, egress filter | every chat: 14 · assembled, not given: 16 · no: 13, 15, 17 |
 | 1, 2, 4, 20, 21 | Lifecycle gates in the registries | no: 1, 2, 4, 20, 21 |
@@ -242,8 +245,9 @@ and the compensating control. Articles are never weakened silently, and never by
 ([Q-35](docs/OPEN-QUESTIONS.md), [D-43](docs/DECISIONS.md)). Binding.*
 *Derived from **all 21 Golden Rules**, every one official since 2026-08-28
 ([Q-19](docs/OPEN-QUESTIONS.md)), plus Part 4 §5, §6, §29, §30, §46.*
-*Amended once, by the route above: **Article 9** gained one recorded exception on 2026-09-23, the
-owner's choice when he was asked — [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so).*
+*Amended twice, by the route above: **Article 9** gained one recorded exception on 2026-09-23, the
+owner's choice when he was asked — [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - and **Article 11** one on
+2026-10-17, accepted by the owner with D-120 to D-122 — [D-119](docs/DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so).*
 
 > **Three stale statements were corrected on acceptance, and they are worth naming rather than quietly
 > fixing.** This file described its own basis as *"Golden Rules 1–15 (official) and 16–19 (proposed)"* —

@@ -47,6 +47,8 @@ DEFAULTS = {
     "bridge.leaseMinutes": "5",
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
+    # The extra wait for a job that has put a Keep or Discard box up (D-119).
+    "revit.askTimeoutSeconds": "300",
     "write.enabled": "false",
     # The two switches above Changes (D-106): each lets one more level
     # through, and only while write.enabled is on as well.
@@ -245,6 +247,25 @@ def fragment_timeout(values=None):
     """
     values = load() if values is None else values
     return max(FRAGMENT_FLOOR_S, response_timeout(values))
+
+
+def ask_timeout(values=None):
+    """What the add-in adds to its wait once a job has asked the modeller (D-119)."""
+    values = load() if values is None else values
+    return max(1.0, _number(values, "revit.askTimeoutSeconds", 300))
+
+
+def try_once_timeout(values=None):
+    """
+    How long to wait for a DRAFT's one run, which ends on a person (D-119).
+
+    The fragment's own deadline PLUS the add-in's ask timeout, because the
+    add-in waits for both one after the other. Below that, this side would
+    give up while the Keep or Discard box is still open in Revit - and the
+    request is not safe to send twice, so the answer would be lost.
+    """
+    values = load() if values is None else values
+    return fragment_timeout(values) + ask_timeout(values)
 
 
 def writing_enabled(values=None):
