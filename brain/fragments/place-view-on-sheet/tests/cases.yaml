@@ -2,6 +2,34 @@ positive:
   - given: 4 unplaced views and an empty sheet
     expect: placed holds 4 viewport ids, refused empty, and all four appear on the sheet stacked at the given point
 
+  - given: >
+      VERSION 2. A legend NOTES on two or more sheets, and its copy AS-BUILT
+      NOTES on none. oldViewId NOTES, views AS-BUILT NOTES, at 0,0,0, sheetId
+      left out
+    expect: >
+      one line in swapped per sheet NOTES was on, each naming the sheet number,
+      'NOTES' gone, 'AS-BUILT NOTES' in its place, centre 0.0 mm from the old
+      one, and the old viewport type kept. placed holds one new viewport id per
+      sheet, notDone and refused empty. NOTES is still in the Project Browser.
+      Then LOOK at each sheet: AS-BUILT NOTES exactly where NOTES was, the
+      title shown or hidden as NOTES had it. One Ctrl+Z puts NOTES back on
+      every sheet
+
+  - given: >
+      VERSION 2. A schedule on one sheet, and a second schedule on no sheet.
+      oldViewId the first, views the second, at 0,0,0
+    expect: >
+      one line in swapped - the sheet number, the old schedule gone, the new
+      one in its place, CORNER 0.0 mm from the old one. A schedule hangs from
+      its top-left corner, so the corners line up, not the centres
+
+  - given: >
+      VERSION 2. A drafting view on a sheet with detail number 7, its viewport
+      PINNED, and a second drafting view on no sheet
+    expect: >
+      the line says "detail number 7 kept" and "pinned as before", and the new
+      viewport reads 7 and is pinned in its Properties
+
 negative:
   - given: a batch of 30 views where 19 are ALREADY on other sheets
     expect: >
@@ -19,5 +47,33 @@ negative:
   - given: Viewport.Create returning null without throwing
     expect: it is in refused, NOT counted as placed - a returned null is not a placement
 
+  - given: >
+      VERSION 2. The new view is a drafting view or a plan ALREADY on a sheet.
+      oldViewId a view on another sheet, views that placed view, at 0,0,0
+    expect: >
+      swapped empty, placed empty, and every sheet the old view is on named in
+      notDone - "Revit will not put ... here - it is on sheet ..." - with its
+      id in refused. The old view is still on every one of those sheets, and
+      the new view is still on its own sheet. A plan, a section or a drafting
+      view can be on only one sheet
+
+  - given: VERSION 2. The new view already sits on one of the old view's sheets
+    expect: >
+      that sheet in notDone - "already on this sheet ... would show it twice" -
+      and left exactly as it was; the old view's other sheets still swapped
+
+  - given: VERSION 2. An oldViewId that is on no sheet at all
+    expect: notDone says it is not on any sheet, and nothing anywhere changed
+
+  - given: VERSION 2. A legend for the old view and a schedule for the new one
+    expect: notDone says they are not the same kind, and nothing anywhere changed
+
+  - given: VERSION 1 with sheetId left out and no oldViewId
+    expect: every view in refused and notDone asking for the sheet number - nothing placed
+
 second_route:
   - Open the sheet. The viewports are there and can be dragged apart
+  - >
+    Version 2: open each sheet the old view was on, select the new viewport,
+    and read its Properties - the view name, the viewport type - and, with the
+    old position noted before the run, check the box sits where the old one sat
