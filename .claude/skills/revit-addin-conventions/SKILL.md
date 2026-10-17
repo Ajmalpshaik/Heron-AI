@@ -136,6 +136,46 @@ No stack traces, no exception class names, no developer jargon.
 
 Use a status line, a results list, or the log for anything that is merely informative.
 
+### Revit's own dialogs during a job
+
+A Revit dialog that opens **inside** a Heron job has nobody to answer it, so the job hangs behind it
+([row 5b-300](../../../docs/fragment-issues/section-5b-rows-276-300.md): a family from a later release
+froze `LOAD_FAMILY` for over 90 s). Since 2026-10-17 `HeronDialogWatch` answers it while the dispatcher
+has a job armed - **declined** (Cancel, then Close) unless a row in `HeronDialogRule` says otherwise -
+and the job stops, so its group rolls back and the reply quotes what Revit asked. Built, not yet run in
+Revit ([NEEDS-CHECKING group EL](../../../docs/needs-checking/group-el.md)).
+
+- **A prompt Heron itself shows during a job goes inside `using (HeronDialogWatch.HeronAsks())`**, or the
+  watch answers Heron's own question for the modeller. `tests/test_dialog_note.py` fails a bare prompt in
+  any `Revit*.cs` file.
+- **A new write path asks `HeronDialogWatch.Refused` before it keeps its group**, and rolls back when it
+  is true. The same suite checks every `Assimilate()` under `revit/`.
+- **Prefer the API's own answer where one exists** - `IFamilyLoadOptions` for a family already loaded,
+  `CopyPasteOptions.SetDuplicateTypeNamesHandler` for duplicate type names. Revit's failures belong to
+  the failures preprocessor, never to the watch.
+- **A `HeronDialogRule` row needs the DialogId a real run reported and that run named in `Evidence`.**
+  Never a guessed id, and never an answer other than Cancel or Close without one.
+
+### Saves, syncs, exports and other models during a job
+
+Constitution Article 10 is held in code since 2026-10-17. `HeronRunGuard`, armed by the dispatcher around
+each job, cancels a save, Save As, sync, export or print of a model that was open when the job began -
+unless the operation is `run_fragment_publish` - refuses a new document unless it is `run_fragment_admin`,
+refuses a job that changes another open model, and closes what the job left open in the background.
+Every decision is `HeronRunPolicy`'s, proved without Revit by `tests/test_run_guard.py`. Built, not yet
+run in Revit ([NEEDS-CHECKING group EM](../../../docs/needs-checking/group-em.md)).
+
+- **Never call `Cancel()` on a Revit event without asking `e.Cancellable` first** - it throws on one that
+  cannot be cancelled. The suite reads every call.
+- **A path that works in a document other than the one in front names it with `HeronRunGuard.Target`**,
+  or its own changes read as a change to another model.
+- **A path that keeps a fragment's group asks `HeronRunGuard.Policy.Refuses`, and reads the switches again
+  with `HeronRunPolicy.Withdrawn`, first** - `RevitFragment` does both. The gate's answer is as old as the
+  job by then, and Article 13 says never cache a permission decision.
+- **A save, a sync or an export of a model that was already open belongs in a PUBLISH fragment.** At any
+  other level it is refused in Revit, whatever the card says. A file the job opened itself - or, under
+  Admin, started - is its own to save.
+
 ## Logging
 
 Log with `DateTime.UtcNow`, never `DateTime.Now`. The `u` format stamps a trailing `Z`, so local time

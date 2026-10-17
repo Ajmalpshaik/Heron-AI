@@ -565,6 +565,13 @@ namespace Heron.Revit.Addin
                 // not the answer that was asked for.
                 var guardedRead = Guarded(threw, ReadOpensNothing);
                 if (guardedRead != null) return guardedRead;
+
+                // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
+                // built around a question nobody answered is not the answer
+                // that was asked for. Ahead of `threw`, because a call the
+                // Cancel refused is often what threw. See HeronDialogWatch.
+                var stoppedRead = DialogRefusal(name, null);
+                if (stoppedRead != null) return stoppedRead;
             }
             else
             {
@@ -642,8 +649,10 @@ namespace Heron.Revit.Addin
                         }
                         if (threw != null)
                         {
-                            var scopeRolledBack = SafeRollBack(group);
-                            return Guarded(threw, GroupState(scopeRolledBack)) ?? threw;
+                            var unwound = SafeRollBack(group);
+                            var guardedThrow = Guarded(threw, GroupState(unwound));
+                            if (guardedThrow != null) return guardedThrow;
+                            return DialogRefusal(name, unwound) ?? threw;
                         }
                     }
                     else
@@ -661,8 +670,10 @@ namespace Heron.Revit.Addin
                         if (threw != null)
                         {
                             SafeRollBack(transaction);
-                            var thrownRolledBack = SafeRollBack(group);
-                            return Guarded(threw, GroupState(thrownRolledBack)) ?? threw;
+                            var unwound = SafeRollBack(group);
+                            var guardedThrow = Guarded(threw, GroupState(unwound));
+                            if (guardedThrow != null) return guardedThrow;
+                            return DialogRefusal(name, unwound) ?? threw;
                         }
 
                         // NOT COMMITTED MEANS DISCIPLINE ROLLED IT BACK, almost
@@ -688,14 +699,21 @@ namespace Heron.Revit.Addin
                         }
                     }
 
-                    // THE LAST LOOK BEFORE ANYTHING IS KEPT, in two halves.
+                    // THE LAST LOOK BEFORE ANYTHING IS KEPT, in three parts: the
+                    // run guard, the switches, and Revit's dialogs.
                     //
                     // THE RUN GUARD'S RECORD. A save, sync, export or print it
                     // cancelled, a new document it refused, a change to
                     // another open model - each means the job did something
                     // its operation may not, and it is rolled back whatever
-                    // `apply` says. Constitution Article 10.
-                    //
+                    // `apply` says. Constitution Article 10. First, because a
+                    // change to another model is the one outcome no rollback
+                    // here can reach, and the modeller must hear it.
+                    if (HeronRunGuard.Policy != null && HeronRunGuard.Policy.Refuses)
+                    {
+                        return Guarded(null, GroupState(SafeRollBack(group)));
+                    }
+
                     // AND THE SWITCHES, READ AGAIN, FRESH. The gate read them
                     // before the job started, and that answer is as old as
                     // the job; a modeller who turns Changes off - or Admin, or
@@ -703,17 +721,10 @@ namespace Heron.Revit.Addin
                     // 13: never cache a permission decision. Asked only when
                     // keeping, because a preview is rolled back whatever the
                     // switches say.
-                    var refusedByGuard = HeronRunGuard.Policy != null && HeronRunGuard.Policy.Refuses;
                     var stoppedNow = HeronStop.IsStopped;
-                    var withdrawn = apply && !refusedByGuard
+                    var withdrawn = apply
                         ? HeronRunPolicy.Withdrawn(risk, HeronConfig.Load(), stoppedNow)
                         : null;
-
-                    if (refusedByGuard)
-                    {
-                        return Guarded(null, GroupState(SafeRollBack(group)));
-                    }
-
                     if (withdrawn != null)
                     {
                         return Json.Error("permission_withdrawn",
@@ -721,6 +732,16 @@ namespace Heron.Revit.Addin
                                 stoppedNow && risk >= HeronRisk.Modify,
                                 GroupState(SafeRollBack(group))));
                     }
+
+                    // A REVIT DIALOG HERON DECLINED STOPS THE JOB HERE, before
+                    // anything is kept. The fragment ran on past it - a Cancel
+                    // makes the call that asked return or throw, and a
+                    // fragment that caught it carried on - so this is the last
+                    // point where the whole job can still be undone, setup
+                    // steps included. Article 7: a question nobody answered is
+                    // never a yes. See HeronDialogWatch.
+                    if (HeronDialogWatch.Refused)
+                        return DialogRefusal(name, SafeRollBack(group));
 
                     // ASSIMILATE, so the whole group collapses to ONE undo step
                     // rather than leaving the inner transaction visible as its
@@ -1340,6 +1361,24 @@ namespace Heron.Revit.Addin
                 return Json.Error("fragment_threw",
                     "'" + name + "' threw while running: " + Innermost(failure).Message);
             }
+        }
+
+        /// <summary>
+        /// The refusal for a job a Revit dialog stopped, or null when none
+        /// did. `rolledBack` is null on the read path, where no transaction
+        /// was open and so nothing can have changed; otherwise it is what
+        /// SafeRollBack reported, and the sentence says the model is as it
+        /// was ONLY when Revit confirmed it - WithVerdict's rule.
+        /// </summary>
+        private static string DialogRefusal(string name, bool? rolledBack)
+        {
+            var met = HeronDialogWatch.Armed;
+            if (met == null || !met.Refused) return null;
+
+            var outcome = rolledBack == null ? HeronDialogNote.Outcome.ReadOnly
+                        : rolledBack.Value   ? HeronDialogNote.Outcome.RolledBack
+                        :                      HeronDialogNote.Outcome.RollbackUnconfirmed;
+            return met.Refusal("'" + name + "'", outcome);
         }
 
         /// <summary>

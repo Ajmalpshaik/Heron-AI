@@ -37,7 +37,7 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 behaviour and a strong one of a missing line.
 
 Neither proves Revit raises the events, lets them be cancelled, or closes
-what it is told to. That is the PC's: docs/needs-checking/group-ej.md.
+what it is told to. That is the PC's: docs/needs-checking/group-em.md.
 
 IT EXITS 3 WHEN .NET IS ABSENT AND THE WIRING PASSED, which is NOT a pass:
 the policy was not run.

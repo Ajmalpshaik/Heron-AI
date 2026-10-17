@@ -326,6 +326,16 @@ namespace Heron.Revit.Addin
                 {
                     var op = Json.ReadString(job.Request, "op") ?? "(none)";
 
+                    // A REVIT DIALOG THE JOB OPENS IS ANSWERED, NOT WAITED ON -
+                    // FRAGMENT-ISSUES section 5b row 300. Armed here, after
+                    // TryStart and around Run alone, so it answers only what
+                    // THIS job raises. A dialog already open before the job
+                    // never gets this far: Revit runs no ExternalEvent behind
+                    // a modal dialog, Dispatch's busy wait runs out, and the
+                    // caller is told revit_busy as before.
+                    HeronDialogWatch.Arm();
+                    HeronDialogNote dialogs = null;
+
                     // THE RUN GUARD, armed for this job and for nothing else
                     // (Constitution Article 10). While it is armed a save, a
                     // sync, an export or a print the operation's risk does not
@@ -334,35 +344,53 @@ namespace Heron.Revit.Addin
                     // decides which. Armed INSIDE the try, so a guard that
                     // cannot arm refuses the job rather than letting it run
                     // unguarded; disarmed in the finally, so it is never left
-                    // armed over the modeller's own Ctrl+S.
+                    // armed over the modeller's own Ctrl+S. Inside the dialog
+                    // watch, so a dialog raised while it closes what the job
+                    // left open is answered too.
                     HeronRunPolicy guarded = null;
                     try
                     {
-                        HeronRunGuard.Arm(app, op);
-                        response = RevitOperations.Run(app, job.Request);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Never let one bad request throw out of here: this
-                        // runs on Revit's own thread, and an escaping
-                        // exception is Revit's problem, not just Heron's.
-                        _log("Operation failed: " + ex);
-                        response = Json.Error("operation_failed", ex.Message);
+                        try
+                        {
+                            HeronRunGuard.Arm(app, op);
+                            response = RevitOperations.Run(app, job.Request);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Never let one bad request throw out of here: this
+                            // runs on Revit's own thread, and an escaping
+                            // exception is Revit's problem, not just Heron's.
+                            _log("Operation failed: " + ex);
+                            response = Json.Error("operation_failed", ex.Message);
+                        }
+                        finally
+                        {
+                            // Closes what the job left open in the background
+                            // before it lets go - after every path out of Run,
+                            // a throw included.
+                            guarded = HeronRunGuard.Disarm(app);
+                        }
                     }
                     finally
                     {
-                        // Closes what the job left open in the background
-                        // before it lets go - after every path out of Run,
-                        // a throw included.
-                        guarded = HeronRunGuard.Disarm(app);
+                        dialogs = HeronDialogWatch.Disarm();
                     }
-
-                    // WHAT IT STOPPED, ON THE REPLY: every act, every refused
-                    // document, every change elsewhere, what was closed. The
-                    // refusal's own words are the executor's; these are the
-                    // record behind them, for anything reading the reply.
-                    if (guarded != null) response = guarded.Splice(response);
                     clock.Stop();
+
+                    // WHAT IT MET GOES ON THE REPLY - `dialogsAnswered` and
+                    // each dialog's id, words and answer - and nothing at all
+                    // when it met none. A path that came back a success from a
+                    // job a dialog stopped is turned into the refusal here.
+                    response = HeronDialogNote.Attach(response, dialogs,
+                                                      HeronOperationRegistry.Writes(op));
+
+                    // WHAT THE RUN GUARD STOPPED, ON THE REPLY: every act,
+                    // every refused document, every change elsewhere, what was
+                    // closed. The refusal's own words are the executor's;
+                    // these are the record behind them, for anything reading
+                    // the reply. AFTER the dialog note, which can replace a
+                    // reply whole - spliced last, so neither record is lost.
+                    if (guarded != null) response = guarded.Splice(response);
 
                     // WHICH MODEL THE WORK ACTUALLY RAN AGAINST, read out
                     // of its own answer. This is the only authoritative
@@ -436,17 +464,20 @@ namespace Heron.Revit.Addin
                     if (warnings.HasValue)
                         numbers.Add(new KeyValuePair<string, long>("warnings", warnings.Value));
 
-                    // AND WHAT THE RUN GUARD STOPPED AND CLOSED, on every job
-                    // it watched. Written as 0 when it stopped nothing,
-                    // because it watched every job and 0 is what it saw -
-                    // unlike `warnings` above, which a read never measures.
-                    // Absent only when the guard never armed, and then the
-                    // job never ran either.
-                    if (guarded != null)
-                    {
+                    // AND HOW MANY REVIT DIALOGS IT MET, on every operation -
+                    // a dialog is not a fragment's alone. Absent when it met
+                    // none, like the reply: every job is armed, so absent here
+                    // means none opened, never that nobody looked.
+                    if (dialogs.Count > 0)
+                        numbers.Add(new KeyValuePair<string, long>("dialogs", dialogs.Count));
+
+                    // AND WHAT THE RUN GUARD STOPPED AND CLOSED, by the same
+                    // rule: every job is armed, so absent means it stopped or
+                    // closed nothing, never that nobody watched.
+                    if (guarded != null && guarded.BlockedCount > 0)
                         numbers.Add(new KeyValuePair<string, long>("blocked", guarded.BlockedCount));
+                    if (guarded != null && guarded.ClosedCount > 0)
                         numbers.Add(new KeyValuePair<string, long>("closed", guarded.ClosedCount));
-                    }
 
                     HeronAudit.Record(job.WorkflowId, op,
                         failure == null,
@@ -618,6 +649,8 @@ namespace Heron.Revit.Addin
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                case "dialog_refused":  return "A Revit dialog stopped the job - nothing kept";
+                case "dialog_unconfirmed": return "A Revit dialog stopped the job - check the model";
                 case "run_guard":       return "Refused - it tried to save, export or start a file";
                 case "changed_other_model": return "It changed another model - look at it";
                 case "permission_withdrawn": return "Switched off while running - not kept";
