@@ -524,6 +524,10 @@ rather than *"close Revit first"*.
    Analysis, Structural Ribbon and Results Builder, plus Enscape, DiRoots ProSheets and AJ Tools. Heron
    loaded and registered all three buttons immediately after it. Anyone grepping a journal for `ERROR`
    will find this first and should not stop there.
+   **Not harmless on a .NET Revit (2025 on) when the module named is the C# compiler** - found
+   2026-10-17, [row 5b-575](fragment-issues/section-5b-rows-401-425.md): on Revit 2026 the line read
+   *"Microsoft.CodeAnalysis of version 4.8.0.0 conflicts with same preloaded module of version 4.14.0.0"*,
+   and every fragment then failed to compile. On 2020 and 2024 the same line meant nothing.
 2. **Revit 2027 records `AddInCodeSigningStatus: Unsigned`.** It loaded anyway, and no release refused
    it. But 2027 is the release that bothers to say so, and the trend across Revit versions is toward
    caring more rather than less. Worth knowing before a release is cut, not after.
