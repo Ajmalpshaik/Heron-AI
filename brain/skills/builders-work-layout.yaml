@@ -31,12 +31,13 @@ purpose: >
   is read from the library every time it is served: where the two differ, the
   list is right and this text is out of date.
 
-  TWO STEPS OF THIS JOB HAVE NO TOOL ON MAIN YET, and a third has half of one -
+  ONE STEP OF THIS JOB HAS NO TOOL ON MAIN YET, and a second has half of one -
   each marked GAP below and kept out of the list of capabilities, because
-  nothing there provides them: replacing a family with another at the same
-  place, setting an opening's depth with one face kept, and a tag on an
-  opening inside a link. At that step say so to the modeller and let them
-  choose; never work round a gap by guessing a value or typing an element id.
+  nothing there provides them: setting an opening's depth with one face kept,
+  and a tag on an opening inside a link. Replacing a family with another at
+  the same place is the method replace-in-place-family since row 5b-740. At a
+  gap say so to the modeller and let them choose; never work round a gap by
+  guessing a value or typing an element id.
 
   BEFORE EACH BIG STEP - 1, 2, 3, 4, 5, 6, 7 and every delete - ASK THE
   MODELLER TO SYNCHRONIZE WITH CENTRAL, and wait for their word. Heron does not
@@ -103,13 +104,13 @@ purpose: >
      template applied to a view overrules every override on it by hand, which
      is what is wanted here, and is why the look is set before, never after.
 
-  4. THE OPENING FAMILIES. GAP - REPLACE A FAMILY WITH ANOTHER AT THE SAME
-     PLACE: each old opening family swapped for the house family where it
-     stands, keeping its workset, with only the size parameters the modeller
-     names set on the new one. That is its own job (the replace-family task)
-     and nothing on main does it yet. replace-in-place-family is for IN-PLACE
-     families and is not this. Until it exists the modeller swaps them; before
-     any old one is deleted, step 8.
+  4. THE OPENING FAMILIES. Each old opening family swapped for the house
+     family where it stands, keeping its workset, with only the size
+     parameters the modeller names set on the new one: the method
+     replace-in-place-family (heron_method), widened on 2026-10-17 to swap a
+     LOADABLE family too, whatever its hosting (row 5b-740). It is DRAFT and
+     carries one gap of its own - a GUID write. Its last step names every tag
+     and dimension a delete takes, as step 8 does here.
 
   5. THE OPENING DEPTH. GAP - KEEP A FACE: the depth parameter ("Wall Width")
      set with the OUTSIDE face of the wall kept where it is. A plain parameter
@@ -218,7 +219,7 @@ note: >
   Written 2026-10-17 from a builders work layout done by hand on 2026-10-15
   and 17, on Revit 2020, in a real project's plans and sections; no name,
   value or id from that model is in this file beyond the examples in quotes.
-  Steps 4 and 5 are each a separate task; the tags were moved with OFFSET_TAGS_FROM_HOST version 2 and the dimensions
+  Step 4 is replace-in-place-family since row 5b-740 and step 5 a separate task; the tags were moved with OFFSET_TAGS_FROM_HOST version 2 and the dimensions
   drawn with CREATE_LINEAR_DIMENSION versions 3 and 4, both still DRAFT.
   The job as a whole has not been watched working through Heron, so it
   stays DRAFT (D-30); no NEEDS-CHECKING group holds that run yet.
