@@ -35,6 +35,11 @@ tests/Heron.Kernel.TestHost section 8, every combination of the three. The
 add-in's gate, the MCP tool and the ribbon are read as TEXT, because running
 them needs Revit and the MCP SDK - that half is NEEDS-CHECKING group BF, on
 the owner's PC.
+
+SECTION 7 IS ARTICLE 11 ON THE SAME PATH (D-116). The fake Revit also writes
+down what each run carried, so "no DRAFT is sent to be KEPT" is observed over
+every write fragment in the library, and so is the other half: a DRAFT run
+WITHOUT --apply is still sent, rolled back, because that is how one is proved.
 """
 
 import contextlib
@@ -106,16 +111,20 @@ def refusal_of(name, switched):
 
 
 class FakeBridge(object):
-    """A Revit that answers every request and writes down what it was sent."""
+    """A Revit that answers every request and writes down what it was sent -
+    the operation in `sent`, and what the run carried in `args`, so a check
+    can say WHICH fragment went and whether it went to be kept."""
 
     revit_version = "2024"
     pid = 4242
 
     def __init__(self):
         self.sent = []
+        self.args = []
 
     def request(self, op, **kwargs):
         self.sent.append(op)
+        self.args.append(dict(kwargs.get("op_args") or {}))
         if op == "count_elements":
             return {"ok": True, "document": "Fake model", "count": 3}
         return {"ok": True, "document": "Fake model", "provides": {},
@@ -161,6 +170,102 @@ def first_with(risk):
         if card_risk(name) == risk:
             return name
     return None
+
+
+def current(found):
+    """Whether proof_status's answer is a proof that still stands."""
+    return (found is not None and found.get("status") in ("PROVEN", "PRODUCTION")
+            and not found.get("stale"))
+
+
+def article_11(names):
+    """Section 7 - a fragment no current proof stands behind is never sent to
+    be KEPT (Constitution Article 11, D-116)."""
+    print()
+    print("7. Article 11: what no current proof stands behind is never sent to be kept")
+
+    # ASK BEFORE CALLING (heron-ship 2a). On the code as it stood neither
+    # exists, and the stand-ins make every check below FAIL rather than crash.
+    proof_of = getattr(CLIENT, "proof_of", None)
+    refusal = getattr(CLIENT, "unproven_refusal", None)
+    check(proof_of is not None and refusal is not None,
+          "the client has proof_of and unproven_refusal to ask")
+    if proof_of is None:
+        proof_of = lambda name: None                                   # noqa: E731
+    if refusal is None:
+        refusal = lambda what, found: None                             # noqa: E731
+
+    for found, why in (({"status": "DRAFT", "stale": False}, "a DRAFT"),
+                       ({"status": "PROVEN", "stale": True, "date": "2026-09-01"},
+                        "a PROVEN one whose code moved after its proof"),
+                       ({"status": None, "stale": False}, "one with no status at all"),
+                       (None, "one whose status could not be read")):
+        said = refusal("SOME_CAPABILITY", found) or ""
+        check("SOME_CAPABILITY" in said and "Nothing was sent to Revit" in said,
+              "%s is refused, by name, saying nothing was sent" % why)
+    stale = refusal("SOME_CAPABILITY", {"status": "PROVEN", "stale": True,
+                                        "date": "2026-09-01"}) or ""
+    check("D-30" in stale and "2026-09-01" in stale,
+          "and a stale one names D-30 and the date of the proof that no longer holds")
+    check(refusal("X", {"status": "PROVEN", "stale": False}) is None
+          and refusal("X", {"status": "PRODUCTION", "stale": False}) is None,
+          "a current PROVEN or PRODUCTION proof is let through")
+
+    # OVER THE WHOLE LIBRARY, through the fake Revit: every write fragment,
+    # asked for with --write --apply, and what reached Revit to be KEPT read
+    # back off the fake's own record.
+    writers = [n for n in names if card_risk(n) not in ("READ", "ANALYZE")]
+    standing = set(n for n in writers if current(proof_of(n)))
+    with fake_revit() as (bridge, asked, out):
+        for name in writers:
+            CLIENT.cmd_fragment(name, writing=True, apply_it=True)
+    kept = [a.get("name") for a in bridge.args if a.get("apply") == "true"]
+    check(len(standing) > 0 and len(standing) < len(writers),
+          "the library has write fragments on both sides - %d of %d with a proof "
+          "that stands (derived, not typed)" % (len(standing), len(writers)))
+    check(set(kept) == standing and len(kept) == len(standing),
+          "with --apply, exactly those were sent to be kept, each once - sent "
+          "without a standing proof: %r, standing and not sent: %r"
+          % (sorted(set(kept) - standing)[:5], sorted(standing - set(kept))[:5]))
+    drafts = [n for n in kept if (proof_of(n) or {}).get("status") == "DRAFT"]
+    check(not drafts, "and not one DRAFT reached Revit to be kept - sent: %r" % drafts[:5])
+
+    pure = [n for n in writers if card_risk(n) == "MODIFY"
+            and (proof_of(n) or {}).get("status") == "DRAFT"
+            and not (proof_of(n) or {}).get("stale")]
+    draft_one = pure[0] if pure else None
+    check(draft_one is not None, "the library has a never-proved MODIFY DRAFT to try")
+    with fake_revit() as (bridge, asked, out):
+        code = CLIENT.cmd_fragment(draft_one or "", writing=True, apply_it=True)
+    check(code == 2 and asked["discover"] == 0 and not bridge.sent,
+          "`fragment %s --write --apply` is refused before Revit is asked anything"
+          % draft_one)
+    check("DRAFT" in out.getvalue() and "Article 11" in out.getvalue()
+          and "Without --apply it still runs" in out.getvalue(),
+          "and says it is DRAFT, under Article 11, and that a rolled-back run is "
+          "still open to it")
+    with fake_revit() as (bridge, asked, out):
+        code = CLIENT.cmd_fragment(draft_one or "", writing=True)
+    check(code == 0 and bridge.sent == ["run_fragment_write"]
+          and not any(a.get("apply") for a in bridge.args),
+          "without --apply the same DRAFT is still sent, to be rolled back - which "
+          "is how a DRAFT is proved at all (D-55)")
+
+    proven_one = sorted(standing)[0] if standing else None
+    for made, why, word in ((lambda found: dict(found or {}, stale=True),
+                             "with its proof made stale", "D-30"),
+                            (lambda found: None,
+                             "whose status cannot be read", "could not be read")):
+        saved = CLIENT.proof_of if hasattr(CLIENT, "proof_of") else None
+        CLIENT.proof_of = lambda name, made=made, saved=saved: made(
+            saved(name) if saved else None)
+        try:
+            with fake_revit() as (bridge, asked, out):
+                code = CLIENT.cmd_fragment(proven_one or "", writing=True, apply_it=True)
+        finally:
+            CLIENT.proof_of = saved
+        check(code == 2 and not bridge.sent and word in out.getvalue(),
+              "a PROVEN fragment (%s) %s is refused, saying so" % (proven_one, why))
 
 
 def main():
@@ -484,6 +589,8 @@ def main():
     check(window and "Autodesk" not in window,
           "the question window touches no Revit API")
 
+    article_11(names)
+
     print()
     shutil.rmtree(_SCRATCH, ignore_errors=True)
     if FAILURES:
@@ -492,7 +599,8 @@ def main():
             print("  - %s" % one)
         return 1
     print("PASSED - Admin and Publish reach Revit only as their own operations, the "
-          "add-in decides by the owner's switch, and no batch reaches any export-*.")
+          "add-in decides by the owner's switch, no batch reaches any export-*, and "
+          "nothing without a standing proof is sent to be kept.")
     return 0
 
 

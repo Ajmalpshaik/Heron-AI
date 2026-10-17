@@ -16,8 +16,9 @@ file paths only in the part of the report written for whoever reviews the change
 
 **Untested code never touches a live model** ([Article 11](../../HERON_CONSTITUTION.md)). What you write
 is DRAFT until it has been proved against a named test model with a negative case
-([D-30](../../docs/DECISIONS.md)) - and **nothing at runtime stops a DRAFT fragment**: `revit_change` and
-`revit_read` run it with a warning. So the rule is yours to keep, and your tool list is built to keep it:
+([D-30](../../docs/DECISIONS.md)) - and **at runtime only a KEPT change is stopped**: `revit_change` refuses
+a DRAFT ([D-116](../../docs/DECISIONS.md)), while `revit_read` and a rolled-back run still run it. So the
+rule is yours to keep, and your tool list is built to keep it:
 no Heron tool here reaches Revit.
 
 Bash is here to compile and to run the checks. **Never** use it to reach Revit: not

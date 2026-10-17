@@ -1160,6 +1160,78 @@ def write_operation(root, name):
     return None
 
 
+# THE STATUSES WHOSE PROOF LETS A CHANGE BE KEPT - Constitution Article 11,
+# "untested code never touches a live model", and D-116. Read from the
+# fragment's own files, and only while that proof still describes its code.
+KEEPABLE_STATUSES = ("PROVEN", "PRODUCTION")
+
+
+def proof_of(name):
+    """How far one fragment is proven - `heron_brain.proof_status`, asked.
+
+    ASKED, NOT REIMPLEMENTED. Whether a proof is stale is D-30's fingerprint,
+    worked out by the brain's fragment reader, and a second copy here is how
+    two answers to "is this proven" would drift apart. It is imported HERE and
+    not at the top because this client is stdlib only and that reader needs
+    PyYAML: only a run that would KEEP a change asks, and a machine that cannot
+    answer gets None - which `unproven_refusal` refuses.
+    """
+    server = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "server")
+    if server not in sys.path:
+        sys.path.insert(0, server)
+    try:
+        import heron_brain
+    except ImportError:
+        return None
+    return heron_brain.proof_status(name)
+
+
+def unproven_refusal(what, found):
+    """The refusal for KEEPING what a fragment does when no proof stands behind
+    its code, or None. `found` is `proof_of`'s answer - None when it could not
+    be read, and that is refused too: "could not tell" is never "proven".
+
+    ARTICLE 11 WAS ENFORCED NOWHERE until this (D-116). `revit_change` ran a
+    DRAFT and kept it, and only a line printed after the run said it was not
+    proven - a warning given once the change was already in the model.
+
+    ONLY A KEPT CHANGE IS ASKED ABOUT. A run that is rolled back (D-55) leaves
+    nothing in the model, and it is how every proof is taken: refusing it would
+    leave nothing able to become PROVEN at all.
+
+    A GUARD ON THIS SIDE, LIKE `risk_refusal`. The add-in never sees the card
+    (RevitFragment.Run is handed the source and the contract), and Golden Rule
+    19 forbids sending a status for it to trust - the caller would be vouching
+    for its own request. WHEN THE IN-REVIT KEEP/DISCARD PROMPT LANDS this stops
+    being a refusal: the request goes with `unproven: "true"`, a field that can
+    only ADD caution - the add-in makes its prompt mandatory and says the code
+    was never proved - and a request without it lowers nothing. Until then
+    there is no prompt to make mandatory, so this refuses.
+    """
+    if found is None:
+        return ("How far %s is proven could not be read, so Heron will not let it "
+                "change the model - \"could not tell\" is not \"proven\". Nothing "
+                "was sent to Revit." % what)
+
+    status = found.get("status")
+    if status not in KEEPABLE_STATUSES:
+        said = "is %s" % status if status else "states no status"
+        return ("%s %s - no recorded proof stands behind its code, so Heron will "
+                "not let it change a live model (Constitution Article 11). Nothing "
+                "was sent to Revit. It is proved first on a test model, with a "
+                "negative case, and then it can be asked for again." % (what, said))
+
+    if found.get("stale"):
+        when = " on %s" % found["date"] if found.get("date") else ""
+        return ("%s was %s%s, but its code has changed since, so that proof no "
+                "longer describes what would run (D-30) and Heron will not let it "
+                "change a live model (Constitution Article 11). Nothing was sent "
+                "to Revit. It is proved again on a test model, and then it can be "
+                "asked for again." % (what, status, when))
+    return None
+
+
 def caller_values(pairs):
     """
     Turn `--set view=Level 1` into what the executor reads.
@@ -1311,7 +1383,8 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     inside a TransactionGroup, and is what lets a fragment at risk: MODIFY run
     at all. It still keeps nothing unless `apply_it` is set: the default runs
     the change for real and rolls it back, which is a record of what happened
-    rather than a prediction of what would.
+    rather than a prediction of what would. `apply_it` is refused for a
+    fragment no current proof stands behind - `unproven_refusal`, D-116.
 
     A PUBLISH OR ADMIN FRAGMENT GOES AS ITS OWN OPERATION when `writing` is
     set - `run_fragment_publish` or `run_fragment_admin`, chosen from its own
@@ -1348,6 +1421,17 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     if refusal is not None:
         print(refusal)
         return 2
+
+    # AND WHETHER WHAT IT DOES MAY BE KEPT - Article 11, D-116. Only with
+    # --apply: without it the run is rolled back, which is how a DRAFT is
+    # proved at all.
+    if writing and apply_it:
+        refusal = unproven_refusal(name, proof_of(name))
+        if refusal is not None:
+            print(refusal)
+            print("Without --apply it still runs, and is rolled back - which is how "
+                  "it is proved.")
+            return 2
 
     # WHICH OPERATION, from the fragment's own card - never from the request.
     operation = write_operation(root, name) if writing else "run_fragment_read"
@@ -2631,7 +2715,9 @@ def main(argv):
             print("  --write                 run a MODIFY fragment, in a transaction. A")
             print("                          PUBLISH or ADMIN one goes as its own operation,")
             print("                          refused unless its switch is on in Revit")
-            print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it)")
+            print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it).")
+            print("                          Refused unless it is PROVEN and its code has")
+            print("                          not changed since (Article 11)")
             print("  --expect-from <fragment>  consume what THAT fragment left, instead")
             print("                          of resetting. Refused if something else")
             print("                          left it. Add \"where k=v\" to check its")

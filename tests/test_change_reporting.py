@@ -34,6 +34,11 @@ here reads the server as TEXT and asserts on what it contains. That is a weak
 test of behaviour and a STRONG test of this particular defect, which was a
 field name and nothing else.
 
+AND ONE THING IT NO LONGER SAYS AFTER THE FACT. "Not PROVEN" was a line
+under the result of a change already kept. Article 11 says untested code
+never touches a live model, so since D-116 that is said INSTEAD of sending
+anything - and the last section here holds the refusal before the send.
+
 AND IT MUST FAIL ON THE OLD KEY, or it is decoration. Row 111's own state line
 asks for that: without it the next rename of a reply field puts the bug
 straight back, silently, exactly as it arrived.
@@ -157,14 +162,46 @@ def main():
           "of the fragment under test cannot speak for the whole group. Found "
           "by review on PR #198, and it is row 117's own mistake made twice")
 
+    # ------------------------------------------------------------------
+    # ARTICLE 11 (D-116). "Not PROVEN" used to be said AFTER the change was
+    # kept - a line under the result. It is said instead of sending anything.
+    # ------------------------------------------------------------------
+    start = server.find("\ndef revit_change(")
+    body = server[start:server.find("\n@server.tool()", start)] if start > 0 else ""
+    code = "\n".join(line for line in body.splitlines()
+                     if not line.lstrip().startswith("#"))
+    check(start > 0, "revit_change is still in the server")
+    check("not PROVEN - it has no recorded proof" not in code
+          and "Look at what it did before trusting it" not in code,
+          "revit_change no longer warns AFTER the run that what it kept was not "
+          "proven - by then the change was already in the model")
+
+    gate = code.find("bridge.unproven_refusal(capability, brain.proof_status(folder))")
+    risk = code.find("risk_refusal(root, folder, switched=True)")
+    source = code.find("fh.read()")
+    bind = code.find("binding.resolve(")
+    sent = code.find("session.request(")
+    # PRESENCE FIRST: `find` gives -1 for what is not there, and an ordering
+    # check then passes loudest when the guard it orders is gone (heron-ship 2a).
+    check(gate > 0, "it asks the client's unproven_refusal with the fragment's own "
+                    "proof status, read from its files")
+    check(gate > 0 and risk > 0 and risk < gate,
+          "after the risk refusal, so a level that is never sent is still said first")
+    check(gate > 0 and source > 0 and bind > 0 and sent > 0
+          and gate < source and gate < bind and gate < sent,
+          "and BEFORE the code is read, a session is bound or anything is sent - "
+          "the refusal touches nothing")
+    check('return _ended("refused", unproven)' in code,
+          "and a refusal is told to the activity list as one")
+
     if FAILURES:
         print("FAILED")
         for failure in FAILURES:
             print("  - %s" % failure)
         return 1
 
-    print("PASSED - a write now reports what it did, and a refusal is visible "
-          "as a refusal.")
+    print("PASSED - a write now reports what it did, a refusal is visible "
+          "as a refusal, and an unproven change is refused before it is sent.")
     return 0
 
 

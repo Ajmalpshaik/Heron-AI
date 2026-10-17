@@ -795,6 +795,31 @@ async def exercise_activity(module):
         check(got == ["refused"],
               "revit_change: the add-in's chain_empty is 'refused' - found %r" % got)
 
+        # ARTICLE 11 (D-116). revit_change KEEPS what it does, so a fragment no
+        # current proof stands behind is refused before anything reaches Revit.
+        draft, _folder = first_with("MODIFY", "DRAFT")
+        revit.asked[:] = []
+        got = await ended("revit_change", {"capability": draft})
+        said = module.revit_change(capability=draft)
+        check(got == ["refused"] and not revit.asked,
+              "revit_change: a DRAFT (%s) is 'refused', and nothing reached Revit - "
+              "found %r, %d request(s)" % (draft, got, len(revit.asked)))
+        check(draft in said and "DRAFT" in said and "Article 11" in said
+              and "Nothing was sent to Revit" in said,
+              "and the reply names it, its status and the Article")
+        real_status = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(real_status(folder) or {},
+                                                        stale=True)
+        try:
+            revit.asked[:] = []
+            got = await ended("revit_change", {"capability": writer})
+            said = module.revit_change(capability=writer)
+        finally:
+            module.brain.proof_status = real_status
+        check(got == ["refused"] and not revit.asked and "D-30" in said,
+              "and so is a PROVEN one (%s) whose proof is stale - found %r, "
+              "%d request(s)" % (writer, got, len(revit.asked)))
+
         # A TOOL SPEAKS ONLY FOR ITSELF.
         say = getattr(module, "_ended", None)
         check(say is not None, "the server has a way for a tool to say how it ended")
