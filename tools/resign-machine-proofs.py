@@ -58,7 +58,10 @@ def _yaml():
     try:
         import yaml
     except ImportError:
-        sys.stderr.write("This needs PyYAML: pip install --user pyyaml\n")
+        sys.path.insert(0, os.path.join(ROOT, "brain"))
+        import heron_install as INSTALL
+        sys.stderr.write("This needs PyYAML - in the Heron folder: %s\n"
+                         % INSTALL.install_line("pip install --user pyyaml"))
         raise
     return yaml
 

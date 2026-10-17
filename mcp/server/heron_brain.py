@@ -72,6 +72,10 @@ BRAIN = os.path.join(ROOT, "brain")
 if BRAIN not in sys.path:
     sys.path.insert(0, BRAIN)
 
+# What a person is told to install - the pinned lock on Windows (rows 5b-944,
+# 5b-979). It imports nothing but os, so it loads where PyYAML does not.
+import heron_install as INSTALL                                  # noqa: E402
+
 
 class BrainUnavailable(Exception):
     """
@@ -102,9 +106,9 @@ def _brain():
     except ImportError as exc:
         raise BrainUnavailable(
             "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
-            "Install it with:  pip install --user pyyaml\n"
+            "Install it, in the Heron folder, with:  %s\n"
             "The Revit tools are unaffected - this stops Heron consulting what "
-            "it knows, not talking to Revit." % exc)
+            "it knows, not talking to Revit." % (exc, INSTALL.install_line("pip install --user pyyaml")))
     return SCOPE, CAP, SKILL, SEARCH, EMBED, RETRIEVE
 
 
@@ -966,7 +970,7 @@ def _context_module():
     except ImportError as exc:
         raise BrainUnavailable(
             "Heron's Context Manager needs PyYAML and it is not installed: %s\n"
-            "Install it with:  pip install --user pyyaml" % exc)
+            "Install it, in the Heron folder, with:  %s" % (exc, INSTALL.install_line("pip install --user pyyaml")))
     return CONTEXT
 
 
@@ -1428,7 +1432,7 @@ def research(request, scopes, project=None, limit=5, project_name=None):
     except ImportError as exc:
         raise BrainUnavailable(
             "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
-            "Install it with:  pip install --user pyyaml" % exc)
+            "Install it, in the Heron folder, with:  %s" % (exc, INSTALL.install_line("pip install --user pyyaml")))
 
     wanted = [one.strip().lower() for one in (scopes or []) if one.strip()]
     if not wanted:
@@ -2302,7 +2306,7 @@ def standards(request, scopes, project=None, limit=5,
     except ImportError as exc:
         raise BrainUnavailable(
             "Heron's knowledge layer needs PyYAML and it is not installed: %s\n"
-            "Install it with:  pip install --user pyyaml" % exc)
+            "Install it, in the Heron folder, with:  %s" % (exc, INSTALL.install_line("pip install --user pyyaml")))
 
     wanted = [s.strip().lower() for s in (scopes or []) if s.strip()]
     if not wanted:
@@ -2517,7 +2521,7 @@ def host_instructions():
     except ImportError as exc:
         raise BrainUnavailable(
             "Heron's rules for this chat need PyYAML and it is not installed: %s\n"
-            "Install it with:  pip install --user pyyaml" % exc)
+            "Install it, in the Heron folder, with:  %s" % (exc, INSTALL.install_line("pip install --user pyyaml")))
 
     # NAMED, NOT SWALLOWED. compose() raises KeyError, ValueError or IOError
     # by design, and a malformed instruction file raises PyYAML's own error,

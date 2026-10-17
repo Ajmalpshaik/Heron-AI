@@ -21,16 +21,20 @@
 # where tests/test_mcp_serves.py PASSED on 2026-10-17, and every other package
 # is pinned to that container's version too. PyYAML is 6.0.3 rather than the
 # container's 6.0.1, because 6.0.1 has no Windows wheel for Python 3.13 and
-# later, and a source build needs a compiler a modeller has not got.
+# later, and a source build needs a compiler a modeller has not got. PyJWT is
+# 2.15.1, moved from 2.14.0 on 2026-10-17 on the owner's word by
+# `tools/lock-python.py --upgrade pyjwt`: its --audit had found PYSEC-2026-4141
+# and PYSEC-2026-4183 on 2.14.0, both fixed in 2.15.0. No other version moved.
 #
-# WHAT WAS RUN ON IT, 2026-10-17, all on Linux:
+# WHAT WAS RUN ON IT, 2026-10-17, all on Linux, and all again after PyJWT moved:
 #   - installed with --require-hashes into a fresh virtual environment
 #     (Python 3.13, with pywin32 left out - it is Windows-only); then
 #     tests/test_mcp_serves.py PASSED and `tools/heron-ready.py --check` said
 #     READY in that environment;
 #   - `pip download --only-binary=:all: --platform win_amd64 --require-hashes`
 #     for Python 3.11, 3.12, 3.13 and 3.14: all 30 packages arrived as Windows
-#     wheels whose hashes matched, so no PC compiles anything.
+#     wheels whose hashes matched, so no PC compiles anything;
+#   - `tools/lock-python.py --audit`: no known advisory on any pinned version.
 # ON A WINDOWS CI RUNNER, since 2026-10-17: .github/workflows/windows.yml runs
 # the command above on Python 3.12 and 3.13, with no source build, then
 # tests/test_mcp_serves.py PASSES there, on every change to this file.
@@ -50,7 +54,8 @@
 #         --python-platform x86_64-pc-windows-msvc --python-version 3.12 \
 #         --generate-hashes --no-header --no-annotate
 #
-# then measure it again the way the lines above say, and change them.
+# `python tools/lock-python.py` runs exactly that and keeps this header; then
+# measure it again the way the lines above say, and change them.
 # tests/test_python_lock.py holds the shape: every line pinned, every line
 # hashed, and everything requirements.txt REQUIRES present.
 
@@ -368,9 +373,9 @@ pydantic-core==2.46.5 \
     --hash=sha256:fc5d783bd4a2387e97b8a2d5ec781cfb92b3d893bf82370548e99db5915935d3 \
     --hash=sha256:fc8515076c11f3cfdf4fb142dcca0fe384b1230a3b5415458ac84f3e0903ec13 \
     --hash=sha256:ff218293c9c806138dca139765e3b067621be52bcd93cdc14c7711be7ddc90a9
-pyjwt==2.14.0 \
-    --hash=sha256:77283c83fb56ecf566a886c757a714bc83668e38156de2cce8263302f42e0b86 \
-    --hash=sha256:ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc
+pyjwt==2.15.1 \
+    --hash=sha256:42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193 \
+    --hash=sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8
 python-multipart==0.0.32 \
     --hash=sha256:be54b7f3fa167bb83e4fcd936b887b708f4e57fe75911c02aebf53efaf8d938e \
     --hash=sha256:ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23
