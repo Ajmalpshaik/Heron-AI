@@ -21,7 +21,43 @@ positive:
       the view zooms to a box containing all 40, not to the first one. shown
       reads 40
 
+  # VERSION 2 - through revit_change, the only door a chat has (5b-489).
+  - given: >
+      through revit_change, a project with a Level 2 plan in front and three
+      duct fittings on Level 6 - version 1's first case, on the door a chat
+      actually uses
+    expect: >
+      the screen moves to them, viewAfter names the view Revit chose, and the
+      binding note names editScopeFailures - run with NO transaction open.
+      Inside one, Revit changes no view (5b-456)
+
+  - given: >
+      a family in the Family Editor, "View 1" opened first with OPEN_VIEW, then
+      every SOLID form - SELECT_FAMILY_FORMS forms=solid through revit_read,
+      and this through revit_change with expect_from="select-family-forms",
+      alsoSelect false
+    expect: >
+      View 1 zoomed so the whole family is on screen, nothing cut off at an
+      edge; viewAfter "View 1"; shown equals SELECT_FAMILY_FORMS' count; the
+      selection untouched
+
 negative:
+  - given: >
+      version 2 sent down the read path - run_fragment_read, or the proving
+      client without --write
+    expect: >
+      refused before anything runs, with the add-in's own words that it runs
+      only as a change (needs_write_path) - the screen does not move. revit_read
+      already refused it as EXECUTE
+
+  - given: >
+      the family case above, with "Ref. Level" (a plan) in front instead of
+      View 1
+    expect: >
+      Show zooms the plan in front, or a view Revit chooses - viewAfter says
+      which, and it is NOT View 1. This tool opens no view by name: the order
+      OPEN_VIEW, then here, is what puts the 3D view on screen
+
   - given: >
       somebody who meant "these are hidden in this view, bring them back" and
       reached this
