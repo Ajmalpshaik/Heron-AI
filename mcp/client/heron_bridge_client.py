@@ -23,6 +23,10 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
                                                        # run one fragment through the
                                                        # phases a proof needs, and
                                                        # record what came back
+    python mcp/client/heron_bridge_client.py try-once <draft-fragment>
+                                                       # run a DRAFT once on the saved
+                                                       # model in front; Revit asks the
+                                                       # modeller Keep or Discard (D-119)
 
 Two rules from the field notes (docs/00e, docs/25) are enforced here:
 
@@ -35,6 +39,7 @@ Two rules from the field notes (docs/00e, docs/25) are enforced here:
     dead entries are removed.
 """
 
+import hashlib
 import io
 import json
 import os
@@ -1600,6 +1605,263 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     return 1 if failures else 0
 
 
+# ---- D-119 / D-120: a DRAFT's ONE run on the live model ------------------
+#
+# The run goes as `run_fragment_write` with `"apply": "ask"`. The add-in runs
+# it for real inside one TransactionGroup, redraws the view, and a box in Revit
+# asks the modeller to keep it or discard it. Nothing on this side can answer
+# that box, and nothing here tries to.
+#
+# WHERE THE RUN IS WRITTEN DOWN: brain/proof-drafts/runs/<fragment>.once.json,
+# kept or not. A KEPT one is what `validate --kept` puts in a proof's positive
+# place (D-120); a discarded one is evidence that the box works and of nothing
+# else.
+
+ONCE_SUFFIX = ".once.json"
+
+
+def source_hash(text):
+    """The hash of the C# a run SENT, so a record names the code that ran.
+
+    sha256 over the text as read in text mode - universal newlines, so a CRLF
+    checkout and an LF one hash alike - cut to sixteen characters like the
+    fingerprint. `heron_validate.source_hash` gives the same answer for the same
+    file, and tests/test_try_once.py holds the two together: this client is
+    stdlib only and cannot import the brain, so the rule is written twice.
+    """
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def once_record_path(root, name):
+    """Where a fragment's one run on the live model is recorded."""
+    return os.path.join(root, "brain", "proof-drafts", "runs", name + ONCE_SUFFIX)
+
+
+def fragment_status(path):
+    """The `heron-status:` a fragment declares, or None. Read the way `risk:` is."""
+    try:
+        with io.open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("heron-status:"):
+                    return line.split(":", 1)[1].strip().strip("\"'")
+    except (OSError, UnicodeDecodeError):
+        return None
+    return None
+
+
+def read_once_record(path):
+    """The once record at `path`, or None when there is none or it cannot be read."""
+    if not os.path.isfile(path):
+        return None
+    try:
+        with io.open(path, "r", encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
+def cmd_try_once(name, values=None, session=None, in_document=None):
+    """
+    Run a DRAFT fragment ONCE on the saved model in front, and let the modeller
+    keep it or discard it in Revit (D-119).
+
+    WHAT IT REFUSES, BEFORE REVIT IS TOUCHED
+      * anything but risk MODIFY - a read needs no box, and an EXECUTE change
+        to the session is not put back by Discard
+      * anything but DRAFT - a proven fragment has nothing to try
+      * a version that already ran once and was KEPT - again would make the
+        change twice. A discarded run left nothing, so it may be asked again
+
+    WHAT THE ADD-IN REFUSES, BEFORE ANYTHING RUNS
+      a model that is not in front, one never saved or with changes not saved
+      (D-121), and anything sent as an export or a project setup change.
+
+    `in_document` NAMES the model rather than choosing it: the add-in still
+    refuses unless that model is the one in front, because the modeller has to
+    see what the run did.
+
+    WHO MAY START IT is D-122: the agent that wrote the fragment, once per
+    version, only when the modeller asks. That is a rule on the agent; the box
+    is the gate this code enforces.
+    """
+    if refuse_off_windows():
+        return 2
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    folder = os.path.join(root, "brain", "fragments", name)
+    source_path = os.path.join(folder, "impl", "any", "fragment.cs")
+    card = os.path.join(folder, "fragment.yaml")
+    if not os.path.isfile(source_path):
+        print("No fragment called '%s' - looked for %s" % (name, source_path))
+        return 2
+
+    risk = fragment_risk(card)
+    if risk != "MODIFY":
+        print("%s is declared risk: %s, and only a MODIFY fragment is tried this way. "
+              "A read changes nothing and needs no Keep or Discard; a session change "
+              "or an export is not put back by Discard. Nothing was sent to Revit."
+              % (name, risk))
+        return 2
+
+    status = fragment_status(card)
+    if status != "DRAFT":
+        print("%s is %s, not DRAFT. A tool that has been proved has nothing to try - "
+              "it runs through revit_change like any other. Nothing was sent to Revit."
+              % (name, status))
+        return 2
+
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+    version = source_hash(source)
+
+    # ONCE PER VERSION, AND "ONCE" MEANS ONCE KEPT. A second kept run of the
+    # same code would make the same change twice.
+    record_path = once_record_path(root, name)
+    earlier = read_once_record(record_path)
+    if earlier and earlier.get("source_hash") == version and earlier.get("kept") is True:
+        print("This version of %s already ran once and was KEPT, on %s in %s."
+              % (name, earlier.get("date"), earlier.get("model")))
+        print("Running it again would make the change twice. Its next step is the")
+        print("negative case, rolled back - D-120:")
+        print("  python mcp/client/heron_bridge_client.py validate %s --write --kept ..."
+              % name)
+        print("Nothing was sent to Revit.")
+        return 2
+
+    needs = needs_for(root, name)
+    if needs is None:
+        return 2
+    report_undeclared(name, values, needs)
+
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        report_mismatched(mismatched)
+        return 1
+    if not live:
+        print("No Revit is connected. Press Heron on the ribbon to connect first.")
+        report_mismatched(mismatched)
+        return 1
+
+    live, refusal = only_session(live, session)
+    if refusal is not None:
+        print(refusal)
+        return 2
+    bridge = live[0]
+    for other in live[1:]:
+        other.close()
+
+    args = {"name": name, "source": source, "needs": needs, "chain": "reset",
+            "apply": "ask"}
+    if values:
+        args["values"] = values
+    if in_document:
+        args["document"] = in_document
+
+    print("Running %s once on the model in front of Revit %s (session %s)."
+          % (name, bridge.revit_version, bridge.pid))
+    print("When it is done Revit shows the result and asks Keep or Discard.")
+    print("Nothing stays unless the modeller presses Keep.")
+
+    # NEVER SENT TWICE: if the modeller pressed Keep, a resend would keep it
+    # again. And the wait covers the person as well as the work.
+    reply = bridge.request("run_fragment_write", op_args=args,
+                           response_timeout=heron_config.try_once_timeout(),
+                           idempotent=False)
+    revit_version, pid = bridge.revit_version, bridge.pid
+    bridge.release()
+    bridge.close()
+
+    if reply is None:
+        print("No answer from Revit. If the Keep or Discard box is still open there,")
+        print("what the modeller presses stands - Discard puts the model back. This")
+        print("run is not recorded. Do not ask again while the box is open.")
+        return 1
+
+    if not reply.get("ok"):
+        print("%s  [%s]" % (name, reply.get("error")))
+        print("    %s" % reply.get("message"))
+        return 1
+
+    # AN ADD-IN OLDER THAN THE BOX reads "ask" as "not true" - so it ran the
+    # change and ROLLED IT BACK, the D-55 preview, and asked nobody. That is
+    # safe, and it is not a try-once run, so it is said and not recorded.
+    if reply.get("asked") is not True:
+        print("This Revit's Heron add-in is older than the Keep or Discard box. It ran")
+        print("the change as a preview and rolled it back - %s"
+              % (reply.get("verdict") or "no verdict was sent"))
+        print("Nothing was kept and nothing is recorded. Deploy the current add-in,")
+        print("restart Revit, and ask again.")
+        return 1
+
+    answer = reply.get("modellerAnswer")
+    kept = reply.get("kept") is True and reply.get("applied") is True
+    today = time.strftime("%Y-%m-%d")
+
+    if kept:
+        told = ("run ONCE on the live model through the Keep or Discard box in Revit "
+                "(D-119) on %s; the modeller saw the result in Revit and pressed Keep, "
+                "and Revit kept it as one undo step" % today)
+    elif answer == "discard":
+        told = ("run ONCE on the live model through the Keep or Discard box in Revit "
+                "(D-119) on %s; the modeller pressed Discard" % today)
+    else:
+        told = ("run ONCE on the live model through the Keep or Discard box in Revit "
+                "(D-119) on %s; the modeller closed the box, which discards" % today)
+    if not kept:
+        told += (" and Revit reported the group ROLLED BACK" if reply.get("rolledBack")
+                 else " and the rollback DID NOT REPORT SUCCESS - check the model")
+    if reply.get("viewRefreshed") is False:
+        told += " - the view could NOT be redrawn before the box opened"
+
+    record = {
+        "run_record": "brain/proof-drafts/runs/%s%s" % (name, ONCE_SUFFIX),
+        "kind": "try-once",
+        "fragment": name,
+        "date": today,
+        "model": "%s, Revit %s, session %s" % (reply.get("document"), revit_version, pid),
+        "source_hash": version,
+        "kept": kept,
+        "answer": answer,
+        "rolled_back": reply.get("rolledBack"),
+        "view_refreshed": reply.get("viewRefreshed"),
+        "verdict": reply.get("verdict"),
+        "phase": {
+            "phase": "positive",
+            "ok": True,
+            "kept": kept,
+            "source_hash": version,
+            "provides": reply.get("provides") or {},
+            "bound": reply.get("bound"),
+            "document": reply.get("document"),
+            "arranged": told,
+        },
+    }
+    folder = os.path.dirname(record_path)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    with io.open(record_path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(record, indent=2, sort_keys=True))
+
+    print("")
+    print("    %s  %s" % ("KEPT" if kept else "DISCARDED", reply.get("asking") or ""))
+    print("    document: %s" % (reply.get("document") or "(unnamed)"))
+    provides = reply.get("provides") or {}
+    for key in sorted(provides):
+        print("    %-22s %s" % (key, provides[key]))
+    print("")
+    print("Recorded %s" % record_path)
+    if kept:
+        print("It is still DRAFT. The kept run is the positive case of its proof")
+        print("(D-120); the negative case is its own run, rolled back:")
+        print("  python mcp/client/heron_bridge_client.py validate %s --write --kept ..."
+              % name)
+    else:
+        print("Nothing was kept. It may be asked for again - with a view that shows")
+        print("the change, or after the tool has been corrected.")
+    return 0
+
+
 def cmd_prove(names, in_document=None, values=None, session=None):
     """
     Run several fragments against the open model in ONE process.
@@ -1847,9 +2109,15 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                  values=None, negative_values=None, setup_values=None,
                  negative_setup_values=None, vary=None, vary_field=None,
                  writing=False, setup=None,
-                 keep_chain=False, allow_publish=False):
+                 keep_chain=False, allow_publish=False, kept=False):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
+
+    `kept` - D-120. The positive phase is NOT run: it is the fragment's one run
+    on the live model that the modeller KEPT through the box in Revit
+    (`try-once`), read from its once record and refused unless it was kept and
+    the code has not moved since. Only the negative leg and the second route
+    run here, rolled back as every --write phase is.
 
     THIS IS THE HALF THAT NEEDS REVIT, AND NOTHING MORE. It runs, it writes down
     what happened, and it stops. It draws no conclusion, writes into no
@@ -1989,6 +2257,42 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     needs = needs_for(root, name)
     if needs is None:
         return 2
+
+    # D-120: THE KEPT RUN STANDS IN FOR THE POSITIVE, and only that run, of
+    # only this code. Checked before Revit is touched, so a refusal costs
+    # nothing and the negative is never run against a positive that cannot be
+    # used.
+    kept_phase = None
+    if kept:
+        if not writing:
+            print("--kept needs --write. A kept run is a change to the model, so its")
+            print("negative case is a change too - run inside a transaction and rolled back.")
+            return 2
+        if vary:
+            print("--kept cannot be tracked with --vary: D-53's first tracked input IS a")
+            print("positive run, and the positive here is the run that was kept.")
+            return 2
+        once_path = once_record_path(root, name)
+        once = read_once_record(once_path)
+        if once is None:
+            print("No kept run of %s at %s." % (name, once_path))
+            print("It is made by:  python mcp/client/heron_bridge_client.py try-once %s"
+                  % name)
+            return 2
+        if once.get("fragment") != name or once.get("kept") is not True:
+            print("The run recorded at %s was not KEPT by the modeller (%s), so it"
+                  % (once_path, once.get("answer") or "no answer recorded"))
+            print("is no evidence the fragment works. Nothing was sent to Revit.")
+            return 2
+        if once.get("source_hash") != source_hash(source):
+            print("The kept run of %s was taken against different code - it ran %s and"
+                  % (name, once.get("source_hash")))
+            print("the fragment is now %s. A kept run is evidence for the code that ran"
+                  % source_hash(source))
+            print("and no other. Nothing was sent to Revit.")
+            return 2
+        kept_phase = dict(once.get("phase") or {})
+        kept_phase["phase"] = "positive"
 
     # BOTH LEGS, because row 71's case was a value typed into the NEGATIVE that
     # the fragment never declared - `--set maxSteps=200` against
@@ -2334,7 +2638,13 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     # being varied - which on the first live run came back
     # `needs_request_values`, wrote a failed phase into the record, and then ran
     # again. Two phases called "positive", one of them about nothing.
-    if not vary:
+    if kept_phase is not None:
+        # D-120. Not run again: the change is already in the model, kept by
+        # the modeller, and running it a second time would make it twice.
+        phases.append(kept_phase)
+        print("%-14s kept on the live model - taken from its once record, not run again"
+              % "positive")
+    elif not vary:
         run_fragment("positive", in_document, "run as it would normally be run",
                      reset_chain)
 
@@ -2511,6 +2821,8 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     }
     if tracking:
         record["tracking"] = tracking
+    if kept_phase is not None:
+        record["positive_from"] = "brain/proof-drafts/runs/%s%s" % (name, ONCE_SUFFIX)
     path = out or os.path.join(root, "brain", "proof-drafts", "runs",
                                "%s.json" % name)
     folder = os.path.dirname(os.path.abspath(path))
@@ -2785,6 +3097,34 @@ def main(argv):
             return 2
         return cmd_fragment(rest[0], values, writing, apply_it, session=session,
                             expect=expect, in_document=in_document)
+    if argv[1] == "try-once":
+        # D-119. No --write and no --apply: the operation is always the change
+        # path, and whether anything stays is the modeller's Keep, never a flag.
+        rest, pairs, _, _, _ = pull_values(argv[2:])
+        if rest is None:
+            return 2
+        rest, session = pull_session(rest)
+        in_document = None
+        if rest and rest[0] == "--in":
+            if len(rest) < 2:
+                print("--in needs the title of an open document after it")
+                return 2
+            in_document = rest[1]
+            rest = rest[2:]
+        if len(rest) != 1 or rest[0].startswith("--"):
+            print("Which DRAFT fragment? e.g. try-once rename-views-by-level")
+            print("  --in \"Doc\"         name the model - it must still be the one in front")
+            print("  --view \"Level 1\"   a view the fragment asks the caller for")
+            print("  --set name=value   any other value it asks for")
+            print("  --session <pid>    which Revit, when more than one is connected")
+            print("It runs once, for real, on the saved model in front. Revit then shows")
+            print("the result and asks Keep or Discard; nothing stays unless Keep is")
+            print("pressed. Only a DRAFT at risk MODIFY, and never a version already kept.")
+            return 2
+        values = caller_values(pairs)
+        if values is None:
+            return 2
+        return cmd_try_once(rest[0], values, session=session, in_document=in_document)
     if argv[1] == "validate":
         rest, pairs, negatives, setup_pairs, negative_setup_pairs = pull_values(argv[2:])
         if rest is None:
@@ -2803,6 +3143,10 @@ def main(argv):
         # without it; see the note beside the check in cmd_validate.
         allow_publish = "--allow-publish" in rest
         rest = [r for r in rest if r != "--allow-publish"]
+        # --kept takes the positive case from the run the modeller KEPT through
+        # try-once, instead of running it again (D-120). Needs --write.
+        kept = "--kept" in rest
+        rest = [r for r in rest if r != "--kept"]
         # --setup names a fragment to run BEFORE each phase, repeatable and in
         # order. It re-makes the arrangement - typically select-by-category-name
         # then set-selection - because a rolled-back write clears the selection.
@@ -2902,6 +3246,9 @@ def main(argv):
             print("                        survives a reset and a value does not. Needs")
             print("                        --setup, and changes what binds: the chain")
             print("                        outranks the selection")
+            print("  --kept                the positive case is the run the modeller KEPT")
+            print("                        through try-once - not run again. Only the")
+            print("                        negative and the second route run. Needs --write")
             return 2
         values = caller_values(pairs)
         if values is None:
@@ -2924,7 +3271,7 @@ def main(argv):
                             vary=vary, vary_field=vary_field,
                             writing=writing,
                             setup=setup, keep_chain=keep_chain,
-                            allow_publish=allow_publish, **options)
+                            allow_publish=allow_publish, kept=kept, **options)
 
     print(__doc__.strip())
     return 2
