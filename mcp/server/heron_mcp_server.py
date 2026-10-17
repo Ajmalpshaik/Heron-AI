@@ -163,7 +163,7 @@ _TAKES_LABELS = (_Annotations is not None
 # 2026-10-17, 3,014 characters of indentation across the list, paid for in
 # context and read by nobody. inspect.cleandoc is what ast.get_docstring
 # returns, so heron_tools' --sizes reads off the source exactly what a host is
-# handed (row 5b-489).
+# handed (row 5b-491).
 _TAKES_DESCRIPTION = "description" in inspect.signature(_Server.tool).parameters
 
 

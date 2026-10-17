@@ -410,7 +410,7 @@ async def exercise(server):
           "and each keeps its safety labels - loading early changes nothing "
           "a host is told about what the tool can do")
 
-    # THE DESCRIPTION SERVED IS THE ONE --sizes MEASURES (row 5b-489). The
+    # THE DESCRIPTION SERVED IS THE ONE --sizes MEASURES (row 5b-491). The
     # budget in tests/test_tool_sizes.py is held on descriptions read off the
     # source with no SDK, so that it runs in CI - and it is a budget on what a
     # host is handed only while the two are the same text. Until 2026-10-17

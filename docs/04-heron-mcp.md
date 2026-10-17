@@ -514,7 +514,7 @@ other tool cost; §8.6's *about 9,000 characters* was a sentence.
   answer of 2026-10-17 to the question D-100 settled the other way for the routing score.
 - **The description served is the docstring cleaned, on every Python.** Python 3.12 - the owner's - served
   every line indented four spaces, so the same list cost more on his PC than in a container
-  ([row 5b-489](fragment-issues/section-5b-rows-401-425.md)).
+  ([row 5b-491](fragment-issues/section-5b-rows-401-425.md)).
 - **What left a description is said where it is needed**, and kept as a comment under the docstring,
   which no host is served:
 
