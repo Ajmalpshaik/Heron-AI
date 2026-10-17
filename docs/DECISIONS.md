@@ -200,6 +200,7 @@ an edit.
 | [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ✅ Accepted · 2026-10-17 |
 | [D-129](#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ✅ Accepted · 2026-10-17 |
 | [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
+| [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1120,3 +1121,13 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) (comments only), [21 §4](21-resilience-and-operations.md), [D-129](decisions/D-129.md)
 
 **Full record:** [`decisions/D-130.md`](decisions/D-130.md)
+
+## D-131 — A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation - asked to accept Q-66's recommended answer or choose another, he chose *"Accept recommended (Recommended)"* · **Source:** [Q-66](open-questions/tier-2.md), found preparing [NEEDS-CHECKING Group EQ](needs-checking/group-eq.md)
+**Numbering:** written when `origin/main` ended at D-126 and open pull requests already named D-127 to D-130, so this took D-131; `tools/next-id.py` found D-131 held by this branch alone when `main` was merged in, by then ending at D-130.
+**Answers:** [Q-66](open-questions/tier-2.md)
+**Keeps:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - the evidence a proof needs, a person's signature, and a proof going stale made visible · the rule that nothing in the proving tools writes `heron-status`
+**Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`RELEASE_REQUIRED`, `release_problems`), [`heron_validate.py`](../brain/heron_validate.py) (`draft` and `accept` with `--release` and `--second-route`), [`heron_matrix.py`](../brain/heron_matrix.py) (`proven_releases`), [`batch-prove.py`](../tools/batch-prove.py) (`--release`), [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md), [Group EQ](needs-checking/group-eq.md)
+
+**Full record:** [`decisions/D-131.md`](decisions/D-131.md)

@@ -771,6 +771,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fu.md`](needs-checking/group-fu.md)
 
+## Group FY - every column of a schedule in one call, and a heading turned back to horizontal: `SET_SCHEDULE_APPEARANCE` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fy.md`](needs-checking/group-fy.md)
+
 ## Group GH - what each element passes through in the links, and a parameter against its thickness: `FIND_CLASHES` version 3 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-gh.md`](needs-checking/group-gh.md)
