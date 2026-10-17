@@ -122,6 +122,10 @@ PROJECTS = [
     "platform/Heron.Installer.Cli/Heron.Installer.Cli.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
+    # The C# compiler door as its own assembly - built into Heron's own load
+    # context on Revit 2025 and later, row 5b-575. Built on every release so
+    # the two files it links are held to all eight, as the add-in holds them.
+    "revit/Heron.Scripting/Heron.Scripting.csproj",
     # STAGE 2 SHAPE PROOFS, deleted when that stage closes. Listed here so
     # they are held to the same eight releases as everything else: a proof
     # that only builds on 2024 proves the shape on 2024 (docs/work-notes/
@@ -151,6 +155,11 @@ PROJECTS = [
     # builds and runs it.
     "tests/Heron.RollbackWitness.TestHost/Heron.RollbackWitness.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
+    # Row 5b-575: another add-in's newer Roslyn loaded into the default context
+    # first, and Heron's door still compiling on its own - linked by source like
+    # the rest; tests/test_script_isolation.py builds and runs it. A stub on
+    # 2020-2024, where .NET Framework has no load context to arrange.
+    "tests/Heron.ScriptIsolation.TestHost/Heron.ScriptIsolation.TestHost.csproj",
 ]
 
 # The one project that is a tool rather than something Heron ships. Named here
