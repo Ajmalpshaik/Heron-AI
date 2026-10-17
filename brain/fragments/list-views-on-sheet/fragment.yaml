@@ -285,6 +285,14 @@ compatibility-note: >
 #                                           reached here by ranking on both
 #                                           backends from 2026-10-09 - a read,
 #                                           and until version 2 not the answer
+#   "is this view already on a sheet"    -> here, viewName = the view. It
+#                                           reached PLACE_VIEW_ON_SHEET, a
+#                                           write, with the re-ranker until
+#                                           declared (row 5b-540)
+#   "swap the NOTES legend for AS-BUILT NOTES on all sheets"
+#                                        -> PLACE_VIEW_ON_SHEET version 2, a
+#                                           CHANGE - the legend comes off and
+#                                           its copy goes where it was
 #   "which sheets is this legend on"     -> here, viewName = the legend.
 #                                           Before version 2 it reached
 #                                           CREATE_LEGEND_VIEW, a write, on both
@@ -323,3 +331,8 @@ utterances:
   - which sheets is this legend on
   - does any view run off the sheet
   - check the sheets for overlapping viewports
+  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-540: a question from the sweep
+  # run for PLACE_VIEW_ON_SHEET version 2. On main it reached that write with
+  # the re-ranker, on spelling and on the trained model; viewName answers it
+  # here - the sheets the view is on, or none.
+  - is this view already on a sheet
