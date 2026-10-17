@@ -174,11 +174,18 @@ namespace Heron.Revit.Addin
         /// where the decision is made is the difference between a person
         /// granting permission and a person guessing. If any of them ever
         /// stops being true, this list is the first thing that must change.
+        ///
+        /// THE FIRST WAS UNTRUE FROM 2026-09-23 TO D-126. D-99 kept a change
+        /// from a chat at once, with no preview, while this said "you see a
+        /// preview first". D-126 makes it true again in Revit's own words: the
+        /// change is shown, and Revit asks Keep or Discard before anything is
+        /// kept - unless the owner turns write.askBeforeKeeping off, which is
+        /// the owner's to do and is said in D-126.
         /// </summary>
         private UIElement Promises()
         {
             var list = new StackPanel();
-            list.Children.Add(Promise("You see a preview first, and nothing is kept until you say yes."));
+            list.Children.Add(Promise("You see each change in Revit first, and nothing is kept until you choose Keep."));
             list.Children.Add(Promise("Every change is one Ctrl+Z."));
             list.Children.Add(Promise("It stays on until you turn it off, including after Revit restarts."));
 

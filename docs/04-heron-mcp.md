@@ -216,8 +216,9 @@ If this is not designed in early it becomes very expensive to retrofit, because 
 `heron_job_status`, no percentage, no cancelling. A tool still blocks until Revit answers; what changed
 is that the host is told, while it blocks, that the wait goes on.
 
-- **Five tools carry the SDK's `Context`**: `revit_change`, `revit_read`, `revit_building_loads`,
-  `revit_sprinkler_hydraulics` and `revit_sprinkler_layout` — the ones that send a fragment and can wait
+- **The tools that send a fragment carry the SDK's `Context`**: `revit_change`, `revit_read`, `revit_show`
+  (§8.9), `revit_building_loads`, `revit_sprinkler_hydraulics` and `revit_sprinkler_layout` — the ones
+  that send a fragment and can wait
   minutes on a slow fragment, a family build, or a modeller answering a prompt in Revit. The SDK finds
   `ctx` by its type, through `_recorded`'s `functools.wraps`, and leaves it out of every tool's arguments.
 - **The bridge client's join loop does the timing.** `Bridge.request(..., on_wait=)` hands the callback
@@ -395,11 +396,12 @@ ordinary case.
   behind the encoder, and a lookup arriving meanwhile waits for it rather than doing it twice. **Only**
   for a private store, an install with no git, or the main checkout on branch `main`: a worktree's
   cards are unmerged work and the shared store is every chat's (rows 131, 136).
-- **Five tools are given to the chat before it asks** - `heron_lookup`, `revit_read`, `revit_change`,
-  `revit_health`, `revit_levels` (`heron_tools.ALWAYS_LOADED`), served with Claude Code's documented
+- **A few tools are given to the chat before it asks** - the lookup, the doors and the first-time
+  checks; `heron_tools.ALWAYS_LOADED` is the list, never this sentence - served with Claude Code's documented
   `_meta["anthropic/alwaysLoad"]`. Most Revit chats spent their first turn searching for a Heron tool
-  (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat; every other tool is
-  still one search away, and nothing about what a tool may do changes.
+  (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat (measured since by a
+  command, §8.8); every other tool is still one search away, and nothing about what a tool may do
+  changes.
 - **A connection check is answered and nothing more is done.** The owner, 2026-10-01: when he asks
   first whether Heron is connected he wants that answer and then to say what is next - *"only need to
   check the connected or not"*. The chat's rules (`host.chat`) and `revit_health`'s own description
@@ -492,3 +494,129 @@ left short is [5b-429](fragment-issues/section-5b-rows-401-425.md).
 
 **NOT MEASURED:** what the 617 s turn spent its thinking on - the thinking text is not stored - and the
 office PC ([Q-61](OPEN-QUESTIONS.md)).
+
+### 8.8 What the tool list costs a chat — built 2026-10-17
+
+**What the owner asked:** cut what Heron's tool list costs in every chat. [D-03](DECISIONS.md) accepted
+the cost in so many words - *"MCP tool schemas cost context on every request"* - and mitigated it with a
+small core set, which since §8.6 is `heron_tools.ALWAYS_LOADED`. Nothing measured what that set or any
+other tool cost; §8.6's *about 9,000 characters* was a sentence.
+
+- **`python mcp/server/heron_tools.py --sizes`** prints every tool's description, input schema and whole
+  served JSON, largest first, with the ALWAYS_LOADED totals and the size of the instructions every chat
+  is given. Descriptions are read off the source with `ast` and need no SDK; schemas are written by the
+  SDK and say **NOT MEASURED** without one. `--json` is for a machine, and
+  [`change-evidence.py`](../tools/change-evidence.py) now records the description totals in every capture.
+- **[`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py)** holds the ALWAYS_LOADED descriptions
+  together, and every tool alone, to a budget - and holds that no trim drops an argument's name or the
+  sentences the two doors stand on, because a budget teaches people to cut words to buy the number back
+  (D-100's first reason). **It is a gate: a tool over budget stops a pull request -
+  [D-118](DECISIONS.md#d-118--a-tool-description-over-its-budget-stops-a-pull-request)**, the owner's
+  answer of 2026-10-17 to the question D-100 settled the other way for the routing score.
+- **The description served is the docstring cleaned, on every Python.** Python 3.12 - the owner's - served
+  every line indented four spaces, so the same list cost more on his PC than in a container
+  ([row 5b-491](fragment-issues/section-5b-rows-401-425.md)).
+- **What left a description is said where it is needed**, and kept as a comment under the docstring,
+  which no host is served:
+
+  | what | where the host hears it now |
+  |---|---|
+  | `expect_from`'s `where k=v` form, and why empty is the safe default | `_contract_lines`, under any capability that takes a value from the fragment before it |
+  | D-106's Admin and Publish switches, and what each covers | the refusal names the switch that is off (`heron_failure`); one line in `revit_change` says so, and not to route round it |
+  | Articles 7, 9 and 10 in full | `host.chat`, every chat's instructions; `revit_change` keeps a one-line pointer to 7 and 10 |
+  | `heron_hvac` and `heron_fire`'s lists of calculations | the catalogue an empty `calculation` returns |
+  | the questions an ASK ONCE answer asks | that answer, which names them |
+  | the full `inputs` shapes of the loads and sprinkler tools | their top-level keys stay; every question names its own path or its project or profile |
+
+**MEASURED 2026-10-17 through the SDK's own `list_tools`**, 45 tools, characters:
+
+| | `main`, Python 3.12 (the owner's) | `main`, Python 3.13 | this change, either |
+|---|---|---|---|
+| every description | 47,170 | 44,246 | **36,560** |
+| the whole list as served | 69,349 | 66,425 | **58,394** |
+| ALWAYS_LOADED's six descriptions | 7,258 | 6,814 | **4,292** |
+| ALWAYS_LOADED as served | 10,595 | 10,151 | **7,546** |
+
+The ten largest descriptions, read off the source (so without 3.12's indentation):
+
+| tool | before | after |
+|---|---|---|
+| `revit_change` | 2,870 | 1,309 |
+| `heron_fire` | 2,349 | 1,375 |
+| `revit_sprinkler_hydraulics` | 2,075 | 1,412 |
+| `revit_building_loads` | 2,008 | 1,325 |
+| `revit_sprinkler_layout` | 1,826 | 1,211 |
+| `heron_hvac` | 1,773 | 1,094 |
+| `revit_read` | 1,520 | 1,040 |
+| `heron_check` | 1,256 | 808 |
+| `revit_export_check` | 1,201 | 650 |
+| `heron_research` | 1,190 | 690 |
+
+SDK 2.3.0 on Python 3.12.3 and 2.2.0 on 3.13.16, in a cloud container. *As served* is the tool's whole JSON
+- name, description, input schema, output schema, safety labels and `_meta`; what reaches the model is at
+least the name, description and input schema, and the rest is the host's to pass or not. Run
+`python mcp/server/heron_tools.py --sizes` for today's figures rather than reading these.
+
+**Not changed, and why:**
+
+- **The Companion ANALYZE tools as `heron_method` jobs** - `revit_building_loads`, the two sprinkler tools,
+  `revit_edit_table`. Considered and not done: none is in ALWAYS_LOADED, so each costs a chat only once a
+  search loads it, and each opens a Companion panel and hands it the reply, which a method - a list of
+  steps for the chat to run - cannot do. Removing a tool the modeller's chats call is the owner's decision.
+- **Every tool is served with an `outputSchema`**, because each is declared `-> str` -
+  6,343 characters across the list - and each result carries the answer twice, as text and as
+  `structuredContent` (`tests/test_mcp_serves.py`'s `text_of` reads the pair). Whether Claude Code puts
+  either in the model's context was **not measured**. `structured_output=False` would drop both, and it
+  changes the shape of every reply, so it is a question rather than part of this change.
+- **`host.chat`** - [`tests/test_instructions.py`](../tests/test_instructions.py) already holds its word
+  budget.
+
+**NOT MEASURED, AND IT NEEDS A REAL CHAT:** whether Claude Code chooses the right Heron tool as often from
+the shorter descriptions. Nothing in a container can show it.
+
+### 8.9 A door that only shows — `revit_show`, and the temporary isolate — built 2026-10-17
+
+**What was wrong:** *"show me / zoom to / isolate these"* needed Changes ON. The add-in's gate has always
+let `EXECUTE` through with Changes off — `HeronPermissions.ReadOnlyCeiling` is `Execute`, *"changes what is
+shown, never what exists"*, and [12 §1](12-security-and-permissions.md) gives `EXECUTE` *"change selection,
+open a view, zoom"* and no confirmation. Only this side held it back: §8.1's door is `ANALYZE`, so an
+`EXECUTE` fragment reached Revit only through `revit_change`, inside the write path's transaction
+([row 5b-497](fragment-issues/section-5b-rows-401-425.md)).
+
+- **`revit_show` is the third door.** It sends `run_fragment_show`, declared `EXECUTE` in the add-in and
+  routed to the read door's executor with **no transaction open** — so Revit still refuses any change to
+  the model, and what an `EXECUTE` fragment can change is the selection, the camera and the active view.
+  Its ceiling is its own row, through the same `door_refusal`: `MODIFY` and above are refused before
+  anything is sent, and `revit_read` now sends an `EXECUTE` fragment here rather than to `revit_change`.
+  Everything else is §8.1's: the pin, the proof line, the words path, `expect_from`.
+- **It is one search away, not given before the chat asks.** `heron_tools.ALWAYS_LOADED`'s six came to
+  4,435 characters of description on 2026-10-17 against §8.8's budget of 4,500, and a door cannot be
+  described in what was left; raising the budget is [D-118](DECISIONS.md)'s to decide. `revit_read`'s
+  refusal of an `EXECUTE` capability names it, and its description was trimmed to fit its own budget.
+  So do `revit_change`'s two refusals a screen-only job meets first - not proven, and Changes off - and
+  `heron_method`'s list of a job's capabilities says `EXECUTE` runs through it.
+- **Revit's Temporary Hide/Isolate needs a transaction, so it is not a fragment.** `revit_isolate_temporary`
+  and `revit_reset_temporary` call two FIXED operations, `isolate_temporary` and `reset_temporary`
+  (`RevitTemporaryView.cs`): one transaction round `IsolateElementsTemporary`, `IsolateCategoriesTemporary`
+  or `DisableTemporaryViewMode`, in the active view, taking element ids or BIM category words. A
+  transaction opened for fragment code with Changes off would be a write path with no switch in front of
+  it; these open one for three Revit calls and nothing a caller sends.
+- **A DRAFT runs here and says DRAFT, as a read does.** [D-117](DECISIONS.md) refuses a fragment that is
+  not PROVEN only where a change is KEPT; its items 3 and 4 leave a run that keeps nothing, and a read,
+  unasked. The show door opens no transaction, so it keeps nothing in the model.
+- **Inside a link, too, with no question first.** [Article 7](../HERON_CONSTITUTION.md) asks for
+  confirmation before *"anything touching a linked model"*, and selecting or zooming to linked elements is
+  not touching it — the owner's answer to [Q-65](OPEN-QUESTIONS.md), [D-124](DECISIONS.md). So
+  `ZOOM_TO_LINKED_ELEMENTS` runs through `revit_show` like any other `EXECUTE` fragment.
+
+**Opening a view, and what still needs Changes ([D-125](DECISIONS.md)):** `OPEN_VIEW` declares
+`noTransactionOpen` - *run me with none open* - which the show door lets through, where the edit-scope need
+it declared until then was refused ([row 5b-498](fragment-issues/section-5b-rows-401-425.md)). A fragment
+whose code needs Heron's transaction is declared `MODIFY`, so `ISOLATE_ELEMENTS` goes through `revit_change`
+with Changes on, and the show door's refusal names `revit_isolate_temporary` for Changes off
+([row 5b-499](fragment-issues/section-5b-rows-401-425.md)).
+
+`tests/test_read_door.py` section 10 holds the show door over every fragment in the library,
+`tests/Heron.Kernel.TestHost` section 9 runs the gate over every switch combination, and
+`tests/test_mcp_serves.py` calls all three tools through a real SDK. **None of it has run in Revit** —
+[NEEDS-CHECKING Group ES](needs-checking/group-es.md).

@@ -52,7 +52,8 @@ WHAT IT PROVES
      `heron-fragment-author` writes new fragments at DRAFT, and nothing at
      runtime stops a DRAFT fragment from running. Article 11 is kept by its
      tool list, so no `revit_*` tool may appear on it - reads included,
-     because `revit_read` executes a fragment too.
+     because `revit_read` executes a fragment too. Its one exception, D-119's
+     Keep or Discard run, goes through the command line and not a tool.
 
 WHAT IT DOES NOT PROVE
   That an agent's report is right. That takes a run against a named model.
@@ -82,6 +83,9 @@ CHANGES = {
     "revit_apply_move":         "moves elements in the model",
     "revit_preview_move":       "leaves a move waiting for revit_apply_move",
     "revit_select_by_category": "changes the selection on the modeller's screen",
+    "revit_show":               "changes the selection, the camera or the view on screen",
+    "revit_isolate_temporary":  "isolates elements in the modeller's active view",
+    "revit_reset_temporary":    "ends the temporary isolate in the modeller's active view",
     "revit_use_session":        "moves the whole chat onto another Revit",
     "revit_use_this_model":     "moves the whole chat onto another model",
 }

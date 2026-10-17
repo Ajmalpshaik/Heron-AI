@@ -24,7 +24,17 @@ where it cannot be bypassed by anything on this side being wrong or replaced.
 
 Stating that plainly matters, because a registry that looks like a gate
 invites somebody to treat it as one.
+
+WHAT EACH TOOL COSTS A CHAT is answered here too, by measurement:
+
+    python mcp/server/heron_tools.py --sizes
 """
+
+import ast
+import io
+import json
+import os
+import sys
 
 # The seven levels of docs/12 section 1, in order of what they cost if wrong.
 # The boundary that matters sits between EXECUTE and MODIFY.
@@ -94,6 +104,15 @@ TOOLS = {
     "revit_views":              (READ,    "list_views"),
     "revit_sheets":             (READ,    "list_sheets"),
 
+    # A picture of one view, for the chat to look at its own work (D-123).
+    # ANALYZE, because that is what `capture_view` is declared in the add-in:
+    # given element ids it makes a temporary 3D view inside a TransactionGroup
+    # the add-in ALWAYS rolls back, with no apply flag anywhere to keep it.
+    # NOT an export, and deliberately not named export-*: the picture goes
+    # into Heron's own Derived folder, comes back in the reply and is deleted
+    # there, which is not the "shared location" Article 10 and D-107 mean.
+    "revit_view_image":         (ANALYZE, "capture_view"),
+
     # Rooms and spaces (HERON-REVIT-RM-028). READ. Placing a room, deleting an
     # unplaced one or moving a boundary all change somebody's area schedule,
     # which on most jobs is a contractual document.
@@ -138,9 +157,10 @@ TOOLS = {
     # The gate lives on the far side of the pipe on purpose: a client deciding
     # its own permission is not a permission.
     #
-    # NO PREVIEW, AND THAT IS NOW A DECISION RATHER THAN A SILENCE. Article 9
-    # asks for one; the owner chose, on 2026-09-23, to keep the change at once
-    # and record the exception - D-99, which names what stands in for it.
+    # NO PREVIEW WAS A DECISION RATHER THAN A SILENCE - D-99, 2026-09-23 - and
+    # D-126 supersedes it: Revit shows the change and asks the modeller Keep
+    # or Discard before it is kept, inside the add-in, under the owner's
+    # write.askBeforeKeeping. Nothing in this row decides whether it asks.
     #
     # ITS ROW IS ITS OWN LEVEL, AND ALSO_REACHES BELOW SAYS WHAT ELSE IT CAN
     # SEND (D-106): a PUBLISH or ADMIN fragment goes as its own operation.
@@ -163,6 +183,27 @@ TOOLS = {
     # ON, through the executor that opens a transaction. A question needed
     # write permission.
     "revit_read":               (ANALYZE, "run_fragment_read"),
+
+    # THE SHOW DOOR (2026-10-17). The read door's executor and the read door's
+    # guarantee - `run_fragment_show` opens NO transaction, so Revit itself
+    # refuses any change to the model - one level higher, so a fragment that
+    # selects, zooms or opens a view runs with Changes OFF. The add-in's
+    # read-only ceiling is EXECUTE ("changes what is shown, never what
+    # exists"); until this row only the MCP side held EXECUTE back, because
+    # revit_read's ceiling is its own ANALYZE and revit_change needs Changes.
+    #
+    # EXECUTE, because that is what `run_fragment_show` is declared in
+    # HeronOperationRegistry.cs, and door_refusal reads the ceiling from this
+    # row - so a MODIFY fragment is refused here before anything is sent.
+    "revit_show":               (EXECUTE, "run_fragment_show"),
+
+    # Revit's own Temporary Hide/Isolate in the active view, and its reset.
+    # EXECUTE through FIXED operations in the add-in, never a fragment: a
+    # temporary isolate needs a transaction, and opening one for fragment code
+    # with Changes off would be a write path with no switch in front of it.
+    # The view's saved visibility is untouched.
+    "revit_isolate_temporary":  (EXECUTE, "isolate_temporary"),
+    "revit_reset_temporary":    (EXECUTE, "reset_temporary"),
 
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends
@@ -369,8 +410,10 @@ ALSO_REACHES = {
 #
 # FEW, ON PURPOSE. Every tool here is paid for in context in every chat,
 # asked or not - about 9,000 characters of descriptions for these five,
-# measured 2026-10-01 - and every other tool is still one search away. The
-# two doors and the lookup cover almost any request (#369); health and levels
+# measured 2026-10-01 (what they cost today is `--sizes` below, and
+# tests/test_tool_sizes.py holds them to a budget) - and every other tool is
+# still one search away. The two doors and the lookup cover almost any
+# request (#369); health and levels
 # are the first-time checks a modeller's chat makes. Loading a tool's
 # description changes nothing about what it may do: its risk and labels above
 # are unchanged, and the host still asks before a tool it was told can write.
@@ -379,6 +422,12 @@ ALSO_REACHES = {
 # method sends the host straight to it, and a deferred tool there costs the
 # search turn this list exists to save - on the one request, a family, where
 # a chat with no memory of Heron otherwise read the method off disk.
+#
+# revit_show, the third door, is NOT here, and that was measured rather than
+# chosen: on 2026-10-17 these six came to 4,435 characters of description
+# against tests/test_tool_sizes.py's 4,500, and a door cannot be described in
+# 65. Raising the budget is a decision (D-118). A chat finds it one search
+# away, and revit_read's refusal of an EXECUTE capability names it.
 ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
                  "revit_health", "revit_levels")
 
@@ -451,6 +500,13 @@ def door_refusal(door, declared, capability):
     needs no transaction, so the one guarantee the read door stands on - Revit
     refuses a model change made outside one - would not cover it.
 
+    revit_show is EXECUTE because `run_fragment_show` is, so the same rule
+    lets the selection, the camera and the active view through it and still
+    refuses MODIFY and above. What it adds to the read door's guarantee is
+    exactly what EXECUTE is declared to do: UI state, never the model. That
+    holds inside a linked model too - selecting or zooming to linked elements
+    is not touching the link, so it asks for no confirmation (D-124).
+
     AN UNREADABLE RISK IS REFUSED, for the reason the client's `risk_refusal`
     gives: "I could not tell" and "it is fine" must not collapse into one
     answer on a path that runs code in somebody's model.
@@ -459,7 +515,14 @@ def door_refusal(door, declared, capability):
     stops a MISTAKE. The add-in never sees a fragment's own risk (FRAGMENT-
     ISSUES row 9 records why it is not sent), so a caller that skipped this
     server could put anything through run_fragment_read. What holds for every
-    caller is Revit's own refusal of a change made outside a transaction.
+    caller is two things, and the first is NOT a guarantee on its own: Revit
+    refuses a change made outside a transaction - yet row 5b-350 is a read run
+    of place-nested-family that reported that refusal and still left a real
+    instance in the family, twice, cause not established (NEEDS-CHECKING CP1).
+    So the add-in also counts the model before and after every read run and
+    answers one that moved it `read_changed_model`, never as a read. That
+    second check sees an element that appeared or disappeared and a model newly
+    marked changed - not an edit in place in a model already unsaved.
 
     Pure - no file, no Revit, no SDK - so tests/test_read_door.py runs every
     outcome, and runs it over every fragment in the library, where CI can.
@@ -474,9 +537,22 @@ def door_refusal(door, declared, capability):
         return None
 
     within = " and ".join(NAMES[n] for n in sorted(NAMES) if n <= ceiling)
-    if level <= MODIFY:
+    if level <= EXECUTE:
+        # NOT revit_change: a capability that changes nothing that exists
+        # does not need the Changes switch, and sending the chat there for it
+        # is how "show me these" came to need write permission.
+        instead = ("A capability declared %s changes nothing that exists, and "
+                   "revit_show runs it - with Changes off, and no transaction "
+                   "open." % NAMES[level])
+    elif level <= MODIFY:
         instead = ("A change belongs to revit_change, and that needs Changes "
                    "switched on in Revit's ribbon.")
+        # THE ONE MODIFY JOB A SHOW REQUEST IS USUALLY AFTER. Revit's temporary
+        # isolate needs a transaction, so ISOLATE_ELEMENTS is MODIFY (D-125);
+        # the fixed operation does it with Changes off.
+        if door == "revit_show":
+            instead += (" To isolate elements in the active view with Changes "
+                        "off, revit_isolate_temporary does it.")
     else:
         # D-106: the level has its own switch now, and saying which one is
         # the whole of the way forward.
@@ -487,6 +563,7 @@ def door_refusal(door, declared, capability):
     return ("'%s' is declared %s, and %s runs nothing above %s - %s only. "
             "Nothing has been sent to Revit. %s"
             % (capability, NAMES[level], door, NAMES[ceiling], within, instead))
+
 
 
 # THE SAFETY LABELS MCP LETS A SERVER PUT ON A TOOL, in the protocol's own
@@ -559,7 +636,151 @@ def describe():
     return "\n".join(lines)
 
 
-def main():
+# WHAT THE TOOL LIST COSTS A CHAT - D-03's accepted cost, measured rather than
+# typed. "MCP tool schemas cost context on every request": every tool in
+# ALWAYS_LOADED is in every chat's context before the modeller types, and
+# every other tool joins it the moment a search loads it. The count was typed
+# in prose once (the comment on ALWAYS_LOADED: about 9,000 for five,
+# 2026-10-01), and on 2026-10-17 the six there measured 6,802 off the source -
+# so the sizes are a command, as the inventory is.
+#
+# THE DESCRIPTION IS READ OFF THE SOURCE, with ast, so it needs no SDK and
+# runs in CI - and it is EXACTLY what a host is served, because the server
+# hands the SDK `inspect.cleandoc` of the docstring (_Labelled.tool), which is
+# what ast.get_docstring returns. Before 2026-10-17 the SDK was handed the raw
+# docstring, which Python 3.12 - the owner's - keeps indented four spaces a
+# line, so the same tool cost more on his PC than in a 3.13 container.
+# tests/test_mcp_serves.py holds the two to each other through a real SDK.
+#
+# THE SCHEMA AND THE WHOLE TOOL need the SDK, because the SDK writes the
+# schema from the signature at run time. Without one they are NOT MEASURED,
+# and said to be, never reported as zero.
+SERVER_SOURCE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "heron_mcp_server.py")
+
+
+def descriptions(path=SERVER_SOURCE):
+    """{tool: the description a host is served} for every `@server.tool()`."""
+    with io.open(path, encoding="utf-8") as fh:
+        tree = ast.parse(fh.read(), path)
+    found = {}
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and any(
+                ast.unparse(d) == "server.tool()" for d in node.decorator_list):
+            found[node.name] = ast.get_docstring(node) or ""
+    return found
+
+
+def served_tools():
+    """
+    (every tool as the SDK serves it, as protocol JSON, None) - or (None, why)
+    when no SDK can serve them here.
+
+    BaseException, for the reason tests/test_mcp_serves.py gives: a broken SDK
+    install raises a native panic that is not an Exception, and a size report
+    must say it could not measure rather than die with a traceback.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    try:
+        import asyncio
+        import heron_mcp_server as served
+        listed = asyncio.run(served.server.list_tools())
+        return [t.model_dump(by_alias=True, exclude_none=True, mode="json")
+                for t in listed], None
+    except BaseException as why:                            # noqa: BLE001
+        if isinstance(why, KeyboardInterrupt):
+            raise
+        return None, "%s: %s" % (type(why).__name__, why)
+
+
+def instructions_size():
+    """(characters of host.chat every chat is given, None) - or (None, why)."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    try:
+        import heron_brain
+        return len(heron_brain.host_instructions()), None
+    except Exception as why:                                # noqa: BLE001
+        return None, "%s: %s" % (type(why).__name__, why)
+
+
+def sizes(served=None, path=SERVER_SOURCE):
+    """
+    What each tool costs, largest first, and the totals a budget is held to.
+
+    `served` is served_tools()'s list, or None to measure descriptions only.
+    A size that was not measured is None, never 0.
+    """
+    by_name = dict((t.get("name"), t) for t in (served or []))
+    rows = []
+    for name, text in descriptions(path).items():
+        tool = by_name.get(name)
+        rows.append({
+            "tool": name,
+            "always_loaded": name in ALWAYS_LOADED,
+            "description": len(text),
+            "schema": (len(json.dumps(tool.get("inputSchema") or {}))
+                       if tool is not None else None),
+            "whole": len(json.dumps(tool)) if tool is not None else None,
+        })
+    rows.sort(key=lambda r: (-(r["whole"] or r["description"]), r["tool"]))
+
+    def total(key, only_always=False):
+        picked = [r[key] for r in rows if r["always_loaded"] or not only_always]
+        return None if any(v is None for v in picked) else sum(picked)
+
+    return {
+        "tools": rows,
+        "description": total("description"),
+        "whole": total("whole"),
+        "always_loaded_description": total("description", True),
+        "always_loaded_whole": total("whole", True),
+    }
+
+
+def print_sizes(as_json=False):
+    """`--sizes`: every tool's cost and the totals, derived on the spot."""
+    served, why = served_tools()
+    report = sizes(served)
+    report["instructions"], unread = instructions_size()
+    report["not_measured"] = dict((k, v) for k, v in (("schemas", why),
+                                                      ("instructions", unread)) if v)
+    if as_json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0
+
+    def say(value, absent="-"):
+        return absent if value is None else "{:,}".format(value)
+
+    print("What each MCP tool costs a chat, in characters, largest first.")
+    print("* is in ALWAYS_LOADED: in every chat's context before the modeller types.")
+    print()
+    width = max(len(r["tool"]) for r in report["tools"])
+    print("  %-*s  %11s  %7s  %7s" % (width + 2, "tool", "description", "schema", "whole"))
+    for r in report["tools"]:
+        print("  %-*s  %11s  %7s  %7s" % (width + 2, r["tool"] + (" *" if r["always_loaded"] else ""),
+                                          say(r["description"]), say(r["schema"]), say(r["whole"])))
+    print()
+    print("  %d tools. Descriptions %s; the whole list as served %s."
+          % (len(report["tools"]), say(report["description"]),
+             say(report["whole"], "NOT MEASURED")))
+    print("  ALWAYS_LOADED, %d tools: descriptions %s; as served %s."
+          % (len(ALWAYS_LOADED), say(report["always_loaded_description"]),
+             say(report["always_loaded_whole"], "NOT MEASURED")))
+    print("  The instructions every chat is given (host.chat): %s."
+          % say(report["instructions"], "NOT MEASURED"))
+    for what, reason in sorted(report["not_measured"].items()):
+        print()
+        print("  NOT MEASURED - %s: %s" % (what, reason))
+        if what == "schemas":
+            print("  The descriptions above are read off the source and need no SDK;")
+            print("  a schema is written by the SDK, so it needs one:  pip install --user mcp")
+    print()
+    print("Descriptions from heron_mcp_server.py's own docstrings; schemas and the whole")
+    print("tool from the SDK's own list. The budget is tests/test_tool_sizes.py.")
+    return 0
+
+
+def main(argv=None):
     """
     Print the registry. THE INVENTORY IS DERIVED, NEVER TYPED.
 
@@ -574,7 +795,14 @@ def main():
     answer lives:
 
         python mcp/server/heron_tools.py
+
+    And what each one costs a chat, the same way:
+
+        python mcp/server/heron_tools.py --sizes [--json]
     """
+    argv = sys.argv[1:] if argv is None else argv
+    if "--sizes" in argv:
+        return print_sizes(as_json="--json" in argv)
     print("Every MCP tool Heron declares, worst first. %d in all." % len(TOOLS))
     print()
     print(describe())

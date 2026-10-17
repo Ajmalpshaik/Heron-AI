@@ -723,6 +723,34 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
 
+## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
+
+## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
+
+## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
+
+## Group EQ - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eq.md`](needs-checking/group-eq.md)
+
+## Group ER - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-er.md`](needs-checking/group-er.md)
+
+## Group ES - "show me / zoom to / isolate these" with Changes OFF: `revit_show`, the temporary isolate, and `ZOOM_TO_LINKED_ELEMENTS` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-es.md`](needs-checking/group-es.md)
+
+## Group ET - Revit asks Keep or Discard before a change from a chat is kept: D-126 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

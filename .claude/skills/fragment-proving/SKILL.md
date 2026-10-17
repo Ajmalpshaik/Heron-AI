@@ -60,6 +60,18 @@ through only while the owner's **Publish** or **Admin** switch is on in the ribb
   `export-views-to-dwg` declared `MODIFY` until 2026-09-28. A job file that proved one of them as
   `MODIFY` is refused now - `batch-prove` passes `--write` and never `--allow-publish`.
 
+### A MODIFY fragment never runs as a read
+
+**Since 2026-10-17** `fragment` and `validate` without `--write`, and every `prove`, refuse a fragment
+or setup step declared `MODIFY` or above before Revit is asked. A read run of `place-nested-family`
+reported Revit's refusal and still left a real instance in the family, twice
+([row 5b-350](../../../docs/fragment-issues/section-5b-rows-326-350.md)). To see a MODIFY fragment's
+refusals, run it with `--write` and no `--apply`: the same refusals, and a rollback behind them. A
+NEEDS-CHECKING row that says "without `--write`" for a MODIFY fragment was written before this.
+
+**A read that changes the model comes back `read_changed_model`**, naming how many elements appeared.
+It is never evidence for anything: look at the model, remove what appeared, and record it on the row.
+
 ## The five rules
 
 Each was learned by breaking it. The full account of every one, with what was passed and what came
@@ -228,6 +240,25 @@ match five different counts.
 
 That is not what `batch-prove` does. Prove those one at a time with `validate`, and let
 `heron_validate` draft the tracking rows.
+
+## A run the modeller kept is the positive half
+
+**[D-120](../../../docs/DECISIONS.md), accepted 2026-10-17.** A MODIFY DRAFT that ran once on the
+modeller's own saved model through `try-once` ([D-119](../../../docs/DECISIONS.md)) and was **kept** -
+they saw the result in Revit and pressed Keep - is its positive case. The run is recorded at
+`brain/proof-drafts/runs/<fragment>.once.json`. Prove the rest without running the positive again:
+
+```bash
+python mcp/client/heron_bridge_client.py validate <fragment> --write --kept --negative-set name=value
+python brain/heron_validate.py draft <fragment> --from brain/proof-drafts/runs/<fragment>.json
+```
+
+- **The negative is arranged like any other** - the five rules above apply. It runs on the model as it
+  is now, with the kept change in it, and is rolled back.
+- **Refused when it cannot stand**: a run that was discarded, or code that has changed since it ran -
+  the record carries a hash of what was sent. `draft` and `accept` refuse the same two.
+- **Not with `--vary`**: D-53's first tracked input is a positive run, and here the positive is kept.
+- `batch-prove` does not do this. It is one fragment at a time, and the signature is still a person's.
 
 ## Honesty
 

@@ -150,6 +150,11 @@ AMBIENT = {
     # transaction of its own open, so the fragment can start one of Revit's
     # edit modes - a stair's - and hand this to every transaction it opens.
     "editScopeFailures": "IFailuresPreprocessor",
+    # D-125. Declaring it says the fragment must run with NO transaction open
+    # and opens none of its own - a view change, which Revit refuses inside
+    # one. The add-in binds it true, and lets it through on the read and show
+    # paths, where editScopeFailures is refused.
+    "noTransactionOpen": "bool",
     # D-114. Revit overwrites a loaded family only when LoadFamily is handed
     # an IFamilyLoadOptions, which needs a class a fragment cannot declare -
     # so the add-in supplies a factory; its bool is overwriteParameterValues.

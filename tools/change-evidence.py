@@ -28,7 +28,8 @@ WHAT IT RECORDS, AND WHAT IT REFUSES TO RECORD
 -----------------------------------------------
 Only things a command can derive: gate exit codes, the set of suites that did
 not pass, and the counts this repository has already been wrong about in prose
-- fragments by lifecycle, suites, tools. Nothing is typed by hand into a record
+- fragments by lifecycle, suites, tools, and what the MCP tool list costs a
+chat in characters of description. Nothing is typed by hand into a record
 that exists to be believed.
 
 It does NOT record a generic dump of the tree. A record big enough to hide a
@@ -169,7 +170,27 @@ def counts():
         "fragments_by_status": status,
         "suites": len(glob.glob(os.path.join(ROOT, "tests", "test_*.py"))),
         "tools": len(glob.glob(os.path.join(ROOT, "tools", "*.py"))),
+        "tool_descriptions": tool_descriptions(),
     }
+
+
+def tool_descriptions():
+    """
+    What the MCP tool list costs a chat, in characters of description - the
+    whole list and ALWAYS_LOADED - or None when it could not be read.
+
+    Read off the server's source by mcp/server/heron_tools.py, which needs no
+    SDK, so two records taken on different machines measure the same thing.
+    The schemas need the SDK and are left to `heron_tools.py --sizes`.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    try:
+        import heron_tools
+        measured = heron_tools.sizes()
+    except Exception:                                   # noqa: BLE001
+        return None
+    return {"all": measured["description"],
+            "always_loaded": measured["always_loaded_description"]}
 
 
 # ------------------------------------------------------------------- the gates
@@ -436,6 +457,10 @@ def show(record):
         if by_status:
             w("  by status: %s\n"
               % ", ".join("%s %d" % (k, by_status[k]) for k in sorted(by_status)))
+        described = counts_.get("tool_descriptions")
+        if described:
+            w("  MCP tool descriptions: %s characters, %s of them in ALWAYS_LOADED\n"
+              % (described.get("all"), described.get("always_loaded")))
 
     if "ruling" in record:
         w("\nAgainst %s (%s):\n"

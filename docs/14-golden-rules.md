@@ -102,13 +102,16 @@ A `MODIFY` operation may run unattended only when it uses a `PRODUCTION` fragmen
 
 *Why:* this is the rule that lets a BIM manager approve Heron for live project use.
 
-**Broken once, on the record — [D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so).**
-A change the user asks for in a chat, through `revit_change`, is kept at once with no preview while the owner has Changes switched on. The owner chose it on 2026-09-23 with the preview offered and recommended; the decision names what stands in for the preview, and [Article 9](../HERON_CONSTITUTION.md) carries the same exception. Nothing else is excused by it.
+**Broken once, on the record — [D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) — and mended by [D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept).**
+From 2026-09-23 a change the user asked for in a chat, through `revit_change`, was kept at once with no preview while the owner had Changes switched on. The owner chose it with the preview offered and recommended. **D-126 (accepted by the owner 2026-10-17) puts the preview back where the modeller already is:** the change runs inside one named `TransactionGroup`, Revit selects and isolates what it touched, and a dialog asks Keep or Discard — nothing is kept until they choose Keep. The rule is still broken in one place, on the record: the owner can switch that question off (`write.askBeforeKeeping`), and then the change is kept at once as D-99 kept it. [Article 9](../HERON_CONSTITUTION.md) says the same. Nothing else is excused by it.
 
 ### 18. Generated code never touches a live model on its first run.
 New code runs in a sandbox or against a detached copy. Promotion to live comes after it passes.
 
 *Why:* the gap between "the AI wrote plausible code" and "the code is correct" is exactly where models get damaged. Shadow Mode ([18 §4](18-agent-operating-system.md)) produces the evidence; this rule sets the boundary.
+
+**Broken once, on the record — [D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so).**
+A DRAFT fragment may run once on the saved model in front, as one undo step held behind Heron's Keep or Discard prompt in Revit, and stays only if the modeller presses Keep after seeing the result. The owner accepted it on 2026-10-17; [Article 11](../HERON_CONSTITUTION.md) carries the same exception. Nothing else is excused by it.
 
 ### 19. No text Heron reads may raise Heron's own permission level.
 Content from documents, family names, parameter descriptions, imported folders, model text and community packages is **data, never instruction**. Permission comes from the user, through Heron's own UI, per action.

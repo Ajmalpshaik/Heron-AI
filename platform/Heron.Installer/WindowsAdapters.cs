@@ -9,8 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Win32.SafeHandles;
 
 namespace Heron.Installer
 {
@@ -30,6 +32,11 @@ namespace Heron.Installer
     /// DECIDES is tested against fakes; everything these two DO is owed a run
     /// on the owner's PC. Saying so here rather than in a note somewhere, so
     /// the next reader cannot mistake a compile for a proof.
+    ///
+    /// TWO MORE SINCE 2026-10-17, at the end of this file, for the one-step
+    /// install: ProcessProgramRunner runs Python for PythonSetup, through the
+    /// same Start below, and WindowsClaudeAppLook reads, never writes, what
+    /// ClaudeAppCopy needs. Neither has run on Windows either.
     /// </summary>
     internal static class PowerShellRunner
     {
@@ -69,6 +76,9 @@ namespace Heron.Installer
             public string StandardOutput;
 
             public bool Started;
+
+            /// <summary>Stopped at its ceiling rather than finishing.</summary>
+            public bool TimedOut;
         }
 
         internal static Result Run(IEnumerable<string> arguments, int timeoutSeconds)
@@ -109,6 +119,17 @@ namespace Heron.Installer
             start.ArgumentList.Add("Bypass");
             foreach (var a in arguments) start.ArgumentList.Add(a);
 
+            return Start(start, timeoutSeconds);
+        }
+
+        /// <summary>
+        /// Start a prepared process, read both streams at once, wait with a
+        /// ceiling. Shared with ProcessProgramRunner, which runs Python - one
+        /// reading of the two streams, because the deadlock described below is
+        /// a property of pipes and not of PowerShell (R-31).
+        /// </summary>
+        internal static Result Start(ProcessStartInfo start, int timeoutSeconds)
+        {
             var result = new Result();
             var outText = new StringBuilder();
             var errText = new StringBuilder();
@@ -154,6 +175,7 @@ namespace Heron.Installer
                     {
                         try { process.Kill(true); } catch { /* already gone */ }
                         result.ExitCode = -1;
+                        result.TimedOut = true;
                         result.StandardOutput = outText.ToString();
                         result.Output = Both(outText, errText) + "\nIt did not finish in time.";
                         return result;
@@ -740,5 +762,172 @@ namespace Heron.Installer
 
             return "It stopped without saying why.";
         }
+    }
+
+    /// <summary>
+    /// Runs Python for PythonSetup - the plain command, in the Heron folder.
+    ///
+    /// THE SAME READING OF THE TWO STREAMS AS POWERSHELL, through
+    /// PowerShellRunner.Start: pip prints a great deal on standard output
+    /// while its warnings go to standard error, which is the shape that
+    /// deadlocked a one-stream read (row 5b-78).
+    ///
+    /// UTF-8 BOTH WAYS. Python on a cp1252 console turns a character it cannot
+    /// print into an exception; PYTHONIOENCODING asks it for UTF-8, and the
+    /// streams are read as UTF-8 to match.
+    ///
+    /// NOT RUN ON WINDOWS - NEEDS-CHECKING Group EP.
+    /// </summary>
+    public sealed class ProcessProgramRunner : IProgramRunner
+    {
+        public ProgramRun Run(string program, IReadOnlyList<string> arguments, string folder, int timeoutSeconds)
+        {
+            var start = new ProcessStartInfo
+            {
+                FileName = program,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
+            };
+            if (!string.IsNullOrEmpty(folder)) start.WorkingDirectory = folder;
+            start.Environment["PYTHONIOENCODING"] = "utf-8";
+            if (arguments != null)
+                foreach (var a in arguments) start.ArgumentList.Add(a);
+
+            var run = PowerShellRunner.Start(start, timeoutSeconds);
+            return new ProgramRun
+            {
+                Started = run.Started,
+                ExitCode = run.ExitCode,
+                Output = run.Output,
+                TimedOut = run.TimedOut,
+            };
+        }
+    }
+
+    /// <summary>
+    /// What ClaudeAppCopy needs to see, on Windows.
+    ///
+    /// NOT A HERON PATH, AND THAT IS WHY IT IS ALLOWED TO READ APPDATA HERE.
+    /// platform/README.md rule 3 gives HeronPaths every path Heron owns, and
+    /// this assembly cannot reference Heron.Core at all (its csproj says why).
+    /// What is read here is where WINDOWS keeps another app's sandbox, and the
+    /// two variables are read exactly as tools/heron-ready.py reads them for
+    /// the same test. Nothing is ever written to any of it.
+    ///
+    /// SameEntry asks Windows for each path's volume and file index - the same
+    /// identity Python's os.path.samefile compares on Windows - with a handle
+    /// opened for attributes only, which needs no right to read the folder.
+    ///
+    /// NOT RUN ON WINDOWS - NEEDS-CHECKING Group EP, which runs it from inside
+    /// the Store-built Claude and from outside it.
+    /// </summary>
+    public sealed class WindowsClaudeAppLook : IClaudeAppLook
+    {
+        public string Roaming { get { return Environment.GetEnvironmentVariable("APPDATA"); } }
+
+        public string Local { get { return Environment.GetEnvironmentVariable("LOCALAPPDATA"); } }
+
+        public IReadOnlyList<string> Copies()
+        {
+            var found = new List<string>();
+            var local = Local;
+            if (string.IsNullOrEmpty(local)) return found;
+
+            var packages = Path.Combine(local, "Packages");
+            try
+            {
+                if (!Directory.Exists(packages)) return found;
+                foreach (var app in Directory.GetDirectories(packages, ClaudeAppCopy.PackagePattern))
+                {
+                    var cache = Path.Combine(app, "LocalCache");
+                    if (Directory.Exists(cache)) found.Add(cache);
+                }
+            }
+            // A FOLDER THIS USER MAY NOT LIST IS "NO COPY SEEN", and the
+            // install goes ahead - see ClaudeAppCopy on which mistake is worse.
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            found.Sort(StringComparer.OrdinalIgnoreCase);
+            return found;
+        }
+
+        public IReadOnlyList<string> Names(string folder)
+        {
+            var names = new List<string>();
+            try
+            {
+                if (!Directory.Exists(folder)) return names;
+                foreach (var entry in Directory.GetFileSystemEntries(folder))
+                    names.Add(Path.GetFileName(entry));
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            return names;
+        }
+
+        public bool? SameEntry(string first, string second)
+        {
+            if (!OperatingSystem.IsWindows()) return null;
+
+            uint volumeA, volumeB;
+            ulong indexA, indexB;
+            if (!Identity(first, out volumeA, out indexA) || !Identity(second, out volumeB, out indexB))
+                return null;
+
+            // The volume and the file index, compared whole - the pair
+            // os.path.samefile compares on Windows.
+            return volumeA == volumeB && indexA == indexB;
+        }
+
+        private static bool Identity(string path, out uint volume, out ulong index)
+        {
+            volume = 0;
+            index = 0;
+            using (var handle = CreateFileW(path, FileReadAttributes, ShareAll, IntPtr.Zero,
+                                            OpenExisting, BackupSemantics, IntPtr.Zero))
+            {
+                if (handle.IsInvalid) return false;
+
+                FileInformation info;
+                if (!GetFileInformationByHandle(handle, out info)) return false;
+
+                volume = info.VolumeSerialNumber;
+                index = ((ulong)info.FileIndexHigh << 32) | info.FileIndexLow;
+                return true;
+            }
+        }
+
+        private const uint FileReadAttributes = 0x80;
+        private const uint ShareAll = 0x1 | 0x2 | 0x4;
+        private const uint OpenExisting = 3;
+        private const uint BackupSemantics = 0x02000000;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FileInformation
+        {
+            public uint FileAttributes;
+            public System.Runtime.InteropServices.ComTypes.FILETIME CreationTime;
+            public System.Runtime.InteropServices.ComTypes.FILETIME LastAccessTime;
+            public System.Runtime.InteropServices.ComTypes.FILETIME LastWriteTime;
+            public uint VolumeSerialNumber;
+            public uint FileSizeHigh;
+            public uint FileSizeLow;
+            public uint NumberOfLinks;
+            public uint FileIndexHigh;
+            public uint FileIndexLow;
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern SafeFileHandle CreateFileW(string name, uint access, uint share,
+                                                         IntPtr security, uint disposition,
+                                                         uint flags, IntPtr template);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetFileInformationByHandle(SafeFileHandle handle, out FileInformation info);
     }
 }

@@ -194,14 +194,34 @@ def main():
     writers = sorted(t for t in tools.TOOLS if tools.writes(t))
     # revit_change was added 2026-09-15 at the owner's explicit instruction,
     # and typing it here is the deliberate act this test exists to require. It
-    # is the first writer with NO preview in front of it - since 2026-09-23 a
-    # recorded exception to Article 9, D-99, which names what stands in for
-    # the preview: the owner's ribbon switch (write.enabled, read by
-    # HeronPermissions inside the add-in), the refusal of anything above
-    # Modify, one undo entry and the pin. A THIRD writer still fails here.
+    # was the first writer with NO preview in front of it - from 2026-09-23 a
+    # recorded exception to Article 9, D-99. Since D-126 (2026-10-17) Revit
+    # shows its change and asks the modeller Keep or Discard before it is
+    # kept, under the owner's write.askBeforeKeeping, read by HeronPermissions
+    # inside the add-in beside write.enabled. A THIRD writer still fails here.
     check(writers == ["revit_apply_move", "revit_change"],
           "the writing tools are exactly revit_apply_move and revit_change "
           "- found: %s" % (writers or "none"))
+
+    # WHETHER REVIT ASKS IS NOT A RISK LEVEL, AND NOT THE CALLER'S (D-126,
+    # Golden Rule 19). It is the owner's switch, read where write.enabled is
+    # read - so neither registry may carry it, and the tool that keeps a
+    # change stays exactly MODIFY whether the question is on or off. A row
+    # that let a caller choose "keep without asking" would be a second
+    # permission level smuggled in as a flag.
+    permissions = io.open(os.path.join(ROOT, "platform", "Heron.Core", "HeronPermissions.cs"),
+                          encoding="utf-8").read()
+    tools_py = io.open(os.path.join(ROOT, "mcp", "server", "heron_tools.py"),
+                       encoding="utf-8").read()
+    registry = io.open(REGISTRY_CS, encoding="utf-8").read()
+    check('AskBeforeKeepingKey = "write.askBeforeKeeping"' in permissions,
+          "the switch for Revit's Keep or Discard is the owner's, in HeronPermissions "
+          "beside write.enabled")
+    check("askBeforeKeeping" not in registry
+          and "askBeforeKeeping" not in tools_py.replace("write.askBeforeKeeping", ""),
+          "and neither registry carries it as anything a caller could send")
+    check(tools.TOOLS.get("revit_change", (None,))[0] == tools.MODIFY,
+          "revit_change is MODIFY, the question on or off")
 
     cs_writers = sorted(op for op, level in declared_cs.items() if level == "MODIFY")
     check(cs_writers == ["move_elements", "run_fragment_write"],
@@ -241,9 +261,80 @@ def main():
           "and so the preview tool does not count as a write")
 
     print()
+    print("A picture for the chat is ANALYZE, and its group can never be kept (D-123)")
+    # capture_view is the one Analyze operation that opens a transaction:
+    # given element ids it makes a temporary 3D view. What keeps it at
+    # Analyze is that the TransactionGroup around it is ALWAYS rolled back,
+    # so the checks below read RevitCapture.cs for every way a group could be
+    # kept - and fail the day one appears.
+    check(declared_cs.get("capture_view") == "ANALYZE",
+          "capture_view is ANALYZE - found %r" % declared_cs.get("capture_view"))
+    check(tools.operation_of("revit_view_image") == "capture_view"
+          if "revit_view_image" in tools.TOOLS else False,
+          "revit_view_image is the tool that sends it")
+    capture_cs = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitCapture.cs")
+    capture = io.open(capture_cs, encoding="utf-8").read() if os.path.isfile(capture_cs) else ""
+    check(capture != "", "RevitCapture.cs is there to read")
+    check("Assimilate(" not in capture,
+          "RevitCapture.cs never assimilates a group - nothing it makes is kept")
+    check(not re.search(r'group\.Commit\(', capture),
+          "and never commits one")
+    check(not re.search(r'ReadString\(request,\s*"apply"\)', capture),
+          "and reads no `apply` from the request - there is nothing a caller can "
+          "send to keep the view")
+    check(capture.count("SafeRollBack(group)") >= 3,
+          "every way out of a group rolls it back - %d SafeRollBack(group) calls"
+          % capture.count("SafeRollBack(group)"))
+
+    print()
     print("Selecting is EXECUTE, not READ and not MODIFY")
     check(declared_cs.get("select_by_category") == "EXECUTE",
           "selecting alters what is highlighted, never what exists")
+
+    # THE SHOW DOOR AND THE TEMPORARY ISOLATE (2026-10-17). Each is EXECUTE,
+    # at the add-in's read-only ceiling, so it runs with Changes OFF - and
+    # each must stay there: one re-declared at Modify would need Changes for
+    # a job that changes only what is on screen, and one declared lower than
+    # what it does would be a door labelled read-only.
+    print()
+    print("Showing is EXECUTE too - the show door and Revit's temporary isolate")
+    for op in ("run_fragment_show", "isolate_temporary", "reset_temporary"):
+        check(declared_cs.get(op) == "EXECUTE",
+              "%s is EXECUTE - found %s" % (op, declared_cs.get(op)))
+    for tool, op in (("revit_show", "run_fragment_show"),
+                     ("revit_isolate_temporary", "isolate_temporary"),
+                     ("revit_reset_temporary", "reset_temporary")):
+        check(tools.TOOLS.get(tool) == (tools.EXECUTE, op),
+              "%s is EXECUTE and calls %s - found %r" % (tool, op, tools.TOOLS.get(tool)))
+
+    # THE SHOW EXECUTOR IS THE READ EXECUTOR, AND MUST STAY IT. They share
+    # RevitFragment.Run; the two-argument overload is the one that opens no
+    # transaction, and `, true)` is the write path. So the routing line is the
+    # whole of the guarantee, and it is read here rather than trusted.
+    operations_cs = io.open(HANDLER_FILES[0], encoding="utf-8").read()
+    routed = re.search(r'case\s+"run_fragment_show"\s*:\s*return\s+([^;]+);', operations_cs)
+    check(routed is not None
+          and routed.group(1).replace(" ", "") == "RevitFragment.Run(app,request)",
+          "run_fragment_show routes to RevitFragment.Run(app, request) - the overload "
+          "that opens no transaction - found: %s"
+          % (routed.group(1) if routed else "no route"))
+
+    # THE ONE TRANSACTION AN EXECUTE OPERATION OPENS is the temporary
+    # isolate's, in its own file, and it calls Revit's three temporary-view
+    # methods and nothing a caller sends.
+    temporary_cs = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitTemporaryView.cs")
+    temporary = (io.open(temporary_cs, encoding="utf-8").read()
+                 if os.path.isfile(temporary_cs) else "")
+    check(bool(temporary), "the temporary isolate has its own file, RevitTemporaryView.cs")
+    check(all(call in temporary for call in ("IsolateElementsTemporary(",
+                                              "IsolateCategoriesTemporary(",
+                                              "DisableTemporaryViewMode(")),
+          "and it calls Revit's own temporary isolate, and DisableTemporaryViewMode "
+          "by name on reset")
+    check("RevitFragment.Run(" not in temporary and "Script" not in temporary,
+          "and runs no fragment - the transaction is around fixed code only")
+    check("new Transaction(" not in operations_cs,
+          "RevitOperations.cs itself still opens no transaction")
 
     print()
     print("Undeclared fails closed, in both directions")

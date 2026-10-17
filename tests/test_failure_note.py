@@ -75,6 +75,7 @@ ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
 DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
 NOTE = os.path.join(ADDIN, "HeronFailureNote.cs")
+WITNESS = os.path.join(ADDIN, "HeronRollbackWitness.cs")
 HOST = os.path.join(ROOT, "tests", "Heron.FailureNote.TestHost")
 COULD_NOT_RUN = 3
 
@@ -213,14 +214,25 @@ def wiring():
     check(len(opened) >= 2,
           "the write path opens %d transaction(s) - the fragment's and one per "
           "setup step" % len(opened))
+    # BEFORE ANYTHING RUNS IN IT OR IT COMMITS. This read "before its script
+    # runs" until 2026-10-17, when D-126 added a transaction that runs no
+    # script - the one that isolates a change on screen while Revit asks Keep
+    # or Discard. Its work is a delegate called `work`, and the rule it must
+    # keep is the same one: the options are set before the first thing that
+    # can post a failure, whichever of the three comes first.
+    starts = (r"RunScript\(", r"\bwork\s*\(", r"\.Commit\(")
     for at in opened:
         after = code[at:]
-        runs = after.find("RunScript(")
+        found = [m.start() for m in (re.search(s, after) for s in starts) if m]
+        first = min(found) if found else -1
         disciplined = after.find("Discipline(")
         where = code.count("\n", 0, at) + 1
-        check(runs > 0 and 0 < disciplined < runs,
+        check(first > 0 and 0 < disciplined < first,
               "the transaction opened near code line %d is put under Discipline "
-              "BEFORE its script runs" % where)
+              "BEFORE anything runs in it or it commits" % where)
+    own = body_of(code, "bool InItsOwnTransaction(")
+    check(bool(own) and re.search(r"new\s+Transaction\s*\(", own) is not None,
+          "the Keep or Discard question's on-screen transaction (D-126) is one of them")
     calls = len(re.findall(r"(?<![\w.])Discipline\s*\(\s*\w", code)) - \
         len(re.findall(r"void\s+Discipline\s*\(", code))
     check(calls == len(opened),
@@ -260,7 +272,17 @@ def wiring():
     refused = body_of(code, "string RefusedBy(")
     check("RefusedSentence()" in refused,
           "a refusal quotes what stopped it, in Revit's words")
-    check(re.search(r"rolledBack\s*\?", refused) is not None,
+    # THE SENTENCE MOVED 2026-10-17, into HeronRollbackWitness.Outcome, so it
+    # can say what the rollback check found as well as Revit's status. The
+    # claim is unchanged - "exactly as it was" needs a confirmed rollback - and
+    # is read where it lives now, in the raw text because it IS a string.
+    # tests/test_rollback_witness.py RUNS it.
+    witness = read(WITNESS) or ""
+    sentence = body_of(witness, "string ModelSentence(")
+    held = body_of(sentence, "if (Held)")
+    check(".Account()" in refused
+          and "exactly as it was" in held
+          and "exactly as it was" not in sentence.replace(held, "", 1),
           "and says the model is as it was ONLY when Revit confirmed the rollback")
     # READ IN THE RAW TEXT, because code_only blanks string contents and the
     # error code IS a string. What follows it must be the RefusedBy call, on

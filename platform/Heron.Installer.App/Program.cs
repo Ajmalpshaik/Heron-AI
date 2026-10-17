@@ -51,6 +51,17 @@ namespace Heron.Installer.App
                 return 1;
             }
 
+            // OPENED FROM INSIDE THE STORE CLAUDE, IT WOULD INSTALL WHERE REVIT
+            // NEVER LOOKS - Q-63, ClaudeAppCopy. A person double-clicking it in
+            // Explorer never meets this; an AI starting it from Claude's shell
+            // does, and is told where to start it instead.
+            if (ClaudeAppCopy.Inside(new WindowsClaudeAppLook()))
+            {
+                MessageBox.Show(ClaudeAppCopy.Refusal, "Heron Installer",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return 1;
+            }
+
             var revit = new PowerShellRevitEnvironment(root);
             var installed = new InstalledProductsOnDisk(revit);
 
@@ -96,7 +107,7 @@ namespace Heron.Installer.App
                                                IReadOnlyList<string> releases,
                                                IReadOnlyList<InstallStep> removals)
             {
-                Install(window, manifest, revit, deployer, products, releases, removals);
+                Install(window, manifest, root, revit, deployer, products, releases, removals);
             };
 
             return new Application().Run(window);
@@ -109,6 +120,7 @@ namespace Heron.Installer.App
         /// </summary>
         private static void Install(InstallerWindow window,
                                     ProductManifest manifest,
+                                    string root,
                                     IRevitEnvironment revit,
                                     IProductDeployer deployer,
                                     IReadOnlyList<string> products,
@@ -125,7 +137,27 @@ namespace Heron.Installer.App
             var worker = new Thread(delegate ()
             {
                 var report = engine.Apply(manifest, products, releases, removals);
-                window.Dispatcher.Invoke(delegate { window.Report(report); });
+
+                // THE OTHER HALF OF ONE INSTALL, ON THE SAME THREAD - pip and
+                // the knowledge store take minutes, and the window says each
+                // step as it starts. What runs and what it says is
+                // PythonSetup's; this only carries it to the screen.
+                IReadOnlyList<string> python = new string[0];
+                if (PythonSetup.ShouldRun(report, manifest))
+                {
+                    var setup = new PythonSetup(root, new ProcessProgramRunner());
+                    setup.OnStep = delegate (string step)
+                    {
+                        window.Dispatcher.Invoke(delegate { window.Waiting(step); });
+                    };
+                    var done = setup.Run();
+                    var lines = new List<string>(done.Lines);
+                    var saved = done.Save(PythonSetup.LogPath());
+                    if (!done.Ready) lines.Add(saved);
+                    python = lines;
+                }
+
+                window.Dispatcher.Invoke(delegate { window.Report(report, python); });
             });
             worker.IsBackground = true;
             worker.Start();

@@ -136,6 +136,10 @@ compatibility-note: >
 #                                             another level that looks like an
 #                                             empty result
 #   "hide these"                           -> HIDE_ELEMENTS
+#   "zoom to the beams in the structural
+#    link"                                 -> ZOOM_TO_LINKED_ELEMENTS. Show takes
+#                                             host ids, and a linked element's
+#                                             id means nothing in the host
 #
 # TWO FRAGMENTS ANSWER "SHOW ME THESE" AND THE DIFFERENCE IS WHY THEY CANNOT BE
 # SEEN. Off the screen is this one. Hidden by the view is SHOW_ELEMENTS. The

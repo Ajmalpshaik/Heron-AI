@@ -30,19 +30,28 @@ enforces. Found by a review 2026-09-11.
 TWO tools write, and the command marks them. revit_apply_move cannot run on
 its own - it applies a preview the user has already seen, once, and the add-in
 re-checks the model before it writes. revit_change carries a fragment straight
-to Revit and KEEPS what it did, with no preview in front of it - the owner's
-choice, recorded as D-99 and as Article 9's one exception. What stands in for
-the preview is named there: the owner's ribbon switch, the client's refusal of
-any fragment above Modify (since FRAGMENT-ISSUES row 5b-155), one undo entry,
-and the pin. Writing is switched off entirely until write.enabled is set - see
+to Revit, and Revit shows what it did and asks the modeller Keep or Discard
+before anything is kept - D-126, which supersedes D-99's change kept with no
+preview, and Article 9's exception says so. The owner's switch for the
+question is write.askBeforeKeeping, read in the add-in. Around it stand the
+owner's ribbon switch, one undo entry and the pin. Writing is switched off
+entirely until write.enabled is set - see
 HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
 own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
 it through only while the owner's Publish or Admin switch is on as well.
 
 ONE tool runs a fragment and changes nothing: revit_read, through the add-in's
-run_fragment_read. It opens no transaction, so Revit itself refuses any change;
-it works with Changes OFF; and it refuses a fragment declared above ANALYZE
-before anything is sent.
+run_fragment_read. It opens no transaction, so Revit refuses a change, and the
+add-in counts the model around every read because that refusal once let an
+element through (FRAGMENT-ISSUES row 5b-350); it works with Changes OFF; and it
+refuses a fragment declared above ANALYZE before anything is sent.
+
+A SECOND changes only what is on screen: revit_show, through run_fragment_show
+- the same executor, the same missing transaction, declared EXECUTE so a
+fragment that selects, zooms or opens a view runs with Changes OFF, and refusing
+anything above EXECUTE before it is sent. Revit's Temporary Hide/Isolate needs
+a transaction, so it is not a fragment at all: revit_isolate_temporary and
+revit_reset_temporary call FIXED operations in the add-in, EXECUTE as well.
 
 EVERY CHAT IS TOLD THE RULES, AND EVERY TOOL CARRIES ITS LABELS. The server's
 instructions are the Instruction Registry's `host.chat`, with the Constitution's
@@ -85,6 +94,8 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import base64
+import binascii
 import functools
 import inspect
 import io
@@ -154,8 +165,29 @@ try:                                                       # noqa: E402
 except ImportError:
     _Annotations = None
 
+# A PICTURE GOES BACK AS THE SDK'S OWN IMAGE HELPER, and it moved with the
+# server class - so it is looked up the same way, newest first (D-45). Both
+# SDKs carry it beside the class above; None means an SDK without one, and
+# then revit_view_image says so rather than the server failing to start.
+try:                                                       # noqa: E402
+    from mcp.server.mcpserver import Image as _Image       # SDK 2.x
+except ImportError:
+    try:
+        from mcp.server.fastmcp import Image as _Image     # SDK 1.x
+    except ImportError:
+        _Image = None
+
 _TAKES_LABELS = (_Annotations is not None
                  and "annotations" in inspect.signature(_Server.tool).parameters)
+
+# THE DESCRIPTION A HOST IS SERVED IS THE DOCSTRING CLEANED, ON EVERY PYTHON.
+# The SDK takes `fn.__doc__` as it finds it, and Python 3.12 - the owner's -
+# keeps every line of it indented four spaces where 3.13 strips them: measured
+# 2026-10-17, 3,014 characters of indentation across the list, paid for in
+# context and read by nobody. inspect.cleandoc is what ast.get_docstring
+# returns, so heron_tools' --sizes reads off the source exactly what a host is
+# handed (row 5b-491).
+_TAKES_DESCRIPTION = "description" in inspect.signature(_Server.tool).parameters
 
 
 class _Labelled(_Server):
@@ -187,6 +219,8 @@ class _Labelled(_Server):
                 name = (args[0] if args else None) or options.get("name") or fn.__name__
                 options["annotations"] = _Annotations.model_validate(
                     tools.annotations(name))
+            if _TAKES_DESCRIPTION and "description" not in options and fn.__doc__:
+                options["description"] = inspect.cleandoc(fn.__doc__)
             return register(*args, **options)(_recorded(fn))
 
         return decorate
@@ -368,6 +402,11 @@ def _recorded(fn):
 
 
 def _note(tool, started, seconds, reply=None, error=None, outcome=None):
+    # A TOOL THAT ANSWERS WITH A PICTURE ANSWERS WITH A LIST - its words, then
+    # the image (revit_view_image). The list shows the words, never the repr
+    # of an image object.
+    if isinstance(reply, (list, tuple)):
+        reply = next((part for part in reply if isinstance(part, str)), "")
     try:
         _companion_module().ACTIVITY.record(tool, started, seconds, reply=reply, error=error,
                                             outcome=outcome)
@@ -1558,68 +1597,60 @@ def revit_change(capability: str = "", values: str = "",
                  expect_from: str = "", request: str = "",
                  ctx: _Context = None) -> str:
     """
-    Change the open Revit model, and KEEP the change.
-
-    Use when the user asks for something that alters the model - duplicate a
-    type, rename, change an element's type, set a parameter.
+    Change the open Revit model, and KEEP the change - duplicate a type,
+    rename, change an element's type, set a parameter.
 
     THE SHORT PATH: pass the user's own words as `request` and leave
-    `capability` empty. When the words are a phrasing a PROVEN capability
-    declares, and every value it needs is in `values`, it runs in THIS call -
-    no heron_lookup, no heron_resolve first. When they are not, NOTHING is
-    sent to Revit and the reply is the candidate list with what each needs
-    typed: pick the one the user meant and call again with `capability`. If
-    none fits, ask the user. `capability`, when given, always wins.
+    `capability` empty. When they are a phrasing a PROVEN capability declares
+    and every value it needs is in `values`, it runs in THIS call. Otherwise
+    NOTHING is sent and the reply lists the candidates with what each needs:
+    call again with the `capability` the user meant, or ask them. `capability`,
+    when given, always wins.
 
-    `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP
+    `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP.
+    `expect_from` names the earlier fragment whose result this acts on, and
+    Heron refuses if something else left it; empty, the call starts clean.
 
-    `expect_from` CONSUMES WHAT AN EARLIER FRAGMENT LEFT, safely. Name the
-    fragment whose result this one should act on - "select-by-categories" - and
-    Heron checks the carried values were left by THAT fragment before it binds
-    anything, refusing if something else left them. Add "where k=v" to check
-    what it ran with too:
+    It runs only while the owner has Changes ON in Revit's ribbon, and a
+    Publish or Admin capability needs the owner's Publish or Admin switch on
+    as well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    or one whose proof is older than its code, is refused before anything is
+    sent. A refusal names the switch or the status: tell the user, and never
+    try another capability to get round it. Revit asks Keep/Discard (D-126):
+    Article 7's explicit yes comes BEFORE this call for destructive work, and
+    Article 10 holds - nothing is saved, synced or exported unasked.
 
-        expect_from="select-by-categories where categories=Pipes"
-
-    Leave it empty and each call is its own batch, which is the default and the
-    safe one: without it a later call could act on elements collected by
-    something nobody remembers running.
-
-    It is REFUSED unless the owner has switched Changes ON in Revit's ribbon.
-    That switch is read inside the add-in, never here - a client deciding its
-    own permission is not a permission.
-
-    TWO MORE SWITCHES SIT BESIDE CHANGES (D-106), each OFF until the owner
-    turns it on in Revit, and each only while Changes is on too:
-      Admin   - a capability that changes how the project is set up: add a
-                project or global parameter, create a workset, start a new
-                family document.
-      Publish - a capability that sends something out of the model or saves
-                it: export, print, save, sync with central.
-    When one is off the reply names it and says where to turn it on. Tell the
-    user that; never try another capability to get round it.
-
-    ONLY A PROVEN CAPABILITY RUNS HERE (Constitution Article 11, D-117). One
-    whose own file says DRAFT, or whose proof was taken before its code last
-    changed, is refused before anything is sent, and the reply names it and
-    its status. Tell the user that; never try another capability to get round
-    it. It is proved first on a test model, and then it can be asked for.
-
-    THERE IS NO PREVIEW: what this does is kept at once. That is the owner's
-    choice, recorded as D-99 - Article 9's one exception. Article 7 still
-    stands: deleting elements, purging, bulk parameter writes, family
-    reloads, workset changes and anything touching a linked model need the
-    user's explicit yes for that specific change BEFORE you call this, and
-    nothing in Heron asks for it on your behalf. Article 10 still stands:
-    never save, sync or export on your own initiative - only when the user
-    asks, for that one request. An export cannot be undone.
-
-    To answer a question about the model, use revit_read instead - it needs
-    no Changes switch and cannot change anything.
-
-    One Ctrl+Z in Revit puts back what this did to the model - never a file it
-    wrote, a save it made or a sync that has already reached other people.
+    To answer a question, use revit_read - it cannot change anything. One
+    Ctrl+Z in Revit undoes what this did to the model, never a save, a sync or
+    an export.
     """
+    # WHAT THIS DESCRIPTION SAID AT LENGTH UNTIL 2026-10-17, and where the host
+    # hears it now - every chat paid for it before its first call
+    # (tests/test_tool_sizes.py, docs/04 s8.8):
+    #   - expect_from's `where k=v` form - expect_from="select-by-categories
+    #     where categories=Pipes" checks what the fragment ran with too - and why
+    #     empty is the safe default: without it a later call could act on
+    #     elements collected by something nobody remembers running. Said by
+    #     _contract_lines, under any capability that takes a value from the
+    #     fragment before it.
+    #   - D-106's two switches and what each covers - Admin: add a project or
+    #     global parameter, create a workset, start a family document; Publish:
+    #     export, print, save, sync with central. Each is OFF until the owner
+    #     turns it on, and only while Changes is on too. The refusal names the
+    #     one that is off (heron_failure: admin_disabled, publish_disabled).
+    #   - Articles 7, 9 and 10 in full: host.chat, every chat's instructions.
+    #   - D-126's question, said where the chat meets it: Revit shows the change
+    #     and asks the modeller Keep or Discard while the owner's
+    #     write.askBeforeKeeping is on, and a Discard's own verdict says it is
+    #     their answer, not a failure, to send again only if they ask - the
+    #     reply below, and Article 9 in host.chat.
+    #   - Article 11's refusal (D-117) in full: a capability whose own file says
+    #     DRAFT, or whose proof was taken before its code last changed, is
+    #     refused before anything is sent, and the reply names it and its
+    #     status; it is proved first on a test model, and then it can be asked
+    #     for. The refusal says so itself (tests/test_mcp_serves.py).
+    # The Changes switch is read inside the add-in, never here - a client
+    # deciding its own permission is not a permission.
     matched = ""
     if not (capability or "").strip() and (request or "").strip():
         capability, handed_back = _by_words(request, "revit_change", values)
@@ -1678,8 +1709,15 @@ def revit_change(capability: str = "", values: str = "",
     # THE CLIENT'S RULE, CALLED - the one `fragment --write --apply` asks -
     # for the reason `risk_refusal` above is called rather than copied. The
     # status is read from the fragment's own files, never from the index.
+    # A JOB THAT CHANGES ONLY THE SCREEN needs neither this door's switch nor
+    # its proof: revit_show runs it with Changes off and no transaction open.
+    # That door is one search away rather than given to every chat (D-118's
+    # budget), so the two refusals a chat meets here first say where it is.
+    elsewhere = _shown_elsewhere(root, folder, capability)
+
     unproven = bridge.unproven_refusal(capability, brain.proof_status(folder))
     if unproven:
+        unproven += elsewhere
         return _ended("refused", unproven)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
@@ -1737,11 +1775,16 @@ def revit_change(capability: str = "", values: str = "",
         # add-in checks that before binding anything and refuses if something
         # else left it. See `expect_from` and docs/36.
         "chain": "reset",
-        # THE FLAG THAT KEEPS IT, and the whole reason this tool exists.
+        # THE FLAG THAT ASKS TO KEEP IT, and the whole reason this tool exists.
         # Without it the executor still runs the change for real inside a
         # TransactionGroup and then rolls it back - which is how every one of
-        # the recorded proofs was taken. This line is what makes a run outlive
+        # the recorded proofs was taken. This line is what lets a run outlive
         # itself, and it is why this tool is MODIFY in the registry.
+        #
+        # ASKING IS NOT KEEPING (D-126). With the owner's switch on - the
+        # default - Revit shows the change and the MODELLER says Keep or
+        # Discard; this flag only makes the question possible. The switch is
+        # read inside the add-in and nothing sent from here can skip it.
         "apply": "true",
     }
 
@@ -1772,9 +1815,11 @@ def revit_change(capability: str = "", values: str = "",
     # "no answer" for a write nobody can ask about again.
     # THE OPERATION FROM THE FRAGMENT'S OWN CARD - run_fragment_write for
     # Modify and below, run_fragment_publish or run_fragment_admin above it.
+    # `keeping`, because Revit may stop and ask the modeller Keep or Discard
+    # before this is kept (D-126), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
-                            response_timeout=configuration.fragment_timeout(),
+                            response_timeout=configuration.fragment_timeout(keeping=True),
                             on_wait=_waiting(ctx))
     session.close()
     _ctx_reply(reply)
@@ -1786,7 +1831,8 @@ def revit_change(capability: str = "", values: str = "",
     failure = analyse(reply, writes=tools.writes("revit_change"))
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
-                + _what_to_type(failure, capability))
+                + _what_to_type(failure, capability)
+                + (elsewhere if failure.code == "write_disabled" else ""))
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
@@ -1854,6 +1900,13 @@ def revit_change(capability: str = "", values: str = "",
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+
+    # THE MODELLER WAS ASKED IN REVIT AND DID NOT KEEP IT (D-126). The reply is
+    # an ok one - the run worked, and the add-in's verdict already says nothing
+    # was kept and why - but the call ended in their no: the activity list
+    # says refused, and no after-change table offers values Revit does not hold.
+    if reply.get("asked") and not reply.get("kept"):
+        return _ended("refused", "\n".join(lines))
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
@@ -2668,42 +2721,53 @@ def _proof_line(capability, folder):
             % (capability, status, where, when))
 
 
+def _shown_elsewhere(root, folder, capability):
+    """
+    One sentence sending a capability declared EXECUTE or below to revit_show,
+    or "" for anything that changes the model - or whose risk cannot be read,
+    which is never guessed to be harmless.
+    """
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+    level = tools.level_named(bridge.fragment_risk(card))
+    if level is None or level > tools.EXECUTE:
+        return ""
+    return (" '%s' changes only what is shown, so revit_show runs it with "
+            "Changes off and no transaction open - a DRAFT included, since "
+            "it keeps nothing in the model." % capability)
+
+
 @server.tool()
 def revit_read(capability: str = "", values: str = "",
                expect_from: str = "", request: str = "",
                ctx: _Context = None) -> str:
     """
     Answer a question about the open Revit model with one of Heron's
-    capabilities that READS - and change nothing.
-
-    Use when the user asks something a capability answers - "which views have
-    no template", "find the ducts connected to nothing", "list the untagged
-    doors". Never ask for a fragment id.
+    capabilities that READS - and change nothing: "which views have no
+    template", "find the ducts connected to nothing". Never ask for a
+    fragment id.
 
     THE SHORT PATH: pass the user's own words as `request` and leave
-    `capability` empty. When the words are a phrasing a PROVEN capability
-    declares, and every value it needs is in `values`, it runs in THIS call.
-    When they are not, NOTHING is sent to Revit and the reply is the
-    candidate list with what each needs typed: pick the one the user meant
-    and call again with `capability`. If none fits, ask the user.
-    `capability`, when given, always wins.
+    `capability` empty. When they are a phrasing a PROVEN capability declares
+    and every value it needs is in `values`, it runs in THIS call. Otherwise
+    NOTHING is sent and the reply lists the candidates with what each needs:
+    call again with the `capability` the user meant, or ask them. `capability`,
+    when given, always wins.
 
-    It works with Changes OFF. The fragment runs with no transaction open, so
-    Revit itself refuses any change it attempts. A capability declared above
-    ANALYZE - one that selects, changes, publishes or administers - is refused
-    here before anything is sent: a change is revit_change's.
+    `values` is one "name=value" per line, e.g. view=Level 1. `expect_from`
+    names the earlier fragment whose result this read acts on, as in
+    revit_change; empty, the read starts clean.
 
-    `values` is one "name=value" per line, e.g. view=Level 1
-
-    `expect_from` names the fragment whose result this read should act on -
-    "find-views" - and Heron checks the carried values were left by THAT
-    fragment before it binds anything, exactly as revit_change does. Leave it
-    empty and the read starts clean.
-
-    It reads the model this chat is pinned to. The answer names that model and
-    says how far the capability is proven: PROVEN on a named model, PROVEN but
-    its code changed since, or never proved.
+    It works with Changes OFF: no transaction is open, and the model is counted
+    before and after - a read that moved it is reported, never answered. A
+    capability declared above ANALYZE is refused before anything is sent - a
+    change is revit_change's. The answer names the pinned model and how far
+    the capability is proven.
     """
+    # Trimmed 2026-10-17 with revit_change (docs/04 s8.8). The answer says how
+    # far the capability is proven in one of three ways: PROVEN on a named model,
+    # PROVEN but its code changed since, or never proved. "Above ANALYZE" is one
+    # that selects, changes, publishes or administers - heron_tools.door_refusal
+    # reads the ceiling off this tool's own row.
     matched = ""
     if not (capability or "").strip() and (request or "").strip():
         capability, handed_back = _by_words(request, "revit_read", values)
@@ -2795,9 +2859,10 @@ def revit_read(capability: str = "", values: str = "",
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The read reached Revit but its answer was lost, so Heron cannot "
-                      "tell whether %s ran. Nothing in the model was changed - a read "
-                      "opens no transaction - but if it ran, the result %s left has "
-                      "been used up. Run %s again, then this read."
+                      "tell whether %s ran. A read opens no transaction, so the model "
+                      "is not expected to have changed - but the count that would have "
+                      "said so was in the lost answer. If it ran, the result %s left "
+                      "has been used up. Run %s again, then this read."
                       % (capability, consumes, consumes))
 
     # THE ADD-IN'S REPLY SAYS HOW IT ENDED - an expect_from or binding refusal
@@ -2837,9 +2902,319 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
-    lines.append("Nothing in the model was changed: this runs with no transaction "
-                 "open, so Revit itself refuses any change.")
+    # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
+    # 5b-350 is a read that reported Revit's refusal and left an element. An
+    # add-in that counted sends `elementsCounted` (a read that moved the count
+    # never reaches here: it comes back read_changed_model); one that sends
+    # nothing never counted, and this does not claim it did.
+    counted = reply.get("elementsCounted")
+    if isinstance(counted, int):
+        lines.append("Nothing in the model was changed: Heron counted %s element(s) "
+                     "before this read and the same after it." % "{:,}".format(counted))
+    else:
+        lines.append("Nothing in the model should have changed: this runs with no "
+                     "transaction open. This add-in does not count the model around a "
+                     "read, so that is not measured - update it (FRAGMENT-ISSUES row "
+                     "5b-350).")
     return _ended("ok", "\n".join(lines))
+
+
+@server.tool()
+def revit_show(capability: str = "", values: str = "", expect_from: str = "",
+               request: str = "", ctx: _Context = None) -> str:
+    """
+    Show the user something in Revit - select it, zoom to it - with one of
+    Heron's capabilities that changes only what is ON SCREEN, and change
+    nothing in the model: "select these", "zoom to the beams in the
+    structural link". To isolate in the active view use
+    revit_isolate_temporary; revit_reset_temporary ends it.
+
+    It works with Changes OFF: no transaction is open, so Revit itself refuses
+    any change to the model. A capability declared above EXECUTE is refused
+    before anything is sent - a change is revit_change's.
+
+    `request`, `capability`, `values` and `expect_from` work as in revit_read.
+    Inside a linked model too, with no question first (D-124). The answer
+    names the pinned model and how far the capability is proven.
+    """
+    # Trimmed 2026-10-17 to the budget tests/test_tool_sizes.py holds (D-118);
+    # what left it is said here, and in the answer where it is needed:
+    #   - THE SHORT PATH is revit_read's: the user's own words as `request`
+    #     with `capability` empty run a phrasing a PROVEN capability declares,
+    #     every value given, in this call; anything else sends nothing and
+    #     hands back the candidates (_by_words).
+    #   - `values` is one "name=value" per line, e.g. alsoSelect=true.
+    #   - `expect_from` names the fragment whose result this acts on, and the
+    #     carried elements are checked to be THAT fragment's, as revit_change
+    #     checks them.
+    #   - What can change is the selection, the camera and the active view.
+    #   - INSIDE A LINK: selecting or zooming to linked elements is not
+    #     touching it - the owner's answer to Q-65, D-124 - so a capability
+    #     that takes linkName runs here like any other. Changing anything in a
+    #     link is still Article 7's.
+    matched = ""
+    if not (capability or "").strip() and (request or "").strip():
+        capability, handed_back = _by_words(request, "revit_show", values)
+        if capability is None:
+            return handed_back
+        matched = capability
+
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return _ended("refused",
+                      "Heron has nothing that does '%s', so nothing has been sent to "
+                      "Revit. Ask heron_lookup in your own words and it will name the "
+                      "capability Heron does have." % (capability or ""))
+
+    root = _repo_root()
+
+    # THE DOOR'S CEILING, FIRST, for revit_read's reason: a refusal costs
+    # nothing and touches nothing. The ceiling is this tool's own declared
+    # risk, EXECUTE - so MODIFY and above are refused here by the same
+    # function that refuses EXECUTE at revit_read.
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+    declared = bridge.fragment_risk(card)
+    refusal = tools.door_refusal("revit_show", declared, capability)
+    if refusal:
+        return _ended("refused", refusal)
+
+    # D-117's unproven_refusal IS NOT ASKED HERE, for its own items 3 and 4:
+    # a run that keeps nothing is not asked, and no transaction is open, so
+    # nothing can be kept in the model. A DRAFT runs and says DRAFT, as a
+    # read does (_proof_line below).
+
+    source_path = os.path.join(root, "brain", "fragments", folder,
+                               "impl", "any", "fragment.cs")
+    if not os.path.isfile(source_path):
+        return _ended("refused",
+                      "'%s' is described but has no code behind it yet. Nothing has "
+                      "been sent to Revit." % capability)
+
+    needs = bridge.fragment_needs(card)
+    if needs is None:
+        return _ended("refused",
+                      "'%s' could not be read with certainty - its contract is "
+                      "unclear, so nothing has been sent to Revit." % capability)
+
+    # THE SOURCE TRAVELS, NOT A NAME - for revit_change's reason.
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+
+    # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
+    # called from the client exactly as both other doors call it.
+    undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # NO "apply", EVER. run_fragment_show opens no transaction, exactly as
+    # run_fragment_read does, and that is the whole of this door's guarantee.
+    args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
+    _aim_at_pin(args)
+
+    supplied = _values_array(values)
+    if supplied:
+        args["values"] = supplied
+
+    consumes = (expect_from or "").strip()
+    if consumes:
+        args.pop("chain", None)
+        args["expectChain"] = consumes
+
+    # SAFE TO ASK TWICE unless it consumes the chain: selecting the same
+    # elements again, or zooming to them again, leaves the screen as it was.
+    # A consuming run replaces the chain, so a resend would be refused on
+    # expect_from - revit_read's reason, and its rule.
+    reply = session.request("run_fragment_show", op_args=args,
+                            response_timeout=configuration.fragment_timeout(),
+                            idempotent=not consumes, on_wait=_waiting(ctx))
+    session.close()
+    _ctx_reply(reply)
+
+    if consumes and reply and reply.get("error") == "unknown_outcome":
+        return _ended("failed",
+                      "The request reached Revit but its answer was lost, so Heron "
+                      "cannot tell whether %s ran. Nothing in the model was changed - "
+                      "no transaction is open - but if it ran, the result %s left has "
+                      "been used up. Run %s again, then this."
+                      % (capability, consumes, consumes))
+
+    failure = analyse(reply, writes=tools.writes("revit_show"))
+    if failure is not None:
+        return (_ended(_failure_ended(failure), explain(failure))
+                + _what_to_type(failure, capability))
+
+    # GOLDEN RULE 20. The add-in refused a different model on `expectProject`
+    # before running; this is the first call's pin. When it fires after a
+    # fragment that ACTED, the screen has already changed - so say that, as
+    # revit_select_by_category does, rather than "nothing has been sent".
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        if tools.level_named(declared) is not None \
+                and tools.level_named(declared) > tools.ANALYZE:
+            return _ended("failed",
+                          "%s ran in %s before Heron could tell that it is not the model "
+                          "this chat works on (%s). Only what is shown can have changed - "
+                          "the selection, the camera or the active view; nothing in either "
+                          "model was changed. Press Esc in Revit to clear a selection, or "
+                          "say 'use this model' to move this chat onto %s deliberately."
+                          % (capability, reply.get("document"), pinned.title,
+                             reply.get("document")))
+        return _ended("refused", wrong_model)
+
+    document = reply.get("document")
+    lines = ["%s ran in %s." % (capability, document)]
+    if matched:
+        lines.append(_matched_line(request, matched))
+
+    # A SELECTION OR A ZOOM IN A WINDOW NOBODY IS LOOKING AT is true and
+    # invisible - the one way this door can look as if it did nothing.
+    if reply.get("wasActiveDocument") is False:
+        lines.append("  %s is not the model in front in Revit, so whatever this showed "
+                     "is in a window the user is not looking at. Bring %s to the front "
+                     "to see it." % (document, document))
+
+    bound = reply.get("bound")
+    if bound:
+        lines.append("  inputs: %s" % bound)
+
+    lines.extend(_ignored_lines(undeclared, takeable))
+
+    left = _provides_lines(reply.get("provides"))
+    lines.extend(left or ["", "  It left nothing behind to report."])
+
+    lines.append("")
+    lines.append(_proof_line(capability, folder))
+    lines.append("Nothing in the model was changed: this runs with no transaction "
+                 "open, so Revit itself refuses any change. Only what is shown can "
+                 "have changed - the selection, the camera or the active view.")
+    return _ended("ok", "\n".join(lines))
+
+
+@server.tool()
+def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
+    """
+    Isolate elements in the ACTIVE Revit view, temporarily - Revit's own
+    Temporary Hide/Isolate - so the user sees only those. Changes nothing in
+    the model and works with Changes OFF.
+
+    Use when the user asks to "isolate these", "show only the ducts in this
+    view", "hide everything else for a moment".
+
+    Give ONE of:
+      ids       element ids as Revit prints them, comma separated - the ids an
+                earlier Heron answer gave, e.g. 925629, 925630
+      category  BIM words, comma separated - "ducts", "pipes, pipe fittings"
+    Both at once is refused: these elements, or everything of that kind, are
+    two different requests.
+
+    An isolate already on in the view is replaced, and the answer says so.
+    The view's saved visibility, its template and every element are untouched;
+    revit_reset_temporary, or Revit's own Reset Temporary Hide/Isolate, ends
+    it, and so does closing the model. A sheet, a schedule or a legend has no
+    temporary isolate and is refused.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # THE PIN TRAVELS WITH THE REQUEST, for revit_select_by_category's reason:
+    # the add-in checks it BEFORE the view changes.
+    reply = session.request("isolate_temporary",
+                            op_args={"ids": ids or "", "category": category or "",
+                                     "expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_isolate_temporary", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    # AFTER THE ACT, as for a selection: between two models made from one
+    # template the add-in's own check passes (5b-324), so a mismatch found
+    # here is an isolate that already happened in the wrong model's view.
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None and reply.get("isolated"):
+        _ended("failed")
+        return ("Heron isolated elements in \"%s\" of %s before it could tell that %s is "
+                "not the model this chat works on (%s). Only that view's temporary "
+                "display changed; nothing in either model was changed. Call "
+                "revit_reset_temporary, or use Revit's own Reset Temporary Hide/Isolate, "
+                "to end it - or say 'use this model' to move this chat onto %s."
+                % (reply.get("view"), reply.get("document"), reply.get("document"),
+                   pinned.title, reply.get("document")))
+    if wrong_model is not None:
+        return _ended("refused", wrong_model)
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    isolated = reply.get("isolated", 0)
+    if reply.get("isolatedBy") == "category":
+        what = "the %s" % (reply.get("categories") or "categories named")
+    else:
+        what = "%s element(s)" % "{:,}".format(isolated)
+
+    lines = ["Isolated %s in \"%s\", in %s." % (what, reply.get("view"), where)]
+    seen = reply.get("inView")
+    if seen is not None and seen != isolated:
+        lines.append("  Only %s of the %s are in this view at all - the rest are on "
+                     "another level, outside its range or hidden by its own settings, "
+                     "and isolating cannot show them here."
+                     % ("{:,}".format(seen), "{:,}".format(isolated)))
+    if reply.get("replacedEarlier"):
+        lines.append("  A temporary isolate was already on in this view, and this "
+                     "replaced it rather than adding to it.")
+    lines.append("This is Revit's Temporary Hide/Isolate: nothing in the model and "
+                 "nothing saved in the view changed. revit_reset_temporary ends it.")
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_reset_temporary() -> str:
+    """
+    End the Temporary Hide/Isolate in the ACTIVE Revit view - Revit's own
+    Reset Temporary Hide/Isolate - so the view shows what its own settings
+    show again. Changes nothing in the model and works with Changes OFF.
+
+    Use when the user says "show everything again", "reset the isolate",
+    "undo the isolate" after revit_isolate_temporary or Revit's own isolate.
+    When nothing is isolated or hidden temporarily it says so and does nothing.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    reply = session.request("reset_temporary",
+                            op_args={"expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_reset_temporary", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        if reply.get("reset"):
+            _ended("failed")
+            return ("Heron reset the temporary hide/isolate in \"%s\" of %s before it could "
+                    "tell that %s is not the model this chat works on (%s). Only that "
+                    "view's temporary display changed; nothing in either model was changed."
+                    % (reply.get("view"), reply.get("document"), reply.get("document"),
+                       pinned.title))
+        return _ended("refused", wrong_model)
+
+    return "%s (%s, Revit %s, session %s)" % (
+        reply.get("said") or "Done.", reply.get("document"),
+        session.revit_version, session.pid)
 
 
 @server.tool()
@@ -2934,7 +3309,7 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     The rows are the elements selected in Revit - or, with `expect_from`, the
     elements an earlier fragment left, e.g. find them first with
     revit_read("FILTER_ELEMENTS_BY_CATEGORY", ...) and pass
-    expect_from="filter-elements-by-category".
+    expect_from="filter-elements-by-category". `max_rows` caps the table.
 
     You are told only how many rows the table holds. The modeller edits it on
     the page and applies it there: each Apply is one entry in Revit's undo
@@ -3010,42 +3385,36 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
                          include_links: bool = False, ctx: _Context = None) -> str:
     """
     Calculate the heating and cooling load of every MEP Space in the open
-    model - docs/44. Heron reads every Space's walls, roofs, floors and
-    windows from Revit (REPORT_SPACE_ENVELOPE, which changes nothing), works
-    out each Space's load with its HVAC engine, adds them up by zone and for
-    the building, and opens the Loads panel in the Heron Companion with the
-    whole table - inputs, results, and what is wrong with the model.
+    model (docs/44). Heron reads each Space's walls, roofs, floors and windows
+    (REPORT_SPACE_ENVELOPE, which changes nothing), works out its load, adds
+    them up by zone and for the building, and opens the Loads panel in the
+    Heron Companion. Use when the user asks to "calculate the loads for this
+    building" or "size the spaces' airflow from their loads".
 
-    Use when the user asks to "calculate the loads for this building", "work
-    out the cooling load of every space", "size the spaces' airflow from
-    their loads".
-
-    `inputs` is a JSON object of what the modeller has answered so far:
-    {"project": {"design_weather": "doha-0.4", "room_dry_bulb_c": 24, ...},
-     "profiles": {"Office": {"people_per_m2": 0.1, ...}},
-     "overrides": {"<space id>": {"equipment_w_per_m2": 40}}}. Answers are
-    kept with the open model's project, so they are not asked twice.
+    `inputs` is a JSON object of what the modeller has answered so far -
+    {"project": {...}, "profiles": {"Office": {...}}, "overrides":
+    {"<space id>": {...}}} - kept with the project, so nothing is asked twice.
+    `expect_from` is passed to that read, as revit_read takes it. Set
+    `include_links` when the modeller says the walls are in a linked model
+    (D-59); left false, linked faces read "unknown".
 
     HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). While
     anything is missing, nothing is calculated and the answer is the list of
-    questions, each with the figure a standard offers - put them to the
-    modeller, never fill them in yourself. A window or wall type with no U or
-    SHGC in the model refuses that Space only, and is never defaulted.
+    questions - put them to the modeller, never fill them in yourself.
 
-    `include_links` (D-59, the modeller decides): in a federated model the
-    walls are in the architect's link. Set it when the modeller says the
-    walls are linked - each linked wall's type, windows and doors are then
-    read from its link. Left false, those faces read "unknown" and the model
-    checks say the links were not read.
-
-    You are told the totals, and every Space that was not calculated with why;
-    the rows are on the Companion page, with a 3D view of the very faces the
-    loads were worked out from. The modeller
-    checks that view and presses "The take-off is right" before the report is
-    final; writing the loads back into the Spaces is the page's Finalize
-    button, never this tool. A load here is a peak estimate, not an hourly
-    simulation like HAP.
+    You are told the totals and every Space not calculated; the rows are on the
+    Companion page, where the modeller confirms the take-off before the report
+    is final. Writing loads into the Spaces is the page's Finalize, never this
+    tool. A load here is a peak estimate, not an hourly simulation like HAP.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8). What left the description: each
+    # question comes with the figure a standard offers, and the answer says
+    # whether it is for the project or for a profile's Spaces; a window or wall
+    # type with no U or SHGC in the model refuses that Space only, and is never
+    # defaulted; with include_links each linked wall's type, windows and doors are
+    # read from its link, and left false the model checks say the links were not
+    # read; the Companion page shows a 3D view of the very faces the loads were
+    # worked out from, and the modeller presses "The take-off is right" there.
     companion_page = _companion_module()
     if not companion_page.enabled():
         _ended("refused")
@@ -3100,42 +3469,43 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
 def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
                                expect_from: str = "", ctx: _Context = None) -> str:
     """
-    Run the hydraulic calculation of one sprinkler system in the open model -
-    docs/46. Heron reads the fire protection piping system from Revit
-    (REPORT_SPRINKLER_NETWORK, which changes nothing) - every pipe, fitting,
-    valve and sprinkler and how they connect - solves it with its fire
-    engine's hydraulic calculation, and opens the Sprinkler panel in the
-    Heron Companion with the network in 3D, the questions, and the results.
-
-    Use when the user asks to "run the hydraulics on this sprinkler system",
-    "do the sprinkler hydraulic calculation", "what pressure does the riser
-    need for this system", "check the sprinkler system's demand".
+    Run the hydraulic calculation of one sprinkler system in the open model
+    (docs/46). Heron reads the fire protection piping system
+    (REPORT_SPRINKLER_NETWORK, which changes nothing), solves it, and opens the
+    Sprinkler panel in the Heron Companion. Use when the user asks to "run the
+    hydraulics on this sprinkler system" or "what pressure does the riser need
+    for this system".
 
     `system` is the system's name as the System Browser shows it; empty means
-    the system of what is selected, else the only fire protection system in
-    the model. With none chosen, the answer lists the systems - ask which.
-
-    `inputs` is a JSON object of what the modeller has answered so far:
-    {"standards": {"sprinkler_standard": "NFPA 13-2022"},
-     "criteria": {"density_mm_min": 4.1, "area_per_sprinkler_m2": 12,
-                  "design_area_m2": 139, "min_pressure_bar": 0.5, "c_factor": 120},
-     "k": {"<sprinkler type id>": 80}, "fittings": {"<kind>|DN50": 3.05},
-     "operating": ["<sprinkler id>", ...], "source": "<point id>"}.
-    Answers are kept with the open model's project, so they are not asked
-    twice; the panel is the easier place to give them.
+    the system of what is selected, else the model's only one - with none
+    chosen the answer lists them, so ask which. `inputs` is a JSON object of
+    what the modeller has answered so far - {"standards": {...}, "criteria":
+    {...}, "k": {...}, "fittings": {...}, "operating": [...], "source": "..."} -
+    kept with the project; the answer names each missing value by its path,
+    and the panel is the easier place to give them. `expect_from` is passed to
+    that read, as revit_read takes it.
 
     HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). While
-    anything is missing, nothing is solved and the answer lists what to ask,
-    each with the standard's figure offered - put them to the modeller, never
-    fill them in yourself. The K-factor of each sprinkler type is the
-    modeller's to confirm: Revit's stored value is shown, never trusted. The
-    remote area is the modeller's ticks; the panel's Suggest only proposes.
+    anything is missing, nothing is solved and the answer lists what to ask -
+    put it to the modeller, never fill it in yourself. Each sprinkler type's
+    K-factor and the remote area are the modeller's to confirm.
 
-    It READS ONLY and writes nothing to Revit. You are told only the totals;
-    the tables, the 3D view and the sheet (Report) are on the Companion page.
-    It is a design aid, not a listed hydraulic program - the fire consultant
-    and the authority (QCDD in Qatar) approve the design.
+    It READS ONLY. You are told the totals; the tables, the 3D view and the
+    report are on the Companion page. A design aid, not a listed hydraulic
+    program: the fire consultant and the authority approve the design.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8). The shape of `inputs` in full, as the
+    # description gave it until then:
+    #   {"standards": {"sprinkler_standard": "NFPA 13-2022"},
+    #    "criteria": {"density_mm_min": 4.1, "area_per_sprinkler_m2": 12,
+    #                 "design_area_m2": 139, "min_pressure_bar": 0.5, "c_factor": 120},
+    #    "k": {"<sprinkler type id>": 80}, "fittings": {"<kind>|DN50": 3.05},
+    #    "operating": ["<sprinkler id>", ...], "source": "<point id>"}
+    # Every question heron_sprinkler_run asks names its path - criteria.<name>,
+    # k.<type>, fittings.<key>, standards.sprinkler_standard. Revit's stored
+    # K-factor is shown and never trusted; the panel's Suggest only proposes a
+    # remote area, and the ticks are the modeller's. The authority in Qatar is
+    # QCDD.
     companion_page = _companion_module()
     if not companion_page.enabled():
         _ended("refused")
@@ -3179,41 +3549,41 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
 @server.tool()
 def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = None) -> str:
     """
-    Lay sprinklers out in the selected Spaces or Rooms of any shape - docs/47.
-    Heron reads the rooms from Revit (REPORT_SPRINKLER_LAYOUT_SPACES, which
-    changes nothing) - each one's outline and holes, its level, the ceilings
-    over it, the sprinklers already in it and the sprinkler types loaded -
-    lays each room out with its fire engine, and opens the Sprinkler Layout
-    panel in the Heron Companion: a plan of every room with each head OK or
-    FAIL, and Apply, level by level.
-
-    Use when the user asks to "place sprinklers in these rooms", "lay out the
-    sprinklers in this room", "auto place sprinklers", "how many sprinklers
+    Lay sprinklers out in the selected Spaces or Rooms of any shape (docs/47).
+    Heron reads the rooms (REPORT_SPRINKLER_LAYOUT_SPACES, which changes
+    nothing), lays each one out, and opens the Sprinkler Layout panel in the
+    Heron Companion: a plan of every room with each head OK or FAIL. Use when
+    the user asks to "place sprinklers in these rooms" or "how many sprinklers
     for these rooms - and put them in".
 
-    `spaces` is empty for the Spaces and Rooms selected now. `inputs` is a
-    JSON object of what the modeller has answered so far:
-    {"standards": {"sprinkler_standard": "NFPA 13-2022"},
-     "job": {"type": "Family: Type", "deflector_mm": 50},
-     "limits": {"light hazard": {"max_spacing_m": 4.6, "max_area_m2": 20.9,
-                "max_wall_distance_m": 2.3, "min_wall_distance_m": 0.1}},
-     "rooms": {"<room id>": {"hazard": "light", "ceiling_mm": 2700,
-               "angle_deg": 0}}}.
-    Answers are kept with the open model's project; the panel is the easier
-    place to give them.
+    `spaces` is empty for the Spaces and Rooms selected now. `inputs` is a JSON
+    object of what the modeller has answered so far - {"standards": {...},
+    "job": {...}, "limits": {...}, "rooms": {"<room id>": {...}}} - kept with
+    the project; the answer names each missing value by its path, and the
+    panel is the easier place to give them.
 
-    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). The
-    ceiling height the model shows and the angle of the longest wall are
-    OFFERED, never used until given. A room whose layout fails, a room that
-    already has heads, and a room bounded by separation lines are shown and
-    NOT placed.
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33): the
+    ceiling height and wall angle the model shows are OFFERED, never used until
+    given. A room whose layout fails, that already has heads, or that is
+    bounded by separation lines is shown and NOT placed.
 
     THIS CALL READS ONLY. Placing is the panel's Apply - one level per press,
-    one undo entry, with the Changes switch on in Revit - and Heron reads the
-    heads back and checks their spacing from the model. It does not draw
-    pipes. It is a design aid: the fire consultant and the authority (QCDD in
-    Qatar) approve the layout.
+    one undo entry, with the Changes switch on. It draws no pipes. A design aid:
+    the fire consultant and the authority approve the layout.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8). The shape of `inputs` in full, as the
+    # description gave it until then:
+    #   {"standards": {"sprinkler_standard": "NFPA 13-2022"},
+    #    "job": {"type": "Family: Type", "deflector_mm": 50},
+    #    "limits": {"light hazard": {"max_spacing_m": 4.6, "max_area_m2": 20.9,
+    #               "max_wall_distance_m": 2.3, "min_wall_distance_m": 0.1}},
+    #    "rooms": {"<room id>": {"hazard": "light", "ceiling_mm": 2700,
+    #              "angle_deg": 0}}}
+    # Every question heron_sprinkler_layout asks names its path - job.type,
+    # rooms.<id>.<key>, limits.<hazard>.<name>. The panel reads each room's
+    # outline and holes, its level, the ceilings over it, the heads already in it
+    # and the sprinkler types loaded; after an Apply Heron reads the heads back
+    # and checks their spacing from the model. The authority in Qatar is QCDD.
     companion_page = _companion_module()
     if not companion_page.enabled():
         _ended("refused")
@@ -3381,8 +3751,13 @@ def _cannot_run():
         "compiles it inside Revit with no transaction open, so Revit itself "
         "refuses any change; it needs no Changes switch, and it refuses "
         "anything declared above ANALYZE. "
-        "A fragment that WRITES reaches Revit through revit_change, which KEEPS "
-        "what it did with no preview (D-99), and only while the owner has "
+        "One that only changes what is SHOWN - the selection, the camera, the "
+        "active view - runs through revit_show, the same executor with no "
+        "transaction open, also with Changes off; it refuses anything declared "
+        "above EXECUTE. Isolating in the active view is revit_isolate_temporary. "
+        "A fragment that WRITES reaches Revit through revit_change, and Revit "
+        "shows the modeller what it did and asks Keep or Discard before "
+        "anything is kept (D-126), only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
         "HeronPermissions refuses it by name and nothing is sent. One declared "
         "ADMIN - a project or global parameter, a workset, a new family file - "
@@ -3546,7 +3921,8 @@ def heron_method(job: str = "") -> str:
     lines.extend("  " + line for line in found["purpose"].rstrip().splitlines())
     lines.append("")
     lines.append("The capabilities it uses%s - READ and ANALYZE run through "
-                 "revit_read, the rest through revit_change:"
+                 "revit_read, EXECUTE through revit_show, the rest through "
+                 "revit_change:"
                  % (" on Revit %s" % revit if revit else ""))
     for s in found["uses"]:
         lines.append("  %-32s %-8s %-9s %s"
@@ -3641,7 +4017,7 @@ def _contract_lines(capability, separator=True, notes=True):
     # or one particular element, and only the need's name says which - asked
     # without it, every one was told to type a TYPE the add-in then refused.
     # FRAGMENT-ISSUES row 5b-190.
-    asked, elsewhere = [], 0
+    asked, elsewhere, chained = [], 0, 0
     for need in needs:
         name = (need or {}).get("name") or ""
         kind = (need or {}).get("type") or ""
@@ -3649,10 +4025,22 @@ def _contract_lines(capability, separator=True, notes=True):
             asked.append((name, kind, HF.how_to_type(kind, name)))
         else:
             elsewhere += 1
+            chained += HF.need_source(need) == "fragment"
+
+    # EXPECT_FROM, SAID WHERE IT IS NEEDED. Until 2026-10-17 its whole
+    # paragraph sat in revit_change's description, paid for in every chat
+    # whether or not anything was chained (docs/04 s8.8). It matters only
+    # under a capability that takes a value from the fragment before it, so
+    # it is said there, once.
+    expect = (['  To act on what an earlier fragment left, name it: '
+               'expect_from="select-by-categories where categories=Pipes" - Heron '
+               'checks that fragment left the values - and, with `where`, what it '
+               'ran with - before binding anything. Left empty, the call starts '
+               'clean, the safe default.'] if chained else [])
 
     if not asked:
         return ["", "  It asks you for nothing - every value comes from the "
-                    "model, the selection, or the fragment before it."]
+                    "model, the selection, or the fragment before it."] + expect
 
     wide = max(len(n) for n, _k, _h in asked)
     wide_kind = max(len(k) for _n, k, _h in asked)
@@ -3684,7 +4072,7 @@ def _contract_lines(capability, separator=True, notes=True):
         out.append("  %d other need(s) come from the model, the selection or "
                    "the fragment before it. You do not supply those."
                    % elsewhere)
-    return out
+    return out + expect
 
 
 def _what_to_type(failure, capability):
@@ -3790,13 +4178,15 @@ def heron_lookup(request: str) -> str:
 
     Use when the user asks for Revit work and you need to know whether Heron
     has a way of doing it. It answers with the capability AND the values it
-    needs typed, so the next call can be revit_read or revit_change itself -
-    no heron_resolve in between. A plan never depends on which fragment
-    happens to serve it today. Touches nothing.
+    needs typed, so the next call can be revit_read or revit_change itself.
+    Touches nothing.
 
     To run it as well, skip this: revit_read or revit_change with `request`
     set to the user's words does this lookup inside the same call.
     """
+    # A plan never depends on which fragment happens to serve it today, which is
+    # why the answer names a capability and never a fragment id. No heron_resolve
+    # is needed in between: the values each candidate needs are in the answer.
     revit, how = _revit_version()
 
     try:
@@ -4061,31 +4451,29 @@ def heron_context(request: str, path: str = "", full: bool = False,
 @server.tool()
 def heron_check(draft: str, request: str, scopes: str = "") -> str:
     """
-    Check a drafted standards answer against the clauses it cites. Flags, never rewrites.
+    Check a drafted standards answer against the clauses it cites. Flags,
+    never rewrites.
 
     Call this BEFORE showing the user an answer about a standard. Pass the
-    draft you are about to show and the SAME request you passed to
-    heron_context, and Heron reassembles the packet and reports: which claims
-    are carried by the clause they cite, which state a fact the clause does
-    not carry, which cite nothing at all, and which are the cited clause with
-    its negation removed.
+    `draft` you are about to show and the SAME `request` you passed to
+    heron_context: it reports which claims the clause they cite carries, which
+    state a fact the clause does not, which cite nothing, and which are the
+    clause with its negation removed. Touches nothing in the model.
 
-    It returns a report and never a corrected answer - repairing its own
-    findings is how a wrong answer becomes an invisible one. Touches nothing
-    in the model.
+    Mark each claim with the chunk id heron_context printed on the `cite` line,
+    in square brackets: "Ducts are insulated to 25mm [a1b2c3...]". A claim with
+    no marker is reported UNCITED.
 
-    Mark each claim with the chunk id heron_context printed on the `cite`
-    line, in square brackets: "Ducts are insulated to 25mm [a1b2c3...]". A
-    claim with no marker is reported UNCITED, which docs/05 s8 calls a bug in
-    a standards answer rather than a low-confidence answer.
-
-    `scopes` MUST NAME THE SCOPES THE EVIDENCE CAME FROM when the draft was
-    written from heron_standards - pass the same comma-separated list you
-    passed there. Leave it empty only for a draft built from heron_context,
-    which reads the global scope. A company or project chunk id cannot be
-    resolved against the global store, and every marker would come back
-    unresolved.
+    `scopes`: for a draft written from heron_standards, the same
+    comma-separated list you passed there. Leave it empty only for a draft
+    built from heron_context, which reads the global scope.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8). It returns a report and never a
+    # corrected answer - repairing its own findings is how a wrong answer becomes
+    # an invisible one. An UNCITED claim is what docs/05 s8 calls a bug in a
+    # standards answer rather than a low-confidence answer. `scopes` matters
+    # because a company or project chunk id cannot be resolved against the
+    # global store, and every marker would come back unresolved.
     revit, _how = _revit_version()
     named = [one for one in scopes.split(",") if one.strip()]
     try:
@@ -4245,28 +4633,26 @@ def heron_standards(request: str, scopes: str = "company,project") -> str:
 @server.tool()
 def heron_research(request: str, scopes: str = "company,project") -> str:
     """
-    Say what Heron does NOT know about a question, and what an outside answer must carry.
+    Say what Heron does NOT know about a question, and what an outside answer
+    must carry.
 
     Call this BEFORE answering a standards question from your own knowledge or
-    from the web. Pass the user's question as `request`, in their own words -
-    Heron searches the scopes you name, reports what each one holds, and hands
-    back a brief: what is missing, and the three things every claim in an
-    answer must carry to be worth anything.
+    from the web. Pass the user's question as `request`, in their own words:
+    Heron searches the `scopes` you name - comma separated: global, company,
+    project, user, temporary, experimental - says what each holds, and hands
+    back what is missing and what every claim in an answer must carry.
 
-    **Heron does not fetch, and that is deliberate.** It has no keys, no proxy
-    policy and no way to promise a connection, and it has to work on a site
-    with no signal. You have the model and the network; this tells you what to
-    go and find, and what shape the answer has to come back in.
-
-    **Read the clauses Heron DID return before researching.** Where any came
-    back, Heron cannot tell you whether they answer your question - that needs
-    a retrieval floor it has measured and cannot derive - so it says so rather
-    than guessing. Researching past a clause that already answers is how a
-    modeller ends up with a web answer over their own company standard.
-
-    `scopes` is a comma-separated list: global, company, project, user,
-    temporary, experimental. Touches nothing in the model.
+    Heron does not fetch: you have the model and the network. Read the clauses
+    it DID return before researching - researching past one that already
+    answers puts a web answer over the modeller's own company standard.
+    Touches nothing in the model.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8). Heron does not fetch on purpose: it has
+    # no keys, no proxy policy and no way to promise a connection, and it has to
+    # work on a site with no signal. It cannot say whether a clause it returned
+    # answers the question - that needs a retrieval floor it has measured and
+    # cannot derive - so it says so rather than guessing. The brief carries the
+    # three things every claim in an answer must carry.
     try:
         got = brain.research(request, [s for s in scopes.split(",")],
                              project=pinned.project_key,
@@ -4326,39 +4712,35 @@ def heron_research_check(answer: str) -> str:
 @server.tool()
 def heron_hvac(calculation: str = "", inputs: str = "") -> str:
     """
-    HVAC design calculations - cooling and heating loads, supply airflow,
-    ASHRAE 62.1 outdoor air, psychrometrics, coil load, duct friction and
-    duct sizing, system pressure and fan power, diffuser layout and
-    selection, chilled-water flow and pipe sizing, unit conversion.
+    HVAC design calculations - loads, supply airflow, ASHRAE 62.1 outdoor air,
+    psychrometrics, ducts, fans, diffusers, chilled water, unit conversion.
+    Use it when the modeller asks what a number SHOULD be: "how much air does
+    this office need", "size this duct for 800 L/s at 1 Pa/m", "convert 500
+    cfm to L/s".
 
-    Use it when the modeller asks what a number SHOULD be: "how much air
-    does this office need", "size this duct for 800 L/s at 1 Pa/m", "how
-    many diffusers for this room", "fresh air for 20 people", "what pressure
-    does the fan need", "convert 500 cfm to L/s". Leave `calculation` empty
-    for every calculation and the inputs each one needs.
+    Leave `calculation` empty for every calculation and the inputs each one
+    needs. `inputs` is a JSON object of named values in the units their names
+    carry: {"flow_ls": 800, "max_friction_pa_m": 1}.
 
-    `calculation` names one - duct_size, cooling_load, ventilation,
-    diffuser_layout and so on. `inputs` is a JSON object of named values in
-    the units their names carry: {"flow_ls": 800, "max_friction_pa_m": 1}.
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). A missing
+    one comes back as a question with a standard's figure offered beside it -
+    put it to the modeller and never fill it in yourself. An answer headed ASK
+    ONCE FOR THIS PROJECT names the project's governing standards: put them to
+    the modeller and pass the answers in the next call's inputs; Heron keeps
+    them for the project (D-111).
 
-    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). A
-    missing one comes back as a question, with the figure a standard lists
-    offered beside it - put that question to the modeller and never fill it
-    in yourself.
-
-    A PROJECT'S GOVERNING STANDARDS ARE ASKED ONCE (D-111): an answer headed
-    ASK ONCE FOR THIS PROJECT wants ventilation_standard, energy_standard,
-    qcs_edition and cibse_beside_ashrae. Put those four to the modeller, pass
-    their answer in the next call's inputs, and Heron keeps them for the open
-    model's project - they are not asked again there. A supply diffuser neck
-    in an NC/RC 30 room is held to the office's own 2.5 m/s (D-110).
-
-    It reads no model and changes nothing in it; the one thing it keeps is
-    that project's standards, in Heron's own knowledge folder. An answer names
-    the capability that would put its result into Revit. A cooling load here
-    is a peak estimate, not an hourly simulation like HAP, and every load
-    answer says so.
+    It reads no model and changes nothing in it. An answer names the
+    capability that would put its result into Revit. A cooling load here is a
+    peak estimate, not an hourly simulation like HAP.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8): the catalogue an empty `calculation`
+    # returns names every calculation - duct_size, cooling_load, ventilation,
+    # diffuser_layout and the rest - so the description no longer lists them,
+    # and the ASK ONCE answer names its four questions (ventilation_standard,
+    # energy_standard, qcs_edition, cibse_beside_ashrae) itself. The one thing it
+    # keeps is that project's standards, in Heron's own knowledge folder. A supply
+    # diffuser neck in an NC/RC 30 room is held to the office's own 2.5 m/s
+    # (D-110), and every load answer says it is not HAP.
     try:
         got = brain.hvac(calculation, inputs, project=pinned.project_key,
                          project_name=pinned.title)
@@ -4373,47 +4755,39 @@ def heron_hvac(calculation: str = "", inputs: str = "") -> str:
 def heron_fire(calculation: str = "", inputs: str = "") -> str:
     """
     Fire protection design calculations - hazard classes, sprinkler spacing,
-    count and layout, the design area, pipe sizes by NFPA 13's pipe schedule
-    (sprinklers above and below a ceiling too), the beam and three-times
-    obstruction rules, sprinkler flow and pressure, pipe friction, a full
-    hydraulic calculation of a tree or a grid, the water supply against a flow
-    test, fire water storage, fire pumps, standpipes, hose reels, extinguishers,
-    detectors, temperature ratings and fittings' equivalent lengths - to NFPA
-    13, BS EN 12845 or FM Global as the project follows, with BS 5839-1, BS
-    5306 and BS 9990 beside NFPA's own.
+    counts and layout, the design area, pipe schedules, obstruction rules,
+    hydraulics, water supply, storage, pumps, standpipes, hose reels,
+    extinguishers and detectors - to NFPA 13, BS EN 12845 or FM Global as the
+    project follows. Use it when the modeller asks what a fire protection
+    number SHOULD be: "what hazard class is a car park", "what pipe size for
+    10 sprinklers, light hazard", "how big is the fire tank".
 
-    Use it when the modeller asks what a fire protection number SHOULD be:
-    "what hazard class is a car park", "how many sprinklers for this room",
-    "check my sprinkler spacing", "what pipe size for 10 sprinklers, light
-    hazard", "sprinklers above and below the ceiling on one branch", "can the
-    deflector sit 120 mm above the beam", "what pressure does the riser need",
-    "how big is the fire tank". Leave `calculation` empty for every
-    calculation and the inputs each one needs.
+    Leave `calculation` empty for every calculation and the inputs each one
+    needs. `inputs` is a JSON object of named values in the units their names
+    carry: {"hazard": "light", "material": "steel", "sprinklers": 10}.
 
-    `calculation` names one - pipe_schedule, sprinkler_layout, design_area,
-    hydraulic and so on. `inputs` is a JSON object of named values in the
-    units their names carry: {"hazard": "light", "material": "steel",
-    "sprinklers": 10}.
-
-    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). The
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33), and the
     hazard class is the engineer's, never inferred from a room's name. A
     missing value comes back as a question with the standard's figure offered
-    beside it - put that question to the modeller and never fill it in yourself. A
-    figure that could not be checked is not held at all, and the answer says
-    so.
+    beside it - put it to the modeller and never fill it in yourself. An answer
+    headed ASK ONCE FOR THIS PROJECT names the project's governing standards:
+    put them to the modeller and pass the answers in the next call's inputs;
+    Heron keeps them for the project (D-111).
 
-    A PROJECT'S GOVERNING STANDARDS ARE ASKED ONCE (D-111): an answer headed
-    ASK ONCE FOR THIS PROJECT wants sprinkler_standard (an NFPA 13 edition, EN
-    12845 or FM Global) and fire_authority (QCDD on a Qatar project, UAE Civil
-    Defence in the UAE). Put them to the modeller,
-    pass the answer in the next call's inputs, and Heron keeps them for the
-    open model's project.
-
-    It reads no model and changes nothing in it; the one thing it keeps is that
-    project's standards, in Heron's own knowledge folder. An answer names the
+    It reads no model and changes nothing in it. An answer names the
     capability that would put its result into Revit. Every answer is a design
-    aid: the fire consultant and the authority - QCDD in Qatar - approve it.
+    aid: the fire consultant and the authority approve it.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8): the catalogue an empty `calculation`
+    # returns names every calculation - pipe_schedule, sprinkler_layout,
+    # design_area, hydraulic and the rest, sprinklers above and below a ceiling,
+    # the beam and three-times obstruction rules, fittings' equivalent lengths,
+    # BS 5839-1, BS 5306 and BS 9990 beside NFPA's own - so the description no
+    # longer lists them, and the ASK ONCE answer names its questions
+    # (sprinkler_standard, fire_authority: QCDD on a Qatar project, UAE Civil
+    # Defence in the UAE) itself. A figure that could not be checked is not held
+    # at all, and the answer says so. The one thing it keeps is that project's
+    # standards, in Heron's own knowledge folder.
     try:
         got = brain.fire(calculation, inputs, project=pinned.project_key,
                          project_name=pinned.title)
@@ -4761,22 +5135,19 @@ def revit_phases() -> str:
 def revit_levels() -> str:
     """
     List the levels and grids in the open Revit model, and what sits on each
-    level.
+    level - with the three states that are hard to see in Revit and costly to
+    miss: two levels at the SAME elevation, a level with NOTHING on it, and
+    names that sort out of order.
 
-    Levels are the hosts almost everything else depends on: a duct is at a
-    level, a room is bounded between two, a view is cut at one. This reports
-    the three states that are hard to see in Revit's own interface and
-    expensive to miss — two levels at the SAME elevation, a level with
-    NOTHING on it, and names that sort out of order.
-
-    Every elevation is as Revit itself prints it, in the project's own units.
-    A raw number is never given: Revit stores lengths in decimal feet
-    whatever the project is set to, and an unlabelled 9.84 gets read as
-    millimetres by the next person who sees it.
-
-    It reads only. No level is renamed and no elevation is moved — moving one
-    drags every element hosted on it.
+    Every elevation is as Revit prints it, in the project's own units - never
+    a raw number. It reads only: no level is renamed and no elevation moved.
     """
+    # Levels are the hosts almost everything else depends on: a duct is at a
+    # level, a room is bounded between two, a view is cut at one. A raw number is
+    # never given because Revit stores lengths in decimal feet whatever the
+    # project is set to, and an unlabelled 9.84 gets read as millimetres by the
+    # next person who sees it. Moving a level drags every element hosted on it,
+    # which is why this tool never does. Trimmed 2026-10-17 (docs/04 s8.8).
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -5097,6 +5468,104 @@ def revit_views() -> str:
                  "schedule instance, so schedules are not reported as unplaced. "
                  "Nothing was changed.")
     return "\n".join(lines)
+
+
+@server.tool()
+def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> list:
+    """
+    Take a picture of a Revit view and LOOK at it - so you can check what you
+    just did the way a modeller glances at the screen, instead of trusting a
+    count.
+
+    Say what to picture in one of two ways:
+
+    - `view`: a view or sheet name as the Project Browser shows it. Empty
+      means the view in front. It is pictured exactly as it stands - its
+      template, crop and filters - and nothing about it is changed. If two
+      views share the name, the answer lists each as "ViewType: Name" to type
+      back.
+    - `elements`: element ids, comma separated, as Heron's answers print them.
+      Heron frames just those in a temporary isometric 3D view - a section box
+      round them with a margin, model categories only, levels, grids and links
+      left out of the box - and takes the view away again.
+
+    `width` is the picture's width in pixels, 320 to 2400 (default 1280).
+
+    IT CHANGES NOTHING. The temporary view is made inside a group Revit always
+    rolls back - there is no way to keep it - and the picture is written into
+    Heron's own folder on this PC, read back and deleted. Nothing is exported
+    anywhere another person reads. Use revit_views first if you need a view's
+    name.
+    """
+    if _Image is None:
+        return _ended("refused",
+                      "This MCP SDK has no image type, so Heron cannot hand a picture to the "
+                      "chat. Update it with:  pip install --user --upgrade mcp. Nothing has "
+                      "been sent to Revit.")
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # THE PIN TRAVELS WITH THE REQUEST, as for a selection: given element ids
+    # the add-in makes a view before it answers, so the guard has to stand in
+    # front of that, not behind it. Empty when this chat has pinned nothing.
+    reply = session.request("capture_view",
+                            op_args={"view": (view or "").strip(),
+                                     "elementIds": (elements or "").strip(),
+                                     "pixelWidth": width,
+                                     "expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_view_image", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return _ended("refused", wrong_model)
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    try:
+        picture = base64.b64decode(reply.get("png") or "", validate=True)
+    except (TypeError, ValueError, binascii.Error):
+        picture = b""
+    if not picture.startswith(b"\x89PNG"):
+        _ended("failed")
+        return ("%s answered without a picture Heron can read, so there is nothing to "
+                "look at. Ask again; if it repeats, the add-in may be older than this "
+                "server." % where)
+
+    if reply.get("mode") == "elements":
+        lines = ["A picture of %d element(s) in %s, in a temporary 3D view, %s px wide."
+                 % (reply.get("shown", 0), where, reply.get("pixelWidth"))]
+        if reply.get("leftOut"):
+            lines.append("Left out of the frame: %s." % reply.get("leftOut"))
+    else:
+        lines = ["A picture of %r (%s) in %s, %s px wide."
+                 % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth"))]
+    if reply.get("widthClamped"):
+        lines.append("The width asked for was outside 320 to 2400 px, so %s was used."
+                     % reply.get("pixelWidth"))
+
+    # THE TWO PROMISES, SAID ONLY WHEN THE ADD-IN SAYS THEY WERE KEPT.
+    if reply.get("rolledBack") is False:
+        lines.append("! Revit did NOT confirm the temporary view was taken away. Look under "
+                     "3D Views in the Project Browser, and at Undo, before going on.")
+    elif reply.get("mode") == "elements":
+        lines.append("The temporary view is gone - Revit rolled it back. Nothing was changed.")
+    else:
+        lines.append("Nothing was changed.")
+    if reply.get("fileDeleted") is False:
+        lines.append("! The picture's file could not be deleted from Heron's captures "
+                     "folder on this PC. That folder is safe to empty.")
+
+    return [NEWLINE.join(lines), _Image(data=picture, format="png")]
 
 
 def _schedules_counted(sheets):
@@ -5574,30 +6043,21 @@ def revit_export_check() -> str:
     Say whether an export of the open Revit model would be worth sending -
     WITHOUT exporting anything.
 
-    Once a file has left there is no undo: the recipient has it, and on a real
-    job somebody may already be building from it. This answers the question
-    people actually have beforehand, which nothing in Revit answers until the
-    file is already written.
+    It looks for what has turned up in issued sets and cannot be seen before
+    export: nothing to export at all, sheets that would print BLANK (no view
+    and no schedule; the titleblock's own revision schedule is not counted),
+    links NOT LOADED (they export as nothing), and rooms with no area feeding
+    area schedules. It reports and does not judge - a coordination model with
+    links unloaded on purpose is a legitimate thing to export.
 
-    It looks for the states that have each turned up in an issued set and are
-    invisible before export: nothing to export at all, sheets that would print
-    BLANK, links that are NOT LOADED (an unloaded link exports as nothing, so
-    the drawing goes out with that model missing), and rooms with no area
-    feeding area schedules.
-
-    A sheet would print blank only with no view AND no schedule on it; the
-    titleblock's own revision schedule is not counted, because every sheet has
-    one.
-
-    It reports what it found and does not decide whether that is acceptable - a
-    coordination model with links deliberately unloaded is a legitimate thing
-    to export.
-
-    NOTHING LEAVES THE MODEL. No file is written, no path touched, nothing
-    printed and nothing sent. Doing the export is a separate job at PUBLISH
-    risk that needs a destination, an overwrite decision and a person who meant
-    it.
+    NOTHING LEAVES THE MODEL: no file is written, nothing printed or sent. The
+    export itself is a separate job at PUBLISH risk.
     """
+    # Trimmed 2026-10-17 (docs/04 s8.8). Once a file has left there is no undo:
+    # the recipient has it, and on a real job somebody may already be building
+    # from it - which is why this answers beforehand the question nothing in
+    # Revit answers until the file is written. The export itself needs a
+    # destination, an overwrite decision and a person who meant it.
     try:
         session = binding.resolve()
     except NotBound as unbound:
