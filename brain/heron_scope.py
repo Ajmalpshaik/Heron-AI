@@ -120,21 +120,23 @@ def row_of(frag):
 
 
 def knowledge_dir():
-    """%APPDATA%\\Heron\\knowledge.
+    """<home>\\knowledge - %USERPROFILE%\\.heron\\knowledge on Windows (D-135).
 
     DATA rather than DERIVED, and the distinction is HeronPaths' own: this is
     the user's knowledge, it roams with them, and a cache wipe must never take
-    it. HERON_KNOWLEDGE overrides it - which the tests use, and which is also
-    the only way to run this on a machine with no %APPDATA% at all, where a
-    good deal of Heron gets written.
+    it. Until D-135 it was %APPDATA%\\Heron\\knowledge, which a Microsoft Store
+    Claude keeps a private copy of and a Reset of that app deletes; the home
+    is `heron_paths.home()`, which carries the old folder in the first time.
+    HERON_KNOWLEDGE overrides it - which the tests use, and which is also the
+    only way to run this on a machine with no home at all, where a good deal
+    of Heron gets written.
     """
     override = os.environ.get("HERON_KNOWLEDGE")
     if override:
         return override
-    appdata = os.environ.get("APPDATA")
-    if not appdata:
-        return None
-    return os.path.join(appdata, "Heron", "knowledge")
+    import heron_paths as PATHS
+    home = PATHS.home()
+    return os.path.join(home, "knowledge") if home else None
 
 
 def scope_path(scope, project_key=None):
@@ -146,7 +148,7 @@ def scope_path(scope, project_key=None):
     base = knowledge_dir()
     if base is None:
         raise ValueError(
-            "No %APPDATA% and no HERON_KNOWLEDGE, so there is nowhere to keep "
+            "No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is nowhere to keep "
             "knowledge. Set HERON_KNOWLEDGE to a folder.")
 
     if scope != PROJECT:
@@ -572,11 +574,14 @@ def _record(store, key, marks, rows_from):
 def shared_dir():
     """The one knowledge folder every checkout on this machine reads, or None.
 
-    Heron/knowledge under %APPDATA% - `knowledge_dir()` with HERON_KNOWLEDGE
-    left out, because a folder somebody pointed HERON_KNOWLEDGE at is theirs.
+    knowledge under the home - `knowledge_dir()` with HERON_KNOWLEDGE left
+    out, because a folder somebody pointed HERON_KNOWLEDGE at is theirs. Only
+    a name: `data_home()`, which carries nothing, so asking which folder is
+    shared never fills one.
     """
-    appdata = os.environ.get("APPDATA")
-    return os.path.join(appdata, "Heron", "knowledge") if appdata else None
+    import heron_paths as PATHS
+    home = PATHS.data_home()
+    return os.path.join(home, "knowledge") if home else None
 
 
 def main_checkout(root=None):
@@ -701,8 +706,8 @@ def rebuild_refusal(root=None):
     """
     base = knowledge_dir()
     if not base:
-        return ("there is no knowledge folder here at all - no %APPDATA% and "
-                "no HERON_KNOWLEDGE")
+        return ("there is no knowledge folder here at all - no HERON_DATA, no "
+                "Windows profile and no HERON_KNOWLEDGE")
     source = refreshes_from(root)
     if source is None:
         return "this is a worktree whose main checkout cannot be found"
@@ -991,7 +996,7 @@ def existing():
 def main(argv):
     base = knowledge_dir()
     if not base:
-        print("No %APPDATA% and no HERON_KNOWLEDGE set, so there is nowhere")
+        print("No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE set, so there is nowhere")
         print("to keep knowledge. Set HERON_KNOWLEDGE to a folder.")
         return 1
 

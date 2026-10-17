@@ -205,6 +205,7 @@ an edit.
 | [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
 | [D-133](#d-133--a-run-that-contradicts-a-proofreleases-entry-is-reported-as-one-that-contradicts-the-proof-is) | A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is | ✅ Accepted · 2026-10-17 |
 | [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) | The re-ranker reads a card's first declared sentences beside its identity, carried in the store | ✅ Accepted · 2026-10-17 |
+| [D-135](#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them) | Heron's Python side keeps its data in %USERPROFILE%\.heron, and the Companion's notes in the temporary folder, where a Store Claude's copy cannot reach them | ✅ Accepted · 2026-10-18 |
 
 ## Format
 
@@ -1171,3 +1172,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_rerank.py`](../brain/heron_rerank.py) (`PASSAGE_UTTERANCES`, `PASSAGE_WORDS`, `passage_said`), [`heron_search.py`](../brain/heron_search.py) (`rerank_said`, `INDEX_FORMAT` 3), [`heron_retrieve.py`](../brain/heron_retrieve.py) (`_fragment_passage`, `_carry_said`), [`tests/test_rerank.py`](../tests/test_rerank.py) section 12
 
 **Full record:** [`decisions/D-134.md`](decisions/D-134.md)
+
+## D-135 — Heron's Python side keeps its data in %USERPROFILE%\.heron, and the Companion's notes in the temporary folder, where a Store Claude's copy cannot reach them
+
+**Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** chosen by the session on Ajmal PS's word of 2026-10-17, recorded in [Q-63](open-questions/tier-2.md): *"OK you can decide this thing. Which one is the best best thing? ... Whatever good you can do it."* - shape 3 was chosen that evening and built here · **Source:** [Q-63](open-questions/tier-2.md), rows [5b-416, 5b-418, 5b-419, 5b-1066](fragment-issues/section-5b-rows-401-425.md)
+**Answers:** Q-63's run-time half · **Amends:** [D-62](#d-62--the-brain-writes-its-own-audit-file-and-the-reader-that-already-merges-does-the-merging) - two folders, one reader · [D-109](#d-109--a-companion-button-in-revit-opens-the-page-and-a-companion-switch-turns-it-off-without-touching-heron) point 4's folder for the chat's note
+**Keeps:** `HeronPaths.Data` for the add-in's own settings and trail · [D-17](#d-17--runtime-state-is-machine-local-not-roaming) · Golden Rule 14 - nothing in an old place is deleted
+**Affects:** [`heron_paths.py`](../brain/heron_paths.py), [`heron_scope.py`](../brain/heron_scope.py), [`heron_gaps.py`](../brain/heron_gaps.py), [`heron_audit.py`](../brain/heron_audit.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_companion.py`](../mcp/companion/heron_companion.py), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs), [`tests/test_data_home.py`](../tests/test_data_home.py)
+
+**Full record:** [`decisions/D-135.md`](decisions/D-135.md)

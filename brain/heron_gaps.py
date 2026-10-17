@@ -184,6 +184,32 @@ def audit_dir():
     return os.path.join(appdata, "Heron", "audit")
 
 
+def brain_audit_dir():
+    """
+    Where the BRAIN writes its half of the trail: <home>\\audit (D-135).
+
+    Not the add-in's folder any more. %APPDATA%\\Heron\\audit is where Revit
+    writes, and Revit is never a child of a Microsoft Store Claude; the brain
+    runs inside the MCP server, which is, and on such a PC everything it wrote
+    there went into the app's private copy, which a Reset deletes (rows
+    5b-418, 5b-419). So the brain writes under `heron_paths.home()` - and
+    `read()` reads both folders, which is why moving it no longer blinds this
+    report the way pointing HERON_AUDIT away alone would have.
+
+    HERON_AUDIT still overrides it, and names ONE folder for both halves - what
+    every suite that plants a trail relies on.
+    """
+    override = os.environ.get("HERON_AUDIT")
+    if override:
+        return override
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import heron_paths as PATHS
+    home = PATHS.home()
+    return os.path.join(home, "audit") if home else None
+
+
 def read(directory=None):
     """
     Every audit entry, oldest first. A bad line is skipped, never fatal.
@@ -191,37 +217,61 @@ def read(directory=None):
     One truncated write - a full disk, a killed process - must cost one entry
     rather than the report. HeronAudit writes one JSON object per line for
     exactly this reason, and reading it any other way would give that up.
-    """
-    target = directory if directory is not None else audit_dir()
-    if not target or not os.path.isdir(target):
-        return [], 0
 
-    entries, skipped = [], 0
-    for name in sorted(os.listdir(target)):
-        if not name.startswith("audit-") or not name.endswith(".jsonl"):
+    TWO FOLDERS SINCE D-135, and still one trail. The add-in writes where
+    HeronPaths.Audit is, %APPDATA%\\Heron\\audit; the brain writes into
+    `brain_audit_dir()`, under Heron's home - so both are read, the brain's
+    first. A brain file an older Heron left in the add-in's folder is read too,
+    less the lines the home already holds: `heron_paths.carry_forward` copies
+    such a file line by line, so a line found in both is one entry, not two.
+    `directory` names one folder and reads only that, as before.
+    """
+    if directory is not None:
+        folders = [directory]
+    else:
+        folders = []
+        for folder in (brain_audit_dir(), audit_dir()):
+            if folder and not any(_same_folder(folder, f) for f in folders):
+                folders.append(folder)
+
+    entries, skipped, held = [], 0, set()
+    for number, target in enumerate(folders):
+        if not target or not os.path.isdir(target):
             continue
-        path = os.path.join(target, name)
-        try:
-            handle = io.open(path, encoding="utf-8", errors="replace")
-        except (IOError, OSError):
-            continue
-        with handle:
-            for line in handle:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    row = json.loads(line)
-                except ValueError:
-                    skipped += 1
-                    continue
-                if isinstance(row, dict):
-                    entries.append(row)
-                else:
-                    skipped += 1
+        for name in sorted(os.listdir(target)):
+            if not name.startswith("audit-") or not name.endswith(".jsonl"):
+                continue
+            brains = name.startswith("audit-brain-")
+            path = os.path.join(target, name)
+            try:
+                handle = io.open(path, encoding="utf-8", errors="replace")
+            except (IOError, OSError):
+                continue
+            with handle:
+                for line in handle:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if brains and number == 0 and len(folders) > 1:
+                        held.add(line)
+                    elif brains and number > 0 and line in held:
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except ValueError:
+                        skipped += 1
+                        continue
+                    if isinstance(row, dict):
+                        entries.append(row)
+                    else:
+                        skipped += 1
 
     entries.sort(key=lambda r: str(r.get("at", "")))
     return entries, skipped
+
+
+def _same_folder(one, two):
+    return os.path.normcase(os.path.abspath(one)) == os.path.normcase(os.path.abspath(two))
 
 
 def duration(row):
@@ -527,7 +577,8 @@ def main(argv):
             return 2
 
     entries, skipped = read()
-    if not entries and not os.path.isdir(audit_dir() or ""):
+    if not entries and not any(os.path.isdir(folder or "")
+                               for folder in (audit_dir(), brain_audit_dir())):
         sys.stdout.write(
             "No audit trail found. Heron writes one the first time it is asked\n"
             "to do something; there is nothing here yet.\n")

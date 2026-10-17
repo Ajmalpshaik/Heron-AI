@@ -10,6 +10,8 @@
 Paths - product, data and derived, in one place instead of five.
 
     python brain/heron_paths.py
+    python brain/heron_paths.py --where    the home, and the old places it carries from
+    python brain/heron_paths.py --carry    carry from the old places again, on purpose
 
 WHAT IT IS FOR (docs/28, HERON-WSP-PTH-007)
 --------------------------------------------
@@ -103,10 +105,43 @@ DATA IS TESTED FIRST
 ----------------------
 "Brain agents" carries a word from both lists. The order is not
 arbitrary - it is the same asymmetry one level down.
+
+AND WHERE THE PYTHON SIDE'S OWN DATA LIVES (D-135)
+----------------------------------------------------
+Everything above answers WHICH CLASS. `data_home()` answers one WHERE, the
+only one this module owns: the folder for the DATA Heron's Python side writes
+- the knowledge store, each project's memory and the brain's audit.
+
+It is %USERPROFILE%\\.heron on Windows, and NOT %APPDATA%\\Heron, because of
+what a Microsoft Store Claude does. Windows keeps a private copy of
+%APPDATA% and %LOCALAPPDATA% for that app and every process it starts -
+Claude's shell and every heron MCP server - and deletes the copy when the
+app is reset or uninstalled (rows 5b-416 to 5b-419). Measured on the owner's
+laptop on 2026-10-17: once a folder exists in both the copy and the real
+disk, a new file, a new folder, an edit to a file both hold and a
+write-then-rename all land in the copy - and the copy held Heron\\knowledge,
+Heron\\audit and Heron\\config. The profile and the temporary folder were
+seen real from both sides the same night.
+
+The add-in's own DATA - its settings and its audit trail - stays where
+HeronPaths.Data puts it: Revit is not a child of the app, so it writes the
+real disk. The Companion's notes are DERIVED and moved to the temporary
+folder on both sides; `heron_bridge_client.temp_folder()` owns that one.
+
+`carry_forward()` copies what the old places hold into the home and deletes
+nothing. `home()` runs it once on a PC, by itself, and leaves a note.
 """
 
+import hashlib
+import io
+import json
+import ntpath
 import os
+import shutil
+import sqlite3
 import sys
+import time
+import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -277,7 +312,315 @@ def may(operation, path):
     }
 
 
+# ------------------------------------------------------------ the home (D-135)
+
+#: The folder under the user's profile that holds the DATA the Python side
+#: writes. A dot, because "Heron" is a name a person may well give the folder
+#: they unzip the PRODUCT into - and docs/06 s2 keeps the two apart.
+HOME_FOLDER = ".heron"
+
+#: The note the first carry leaves in the home: what it copied, from where.
+CARRIED_NOTE = "carried.json"
+
+#: Taken by the process that is carrying, so two chats starting at once do not
+#: both merge the same audit lines. One older than this was left by a process
+#: that died, and is taken over.
+CARRYING_LOCK = "carrying.lock"
+LOCK_SECONDS = 600
+
+#: A Microsoft Store Claude's package folders under %LOCALAPPDATA%\Packages.
+STORE_CLAUDE = "AnthropicPBC.Claude_"
+
+#: What is carried from an old place, and how: the whole knowledge folder,
+#: file by file; and the BRAIN's audit files only, merged line by line. The
+#: add-in's trail and its settings are not the Python side's - they stay where
+#: the add-in writes and reads them.
+CARRIED = (("knowledge", None), ("audit", "audit-brain-"))
+
+#: SQLite's own side files. A store is carried through SQLite's backup, which
+#: reads them; copied raw, they would be a second, torn copy of it.
+SIDE_FILES = ("-wal", "-shm", "-journal", ".part")
+
+# Homes this process has already looked at, so the note is read once.
+_carried_here = set()
+
+
+def data_home(environ=None, system=None):
+    """The folder for the DATA Heron's Python side writes, or None.
+
+    HERON_DATA when set, on any system - which is what the tests plant, and a
+    person's own choice of folder. On Windows, %USERPROFILE%\\.heron: outside
+    %APPDATA% and %LOCALAPPDATA%, which a Microsoft Store Claude keeps a
+    private copy of and a Reset of that app deletes (D-135). Anywhere else,
+    None - there is no profile convention to follow, and a machine with none
+    keeps nothing, as it did when this was %APPDATA% and Linux had none.
+
+    Pure: it looks at nothing on disk. `home()` is the one that carries.
+    """
+    env = os.environ if environ is None else environ
+    chosen = (env.get("HERON_DATA") or "").strip()
+    if chosen:
+        return chosen
+    if (os.name if system is None else system) != "nt":
+        return None
+    profile = (env.get("USERPROFILE") or "").strip()
+    # A profile that is not a whole path would put the home inside whatever
+    # folder the process started in - none is the honest answer (row 5b-168).
+    if not profile or not ntpath.isabs(profile):
+        return None
+    return os.path.join(profile, HOME_FOLDER)
+
+
+def old_homes(environ=None):
+    """Where the Python side kept its DATA before D-135 - each Store Claude's
+    private copy of %APPDATA%\\Heron first, then %APPDATA%\\Heron as this
+    process sees it. Only the folders that exist.
+
+    THE COPY FIRST, AND BY ITS OWN PATH. Inside such an app, %APPDATA%\\Heron
+    shows the copy's file wherever both hold one, so the copy is what every
+    chat has been using; outside it, %APPDATA%\\Heron is the real folder and
+    the copy is reachable only by its LocalCache path. Naming the copy
+    explicitly makes a carry from either side take what the chats wrote.
+    """
+    env = os.environ if environ is None else environ
+    found = []
+    local = (env.get("LOCALAPPDATA") or "").strip()
+    if local:
+        packages = os.path.join(local, "Packages")
+        try:
+            names = sorted(os.listdir(packages))
+        except OSError:
+            names = []
+        for name in names:
+            if name.startswith(STORE_CLAUDE):
+                folder = os.path.join(packages, name, "LocalCache", "Roaming", "Heron")
+                if os.path.isdir(folder):
+                    found.append(folder)
+    roaming = (env.get("APPDATA") or "").strip()
+    if roaming and os.path.isdir(os.path.join(roaming, "Heron")):
+        found.append(os.path.join(roaming, "Heron"))
+    return found
+
+
+def _digest(path):
+    hasher = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            hasher.update(block)
+    return hasher.hexdigest()
+
+
+def _readonly_uri(path):
+    """SQLite's read-only URI for a file, drive letter and spaces included."""
+    spelled = os.path.abspath(path).replace("\\", "/")
+    if not spelled.startswith("/"):
+        spelled = "/" + spelled
+    return "file://" + urllib.parse.quote(spelled, safe="/:") + "?mode=ro"
+
+
+def _copy(source, target):
+    """Copy one file into a place it is not yet, all or nothing.
+
+    A store goes through SQLite's backup, read-only: a chat on an older Heron
+    may be writing it this moment, and a byte copy of a store being written
+    is a torn store. Anything that is not a store is copied as it is. Either
+    way the copy is written beside the target and renamed into place."""
+    folder = os.path.dirname(target)
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    partial = target + ".part"
+    if source.lower().endswith(".db"):
+        try:
+            reading = sqlite3.connect(_readonly_uri(source), uri=True)
+            try:
+                writing = sqlite3.connect(partial)
+                try:
+                    reading.backup(writing)
+                finally:
+                    writing.close()
+            finally:
+                reading.close()
+            os.replace(partial, target)
+            return
+        except sqlite3.DatabaseError:
+            # Named .db and not a store: copied as it is, below.
+            if os.path.exists(partial):
+                os.remove(partial)
+    shutil.copy2(source, partial)
+    os.replace(partial, target)
+
+
+def _merge_lines(source, target):
+    """Add to `target` every line of `source` it does not hold. The number added.
+
+    An audit file is append-only and every line is one whole record, so the
+    union of two is the trail of both - and a second merge adds nothing."""
+    with io.open(source, encoding="utf-8", errors="replace", newline="") as handle:
+        wanted = [row.strip() for row in handle if row.strip()]
+    held, ends_clean = set(), True
+    if os.path.isfile(target):
+        with io.open(target, encoding="utf-8", errors="replace", newline="") as handle:
+            text = handle.read()
+        held = set(row.strip() for row in text.splitlines() if row.strip())
+        ends_clean = not text or text.endswith("\n")
+    adding = []
+    for row in wanted:
+        if row not in held:
+            held.add(row)
+            adding.append(row)
+    if adding:
+        folder = os.path.dirname(target)
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        with io.open(target, "a", encoding="utf-8", newline="") as handle:
+            handle.write(("" if ends_clean else "\n") + "\n".join(adding) + "\n")
+    return len(adding)
+
+
+def carry_forward(home, sources):
+    """Copy the DATA the old places hold into `home`. Delete nothing.
+
+    Sources in order, so the first that holds a file is the one carried. A
+    knowledge file the home has not got is copied; one it holds the same is
+    counted; one it holds DIFFERENTLY is left as the home has it and named in
+    `left`, because the home's own file is never overwritten. The brain's
+    audit is merged line by line instead. Nothing in a source is changed:
+    carried means copied, never moved.
+
+    Returns {home, sources, copied, same, lines, left, failed}.
+    """
+    report = {"home": home, "sources": list(sources), "copied": 0, "same": 0,
+              "lines": 0, "left": [], "failed": []}
+    # ONE FILE BY TWO NAMES IS READ ONCE. Inside a Store Claude, %APPDATA%\\Heron
+    # shows the copy's own files, so the copy's LocalCache path and the
+    # %APPDATA% path open the same file - measured on the laptop, 2026-10-18,
+    # where the second look at each store reported it "left", because a store
+    # carried through SQLite's backup is not byte for byte its source.
+    seen = set()
+    for source in sources:
+        for part, only in CARRIED:
+            top = os.path.join(source, part)
+            if not os.path.isdir(top):
+                continue
+            for here, folders, files in os.walk(top):
+                folders.sort()
+                for name in sorted(files):
+                    if name.endswith(SIDE_FILES):
+                        continue
+                    if only and not (name.startswith(only) and name.endswith(".jsonl")):
+                        continue
+                    path = os.path.join(here, name)
+                    target = os.path.join(home, os.path.relpath(path, source))
+                    try:
+                        found = os.stat(path)
+                        identity = (found.st_dev, found.st_ino)
+                        if found.st_ino and identity in seen:
+                            report["same"] += 1
+                            continue
+                        seen.add(identity)
+                        if only:
+                            report["lines"] += _merge_lines(path, target)
+                        elif not os.path.exists(target):
+                            _copy(path, target)
+                            report["copied"] += 1
+                        elif _digest(path) == _digest(target):
+                            report["same"] += 1
+                        else:
+                            report["left"].append(path)
+                    except (IOError, OSError, sqlite3.Error) as error:
+                        report["failed"].append("%s: %s" % (path, error))
+    return report
+
+
+def _note(home, report, how):
+    """Add this carry to the home's note."""
+    path = os.path.join(home, CARRIED_NOTE)
+    noted = {"format": "1", "runs": []}
+    if os.path.isfile(path):
+        try:
+            with io.open(path, encoding="utf-8") as handle:
+                noted = json.load(handle)
+        except (IOError, OSError, ValueError):
+            pass
+    run = dict(report)
+    run.update({"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "how": how,
+                "pid": os.getpid()})
+    noted.setdefault("runs", []).append(run)
+    if not os.path.isdir(home):
+        os.makedirs(home)
+    partial = path + ".part"
+    with io.open(partial, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(noted, indent=1, sort_keys=True))
+    os.replace(partial, path)
+
+
+def home(environ=None, system=None):
+    """`data_home()`, carried into once on this PC before anything uses it.
+
+    The FIRST time a process asks for the default home and finds no note in
+    it, the old places are carried in and a note is left saying what was
+    done; after that this is one look for the note a process. A HERON_DATA
+    folder is somebody's own and is never filled. NEVER FATAL: a carry that
+    fails leaves no note, so the next process tries again, and the folder is
+    answered either way - a chat must not stop because a copy could not be
+    made. `python brain/heron_paths.py --carry` carries again on purpose.
+    """
+    env = os.environ if environ is None else environ
+    found = data_home(env, system)
+    if not found or (env.get("HERON_DATA") or "").strip():
+        return found
+    key = os.path.normcase(os.path.abspath(found))
+    if key in _carried_here:
+        return found
+    _carried_here.add(key)
+    try:
+        if os.path.isfile(os.path.join(found, CARRIED_NOTE)):
+            return found
+        if not os.path.isdir(found):
+            os.makedirs(found)
+        lock = os.path.join(found, CARRYING_LOCK)
+        try:
+            handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except OSError:
+            if time.time() - os.path.getmtime(lock) < LOCK_SECONDS:
+                return found                        # another process is carrying
+            os.remove(lock)
+            handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        try:
+            os.write(handle, str(os.getpid()).encode("ascii"))
+            os.close(handle)
+            _note(found, carry_forward(found, old_homes(env)), "first use")
+        finally:
+            os.remove(lock)
+    except Exception:                               # noqa: BLE001 - never fatal, see above
+        pass
+    return found
+
+
+def where_and_carry(argv):
+    """--where and --carry: the home on this PC, and carrying into it again."""
+    found = data_home()
+    print("HOME    %s" % (found or "none - no HERON_DATA, and not Windows"))
+    for folder in old_homes():
+        print("OLD     %s" % folder)
+    if "--carry" not in argv or not found:
+        return 0
+    report = carry_forward(found, old_homes())
+    _note(found, report, "--carry")
+    print("CARRIED %d file(s) copied, %d already the same, %d audit line(s) added"
+          % (report["copied"], report["same"], report["lines"]))
+    for path in report["left"]:
+        print("LEFT    %s - the home already holds its own file of that name, "
+              "kept as the home has it" % path)
+    for line in report["failed"]:
+        print("FAILED  %s" % line)
+    print("Nothing in the old places was changed or deleted.")
+    return 1 if report["failed"] else 0
+
+
 def main(argv):
+    if "--where" in argv or "--carry" in argv:
+        return where_and_carry(argv)
     print("PATHS   product, data and derived, in one place instead of five")
     print("=" * 72)
 

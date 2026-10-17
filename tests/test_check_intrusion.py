@@ -164,7 +164,8 @@ def run_in_main_folder(tool, top, on_main):
     def stop(*_args, **_kwargs):
         raise _Measured()
 
-    env = dict((k, os.environ.get(k)) for k in ("APPDATA", "HERON_KNOWLEDGE"))
+    env = dict((k, os.environ.get(k))
+               for k in ("APPDATA", "HERON_KNOWLEDGE", "HERON_DATA"))
     was_index, was_from = SEARCH.index, SCOPE.refreshes_from
     was_branch = getattr(SCOPE, "on_main_branch", None)
     SEARCH.index = stop
@@ -172,6 +173,9 @@ def run_in_main_folder(tool, top, on_main):
     SCOPE.on_main_branch = lambda root=None: on_main
     os.environ.pop("HERON_KNOWLEDGE", None)
     os.environ["APPDATA"] = appdata
+    # D-135: the shared store is under HERON_DATA (the Windows profile on the
+    # owner's PC), so it is planted where this case expects it.
+    os.environ["HERON_DATA"] = os.path.join(appdata, "Heron")
     said = io.StringIO()
     try:
         with contextlib.redirect_stdout(said):

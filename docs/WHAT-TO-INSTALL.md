@@ -122,20 +122,24 @@ every package Claude had installed was in the copy and none was in the real fold
    leave two copies of one package mixed together in Claude's view. Leaving a package out is safe. **The
    installer installs the lock's versions instead** - the two disagree, and which one a PC like this should
    end up with is Ajmal PS's to settle ([row 5b-1065](fragment-issues/section-5b-rows-401-425.md)).
-3. **A Reset or uninstall of the Claude app deletes its copy** — the packages Claude installed, Heron's
-   knowledge store, each project's memory (load runs, standards, earlier answers) and the brain's record
-   of what each chat asked ([row 5b-419](fragment-issues/section-5b-rows-401-425.md)).
-4. **Choose a folder for load reports.** A report saved with no folder chosen and the model never saved
-   goes under Heron's knowledge folder, which on such a PC is inside Claude's copy — whether it opens
-   from Explorer has not been checked ([row 5b-418](fragment-issues/section-5b-rows-401-425.md)).
-5. **Revit's Companion button is expected not to find your chat** on such a PC, because each chat leaves
-   its note inside Claude's copy ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Not yet
-   tried in Revit.
+3. **A Reset or uninstall of the Claude app deletes its copy** — the packages Claude installed itself.
+   **Heron's own data is no longer in it** ([D-135](decisions/D-135.md), 2026-10-18): the knowledge store,
+   each project's memory (load runs, standards, earlier answers) and the brain's record of what each chat
+   asked live in **`%USERPROFILE%\.heron`** — `C:\Users\<you>\.heron` — which the app does not copy. The first
+   chat on the new Heron **copies** what the old places held into it, and deletes nothing; the old copies stay
+   until you choose to remove them ([row 5b-419](fragment-issues/section-5b-rows-401-425.md)).
+   `python brain/heron_paths.py --where` names that folder and the old places; `--carry` copies again.
+4. **Load reports** saved with no folder chosen and the model never saved go under that knowledge folder,
+   so they are on the real disk now and open from Explorer - not yet tried
+   ([row 5b-418](fragment-issues/section-5b-rows-401-425.md)).
+5. **Revit's Companion button** reads each chat's note from `%TEMP%\Heron\companion`, which both sides see,
+   once the add-in is rebuilt from the same change; an add-in installed before it still looks in the old
+   folder and will not find the chat ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Not yet tried in Revit.
 
 **Installing is settled: from outside Claude, by the installer** — [Q-63](OPEN-QUESTIONS.md),
-2026-10-17. **Where Heron keeps what it writes while a chat runs was chosen the same evening, and is not
-built:** outside the app's copy, where a Reset cannot reach it - the owner left the choice to the session
-([Q-63](OPEN-QUESTIONS.md)). Until that is built, points 3 to 5 above are unchanged.
+2026-10-17. **Where Heron keeps what it writes is settled too:** outside the app's copy, where a Reset
+cannot reach it — built 2026-10-18 as [D-135](decisions/D-135.md). Heron's settings file `heron.config`
+still has a copy of its own on such a PC; which one Heron should believe is [Q-70](OPEN-QUESTIONS.md).
 
 ## 2. Optional — the two search add-ons
 

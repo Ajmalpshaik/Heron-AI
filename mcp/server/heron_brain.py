@@ -363,7 +363,7 @@ class _Open(object):
             if SCOPE.knowledge_dir() is None:
                 raise BrainUnavailable(
                     "Heron has nowhere to keep what it knows: there is no "
-                    "%APPDATA% on this machine and HERON_KNOWLEDGE is not set. "
+                    "Windows profile and no HERON_DATA on this machine, and HERON_KNOWLEDGE is not set. "
                     "Set HERON_KNOWLEDGE to a folder and ask again.")
             self.store = SCOPE.open_scope(SCOPE.GLOBAL)
             if self.store.count() == 0:
