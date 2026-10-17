@@ -4,43 +4,55 @@
 #     python tools/batch-prove.py tools/jobs/sheet-issues-revisions-test-copy-2026-09-28.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/sheet-issues-revisions-test-copy-2026-09-28.yaml
 #
-# RUN ON A TEST COPY OF "heron ai bulding", NEVER THE WORKING FILE. Save a copy
-# of the model under another name, open it, and bring it to the front. Every
+# RUN ON TWO TEST COPIES OF "heron ai bulding", NEVER THE WORKING FILE. Every
 # job here writes: `write: true` runs both legs inside a transaction group and
 # ROLLS THEM BACK, so nothing should be kept - run LIST_REVISIONS afterwards
 # rather than assuming it: rollback has failed before on this PC.
 #
-# WHAT THE COPY MUST HOLD - the working model as it stood at the end of
-# 2026-09-28: ONE revision, Seq. 1 'Issued for Review' (unissued, shown on the
-# seven sheets M-101 to M-107, numbered by 'Numeric', issued to Ajmal PS);
-# sequences 'Numeric' (numeric)
-# and 'Custom' (alphanumeric, used by nothing); numbered Per Sheet; arc length
-# 20 mm. A copy that differs changes the answers - run LIST_REVISIONS on it
-# first and compare.
+# THE TWO COPIES, MADE BY HAND BEFORE THE RUN AND BOTH OPEN IN ONE REVIT.
+# Start from the working model as it stood at the end of 2026-09-28: ONE
+# revision, Seq. 1 'Issued for Review' (unissued, shown on the seven sheets
+# M-101 to M-107, numbered by 'Numeric', issued to Ajmal PS); sequences
+# 'Numeric' (numeric) and 'Custom' (alphanumeric, used by nothing); numbered
+# Per Sheet; arc length 20 mm.
+#   "heron ai bulding test copy"   - in Manage > Sheet Issues/Revisions, Add
+#       one revision: Description 'HERON PROOF second', Numbering 'Numeric',
+#       Issued NOT ticked, date and issued to/by left blank. It lands as
+#       Seq. 2, Revit names it "Seq. 2 - HERON PROOF second". Save.
+#   "heron ai bulding issued copy" - Save As from the first, then tick
+#       Issued on Seq. 2 and Save. Nothing else differs.
+# Run LIST_REVISIONS on each and compare before the run: a copy that differs
+# changes the answers.
 #
-# THE SECOND REVISION IS MADE IN EACH SETUP. Delete, move and merge need two
-# revisions, and the copy has one, so their setup runs CREATE_REVISION first
-# ('HERON PROOF second', which lands as Seq. 2) and then finds it by
-# description. It is rolled back with everything else.
+# WHY BY HAND, AND NOT IN THE SETUP (row 5b-917). Until 2026-10-17 delete,
+# move and merge made their second revision with a CREATE_REVISION setup step
+# and then found it by description - but a step that changes the model runs
+# AFTER every step that only reads, so the find ran first and found nothing.
+# CREATE_REVISION hands on one id, `created`, and the tools take `elements`,
+# so the find cannot be left out either. And a setup step that changes the
+# model cannot be given values of its own (`setup-set:`); CREATE_REVISION and
+# EDIT_REVISION share every value name, so one value list cannot serve both.
+# `validate` refuses all of it now, before Revit is asked.
 #
 # THE REVISION COMES FROM A FIND, NEVER THE SELECTION. Each per-revision job
 # runs SELECT_BY_PARAMETER_VALUE on the Revisions category first
 # (`setup-set`), and `keep-chain` hands its answer to the tool under test.
+# The find only reads, so it may take values of its own.
 #
-# THE ISSUED-REVISION NEGATIVE IS ARRANGED, NOT FOUND. No revision in the
-# model is issued, so the negative leg of edit-revision ISSUES Seq. 1 first
-# (a setup step, rolled back with everything else) and then asks for an edit
-# it must refuse by name.
+# THE ISSUED-REVISION NEGATIVE IS IN THE ISSUED COPY. No revision in the test
+# copy is issued, so edit-revision's negative runs in the issued copy
+# (`negative-in:`), on Seq. 2, and must be refused naming it - row 5b-412.
 #
-# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
-# the test copy to the front. With two Revits connected to Heron, add
-# `--session <process id>` to both commands.
+# `in:` NAMES THE TEST COPY, because two models are open and the one in front
+# is a click away from being the other. With two Revits connected to Heron,
+# add `--session <process id>` to both commands.
 
-model: '"heron ai bulding" (a test copy), Revit 2024'
+model: '"heron ai bulding test copy" and "heron ai bulding issued copy", both open, Revit 2024'
 
 defaults:
   # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
   write: true
+  in: heron ai bulding test copy
 
 jobs:
   # ---- the table's rows ---------------------------------------------------
@@ -69,25 +81,14 @@ jobs:
     expect: changed
     setup:
       - select-by-parameter-value
-      - edit-revision
-      - select-by-parameter-value
     keep-chain: true
-    # POSITIVE: the setup's edit-revision is asked for nothing (it refuses,
-    # harmlessly), and Seq. 1 takes a new issued by.
+    # POSITIVE, in the test copy: Seq. 1 takes a new issued by.
     setup-set:
       parameterName: Revision Sequence
       matchText: "1"
       matchMode: equals
       includeTypeParameters: "false"
       categories: Revisions
-      description: ""
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: ""
-      confirmCount: ""
     set:
       description: ""
       revisionDate: ""
@@ -97,22 +98,16 @@ jobs:
       numbering: ""
       issueState: ""
       confirmCount: ""
-    # NEGATIVE: the setup ISSUES Seq. 1, then the same edit must be refused,
-    # naming the revision and "issued by", with `changed` empty.
+    # NEGATIVE, in the issued copy: the same edit on Seq. 2, which is ISSUED
+    # there, must be refused naming the revision and "issued by", with
+    # `changed` empty - row 5b-412.
+    negative-in: heron ai bulding issued copy
     negative-setup-set:
-      parameterName: Revision Sequence
-      matchText: "1"
+      parameterName: Revision Description
+      matchText: HERON PROOF second
       matchMode: equals
       includeTypeParameters: "false"
       categories: Revisions
-      description: ""
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: issue
-      confirmCount: ""
     negative-set:
       description: ""
       revisionDate: ""
@@ -126,17 +121,9 @@ jobs:
   - fragment: delete-revision
     expect: deleted
     setup:
-      - create-revision
       - select-by-parameter-value
     keep-chain: true
     setup-set:
-      description: HERON PROOF second
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: ""
       parameterName: Revision Description
       matchText: HERON PROOF second
       matchMode: equals
@@ -152,13 +139,6 @@ jobs:
     # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the
     # runner hands the chain the negative-set instead (row 5b-242).
     negative-setup-set:
-      description: HERON PROOF second
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: ""
       parameterName: Revision Description
       matchText: HERON PROOF second
       matchMode: equals
@@ -168,17 +148,9 @@ jobs:
   - fragment: reorder-revision
     expect: moved
     setup:
-      - create-revision
       - select-by-parameter-value
     keep-chain: true
     setup-set:
-      description: HERON PROOF second
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: ""
       parameterName: Revision Description
       matchText: HERON PROOF second
       matchMode: equals
@@ -186,16 +158,8 @@ jobs:
       categories: Revisions
     set:
       direction: up
-    # Seq. 1 up: already first, nothing moved. The setup still makes the
-    # second revision; the find takes the FIRST one.
+    # Seq. 1 up: already first, nothing moved. The find takes the FIRST one.
     negative-setup-set:
-      description: HERON PROOF second
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: ""
       parameterName: Revision Sequence
       matchText: "1"
       matchMode: equals
@@ -207,17 +171,9 @@ jobs:
   - fragment: merge-revision
     expect: merged
     setup:
-      - create-revision
       - select-by-parameter-value
     keep-chain: true
     setup-set:
-      description: HERON PROOF second
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: ""
       parameterName: Revision Description
       matchText: HERON PROOF second
       matchMode: equals
@@ -234,13 +190,6 @@ jobs:
     # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the
     # runner hands the chain the negative-set instead (row 5b-242).
     negative-setup-set:
-      description: HERON PROOF second
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: ""
-      issueState: ""
       parameterName: Revision Description
       matchText: HERON PROOF second
       matchMode: equals
@@ -309,7 +258,7 @@ jobs:
     set:
       name: Custom
       confirm: Custom
-    # 'Numeric' numbers Seq. 1: refused, naming it.
+    # 'Numeric' numbers Seq. 1 and Seq. 2: refused, naming them.
     negative-set:
       name: Numeric
       confirm: Numeric

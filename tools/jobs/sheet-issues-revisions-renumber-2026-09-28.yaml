@@ -6,20 +6,26 @@
 #     python tools/batch-prove.py tools/jobs/sheet-issues-revisions-renumber-2026-09-28.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/sheet-issues-revisions-renumber-2026-09-28.yaml
 #
-# RUN ON THE SAME TEST COPY as sheet-issues-revisions-test-copy-2026-09-28.yaml,
-# never the working file; `write: true` rolls both legs back.
+# RUN ON THE SAME TWO COPIES as sheet-issues-revisions-test-copy-2026-09-28.yaml
+# - its header says how to make them - never the working file; `write: true`
+# rolls both legs back.
 #
-# WHAT IT ARRANGES. The copy holds one revision, Seq. 1 'Issued for Review',
-# numbered by 'Numeric'. The setup adds Seq. 2 'HERON PROOF later', also on
-# 'Numeric' - UNISSUED for the positive, ISSUED for the negative - then finds
-# Seq. 1 by description. The fragment under test moves Seq. 1 to 'Custom'.
-# That renumbers Seq. 2 on 'Numeric' (it would print 1 instead of 2), so:
-#   positive - Seq. 2 unissued: `changed` "numbering Numeric -> Custom"
-#   negative - Seq. 2 ISSUED: `refused` naming Seq. 2, nothing changed
+# WHAT IT ARRANGES. Both copies hold Seq. 1 'Issued for Review' and Seq. 2
+# 'HERON PROOF second', both numbered by 'Numeric' - Seq. 2 UNISSUED in the
+# test copy and ISSUED in the issued copy. The setup finds Seq. 1 by
+# description; the fragment under test moves it to 'Custom'. That renumbers
+# Seq. 2 on 'Numeric' (it would print 1 instead of 2), so:
+#   positive - test copy, Seq. 2 unissued: `changed` "numbering Numeric -> Custom"
+#   negative - issued copy, Seq. 2 ISSUED: `refused` naming Seq. 2, nothing changed
 # Found by the review before merge; the owner's rule is that nothing Heron does
 # may change what an issued revision prints.
+#
+# SEQ. 2 IS MADE BY HAND, NOT IN THE SETUP (row 5b-917). Until 2026-10-17 a
+# CREATE_REVISION setup step made it, with `setup-set:` values the client now
+# refuses for a step that changes the model - and CREATE_REVISION shares every
+# value name with EDIT_REVISION, so no single value list could serve both.
 
-model: '"heron ai bulding" (a test copy), Revit 2024'
+model: '"heron ai bulding test copy" and "heron ai bulding issued copy", both open, Revit 2024'
 
 defaults:
   write: true
@@ -27,18 +33,12 @@ defaults:
 jobs:
   - fragment: edit-revision
     expect: changed
+    in: heron ai bulding test copy
+    negative-in: heron ai bulding issued copy
     setup:
-      - create-revision
       - select-by-parameter-value
     keep-chain: true
     setup-set:
-      description: HERON PROOF later
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: Numeric
-      issueState: ""
       parameterName: Revision Description
       matchText: Issued for Review
       matchMode: equals
@@ -54,13 +54,6 @@ jobs:
       issueState: ""
       confirmCount: ""
     negative-setup-set:
-      description: HERON PROOF later
-      revisionDate: ""
-      issuedBy: ""
-      issuedTo: ""
-      show: ""
-      numbering: Numeric
-      issueState: issue
       parameterName: Revision Description
       matchText: Issued for Review
       matchMode: equals
