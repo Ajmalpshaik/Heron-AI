@@ -1,9 +1,15 @@
 # Plain questions that reach a write - the owner's call, and D-101's second half
 
-**2026-10-17. Active - waiting on the owner.** Two questions for Ajmal, each with what was measured.
-Retires when both are answered and the answers are recorded: the rulings in rows
-[5b-477 and 5b-478](../../fragment-issues/section-5b-rows-401-425.md) and in the cards they touch, and
-D-101's half in a decision of its own.
+**2026-10-17. Completed the same day - both ruled and applied.** Ajmal answered *"do it the best only"*:
+the advice below, both halves. **The 23 sentences are declared** on their cards, each with a dated comment,
+and the three answers his word changed are `corrections` in
+[`tests/data/plain-questions.yaml`](../../../tests/data/plain-questions.yaml). **D-101's half is
+[D-128](../../decisions/D-128.md)**, built behind `heron_lookup`'s `question` flag, after the host's own
+calls were measured first (D-128 carries the figures). Rows
+[5b-477 and 5b-478](../../fragment-issues/section-5b-rows-401-425.md) say what changed. **Retires once the
+pull request that carries it has merged** - its durable half is in the cards, the rows, D-128 and
+[`brain/retrieval-history.md`](../../../brain/retrieval-history.md); repair the two links to this file
+(the yaml's comment and D-128's Status line) when it goes.
 
 > Nothing here is specification. Every figure is a run on `main` `37ccfbd0`, 569 fragments, no Revit
 > filter, each run on its own scratch store through `heron_brain.lookup` - the function `heron_lookup`

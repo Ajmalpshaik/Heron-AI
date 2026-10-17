@@ -821,6 +821,8 @@ key, with the day he gave it.
 | 2026-09-24 | 398 | `model+rerank` | any | `88c7eadd` | 12 | 14 | 10 | 28 | 1 (0) | 15 | 4 of 7 | `1--51--431---41.43-32-5--.-----24-1213-4--311-312-115--1-w1w143-2w3-1-w-w-w22-4` |
 | 2026-10-17 | 569 | `lexical` | any | `88c7eadd` | 18 | 7 | 4 | 35 | 1 (0) | 9 | 4 of 7 | `141-1----1-4-11.-112-----w-------411-1-2---11--242111-241w1w12---w2---w3w-w2--1` |
 | 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 11 | 5 | 31 | 1 (0) | 11 | 5 of 7 | `11-42----1---21.-252-----w---4----1111-4---11-4222111-231w1w121-3w2---w-w-w1221` |
+| 2026-10-17 | 569 | `lexical` | any | `88c7eadd` | 18 | 7 | 4 | 35 | 1 (0) | 9 | 4 of 7 | `151-1----1-4-11.-112-----w-------411-1-2---11--242111-241w1w12---w2---w3w-w2--1` |
+| 2026-10-17 | 569 | `model` | any | `88c7eadd` | 17 | 12 | 5 | 30 | 1 (0) | 9 | 5 of 7 | `11-42----1---21.-212-----w---4----1111-4--411-4222111-231w1w121-3w2---w-w-w2221` |
 
 ### The plain questions — rows 5b-477 and 5b-478, scored beside his
 
@@ -845,6 +847,8 @@ their own table and are never added into his numbers.
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-17 | 569 | `lexical` | any | `30b3da1f` | 120 | 27 | 24 | 20 of 41 | 32 of 41 | `11..-1w...11..-...w1..1.........www..1www1..1.w2-....1.11....ww1...1w..ww..w....ww-w1..12.w..w...w....wwww......11.w.1.w` |
 | 2026-10-17 | 569 | `model` | any | `30b3da1f` | 120 | 32 | 24 | 17 of 41 | 30 of 41 | `11..www...11..w...w1..1.........www.www.w1..1.www....1.11....ww1...w...ww..w.....www1..1w....w..ww.....www......11...1.w` |
+| 2026-10-17 | 569 | `lexical` | any | `b5734ccb` | 120 | 13 | 47 | 40 of 41 | 41 of 41 | `11..111...11..1...11..1.........ww1..11w11..1.111....1.11....111...1w..w1..w....ww111..11.w..1...w....w111......11.w.1.w` |
+| 2026-10-17 | 569 | `model` | any | `b5734ccb` | 120 | 9 | 47 | 40 of 41 | 41 of 41 | `11..111...11..1...11..1.........ww1.w11.11..1.111....1.11....111...1...w1..w.....w111..11....1..ww.....111......11...1.w` |
 
 ---
 
@@ -1440,11 +1444,47 @@ reports, and the store's md5 the same before and after every run (4 crossings on
 rebuild and its read - reproduced on that day's code; [row 116](../docs/fragment-issues/section-5-rows-101-125.md)
 carries it.
 
+### Applied the same day - the 23 declared, and D-128 built
+
+The owner chose the advice (*"do it the best only"*): the 23 sentences are declared on their cards, and
+D-101's half is [D-128](../docs/DECISIONS.md) - `heron_lookup(question=true)` leaves out every fragment
+above the level just below the change door's. Before it was built, the host's own calls were measured: a
+fresh agent given only the tool's description and 349 shuffled sentences, never the answer key, set the
+flag on each - on three wordings, because D-118's budget for the always-loaded tools left about seventy
+characters: one of 750 (his 79 handed a change 9 → 2 and 9 → 1), a short one (9 → 3 and 9 → 3), and the shipped one,
+the short one with *"selecting, isolating or zooming is not a change"* back. The shipped wording
+flagged all 120 plain questions, 36 of his 79 (none wanting a change) and 1 of 150 write-card
+utterances. Measured on the
+finished tree, scratch stores:
+
+| | `lexical` | `model` |
+|---|---|---|
+| plain questions answered by a write - flag off / on | 13 / **0** | 9 / **0** |
+| the named read first, of 41 - flag off / on | 40 / 41 | 40 / 41 |
+| his 79, handed a change - flag off / with the host's flags | 9 / **1** | 9 / **1** |
+| his 79, first place - flag off / with the host's flags | 18 / 18 | 17 / 19 |
+| the material questions answered by a write - flag off / on | 24 / 0 | 16 / 0 |
+| `check-risk-crossings --revit 2024` (flag off) | 4, as before | 2, as before |
+
+`score-routing.py --record` measured the flag-off path - the rows dated today in both tables, the plain
+set under its new key `b5734ccb` (three answers changed on his word) - and named the same four movements
+the scratch copy had predicted: #2 and #76 down a place, read to read; #19 and #43 up.
+`tests/test_routing_phrases.py` on the trained backend fails the same four checks as on `main`.
+
+**One move outside the frozen sets, found by `check-routing`, recorded and not fixed.** On `lexical`
+only, `PLACE_HOSTED_FAMILY`'s routing-table claim *"put doors in the walls at these points"* now reaches
+`CREATE_WALL` - a change to a different change, on a near tie; `CREATE_WALL` was second before. Measured
+one card at a time, it is *"which doors have no tag"* on `FIND_UNTAGGED_ELEMENTS`: one more card saying
+"doors". On `model` it still reaches `PLACE_HOSTED_FAMILY`. Declaring it on its own card is the usual
+repair and is closed here: `tests/test_routing_phrases.py` holds that no card declares it, so ranking
+decides.
+
 ### What this does not establish
 
 - **The 120 are a session's sentences**; his 79 decide. One encoder for every `model` figure.
-- **Nothing met Revit**, and no card, ranking or filter in the repository was changed by this section's
-  measurements - the declarations and the ceiling lived in scratch copies.
+- **Nothing met Revit.** The measurements before the owner's word lived in scratch copies; what he
+  approved is in the repository, and the host's flags are one agent's calls on one day, not a host
+  watched over real work.
 
 ---
 
