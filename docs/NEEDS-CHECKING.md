@@ -727,6 +727,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
+## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)
+
 ## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
