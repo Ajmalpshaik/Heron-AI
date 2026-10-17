@@ -322,6 +322,13 @@ a widening of the two single-form tools, for the reasons in
 [NEEDS-CHECKING Group DA](../needs-checking/group-da.md), which also holds its proof plan. Left for him:
 whether a whole list should undo as one, and whether cuts belong in the same call.
 
+**Answer: one undo per list, and cuts stay a separate call - 2026-10-17. See [D-116](../DECISIONS.md).**
+Asked both halves in plain words with a worked example each - a pump family's 107 forms undone by one
+Ctrl+Z, and a flange's disc and four holes built in one call and cut in a second - the owner chose
+*"Yes, one undo per list"* and *"No, keep cuts separate"*. `CREATE_FAMILY_FORMS` as written already does
+both, so no code changed. **This answers the shape, not the proof**: the fragment is still DRAFT until
+Group DA has run in Revit.
+
 ---
 
 ### 🟡 Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? *(found 2026-10-10)*

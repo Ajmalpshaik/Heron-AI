@@ -715,6 +715,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ej.md`](needs-checking/group-ej.md)
 
+## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
+
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
+
 ## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
