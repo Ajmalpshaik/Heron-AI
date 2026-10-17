@@ -24,7 +24,17 @@ where it cannot be bypassed by anything on this side being wrong or replaced.
 
 Stating that plainly matters, because a registry that looks like a gate
 invites somebody to treat it as one.
+
+WHAT EACH TOOL COSTS A CHAT is answered here too, by measurement:
+
+    python mcp/server/heron_tools.py --sizes
 """
+
+import ast
+import io
+import json
+import os
+import sys
 
 # The seven levels of docs/12 section 1, in order of what they cost if wrong.
 # The boundary that matters sits between EXECUTE and MODIFY.
@@ -369,8 +379,10 @@ ALSO_REACHES = {
 #
 # FEW, ON PURPOSE. Every tool here is paid for in context in every chat,
 # asked or not - about 9,000 characters of descriptions for these five,
-# measured 2026-10-01 - and every other tool is still one search away. The
-# two doors and the lookup cover almost any request (#369); health and levels
+# measured 2026-10-01 (what they cost today is `--sizes` below, and
+# tests/test_tool_sizes.py holds them to a budget) - and every other tool is
+# still one search away. The two doors and the lookup cover almost any
+# request (#369); health and levels
 # are the first-time checks a modeller's chat makes. Loading a tool's
 # description changes nothing about what it may do: its risk and labels above
 # are unchanged, and the host still asks before a tool it was told can write.
@@ -566,7 +578,151 @@ def describe():
     return "\n".join(lines)
 
 
-def main():
+# WHAT THE TOOL LIST COSTS A CHAT - D-03's accepted cost, measured rather than
+# typed. "MCP tool schemas cost context on every request": every tool in
+# ALWAYS_LOADED is in every chat's context before the modeller types, and
+# every other tool joins it the moment a search loads it. The count was typed
+# in prose once (the comment on ALWAYS_LOADED: about 9,000 for five,
+# 2026-10-01), and on 2026-10-17 the six there measured 6,802 off the source -
+# so the sizes are a command, as the inventory is.
+#
+# THE DESCRIPTION IS READ OFF THE SOURCE, with ast, so it needs no SDK and
+# runs in CI - and it is EXACTLY what a host is served, because the server
+# hands the SDK `inspect.cleandoc` of the docstring (_Labelled.tool), which is
+# what ast.get_docstring returns. Before 2026-10-17 the SDK was handed the raw
+# docstring, which Python 3.12 - the owner's - keeps indented four spaces a
+# line, so the same tool cost more on his PC than in a 3.13 container.
+# tests/test_mcp_serves.py holds the two to each other through a real SDK.
+#
+# THE SCHEMA AND THE WHOLE TOOL need the SDK, because the SDK writes the
+# schema from the signature at run time. Without one they are NOT MEASURED,
+# and said to be, never reported as zero.
+SERVER_SOURCE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "heron_mcp_server.py")
+
+
+def descriptions(path=SERVER_SOURCE):
+    """{tool: the description a host is served} for every `@server.tool()`."""
+    with io.open(path, encoding="utf-8") as fh:
+        tree = ast.parse(fh.read(), path)
+    found = {}
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and any(
+                ast.unparse(d) == "server.tool()" for d in node.decorator_list):
+            found[node.name] = ast.get_docstring(node) or ""
+    return found
+
+
+def served_tools():
+    """
+    (every tool as the SDK serves it, as protocol JSON, None) - or (None, why)
+    when no SDK can serve them here.
+
+    BaseException, for the reason tests/test_mcp_serves.py gives: a broken SDK
+    install raises a native panic that is not an Exception, and a size report
+    must say it could not measure rather than die with a traceback.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    try:
+        import asyncio
+        import heron_mcp_server as served
+        listed = asyncio.run(served.server.list_tools())
+        return [t.model_dump(by_alias=True, exclude_none=True, mode="json")
+                for t in listed], None
+    except BaseException as why:                            # noqa: BLE001
+        if isinstance(why, KeyboardInterrupt):
+            raise
+        return None, "%s: %s" % (type(why).__name__, why)
+
+
+def instructions_size():
+    """(characters of host.chat every chat is given, None) - or (None, why)."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    try:
+        import heron_brain
+        return len(heron_brain.host_instructions()), None
+    except Exception as why:                                # noqa: BLE001
+        return None, "%s: %s" % (type(why).__name__, why)
+
+
+def sizes(served=None, path=SERVER_SOURCE):
+    """
+    What each tool costs, largest first, and the totals a budget is held to.
+
+    `served` is served_tools()'s list, or None to measure descriptions only.
+    A size that was not measured is None, never 0.
+    """
+    by_name = dict((t.get("name"), t) for t in (served or []))
+    rows = []
+    for name, text in descriptions(path).items():
+        tool = by_name.get(name)
+        rows.append({
+            "tool": name,
+            "always_loaded": name in ALWAYS_LOADED,
+            "description": len(text),
+            "schema": (len(json.dumps(tool.get("inputSchema") or {}))
+                       if tool is not None else None),
+            "whole": len(json.dumps(tool)) if tool is not None else None,
+        })
+    rows.sort(key=lambda r: (-(r["whole"] or r["description"]), r["tool"]))
+
+    def total(key, only_always=False):
+        picked = [r[key] for r in rows if r["always_loaded"] or not only_always]
+        return None if any(v is None for v in picked) else sum(picked)
+
+    return {
+        "tools": rows,
+        "description": total("description"),
+        "whole": total("whole"),
+        "always_loaded_description": total("description", True),
+        "always_loaded_whole": total("whole", True),
+    }
+
+
+def print_sizes(as_json=False):
+    """`--sizes`: every tool's cost and the totals, derived on the spot."""
+    served, why = served_tools()
+    report = sizes(served)
+    report["instructions"], unread = instructions_size()
+    report["not_measured"] = dict((k, v) for k, v in (("schemas", why),
+                                                      ("instructions", unread)) if v)
+    if as_json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0
+
+    def say(value, absent="-"):
+        return absent if value is None else "{:,}".format(value)
+
+    print("What each MCP tool costs a chat, in characters, largest first.")
+    print("* is in ALWAYS_LOADED: in every chat's context before the modeller types.")
+    print()
+    width = max(len(r["tool"]) for r in report["tools"])
+    print("  %-*s  %11s  %7s  %7s" % (width + 2, "tool", "description", "schema", "whole"))
+    for r in report["tools"]:
+        print("  %-*s  %11s  %7s  %7s" % (width + 2, r["tool"] + (" *" if r["always_loaded"] else ""),
+                                          say(r["description"]), say(r["schema"]), say(r["whole"])))
+    print()
+    print("  %d tools. Descriptions %s; the whole list as served %s."
+          % (len(report["tools"]), say(report["description"]),
+             say(report["whole"], "NOT MEASURED")))
+    print("  ALWAYS_LOADED, %d tools: descriptions %s; as served %s."
+          % (len(ALWAYS_LOADED), say(report["always_loaded_description"]),
+             say(report["always_loaded_whole"], "NOT MEASURED")))
+    print("  The instructions every chat is given (host.chat): %s."
+          % say(report["instructions"], "NOT MEASURED"))
+    for what, reason in sorted(report["not_measured"].items()):
+        print()
+        print("  NOT MEASURED - %s: %s" % (what, reason))
+        if what == "schemas":
+            print("  The descriptions above are read off the source and need no SDK;")
+            print("  a schema is written by the SDK, so it needs one:  pip install --user mcp")
+    print()
+    print("Descriptions from heron_mcp_server.py's own docstrings; schemas and the whole")
+    print("tool from the SDK's own list. The budget is tests/test_tool_sizes.py.")
+    return 0
+
+
+def main(argv=None):
     """
     Print the registry. THE INVENTORY IS DERIVED, NEVER TYPED.
 
@@ -581,7 +737,14 @@ def main():
     answer lives:
 
         python mcp/server/heron_tools.py
+
+    And what each one costs a chat, the same way:
+
+        python mcp/server/heron_tools.py --sizes [--json]
     """
+    argv = sys.argv[1:] if argv is None else argv
+    if "--sizes" in argv:
+        return print_sizes(as_json="--json" in argv)
     print("Every MCP tool Heron declares, worst first. %d in all." % len(TOOLS))
     print()
     print(describe())

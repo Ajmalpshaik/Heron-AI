@@ -279,7 +279,7 @@ def main():
           "or the answer is built")
     check('"read_changed_model"' in executor,
           "a changed model has its own error code, never a clean answer")
-    check(": WithCount(answer, counted);" in executor
+    check("WithCount(answer, counted);" in executor
           and '"elementsCounted"' in executor,
           "a clean read carries the count it was measured by, so the chat's "
           "'nothing was changed' is said from a measurement")
