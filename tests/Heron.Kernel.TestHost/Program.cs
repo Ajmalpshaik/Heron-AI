@@ -82,6 +82,7 @@ namespace Heron.Kernel.TestHost
 
             Units();
             Paths();
+            Runs();
             Identity();
             Stop();
             AtomicWrite();
@@ -189,6 +190,117 @@ namespace Heron.Kernel.TestHost
             Check(!HeronPaths.IsSafeToDelete(Path.Combine(derived, "..", "..")),
                   "and a path that climbs back out with .. is refused, "
                   + "because the comparison is made after it is resolved");
+        }
+
+        // ------------------------------------------------------------------
+        // HeronPaths.Runs and HeronRuns - the run records a fragment write
+        // leaves for heron_run_record (FRAGMENT-ISSUES 5b-407). DERIVED, so a
+        // cleanup may take them; never DATA, which no cleanup may reach.
+        //
+        // THE ONLY CHECKS HERE THAT WRITE UNDER DERIVED, and they write into
+        // a scratch folder of their own inside it and delete it after. A
+        // prune is guarded by IsSafeToDelete, and that guard answers yes only
+        // under DERIVED - so a prune can only be shown deleting anything from
+        // there. DERIVED is the folder docs/06 calls safe to delete at any
+        // moment; nothing here touches DATA or the real runs folder's files.
+        // ------------------------------------------------------------------
+        private static void Runs()
+        {
+            Console.WriteLine();
+            Console.WriteLine("2b. HeronPaths.Runs and HeronRuns - the run records, DERIVED and pruned");
+
+            var derived = Path.GetFullPath(HeronPaths.Derived);
+            var data = Path.GetFullPath(HeronPaths.Data);
+            var runs = Path.GetFullPath(HeronPaths.Runs);
+
+            Check(runs == Path.Combine(derived, "runs"),
+                  "Runs is the `runs` folder under DERIVED - the one the bridge client "
+                  + "names as RUNS_DIR (" + runs + ")");
+            Check(!runs.StartsWith(data + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                  && runs != data,
+                  "and is not under DATA, where the audit trail it is linked to lives");
+            Check(Directory.Exists(runs), "the path manager makes it, as it makes the others");
+            Check(HeronPaths.IsSafeToDelete(runs)
+                  && HeronPaths.IsSafeToDelete(Path.Combine(runs, "wf-20261009-133432-0042-a1b2.json")),
+                  "IsSafeToDelete says yes to it and to a record in it - a prune is allowed");
+
+            Check(HeronRuns.IsRunId("wf-20261009-133432-0042-a1b2")
+                  && HeronRuns.IsRunId(HeronIdentity.NewWorkflowId()),
+                  "a workflow id, as HeronIdentity mints one, is a run id");
+            var refused = new[] { null, "", "wf-", "../wf-1", "wf-1/../../x", "wf-1.json",
+                                  "C:wf-1", "wf 1", "run-1", "wf-1\\x" };
+            var allRefused = true;
+            foreach (var id in refused)
+            {
+                if (HeronRuns.IsRunId(id) || HeronRuns.PathFor(runs, id) != null) allRefused = false;
+            }
+            Check(allRefused,
+                  "and nothing that could be a path out of the folder is one - a separator, a "
+                  + "dot, a drive, a space, another prefix");
+
+            var scratch = Path.Combine(derived, "kernel-runs-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            try
+            {
+                const string id = "wf-20261009-133432-0042-a1b2";
+                Check(HeronRuns.Write(scratch, id, "{\"record\": 1}"),
+                      "a record is written, folder and all");
+                var path = HeronRuns.PathFor(scratch, id);
+                Check(path != null && File.ReadAllText(path) == "{\"record\": 1}"
+                      && !File.Exists(path + ".tmp"),
+                      "whole, through HeronAtomicWrite, with no .tmp left behind");
+                Check(!HeronRuns.Write(scratch, "../escape", "{}")
+                      && !File.Exists(Path.Combine(derived, "escape.json")),
+                      "an id that is not a run id writes nothing and says so");
+                Check(!HeronRuns.Write(scratch, "wf-empty", ""),
+                      "and an empty record is not written at all");
+
+                var now = new DateTime(2026, 10, 17, 12, 0, 0, DateTimeKind.Utc);
+                var old = HeronRuns.PathFor(scratch, "wf-20260901-000000-0001-aaaa");
+                var fresh = HeronRuns.PathFor(scratch, "wf-20261016-000000-0002-bbbb");
+                var stranger = Path.Combine(scratch, "notes.json");
+                var oddName = Path.Combine(scratch, "wf-..json");
+                foreach (var one in new[] { old, fresh, stranger, oddName })
+                {
+                    File.WriteAllText(one, "{}");
+                }
+                File.SetLastWriteTimeUtc(old, now.AddDays(-30));
+                File.SetLastWriteTimeUtc(fresh, now.AddDays(-1));
+                File.SetLastWriteTimeUtc(stranger, now.AddDays(-30));
+                File.SetLastWriteTimeUtc(oddName, now.AddDays(-30));
+                File.SetLastWriteTimeUtc(path, now.AddDays(-30));
+
+                Check(HeronRuns.Prune(scratch, 0, now) == 0 && File.Exists(old),
+                      "retainDays below 1 prunes nothing - zero must not mean keep nothing");
+                var deleted = HeronRuns.Prune(scratch, 14, now);
+                Check(deleted == 2 && !File.Exists(old) && !File.Exists(path),
+                      "a prune at 14 days deletes the two records older than that - found "
+                      + deleted);
+                Check(File.Exists(fresh), "and keeps the one written yesterday");
+                Check(File.Exists(stranger) && File.Exists(oddName),
+                      "and never touches a file that is not a record, however old");
+
+                // OUTSIDE DERIVED, A PRUNE DELETES NOTHING - the guard, not the
+                // name, decides. The temp folder stands in for anywhere that is
+                // not Heron's own: DATA is not written to check it.
+                var outside = Path.Combine(Path.GetTempPath(),
+                                           "heron-runs-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+                try
+                {
+                    Check(HeronRuns.Write(outside, id, "{}"), "a record can be written anywhere it is told");
+                    File.SetLastWriteTimeUtc(HeronRuns.PathFor(outside, id), now.AddDays(-30));
+                    Check(HeronRuns.Prune(outside, 14, now) == 0
+                          && File.Exists(HeronRuns.PathFor(outside, id)),
+                          "but a prune outside DERIVED deletes nothing, because IsSafeToDelete says no");
+                }
+                finally
+                {
+                    try { Directory.Delete(outside, true); } catch (IOException) { }
+                }
+            }
+            finally
+            {
+                try { Directory.Delete(scratch, true); } catch (IOException) { }
+            }
         }
 
         // ------------------------------------------------------------------
