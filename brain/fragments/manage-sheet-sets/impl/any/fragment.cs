@@ -15,7 +15,8 @@
 //
 // Asking for it while the print range is anything but "selected views" raises
 // an error whose wording is about the print dialog and mentions no sheet set
-// at all. Every mode below sets the range first.
+// at all. Every mode below makes sure the range is "selected views" first -
+// setting it only when it is not already.
 //
 // AND THE PRINT MANAGER IS NOT TRANSACTIONAL.
 //
@@ -186,8 +187,10 @@ if (refused.Length == 0)
                             if (givenIds.Add(view.Id)) given.Add(view);
                         }
 
+                        // Partitioned only when the set's members were read - a set
+                        // that could not be read claims nothing about what is in it.
                         var views = new ViewSet();
-                        if (operation == "add")
+                        if (membersRead && operation == "add")
                         {
                             foreach (var member in members) views.Insert(member);
                             foreach (var view in given)
@@ -197,7 +200,7 @@ if (refused.Length == 0)
                                 changed++;
                             }
                         }
-                        else
+                        else if (membersRead)
                         {
                             foreach (var view in given)
                                 if (!memberIds.Contains(view.Id)) unchanged.Add(view.Id);
@@ -225,7 +228,7 @@ if (refused.Length == 0)
                             try
                             {
                                 setting.CurrentViewSheetSet.Views = views;
-                                if (setting.Save()) done = true;
+                                if (setting.Save()) { done = true; memberCount = views.Size; }
                                 else refused = "Revit did not save the change to '" + wanted + "'; nothing was changed.";
                             }
                             catch { refused = "Revit refused to save the change to '" + wanted + "'; nothing was changed."; }
@@ -277,8 +280,9 @@ if (refused.Length == 0)
             }
             catch
             {
-                printRange = "Print range NOT put back: Revit's Print dialog is left on Selected views/sheets "
-                    + "and was on " + rangeWords(rangeBefore) + ". Set it back there in File - Print.";
+                printRange = "Print range NOT put back: Revit refused to set it back. It was set to Selected "
+                    + "views/sheets for this run and was " + rangeWords(rangeBefore) + " before. Check File - "
+                    + "Print and set it back there.";
             }
         }
         else if (rangeRead && rangeBefore == PrintRange.Select)
