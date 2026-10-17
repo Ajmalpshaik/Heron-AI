@@ -330,6 +330,19 @@ _KNOWN = {
     "setup_failed":      (ROLLED_BACK, FIX_FIRST,
                           "an arrangement step could not be given what it needs, so nothing "
                           "was run and the model is as it was"),
+    # THE RUN CLOCK'S TWO (D-129). The add-in stopped a fragment part way and
+    # rolled the whole job back before answering - so ROLLED_BACK, never the
+    # fail-closed unknown, which would tell the owner to go and check a model
+    # the add-in put back. Whether Revit CONFIRMED that rollback is in the
+    # message, as it is for `operation_failed`. A fragment that ran out of
+    # time is fixed before it is sent again; one stopped by a person is not
+    # sent again at all, and Heron stays stopped until Revit restarts.
+    "ran_too_long":      (ROLLED_BACK, FIX_FIRST,
+                          "the fragment ran past Heron's time limit, so Heron stopped it and "
+                          "rolled the job back - a loop that never ends is the usual cause"),
+    "stopped_mid_run":   (ROLLED_BACK, STOP,
+                          "Heron was told to stop while the fragment ran, so it was stopped "
+                          "part way and rolled back; Heron stays stopped until Revit restarts"),
 
     # --- a read that did not leave the model as it was - row 5b-350 ---------
     # Not "it only reads, so it is merely a refusal", which is what an
