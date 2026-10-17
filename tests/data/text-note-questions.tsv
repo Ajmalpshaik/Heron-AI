@@ -3,7 +3,7 @@
 # A HELD-OUT SET, kept so that a change to READ_ELEMENT_PARAMETERS - its identity
 # above all - or to EDIT_TEXT_VALUES, CREATE_TEXT_NOTE or the date readers can be
 # measured against sentences nothing was tuned to. Written 2026-10-17 for
-# FRAGMENT-ISSUES row 5b-980, BEFORE any wording was tried. A session's
+# FRAGMENT-ISSUES row 5b-1007, BEFORE any wording was tried. A session's
 # sentences, not the owner's: tests/data/owner-questions.yaml is his set, and it
 # stays the one that decides.
 #
@@ -21,7 +21,7 @@
 #
 # MEASURED ON main c2f2765a, 571 fragments, Revit 2020 cards, question flag off:
 # 14 of the 66 Q lines reach a card that WRITES on the lexical backend and 14 on
-# the trained one (model2vec potion-base-8M, no re-ranker). Row 5b-980 says what
+# the trained one (model2vec potion-base-8M, no re-ranker). Row 5b-1007 says what
 # twelve wordings of READ_ELEMENT_PARAMETERS' identity did to them.
 #
 # Ask each sentence through heron_brain.lookup (mcp/server/heron_brain.py), the

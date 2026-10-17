@@ -269,7 +269,7 @@ utterances:
   # level are these air terminals on" to SET_AIR_TERMINAL_FLOW on lexical and
   # "read the comments parameter" to EDIT_PARAMETER_TEXT on model. Recorded in
   # 5b-520 instead. The first is declared below since 5b-737. For the second,
-  # twelve wordings of this card's identity were measured instead (5b-980): on
+  # twelve wordings of this card's identity were measured instead (5b-1007): on
   # main c2f2765a none moves it, or any other of the 89 sentences in
   # tests/data/text-note-questions.tsv, on lexical or the trained model, so the
   # identity was left as it is. The re-ranker, where the identity weighs most
