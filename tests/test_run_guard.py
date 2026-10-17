@@ -37,7 +37,7 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 behaviour and a strong one of a missing line.
 
 Neither proves Revit raises the events, lets them be cancelled, or closes
-what it is told to. That is the PC's: docs/needs-checking/group-er.md.
+what it is told to. That is the PC's: docs/needs-checking/group-ex.md.
 
 IT EXITS 3 WHEN .NET IS ABSENT AND THE WIRING PASSED, which is NOT a pass:
 the policy was not run.
@@ -195,6 +195,25 @@ def guard_file():
     disarm = block(code, "static HeronRunPolicy Disarm(")
     check("CloseLeftovers(" in disarm and "finally" in disarm,
           "disarming closes the leftovers and always forgets the job")
+
+    # HERON'S OWN EXPORT IS THE ONE LET THROUGH, and only where it is wrapped:
+    # capture_view's ExportImage, into Heron's own folder. Any other export in
+    # the add-in's own code would be cancelled under a read - so every one
+    # must sit inside the scope, or the guard breaks Heron's own tool.
+    walked = 0
+    for name in sorted(os.listdir(ADDIN)):
+        if not name.endswith(".cs"):
+            continue
+        text = strip(read(os.path.join(ADDIN, name)) or "")
+        for found in re.finditer(r"\.\s*(ExportImage|Export)\s*\(", text):
+            walked += 1
+            before = text[max(0, found.start() - 400):found.start()]
+            check("HeronRunGuard.HeronExports()" in before,
+                  "%s exports at code line %d inside HeronRunGuard.HeronExports()"
+                  % (name, text.count("\n", 0, found.start()) + 1))
+    check(walked >= 1, "the add-in's own exports were found - %d" % walked)
+    check("_heronExports > 0" in judge,
+          "and the scope reaches the policy's question")
 
     policy = read(POLICY)
     check(policy is not None and "Autodesk" not in strip(policy),

@@ -54,6 +54,13 @@ namespace Heron.Revit.Addin
         private static Action<string> _log = delegate { };
 
         /// <summary>
+        /// How many HeronExports scopes are open - see that method. A count
+        /// rather than a flag so that two nested scopes cannot end each
+        /// other's.
+        /// </summary>
+        private static int _heronExports;
+
+        /// <summary>
         /// Revit's thread, from OnStartup: listen, once, for the life of the
         /// session. Every handler returns at once while no job is armed.
         /// </summary>
@@ -153,6 +160,40 @@ namespace Heron.Revit.Addin
             if (_policy != null && document != null) _target = document;
         }
 
+        /// <summary>
+        /// Heron's OWN export, about to happen - `using (HeronRunGuard.HeronExports())`
+        /// round the one call, and nothing else inside it.
+        ///
+        /// capture_view is ANALYZE and exports a picture of the open model
+        /// with ExportImage, so without this the guard would cancel it as it
+        /// cancels any read that exports. But it is fixed C# Heron wrote, and
+        /// the file goes to HeronPaths.Captures - Heron's own Derived folder -
+        /// is read back and deleted before it answers: nothing reaches anybody
+        /// else, which is what Article 10 is about. A fragment cannot name
+        /// this scope: it is internal to the add-in, and a fragment compiles
+        /// into an assembly of its own. (Code that reaches past the compiler
+        /// with reflection can reach anything in-process; no guard in Revit's
+        /// own process is a defence against that.) The same shape as
+        /// HeronDialogWatch.HeronAsks.
+        /// </summary>
+        internal static IDisposable HeronExports()
+        {
+            _heronExports++;
+            return new ExportScope();
+        }
+
+        private sealed class ExportScope : IDisposable
+        {
+            private bool _closed;
+
+            public void Dispose()
+            {
+                if (_closed) return;
+                _closed = true;
+                _heronExports--;
+            }
+        }
+
         /// <summary>The armed job's record, or null when no job is armed.</summary>
         internal static HeronRunPolicy Policy
         {
@@ -242,7 +283,7 @@ namespace Heron.Revit.Addin
             try { document = e.Document; }
             catch (Exception) { document = null; }
 
-            if (!policy.Cancels(act, OriginOf(document))) return;
+            if (!policy.Cancels(act, OriginOf(document), _heronExports > 0)) return;
 
             var cancelled = false;
             try

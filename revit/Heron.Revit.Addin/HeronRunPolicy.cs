@@ -168,7 +168,24 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal bool Cancels(Act act, Origin origin)
         {
+            return Cancels(act, origin, false);
+        }
+
+        /// <summary>
+        /// The same, when Heron's own fixed C# may be the one exporting.
+        ///
+        /// `heronExporting` is true only inside HeronRunGuard.HeronExports(),
+        /// which wraps an export Heron itself makes into a folder of its own -
+        /// capture_view's picture, written under HeronPaths.Captures, read
+        /// back and deleted before it answers. That is not a fragment
+        /// publishing anything, and Article 10 is about what reaches other
+        /// people. ONLY AN EXPORT is let through by it: a save, a sync or a
+        /// print inside the same scope is judged exactly as it always is.
+        /// </summary>
+        internal bool Cancels(Act act, Origin origin, bool heronExporting)
+        {
             if (StandsAside) return false;
+            if (heronExporting && (act == Act.Export || act == Act.ExportView)) return false;
 
             switch (origin)
             {

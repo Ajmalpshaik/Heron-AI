@@ -23,7 +23,7 @@ namespace Heron.RunGuard.TestHost
     /// judgement - risk x what happened x where the document came from - and
     /// the sentence the modeller reads, are what this checks. Whether Revit
     /// raises the events, lets them be cancelled and closes what it is told
-    /// to is the PC's to prove: docs/needs-checking/group-er.md.
+    /// to is the PC's to prove: docs/needs-checking/group-ex.md.
     ///
     /// EVERY LEVEL IS WALKED, not a sample. HeronRisk is an ordered enum, and
     /// the policy's answers change at two of its values (Admin and Publish) -
@@ -64,6 +64,7 @@ namespace Heron.RunGuard.TestHost
             Publish();
             Admin();
             StrictLevels();
+            HeronsOwnExport();
             AboveAdmin();
             Elsewhere();
             Record();
@@ -151,6 +152,26 @@ namespace Heron.RunGuard.TestHost
                       risk + ": cancels an open model's and a refused new document's, allows the "
                       + "job's own opened file" + (wrong.Count == 0 ? "" : " - " + string.Join("; ", wrong)));
                 Check(policy.RefusesNewDocument, risk + ": a new family or project document is refused");
+            }
+        }
+
+        private static void HeronsOwnExport()
+        {
+            Console.WriteLine();
+            Console.WriteLine("4a. Heron's own export into its own folder - capture_view - and nothing else");
+
+            foreach (var risk in Strict)
+            {
+                var policy = For(risk);
+                Check(!policy.Cancels(HeronRunPolicy.Act.ExportView, HeronRunPolicy.Origin.OpenAtStart, true)
+                      && !policy.Cancels(HeronRunPolicy.Act.Export, HeronRunPolicy.Origin.OpenAtStart, true),
+                      risk + ": an export inside HeronExports() is let through");
+                Check(policy.Cancels(HeronRunPolicy.Act.Save, HeronRunPolicy.Origin.OpenAtStart, true)
+                      && policy.Cancels(HeronRunPolicy.Act.Sync, HeronRunPolicy.Origin.OpenAtStart, true)
+                      && policy.Cancels(HeronRunPolicy.Act.Print, HeronRunPolicy.Origin.OpenAtStart, true),
+                      risk + ": a save, a sync or a print inside it is still cancelled");
+                Check(policy.Cancels(HeronRunPolicy.Act.ExportView, HeronRunPolicy.Origin.OpenAtStart, false),
+                      risk + ": and an export outside it still is");
             }
         }
 
