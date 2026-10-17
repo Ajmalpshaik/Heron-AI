@@ -1,0 +1,117 @@
+# The proof of list-views-on-sheet VERSION 2 (LIST_VIEWS_ON_SHEET, FRG-SHT-027),
+# written 2026-10-17 for FRAGMENT-ISSUES row 5b-560. NOT RUN - written and
+# read back with --dry-run only. It needs Revit.
+#
+#     python tools/batch-prove.py tools/jobs/list-views-on-sheet-v2-scratch-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-views-on-sheet-v2-scratch-2026-10-17.yaml
+#
+# A SCRATCH PROJECT, IN A LOCAL SESSION ON THE OWNER'S PC - NEVER A JOB MODEL.
+# Not the 4355 model that found row 5b-560, and not any copy of it: the
+# arrangement below drags views about by hand, and a proof's model is one you
+# can throw away. The fragment is a READ - no transaction, nothing changed by
+# it - so there is no `write:` below. The only changes are the arrangement.
+#
+# ARRANGE IT ONCE, BY HAND, AND SAVE IT (Revit 2020 first - the owner's job
+# release - then any other release to hand):
+#
+#   1. File > New > Project, the default metric template. Save it as
+#      heron-sheets-scratch.rvt anywhere outside the Heron folder.
+#   2. View > Legends > Legend, name it  HERON TEST LEGEND , and put one text
+#      note in it so it has a size.
+#   3. Make four sheets with the template's title block, numbered
+#      S-01, S-02, S-03 and S-04.
+#   4. S-01: drag the Level 1 floor plan on, inside the title block. Drag
+#      HERON TEST LEGEND on, then move it so its box runs past the RIGHT edge
+#      of the title block by about 50 mm. Clear of the plan.
+#   5. S-02: drag the Level 2 floor plan on. Drag HERON TEST LEGEND on (a
+#      legend can sit on many sheets), inside the title block, and move it
+#      so its box lies over a corner of the Level 2 plan's box.
+#   6. S-03: drag the Site plan on, alone, well inside the title block. A
+#      CLEAN sheet: nothing off it, nothing over anything.
+#   7. S-04: nothing on it at all.
+#   8. Measure before the run, in Revit: on S-01 and S-02 select the legend's
+#      viewport and note where its box sits; the title block's extents are
+#      its family's sheet size.
+#
+# THREE JOBS, ONE FRAGMENT, AND THE ORDER MATTERS. Each job overwrites the same
+# run record, brain/proof-drafts/runs/list-views-on-sheet.json, and the same
+# draft, brain/proof-drafts/list-views-on-sheet.yaml - so the draft left at
+# the end is the LAST job's, the pair to sign. Read each verdict as it prints.
+#
+#   1. every sheet       - positive both inputs LEFT OUT (every sheet), negative
+#                          the clean sheet S-03 - a check, read by hand
+#   2. one sheet         - positive S-01, negative a number no sheet carries
+#   3. THE PROOF         - positive HERON TEST LEGEND by name on every sheet,
+#                          negative the same name asked of the empty sheet S-04
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - job 1, NEG NOT EMPTY IS EXPECTED, AND IS NOT THE FINDING. The clean
+#     sheet still lists its Site plan, and batch-prove judges every result.
+#     What must be EMPTY on S-03 is offTitleBlock, overlaps and their counts
+#     (0 and 0) - "a clean sheet answers no findings". Read them. Either
+#     count above 0 on S-03 is a defect: a box said off or over that is not.
+#     On the positive: offTitleBlockCount 1 (S-01's legend) and overlapCount 1
+#     (S-02's legend and Level 2), each row naming its sheet
+#   - job 2, PASS whatever sheetProblem says. Read it: "no sheet numbered
+#     'ZZZ999'". On the positive: offTitleBlock names the legend, the RIGHT
+#     side, and about 50 mm; viewsOnSheet gives the plan and the legend, each
+#     with "box (x1, y1) to (x2, y2) mm" and a viewport type
+#   - job 3, PASS: the legend came back on S-01 and S-02 and on nothing else,
+#     and the empty sheet gave nothing. NEG NOT EMPTY means something was read
+#     off S-04, or a view that is not the legend was answered
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - job 3's viewCount is 2 and viewsOnSheet has exactly two rows, starting
+#     "S-01:" and "S-02:"; sheetRead names those two sheets
+#   - the legend's box on S-01 against the title block: the "right" amount is
+#     how far its box's right edge lies past the title block's, within a
+#     millimetre or two of what Revit shows. A box said off on the LEFT, or
+#     an amount near 0.05 or 15000, means a side or a unit is wrong
+#   - the overlap on S-02 is "W x H mm" - compare with the two boxes' corners
+#     in the same answer: W and H are where they share width and height
+#   - the box's corners are lower left, then upper right: x1 < x2 and y1 < y2
+#   - viewport type is what Properties shows as the viewport's Type
+#   - a box is the view and its annotation, never the title under it (row
+#     5b-560's NEEDS-CHECKING group FG asks it in Revit)
+#   - viewProblem on job 3's negative says the legend "is in the model but on
+#     none of the sheets read"
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the scratch project to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: heron-sheets-scratch.rvt, a scratch project from the default metric template, Revit 2020 first - sheets S-01 to S-04 arranged by hand as above
+
+jobs:
+  - fragment: list-views-on-sheet
+    expect: overlapCount
+    negative-set:
+      sheetNumber: S-03
+    note: >
+      Check 1 of 3. Both inputs left out, so every sheet - the card reads an
+      absent value as "all". NEG NOT EMPTY is expected (S-03 lists its Site
+      plan); offTitleBlockCount and overlapCount on S-03 must be 0.
+
+  - fragment: list-views-on-sheet
+    expect: offTitleBlockCount
+    set:
+      sheetNumber: S-01
+    negative-set:
+      sheetNumber: ZZZ999
+    note: >
+      Check 2 of 3. S-01's legend runs off the right of the title block by
+      about 50 mm. sheetProblem on the negative must read "no sheet numbered
+      'ZZZ999'".
+
+  - fragment: list-views-on-sheet
+    expect: viewCount
+    set:
+      viewName: HERON TEST LEGEND
+    negative-set:
+      sheetNumber: S-04
+      viewName: HERON TEST LEGEND
+    note: >
+      THE PROOF, and last so its draft is the one left. One legend by name,
+      on the two sheets it sits on, each with its box, the S-01 one off the
+      title block and the S-02 one over Level 2 - against the same name asked
+      of a sheet with nothing on it.
