@@ -123,9 +123,14 @@ utterances:
 # NOT NAMED, ON PURPOSE (2026-10-14, FRAGMENT-ISSUES 5b-465): LIST_SHEET_SETS,
 # the read of the saved View/Sheet Sets. Nothing in this method saves a set -
 # the method stops before the issue, and a print set is MANAGE_SHEET_SETS',
-# which is not a step here - so there is nothing for the read to check. When a
-# print-set step is added (row 5b-466 asks MANAGE_SHEET_SETS for an add mode
-# first), LIST_SHEET_SETS is its read-back and goes in this list beside it.
+# which is not a step here - so there is nothing for the read to check.
+# Row 5b-466's add mode exists since MANAGE_SHEET_SETS version 2 (2026-10-17,
+# DRAFT, NEEDS-CHECKING Group FA), with remove beside it, and this method
+# still has no print-set step: adding one is a change to the method, not to
+# a cross-reference. When it is added, MANAGE_SHEET_SETS is the step and
+# LIST_SHEET_SETS its read-back - it flags a set left EMPTY and, since its
+# version 2, two sets holding the same sheets (row 5b-545) - and both go in
+# this list.
 #
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:

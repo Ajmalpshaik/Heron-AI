@@ -751,6 +751,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
+## Group FA - sheet sets v2: sheets added to and taken out of an existing set, the print range put back, and two sets holding the same sheets flagged: `MANAGE_SHEET_SETS` and `LIST_SHEET_SETS` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fa.md`](needs-checking/group-fa.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
