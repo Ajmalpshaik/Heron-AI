@@ -2841,6 +2841,12 @@ def revit_read(capability: str = "", values: str = "",
     with io.open(source_path, "r", encoding="utf-8") as fh:
         source = fh.read()
 
+    # NOTHING WRITTEN TO DISK, EITHER: no transaction is needed to write a
+    # file, so the missing one does not stop it (heron_tools.disk_refusal).
+    on_disk = tools.disk_refusal("revit_read", capability, source)
+    if on_disk:
+        return _ended("refused", on_disk)
+
     needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
                                                folder, "fragment.yaml"))
     if needs is None:
@@ -3034,6 +3040,12 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     with io.open(source_path, "r", encoding="utf-8") as fh:
         source = fh.read()
 
+    # NOTHING WRITTEN TO DISK, EITHER: no transaction is needed to write a
+    # file, so the missing one does not stop it (heron_tools.disk_refusal).
+    on_disk = tools.disk_refusal("revit_show", capability, source)
+    if on_disk:
+        return _ended("refused", on_disk)
+
     # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
     # called from the client exactly as both other doors call it.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
@@ -3200,6 +3212,8 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
                      "another level, outside its range or hidden by its own settings, "
                      "and isolating cannot show them here."
                      % ("{:,}".format(seen), "{:,}".format(isolated)))
+    # WHOSE IT WAS IS NOT KNOWN - the modeller's, or an earlier Heron call's,
+    # a resend after a lost answer included - so it is not said.
     if reply.get("replacedEarlier"):
         lines.append("  A temporary isolate was already on in this view, and this "
                      "replaced it rather than adding to it.")
@@ -3235,15 +3249,22 @@ def revit_reset_temporary() -> str:
     if not reply.get("ok"):
         return reply.get("message") or reply.get("error") or "The request was refused."
 
+    # THE WRONG MODEL, SAID - BUT NOT AS A FAILURE when it reset something. An
+    # isolate that landed in the wrong model's view tells the chat to call
+    # this to end it, so ending it there is the job done, not a mistake. When
+    # nothing was on, the pin's own sentence is used, as every tool here uses
+    # it (row 5b-594 records what that sentence gets wrong after the act).
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         if reply.get("reset"):
-            _ended("failed")
-            return ("Heron reset the temporary hide/isolate in \"%s\" of %s before it could "
-                    "tell that %s is not the model this chat works on (%s). Only that "
-                    "view's temporary display changed; nothing in either model was changed."
+            _ended("ok")
+            return ("Reset the temporary hide/isolate in \"%s\" of %s. %s is not the model "
+                    "this chat works on (%s) - if that isolate was the one Heron made in the "
+                    "wrong model, it is ended now. Only that view's temporary display "
+                    "changed; nothing in either model was changed. Say 'use this model' to "
+                    "move this chat onto %s."
                     % (reply.get("view"), reply.get("document"), reply.get("document"),
-                       pinned.title))
+                       pinned.title, reply.get("document")))
         return _ended("refused", wrong_model)
 
     return "%s (%s, Revit %s, session %s)" % (
