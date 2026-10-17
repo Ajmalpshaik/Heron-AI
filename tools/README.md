@@ -2242,8 +2242,8 @@ python tools/hook-report.py --log FILE      # another diary file
 ```
 
 Every hook in [`.claude/settings.json`](../.claude/settings.json) - the
-[guard](../.claude/skills/heron-guard/SKILL.md), the session line and the "has main moved?" advice of
-[`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
+[guard](../.claude/skills/heron-guard/SKILL.md), the session line, the "has main moved?" advice and the
+LOCAL-prompt note of [`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
 outside this repository, found through Heron's own path helpers and never a typed path. This counts it:
 per hook, how many decisions in how many sessions, each kind of decision, **how often it spoke at all**,
 and the things it said most.
@@ -2258,3 +2258,41 @@ several processes - is counted and shown, never fatal, and the one older copy ke
 read too. No diary on this machine is an answer, with the reason, not a crash.
 [`tests/test_hook_report.py`](../tests/test_hook_report.py) holds it to a diary written with known
 contents.
+
+## `time-family-build.py` - where a family build's minutes went
+
+```bash
+python tools/time-family-build.py CHAT.jsonl --audit AUDIT          # the report
+python tools/time-family-build.py CHAT.jsonl --audit AUDIT --json   # for a machine
+python tools/time-family-build.py CHAT.jsonl --since 2026-10-09T13:33:00Z --until 2026-10-09T13:55:00Z
+python tools/time-family-build.py --form-cards                      # which capabilities build forms
+```
+
+`CHAT.jsonl` is a Claude Code transcript; `AUDIT` is the add-in's `audit-YYYYMM.jsonl`, or the folder
+holding it - a folder is read for the add-in's monthly files only, because `audit-brain-*.jsonl` holds
+the brain's lookups, which are not Revit's time.
+
+**[docs/04 §8.7](../docs/04-heron-mcp.md)'s two family-build measurements were worked out by hand**, from
+the files [row 5b-378](../docs/FRAGMENT-ISSUES.md) names, so the next re-timing had nothing to be compared
+with like for like. This is that hand: request to finish, the model's own turns and their share, thinking
+tokens and seconds, the model and effort the chat ran, the Heron calls and the `revit_change` hand-back,
+Revit's own time and its first runs in a session, Heron's time around Revit a batch and a call, forms
+built and seconds a form.
+
+**Every number names the file and lines it was read from, and a number the files cannot show is NOT
+MEASURED, never estimated.** The chat's time is split at each line's own timestamp - the interval ending
+at an assistant line is the model's, at a tool's result the tool's, at a prompt the person's - so the
+three add up to request to finish exactly. Revit's time is the audit's `ms` for each line whose `at`
+falls inside one of this chat's Heron calls; a line inside the chat's minutes and outside every call is
+another chat's, and is counted apart. Thinking tokens, thinking seconds and effort are read only where
+the transcript records them (`output_tokens_details`, `thinkingDurationMs`, `effort`), and `output_tokens`
+is never passed off as thinking. Which capabilities build forms is read from the cards: a card that
+provides `formId` builds one a run, one that provides `formCount` builds what its reply says - and a
+reply that does not print it leaves the total NOT MEASURED rather than counting the rows sent. **Heron's
+server alone is always NOT MEASURED:** it keeps each call's seconds in memory only
+(`heron_companion.Activity`).
+
+**A report, not a gate: it exits 0 whatever it finds**, and 2 only when a file it was named is not there.
+[`tests/test_time_family_build.py`](../tests/test_time_family_build.py) holds it to synthetic transcripts
+and audit lines shaped like both builds, with a negative case - a transcript with no Heron call reports
+zero calls and NOT MEASURED for Revit's time. Not yet run on the owner's own transcripts.
