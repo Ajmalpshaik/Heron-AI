@@ -641,6 +641,44 @@ def main():
             check(got is not None and "FIXED-SIZE FAMILY" in got["purpose"],
                   "and the family method it names carries the fixed-size path")
 
+            # THE OWNER'S SWAP ASKS (row 5b-560). Both named the family
+            # CREATION methods - "build a new family" - beside a request to
+            # replace one, or nothing at all. The capabilities are the ones
+            # the lookup returned for these words on 2026-10-17, the first on
+            # the built-in search and the second on the trained one; only the
+            # skills decide here.
+            jobs_now = SKILL.load_all()[0].values()
+            swap = SKILL.methods_for(
+                jobs_now, "swap this family for that one keeping their data",
+                ["REPLACE_MATERIAL", "SET_SHEET_TITLE_BLOCK",
+                 "ADD_FAMILY_TYPE_PARAMETER", "CHANGE_ELEMENT_TYPE",
+                 "REPORT_SHEET_TITLE_BLOCKS"])
+            check([s.id for s in swap][:1] == ["replace-in-place-family"],
+                  "\"swap this family for that one keeping their data\" names "
+                  "the replace method first - %s" % [s.id for s in swap])
+            openings = SKILL.methods_for(
+                jobs_now,
+                "replace these openings with the TRG family at the same place",
+                ["SELECT_OPENINGS", "COPY_TAGS_TO_REPLACEMENTS",
+                 "AUDIT_MEP_OPENINGS", "SET_SHEET_TITLE_BLOCK",
+                 "SET_VIEW_FILTER_CATEGORIES"])
+            check([s.id for s in openings][:1] == ["replace-in-place-family"],
+                  "\"replace these openings with the TRG family at the same "
+                  "place\" names the replace method first - %s"
+                  % [s.id for s in openings])
+            # And it is named beside nothing that replaces nothing: a hosted
+            # placement is kept out of its needs, and no utterance of it says
+            # "this", which the word splitter keeps as "thi" (row 5b-561).
+            for request, caps in (
+                    ("place windows in this wall", ["PLACE_HOSTED_FAMILY"]),
+                    ("who owns this element",
+                     ["REPORT_ELEMENT_OWNERSHIP", "READ_ELEMENT_OWNERSHIP",
+                      "SELECT_BY_WORKSET", "SET_ELEMENT_WORKSET"])):
+                named = [s.id for s in SKILL.methods_for(jobs_now, request, caps)]
+                check("replace-in-place-family" not in named,
+                      "%r does not name the replace method - %s"
+                      % (request, named))
+
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to
         # do nothing" and "Heron cannot read what it knows" send a user in
