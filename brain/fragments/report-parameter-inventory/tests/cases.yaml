@@ -35,6 +35,68 @@ positive:
       tag on it with view, tag type, head in mm and leader - checked against the
       Properties palette, Edit Type and each view the tags are in
 
+  # ---- VERSION 3 (NEEDS-CHECKING Group EK) ----------------------------------
+  # Run on a TEST COPY, never the central: a copy of Snowdon-scratch_ajmal.al
+  # saved as "Heron Record WS.rvt". If Collaborate > Worksets says the copy is
+  # not workshared, enable worksets on the copy. Read only - nothing changes.
+
+  - given: >
+      THE D-30 POSITIVE. On Heron Record WS.rvt, 50 MIXED elements typed in
+      elementIds - 10 ducts in FloorPlan: M1, 10 pipes (10 more ducts if
+      the model has no pipes), 10 walls, 10
+      mechanical equipment, 5 duct tags, 4 air terminals and one placed
+      Revit link - with fullRecord true, includeTypeParameters true,
+      sampleOnly false, includeTags true and maxChars 1000000. The ids from
+      Manage > IDs of Selection, nothing selected
+    expect: >
+      record headed "PARAMETER RECORD: 50 element(s)" and "from 50 id(s) typed,
+      50 found", no RECORD CUT line, missing empty, and EVERY FIELD FILLED
+      where it applies - on every block a unique id; a level (the walls "from
+      LevelId", the ducts and pipes "from RBS_START_LEVEL_PARAM"); a workset
+      name; the duct tags with their owner view by name, every model element
+      "owner view: none"; the ducts, pipes and walls a curve length in mm that
+      matches the Length in Properties; the link "link document" with the
+      linked model's title. Parameters sorted by name ignoring case, each with
+      its built-in name or "-" and a raw value - a duct's Width raw in FEET
+      beside the value as shown, the two agreeing once converted by hand
+
+  - given: >
+      THE SAME 50 ids with maxChars left out, so the card's default applies
+    expect: >
+      the binding note says maxChars not given - "60000", the card's own
+      default; record no longer than 60000 characters, ending in "RECORD CUT
+      AT THE 60000-CHARACTER BUDGET" naming how many were written whole, which
+      element was cut and every id not written; asked again with exactly those
+      ids, they are described and nothing written before is repeated
+
+  - given: >
+      60 ids typed - the 50 above and 10 more ducts - maxChars 1000000
+    expect: >
+      "FIRST 50 OF 60" in the header with the 51st id named as the next; the
+      first 50 recorded as in the positive; the inventory in findings still
+      read from all 60
+
+  - given: >
+      the 50 ids again with parameterFilter "level, offset"
+    expect: >
+      every block's parameter heading reads "N kept of M", and every line kept
+      has "level" or "offset" in its name or its built-in name - a duct's
+      Reference Level kept, a wall's Base Constraint not (neither its name nor
+      WALL_BASE_CONSTRAINT holds either word); the inventory in findings is
+      unfiltered
+
+  - given: >
+      A LINKED MODEL. On Heron Record WS.rvt, three structural framing ids
+      from INSIDE the placed Snowdon Towers Sample Structural link - read from
+      the linked file itself, opened alone, with Manage > IDs of Selection -
+      with linkName "Structural" and fullRecord true
+    expect: >
+      "read in 'Snowdon Towers Sample Structural...' through the link" with
+      the link's id; three blocks of structural framing, each id the LINK's
+      own, its level from the link, its location in the link's coordinates
+      with "in this model's coordinates" beside it; "tags not read"; missing
+      empty. Version 2 could not reach these at all
+
 negative:
   - given: any element at all
     expect: >
@@ -78,6 +140,60 @@ negative:
       "no parameters could be read" with the note that it is not a normal state -
       not an empty success
 
+  - given: nothing selected and no elementIds (version 3, elements optional)
+    expect: >
+      it RUNS and says "Nothing was handed in - nothing selected and no
+      element ids typed", parameterNames 0 - never an empty success, and no
+      longer a refusal before it runs
+
+  # ---- VERSION 3 (NEEDS-CHECKING Group EK) ----------------------------------
+
+  - given: >
+      THE D-30 NEGATIVE. On Heron Record WS.rvt, elementIds "<one real duct
+      id>, 999999999, abc", fullRecord true
+    expect: >
+      missing holds 999999999 and "abc (not an id - digits only)"; the duct is
+      still described in full; the record's header lists both under "IN missing";
+      nothing about either is invented. The binder's own typed-id rule would
+      have refused the whole call - this read describes the rest
+
+  - given: elementIds of three ids that name nothing in the model
+    expect: >
+      missing 3, no ELEMENT block, parameterNames 0 and "None of the 3 id(s)
+      typed named an element that could be read - see missing"
+
+  - given: >
+      the three linked framing ids of the link case WITHOUT linkName
+    expect: >
+      each id looked up in the HOST: in missing, or - if the host holds an
+      element with the same number - a block naming a different category
+      from structural framing. The case version 3's linkName exists for
+
+  - given: linkName "ZZZNOTHINGHERE" with the three framing ids
+    expect: >
+      nothing looked up; all three in missing; the first finding "No placed
+      link matches 'ZZZNOTHINGHERE'" naming every link the model places
+
+  - given: the link case with that link unloaded in Manage Links
+    expect: >
+      "matches a link that is present but NOT LOADED"; all three in missing -
+      never "nothing found in the link"
+
+  - given: ten ducts selected AND two other ids typed in elementIds
+    expect: >
+      only the two typed are described; a finding says the 10 selected were
+      NOT read because ids were typed
+
+  - given: the positive's ids on a model that is not workshared
+    expect: >
+      no workset line on any block and the header "worksets not shown - not a
+      workshared model" - never a blank or invented workset
+
+  - given: maxChars 100
+    expect: >
+      raised to 5000, the header saying so; the record no longer than that
+      with its RECORD CUT line
+
   - given: a parameter whose value throws when read
     expect: >
       "<unreadable>" for that one, every other parameter still listed. One bad
@@ -91,3 +207,9 @@ second_route:
   - >
     Manage - Project Parameters shows which are project parameters, which is the
     one distinction this fragment honestly cannot make on its own
+
+  - >
+    Version 3: Manage > Select by ID with each typed id - the element Revit
+    selects is the one the block describes - and Properties' Workset, Level and
+    Length for the same element. For a linked id, the linked file opened alone
+    with Select by ID

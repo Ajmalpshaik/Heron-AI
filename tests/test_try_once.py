@@ -40,7 +40,7 @@ WHAT IT PROVES
 WHAT IT CANNOT SAY
 ------------------
 That Revit draws the change before the box, that Keep leaves one undo entry
-and Discard none. That is NEEDS-CHECKING Group EK, on a real Revit.
+and Discard none. That is NEEDS-CHECKING Group EL, on a real Revit.
 """
 
 import contextlib
