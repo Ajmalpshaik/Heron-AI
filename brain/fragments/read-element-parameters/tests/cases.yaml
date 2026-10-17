@@ -28,6 +28,23 @@ positive:
       "type" for each. Version 1 answered `absent` for all of them because it
       only ever asked the instance
 
+  - given: >
+      VERSION 3. A text note whose 8 paragraphs are a 1-2-3 list, reading
+      "Text"
+    expect: >
+      the note's wording in values with no closing carriage return,
+      resolvedFrom "note", and `noteWording` showing each paragraph end as \r,
+      the soft line breaks as \v, "lists: 1-8 ArabicNumbers from 1" and the
+      curly apostrophe named as U+2019. Version 2 answered `absent` - a note's
+      wording is no parameter
+
+  - given: >
+      the text notes of one view, collected with SELECT_VISIBLE_IN_VIEW
+      categories=Text Notes, reading "Text"
+    expect: >
+      every note in values and one line each in `noteWording`; a note in no
+      list says "no list"
+
 negative:
   - given: the same 4 ducts, reading a parameter name that does not exist
     expect: >
@@ -50,6 +67,17 @@ negative:
       ABSENT, not blank and not a throw. The level chain must be able to come
       back empty; a fallback that always finds something is a fallback that has
       started inventing
+
+  - given: >
+      VERSION 3. The same text notes, reading a name no note carries
+    expect: >
+      every one ABSENT and `noteWording` null - "Text" is the only name that
+      reads a note's wording, and any other name reads as version 2 did
+
+  - given: "\"Text\" on elements that are not text notes"
+    expect: >
+      looked up as a parameter, exactly as version 2 - absent where there is
+      none, and never a wording invented for them
 
 second_route:
   - open one element's properties in Revit and read the value by eye
