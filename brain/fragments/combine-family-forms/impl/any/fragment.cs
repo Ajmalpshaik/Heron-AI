@@ -269,6 +269,14 @@ if (refused == null && act == "combine")
     var touching = 0.01 / 304.8;
     var rays = new[] { new XYZ(0.5773, 0.5774, 0.5775).Normalize(), new XYZ(-0.6, 0.48, 0.64).Normalize(),
         new XYZ(0.31, -0.71, 0.63).Normalize() };
+    // SPARE DIRECTIONS, for a ray Revit cannot cast (5b-1001). On a VOID's body a
+    // line through one of its edges throws Revit's internal "Error from
+    // cutGCurveWithGeometry"; a solid's body takes the same line. Measured
+    // 2026-10-17, Revit 2024: a 40 mm square void on a cylinder's axis, a point
+    // on the axis, and the first ray running to the void's corner edge - the
+    // other two rays, and the first from 5 mm off the axis, answered.
+    var spares = new[] { new XYZ(0.8, 0.36, 0.48).Normalize(), new XYZ(-0.42, -0.83, 0.37).Normalize(),
+        new XYZ(0.23, 0.55, -0.8).Normalize() };
     Func<Element, List<Solid>> bodiesOf = element =>
     {
         var bodies = new List<Solid>();
@@ -284,6 +292,8 @@ if (refused == null && act == "combine")
     // INSIDE, BY COUNTING CROSSINGS: an odd number of face crossings between the
     // point and a far point means inside, whichever way the faces are turned. Two
     // of three skewed rays must agree, so one that grazes an edge is outvoted.
+    // A ray Revit cannot cast at all is replaced by the next spare direction, and
+    // with none left the call is refused in plain words rather than Revit's.
     Func<Solid, XYZ, bool> holds = (body, point) =>
     {
         var box = body.GetBoundingBox();
@@ -293,10 +303,20 @@ if (refused == null && act == "combine")
             return false;
         var reach = box.Max.DistanceTo(box.Min) + 1.0;
         var votes = 0;
-        foreach (var ray in rays)
+        var cast = 0;
+        string revitWords = null;
+        foreach (var ray in rays.Concat(spares))
         {
+            if (cast == rays.Length) break;
             var far = point + ray * reach;
-            var hit = body.IntersectWithCurve(Line.CreateBound(point, far), new SolidCurveIntersectionOptions());
+            SolidCurveIntersection hit;
+            try { hit = body.IntersectWithCurve(Line.CreateBound(point, far), new SolidCurveIntersectionOptions()); }
+            catch (Exception ex) when (ex.GetType().Name == "InternalException")
+            {
+                revitWords = ex.Message;
+                continue;
+            }
+            cast++;
             var crossings = 0;
             for (var i = 0; i < hit.SegmentCount; i++)
             {
@@ -309,6 +329,13 @@ if (refused == null && act == "combine")
             }
             if (crossings % 2 == 1) votes++;
         }
+        if (cast < rays.Length)
+            throw new InvalidOperationException("Revit could not tell whether the point ("
+                + Math.Round(point.X * 304.8, 1).ToString(invariant) + ", " + Math.Round(point.Y * 304.8, 1).ToString(invariant)
+                + ", " + Math.Round(point.Z * 304.8, 1).ToString(invariant) + ") mm lies inside a form: a line cast from "
+                + "it in " + (rays.Length + spares.Length - cast) + " of " + (rays.Length + spares.Length) + " directions "
+                + "failed in Revit, which happens where the line runs through one of the form's edges - its own words "
+                + "are \"" + revitWords + "\". NOTHING from this call was kept.");
         return votes >= 2;
     };
     Func<Solid, List<XYZ>> pointsIn = body =>

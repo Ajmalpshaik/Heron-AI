@@ -58,6 +58,10 @@ when its answers ran on another backend, every changed answer tagged against
 a second fixture tree with one card gone, and candidate identities re-scored
 offline on the shortlists the fake re-ranker read.
 
+Section 10, added 2026-10-17: on a store the run has just built, the index
+block printed beside the numbers counts it (row 5b-980) - it said "COULD NOT
+BE READ" on every fresh scratch store until the store was prepared first.
+
 Exit 0 passed, 1 failed, 3 could not run for want of PyYAML.
 """
 
@@ -1005,6 +1009,38 @@ def sentence_sets(tool):
         shutil.rmtree(work, ignore_errors=True)
 
 
+def fresh_store_fingerprint(tool):
+    """Section 10. On a store this run has just built, the index block counts
+    it - row 5b-980. The questions are not asked: `measure` and
+    `measure_plain` are stood in for, so the run stops being slow and the
+    block is all that is read."""
+    home = tempfile.mkdtemp(prefix="heron-score-fresh-")
+    was = (tool.measure, tool.measure_plain)
+    tool.measure = lambda *a, **k: []
+    tool.measure_plain = lambda *a, **k: []
+    kept = _set_env({"HERON_KNOWLEDGE": home})
+    said = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+            code = tool.main([])
+    except BaseException as raised:                      # noqa: BLE001
+        code = "raised %s: %s" % (type(raised).__name__, raised)
+    finally:
+        _set_env(kept)
+        tool.measure, tool.measure_plain = was
+        shutil.rmtree(home, ignore_errors=True)
+    text = said.getvalue()
+    block = text[text.find("THE INDEX THIS RAN AGAINST"):][:600]
+    counted = re.search(r"identities (\d+)", block)
+    check(code == 0, "a run on an empty scratch folder finishes (got %r)"
+          % (code,))
+    check("COULD NOT BE READ" not in block and counted is not None
+          and int(counted.group(1)) > 0,
+          "and the index block counts the store it has just built - not "
+          "'COULD NOT BE READ' (row 5b-980): %s"
+          % (" ".join(block.split())[:160],))
+
+
 def main():
     print(__doc__.strip().splitlines()[0])
     print()
@@ -1374,6 +1410,12 @@ def main():
           "asked on a fixture tree, refused on the wrong backend, compared, "
           "re-scored offline")
     sentence_sets(tool)
+
+    # ------------------------------------------------------------------
+    print()
+    print("10. The index it ran against is counted on a store it has just "
+          "built - row 5b-980")
+    fresh_store_fingerprint(tool)
 
     return finish()
 
