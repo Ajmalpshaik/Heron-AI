@@ -29,6 +29,30 @@ positive:
       the hidden column still hidden. Every input left empty stays untouched,
       or the fragment un-hides work somebody did deliberately
 
+  # VERSION 3 (row 5b-620).
+  - given: fieldName "all", alignment "centre", headingOrientation "horizontal"
+    expect: >
+      every column of the schedule centred with its heading horizontal, in ONE
+      call - one entry in Revit's Undo list - and one line per column in
+      appliedAppearance, each read back. The request that took one call per
+      field on 2026-10-15
+
+  - given: fieldName "Mark, Size" on a schedule that also has Length
+    expect: >
+      Mark and Size changed and read back, Length untouched; a name in the list
+      that is not a column named in notPresent, the others still done
+
+  - given: headingOrientation "horizontal" on a column whose heading is sideways
+    expect: >
+      the heading reads horizontally again - the change version 2 could not
+      make, because headingSideways false meant "leave it"
+
+  - given: headingSideways true and headingOrientation left out
+    expect: >
+      the heading turned sideways exactly as in version 2 - the card's absent
+      word "leave" hands headingSideways the decision. A version 2 caller sees
+      no difference
+
 negative:
   - given: an empty newHeading and columnWidthMm of 0
     expect: >
@@ -54,6 +78,23 @@ negative:
       NOT DONE BY THIS FRAGMENT AT ALL, and the Revit route named. Bold lives on
       the schedule's text type, which other schedules share - a fragment that
       edits it to satisfy one sentence restyles drawings nobody asked about
+
+  # VERSION 3.
+  - given: fieldName "all" and a newHeading
+    expect: >
+      the heading NOT written on any column - one title over every column is a
+      mistake nobody asked for - and said so in refused; any alignment or
+      orientation in the same call still applied
+
+  - given: headingSideways true and headingOrientation "horizontal"
+    expect: >
+      refused before anything is written - the two ask for opposite things - and
+      NOTHING changed, not even an alignment sent in the same call
+
+  - given: headingSideways false and headingOrientation left out
+    expect: >
+      every heading exactly as it was. False never meant horizontal and must not
+      start meaning it for a caller who has not asked
 
 second_route:
   - >

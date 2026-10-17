@@ -1,0 +1,170 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-033
+semantic-identity: "pick the sheets for an issue by one revision - its sequence, description or date, latest on the sheet or not - or by a typed list of sheet numbers"
+kind: filter
+domain: revit.sheets
+capability: FIND_SHEETS_BY_REVISION_OR_NUMBER
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY THIS IS A NEW CARD AND NOT A WIDENING (2026-10-17, FRAGMENT-ISSUES row
+#   5b-550). The owner's rule is to widen what already touches the job first.
+#   Three cards touch it, and each was weighed:
+#   - FIND_SHEETS (PROVEN v1) is the natural home - "the sheets, narrowed" -
+#     but any change under its impl/ makes its proof stale and sends it back
+#     to DRAFT, and a PROVEN change needs Ajmal PS's yes. Its one input,
+#     numberOrNameContains, is a CONTAINS match: "17" finds 17, 170 and 179,
+#     so a list of numbers cannot be put through it without changing what the
+#     proved input means.
+#   - SELECT_BY_PARAMETER_VALUE (PROVEN v2) matches a parameter's text. A
+#     sheet's revisions are not a parameter: "Current Revision ..." holds the
+#     LATEST one only, which is why the 2026-10-14 sheet set worked only while
+#     Seq. 15 was the latest on all 8 sheets. Widening it would mean teaching
+#     a generic parameter filter one sheet-only API call.
+#   - LIST_REVISIONS (DRAFT v1) reads which sheets carry each revision, but
+#     its `elements` are the REVISIONS. Making them sheets would change what
+#     every chain that reads it receives.
+#   So a new READ filter, and both PROVEN proofs stand. If Ajmal PS later says
+#   yes to FIND_SHEETS version 2, the number list can move there and this card
+#   keep the revision half - written in the row, not decided here.
+#
+# NOTHING IS ASSUMED ABOUT WHICH FIELD THE MODELLER MEANT (D-01). "Revision 15"
+#   can be the Seq. column or a number printed in the title block; the host
+#   decides and fills ONE input, and `revisionsMatched` names every field of
+#   every revision chosen, so a wrong choice is seen before a set is saved.
+#   NOT YET: the number a revision PRINTS ("C", "3") is no input here - with
+#   Per Sheet numbering it differs from sheet to sheet. Ranges ("179-186")
+#   are not read either: a sheet can be numbered 179-186.
+purpose: >
+  Picks the sheets for an issue - the sheets of one revision, the sheets
+  in a list of sheet numbers, or both - and leaves them for the next
+  step: a sheet set, a PDF export, a title block.
+
+  ANY REVISION ON THE SHEET, NOT ONLY THE LATEST. A sheet is picked when the
+  revision is anywhere in Revit's list of the sheet's revisions - ticked by
+  hand or clouded in a view placed on it. "Current Revision" holds only the
+  latest, so a filter on it loses a sheet once a later revision is added.
+
+  The revision is chosen by its sequence number (the Seq. column of Sheet
+  Issues/Revisions), its description or its date, and must fit every one
+  given. A description fits whole first, ignoring case, and only then in
+  part; a date fits as typed in the dialog. A description that fits two
+  revisions is refused and both are named; a date may fit several - that
+  day's issues - and each is named.
+
+  Sheet numbers fit whole: "179, 180, 181" picks those three and never 1790.
+  A number that names no sheet comes back in `notFound`, a listed sheet
+  without the revision in `listedWithoutRevision`. Placeholder sheets are
+  returned and their ids handed over apart. Reads only.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The revision's number in the Seq. column of Sheet Issues/Revisions -
+    # "15", or "Seq. 15". One number. Left out: "any" - not narrowed by it.
+    - name: revisionSequence
+      type: string
+      source: request
+      optional: true
+      absent: any
+    # The revision's description, or a part of it - "IAB-ISSUED AS-BUILT",
+    # "as-built". Whole first, then a part; ignoring case. Left out: "any".
+    - name: revisionDescription
+      type: string
+      source: request
+      optional: true
+      absent: any
+    # The revision's date exactly as the dialog shows it - "14.10.2026".
+    # Ignoring case and outer spaces. Left out: "any".
+    - name: revisionDate
+      type: string
+      source: request
+      optional: true
+      absent: any
+    # Sheet numbers with commas, semicolons or new lines between -
+    # "179, 180, 181". Each matched WHOLE, ignoring case. No ranges: "179-186"
+    # cannot be told from a sheet numbered 179-186. Left out: "all" - every
+    # sheet, narrowed by the revision alone.
+    - name: sheetNumbers
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: elements
+      # The sheets picked, ordered by sheet number - placeholders included.
+      role: result
+      type: IList<Element>
+    - name: placeholders
+      # The placeholder sheets among them, by id, as FIND_SHEETS hands them.
+      role: result
+      type: IList<ElementId>
+    - name: revisionsMatched
+      # Every revision the revision inputs chose - its sequence, number, date
+      # and description, and how many sheets carry it - with " || " between.
+      # What the INPUTS resolved to, never a sheet found (D-52). A STRING,
+      # because a list reaches the reply cut to three short entries.
+      role: accounting
+      type: string
+    - name: notFound
+      # Typed sheet numbers that name no sheet in this model. What it was
+      # GIVEN and could not find, never a thing found (D-52).
+      role: accounting
+      type: string
+    - name: listedWithoutRevision
+      # Listed sheets that exist but do not carry the revision - the check
+      # before an issue. Left out of `elements` and named here.
+      role: accounting
+      type: string
+    - name: notRead
+      # Sheets whose revisions Revit would not hand over, with why. Counted,
+      # never matched and never dropped in silence.
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined, in the modeller's words, naming the project's
+      # revisions when the revision asked for is not among them (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ViewSheet.GetAllRevisionIds()`,
+  `SheetNumber` and `IsPlaceholder`, and `Revision.GetAllRevisionIds(Document)`,
+  `SequenceNumber`, `RevisionNumber`, `RevisionDate` and `Description` are
+  unchanged 2020 to 2027 - read 2026-10-17 off each release's reference
+  assembly with tools/api-surface --members, not remembered. Ids are kept as
+  ElementId and compared as ElementId; none is built from or read as a
+  number, so 2024's 64-bit ids do not reach this code.
+
+# ROUTING - repeated in FIND_SHEETS, LIST_REVISIONS and SELECT_BY_PARAMETER_VALUE.
+#
+#   "the sheets with the as-built revision"  -> here - revisionDescription
+#   "sheets on revision 15"                  -> here - revisionSequence
+#   "these sheets: 179, 180, 181"            -> here - sheetNumbers, whole
+#   "the m series sheets"                    -> FIND_SHEETS - a part of a
+#                                               number or a name
+#   "which sheets have this revision"        -> LIST_REVISIONS - a QUESTION,
+#                                               answered for every revision;
+#                                               this picks the sheets of one
+#                                               for the next step
+#   A match on "Current Revision Description" is SELECT_BY_PARAMETER_VALUE,
+#   and reads the LATEST revision on each sheet only.
+#   "save these sheets as a named set"       -> MANAGE_SHEET_SETS, handed
+#                                               this card's elements
+#   "put that revision on these sheets"      -> SET_SHEET_REVISIONS
+
+utterances:
+  - the sheets with the as-built revision
+  - sheets on revision 15
+  - "these sheets: 179, 180, 181"
