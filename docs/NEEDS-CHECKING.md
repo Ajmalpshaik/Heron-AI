@@ -751,6 +751,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
+## Group EU - Heron says when its own code changed under a chat, and changes nothing until the chat is reopened (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eu.md`](needs-checking/group-eu.md)
+
 ## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
