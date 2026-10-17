@@ -34,6 +34,7 @@ import ast
 import io
 import json
 import os
+import re
 import sys
 
 # The seven levels of docs/12 section 1, in order of what they cost if wrong.
@@ -434,10 +435,10 @@ ALSO_REACHES = {
 # a chat with no memory of Heron otherwise read the method off disk.
 #
 # revit_show, the third door, is NOT here, and that was measured rather than
-# chosen: on 2026-10-17 these six came to 4,435 characters of description
-# against tests/test_tool_sizes.py's 4,500, and a door cannot be described in
-# 65. Raising the budget is a decision (D-118). A chat finds it one search
-# away, and revit_read's refusal of an EXECUTE capability names it.
+# chosen: when it was written these six left less of tests/test_tool_sizes.py's
+# ALWAYS_LOADED_BUDGET than a door's description takes - `--sizes` below says
+# what they cost today. Raising the budget is a decision (D-118). A chat finds
+# it one search away, and the refusals and the method list that name it.
 ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
                  "revit_health", "revit_levels")
 
@@ -559,8 +560,10 @@ def door_refusal(door, declared, capability):
                    "switched on in Revit's ribbon.")
         # THE ONE MODIFY JOB A SHOW REQUEST IS USUALLY AFTER. Revit's temporary
         # isolate needs a transaction, so ISOLATE_ELEMENTS is MODIFY (D-125);
-        # the fixed operation does it with Changes off.
-        if door == "revit_show":
+        # the fixed operation does it with Changes off. Said only for an
+        # isolate: under any other change it would read as a way round the
+        # refusal, which no refusal here may offer.
+        if door == "revit_show" and "ISOLATE" in (capability or "").upper():
             instead += (" To isolate elements in the active view with Changes "
                         "off, revit_isolate_temporary does it.")
     else:
@@ -573,6 +576,118 @@ def door_refusal(door, declared, capability):
     return ("'%s' is declared %s, and %s runs nothing above %s - %s only. "
             "Nothing has been sent to Revit. %s"
             % (capability, NAMES[level], door, NAMES[ceiling], within, instead))
+
+
+# WHAT A FRAGMENT'S CODE WRITES TO DISK, read as code: comments and string
+# literals blanked first, so a header that names SaveAs is not a SaveAs.
+#
+# THE READ AND SHOW DOORS RUN WITH EVERY SWITCH OFF, and what they promise is
+# that only the screen can change. A file written is more than that - saving,
+# exporting and printing are Publish's (D-106) - and no transaction is needed
+# to write one, so Revit's refusal of a change outside a transaction does not
+# stop it. OPEN_FAMILY_FOR_EDITING, declared EXECUTE, writes a family to a
+# folder with OverwriteExistingFile on: through revit_show it would have
+# replaced a .rfa on disk with Changes, Admin and Publish all off. Row 5b-591.
+#
+# IT STOPS A FRAGMENT THAT SAYS WHAT IT DOES. A write through reflection or
+# another assembly is not seen - the same limit HeronSourceScan states for the
+# add-in's transaction check.
+_DISK_WRITE = re.compile(
+    r"\.(SaveAs|Save|SaveAsFamily|Export|Print|SubmitPrint|SynchronizeWithCentral)\s*\("
+    r"|\bFile\.(Write\w*|AppendAll\w*|Copy|Move|Delete|Create|Replace)\s*\("
+    r"|\bDirectory\.(CreateDirectory|Delete|Move)\s*\("
+    r"|\bnew\s+(?:System\.IO\.)?(StreamWriter|FileStream)\s*\(")
+
+
+def code_only(source):
+    """
+    `source` with every C# comment and string or character literal blanked,
+    lines kept - the Python half of Heron.Core's HeronSourceScan.CodeOnly.
+    Regular, verbatim (@"..."), interpolated ($"...") and both.
+    """
+    if not source:
+        return source or ""
+    out = []
+    i, n = 0, len(source)
+    while i < n:
+        c = source[i]
+        nxt = source[i + 1] if i + 1 < n else ""
+        if c == "/" and nxt == "/":
+            while i < n and source[i] != "\n":
+                out.append(" ")
+                i += 1
+            continue
+        if c == "/" and nxt == "*":
+            out.append("  ")
+            i += 2
+            while i < n and not (source[i] == "*" and i + 1 < n and source[i + 1] == "/"):
+                out.append("\n" if source[i] == "\n" else " ")
+                i += 1
+            if i < n:
+                out.append("  ")
+                i += 2
+            continue
+        start, verbatim = i, False
+        while i < n and source[i] in "$@":
+            verbatim = verbatim or source[i] == "@"
+            i += 1
+        if i < n and source[i] == '"' and (i > start or c == '"'):
+            out.append(" " * (i - start + 1))
+            i += 1
+            while i < n:
+                if verbatim and source[i] == '"' and i + 1 < n and source[i + 1] == '"':
+                    out.append("  ")
+                    i += 2
+                    continue
+                if not verbatim and source[i] == "\\" and i + 1 < n:
+                    out.append("  ")
+                    i += 2
+                    continue
+                if source[i] == '"':
+                    out.append(" ")
+                    i += 1
+                    break
+                out.append("\n" if source[i] == "\n" else " ")
+                i += 1
+            continue
+        i = start
+        if c == "'":
+            out.append(" ")
+            i += 1
+            while i < n and source[i] not in "'\n":
+                if source[i] == "\\" and i + 1 < n:
+                    out.append(" ")
+                    i += 1
+                out.append(" ")
+                i += 1
+            if i < n and source[i] == "'":
+                out.append(" ")
+                i += 1
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def writes_to_disk(source):
+    """The first call in `source` that writes to disk, as written - or None."""
+    found = _DISK_WRITE.search(code_only(source or ""))
+    return found.group(0).rstrip("( ") if found else None
+
+
+def disk_refusal(door, capability, source):
+    """
+    Why `door` - a door that runs with every switch off - will not run this
+    source, or None. Pure, so tests/test_read_door.py runs it over the library.
+    """
+    found = writes_to_disk(source)
+    if found is None:
+        return None
+    return ("'%s' writes to disk - its code calls %s - and %s runs only what "
+            "changes nothing beyond the screen, with every switch off. Nothing has "
+            "been sent to Revit. Saving, exporting and printing are Publish's "
+            "(D-106), behind the owner's own switch."
+            % (capability, found.lstrip("."), door))
 
 
 

@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-027
-semantic-identity: "what one sheet already carries - its viewports and schedules, each with its type and scale"
+semantic-identity: "what the sheets carry and where - each viewport and schedule with its box on the paper, every sheet one view or legend is on, and any box running off its title block or overlapping another"
 kind: action
 domain: revit.sheets
 capability: LIST_VIEWS_ON_SHEET
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -18,6 +18,17 @@ risk: READ
 # and spelling, because no READ named a sheet's views: LIST_SHEETS only
 # COUNTS them. A gap, not a mis-route, so declaring the sentence on an
 # existing card could not repair it.
+#
+# VERSION 2, 2026-10-17, FRAGMENT-ISSUES ROW 5b-560 - WIDENED, NOT A NEW
+# TOOL. Asked to put a second note beside a legend, a chat had to write its
+# own probe to learn which four sheets the legend was on, where its box sat on
+# each, and that a wider legend would run off all four. So each box comes back
+# corner to corner with its viewport type, one view can be asked for by name
+# across every sheet, and a box past the title block or over another box is
+# said with by how many millimetres. Both inputs may be left out (`absent:
+# all`), so nothing new is required. A version 1 caller - a sheet number and
+# nothing else - gets every row it got before, with the box and viewport type
+# added to each.
 #
 # THE WRITE'S WORDS ARE KEPT OUT OF THE INDEXED TEXT ON PURPOSE - identity,
 # utterances and purpose. Measured the same day: a first version whose
@@ -48,18 +59,39 @@ risk: READ
 # brought it here, and took "place the plans on sheet M-101" (model) and
 # "put this schedule on sheet M-105" (spelling) from their writes.
 purpose: >
-  Answers what a sheet carries - which viewports and which schedules the
-  sheet with this number already holds: each viewport's view name, view
-  type and scale ("1 : 100"), its detail number and where it sits on the
-  sheet in millimetres, and, apart from them, each schedule on that sheet. A
-  question, read and never changed - it opens no transaction.
+  Answers what the sheets carry and where each thing sits on the paper -
+  which viewports, legends and schedules one sheet holds, or every sheet one
+  view or legend is on - each with its box corner to corner in millimetres,
+  its viewport type, its view type and scale ("1 : 100") and its detail
+  number. And it checks the layout: a box running off the sheet past its
+  title block, and two viewports or schedules overlapping, each said with by
+  how many millimetres. A question, read and never changed - it opens no
+  transaction.
 
-  **THE SHEET IS NAMED BY ITS NUMBER**, matched whole and ignoring case. A
-  number that matches no sheet is said by name and nothing is read; a blank
-  one is refused rather than answered from the sheet in front or the first
-  sheet in the list, which would be a confident answer about a sheet nobody
-  asked about. To find a sheet by its title first, FIND_SHEETS takes part of
-  a number or a title.
+  **THE SHEET IS NAMED BY ITS NUMBER, OR "all" FOR EVERY SHEET**, matched
+  whole and ignoring case. Left out, it is every sheet - so "does any view
+  run off the sheet" needs no number. A number that matches no sheet is said
+  by name and nothing is read; a blank one is refused rather than answered
+  from the sheet in front or the first sheet in the list, which would be a
+  confident answer about a sheet nobody asked about. To find a sheet by its
+  title first, FIND_SHEETS takes part of a number or a title.
+
+  **ONE VIEW BY NAME, ON EVERY SHEET IT IS ON.** A legend or a schedule can
+  sit on many sheets. Named in `viewName`, whole and ignoring case, only its
+  rows come back - one per sheet, with the box on each - and the sheets it
+  is on are named. It is still measured against everything else on each of
+  those sheets, so a legend overlapping a plan is found, but only a problem
+  that involves it is said. A name on no sheet is said, with the names on
+  the sheets that hold the text typed. Left out, it is every view.
+
+  **OFF THE SHEET AND OVERLAPS, MEASURED ON THE BOXES.** The paper is the
+  title block's extent on the sheet; a box past it is said side by side -
+  left, right, bottom, top - with how far. Two boxes overlapping are said
+  with how wide and how high the overlap is. Within half a millimetre is a
+  layout snapped edge to edge, not a problem. A viewport's box is the view
+  and its annotation, never the title under it. A sheet with no title block
+  cannot be checked for running off, and is named as not checked rather
+  than passed.
 
   **A SCHEDULE ON A SHEET IS NOT A VIEWPORT, SO IT IS GIVEN APART.** Revit
   shows a view on a sheet through a viewport and a schedule through a
@@ -75,47 +107,101 @@ purpose: >
   number Revit itself calls meaningless.
 
   **A PLACEHOLDER SHEET HOLDS NOTHING AND IS SAID TO BE ONE.** It is a number and
-  a name with no title block, and it can hold no view.
+  a name with no title block, and it can hold no view. Among every sheet,
+  placeholders are counted and left out.
+
+  **A LONG ANSWER SAYS IT WAS CUT.** Each list stops before 60000
+  characters and its last row says how many were not written; the counts
+  are never cut.
 
 contract:
   needs:
     - name: doc
       type: Document
     # The sheet NUMBER, as PLACE_VIEWS_ON_SHEET takes it - matched whole and
-    # ignoring case, never as part of a number. Send it, blank or not: the
-    # add-in refuses a `source: request` need that arrives with no value
-    # (FRAGMENT-ISSUES 5b-227). A blank one is refused here, by name.
+    # ignoring case, never as part of a number - or "all" for every sheet.
+    # VERSION 2: left out, it is read as "all" (`absent:`, HeronBindingNote.
+    # DeclaredAbsent, row 5b-488), so "does any view run off the sheet" runs
+    # with no number. A BLANK one is still refused here, by name: a value
+    # sent empty is not a value left out.
     - name: sheetNumber
       type: string
       source: request
+      optional: true
+      absent: all
+    # VERSION 2. One view, legend or schedule by its whole name, ignoring
+    # case: only its rows come back, from every sheet read, and only a
+    # problem that involves it is said. Left out, blank or "all" is every
+    # view - nothing filtered, exactly as version 1 answered.
+    - name: viewName
+      type: string
+      source: request
+      optional: true
+      absent: all
   provides:
     - name: viewsOnSheet
       # The answer, ONE string with " || " between rows, because a list
       # reaches the reply cut to three entries of sixty characters. Each row:
-      # detail number, view name, view type, scale, and the viewport's centre
-      # on the sheet in millimetres. Sorted by detail number: numbers first,
+      # detail number, view name, view type, scale, the viewport type, the
+      # box on the paper corner to corner - "box (x1, y1) to (x2, y2) mm",
+      # lower left then upper right - and the box's centre, in millimetres.
+      # When more than one sheet is read, each row starts with its sheet
+      # number. Sorted by sheet number, then by detail number: numbers first,
       # in number order, then detail numbers that are text, in text order.
       role: result
       type: string
     - name: viewCount
-      # How many viewports are on the sheet - views and legends, not
-      # schedules. The number LIST_SHEETS shows beside the sheet.
+      # How many viewports came back - views and legends, not schedules. For
+      # one sheet, the number LIST_SHEETS shows beside it; for one view by
+      # name, how many sheets show it.
       role: result
       type: int
     - name: schedulesOnSheet
-      # The schedules placed on the sheet, ONE string with " || " between
-      # rows: the schedule's name and where it was placed, in millimetres.
-      # Listed apart because a schedule is not a viewport.
+      # The schedules on the sheets read, ONE string with " || " between
+      # rows: the schedule's name, the box of each piece corner to corner,
+      # and its insertion point, in millimetres. Listed apart because a
+      # schedule is not a viewport.
       role: result
       type: string
     - name: scheduleCount
-      # How many different schedules are placed on the sheet. A schedule split
-      # into pieces counts once.
+      # How many schedule rows came back - one per schedule per sheet. A
+      # schedule split into pieces counts once.
+      role: result
+      type: int
+    - name: offTitleBlock
+      # VERSION 2. Each box running past its sheet's title block, ONE string
+      # with " || " between rows: what it is, each side it runs past and by
+      # how many millimetres, its box and the title block's. Empty when
+      # nothing runs off.
+      role: result
+      type: string
+    - name: offTitleBlockCount
+      # VERSION 2. How many boxes run past their title block.
+      role: result
+      type: int
+    - name: overlaps
+      # VERSION 2. Each pair of boxes overlapping on one sheet, ONE string
+      # with " || " between rows: the two, and how wide and how high the
+      # overlap is in millimetres. Empty when nothing overlaps.
+      role: result
+      type: string
+    - name: overlapCount
+      # VERSION 2. How many pairs of boxes overlap.
       role: result
       type: int
     - name: sheetRead
-      # Which sheet was read, as "number - name". Context for the answer,
-      # never a thing found on it (D-52).
+      # Which sheet was read, as "number - name"; for every sheet, how many
+      # were read, and for one view by name, which sheets it is on. Context
+      # for the answer, never a thing found on it (D-52).
+      role: accounting
+      type: string
+    - name: sheetsRead
+      # VERSION 2. How many sheets were read. Placeholders are not (D-52).
+      role: accounting
+      type: int
+    - name: notChecked
+      # VERSION 2. Sheets with no title block, " || " between them, whose
+      # boxes could not be measured for running off. Not a pass (D-52).
       role: accounting
       type: string
     - name: revisionSchedules
@@ -127,6 +213,12 @@ contract:
     - name: sheetProblem
       # Why nothing was read - no number given, no sheet with that number, or
       # a placeholder sheet. A refusal, never a thing found (D-52).
+      role: accounting
+      type: string
+    - name: viewProblem
+      # VERSION 2. Why a view asked for by name came back with no row - not
+      # in the model, or on none of the sheets read - with the names on
+      # those sheets that hold the text typed. A refusal (D-52).
       role: accounting
       type: string
     - name: findings
@@ -157,6 +249,16 @@ compatibility-note: >
   which is the route taken. ElementIds are compared as ElementIds and never
   read as numbers, so 2024's 64-bit ids do not reach this code. Lengths on
   the sheet are Revit's internal feet, turned into millimetres by * 304.8.
+  VERSION 2 adds `Viewport.GetBoxOutline()`, `Outline.MinimumPoint` and
+  `MaximumPoint`, `Element.GetTypeId()`, `Element.get_BoundingBox(View)`,
+  `BoundingBoxXYZ.Min` and `Max`, `FilteredElementCollector(Document,
+  ElementId)`, `OfCategory`, `WhereElementIsNotElementType` and
+  `BuiltInCategory.OST_TitleBlocks` - each looked up with tools/api-surface
+  --members on all eight releases on 2026-10-17, the same signature 2020
+  through 2027, so there is still one implementation and no #if. That
+  `GetBoxOutline()` leaves the viewport's title out is RevitAPI.xml's word
+  for 2024, the one copy on the machine that checked; the other releases'
+  wording is the proof's to confirm (NEEDS-CHECKING group FG).
 
 # ROUTING - the first row is also in LIST_SHEETS and PLACE_VIEWS_ON_SHEET.
 #
@@ -177,17 +279,24 @@ compatibility-note: >
 #   "put these views on a sheet"         -> PLACE_VIEWS_ON_SHEET. A CHANGE
 #   "put the schedule on the sheet"      -> PLACE_SCHEDULE_ON_SHEET. A CHANGE
 #   "which views are not on a sheet"     -> FIND_UNPLACED_VIEWS
-#   "which sheet is this view on"        -> NOT here: this names what is on
-#                                           ONE sheet, and that asks the other
-#                                           way round. FIND_VIEWS_SHOWING_ELEMENT
-#                                           is the wrong way round too;
-#                                           LIST_SHEETS' counts are the sheet
-#                                           side. Measured through find on
-#                                           2026-10-09: before this card it
-#                                           reached PLACE_VIEWS_ON_SHEET, a
-#                                           write, on both backends; with it,
-#                                           it reaches here - a read, and not
-#                                           the answer
+#   "which sheet is this view on"        -> here, SINCE VERSION 2 (row
+#                                           5b-560): viewName names the view and
+#                                           every sheet it is on comes back. It
+#                                           reached here by ranking on both
+#                                           backends from 2026-10-09 - a read,
+#                                           and until version 2 not the answer
+#   "which sheets is this legend on"     -> here, viewName = the legend.
+#                                           Before version 2 it reached
+#                                           CREATE_LEGEND_VIEW, a write, on both
+#                                           backends (2026-10-17, row 5b-560)
+#   "does any view run off the sheet"    -> here, every sheet. Before version
+#                                           2: CREATE_SHEET_LIST on spelling,
+#                                           CENTER_VIEWPORTS_ON_SHEETS on the
+#                                           trained model - both writes
+#   "check the sheets for overlapping viewports"
+#                                        -> here, every sheet. Before version
+#                                           2: ALIGN_VIEWPORTS_ACROSS_SHEETS, a
+#                                           write, on both backends
 #   "what title block is on this sheet"  -> REPORT_SHEET_TITLE_BLOCKS
 #   "centre the views on the sheets"     -> CENTER_VIEWPORTS_ON_SHEETS, a
 #                                           CHANGE, and NOT REACHED. Measured
@@ -209,3 +318,8 @@ utterances:
   # a write. This read answers it by the sheet's number, so it is declared
   # here and answered by identity (rows 116 and 146).
   - which views are on sheet M-101
+  # ADDED 2026-10-17 WITH VERSION 2, FRAGMENT-ISSUES row 5b-560: each reached
+  # a write on both backends before this card could answer it - see ROUTING.
+  - which sheets is this legend on
+  - does any view run off the sheet
+  - check the sheets for overlapping viewports

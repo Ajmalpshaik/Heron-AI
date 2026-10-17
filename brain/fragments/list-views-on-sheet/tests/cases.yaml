@@ -1,5 +1,7 @@
 # D-30: the negative case is what catches "answered, and about another sheet".
-# The proof plan is tools/jobs/list-views-on-sheet-project1-2026-10-09.yaml.
+# The proof plan is tools/jobs/list-views-on-sheet-project1-2026-10-09.yaml;
+# version 2's (row 5b-560) is tools/jobs/list-views-on-sheet-v2-scratch-2026-10-17.yaml,
+# on a scratch project - never a job model.
 
 positive:
   - given: >
@@ -33,6 +35,35 @@ positive:
       viewCount 0 and scheduleCount 1; schedulesOnSheet names that one
       schedule, placed at about (25, 570) mm, and never the schedules on
       M-106 or M-107 - a schedule is not a viewport, and both are read
+
+  # VERSION 2 (row 5b-560). The scratch project the v2 job arranges: legend
+  # HERON TEST LEGEND on S-01 (box past the title block's right edge by about
+  # 50 mm) and on S-02 (box over a corner of Level 2); S-03 the Site plan
+  # alone and clean; S-04 nothing.
+  - given: viewName HERON TEST LEGEND, sheetNumber left out (every sheet)
+    expect: >
+      viewCount 2 - one row on S-01 and one on S-02, each starting with its
+      sheet number and giving "box (x1, y1) to (x2, y2) mm" with x1 < x2 and
+      y1 < y2, and the viewport type; sheetRead names S-01 and S-02 and no
+      other sheet; offTitleBlockCount 1, the S-01 row saying the right side
+      and about 50 mm; overlapCount 1, the S-02 legend and Level 2 with how
+      wide and how high
+
+  - given: sheetNumber S-01
+    expect: >
+      viewCount 2, the plan and the legend, each with its box and viewport
+      type, rows NOT prefixed with the sheet (sheetRead names it);
+      offTitleBlockCount 1; overlapCount 0 - the legend is clear of the plan
+
+  - given: both inputs left out
+    expect: >
+      every sheet read, sheetsRead 4; offTitleBlockCount 1 and overlapCount 1,
+      each row naming its sheet; S-03 and S-04 in no finding row
+
+  - given: a sheet with views and no title block
+    expect: >
+      its boxes listed, offTitleBlockCount 0 for it, and the sheet named in
+      notChecked - never passed as clean
 
 negative:
   - given: >
@@ -70,6 +101,26 @@ negative:
       scheduleCount 0 and revisionSchedules 1 - the revision schedule belongs
       to the title block family and is never listed as one somebody placed
 
+  # VERSION 2 (row 5b-560)
+  - given: viewName HERON TEST LEGEND, sheetNumber S-04 (nothing on it)
+    expect: >
+      every result empty and 0 - no row, no box off, no overlap; viewProblem
+      says the legend is in the model but on none of the sheets read. The
+      legend's rows from S-01 or S-02 appearing is a filter falling back to
+      every sheet
+
+  - given: sheetNumber S-03 - the CLEAN sheet, the Site plan alone inside
+    expect: >
+      offTitleBlock and overlaps empty, offTitleBlockCount 0, overlapCount 0 -
+      a clean sheet answers no findings. Its Site plan is still listed in
+      viewsOnSheet, so batch-prove reads this leg NEG NOT EMPTY; the two
+      counts are the measurement
+
+  - given: viewName NO SUCH VIEW 999
+    expect: >
+      no rows, viewProblem "no view or schedule named 'NO SUCH VIEW 999'" -
+      never every view
+
 second_route:
   - >
     LIST_SHEETS on the same model: the "(n views)" beside each sheet should
@@ -79,3 +130,7 @@ second_route:
   - >
     Revit itself: open the sheet, and expand it in the Project Browser - the
     views and schedules listed under it are the rows here
+  - >
+    VERSION 2: Revit itself. Select a viewport on the sheet - its box's
+    corners against the title block's edges, with the Measure tool on the
+    sheet, are the box rows and the amounts here, to the millimetre
