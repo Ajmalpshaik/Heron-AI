@@ -3,32 +3,44 @@
 > One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-17 so that it can be read
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
 > for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
-> reads it back into the register for every tool that reads the register, so a row here is seen
+> reads it back into the register for every tool that reads it, so a row here is seen
 > exactly as it was seen there.
 
-## Group EK - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-64` asks for (2026-10-17)
+## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
 
-On 2026-10-13 and 2026-10-14 a house with 9 sheets and a 32-floor tower were built in models that had
-never been saved, and Revit was closed: both were lost. Heron cannot save the model it works in -
-`SAVE_DOCUMENT` refuses it, because Heron's one Undo entry is open in it for the whole run.
-[Row 5b-490](../fragment-issues/section-5b-rows-401-425.md) has the whole of it, and
-[OPEN-QUESTIONS Q-64](../open-questions/tier-2.md) the proposal for the owner.
+Asked for by the owner on 2026-10-17: one read-only call that describes up to 50 elements fully. Version 2
+([Group DI](group-di.md)) took only a selection or a chained set, had no cap - 535 elements came back as a
+6.2 MB record (DI3) - and an id from a linked model found nothing.
+[FRAGMENT-ISSUES row 5b-489](../fragment-issues/section-5b-rows-401-425.md).
 
-**What changed.** No fragment and nothing in the add-in. `building-shell` and `drawing-set` have a step 0:
-read `REPORT_OPEN_DOCUMENTS`, and when it says the model has NEVER BEEN SAVED, ask the modeller once to
-save it before step 1. `family-creation`'s closing paragraph says a big build in a family never saved is
-saved first, as its step 0 already asks ([Group EI](group-ei.md) EI8 watches that one).
+**What was built - version 3 of the same capability, not a new one.** `elementIds` takes ids as Revit shows
+them, matched as text in the model looked in; an id that names nothing lands in `missing` and the rest are
+described. `linkName` looks the ids up inside a placed link's own document. The record holds the first 50
+of N and adds, per element, the unique id, level (and which parameter gave it), owner view, workset in a
+workshared model, curve length and a placed link's model title; per parameter, sorted by name, the
+built-in name and the raw value in Revit's internal units. It stops at `maxChars` - 60000 when left out -
+with a last line naming every element not written; `parameterFilter` keeps only the parameters asked
+about.
 
-**What is run and what is not.** Nothing here has run in Revit. Rows EK1 to EK3 are *watching, not a
-proof*: a method's step is DRAFT until a real chat is seen to take it. EK4 and EK5 are measurements
-for Q-64 and are run **only on the owner's word**.
+**What is compiled and what is not run.** Compiled on all eight releases 2020 to 2027
+(`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** The binding of the four
+new values left out - `elementIds` "none", `linkName` "host", `maxChars` "60000", `parameterFilter` "all" - is
+the add-in's `absent:` rule from [Group EI](group-ei.md), which needs that add-in deployed.
 
-**SCRATCH ONLY, never a working model.** A new project from the default metric template, left unsaved.
+**A TEST COPY, never a working model.** Copy Snowdon-scratch_ajmal.al and save it as *Heron Record WS.rvt*;
+if Collaborate > Worksets says the copy is not workshared, enable worksets on the copy. Keep its placed
+links loaded. Read the ids each row types with Manage > IDs of Selection, and for a linked element from the
+linked file opened alone.
 
 | # | Run | Look for |
 |---|---|---|
-| **EK1** | *Watching, not a proof.* The unsaved scratch project in front; ask a chat to build a small shell - two levels and four walls - so that it takes `heron_method("building-shell")` | Before step 1 it reads `REPORT_OPEN_DOCUMENTS`, sees NEVER BEEN SAVED, and asks ONCE for Ctrl+S under a name of the modeller's own; it builds only after the file exists, and does not ask again |
-| **EK2** | EK1's negative: the same request in the same project once it HAS been saved | No ask at all - straight to step 1. A step 0 that asks every time is the failure |
-| **EK3** | *Watching, not a proof.* A second never-saved scratch project with a few walls on two levels drawn by hand; ask a chat for a two-sheet drawing set, so that it takes `heron_method("drawing-set")`. Then the same request once that project is saved | The same ask before step 1 while it has no file; none once it has |
-| **EK4** | *A measurement for Q-64, on the owner's word only.* A chat reads the never-saved scratch project once (`revit_health`), so its pin holds that model. Then a scratch fragment, run by the proving client on the READ path - no transaction and no group anywhere - calls `SaveAs` on that project to a new path under `%TEMP%\heron-work`, in Revit 2020. Then the chat is asked to add one level | Whether Revit lets an ExternalEvent callback save at all: the file on disk and its size, the title bar's new name, any dialog Revit raises. And **write down the chat's answer to the level**: on 2020 its pin holds only the old title, so Q-64 predicts a refusal - the title it pinned is no longer open - and no level |
-| **EK5** | EK4 on Revit 2024, where the model's own id exists | The same save; and whether the level goes in. Q-64 predicts the pin follows the rename on 2024, matched on `creationGuid`, once a reply under the new title has been read - write down whether the first call after the save is refused anyway |
+| **EK1** | **The D-30 positive.** 50 MIXED ids typed in `elementIds`, nothing selected - 10 ducts in FloorPlan: M1, 10 pipes (10 more ducts if the model has no pipes), 10 walls, 10 mechanical equipment, 5 duct tags, 4 air terminals and the one placed link of your choice - with fullRecord, includeTypeParameters and includeTags true, sampleOnly false, maxChars 1000000. The selection-chain half is `tools/jobs/report-parameter-inventory-v3-2026-10-17.yaml` | header "50 element(s)" and "50 id(s) typed, 50 found", `missing` empty, no RECORD CUT line, and **every field filled where it applies**: a unique id on every block; a level - walls *from LevelId*, ducts and pipes *from RBS_START_LEVEL_PARAM*; a workset name; the duct tags' owner view by name, every model element *owner view: none*; a length in mm on the ducts, pipes and walls equal to Properties' Length; the link's *link document* title. Parameters sorted by name, each with its built-in name or `-` and a raw value |
+| **EK2** | EK1's 50 ids with **maxChars left out** | the binding note *maxChars not given - "60000", the card's own default*; `record` no longer than 60000 characters, ending in *RECORD CUT AT THE 60000-CHARACTER BUDGET* naming the elements written whole, the one cut and every id not written; those ids asked for again come back, nothing before them repeated |
+| **EK3** | 60 ids - EK1's and 10 more ducts | *FIRST 50 OF 60* with the 51st id named as the next; the inventory in `findings` read from all 60 |
+| **EK4** | **The D-30 negative.** One real duct id, `999999999` and `abc` in `elementIds`; then three ids that name nothing; then the job file's negative - its selection with two unknown ids typed | `missing` holds `999999999` and *abc (not an id - digits only)* and the duct is still described whole; the three unknown alone give no ELEMENT block and *None of the 3 id(s) typed ...*; the job's negative describes nothing and says the selected elements were NOT read |
+| **EK5** | **The linked model.** Three structural framing ids from inside the placed *Snowdon Towers Sample Structural* link with `linkName` "Structural" | *read in '...Structural...' through the link* with its id; three framing blocks, each id the link's own, its level from the link, its location in the link's coordinates with *in this model's coordinates* beside it; *tags not read*; `missing` empty |
+| **EK6** | EK5's ids **without** `linkName`; then `linkName` "ZZZNOTHINGHERE"; then the link unloaded in Manage Links | in the host each id lands in `missing` or names something that is not structural framing - the case version 3 exists for; no match names every placed link and leaves the three in `missing`; unloaded says *present but NOT LOADED* - never "nothing found" |
+| **EK7** | `parameterFilter` "level, offset" on EK1's ids; then `maxChars` 100 | each parameter heading *N kept of M*, every kept line holding *level* or *offset* in its name or built-in name, the inventory in `findings` unfiltered; 100 raised to 5000 in the header, the record no longer than that with its RECORD CUT line |
+| **EK8** | 10 ducts selected and two other ids typed; then EK1's ids on a model that is not workshared | only the two typed are described, a finding saying the 10 selected were not read; no workset line anywhere and *worksets not shown - not a workshared model* |
+| **EK9** | EK1 and EK5 once on **Revit 2020** and once on **2027** | the same answers. The members were read off the reference assemblies for every release and compiled, not run |
+| **EK10** | Second route: Manage > Select by ID with each typed id, and Properties' Workset, Level and Length for it; for a linked id, the linked file opened alone | the element Revit selects is the one the block describes, and the three values agree |

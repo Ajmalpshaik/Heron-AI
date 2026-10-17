@@ -322,6 +322,13 @@ a widening of the two single-form tools, for the reasons in
 [NEEDS-CHECKING Group DA](../needs-checking/group-da.md), which also holds its proof plan. Left for him:
 whether a whole list should undo as one, and whether cuts belong in the same call.
 
+**Answer: one undo per list, and cuts stay a separate call - 2026-10-17. See [D-116](../DECISIONS.md).**
+Asked both halves in plain words with a worked example each - a pump family's 107 forms undone by one
+Ctrl+Z, and a flange's disc and four holes built in one call and cut in a second - the owner chose
+*"Yes, one undo per list"* and *"No, keep cuts separate"*. `CREATE_FAMILY_FORMS` as written already does
+both, so no code changed. **This answers the shape, not the proof**: the fragment is still DRAFT until
+Group DA has run in Revit.
+
 ---
 
 ### 🟡 Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? *(found 2026-10-10)*
@@ -374,11 +381,11 @@ is the whole of the response.
 
 ---
 
-### 🟡 Q-64 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
+### 🟡 Q-65 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and
 Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
-([row 5b-490](../fragment-issues/section-5b-rows-401-425.md)). Heron could not have saved either.
+([row 5b-497](../fragment-issues/section-5b-rows-401-425.md)). Heron could not have saved either.
 `SAVE_DOCUMENT` version 2 (FRG-DOC-033, PROVEN, PUBLISH) saves only ANOTHER open document that already has
 a file, and refuses the one Heron works in by name ([row 5b-365](../fragment-issues/section-5b-rows-351-375.md)).
 
@@ -443,7 +450,7 @@ entry, and the save is not in it - a save is not a model change and cannot be un
 What none of the three can do: save a model the modeller never asked to save (Article 10), or choose its
 name.
 
-**Measure before deciding** - [NEEDS-CHECKING Group EK](../needs-checking/group-ek.md) EK4, on the owner's
+**Measure before deciding** - [NEEDS-CHECKING Group EN](../needs-checking/group-en.md) EN4, on the owner's
 word only: a scratch fragment on the read path - no transaction and no group anywhere - calling
 `SaveAs` on a NEVER-SAVED scratch project, to see whether Revit lets an ExternalEvent callback save at all.
 **Not measured:** any of it. Whether a save from the callback raises Revit's own dialogs (a workshared

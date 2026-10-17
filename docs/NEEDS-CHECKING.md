@@ -711,9 +711,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ei.md`](needs-checking/group-ei.md)
 
-## Group EK - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-64` asks for (2026-10-17)
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ej.md`](needs-checking/group-ej.md)
+
+## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
+
+## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-65` asks for (2026-10-17)
+
+**Its own file:** [`needs-checking/group-en.md`](needs-checking/group-en.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
