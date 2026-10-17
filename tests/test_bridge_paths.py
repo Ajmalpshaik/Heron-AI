@@ -35,10 +35,18 @@ WHAT THIS PROVES
   4. WHERE THE .NET 10 SDK IS PRESENT, .NET ITSELF IS ASKED, under the same
      settings, and the two answers must be the same folder. Where it is not,
      that section says NOT RUN and the rest still counts.
+  5. THE RUN RECORDS' FOLDER IS THE SAME ON BOTH SIDES. The add-in writes a
+     record per fragment write into HeronPaths.Runs and the MCP server pages
+     it back from RUNS_DIR (FRAGMENT-ISSUES 5b-407), so a folder named one
+     way in C# and another in Python is a record nobody can find. Read off
+     HeronPaths.cs, which must build it under DERIVED - the folder this suite
+     already holds the client to - and never under DATA.
 """
 
+import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -56,7 +64,9 @@ FAILURES = []
 
 # Asked in a fresh process, because the folders are resolved at import time.
 ASK = ("import json, sys; sys.path.insert(0, %r); import heron_bridge_client as c; "
-       "print(json.dumps([c.DISCOVERY_DIR, c.LOG_DIR]))" % CLIENT)
+       "print(json.dumps([c.DISCOVERY_DIR, c.LOG_DIR, getattr(c, 'RUNS_DIR', None)]))"
+       % CLIENT)
+PATHS_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronPaths.cs")
 
 # One C# file that asks the same question of .NET under each setting in turn.
 #
@@ -95,12 +105,17 @@ def clean_env(**extra):
 
 def folders(env):
     """(DISCOVERY_DIR, LOG_DIR) as a fresh import of the client resolves them."""
+    got, err = all_folders(env)
+    return (got[:2] if got else None), err
+
+
+def all_folders(env):
+    """[DISCOVERY_DIR, LOG_DIR, RUNS_DIR] from a fresh import - RUNS_DIR None if absent."""
     done = subprocess.run([sys.executable, "-c", ASK], env=env, cwd=ROOT,
                           capture_output=True, timeout=60)
     if done.returncode != 0:
         return None, done.stderr.decode("utf-8", "replace").strip()[-300:]
-    bridges, logs = json.loads(done.stdout.decode("utf-8"))
-    return (bridges, logs), None
+    return json.loads(done.stdout.decode("utf-8")), None
 
 
 def posix_cases(home):
@@ -168,6 +183,43 @@ def rule_cases():
           == "/home/m/.local/share", "elsewhere: a relative one ignored")
     check(rule({"HOME": "/home/m", "LOCALAPPDATA": "/lad"}, "posix")
           == "/home/m/.local/share", "elsewhere: LOCALAPPDATA ignored")
+
+
+def runs_cases(home):
+    """The run records' folder: the client's RUNS_DIR and HeronPaths.Runs agree."""
+    print("The run records' folder, on both sides")
+    env = clean_env(HOME=home)
+    if os.name == "nt":
+        env = clean_env(LOCALAPPDATA=os.path.join(home, "AppData", "Local"))
+    got, err = all_folders(env)
+    check(got is not None, "the client imports (%s)" % (err or "ok"))
+    if got is None:
+        return
+    bridges, _logs, runs = got
+    check(runs is not None, "the client names RUNS_DIR at all")
+    if runs is None:
+        return
+    check(os.path.isabs(runs), "it is not relative - %s" % runs)
+    check(os.path.dirname(runs) == os.path.dirname(bridges)
+          and os.path.basename(runs) == "runs",
+          "it is `runs` beside `bridges`, in the same Heron folder - %s" % runs)
+
+    try:
+        text = io.open(PATHS_CS, encoding="utf-8").read()
+    except (IOError, OSError):
+        check(False, "HeronPaths.cs can be read")
+        return
+    built = re.search(r'public\s+static\s+string\s+Runs\s*\{\s*get\s*\{\s*return\s+'
+                      r'Ensure\(Path\.Combine\((\w+),\s*"([^"]+)"\)\);', text)
+    check(built is not None, "HeronPaths names a Runs folder the same way it names the others")
+    if built is None:
+        return
+    root, name = built.group(1), built.group(2)
+    check(root == "Derived",
+          "under DERIVED, as the client's is - never DATA, where IsSafeToDelete would "
+          "refuse every prune (found %s)" % root)
+    check(name == os.path.basename(runs),
+          "and by the same name: C# says %r, the client %r" % (name, os.path.basename(runs)))
 
 
 def dotnet_agrees():
@@ -241,6 +293,8 @@ def main():
             posix_cases(home)
         print("")
         rule_cases()
+        print("")
+        runs_cases(home)
         print("")
         dotnet_agrees()
     finally:
