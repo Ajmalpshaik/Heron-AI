@@ -19,11 +19,11 @@ job made - the job on screen truly kept nothing, said so, and the stage before i
 `RollBackAndCheck`, and assimilated through one, `KeepAndWatch` - the rollbacks a declined Revit dialog causes
 ([Group EL](group-el.md)) included, whose refusal now says what the check found beside Revit's status. A
 modeller's Keep in the Keep-or-Discard box ([Group EM](group-em.md)) is kept the same way, so its elements
-are watched like any `apply`, and a Discard is a rollback like any preview's. **Not yet watched:**
-`RevitCapture`'s picture of a view ([Group ER](group-er.md)), which merged while this was open, makes a
-temporary view inside a group it ALWAYS rolls back, through a `SafeRollBack` of its own - so a capture's
-rollback is not yet checked for the last kept job's elements. `tests/test_rollback_witness.py` names it as
-the one exception, so no other file can open a group outside the check without failing it. A permanent `DocumentChanged` listener, subscribed in
+are watched like any `apply`, and a Discard is a rollback like any preview's. **And the picture
+of a view** ([Group ER](group-er.md)), whose group is ALWAYS rolled back: since a follow-up on 2026-10-17 its
+rollbacks go through the same helper, its temporary 3D view is the addition counted back, and a loss of the
+last kept job's work comes back as `keptLost` and `rollbackNote` - the chat says it instead of *"Nothing was
+changed."* `tests/test_rollback_witness.py` fails any file in `revit/` that opens a group outside the check. A permanent `DocumentChanged` listener, subscribed in
 `OnStartup`, counts the elements each write job adds while it runs and samples up to 200 by UniqueId. When a job
 is **kept**, that sample is kept under the model's identity strings (CreationGUID from 2024, path, title - never
 the Document). When the next write job **starts**, the sample is narrowed to what still resolves, so what the
@@ -65,6 +65,7 @@ three plan points in the units the card states. Read `verdict`, `rolledBack`, `r
 | **EO6** | **The move.** Keep A, then `preview_move` / `move_elements` on Walls with Revit refusing (a pinned wall in a workshared copy, or whatever makes `transaction.Commit()` fail) | The `move_failed` message is the one it always was, with no loss sentence; A's walls still there. A move that SUCCEEDS leaves A watched - a following EO1 B still reports `keptJob` "create-wall" |
 | **EO7** | EO1 and EO2 once on Revit 2020 and once on 2027 | The same answers. 2020 has no CreationGUID, so the model is keyed by path and title alone - a Save As between A and B must leave B silent (a new key, so nothing is watched), never a false loss |
 | **EO8** | *Not a proof - an observation.* Ctrl+Y after EO2's Ctrl+Z, then preview B | Silent, `keptChecked` 2 - the redo was seen and A is watched again. If B says A was undone, the listener did not see `TransactionRedone` with the same name |
+| **EO9** | **A picture after a kept job.** Keep A as in EO1, then `revit_view_image` with `elements` set to the ids of A's two walls | The picture, and the chat's words end *"The temporary view is gone - Revit rolled it back. Nothing was changed."*; A's walls still there; no temporary 3D view left under 3D Views in the Project Browser. The reply's `keptLost` 0 and `rolledBack` true. Then keep A again, press Ctrl+Z on it, and picture the floor plan in front by name (`view` Level 1): the words carry *"The last kept job ('create-wall') was undone in Revit before this run started"* beside the picture |
 
 **What no row here can arrange: a real loss.** The sentence *"Rolling back this run removed X of N elements the
 last kept job made"* exists for section 1c's kind of failure, and nobody knows how to cause one on purpose - the

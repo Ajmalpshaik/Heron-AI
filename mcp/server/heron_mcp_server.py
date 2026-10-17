@@ -5568,13 +5568,23 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
                      % reply.get("pixelWidth"))
 
     # THE TWO PROMISES, SAID ONLY WHEN THE ADD-IN SAYS THEY WERE KEPT.
+    #
+    # AND "NOTHING WAS CHANGED" NEVER OVER A LOSS: the capture's rollback is
+    # checked like every other (RevitFragment.RollBackAndCheck), and when it
+    # took elements the last kept job made, `keptLost` counts them and
+    # `rollbackNote` is the add-in's sentence for it, said in its place.
+    note = reply.get("rollbackNote")
     if reply.get("rolledBack") is False:
         lines.append("! Revit did NOT confirm the temporary view was taken away. Look under "
                      "3D Views in the Project Browser, and at Undo, before going on.")
+    elif reply.get("keptLost"):
+        lines.append("! %s" % note)
     elif reply.get("mode") == "elements":
         lines.append("The temporary view is gone - Revit rolled it back. Nothing was changed.")
     else:
         lines.append("Nothing was changed.")
+    if note and not (reply.get("keptLost") and reply.get("rolledBack") is not False):
+        lines.append(note)
     if reply.get("fileDeleted") is False:
         lines.append("! The picture's file could not be deleted from Heron's captures "
                      "folder on this PC. That folder is safe to empty.")
