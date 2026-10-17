@@ -317,8 +317,8 @@ def main():
 
             # WHAT A NEW PERSON IS TOLD TO RUN FROM IT - row 5b-371. The
             # installers drive two scripts from the folder they sit in, and
-            # docs/WHAT-TO-INSTALL.md says to install from requirements.txt
-            # and check with check-dependencies.py. A download missing any of
+            # docs/WHAT-TO-INSTALL.md says to check with check-dependencies.py,
+            # which reads both requirements files. A download missing any of
             # them is an instruction that cannot be followed on the PC it was
             # written for.
             for needed in ("tools/deploy-addin.ps1",
