@@ -731,6 +731,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
 
+## Group EQ - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eq.md`](needs-checking/group-eq.md)
+
 ## Group ER - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
 **Its own file:** [`needs-checking/group-er.md`](needs-checking/group-er.md)

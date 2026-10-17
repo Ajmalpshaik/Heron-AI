@@ -28,7 +28,9 @@ WHAT IS PROVED
      reading the history that was thrown away - whichever side wrote first;
   5. a branch that renumbers its own decision after main took the number is
      not failed against main's history, which is why CI passes --published
-     HEAD^1;
+     HEAD^1 - and what a branch shares with main is that history, where
+     HEAD^1 of a merge of main INTO the branch is not. A title main
+     published, changed on the branch, still fails against it;
   6. a decision record whose heading drifts from the log fails, and so does a
      record the log no longer holds;
   7. KNOWN can only shrink: an entry the history does not bear out, or one no
@@ -39,7 +41,9 @@ WHAT IS PROVED
      titles, D-97, D-98 and D-101 to D-103 because theirs name the numbers they
      were first written under - and each FAILS the moment its line is taken
      away. A changed title in today's log fails;
- 10. the real repository passes, where its history is whole;
+ 10. the real repository passes, where its history is whole - read against
+     what it shares with origin/main, as CI reads it, so a branch's own
+     renumbering is a draft here too;
  11. CI runs it, with the whole history fetched for it.
 """
 
@@ -179,6 +183,16 @@ def cli(repo, *args):
     return out.returncode, out.stdout.decode("utf-8", "replace")
 
 
+def published(repo, main="origin/main"):
+    """The history that counts as written, as CI's gates job reads it: what
+    HEAD shares with `main`. A branch's own commits are drafts - one that
+    renumbered its decision while open reads against them as a changed title
+    (section 5). Not HEAD^1, which is main only on CI's merge commit: a merge
+    of main INTO a branch has the branch first. On main itself, or with no
+    `main` to ask, it is HEAD, as before."""
+    return git(repo, "merge-base", "HEAD", main, may_fail=True) or "HEAD"
+
+
 LOG = "docs/DECISIONS.md"
 DAY = ["2026-08-%02dT12:00:00+00:00" % d for d in range(1, 31)]
 
@@ -302,19 +316,32 @@ def run(work):
     commit(repo, DAY[2], {LOG: log_text([("D-01", "Alpha"), ("D-02", "Main's decision")])})
     git(repo, "checkout", "-q", "branch")
     git(repo, "merge", "-q", "-s", "ours", "--no-edit", "main", date=DAY[3])
-    commit(repo, DAY[4], {LOG: log_text([("D-01", "Alpha"), ("D-02", "Main's decision"),
-                                         ("D-03", "The branch's decision")])})
+    renumbered = [("D-01", "Alpha"), ("D-02", "Main's decision"), ("D-03", "The branch's decision")]
+    commit(repo, DAY[4], {LOG: log_text(renumbered)})
     report, why = audit(repo, "main")
     check(report is not None and not report.failed,
           "against main's history the renumbering is right, and passes (%s)" % (why or "clean"))
     report, _ = audit(repo, "HEAD")
     check(report is not None and report.failed,
           "against the branch's own history its draft D-02 reads as a rewrite - why CI passes HEAD^1")
+    base = published(repo, "main")
+    report, _ = audit(repo, base)
+    check(base == git(repo, "rev-parse", "main") and report is not None and not report.failed,
+          "what the branch shares with main is main's tip, and passes - how section 10 reads this repository")
+    report, _ = audit(repo, "HEAD~1^1")
+    check(report is not None and report.failed,
+          "not HEAD^1 of the branch's merge of main: that parent is the branch's own side, and fails")
+    write(repo, LOG, log_text([("D-01", "Alpha, reworded")] + renumbered[1:]))
+    report, _ = audit(repo, base)
+    check(said(report, "D-01", '"Alpha"'), "and a title main published, changed on the branch, still fails")
+    write(repo, LOG, log_text(renumbered))
     git(repo, "checkout", "-q", "main")
     git(repo, "merge", "-q", "--no-ff", "--no-edit", "branch", date=DAY[5])
     report, _ = audit(repo, "HEAD^1")
     check(report is not None and not report.failed,
           "and once merged, HEAD^1 - the base the merge went into - is main's history exactly")
+    check(published(repo, "main") == git(repo, "rev-parse", "HEAD") and published(repo, "nowhere") == "HEAD",
+          "on main itself, or with no main to ask, the history is HEAD's - as it always was")
 
     print()
     print("6. A decision record must open with the log's heading")
@@ -422,8 +449,10 @@ def run(work):
         print("  NOT RUN here - this clone is shallow, so its history is not whole. Section 9 ran")
         print("        today's log; the gates job runs this on the real history, fetched whole.")
     else:
-        out = subprocess.run([sys.executable, TOOL_PATH], capture_output=True)
-        check(out.returncode == 0, "check-decision-titles exits 0 on this repository (exit %d)" % out.returncode)
+        base = published(ROOT)
+        out = subprocess.run([sys.executable, TOOL_PATH, "--published", base], capture_output=True)
+        check(out.returncode == 0, "check-decision-titles exits 0 on this repository, read against %s (exit %d)"
+              % ("HEAD - no origin/main to ask" if base == "HEAD" else base[:7], out.returncode))
 
     print()
     print("11. CI runs it, with the whole history fetched")
