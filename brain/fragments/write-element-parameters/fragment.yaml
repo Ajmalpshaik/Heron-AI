@@ -183,6 +183,13 @@ compatibility-note: >
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "fill in the mark"               -> here - the parameter already exists
+#   "set the comments to X"          -> here - one stated value. Declared
+#                                       2026-10-17 (row 5b-943):
+#                                       COPY_PARAMETER_VALUE's row sent it
+#                                       here, and the search did not -
+#                                       EDIT_PARAMETER_TEXT on main, and
+#                                       REPORT_BOUNDING_BOX once a card
+#                                       elsewhere changed status
 #   "add a project parameter"        -> ADD_PROJECT_PARAMETER - it MAKES the
 #                                       parameter and writes no values
 #   "make the new type 300 wide"     -> here, on the type DUPLICATE_TYPE made
@@ -210,6 +217,7 @@ compatibility-note: >
 
 utterances:
   - set the comments on these
+  - set the comments to X
   - write the airflow back
   - fill in the parameter
   - update the mark on all of them

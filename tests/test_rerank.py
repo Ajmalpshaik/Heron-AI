@@ -53,6 +53,10 @@ WHAT IT PROVES
      MCP seam - a feature that does not serialise does not exist in
      production. Same mistake, same shape, asserted here instead.
 
+ 10. A FRAGMENT'S PASSAGE CARRIES ITS FIRST UTTERANCES, AND THEY COME FROM
+     THE STORE. The index writes them once; a question reads no card file.
+     A store indexed before them still answers, on the identity alone.
+
 WHAT THIS IS NOT
 ----------------
 IT IS NOT A MEASUREMENT OF RE-RANKING. The stub below is this session's
@@ -355,6 +359,105 @@ def main():
     check(RERANK.SHORTLIST == 20, "SHORTLIST is docs/05 s4.4's twenty")
     check(RERANK.ABSENT != RERANK.CROSS_ENCODER,
           "and the two states are distinguishable by name")
+    print()
+
+    print("12. A fragment's passage carries its first utterances, from the store")
+    check(RERANK.passage_said(["one two", "three", "", "  four   five "])
+          == "one two. three. four five",
+          "passage_said joins the utterances as sentences, blanks left out")
+    many = ["u%d" % i for i in range(RERANK.PASSAGE_UTTERANCES + 3)]
+    check(RERANK.passage_said(many).split(". ")
+          == many[:RERANK.PASSAGE_UTTERANCES],
+          "at most PASSAGE_UTTERANCES, the first ones, in the card's order")
+    long = [" ".join(["x"] * (RERANK.PASSAGE_WORDS - 1)), "y z", "w"]
+    check(RERANK.passage_said(long) == long[0],
+          "the utterance that would pass PASSAGE_WORDS is left out whole and "
+          "nothing after it is read - a sentence is never cut in half")
+
+    home = tempfile.mkdtemp(prefix="heron-rerank-said-")
+    os.environ["HERON_KNOWLEDGE"] = home
+    try:
+        import heron_scope as SCOPE
+        import heron_search as SEARCH
+        import heron_fragment as FRAG
+
+        SCOPE.rebuild()
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            SEARCH.index(store)
+            found, _ = FRAG.load_all()
+            ids = set(r["id"] for r in store.fragments())
+            stored = dict((r["id"], r["said"]) for r in store.execute(
+                "SELECT id, said FROM rerank_said").fetchall())
+            check(set(stored) == ids,
+                  "the index writes one rerank_said row for every fragment row")
+            check(all(stored[f] == RERANK.passage_said(found[f].utterances())
+                      for f in stored if f in found),
+                  "and each holds what passage_said makes of that card's "
+                  "utterances")
+
+            store.execute("DELETE FROM rerank_said")
+            SEARCH.index(store)
+            again = store.execute(
+                "SELECT COUNT(*) AS n FROM rerank_said").fetchone()["n"]
+            check(again == len(ids),
+                  "an emptied rerank_said is rebuilt on the next index, though "
+                  "the library's digest has not moved - a third independent "
+                  "output, like identities")
+
+            # NOT ONE CARD FILE PER QUESTION - the reason the utterances live
+            # in the store at all. load_all is refused for the length of it.
+            real = FRAG.load_all
+
+            def refused(*_a, **_k):
+                raise AssertionError("the library was read for one question")
+
+            installed(RERANK, lambda pairs: [0.0] * len(pairs))
+            FRAG.load_all = refused
+            try:
+                top, _ = R.retrieve(store, "rename the plan", limit=20)
+                read_none = True
+            except AssertionError:
+                top, read_none = [], False
+            finally:
+                FRAG.load_all = real
+            check(read_none, "retrieve() read no card file to build passages")
+            reread = [c for c in top if c.rerank_rank is not None]
+            check(reread and all(c.said == stored[c.id] and
+                                 c.said in R._fragment_passage(c)
+                                 for c in reread),
+                  "every passage the re-ranker read carries that card's "
+                  "stored utterances")
+
+            # WELL INSIDE THE WINDOW. Words, because CI has no tokenizer:
+            # measured 2026-10-17 with the default model's own, the longest
+            # passage the library built was 94 words and 137 of its 512
+            # tokens. 200 words leaves room for a longer identity.
+            longest = 0
+            for row in store.fragments():
+                one = R.Candidate(row["id"], row)
+                one.said = stored.get(row["id"], "")
+                longest = max(longest, len(R._fragment_passage(one).split()))
+            check(0 < longest <= 200,
+                  "the longest fragment passage is %d words, inside 200"
+                  % longest)
+
+            store.execute("DROP TABLE rerank_said")
+            installed(RERANK, lambda pairs: [0.0] * len(pairs))
+            try:
+                top, _ = R.retrieve(store, "rename the plan", limit=5)
+                survived = bool(top) and all(c.said == "" for c in top)
+            except Exception:
+                survived = False
+            check(survived,
+                  "a store indexed before rerank_said existed still answers, "
+                  "every passage the identity, capability and domain alone")
+        finally:
+            store.close()
+    finally:
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        shutil.rmtree(home, ignore_errors=True)
+        absent(RERANK)
     print()
 
     if FAILURES:
