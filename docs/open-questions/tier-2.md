@@ -400,11 +400,38 @@ decision to make it.
 
 ---
 
-### 🟡 Q-65 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
+### ✅ Q-64 — Is a picture of a Revit view "model data" under D-82, or may it be handed to the chat? → **Not model data** *(found and answered 2026-10-17)*
+
+**What is asked.** The owner asked on 2026-10-17 for a read-only tool that returns a PNG of a Revit view
+into the chat, so the AI can check its own work. It is built as `revit_view_image` and the add-in's
+`capture_view` - [D-123](../decisions/D-123.md), **Proposed** - and it is not merged.
+[D-82](../decisions/D-82.md) says *"Revit models, families, model data - never leave the PC"*;
+[D-26](../decisions/D-26.md) put element data - counts, sizes, parameters - in the conversation. A
+picture sits between the two, and neither was written with one in mind.
+
+**The two answers, and what each does:**
+
+1. **Not model data.** It cannot be opened or rebuilt into a model, and it is what the model shows, the
+   same kind of thing as a count. The tool ships as D-123 describes.
+2. **Model data.** It shows the geometry and layout of the building at a glance, and in the conversation
+   it has gone to the cloud. **The tool does not ship**: its pull request is closed, or the tool and
+   `capture_view` are taken out of it before merge.
+
+D-123 holds the second thing to accept with the first - that `capture_view` is the first ANALYZE
+operation to open a transaction, always rolled back - and [NEEDS-CHECKING group ER](../needs-checking/group-er.md)
+the run that would prove it.
+
+**Answer: NOT MODEL DATA — 2026-10-17. See [D-123](../decisions/D-123.md), now Accepted.** The owner:
+*"A picture is not model data, ship it"*. `revit_view_image` ships as D-123 describes; it is still
+DRAFT until [NEEDS-CHECKING group ER](../needs-checking/group-er.md) is run in Revit.
+
+---
+
+### 🟡 Q-67 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and
 Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
-([row 5b-497](../fragment-issues/section-5b-rows-401-425.md)). Heron could not have saved either.
+([row 5b-513](../fragment-issues/section-5b-rows-401-425.md)). Heron could not have saved either.
 `SAVE_DOCUMENT` version 2 (FRG-DOC-033, PROVEN, PUBLISH) saves only ANOTHER open document that already has
 a file, and refuses the one Heron works in by name ([row 5b-365](../fragment-issues/section-5b-rows-351-375.md)).
 
@@ -413,12 +440,12 @@ API opened is still open - *"Operation is not permitted when there is any open s
 transaction, or transaction group"*, the same words for `Document.Save` and `Document.SaveAs` (RevitAPI.xml
 2024; 2020 and 2027 read the same on 2026-10-07, row 5b-365). Every fragment `revit_change` runs goes to
 the add-in's write path, which opens ONE `TransactionGroup` in the document for the whole run
-([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 566) and assimilates or rolls it
-back at the end (line 695) - Article 8's one undo entry. So a fragment can never save the document it runs
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 588) and assimilates or rolls it
+back at the end (line 729) - Article 8's one undo entry. So a fragment can never save the document it runs
 in, however it is written.
 
 **What would work, read from the code - NOT RUN.** In the same request, AFTER that group is closed (lines
-695 to 703, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
+729 to 737, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
 the add-in could run the save itself at that point, on the fragment's behalf: `SAVE_DOCUMENT` version 3
 asks for it - the document it works in, by its own file for a Save, or a full `.rvt` or `.rfa` path the
 modeller typed for a Save As of a model that has none - and the add-in does it once the group has closed,
@@ -440,20 +467,21 @@ entry, and the save is not in it - a save is not a model change and cannot be un
    right. Either a preview saves too, or the add-in saves only when the group was KEPT and says so on a
    preview; the second keeps a preview free of anything irreversible, and means a proof of this route must
    be run with `--apply`. **And [D-117](../decisions/D-117.md), merged the same day, refuses `--apply` -
-   and `revit_change` - for a fragment that is DRAFT**, which version 3 would be until proved. So with a
-   preview that does not save, the route could not be proved at all until D-117's in-Revit Keep/Discard
-   prompt exists; with a preview that saves, it can be proved today, on a scratch model, the way version 2
-   was.
+   and `revit_change` - for a fragment that is DRAFT**, which version 3 would be until proved. The one way
+   a DRAFT's run is kept, [D-119](../decisions/D-119.md)'s `try-once` behind Keep or Discard, runs only on
+   a model saved with nothing unsaved ([D-121](../decisions/D-121.md)) - the one state in which a save has
+   nothing to do and a Save As is not needed. So with a preview that does not save, the route could never
+   be proved; with a preview that saves, it can be proved today, on a scratch model, the way version 2 was.
 3. **A Save As renames the model, and the chat's model pin would read that as a DIFFERENT model** -
    Golden Rule 20's guard, Articles 12a and 12b. The pin compares the model's own id where both sides have
    one ([`heron_write.py`](../../mcp/server/heron_write.py) line 255), and only a match on it or on the file
    path lets a new title through (line 461, *"a save can rename it; same document"*). But that id,
    `Document.CreationGUID`, arrived at Revit 2024 and is null on 2020 to 2023 and on every family document
-   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 628, measured
+   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 636, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
-   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1802)
-   about a model it has just saved. The next call is then aimed at the old title (line 1363) and refused
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1821)
+   about a model it has just saved. The next call is then aimed at the old title (line 1382) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**

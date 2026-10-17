@@ -1941,7 +1941,9 @@ python tools/split-needs-checking.py --write    # move it
 Gives each group of [`docs/NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) its own file in
 [`docs/needs-checking/`](../docs/needs-checking/), and keeps NEEDS-CHECKING.md as the register's index: the page's
 rules, and each group's heading in its place with one line naming its file. A `## Group X` section moves whole; so
-does a dated section whose rows all belong to one group. A section with rows of two groups, or none, stays in full.
+does a dated section whose rows all belong to one group. A section with rows of two groups, or none, stays in full. A group
+file may hold more than one section - `group-ac.md` holds three dated ones - and every section it holds stays in
+it ([row 5b-425](../docs/fragment-issues/section-5b-rows-401-425.md)).
 Exits **0**, **1** when a check refused and nothing was written, **2** when the register could not be read.
 
 **The register is still one text, and that is what is proved.** Nothing is written unless the new files read back

@@ -190,6 +190,11 @@ an edit.
 | [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
 | [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) | A change is kept only from a fragment whose proof still stands | ✅ Accepted · 2026-10-17 |
 | [D-118](#d-118--a-tool-description-over-its-budget-stops-a-pull-request) | A tool description over its budget stops a pull request | ✅ Accepted · 2026-10-17 |
+| [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so | ✅ Accepted · 2026-10-17 |
+| [D-120](#d-120--a-run-the-modeller-kept-after-checking-it-is-the-positive-case-of-a-proof-and-the-negative-case-is-still-its-own-rolled-back-run) | A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run | ✅ Accepted · 2026-10-17 |
+| [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
+| [D-122](#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
+| [D-123](#d-123--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1014,3 +1019,49 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py), [`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py) (`--sizes`), [`.github/workflows/gates.yml`](../.github/workflows/gates.yml), which runs every suite
 
 **Full record:** [`decisions/D-118.md`](decisions/D-118.md)
+
+## D-119 — A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17 - make *"Heron has no tool for this job"* fast and safe, so a fragment written on the spot can be tried on the model it was written for
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Amends, once accepted:** [Constitution Article 11](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 18](14-golden-rules.md) · **Keeps:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), Article 8
+**Beside:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands), accepted the same day - it refuses a DRAFT's kept change on `revit_change` and `fragment --write --apply`; this decision's `try-once` is the one way a DRAFT's change is kept, and it goes through neither
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`try-once`), [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md)
+
+**Full record:** [`decisions/D-119.md`](decisions/D-119.md)
+
+## D-120 — A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17, with [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Applies:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - its bar is unchanged · **Keeps:** [D-53](#d-53--a-fragment-that-cannot-come-back-empty-is-proved-by-tracking-instead)
+**Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`try-once`, `validate --kept`), [`heron_validate.py`](../brain/heron_validate.py) (`draft`, `accept`)
+
+**Full record:** [`decisions/D-120.md`](decisions/D-120.md)
+
+## D-121 — D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Revisits:** [D-84](#d-84--the-sandbox-is-renamed-not-rebuilt)'s accepted cost · **Keeps:** D-84's decision - watched, not contained, no subprocess
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) - the ask mode's refusal of an unsaved model
+
+**Full record:** [`decisions/D-121.md`](decisions/D-121.md)
+
+## D-122 — Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17 - *"Article 19 (the modeller is the validator) supports this path"*
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Reads:** [Constitution Article 19](../HERON_CONSTITUTION.md) · **Keeps:** Article 20 - nothing the author writes approves itself
+**Affects:** [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) and its `.codex` copy
+
+**Full record:** [`decisions/D-122.md`](decisions/D-122.md)
+
+## D-123 — A picture of a view, taken for the chat and deleted, is ANALYZE and not an export
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"A picture is not model data, ship it"* · **Source:** the owner's brief of 2026-10-17 for `revit_view_image` - *"a read-only tool that returns a PNG of a Revit view into the chat, so the AI can check its own work"*
+**Keeps:** [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) - every `export-*` stays PUBLISH, `export-view-image` included · [D-26](#d-26--the-model-file-is-never-uploaded) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) - Changes stays off · [Constitution Articles 8 and 10](../HERON_CONSTITUTION.md) · Golden Rule 19 - the risk is the registry's, by name · the read path's guarantee that nothing on `run_fragment_read` opens a transaction
+**Asks:** whether a view's picture is *model data* under [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope), put as [Q-64](OPEN-QUESTIONS.md) - answered: **not model data**
+**Affects:** [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs) (new), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`Captures`), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [NEEDS-CHECKING group ER](needs-checking/group-er.md)
+
+**Full record:** [`decisions/D-123.md`](decisions/D-123.md)

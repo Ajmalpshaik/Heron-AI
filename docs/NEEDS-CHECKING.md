@@ -723,13 +723,21 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
 
-## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-65` asks for (2026-10-17)
+## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
+
+## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-67` asks for (2026-10-17)
 
 **Its own file:** [`needs-checking/group-en.md`](needs-checking/group-en.md)
 
 ## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
+
+## Group ER - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-er.md`](needs-checking/group-er.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
