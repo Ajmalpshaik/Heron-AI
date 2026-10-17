@@ -398,6 +398,28 @@ untouched by this, because the server is still a child of the app wherever its p
 out of AppData is shape 3, a decision about the platform boundary; *no preference* was not read as a
 decision to make it.
 
+**2026-10-17, evening - measured on Windows, and the run-time half put to the owner.**
+[Group EP](../needs-checking/group-ep.md) ran on the laptop and measured two things this question said were
+not checked. **One name in both places:** the copy's file wins - every file under `mcp`, `cryptography`,
+`pydantic` and `pydantic_core` present in both read byte for byte as the copy's - while files only the real
+folder has show through, and the version Python reports is the real folder's
+([row 5b-1065](../fragment-issues/section-5b-rows-401-425.md)). **A write from inside into a folder that
+already exists on the real disk lands on the real disk**, not in the copy
+([row 5b-1066](../fragment-issues/section-5b-rows-401-425.md)) - so "every write under AppData is sent to
+the copy", as written above, holds only where the folder did not exist outside. The installer, run outside
+the app, also built a second knowledge store in the real `%APPDATA%\Heron\knowledge` at 22:11; the chats
+still read the copy's.
+
+Asked in plain words where Heron should keep what it saves while a chat runs - each project's memory, the
+Companion's notes, the tool index - the owner answered: *"OK you can decide this thing. Which one is the
+best best thing? ... Whatever good you can do it."* **Chosen, on that delegation: shape 3** - Heron's DATA
+lives where a Reset or uninstall of the Claude app cannot reach it, because `HeronPaths` already says DATA
+must survive every update, uninstall and reinstall, and rows 5b-416, 5b-418 and 5b-419 are that rule broken
+on this one kind of PC. **Nothing was moved on 2026-10-17.** The build is its own task: it has to measure a
+folder that exists in BOTH places first, because the copy already holds `Heron\knowledge`, `Heron\audit`
+and `Heron\config`; and the Companion note moves on both sides, Python and add-in ([D-109](../decisions/D-109.md)).
+This question stays open until that task records its decision with what it measured.
+
 ---
 
 ### ✅ Q-64 — Is a picture of a Revit view "model data" under D-82, or may it be handed to the chat? → **Not model data** *(found and answered 2026-10-17)*
