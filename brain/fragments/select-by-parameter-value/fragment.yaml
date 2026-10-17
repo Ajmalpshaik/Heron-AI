@@ -193,6 +193,12 @@ compatibility-note: >
 #                                       change (FRAGMENT-ISSUES 5b-329)
 #   "what is blank"                  -> DESCRIBE_BLANK_PARAMETERS - presence
 #                                       and emptiness, not a value to match
+#   "the sheets with the as-built revision" -> FIND_SHEETS_BY_REVISION_OR_NUMBER.
+#                                       A sheet's "Current Revision ..."
+#                                       parameters hold its LATEST revision
+#                                       only, so a match here loses a sheet
+#                                       once a later revision is added to it
+#                                       (row 5b-550)
 
 utterances:
   - find every vcd
