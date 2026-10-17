@@ -82,6 +82,23 @@ def read(*parts):
     return io.open(path, encoding="utf-8", errors="replace").read()
 
 
+def suite_loads(text, module):
+    """Does a suite's text load brain/<module>.py - by an import, or by path?
+
+    THE PATH COUNTS TOO - row 5b-1067. tests/test_install_lines.py loads
+    brain/heron_install.py through importlib from a path it builds with
+    os.path.join, so that a missing module is one FAIL line rather than a
+    traceback, and an import-only reading named the module tested by no
+    suite. Still not a mention: the file's name must be an argument to
+    os.path.join in a suite that calls spec_from_file_location.
+    """
+    if re.search(r"^\s*(?:import|from)\s+%s\b" % re.escape(module), text, re.M):
+        return True
+    return ("spec_from_file_location" in text
+            and re.search(r"os\.path\.join\([^)]*[\"']%s\.py[\"']" % re.escape(module),
+                          text) is not None)
+
+
 # THE REGISTER IS SEVERAL FILES SINCE 2026-09-23, AND IS STILL READ AS ONE.
 # tools/needs-checking-register.py puts every group's file back under its
 # heading in NEEDS-CHECKING.md, links as they were written, so this tool reads
@@ -482,8 +499,7 @@ def check_brain_is_reachable():
             continue
         text = read("tests", name)
         for module in brain_modules:
-            if re.search(r"^\s*(?:import|from)\s+%s\b" % re.escape(module),
-                         text, re.M):
+            if suite_loads(text, module):
                 tested.add(module)
 
     untested = [m for m in brain_modules if m not in tested]
