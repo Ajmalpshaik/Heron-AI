@@ -43,3 +43,4 @@ an EMPTY set, and BL001A's own seven. **If [PR #574](https://github.com/Ajmalpsh
 proof goes stale** - it changes this card's code; Project1's two sets hold the same four views, the case its
 `sameSets` flags. Signing, from the checkout that holds the draft:
 `python brain/heron_validate.py accept list-sheet-sets --by "Ajmal PS"`, then `heron-status: PROVEN` on his word.
+**Signed by Ajmal PS and PROVEN the same day** (fingerprint `ead2d4ff5f4b7360`). EA2 and EA3 stay owed.
