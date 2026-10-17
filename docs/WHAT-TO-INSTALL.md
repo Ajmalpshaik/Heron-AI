@@ -188,6 +188,45 @@ python tools/check-dependencies.py
 It names every Python package Heron can use, whether this PC has it, what it buys, and what happens
 without it. It fails only when a **required** one is missing.
 
+## 5a. When a Revit job runs long — Claude Code's own limits
+
+**With Claude Code's defaults, nothing here needs changing.** This section is for a PC where somebody
+has set a tool timeout lower.
+
+A Heron tool that sends a fragment can wait minutes on Revit — a slow fragment, a family build, or you
+answering a prompt in Revit. Since 2026-10-17 Heron tells Claude every few seconds that it is still
+waiting for Revit — how often is `WAIT_NOTE_S` in
+[`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) ([docs/04 §7.1](04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)).
+**That has been tested against a stand-in Revit only. It has not been seen in a real chat yet**
+([NEEDS-CHECKING EJ](needs-checking/group-ej.md)).
+
+What Claude Code does with those notes, from [its MCP docs](https://code.claude.com/docs/en/mcp),
+[its environment variables page](https://code.claude.com/docs/en/env-vars) and
+[its changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md), read on 2026-10-17:
+
+| | What Claude Code does | The setting |
+|---|---|---|
+| **Shows them** | *"The task's entry shows the latest progress the server has reported."* Changelog 2.1.153 fixed the notes not showing in the collapsed tool view, and 2.1.283 fixed them being dropped once a call moved to the background | — |
+| **Keeps the idle timer from firing** | A call that sends *"no response and no progress notification"* for the idle window is stopped with an error. For a server like Heron's that window is 30 minutes, and each note starts it again | `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT`, in milliseconds |
+| **Does NOT extend the overall limit** | *"progress notifications from the server don't extend it."* Unset, that limit is about 28 hours | `MCP_TOOL_TIMEOUT`, in milliseconds, or a `"timeout"` in milliseconds on the `heron` entry in `.mcp.json` |
+| **Moves a long call aside** | A call still running after two minutes becomes a background task, so you can keep typing. The limits above still apply to it | `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS` |
+
+**If `MCP_TOOL_TIMEOUT` or the `heron` entry's `"timeout"` is set on this PC, keep it above Heron's own
+wait for a fragment.** Heron gives up on Revit at
+`python -c "import sys; sys.path.insert(0, 'mcp/client'); import heron_config; print(heron_config.fragment_timeout())"`
+seconds, run in the Heron folder. It never drops below `FRAGMENT_FLOOR_S` in
+[`heron_config.py`](../mcp/client/heron_config.py), and it grows when `revit.operationTimeoutSeconds` is
+raised in Heron's settings. A limit below it stops Claude waiting while
+Revit is still working, and a change sent to Revit may still be kept. To raise it for every Claude Code
+session, put it under `env` in Claude Code's `settings.json` — for 30 minutes:
+
+```json
+{ "env": { "MCP_TOOL_TIMEOUT": "1800000" } }
+```
+
+**Not known yet:** whether Claude Code sends the `progressToken` that Heron waits for before it sends a
+note. Its docs do not say, and Heron sends nothing without one. EJ1 is the run that answers it.
+
 ## 6. Where everything lives on your PC
 
 | | Where |
