@@ -143,9 +143,14 @@ defect. Build it in-session instead, fresh:
 
 ```bash
 dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 \
-  -p:HeronTfm=net8.0 -p:OutputPath=bin/x64/Debug-net8.0/
+  -p:HeronTfm=net10.0 -p:OutputPath=bin/x64/Debug-net10.0/
 python tests/test_bridge_roundtrip.py
 ```
+
+The suite picks the framework from the newest runtime `dotnet --list-runtimes` shows - .NET 10 on this
+image - and when the host is missing it exits 3 and prints the exact build it wants. **Run the command
+it prints over this one.** This block said `net8.0` until 2026-10-17, and that build left the suite
+exiting 3 ([row 5b-942](fragment-issues/section-5b-rows-401-425.md)).
 
 **It does not exit non-zero, ever.** A setup script that exits non-zero fails the session outright.
 
