@@ -53,6 +53,9 @@ DEFAULTS = {
     "admin.enabled": "false",
     "publish.enabled": "false",
     "log.retainDays": "14",
+    # How long each write's run record stays on disk (HeronRuns), pruned by
+    # the add-in at start-up - DERIVED, like the log.
+    "runs.retainDays": "14",
     "ui.activityBanner": "true",
     # The Companion page (D-108, D-109): on by default, switched from the
     # Companion button's arrow in Revit. Off leaves Heron itself untouched.

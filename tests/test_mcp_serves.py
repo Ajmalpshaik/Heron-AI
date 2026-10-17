@@ -79,6 +79,13 @@ WHAT IT PROVES, when an SDK is installed
      "failed" for a lost answer and revit_busy, and "ok" for a good reply
      from a model whose very name says Failed; revit_edit_table hands back
      the label revit_read gave the answer it hands back.
+ 13. THE SHORT CHANGE REPORT, THROUGH THE REAL TOOL (row 5b-407). Two kept
+     changes in one batch: the first prints the KEPT paragraph whole and
+     every value, the second the add-in's one sentence - the undo rule
+     whole - and counts what the first already showed. Both say what Revit
+     changed and name the run record. A rollback prints whole; a reply from
+     an add-in before the report prints exactly as before. heron_run_record
+     pages a record from a folder of the test's own, and lists the newest.
  12. NOTHING HERE REACHES THE REVIT RUNNING ON THIS PC (row 5b-461). The
      client's discovery folder is an empty one for the whole run, and
      tests/support/live_revit_guard.py refuses any named-pipe open and fails the run
@@ -826,6 +833,127 @@ async def exercise_activity(module):
     await exercise_single_purpose(module, server, newest)
 
 
+async def exercise_change_report(module):
+    """Section 13: revit_change's short change report and the run record (5b-407)."""
+    server = module.server
+    print()
+    print("  revit_change's short change report, and heron_run_record (row 5b-407)")
+
+    async def call(tool, arguments):
+        try:
+            return text_of(await server.call_tool(tool, arguments)) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(%s could not be called: %s: %s)" % (tool, type(exc).__name__, exc)
+
+    name = "create-family-extrusion"
+    undo = ("IF anything was written, all of it is ONE undo step; if nothing was, there "
+            "is no new undo entry and Ctrl+Z would undo whatever you did before this.")
+    run = "wf-20261009-133432-0042-a1b2"
+    kept = {"ok": True, "ran": name, "document": "Panel",
+            "documentPath": "C:/families/Panel.rfa", "wasActiveDocument": True,
+            "bound": "workPlane as given",
+            "provides": {"formId": "form-1", "problems": "0 item(s)", "mm": "Func`2",
+                         "shortest": "0.79375"},
+            "applied": True, "rolledBack": False, "warnings": 0, "warningsDismissed": [],
+            "verdict": "'%s' was KEPT: Revit accepted the transaction rather than rolling "
+                       "it back. THE COUNTS ABOVE ... %s" % (name, undo),
+            "verdictKind": "kept", "verdictShort": "'%s' was KEPT. %s" % (name, undo),
+            "run": run,
+            "changes": {"events": 1, "unreadable": 0, "witnessed": True, "total": 2,
+                        "fragment": {"added": 2, "modified": 0, "deleted": 0, "total": 2,
+                                     "byCategory": [{"category": "Generic Models",
+                                                     "added": 1, "modified": 0},
+                                                    {"category": "Lines", "added": 1,
+                                                     "modified": 0}],
+                                     "firstIds": ["101", "102"]},
+                        "setup": {"added": 0, "modified": 0, "deleted": 0, "total": 0,
+                                  "byCategory": [], "firstIds": []}}}
+    revit = StandIn(kept)
+    module.binding.resolve = lambda: revit
+    module.pinned.forget()
+    batch = getattr(module, "_BATCH", None)
+    runs = getattr(module, "runs", None)
+    check(batch is not None and runs is not None,
+          "the server keeps one batch for the chat and uses heron_run_records")
+    if batch is None or runs is None:
+        del module.binding.resolve
+        return
+    module._BATCH = runs.Batch()
+    asked = {"capability": "CREATE_FAMILY_EXTRUSION", "values": "workPlane=Ref. Level"}
+    try:
+        first = await call("revit_change", asked)
+        op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "run_fragment_write" and args.get("apply") == "true" and idempotent is False,
+              "a kept change is sent as run_fragment_write with apply, not safe to resend")
+        check("Revit accepted the transaction" in first and undo in first,
+              "the first kept change of a batch prints the add-in's paragraph whole")
+        check("  changed: 2 added (Generic Models 1, Lines 1)" in first,
+              "and what Revit says it changed, by category")
+        check("  record:  heron_run_record run=%s (every id and value)" % run in first,
+              "and names the run record that holds every id and value")
+        check("form-1" in first and "shortest" in first and "unchanged" not in first,
+              "and prints every value the fragment left")
+
+        revit.reply = dict(kept, provides=dict(kept["provides"], formId="form-2"))
+        second = await call("revit_change", asked)
+        check("Revit accepted the transaction" not in second
+              and "'%s' was KEPT. %s" % (name, undo) in second,
+              "the next in the same batch prints the add-in's one sentence - the undo "
+              "rule whole")
+        check("form-2" in second and "shortest" not in second
+              and "and 3 values unchanged from the last reply - every one is in the record."
+              in second,
+              "and the new form's id, with what the last reply showed word for word "
+              "counted rather than printed")
+        print("    a kept change in one batch: %d characters first, %d after"
+              % (len(first), len(second)))
+        check(len(second) < len(first), "so the second is shorter than the first")
+
+        revit.reply = dict(kept, verdict="NOTHING WAS KEPT. ... rolled back",
+                           verdictKind="rolledBack", verdictShort=None)
+        rolled = await call("revit_change", asked)
+        check("NOTHING WAS KEPT. ... rolled back" in rolled,
+              "a rollback is printed whole, inside a batch or not")
+
+        old = dict((k, v) for k, v in kept.items()
+                   if k not in ("verdictKind", "verdictShort", "run", "changes"))
+        revit.reply = old
+        module._BATCH = runs.Batch()
+        once = await call("revit_change", asked)
+        twice = await call("revit_change", asked)
+        check(all("Revit accepted the transaction" in said and "shortest" in said
+                  and "changed:" not in said and "record:" not in said
+                  for said in (once, twice)),
+              "a reply from an add-in before the change report prints exactly as before - "
+              "every value and the paragraph, every time")
+    finally:
+        del module.binding.resolve
+        module.pinned.forget()
+        module._BATCH = runs.Batch()
+
+    # THE RECORD, paged back from a folder of this run's own.
+    folder = module.bridge.RUNS_DIR
+    record = {"record": 1, "workflow": run, "at": "2026-10-09T13:34:32Z",
+              "op": "run_fragment_write", "fragment": name, "document": "Panel",
+              "elements": [{"part": "fragment", "change": "added", "id": str(100 + i),
+                            "category": "Lines"} for i in range(30)],
+              "reply": kept}
+    with io.open(os.path.join(folder, run + ".json"), "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(record))
+    page = await call("heron_run_record", {"run": run, "limit": 10})
+    check(page.startswith("Run %s: %s in Panel" % (run, name))
+          and "Lines 0-9 of" in page and "offset=10" in page,
+          "heron_run_record pages the record from disk, naming the next offset")
+    rest = await call("heron_run_record", {"run": run, "offset": 30, "limit": 50})
+    check("fragment  added    129  Lines" in rest and "More:" not in rest,
+          "and the last page holds every id that was left")
+    listed = await call("heron_run_record", {})
+    check(run in listed and name in listed,
+          "with no run named it lists the newest records")
+    refused = await call("heron_run_record", {"run": "../../secrets"})
+    check("not a run id" in refused, "and an id that is a path is refused, not opened")
+
+
 async def exercise_single_purpose(module, server, newest):
     """
     Section 11, continued: the SINGLE-PURPOSE tools say how they ended too
@@ -1211,6 +1339,11 @@ def main():
     real_discovery = bridge.DISCOVERY_DIR
     bridge.DISCOVERY_DIR = os.path.join(home, "bridges")
     os.makedirs(bridge.DISCOVERY_DIR)
+    # AND ITS RUN RECORDS (5b-407): heron_run_record reads the client's
+    # RUNS_DIR, and the real one holds the owner's own changes.
+    real_runs = getattr(bridge, "RUNS_DIR", None)
+    bridge.RUNS_DIR = os.path.join(home, "runs")
+    os.makedirs(bridge.RUNS_DIR)
     try:
         try:
             import heron_mcp_server as server_module
@@ -1233,6 +1366,7 @@ def main():
         asyncio.run(exercise_words(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
+        asyncio.run(exercise_change_report(server_module))
 
         guard.stop()
         print()
@@ -1267,6 +1401,8 @@ def main():
         else:
             os.environ["HERON_AUDIT"] = had_audit
         bridge.DISCOVERY_DIR = real_discovery
+        if real_runs is not None:
+            bridge.RUNS_DIR = real_runs
         guard.stop()
         shutil.rmtree(home, ignore_errors=True)
 

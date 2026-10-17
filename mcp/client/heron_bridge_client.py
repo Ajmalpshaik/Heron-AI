@@ -88,6 +88,10 @@ def local_app_data(environ=None, system=None):
 # file would follow the user to a PC where that process does not exist.
 DISCOVERY_DIR = os.path.join(local_app_data(), "Heron", "bridges")
 LOG_DIR = os.path.join(local_app_data(), "Heron", "logs")
+# HeronPaths.Runs: one record per fragment write, named by its workflow id,
+# which heron_run_record pages back from disk (FRAGMENT-ISSUES 5b-407).
+# Read here, never written - the add-in writes and prunes it.
+RUNS_DIR = os.path.join(local_app_data(), "Heron", "runs")
 PROTOCOL_VERSION = 2
 CONNECT_TIMEOUT_S = 2.0
 

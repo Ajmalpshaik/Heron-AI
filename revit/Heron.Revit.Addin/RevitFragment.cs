@@ -102,6 +102,11 @@ namespace Heron.Revit.Addin
         /// </summary>
         public static string Run(UIApplication app, string request, bool writing)
         {
+            // NOTHING FROM AN EARLIER RUN IS HANDED ON. The dispatcher takes
+            // what the last write changed straight after this returns, and a
+            // refusal or a read must not leave it the list a previous job made.
+            Elements = null;
+
             var source = Json.ReadString(request, "source");
             var name = Json.ReadString(request, "name") ?? "(unnamed)";
 
@@ -546,6 +551,12 @@ namespace Heron.Revit.Addin
             // which opens no transaction for Revit to post anything to.
             var said = new HeronFailureNote();
 
+            // WHAT THE JOB CHANGED, element by element, read off Revit's own
+            // DocumentChanged - see ChangeWatch. Null on the read path, which
+            // opens no transaction for anything to change in, and on every
+            // refusal below, which returns before it is described.
+            HeronChangeReport.Described changed = null;
+
             if (!writing)
             {
                 threw = RunScript(script, globals, name, out state);
@@ -559,6 +570,14 @@ namespace Heron.Revit.Addin
                 using (var group = new TransactionGroup(target, label))
                 {
                     group.Start();
+
+                    // LISTENING FROM THE FIRST MOMENT ANYTHING IN THIS GROUP
+                    // CAN COMMIT. A using DECLARATION, so the handler is
+                    // removed at the end of this block whichever way it is
+                    // left - every early return below included - which is
+                    // the finally the subscription needs, without moving
+                    // the whole block in a level.
+                    using var watch = new ChangeWatch(app.Application, target, label);
 
                     // SETUP THAT HAS TO CHANGE THE MODEL, inside this group.
                     //
@@ -671,6 +690,13 @@ namespace Heron.Revit.Addin
                         }
                     }
 
+                    // WHAT IT CHANGED, READ NOW - before Assimilate or the
+                    // rollback, while every element it added still exists to
+                    // be asked its category. After this the report is sealed:
+                    // a rollback names the same elements again with the
+                    // meaning reversed, and it is not the fragment's work.
+                    changed = watch.Describe();
+
                     // ASSIMILATE, so the whole group collapses to ONE undo step
                     // rather than leaving the inner transaction visible as its
                     // own. Rolling back instead is what makes the default a
@@ -682,11 +708,166 @@ namespace Heron.Revit.Addin
 
             if (threw != null) return threw;
 
+            // EVERY ELEMENT, for the dispatcher's run record. The reply only
+            // counts them; the list is what the record is for.
+            Elements = changed == null ? null : changed.ElementsField();
+
             Remember(name, state, target, bound, client, globals.__heron, ranWith);
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
-            return writing ? WithVerdict(answer, apply, name, rolledBack, said) : answer;
+            return writing ? WithVerdict(answer, apply, name, rolledBack, said, changed) : answer;
+        }
+
+        /// <summary>
+        /// What the last write changed, element by element, as the run
+        /// record's `elements` field - or null when the last run was not a
+        /// write that got as far as being described. Set by Run, taken by
+        /// RevitDispatcher straight after it, on the same thread: every
+        /// operation arrives on the Revit API thread, one at a time, which is
+        /// what Note below relies on too.
+        /// </summary>
+        private static string Elements;
+
+        /// <summary>
+        /// The element list the last run left, handed over once and cleared,
+        /// so the record of one job can never be written under the next.
+        /// </summary>
+        internal static string TakeElements()
+        {
+            var taken = Elements;
+            Elements = null;
+            return taken;
+        }
+
+        /// <summary>
+        /// The DocumentChanged collector for one write: subscribed when it is
+        /// made, unsubscribed when it is disposed or described.
+        ///
+        /// IT READS NOTHING HEAVY INSIDE THE EVENT. Revit raises
+        /// DocumentChanged while it is finishing a transaction, so the handler
+        /// keeps the ids and the transaction's names and returns; categories
+        /// are read once, in Describe, before the group closes. The counting
+        /// rule is HeronChangeReport's, proved without Revit.
+        ///
+        /// ONLY THE TARGET, AND ONLY A COMMIT. Another open document can
+        /// change while this runs, and is not this job's. A rollback, an undo
+        /// or a redo reports elements with the meaning reversed or repeated,
+        /// so only TransactionCommitted is counted - every member used here is
+        /// the same on 2020 to 2027, read with tools/api-surface --members.
+        ///
+        /// WHETHER REVIT RAISES IT FOR EACH COMMIT INSIDE A GROUP, for an
+        /// edit-scope fragment's own transactions and on a group's rollback is
+        /// NOT KNOWN from here - NEEDS-CHECKING says so. Until it is, a report
+        /// that saw no event at all says it saw nothing, never that nothing
+        /// changed (HeronChangeReport.Described.Witnessed).
+        /// </summary>
+        private sealed class ChangeWatch : IDisposable
+        {
+            private readonly Autodesk.Revit.ApplicationServices.Application _app;
+            private readonly Document _target;
+            private readonly HeronChangeReport _report;
+
+            // The ids themselves, so a category is read from the ElementId
+            // Revit handed over - no ElementId is ever built from a number
+            // here (its constructor changed from int to long at 2024, 5b-441).
+            private readonly Dictionary<string, ElementId> _ids =
+                new Dictionary<string, ElementId>(StringComparer.Ordinal);
+
+            private bool _listening;
+
+            internal ChangeWatch(Autodesk.Revit.ApplicationServices.Application app,
+                                 Document target, string label)
+            {
+                _app = app;
+                _target = target;
+                _report = new HeronChangeReport(label);
+                if (app == null) return;
+                app.DocumentChanged += Changed;
+                _listening = true;
+            }
+
+            private void Changed(object sender, Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
+            {
+                // NOTHING MAY ESCAPE INTO REVIT'S EVENT. A handler that throws
+                // is Revit's problem, raised from inside a commit; one that
+                // cannot read an event counts it as unreadable instead, so the
+                // report can say its numbers are incomplete.
+                try
+                {
+                    if (e.Operation != Autodesk.Revit.DB.Events.UndoOperation.TransactionCommitted)
+                        return;
+                    var doc = e.GetDocument();
+                    if (doc == null || !doc.Equals(_target)) return;
+
+                    _report.Committed(e.GetTransactionNames(),
+                                      Keep(e.GetAddedElementIds()),
+                                      Keep(e.GetModifiedElementIds()),
+                                      Text(e.GetDeletedElementIds()));
+                }
+                catch (Exception)
+                {
+                    _report.CouldNotRead();
+                }
+            }
+
+            /// <summary>Each id as text, kept for the category read later.</summary>
+            private List<string> Keep(ICollection<ElementId> ids)
+            {
+                var text = new List<string>();
+                if (ids == null) return text;
+                foreach (var id in ids)
+                {
+                    if (id == null) continue;
+                    var key = id.ToString();
+                    _ids[key] = id;
+                    text.Add(key);
+                }
+                return text;
+            }
+
+            /// <summary>Each id as text, and nothing kept: a deleted element has no category to read.</summary>
+            private static List<string> Text(ICollection<ElementId> ids)
+            {
+                var text = new List<string>();
+                if (ids == null) return text;
+                foreach (var id in ids)
+                {
+                    if (id != null) text.Add(id.ToString());
+                }
+                return text;
+            }
+
+            /// <summary>
+            /// Stop listening, and read each element's category once - the
+            /// one moment it can be read, with the group still open.
+            /// </summary>
+            internal HeronChangeReport.Described Describe()
+            {
+                Dispose();
+                return _report.Describe(CategoryOf);
+            }
+
+            private string CategoryOf(string key)
+            {
+                ElementId id;
+                if (!_ids.TryGetValue(key, out id)) return null;
+                try
+                {
+                    var element = _target.GetElement(id);
+                    return element == null || element.Category == null ? null : element.Category.Name;
+                }
+                catch (Exception) { return null; }
+            }
+
+            public void Dispose()
+            {
+                if (!_listening) return;
+                _listening = false;
+                _report.Seal();
+                try { _app.DocumentChanged -= Changed; }
+                catch (Exception) { }
+            }
         }
 
         /// <summary>
@@ -1550,8 +1731,18 @@ namespace Heron.Revit.Addin
         /// "renamed 47 views" and finding 47 unrenamed views would be right to
         /// distrust every number Heron has ever given them.
         /// </summary>
+        /// <summary>
+        /// ARTICLE 8's INSTRUCTION, in the one form both verdicts use. Row
+        /// 117 made it conditional and PR #198 had to make it conditional
+        /// twice, because two copies of a sentence drift.
+        /// </summary>
+        private const string UndoRule =
+            "IF anything was written, all of it is ONE undo step; if nothing was, there is "
+            + "no new undo entry and Ctrl+Z would undo whatever you did before this.";
+
         private static string WithVerdict(string answer, bool applied, string name,
-                                          bool rolledBack, HeronFailureNote said)
+                                          bool rolledBack, HeronFailureNote said,
+                                          HeronChangeReport.Described changed)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
@@ -1564,6 +1755,8 @@ namespace Heron.Revit.Addin
             // because a write that may still be standing is the one thing a
             // reader must not have to guess at.
             string verdict;
+            string kind;
+            string brief = null;
             if (applied)
             {
                 // ROW 117. THIS BRANCH USED TO SAY "the model was CHANGED", AND IT SAID IT
@@ -1608,13 +1801,39 @@ namespace Heron.Revit.Addin
                 // modeller told to press Ctrl+Z then undoes whatever they did
                 // BEFORE running this. Saying "if anything was written" costs
                 // one clause and cannot send anybody backwards.
+                //
+                // SETUP CHANGES ARE COUNTED NOW, APART, and the sentence says
+                // so only when they were: `changed` is Revit's own account of
+                // the job, read off DocumentChanged, with a setup step's
+                // transactions told from the fragment's by name. Until it was,
+                // this sentence had to admit that anything a setup step did
+                // was not counted anywhere. When no event arrived at all the
+                // old admission stands word for word, because a report that
+                // saw nothing cannot say what was done. And counts of zero
+                // still do not prove the model untouched: whether Revit raises
+                // the event for every commit inside a group is NEEDS-CHECKING's
+                // to settle, not this sentence's.
+                var setupCounted = changed != null && changed.Witnessed
+                    ? "what its setup steps did is counted apart under changes, and counts "
+                      + "of zero"
+                    : "anything a setup step did was kept in the same group and is not "
+                      + "counted here, so counts of zero";
                 verdict = "'" + name + "' was KEPT: Revit accepted the transaction rather than "
                         + "rolling it back. THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID and "
-                        + "nothing more - anything a setup step did was kept in the same group "
-                        + "and is not counted here, so counts of zero do not by themselves mean "
-                        + "the model is untouched. IF anything was written, all of it is ONE "
-                        + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
-                        + "would undo whatever you did before this.";
+                        + "nothing more - " + setupCounted + " do not by themselves mean "
+                        + "the model is untouched. " + UndoRule;
+                kind = "kept";
+
+                // THE SAME VERDICT IN ONE SENTENCE AND THE UNDO RULE WHOLE, for
+                // a reader that has already printed the paragraph above once
+                // in the same batch of calls (5b-407: it was 24.5% of what two
+                // family builds sent back, word for word in 170 of 172
+                // replies). Article 8's half is the rule, and the rule is
+                // never shortened: told to press Ctrl+Z after a run that did
+                // nothing, a modeller undoes whatever came before. Only this
+                // case has a short form - a rollback, and above all one that
+                // did not report success, is printed whole every time.
+                brief = "'" + name + "' was KEPT. " + UndoRule;
             }
             else if (rolledBack)
             {
@@ -1622,6 +1841,7 @@ namespace Heron.Revit.Addin
                         + "transaction group rolled back afterwards, so the counts above are "
                         + "what it actually did rather than a guess. Send it again with apply "
                         + "to keep it.";
+                kind = "rolledBack";
             }
             else
             {
@@ -1630,6 +1850,7 @@ namespace Heron.Revit.Addin
                         + "transaction group as rolled back - so THE MODEL MAY STILL HOLD THIS "
                         + "CHANGE. Check the thing that was written before trusting anything "
                         + "here, and do not save until you have.";
+                kind = "notConfirmed";
             }
 
             // WHAT REVIT RAISED AND HERON DISMISSED, on the verdict itself -
@@ -1637,7 +1858,29 @@ namespace Heron.Revit.Addin
             // modeller without the server having to learn a new field. Empty
             // when nothing was raised, so a clean run reads exactly as it did.
             var dismissed = said == null ? "" : said.DismissedSentence();
-            if (dismissed.Length > 0) verdict += " " + dismissed;
+            if (dismissed.Length > 0)
+            {
+                verdict += " " + dismissed;
+                if (brief != null) brief += " " + dismissed;
+            }
+
+            // AND THE SHORT FORM BESIDE IT, never instead of it: which of the
+            // three this was, and the one sentence a reader that printed the
+            // whole paragraph earlier in the batch may print in its place,
+            // this run's dismissed warnings included. `verdict` stays whole,
+            // so a reader that knows neither field prints exactly what it
+            // printed before. Both are written here, by the side that saw
+            // whether the group held - the server only chooses between them.
+            var fields = new List<string>
+            {
+                Json.Str("verdictKind", kind),
+                Json.Str("verdictShort", brief),
+            };
+
+            // WHAT REVIT SAID THE JOB CHANGED: counts by category, the first
+            // ids, the totals - and the three whole-job numbers the audit
+            // line reads. Every element is in the run record instead.
+            if (changed != null) fields.AddRange(changed.ReplyFields());
 
             // AND EVERY ONE OF THEM, for anything reading the reply rather than
             // the sentence: the sentence quotes a few kinds and counts the rest,
@@ -1660,7 +1903,8 @@ namespace Heron.Revit.Addin
                  + "," + Json.Bool("rolledBack", rolledBack)
                  + "," + Json.Num("warnings", said == null ? 0 : said.DismissedCount)
                  + "," + Json.Arr("warningsDismissed", listed)
-                 + "," + Json.Str("verdict", verdict) + "}";
+                 + "," + Json.Str("verdict", verdict)
+                 + "," + string.Join(",", fields) + "}";
         }
 
         /// <summary>How many generated lines sit in front of the snippet.</summary>

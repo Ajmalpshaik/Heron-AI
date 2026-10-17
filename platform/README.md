@@ -30,6 +30,7 @@ One file per class (`ls platform/Heron.Core/*.cs`), each the Kernel half of an a
 | [`HeronAppend.cs`](Heron.Core/HeronAppend.cs) | One line onto the end of a file another Revit process may be appending to at the same moment — or a plain answer that it could not be done. Used by the audit trail and the add-in log | 1 |
 | [`HeronAudit.cs`](Heron.Core/HeronAudit.cs) | The audit trail: one append-only line per request, keyed by Workflow ID | 4 |
 | [`HeronAtomicWrite.cs`](Heron.Core/HeronAtomicWrite.cs) | Write a file so an interrupted write cannot destroy what was already there — never delete-then-move | 6 |
+| [`HeronRuns.cs`](Heron.Core/HeronRuns.cs) | The run records: one file per fragment write under `HeronPaths.Runs` (DERIVED), named by its workflow id, holding every element it changed and its whole reply — written atomically, pruned by `runs.retainDays`, read back by `heron_run_record` | 7 |
 | [`HeronLease.cs`](Heron.Core/HeronLease.cs) | Who currently holds a Revit, and who may therefore send it anything ([D-22](../docs/DECISIONS.md)) | 6 |
 | [`HeronPermissions.cs`](Heron.Core/HeronPermissions.cs) | The seven permission levels of [docs/12 §1](../docs/12-security-and-permissions.md), in order | 6 |
 | [`HeronStop.cs`](Heron.Core/HeronStop.cs) | Emergency Stop — one switch that stops Heron doing anything further | 6 |

@@ -339,6 +339,12 @@ namespace Heron.Revit.Addin
                     }
                     clock.Stop();
 
+                    // THE RUN RECORD, for a fragment write that got as far as
+                    // describing what it changed - and taken for EVERY
+                    // operation, so a list a write left can never be written
+                    // under the next job's id. See RunRecord.
+                    response = RunRecord(job, op, response, RevitFragment.TakeElements());
+
                     // WHICH MODEL THE WORK ACTUALLY RAN AGAINST, read out
                     // of its own answer. This is the only authoritative
                     // name anywhere on the path: it is the one place with
@@ -411,6 +417,19 @@ namespace Heron.Revit.Addin
                     if (warnings.HasValue)
                         numbers.Add(new KeyValuePair<string, long>("warnings", warnings.Value));
 
+                    // AND THE ELEMENTS IT TOUCHED - Article 22 names them in
+                    // what the trail must hold, and until a write's reply
+                    // carried Revit's own count of them nothing could. Read
+                    // as numbers by the rule `warnings` follows above: absent
+                    // is left absent, so a read, a refusal or a reply from
+                    // before the change report says nothing rather than 0.
+                    foreach (var touched in TouchedFields)
+                    {
+                        var count = fragmentRun ? Json.ReadLong(response, touched) : null;
+                        if (count.HasValue)
+                            numbers.Add(new KeyValuePair<string, long>(touched, count.Value));
+                    }
+
                     HeronAudit.Record(job.WorkflowId, op,
                         failure == null,
                         new[]
@@ -457,6 +476,57 @@ namespace Heron.Revit.Addin
                     job.Finish(response);
                 }
             }
+        }
+
+        /// <summary>
+        /// The whole-job counts a fragment write's reply carries beside its
+        /// `changes`, copied onto the audit line as numbers (Article 22).
+        /// </summary>
+        private static readonly string[] TouchedFields =
+        {
+            "elementsAdded", "elementsModified", "elementsDeleted", "changeEvents",
+        };
+
+        /// <summary>
+        /// Write the run record for a fragment write, and name it on the reply.
+        ///
+        /// HERE AND NOT IN RevitFragment, because this is the one place with
+        /// the workflow id, the operation and the finished reply together -
+        /// the same three the audit line below is written from. The record
+        /// carries the id; the audit line carries the id; nothing else links
+        /// them, and nothing else needs to.
+        ///
+        /// WHAT IT HOLDS: every element the job changed - which the reply
+        /// only counts - and the reply itself, whole, as it leaves for the
+        /// client. The chat is given the short report and reads the rest a
+        /// page at a time with heron_run_record (FRAGMENT-ISSUES 5b-407).
+        ///
+        /// `run` IS ADDED ONLY WHEN THE FILE WAS WRITTEN. A reply that names a
+        /// record nobody can read would send the chat to a page that is not
+        /// there; without `run`, the client prints everything it was sent,
+        /// exactly as before. Never throws - HeronRuns.Write does not, and a
+        /// reply this cannot splice into is returned as it came.
+        /// </summary>
+        private static string RunRecord(RevitJob job, string op, string response, string elements)
+        {
+            if (elements == null || string.IsNullOrEmpty(response)
+                || !response.EndsWith("}", StringComparison.Ordinal))
+                return response;
+
+            var body = Json.Obj(
+                Json.Num("record", 1),
+                Json.Str("workflow", job.WorkflowId),
+                Json.Str("at", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)),
+                Json.Str("op", op),
+                Json.Str("fragment", Json.ReadString(job.Request, "name")),
+                Json.Str("document", Json.ReadString(response, "document")),
+                elements,
+                "\"reply\": " + response);
+
+            if (!HeronRuns.Write(job.WorkflowId, body)) return response;
+
+            return response.Substring(0, response.Length - 1)
+                 + ", " + Json.Str("run", job.WorkflowId) + "}";
         }
 
         /// <summary>
