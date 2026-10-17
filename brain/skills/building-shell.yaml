@@ -47,8 +47,10 @@ purpose: >
      A TYPICAL STOREY IS DRAWN ONCE AND COPIED. When floors repeat - a tower,
      or upper floors that match - draw one storey's walls, curtain walls and
      slab (steps 3 to 5), collect them with SELECT_BY_LEVEL (DRAFT),
-     levelId= that level, categories=Walls, Floors, then COPY_ELEMENTS (PROVEN,
-     version 2) with expect_from naming that select, offset=0,0,0 and
+     levelId= that level, categories=Walls, Floors, then COPY_ELEMENTS (DRAFT,
+     version 3 - version 2 was PROVEN, and until NEEDS-CHECKING Group FC
+     proves version 3 a kept change from it is refused, D-117) with
+     expect_from naming that select, offset=0,0,0 and
      toLevels= the levels to repeat on - "Level 2..Roof" is every level from
      Level 2 to Roof by height. Each copy BELONGS to its level at its
      original's offset, so it is never a ground-floor wall lifted by a height;
@@ -56,6 +58,8 @@ purpose: >
      and on the top storey keeps its height unconnected. A TWISTING TOWER is
      the same call with turnDegrees= the turn per storey and turnCentreMm= the
      plan point it turns about, in millimetres; leave both blank for none.
+     In a workshared model Revit puts every copy on the ACTIVE workset;
+     toWorkset=source keeps each copy on its original's workset.
      Read the answer: each level's line must say every copy belongs to it and
      every plan point sits where the turn puts it. On 2026-10-13 a 32-storey
      twisting tower took 33 CREATE_WALL and 36 CREATE_FLOOR calls without

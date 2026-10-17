@@ -1,8 +1,30 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `offset`, `toLevels`,
-// `turnDegrees` and `turnCentreMm` are in scope; leaves `copies`, `notCopied`,
-// `copiedTo` and `refused` behind.
+// `turnDegrees`, `turnCentreMm` and `toWorkset` are in scope; leaves `copies`,
+// `notCopied`, `copiedTo`, `onWorksets` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). `offset` is in internal FEET.
+//
+// WHICH WORKSET THE COPIES GO ON (version 3, 2026-10-17, FRAGMENT-ISSUES
+// 5b-540). Revit puts every copy on the ACTIVE workset, whatever workset its
+// original is on. Seen 2026-10-15 on a BIM 360 project in Revit 2020:
+// builders-work openings copied from instances on BHVD_BW_WALL_OPENING landed
+// on the active workset and had to be moved with SET_ELEMENT_WORKSET after.
+//
+//   toWorkset "active"  Revit's own way - version 2, line for line. It is what
+//                       a call that leaves toWorkset out is read as (the
+//                       card's `absent: active`), so no workset is read or
+//                       written and `onWorksets` stays empty.
+//   toWorkset "source"  each copy on the workset of the element it is a copy
+//                       of. "same", "own" and "original" say the same.
+//   any other text      every copy on the user workset of that name - case and
+//                       extra spaces forgiven. A name in double quotes is
+//                       always a name, for a workset called "Source".
+//
+// Both paths copy exactly as version 2 does, then set each copy's workset the
+// way SET_ELEMENT_WORKSET does (ELEM_PARTITION_PARAM, an int), and read every
+// copy's workset back from the model. A copy whose workset Revit will not let
+// be set - a curtain panel, a mullion, something drawn in a view - follows its
+// host or its view and is counted as such, never written.
 //
 // TWO WAYS TO COPY, CHOSEN BY `toLevels` (version 2, 2026-10-13, FRAGMENT-ISSUES
 // 5b-460):
@@ -36,6 +58,7 @@
 var copies = new List<ElementId>();
 var notCopied = 0;
 var copiedTo = "";
+var onWorksets = "";
 string refused = null;
 
 var source = new List<ElementId>();
@@ -68,6 +91,258 @@ if (turnText.Length > 0)
     }
 }
 
+// ----------------------------------------------------------------------
+// VERSION 3 - THE WORKSET, read once here and used by both paths below.
+// `worksetMode` stays null for "active" or blank, and then nothing below it
+// runs: no workset is read, none is written, `onWorksets` stays empty.
+// ----------------------------------------------------------------------
+var worksetText = (toWorkset ?? "").Trim();
+string worksetMode = null;              // null, "source" or "named"
+string worksetProblem = null;
+var worksetNamed = 0;                   // a WorksetId's IntegerValue - an int, as SET_ELEMENT_WORKSET has it.
+                                        // 0 is a real one (often Workset1), so worksetMode says whether it is set
+var worksetNames = new Dictionary<int, string>();
+var worksetOpen = new Dictionary<int, bool>();
+{
+    var quoted = worksetText.Length >= 2 && worksetText.StartsWith("\"") && worksetText.EndsWith("\"");
+    var word = string.Join(" ", worksetText.ToLowerInvariant()
+        .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries));
+    if (word.EndsWith(" workset")) word = word.Substring(0, word.Length - " workset".Length);
+    if (word.StartsWith("the ")) word = word.Substring(4);
+    if (word.StartsWith("its ")) word = word.Substring(4);
+
+    if (!quoted && (word.Length == 0 || word == "active"))
+    {
+        // VERSION 2: Revit's own - every copy on the active workset.
+    }
+    else if (!doc.IsWorkshared)
+    {
+        // A VALUE THAT WOULD BE IGNORED IS REFUSED INSTEAD - the same rule as
+        // the turn. With no worksets the copies would be made and the workset
+        // asked for silently never applied.
+        worksetProblem = "This model is not workshared, so there is no workset to put the copies on - leave the "
+            + "workset out and they are copied as before.";
+    }
+    else
+    {
+        foreach (var workset in new FilteredWorksetCollector(doc).OfKind(WorksetKind.UserWorkset))
+        {
+            worksetNames[workset.Id.IntegerValue] = workset.Name;
+            worksetOpen[workset.Id.IntegerValue] = workset.IsOpen;
+        }
+
+        if (!quoted && (word == "source" || word == "same" || word == "own" || word == "original"))
+        {
+            worksetMode = "source";
+        }
+        else
+        {
+            var wanted = quoted ? worksetText.Substring(1, worksetText.Length - 2) : worksetText;
+            var key = string.Join(" ", wanted.ToLowerInvariant()
+                .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries));
+            foreach (var pair in worksetNames)
+            {
+                var name = string.Join(" ", pair.Value.ToLowerInvariant()
+                    .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries));
+                if (name == key) { worksetNamed = pair.Key; worksetMode = "named"; break; }
+            }
+            if (worksetMode == null)
+            {
+                var known = worksetNames.Values.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+                worksetProblem = "This model has no user workset named \"" + wanted + "\". Its user worksets: "
+                    + (known.Count == 0 ? "none" : string.Join(", ", known.Take(40)))
+                    + (known.Count > 40 ? " and " + (known.Count - 40) + " more" : "")
+                    + ". Or type source for each copy on its own original's workset.";
+            }
+        }
+    }
+}
+
+// THE COPY'S WORKSET, WRITTEN - for every copy in `made`, straight after
+// Revit made it, while each copy still stands `dx, dy` in plan from its
+// original. Read back for all of them at the end (onWorksets).
+var worksetWritten = new Dictionary<ElementId, int>();
+var worksetFollowers = new List<string>();
+var worksetUnmatched = new List<string>();
+List<Element> worksetPool = null;
+
+Func<Element, string> worksetCategory = element =>
+    element.Category != null ? element.Category.Name : element.GetType().Name;
+
+// WHERE AN ELEMENT IS IN PLAN - its point, both ends of its line, or its box -
+// to tell two copies of one type apart when their originals sit on different
+// worksets. Plan only: a copy by an upward vector can leave a wall where it
+// was (measured 2026-10-14, see ONTO LEVELS below), and onto levels each copy
+// is a storey up.
+Func<Element, List<XYZ>> worksetMarks = element =>
+{
+    var marks = new List<XYZ>();
+    var at = element.Location as LocationPoint;
+    var along = element.Location as LocationCurve;
+    if (at != null) marks.Add(at.Point);
+    else if (along != null && along.Curve != null)
+    {
+        marks.Add(along.Curve.GetEndPoint(0));
+        marks.Add(along.Curve.GetEndPoint(1));
+    }
+    else
+    {
+        var box = element.get_BoundingBox(null);
+        if (box != null) { marks.Add(box.Min); marks.Add(box.Max); }
+    }
+    return marks;
+};
+
+Action<ICollection<ElementId>, double, double> putOnWorksets = (made, dx, dy) =>
+{
+    if (worksetMode == null || made == null) return;
+    doc.Regenerate();
+
+    // "source": EVERY ELEMENT A COPY CAN BE A COPY OF - each one given, and
+    // what Revit copies with it: a door in a given wall, a curtain panel, a
+    // nested part. Read once, before anything is written.
+    if (worksetMode == "source" && worksetPool == null)
+    {
+        worksetPool = new List<Element>();
+        var seen = new HashSet<ElementId>();
+        foreach (var element in elements)
+        {
+            if (element == null) continue;
+            var family = new List<ElementId> { element.Id };
+            family.AddRange(element.GetDependentElements(new ElementIsElementTypeFilter(true)));
+            foreach (var id in family)
+            {
+                if (!seen.Add(id)) continue;
+                var member = doc.GetElement(id);
+                if (member == null) continue;
+                if (worksetNames.ContainsKey(doc.GetWorksetId(id).IntegerValue)) worksetPool.Add(member);
+            }
+        }
+    }
+
+    const double samePlan = 2.0 / 304.8;
+    foreach (var id in made)
+    {
+        var copy = doc.GetElement(id);
+        if (copy == null) continue;
+        var parameter = copy.get_Parameter(BuiltInParameter.ELEM_PARTITION_PARAM);
+        if (parameter == null || parameter.StorageType != StorageType.Integer || parameter.IsReadOnly)
+        {
+            // FOLLOWS ITS HOST OR ITS VIEW - Revit decides its workset.
+            worksetFollowers.Add(worksetCategory(copy));
+            continue;
+        }
+
+        var wanted = worksetNamed;
+        if (worksetMode == "source")
+        {
+            // ITS ORIGINAL'S WORKSET. When every original is on one workset -
+            // the usual case, and the BHVD_BW_WALL_OPENING one - that is the
+            // workset, for every copy. Otherwise its original is found: the
+            // same category and type, and where that is not enough to name one
+            // workset, the same place in plan less the step. A copy of a kind
+            // no original is (a sketch plane, a grid line) is left where Revit
+            // made it and counted; two originals on different worksets that it
+            // could be a copy of are never guessed between.
+            var on = worksetPool.Select(o => doc.GetWorksetId(o.Id).IntegerValue).Distinct().ToList();
+            var alike = worksetPool.Where(o => o.GetTypeId() == copy.GetTypeId()
+                && worksetCategory(o) == worksetCategory(copy)).ToList();
+            if (on.Count > 1)
+            {
+                if (alike.Count == 0)
+                {
+                    worksetUnmatched.Add(worksetCategory(copy));
+                    continue;
+                }
+                on = alike.Select(o => doc.GetWorksetId(o.Id).IntegerValue).Distinct().ToList();
+            }
+            if (on.Count > 1)
+            {
+                var marks = worksetMarks(copy);
+                on = alike.Where(o =>
+                {
+                    var was = worksetMarks(o);
+                    if (marks.Count == 0 || was.Count != marks.Count) return false;
+                    for (var i = 0; i < marks.Count; i++)
+                    {
+                        if (Math.Abs(marks[i].X - dx - was[i].X) > samePlan
+                            || Math.Abs(marks[i].Y - dy - was[i].Y) > samePlan) return false;
+                    }
+                    return true;
+                }).Select(o => doc.GetWorksetId(o.Id).IntegerValue).Distinct().ToList();
+            }
+            if (on.Count != 1)
+                throw new InvalidOperationException("A copy of a " + worksetCategory(copy) + " could not be told "
+                    + "from its original" + (on.Count > 1 ? "s on different worksets" : "") + ", so its workset "
+                    + "would be a guess. Nothing was kept - name one workset in toWorkset, or copy each "
+                    + "workset's elements on their own.");
+            wanted = on[0];
+        }
+
+        if (parameter.AsInteger() != wanted && !parameter.Set(wanted))
+            throw new InvalidOperationException("Revit would not put a copy of a " + worksetCategory(copy)
+                + " on workset \"" + worksetNames[wanted] + "\". Nothing was kept.");
+        worksetWritten[id] = wanted;
+    }
+};
+
+// READ BACK - every copy's workset as the model now holds it, never the
+// value written: Set returning true is not evidence it stored (the reason
+// SET_ELEMENT_WORKSET reads back too). A copy written that does not hold its
+// workset takes the whole call back.
+Action readBackWorksets = () =>
+{
+    if (worksetMode == null || copies.Count == 0) return;
+    var held = new Dictionary<string, int>();
+    var right = 0;
+    var total = 0;
+    foreach (var id in copies)
+    {
+        var copy = doc.GetElement(id);
+        if (copy == null) continue;
+        total++;
+        var on = doc.GetWorksetId(id).IntegerValue;
+        string name;
+        if (!worksetNames.TryGetValue(on, out name))
+        {
+            var other = doc.GetWorksetTable().GetWorkset(doc.GetWorksetId(id));
+            name = other != null ? other.Name : "no workset";
+        }
+        held[name] = held.ContainsKey(name) ? held[name] + 1 : 1;
+
+        int wanted;
+        if (!worksetWritten.TryGetValue(id, out wanted)) continue;
+        if (on != wanted)
+            throw new InvalidOperationException("A copy of a " + worksetCategory(copy) + " reads workset \"" + name
+                + "\" after it was put on \"" + worksetNames[wanted] + "\". Nothing was kept.");
+        right++;
+    }
+
+    var active = doc.GetWorksetTable().GetWorkset(doc.GetWorksetTable().GetActiveWorksetId());
+    var lines = new List<string>();
+    lines.Add((worksetMode == "named"
+            ? "Every copy asked onto workset \"" + worksetNames[worksetNamed] + "\""
+            : "Each copy asked onto its own original's workset")
+        + "; Revit makes copies on the active workset" + (active != null ? ", \"" + active.Name + "\"" : "") + ".");
+    lines.Add("Read back, all " + total + " copies: "
+        + string.Join(", ", held.OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(p => p.Key + " " + p.Value)) + ".");
+    lines.Add(right + " of " + worksetWritten.Count + " copies whose workset can be set are on the workset asked for"
+        + (worksetFollowers.Count > 0
+            ? "; " + worksetFollowers.Count + " follow their host or view and were not set ("
+              + string.Join(", ", worksetFollowers.Distinct()) + ")"
+            : "")
+        + (worksetUnmatched.Count > 0
+            ? "; " + worksetUnmatched.Count + " are of a kind none of the originals is and stay where Revit made "
+              + "them (" + string.Join(", ", worksetUnmatched.Distinct()) + ")"
+            : "")
+        + ".");
+    if (worksetMode == "named" && worksetOpen.ContainsKey(worksetNamed) && !worksetOpen[worksetNamed])
+        lines.Add("\"" + worksetNames[worksetNamed] + "\" is CLOSED in this session - the copies are on it, and Revit "
+            + "shows them once it is opened.");
+    onWorksets = string.Join("\n", lines);
+};
+
 if (levelsText.Length == 0)
 {
     if (turnProblem != null)
@@ -83,6 +358,10 @@ if (levelsText.Length == 0)
             + "elements where they are, ROTATE_ELEMENTS does it; to copy them round a point, "
             + "ARRAY_ELEMENTS_RADIAL. Nothing was copied.";
     }
+    else if (worksetProblem != null)
+    {
+        refused = worksetProblem + " Nothing was copied.";
+    }
     else if (source.Count > 0)
     {
         // VERSION 1, UNCHANGED.
@@ -94,6 +373,10 @@ if (levelsText.Length == 0)
         // originals with copies.
         notCopied = source.Count - copies.Count;
         if (notCopied < 0) notCopied = 0;
+
+        // VERSION 3 - nothing at all unless a workset was asked for.
+        putOnWorksets(copies, offset != null ? offset.X : 0, offset != null ? offset.Y : 0);
+        readBackWorksets();
     }
 }
 else
@@ -157,6 +440,7 @@ else
 
     var problems = new List<string>();
     if (turnProblem != null) problems.Add(turnProblem);
+    if (worksetProblem != null) problems.Add(worksetProblem);
 
     Func<string, string> squeeze = text => string.Join(" ",
         (text ?? "").Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
@@ -629,6 +913,11 @@ else
                         + " on " + wanted.Name + ". Nothing was kept.");
             }
 
+            // 3a. VERSION 3 - ONTO THE WORKSET ASKED FOR, while every copy
+            // still stands a kilometre aside of its original in plan. Nothing
+            // at all unless a workset was asked for.
+            putOnWorksets(made, aside, 0);
+
             // 4. BACK OVER THE ORIGINALS, AND TURNED. What rides follows its host.
             var ownIds = own.Select(e => e.Id).ToList();
             try
@@ -729,6 +1018,7 @@ else
                 + ".");
         }
         dropTemporaryPlans();
+        readBackWorksets();
 
         if (unconnectedTops > 0)
             lines.Add(unconnectedTops + " wall copy(ies) had no level as far above their new base as their "

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -28,7 +28,22 @@ capability: COPY_ELEMENTS
 # are strings because only an optional bool may be left out, and a blank string
 # is how "not asked" is typed (HeronBindingNote.AbsentValue). Signed by Ajmal PS
 # on 2026-10-14 and promoted to PROVEN on this card's branch (Group DX, DX1).
-version: 2
+#
+# Version 3 (2026-10-17, FRAGMENT-ISSUES 5b-540): in a WORKSHARED model the
+# modeller can say where the copies go - each one on its own original's
+# workset (toWorkset "source"), or every one on a workset named by the
+# modeller - and `onWorksets` reads every copy's workset back from the model.
+# Revit puts copies on the ACTIVE workset: seen 2026-10-15 on a BIM 360 project
+# in Revit 2020, builders-work openings copied from instances on
+# BHVD_BW_WALL_OPENING landed on the active workset and were moved after with
+# SET_ELEMENT_WORKSET. toWorkset is `optional: true` with `absent: active`
+# (HeronBindingNote.DeclaredAbsent, row 5b-488), so a caller that leaves it out
+# runs version 2's code with no workset read or written - every caller and the
+# building-shell skill unchanged. A choice in a model that is not workshared,
+# or a workset name the model does not have, is refused before anything is
+# copied. Changing impl/ made version 2's proof stale: DRAFT until it is proved
+# again (NEEDS-CHECKING Group FC). Version 2's proof is kept below as a record.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -102,6 +117,19 @@ contract:
       # Blank is the middle of the originals' box in plan.
       type: string
       source: request
+    - name: toWorkset
+      # Version 3. Which workset the copies go on, in a workshared model.
+      # "source" - each copy on its own original's workset ("same", "own" and
+      # "original" say the same); a user workset's name - every copy on it,
+      # case and extra spaces forgiven, and a name in double quotes is always a
+      # name; "active" - Revit's own way, every copy on the active workset.
+      # LEFT OUT IS "active": version 2 exactly, no workset read or written.
+      # Anything but "active" in a model that is not workshared, or a name it
+      # has no user workset for, refuses the call.
+      type: string
+      source: request
+      optional: true
+      absent: active
   provides:
     - name: copies
       role: result
@@ -118,12 +146,24 @@ contract:
       # reaches the reply cut to three lines. Empty when copying by the offset.
       role: result
       type: string
+    - name: onWorksets
+      # Version 3, when a workset was asked for: what was asked, every copy's
+      # workset READ BACK from the model with a count on each, how many copies
+      # whose workset can be set are on the one asked for, and how many follow
+      # their host or view (a curtain panel, a mullion) and were not set. ONE
+      # string, as copiedTo. Empty when toWorkset is left out or "active".
+      role: result
+      type: string
     - name: refused
       # Why it declined, in the modeller's words, ending "Nothing was copied".
       # Evidence it looked and said no, never a thing it did (D-52).
       role: accounting
       type: string
 
+# VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until Group FC
+# proves version 3 (D-30). The version 2 code it ran is still the path every
+# call that leaves toWorkset out takes.
 proof:
   date: '2026-10-14'
   by: Ajmal PS
@@ -179,7 +219,14 @@ compatibility-note: >
   floor plan, `MoveElements`, `RotateElements` and level and offset
   parameters by their built-in names, all present on every release from 2020;
   the turn centre is millimetres to feet by arithmetic (D-20). Compiled 2020
-  to 2027; run on Revit 2020 only (2026-10-14, Project2, 5b-460).
+  to 2027; run on Revit 2020 only (2026-10-14, Project2, 5b-460). Version 3
+  adds `Document.IsWorkshared`, `FilteredWorksetCollector` of user worksets,
+  `Workset.IsOpen`, `Document.GetWorksetId`, `WorksetTable.GetActiveWorksetId`
+  and `GetWorkset`, `Element.GetDependentElements` and the integer
+  `ELEM_PARTITION_PARAM` SET_ELEMENT_WORKSET already writes - each read off the
+  reference assemblies as the same on all eight releases (tools/api-surface,
+  2026-10-17). A WorksetId is an int, untouched by 2024's 64-bit ids. Compiled
+  2020 to 2027; NOT RUN IN REVIT.
 
 # WHY VERSION 2 COPIES PLAN TO PLAN - measured 2026-10-14 on Revit 2020 in a
 # scratch Project2, every probe rolled back (FRAGMENT-ISSUES 5b-460):
@@ -227,3 +274,5 @@ utterances:
   - copy this floor to the levels above
   - paste aligned to selected levels
   - repeat this storey on every level up to the roof
+  # Version 3 - the owner's own words for the workset choice (2026-10-17).
+  - copy these and keep them on the same workset

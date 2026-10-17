@@ -28,6 +28,31 @@ positive:
     expect: >
       exactly version 1 - one copy at the offset, copiedTo empty, refused empty
 
+  - given: >
+      version 3, a NEW project made workshared with two user worksets, A and B
+      (A active) - four generic model instances on B, toWorkset "source",
+      offset 3 m sideways
+    expect: >
+      four copies; onWorksets reads back "B 4" and "4 of 4 copies whose workset
+      can be set are on the workset asked for". Read back from outside too: the
+      copies' Workset property says B in the Properties palette, though A is
+      the active workset
+
+  - given: >
+      version 3, the same project - two instances on A and two on B, one call,
+      toWorkset "source"
+    expect: >
+      each copy on its own original's workset - "A 2, B 2" read back - and the
+      two on A are the copies of the two on A, found by their place in plan
+
+  - given: version 3, the same four instances on B, toWorkset "A"
+    expect: every copy on A - onWorksets reads back "A 4"
+
+  - given: version 3, toWorkset left out, in the workshared project
+    expect: >
+      exactly version 2 - the copies on the active workset A, onWorksets empty,
+      refused empty; the binding note says toWorkset not given - "active"
+
 negative:
   - given: an empty element list
     expect: >
@@ -48,6 +73,21 @@ negative:
   - given: version 2 - a turn given with toLevels blank
     expect: refused, nothing copied - a turn is never silently ignored
 
+  - given: >
+      version 3 - toWorkset "source" in a project that is NOT workshared (a new
+      project from the default template, never made workshared)
+    expect: >
+      `copies` EMPTY, onWorksets empty, refused says the model is not
+      workshared and ends "Nothing was copied" - the element count is
+      unchanged. The same call with toWorkset left out copies as version 2
+
+  - given: version 3 - toWorkset names a workset the workshared model does not have
+    expect: >
+      `copies` EMPTY, refused names the workset asked for and lists the model's
+      user worksets, and ends "Nothing was copied"
+
 second_route:
   - a count of that category before and after, differing by exactly the number copied
+  - version 3 - select the copies and read each one's Workset in the Properties palette, or
+    View > Visibility/Graphics > Worksets with one workset hidden at a time
   - one Ctrl+Z removes every copy in a single step (Golden Rule 16)
