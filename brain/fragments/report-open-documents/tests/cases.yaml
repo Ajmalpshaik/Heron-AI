@@ -20,6 +20,20 @@ positive:
       marked as such. Anything that might later close a view or switch away is
       worth knowing about before it happens
 
+  - given: >
+      version 2 - a project open, and two families open in the Family Editor:
+      one saved to a file, one made from a template and never saved
+    expect: >
+      the project listed and counted exactly as version 1 lists it (count 1);
+      familyCount 2, and familyList on ONE line naming both families with their
+      category - the saved one with its full .rfa path, the other with NEVER
+      SAVED - and a finding naming the never-saved family with Ctrl+S as the
+      way to keep it
+
+  - given: version 2 - the never-saved family is the window in front
+    expect: >
+      that family marked [ACTIVE] in familyList, and no project marked active
+
 negative:
   - given: a session with two links loaded inside one project
     expect: >
@@ -30,8 +44,14 @@ negative:
 
   - given: a family document open for editing alongside a project
     expect: >
-      the family counted apart from the projects, for the same reason - it is
-      edited in its own editor and is not a project to switch to
+      the family listed in familyList and NOT in documents, titles or paths,
+      and not counted in count - it is edited in its own editor and is not a
+      project to switch to (version 1 only counted it)
+
+  - given: version 2 - a project open and no family open at all
+    expect: >
+      familyCount 0 and familyList empty - not a family invented from the
+      project, and no NEVER SAVED finding for a family that is not there
 
   - given: a session with no project open at all
     expect: >
@@ -45,9 +65,14 @@ negative:
 
 second_route:
   - >
-    Revit's own Window tab and the title bar. What is listed here should match
-    what the user can see and click, one for one - and the links and families
-    that are counted rather than listed should be the ones with no tab
+    Revit's own View tab > Switch Windows and the title bar. What is listed here
+    should match what the user can see and click, one for one - the projects
+    in `documents`, the families in `familyList` - and the links that are
+    counted rather than listed should be the ones with no window
+
+  - >
+    For a family listed NEVER SAVED: Ctrl+S in that window opens Save As rather
+    than saving in place, which is Revit saying the same thing
 
   - >
     The Manage Links dialog, for the linked models this fragment only counts.

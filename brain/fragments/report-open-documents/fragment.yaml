@@ -5,17 +5,31 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-026
-semantic-identity: "which projects are open in this Revit, and how to tell two of the same name apart"
+semantic-identity: "which projects and families are open in this Revit, each with its file or none yet, and how to tell two models of the same name apart"
 kind: action
 domain: revit.document
 capability: REPORT_OPEN_DOCUMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
+# VERSION 2 (2026-10-16, row 5b-435). Version 1 counted the families open in
+# the Family Editor and listed none, so "2 family document(s) are open and are
+# NOT listed above" was the whole answer while a modeller's 60 inch monitor
+# family sat unsaved in one of them (2026-10-14, Revit 2020), and the family
+# method's step 11 b - check a lost answer while a window opens "with
+# REPORT_OPEN_DOCUMENTS" - could not see the window it was checking for. A
+# family closed without a file is gone (a house and two towers were lost
+# unsaved on 2026-10-13), and Heron cannot save one: SAVE_DOCUMENT saves only
+# a document that already has a file, and never the one in front. So each
+# family is named, and one with no file is said out loud, with Ctrl+S as the
+# only way to keep it. The projects' lists and `count` are version 1's.
+
 purpose: >
-  Lists the projects open in this Revit session, with enough identity to act on
-  one. It changes nothing.
+  Lists the projects open in this Revit session, and the families open in the
+  Family Editor, with enough identity to act on one: each model's title and
+  full path, and each family's category and file, or that it has none yet. It
+  changes nothing.
 
   **THIS EXISTS BECAUSE A TITLE IS NOT AN IDENTIFIER.** Two projects called
   `Project1` can be open at once, and then *"switch to Project1"* names nothing.
@@ -24,18 +38,16 @@ purpose: >
   SWITCH_ACTIVE_PROJECT matches on first - a title match is the convenience, a
   path match is the answer.
 
-  **LINKS AND FAMILIES ARE OPEN DOCUMENTS AND ARE NOT PROJECTS.** `Application.Documents`
-  returns every Document the session has loaded, which includes each linked model
-  and every family being edited. A modeller asking what is open means the things
-  with tabs. Counting a link as a project would offer to switch to something that
-  has no tab to switch to, so links and families are separated out and counted
-  rather than listed - the count is what tells you the list is shorter than you
-  expected on purpose.
+  **A FAMILY BEING EDITED IS NOT A PROJECT.** Each one is listed apart, on
+  one line in `familyList`, and one with no file is said to be NEVER SAVED:
+  nothing on disk holds it.
+
+  **LINKS ARE COUNTED, NOT LISTED.** `Application.Documents` returns each
+  linked model too, and a link is nothing to switch to.
 
   **AN UNSAVED PROJECT HAS NO PATH, AND THAT IS NOT AN ERROR.** A new model that
-  has never been saved reports an empty `PathName`. It is said out loud rather
-  than left blank, because a blank column reads as a bug and because such a
-  project can only ever be matched by title.
+  has never been saved reports an empty `PathName`, said out loud rather than
+  left blank: such a project can only ever be matched by title.
 
   Reads only. Opens no transaction and needs none.
 
@@ -61,7 +73,19 @@ contract:
     - name: count
       # How many are real projects. LINKS AND FAMILIES ARE OPEN DOCUMENTS AND
       # ARE NOT PROJECTS, so this is what tells you the list is shorter than
-      # you expected on purpose.
+      # you expected on purpose. Unchanged in version 2.
+      role: result
+      type: int
+    - name: familyList
+      # Version 2. Every family open in the Family Editor on ONE line, "  ||  "
+      # between them: title, [ACTIVE] when it is the document read, [unsaved
+      # changes], its category, and its file - or "NEVER SAVED, no file of its
+      # own". One line because a list reaches the reply cut to three entries of
+      # sixty characters, and a family's path alone is longer.
+      role: result
+      type: string
+    - name: familyCount
+      # Version 2. How many families are open in the Family Editor.
       role: result
       type: int
     - name: findings
@@ -78,6 +102,9 @@ compatibility-note: >
   fragment against the reference assemblies for all eight.
 
   `DocumentSet` is not generic, so the loop variable is typed rather than `var`.
+  Version 2 adds `Document.OwnerFamily`, `Family.FamilyCategory` and
+  `Document.Equals`, which LOAD_FAMILY already uses to compare an open document
+  with `doc` - the same 2020 to 2027, compiled against all eight on 2026-10-16.
 
 # ROUTING - cross-referenced in SWITCH_ACTIVE_PROJECT and LIST_LINKED_MODELS.
 #
@@ -90,6 +117,12 @@ compatibility-note: >
 #                                         the ONE active model in depth
 #   "switch to the other project"      -> SWITCH_ACTIVE_PROJECT, which needs
 #                                         what this returns
+#   "which families are open"          -> here (version 2)
+#   "what family windows are open"     -> here (version 2)
+#   "save the family and close it"     -> SAVE_DOCUMENT, which saves only a
+#                                         document that has a file, and never
+#                                         the one in front
+#   "activate the family document"     -> ACTIVATE_DOCUMENT
 
 utterances:
   - what projects are open
@@ -104,3 +137,9 @@ utterances:
   # answered it.
   - how many Revit files are open
   - which models do I have open
+  # ADDED 2026-10-16, version 2 (row 5b-435): the families open in the Family
+  # Editor. Measured against main on three backends before they went in - see
+  # the row.
+  - which families are open
+  - what family windows are open
+  - has the family been saved

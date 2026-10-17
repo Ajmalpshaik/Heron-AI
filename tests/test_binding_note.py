@@ -333,6 +333,17 @@ def main():
     print("  %s  the binder asks AbsentValue before refusing an absent "
           "request need" % ("ok  " if asks else "FAIL"))
 
+    # Row 5b-488's: the card's own default is asked FIRST, and what it names
+    # goes through the same conversion as a typed value - so the note says so.
+    declared_at = text.find("HeronBindingNote.DeclaredAbsent(optional, absentWord)")
+    absent_at = text.find("HeronBindingNote.AbsentValue(type, optional)")
+    declares = (declared_at >= 0 and absent_at >= 0 and declared_at < absent_at
+                and "givenText = defaulted;" in text
+                and "the card's own default (optional)" in text)
+    print("  %s  the binder asks DeclaredAbsent before AbsentValue, and reads "
+          "the card's default as a typed value" % ("ok  " if declares else "FAIL"))
+    asks = asks and declares
+
     # And row 5b-322's: the host proves what EmptyWhenAbsent answers, and only
     # this can see that the binder asks it before refusing an unfilled list.
     empties = "HeronBindingNote.EmptyWhenAbsent(type, optionalWord)" in text
@@ -366,7 +377,36 @@ def main():
     agrees = all(HF.need_may_be_empty(need) == want for need, want in mirror)
     print("  %s  heron_fragment.need_may_be_empty answers the %d cases the host "
           "does" % ("ok  " if agrees else "FAIL", len(mirror)))
-    return 0 if ok and asks and empties and linked_ok and typed_ok and agrees else 1
+
+    # Row 5b-488's mirror: DeclaredAbsent's cases, and what need_may_be_absent
+    # then answers. Asked without calling a name the old module may not have.
+    absent_text = getattr(HF, "need_absent_text", None)
+    print("  %s  heron_fragment has need_absent_text at all"
+          % ("ok  " if absent_text is not None else "FAIL"))
+    declared = [
+        ({"name": "which", "type": "string", "source": "request",
+          "optional": "true", "absent": "all"}, "all", True),
+        ({"name": "which", "type": "string", "source": "request",
+          "optional": " True ", "absent": "  all "}, "all", True),
+        ({"name": "which", "type": "string", "source": "request",
+          "absent": "all"}, None, False),
+        ({"name": "which", "type": "string", "source": "request",
+          "optional": "false", "absent": "all"}, None, False),
+        ({"name": "which", "type": "string", "source": "request",
+          "optional": "true"}, None, False),
+        ({"name": "which", "type": "string", "source": "request",
+          "optional": "true", "absent": "   "}, None, False),
+        ({"name": "includeLinks", "type": "bool", "source": "request",
+          "optional": "true"}, None, True),
+    ]
+    mirrored = absent_text is not None and all(
+        absent_text(need) == text and HF.need_may_be_absent(need) == may
+        for need, text, may in declared)
+    print("  %s  heron_fragment.need_absent_text and need_may_be_absent answer "
+          "the %d cases the host does" % ("ok  " if mirrored else "FAIL",
+                                         len(declared)))
+    return 0 if (ok and asks and empties and linked_ok and typed_ok and agrees
+                 and mirrored) else 1
 
 
 if __name__ == "__main__":

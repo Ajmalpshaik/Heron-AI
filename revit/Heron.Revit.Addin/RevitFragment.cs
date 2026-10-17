@@ -2105,25 +2105,40 @@ namespace Heron.Revit.Addin
                 if (source == "request")
                 {
                     string givenText;
+                    string defaulted = null;
                     if (supplied == null || !supplied.TryGetValue(name, out givenText))
                     {
-                        // ONE EXCEPTION: a bool the card marks optional is a
-                        // switch left off - D-59's "absent means host only".
-                        // Everything else is still the caller's to supply.
                         string optional;
                         need.TryGetValue("optional", out optional);
-                        var absent = HeronBindingNote.AbsentValue(type, optional);
-                        if (absent != null)
+
+                        // THE CARD MAY SAY WHAT LEAVING IT OUT MEANS - `absent:`
+                        // beside `optional: true` (row 5b-488). That text is
+                        // then read below exactly as if the caller had typed
+                        // it. See HeronBindingNote.DeclaredAbsent.
+                        string absentWord;
+                        need.TryGetValue("absent", out absentWord);
+                        defaulted = HeronBindingNote.DeclaredAbsent(optional, absentWord);
+
+                        if (defaulted == null)
                         {
-                            bound.Add(name);
-                            lines.Append(type).Append(" ").Append(name)
-                                 .Append(" = ").Append(absent).Append(";\n");
-                            how.Add(name + " not given - " + absent + " (optional)");
+                            // ONE EXCEPTION: a bool the card marks optional is a
+                            // switch left off - D-59's "absent means host only".
+                            // Everything else is still the caller's to supply.
+                            var absent = HeronBindingNote.AbsentValue(type, optional);
+                            if (absent != null)
+                            {
+                                bound.Add(name);
+                                lines.Append(type).Append(" ").Append(name)
+                                     .Append(" = ").Append(absent).Append(";\n");
+                                how.Add(name + " not given - " + absent + " (optional)");
+                                continue;
+                            }
+
+                            fromRequest.Add(name + " (" + type + ")");
                             continue;
                         }
 
-                        fromRequest.Add(name + " (" + type + ")");
-                        continue;
+                        givenText = defaulted;
                     }
 
                     // A VALUE THAT CANNOT BECOME ITS DECLARED TYPE STOPS THE
@@ -2153,7 +2168,9 @@ namespace Heron.Revit.Addin
                          .Append(" = (").Append(type).Append(")__heron[\"")
                          .Append(name).Append("\"];\n");
 
-                    how.Add(name + " as given" + Size(given));
+                    how.Add(defaulted != null
+                        ? name + " not given - \"" + defaulted + "\", the card's own default (optional)"
+                        : name + " as given" + Size(given));
                     continue;
                 }
 
