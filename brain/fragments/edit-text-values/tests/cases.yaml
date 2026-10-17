@@ -22,6 +22,31 @@ positive:
     expect: >
       changed, and the note on the view reads exactly that
 
+  - given: >
+      VERSION 4. A text note whose 8 paragraphs are a 1-2-3 list (soft line
+      breaks inside paragraph 3, a curly apostrophe, one bold word), field
+      "Text", mode "replace", text "DETAIL A", replacement "DETAIL B"
+    expect: >
+      changed, and `noteFormatting` reads back "1-8 ArabicNumbers from 1" - the
+      numbering still on every paragraph, the bold word still bold. Version 3
+      wrote `note.Text` and every paragraph came back with no list (measured on
+      a real project's note, read only, 2026-10-17)
+
+  - given: >
+      the same note, mode "set", text "ALPHA\rBETA\vSOFT\rGAMMA" - three
+      paragraphs typed with the marks READ_ELEMENT_PARAMETERS shows
+    expect: >
+      changed, 8 paragraph(s) before and 3 after, "1-3 ArabicNumbers from 1",
+      the soft line break kept inside paragraph 2, and "NOT KEPT: paragraph 1
+      was partly bold" said rather than hidden. A bulleted note in the same set
+      keeps its indent 1 paragraphs at indent 1
+
+  - given: >
+      the same note, mode "prefix" with "NOTE: ", then mode "suffix" with " (END)"
+    expect: >
+      changed, 8 paragraphs before and after, the list on all 8 - the added
+      words land in paragraph 1 and paragraph 8 and take their neighbour's style
+
 negative:
   - given: two ducts, field "Text", mode "set"
     expect: >
@@ -68,6 +93,18 @@ negative:
       those elements in `ambiguous`, not in changed, and BOTH parameters exactly
       as they were. Before version 2 one of the two - Revit's reference calls the
       choice random - took the prefix and was reported changed
+
+  - given: >
+      VERSION 4. The numbered note and a bulleted one, mode "replace", a text
+      neither contains
+    expect: >
+      both `untouched`, `noteFormatting` null - nothing written, so nothing to
+      read back
+
+  - given: a note whose formatting reads back other than the rule meant
+    expect: >
+      in `unverified`, NOT in changed, and `noteFormatting` names the
+      paragraph and what it reads back
 
 second_route:
   - >

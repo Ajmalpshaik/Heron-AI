@@ -1,4 +1,5 @@
-// NOT STANDALONE. Assumes `elements` and `parameterName` are in scope.
+// NOT STANDALONE. Assumes `elements` and `parameterName` are in scope, and
+// leaves `values`, `blank`, `absent`, `resolvedFrom` and `noteWording`.
 //
 // THREE OUTCOMES, NOT TWO, and this is the whole point of the fragment.
 //
@@ -48,6 +49,31 @@
 // they are how a table is labelled, not something read off the element - and
 // D-20 keeps that at the edge where the user is. Adding them here would put
 // this fragment in the business of formatting.
+//
+// ----------------------------------------------------------------------
+// VERSION 3 - "Text" ON A TEXT NOTE IS WHAT THE NOTE SAYS
+// ----------------------------------------------------------------------
+//
+// No Heron tool read a note's wording: asked to "read what the text notes in
+// this view say", a chat had to send scratch code. This fragment could not do
+// it either, because a note's wording is no parameter - MEASURED 2026-10-17,
+// Revit 2020: LookupParameter("Text") on a TextNote is null and
+// GetParameters("Text") is empty, so every note answered `absent`.
+//
+// So `Text` on a text note reads the note itself, by the rule EDIT_TEXT_VALUES
+// writes it by: its plain text WITHOUT the closing carriage return Revit always
+// adds. `values` carries that wording as it is, `resolvedFrom` says "note", and
+// `noteWording` says it so a chat can SEE it - a dictionary in a reply arrives
+// as a count. There each note is one line: every paragraph end shown as \r,
+// every soft line break (Shift+Enter) as \v and a backslash as \\, which are
+// the marks EDIT_TEXT_VALUES takes back; then each paragraph's list type,
+// indent and the number the list starts from, as Revit's FormattedText reads
+// them; then any character a keyboard does not type plainly - a curly
+// apostrophe, U+2019, was in the real note that started this, and a replace
+// typed with a straight one finds nothing. Past 20,000 characters the rest are
+// counted, not printed.
+//
+// Not a text note, or not "Text": everything above, exactly as version 2.
 
 var values = new Dictionary<ElementId, string>();
 var blank = new List<ElementId>();
@@ -56,6 +82,12 @@ var resolvedFrom = new Dictionary<ElementId, string>();
 
 bool askingForLevel = string.Equals((parameterName ?? "").Trim(), "Level",
                                     StringComparison.OrdinalIgnoreCase);
+bool askingText = string.Equals((parameterName ?? "").Trim(), "Text",
+                                StringComparison.OrdinalIgnoreCase);
+// One line per text note read, notes apart by a line break - a note's own
+// wording can never hold one (Revit refuses a line feed in a note), so the
+// separator cannot be mistaken for the text. Null when no note was read.
+string noteWording = null;
 
 // AsValueString() first: it gives the number as the user sees it, with the
 // project's own units, which is what a modeller checks against. AsString()
@@ -74,6 +106,71 @@ Func<Parameter, string> readValue = p =>
 foreach (var e in elements)
 {
     if (e == null) continue;
+
+    var note = askingText ? e as TextNote : null;
+    if (note != null)
+    {
+        FormattedText shape = null;
+        string plain = null;
+        try { shape = note.GetFormattedText(); plain = shape.GetPlainText(); } catch { }
+        if (plain == null) { try { plain = note.Text; } catch { } }
+
+        var wording = (plain ?? "").TrimEnd('\r', '\n');
+        if (string.IsNullOrWhiteSpace(wording)) { blank.Add(e.Id); continue; }
+        values[e.Id] = wording;
+        resolvedFrom[e.Id] = "note";
+
+        var pieces = wording.Split('\r');
+        var lists = new List<string>();
+        if (shape == null) lists.Add("unreadable - Revit gave no formatted text");
+        else
+        {
+            // Runs of paragraphs with the same list and indent: "1-8 ArabicNumbers from 1".
+            // Read over each paragraph WITH its closing carriage return, so an
+            // empty paragraph has a range too.
+            int at = 0, first = 0;
+            var kinds = new List<string>();
+            for (int k = 0; k < pieces.Length; k++)
+            {
+                var whole = new TextRange(at, pieces[k].Length + 1);
+                string kind;
+                try { kind = shape.GetListType(whole).ToString(); } catch { kind = "unreadable"; }
+                if (kind == "None") kind = "no list";
+                int indent = -1;
+                try { indent = shape.GetIndentLevel(whole); } catch { }
+                if (indent > 0) kind += " indent " + indent;
+                kinds.Add(kind);
+                at += pieces[k].Length + 1;
+            }
+            int startNumber = -1;
+            try { startNumber = shape.GetListStartNumber(new TextRange(0, pieces[0].Length + 1)); } catch { }
+            for (int k = 1; k <= kinds.Count; k++)
+            {
+                if (k < kinds.Count && kinds[k] == kinds[first]) continue;
+                lists.Add((k - 1 == first ? (first + 1).ToString() : (first + 1) + "-" + k) + " "
+                    + kinds[first] + (first == 0 && startNumber > 0 ? " from " + startNumber : ""));
+                first = k;
+            }
+        }
+
+        var unusual = new List<string>();
+        foreach (var ch in wording)
+        {
+            if (ch <= 126 || ch == '\v') continue;
+            var named = string.Format("{0} (U+{1:X4})", ch, (int)ch);
+            if (!unusual.Contains(named)) unusual.Add(named);
+        }
+
+        // A note in no list at all - most of them - says so in two words.
+        var listed = lists.Count == 1 && lists[0].EndsWith(" no list") ? "no list"
+            : "lists: " + string.Join(", ", lists);
+        var line = string.Format("note {0}, {1} paragraph(s): {2} || {3}{4}", e.Id, pieces.Length,
+            wording.Replace("\\", "\\\\").Replace("\r", "\\r").Replace("\v", "\\v"),
+            listed,
+            unusual.Count > 0 ? " || not typed plainly: " + string.Join(", ", unusual) : "");
+        noteWording = noteWording == null ? line : noteWording + "\n" + line;
+        continue;
+    }
 
     if (askingForLevel)
     {
@@ -148,4 +245,23 @@ foreach (var e in elements)
         values[e.Id] = text;
         resolvedFrom[e.Id] = from;
     }
+}
+
+// Past 20,000 characters the remaining notes are counted, not printed - their
+// wording is still in `values`. A note is never cut in half.
+if (noteWording != null && noteWording.Length > 20000)
+{
+    var every = noteWording.Split('\n');
+    var printed = new List<string>();
+    int size = 0;
+    foreach (var one in every)
+    {
+        if (printed.Count > 0 && size + one.Length > 20000) break;
+        printed.Add(one);
+        size += one.Length + 1;
+    }
+    noteWording = string.Join("\n", printed) + (printed.Count < every.Length
+        ? string.Format("\n... and {0} more text note(s) not printed here - read fewer at a time",
+            every.Length - printed.Count)
+        : "");
 }
