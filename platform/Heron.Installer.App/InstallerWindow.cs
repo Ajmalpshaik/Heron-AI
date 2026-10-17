@@ -72,6 +72,12 @@ namespace Heron.Installer.App
             page.Children.Add(Quiet(InstallerScreen.InstallLocation));
             page.Children.Add(Quiet(InstallerScreen.InstallLocationNote));
 
+            // WHAT INSTALL ALSO DOES, BEFORE IT IS PRESSED - Q-39. Pressing
+            // Install after reading this is the asking; the sentence is
+            // PythonSetup's, so it says what PythonSetup really does.
+            page.Children.Add(Heading("Heron's Python side"));
+            page.Children.Add(Quiet(PythonSetup.WhatInstallAlsoDoes));
+
             // BEFORE Install, never after it fails - Stage 4 item 6.
             page.Children.Add(Notice(screen.CloseRevitFirst));
 
@@ -127,8 +133,12 @@ namespace Heron.Installer.App
             _report.Text = why;
         }
 
-        /// <summary>Told what happened, once the engine has finished.</summary>
-        public void Report(InstallReport report)
+        /// <summary>
+        /// Told what happened, once the engine - and Heron's Python side, when
+        /// it ran - has finished. `python` is PythonSetup's own lines, empty
+        /// when it did not run; the window adds nothing to them.
+        /// </summary>
+        public void Report(InstallReport report, IReadOnlyList<string> python)
         {
             if (report == null) return;
 
@@ -138,6 +148,7 @@ namespace Heron.Installer.App
             if (report.Removed > 0)
                 lines.Add("Restart Revit so the removed products stop loading.");
             foreach (var skipped in report.Skipped) lines.Add(skipped.Explanation);
+            if (python != null) lines.AddRange(python);
 
             _report.Text = lines.Count == 0
                 ? "Nothing was installed."

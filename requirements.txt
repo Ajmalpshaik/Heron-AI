@@ -19,6 +19,10 @@
 # NO VERSION FLOORS ARE ASSERTED. Nothing here has been measured against an
 # older release, so a floor would be a guess wearing a number. Checking that
 # an installed version is the RIGHT one is R-78, and it is not built.
+#
+# THE VERSIONS THE INSTALLER PUTS ON A PC are in requirements-lock.txt - one
+# measured set, pinned and hashed, for the one-step install (2026-10-17). This
+# file stays the list; that one is an answer to "which versions".
 
 # yaml | reading fragment.yaml, the skill definitions, and every generated report | nothing in brain/ or tools/ runs
 PyYAML
