@@ -167,8 +167,21 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal enum Outcome
         {
-            /// <summary>A read: no transaction was open, so nothing changed.</summary>
+            /// <summary>
+            /// A fragment read: no transaction was open, and RevitFragment
+            /// counted the model before and after it and found it unchanged.
+            /// Only reached after that count - FRAGMENT-ISSUES row 5b-350 is a
+            /// read that reported Revit's refusal and still left an element.
+            /// </summary>
             ReadOnly,
+
+            /// <summary>
+            /// A job below MODIFY that nothing counted - one of Heron's own
+            /// operations, turned into the refusal by Attach. It is not one
+            /// that changes the model, and that is all that can be said: the
+            /// sentence says so rather than claim a measurement (row 5b-350).
+            /// </summary>
+            ReadUncounted,
 
             /// <summary>Revit reported the group rolled back.</summary>
             RolledBack,
@@ -294,7 +307,13 @@ namespace Heron.Revit.Addin
             switch (outcome)
             {
                 case Outcome.ReadOnly:
-                    told += " This job only reads, so nothing in the model was changed.";
+                    told += " This job only reads, and Heron counted the model before and after "
+                          + "it, so nothing in the model was changed.";
+                    break;
+                case Outcome.ReadUncounted:
+                    told += " This job is not one that changes the model, so nothing in it should "
+                          + "have changed - Heron did not count the model around it, so that is "
+                          + "not measured.";
                     break;
                 case Outcome.RolledBack:
                     told += " The whole job was rolled back, so the model is exactly as it was.";
@@ -317,7 +336,8 @@ namespace Heron.Revit.Addin
             // Each code spelled out in its own call: tests/test_failure_analysis.py
             // finds the codes the add-in can produce by reading Json.Error calls,
             // and holds mcp/server/heron_failure.py to every one.
-            return outcome == Outcome.ReadOnly || outcome == Outcome.RolledBack
+            return outcome == Outcome.ReadOnly || outcome == Outcome.ReadUncounted
+                || outcome == Outcome.RolledBack
                 ? Json.Error("dialog_refused", told)
                 : Json.Error("dialog_unconfirmed", told);
         }
@@ -328,8 +348,10 @@ namespace Heron.Revit.Addin
         /// NOTHING IS ADDED WHEN NONE WAS MET, so every reply from a job no
         /// dialog interrupted reads exactly as it did. A reply that came back
         /// a SUCCESS from a job a dialog stopped - a path that does not check
-        /// the watch - is turned into the refusal here: a read changed
-        /// nothing, and a write is told plainly that nothing undid it.
+        /// the watch - is turned into the refusal here: a job below MODIFY is
+        /// said not to change the model, never measured to (a fragment read
+        /// makes its own refusal after the count, so it is never this one),
+        /// and a write is told plainly that nothing undid it.
         /// </summary>
         internal static string Attach(string response, HeronDialogNote note, bool writes)
         {
@@ -338,7 +360,7 @@ namespace Heron.Revit.Addin
                 return response;
 
             if (note.Refused && Json.ReadString(response, "error") == null)
-                response = note.Refusal("This job", writes ? Outcome.NotUndone : Outcome.ReadOnly);
+                response = note.Refusal("This job", writes ? Outcome.NotUndone : Outcome.ReadUncounted);
 
             var listed = new List<string>(note.Count);
             foreach (var met in note._met)
