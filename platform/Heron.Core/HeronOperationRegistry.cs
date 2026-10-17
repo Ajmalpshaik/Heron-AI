@@ -158,6 +158,18 @@ namespace Heron.Core
                 // refusal can say so in the user's own terms.
                 { "preview_move",       HeronRisk.Analyze },
 
+                // ANALYZE - a picture of one view, handed back to the chat so
+                // it can look at what it did (D-123, RevitCapture.cs). Given
+                // element ids it makes a temporary 3D view, which needs a
+                // transaction - the first Analyze operation to open one. What
+                // keeps it at Analyze is that the TransactionGroup around it
+                // is ALWAYS rolled back: there is no apply flag to send, so
+                // nothing in a request can keep the view. The picture is
+                // written into Heron's own Derived folder, read back and
+                // deleted - never put anywhere shared, which is what Article
+                // 10 and D-107 mean by an export.
+                { "capture_view",       HeronRisk.Analyze },
+
                 // EXECUTE - a non-destructive model action. Selecting alters
                 // what is highlighted, not what exists, so Ctrl+Z has nothing
                 // to undo afterwards. It is still the first thing the user can

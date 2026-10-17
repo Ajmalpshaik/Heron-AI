@@ -9,7 +9,7 @@ semantic-identity: "take me to these on screen, wherever they are"
 kind: action
 domain: revit.selection
 capability: ZOOM_TO_ELEMENTS
-# VERSION 2 (2026-10-17, FRAGMENT-ISSUES 5b-496): it runs with NO TRANSACTION
+# VERSION 2 (2026-10-17, FRAGMENT-ISSUES 5b-512): it runs with NO TRANSACTION
 # OPEN. revit_read refuses anything above ANALYZE, so revit_change is the only
 # door a chat has for this EXECUTE fragment - and it ran version 1 inside
 # Heron's transaction, where Revit changes no view: "The active view can only
@@ -24,7 +24,7 @@ capability: ZOOM_TO_ELEMENTS
 # answer. Version 1 was proved on the old read path, in a project's {3D}, and
 # never in the Family Editor - where the code asks nothing about the kind of
 # document, and the family method opens "View 1" first so Show zooms the 3D
-# view (NEEDS-CHECKING Group EM). DRAFT until version 2 is run in Revit -
+# view (NEEDS-CHECKING Group ES). DRAFT until version 2 is run in Revit -
 # and until then revit_change refuses it before sending it (D-117).
 version: 2
 source: OFFICIAL
@@ -107,7 +107,7 @@ contract:
 # THIS PROOF IS VERSION 1's AND IT IS STALE. It ran on the read path, with no
 # transaction anywhere, in a project's {3D} - never through revit_change, where
 # version 1 ran inside Heron's transaction, and never in the Family Editor. The
-# fingerprint below no longer matches the implementation; Group EM is the run
+# fingerprint below no longer matches the implementation; Group ES is the run
 # that replaces it.
 proof:
   date: '2026-09-13'

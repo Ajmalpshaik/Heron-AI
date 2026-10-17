@@ -4,50 +4,46 @@
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
 > for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
 > reads it back into the register for every tool that reads the register, so a row here is seen
-> exactly as it was seen there.
+> exactly as it was seen there. Written by
+> [`tools/split-needs-checking.py`](../../tools/split-needs-checking.py).
 
-## Group EM - the family method looks at what it built: `ZOOM_TO_ELEMENTS` version 2, `EXPORT_VIEW_IMAGE` in a family, and `family-creation` step 13 (2026-10-17)
+## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
 
-Found on 2026-10-14 building two fixed monitor families on Revit 2020. Both were checked by
-`REPORT_FAMILY_FORMS`, every size as planned, and then by a desktop screen grab of the Revit window taken
-outside Heron - which showed the 55 inch family half off the screen, because the 3D view had never been
-zoomed. A part on the wrong side, a missing part or one floating off the body reads back with the right
-sizes. [Row 5b-496](../fragment-issues/section-5b-rows-401-425.md) has the whole of it.
+Built for [D-119 to D-122](../DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so),
+all four **accepted by the owner on 2026-10-17** - this group is run once the add-in carrying them is
+deployed.
 
-**What changed.**
-[`ZOOM_TO_ELEMENTS`](../../brain/fragments/zoom-to-elements/fragment.yaml) (FRG-SEL-030, DRAFT, version 2)
-declares the ambient `editScopeFailures` need, so the add-in runs it inside the job's group with **no
-transaction open** ([D-115](../DECISIONS.md)): `revit_change` is the only door a chat has for it, and that
-door ran version 1 inside Heron's transaction, where Revit changes no view (row 5b-456). When Show is
-refused, Revit's words now come first and `shown` stays 0. No new input; nothing in the add-in changed.
-[`EXPORT_VIEW_IMAGE`](../../brain/fragments/export-view-image/fragment.yaml) (FRG-VIEW-073, PROVEN) is **not
-changed** - its code shows no gap in a family - but it has only ever run in a project, so it is checked here
-where the method now uses it. `family-creation` step 13 now opens "View 1", shades it at Fine with
-`SET_VIEW_PROPERTIES`, zooms it to every solid form, exports it (and "Front") into a folder under
-`%TEMP%\heron-work`, and the agent opens the picture and looks before telling the modeller it is done.
+**What changed.** `run_fragment_write` takes `"apply": "ask"`
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs)): refused unless the model is in front,
+saved and with nothing unsaved, and only on the change path; otherwise the fragment runs inside Heron's
+one `TransactionGroup`, the view is redrawn, and a box asks **Keep it** or **Discard it** - Discard the
+default, Escape and the close button discarding too. Keep assimilates the group into one undo entry named
+`Heron: <fragment>`; anything else rolls it back. The dispatcher waits `revit.askTimeoutSeconds` (300)
+more for a job that put the box up ([`RevitDispatcher.cs`](../../revit/Heron.Revit.Addin/RevitDispatcher.cs)).
+`heron_bridge_client.py try-once <fragment>` sends it, only for a DRAFT at risk MODIFY, and records the run
+at `brain/proof-drafts/runs/<fragment>.once.json`; `validate <fragment> --write --kept` runs only the
+negative and puts the kept run in the positive's place, and `heron_validate` refuses a kept phase that was
+discarded or whose code moved.
 
-**What is compiled and what is not run.** The fragments compile on every release they claim
-(`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** `ZOOM_TO_ELEMENTS`'
-`impl/` moved, so its 2026-09-13 proof is stale and marked so; EM3 and EM4 are the runs that replace it.
-`EXPORT_VIEW_IMAGE`'s `impl/` did not move - its proof stands for a project. **Until version 2 is signed, a chat cannot run the zoom:** [D-117](../DECISIONS.md) refuses a DRAFT through `revit_change` before it is sent, so EM3 to EM5 run through the proving client, rolled back, and step 13 says to ask the modeller for ZF meanwhile.
+**What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027 and every
+Revit member it calls exists in all eight (`tools/check-compile.py`, `tools/check-api-surface.py`,
+2026-10-17). `tests/test_try_once.py` runs the client and the brain against a Revit that is not there, and
+reads the add-in as text. **None of it has run in Revit**: whether Revit redraws the change inside an open
+group before the box, and whether Keep leaves exactly one undo entry and Discard none, are what this group
+is for.
 
-**ONE SCRATCH FAMILY, never a working model.** Make it before EM1, in Revit 2020 first: a family from
-*Metric Generic Model.rft* saved as *Heron Look Scratch.rfa* under `%TEMP%\heron-work`, with a box body
-400 x 100 x 300 mm on Ref. Level, a bracket box 200 x 60 x 200 mm against its back, and one small cylinder
-on its front set to show at Fine only (`CREATE_FAMILY_FORMS`, `detailLevels=fine` on its row). Leave
-"Ref. Level" (the floor plan) in front. Changes and Publish both switched on in Revit's ribbon.
+**A SCRATCH PROJECT, never a working model.** In Revit 2020 first: a project from the default metric
+template with a few walls or ducts in a plan view, saved as *Heron Try Once.rvt*, with Changes on. The
+fragment is a DRAFT at risk MODIFY with no proof block whose change shows in a plan - `python
+tools/check-signatures.py` and the card say which; `color-by-parameter` or `override-graphics-in-view`
+are the shape. Note the Undo list (the arrow beside Undo) before each row.
 
 | # | Run | Look for |
 |---|---|---|
-| **EM1** | `revit_change` capability `OPEN_VIEW`, `viewName=View 1`, with Ref. Level in front | View 1 on screen once the call has ended; `opened` true. OPEN_VIEW is PROVEN in a project and has never run in a family |
-| **EM2** | `revit_change` capability `SET_VIEW_PROPERTIES`, `views=View 1`, `visualStyle=Shaded with Edges`, `detailLevel=Fine`, `scale=0` | View 1 shaded with edges and at Fine - the small cylinder now shows; the style and detail read back; the scale untouched. **Write down the style View 1 had BEFORE** - which one a family template starts in is not known |
-| **EM3** | Pan and zoom View 1 by hand so half the family is off the screen. **Through the proving client, rolled back** - a DRAFT is refused by `revit_change` (D-117), and a view change survives a rolled-back group (D-115): `validate zoom-to-elements --write`, `--setup select-family-forms --setup-set forms=solid --keep-chain`, `--set alsoSelect=false` | The whole family on screen, nothing cut off at an edge; `viewAfter` "View 1"; `shown` equals the select's count (3); the selection untouched; the binding note names `editScopeFailures` and the elements as from select-family-forms. **The D-30 positive** for version 2 |
-| **EM4** | EM3's negative, two parts. (a) The proving client running `zoom-to-elements` **without** `--write`. (b) Ref. Level in front instead of View 1, then EM3's run | (a) Refused before anything runs - the add-in's words that it runs only as a change (`needs_write_path`) - and the screen does not move. (b) `viewAfter` names Ref. Level or a view Revit chose, and it is NOT View 1: this tool opens no view by name, which is why the method opens it first |
-| **EM5** | A scratch PROJECT with three walls on Level 2 and the Level 1 plan in front, through the proving client as EM3: `validate zoom-to-elements --write`, `--setup filter-elements-by-category --setup-set category=Walls --setup-set levelId=` Level 2's id `--keep-chain`, `--set alsoSelect=false` | The screen moves to them and `viewAfter` names the view Revit chose - version 1's own first case, with no transaction open. Through `revit_change` version 1 ran inside Heron's transaction; this is the case most likely to show the difference |
-| **EM6** | Back in the family, View 1 zoomed as EM3 left it: `revit_change` capability `EXPORT_VIEW_IMAGE`, `views=View 1, Front`, `folder=%TEMP%\heron-work\look-ej` (typed in full), `filePrefix=Heron Look`, `pixelWidth=1600` | `exported` 2; two PNG files in that folder, each 1600 px wide; View 1 shaded with edges with the small cylinder in it, Front showing the body with the bracket behind it. Open both. **The positive for EXPORT_VIEW_IMAGE in a family** |
-| **EM7** | EM6's negative: the same call with Publish switched **off** | Refused naming the Publish switch; no file written - the look the method says to report as not done |
-| **EM8** | *An observation.* Pan View 1 so half the family is off the screen, then EM6 into a second folder | Whether the picture shows the whole family anyway. A view exported as a set is drawn to fit by its options, so it probably does - but nobody has measured it. Write down which: it says whether the zoom in step 13 is for the picture or only for the modeller's screen |
-| **EM9** | EM3 and EM6 once on Revit 2024 and once on 2027 | The same answers |
-| **EM10** | Second route: Zoom to Fit (ZF) in View 1 by hand, then File > Export > Images and Animations > Image of View 1 by hand | The same framing as EM3, and an image like EM6's |
-| **EM11** | *Watching, not a proof - once EM3 and EM4 are signed.* A chat builds a small fixed family - six or so forms - with one part placed on the WRONG side on purpose (the bracket in front of the body), then reaches step 13 | It opens View 1, zooms, exports, opens the picture, and says the bracket is on the wrong side BEFORE telling the modeller it is done. With Publish off it says the look was not done and asks the modeller to look at View 1. It never offers to send the picture anywhere |
-| **EM12** | **Before version 2 is signed**: `revit_change` capability `ZOOM_TO_ELEMENTS`, anything at all | Refused as DRAFT before anything is sent (D-117), naming the capability - the step 13 fallback: the chat says so and asks for ZF |
+| **EM1** | The plan in front, saved. `try-once <fragment>` with the values it needs; when the box opens, look at the view, then press **Keep it** | The view shows the change BEFORE the box is answered; the box reads *"'<fragment>' has never been proved. Keep what it did?"*; after Keep the change stays, the Undo list has exactly ONE new entry `Heron: <fragment>`, and the command line prints KEPT and writes `<fragment>.once.json` with `kept: true`. The box waits for you - Heron's own dialog watch (Group EL) never answers it. One Ctrl+Z takes the whole change back |
+| **EM2** | Save again. The same fragment, corrected or with other values so it is a run the modeller would not keep; press **Discard it**. Then once more, closing the box with Escape | Both times the model is exactly as before - **the Undo list is unchanged**, no `Heron:` entry - the reply says `rolledBack` true and DISCARDED, and the record says `kept: false`. Ctrl+Z undoes whatever was done BEFORE the run, never this |
+| **EM3** | After EM1's Keep: `validate <fragment> --write --kept` with a negative arrangement that must find nothing, then `heron_validate.py draft`, `review` and `accept --by "Ajmal PS"` | Only the negative runs (one rolled-back write); the draft's positive case is the kept run, *"the modeller saw the result in Revit and pressed Keep"*, the negative comes back empty, and `accept` writes the proof with the status still DRAFT. Edit one character of the fragment's `impl/` and re-run `validate --kept`: refused, *"taken against different code"* |
+| **EM4** | Refusals, each before anything runs: (a) make one unsaved change, then `try-once`; (b) open a second model in front, then `try-once --in "Heron Try Once"`; (c) `try-once` on a PROVEN or READ fragment | (a) `ask_needs_saved_model` - *"Save the model, then ask again"*; (b) `ask_needs_model_in_front`; (c) refused by the command line, nothing sent. In every case the Undo list is unchanged |
+| **EM5** | `try-once`, and leave the box open for two minutes before pressing Keep | The answer arrives - no *"still running"* at 60 s. Then set `revit.askTimeoutSeconds = 60`, restart Revit, and leave the box open three minutes: the command line says the box is still open and the run is not recorded; pressing Discard afterwards still puts the model back |
+| **EM6** | EM1 and EM2 once on Revit 2024 and once on Revit 2027 | The same - one undo entry on Keep, none on Discard |
+| **EM7** | *Not a proof - a check on the old add-in.* Before deploying, `try-once` against the add-in that is installed now | *"older than the Keep or Discard box"* - it ran as a preview, rolled back, nothing recorded, and no box appeared |
