@@ -170,7 +170,9 @@ Three things the shape of the file is doing:
 - **A setup step that CHANGES the model takes the run's own values, never `setup-set:`.** `validate`
   refuses the job before Revit is asked - *"setup values cannot reach a setup step that CHANGES the
   model"* - because such a step runs inside the fragment's own transaction group and the add-in binds it
-  from the run's values. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
+  from the run's values; `batch-prove --dry-run` says `REFUSED` for it. Both only since
+  [row 5b-917](../../../docs/fragment-issues/section-5b-rows-401-425.md): until then `validate` asked
+  Revit for a count first and the dry run said `WOULD RUN`. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
   (row 5b-481): what worked was ONE value list both steps read - the names they share (`filterNames`,
   `categories`, `parameterName`) must then mean the same for both - or arranging on something the model
   already holds. A read-only setup chain (`select-by-category-name`) takes `setup-set:` as before.

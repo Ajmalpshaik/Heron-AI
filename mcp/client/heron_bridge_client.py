@@ -1277,6 +1277,33 @@ def setup_order_refusal(steps):
     return None
 
 
+def setup_values_refusal(steps):
+    """The refusal for setup values on a write setup that changes the model, or None.
+
+    Asked only when --setup-set or --negative-setup-set was given with --write.
+    STEPS as `setup_order_refusal` takes them. A step at MODIFY or above
+    travels WITH the fragment in the request's `setup` array, which carries a
+    name, a source and the needs - no values - and `RevitFragment.RunSetupSteps`
+    binds it from the run's top-level `supplied`. So a value meant only for it
+    would be accepted, sent, and quietly not applied, and a name the step and
+    the fragment share would collide silently (named by review on PR #198).
+    Carrying per-step values needs the add-in to read them - C#, a rebuild and
+    a Revit restart - so until then this is a wrong answer that cannot be
+    produced. One line, so `batch-prove` can report it in a row (5b-917).
+    """
+    changing = sorted(step for step, risk in steps or []
+                      if risk in ("MODIFY", "PUBLISH", "ADMIN"))
+    if not changing:
+        return None
+    return ("setup values cannot reach a setup step that CHANGES the model: %s. "
+            "Such a step runs inside the fragment's own transaction group, and the "
+            "add-in binds it from the run's values - there is nowhere to put a "
+            "value meant only for it. Nothing was sent to Revit (FRAGMENT-ISSUES "
+            "row 5b-917). Give the chain and the fragment different NAMES, or use "
+            "a read-only chain, or teach the add-in per-step values (C#, so a "
+            "rebuild and a Revit restart)." % ", ".join(changing))
+
+
 # THE STATUSES WHOSE PROOF LETS A CHANGE BE KEPT - Constitution Article 11,
 # "untested code never touches a live model", and D-117. Read from the
 # fragment's own files, and only while that proof still describes its code.
@@ -2344,11 +2371,16 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     # A WRITE SETUP RUNS IN ITS TYPED ORDER OR NOT AT ALL - row 5b-917. The
     # read steps run first (arrange below) and the change steps inside the
     # fragment's group (deferred_setup below), so a read typed after a change
-    # would look at the model before the change existed.
+    # would look at the model before the change existed. And a change step
+    # takes no setup values of its own - asked here, before Revit is reached,
+    # where it was asked after `count_elements` until the same row.
     if writing:
-        refusal = setup_order_refusal([(step, fragment_risk(os.path.join(
+        step_risks = [(step, fragment_risk(os.path.join(
             root, "brain", "fragments", step, "fragment.yaml")))
-            for step in (setup or [])])
+            for step in (setup or [])]
+        refusal = setup_order_refusal(step_risks)
+        if refusal is None and (setup_values or negative_setup_values):
+            refusal = setup_values_refusal(step_risks)
         if refusal:
             print(refusal)
             return 2
@@ -2496,30 +2528,8 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             if step_risk in ("MODIFY", "PUBLISH", "ADMIN"):
                 deferred_setup.add(step)
 
-    # A DEFERRED STEP CANNOT BE GIVEN ITS OWN VALUES, SO SAYING SO IS REFUSED
-    # RATHER THAN IGNORED. A step at MODIFY or above travels WITH the fragment
-    # in the request's `setup` array, and that array carries a name, a source
-    # and the needs - no values. `RevitFragment.RunSetupSteps` binds every step
-    # from the run's top-level `supplied`, so `--setup-set` would be accepted
-    # here, sent, and quietly not applied - and if the step and the fragment
-    # share a name like `categories`, the silent collision this flag exists to
-    # kill is still there for write arrangements. Named by review on PR #198.
-    #
-    # REFUSING IS THE HONEST HALF OF A FIX THAT NEEDS A DEPLOY. Carrying
-    # per-step values needs the add-in to read them, which is C# and costs a
-    # rebuild and a Revit restart. Until then this is a wrong answer that
-    # cannot be produced, rather than one produced silently.
-    if (setup_values or negative_setup_values) and deferred_setup:
-        print("setup values cannot reach a setup step that CHANGES the model.")
-        print("")
-        print("  %s" % ", ".join(sorted(deferred_setup)))
-        print("")
-        print("Those run inside the fragment's own transaction group, and the")
-        print("add-in binds them from the run's values - there is nowhere to")
-        print("put a value meant only for them. Give the chain and the fragment")
-        print("different NAMES, or use a read-only chain, or teach the add-in")
-        print("per-step values (C#, so a rebuild and a Revit restart).")
-        return 2
+    # A DEFERRED STEP CANNOT BE GIVEN ITS OWN VALUES - refused above, before
+    # Revit was reached, by setup_values_refusal (row 5b-917).
 
     def deferred_specs():
         """The deferred steps as the add-in wants them, in the declared order."""
