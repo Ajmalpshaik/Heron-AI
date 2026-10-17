@@ -31,8 +31,24 @@ namespace Heron.Revit.Addin
     /// the Application would hear every model change for the rest of the
     /// session.
     ///
-    /// MINIMAL ON PURPOSE. It keeps the ids and nothing else, so a later short
-    /// change report can be built on it rather than beside it.
+    /// AND THE SHORT CHANGE REPORT (5b-407) IS BUILT ON IT, not beside it: the
+    /// same events feed a HeronChangeReport, which splits the setup steps from
+    /// the fragment by transaction name and keeps the counting rule where it
+    /// can be proved without Revit. Describe reads each element's category
+    /// once, with the group still open, and is the report the reply carries.
+    ///
+    /// IT READS NOTHING HEAVY INSIDE THE EVENT. Revit raises DocumentChanged
+    /// while it is finishing a transaction, so the handler keeps ids and the
+    /// transaction's names and returns - and NOTHING MAY ESCAPE INTO REVIT'S
+    /// EVENT: one it cannot read is counted as unreadable, so the report can
+    /// say its numbers are incomplete. Every member used here is the same on
+    /// 2020 to 2027, read with tools/api-surface --members.
+    ///
+    /// WHETHER REVIT RAISES IT FOR EACH COMMIT INSIDE A GROUP, for an
+    /// edit-scope fragment's own transactions and on a group's rollback is NOT
+    /// KNOWN from here - NEEDS-CHECKING Group EV says so. Until it is, a report
+    /// that saw no event at all says it saw nothing, never that nothing
+    /// changed (HeronChangeReport.Described.Witnessed).
     /// </summary>
     internal sealed class RevitChangedSet : IDisposable
     {
@@ -43,10 +59,21 @@ namespace Heron.Revit.Addin
         private int _deleted;
         private bool _listening;
 
-        public RevitChangedSet(Application application, Document document)
+        private readonly HeronChangeReport _report;
+
+        // The ids themselves, so a category is read from the ElementId Revit
+        // handed over - no ElementId is ever built from a number here (its
+        // constructor changed from int to long at 2024, 5b-441).
+        private readonly Dictionary<string, ElementId> _ids =
+            new Dictionary<string, ElementId>(StringComparer.Ordinal);
+
+        /// <param name="label">The run's TransactionGroup name, which is what
+        /// tells a setup step's commit from the fragment's own.</param>
+        public RevitChangedSet(Application application, Document document, string label)
         {
             _application = application;
             _document = document;
+            _report = new HeronChangeReport(label);
         }
 
         /// <summary>Added and still there at the end of the run.</summary>
@@ -70,6 +97,7 @@ namespace Heron.Revit.Addin
 
         public void End()
         {
+            _report.Seal();
             if (!_listening) return;
             _listening = false;
             try { _application.DocumentChanged -= OnChanged; }
@@ -81,30 +109,94 @@ namespace Heron.Revit.Addin
             End();
         }
 
+        /// <summary>
+        /// Stop listening, and read each element's category once - the one
+        /// moment it can be read, with the group still open, before Assimilate
+        /// or the rollback.
+        /// </summary>
+        public HeronChangeReport.Described Describe()
+        {
+            End();
+            return _report.Describe(CategoryOf);
+        }
+
+        private string CategoryOf(string key)
+        {
+            ElementId id;
+            if (!_ids.TryGetValue(key, out id)) return null;
+            try
+            {
+                var element = _document.GetElement(id);
+                return element == null || element.Category == null ? null : element.Category.Name;
+            }
+            catch (Exception) { return null; }
+        }
+
         private void OnChanged(object sender, DocumentChangedEventArgs args)
         {
-            // ANOTHER DOCUMENT IS NOT THIS RUN'S CHANGE. A fragment that edits a
-            // family document and loads it back commits in two models, and an
-            // id from the family would select an unrelated element here.
-            if (args == null || args.Operation != UndoOperation.TransactionCommitted) return;
-            var changedIn = args.GetDocument();
-            if (changedIn == null || !changedIn.Equals(_document)) return;
-
-            foreach (var id in args.GetAddedElementIds()) _added.Add(id);
-
-            foreach (var id in args.GetModifiedElementIds())
+            try
             {
-                if (!_added.Contains(id)) _changed.Add(id);
-            }
+                // ANOTHER DOCUMENT IS NOT THIS RUN'S CHANGE. A fragment that edits a
+                // family document and loads it back commits in two models, and an
+                // id from the family would select an unrelated element here.
+                if (args == null || args.Operation != UndoOperation.TransactionCommitted) return;
+                var changedIn = args.GetDocument();
+                if (changedIn == null || !changedIn.Equals(_document)) return;
 
-            // ADDED AND THEN DELETED IN ONE RUN is no change at all, and is
-            // taken off the added list rather than counted as a deletion.
-            foreach (var id in args.GetDeletedElementIds())
-            {
-                if (_added.Remove(id)) continue;
-                _changed.Remove(id);
-                _deleted++;
+                var added = args.GetAddedElementIds();
+                var modified = args.GetModifiedElementIds();
+                var deleted = args.GetDeletedElementIds();
+
+                foreach (var id in added) _added.Add(id);
+
+                foreach (var id in modified)
+                {
+                    if (!_added.Contains(id)) _changed.Add(id);
+                }
+
+                // ADDED AND THEN DELETED IN ONE RUN is no change at all, and is
+                // taken off the added list rather than counted as a deletion.
+                foreach (var id in deleted)
+                {
+                    if (_added.Remove(id)) continue;
+                    _changed.Remove(id);
+                    _deleted++;
+                }
+
+                _report.Committed(args.GetTransactionNames(), Keep(added), Keep(modified),
+                                  Text(deleted));
             }
+            catch (Exception)
+            {
+                _report.CouldNotRead();
+            }
+        }
+
+        /// <summary>Each id as text, kept for the category read later.</summary>
+        private List<string> Keep(ICollection<ElementId> ids)
+        {
+            var text = new List<string>();
+            if (ids == null) return text;
+            foreach (var id in ids)
+            {
+                if (id == null) continue;
+                var key = id.ToString();
+                _ids[key] = id;
+                text.Add(key);
+            }
+            return text;
+        }
+
+        /// <summary>Each id as text, and nothing kept: a deleted element has no category to read.</summary>
+        private static List<string> Text(ICollection<ElementId> ids)
+        {
+            var text = new List<string>();
+            if (ids == null) return text;
+            foreach (var id in ids)
+            {
+                if (id != null) text.Add(id.ToString());
+            }
+            return text;
         }
     }
 }

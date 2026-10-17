@@ -751,6 +751,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
+## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
+
 ## Group FC - one family swapped for another, whatever each one's hosting: the method `replace-in-place-family` widened (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fc.md`](needs-checking/group-fc.md)
