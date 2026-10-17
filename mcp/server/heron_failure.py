@@ -330,7 +330,7 @@ _KNOWN = {
     "setup_failed":      (ROLLED_BACK, FIX_FIRST,
                           "an arrangement step could not be given what it needs, so nothing "
                           "was run and the model is as it was"),
-    # THE RUN CLOCK'S TWO (D-126). The add-in stopped a fragment part way and
+    # THE RUN CLOCK'S TWO (D-129). The add-in stopped a fragment part way and
     # rolled the whole job back before answering - so ROLLED_BACK, never the
     # fail-closed unknown, which would tell the owner to go and check a model
     # the add-in put back. Whether Revit CONFIRMED that rollback is in the
@@ -343,6 +343,18 @@ _KNOWN = {
     "stopped_mid_run":   (ROLLED_BACK, STOP,
                           "Heron was told to stop while the fragment ran, so it was stopped "
                           "part way and rolled back; Heron stays stopped until Revit restarts"),
+
+    # --- a read that did not leave the model as it was - row 5b-350 ---------
+    # Not "it only reads, so it is merely a refusal", which is what an
+    # unknown code on a read falls to below: the add-in counted the model
+    # around the run and the count moved, with no transaction to roll back.
+    "read_changed_model": (UNKNOWN, LOOK_AT_THE_MODEL,
+                           "a read ran with no transaction open and the model's count or "
+                           "its changed flag moved anyway, so something may be in the "
+                           "model that nothing can undo"),
+    "read_unverified":   (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "the model a read ran in closed before it could be counted "
+                          "again, so whether the read changed it is not known"),
 
     # --- a Revit dialog opened inside the job -------------------------------
     #

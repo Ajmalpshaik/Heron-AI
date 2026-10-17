@@ -15,7 +15,7 @@ namespace Heron.Revit.Addin
 {
     /// <summary>
     /// Stops a fragment that will not stop by itself, and says so before the
-    /// dispatcher gives up waiting for it - D-126.
+    /// dispatcher gives up waiting for it - D-129.
     ///
     /// THE HOLE THIS CLOSES. A fragment runs on Revit's own thread, inside
     /// Execute, and nothing else runs there until it returns. One that loops

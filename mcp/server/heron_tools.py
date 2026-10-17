@@ -157,9 +157,10 @@ TOOLS = {
     # The gate lives on the far side of the pipe on purpose: a client deciding
     # its own permission is not a permission.
     #
-    # NO PREVIEW, AND THAT IS NOW A DECISION RATHER THAN A SILENCE. Article 9
-    # asks for one; the owner chose, on 2026-09-23, to keep the change at once
-    # and record the exception - D-99, which names what stands in for it.
+    # NO PREVIEW WAS A DECISION RATHER THAN A SILENCE - D-99, 2026-09-23 - and
+    # D-126 supersedes it: Revit shows the change and asks the modeller Keep
+    # or Discard before it is kept, inside the add-in, under the owner's
+    # write.askBeforeKeeping. Nothing in this row decides whether it asks.
     #
     # ITS ROW IS ITS OWN LEVEL, AND ALSO_REACHES BELOW SAYS WHAT ELSE IT CAN
     # SEND (D-106): a PUBLISH or ADMIN fragment goes as its own operation.
@@ -514,7 +515,14 @@ def door_refusal(door, declared, capability):
     stops a MISTAKE. The add-in never sees a fragment's own risk (FRAGMENT-
     ISSUES row 9 records why it is not sent), so a caller that skipped this
     server could put anything through run_fragment_read. What holds for every
-    caller is Revit's own refusal of a change made outside a transaction.
+    caller is two things, and the first is NOT a guarantee on its own: Revit
+    refuses a change made outside a transaction - yet row 5b-350 is a read run
+    of place-nested-family that reported that refusal and still left a real
+    instance in the family, twice, cause not established (NEEDS-CHECKING CP1).
+    So the add-in also counts the model before and after every read run and
+    answers one that moved it `read_changed_model`, never as a read. That
+    second check sees an element that appeared or disappeared and a model newly
+    marked changed - not an edit in place in a model already unsaved.
 
     Pure - no file, no Revit, no SDK - so tests/test_read_door.py runs every
     outcome, and runs it over every fragment in the library, where CI can.

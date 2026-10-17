@@ -123,6 +123,13 @@ namespace Heron.Core
         public const string PublishEnabledKey = "publish.enabled";
 
         /// <summary>
+        /// Config key for D-126: Revit asks the modeller Keep or Discard before
+        /// a change from a chat is kept. It lets nothing through - it only
+        /// decides whether a change Changes already allowed is asked about.
+        /// </summary>
+        public const string AskBeforeKeepingKey = "write.askBeforeKeeping";
+
+        /// <summary>
         /// What RefusedBy answers for a level no switch opens. None exists
         /// today - Admin is the top of HeronRisk - and this is here so that a
         /// level added above it is refused, by name, until somebody decides
@@ -370,6 +377,19 @@ namespace Heron.Core
         public static bool PublishEnabled()
         {
             return HeronConfig.Load().GetBool(PublishEnabledKey, false);
+        }
+
+        /// <summary>
+        /// Whether Revit asks Keep or Discard before keeping a change - D-126.
+        /// Read fresh, like every switch here, so the owner's edit to the file
+        /// counts from the next change without a restart.
+        ///
+        /// A VALUE NOBODY CAN READ MEANS ASK. The fallback is TRUE, the safe
+        /// side for this key: a typo must never quietly turn the question off.
+        /// </summary>
+        public static bool AsksBeforeKeeping()
+        {
+            return HeronConfig.Load().GetBool(AskBeforeKeepingKey, true);
         }
 
         /// <summary>

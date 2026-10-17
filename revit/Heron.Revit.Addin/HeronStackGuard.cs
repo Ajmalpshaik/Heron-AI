@@ -67,7 +67,7 @@ namespace Heron.Revit.Addin
     /// at all goes wrong. A rewriter that hardens the common case and breaks
     /// the rare one has made the trade backwards.
     ///
-    /// IT ALSO PUTS THE RUN CLOCK IN, since 2026-10-17 (D-126). A loop that
+    /// IT ALSO PUTS THE RUN CLOCK IN, since 2026-10-17 (D-129). A loop that
     /// never ends is the other way a fragment takes Revit down with it - not
     /// by crashing it, by never handing the thread back. So beside the stack
     /// check at the entry of every body above, and at the head of every loop
@@ -253,7 +253,7 @@ namespace Heron.Revit.Addin
                 : visited.WithBody(Prepend(visited.Body));
         }
 
-        // ---- every loop, for the run clock (D-126). A fragment that loops
+        // ---- every loop, for the run clock (D-129). A fragment that loops
         // ---- for ever goes round one of these, so each pass asks the clock.
 
         public override SyntaxNode VisitForStatement(ForStatementSyntax node)

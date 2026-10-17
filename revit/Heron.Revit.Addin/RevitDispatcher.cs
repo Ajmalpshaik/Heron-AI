@@ -78,6 +78,14 @@ namespace Heron.Revit.Addin
         [ThreadStatic]
         private static RevitJob _running;
 
+        /// <summary>
+        /// The banner of the job running now, for the same reason as _running:
+        /// AwaitingModeller has to move it out of the way of the box, and the
+        /// box's code is never handed the dispatcher (D-126).
+        /// </summary>
+        [ThreadStatic]
+        private static HeronActivityBanner _runningBanner;
+
         private readonly Action<string> _log;
         private readonly string _session;
 
@@ -153,7 +161,7 @@ namespace Heron.Revit.Addin
                 Math.Max(1, config.GetInt("revit.operationTimeoutSeconds", 60)));
 
             // THE RUN CLOCK IS GIVEN THIS WAIT, NOT ITS OWN READING OF THE
-            // KEY (D-126). It has to stop a fragment inside the time this
+            // KEY (D-129). It has to stop a fragment inside the time this
             // class waits, and two readings of heron.config can disagree once
             // the file is edited with Revit open.
             HeronRunClock.OperationLimit = _operationTimeout;
@@ -178,6 +186,12 @@ namespace Heron.Revit.Addin
         {
             var job = _running;
             if (job != null) job.MarkAskedModeller();
+
+            // AND THE BANNER STEPS ASIDE (D-126). It is Topmost, so it would
+            // sit over the box it is waiting on; Execute brings it back the
+            // moment the job returns, before it says how the job ended.
+            var banner = _runningBanner;
+            if (banner != null) banner.StepAside(true);
         }
 
         /// <summary>
@@ -252,7 +266,7 @@ namespace Heron.Revit.Addin
         {
             var op = Json.ReadString(request, "op");
 
-            // THE STOP IS ANSWERED HERE, BEFORE THE QUEUE - D-126. It exists
+            // THE STOP IS ANSWERED HERE, BEFORE THE QUEUE - D-129. It exists
             // for the moment Revit's thread is held by a job that will not
             // end, and anything queued would wait behind that very job. So it
             // never touches the Revit API and never waits: it sets the flag
@@ -382,7 +396,7 @@ namespace Heron.Revit.Addin
                 // It IS running - Revit picked it up. Calling this "busy"
                 // would invite a retry of something already in progress.
                 //
-                // A FRAGMENT SHOULD NOT GET HERE ANY MORE (D-126). The run
+                // A FRAGMENT SHOULD NOT GET HERE ANY MORE (D-129). The run
                 // clock stops one, rolled back, a margin inside this wait, so
                 // its answer arrives first. What still does: an operation
                 // that is not a fragment, a fragment inside one long Revit API
@@ -407,7 +421,7 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// The `stop` operation, on a listener thread: Heron stops, and a
-        /// fragment Revit is running stops at its next check - D-126.
+        /// fragment Revit is running stops at its next check - D-129.
         ///
         /// IT SAYS WHAT IT CAN AND CANNOT REACH. The flag is read by the run
         /// clock inside a fragment's loops and calls, so a fragment stops
@@ -486,6 +500,7 @@ namespace Heron.Revit.Addin
                         {
                             // So AwaitingModeller can find this job - see _running.
                             _running = job;
+                            _runningBanner = _banner;
                             response = RevitOperations.Run(app, job.Request);
                         }
                         catch (Exception ex)
@@ -499,6 +514,11 @@ namespace Heron.Revit.Addin
                         finally
                         {
                             _running = null;
+                            _runningBanner = null;
+
+                            // The box is answered or the job is over: the
+                            // banner comes back to say how it ended (D-126).
+                            if (job.AskedModeller) _banner.StepAside(false);
                         }
                     }
                     finally
@@ -535,7 +555,8 @@ namespace Heron.Revit.Addin
                     // and the screen must follow the model, not the client.
                     var failure = Json.ReadString(response, "error");
                     if (job.TakeBannerEnd())
-                        _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds, document);
+                        _banner.End(failure == null, Ended(failure, response),
+                                    clock.ElapsedMilliseconds, document);
 
                     // One line per request, whatever happened. A trail that
                     // only records successes answers the wrong question later.
@@ -586,6 +607,19 @@ namespace Heron.Revit.Addin
                     var warnings = fragmentRun ? Json.ReadLong(response, "warnings") : null;
                     if (warnings.HasValue)
                         numbers.Add(new KeyValuePair<string, long>("warnings", warnings.Value));
+
+                    // AND WHAT A READ LEFT IN THE MODEL - row 5b-350. A read
+                    // run that changed the model comes back read_changed_model
+                    // with the count; the error alone says it happened, the
+                    // count says how much, so the trail can answer "what did
+                    // Heron change" for a run that was meant to change nothing.
+                    // Absent on every other reply, and left absent.
+                    var appeared = fragmentRun ? Json.ReadLong(response, "elementsAppeared") : null;
+                    if (appeared.HasValue)
+                        numbers.Add(new KeyValuePair<string, long>("elementsAppeared", appeared.Value));
+                    var typesAppeared = fragmentRun ? Json.ReadLong(response, "typesAppeared") : null;
+                    if (typesAppeared.HasValue)
+                        numbers.Add(new KeyValuePair<string, long>("typesAppeared", typesAppeared.Value));
 
                     // AND HOW MANY REVIT DIALOGS IT MET, on every operation -
                     // a dialog is not a fragment's alone. Absent when it met
@@ -755,6 +789,24 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// The banner's last line for a finished job: the modeller's own Keep
+        /// or Discard when the job asked them one (D-126), otherwise Explain's
+        /// line for the error code.
+        /// </summary>
+        private static string Ended(string failure, string response)
+        {
+            // A KEEP OR DISCARD THE MODELLER ANSWERED IS NO FAILURE, and "Done"
+            // over a change they just discarded would read as kept (D-126).
+            if (failure == null)
+            {
+                var answered = Json.ReadString(response, "modellerAnswer");
+                if (answered == "discard" || answered == "closed") return "Discarded - nothing was kept";
+                if (answered == "keep") return "Kept - one undo step";
+            }
+            return Explain(failure);
+        }
+
+        /// <summary>
         /// An error code turned into the one line the banner has room for.
         ///
         /// The full sentence still goes back to the chat, which is where the
@@ -793,6 +845,8 @@ namespace Heron.Revit.Addin
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                case "read_changed_model": return "A read changed the model - look at it";
+                case "read_unverified": return "Could not check the model after a read";
                 case "ask_needs_change_path": return "That job cannot be tried this way";
                 case "ask_needs_model_in_front": return "Bring that model to the front first";
                 case "ask_needs_saved_model": return "Save the model first - nothing was run";

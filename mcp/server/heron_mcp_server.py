@@ -30,19 +30,21 @@ enforces. Found by a review 2026-09-11.
 TWO tools write, and the command marks them. revit_apply_move cannot run on
 its own - it applies a preview the user has already seen, once, and the add-in
 re-checks the model before it writes. revit_change carries a fragment straight
-to Revit and KEEPS what it did, with no preview in front of it - the owner's
-choice, recorded as D-99 and as Article 9's one exception. What stands in for
-the preview is named there: the owner's ribbon switch, the client's refusal of
-any fragment above Modify (since FRAGMENT-ISSUES row 5b-155), one undo entry,
-and the pin. Writing is switched off entirely until write.enabled is set - see
+to Revit, and Revit shows what it did and asks the modeller Keep or Discard
+before anything is kept - D-126, which supersedes D-99's change kept with no
+preview, and Article 9's exception says so. The owner's switch for the
+question is write.askBeforeKeeping, read in the add-in. Around it stand the
+owner's ribbon switch, one undo entry and the pin. Writing is switched off
+entirely until write.enabled is set - see
 HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
 own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
 it through only while the owner's Publish or Admin switch is on as well.
 
 ONE tool runs a fragment and changes nothing: revit_read, through the add-in's
-run_fragment_read. It opens no transaction, so Revit itself refuses any change;
-it works with Changes OFF; and it refuses a fragment declared above ANALYZE
-before anything is sent.
+run_fragment_read. It opens no transaction, so Revit refuses a change, and the
+add-in counts the model around every read because that refusal once let an
+element through (FRAGMENT-ISSUES row 5b-350); it works with Changes OFF; and it
+refuses a fragment declared above ANALYZE before anything is sent.
 
 A SECOND changes only what is on screen: revit_show, through run_fragment_show
 - the same executor, the same missing transaction, declared EXECUTE so a
@@ -1614,7 +1616,7 @@ def revit_change(capability: str = "", values: str = "",
     as well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
-    try another capability to get round it. There is no preview (D-99):
+    try another capability to get round it. Revit asks Keep/Discard (D-126):
     Article 7's explicit yes comes BEFORE this call for destructive work, and
     Article 10 holds - nothing is saved, synced or exported unasked.
 
@@ -1637,6 +1639,11 @@ def revit_change(capability: str = "", values: str = "",
     #     turns it on, and only while Changes is on too. The refusal names the
     #     one that is off (heron_failure: admin_disabled, publish_disabled).
     #   - Articles 7, 9 and 10 in full: host.chat, every chat's instructions.
+    #   - D-126's question, said where the chat meets it: Revit shows the change
+    #     and asks the modeller Keep or Discard while the owner's
+    #     write.askBeforeKeeping is on, and a Discard's own verdict says it is
+    #     their answer, not a failure, to send again only if they ask - the
+    #     reply below, and Article 9 in host.chat.
     #   - Article 11's refusal (D-117) in full: a capability whose own file says
     #     DRAFT, or whose proof was taken before its code last changed, is
     #     refused before anything is sent, and the reply names it and its
@@ -1768,11 +1775,16 @@ def revit_change(capability: str = "", values: str = "",
         # add-in checks that before binding anything and refuses if something
         # else left it. See `expect_from` and docs/36.
         "chain": "reset",
-        # THE FLAG THAT KEEPS IT, and the whole reason this tool exists.
+        # THE FLAG THAT ASKS TO KEEP IT, and the whole reason this tool exists.
         # Without it the executor still runs the change for real inside a
         # TransactionGroup and then rolls it back - which is how every one of
-        # the recorded proofs was taken. This line is what makes a run outlive
+        # the recorded proofs was taken. This line is what lets a run outlive
         # itself, and it is why this tool is MODIFY in the registry.
+        #
+        # ASKING IS NOT KEEPING (D-126). With the owner's switch on - the
+        # default - Revit shows the change and the MODELLER says Keep or
+        # Discard; this flag only makes the question possible. The switch is
+        # read inside the add-in and nothing sent from here can skip it.
         "apply": "true",
     }
 
@@ -1803,9 +1815,11 @@ def revit_change(capability: str = "", values: str = "",
     # "no answer" for a write nobody can ask about again.
     # THE OPERATION FROM THE FRAGMENT'S OWN CARD - run_fragment_write for
     # Modify and below, run_fragment_publish or run_fragment_admin above it.
+    # `keeping`, because Revit may stop and ask the modeller Keep or Discard
+    # before this is kept (D-126), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
-                            response_timeout=configuration.fragment_timeout(),
+                            response_timeout=configuration.fragment_timeout(keeping=True),
                             on_wait=_waiting(ctx))
     session.close()
     _ctx_reply(reply)
@@ -1886,6 +1900,13 @@ def revit_change(capability: str = "", values: str = "",
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+
+    # THE MODELLER WAS ASKED IN REVIT AND DID NOT KEEP IT (D-126). The reply is
+    # an ok one - the run worked, and the add-in's verdict already says nothing
+    # was kept and why - but the call ended in their no: the activity list
+    # says refused, and no after-change table offers values Revit does not hold.
+    if reply.get("asked") and not reply.get("kept"):
+        return _ended("refused", "\n".join(lines))
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
@@ -2736,10 +2757,11 @@ def revit_read(capability: str = "", values: str = "",
     names the earlier fragment whose result this read acts on, as in
     revit_change; empty, the read starts clean.
 
-    It works with Changes OFF: no transaction is open, so Revit itself refuses
-    any change. A capability declared above ANALYZE is refused before anything
-    is sent - a change is revit_change's. The answer names the pinned model
-    and how far the capability is proven.
+    It works with Changes OFF: no transaction is open, and the model is counted
+    before and after - a read that moved it is reported, never answered. A
+    capability declared above ANALYZE is refused before anything is sent - a
+    change is revit_change's. The answer names the pinned model and how far
+    the capability is proven.
     """
     # Trimmed 2026-10-17 with revit_change (docs/04 s8.8). The answer says how
     # far the capability is proven in one of three ways: PROVEN on a named model,
@@ -2837,9 +2859,10 @@ def revit_read(capability: str = "", values: str = "",
     if consumes and reply and reply.get("error") == "unknown_outcome":
         return _ended("failed",
                       "The read reached Revit but its answer was lost, so Heron cannot "
-                      "tell whether %s ran. Nothing in the model was changed - a read "
-                      "opens no transaction - but if it ran, the result %s left has "
-                      "been used up. Run %s again, then this read."
+                      "tell whether %s ran. A read opens no transaction, so the model "
+                      "is not expected to have changed - but the count that would have "
+                      "said so was in the lost answer. If it ran, the result %s left "
+                      "has been used up. Run %s again, then this read."
                       % (capability, consumes, consumes))
 
     # THE ADD-IN'S REPLY SAYS HOW IT ENDED - an expect_from or binding refusal
@@ -2879,8 +2902,20 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
-    lines.append("Nothing in the model was changed: this runs with no transaction "
-                 "open, so Revit itself refuses any change.")
+    # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
+    # 5b-350 is a read that reported Revit's refusal and left an element. An
+    # add-in that counted sends `elementsCounted` (a read that moved the count
+    # never reaches here: it comes back read_changed_model); one that sends
+    # nothing never counted, and this does not claim it did.
+    counted = reply.get("elementsCounted")
+    if isinstance(counted, int):
+        lines.append("Nothing in the model was changed: Heron counted %s element(s) "
+                     "before this read and the same after it." % "{:,}".format(counted))
+    else:
+        lines.append("Nothing in the model should have changed: this runs with no "
+                     "transaction open. This add-in does not count the model around a "
+                     "read, so that is not measured - update it (FRAGMENT-ISSUES row "
+                     "5b-350).")
     return _ended("ok", "\n".join(lines))
 
 
@@ -3720,8 +3755,9 @@ def _cannot_run():
         "active view - runs through revit_show, the same executor with no "
         "transaction open, also with Changes off; it refuses anything declared "
         "above EXECUTE. Isolating in the active view is revit_isolate_temporary. "
-        "A fragment that WRITES reaches Revit through revit_change, which KEEPS "
-        "what it did with no preview (D-99), and only while the owner has "
+        "A fragment that WRITES reaches Revit through revit_change, and Revit "
+        "shows the modeller what it did and asks Keep or Discard before "
+        "anything is kept (D-126), only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
         "HeronPermissions refuses it by name and nothing is sent. One declared "
         "ADMIN - a project or global parameter, a workset, a new family file - "

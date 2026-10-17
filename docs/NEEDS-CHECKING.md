@@ -747,9 +747,13 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-es.md`](needs-checking/group-es.md)
 
-## Group ET - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
+## Group ET - Revit asks Keep or Discard before a change from a chat is kept: D-126 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
+
+## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
