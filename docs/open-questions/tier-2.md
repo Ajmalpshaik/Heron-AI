@@ -373,3 +373,43 @@ packaged; and how the merged view behaves when one file name is in both places.
 is the whole of the response.
 
 ---
+
+### 🟠 Q-64 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
+
+**What was found**, preparing [NEEDS-CHECKING Group EK](../needs-checking/group-ek.md) - a core set of PROVEN
+fragments proved again on every release, to back the *"2020 → latest"* claim with evidence. Three things in
+Heron stop it, each on purpose:
+
+1. **`tools/batch-prove.py` refuses a PROVEN or PRODUCTION fragment** as `ALREADY` and never sends it to Revit.
+   Its docstring says *"There is deliberately no flag to override that"* - it was written against re-proving
+   unchanged code on the same release, which bought nothing.
+2. **`heron_validate.py accept` refuses a PROVEN fragment whose proof still matches its code** - *"Signing it
+   again would overwrite a good proof with the same thing."*
+3. **A fragment's `proof:` holds ONE record**, and its release is prose inside `model:`.
+   [`brain/heron_matrix.py`](../../brain/heron_matrix.py) reads one release per fragment and says so: *"a proof
+   on 2024 is evidence about 2024 ... Nothing here spreads a proof sideways"*, and *"if PROOF_REQUIRED ever
+   grows a `revit:` field this should read that instead."*
+
+So a run of `create-floor` on 2025 that passes both halves has nowhere to be written, and the only way to
+record it today would overwrite the 2024 proof. **A second route has the same problem from the other side**:
+`second_route` is a field of that one record, and `accept` will not reopen it.
+
+**Recommended - reasoned, not built:** keep `proof:` as the record that made the fragment PROVEN, and add a
+list beside it, **`proof.releases:`**, one entry per further release, each with the same fields D-30 asks for
+(`date`, `by`, `model`, `positive_case`, `negative_case`) and the fingerprint of the code it ran. Then:
+
+- `batch-prove --release` runs only PROVEN fragments, and only on a release they have no entry for. It writes
+  drafts and never touches `heron-status` - the guarantee it already checks.
+- `accept --release` writes one entry, signed by a person, and refuses a release already recorded.
+- `heron_matrix.py` marks a cell PROVEN from either the proof or an entry - never from the claim.
+- A second route for a PROVEN fragment is written into `proof.second_route` by `accept --second-route`,
+  signed, from a recorded run - never typed by hand.
+
+**What the other choices cost.** Leaving it as it is keeps the claim unbacked. Re-proving into `proof:`
+loses the earlier release's record. A separate register outside the fragment would be read by nothing
+that reads fragments today.
+
+**Ajmal PS decides.** Until he does, EK1 to EK6 (loading the add-in on each release) and EK8 (the routes
+themselves, by hand in Revit) can still be run and recorded in Group EK; only EK7 waits.
+
+---

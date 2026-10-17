@@ -376,7 +376,14 @@ def declared_second_route(frag):
     if problem:
         return []
     routes = []
-    for row in (cases.get("second_route") or []):
+    rows = cases.get("second_route") or []
+    # A case file may write its route as ONE folded sentence rather than a
+    # list. Walking that string handed back its first LETTER as the route, so
+    # `plan` told the person at the PC "A" for select-by-parameter-value and
+    # "R" for set-sheet-title-block. Row 5b-489.
+    if isinstance(rows, str):
+        rows = [rows]
+    for row in rows:
         if isinstance(row, dict):
             row = row.get("given") or row.get("route") or ""
         if row:
