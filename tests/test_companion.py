@@ -407,9 +407,9 @@ def test_activity():
     words = words[:words.find("\ndef ", 1)]
     check(words.count('_ended("handed_back"') == 2,
           "the words path calls what it hands back 'handed_back', not a refusal")
-    check(server.count("_ended(_failure_ended(failure), explain(failure))") == 3,
-          "and revit_read, revit_change and revit_apply_move label a failure from "
-          "the add-in's reply, not from the words that explain it")
+    check(server.count("_ended(_failure_ended(failure), explain(failure))") == 4,
+          "and revit_read, revit_show, revit_change and revit_apply_move label a "
+          "failure from the add-in's reply, not from the words that explain it")
     _single_purpose_endings(server)
 
 
@@ -423,7 +423,7 @@ def _single_purpose_endings(server):
     are connected, so it is not safe to guess which one you mean:", so a
     refusal was labelled ok.
     """
-    doors = ("revit_read", "revit_change", "revit_apply_move")
+    doors = ("revit_read", "revit_show", "revit_change", "revit_apply_move")
     bodies = {}
     for found in re.finditer(r"\n@server\.tool\(\)\ndef (revit_\w+)\(", server):
         rest = server[found.end():]

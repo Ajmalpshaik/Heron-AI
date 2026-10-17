@@ -216,8 +216,9 @@ If this is not designed in early it becomes very expensive to retrofit, because 
 `heron_job_status`, no percentage, no cancelling. A tool still blocks until Revit answers; what changed
 is that the host is told, while it blocks, that the wait goes on.
 
-- **Five tools carry the SDK's `Context`**: `revit_change`, `revit_read`, `revit_building_loads`,
-  `revit_sprinkler_hydraulics` and `revit_sprinkler_layout` — the ones that send a fragment and can wait
+- **The tools that send a fragment carry the SDK's `Context`**: `revit_change`, `revit_read`, `revit_show`
+  (§8.9), `revit_building_loads`, `revit_sprinkler_hydraulics` and `revit_sprinkler_layout` — the ones
+  that send a fragment and can wait
   minutes on a slow fragment, a family build, or a modeller answering a prompt in Revit. The SDK finds
   `ctx` by its type, through `_recorded`'s `functools.wraps`, and leaves it out of every tool's arguments.
 - **The bridge client's join loop does the timing.** `Bridge.request(..., on_wait=)` hands the callback
@@ -395,8 +396,8 @@ ordinary case.
   behind the encoder, and a lookup arriving meanwhile waits for it rather than doing it twice. **Only**
   for a private store, an install with no git, or the main checkout on branch `main`: a worktree's
   cards are unmerged work and the shared store is every chat's (rows 131, 136).
-- **Five tools are given to the chat before it asks** - `heron_lookup`, `revit_read`, `revit_change`,
-  `revit_health`, `revit_levels` (`heron_tools.ALWAYS_LOADED`), served with Claude Code's documented
+- **A few tools are given to the chat before it asks** - the lookup, the doors and the first-time
+  checks; `heron_tools.ALWAYS_LOADED` is the list, never this sentence - served with Claude Code's documented
   `_meta["anthropic/alwaysLoad"]`. Most Revit chats spent their first turn searching for a Heron tool
   (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat (measured since by a
   command, §8.8); every other tool is still one search away, and nothing about what a tool may do
@@ -473,7 +474,7 @@ disk without Revit. The KEPT paragraph is printed once per batch of calls and th
 carrying the undo rule whole, on the rest; a value the last reply of the same capability showed word for
 word is counted rather than printed again. Replayed through the real tool, 172 kept changes shaped from
 `CREATE_FAMILY_EXTRUSION`'s code went from 213,332 characters to 160,364, 24.8% less. **NOT RUN IN REVIT** - whether
-`DocumentChanged` reaches every commit the write path makes is [Group ES](needs-checking/group-es.md).
+`DocumentChanged` reaches every commit the write path makes is [Group EV](needs-checking/group-ev.md).
 
 **MEASURED 2026-10-11 on the same laptop** - a 165-form generator (156 extrusions, 5 sweeps, 4 revolves)
 built in one chat, `claude-opus-5-5` at effort *xhigh* on every request. 1,423 s from request to finish,
@@ -582,3 +583,50 @@ least the name, description and input schema, and the rest is the host's to pass
 
 **NOT MEASURED, AND IT NEEDS A REAL CHAT:** whether Claude Code chooses the right Heron tool as often from
 the shorter descriptions. Nothing in a container can show it.
+
+### 8.9 A door that only shows — `revit_show`, and the temporary isolate — built 2026-10-17
+
+**What was wrong:** *"show me / zoom to / isolate these"* needed Changes ON. The add-in's gate has always
+let `EXECUTE` through with Changes off — `HeronPermissions.ReadOnlyCeiling` is `Execute`, *"changes what is
+shown, never what exists"*, and [12 §1](12-security-and-permissions.md) gives `EXECUTE` *"change selection,
+open a view, zoom"* and no confirmation. Only this side held it back: §8.1's door is `ANALYZE`, so an
+`EXECUTE` fragment reached Revit only through `revit_change`, inside the write path's transaction
+([row 5b-497](fragment-issues/section-5b-rows-401-425.md)).
+
+- **`revit_show` is the third door.** It sends `run_fragment_show`, declared `EXECUTE` in the add-in and
+  routed to the read door's executor with **no transaction open** — so Revit still refuses any change to
+  the model, and what an `EXECUTE` fragment can change is the selection, the camera and the active view.
+  Its ceiling is its own row, through the same `door_refusal`: `MODIFY` and above are refused before
+  anything is sent, and `revit_read` now sends an `EXECUTE` fragment here rather than to `revit_change`.
+  Everything else is §8.1's: the pin, the proof line, the words path, `expect_from`.
+- **It is one search away, not given before the chat asks.** `heron_tools.ALWAYS_LOADED`'s six came to
+  4,435 characters of description on 2026-10-17 against §8.8's budget of 4,500, and a door cannot be
+  described in what was left; raising the budget is [D-118](DECISIONS.md)'s to decide. `revit_read`'s
+  refusal of an `EXECUTE` capability names it, and its description was trimmed to fit its own budget.
+  So do `revit_change`'s two refusals a screen-only job meets first - not proven, and Changes off - and
+  `heron_method`'s list of a job's capabilities says `EXECUTE` runs through it.
+- **Revit's Temporary Hide/Isolate needs a transaction, so it is not a fragment.** `revit_isolate_temporary`
+  and `revit_reset_temporary` call two FIXED operations, `isolate_temporary` and `reset_temporary`
+  (`RevitTemporaryView.cs`): one transaction round `IsolateElementsTemporary`, `IsolateCategoriesTemporary`
+  or `DisableTemporaryViewMode`, in the active view, taking element ids or BIM category words. A
+  transaction opened for fragment code with Changes off would be a write path with no switch in front of
+  it; these open one for three Revit calls and nothing a caller sends.
+- **A DRAFT runs here and says DRAFT, as a read does.** [D-117](DECISIONS.md) refuses a fragment that is
+  not PROVEN only where a change is KEPT; its items 3 and 4 leave a run that keeps nothing, and a read,
+  unasked. The show door opens no transaction, so it keeps nothing in the model.
+- **Inside a link, too, with no question first.** [Article 7](../HERON_CONSTITUTION.md) asks for
+  confirmation before *"anything touching a linked model"*, and selecting or zooming to linked elements is
+  not touching it — the owner's answer to [Q-65](OPEN-QUESTIONS.md), [D-124](DECISIONS.md). So
+  `ZOOM_TO_LINKED_ELEMENTS` runs through `revit_show` like any other `EXECUTE` fragment.
+
+**Opening a view, and what still needs Changes ([D-125](DECISIONS.md)):** `OPEN_VIEW` declares
+`noTransactionOpen` - *run me with none open* - which the show door lets through, where the edit-scope need
+it declared until then was refused ([row 5b-498](fragment-issues/section-5b-rows-401-425.md)). A fragment
+whose code needs Heron's transaction is declared `MODIFY`, so `ISOLATE_ELEMENTS` goes through `revit_change`
+with Changes on, and the show door's refusal names `revit_isolate_temporary` for Changes off
+([row 5b-499](fragment-issues/section-5b-rows-401-425.md)).
+
+`tests/test_read_door.py` section 10 holds the show door over every fragment in the library,
+`tests/Heron.Kernel.TestHost` section 9 runs the gate over every switch combination, and
+`tests/test_mcp_serves.py` calls all three tools through a real SDK. **None of it has run in Revit** —
+[NEEDS-CHECKING Group ES](needs-checking/group-es.md).

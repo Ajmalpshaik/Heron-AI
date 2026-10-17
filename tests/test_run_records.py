@@ -303,9 +303,15 @@ def batching(runs):
                         verdictShort=None)
     unsure = reply_with(verdict="THE ROLLBACK DID NOT REPORT SUCCESS ...",
                         verdictKind="notConfirmed", verdictShort="must never be printed")
+    unheld = reply_with(verdict="THE ROLLBACK DID NOT HOLD ...", verdictKind="notHeld",
+                        verdictShort="must never be printed")
     check(runs.verdict_line(rolled, b) == rolled["verdict"]
-          and runs.verdict_line(unsure, b) == unsure["verdict"],
-          "a rollback, and one Revit did not confirm, are printed whole every time")
+          and runs.verdict_line(unsure, b) == unsure["verdict"]
+          and runs.verdict_line(unheld, b) == unheld["verdict"],
+          "a rollback, one Revit did not confirm and one that did not hold are printed "
+          "whole every time")
+    check("DID NOT HOLD" in runs.page({"reply": unheld}, "wf-1", 0, 5).splitlines()[0],
+          "and a record's header says when the rollback did not hold")
     after_rollback = runs.Batch()
     after_rollback.turn(1.0, 1.1)
     runs.verdict_line(rolled, after_rollback)

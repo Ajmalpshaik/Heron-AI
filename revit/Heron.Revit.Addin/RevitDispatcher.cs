@@ -484,7 +484,8 @@ namespace Heron.Revit.Addin
                     // and the warning count below can never disagree about
                     // which runs are fragment runs.
                     var fragmentRun =
-                        op == "run_fragment_read" || op == "run_fragment_write"
+                        op == "run_fragment_read" || op == "run_fragment_show"
+                        || op == "run_fragment_write"
                         || op == "run_fragment_publish" || op == "run_fragment_admin";
 
                     // AND WHAT REVIT RAISED, read off the reply as a NUMBER.
@@ -661,6 +662,19 @@ namespace Heron.Revit.Addin
                 case "run_fragment_read":
                     var name = Clean(Json.ReadString(request, "name"));
                     return name.Length == 0 ? "Running a job" : "Running a job: " + name;
+
+                // WHAT IS SHOWN, NOT WHAT EXISTS - the show door changes the
+                // selection, the camera or the view, and the banner says that
+                // rather than the read's "Running a job".
+                case "run_fragment_show":
+                    var showing = Clean(Json.ReadString(request, "name"));
+                    return showing.Length == 0 ? "Showing on screen" : "Showing on screen: " + showing;
+
+                case "isolate_temporary":
+                    return "Isolating in the active view, temporarily";
+
+                case "reset_temporary":
+                    return "Resetting the temporary hide/isolate";
 
                 // THE BANNER MUST NOT SAY THE SAME THING FOR BOTH. Its colour
                 // already differs - amber, from the tool registry - but the

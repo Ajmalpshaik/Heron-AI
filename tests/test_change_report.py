@@ -100,20 +100,21 @@ def wiring():
           "the first thing Run does is drop any element list an earlier run left, so a "
           "refusal or a read never hands the dispatcher another job's list")
     started = at(run, "group.Start();")
-    watch = at(run, "new ChangeWatch(", max(started, 0))
+    watch = at(run, "ChangeWatch.Begin(", max(started, 0))
     setup = at(run, "RunSetupSteps(", max(started, 0))
     check(0 <= started < watch < setup,
-          "the collector is made right after group.Start() and before the setup steps run, "
-          "so a setup step's commits are seen too")
-    check(re.search(r"using\s+var\s+watch\s*=\s*new\s+ChangeWatch\(", run) is not None,
+          "the collector is registered right after group.Start() and before the setup steps "
+          "run, so a setup step's commits are seen too")
+    check(re.search(r"using\s+var\s+changes\s*=\s*ChangeWatch\.Begin\(", run) is not None,
           "as a using declaration, so it is let go however the group's block is left - "
           "every early return included")
-    described = at(run, "changed = watch.Describe();")
-    assimilate = at(run, "if (apply) group.Assimilate();")
-    check(0 < described < assimilate,
-          "what changed is described BEFORE Assimilate or the rollback, while every added "
-          "element still exists to be asked its category")
-    check(re.search(r"else\s+rolledBack\s*=\s*SafeRollBack\(group\)", run[described:]) is not None,
+    described = at(run, "changed = changes.Describe();")
+    asked = at(run, "AskTheModeller(")
+    kept = at(run, "if (apply) keptNote = KeepAndWatch(")
+    check(0 < described < asked < kept,
+          "what changed is described BEFORE the modeller is asked and before Assimilate or "
+          "the rollback, while every added element still exists to be asked its category")
+    check(re.search(r"else\s+rolledBack\s*=\s*RollBackAndCheck\(", run[max(described, 0):]) is not None,
           "and the rollback that makes the default a preview comes after it too")
     check("Elements = changed == null ? null : changed.ElementsField();" in run,
           "the full element list is left for the dispatcher's record")
@@ -136,9 +137,18 @@ def wiring():
           is not None,
           "and nothing escapes into Revit's event: an event it cannot read is COUNTED as "
           "unreadable, so the report can say its numbers are incomplete")
-    check("DocumentChanged += Changed" in watcher.replace("  ", " ")
-          and "DocumentChanged -= Changed" in watcher.replace("  ", " "),
-          "it subscribes when made and unsubscribes when let go")
+    check("DocumentChanged +=" not in watcher and "DocumentChanged -=" not in watcher,
+          "it holds NO subscription of its own - one listener, the rollback witness's, "
+          "serves both (the brief: extend a collector that exists, never add a second)")
+    listener = NOTE.body_of(code, "void OnDocumentChanged(")
+    fed = at(listener, "ChangeWatch.Current")
+    first_return = at(listener, "return;")
+    check(fed > 0 and ".Changed(e)" in listener and (first_return < 0 or fed < first_return),
+          "the permanent listener feeds the collector, BEFORE any of its own early returns, "
+          "so a job the witness is not watching is still counted")
+    disposed = NOTE.body_of(watcher, "public void Dispose()")
+    check("Current = null" in disposed and "ReferenceEquals(Current, this)" in disposed,
+          "and letting it go unregisters it - only itself, never a later job's")
     describe = NOTE.body_of(watcher, "Describe()")
     check(at(describe, "Dispose();") >= 0
           and at(describe, "Dispose();") < at(describe, "_report.Describe("),

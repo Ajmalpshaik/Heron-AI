@@ -235,6 +235,8 @@ def _ended(reply):
         return "KEPT"
     if kind == "rolledBack":
         return "rolled back, nothing kept"
+    if kind == "notHeld":
+        return "THE ROLLBACK DID NOT HOLD - the model still holds part of it"
     if kind == "notConfirmed":
         return "ROLLBACK NOT CONFIRMED - the model may still hold it"
     return "outcome not recorded" if reply.get("ok", True) else "refused"

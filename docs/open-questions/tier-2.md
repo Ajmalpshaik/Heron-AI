@@ -427,6 +427,47 @@ DRAFT until [NEEDS-CHECKING group ER](../needs-checking/group-er.md) is run in R
 
 ---
 
+### ✅ Q-65 — Does selecting or zooming to elements inside a linked model count as "touching" it under Article 7? → **No - it needs no confirmation** *(found and answered 2026-10-17)*
+
+**The words.** [Article 7](../../HERON_CONSTITUTION.md): *"Do not execute destructive Revit operations
+without permission. Deleting elements, purging, bulk parameter writes, family reloads, workset changes and
+anything touching a linked model require explicit confirmation for that specific operation."*
+
+**Why it is asked now.** On 2026-10-17 Heron gained a door that changes only what is on screen -
+`revit_show`, through the add-in's `run_fragment_show` (EXECUTE, no transaction open, runs with Changes off)
+- and a fragment for it, `ZOOM_TO_LINKED_ELEMENTS` (FRG-SEL-039, DRAFT), which zooms the active view to
+elements inside a loaded link and, on Revit 2023 and later, selects them as linked elements. It changes
+nothing in the model and nothing in the link. Whether that is "touching" the link is not something Heron can
+decide for the owner.
+
+**Two readings, and what each costs.**
+
+1. **It does not count.** The Article's heading is *destructive* operations, and a selection or a zoom
+   destroys nothing - Ctrl+Z has nothing to undo after either. `ZOOM_TO_LINKED_ELEMENTS` would then run
+   like `ZOOM_TO_ELEMENTS`, with no question in front of it.
+2. **It counts.** "Anything touching a linked model" is read literally: the chat asks for the modeller's
+   yes, in the chat, before every zoom or selection inside a link - one more turn each time.
+
+**What Heron does until the owner answers: the reading that ASKS (2).** `heron_tools.link_refusal` holds any
+fragment declared above ANALYZE whose contract takes `linkName` until the host says the user agreed, by
+calling `revit_show` again with `link_confirmed=true`; nothing is sent to Revit before that. A READ of a link
+is not held - [D-59](../decisions/D-59.md) settled reading one, and `revit_read` never asked. **What is
+NOT covered either way:** `revit_change` holds nothing in code for a link - it tells the host to ask, as
+[FRAGMENT-ISSUES row 5b-161](../fragment-issues/section-5b-rows-151-175.md) records for every destructive
+change.
+
+**Ajmal PS decides.** If the answer is (1), the change is one line in `link_refusal` and one in
+`tests/test_read_door.py`, and this question is promoted to a decision. Measuring either way:
+[NEEDS-CHECKING Group ES](../needs-checking/group-es.md) ES5 to ES7 run the fragment itself.
+
+**Answer: (1), it does not count - 2026-10-17. See [D-124](../DECISIONS.md).** The owner: *"Q-64:
+selecting/zooming linked elements is not touching, no confirmation"* - this question's first number; it is Q-65 since #556 gave Q-64 to another on 2026-10-17. The hold was taken out the same day
+rather than switched off: `link_refusal`, `LINK_NEEDS` and `revit_show`'s `link_confirmed` are gone, and
+`tests/test_read_door.py` holds that a fragment the show door may run goes through it whether or not it
+works inside a link. Changing a link is still Article 7's, with its confirmation.
+
+---
+
 ### 🟠 Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
 
 **What was found**, preparing [NEEDS-CHECKING Group EQ](../needs-checking/group-eq.md) - a core set of PROVEN

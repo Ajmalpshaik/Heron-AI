@@ -11,7 +11,7 @@ domain: revit.views
 capability: ISOLATE_ELEMENTS
 version: 1
 source: OFFICIAL
-risk: EXECUTE
+risk: MODIFY
 
 purpose: >
   Shows only the given elements in one view and hides everything else -
@@ -29,6 +29,14 @@ purpose: >
   the filter having found too much.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+  **DECLARED MODIFY SINCE 2026-10-17, ALTHOUGH NOTHING IN THE MODEL CHANGES**
+  (D-125). Revit takes a temporary isolate only inside a transaction, and Heron
+  opens one for fragment code only on the write path, behind the Changes switch.
+  Declared EXECUTE, this card was sent to the show door, which opens none, and
+  Revit refused it there (FRAGMENT-ISSUES 5b-499). Its `impl/` did not move, so
+  its proof - taken on the write path, rolled back - stands. **With Changes OFF,
+  `revit_isolate_temporary` does the same job** as fixed code in the add-in.
 
 contract:
   needs:

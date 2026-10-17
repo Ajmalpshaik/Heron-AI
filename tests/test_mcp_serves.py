@@ -101,6 +101,13 @@ WHAT IT PROVES, when an SDK is installed
      beside its words, holding exactly what the stand-in sent, with no
      output schema; the request is capture_view with the pin and no path;
      and a reply with no readable picture, or a refusal, gives no image.
+ 15. `revit_show` AND THE TEMPORARY ISOLATE, against a stand-in Revit. A
+     MODIFY capability is refused before a session is bound; an EXECUTE one
+     goes as run_fragment_show with no `apply`; a capability that works
+     inside a link goes the same way with no question first (D-124);
+     revit_isolate_temporary and revit_reset_temporary
+     send their fixed operations with the pin, and an add-in refusal
+     reaches the chat in its own words.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -277,6 +284,9 @@ async def exercise(server):
         "revit_select_by_category": ["category"],
         "revit_preview_move": ["category", "distance"],
         "revit_read": ["capability", "values", "expect_from", "request"],
+        "revit_show": ["capability", "values", "expect_from", "request"],
+        "revit_isolate_temporary": ["ids", "category"],
+        "revit_reset_temporary": [],
         "revit_change": ["capability", "values", "expect_from", "request"],
         "heron_hvac": ["calculation", "inputs"],
         "heron_fire": ["calculation", "inputs"],
@@ -480,8 +490,9 @@ async def exercise(server):
 
 # The tools that can wait minutes on Revit, and so are handed the SDK's
 # Context to say so. Typed here on purpose: this is the claim being checked,
-# and docs/04 section 7.1 names the same five.
-WAITS_ON_REVIT = ("revit_change", "revit_read", "revit_building_loads",
+# and docs/04 section 7.1 names the same tools. revit_show joined them with
+# the show door: it sends a fragment, and a fragment can be slow.
+WAITS_ON_REVIT = ("revit_change", "revit_read", "revit_show", "revit_building_loads",
                   "revit_sprinkler_hydraulics", "revit_sprinkler_layout")
 
 
@@ -674,6 +685,109 @@ async def exercise_door(module):
               and "could do the work twice" not in said,
               "a lost answer on that read says to run find-views again, not that "
               "the model may have been changed twice")
+    finally:
+        del module.binding.resolve
+        module.pinned.forget()
+
+
+async def exercise_show(module):
+    """revit_show and Revit's temporary isolate, through the SDK's dispatch,
+    against a stand-in Revit - section 13 of the header."""
+    server = module.server
+
+    async def call(tool, arguments):
+        try:
+            return text_of(await server.call_tool(tool, arguments)) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(%s could not be called: %s: %s)" % (tool, type(exc).__name__, exc)
+
+    print()
+    print("  revit_show and the temporary isolate, against a stand-in Revit")
+    reply = {"ok": True, "ran": "x", "document": "Project1",
+             "documentPath": "C:/jobs/Project1.rvt", "projectKey": "key-1",
+             "wasActiveDocument": True, "bound": "elements from the selection (3)",
+             "provides": {"shown": "3", "viewAfter": "{3D}"}, "providesCount": 2}
+    revit = StandIn(reply)
+    resolved = []
+
+    def resolve():
+        resolved.append(1)
+        return revit
+
+    module.binding.resolve = resolve
+    module.pinned.forget()
+    try:
+        capability, _folder = first_with("MODIFY", "PROVEN")
+        said = await call("revit_show", {"capability": capability})
+        check("Nothing has been sent to Revit" in said and not revit.asked
+              and not resolved,
+              "a MODIFY capability (%s) is refused before any session is bound"
+              % capability)
+
+        said = await call("revit_show", {"capability": "ZOOM_TO_ELEMENTS",
+                                         "values": "alsoSelect=true"})
+        op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(len(revit.asked) == 1 and op == "run_fragment_show",
+              "ZOOM_TO_ELEMENTS (EXECUTE) is sent once, as run_fragment_show - "
+              "found %r" % op)
+        check("apply" not in args and args.get("chain") == "reset"
+              and args.get("source"),
+              "with its source, a reset chain, and no `apply`")
+        check(idempotent is True,
+              "and as safe to ask again - zooming twice leaves the screen as it was")
+        check("ZOOM_TO_ELEMENTS ran in Project1." in said
+              and "Nothing in the model was changed" in said
+              and "Only what is shown can have changed" in said,
+              "the answer names the model, and says only the screen can have "
+              "changed")
+
+        revit.asked[:] = []
+        resolved[:] = []
+        linked = {"capability": "ZOOM_TO_LINKED_ELEMENTS",
+                  "values": "linkName=Structural\ncategories=Structural Framing"}
+        said = await call("revit_show", linked)
+        op, args, _ = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(len(revit.asked) == 1 and op == "run_fragment_show"
+              and "Article 7" not in said,
+              "ZOOM_TO_LINKED_ELEMENTS goes at once, as run_fragment_show, with no "
+              "question first - selecting or zooming inside a link is not "
+              "touching it (D-124)")
+        check("DRAFT" in said and "claim" in said,
+              "and says it is a DRAFT - a claim, not a proof")
+
+        print()
+        revit.asked[:] = []
+        revit.reply = {"ok": True, "isolated": 2, "isolatedBy": "element id",
+                       "view": "Level 1", "replacedEarlier": True, "inView": 1,
+                       "document": "Project1", "projectKey": "key-1"}
+        said = await call("revit_isolate_temporary", {"ids": "925629, 925630"})
+        op, args, _ = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "isolate_temporary" and args.get("ids") == "925629, 925630"
+              and args.get("category") == ""
+              and args.get("expectProject") == "key-1",
+              "revit_isolate_temporary sends isolate_temporary with the ids and the "
+              "pin - found %r %r" % (op, args))
+        check("Isolated 2 element(s)" in said and "Only 1 of the 2" in said
+              and "replaced it" in said and "revit_reset_temporary" in said,
+              "and says how many, how many this view can show, that an earlier "
+              "isolate was replaced, and how it ends")
+
+        revit.asked[:] = []
+        revit.reply = {"ok": True, "reset": True, "view": "Level 1",
+                       "document": "Project1", "projectKey": "key-1",
+                       "said": "The Temporary Hide/Isolate in \"Level 1\" is off."}
+        said = await call("revit_reset_temporary", {})
+        op, args, _ = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "reset_temporary" and args.get("expectProject") == "key-1"
+              and "is off" in said,
+              "revit_reset_temporary sends reset_temporary with the pin, and says "
+              "the isolate is off")
+
+        revit.reply = {"ok": False, "error": "not_this_view",
+                       "message": "\"A101\" cannot hide or isolate temporarily."}
+        said = await call("revit_isolate_temporary", {"category": "ducts"})
+        check("cannot hide or isolate temporarily" in said,
+              "and the add-in's refusal reaches the chat in its own words")
     finally:
         del module.binding.resolve
         module.pinned.forget()
@@ -1155,7 +1269,9 @@ async def exercise_single_purpose(module, server, newest):
              ("revit_schedules", {}), ("revit_families", {}), ("revit_export_check", {}),
              ("revit_imports", {}), ("revit_annotation", {}), ("revit_systems", {}),
              ("revit_parameters", {"category": "ducts"}), ("revit_groups", {}),
-             ("revit_view_image", {}))
+             ("revit_view_image", {}),
+             ("revit_isolate_temporary", {"category": "ducts"}),
+             ("revit_reset_temporary", {}))
     with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
                  encoding="utf-8") as fh:
         shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', fh.read()))
@@ -1634,6 +1750,7 @@ def main():
         asyncio.run(exercise(server))
         exercise_waiting(server_module)
         asyncio.run(exercise_door(server_module))
+        asyncio.run(exercise_show(server_module))
         asyncio.run(exercise_words(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
