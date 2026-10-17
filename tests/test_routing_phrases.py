@@ -185,8 +185,8 @@ CHANGES = [
     # that cannot rename a view or a sheet; the model alone already reached this
     # card. Paraphrases of 5b-485's declared three, which identity answers and
     # this suite refuses. The fifth is the card's own find-and-replace job; the
-    # last went to SET_VIEW_FILTER_CATEGORIES on PR #539's tree before the change.
-    # NOT HERE: "rename the selected views", which that tree still sends there.
+    # last went to SET_VIEW_FILTER_CATEGORIES once #539 merged (main be29fde4).
+    # NOT HERE: "rename the selected views", which that card still takes.
     ("rename the plan", "RENAME_ELEMENTS",
      "5b-489: answered RENAME_FAMILY with the re-ranker"),
     ("rename this floor plan", "RENAME_ELEMENTS",
@@ -198,7 +198,7 @@ CHANGES = [
     ("rename the selected elements", "RENAME_ELEMENTS",
      "5b-489: answered RENAME_FAMILY with the re-ranker"),
     ("rename the views to match the new naming", "RENAME_ELEMENTS",
-     "5b-489: answered SET_VIEW_FILTER_CATEGORIES with the re-ranker on PR #539's tree"),
+     "5b-489: answered SET_VIEW_FILTER_CATEGORIES with the re-ranker after #539"),
 ]
 
 QUESTIONS = [
