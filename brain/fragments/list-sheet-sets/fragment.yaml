@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "the View/Sheet Sets this project holds - each set's name, an
 kind: action
 domain: revit.sheets
 capability: LIST_SHEET_SETS
-version: 1
+# VERSION 2 (2026-10-17, FRAGMENT-ISSUES 5b-545): two sets that hold exactly
+# the same sheets and views are flagged - in their rows, in `sameSets` and in
+# a finding. Found 2026-10-14 on BL001A: a seventh set was made there holding
+# the same 8 sheets as the first, and this read named both without a word.
+# Version 1 was run and PROVEN the same day as this was written (2026-10-17,
+# NEEDS-CHECKING EA1, "Project1", Revit 2020). Its proof below is kept as the
+# record it is; its fingerprint no longer matches this code, so the card is
+# DRAFT again, on Ajmal PS's choice that day, until Group FA's FA5 re-proves it.
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -49,6 +57,9 @@ purpose: >
   still appears in the dialog, and holds nothing. It is listed, marked
   EMPTY, and listed again in `emptySets`.
 
+  **TWO SETS HOLDING EXACTLY THE SAME SHEETS AND VIEWS ARE FLAGGED.** Each is
+  marked SAME with the other's name, and the pair is listed in `sameSets`.
+
   **THE IN-SESSION SET IS NOT COUNTED.** It lives only in the Revit session,
   not in the model, so a project with no other set answers none.
 
@@ -63,6 +74,8 @@ contract:
       # its name, how many sheets and views it holds, then every sheet as
       # "number - name" and every view as "name (view type)", "; " between
       # them. An empty set reads "<name> - EMPTY: no sheet and no view".
+      # Since version 2, a set holding exactly what another holds reads
+      # "<name> - SAME sheets and views as <other> - " and then its counts.
       # Sorted by set name; sheets by number, views by name.
       role: result
       type: string
@@ -74,6 +87,14 @@ contract:
     - name: emptySets
       # The names of the sets that hold nothing, ", " between them. Empty
       # when every set holds something.
+      role: result
+      type: string
+    - name: sameSets
+      # Version 2. The sets that hold exactly the same sheets and views,
+      # member for member - each group as "A = B", "; " between groups, in
+      # name order. Compared by element, never by name or count, and not by
+      # print order. Empty sets are not compared (they are in emptySets).
+      # Empty when no two sets match.
       role: result
       type: string
     - name: findings
@@ -118,9 +139,11 @@ compatibility-note: >
   `SheetOrganizationId` and `ViewOrganizationId` to a set, which say how
   the dialog ORDERS a set's members; none is read, so every release answers
   the same way and no 2023-only member is called. No ElementId is read as a
-  number, so 2024's 64-bit ids do not reach this code. The same collector
-  and member walk answered on Revit 2020 on 2026-10-14 as a scratch read -
-  that is not this fragment's proof.
+  number, so 2024's 64-bit ids do not reach this code - version 2 compares
+  members as sets of ElementId by the type's own Equals and GetHashCode,
+  present 2020 through 2027 (api-surface --members, 2026-10-17). The same
+  collector and member walk answered on Revit 2020 on 2026-10-14 as a
+  scratch read - that is not this fragment's proof.
 
 # ROUTING - the first two rows are also in MANAGE_SHEET_SETS and LIST_SHEETS.
 #
@@ -130,9 +153,11 @@ compatibility-note: >
 #   "save these sheets as a named set"   -> MANAGE_SHEET_SETS. A CHANGE: it
 #                                           creates, renames and deletes a
 #                                           set, and reads none back
-#   "add these sheets to the set"        -> NOT YET. MANAGE_SHEET_SETS has no
-#                                           mode that adds to or takes from an
-#                                           existing set - row 5b-466
+#   "add these sheets to the set"        -> MANAGE_SHEET_SETS, mode add. A
+#                                           CHANGE - since its version 2
+#                                           (2026-10-17, row 5b-466). This
+#                                           read is its read-back
+#   "take these sheets out of the set"   -> MANAGE_SHEET_SETS, mode remove
 #   "list the sheets"                    -> LIST_SHEETS - every sheet, which
 #                                           is not the same as every set
 #   "what views are on this sheet"       -> LIST_VIEWS_ON_SHEET

@@ -1,0 +1,108 @@
+# The proof of MANAGE_SHEET_SETS version 2 (manage-sheet-sets, FRG-SHT-015) and
+# of LIST_SHEET_SETS version 2's SAME flag (list-sheet-sets, FRG-SHT-032),
+# written 2026-10-17 for FRAGMENT-ISSUES rows 5b-466 and 5b-545 - NEEDS-CHECKING
+# Group FA, rows FA1 and FA5. NOT RUN - written and read back with --dry-run
+# only.
+#
+#     python tools/batch-prove.py tools/jobs/manage-sheet-sets-v2-remove-revit2020-2026-10-17.yaml
+#     python tools/batch-prove.py tools/jobs/manage-sheet-sets-v2-revit2020-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/manage-sheet-sets-v2-revit2020-2026-10-17.yaml
+#
+# RUN THE REMOVE JOB FIRST (FA2, its own file). Every run of one fragment
+# writes the same record, brain/proof-drafts/runs/manage-sheet-sets.json, so
+# the run that is signed is the one that runs LAST - this file's add (FA1).
+# Read FA2's values on screen as it runs; they are not the signed record.
+#
+# WHY. Version 1 could create, rename and delete a set, and not change what an
+# existing one holds (row 5b-466). And it set the Print dialog's range to
+# "Selected views/sheets" and never put it back - the print manager is not
+# transactional, so an Undo left the dialog changed (row 5b-545, found
+# 2026-10-14). Version 2 adds modes `add` and `remove`, and reads the range
+# first and puts it back. This job is both new modes, on a model that is not
+# a job model.
+#
+# THE MODEL: A NEW PROJECT, never 4355-* nor any project of Ajmal PS's. In
+# Revit 2020: File, New, Project, the default metric template, saved as
+# "Heron Sheet Sets FA". MAKE THIS BY HAND FIRST - a setup step that CHANGES
+# the model cannot be given values of its own (batch-prove refuses
+# `setup-set:` without a negative one, and the add-in binds it from the run's
+# values), so the sets are made in Revit's own dialogs:
+#
+#   1. View, Sheet Composition, Sheet: five sheets, numbered A101, A102, A103,
+#      A104 and A105 - no view on them is needed
+#   2. File, Print. Print Range: Selected views/sheets, then Select... and
+#      tick A101, A102 and the Level 1 floor plan. Save As "HERON FA SET".
+#      Untick the floor plan, Save As "HERON FA SHEETS" (A101 and A102 only).
+#      Save As again "HERON FA SHEETS COPY" (the same two - FA5's pair). OK
+#   3. STILL IN File, Print: set Print Range to "Current window" and Close.
+#      Open File, Print once more and check it SHOWS Current window. If Revit
+#      does not keep it on Close, write that down: FA4 is then read only from
+#      `printRange`, and the dialog half of it is run by hand (the FA4 row)
+#   4. Save the project, so every run below starts from the same sets
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# Open File, Print afterwards and select each HERON FA set: it must hold what
+# step 2 gave it, rather than assuming the rollback held.
+#
+# THE ELEMENTS: every sheet in the project, by the list-sheets -> set-selection
+# chain - all five, A101 to A105. That is the only arrangement batch-prove can
+# make for sheets (they cannot be selected by category - FRAGMENT-ISSUES
+# section 3i), so each case below is written around "all five sheets".
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: `changed` above 0 on the positive, 0 on the negative
+#   - NEG NOT EMPTY: the negative changed something. A FAIL whatever else is
+#     said - both negatives are calls that must change nothing
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   FA1 add, positive on "HERON FA SET" (A101, A102, Level 1):
+#     changed 3, unchanged the ids of A101 and A102, memberCount 6, done true,
+#     printRange "Print range put back to Current window, as it was before."
+#   FA1 add, negative on "HERON FA NO SUCH SET":
+#     done false, changed 0, refused "No sheet set called 'HERON FA NO SUCH
+#     SET'." - and File, Print offers NO set of that name afterwards: add
+#     never creates
+#   After the whole batch, File, Print: Print Range shows Current window, and
+#     every HERON FA set holds exactly what step 2 gave it
+#   FA5, the read: HERON FA SHEETS and HERON FA SHEETS COPY marked "SAME
+#     sheets and views as" each other, sameSets "HERON FA SHEETS = HERON FA
+#     SHEETS COPY", and HERON FA SET (the same two sheets AND a plan) NOT in it
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Heron Sheet Sets FA (a NEW project from Revit 2020's default metric template, made by hand as above), Revit 2020
+
+defaults:
+  in: "Heron Sheet Sets FA"
+  write: true
+  setup:
+    - list-sheets
+    - set-selection
+
+jobs:
+  - fragment: manage-sheet-sets
+    expect: changed
+    set:
+      setName: "HERON FA SET"
+      mode: "add"
+      newName: ""
+    negative-set:
+      setName: "HERON FA NO SUCH SET"
+      mode: "add"
+      newName: ""
+    note: >
+      FA1. Add all five sheets to a set holding two of them and a plan: three
+      go in, two are already there. The negative names a set that does not
+      exist, and must not make one.
+
+  - fragment: list-sheet-sets
+    negative-in: "Heron Sheet Sets Empty"
+    setup: []
+    write: false
+    expect: [setCount, sameSets]
+    note: >
+      FA5. The read of the same project: two sets holding the same two sheets
+      flagged SAME, and the set with the plan as well not flagged. The
+      negative is Group EA's empty project - make it as tools/jobs/
+      list-sheet-sets-bl001a-2026-10-14.yaml says, and open it beside this one.
