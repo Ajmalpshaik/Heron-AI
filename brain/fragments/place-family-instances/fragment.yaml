@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -14,7 +14,13 @@ capability: PLACE_FAMILY_INSTANCES
 # cannot be lifted off it; every placement is read back. Version 1's proof
 # no longer described the code; version 2's tracking run in Project2 was signed
 # by Ajmal PS on 2026-10-06.
-version: 2
+#
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-590): a family's height is read
+# where its own level stands - what Elevation from Level and Offset from Host
+# measure to - and no longer at its insertion point. See "VERSION 3" below.
+# DRAFT until the version 3 proof is signed; version 2's proof below is kept
+# as a record and no longer describes the code.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -53,6 +59,39 @@ purpose: >
 # where it was asked rolls the whole layout back. `readBack` says how each kind
 # ended up, in the Properties palette's names.
 #
+# VERSION 3 - WHERE A FAMILY STANDS IS WHERE ITS OWN LEVEL STANDS, NOT ITS
+# INSERTION POINT (FRAGMENT-ISSUES 5b-590). On 2026-10-15, on a real project
+# in Revit 2020, two cut-outs asked 2152 mm above 'PLAN AT EL. +106.832' were
+# refused - "Revit put ... 2014.5 mm above ... where it was asked 2152 mm
+# above" - and nothing was kept, with each one's centre, its Elevation from
+# Level, exactly where it was wanted. TRG_GEN_CutOut_Rectangular_HVAC, a
+# level-based Generic Model, ticks "Defines Origin" on the reference plane at
+# the BOTTOM of its opening, so its insertion point (LocationPoint) stands half
+# the opening's height below its own level, and moves with Object Height.
+# Version 2 compared the insertion point. Version 3 compares where the
+# instance's transform puts the family's own level - the height Elevation from
+# Level and Offset from Host hold, and the one Revit's own call uses when it
+# is given no level. Plan is still read off the insertion point, and
+# `readBack` adds "its insertion point N mm below that" only where the two
+# heights differ.
+#
+# MEASURED 2026-10-17, Revit 2020, scratch Project1, every run rolled back:
+# the cut-out with Elevation from Level 2152 had its centre at 2152 and its
+# insertion point at 2002, 1827 and 1627 for Object Height 250, 600 and 1000.
+# Version 2 and version 3 run side by side on the same placements: version 2
+# refused the cut-out ("2002 mm above 'Level 2' ... asked 2152", the shape
+# of the real refusal) and refused it even at the level's own height ("-300
+# mm"); version 3 placed both. On the fan coil unit at 2700 on Level 1 and
+# 6700 on Level 2, the hosted diffuser three times at 3000 and once at 6700,
+# the ceiling-mounted diffuser refused at 3000 and placed at its level's own
+# height, and an empty list, the two answered word for word the same. Each of
+# those families' insertion point IS its own level, so nothing reads
+# differently for them.
+#
+# THE TYPE'S "Default Elevation" PLAYS NO PART HERE: the cut-out's is 2500
+# and Revit's call wrote Elevation from Level from the point, as it does for
+# every level-based family (measured the same day).
+
 # THE PURPOSE IS VERSION 1'S, WORD FOR WORD, ON PURPOSE - and every sentence of
 # it is still true. Measured 2026-10-06 on private stores, these two paragraphs
 # written into the purpose sent "what level is this diffuser on" here on both
@@ -87,7 +126,9 @@ contract:
       # VERSION 2. How each kind ended up, read off Revit after the rebuild and
       # grouped - "3 x work plane-based, on 'Level 1''s own plane, standing
       # 3000 mm above it - Host 'Level 1', Level 'Level 1', Schedule Level
-      # 'Level 1', Offset from Host 3000 mm". A STRING, because a reply cuts a
+      # 'Level 1', Offset from Host 3000 mm". VERSION 3 adds ", its insertion
+      # point 150 mm below that" where a family's insertion point is not its
+      # own level. A STRING, because a reply cuts a
       # list to three items. Accounting: it describes what `placed` counts.
       role: accounting
       type: string
@@ -141,7 +182,9 @@ compatibility-note: >
   `InternalDefinition.BuiltInParameter` and the INSTANCE_FREE_HOST_OFFSET_PARAM,
   INSTANCE_ELEVATION_PARAM and INSTANCE_SCHEDULE_ONLY_LEVEL_PARAM ids;
   tools/check-fragments-compile.py built it against all eight releases on
-  2026-10-06. Only Revit 2024 has run it.
+  2026-10-06. Only Revit 2024 has run it. Version 3 adds
+  `Instance.GetTransform()` (unchanged 2020 to 2027); built against all eight
+  releases on 2026-10-17 and run, rolled back, in Revit 2020.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #

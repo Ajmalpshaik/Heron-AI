@@ -58,16 +58,17 @@
 // carries, so `carried` looks there.
 //
 // WHERE A FAMILY STANDS IS WHERE ITS OWN LEVEL STANDS, NOT ITS INSERTION POINT
-// (version 3, FRAGMENT-ISSUES 5b-525). Elevation from Level and Offset from
+// (version 3, FRAGMENT-ISSUES 5b-590). Elevation from Level and Offset from
 // Host both measure to the family's own Ref. Level, and that is where the
 // instance's transform puts the family's origin. The INSERTION POINT -
-// LocationPoint - is wherever the family's "Defines Origin" planes cross, and a
-// family may tick that on a plane that is not its level. Measured 2026-10-17,
-// Revit 2020, a scratch project: TRG_GEN_CutOut_Rectangular_HVAC ticks it on the
-// plane at the BOTTOM of its opening, which moves with Object Height. With
-// Elevation from Level 2152 its centre stood at 2152 and its insertion point at
-// 2002 (Object Height 250), 1827 (600) and 1627 (1000). Version 2 measured the
-// insertion point, so on 2026-10-15 a real job asked for 2152 was refused
+// LocationPoint - followed the family's "Defines Origin" planes on the family
+// measured, and a family may tick that on a plane that is not its level.
+// Measured 2026-10-17, Revit 2020, a scratch project:
+// TRG_GEN_CutOut_Rectangular_HVAC ticks it on the plane at the BOTTOM of its
+// opening, which moves with Object Height. With Elevation from Level 2152 its
+// centre stood at 2152 and its insertion point at 2002 (Object Height 250),
+// 1827 (600) and 1627 (1000). Version 2 measured the insertion point, so on
+// 2026-10-15 a real job asked for 2152 was refused
 // "2014.5 mm above" and nothing was kept, with the cut-out where it was wanted.
 // Revit's own call reads the height the same way: given no level, it put that
 // family's own level at the point's Z, not its insertion point. So the height
