@@ -291,7 +291,7 @@ def main():
         # model2vec present and PyYAML not, on EVERY machine: the search model
         # section imported heron_embed, which needs PyYAML, and died with a
         # traceback before the summary - only where model2vec was installed,
-        # so CI never saw it (row 5b-1029).
+        # so CI never saw it (row 5b-1008).
         with open(os.path.join(shadow, "model2vec.py"), "w") as handle:
             handle.write("# stands in for model2vec being installed\n")
         store = os.path.join(work, "no-yaml")

@@ -364,7 +364,7 @@ def search_model(check_only):
         return
     if not HAVE_YAML[0]:
         # heron_embed needs PyYAML on import: without this the run died here
-        # with a traceback, before the summary the installer reads (5b-1029).
+        # with a traceback, before the summary the installer reads (5b-1008).
         say(NOTE, "model2vec is installed; not loaded - it needs PyYAML, above")
         return
     import heron_embed as EMBED
