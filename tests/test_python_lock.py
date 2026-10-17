@@ -23,18 +23,24 @@ safe to run on a modeller's PC:
       what pulled a broken cryptography on 2026-09-16
     the Python it says it needs is the one PythonSetup refuses below
     the file PythonSetup names is this file
+    tools/lock-python.py runs the header's own recipe - the same platform,
+      the same Python, the same packages to compile from - and keeps the
+      header whole when it writes the body again
 
 WHAT IT CANNOT PROVE
 --------------------
 That the versions work on Windows. The header of requirements-lock.txt says
 what was run on it and where; NEEDS-CHECKING Group EP owes the Windows run.
-Nothing here touches the network.
+Nor that regenerating gives the same file, or that a pinned version has no
+known advisory: both need the network, and `python tools/lock-python.py` and
+`--audit` are those two runs. Nothing here touches the network.
 
     python tests/test_python_lock.py
 
 Exit 0 = the lock has its shape. Exit 1 = it does not, and what is wrong is named.
 """
 
+import importlib.util
 import io
 import os
 import re
@@ -44,6 +50,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCK = os.path.join(ROOT, "requirements-lock.txt")
 REQUIRED = os.path.join(ROOT, "requirements.txt")
 SETUP = os.path.join(ROOT, "platform", "Heron.Installer", "PythonSetup.cs")
+TOOL = os.path.join(ROOT, "tools", "lock-python.py")
 
 FAILURES = []
 
@@ -89,6 +96,49 @@ def required_names(text):
         if line:
             names.append(re.split(r"[<>=!~;\[\s]", line, maxsplit=1)[0])
     return names
+
+
+def load_tool():
+    """tools/lock-python.py as a module, or None when it is not there."""
+    if not os.path.exists(TOOL):
+        return None
+    spec = importlib.util.spec_from_file_location("lock_python_under_test", TOOL)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def regenerated_the_header_way(lock):
+    """The tool that writes the lock again runs the recipe the header gives."""
+    tool = load_tool()
+    check(tool is not None, "tools/lock-python.py is there to regenerate it")
+    header = lock.split("\n\n", 1)[0]
+    recipe = re.search(r"uv pip compile .*?--no-annotate", lock, re.S)
+    recipe = recipe.group(0) if recipe else ""
+    check(bool(recipe), "the header gives the uv line that writes the lock")
+    platform = getattr(tool, "PLATFORM", None)
+    python = getattr(tool, "PYTHON", None)
+    check(platform is not None and ("--python-platform %s" % platform) in recipe,
+          "the tool compiles for the platform the header names: %s" % platform)
+    check(python is not None and ("--python-version %s" % python) in recipe,
+          "and for the Python the header names: %s" % python)
+    check("--generate-hashes" in recipe, "the header's recipe hashes every file")
+    stated = re.search(r"printf '([^']*)'", recipe)
+    stated = stated.group(1).split("\\n") if stated else []
+    roots = getattr(tool, "roots", None)
+    got = roots() if roots else None
+    check(got is not None and [key(n) for n in got] == [key(n) for n in stated if n],
+          "it compiles from the packages the header's recipe names, read from "
+          "requirements.txt plus mcp: %s, header %s" % (got, stated))
+    split = getattr(tool, "split_lock", None)
+    if split is None:
+        check(False, "it can tell the header from the packages")
+        return
+    kept, body = split(lock)
+    check(kept + body == lock and kept.startswith(header)
+          and PIN.match(body) is not None,
+          "it keeps the header whole - the record of what was measured - and "
+          "writes again only what follows it")
 
 
 def main():
@@ -152,6 +202,10 @@ def main():
           "PythonSetup installs from this file and no other")
     check('"--require-hashes"' in setup,
           "and passes --require-hashes, without which the hashes here check nothing")
+
+    print()
+    print("The tool that writes it again runs the header's own recipe")
+    regenerated_the_header_way(lock)
 
     print()
     if FAILURES:

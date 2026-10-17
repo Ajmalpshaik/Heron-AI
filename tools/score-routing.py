@@ -2203,8 +2203,9 @@ def main(argv=None):
     try:
         import yaml                                      # noqa: F401
     except ImportError:
-        sys.stderr.write("COULD NOT RUN: this needs PyYAML - "
-                         "pip install --user pyyaml\n")
+        import heron_install as INSTALL
+        sys.stderr.write("COULD NOT RUN: this needs PyYAML - in the Heron folder: "
+                         "%s\n" % INSTALL.install_line("pip install --user pyyaml"))
         return 2
 
     if args.sentences or args.source:

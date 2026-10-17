@@ -99,8 +99,9 @@ import heron_matrix as MX                                         # noqa: E402
 try:
     import yaml
 except ImportError:                                          # pragma: no cover
-    sys.stderr.write("This agent reads fragment.yaml, so it needs PyYAML:\n"
-                     "  pip install --user pyyaml\n")
+    import heron_install as INSTALL
+    sys.stderr.write("This agent reads fragment.yaml, so it needs PyYAML. In the "
+                     "Heron folder:\n  %s\n" % INSTALL.install_line("pip install --user pyyaml"))
     raise
 
 ROOT = HF.ROOT
@@ -1649,7 +1650,7 @@ def accept_release(slug, release, by, library=None):
         return 2, ("no draft for '%s' on Revit %s in brain/proof-drafts/ - run it "
                    "there, then `draft %s --release %s --from %s`"
                    % (slug, release, slug, release,
-                      os.path.relpath(run_record_path(key), ROOT)))
+                      HF.repo_relative(run_record_path(key), ROOT)))
     entry = dict(draft.get("proof-draft") or {})
     if str(entry.get("release") or "") != release:
         return 2, ("the draft is for Revit %s, not %s"
@@ -1719,7 +1720,7 @@ def accept_second_route(slug, by, library=None):
     if draft is None:
         return 2, ("no second-route draft for '%s' in brain/proof-drafts/ - run it "
                    "with `validate --cross`, then `draft %s --second-route --from %s`"
-                   % (slug, slug, os.path.relpath(run_record_path(key), ROOT)))
+                   % (slug, slug, HF.repo_relative(run_record_path(key), ROOT)))
     proof = dict(draft.get("proof-draft") or {})
     text = str(proof.get("second_route") or "").strip()
     if not text or NOT_ESTABLISHED in text:
@@ -2295,8 +2296,8 @@ def main(argv=None):
             print("A %s draft is re-checked at accept against %s, and this record "
                   "is %s. Run it with `validate --out %s`."
                   % ("release" if args.release else "second-route",
-                     os.path.relpath(run_record_path(key), ROOT), args.record,
-                     os.path.relpath(run_record_path(key), ROOT)))
+                     HF.repo_relative(run_record_path(key), ROOT), args.record,
+                     HF.repo_relative(run_record_path(key), ROOT)))
             return 2
         with io.open(args.record, "r", encoding="utf-8") as fh:
             record = json.loads(fh.read())
@@ -2310,7 +2311,7 @@ def main(argv=None):
             draft = draft_from_record(match[0], record)
             how = ""
         path = write_draft(key, draft)
-        print("Drafted %s" % os.path.relpath(path, ROOT))
+        print("Drafted %s" % HF.repo_relative(path, ROOT))
         for gap in draft["gaps"]:
             print("  gap: %s" % gap)
         print("")
