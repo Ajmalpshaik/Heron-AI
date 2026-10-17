@@ -5217,8 +5217,12 @@ namespace Heron.Revit.Addin
                         + ". A sheet is normally named by its NUMBER, like \"A101\".";
                 return null;
             }
+            // `oldViewId` IS THE VIEW TAKEN OFF THE SHEETS - PLACE_VIEW_ON_SHEET
+            // version 2 puts its `views` where this one sits (FRAGMENT-ISSUES
+            // row 5b-540). `none`, above, is no view: the plain placing job.
             else if (name == "planViewId" || name == "scopeViewId"
-                     || name == "targetViewId" || name == "templateId")
+                     || name == "targetViewId" || name == "templateId"
+                     || name == "oldViewId")
             {
                 wanted = typeof(View); kind = "view";
             }
