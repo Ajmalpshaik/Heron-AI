@@ -69,8 +69,9 @@ namespace Heron.Revit.Addin
                                             Json.ReadString(request, "expectProject"));
 
                 // D-28's executor. Reads only: it opens no transaction, so
-                // Revit itself refuses anything that would change the model.
-                // Its own file, for the same reason RevitWrite has one - the
+                // Revit refuses a change - not always completely (row
+                // 5b-350), so RevitFragment also measures every read. Its own
+                // file, for the same reason RevitWrite has one - the
                 // code that runs OTHER PEOPLE'S code is worth reading in one
                 // piece.
                 // Linked models. HERON-REVIT-LNK-015, and its own file for

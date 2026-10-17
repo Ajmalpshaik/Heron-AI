@@ -75,6 +75,7 @@ ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
 DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
 NOTE = os.path.join(ADDIN, "HeronFailureNote.cs")
+WITNESS = os.path.join(ADDIN, "HeronRollbackWitness.cs")
 HOST = os.path.join(ROOT, "tests", "Heron.FailureNote.TestHost")
 COULD_NOT_RUN = 3
 
@@ -271,7 +272,17 @@ def wiring():
     refused = body_of(code, "string RefusedBy(")
     check("RefusedSentence()" in refused,
           "a refusal quotes what stopped it, in Revit's words")
-    check(re.search(r"rolledBack\s*\?", refused) is not None,
+    # THE SENTENCE MOVED 2026-10-17, into HeronRollbackWitness.Outcome, so it
+    # can say what the rollback check found as well as Revit's status. The
+    # claim is unchanged - "exactly as it was" needs a confirmed rollback - and
+    # is read where it lives now, in the raw text because it IS a string.
+    # tests/test_rollback_witness.py RUNS it.
+    witness = read(WITNESS) or ""
+    sentence = body_of(witness, "string ModelSentence(")
+    held = body_of(sentence, "if (Held)")
+    check(".Account()" in refused
+          and "exactly as it was" in held
+          and "exactly as it was" not in sentence.replace(held, "", 1),
           "and says the model is as it was ONLY when Revit confirmed the rollback")
     # READ IN THE RAW TEXT, because code_only blanks string contents and the
     # error code IS a string. What follows it must be the RefusedBy call, on

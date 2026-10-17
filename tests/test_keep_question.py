@@ -35,7 +35,7 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 missing line or a line in the wrong place.
 
 Neither half proves Revit then does what it is told. That is the PC's, and
-NEEDS-CHECKING Group EO says what it owes.
+NEEDS-CHECKING Group ET says what it owes.
 
 MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-126 every
 wiring section fails and the host does not build, and this suite exits 1 rather
@@ -159,10 +159,11 @@ def wiring():
     # met there must stop the job like one met in the fragment.
     asked_at = run.find("answered = AskTheModeller(")
     recheck = run.find("if (HeronDialogWatch.Refused)", asked_at)
-    kept_at = run.find("if (apply) group.Assimilate();")
+    kept_at = run.find("if (apply) keptNote = KeepAndWatch(group, target, watch);")
     check(0 < asked_at < recheck < kept_at,
           "the box asks, the dialog watch is asked again, and only then is anything kept")
-    check(before(run, "rolledBack = SafeRollBack(group);", "selectionRestored = putBack();"),
+    check(before(run, "rolledBack = RollBackAndCheck(group, target, watch);",
+                 "selectionRestored = putBack();"),
           "and on Discard their selection is put back after the rollback")
     check("WithAnswer(verdict, answered, refreshed)" in run
           and "answered != null && answered != Keep" in run,
@@ -215,7 +216,8 @@ def wiring():
     verdict = NOTE_SUITE.body_of(executor, "string WithVerdict(")
     check("HeronKeepQuestion.NothingToAskSentence" in verdict,
           "a run kept with no question says why none was put")
-    check("HeronKeepQuestion.Discarded(name, rolledBack, selectionRestored)" in verdict,
+    check(before(verdict, "var held = rolledBack != null && rolledBack.Held;",
+                 "HeronKeepQuestion.Discarded(name, held, selectionRestored)"),
           "and a Discard has its own verdict - never the plain rollback's \"send it again with apply\"")
 
     print("\n5. the dispatcher waits for the modeller, and the banner steps aside")

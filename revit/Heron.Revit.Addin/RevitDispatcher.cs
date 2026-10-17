@@ -522,6 +522,19 @@ namespace Heron.Revit.Addin
                     if (warnings.HasValue)
                         numbers.Add(new KeyValuePair<string, long>("warnings", warnings.Value));
 
+                    // AND WHAT A READ LEFT IN THE MODEL - row 5b-350. A read
+                    // run that changed the model comes back read_changed_model
+                    // with the count; the error alone says it happened, the
+                    // count says how much, so the trail can answer "what did
+                    // Heron change" for a run that was meant to change nothing.
+                    // Absent on every other reply, and left absent.
+                    var appeared = fragmentRun ? Json.ReadLong(response, "elementsAppeared") : null;
+                    if (appeared.HasValue)
+                        numbers.Add(new KeyValuePair<string, long>("elementsAppeared", appeared.Value));
+                    var typesAppeared = fragmentRun ? Json.ReadLong(response, "typesAppeared") : null;
+                    if (typesAppeared.HasValue)
+                        numbers.Add(new KeyValuePair<string, long>("typesAppeared", typesAppeared.Value));
+
                     // AND HOW MANY REVIT DIALOGS IT MET, on every operation -
                     // a dialog is not a fragment's alone. Absent when it met
                     // none, like the reply: every job is armed, so absent here
@@ -745,6 +758,8 @@ namespace Heron.Revit.Addin
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                case "read_changed_model": return "A read changed the model - look at it";
+                case "read_unverified": return "Could not check the model after a read";
                 case "ask_needs_change_path": return "That job cannot be tried this way";
                 case "ask_needs_model_in_front": return "Bring that model to the front first";
                 case "ask_needs_saved_model": return "Save the model first - nothing was run";

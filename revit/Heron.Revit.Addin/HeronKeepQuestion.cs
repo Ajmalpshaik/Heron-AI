@@ -28,7 +28,7 @@ namespace Heron.Revit.Addin
     /// them on any machine. Which dialog result keeps is RevitFragment's -
     /// only the Keep link, read there and checked by tests/test_try_once.py.
     /// Whether Revit then does what it is told is the PC's to prove
-    /// (NEEDS-CHECKING Groups EM and EO).
+    /// (NEEDS-CHECKING Groups EM and ET).
     /// </summary>
     internal static class HeronKeepQuestion
     {
@@ -197,20 +197,23 @@ namespace Heron.Revit.Addin
         /// The verdict when the modeller chose Discard - or closed the box,
         /// which discards.
         ///
-        /// "NOTHING WAS KEPT" ONLY WHEN REVIT REPORTED THE GROUP ROLLED BACK,
-        /// for the reason WithVerdict gives: on 2026-09-09 a rollback did not
-        /// hold while Heron said it had. Otherwise it says the model may still
-        /// hold the change. And never "send it again with apply", which the
-        /// plain rollback's verdict says: the modeller has just answered.
+        /// "NOTHING WAS KEPT" ONLY WHEN THE ROLLBACK HELD - Revit reported the
+        /// group rolled back AND nothing the run added is still standing
+        /// (RevitFragment.RollBackAndCheck) - for the reason WithVerdict gives:
+        /// on 2026-09-09 a rollback did not hold while Heron said it had.
+        /// Otherwise it says the model may still hold the change. And never
+        /// "send it again with apply", which the plain rollback's verdict
+        /// says: the modeller has just answered.
         /// </summary>
-        public static string Discarded(string name, bool rolledBack, bool selectionRestored)
+        public static string Discarded(string name, bool held, bool selectionRestored)
         {
-            if (!rolledBack)
+            if (!held)
             {
-                return "The modeller chose Discard in Revit, and Revit did NOT report the "
-                     + "transaction group rolled back afterwards - so THE MODEL MAY STILL HOLD "
-                     + "what '" + Named(name) + "' did. Look at it in Revit before trusting "
-                     + "anything here, and do not save until you have.";
+                return "The modeller chose Discard in Revit, and the rollback could not be "
+                     + "confirmed - Revit did not report the transaction group rolled back, or "
+                     + "something the run added is still in the model - so "
+                     + "THE MODEL MAY STILL HOLD what '" + Named(name) + "' did. Look at it in "
+                     + "Revit before trusting anything here, and do not save until you have.";
             }
 
             return "The modeller chose Discard in Revit, so NOTHING WAS KEPT: '" + Named(name)

@@ -143,6 +143,10 @@ PROJECTS = [
     # tests/test_keep_question.py builds and runs it.
     "tests/Heron.KeepQuestion.TestHost/Heron.KeepQuestion.TestHost.csproj",
     "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
+    # Whether a rollback took the last kept job's work, and whether it held -
+    # linked by source like the failure note; tests/test_rollback_witness.py
+    # builds and runs it.
+    "tests/Heron.RollbackWitness.TestHost/Heron.RollbackWitness.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
 ]
 

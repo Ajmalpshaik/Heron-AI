@@ -515,7 +515,14 @@ def door_refusal(door, declared, capability):
     stops a MISTAKE. The add-in never sees a fragment's own risk (FRAGMENT-
     ISSUES row 9 records why it is not sent), so a caller that skipped this
     server could put anything through run_fragment_read. What holds for every
-    caller is Revit's own refusal of a change made outside a transaction.
+    caller is two things, and the first is NOT a guarantee on its own: Revit
+    refuses a change made outside a transaction - yet row 5b-350 is a read run
+    of place-nested-family that reported that refusal and still left a real
+    instance in the family, twice, cause not established (NEEDS-CHECKING CP1).
+    So the add-in also counts the model before and after every read run and
+    answers one that moved it `read_changed_model`, never as a read. That
+    second check sees an element that appeared or disappeared and a model newly
+    marked changed - not an edit in place in a model already unsaved.
 
     Pure - no file, no Revit, no SDK - so tests/test_read_door.py runs every
     outcome, and runs it over every fragment in the library, where CI can.
