@@ -789,7 +789,9 @@ namespace Heron.Installer
     /// print into an exception; PYTHONIOENCODING asks it for UTF-8, and the
     /// streams are read as UTF-8 to match.
     ///
-    /// NOT RUN ON WINDOWS - NEEDS-CHECKING Group EP.
+    /// STARTED ON A WINDOWS CI RUNNER by tests/Heron.Installer.TestHost
+    /// (.github/workflows/windows.yml), on `dotnet` and on `cmd`. Never yet
+    /// run on pip or heron-ready there - NEEDS-CHECKING Group EP.
     /// </summary>
     public sealed class ProcessProgramRunner : IProgramRunner
     {
@@ -835,8 +837,11 @@ namespace Heron.Installer
     /// identity Python's os.path.samefile compares on Windows - with a handle
     /// opened for attributes only, which needs no right to read the folder.
     ///
-    /// NOT RUN ON WINDOWS - NEEDS-CHECKING Group EP, which runs it from inside
-    /// the Store-built Claude and from outside it.
+    /// SameEntry IS RUN ON A WINDOWS CI RUNNER by tests/Heron.Installer.TestHost
+    /// (.github/workflows/windows.yml): a folder and a junction to it true, two
+    /// folders false, a missing path null. NOT RUN inside a Store-built Claude,
+    /// nor Copies() and Names() on a real one - NEEDS-CHECKING Group EP runs it
+    /// from inside that Claude and from outside it.
     /// </summary>
     public sealed class WindowsClaudeAppLook : IClaudeAppLook
     {
