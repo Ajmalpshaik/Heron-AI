@@ -591,6 +591,43 @@ def main():
 
     article_11(names)
 
+    # ------------------------------------------------------------------
+    print()
+    print("8. A picture for the chat is not an export, and does not move one (D-123)")
+    # capture_view writes a PNG too, and could be mistaken for a way round
+    # the Publish switch. What makes it not an export is WHERE the file goes
+    # and what becomes of it - so those are read here, and the export that
+    # already exists is held exactly where D-107 put it.
+    check(card_risk("export-view-image") == "PUBLISH",
+          "export-view-image - the export that writes views to a folder the "
+          "caller names - is still PUBLISH")
+    check(declared.get("capture_view") == "Analyze"
+          and TOOLS.TOOLS.get("revit_view_image", (None, None))[1] == "capture_view"
+          and TOOLS.risk_of("revit_view_image") == TOOLS.ANALYZE
+          if "revit_view_image" in TOOLS.TOOLS else False,
+          "capture_view is Analyze in the add-in and revit_view_image ANALYZE here")
+    # export-* MEANS PUBLISH in this repository (D-107), so no tool or
+    # operation may wear the word at the front unless it is one - renaming
+    # capture_view to export_view would fail here.
+    named = [n for n in list(TOOLS.TOOLS) + list(declared) if n.startswith("export")]
+    check(not named and not os.path.isdir(os.path.join(FRAGMENTS, "capture-view")),
+          "no MCP tool or add-in operation is named export* - found %s - and the "
+          "capture is no fragment a batch could walk" % (named or "none"))
+    capture = read(os.path.join(ADDIN, "RevitCapture.cs"))
+    check(re.search(r'var folder = Path\.Combine\(HeronPaths\.Captures,', capture) is not None
+          and "options.FilePath = Path.Combine(folder," in capture,
+          "the picture is written only inside HeronPaths.Captures - Heron's own "
+          "Derived folder")
+    check(not re.search(r'ReadString\(request,\s*"(folder|path|filePath|destination)"\)',
+                        capture),
+          "and no folder or path is taken from the request - a caller cannot point "
+          "it anywhere shared")
+    check("Directory.Delete(folder, true)" in capture
+          and capture.find("deleted = DeleteFolder(folder);")
+          < capture.find('Json.Str("png", Convert.ToBase64String(picture))'),
+          "the folder is deleted before the answer is built, and the picture "
+          "travels in the reply")
+
     print()
     shutil.rmtree(_SCRATCH, ignore_errors=True)
     if FAILURES:

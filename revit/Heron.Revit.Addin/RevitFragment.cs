@@ -381,6 +381,18 @@ namespace Heron.Revit.Addin
             // one undo (Golden Rule 16) that rolls back on a preview.
             var ownsTransactions = DeclaresNeed(needs, EditScopeNeed);
 
+            // A FRAGMENT THAT MUST RUN WITH NO TRANSACTION OPEN AND OPENS NONE -
+            // D-125. Revit changes no view inside a transaction (D-115), so
+            // OPEN_VIEW has to run with none open; it declared D-112's switch
+            // for that, and so was refused below on the read and show paths,
+            // where no transaction is open anyway. This need says only "run
+            // me with none open": on the write path it runs inside the group
+            // as an edit-mode fragment does, and on the read and show paths
+            // nothing changes, because nothing there is open to begin with.
+            // It promises the fragment opens NONE of its own, so it grants
+            // nothing those paths did not already allow.
+            var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
+
             // NEVER ON THE READ PATH. That path's guarantee is that no
             // transaction is open, so Revit refuses a change - not always
             // completely (row 5b-350), which is why a read is also measured -
@@ -560,8 +572,13 @@ namespace Heron.Revit.Addin
 
             // Only meaningful on the writing path with apply off. Reported so a
             // reader never has to infer a rollback from the request that asked
-            // for one - see SafeRollBack.
-            var rolledBack = false;
+            // for one - see SafeRollBack, and RollBackAndCheck for what is
+            // looked for again after it. Null until a rollback has happened.
+            HeronRollbackWitness.Outcome rolledBack = null;
+
+            // What the start of a KEPT job found to say about the job kept
+            // before it - see HeronRollbackWitness.Begin. "" almost always.
+            var keptNote = "";
 
             // What the modeller chose, and whether the view was redrawn for
             // them to choose by. Only set when `asking` - D-119.
@@ -609,6 +626,13 @@ namespace Heron.Revit.Addin
                 // Golden Rule 16. Named for the fragment, so Revit's own undo
                 // history reads as something a person did.
                 var label = "Heron: " + name;
+
+                // WATCHED FROM BEFORE THE GROUP STARTS: the last kept job's
+                // elements are counted here, so what the modeller removed
+                // since is never blamed on this job's rollback, and every
+                // element this job adds is counted as Revit reports it. See
+                // HeronRollbackWitness.
+                using (var watch = Watch(target, name, label))
                 using (var group = new TransactionGroup(target, label))
                 {
                     group.Start();
@@ -638,7 +662,7 @@ namespace Heron.Revit.Addin
                     // them in, and a setup step that writes has no business on
                     // a path whose whole guarantee is that Revit refuses it.
                     var setupError = RunSetupSteps(request, globals, target, uidoc,
-                                                   client, supplied, group, label, said);
+                                                   client, supplied, group, watch, label, said);
                     if (setupError != null) return setupError;
 
                     // NOW the fragment can be given what the setup just made.
@@ -655,8 +679,7 @@ namespace Heron.Revit.Addin
                             // this path must never produce. Every other refusal
                             // on this page is free because nothing had run yet;
                             // this one is not, so it pays for itself here.
-                            SafeRollBack(group);
-                            return late;
+                            return HeronRollbackWitness.Told(late, RollBackAndCheck(group, target, watch).Unsaid());
                         }
                     }
 
@@ -664,9 +687,12 @@ namespace Heron.Revit.Addin
                     // where ownsTransactions is read. Whatever it opened it
                     // must have closed - a transaction left open is a group
                     // that can be neither kept nor rolled back, so it is named.
-                    if (ownsTransactions)
+                    if (ownsTransactions || wantsNoTransaction)
                     {
-                        globals.__heron[EditScopeNeed] = new FailureDiscipline(said, null);
+                        // The discipline is the edit-mode fragment's to hand
+                        // on; a fragment that opens none has nothing to give it.
+                        if (ownsTransactions)
+                            globals.__heron[EditScopeNeed] = new FailureDiscipline(said, null);
 
                         threw = RunScript(script, globals, name, out state);
 
@@ -679,8 +705,9 @@ namespace Heron.Revit.Addin
                         }
                         if (threw != null)
                         {
-                            var unwound = SafeRollBack(group);
-                            return DialogRefusal(name, unwound) ?? threw;
+                            var after = RollBackAndCheck(group, target, watch);
+                            return Stopped(name, after)
+                                ?? HeronRollbackWitness.Told(threw, after.Unsaid());
                         }
                     }
                     else
@@ -698,8 +725,9 @@ namespace Heron.Revit.Addin
                         if (threw != null)
                         {
                             SafeRollBack(transaction);
-                            var unwound = SafeRollBack(group);
-                            return DialogRefusal(name, unwound) ?? threw;
+                            var after = RollBackAndCheck(group, target, watch);
+                            return Stopped(name, after)
+                                ?? HeronRollbackWitness.Told(threw, after.Unsaid());
                         }
 
                         // NOT COMMITTED MEANS DISCIPLINE ROLLED IT BACK, almost
@@ -720,7 +748,7 @@ namespace Heron.Revit.Addin
                         {
                             return Json.Error("operation_failed",
                                 RefusedBy("'" + name + "' ran, and Revit would not keep it.",
-                                          said, SafeRollBack(group)));
+                                          said, RollBackAndCheck(group, target, watch)));
                         }
                     }
 
@@ -732,7 +760,7 @@ namespace Heron.Revit.Addin
                     // steps included. Article 7: a question nobody answered is
                     // never a yes. See HeronDialogWatch.
                     if (HeronDialogWatch.Refused)
-                        return DialogRefusal(name, SafeRollBack(group));
+                        return Stopped(name, RollBackAndCheck(group, target, watch));
 
                     // D-119: THE MODELLER DECIDES, here, with the work done and
                     // the group still open - so Keep and Discard are exactly
@@ -750,8 +778,8 @@ namespace Heron.Revit.Addin
                     // rather than leaving the inner transaction visible as its
                     // own. Rolling back instead is what makes the default a
                     // preview.
-                    if (apply) group.Assimilate();
-                    else rolledBack = SafeRollBack(group);
+                    if (apply) keptNote = KeepAndWatch(group, target, watch);
+                    else rolledBack = RollBackAndCheck(group, target, watch);
                 }
             }
 
@@ -762,7 +790,7 @@ namespace Heron.Revit.Addin
                                 globals.__heron);
 
             if (!writing) return WithCount(answer, counted);
-            var verdict = WithVerdict(answer, apply, name, rolledBack, said);
+            var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said);
             return asking ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
 
@@ -957,7 +985,9 @@ namespace Heron.Revit.Addin
         /// A STEP THAT FAILS STOPS EVERYTHING. A half-made arrangement is worse
         /// than none: the fragment under test would run against a model that is
         /// neither what it was nor what was asked for, and report about it with
-        /// complete confidence. The group is rolled back before returning.
+        /// complete confidence. The group is rolled back before returning,
+        /// through RollBackAndCheck like every other rollback, and "the model is
+        /// as it was" is said only as far as that checked it.
         /// </summary>
         private static string RunSetupSteps(string request,
                                             HeronFragmentGlobals globals,
@@ -966,6 +996,7 @@ namespace Heron.Revit.Addin
                                             string client,
                                             Dictionary<string, string> supplied,
                                             TransactionGroup group,
+                                            HeronRollbackWitness.Watch watch,
                                             string label,
                                             HeronFailureNote said)
         {
@@ -985,11 +1016,11 @@ namespace Heron.Revit.Addin
                 step.TryGetValue("source", out stepSource);
                 if (string.IsNullOrEmpty(stepSource))
                 {
-                    SafeRollBack(group);
-                    return Json.Error("setup_no_source",
+                    var after = RollBackAndCheck(group, target, watch);
+                    return HeronRollbackWitness.Told(Json.Error("setup_no_source",
                         "A setup step was sent with no source, so the arrangement could not "
                         + "be made and nothing was run. This operation runs the C# it is "
-                        + "given; it does not read the fragment library itself.");
+                        + "given; it does not read the fragment library itself."), after.Unsaid());
                 }
 
                 string stepName;
@@ -1026,11 +1057,14 @@ namespace Heron.Revit.Addin
                                             out stepPrologue, out stepBinding);
                     if (refusal != null)
                     {
-                        SafeRollBack(group);
+                        // "THE MODEL IS AS IT WAS" WAS SAID HERE WITHOUT LOOKING,
+                        // and an earlier step may already have committed inside
+                        // this group. Now it is the rollback's checked answer.
+                        var after = RollBackAndCheck(group, target, watch);
                         return Json.Error("setup_failed",
                             "The arrangement step '" + stepName + "' could not be given what "
-                            + "it needs, so nothing was run and the model is as it was. "
-                            + refusal);
+                            + "it needs, so nothing was run. " + after.Account()
+                            + " " + refusal);
                     }
                 }
 
@@ -1039,10 +1073,10 @@ namespace Heron.Revit.Addin
                                            PrologueLines(stepPrologue), out stepScript);
                 if (compileError != null)
                 {
-                    SafeRollBack(group);
+                    var after = RollBackAndCheck(group, target, watch);
                     return Json.Error("setup_failed",
                         "The arrangement step '" + stepName + "' did not compile, so nothing "
-                        + "was run and the model is as it was. " + compileError);
+                        + "was run. " + after.Account() + " " + compileError);
                 }
 
                 using (var stepTransaction = new Transaction(target, label + " - " + stepName))
@@ -1061,8 +1095,7 @@ namespace Heron.Revit.Addin
                     if (threw != null)
                     {
                         SafeRollBack(stepTransaction);
-                        SafeRollBack(group);
-                        return threw;
+                        return HeronRollbackWitness.Told(threw, RollBackAndCheck(group, target, watch).Unsaid());
                     }
 
                     if (stepTransaction.Commit() != TransactionStatus.Committed)
@@ -1070,7 +1103,7 @@ namespace Heron.Revit.Addin
                         return Json.Error("setup_failed",
                             RefusedBy("Revit would not keep the arrangement step '" + stepName
                                       + "', so the fragment under test never ran.",
-                                      said, SafeRollBack(group)));
+                                      said, RollBackAndCheck(group, target, watch)));
                     }
 
                     // WHAT IT LEFT, for the step after it and for the fragment
@@ -1690,13 +1723,101 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// Roll back without letting the rollback itself become the failure.
+        /// The dialog refusal after the rollback check, or null when no dialog
+        /// stopped the job. Its own words already say whether Revit confirmed
+        /// the rollback, from `Held`; what it is handed beyond that is what the
+        /// check found - a rollback Revit reported whose additions still stand,
+        /// and the last kept job's loss.
+        /// </summary>
+        private static string Stopped(string name, HeronRollbackWitness.Outcome after)
+        {
+            var refusal = DialogRefusal(name, after.Held);
+            if (refusal == null) return null;
+            return HeronRollbackWitness.Told(refusal,
+                after.Reported && !after.Held ? after.Unsaid() : after.Also());
+        }
+
+        /// <summary>
+        /// Roll a write job's group back, check what that left, and say it -
+        /// THE ONE WAY A WRITE JOB'S GROUP IS ROLLED BACK, from this file and
+        /// from RevitWrite's move. tests/test_rollback_witness.py fails a
+        /// rollback made any other way, and names the one file not yet
+        /// watched - RevitCapture's picture, always rolled back by its own.
         ///
-        /// The same hazard RevitWrite.SafeRollBack exists for, and for the same
-        /// reason: rolling back something already rolled back throws, and it
-        /// throws from the catch block where the real error is still being
-        /// handled - so the useful message is lost and replaced by a confusing
-        /// one, at the worst possible moment.
+        /// SafeRollBack answers Revit's status. Then two things are looked for
+        /// again, because section 1c showed that status and the model can
+        /// disagree (HeronRollbackWitness has the reasoning):
+        ///
+        ///   what THIS job added    any still standing, and it did not hold
+        ///   what the LAST KEPT     any gone, and this rollback took earlier
+        ///   job made               committed work with it - said once, then
+        ///                          forgotten
+        ///
+        /// NEVER THROWS, for the reason SafeRollBack never does: it runs where a
+        /// real error is already being reported. A witness that fails answers
+        /// Revit's status alone, which is what every caller had before.
+        /// </summary>
+        internal static HeronRollbackWitness.Outcome RollBackAndCheck(TransactionGroup group,
+                                                                      Document doc,
+                                                                      HeronRollbackWitness.Watch watch)
+        {
+            var reported = SafeRollBack(group);
+            try
+            {
+                return Witness.RolledBack(watch, reported, Resolver(doc));
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Rollback check could not run: " + ex.Message);
+                return new HeronRollbackWitness.Outcome(reported);
+            }
+        }
+
+        /// <summary>
+        /// Assimilate a write job's group - one undo step, Golden Rule 16 - and
+        /// keep what it added as the work the next rollback must not take. The
+        /// one place a group is assimilated, as RollBackAndCheck is the one
+        /// place one is rolled back.
+        ///
+        /// ONLY A GROUP REVIT SAYS IT COMMITTED IS WATCHED. Returns what the
+        /// start of the job found to say about the job kept before it.
+        /// </summary>
+        internal static string KeepAndWatch(TransactionGroup group, Document doc,
+                                            HeronRollbackWitness.Watch watch)
+        {
+            if (group.Assimilate() != TransactionStatus.Committed) return "";
+            try
+            {
+                return Witness.Assimilated(watch, Resolver(doc));
+            }
+            catch (Exception ex)
+            {
+                // The job is KEPT by now. A witness failing must not turn it
+                // into a reported failure - it only means nothing is watched.
+                HeronApplication.Log("Kept-work sample could not be taken: " + ex.Message);
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Roll back without letting the rollback itself become the failure.
+        /// Called by RollBackAndCheck and nothing else.
+        ///
+        /// A ROLLBACK IS ALWAYS A SECOND THING GOING WRONG: something already
+        /// failed, and this is the cleanup. If the cleanup throws too, its
+        /// exception escapes from the block still handling the first and buries
+        /// it - the user is told the group was not in a state to roll back,
+        /// which tells them nothing, instead of what happened to their model.
+        /// A shipped bug in real Revit tooling had exactly this shape, and the
+        /// caller waited for ever on an answer that never came. TransactionGroup
+        /// has no state in which RollBack() is guaranteed to succeed.
+        ///
+        /// Both guards are kept on purpose. The status check avoids provoking an
+        /// exception in the ordinary case; the catch handles what the status
+        /// check cannot see - a group left un-rollback-able by an Assimilate()
+        /// that failed part way, or a GetStatus() that throws on its own.
+        /// RevitWrite carried its own copy of this until the rollback check
+        /// made one helper of every rollback; this paragraph is that copy's.
         /// </summary>
         private static bool SafeRollBack(TransactionGroup group)
         {
@@ -1722,7 +1843,14 @@ namespace Heron.Revit.Addin
                 if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
                 return group.GetStatus() == TransactionStatus.RolledBack;
             }
-            catch { return false; }
+            catch
+            {
+                // Nothing more can be done to the group, and throwing would
+                // replace the useful message with a useless one. The `using`
+                // block's Dispose() rolls back anything still open - but that
+                // is not a confirmation, so it is reported as none.
+                return false;
+            }
         }
 
         private static void SafeRollBack(Transaction transaction)
@@ -1919,23 +2047,21 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// A refusal after Revit would not keep a write: what stopped it, in
         /// Revit's words, and what happened to the model - which is said only
-        /// as far as Revit confirmed it.
+        /// as far as the rollback was checked: Revit's status, the elements the
+        /// job added counted back, and the last kept job's elements looked for.
+        /// The sentences are HeronRollbackWitness.Outcome's, so the rule that
+        /// "exactly as it was" needs a confirmed rollback is proved there.
         /// </summary>
-        private static string RefusedBy(string what, HeronFailureNote said, bool rolledBack)
+        private static string RefusedBy(string what, HeronFailureNote said,
+                                        HeronRollbackWitness.Outcome rolledBack)
         {
             var why = said.RefusedCount > 0
                 ? said.RefusedSentence()
                 : "Revit gave no reason Heron could read.";
 
-            var model = rolledBack
-                ? "Revit confirmed the rollback, so the model is exactly as it was."
-                : "Revit did NOT confirm the rollback, so THE MODEL MAY STILL HOLD PART OF THIS "
-                  + "JOB. Check what it would have changed before trusting anything here, and do "
-                  + "not save until you have.";
-
             return what + " " + why + " Heron rolled the whole job back rather than let Revit "
                  + "resolve it its own way - Revit's own fix for an error can be to delete the "
-                 + "elements it names. " + model;
+                 + "elements it names. " + rolledBack.Account();
         }
 
         /// <summary>
@@ -1949,7 +2075,8 @@ namespace Heron.Revit.Addin
         /// distrust every number Heron has ever given them.
         /// </summary>
         private static string WithVerdict(string answer, bool applied, string name,
-                                          bool rolledBack, HeronFailureNote said)
+                                          HeronRollbackWitness.Outcome rolledBack,
+                                          string keptNote, HeronFailureNote said)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
@@ -1961,6 +2088,14 @@ namespace Heron.Revit.Addin
             // group RolledBack; when it did not, that is what is said instead,
             // because a write that may still be standing is the one thing a
             // reader must not have to guess at.
+            //
+            // AND ONLY WHEN NOTHING THE RUN ADDED IS STILL STANDING. Revit's
+            // status was the only evidence until the rollback check: what the
+            // run added is now counted back too (HeronRollbackWitness), and an
+            // element still in the model withdraws the sentence whatever the
+            // status said. It sees additions only, so it never ADDS certainty
+            // the status did not give - it can only take it away.
+            var held = rolledBack != null && rolledBack.Held;
             string verdict;
             if (applied)
             {
@@ -2014,12 +2149,23 @@ namespace Heron.Revit.Addin
                         + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
                         + "would undo whatever you did before this.";
             }
-            else if (rolledBack)
+            else if (held)
             {
                 verdict = "NOTHING WAS KEPT. '" + name + "' ran for real and Revit reported the "
-                        + "transaction group rolled back afterwards, so the counts above are "
-                        + "what it actually did rather than a guess. Send it again with apply "
-                        + "to keep it.";
+                        + "transaction group rolled back afterwards"
+                        + (rolledBack.Checked > 0 ? ", and " + rolledBack.NoneStanding() : "")
+                        + ", so the counts above are what it actually did rather than a guess. "
+                        + "Send it again with apply to keep it.";
+            }
+            else if (rolledBack != null && rolledBack.Reported)
+            {
+                // THE TWO WITNESSES DISAGREE, which is section 1c caught in the
+                // act rather than reconstructed a day later from the model.
+                verdict = "THE ROLLBACK DID NOT HOLD. '" + name + "' ran for real and Revit "
+                        + "reported the transaction group rolled back, but "
+                        + rolledBack.SomeStanding() + " still in the model - so THE MODEL STILL "
+                        + "HOLDS PART OF THIS CHANGE. Check the thing that was written before "
+                        + "trusting anything here, and do not save until you have.";
             }
             else
             {
@@ -2027,8 +2173,17 @@ namespace Heron.Revit.Addin
                         + "rollback was requested, and Revit did not afterwards report the "
                         + "transaction group as rolled back - so THE MODEL MAY STILL HOLD THIS "
                         + "CHANGE. Check the thing that was written before trusting anything "
-                        + "here, and do not save until you have.";
+                        + "here, and do not save until you have."
+                        + (rolledBack != null && rolledBack.Standing > 0
+                            ? " " + rolledBack.SomeStanding() + " still in it." : "");
             }
+
+            // WHAT THE ROLLBACK TOOK FROM THE JOB KEPT BEFORE THIS ONE, said
+            // once and straight after the verdict, because it is about work the
+            // modeller believes is safe. And what the start of the run found.
+            // Both "" almost always, so an ordinary verdict reads as it did.
+            var also = applied ? keptNote : (rolledBack == null ? "" : rolledBack.Also());
+            if (!string.IsNullOrEmpty(also)) verdict += " " + also;
 
             // WHAT REVIT RAISED AND HERON DISMISSED, on the verdict itself -
             // the one sentence the chat prints whole, so it reaches the
@@ -2053,9 +2208,31 @@ namespace Heron.Revit.Addin
                 }
             }
 
+            // `rolledBack` MEANS THE ROLLBACK HELD AS FAR AS IT WAS CHECKED -
+            // Revit's status AND nothing the run added still standing - so the
+            // client's ROLLED BACK label and a proof record's "rolled back"
+            // can never sit above a verdict saying it did not hold. Revit's
+            // status alone is `rollbackReported`, and the counts behind both
+            // are `rollbackCheck`, which is what a run at the PC reads to
+            // answer NEEDS-CHECKING's rollback-check rows.
+            var check = "";
+            if (rolledBack != null)
+            {
+                check = ",\"rollbackCheck\": " + Json.Obj(
+                    Json.Num("added", rolledBack.Added),
+                    Json.Num("checked", rolledBack.Checked),
+                    Json.Num("standing", rolledBack.Standing),
+                    Json.Num("eventNamed", rolledBack.EventNamed),
+                    Json.Str("keptJob", rolledBack.KeptJob),
+                    Json.Num("keptChecked", rolledBack.KeptChecked),
+                    Json.Num("keptLost", rolledBack.Lost));
+            }
+
             return answer.Substring(0, answer.Length - 1)
                  + "," + Json.Bool("applied", applied)
-                 + "," + Json.Bool("rolledBack", rolledBack)
+                 + "," + Json.Bool("rolledBack", held)
+                 + "," + Json.Bool("rollbackReported", rolledBack != null && rolledBack.Reported)
+                 + check
                  + "," + Json.Num("warnings", said == null ? 0 : said.DismissedCount)
                  + "," + Json.Arr("warningsDismissed", listed)
                  + "," + Json.Str("verdict", verdict) + "}";
@@ -2144,6 +2321,158 @@ namespace Heron.Revit.Addin
 
         private static readonly Dictionary<string, Chain> Chains =
             new Dictionary<string, Chain>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// The last KEPT job's elements in each model, and the write job being
+        /// watched now - the chain store's neighbour because it is the same kind
+        /// of thing: state that outlives one request, about one document, held
+        /// as strings so no Document is ever kept (revit-addin-conventions).
+        ///
+        /// KEYED BY DOCUMENT, NOT BY CHAT. A chain is one chat's working state;
+        /// a kept job is the model's history, and a second chat's preview that
+        /// takes it is exactly the case this exists to catch.
+        ///
+        /// Single-threaded by construction, like Chains: every request and
+        /// every DocumentChanged event arrives on Revit's own thread.
+        /// </summary>
+        private static readonly HeronRollbackWitness Witness = new HeronRollbackWitness();
+
+        /// <summary>
+        /// Start watching one write job: count the last kept job's elements as
+        /// they stand now, and arm the listener for what this job adds. Opened
+        /// just before the group starts, disposed when the job's request ends.
+        /// </summary>
+        internal static HeronRollbackWitness.Watch Watch(Document doc, string job, string label)
+        {
+            try
+            {
+                return Witness.Begin(WitnessKey(doc), job, label, Resolver(doc));
+            }
+            catch (Exception ex)
+            {
+                // A job is never refused for want of a witness: unwatched is
+                // what every job was before, and the reply says nothing it
+                // did not check.
+                HeronApplication.Log("Rollback watch could not start: " + ex.Message);
+                return Witness.Begin(null, job, label, null);
+            }
+        }
+
+        /// <summary>
+        /// A document's identity as the three strings Report sends - the
+        /// model's own CreationGUID where the release has one (2024 on), its
+        /// path, its title. The guid alone is shared by copies of one model, so
+        /// two copies open at once are told apart by path; a Save As starts a
+        /// new key, which costs a sample and never a false alarm.
+        /// </summary>
+        private static string WitnessKey(Document doc)
+        {
+            if (doc == null) return null;
+
+            string guid = null;
+            try { guid = RevitOperations.CreationGuid(doc); } catch { }
+            var path = "";
+            try { path = doc.PathName ?? ""; } catch { }
+            var title = "";
+            try { title = doc.Title ?? ""; } catch { }
+
+            return (guid ?? "") + "|" + path + "|" + title;
+        }
+
+        /// <summary>
+        /// "Is this element still in the model?" for HeronRollbackWitness:
+        /// true, false, or null when Revit could not be asked. Used at once and
+        /// never stored, so the Document it closes over is not kept.
+        /// </summary>
+        private static Func<string, bool?> Resolver(Document doc)
+        {
+            return uniqueId =>
+            {
+                if (doc == null) return null;
+                try { return doc.GetElement(uniqueId) != null; }
+                catch { return null; }
+            };
+        }
+
+        /// <summary>
+        /// The permanent DocumentChanged listener, subscribed in OnStartup.
+        /// </summary>
+        internal static void Listen(Autodesk.Revit.ApplicationServices.ControlledApplication application)
+        {
+            application.DocumentChanged += OnDocumentChanged;
+        }
+
+        internal static void StopListening(Autodesk.Revit.ApplicationServices.ControlledApplication application)
+        {
+            application.DocumentChanged -= OnDocumentChanged;
+        }
+
+        /// <summary>
+        /// What Revit reports after every transaction in every open model - the
+        /// minimal added-ids collector the rollback check needs, and the undo
+        /// watcher that keeps a modeller's Ctrl+Z from reading as Heron's loss.
+        ///
+        ///   committed while a job    the elements it added are counted, and
+        ///   is watched               up to 200 sampled by UniqueId
+        ///   a group rolled back      what Revit says it removed, compared with
+        ///   while a job is watched   what the job added - carried on the reply
+        ///                            for NEEDS-CHECKING, decided on by nothing
+        ///   undone / redone          a kept job's own undo entry marks its
+        ///                            elements as expected to go, or back
+        ///
+        /// CHEAP WHEN THERE IS NOTHING TO WATCH, because this runs on every
+        /// edit the modeller makes: one comparison when nothing is kept and no
+        /// job is armed. AND NOTHING ESCAPES IT - this is Revit's own thread,
+        /// inside Revit's own commit.
+        /// </summary>
+        private static void OnDocumentChanged(object sender,
+            Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
+        {
+            try
+            {
+                var armed = Witness.Armed;
+                if (armed == null && !Witness.Any) return;
+
+                var operation = e.Operation;
+                if (operation == Autodesk.Revit.DB.Events.UndoOperation.TransactionUndone
+                    || operation == Autodesk.Revit.DB.Events.UndoOperation.TransactionRedone)
+                {
+                    if (!Witness.Any) return;
+                    var key = WitnessKey(e.GetDocument());
+                    if (operation == Autodesk.Revit.DB.Events.UndoOperation.TransactionUndone)
+                        Witness.Undone(key, e.GetTransactionNames());
+                    else
+                        Witness.Redone(key, e.GetTransactionNames());
+                    return;
+                }
+
+                if (armed == null) return;
+
+                var doc = e.GetDocument();
+                if (WitnessKey(doc) != armed.Document) return;
+
+                if (operation == Autodesk.Revit.DB.Events.UndoOperation.TransactionCommitted)
+                {
+                    foreach (var id in e.GetAddedElementIds())
+                    {
+                        if (!armed.Counts(id.ToString())) continue;
+                        Element element = null;
+                        try { element = doc.GetElement(id); } catch { }
+                        if (element != null) armed.Sampled(element.UniqueId);
+                    }
+                }
+                else if (operation == Autodesk.Revit.DB.Events.UndoOperation.TransactionGroupRolledBack)
+                {
+                    var removed = new List<string>();
+                    foreach (var id in e.GetDeletedElementIds()) removed.Add(id.ToString());
+                    armed.RollbackNamed(removed);
+                }
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Rollback watch missed a change: " + ex.Message);
+            }
+        }
 
         /// <summary>
         /// How long a chat's carried values survive without being touched.
@@ -2463,6 +2792,17 @@ namespace Heron.Revit.Addin
                          .Append("\"];\n");
                     how.Add(name + " - Heron's failure discipline, for the fragment's own "
                             + "edit mode");
+                    continue;
+                }
+
+                // D-125: the switch that says "run me with no transaction
+                // open". There is nothing to hand the fragment, so it is bound
+                // as a constant it can ignore - the declaration is the point.
+                if (name == NoTransactionNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("bool ").Append(name).Append(" = true;\n");
+                    how.Add(name + " - run with no transaction open (D-125)");
                     continue;
                 }
 
@@ -4250,7 +4590,7 @@ namespace Heron.Revit.Addin
         /// ELEMENT TYPES TOO, in the one walk: an id an earlier answer printed
         /// may be a type's, and the walk stops as soon as every id is found.
         /// </summary>
-        private static object ElementsWithTypedIds(Document doc, List<string> typed,
+        internal static object ElementsWithTypedIds(Document doc, List<string> typed,
                                                    out string problem)
         {
             problem = null;
@@ -5627,6 +5967,15 @@ namespace Heron.Revit.Addin
         /// The same name is in brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string EditScopeNeed = "editScopeFailures";
+
+        /// <summary>
+        /// The ambient need that says a fragment must run with NO transaction
+        /// open and opens none of its own - D-125, for a call Revit refuses
+        /// inside one, such as changing the active view. Unlike EditScopeNeed
+        /// it is allowed on the read and show paths. The same name is in
+        /// brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string NoTransactionNeed = "noTransactionOpen";
 
         /// <summary>
         /// The ambient need that hands a reloading fragment its answer to

@@ -9,7 +9,7 @@ semantic-identity: "put the Level 2 ceiling plan on screen"
 kind: action
 domain: revit.views
 capability: OPEN_VIEW
-version: 2
+version: 3
 source: OFFICIAL
 risk: EXECUTE
 
@@ -50,9 +50,9 @@ purpose: >
   a sheet in Project2 and a 3D view in Project1 - and only its "already on
   screen" answer ever worked there. Measured 2026-10-13 on Project1, Revit
   2020 (FRAGMENT-ISSUES 5b-456): with no transaction open the same call opens
-  the view, a TransactionGroup alone included. This card declares the ambient
-  `editScopeFailures` need, and the add-in runs it inside the job's group with
-  no transaction open (D-112, widened by D-115). Revit's own words now come
+  the view, a TransactionGroup alone included. Version 2 declared the ambient
+  `editScopeFailures` need so the add-in would run it inside the job's group
+  with no transaction open (D-112, widened by D-115). Revit's own words now come
   FIRST in a refusal, because a finding is shown cut short - the add-in cuts
   every list item to about sixty characters.
 
@@ -62,19 +62,28 @@ purpose: >
   it names one openable view; the refusal for two STARTS with the spellings to
   use. Run on sheets on 2026-10-13, Revit 2020, before and after (5b-456).
 
+  **VERSION 3: THE SAME CODE, AND THE SWITCH THAT SAYS WHAT IT NEEDS** -
+  `noTransactionOpen` (D-125) in place of `editScopeFailures`. The write path
+  runs it exactly as before, inside the job's group with no transaction open;
+  and the show door now runs it too, with Changes OFF, because that switch only
+  says "none open" where `editScopeFailures` said "opens its own", which the
+  add-in refuses everywhere but the write path (FRAGMENT-ISSUES 5b-498). Its
+  `impl/` did not move, so its proof stands. Its code's header still names
+  `editScopeFailures`: editing it would make that proof stale.
+
 contract:
   needs:
     - name: uidoc
       type: UIDocument
     - name: doc
       type: Document
-    - name: editScopeFailures
+    - name: noTransactionOpen
       # NEVER USED BY THE CODE. Declaring it is the switch that has the add-in
-      # run this inside the job's TransactionGroup with NO transaction open
-      # (D-112, D-115) - Revit refuses a view change inside one (5b-456). It
-      # also refuses this fragment on the read path, which revit_read already
-      # does for anything declared EXECUTE.
-      type: IFailuresPreprocessor
+      # run this with NO transaction open on every path - inside the job's
+      # TransactionGroup on the write path - because Revit refuses a view
+      # change inside one (5b-456, D-115, D-125). Unlike editScopeFailures,
+      # which this declared until version 3, it is allowed on the show door.
+      type: bool
       source: ambient
     - name: viewName
       # The view's name as the Project Browser shows it, or "Kind: name" when

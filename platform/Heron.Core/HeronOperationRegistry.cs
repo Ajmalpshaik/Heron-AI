@@ -158,11 +158,36 @@ namespace Heron.Core
                 // refusal can say so in the user's own terms.
                 { "preview_move",       HeronRisk.Analyze },
 
+                // ANALYZE - a picture of one view, handed back to the chat so
+                // it can look at what it did (D-123, RevitCapture.cs). Given
+                // element ids it makes a temporary 3D view, which needs a
+                // transaction - the first Analyze operation to open one. What
+                // keeps it at Analyze is that the TransactionGroup around it
+                // is ALWAYS rolled back: there is no apply flag to send, so
+                // nothing in a request can keep the view. The picture is
+                // written into Heron's own Derived folder, read back and
+                // deleted - never put anywhere shared, which is what Article
+                // 10 and D-107 mean by an export.
+                { "capture_view",       HeronRisk.Analyze },
+
                 // EXECUTE - a non-destructive model action. Selecting alters
                 // what is highlighted, not what exists, so Ctrl+Z has nothing
                 // to undo afterwards. It is still the first thing the user can
                 // SEE, which is why it is not merely a Read.
                 { "select_by_category", HeronRisk.Execute },
+
+                // EXECUTE - Revit's own Temporary Hide/Isolate, in the active
+                // view, and its reset. FIXED CODE IN THE ADD-IN, never a
+                // fragment's: Revit takes a temporary isolate only inside a
+                // transaction, and a transaction opened for arbitrary fragment
+                // code with Changes OFF would be a write path with no switch in
+                // front of it. So the one transaction here is in
+                // RevitTemporaryView.cs, and it calls IsolateElementsTemporary,
+                // IsolateCategoriesTemporary or DisableTemporaryViewMode and
+                // nothing else. The view's saved visibility is untouched - the
+                // Temporary Hide/Isolate border is Revit saying so.
+                { "isolate_temporary",  HeronRisk.Execute },
+                { "reset_temporary",    HeronRisk.Execute },
 
                 // ANALYZE - runs a fragment's own C# against the model and
                 // reports what it left behind. It is here rather than at
@@ -181,6 +206,22 @@ namespace Heron.Core
                 //
                 // Running a fragment that WRITES is the row below.
                 { "run_fragment_read",  HeronRisk.Analyze },
+
+                // EXECUTE - THE SAME EXECUTOR AS run_fragment_read, and the
+                // same path through it: NO TRANSACTION. What differs is only
+                // the level the gate reads for the name, so a fragment that
+                // selects, zooms or opens a view can run with Changes OFF -
+                // HeronPermissions.ReadOnlyCeiling is Execute, "changes what
+                // is shown, never what exists".
+                //
+                // THE GUARANTEE IS STILL REVIT'S. With no transaction open,
+                // Revit refuses every change to the model, so the worst this
+                // name can do is what an Execute fragment is declared to do:
+                // the selection, the camera, the active view. A fragment that
+                // needs a transaction - a temporary isolate, a hide - fails
+                // here in Revit's own words rather than running, which is why
+                // the isolate has the fixed operations above.
+                { "run_fragment_show",  HeronRisk.Execute },
 
                 // MODIFY - the same executor, inside a TransactionGroup, so a
                 // fragment at risk: MODIFY can finally run. 130 of them had no

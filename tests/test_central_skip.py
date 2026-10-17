@@ -47,6 +47,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WRITE = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitWrite.cs")
+FRAGMENT = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
 READER = os.path.join(ROOT, "tools", "api-surface", "bin", "Debug", "ApiSurface.dll")
 CACHE = os.path.join(ROOT, "tools", "api-surface", ".assemblies")
 
@@ -179,10 +180,26 @@ def main():
     # FRAGMENT-ISSUES row 10: SafeRollBack was void, so a group that was not
     # Started, or a RollBack() that threw, still left the reply saying "rolled
     # back completely". Read as text, like the sections above.
-    rollback = body_of(code, "private static bool SafeRollBack(")
-    check(bool(rollback) and "TransactionStatus.RolledBack" in rollback,
-          "SafeRollBack answers whether Revit reports the group ROLLED BACK")
+    #
+    # THE MOVE KEEPS NO ROLLBACK OF ITS OWN since 2026-10-17: every group in
+    # Heron is rolled back through RevitFragment.RollBackAndCheck, and the
+    # SafeRollBack that answers Revit's status is the one it calls. So that
+    # half of the claim is read where it now lives, and this file is checked
+    # for going through it. tests/test_rollback_witness.py checks every other
+    # rollback the same way, and RUNS the rule behind `Held`.
+    try:
+        fragment = without_comments(io.open(FRAGMENT, encoding="utf-8").read())
+    except (IOError, OSError):
+        fragment = ""
+    rollback = body_of(fragment, "private static bool SafeRollBack(TransactionGroup")
+    check(bool(rollback) and "TransactionStatus.RolledBack" in rollback
+          and re.search(r"SafeRollBack\s*\(", code) is None
+          and re.search(r"\.\s*RollBack\s*\(", code) is None
+          and len(re.findall(r"RevitFragment\.RollBackAndCheck\(\s*group\b", code)) >= 2,
+          "the move's rollbacks go through the helper whose SafeRollBack answers "
+          "whether Revit reports the group ROLLED BACK")
     check("rolled back completely" in raw and "RollbackNotConfirmed" in code
+          and re.search(r"rolledBack\s*=\s*after\.Held\s*;", code) is not None
           and re.search(r"rolledBack\s*\?\s*\"The move failed and was rolled back completely",
                         raw) is not None,
           "and \"rolled back completely\" is said only on that answer, never on its own")

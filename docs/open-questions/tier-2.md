@@ -399,3 +399,111 @@ out of AppData is shape 3, a decision about the platform boundary; *no preferenc
 decision to make it.
 
 ---
+
+### ✅ Q-64 — Is a picture of a Revit view "model data" under D-82, or may it be handed to the chat? → **Not model data** *(found and answered 2026-10-17)*
+
+**What is asked.** The owner asked on 2026-10-17 for a read-only tool that returns a PNG of a Revit view
+into the chat, so the AI can check its own work. It is built as `revit_view_image` and the add-in's
+`capture_view` - [D-123](../decisions/D-123.md), **Proposed** - and it is not merged.
+[D-82](../decisions/D-82.md) says *"Revit models, families, model data - never leave the PC"*;
+[D-26](../decisions/D-26.md) put element data - counts, sizes, parameters - in the conversation. A
+picture sits between the two, and neither was written with one in mind.
+
+**The two answers, and what each does:**
+
+1. **Not model data.** It cannot be opened or rebuilt into a model, and it is what the model shows, the
+   same kind of thing as a count. The tool ships as D-123 describes.
+2. **Model data.** It shows the geometry and layout of the building at a glance, and in the conversation
+   it has gone to the cloud. **The tool does not ship**: its pull request is closed, or the tool and
+   `capture_view` are taken out of it before merge.
+
+D-123 holds the second thing to accept with the first - that `capture_view` is the first ANALYZE
+operation to open a transaction, always rolled back - and [NEEDS-CHECKING group ER](../needs-checking/group-er.md)
+the run that would prove it.
+
+**Answer: NOT MODEL DATA — 2026-10-17. See [D-123](../decisions/D-123.md), now Accepted.** The owner:
+*"A picture is not model data, ship it"*. `revit_view_image` ships as D-123 describes; it is still
+DRAFT until [NEEDS-CHECKING group ER](../needs-checking/group-er.md) is run in Revit.
+
+---
+
+### ✅ Q-65 — Does selecting or zooming to elements inside a linked model count as "touching" it under Article 7? → **No - it needs no confirmation** *(found and answered 2026-10-17)*
+
+**The words.** [Article 7](../../HERON_CONSTITUTION.md): *"Do not execute destructive Revit operations
+without permission. Deleting elements, purging, bulk parameter writes, family reloads, workset changes and
+anything touching a linked model require explicit confirmation for that specific operation."*
+
+**Why it is asked now.** On 2026-10-17 Heron gained a door that changes only what is on screen -
+`revit_show`, through the add-in's `run_fragment_show` (EXECUTE, no transaction open, runs with Changes off)
+- and a fragment for it, `ZOOM_TO_LINKED_ELEMENTS` (FRG-SEL-039, DRAFT), which zooms the active view to
+elements inside a loaded link and, on Revit 2023 and later, selects them as linked elements. It changes
+nothing in the model and nothing in the link. Whether that is "touching" the link is not something Heron can
+decide for the owner.
+
+**Two readings, and what each costs.**
+
+1. **It does not count.** The Article's heading is *destructive* operations, and a selection or a zoom
+   destroys nothing - Ctrl+Z has nothing to undo after either. `ZOOM_TO_LINKED_ELEMENTS` would then run
+   like `ZOOM_TO_ELEMENTS`, with no question in front of it.
+2. **It counts.** "Anything touching a linked model" is read literally: the chat asks for the modeller's
+   yes, in the chat, before every zoom or selection inside a link - one more turn each time.
+
+**What Heron does until the owner answers: the reading that ASKS (2).** `heron_tools.link_refusal` holds any
+fragment declared above ANALYZE whose contract takes `linkName` until the host says the user agreed, by
+calling `revit_show` again with `link_confirmed=true`; nothing is sent to Revit before that. A READ of a link
+is not held - [D-59](../decisions/D-59.md) settled reading one, and `revit_read` never asked. **What is
+NOT covered either way:** `revit_change` holds nothing in code for a link - it tells the host to ask, as
+[FRAGMENT-ISSUES row 5b-161](../fragment-issues/section-5b-rows-151-175.md) records for every destructive
+change.
+
+**Ajmal PS decides.** If the answer is (1), the change is one line in `link_refusal` and one in
+`tests/test_read_door.py`, and this question is promoted to a decision. Measuring either way:
+[NEEDS-CHECKING Group ES](../needs-checking/group-es.md) ES5 to ES7 run the fragment itself.
+
+**Answer: (1), it does not count - 2026-10-17. See [D-124](../DECISIONS.md).** The owner: *"Q-64:
+selecting/zooming linked elements is not touching, no confirmation"* - this question's first number; it is Q-65 since #556 gave Q-64 to another on 2026-10-17. The hold was taken out the same day
+rather than switched off: `link_refusal`, `LINK_NEEDS` and `revit_show`'s `link_confirmed` are gone, and
+`tests/test_read_door.py` holds that a fragment the show door may run goes through it whether or not it
+works inside a link. Changing a link is still Article 7's, with its confirmation.
+
+---
+
+### 🟠 Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
+
+**What was found**, preparing [NEEDS-CHECKING Group EQ](../needs-checking/group-eq.md) - a core set of PROVEN
+fragments proved again on every release, to back the *"2020 → latest"* claim with evidence. Three things in
+Heron stop it, each on purpose:
+
+1. **`tools/batch-prove.py` refuses a PROVEN or PRODUCTION fragment** as `ALREADY` and never sends it to Revit.
+   Its docstring says *"There is deliberately no flag to override that"* - it was written against re-proving
+   unchanged code on the same release, which bought nothing.
+2. **`heron_validate.py accept` refuses a PROVEN fragment whose proof still matches its code** - *"Signing it
+   again would overwrite a good proof with the same thing."*
+3. **A fragment's `proof:` holds ONE record**, and its release is prose inside `model:`.
+   [`brain/heron_matrix.py`](../../brain/heron_matrix.py) reads one release per fragment and says so: *"a proof
+   on 2024 is evidence about 2024 ... Nothing here spreads a proof sideways"*, and *"if PROOF_REQUIRED ever
+   grows a `revit:` field this should read that instead."*
+
+So a run of `create-floor` on 2025 that passes both halves has nowhere to be written, and the only way to
+record it today would overwrite the 2024 proof. **A second route has the same problem from the other side**:
+`second_route` is a field of that one record, and `accept` will not reopen it.
+
+**Recommended - reasoned, not built:** keep `proof:` as the record that made the fragment PROVEN, and add a
+list beside it, **`proof.releases:`**, one entry per further release, each with the same fields D-30 asks for
+(`date`, `by`, `model`, `positive_case`, `negative_case`) and the fingerprint of the code it ran. Then:
+
+- `batch-prove --release` runs only PROVEN fragments, and only on a release they have no entry for. It writes
+  drafts and never touches `heron-status` - the guarantee it already checks.
+- `accept --release` writes one entry, signed by a person, and refuses a release already recorded.
+- `heron_matrix.py` marks a cell PROVEN from either the proof or an entry - never from the claim.
+- A second route for a PROVEN fragment is written into `proof.second_route` by `accept --second-route`,
+  signed, from a recorded run - never typed by hand.
+
+**What the other choices cost.** Leaving it as it is keeps the claim unbacked. Re-proving into `proof:`
+loses the earlier release's record. A separate register outside the fragment would be read by nothing
+that reads fragments today.
+
+**Ajmal PS decides.** Until he does, EQ1 to EQ6 (loading the add-in on each release) and EQ8 (the routes
+themselves, by hand in Revit) can still be run and recorded in Group EQ; only EQ7 waits.
+
+---

@@ -38,7 +38,8 @@ TWO DOORS SINCE 2026-09-23, AND ONE SENTENCE. `revit_read` takes the same
 values and drops the same undeclared names, so it calls the same helper - and
 both print through `_ignored_lines`, so the words a user sees cannot drift
 between the door that reads and the door that writes. Section 2 now holds
-both doors to it, and the sentence to what it has always said.
+both doors to it, and the sentence to what it has always said. `revit_show`
+joined them on 2026-10-17 - the third door, held to the same two lines.
 """
 
 import io
@@ -114,7 +115,7 @@ def main():
     check(said is not None and "It takes:" in said,
           "and names what the capability does take, so the fix is one line away")
 
-    for door in ("revit_change", "revit_read"):
+    for door in ("revit_change", "revit_read", "revit_show"):
         body = body_of(door)
         check(body is not None, "%s is still in the server" % door)
         if body is None:

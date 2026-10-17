@@ -176,6 +176,28 @@ _KNOWN = {
                           "two open models share that name, so naming one cannot say which "
                           "was meant - nothing was written"),
 
+    # --- Revit's temporary isolate, in the active view (RevitTemporaryView) -
+    #
+    # The first four return before its transaction opens, so nothing in the
+    # view changed. The last two are Revit refusing inside it: rolled back,
+    # and a temporary isolate never touches the model in any case.
+    "ambiguous_request": (REFUSED, FIX_FIRST,
+                          "element ids and a category were both given - two different "
+                          "requests - so nothing was isolated"),
+    "nothing_to_isolate": (REFUSED, FIX_FIRST,
+                          "nothing was named to isolate - no element ids and no category"),
+    "no_view":           (REFUSED, FIX_FIRST,
+                          "the model in front has no active view to work in"),
+    "not_this_view":     (REFUSED, FIX_FIRST,
+                          "the active view has no temporary hide/isolate - a sheet, a "
+                          "schedule or a legend - so nothing was done"),
+    "isolate_failed":    (ROLLED_BACK, FIX_FIRST,
+                          "Revit refused the temporary isolate, and the view's own "
+                          "visibility settings were not touched"),
+    "reset_failed":      (ROLLED_BACK, FIX_FIRST,
+                          "Revit refused to end the temporary hide/isolate; nothing in the "
+                          "model was touched"),
+
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
                           "Revit took it and has not finished; it is still working"),
@@ -258,6 +280,41 @@ _KNOWN = {
     "chain_contradiction": (REFUSED, FIX_FIRST,
                           "the request both resets the chain and expects to consume from "
                           "it, so it could only fail"),
+
+    # --- a picture for the chat (capture_view, D-123) ----------------------
+    #
+    # Every one of these returns before the TransactionGroup is started, so
+    # nothing was made - the temporary 3D view of the elements way included.
+    "both_given":        (REFUSED, FIX_FIRST,
+                          "a view name and element ids were both given - one picture is one "
+                          "or the other, and nothing was pictured"),
+    "no_view":           (REFUSED, FIX_FIRST,
+                          "Revit had no view in front to picture, and none was named"),
+    "no_such_view":      (REFUSED, FIX_FIRST, "no view in that model has that name"),
+    "ambiguous_view":    (REFUSED, FIX_FIRST,
+                          "more than one view has that name; the answer lists each one as it "
+                          "can be typed back"),
+    "not_printable":     (REFUSED, FIX_FIRST,
+                          "that view is a template, or of a kind Revit cannot export as a "
+                          "picture"),
+    "bad_ids":           (REFUSED, FIX_FIRST, "the element ids could not be read"),
+    "no_such_elements":  (REFUSED, FIX_FIRST,
+                          "some of those ids name no placed element in the model in front"),
+    "nothing_to_frame":  (REFUSED, FIX_FIRST,
+                          "none of those elements has a 3D extent that is not a datum, a link "
+                          "or annotation"),
+    "no_isometric_type": (REFUSED, STOP,
+                          "the model has no 3D view type to make a temporary view from"),
+    # THESE TWO RAN: the picture was taken, or Revit failed part way, and the
+    # group around it was rolled back before the answer. Whether Revit
+    # CONFIRMED the rollback is in the add-in's own message, which is passed
+    # on unchanged.
+    "capture_failed":    (ROLLED_BACK, FIX_FIRST,
+                          "Revit could not take the picture, and what it made for it was "
+                          "rolled back"),
+    "picture_too_large": (ROLLED_BACK, FIX_FIRST,
+                          "the picture was too large to hand to the chat; a smaller width "
+                          "will fit, and what was made for it was rolled back"),
 
     # --- the line itself, refused before anything read it -------------------
     "request_too_long":  (NEVER_RAN, FIX_FIRST,

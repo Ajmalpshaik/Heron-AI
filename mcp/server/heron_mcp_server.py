@@ -45,6 +45,13 @@ add-in counts the model around every read because that refusal once let an
 element through (FRAGMENT-ISSUES row 5b-350); it works with Changes OFF; and it
 refuses a fragment declared above ANALYZE before anything is sent.
 
+A SECOND changes only what is on screen: revit_show, through run_fragment_show
+- the same executor, the same missing transaction, declared EXECUTE so a
+fragment that selects, zooms or opens a view runs with Changes OFF, and refusing
+anything above EXECUTE before it is sent. Revit's Temporary Hide/Isolate needs
+a transaction, so it is not a fragment at all: revit_isolate_temporary and
+revit_reset_temporary call FIXED operations in the add-in, EXECUTE as well.
+
 EVERY CHAT IS TOLD THE RULES, AND EVERY TOOL CARRIES ITS LABELS. The server's
 instructions are the Instruction Registry's `host.chat`, with the Constitution's
 Articles assembled at start-up (heron_brain.host_instructions), and each tool's
@@ -86,6 +93,8 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import base64
+import binascii
 import functools
 import inspect
 import io
@@ -154,6 +163,18 @@ try:                                                       # noqa: E402
     from mcp.types import ToolAnnotations as _Annotations
 except ImportError:
     _Annotations = None
+
+# A PICTURE GOES BACK AS THE SDK'S OWN IMAGE HELPER, and it moved with the
+# server class - so it is looked up the same way, newest first (D-45). Both
+# SDKs carry it beside the class above; None means an SDK without one, and
+# then revit_view_image says so rather than the server failing to start.
+try:                                                       # noqa: E402
+    from mcp.server.mcpserver import Image as _Image       # SDK 2.x
+except ImportError:
+    try:
+        from mcp.server.fastmcp import Image as _Image     # SDK 1.x
+    except ImportError:
+        _Image = None
 
 _TAKES_LABELS = (_Annotations is not None
                  and "annotations" in inspect.signature(_Server.tool).parameters)
@@ -380,6 +401,11 @@ def _recorded(fn):
 
 
 def _note(tool, started, seconds, reply=None, error=None, outcome=None):
+    # A TOOL THAT ANSWERS WITH A PICTURE ANSWERS WITH A LIST - its words, then
+    # the image (revit_view_image). The list shows the words, never the repr
+    # of an image object.
+    if isinstance(reply, (list, tuple)):
+        reply = next((part for part in reply if isinstance(part, str)), "")
     try:
         _companion_module().ACTIVITY.record(tool, started, seconds, reply=reply, error=error,
                                             outcome=outcome)
@@ -1677,8 +1703,15 @@ def revit_change(capability: str = "", values: str = "",
     # THE CLIENT'S RULE, CALLED - the one `fragment --write --apply` asks -
     # for the reason `risk_refusal` above is called rather than copied. The
     # status is read from the fragment's own files, never from the index.
+    # A JOB THAT CHANGES ONLY THE SCREEN needs neither this door's switch nor
+    # its proof: revit_show runs it with Changes off and no transaction open.
+    # That door is one search away rather than given to every chat (D-118's
+    # budget), so the two refusals a chat meets here first say where it is.
+    elsewhere = _shown_elsewhere(root, folder, capability)
+
     unproven = bridge.unproven_refusal(capability, brain.proof_status(folder))
     if unproven:
+        unproven += elsewhere
         return _ended("refused", unproven)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
@@ -1785,7 +1818,8 @@ def revit_change(capability: str = "", values: str = "",
     failure = analyse(reply, writes=tools.writes("revit_change"))
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
-                + _what_to_type(failure, capability))
+                + _what_to_type(failure, capability)
+                + (elsewhere if failure.code == "write_disabled" else ""))
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
@@ -2667,6 +2701,21 @@ def _proof_line(capability, folder):
             % (capability, status, where, when))
 
 
+def _shown_elsewhere(root, folder, capability):
+    """
+    One sentence sending a capability declared EXECUTE or below to revit_show,
+    or "" for anything that changes the model - or whose risk cannot be read,
+    which is never guessed to be harmless.
+    """
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+    level = tools.level_named(bridge.fragment_risk(card))
+    if level is None or level > tools.EXECUTE:
+        return ""
+    return (" '%s' changes only what is shown, so revit_show runs it with "
+            "Changes off and no transaction open - a DRAFT included, since "
+            "it keeps nothing in the model." % capability)
+
+
 @server.tool()
 def revit_read(capability: str = "", values: str = "",
                expect_from: str = "", request: str = "",
@@ -2848,6 +2897,304 @@ def revit_read(capability: str = "", values: str = "",
                      "read, so that is not measured - update it (FRAGMENT-ISSUES row "
                      "5b-350).")
     return _ended("ok", "\n".join(lines))
+
+
+@server.tool()
+def revit_show(capability: str = "", values: str = "", expect_from: str = "",
+               request: str = "", ctx: _Context = None) -> str:
+    """
+    Show the user something in Revit - select it, zoom to it - with one of
+    Heron's capabilities that changes only what is ON SCREEN, and change
+    nothing in the model: "select these", "zoom to the beams in the
+    structural link". To isolate in the active view use
+    revit_isolate_temporary; revit_reset_temporary ends it.
+
+    It works with Changes OFF: no transaction is open, so Revit itself refuses
+    any change to the model. A capability declared above EXECUTE is refused
+    before anything is sent - a change is revit_change's.
+
+    `request`, `capability`, `values` and `expect_from` work as in revit_read.
+    Inside a linked model too, with no question first (D-124). The answer
+    names the pinned model and how far the capability is proven.
+    """
+    # Trimmed 2026-10-17 to the budget tests/test_tool_sizes.py holds (D-118);
+    # what left it is said here, and in the answer where it is needed:
+    #   - THE SHORT PATH is revit_read's: the user's own words as `request`
+    #     with `capability` empty run a phrasing a PROVEN capability declares,
+    #     every value given, in this call; anything else sends nothing and
+    #     hands back the candidates (_by_words).
+    #   - `values` is one "name=value" per line, e.g. alsoSelect=true.
+    #   - `expect_from` names the fragment whose result this acts on, and the
+    #     carried elements are checked to be THAT fragment's, as revit_change
+    #     checks them.
+    #   - What can change is the selection, the camera and the active view.
+    #   - INSIDE A LINK: selecting or zooming to linked elements is not
+    #     touching it - the owner's answer to Q-65, D-124 - so a capability
+    #     that takes linkName runs here like any other. Changing anything in a
+    #     link is still Article 7's.
+    matched = ""
+    if not (capability or "").strip() and (request or "").strip():
+        capability, handed_back = _by_words(request, "revit_show", values)
+        if capability is None:
+            return handed_back
+        matched = capability
+
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return _ended("refused",
+                      "Heron has nothing that does '%s', so nothing has been sent to "
+                      "Revit. Ask heron_lookup in your own words and it will name the "
+                      "capability Heron does have." % (capability or ""))
+
+    root = _repo_root()
+
+    # THE DOOR'S CEILING, FIRST, for revit_read's reason: a refusal costs
+    # nothing and touches nothing. The ceiling is this tool's own declared
+    # risk, EXECUTE - so MODIFY and above are refused here by the same
+    # function that refuses EXECUTE at revit_read.
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+    declared = bridge.fragment_risk(card)
+    refusal = tools.door_refusal("revit_show", declared, capability)
+    if refusal:
+        return _ended("refused", refusal)
+
+    # D-117's unproven_refusal IS NOT ASKED HERE, for its own items 3 and 4:
+    # a run that keeps nothing is not asked, and no transaction is open, so
+    # nothing can be kept in the model. A DRAFT runs and says DRAFT, as a
+    # read does (_proof_line below).
+
+    source_path = os.path.join(root, "brain", "fragments", folder,
+                               "impl", "any", "fragment.cs")
+    if not os.path.isfile(source_path):
+        return _ended("refused",
+                      "'%s' is described but has no code behind it yet. Nothing has "
+                      "been sent to Revit." % capability)
+
+    needs = bridge.fragment_needs(card)
+    if needs is None:
+        return _ended("refused",
+                      "'%s' could not be read with certainty - its contract is "
+                      "unclear, so nothing has been sent to Revit." % capability)
+
+    # THE SOURCE TRAVELS, NOT A NAME - for revit_change's reason.
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+
+    # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
+    # called from the client exactly as both other doors call it.
+    undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # NO "apply", EVER. run_fragment_show opens no transaction, exactly as
+    # run_fragment_read does, and that is the whole of this door's guarantee.
+    args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
+    _aim_at_pin(args)
+
+    supplied = _values_array(values)
+    if supplied:
+        args["values"] = supplied
+
+    consumes = (expect_from or "").strip()
+    if consumes:
+        args.pop("chain", None)
+        args["expectChain"] = consumes
+
+    # SAFE TO ASK TWICE unless it consumes the chain: selecting the same
+    # elements again, or zooming to them again, leaves the screen as it was.
+    # A consuming run replaces the chain, so a resend would be refused on
+    # expect_from - revit_read's reason, and its rule.
+    reply = session.request("run_fragment_show", op_args=args,
+                            response_timeout=configuration.fragment_timeout(),
+                            idempotent=not consumes, on_wait=_waiting(ctx))
+    session.close()
+    _ctx_reply(reply)
+
+    if consumes and reply and reply.get("error") == "unknown_outcome":
+        return _ended("failed",
+                      "The request reached Revit but its answer was lost, so Heron "
+                      "cannot tell whether %s ran. Nothing in the model was changed - "
+                      "no transaction is open - but if it ran, the result %s left has "
+                      "been used up. Run %s again, then this."
+                      % (capability, consumes, consumes))
+
+    failure = analyse(reply, writes=tools.writes("revit_show"))
+    if failure is not None:
+        return (_ended(_failure_ended(failure), explain(failure))
+                + _what_to_type(failure, capability))
+
+    # GOLDEN RULE 20. The add-in refused a different model on `expectProject`
+    # before running; this is the first call's pin. When it fires after a
+    # fragment that ACTED, the screen has already changed - so say that, as
+    # revit_select_by_category does, rather than "nothing has been sent".
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        if tools.level_named(declared) is not None \
+                and tools.level_named(declared) > tools.ANALYZE:
+            return _ended("failed",
+                          "%s ran in %s before Heron could tell that it is not the model "
+                          "this chat works on (%s). Only what is shown can have changed - "
+                          "the selection, the camera or the active view; nothing in either "
+                          "model was changed. Press Esc in Revit to clear a selection, or "
+                          "say 'use this model' to move this chat onto %s deliberately."
+                          % (capability, reply.get("document"), pinned.title,
+                             reply.get("document")))
+        return _ended("refused", wrong_model)
+
+    document = reply.get("document")
+    lines = ["%s ran in %s." % (capability, document)]
+    if matched:
+        lines.append(_matched_line(request, matched))
+
+    # A SELECTION OR A ZOOM IN A WINDOW NOBODY IS LOOKING AT is true and
+    # invisible - the one way this door can look as if it did nothing.
+    if reply.get("wasActiveDocument") is False:
+        lines.append("  %s is not the model in front in Revit, so whatever this showed "
+                     "is in a window the user is not looking at. Bring %s to the front "
+                     "to see it." % (document, document))
+
+    bound = reply.get("bound")
+    if bound:
+        lines.append("  inputs: %s" % bound)
+
+    lines.extend(_ignored_lines(undeclared, takeable))
+
+    left = _provides_lines(reply.get("provides"))
+    lines.extend(left or ["", "  It left nothing behind to report."])
+
+    lines.append("")
+    lines.append(_proof_line(capability, folder))
+    lines.append("Nothing in the model was changed: this runs with no transaction "
+                 "open, so Revit itself refuses any change. Only what is shown can "
+                 "have changed - the selection, the camera or the active view.")
+    return _ended("ok", "\n".join(lines))
+
+
+@server.tool()
+def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
+    """
+    Isolate elements in the ACTIVE Revit view, temporarily - Revit's own
+    Temporary Hide/Isolate - so the user sees only those. Changes nothing in
+    the model and works with Changes OFF.
+
+    Use when the user asks to "isolate these", "show only the ducts in this
+    view", "hide everything else for a moment".
+
+    Give ONE of:
+      ids       element ids as Revit prints them, comma separated - the ids an
+                earlier Heron answer gave, e.g. 925629, 925630
+      category  BIM words, comma separated - "ducts", "pipes, pipe fittings"
+    Both at once is refused: these elements, or everything of that kind, are
+    two different requests.
+
+    An isolate already on in the view is replaced, and the answer says so.
+    The view's saved visibility, its template and every element are untouched;
+    revit_reset_temporary, or Revit's own Reset Temporary Hide/Isolate, ends
+    it, and so does closing the model. A sheet, a schedule or a legend has no
+    temporary isolate and is refused.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # THE PIN TRAVELS WITH THE REQUEST, for revit_select_by_category's reason:
+    # the add-in checks it BEFORE the view changes.
+    reply = session.request("isolate_temporary",
+                            op_args={"ids": ids or "", "category": category or "",
+                                     "expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_isolate_temporary", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    # AFTER THE ACT, as for a selection: between two models made from one
+    # template the add-in's own check passes (5b-324), so a mismatch found
+    # here is an isolate that already happened in the wrong model's view.
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None and reply.get("isolated"):
+        _ended("failed")
+        return ("Heron isolated elements in \"%s\" of %s before it could tell that %s is "
+                "not the model this chat works on (%s). Only that view's temporary "
+                "display changed; nothing in either model was changed. Call "
+                "revit_reset_temporary, or use Revit's own Reset Temporary Hide/Isolate, "
+                "to end it - or say 'use this model' to move this chat onto %s."
+                % (reply.get("view"), reply.get("document"), reply.get("document"),
+                   pinned.title, reply.get("document")))
+    if wrong_model is not None:
+        return _ended("refused", wrong_model)
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    isolated = reply.get("isolated", 0)
+    if reply.get("isolatedBy") == "category":
+        what = "the %s" % (reply.get("categories") or "categories named")
+    else:
+        what = "%s element(s)" % "{:,}".format(isolated)
+
+    lines = ["Isolated %s in \"%s\", in %s." % (what, reply.get("view"), where)]
+    seen = reply.get("inView")
+    if seen is not None and seen != isolated:
+        lines.append("  Only %s of the %s are in this view at all - the rest are on "
+                     "another level, outside its range or hidden by its own settings, "
+                     "and isolating cannot show them here."
+                     % ("{:,}".format(seen), "{:,}".format(isolated)))
+    if reply.get("replacedEarlier"):
+        lines.append("  A temporary isolate was already on in this view, and this "
+                     "replaced it rather than adding to it.")
+    lines.append("This is Revit's Temporary Hide/Isolate: nothing in the model and "
+                 "nothing saved in the view changed. revit_reset_temporary ends it.")
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_reset_temporary() -> str:
+    """
+    End the Temporary Hide/Isolate in the ACTIVE Revit view - Revit's own
+    Reset Temporary Hide/Isolate - so the view shows what its own settings
+    show again. Changes nothing in the model and works with Changes OFF.
+
+    Use when the user says "show everything again", "reset the isolate",
+    "undo the isolate" after revit_isolate_temporary or Revit's own isolate.
+    When nothing is isolated or hidden temporarily it says so and does nothing.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    reply = session.request("reset_temporary",
+                            op_args={"expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_reset_temporary", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        if reply.get("reset"):
+            _ended("failed")
+            return ("Heron reset the temporary hide/isolate in \"%s\" of %s before it could "
+                    "tell that %s is not the model this chat works on (%s). Only that "
+                    "view's temporary display changed; nothing in either model was changed."
+                    % (reply.get("view"), reply.get("document"), reply.get("document"),
+                       pinned.title))
+        return _ended("refused", wrong_model)
+
+    return "%s (%s, Revit %s, session %s)" % (
+        reply.get("said") or "Done.", reply.get("document"),
+        session.revit_version, session.pid)
 
 
 @server.tool()
@@ -3384,6 +3731,10 @@ def _cannot_run():
         "compiles it inside Revit with no transaction open, so Revit itself "
         "refuses any change; it needs no Changes switch, and it refuses "
         "anything declared above ANALYZE. "
+        "One that only changes what is SHOWN - the selection, the camera, the "
+        "active view - runs through revit_show, the same executor with no "
+        "transaction open, also with Changes off; it refuses anything declared "
+        "above EXECUTE. Isolating in the active view is revit_isolate_temporary. "
         "A fragment that WRITES reaches Revit through revit_change, which KEEPS "
         "what it did with no preview (D-99), and only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
@@ -3549,7 +3900,8 @@ def heron_method(job: str = "") -> str:
     lines.extend("  " + line for line in found["purpose"].rstrip().splitlines())
     lines.append("")
     lines.append("The capabilities it uses%s - READ and ANALYZE run through "
-                 "revit_read, the rest through revit_change:"
+                 "revit_read, EXECUTE through revit_show, the rest through "
+                 "revit_change:"
                  % (" on Revit %s" % revit if revit else ""))
     for s in found["uses"]:
         lines.append("  %-32s %-8s %-9s %s"
@@ -5095,6 +5447,104 @@ def revit_views() -> str:
                  "schedule instance, so schedules are not reported as unplaced. "
                  "Nothing was changed.")
     return "\n".join(lines)
+
+
+@server.tool()
+def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> list:
+    """
+    Take a picture of a Revit view and LOOK at it - so you can check what you
+    just did the way a modeller glances at the screen, instead of trusting a
+    count.
+
+    Say what to picture in one of two ways:
+
+    - `view`: a view or sheet name as the Project Browser shows it. Empty
+      means the view in front. It is pictured exactly as it stands - its
+      template, crop and filters - and nothing about it is changed. If two
+      views share the name, the answer lists each as "ViewType: Name" to type
+      back.
+    - `elements`: element ids, comma separated, as Heron's answers print them.
+      Heron frames just those in a temporary isometric 3D view - a section box
+      round them with a margin, model categories only, levels, grids and links
+      left out of the box - and takes the view away again.
+
+    `width` is the picture's width in pixels, 320 to 2400 (default 1280).
+
+    IT CHANGES NOTHING. The temporary view is made inside a group Revit always
+    rolls back - there is no way to keep it - and the picture is written into
+    Heron's own folder on this PC, read back and deleted. Nothing is exported
+    anywhere another person reads. Use revit_views first if you need a view's
+    name.
+    """
+    if _Image is None:
+        return _ended("refused",
+                      "This MCP SDK has no image type, so Heron cannot hand a picture to the "
+                      "chat. Update it with:  pip install --user --upgrade mcp. Nothing has "
+                      "been sent to Revit.")
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # THE PIN TRAVELS WITH THE REQUEST, as for a selection: given element ids
+    # the add-in makes a view before it answers, so the guard has to stand in
+    # front of that, not behind it. Empty when this chat has pinned nothing.
+    reply = session.request("capture_view",
+                            op_args={"view": (view or "").strip(),
+                                     "elementIds": (elements or "").strip(),
+                                     "pixelWidth": width,
+                                     "expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_view_image", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return _ended("refused", wrong_model)
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    try:
+        picture = base64.b64decode(reply.get("png") or "", validate=True)
+    except (TypeError, ValueError, binascii.Error):
+        picture = b""
+    if not picture.startswith(b"\x89PNG"):
+        _ended("failed")
+        return ("%s answered without a picture Heron can read, so there is nothing to "
+                "look at. Ask again; if it repeats, the add-in may be older than this "
+                "server." % where)
+
+    if reply.get("mode") == "elements":
+        lines = ["A picture of %d element(s) in %s, in a temporary 3D view, %s px wide."
+                 % (reply.get("shown", 0), where, reply.get("pixelWidth"))]
+        if reply.get("leftOut"):
+            lines.append("Left out of the frame: %s." % reply.get("leftOut"))
+    else:
+        lines = ["A picture of %r (%s) in %s, %s px wide."
+                 % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth"))]
+    if reply.get("widthClamped"):
+        lines.append("The width asked for was outside 320 to 2400 px, so %s was used."
+                     % reply.get("pixelWidth"))
+
+    # THE TWO PROMISES, SAID ONLY WHEN THE ADD-IN SAYS THEY WERE KEPT.
+    if reply.get("rolledBack") is False:
+        lines.append("! Revit did NOT confirm the temporary view was taken away. Look under "
+                     "3D Views in the Project Browser, and at Undo, before going on.")
+    elif reply.get("mode") == "elements":
+        lines.append("The temporary view is gone - Revit rolled it back. Nothing was changed.")
+    else:
+        lines.append("Nothing was changed.")
+    if reply.get("fileDeleted") is False:
+        lines.append("! The picture's file could not be deleted from Heron's captures "
+                     "folder on this PC. That folder is safe to empty.")
+
+    return [NEWLINE.join(lines), _Image(data=picture, format="png")]
 
 
 def _schedules_counted(sheets):
