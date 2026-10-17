@@ -1,6 +1,6 @@
 ---
 name: heron-session
-description: What a Heron development session is told without asking - at the start, where this branch stands against origin/main and how many fragments are PROVEN and DRAFT, and on any system but Windows that no Revit and no Heron tools can be reached; just before a pull request is merged or marked ready, which commits on origin/main the branch does not have. Advice only, never a gate. Also where every Heron hook writes down what it decided, and how to read that with tools/hook-report.py. Use when the session-start line or a "main has moved" note needs explaining, when a hook seems silent or noisy, or when asked whether the hooks run at all. For developing Heron; not part of what a modeller installs.
+description: What a Heron development session is told without asking - at the start, where this branch stands against origin/main and how many fragments are PROVEN and DRAFT, and on any system but Windows that no Revit can be reached and Heron serves only its library tools; just before a pull request is merged or marked ready, which commits on origin/main the branch does not have. Advice only, never a gate. Also where every Heron hook writes down what it decided, and how to read that with tools/hook-report.py. Use when the session-start line or a "main has moved" note needs explaining, when a hook seems silent or noisy, or when asked whether the hooks run at all. For developing Heron; not part of what a modeller installs.
 allowed-tools:
   - Read
 ---
@@ -13,7 +13,7 @@ trap [`heron-guard`](../heron-guard/SKILL.md) fell into, and the reason it moved
 
 | | when | what it says | can it block? |
 |---|---|---|---|
-| `bin/session_line.py` | every session start | *"Heron: branch X is N behind and M ahead of origin/main (as last fetched). Fragments: P PROVEN, D DRAFT of T."* — and on any system but Windows, *"Not Windows: no Revit and no Heron tools in this session …"* | **No** |
+| `bin/session_line.py` | every session start | *"Heron: branch X is N behind and M ahead of origin/main (as last fetched). Fragments: P PROVEN, D DRAFT of T."* — and on any system but Windows, *"Not Windows: no Revit in this session - Heron serves only its library tools …"* | **No** |
 | `bin/main_moved.py` | before a pull request is **merged** or **marked ready** | the commits on origin/main this branch does not have, freshly fetched | **No** |
 | `bin/hook_log.py` | after every decision any Heron hook makes | nothing — it writes one line to a log outside the repository | **No** |
 
@@ -39,9 +39,10 @@ and the moment before a merge are the two places that knowledge is cheapest and 
   0.9 s, and put repository words in front of a Revit question (measured 2026-10-01). A worktree or any
   other branch gets the line as before.
 - **Says when the machine is not Windows.** On Linux or macOS — a cloud container above all — the line
-  ends *"Not Windows: no Revit and no Heron tools in this session - anything marked LOCAL or NEEDS REAL
-  REVIT cannot run here."* The `heron` MCP server exits on any system but Windows, so such a task is
-  stopped before its first step. On 2026-10-17 a LOCAL SESSION task (NEEDS-CHECKING D3) was started in a
+  ends *"Not Windows: no Revit in this session - Heron serves only its library tools, no revit_ tool -
+  anything marked LOCAL or NEEDS REAL REVIT cannot run here."* Off Windows the `heron` MCP server serves
+  its library alone and no `revit_` tool ([D-132](../../../docs/DECISIONS.md); until 2026-10-17 it
+  exited there), so such a task is stopped before its first step. On 2026-10-17 a LOCAL SESSION task (NEEDS-CHECKING D3) was started in a
   cloud session and spent its first steps finding that out. Derived from `os.name`, the same test the
   server makes, and said only on a line that already has something to say. **On Windows the line is
   unchanged.**

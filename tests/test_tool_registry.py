@@ -162,6 +162,49 @@ def labels(declared_cs):
           "the label off the registry as the tool registers")
 
 
+def library():
+    """
+    WHAT A MACHINE WITH NO REVIT IS SERVED IS THE REGISTRY'S, AND IT SENDS
+    NOTHING TO REVIT (Q-67, D-132).
+
+    Off Windows the server registers heron_tools.LIBRARY and nothing else. So
+    every name on it must be a tool this file already holds, declared READ
+    with no operation - a tool with an operation is one that reaches the
+    add-in, and there is no add-in to reach. And every Heron tool the
+    fragment-author agent is given must be on it, or that agent is handed a
+    tool a cloud session never lists.
+    """
+    print()
+    print("What a machine with no Revit is served")
+    listed = getattr(tools, "LIBRARY", None)
+    check(isinstance(listed, tuple) and bool(listed),
+          "heron_tools.LIBRARY exists and names at least one tool")
+    if not listed:
+        return
+    check(len(set(listed)) == len(listed), "and names none twice")
+    for name in listed:
+        check(name in tools.TOOLS and tools.risk_of(name) == tools.READ
+              and tools.operation_of(name) is None,
+              "%s is declared READ with no operation - it sends nothing to Revit"
+              % name)
+    check(not any(name.startswith("revit_") for name in listed),
+          "and no revit_ tool is on it")
+
+    agent = os.path.join(ROOT, ".claude", "agents", "heron-fragment-author.md")
+    given = []
+    with io.open(agent, encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("tools:"):
+                given = re.findall(r"mcp__heron__(\w+)", line)
+                break
+    check(bool(given), "the fragment-author agent's tools line was read - %s"
+          % (", ".join(given) or "none"))
+    missing = sorted(set(given) - set(listed))
+    check(not missing,
+          "every Heron tool that agent is given is served with no Revit - "
+          "missing: %s" % (", ".join(missing) or "none"))
+
+
 def main():
     declared_cs = csharp_registry()
     handled = csharp_handlers()
@@ -438,6 +481,7 @@ def main():
           "lease, so only the chat holding this Revit can stop it")
 
     labels(declared_cs)
+    library()
 
     print()
     if FAILURES:

@@ -508,7 +508,7 @@ themselves, by hand in Revit) can still be run and recorded in Group EQ; only EQ
 
 ---
 
-### 🟡 Q-67 — Should the Heron server start on a non-Windows machine with only its library tools, and every Revit tool answering that Revit is not reachable here? *(found 2026-10-17)*
+### ✅ Q-67 — Should the Heron server start on a non-Windows machine with only its library tools, and every Revit tool answering that Revit is not reachable here? → **Yes - the library alone, and no Revit tool listed** *(found and answered 2026-10-17)*
 
 **What was found**, in a cloud session on 2026-10-17. The last lines of
 [`mcp/server/heron_mcp_server.py`](../../mcp/server/heron_mcp_server.py) exit **2** when `os.name != "nt"` -
@@ -548,5 +548,12 @@ disagree on what exists. Listing the Revit tools and having each refuse is hones
 says Revit is here when it is not, which is the trap AGENTS.md's sentence exists to avoid.
 
 **Ajmal PS decides.** Until he does, the server keeps exiting 2 off Windows and nothing is built.
+
+**Answer: yes, as recommended - 2026-10-17. See [D-132](../DECISIONS.md).** Ajmal PS, asked in plain words
+what the yes would change: *"yes"*. Off Windows the server registers `heron_tools.LIBRARY` - the five tools
+this question names - and nothing else, so no `revit_` tool is listed; its instructions and a lookup's version
+line say there is no Revit on this machine. On Windows nothing changes. AGENTS.md's test and the
+`heron-session` start-up line are reworded to match, and `tests/test_mcp_stdio.py` starts the real server off
+Windows and holds all of it.
 
 ---

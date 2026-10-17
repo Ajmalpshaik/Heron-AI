@@ -441,6 +441,20 @@ ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
                  "revit_health", "revit_levels")
 
 
+# WHAT A MACHINE WITH NO REVIT IS SERVED (Q-67, D-132). Off Windows there is
+# no named pipe and no Revit - a cloud session is the case - and the server
+# registers these and nothing else, so the host's list itself says there is
+# no Revit here: no revit_ tool appears. Each reads files that shipped with
+# Heron and is declared READ with no operation above; tests/test_tool_registry.py
+# holds that, and that every Heron tool the fragment-author agent is given is
+# here. On Windows this list changes nothing - every tool is served.
+#
+# The five the owner said yes to, by name. A tool joins only by a decision:
+# the next one that sends nothing to Revit is not added because it could be.
+LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
+           "heron_resolve", "heron_standards")
+
+
 class NotDeclared(Exception):
     """A tool nobody declared. Never treated as harmless."""
 

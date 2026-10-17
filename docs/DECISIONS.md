@@ -200,6 +200,7 @@ an edit.
 | [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ✅ Accepted · 2026-10-17 |
 | [D-129](#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ✅ Accepted · 2026-10-17 |
 | [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
+| [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1120,3 +1121,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) (comments only), [21 §4](21-resilience-and-operations.md), [D-129](decisions/D-129.md)
 
 **Full record:** [`decisions/D-130.md`](decisions/D-130.md)
+
+## D-132 — Off Windows the Heron server serves its library alone, and no Revit tool
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"yes"*, to Q-67 put to him in plain words · **Answers:** [Q-67](open-questions/tier-2.md)
+**Keeps:** [D-02](#d-02--mcp--add-in-transport-named-pipes) - the bridge is a Windows named pipe, and nothing here reaches it · [D-01](#d-01--execution-host-claude-code-plugin) · every tool on Windows, exactly as before
+**Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (`LIBRARY`), [`AGENTS.md`](../AGENTS.md), [38 §4](38-the-cloud-environment.md), the [`heron-session`](../.claude/skills/heron-session/SKILL.md) start-up line, [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py), [`tests/test_tool_registry.py`](../tests/test_tool_registry.py)
+
+**Full record:** [`decisions/D-132.md`](decisions/D-132.md)
