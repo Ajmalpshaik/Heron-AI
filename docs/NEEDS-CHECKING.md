@@ -751,6 +751,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
+## Group EU - Heron says when its own code changed under a chat, and changes nothing until the chat is reopened (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eu.md`](needs-checking/group-eu.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

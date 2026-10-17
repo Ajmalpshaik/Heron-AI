@@ -120,6 +120,16 @@ import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
+import heron_running_code as running_code           # noqa: E402
+
+# WHAT THIS CHAT IS RUNNING, fingerprinted now - before a pull can land under
+# it. A git pull changes the files and not this process, and on 2026-09-07 that
+# had revit_apply_move answering from code a fix had already replaced
+# (NEEDS-CHECKING B8). heron_running_code says how, and what is decided when
+# the two differ: every reply says so, and nothing changes the model.
+RUNNING = running_code.RunningCode.of_checkout(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
 # `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
 # run - resolved to 1.x when this server was written and resolves to 2.x now.
@@ -309,7 +319,10 @@ def _through(tool, reply_out=None, origin="chat"):
         # the caller's own word, still standing from before the call.
         _ctx.reply_out, _ctx.origin, _ctx.outcome = reply_out, origin, None
         try:
-            return body(*a, **k)
+            # The page's Apply is a write from this same process, so old code
+            # refuses it here exactly as _recorded refuses the chat's.
+            refused = _refused_for_old_code(body.__name__)
+            return refused if refused is not None else body(*a, **k)
         finally:
             if reply_out is not None:
                 reply_out["ended"] = getattr(_ctx, "outcome", None)
@@ -371,6 +384,12 @@ def _recorded(fn):
     exception pass through untouched, and a fault in the recording is
     dropped: the list is display, and must never cost a tool its answer. A
     tool called from inside another is not listed twice.
+
+    AND THE ONE PLACE A CHAT HEARS THAT ITS CODE IS OLD. While RUNNING finds
+    a file changed since it was loaded, a tool that changes the model is
+    refused before its body runs, and every answer ends with one line saying
+    to reopen the chat - a read still answers in full (heron_running_code has
+    the decision). Nothing changed, nothing is added: a stat per file.
     """
     @functools.wraps(fn)
     def run(*a, **k):
@@ -386,7 +405,9 @@ def _recorded(fn):
         kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
         started, clock = time.strftime("%H:%M:%S"), time.time()
         try:
-            reply = fn(*a, **k)
+            reply = _refused_for_old_code(fn.__name__)
+            if reply is None:
+                reply = fn(*a, **k)
         except Exception as error:
             if outer:
                 _note(fn.__name__, started, time.time() - clock, error=error)
@@ -397,8 +418,49 @@ def _recorded(fn):
                 _depth.busy = False
         if outer:
             _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
+            reply = _said_old_code(reply)
         return reply
     return run
+
+
+def _changes_model(tool):
+    """heron_tools.writes, and a tool nobody declared is never harmless."""
+    try:
+        return tools.writes(tool)
+    except tools.NotDeclared:
+        return True
+
+
+def _old_code():
+    """What RUNNING finds changed - and nothing when the watch itself faults,
+    which leaves a tool as it was before the watch existed rather than
+    costing every tool its answer."""
+    try:
+        return RUNNING.changed()
+    except Exception:                                # noqa: BLE001 - never cost a tool its answer
+        return []
+
+
+def _refused_for_old_code(tool):
+    """The refusal, said as one, when `tool` would change the model and this
+    process is not running the code on disk - else None."""
+    if _changes_model(tool) and _old_code():
+        return _ended("refused", running_code.REFUSED)
+    return None
+
+
+def _said_old_code(reply):
+    """The reply with one line after it while this process is not running the
+    code on disk, and untouched otherwise. A refusal for it already says so."""
+    if not _old_code():
+        return reply
+    if isinstance(reply, str):
+        if running_code.REFUSED in reply:
+            return reply
+        return reply + NEWLINE + NEWLINE + running_code.SAID
+    if isinstance(reply, (list, tuple)):
+        return list(reply) + [running_code.SAID]
+    return reply
 
 
 def _note(tool, started, seconds, reply=None, error=None, outcome=None):
@@ -6834,4 +6896,7 @@ if __name__ == "__main__":
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 
+    # One more look, so what start-up imported is fingerprinted before the
+    # first call rather than at it.
+    _old_code()
     server.run()
