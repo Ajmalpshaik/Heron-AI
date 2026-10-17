@@ -216,11 +216,9 @@ solve overlapping problems and are genuinely worth reading — but **nothing you
 What that looks like in practice is `RevitFragment.SafeRollBack` and `RevitWrite.TryRefresh`: both exist
 because of what that study revealed, and neither shares a line with what it came from — the hazard is
 explained there, in terms of what `TransactionGroup` actually guarantees. (`SafeRollBack` lived in
-`RevitWrite` too until 2026-10-17; since then **every write job's transaction group is rolled back
-through `RevitFragment.RollBackAndCheck`**, which calls it and then checks what the rollback left, and
-`tests/test_rollback_witness.py` fails a file that opens a group and does not. `RevitCapture`'s
-always-rolled-back picture keeps a `SafeRollBack` of its own, and that suite names it as the one file not
-yet watched.)
+`RevitWrite` and `RevitCapture` too until 2026-10-17; since then **every transaction group in Heron is
+rolled back through `RevitFragment.RollBackAndCheck`**, which calls it and then checks what the rollback
+left, and `tests/test_rollback_witness.py` fails a file that opens a group and does not.)
 
 ## The bridge is a boundary, not a pipe
 

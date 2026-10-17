@@ -180,6 +180,25 @@ CHANGES = [
      "5b-484: the owner's words; answered COPY_TAGS_TO_REPLACEMENTS and ARRANGE_TAGS"),
     ("put the duct tags above the ducts with a leader", "OFFSET_TAGS_FROM_HOST",
      "5b-484: a draft identity sent it to FORCE_TAG_LEADER_LSHAPE on the re-ranker"),
+    # 5b-510, 2026-10-16: RENAME_ELEMENTS's identity named no view, and the
+    # re-ranker reads a card's identity alone - so with it these went to tools
+    # that cannot rename a view or a sheet; the model alone already reached this
+    # card. Paraphrases of 5b-485's declared three, which identity answers and
+    # this suite refuses. The fifth is the card's own find-and-replace job; the
+    # last went to SET_VIEW_FILTER_CATEGORIES once #539 merged (main be29fde4).
+    # NOT HERE: "rename the selected views", which that card still takes.
+    ("rename the plan", "RENAME_ELEMENTS",
+     "5b-510: answered RENAME_FAMILY with the re-ranker"),
+    ("rename this floor plan", "RENAME_ELEMENTS",
+     "5b-510: answered SYNC_SPACES_WITH_LINKED_ROOMS with the re-ranker"),
+    ("rename these sheets", "RENAME_ELEMENTS",
+     "5b-510: answered EDIT_REVISION_NUMBERING_SEQUENCE with the re-ranker"),
+    ("rename the schedule", "RENAME_ELEMENTS",
+     "5b-510: answered EDIT_REVISION_NUMBERING_SEQUENCE with the re-ranker"),
+    ("rename the selected elements", "RENAME_ELEMENTS",
+     "5b-510: answered RENAME_FAMILY with the re-ranker"),
+    ("rename the views to match the new naming", "RENAME_ELEMENTS",
+     "5b-510: answered SET_VIEW_FILTER_CATEGORIES with the re-ranker after #539"),
 ]
 
 QUESTIONS = [
