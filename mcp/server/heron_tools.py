@@ -94,7 +94,7 @@ TOOLS = {
     "revit_views":              (READ,    "list_views"),
     "revit_sheets":             (READ,    "list_sheets"),
 
-    # A picture of one view, for the chat to look at its own work (D-118).
+    # A picture of one view, for the chat to look at its own work (D-119).
     # ANALYZE, because that is what `capture_view` is declared in the add-in:
     # given element ids it makes a temporary 3D view inside a TransactionGroup
     # the add-in ALWAYS rolls back, with no apply flag anywhere to keep it.

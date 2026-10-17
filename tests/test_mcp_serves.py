@@ -90,7 +90,7 @@ WHAT IT PROVES, when an SDK is installed
      argument. A call with no request behind it, as every call here is, has
      no progressToken and so no callback. That the notes reach a host over
      stdio is tests/test_mcp_stdio.py's.
- 14. revit_view_image HANDS BACK A PICTURE (D-118): one image/png block
+ 14. revit_view_image HANDS BACK A PICTURE (D-119): one image/png block
      beside its words, holding exactly what the stand-in sent, with no
      output schema; the request is capture_view with the pin and no path;
      and a reply with no readable picture, or a refusal, gives no image.
@@ -212,7 +212,7 @@ def text_of(result):
     """Flatten whatever call_tool returned into text - its TEXT blocks only.
 
     AN IMAGE BLOCK IS NOT TEXT, and revit_view_image answers with one beside
-    its words (D-118). Read the old way, str() of the block put the whole
+    its words (D-119). Read the old way, str() of the block put the whole
     picture's base64 into the text, so a sentence check searched a few
     megabytes of letters and could find a short word in them by chance.
     images_of() reads the pictures.
@@ -506,7 +506,7 @@ class StandIn(object):
 
 
 # A REAL ONE-PIXEL PNG, as the add-in's capture_view sends a picture: base64
-# in the reply, never a path (D-118). Small so a failure prints readably.
+# in the reply, never a path (D-119). Small so a failure prints readably.
 PNG_1PX = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9"
            "awAAAABJRU5ErkJggg==")
 
@@ -1171,14 +1171,14 @@ async def exercise_view_image(module):
     """
     Section 14: revit_view_image hands the chat a PICTURE, through the SDK's
     own dispatch, against a stand-in Revit that answers as capture_view does
-    (D-118). What a host is given is an image block beside the words - not a
+    (D-119). What a host is given is an image block beside the words - not a
     path, not base64 inside the text - and a reply that carries no picture
     gives no image and says so.
     """
     import base64
     server = module.server
     print()
-    print("  revit_view_image hands back a picture, as an image block (D-118)")
+    print("  revit_view_image hands back a picture, as an image block (D-119)")
 
     listed = dict((t.name, t) for t in await server.list_tools())
     tool = listed.get("revit_view_image")
