@@ -622,6 +622,77 @@ def main():
                   "its one ranked capability - %s"
                   % [m["id"] for m in asked.get("methods") or []])
 
+            # GENERAL NOTES, 2026-10-17 (row 5b-900). Row 5b-520's steps -
+            # collect a view's notes, read them, edit, read again - sat in two
+            # cards' comments and nothing served them as one job. The
+            # capabilities are the ones the live lookup returned for these
+            # words on the spelling backend on main e592b1ca; only the skills
+            # decide here.
+            everything = SKILL.load_all()[0].values()
+            for said, returned in (
+                    ("update the general notes and keep their numbering",
+                     ["LIST_DATES_ON_SHEETS", "EXTRACT_DATES_FROM_TEXT",
+                      "CREATE_WALL", "REFRESH_VIEW", "EDIT_TEXT_VALUES"]),
+                    ("update the general notes in the legend and keep the "
+                     "numbering",
+                     ["CREATE_LEGEND_VIEW", "CREATE_WALL", "MOVE_TO_RAY_HIT",
+                      "EDIT_TEXT_VALUES", "EDIT_REVISION"]),
+                    ("change the wording of the general notes but keep the "
+                     "numbering",
+                     ["EDIT_TEXT_VALUES", "CREATE_WALL", "MOVE_TO_RAY_HIT",
+                      "READ_ELEMENT_PARAMETERS",
+                      "EDIT_REVISION_NUMBERING_SEQUENCE"])):
+                picked = [s.id for s in SKILL.methods_for(everything, said,
+                                                          returned)]
+                check(picked[:1] == ["update-general-notes"],
+                      "\"%s\" names the general notes method first beside "
+                      "the capabilities it reached - %s" % (said, picked))
+            # A QUESTION ABOUT NOTES IS NOT OFFERED THE CHANGE. The method
+            # leaves its read off `needs` for exactly this sentence.
+            read = [s.id for s in SKILL.methods_for(
+                everything, "read what the text notes in the open view say",
+                ["READ_ELEMENT_PARAMETERS", "CREATE_TEXT_NOTE",
+                 "EXTRACT_DATES_FROM_TEXT", "REPORT_SPOT_DIMENSIONS",
+                 "READ_SCHEDULE_CONTENTS"])]
+            check("update-general-notes" not in read,
+                  "and a question that only reads the notes is not offered "
+                  "it - %s" % read)
+            said = ("change the wording of the general notes but keep the "
+                    "numbering")
+            offered = [m["id"] for m in
+                       BRAIN.lookup(said).get("methods") or []]
+            check(offered[:1] == ["update-general-notes"],
+                  "the live lookup names it first too - %s" % offered)
+
+            notes = BRAIN.method("update-general-notes")
+            # Read as words: a step's own lines keep their breaks in the YAML.
+            steps = " ".join((notes or {}).get("purpose", "").split())
+            # Each step is FOUND before its order is compared: str.find
+            # answers -1 for a step that is not there, which would pass.
+            at = [steps.find(step) for step in (
+                "1. SELECT_VISIBLE_IN_VIEW", "2. READ_ELEMENT_PARAMETERS",
+                "4. EDIT_TEXT_VALUES, field=Text")]
+            check(notes is not None
+                  and [u["capability"] for u in notes["uses"]]
+                  == ["SELECT_VISIBLE_IN_VIEW", "EDIT_TEXT_VALUES"]
+                  and min(at) >= 0 and at == sorted(at),
+                  "the general notes method collects the notes, reads them, "
+                  "then edits - in that order %s" % at)
+            check(notes is not None and all(
+                      word in steps for word in (
+                          "5b-520", "#570", "Ajmal PS", "try-once",
+                          "D-119", "D-121")),
+                  "and says both cards are DRAFT until signed, and that on a "
+                  "real model the edit runs only through try-once, on a saved "
+                  "model")
+            check(notes is not None and "EVERY note it is handed" in steps,
+                  "and that a whole-wording set goes to one note, never to "
+                  "the view's whole set")
+            check(notes is not None and "step 1 again" in steps
+                  and "chain_mismatch" in steps,
+                  "and that the notes are collected again after the read, "
+                  "which takes the chain over")
+
             # THE OWNER'S FIXED-SIZE ASK. "A detailed generator, no
             # parameters" shared only "family" with the family method and
             # "family" and "parameters" with the profile one, so the profile
