@@ -2307,6 +2307,19 @@ def main(argv=None):
     for n, why in plain_bad:
         print("  PLAIN QUESTION #%s: %s. The row is not scored." % (n, why))
 
+    # BUILT BEFORE THE FINGERPRINT, as check-risk-crossings.py has been since
+    # 2026-10-17 - row 5b-980. store_for_this_tree() rebuilds the fragments
+    # table alone, and the search tables are made by the first lookup's open,
+    # so on a fresh scratch store the block below said "COULD NOT BE READ"
+    # and its md5 was of a store not yet indexed. The same preparation every
+    # lookup makes, once, before any question is asked.
+    try:
+        with brain._Open():
+            pass
+    except brain.BrainUnavailable as why:
+        sys.stderr.write("COULD NOT RUN: %s\n" % why)
+        return 2
+
     # READ BEFORE ASKING, as check-risk-crossings.py does: asking can move the
     # store, and a fingerprint taken afterwards describes a different one.
     index = skill_routing._index_fingerprint()

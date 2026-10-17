@@ -44,14 +44,19 @@ risk on the ladder today, and `tests/test_skills.py` calls `validate()`, so
 CI would name such a file. What was missing is this tool saying it too,
 about the verdicts it is the only one making.
 
-WHAT IT DOES NOT DO. It never calls `heron_brain.lookup`, so it opens no
-store and ranks nothing - that half is a sample rather than a measurement
-(FRAGMENT-ISSUES row 116) and belongs to the tool, not to a test.
+WHAT IT DOES NOT DO. It never calls `heron_brain.lookup`, and ranks nothing -
+that half is a sample rather than a measurement (FRAGMENT-ISSUES row 116)
+and belongs to the tool, not to a test. Section 7 (row 5b-980) is the one
+place it opens a store: the tool's main() on an empty scratch folder, with
+the lookup stood in for, to read the index block printed beside the
+numbers.
 """
 
+import contextlib
 import importlib.util
 import io
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -112,6 +117,38 @@ def fragment_file(folder, fid, capability, risk, said):
         "id: %s\ncapability: %s\nrisk: %s\nutterances:\n%s\n"
         % (fid, capability, risk,
            "\n".join("  - '%s'" % one for one in said)))
+
+
+def fresh_store_block(tool):
+    """The tool's index block, from its own main() on an empty scratch folder.
+
+    `heron_brain.lookup` is stood in for, so no sentence is ranked - the
+    block is all that is read - and HERON_KNOWLEDGE, sys.argv and the lookup
+    are put back whatever happens.
+    """
+    import heron_brain as brain
+
+    home = tempfile.mkdtemp(prefix="heron-skillroute-fresh-")
+    kept = (os.environ.get("HERON_KNOWLEDGE"), list(sys.argv), brain.lookup)
+    os.environ["HERON_KNOWLEDGE"] = home
+    sys.argv = ["check-skill-routing.py"]
+    brain.lookup = lambda *a, **k: {}
+    said = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+            tool.main()
+    except BaseException as raised:                      # noqa: BLE001
+        said.write("\nraised %s: %s\n" % (type(raised).__name__, raised))
+    finally:
+        if kept[0] is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = kept[0]
+        sys.argv, brain.lookup = kept[1], kept[2]
+        shutil.rmtree(home, ignore_errors=True)
+    text = said.getvalue()
+    at = text.find("THE INDEX THIS RAN AGAINST")
+    return text[at:at + 600] if at >= 0 else text[-600:]
 
 
 def main():
@@ -247,6 +284,17 @@ def main():
         check(any("COULD NOT BE READ" in one for one in lines)
               and any("D-52" in one for one in lines),
               "and counts that could not be read name D-52 rather than zero")
+
+        print()
+        print("7. On an empty scratch folder the index block counts a store - "
+              "row 5b-980")
+        block = fresh_store_block(tool)
+        counted = re.search(r"identities (\d+)", block)
+        check("unreadable" not in block and "COULD NOT BE READ" not in block
+              and counted is not None and int(counted.group(1)) > 0,
+              "the store is built before the fingerprint, so the block counts "
+              "it rather than saying 'md5 unreadable': %s"
+              % " ".join(block.split())[:160])
     finally:
         shutil.rmtree(home, ignore_errors=True)
 

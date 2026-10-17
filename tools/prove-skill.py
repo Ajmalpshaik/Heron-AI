@@ -892,6 +892,16 @@ def main():
               % asked)
         print("the same seam a host uses. This is the slow half.")
         print("")
+        # BUILT BEFORE THE FINGERPRINT - row 5b-980, as check-skill-routing.py
+        # does: on an empty scratch folder the block below described a store
+        # that did not exist yet. One open, the preparation every lookup
+        # makes; one that cannot open is left to the lookups, which name why.
+        import heron_brain as brain
+        try:
+            with brain._Open():
+                pass
+        except brain.BrainUnavailable:
+            pass
         index = ROUTING._index_fingerprint()
         print("THE INDEX THIS RAN AGAINST - compare it before comparing counts:")
         for line in ROUTING.fingerprint_lines(index):
