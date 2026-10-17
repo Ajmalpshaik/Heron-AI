@@ -194,6 +194,7 @@ an edit.
 | [D-120](#d-120--a-run-the-modeller-kept-after-checking-it-is-the-positive-case-of-a-proof-and-the-negative-case-is-still-its-own-rolled-back-run) | A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run | ✅ Accepted · 2026-10-17 |
 | [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
 | [D-122](#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
+| [D-123](#d-123--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1055,3 +1056,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) and its `.codex` copy
 
 **Full record:** [`decisions/D-122.md`](decisions/D-122.md)
+
+## D-123 — A picture of a view, taken for the chat and deleted, is ANALYZE and not an export
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"A picture is not model data, ship it"* · **Source:** the owner's brief of 2026-10-17 for `revit_view_image` - *"a read-only tool that returns a PNG of a Revit view into the chat, so the AI can check its own work"*
+**Keeps:** [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) - every `export-*` stays PUBLISH, `export-view-image` included · [D-26](#d-26--the-model-file-is-never-uploaded) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) - Changes stays off · [Constitution Articles 8 and 10](../HERON_CONSTITUTION.md) · Golden Rule 19 - the risk is the registry's, by name · the read path's guarantee that nothing on `run_fragment_read` opens a transaction
+**Asks:** whether a view's picture is *model data* under [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope), put as [Q-64](OPEN-QUESTIONS.md) - answered: **not model data**
+**Affects:** [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs) (new), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`Captures`), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [NEEDS-CHECKING group ER](needs-checking/group-er.md)
+
+**Full record:** [`decisions/D-123.md`](decisions/D-123.md)
