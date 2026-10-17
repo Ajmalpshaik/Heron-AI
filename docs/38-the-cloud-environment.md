@@ -202,7 +202,8 @@ Q-67). Off Windows it registers `heron_tools.LIBRARY` and nothing else, so the h
 here - and its instructions and a lookup's version line say *"No Revit on this machine (it is not
 Windows)"*. The paragraph above is what was true before, kept as it was. A session that started before
 the change, or on a branch without it, still shows `CONNECTION_CLOSED`. `tests/test_mcp_stdio.py` starts
-the real server here over stdio and holds the list. **Not yet seen in a real cloud session's host list.**
+the real server here over stdio and holds the list. **Seen in a real cloud session's host list on
+2026-10-17**: the five library tools, no `revit_` tool, and a lookup that answered ([D-132](decisions/D-132.md)).
 
 ---
 
