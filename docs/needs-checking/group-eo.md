@@ -16,8 +16,10 @@ job made - the job on screen truly kept nothing, said so, and the stage before i
 **What changed.** Every transaction group in Heron - the fragment write path in
 [`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) and the move in
 [`RevitWrite.cs`](../../revit/Heron.Revit.Addin/RevitWrite.cs) - is now rolled back through one helper,
-`RollBackAndCheck`, and assimilated through one, `Keep` - the rollbacks a declined Revit dialog causes
-([Group EL](group-el.md)) included, whose refusal now says what the check found beside Revit's status. A permanent `DocumentChanged` listener, subscribed in
+`RollBackAndCheck`, and assimilated through one, `KeepAndWatch` - the rollbacks a declined Revit dialog causes
+([Group EL](group-el.md)) included, whose refusal now says what the check found beside Revit's status. A
+modeller's Keep in the Keep-or-Discard box ([Group EM](group-em.md)) is kept the same way, so its elements
+are watched like any `apply`, and a Discard is a rollback like any preview's. A permanent `DocumentChanged` listener, subscribed in
 `OnStartup`, counts the elements each write job adds while it runs and samples up to 200 by UniqueId. When a job
 is **kept**, that sample is kept under the model's identity strings (CreationGUID from 2024, path, title - never
 the Document). When the next write job **starts**, the sample is narrowed to what still resolves, so what the

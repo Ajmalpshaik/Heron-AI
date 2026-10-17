@@ -419,9 +419,9 @@ namespace Heron.Revit.Addin
                     }
 
                     // A move adds nothing, so there is no note to carry: the
-                    // move's reply has no verdict, and Keep's only words are
+                    // move's reply has no verdict, and KeepAndWatch's only words are
                     // about a job kept before this one.
-                    RevitFragment.Keep(group, doc, watch);
+                    RevitFragment.KeepAndWatch(group, doc, watch);
                 }
                 catch (Exception ex)
                 {

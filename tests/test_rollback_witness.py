@@ -240,7 +240,7 @@ def wiring():
     startup = code_only(raw_startup or "")
 
     helper = body_of(code, "RollBackAndCheck(TransactionGroup")
-    keep = body_of(code, "string Keep(TransactionGroup")
+    keep = body_of(code, "string KeepAndWatch(TransactionGroup")
     group_rollback = body_of(code, "bool SafeRollBack(TransactionGroup")
     step_rollback = body_of(code, "void SafeRollBack(Transaction ")
 
@@ -280,9 +280,9 @@ def wiring():
             returns_roll_back(text, block_after(text, at), "%s group" % name)
         assimilated = [m.start() for m in re.finditer(r"\.\s*Assimilate\s*\(", without(text, keep))]
         check(not assimilated,
-              "%s assimilates a group only through Keep, which records what to watch" % name)
-        check(re.search(r"\bKeep\s*\(\s*group\s*,", text) is not None,
-              "%s keeps a job through Keep" % name)
+              "%s assimilates a group only through KeepAndWatch, which records what to watch" % name)
+        check(re.search(r"\bKeepAndWatch\s*\(\s*group\s*,", text) is not None,
+              "%s keeps a job through KeepAndWatch" % name)
     setup = body_of(code, "string RunSetupSteps(")
     signature = code[code.find("string RunSetupSteps("):code.find(setup) if setup else 0]
     check(bool(setup) and re.search(r"HeronRollbackWitness\.Watch\s+watch", signature) is not None,
@@ -290,7 +290,7 @@ def wiring():
     returns_roll_back(code, setup, "RunSetupSteps")
     check("Assimilate()" in keep.replace(" ", "")
           and "TransactionStatus.Committed" in keep and "Witness.Assimilated(" in keep,
-          "Keep records what to watch only when Revit says the group committed")
+          "KeepAndWatch records what to watch only when Revit says the group committed")
 
     print("\n3. the listener runs for the add-in's whole life, and holds no Document")
     on_startup = body_of(startup, "Result OnStartup(")

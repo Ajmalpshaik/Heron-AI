@@ -723,6 +723,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
 
+## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
+
 ## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
 
 **Its own file:** [`needs-checking/group-eo.md`](needs-checking/group-eo.md)

@@ -195,20 +195,20 @@ def dispatcher():
 
 def write_paths():
     print("\n3. every write path checks before it keeps anything")
-    # A GROUP IS KEPT THROUGH RevitFragment.Keep since 2026-10-17, the one
+    # A GROUP IS KEPT THROUGH RevitFragment.KeepAndWatch since 2026-10-17, the one
     # place Assimilate is called, so the rollback check can watch what the job
     # added - every call of it is a keep, and is held to the same rule as an
-    # Assimilate written out. Keep's own body is that Assimilate, not a write
+    # Assimilate written out. KeepAndWatch's own body is that Assimilate, not a write
     # path, and is left out. The rollback before it is SafeRollBack or
     # RollBackAndCheck, the helper every group rollback now goes through
     # (tests/test_rollback_witness.py).
     keepers = 0
     for path in FN.sources(os.path.join(ROOT, "revit")):
         text = FN.code_only(FN.read(path) or "")
-        helper = FN.body_of(text, "string Keep(TransactionGroup")
+        helper = FN.body_of(text, "string KeepAndWatch(TransactionGroup")
         if helper:
             text = text.replace(helper, "{}", 1)
-        for found in re.finditer(r"\.\s*Assimilate\s*\(\s*\)|\bKeep\s*\(\s*group\s*,", text):
+        for found in re.finditer(r"\.\s*Assimilate\s*\(\s*\)|\bKeepAndWatch\s*\(\s*group\s*,", text):
             keepers += 1
             before = text[max(0, found.start() - 900):found.start()]
             asked = before.rfind("HeronDialogWatch.Refused")
