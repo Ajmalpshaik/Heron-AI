@@ -316,7 +316,7 @@ purpose: >
   host. A big build in a family that has never been saved is saved FIRST,
   as step 0 asks, never only at the end: closed with no file, it is lost
   with every form in it, and Heron cannot save it for the modeller until
-  OPEN-QUESTIONS Q-67 is answered.
+  OPEN-QUESTIONS Q-68 is answered.
 
   NOT YET: reference lines and angles - a part that swings or tilts about a
   pivot. A reference line can be made through the API, and an angle labelled,

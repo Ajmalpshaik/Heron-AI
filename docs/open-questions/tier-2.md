@@ -427,7 +427,88 @@ DRAFT until [NEEDS-CHECKING group ER](../needs-checking/group-er.md) is run in R
 
 ---
 
-### 🟡 Q-67 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
+### ✅ Q-65 — Does selecting or zooming to elements inside a linked model count as "touching" it under Article 7? → **No - it needs no confirmation** *(found and answered 2026-10-17)*
+
+**The words.** [Article 7](../../HERON_CONSTITUTION.md): *"Do not execute destructive Revit operations
+without permission. Deleting elements, purging, bulk parameter writes, family reloads, workset changes and
+anything touching a linked model require explicit confirmation for that specific operation."*
+
+**Why it is asked now.** On 2026-10-17 Heron gained a door that changes only what is on screen -
+`revit_show`, through the add-in's `run_fragment_show` (EXECUTE, no transaction open, runs with Changes off)
+- and a fragment for it, `ZOOM_TO_LINKED_ELEMENTS` (FRG-SEL-039, DRAFT), which zooms the active view to
+elements inside a loaded link and, on Revit 2023 and later, selects them as linked elements. It changes
+nothing in the model and nothing in the link. Whether that is "touching" the link is not something Heron can
+decide for the owner.
+
+**Two readings, and what each costs.**
+
+1. **It does not count.** The Article's heading is *destructive* operations, and a selection or a zoom
+   destroys nothing - Ctrl+Z has nothing to undo after either. `ZOOM_TO_LINKED_ELEMENTS` would then run
+   like `ZOOM_TO_ELEMENTS`, with no question in front of it.
+2. **It counts.** "Anything touching a linked model" is read literally: the chat asks for the modeller's
+   yes, in the chat, before every zoom or selection inside a link - one more turn each time.
+
+**What Heron does until the owner answers: the reading that ASKS (2).** `heron_tools.link_refusal` holds any
+fragment declared above ANALYZE whose contract takes `linkName` until the host says the user agreed, by
+calling `revit_show` again with `link_confirmed=true`; nothing is sent to Revit before that. A READ of a link
+is not held - [D-59](../decisions/D-59.md) settled reading one, and `revit_read` never asked. **What is
+NOT covered either way:** `revit_change` holds nothing in code for a link - it tells the host to ask, as
+[FRAGMENT-ISSUES row 5b-161](../fragment-issues/section-5b-rows-151-175.md) records for every destructive
+change.
+
+**Ajmal PS decides.** If the answer is (1), the change is one line in `link_refusal` and one in
+`tests/test_read_door.py`, and this question is promoted to a decision. Measuring either way:
+[NEEDS-CHECKING Group ES](../needs-checking/group-es.md) ES5 to ES7 run the fragment itself.
+
+**Answer: (1), it does not count - 2026-10-17. See [D-124](../DECISIONS.md).** The owner: *"Q-64:
+selecting/zooming linked elements is not touching, no confirmation"* - this question's first number; it is Q-65 since #556 gave Q-64 to another on 2026-10-17. The hold was taken out the same day
+rather than switched off: `link_refusal`, `LINK_NEEDS` and `revit_show`'s `link_confirmed` are gone, and
+`tests/test_read_door.py` holds that a fragment the show door may run goes through it whether or not it
+works inside a link. Changing a link is still Article 7's, with its confirmation.
+
+---
+
+### 🟠 Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
+
+**What was found**, preparing [NEEDS-CHECKING Group EQ](../needs-checking/group-eq.md) - a core set of PROVEN
+fragments proved again on every release, to back the *"2020 → latest"* claim with evidence. Three things in
+Heron stop it, each on purpose:
+
+1. **`tools/batch-prove.py` refuses a PROVEN or PRODUCTION fragment** as `ALREADY` and never sends it to Revit.
+   Its docstring says *"There is deliberately no flag to override that"* - it was written against re-proving
+   unchanged code on the same release, which bought nothing.
+2. **`heron_validate.py accept` refuses a PROVEN fragment whose proof still matches its code** - *"Signing it
+   again would overwrite a good proof with the same thing."*
+3. **A fragment's `proof:` holds ONE record**, and its release is prose inside `model:`.
+   [`brain/heron_matrix.py`](../../brain/heron_matrix.py) reads one release per fragment and says so: *"a proof
+   on 2024 is evidence about 2024 ... Nothing here spreads a proof sideways"*, and *"if PROOF_REQUIRED ever
+   grows a `revit:` field this should read that instead."*
+
+So a run of `create-floor` on 2025 that passes both halves has nowhere to be written, and the only way to
+record it today would overwrite the 2024 proof. **A second route has the same problem from the other side**:
+`second_route` is a field of that one record, and `accept` will not reopen it.
+
+**Recommended - reasoned, not built:** keep `proof:` as the record that made the fragment PROVEN, and add a
+list beside it, **`proof.releases:`**, one entry per further release, each with the same fields D-30 asks for
+(`date`, `by`, `model`, `positive_case`, `negative_case`) and the fingerprint of the code it ran. Then:
+
+- `batch-prove --release` runs only PROVEN fragments, and only on a release they have no entry for. It writes
+  drafts and never touches `heron-status` - the guarantee it already checks.
+- `accept --release` writes one entry, signed by a person, and refuses a release already recorded.
+- `heron_matrix.py` marks a cell PROVEN from either the proof or an entry - never from the claim.
+- A second route for a PROVEN fragment is written into `proof.second_route` by `accept --second-route`,
+  signed, from a recorded run - never typed by hand.
+
+**What the other choices cost.** Leaving it as it is keeps the claim unbacked. Re-proving into `proof:`
+loses the earlier release's record. A separate register outside the fragment would be read by nothing
+that reads fragments today.
+
+**Ajmal PS decides.** Until he does, EQ1 to EQ6 (loading the add-in on each release) and EQ8 (the routes
+themselves, by hand in Revit) can still be run and recorded in Group EQ; only EQ7 waits.
+
+---
+
+### 🟡 Q-68 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and
 Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
@@ -440,12 +521,12 @@ API opened is still open - *"Operation is not permitted when there is any open s
 transaction, or transaction group"*, the same words for `Document.Save` and `Document.SaveAs` (RevitAPI.xml
 2024; 2020 and 2027 read the same on 2026-10-07, row 5b-365). Every fragment `revit_change` runs goes to
 the add-in's write path, which opens ONE `TransactionGroup` in the document for the whole run
-([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 588) and assimilates or rolls it
-back at the end (line 729) - Article 8's one undo entry. So a fragment can never save the document it runs
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 636) and assimilates or rolls it
+back at the end (line 781) - Article 8's one undo entry. So a fragment can never save the document it runs
 in, however it is written.
 
 **What would work, read from the code - NOT RUN.** In the same request, AFTER that group is closed (lines
-729 to 737, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
+781 to 789, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
 the add-in could run the save itself at that point, on the fragment's behalf: `SAVE_DOCUMENT` version 3
 asks for it - the document it works in, by its own file for a Save, or a full `.rvt` or `.rfa` path the
 modeller typed for a Save As of a model that has none - and the add-in does it once the group has closed,
@@ -477,11 +558,11 @@ entry, and the save is not in it - a save is not a model change and cannot be un
    one ([`heron_write.py`](../../mcp/server/heron_write.py) line 255), and only a match on it or on the file
    path lets a new title through (line 461, *"a save can rename it; same document"*). But that id,
    `Document.CreationGUID`, arrived at Revit 2024 and is null on 2020 to 2023 and on every family document
-   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 636, measured
+   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 663, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
-   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1821)
-   about a model it has just saved. The next call is then aimed at the old title (line 1382) and refused
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1837)
+   about a model it has just saved. The next call is then aimed at the old title (line 1391) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**

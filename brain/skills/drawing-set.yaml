@@ -30,7 +30,7 @@ purpose: >
      NEVER BEEN SAVED: one with no file is lost, sheets and all, when Revit
      closes. Ask the modeller ONCE to save it - Ctrl+S, in a folder and
      under a name of their own - and start when it has a file. Heron cannot
-     save the model it works in (OPEN-QUESTIONS Q-67). Declined, say in one
+     save the model it works in (OPEN-QUESTIONS Q-68). Declined, say in one
      line what is at stake and go on. Twice in two days a whole build was
      lost this way - a house with 9 sheets and a 32-floor tower, 2026-10-13
      and 14.

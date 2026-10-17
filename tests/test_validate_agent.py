@@ -550,6 +550,29 @@ def test_audit_reading_says_what_it_cannot_say():
         shutil.rmtree(workspace)
 
 
+def test_a_second_route_written_as_one_sentence():
+    print("A case file's second route, as a list or as one folded sentence:")
+
+    class Stand:
+        def __init__(self, route):
+            self.route = route
+
+        def cases(self):
+            return {"second_route": self.route}, None
+
+    sentence = ("A schedule of the same category with that parameter as a field\n"
+                "and a Contains filter set to the same text, counted\n")
+    routes = HV.declared_second_route(Stand(sentence))
+    check(routes == ["A schedule of the same category with that parameter as a field "
+                     "and a Contains filter set to the same text, counted"],
+          "one sentence is ONE route, whole - not its first letter (row 5b-511)")
+
+    routes = HV.declared_second_route(Stand(["the Project Browser",
+                                             {"given": "a Revit schedule"}]))
+    check(routes == ["the Project Browser", "a Revit schedule"],
+          "a list still gives one route per row, a dict row by its given")
+
+
 def main():
     for test in (test_reachability,
                  test_plan_is_ordered_and_honest,
@@ -562,7 +585,8 @@ def main():
                  test_an_unsigned_draft_cannot_pass_validation,
                  test_restamp_refuses_a_genuinely_stale_proof,
                  test_the_fingerprint_is_about_content_only,
-                 test_audit_reading_says_what_it_cannot_say):
+                 test_audit_reading_says_what_it_cannot_say,
+                 test_a_second_route_written_as_one_sentence):
         test()
         print("")
 

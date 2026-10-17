@@ -183,6 +183,27 @@ TOOLS = {
     # write permission.
     "revit_read":               (ANALYZE, "run_fragment_read"),
 
+    # THE SHOW DOOR (2026-10-17). The read door's executor and the read door's
+    # guarantee - `run_fragment_show` opens NO transaction, so Revit itself
+    # refuses any change to the model - one level higher, so a fragment that
+    # selects, zooms or opens a view runs with Changes OFF. The add-in's
+    # read-only ceiling is EXECUTE ("changes what is shown, never what
+    # exists"); until this row only the MCP side held EXECUTE back, because
+    # revit_read's ceiling is its own ANALYZE and revit_change needs Changes.
+    #
+    # EXECUTE, because that is what `run_fragment_show` is declared in
+    # HeronOperationRegistry.cs, and door_refusal reads the ceiling from this
+    # row - so a MODIFY fragment is refused here before anything is sent.
+    "revit_show":               (EXECUTE, "run_fragment_show"),
+
+    # Revit's own Temporary Hide/Isolate in the active view, and its reset.
+    # EXECUTE through FIXED operations in the add-in, never a fragment: a
+    # temporary isolate needs a transaction, and opening one for fragment code
+    # with Changes off would be a write path with no switch in front of it.
+    # The view's saved visibility is untouched.
+    "revit_isolate_temporary":  (EXECUTE, "isolate_temporary"),
+    "revit_reset_temporary":    (EXECUTE, "reset_temporary"),
+
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends
     # anything to Revit, which is why every operation here is None.
@@ -400,6 +421,12 @@ ALSO_REACHES = {
 # method sends the host straight to it, and a deferred tool there costs the
 # search turn this list exists to save - on the one request, a family, where
 # a chat with no memory of Heron otherwise read the method off disk.
+#
+# revit_show, the third door, is NOT here, and that was measured rather than
+# chosen: on 2026-10-17 these six came to 4,435 characters of description
+# against tests/test_tool_sizes.py's 4,500, and a door cannot be described in
+# 65. Raising the budget is a decision (D-118). A chat finds it one search
+# away, and revit_read's refusal of an EXECUTE capability names it.
 ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
                  "revit_health", "revit_levels")
 
@@ -472,6 +499,13 @@ def door_refusal(door, declared, capability):
     needs no transaction, so the one guarantee the read door stands on - Revit
     refuses a model change made outside one - would not cover it.
 
+    revit_show is EXECUTE because `run_fragment_show` is, so the same rule
+    lets the selection, the camera and the active view through it and still
+    refuses MODIFY and above. What it adds to the read door's guarantee is
+    exactly what EXECUTE is declared to do: UI state, never the model. That
+    holds inside a linked model too - selecting or zooming to linked elements
+    is not touching the link, so it asks for no confirmation (D-124).
+
     AN UNREADABLE RISK IS REFUSED, for the reason the client's `risk_refusal`
     gives: "I could not tell" and "it is fine" must not collapse into one
     answer on a path that runs code in somebody's model.
@@ -480,7 +514,14 @@ def door_refusal(door, declared, capability):
     stops a MISTAKE. The add-in never sees a fragment's own risk (FRAGMENT-
     ISSUES row 9 records why it is not sent), so a caller that skipped this
     server could put anything through run_fragment_read. What holds for every
-    caller is Revit's own refusal of a change made outside a transaction.
+    caller is two things, and the first is NOT a guarantee on its own: Revit
+    refuses a change made outside a transaction - yet row 5b-350 is a read run
+    of place-nested-family that reported that refusal and still left a real
+    instance in the family, twice, cause not established (NEEDS-CHECKING CP1).
+    So the add-in also counts the model before and after every read run and
+    answers one that moved it `read_changed_model`, never as a read. That
+    second check sees an element that appeared or disappeared and a model newly
+    marked changed - not an edit in place in a model already unsaved.
 
     Pure - no file, no Revit, no SDK - so tests/test_read_door.py runs every
     outcome, and runs it over every fragment in the library, where CI can.
@@ -495,9 +536,22 @@ def door_refusal(door, declared, capability):
         return None
 
     within = " and ".join(NAMES[n] for n in sorted(NAMES) if n <= ceiling)
-    if level <= MODIFY:
+    if level <= EXECUTE:
+        # NOT revit_change: a capability that changes nothing that exists
+        # does not need the Changes switch, and sending the chat there for it
+        # is how "show me these" came to need write permission.
+        instead = ("A capability declared %s changes nothing that exists, and "
+                   "revit_show runs it - with Changes off, and no transaction "
+                   "open." % NAMES[level])
+    elif level <= MODIFY:
         instead = ("A change belongs to revit_change, and that needs Changes "
                    "switched on in Revit's ribbon.")
+        # THE ONE MODIFY JOB A SHOW REQUEST IS USUALLY AFTER. Revit's temporary
+        # isolate needs a transaction, so ISOLATE_ELEMENTS is MODIFY (D-125);
+        # the fixed operation does it with Changes off.
+        if door == "revit_show":
+            instead += (" To isolate elements in the active view with Changes "
+                        "off, revit_isolate_temporary does it.")
     else:
         # D-106: the level has its own switch now, and saying which one is
         # the whole of the way forward.
@@ -508,6 +562,7 @@ def door_refusal(door, declared, capability):
     return ("'%s' is declared %s, and %s runs nothing above %s - %s only. "
             "Nothing has been sent to Revit. %s"
             % (capability, NAMES[level], door, NAMES[ceiling], within, instead))
+
 
 
 # THE SAFETY LABELS MCP LETS A SERVER PUT ON A TOOL, in the protocol's own

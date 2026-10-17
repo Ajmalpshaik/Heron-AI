@@ -195,24 +195,39 @@ def dispatcher():
 
 def write_paths():
     print("\n3. every write path checks before it keeps anything")
+    # A GROUP IS KEPT THROUGH RevitFragment.KeepAndWatch since 2026-10-17, the one
+    # place Assimilate is called, so the rollback check can watch what the job
+    # added - every call of it is a keep, and is held to the same rule as an
+    # Assimilate written out. KeepAndWatch's own body is that Assimilate, not a write
+    # path, and is left out. The rollback before it is SafeRollBack or
+    # RollBackAndCheck, the helper every group rollback now goes through
+    # (tests/test_rollback_witness.py).
     keepers = 0
     for path in FN.sources(os.path.join(ROOT, "revit")):
         text = FN.code_only(FN.read(path) or "")
-        for found in re.finditer(r"\.\s*Assimilate\s*\(\s*\)", text):
+        helper = FN.body_of(text, "string KeepAndWatch(TransactionGroup")
+        if helper:
+            text = text.replace(helper, "{}", 1)
+        for found in re.finditer(r"\.\s*Assimilate\s*\(\s*\)|\bKeepAndWatch\s*\(\s*group\s*,", text):
             keepers += 1
             before = text[max(0, found.start() - 900):found.start()]
             asked = before.rfind("HeronDialogWatch.Refused")
             line = text.count("\n", 0, found.start()) + 1
-            check(asked >= 0 and "SafeRollBack(group)" in before[asked:],
+            check(asked >= 0 and re.search(r"(SafeRollBack|RollBackAndCheck)\(\s*group\b",
+                                           before[asked:]) is not None,
                   "%s keeps a group at code line %d only after asking whether a "
                   "dialog stopped the job, and rolls back when one did"
                   % (os.path.basename(path), line))
     check(keepers >= 2,
-          "the walk reached the write paths - %d Assimilate call(s)" % keepers)
+          "the walk reached the write paths - %d keep(s)" % keepers)
 
     executor = FN.code_only(FN.read(EXECUTOR) or "")
-    check(len(re.findall(r"return\s+DialogRefusal\(\s*name\s*,\s*unwound\s*\)\s*\?\?\s*threw\s*;",
-                         executor)) == 2,
+    # THROUGH Stopped since 2026-10-17: the rollback is checked first, and
+    # Stopped hands DialogRefusal whether it held.
+    stopped = FN.body_of(executor, "string Stopped(")
+    check(len(re.findall(r"return\s+Stopped\(\s*name\s*,\s*after\s*\)\s*\?\?\s*"
+                         r"HeronRollbackWitness\.Told\(\s*threw\b", executor)) == 2
+          and re.search(r"DialogRefusal\(\s*name\s*,\s*after\.Held\s*\)", stopped) is not None,
           "a fragment that threw after a declined dialog is reported as the dialog, on both write branches")
     reading = executor.find("if (!writing)")
     script = executor.find("RunScript(", reading)

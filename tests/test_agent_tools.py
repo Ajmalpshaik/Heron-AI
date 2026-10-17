@@ -83,6 +83,9 @@ CHANGES = {
     "revit_apply_move":         "moves elements in the model",
     "revit_preview_move":       "leaves a move waiting for revit_apply_move",
     "revit_select_by_category": "changes the selection on the modeller's screen",
+    "revit_show":               "changes the selection, the camera or the view on screen",
+    "revit_isolate_temporary":  "isolates elements in the modeller's active view",
+    "revit_reset_temporary":    "ends the temporary isolate in the modeller's active view",
     "revit_use_session":        "moves the whole chat onto another Revit",
     "revit_use_this_model":     "moves the whole chat onto another model",
 }
