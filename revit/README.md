@@ -15,6 +15,7 @@
 | Project | Does |
 |---|---|
 | `Heron.Revit.Addin` | Ribbon, Connect, Status, the tool windows, and the `ExternalEvent` handler (`RevitDispatcher.cs`) that runs every bridge request on Revit's thread. The `Revit*.cs` files are the element operations; `Resources/` holds the ribbon icons |
+| `Heron.Scripting` | The C# compiler door as an assembly of its own - `HeronScriptEngine.cs` and `HeronStackGuard.cs`, linked from `Heron.Revit.Addin`, no source of its own and no Revit reference. On Revit 2025 and later [`HeronScriptHost`](Heron.Revit.Addin/HeronScriptHost.cs) loads it into a load context of Heron's own, so Heron compiles on its own Roslyn whatever another add-in loaded ([row 5b-575](../docs/fragment-issues/section-5b-rows-401-425.md)); on 2020 to 2024 the same two files are built into the add-in. `Heron.Scripting.targets` copies it and the compiler beside the add-in |
 | `Heron.Bridge` | The named-pipe server. No Revit reference — which is what makes it testable without Revit. References `platform/Heron.Core` |
 | `Heron.Tools` | **Stage 2 shape proof, not a product** — a second piece of the same Heron tab. Listed `PROVING` in [`platform/heron-products.json`](../platform/heron-products.json) |
 | `Heron.Doc` | **Stage 2 shape proof, not a product** — a second Heron tab with one dummy button. `PROVING` in the same manifest; its own header says it is deleted when Stage 2 closes |
