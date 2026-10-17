@@ -47,7 +47,7 @@ DEFAULTS = {
     "bridge.leaseMinutes": "5",
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
-    # The extra wait for a job that has put a Keep or Discard box up (D-117).
+    # The extra wait for a job that has put a Keep or Discard box up (D-118).
     "revit.askTimeoutSeconds": "300",
     "write.enabled": "false",
     # The two switches above Changes (D-106): each lets one more level
@@ -247,14 +247,14 @@ def fragment_timeout(values=None):
 
 
 def ask_timeout(values=None):
-    """What the add-in adds to its wait once a job has asked the modeller (D-117)."""
+    """What the add-in adds to its wait once a job has asked the modeller (D-118)."""
     values = load() if values is None else values
     return max(1.0, _number(values, "revit.askTimeoutSeconds", 300))
 
 
 def try_once_timeout(values=None):
     """
-    How long to wait for a DRAFT's one run, which ends on a person (D-117).
+    How long to wait for a DRAFT's one run, which ends on a person (D-118).
 
     The fragment's own deadline PLUS the add-in's ask timeout, because the
     add-in waits for both one after the other. Below that, this side would

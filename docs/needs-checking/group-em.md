@@ -9,7 +9,7 @@
 
 ## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
 
-Built for [D-117 to D-120](../DECISIONS.md#d-117--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so),
+Built for [D-118 to D-121](../DECISIONS.md#d-118--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so),
 all four **accepted by the owner on 2026-10-17** - this group is run once the add-in carrying them is
 deployed.
 

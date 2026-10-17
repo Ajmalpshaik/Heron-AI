@@ -63,7 +63,7 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// The extra wait for a job that has asked the modeller to keep or
-        /// discard a DRAFT's change (D-117). See AwaitingModeller.
+        /// discard a DRAFT's change (D-118). See AwaitingModeller.
         /// </summary>
         private readonly TimeSpan _askTimeout;
 
@@ -148,7 +148,7 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// Revit's own thread, from inside a running job: the job is about to
-        /// show the modeller a Keep or Discard box and wait for them (D-117).
+        /// show the modeller a Keep or Discard box and wait for them (D-118).
         ///
         /// THE AWAITING-THE-MODELLER EXEMPTION. Dispatch gives up on a job
         /// that has not finished within revit.operationTimeoutSeconds and
@@ -320,7 +320,7 @@ namespace Heron.Revit.Addin
                     "or a command may be running. Finish what is open in Revit and ask again.");
             }
 
-            // THE MODELLER IS NOT A TIMEOUT (D-117). A job that put a Keep or
+            // THE MODELLER IS NOT A TIMEOUT (D-118). A job that put a Keep or
             // Discard box up is waiting for a person, so it gets the ask
             // timeout on top - asked AFTER the first wait ran out, because the
             // box can go up at any moment of it.
@@ -596,7 +596,7 @@ namespace Heron.Revit.Addin
                     var applyWord = Json.ReadString(request, "apply");
                     var keeping = string.Equals(applyWord, "true",
                                                 StringComparison.OrdinalIgnoreCase);
-                    // D-117: it runs, and the modeller decides in Revit.
+                    // D-118: it runs, and the modeller decides in Revit.
                     var asking = string.Equals(applyWord, "ask",
                                                StringComparison.OrdinalIgnoreCase);
                     var verb = asking ? "Trying a new tool - you choose Keep or Discard"

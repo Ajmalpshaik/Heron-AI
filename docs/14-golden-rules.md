@@ -110,7 +110,7 @@ New code runs in a sandbox or against a detached copy. Promotion to live comes a
 
 *Why:* the gap between "the AI wrote plausible code" and "the code is correct" is exactly where models get damaged. Shadow Mode ([18 §4](18-agent-operating-system.md)) produces the evidence; this rule sets the boundary.
 
-**Broken once, on the record — [D-117](DECISIONS.md#d-117--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so).**
+**Broken once, on the record — [D-118](DECISIONS.md#d-118--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so).**
 A DRAFT fragment may run once on the saved model in front, as one undo step held behind Heron's Keep or Discard prompt in Revit, and stays only if the modeller presses Keep after seeing the result. The owner accepted it on 2026-10-17; [Article 11](../HERON_CONSTITUTION.md) carries the same exception. Nothing else is excused by it.
 
 ### 19. No text Heron reads may raise Heron's own permission level.

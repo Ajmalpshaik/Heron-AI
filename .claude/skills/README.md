@@ -48,7 +48,7 @@ The same folder also holds `heron-*.md` files, and they are **a different kind o
 rules for whoever works on Heron, but Heron's own agents for a modeller - the first is
 `heron-model-auditor`, which audits the open model with Heron's read tools while the modeller keeps
 working; `heron-fragment-author` writes a new Heron tool at DRAFT when nothing in the library does the
-job, and runs it only once, behind Revit's Keep or Discard box, when the modeller asks (D-117). They sit here only because this is where the host reads agents from.
+job, and runs it only once, behind Revit's Keep or Discard box, when the modeller asks (D-118). They sit here only because this is where the host reads agents from.
 [PROJECT-MAP](../../docs/PROJECT-MAP.md) says where they fit; `tests/test_agent_tools.py` holds what
 they may call.
 
