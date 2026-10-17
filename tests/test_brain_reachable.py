@@ -641,6 +641,45 @@ def main():
             check(got is not None and "FIXED-SIZE FAMILY" in got["purpose"],
                   "and the family method it names carries the fixed-size path")
 
+            # THE BUILDERS WORK LAYOUT, 2026-10-17 (row 5b-540). Before
+            # CREATE_LINEAR_DIMENSION said "builders work", neither of the
+            # owner's two sentences reached a capability any method needs -
+            # words alone found curtain walls and worksets - so nothing named
+            # the method. The capabilities are the ones the live lookup
+            # returned for these words on the spelling backend after that
+            # card's sentence was added; only the skills decide here.
+            for said, returned in (
+                    ("set up the builders work layout",
+                     ["RENAME_WORKSET", "CREATE_LINEAR_DIMENSION",
+                      "SET_CURTAIN_WALL_GRID", "REPORT_COVERAGE",
+                      "REPORT_SPRINKLER_LAYOUT_SPACES"]),
+                    ("do the builders work for this layout",
+                     ["REPORT_CURTAIN_WALL_TYPE", "COPY_FROM_LINK",
+                      "CREATE_LINEAR_DIMENSION", "MIRROR_ELEMENTS",
+                      "SET_CURTAIN_WALL_GRID"])):
+                picked = [s.id for s in SKILL.methods_for(
+                    SKILL.load_all()[0].values(), said, returned)]
+                check(picked[:1] == ["builders-work-layout"],
+                      "\"%s\" names the builders work method first beside "
+                      "the capabilities it reached - %s" % (said, picked))
+                offered = [m["id"] for m in
+                           BRAIN.lookup(said).get("methods") or []]
+                check(offered[:1] == ["builders-work-layout"],
+                      "and the live lookup names it first too - %s" % offered)
+
+            layout = BRAIN.method("builders-work-layout")
+            # Read as words: a step's own lines keep their breaks in the YAML.
+            steps = " ".join((layout or {}).get("purpose", "").split())
+            check(layout is not None and all(
+                      gap in steps for gap in (
+                          "GAP - REPLACE A FAMILY", "GAP - KEEP A FACE",
+                          "GAP - A TAG ON AN OPENING INSIDE A LINK")),
+                  "the builders work method names its three gaps, so a chat "
+                  "says so at that step instead of working round one")
+            check(layout is not None and "SYNC_WITH_CENTRAL" not in
+                  [u["capability"] for u in layout["uses"]],
+                  "and never syncs - it asks the modeller to")
+
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to
         # do nothing" and "Heron cannot read what it knows" send a user in
