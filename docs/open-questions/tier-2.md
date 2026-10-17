@@ -533,7 +533,7 @@ not. A yes therefore owes two things with it: the Revit tools **not listed** off
 then hanging or failing late - and the AGENTS.md line reworded to the test that still holds, *no `revit_`
 tool listed means no Revit here*. The session-start line [#573](https://github.com/Ajmalpshaik/Heron-AI/pull/573)
 added says, off Windows, *"no Revit and no Heron tools in this session"*
-([`session_line.py`](../../.claude/skills/heron-session/bin/session_line.py)); a yes changes it to say the
+(`session_line.py` in the [`heron-session`](../../.claude/skills/heron-session/SKILL.md) skill); a yes changes it to say the
 library tools are there and the Revit ones are not.
 
 **Recommended - reasoned, not built:** **yes**, on non-Windows only, with the library tools served and every
