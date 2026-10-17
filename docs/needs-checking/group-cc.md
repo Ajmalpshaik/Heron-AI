@@ -12,7 +12,8 @@
 building runner in `brain/`, the Companion's Loads panel, the load calculation sheet, and Finalize.
 **Compiled on 2020 to 2027; nothing below has run in Revit.** The model is the one the owner names -
 docs/44 section 10 proposes his L-shaped office, "heron ai bulding" (15 Spaces, 5 zones). Every take-off
-run is a READ: run it with `validate` and no `--write`, so Revit refuses any change. Finalize is a
+run is a READ: run it with `validate` and no `--write`, so Revit refuses a change, and the add-in counts
+the model around every read ([row 5b-350](../fragment-issues/section-5b-rows-326-350.md)). Finalize is a
 write: run it on a rolled-back setup and undo it.
 
 | # | Run | Look for |
