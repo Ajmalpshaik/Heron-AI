@@ -14,8 +14,9 @@ The read-only door: `revit_read` runs what reads, and nothing else.
 WHAT WAS MISSING
 ----------------
 The add-in has had `run_fragment_read` since D-28 - declared ANALYZE, opening
-no transaction, so Revit itself refuses any change - and only the command
-line ever sent it. A chat could reach a READ or ANALYZE fragment through
+no transaction, so Revit refuses a change, and since FRAGMENT-ISSUES row
+5b-350 counting the model around every read - and only the command line
+ever sent it. A chat could reach a READ or ANALYZE fragment through
 `revit_change` alone: with Changes switched ON, inside the executor that opens
 a transaction. A question about the model needed write permission. And the
 server's own text told every chat "Heron can now RUN a read-only fragment",
@@ -722,10 +723,11 @@ def main():
 
     print()
     print("9. Article 11 is asked at the change door, and not at this one (D-117)")
-    # A READ MAY RUN A DRAFT: it opens no transaction, so Revit itself refuses
-    # any change, and its answer says DRAFT (section 6). A CHANGE KEEPS what
-    # it does, so a DRAFT, or a proof its code has moved past, is refused
-    # there before anything is sent.
+    # A READ MAY RUN A DRAFT: it opens no transaction, so Revit refuses a
+    # change, the add-in counts the model around it (row 5b-350), and its
+    # answer says DRAFT (section 6). A CHANGE KEEPS what it does, so a DRAFT,
+    # or a proof its code has moved past, is refused there before anything
+    # is sent.
     unproven = getattr(CLIENT, "unproven_refusal", None)
     check(unproven is not None, "the client has unproven_refusal to ask")
     read_code = "\n".join(line for line in body.splitlines()

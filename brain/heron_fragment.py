@@ -1573,6 +1573,66 @@ def validate(frag):
 PROOF_REQUIRED = ("date", "by", "model", "positive_case", "negative_case",
                   "second_route")
 
+# D-131. ONE ENTRY OF `proof.releases`, a further Revit release this fragment
+# was proved on after `proof:` made it PROVEN. The same evidence D-30 asks of
+# the proof itself, less the second route - that is a fact about the fragment,
+# not about a release - and plus two the proof has no field for: the RELEASE,
+# as a field rather than prose inside `model:`, and the fingerprint the run was
+# taken against, because an entry goes stale on its own.
+RELEASE_REQUIRED = ("release", "date", "by", "model", "positive_case",
+                    "negative_case", "fingerprint")
+
+
+def release_problems(frag, proof):
+    """Whether `proof.releases`, if there is one, holds entries that are entries.
+
+    A STALE ENTRY IS NOT A PROBLEM HERE, and that is deliberate. When the code
+    moves, `proof:` goes stale and the fragment fails validation until it is
+    proved again - that is the fragment's gate. An entry is evidence about one
+    more release, and asking for every release to be re-proved before the
+    fragment validates again would punish having recorded them. The matrix
+    stops counting a stale entry instead (heron_matrix.proven_releases), which
+    is where "proven on that release" is read.
+    """
+    problems = []
+    where = frag.slug
+    rows = proof.get("releases")
+    if rows is None:
+        return problems
+    if not isinstance(rows, list):
+        problems.append("%s: proof.releases must be a list of entries (D-131)" % where)
+        return problems
+
+    claimed = set(frag.supported)
+    seen = set()
+    for index, row in enumerate(rows, 1):
+        if not isinstance(row, dict):
+            problems.append("%s: proof.releases entry %d is not a mapping" % (where, index))
+            continue
+        release = str(row.get("release") or "")
+        name = release or "entry %d" % index
+        for field in RELEASE_REQUIRED:
+            if not row.get(field):
+                problems.append(
+                    "%s: proof.releases %s has no %s. All of %s are required - "
+                    "an entry is a proof on one more release, and is held to "
+                    "the same evidence (D-131)"
+                    % (where, name, field, ", ".join(RELEASE_REQUIRED)))
+        if release and release not in claimed:
+            problems.append(
+                "%s: proof.releases names Revit %s, which this fragment's "
+                "`revit:` does not claim" % (where, release))
+        if release and release in seen:
+            problems.append(
+                "%s: proof.releases names Revit %s twice. One release has one "
+                "entry" % (where, release))
+        seen.add(release)
+        if row.get("negative_case") and len(str(row["negative_case"]).strip()) < 10:
+            problems.append(
+                "%s: proof.releases %s negative_case is too short to be one"
+                % (where, name))
+    return problems
+
 
 def proof_problems(frag):
     """Whether this fragment's proof, if it has one, is a proof at all."""
@@ -1632,6 +1692,7 @@ def proof_problems(frag):
             "%s: negative_case is too short to be one. It must say what came "
             "back EMPTY and why that is the right answer" % where)
 
+    problems.extend(release_problems(frag, proof))
     return problems
 
 

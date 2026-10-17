@@ -256,16 +256,23 @@ class Store(object):
                 revit             TEXT NOT NULL
             );
         """)
-        self.db.execute(
-            "INSERT OR REPLACE INTO meta (key, value) VALUES (\'scope\', ?)",
-            (self.scope,))
-        self.db.execute(
-            "INSERT OR REPLACE INTO meta (key, value) VALUES (\'schema\', ?)",
-            (str(SCHEMA_VERSION),))
+        # WRITTEN ONLY WHEN A VALUE DIFFERS - FRAGMENT-ISSUES row 116. These
+        # three rows were INSERT OR REPLACEd and committed on EVERY open, so
+        # every lookup was a write that changed no row and still moved the
+        # file: measured 2026-10-17, a sweep on a store only it could reach
+        # left every table equal and the md5 different, run after run - which
+        # is what check-risk-crossings.py printed as "the store changed while
+        # this ran". A read now leaves the file byte for byte as it was.
+        wanted = [("scope", self.scope), ("schema", str(SCHEMA_VERSION))]
         if self.project_key:
-            self.db.execute(
-                "INSERT OR REPLACE INTO meta (key, value) VALUES (\'project\', ?)",
-                (str(self.project_key),))
+            wanted.append(("project", str(self.project_key)))
+        held = dict((row["key"], row["value"]) for row in
+                    self.db.execute("SELECT key, value FROM meta").fetchall())
+        for key, value in wanted:
+            if held.get(key) != value:
+                self.db.execute(
+                    "INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)",
+                    (key, value))
         self.db.commit()
 
     # -- contents -----------------------------------------------------------

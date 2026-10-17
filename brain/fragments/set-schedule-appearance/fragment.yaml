@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "how this schedule's columns read on the sheet - heading text
 kind: action
 domain: revit.schedules
 capability: SET_SCHEDULE_APPEARANCE
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -53,12 +53,49 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES row 5b-620). Kept out of the purpose
+# on purpose: the purpose is searched, and a paragraph about "all" and
+# "horizontal" would pull other cards' sentences.
+#
+#   Found 2026-10-15 on a real project, Revit 2020. Asked "make all the fields
+#   formatting horizontal and centre" on one schedule, the chat had to call
+#   this once per field - one undo entry per column - and had no way to turn a
+#   heading back to horizontal: `headingSideways` false meant "leave it", so
+#   only Vertical could ever be written.
+#
+#   `fieldName` "all" (also "every", "*", "all fields", "all columns") is
+#   every column of each schedule, hidden ones included; a list with commas
+#   between - "Mark, Size, Length" - is each one named, by field name or
+#   printed heading. Still one call: one transaction, one undo entry, and one
+#   read-back line per column in appliedAppearance. A text matching one column
+#   EXACTLY is that column, as in version 2 - so a field called "All", or one
+#   whose name holds a comma, still means itself and no version 2 caller's
+#   request changes meaning. A new heading on more than one column is refused
+#   (the same title would print over each) and the rest still applied.
+#
+#   `headingOrientation` "horizontal" or "vertical" sets the heading either
+#   way. It is `optional: true` with `absent: leave`, so a caller that never
+#   sends it is bound "leave" and gets exactly version 2: headingSideways true
+#   turns the heading sideways, false leaves it. Sideways true with horizontal
+#   is refused before anything is written. Any other word is refused by name.
+#
+#   `changed` counts columns read back - one per schedule in version 2, since
+#   version 2 changed one column per schedule. A word that is not an alignment
+#   or an orientation is refused once per schedule, as version 2 refused it,
+#   not once per column.
+#
+#   Version 2's proof below no longer describes the code and is kept as a
+#   record; the card is DRAFT until the version 3 proof (NEEDS-CHECKING Group
+#   FY) is signed.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: elements
       type: IList<Element>
+    # One column by field name or printed heading, or VERSION 3: "all" for
+    # every column, or names with commas between - "Mark, Size".
     - name: fieldName
       type: string
       source: request
@@ -78,6 +115,13 @@ contract:
     - name: hideOrShow
       type: string
       source: request
+    # VERSION 3. "horizontal" | "vertical" sets the heading that way; left
+    # out it is "leave", and headingSideways decides exactly as in version 2.
+    - name: headingOrientation
+      type: string
+      source: request
+      optional: true
+      absent: leave
   provides:
     - name: changed
       role: result
@@ -159,6 +203,12 @@ compatibility-note: >
 #                                         only the printed heading changes
 #   "make the schedule column wider"   -> here, in mm
 #   "turn the heading sideways"        -> here
+#   "set every heading horizontal"     -> here, version 3: fieldName all,
+#                                         headingOrientation horizontal
+#   "make all the schedule columns horizontal and centred"
+#                                      -> here, version 3: one call for every
+#                                         column, alignment centre and
+#                                         headingOrientation horizontal
 #   "sum this column in the schedule"  -> SET_SCHEDULE_FIELD_TOTALS. A total is
 #                                         what a column CALCULATES, not how it
 #                                         prints, and this sentence used to
@@ -205,3 +255,14 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "turn the
   # heading sideways": OFFSET_ELEMENTS on the trained backend answered it.
   - turn the heading sideways
+  # ADDED 2026-10-17, row 5b-620 - version 3 does every column in one call
+  # and turns a heading back to horizontal.
+  - make all the schedule columns horizontal and centred
+  - set every heading horizontal
+  # NOT declared, measured 2026-10-17 on four backends: the owner's own words
+  # "make all the fields formatting horizontal and centre" reach here on the
+  # trained model alone, MEASURE_DISTANCE on spelling, and CREATE_RADIAL_GRIDS
+  # - a write - on both re-ranked backends, on main and on this branch alike.
+  # Declaring them fixed three of the four and moved "align the text notes
+  # horizontally" on the trained model from MOVE_ANNOTATION, which lines
+  # annotation up, to ALIGN_ELEMENTS. Recorded in row 5b-620 for the owner.

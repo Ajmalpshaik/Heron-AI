@@ -103,8 +103,11 @@ WHAT IT PROVES, when an SDK is installed
      and a reply with no readable picture, or a refusal, gives no image.
  15. `revit_show` AND THE TEMPORARY ISOLATE, against a stand-in Revit. A
      MODIFY capability is refused before a session is bound; an EXECUTE one
-     goes as run_fragment_show with no `apply`; a capability that works
-     inside a link goes the same way with no question first (D-124);
+     goes as run_fragment_show with no `apply`, and its answer says nothing
+     in the model changed only from the add-in's count (row 5b-350) - with
+     no count, or a lost answer, it says that was not measured; a
+     capability that works inside a link goes the same way with no question
+     first (D-124);
      revit_isolate_temporary and revit_reset_temporary
      send their fixed operations with the pin, and an add-in refusal
      reaches the chat in its own words.
@@ -286,7 +289,9 @@ async def exercise(server):
     # The arguments, from the generated schema rather than from the signature.
     expected = {
         "heron_resolve": ["capability"],
-        "heron_lookup": ["request"],
+        # `question` since 2026-10-17: the host's word that a request is a
+        # question, which leaves out every capability that writes (D-128).
+        "heron_lookup": ["request", "question"],
         "revit_use_session": ["session"],
         "revit_select_by_category": ["category"],
         "revit_preview_move": ["category", "distance"],
@@ -362,6 +367,45 @@ async def exercise(server):
           "and names it")
     check("heron_scope.py --rebuild" in drifted,
           "and that a rebuild is needed - this store is the suite's own")
+
+    # D-128, THROUGH THE DISPATCH A HOST USES. "what scale is this view" is a
+    # question a write declares (D-86's own example), so without the flag it
+    # answers by identity with SET_VIEW_SCALE; with `question` the write is
+    # not offered and the reply says what was left out.
+    print()
+    print("  a question, through the SDK's own dispatch - D-128")
+    import heron_brain as BRAIN
+    import heron_tools as TOOLS
+    ceiling = getattr(BRAIN, "question_ceiling", None)
+    check(callable(ceiling), "the brain has a word for a question's ceiling")
+    if callable(ceiling):
+        level = TOOLS.level_named(ceiling())
+        check(level is not None and level + 1 == TOOLS.risk_of("revit_change"),
+              "the ceiling is the level just below the change door's, read "
+              "from the registry (%s)" % ceiling())
+        found = BRAIN.lookup("what scale is this view", question=True)
+        answered = TOOLS.level_named(found.get("risk"))
+        check(found.get("question") is True and found.get("left_out", 0) > 0
+              and answered is not None
+              and answered < TOOLS.risk_of("revit_change"),
+              "lookup(question=True) answers below the write line and counts "
+              "what it left out (%s, %s, %s left out)"
+              % (found.get("capability"), found.get("risk"),
+                 found.get("left_out")))
+    try:
+        plain = text_of(await server.call_tool(
+            "heron_lookup", {"request": "what scale is this view"}))
+        asked = text_of(await server.call_tool(
+            "heron_lookup", {"request": "what scale is this view",
+                             "question": True}))
+    except Exception as exc:                                    # noqa: BLE001
+        plain = asked = "(raised %s: %s)" % (type(exc).__name__, exc)
+    check("Asked as a question" not in plain,
+          "without `question` the reply is the lookup it always was")
+    check("Asked as a question" in asked and "D-128" in asked
+          and "would need   SET_VIEW_SCALE" not in asked,
+          "with it, the write is not the answer and the reply says what was "
+          "not offered")
 
     print()
     print("  the HVAC engine, called through the SDK's own dispatch")
@@ -723,7 +767,8 @@ async def exercise_show(module):
     reply = {"ok": True, "ran": "x", "document": "Project1",
              "documentPath": "C:/jobs/Project1.rvt", "projectKey": "key-1",
              "wasActiveDocument": True, "bound": "elements from the selection (3)",
-             "provides": {"shown": "3", "viewAfter": "{3D}"}, "providesCount": 2}
+             "provides": {"shown": "3", "viewAfter": "{3D}"}, "providesCount": 2,
+             "elementsCounted": 1234}
     revit = StandIn(reply)
     resolved = []
 
@@ -757,6 +802,28 @@ async def exercise_show(module):
               and "Only what is shown can have changed" in said,
               "the answer names the model, and says only the screen can have "
               "changed")
+        check("1,234" in said and "itself refuses" not in said,
+              "and says the model was unchanged from the add-in's own count, not "
+              "from Revit's refusal (row 5b-350)")
+
+        # AN ADD-IN THAT NEVER COUNTED MUST NOT BE SAID TO HAVE - revit_read's
+        # rule, on the same counted read path.
+        revit.reply = {k: v for k, v in reply.items() if k != "elementsCounted"}
+        said = await call("revit_show", {"capability": "ZOOM_TO_ELEMENTS"})
+        check("Nothing in the model was changed" not in said
+              and "not measured" in said,
+              "an answer with no count says the model was not measured")
+
+        # A LOST ANSWER CARRIED THE COUNT AWAY WITH IT.
+        revit.reply = {"ok": False, "error": "unknown_outcome",
+                       "message": "The request reached Revit but the answer was lost."}
+        said = await call("revit_show", {"capability": "ZOOM_TO_ELEMENTS",
+                                         "expect_from": "find-views"})
+        check("find-views" in said and "lost answer" in said
+              and "Nothing in the model was changed" not in said,
+              "a consuming show whose answer was lost says the count went with it, "
+              "and never that nothing was changed")
+        revit.reply = reply
 
         revit.asked[:] = []
         resolved[:] = []

@@ -367,12 +367,14 @@ _KNOWN = {
     # HeronDialogWatch answers it - Cancel, or Close - rather than let the job
     # hang behind it, and the job stops (FRAGMENT-ISSUES section 5b row 300).
     # The add-in says `dialog_refused` ONLY when Revit confirmed the rollback,
-    # or when the job only read; any other case is `dialog_unconfirmed`, which
-    # is a person looking at the model and never a retry.
+    # or when the job does not change the model - a fragment read counted
+    # before and after, or one of Heron's own operations below MODIFY, which
+    # nothing counts (row 5b-350); any other case is `dialog_unconfirmed`,
+    # which is a person looking at the model and never a retry.
     "dialog_refused":    (ROLLED_BACK, FIX_FIRST,
                           "Revit showed a dialog during the job and Heron declined it rather "
                           "than answer for the modeller, so the job stopped - rolled back, or "
-                          "a read that changed nothing"),
+                          "a job that does not change the model"),
     "dialog_unconfirmed": (UNKNOWN, LOOK_AT_THE_MODEL,
                           "Revit showed a dialog during the job and Heron declined it, and "
                           "Revit did not confirm the change was undone"),

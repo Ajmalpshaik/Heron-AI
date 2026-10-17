@@ -154,3 +154,9 @@ utterances:
   - is this view on a template
   - which settings are locked by the template
   - what is this template holding
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md (FRAGMENT-ISSUES 5b-477). Measured reaching
+  # REMOVE_VIEW_TEMPLATE, a write, on both backends. Nothing on any frozen set
+  # became riskier (brain/retrieval-history.md, 2026-10-17).
+  - what is the view template of this view
