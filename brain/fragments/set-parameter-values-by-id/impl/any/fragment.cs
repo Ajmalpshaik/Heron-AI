@@ -261,8 +261,15 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
             : side == "bottom" ? v.UpDirection.Negate()
             : side == "near" ? v.ViewDirection
             : v.ViewDirection.Negate();
+        // A view's Name THROWS on a handful of view kinds rather than reading
+        // empty (the add-in's own ViewsNamed guards it the same way), and one
+        // such view must not stop the run.
+        Func<View, string> nameOf = v =>
+        {
+            try { return v.Name; } catch (Exception) { return null; }
+        };
         var named = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
-            .Where(v => !v.IsTemplate && string.Equals(v.Name, viewName, StringComparison.OrdinalIgnoreCase))
+            .Where(v => !v.IsTemplate && string.Equals(nameOf(v), viewName, StringComparison.OrdinalIgnoreCase))
             .ToList();
         var inModel = named.Where(v => v.ViewType == ViewType.FloorPlan || v.ViewType == ViewType.CeilingPlan
                                        || v.ViewType == ViewType.EngineeringPlan || v.ViewType == ViewType.AreaPlan
@@ -491,8 +498,9 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
             foreach (var candidate in nearBy(model, low - pad, high + pad, BuiltInCategory.OST_Walls))
             {
                 var wall = candidate as Wall;
+                // A WALL WRITTEN ITSELF is the wall it sits in: its own middle
+                // line passes through its own middle, so it is not skipped.
                 if (wall == null) continue;
-                if (model.Item1.Equals(doc) && wall.Id == element.Id) continue;
                 double width;
                 try { width = wall.Width; } catch (Exception) { continue; }
                 var line = wallLineNear(model, wall, middle);
@@ -541,7 +549,11 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
             foreach (var way in new[] { 1, -1 })
             {
                 var toward = normal.Multiply(way);
-                var reachOut = outermost(points, toward) - middle.DotProduct(toward);
+                // OUT FROM THE WALL'S FACE, or the element's where it stands
+                // proud of it: an element thinner than its wall would otherwise
+                // probe 1 m out from a point inside the wall.
+                var wallFace = foot0.DotProduct(toward) + halfWall;
+                var reachOut = Math.Max(outermost(points, toward), wallFace) - middle.DotProduct(toward);
                 found[way] = new List<string>();
                 foreach (var metres in new[] { 1.0, 3.0 })
                 {
@@ -594,15 +606,20 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
         {
             foreach (var near in nearBy(models[0], low - ductPad, high + ductPad, category))
             {
+                // A DUCT BY ITS POINT NEAREST THE ELEMENT, never its ends: a long
+                // duct passing outside the wall has both ends far away, and one
+                // through the opening has its nearest point in the wall itself.
                 var spots = new List<XYZ>();
                 var onCurve = near.Location as LocationCurve;
                 var onPoint = near.Location as LocationPoint;
                 if (onCurve != null && onCurve.Curve != null)
                 {
-                    spots.Add(onCurve.Curve.GetEndPoint(0));
-                    spots.Add(onCurve.Curve.GetEndPoint(1));
+                    IntersectionResult closest = null;
+                    try { closest = onCurve.Curve.Project(middle); } catch (Exception) { }
+                    if (closest != null && closest.XYZPoint.DistanceTo(middle) <= 3.0 * metre)
+                        spots.Add(closest.XYZPoint);
                 }
-                else if (onPoint != null) spots.Add(onPoint.Point);
+                else if (onPoint != null && onPoint.Point.DistanceTo(middle) <= 3.0 * metre) spots.Add(onPoint.Point);
                 foreach (var spot in spots)
                 {
                     var offset = (spot - foot0).DotProduct(normal);
@@ -613,10 +630,10 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
         }
         var ductVote = count[1] > count[-1] ? -1 : count[-1] > count[1] ? 1 : 0;
         var ductSaid = ductVote != 0
-            ? "outside is " + named(ductVote) + " - " + count[-ductVote] + " duct end(s) or duct accessories "
+            ? "outside is " + named(ductVote) + " - " + count[-ductVote] + " duct(s) or duct accessories "
               + "within 3 m on the other side, the inside, and " + count[ductVote] + " on this one"
             : count[1] > 0
-                ? "not used - as many duct ends or duct accessories on each side (" + count[1] + ")"
+                ? "not used - as many ducts or duct accessories on each side (" + count[1] + ")"
                 : "not used - no duct or duct accessory of this model within 3 m";
 
         var signsJson = "{" + esc("slab") + ": " + esc(slabSaid) + ", " + esc("skin") + ": " + esc(skinSaid)
@@ -639,6 +656,7 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
     var signs = new Dictionary<string, string>();
     var turnedDown = new List<string>();
     var refusedWhy = new Dictionary<string, string>();
+    var refusedRows = 0;
     var keptCount = 0;
 
     // BEFORE ANYTHING IS WRITTEN: the face can be found and the element can
@@ -648,7 +666,11 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
         if (ruleProblem != null) return null;   // said once, for the whole run
         var key = element.UniqueId;
         if (faceToward.ContainsKey(key)) return null;   // another row on the same element
-        if (refusedWhy.ContainsKey(key)) return refusedWhy[key];
+        if (refusedWhy.ContainsKey(key))
+        {
+            refusedRows++;
+            return refusedWhy[key];
+        }
         string why = null;
         if (element.Pinned)
             why = "it is pinned, and keeping its " + side + " face means moving it - unpin it, or leave keepFace out";
@@ -681,6 +703,7 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
         }
         if (why == null) return null;
         turnedDown.Add(element.Id.ToString());
+        refusedRows++;
         refusedWhy[key] = "its " + side + " face cannot be kept - " + why;
         return refusedWhy[key];
     };
@@ -691,9 +714,10 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
     Func<IEnumerable<Element>, string> keepFaces = elements =>
     {
         var moving = new List<Element>();
+        var once = new HashSet<string>(StringComparer.Ordinal);
         foreach (var element in elements)
         {
-            if (faceToward.ContainsKey(element.UniqueId) && !moving.Any(m => m.UniqueId == element.UniqueId))
+            if (faceToward.ContainsKey(element.UniqueId) && once.Add(element.UniqueId))
                 moving.Add(element);
         }
         foreach (var element in moving)
@@ -770,11 +794,13 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
              + " mm and each element was moved back by exactly what was measured, in the same undo entry.";
     };
 
-    // When the face stopped the run: the rule itself, or some elements.
-    Func<int, string> stoppedSentence = staleRows => ruleProblem != null
+    // When the face stopped the run: the rule itself, or some elements. Said
+    // beside version 2's sentence for the rows that changed in Revit, never
+    // instead of it - the two have different fixes.
+    Func<string> stoppedSentence = () => ruleProblem != null
         ? "Nothing was written: " + ruleProblem
         : "Nothing was written: the " + side + " face of " + turnedDown.Count + " element(s) cannot be kept - "
-          + "stale says why for each of its " + staleRows + " row(s).";
+          + "stale says why, row by row.";
 
     return new
     {
@@ -786,7 +812,8 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
         Kept = (Func<int>)(() => keptCount),
         Said = keptSentence,
         Stopped = stoppedSentence,
-        Stopping = (Func<bool>)(() => ruleProblem != null || turnedDown.Count > 0)
+        // The id rows the face turned down - the rule's own stale row counts one.
+        Rows = (Func<int>)(() => (ruleProblem != null ? 1 : 0) + refusedRows)
     };
 }).First();
 
@@ -884,11 +911,14 @@ var applied = stale.Count == 0 && plan.Count > 0;
 
 if (stale.Count > 0)
 {
-    findings.Add(faceKeeper != null && faceKeeper.Stopping()
-        ? faceKeeper.Stopped(stale.Count)
-        : string.Format(
+    // Version 3: rows the face turned down are said apart from rows changed
+    // in Revit. Left out, faceRows is 0 and this is version 2's sentence.
+    var faceRows = faceKeeper == null ? 0 : faceKeeper.Rows();
+    if (faceRows > 0) findings.Add(faceKeeper.Stopped());
+    if (stale.Count > faceRows)
+    findings.Add(string.Format(
         "Nothing was written: {0} row(s) no longer match what the table showed. " +
-        "Refresh the table, look at them, and apply again.", stale.Count));
+        "Refresh the table, look at them, and apply again.", stale.Count - faceRows));
 }
 else if (plan.Count == 0)
 {
@@ -1347,4 +1377,10 @@ if (faceKeeper != null)
     if (faceKeeper.Kept() > 0) findings.Add(faceKeeper.Said());
     resultJson = resultJson.Substring(0, resultJson.Length - 1)
                + ", " + esc("keepFace") + ": " + faceKeeper.Summary() + "}";
+
+    // LET IT GO. Every top-level name is kept in the chain after the run, and
+    // this one holds the document, every loaded link and each element's
+    // measures; resultJson already carries all of it. Null, the reply prints
+    // `faceKeeper (null)` - the same line as when keepFace is left out.
+    faceKeeper = null;
 }

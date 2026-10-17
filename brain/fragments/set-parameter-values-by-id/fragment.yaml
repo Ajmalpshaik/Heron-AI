@@ -52,6 +52,9 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   other side, the inside. A sign with nothing to go on does not vote. None
 #   voting, or two voting different ways, refuses the element - by id rows the
 #   whole run, by key that row - naming what each sign found. Never a guess.
+#   A duct counts by its point nearest the element, never its ends; the slab
+#   is looked for 1 m and 3 m out from the wall's face; and a WALL written
+#   itself is the wall it sits in.
 #
 #   A VIEW SIDE is the view's own direction: left and right along its right
 #   direction, top and bottom along its up direction, near toward the viewer
