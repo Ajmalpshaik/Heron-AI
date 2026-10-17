@@ -131,6 +131,9 @@ PROJECTS = [
     "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
     "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
+    # How a Revit dialog met inside a job is answered, linked by source the
+    # same way - tests/test_dialog_note.py builds and runs it (5b row 300).
+    "tests/Heron.DialogNote.TestHost/Heron.DialogNote.TestHost.csproj",
     # The fragment write path's failure rule, linked by source like the
     # binding note above - tests/test_failure_note.py builds and runs it.
     "tests/Heron.FailureNote.TestHost/Heron.FailureNote.TestHost.csproj",

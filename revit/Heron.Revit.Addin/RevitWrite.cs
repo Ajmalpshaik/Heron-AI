@@ -404,6 +404,20 @@ namespace Heron.Revit.Addin
                         }
                     }
 
+                    // A REVIT DIALOG HERON DECLINED STOPS THE MOVE before it is
+                    // kept, as it stops a fragment - see HeronDialogWatch. Its
+                    // rollback is checked like every other one.
+                    if (HeronDialogWatch.Refused)
+                    {
+                        var after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                        var unwound = after.Held;
+                        return Failed(workflow, preview, handler,
+                            HeronDialogWatch.Armed.RefusedSentence() + (unwound
+                                ? " The move was rolled back completely, so the model is as it was."
+                                : " " + NotHeld(after))
+                            + Also(after));
+                    }
+
                     // A move adds nothing, so there is no note to carry: the
                     // move's reply has no verdict, and Keep's only words are
                     // about a job kept before this one.

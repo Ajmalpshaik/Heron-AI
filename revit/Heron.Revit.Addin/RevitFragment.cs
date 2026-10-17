@@ -554,6 +554,13 @@ namespace Heron.Revit.Addin
             if (!writing)
             {
                 threw = RunScript(script, globals, name, out state);
+
+                // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
+                // built around a question nobody answered is not the answer
+                // that was asked for. Ahead of `threw`, because a call the
+                // Cancel refused is often what threw. See HeronDialogWatch.
+                var stoppedRead = DialogRefusal(name, null);
+                if (stoppedRead != null) return stoppedRead;
             }
             else
             {
@@ -637,7 +644,9 @@ namespace Heron.Revit.Addin
                         }
                         if (threw != null)
                         {
-                            return HeronRollbackWitness.Told(threw, RollBackAndCheck(group, target, watch).Unsaid());
+                            var after = RollBackAndCheck(group, target, watch);
+                            return Stopped(name, after)
+                                ?? HeronRollbackWitness.Told(threw, after.Unsaid());
                         }
                     }
                     else
@@ -655,7 +664,9 @@ namespace Heron.Revit.Addin
                         if (threw != null)
                         {
                             SafeRollBack(transaction);
-                            return HeronRollbackWitness.Told(threw, RollBackAndCheck(group, target, watch).Unsaid());
+                            var after = RollBackAndCheck(group, target, watch);
+                            return Stopped(name, after)
+                                ?? HeronRollbackWitness.Told(threw, after.Unsaid());
                         }
 
                         // NOT COMMITTED MEANS DISCIPLINE ROLLED IT BACK, almost
@@ -679,6 +690,16 @@ namespace Heron.Revit.Addin
                                           said, RollBackAndCheck(group, target, watch)));
                         }
                     }
+
+                    // A REVIT DIALOG HERON DECLINED STOPS THE JOB HERE, before
+                    // anything is kept. The fragment ran on past it - a Cancel
+                    // makes the call that asked return or throw, and a
+                    // fragment that caught it carried on - so this is the last
+                    // point where the whole job can still be undone, setup
+                    // steps included. Article 7: a question nobody answered is
+                    // never a yes. See HeronDialogWatch.
+                    if (HeronDialogWatch.Refused)
+                        return Stopped(name, RollBackAndCheck(group, target, watch));
 
                     // ASSIMILATE, so the whole group collapses to ONE undo step
                     // rather than leaving the inner transaction visible as its
@@ -1303,6 +1324,39 @@ namespace Heron.Revit.Addin
                 return Json.Error("fragment_threw",
                     "'" + name + "' threw while running: " + Innermost(failure).Message);
             }
+        }
+
+        /// <summary>
+        /// The refusal for a job a Revit dialog stopped, or null when none
+        /// did. `rolledBack` is null on the read path, where no transaction
+        /// was open and so nothing can have changed; otherwise it is what
+        /// SafeRollBack reported, and the sentence says the model is as it
+        /// was ONLY when Revit confirmed it - WithVerdict's rule.
+        /// </summary>
+        private static string DialogRefusal(string name, bool? rolledBack)
+        {
+            var met = HeronDialogWatch.Armed;
+            if (met == null || !met.Refused) return null;
+
+            var outcome = rolledBack == null ? HeronDialogNote.Outcome.ReadOnly
+                        : rolledBack.Value   ? HeronDialogNote.Outcome.RolledBack
+                        :                      HeronDialogNote.Outcome.RollbackUnconfirmed;
+            return met.Refusal("'" + name + "'", outcome);
+        }
+
+        /// <summary>
+        /// The dialog refusal after the rollback check, or null when no dialog
+        /// stopped the job. Its own words already say whether Revit confirmed
+        /// the rollback, from `Held`; what it is handed beyond that is what the
+        /// check found - a rollback Revit reported whose additions still stand,
+        /// and the last kept job's loss.
+        /// </summary>
+        private static string Stopped(string name, HeronRollbackWitness.Outcome after)
+        {
+            var refusal = DialogRefusal(name, after.Held);
+            if (refusal == null) return null;
+            return HeronRollbackWitness.Told(refusal,
+                after.Reported && !after.Held ? after.Unsaid() : after.Also());
         }
 
         /// <summary>

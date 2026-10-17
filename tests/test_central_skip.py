@@ -194,8 +194,9 @@ def main():
     rollback = body_of(fragment, "private static bool SafeRollBack(TransactionGroup")
     check(bool(rollback) and "TransactionStatus.RolledBack" in rollback
           and re.search(r"SafeRollBack\s*\(", code) is None
-          and len(re.findall(r"RevitFragment\.RollBackAndCheck\(\s*group\b", code)) == 2,
-          "the move's two rollbacks go through the helper whose SafeRollBack answers "
+          and re.search(r"\.\s*RollBack\s*\(", code) is None
+          and len(re.findall(r"RevitFragment\.RollBackAndCheck\(\s*group\b", code)) >= 2,
+          "the move's rollbacks go through the helper whose SafeRollBack answers "
           "whether Revit reports the group ROLLED BACK")
     check("rolled back completely" in raw and "RollbackNotConfirmed" in code
           and re.search(r"rolledBack\s*=\s*after\.Held\s*;", code) is not None

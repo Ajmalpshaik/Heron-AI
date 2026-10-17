@@ -204,6 +204,12 @@ namespace Heron.Revit.Addin
                 // moment no request is running. See RevitFragment.Listen.
                 RevitFragment.Listen(application.ControlledApplication);
 
+                // A REVIT DIALOG THAT OPENS INSIDE A JOB IS ANSWERED, not left
+                // for a modeller who is not there - FRAGMENT-ISSUES 5b row 300.
+                // Inert until the dispatcher arms it around a job, so a dialog
+                // in the modeller's own work is never touched. HeronDialogWatch.
+                HeronDialogWatch.Attach(application, Log);
+
                 // WHAT THE COMPANION PAGE READS (D-108): the model, view and
                 // selection, written to a file only while the bridge is
                 // connected. Before BuildRibbon, whose SetBridgeIcon(false)
@@ -309,6 +315,7 @@ namespace Heron.Revit.Addin
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
                 RevitFragment.StopListening(application.ControlledApplication);
+                HeronDialogWatch.Detach(application);
                 HeronLiveState.Detach(application);
 
                 Dispatcher = null;

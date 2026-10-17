@@ -3,63 +3,44 @@
 > One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-17 so that it can be read
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
 > for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
-> reads it back into the register for every tool that reads the register, so a row here is seen
+> reads it back into the register for every tool that reads it, so a row here is seen
 > exactly as it was seen there.
 
-## Group EK - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
+## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
 
-A fragment's preview is the run itself, rolled back ([D-55](../DECISIONS.md)), so Heron rolls back far more
-than it keeps. [Section 1c](../fragment-issues/section-1c.md) holds three rollbacks that did not hold while
-the reply said they had, and nothing checked whether a rollback had also taken the elements the **last kept**
-job made - the job on screen truly kept nothing, said so, and the stage before it could be gone without a word.
+Asked for by the owner on 2026-10-17: one read-only call that describes up to 50 elements fully. Version 2
+([Group DI](group-di.md)) took only a selection or a chained set, had no cap - 535 elements came back as a
+6.2 MB record (DI3) - and an id from a linked model found nothing.
+[FRAGMENT-ISSUES row 5b-489](../fragment-issues/section-5b-rows-401-425.md).
 
-**What changed.** Every transaction group in Heron - the fragment write path in
-[`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) and the move in
-[`RevitWrite.cs`](../../revit/Heron.Revit.Addin/RevitWrite.cs) - is now rolled back through one helper,
-`RollBackAndCheck`, and assimilated through one, `Keep`. A permanent `DocumentChanged` listener, subscribed in
-`OnStartup`, counts the elements each write job adds while it runs and samples up to 200 by UniqueId. When a job
-is **kept**, that sample is kept under the model's identity strings (CreationGUID from 2024, path, title - never
-the Document). When the next write job **starts**, the sample is narrowed to what still resolves, so what the
-modeller deleted or undid in between is never blamed on Heron. After that job's **rollback**, anything gone from
-the narrowed sample is said once - *"Rolling back this run removed X of N elements the last kept job made
-('NAME') - rebuild that stage"* - and the sample is forgotten. And the job's own additions are counted back as a
-second witness beside Revit's status: any still standing and the reply says **THE ROLLBACK DID NOT HOLD**, and
-`rolledBack` on the reply is false. A Ctrl+Z of the kept job's own undo entry, seen by the listener as
-`TransactionUndone` with the name `Heron: NAME`, is reported at the next job's start as an undo, not a loss.
+**What was built - version 3 of the same capability, not a new one.** `elementIds` takes ids as Revit shows
+them, matched as text in the model looked in; an id that names nothing lands in `missing` and the rest are
+described. `linkName` looks the ids up inside a placed link's own document. The record holds the first 50
+of N and adds, per element, the unique id, level (and which parameter gave it), owner view, workset in a
+workshared model, curve length and a placed link's model title; per parameter, sorted by name, the
+built-in name and the raw value in Revit's internal units. It stops at `maxChars` - 60000 when left out -
+with a last line naming every element not written; `parameterFilter` keeps only the parameters asked
+about.
 
-The bookkeeping and every sentence are in
-[`HeronRollbackWitness.cs`](../../revit/Heron.Revit.Addin/HeronRollbackWitness.cs), which names no Autodesk type;
-[`tests/test_rollback_witness.py`](../../tests/test_rollback_witness.py) runs it in
-`tests/Heron.RollbackWitness.TestHost` and reads every rollback site as text. **What nobody has seen is Revit
-reporting what the listener relies on**, and every row below is about that.
+**What is compiled and what is not run.** Compiled on all eight releases 2020 to 2027
+(`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** The binding of the four
+new values left out - `elementIds` "none", `linkName` "host", `maxChars` "60000", `parameterFilter` "all" - is
+the add-in's `absent:` rule from [Group EI](group-ei.md), which needs that add-in deployed.
 
-**What is compiled and what is not run.** The add-in and the test host build for all eight releases 2020 to
-2027 (`tools/check-compile.py`, 2026-10-17); the members used - `UndoOperation`'s five values,
-`DocumentChangedEventArgs.Operation`, `GetAddedElementIds`, `GetDeletedElementIds`, `GetTransactionNames`,
-`TransactionGroup.Assimilate` returning a status, `Document.GetElement(string)` - were read out of all eight
-releases' RevitAPI.dll with `tools/api-surface --members`. **None of it has run in Revit.** It works only once the
-add-in is rebuilt, deployed for each Revit and Revit restarted.
-
-**A NEW SCRATCH PROJECT, never a working model.** Make it before EK1, in Revit 2024 first: a project from the
-default metric template saved as *Heron Rollback Check.rvt*, a floor plan of Level 1 open. Each write below goes
-through the chat's `revit_change`, or the same add-in path from the bridge client:
-`python mcp/client/heron_bridge_client.py fragment --in "Heron Rollback Check" create-wall --write [--apply]
---set level=Level 1 --set "wallType=Generic - 200mm" --set height=3000 --set structural=false --set points=...`,
-three plan points in the units the card states. Read `verdict`, `rolledBack`, `rollbackReported` and
-`rollbackCheck` off each reply.
+**A TEST COPY, never a working model.** Copy Snowdon-scratch_ajmal.al and save it as *Heron Record WS.rvt*;
+if Collaborate > Worksets says the copy is not workshared, enable worksets on the copy. Keep its placed
+links loaded. Read the ids each row types with Manage > IDs of Selection, and for a linked element from the
+linked file opened alone.
 
 | # | Run | Look for |
 |---|---|---|
-| **EK1** | **Keep A, then preview B and roll it back.** A: `CREATE_WALL` with **apply**, three points - two walls, KEPT. B: `CREATE_WALL` again, no apply, three other points | B's reply: `rolledBack` true, `rollbackReported` true, `rollbackCheck` `added` 2, `checked` 2, `standing` 0, `keptJob` "create-wall", `keptChecked` 2, `keptLost` 0, and the verdict says NOTHING WAS KEPT with *"none of the 2 elements this run added is still in the model"* and **no** "Rolling back this run removed". A's two walls still there, B's gone. **The check stays silent** - the D-30 positive |
-| **EK2** | **Ctrl+Z on A, then B.** Keep A as in EK1, press Ctrl+Z once in Revit (the undo entry reads *Heron: create-wall*), then preview B | B's verdict ends with *"The last kept job ('create-wall') was undone in Revit before this run started, so this run did not remove what it made."* and **never** *"Rolling back this run removed"*; `keptLost` 0. **Reported as undone by the user.** If it says *"What the last kept job ('create-wall') made was already gone when this run started"* instead, the listener did not match the undo - the name `GetTransactionNames()` reports for an assimilated group is not *Heron: create-wall*; write down what it is |
-| **EK3** | **Whether `DocumentChanged` reports the group's commits and its rollback with the right ids.** EK1's B, read off the reply | `rollbackCheck.added` equal to the walls B built (2) - **0 means the listener never saw the inner commits inside the open group**, and every other row here is then silent for the wrong reason. `eventNamed` 2: Revit's `TransactionGroupRolledBack` event named both walls as removed. **-1 means that event never reached the job** (raised after the request ended, or not at all); 0 means it came with other ids. Neither decides anything today - write down which it is |
-| **EK4** | **The negative: B deletes A's walls, and is rolled back.** Keep A, select its two walls, `DELETE_ELEMENTS` without apply | `keptLost` 0, no "Rolling back this run removed", both walls back in the model - the rollback restored them, and the check says so by saying nothing. **The D-30 negative**: a loss that a rollback DOES undo is not reported |
-| **EK5** | **The modeller's own delete is not Heron's.** Keep A, delete ONE of its walls by hand, then preview B | Silent, `keptChecked` 1, `keptLost` 0. Then delete the other by hand and preview B again: the verdict ends with *"What the last kept job ('create-wall') made was already gone when this run started - removed in Revit, not by this run."* once, and the next preview says nothing |
-| **EK6** | **The move.** Keep A, then `preview_move` / `move_elements` on Walls with Revit refusing (a pinned wall in a workshared copy, or whatever makes `transaction.Commit()` fail) | The `move_failed` message is the one it always was, with no loss sentence; A's walls still there. A move that SUCCEEDS leaves A watched - a following EK1 B still reports `keptJob` "create-wall" |
-| **EK7** | EK1 and EK2 once on Revit 2020 and once on 2027 | The same answers. 2020 has no CreationGUID, so the model is keyed by path and title alone - a Save As between A and B must leave B silent (a new key, so nothing is watched), never a false loss |
-| **EK8** | *Not a proof - an observation.* Ctrl+Y after EK2's Ctrl+Z, then preview B | Silent, `keptChecked` 2 - the redo was seen and A is watched again. If B says A was undone, the listener did not see `TransactionRedone` with the same name |
-
-**What no row here can arrange: a real loss.** The sentence *"Rolling back this run removed X of N elements the
-last kept job made"* exists for section 1c's kind of failure, and nobody knows how to cause one on purpose - the
-three on record came from a dialog-raising transfer, a cascading delete and a plain rename. The host proves what
-Heron says when one happens; only the next one, met in a real model, proves Revit can produce one for it to see.
+| **EK1** | **The D-30 positive.** 50 MIXED ids typed in `elementIds`, nothing selected - 10 ducts in FloorPlan: M1, 10 pipes (10 more ducts if the model has no pipes), 10 walls, 10 mechanical equipment, 5 duct tags, 4 air terminals and the one placed link of your choice - with fullRecord, includeTypeParameters and includeTags true, sampleOnly false, maxChars 1000000. The selection-chain half is `tools/jobs/report-parameter-inventory-v3-2026-10-17.yaml` | header "50 element(s)" and "50 id(s) typed, 50 found", `missing` empty, no RECORD CUT line, and **every field filled where it applies**: a unique id on every block; a level - walls *from LevelId*, ducts and pipes *from RBS_START_LEVEL_PARAM*; a workset name; the duct tags' owner view by name, every model element *owner view: none*; a length in mm on the ducts, pipes and walls equal to Properties' Length; the link's *link document* title. Parameters sorted by name, each with its built-in name or `-` and a raw value |
+| **EK2** | EK1's 50 ids with **maxChars left out** | the binding note *maxChars not given - "60000", the card's own default*; `record` no longer than 60000 characters, ending in *RECORD CUT AT THE 60000-CHARACTER BUDGET* naming the elements written whole, the one cut and every id not written; those ids asked for again come back, nothing before them repeated |
+| **EK3** | 60 ids - EK1's and 10 more ducts | *FIRST 50 OF 60* with the 51st id named as the next; the inventory in `findings` read from all 60 |
+| **EK4** | **The D-30 negative.** One real duct id, `999999999` and `abc` in `elementIds`; then three ids that name nothing; then the job file's negative - its selection with two unknown ids typed | `missing` holds `999999999` and *abc (not an id - digits only)* and the duct is still described whole; the three unknown alone give no ELEMENT block and *None of the 3 id(s) typed ...*; the job's negative describes nothing and says the selected elements were NOT read |
+| **EK5** | **The linked model.** Three structural framing ids from inside the placed *Snowdon Towers Sample Structural* link with `linkName` "Structural" | *read in '...Structural...' through the link* with its id; three framing blocks, each id the link's own, its level from the link, its location in the link's coordinates with *in this model's coordinates* beside it; *tags not read*; `missing` empty |
+| **EK6** | EK5's ids **without** `linkName`; then `linkName` "ZZZNOTHINGHERE"; then the link unloaded in Manage Links | in the host each id lands in `missing` or names something that is not structural framing - the case version 3 exists for; no match names every placed link and leaves the three in `missing`; unloaded says *present but NOT LOADED* - never "nothing found" |
+| **EK7** | `parameterFilter` "level, offset" on EK1's ids; then `maxChars` 100 | each parameter heading *N kept of M*, every kept line holding *level* or *offset* in its name or built-in name, the inventory in `findings` unfiltered; 100 raised to 5000 in the header, the record no longer than that with its RECORD CUT line |
+| **EK8** | 10 ducts selected and two other ids typed; then EK1's ids on a model that is not workshared | only the two typed are described, a finding saying the 10 selected were not read; no workset line anywhere and *worksets not shown - not a workshared model* |
+| **EK9** | EK1 and EK5 once on **Revit 2020** and once on **2027** | the same answers. The members were read off the reference assemblies for every release and compiled, not run |
+| **EK10** | Second route: Manage > Select by ID with each typed id, and Properties' Workset, Level and Length for it; for a linked id, the linked file opened alone | the element Revit selects is the one the block describes, and the three values agree |
