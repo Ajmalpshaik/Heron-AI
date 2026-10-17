@@ -779,6 +779,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fd.md`](needs-checking/group-fd.md)
 
+## Group FE - change a value and keep a face where it is: `SET_PARAMETER_VALUES_BY_ID` version 3, `keepFace` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fe.md`](needs-checking/group-fe.md)
+
 ## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fg.md`](needs-checking/group-fg.md)

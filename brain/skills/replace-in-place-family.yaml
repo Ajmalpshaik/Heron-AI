@@ -207,10 +207,10 @@ purpose: >
      %TEMP%\heron-work - never beside Heron or the model. Both write by NAME,
      and both REFUSE a name the element carries twice, which is right.
      GAP - A GUID WRITE: nothing writes a value by GUID yet. Checked
-     2026-10-17 on main: SET_PARAMETER_VALUES_BY_ID version 2 (row 5b-459)
-     finds a parameter by its name and matches a row by a value an element
-     holds - not by GUID - and IMPORT_PARAMETER_VALUES takes names as
-     headings. So a value is CARRIED by GUID - the map pairs the GUIDs - and
+     2026-10-17 on main: SET_PARAMETER_VALUES_BY_ID versions 2 and 3 (rows
+     5b-459, 5b-610) find a parameter by its name and match a row by a value
+     an element holds - not by GUID - and IMPORT_PARAMETER_VALUES takes names
+     as headings. So a value is CARRIED by GUID - the map pairs the GUIDs - and
      WRITTEN by name where the new element carries that name once; where it
      carries it twice, name it to the modeller, who sets it by hand. Widening
      one of the two to take a GUID is the fix, not a new capability.
