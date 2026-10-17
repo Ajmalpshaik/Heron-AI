@@ -187,10 +187,10 @@ an edit.
 | [D-113](#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about) | A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about | ⏳ Proposed · 2026-10-06 |
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
-| [D-116](#d-116--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so | ⏳ Proposed · 2026-10-17 |
-| [D-117](#d-117--a-run-the-modeller-kept-after-checking-it-is-the-positive-case-of-a-proof-and-the-negative-case-is-still-its-own-rolled-back-run) | A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run | ⏳ Proposed · 2026-10-17 |
-| [D-118](#d-118--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ⏳ Proposed · 2026-10-17 |
-| [D-119](#d-119--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ⏳ Proposed · 2026-10-17 |
+| [D-116](#d-116--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so | ✅ Accepted · 2026-10-17 |
+| [D-117](#d-117--a-run-the-modeller-kept-after-checking-it-is-the-positive-case-of-a-proof-and-the-negative-case-is-still-its-own-rolled-back-run) | A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run | ✅ Accepted · 2026-10-17 |
+| [D-118](#d-118--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
+| [D-119](#d-119--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -990,7 +990,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-116 — A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so
 
-**Status:** Proposed · **Date:** 2026-10-17 · **Source:** the owner's brief of 2026-10-17 - make *"Heron has no tool for this job"* fast and safe, so a fragment written on the spot can be tried on the model it was written for
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17 - make *"Heron has no tool for this job"* fast and safe, so a fragment written on the spot can be tried on the model it was written for
 **Amends, once accepted:** [Constitution Article 11](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 18](14-golden-rules.md) · **Keeps:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), Article 8
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`try-once`), [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md)
 
@@ -998,7 +998,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-117 — A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run
 
-**Status:** Proposed · **Date:** 2026-10-17 · **Source:** the owner's brief of 2026-10-17, with [D-116](#d-116--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17, with [D-116](#d-116--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)
 **Applies:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - its bar is unchanged · **Keeps:** [D-53](#d-53--a-fragment-that-cannot-come-back-empty-is-proved-by-tracking-instead)
 **Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`try-once`, `validate --kept`), [`heron_validate.py`](../brain/heron_validate.py) (`draft`, `accept`)
 
@@ -1006,7 +1006,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-118 — D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved
 
-**Status:** Proposed · **Date:** 2026-10-17 · **Source:** the owner's brief of 2026-10-17
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17
 **Revisits:** [D-84](#d-84--the-sandbox-is-renamed-not-rebuilt)'s accepted cost · **Keeps:** D-84's decision - watched, not contained, no subprocess
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) - the ask mode's refusal of an unsaved model
 
@@ -1014,7 +1014,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-119 — Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it
 
-**Status:** Proposed · **Date:** 2026-10-17 · **Source:** the owner's brief of 2026-10-17 - *"Article 19 (the modeller is the validator) supports this path"*
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17 - *"Article 19 (the modeller is the validator) supports this path"*
 **Reads:** [Constitution Article 19](../HERON_CONSTITUTION.md) · **Keeps:** Article 20 - nothing the author writes approves itself
 **Affects:** [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) and its `.codex` copy
 

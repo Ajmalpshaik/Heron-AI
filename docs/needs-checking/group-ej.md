@@ -10,8 +10,8 @@
 ## Group EJ - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
 
 Built for [D-116 to D-119](../DECISIONS.md#d-116--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so),
-all four **Proposed** and waiting on the owner - this group is run only once he has accepted them and the
-add-in carrying them is deployed.
+all four **accepted by the owner on 2026-10-17** - this group is run once the add-in carrying them is
+deployed.
 
 **What changed.** `run_fragment_write` takes `"apply": "ask"`
 ([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs)): refused unless the model is in front,
