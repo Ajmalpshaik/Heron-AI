@@ -1481,7 +1481,8 @@ a regression that arrives the same day something else is fixed. (That list names
 **cannot run** there, since [row 5b-49](../docs/FRAGMENT-ISSUES.md).)
 
 It records only what a command derives — gate exits, the suite map, and the counts this repository has
-been wrong about in prose. **Not a dump of the tree.** A record big enough to hide a change in is a
+been wrong about in prose, among them what the MCP tool list costs a chat (`heron_tools.py --sizes`'
+description totals). **Not a dump of the tree.** A record big enough to hide a change in is a
 record nobody reads.
 
 ### Three rulings, and the third is the one usually missing
