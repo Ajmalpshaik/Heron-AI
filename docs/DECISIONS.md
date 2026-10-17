@@ -187,8 +187,16 @@ an edit.
 | [D-113](#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about) | A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about | ⏳ Proposed · 2026-10-06 |
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
-| [D-116](#d-116--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ⏳ Proposed · 2026-10-17 |
-| [D-117](#d-117--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
+| [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
+| [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) | A change is kept only from a fragment whose proof still stands | ✅ Accepted · 2026-10-17 |
+| [D-118](#d-118--a-tool-description-over-its-budget-stops-a-pull-request) | A tool description over its budget stops a pull request | ✅ Accepted · 2026-10-17 |
+| [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so | ✅ Accepted · 2026-10-17 |
+| [D-120](#d-120--a-run-the-modeller-kept-after-checking-it-is-the-positive-case-of-a-proof-and-the-negative-case-is-still-its-own-rolled-back-run) | A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run | ✅ Accepted · 2026-10-17 |
+| [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
+| [D-122](#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
+| [D-123](#d-123--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
+| [D-126](#d-126--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ✅ Accepted · 2026-10-17 |
+| [D-127](#d-127--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -986,20 +994,96 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-115.md`](decisions/D-115.md)
 
-## D-116 — A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again
+## D-116 — A list of family forms built in one call undoes as one, and cuts stay a separate call
 
-**Status:** Proposed · **Date:** 2026-10-17 · **Source:** the owner's task of 2026-10-17: *"A fragment that loops forever must stop, roll back and say so before the dispatcher gives up"*
-**Updates:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays)'s stated costs - four of the five are smaller now. D-46 itself is unchanged: there is still no Emergency Stop button
-**Keeps:** [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) · Golden Rule 16 · [row 5b-14](fragment-issues/section-5b-rows-001-025.md)'s named allow-list outside the gate · [Q-64](open-questions/from-master-specification-part-2.md), answered as [D-117](#d-117--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it)
-**Affects:** [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs) (new), [`HeronStackGuard.cs`](../revit/Heron.Revit.Addin/HeronStackGuard.cs), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) (`stop`), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py)
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation, answering both halves of the question: *"Yes, one undo per list"* and *"No, keep cuts separate"* · **Question:** [Q-62](OPEN-QUESTIONS.md)
+**Keeps:** Golden Rule 16 and Constitution Article 8 - one call, one TransactionGroup, one undo · all or nothing - one row that fails keeps none of the list
+**Affects:** [`create-family-forms`](../brain/fragments/create-family-forms/fragment.yaml) and [`combine-family-forms`](../brain/fragments/combine-family-forms/fragment.yaml), neither changed · [NEEDS-CHECKING Group DA](needs-checking/group-da.md), unchanged · [04](04-heron-mcp.md)
 
 **Full record:** [`decisions/D-116.md`](decisions/D-116.md)
 
-## D-117 — A stop lasts until Revit restarts, and a restart clears it
+## D-117 — A change is kept only from a fragment whose proof still stands
 
-**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"Q-64: restart clears it, accept your recommendation"* · **Answers:** [Q-64](open-questions/from-master-specification-part-2.md)
-**Amends:** [21 §4](21-resilience-and-operations.md) requirement 3 - sticky until Revit restarts, not past it
-**Keeps:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) - no second control · [D-116](#d-116--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) item 7 - nothing over the bridge resumes
-**Affects:** [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) (comments only), [21 §4](21-resilience-and-operations.md), [D-116](decisions/D-116.md)
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 and merge the PR"* · **Source:** the after-the-run warning in [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py)'s `revit_change`, and the [Constitution](../HERON_CONSTITUTION.md)'s Enforcement table naming no place Article 11 is enforced
+**Numbering:** written and accepted as D-116; renumbered D-126 on 2026-10-17 while merging `main` - in the hours this branch was open `main` gave D-116 to D-123 to other decisions (#546, #547, #557, #554, #556) and open pull requests claimed D-124 and D-125, so it took the first number no branch held. The owner's words quoted above name it by its first number.
+**Enforces:** [Constitution Article 11](../HERON_CONSTITUTION.md) · [Golden Rule 18](14-golden-rules.md)
+**Supersedes:** one row of [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)'s table - *"a warning line when the fragment is not `PROVEN`"*, said after the change. It is now a refusal, said instead of sending anything
+**Keeps:** [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - no preview in front of a proven change · [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back) - the rolled-back run · [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) · [Golden Rule 19](14-golden-rules.md)
+**Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`proof_of`, `unproven_refusal`, `cmd_fragment`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`), [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) (the Enforcement table), the `heron-fragment-author` agent on both hosts
 
 **Full record:** [`decisions/D-117.md`](decisions/D-117.md)
+
+## D-118 — A tool description over its budget stops a pull request
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Source:** Ajmal PS, 2026-10-17, in conversation, answering the question put in the pull request that added the budget: *"keep it a gate"*
+**Numbering:** written and accepted as D-116; renumbered D-126 on 2026-10-17 while merging `main` - in the hours this branch was open `main` gave D-116 to D-123 to other decisions (#546, #547, #557, #554, #556) and open pull requests claimed D-124 and D-125, so it took the first number no branch held. The owner's words quoted above name it by its first number.
+**Keeps:** [D-03](#d-03--mcp-tool-granularity-thick-and-specific) - the tool list's cost is accepted and kept down by a small core set · [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) - the routing score stays a report; this decides a different number
+**Affects:** [`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py), [`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py) (`--sizes`), [`.github/workflows/gates.yml`](../.github/workflows/gates.yml), which runs every suite
+
+**Full record:** [`decisions/D-118.md`](decisions/D-118.md)
+
+## D-119 — A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17 - make *"Heron has no tool for this job"* fast and safe, so a fragment written on the spot can be tried on the model it was written for
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Amends, once accepted:** [Constitution Article 11](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 18](14-golden-rules.md) · **Keeps:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), Article 8
+**Beside:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands), accepted the same day - it refuses a DRAFT's kept change on `revit_change` and `fragment --write --apply`; this decision's `try-once` is the one way a DRAFT's change is kept, and it goes through neither
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`try-once`), [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md)
+
+**Full record:** [`decisions/D-119.md`](decisions/D-119.md)
+
+## D-120 — A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17, with [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Applies:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - its bar is unchanged · **Keeps:** [D-53](#d-53--a-fragment-that-cannot-come-back-empty-is-proved-by-tracking-instead)
+**Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`try-once`, `validate --kept`), [`heron_validate.py`](../brain/heron_validate.py) (`draft`, `accept`)
+
+**Full record:** [`decisions/D-120.md`](decisions/D-120.md)
+
+## D-121 — D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Revisits:** [D-84](#d-84--the-sandbox-is-renamed-not-rebuilt)'s accepted cost · **Keeps:** D-84's decision - watched, not contained, no subprocess
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) - the ask mode's refusal of an unsaved model
+
+**Full record:** [`decisions/D-121.md`](decisions/D-121.md)
+
+## D-122 — Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 to D-119 and merge the PR"* · **Source:** the owner's brief of 2026-10-17 - *"Article 19 (the modeller is the validator) supports this path"*
+**Numbering:** written and accepted as D-116 to D-119 on 2026-10-17, and renumbered D-119 to D-122 the same day as the pull request merged, because [#546](https://github.com/Ajmalpshaik/Heron-AI/pull/546), [#547](https://github.com/Ajmalpshaik/Heron-AI/pull/547) and [#557](https://github.com/Ajmalpshaik/Heron-AI/pull/557) had taken D-116, D-117 and D-118 first. The owner's words above quote the numbers he was shown.
+**Reads:** [Constitution Article 19](../HERON_CONSTITUTION.md) · **Keeps:** Article 20 - nothing the author writes approves itself
+**Affects:** [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) and its `.codex` copy
+
+**Full record:** [`decisions/D-122.md`](decisions/D-122.md)
+
+## D-123 — A picture of a view, taken for the chat and deleted, is ANALYZE and not an export
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"A picture is not model data, ship it"* · **Source:** the owner's brief of 2026-10-17 for `revit_view_image` - *"a read-only tool that returns a PNG of a Revit view into the chat, so the AI can check its own work"*
+**Keeps:** [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) - every `export-*` stays PUBLISH, `export-view-image` included · [D-26](#d-26--the-model-file-is-never-uploaded) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) - Changes stays off · [Constitution Articles 8 and 10](../HERON_CONSTITUTION.md) · Golden Rule 19 - the risk is the registry's, by name · the read path's guarantee that nothing on `run_fragment_read` opens a transaction
+**Asks:** whether a view's picture is *model data* under [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope), put as [Q-64](OPEN-QUESTIONS.md) - answered: **not model data**
+**Affects:** [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs) (new), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`Captures`), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [NEEDS-CHECKING group ER](needs-checking/group-er.md)
+
+**Full record:** [`decisions/D-123.md`](decisions/D-123.md)
+
+## D-126 — A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 and mark the PR ready"* · **Source:** the owner's task of 2026-10-17: *"A fragment that loops forever must stop, roll back and say so before the dispatcher gives up"*
+**Numbering:** written and accepted as D-116; renumbered D-126 on 2026-10-17 while merging `main` - in the hours this branch was open `main` gave D-116 to D-123 to other decisions (#546, #547, #557, #554, #556) and open pull requests claimed D-124 and D-125, so it took the first number no branch held. The owner's words quoted above name it by its first number.
+**Updates:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays)'s stated costs - four of the five are smaller now. D-46 itself is unchanged: there is still no Emergency Stop button
+**Keeps:** [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) · Golden Rule 16 · [row 5b-14](fragment-issues/section-5b-rows-001-025.md)'s named allow-list outside the gate · [Q-67](open-questions/from-master-specification-part-2.md), answered as [D-127](#d-127--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it)
+**Affects:** [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs) (new), [`HeronStackGuard.cs`](../revit/Heron.Revit.Addin/HeronStackGuard.cs), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) (`stop`), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py)
+
+**Full record:** [`decisions/D-126.md`](decisions/D-126.md)
+
+## D-127 — A stop lasts until Revit restarts, and a restart clears it
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"Q-64: restart clears it, accept your recommendation"* · **Answers:** [Q-67](open-questions/from-master-specification-part-2.md)
+**Numbering:** written and accepted as D-117, answering a question then numbered Q-64; renumbered D-127 and Q-67 on 2026-10-17 while merging `main`, past every number `main` or an open pull request held. The owner's words quoted above name the question by its first number.
+**Amends:** [21 §4](21-resilience-and-operations.md) requirement 3 - sticky until Revit restarts, not past it
+**Keeps:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) - no second control · [D-126](#d-126--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) item 7 - nothing over the bridge resumes
+**Affects:** [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) (comments only), [21 §4](21-resilience-and-operations.md), [D-126](decisions/D-126.md)
+
+**Full record:** [`decisions/D-127.md`](decisions/D-127.md)

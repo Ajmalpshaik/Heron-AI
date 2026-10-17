@@ -33,7 +33,9 @@ installer sections hold AC to AF, and no `## Group` heading names those. Each
 leaves its heading in NEEDS-CHECKING.md, in its place, and one line naming its
 file. What stays in full is everything else: the page's own rules, a section
 with rows of two groups or none, and a section whose file another section has
-already taken.
+already taken. A group file may hold more than one section - group-ac.md holds
+three dated ones under the index's one line for it - and every section it
+holds stays in it.
 
 THE REGISTER IS STILL ONE TEXT, AND THAT IS WHAT IS PROVED
 ----------------------------------------------------------
@@ -129,12 +131,44 @@ def _header(name, today):
     ])
 
 
+def held_layout(lines, files):
+    """({heading: file}, stubs) - every section a group file already holds:
+    the heading over the index's stub for it, and every later section that
+    file holds after its first. Rows 5b-425 and 5b-493: group-ac.md holds
+    three sections under one stub, and a layout that knew only the first
+    rebuilt the index with the other two in it while the file still held
+    them - the register read back holding them twice, and every split was
+    refused."""
+    spans, _ = NCR.sections(lines)
+    layout, stubs = {}, 0
+    for start, end in spans:
+        name = NCR.stub_of(lines, start, end)
+        if not name:
+            continue
+        layout[lines[start]] = name
+        stubs += 1
+        held = (files.get(name) or "").replace(CR + NL, NL).split(NL)
+        for s, _ in NCR.sections(held)[0][1:]:
+            layout[held[s]] = name
+    return layout, stubs
+
+
 def split_by(text, layout, headers, today, index, folder):
     """(index text, {file: text}, trouble) - TEXT, the register as one text,
     with each section LAYOUT maps by its heading line moved to its file."""
     lines = text.replace(CR + NL, NL).split(NL)
     spans, first = NCR.sections(lines)
     fenced = NCR.fenced_lines(lines)
+    # Sections side by side that go to one file go as one: the file holds
+    # them all, and the index keeps the first heading and its one line.
+    runs = []
+    for start, end in spans:
+        name = layout.get(lines[start])
+        if name and runs and runs[-1][2] == name:
+            runs[-1] = (runs[-1][0], end, name)
+        else:
+            runs.append((start, end, name))
+    spans = [(start, end) for start, end, _ in runs]
     moved = {}
     for start, end in spans:
         name = layout.get(lines[start])
@@ -274,13 +308,8 @@ def plan(index=INDEX, folder=FOLDER, today=None, root=ROOT, check_others=True):
         p.fatal = str(broken)
         return p
 
-    spans_before, _ = NCR.sections(lines)
-    layout, taken = {}, set(p.files_before)
-    for start, end in spans_before:
-        name = NCR.stub_of(lines, start, end)
-        if name:
-            layout[lines[start]] = name
-            p.already += 1
+    layout, p.already = held_layout(lines, p.files_before)
+    taken = set(p.files_before)
     joined = p.joined.split(NL)
     fenced = NCR.fenced_lines(joined)
     spans, _ = NCR.sections(joined)
@@ -365,18 +394,18 @@ def layout_split(index, joined, today=None, folder=None):
     before = AF._read(index)
     lines = before.replace(CR + NL, NL).split(NL)
     spans, _ = NCR.sections(lines)
-    layout = {}
+    held_files = {}
     for start, end in spans:
         name = NCR.stub_of(lines, start, end)
-        if name:
-            layout[lines[start]] = name
+        path = os.path.join(folder, name) if name else None
+        if path and os.path.exists(path):
+            held_files[name] = AF._read(path)
+    layout, _ = held_layout(lines, held_files)
     headers = {}
-    for name in set(layout.values()):
-        path = os.path.join(folder, name)
-        if os.path.exists(path):
-            held = AF._read(path).replace(CR + NL, NL).split(NL)
-            _, first = NCR.sections(held)
-            headers[name] = NL.join(held[:first]) + NL
+    for name, text in held_files.items():
+        held = text.replace(CR + NL, NL).split(NL)
+        _, first = NCR.sections(held)
+        headers[name] = NL.join(held[:first]) + NL
     eol = CR + NL if CR + NL in before else NL
     after, files, trouble = split_by(joined, layout, headers, today or datetime.date.today().isoformat(),
                                      index, folder)

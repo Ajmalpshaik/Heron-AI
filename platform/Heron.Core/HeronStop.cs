@@ -39,13 +39,13 @@ namespace Heron.Core
     ///
     /// AND THAT DISAGREED WITH docs/21 section 4, whose third requirement was
     /// a stop that "does not quietly resume on the next request or after a
-    /// restart". Both were recorded as Q-64, and the owner answered it on
-    /// 2026-10-17 (D-117): a restart clears it. So this class stays as it
+    /// restart". Both were recorded as Q-67, and the owner answered it on
+    /// 2026-10-17 (D-127): a restart clears it. So this class stays as it
     /// was - in memory, cleared by a restart - and docs/21's requirement is
     /// amended to match, not this.
     ///
     /// SINCE 2026-10-17 SOMETHING CAN SET IT AGAIN, and it can stop what is
-    /// already running (D-116). The `stop` operation, answered on a bridge
+    /// already running (D-126). The `stop` operation, answered on a bridge
     /// listener thread before anything is queued - Revit's own thread is the
     /// one a runaway job holds - calls Stop(); HeronRunClock sees the count
     /// move at the running fragment's next check and stops it, rolled back.
@@ -140,11 +140,11 @@ namespace Heron.Core
         /// message and it is still true.
         /// FRAGMENT-ISSUES section 5b, row 2.
         ///
-        /// BUILT 2026-10-17 (D-116), SO IT NAMES THE WAY OUT: a restart of
+        /// BUILT 2026-10-17 (D-126), SO IT NAMES THE WAY OUT: a restart of
         /// Revit, the one thing that clears this flag and that every modeller
         /// can do. It names no button because none clears it - the `stop`
         /// operation cannot resume, on purpose, and EmergencyStopCommand is
-        /// still on no ribbon. D-117 settled that a restart is the way out, so
+        /// still on no ribbon. D-127 settled that a restart is the way out, so
         /// a decision that ever made the stop outlive one changes this too.
         /// </summary>
         public const string Message =

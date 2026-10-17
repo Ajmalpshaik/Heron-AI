@@ -233,7 +233,7 @@ namespace Heron.Kernel.TestHost
 
             Check(!HeronStop.IsStopped, "starts clear");
 
-            // D-116. The run clock reads the COUNT, not the flag, so a stop
+            // D-126. The run clock reads the COUNT, not the flag, so a stop
             // asked while already stopped still reaches a running fragment,
             // and a read begun while stopped is not tripped by the old one.
             var asked = HeronStop.Requests;
@@ -258,7 +258,7 @@ namespace Heron.Kernel.TestHost
                   "and says plainly that nothing was sent");
 
             // THE KILL SWITCH WAS BUILT ON 2026-10-17, SO THE WAY OUT IS
-            // NAMED (D-116). HeronStop's own rule: whoever builds what sets
+            // NAMED (D-126). HeronStop's own rule: whoever builds what sets
             // the flag owns this sentence, the same day. A restart is the one
             // thing that clears it - nothing over the bridge resumes.
             Check(HeronStop.Message.IndexOf("until Revit is restarted", StringComparison.Ordinal) >= 0,

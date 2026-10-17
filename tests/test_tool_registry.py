@@ -46,7 +46,7 @@ HANDLER_FILES = [
     os.path.join(ROOT, "revit", "Heron.Bridge", "BridgeServer.cs"),
 ]
 
-# `stop` is answered in RevitDispatcher.Dispatch, before the queue (D-116).
+# `stop` is answered in RevitDispatcher.Dispatch, before the queue (D-126).
 # NOT a whole handler file: the rest of it switches on ERROR CODES for the
 # banner (`case "revit_busy":`), which the pattern above would read as
 # operations nobody declared. Only Dispatch's own body answers anything.
@@ -258,6 +258,32 @@ def main():
           "and so the preview tool does not count as a write")
 
     print()
+    print("A picture for the chat is ANALYZE, and its group can never be kept (D-123)")
+    # capture_view is the one Analyze operation that opens a transaction:
+    # given element ids it makes a temporary 3D view. What keeps it at
+    # Analyze is that the TransactionGroup around it is ALWAYS rolled back,
+    # so the checks below read RevitCapture.cs for every way a group could be
+    # kept - and fail the day one appears.
+    check(declared_cs.get("capture_view") == "ANALYZE",
+          "capture_view is ANALYZE - found %r" % declared_cs.get("capture_view"))
+    check(tools.operation_of("revit_view_image") == "capture_view"
+          if "revit_view_image" in tools.TOOLS else False,
+          "revit_view_image is the tool that sends it")
+    capture_cs = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitCapture.cs")
+    capture = io.open(capture_cs, encoding="utf-8").read() if os.path.isfile(capture_cs) else ""
+    check(capture != "", "RevitCapture.cs is there to read")
+    check("Assimilate(" not in capture,
+          "RevitCapture.cs never assimilates a group - nothing it makes is kept")
+    check(not re.search(r'group\.Commit\(', capture),
+          "and never commits one")
+    check(not re.search(r'ReadString\(request,\s*"apply"\)', capture),
+          "and reads no `apply` from the request - there is nothing a caller can "
+          "send to keep the view")
+    check(capture.count("SafeRollBack(group)") >= 3,
+          "every way out of a group rolls it back - %d SafeRollBack(group) calls"
+          % capture.count("SafeRollBack(group)"))
+
+    print()
     print("Selecting is EXECUTE, not READ and not MODIFY")
     check(declared_cs.get("select_by_category") == "EXECUTE",
           "selecting alters what is highlighted, never what exists")
@@ -320,7 +346,7 @@ def main():
 
     print()
     print("And what the dispatcher answers BEFORE THE QUEUE is a named, READ-risk list too")
-    # D-116. The second place an operation can be answered without reaching
+    # D-126. The second place an operation can be answered without reaching
     # Gate: RevitDispatcher.Dispatch runs on the listener thread, and Gate
     # runs on Revit's, inside Execute. `stop` belongs there because the job it
     # exists to stop is the one holding Revit's thread - queued, it would wait

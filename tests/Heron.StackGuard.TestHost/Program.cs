@@ -31,7 +31,7 @@ namespace Heron.StackGuard.TestHost
     /// it changes the meaning of one of 372 real fragments that work today.
     /// So the input is the library itself.
     ///
-    /// SINCE 2026-10-17 IT ALSO HOLDS THE RUN CLOCK (D-116): over the library,
+    /// SINCE 2026-10-17 IT ALSO HOLDS THE RUN CLOCK (D-126): over the library,
     /// that every loop and every body asks the clock and that the rewrite adds
     /// nothing but its two calls and the braces a one-statement loop body
     /// needs; and then, with invented snippets after all, because the claim
@@ -156,7 +156,7 @@ namespace Heron.StackGuard.TestHost
                           name + ": has a block-bodied lambda and was NOT guarded");
                 }
 
-                // 4. EVERY LOOP IS CHECKED (D-116). Read off the guarded tree
+                // 4. EVERY LOOP IS CHECKED (D-126). Read off the guarded tree
                 //    rather than the rewriter, so a loop shape the rewriter
                 //    forgot is found here: each loop's body is a block whose
                 //    FIRST statement is the clock's check, and each body the
@@ -187,7 +187,7 @@ namespace Heron.StackGuard.TestHost
                 //    statement. So nothing a fragment wrote can mean anything
                 //    different - the only new code is the two calls - which
                 //    is what a compile gate that never sees the rewrite has
-                //    to be able to lean on (D-28; see D-116's limits).
+                //    to be able to lean on (D-28; see D-126's limits).
                 string drift;
                 var braces = AddedBraces(source, guarded, options, out drift);
                 var oneStatement = Loops(source, options).Count(body => !(body is BlockSyntax));
@@ -232,7 +232,7 @@ namespace Heron.StackGuard.TestHost
                 Console.WriteLine("or that a runaway loop there is stopped and rolled back "
                                   + "while Revit stays responsive.");
                 Console.WriteLine("Those need a model and are NEEDS-CHECKING's to hold "
-                                  + "(J9, and Group EJ).");
+                                  + "(J9, and Group ES).");
                 return 0;
             }
 
@@ -443,7 +443,7 @@ namespace Heron.StackGuard.TestHost
         }
 
         // ------------------------------------------------------------------
-        // The run clock, run (D-116). Revit-free: the scripts below are
+        // The run clock, run (D-126). Revit-free: the scripts below are
         // guarded exactly as RevitFragment guards a fragment and run through
         // CSharpScript with the clock begun and watched exactly as RunScript
         // runs one - on a 200 ms deadline instead of fifty seconds.

@@ -353,7 +353,7 @@ into ranking, where it may find a different writer. **Build the READ, then move 
 
 ---
 
-### ✅ Q-64 — Should a stop survive a restart of Revit? → **No: a restart clears it** *(found and answered 2026-10-17)*
+### ✅ Q-67 — Should a stop survive a restart of Revit? → **No: a restart clears it** *(found and answered 2026-10-17)*
 
 **Two sources disagree, and neither is edited to match the other.**
 
@@ -366,13 +366,13 @@ into ranking, where it may find a different writer. **Build the READ, then move 
   mysteriously refusing to work, with no memory of why."*
 
 **Why it matters now and did not before.** Until 2026-10-17 nothing could set the stop ([D-46](../decisions/D-46.md)),
-so whether it outlived a restart was a question about a switch nobody could press. [D-116](../decisions/D-116.md)
+so whether it outlived a restart was a question about a switch nobody could press. [D-126](../decisions/D-126.md)
 gave it a trigger - the bridge's `stop` operation, which also stops a fragment already running - and so the
 answer is now something a modeller meets.
 
 **What the code does until this is answered:** exactly what it did. The stop lives in memory; restarting Revit
 clears it; and `HeronStop.Message` says so - *"Heron stays stopped until Revit is restarted"* - which is
-true today. D-116 chose a pipe operation over the file 21 §4 names partly so as not to settle this by
+true today. D-126 chose a pipe operation over the file 21 §4 names partly so as not to settle this by
 accident: a file on disk would have made the stop survive a restart by construction.
 
 **The two answers, and what each costs.**
@@ -393,9 +393,10 @@ owner did not want a second control.
 **The owner decides.** Until then a restart clears it, and the message says so.
 
 **Answer: the first - a stop lasts until Revit is restarted, and a restart clears it. See
-[D-117](../decisions/D-117.md).** Ajmal PS, 2026-10-17: *"Q-64: restart clears it, accept your
-recommendation"*. Nothing in the code changes - it already did this - and 21 §4's requirement 3 is
+[D-127](../decisions/D-127.md).** Ajmal PS, 2026-10-17: *"Q-64: restart clears it, accept your
+recommendation"* - said while this question was numbered Q-64, before other branches' claims
+on Q-64 to Q-66 had it renumbered Q-67 when `main` was merged. Nothing in the code changes - it already did this - and 21 §4's requirement 3 is
 amended to match, with a note beside it rather than an edit to its words.
 
-→ [D-116](../decisions/D-116.md), [D-46](../decisions/D-46.md), [21 §4](../21-resilience-and-operations.md),
-[NEEDS-CHECKING Group EJ](../needs-checking/group-ej.md)
+→ [D-126](../decisions/D-126.md), [D-46](../decisions/D-46.md), [21 §4](../21-resilience-and-operations.md),
+[NEEDS-CHECKING Group ES](../needs-checking/group-es.md)

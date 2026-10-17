@@ -15,7 +15,7 @@ namespace Heron.Revit.Addin
 {
     /// <summary>
     /// Stops a fragment that will not stop by itself, and says so before the
-    /// dispatcher gives up waiting for it - D-116.
+    /// dispatcher gives up waiting for it - D-126.
     ///
     /// THE HOLE THIS CLOSES. A fragment runs on Revit's own thread, inside
     /// Execute, and nothing else runs there until it returns. One that loops
@@ -210,6 +210,13 @@ namespace Heron.Revit.Addin
         /// block rather than a change to this class. And it does NOT pause the
         /// dispatcher, which stops waiting on its own clock - a long answer
         /// still reaches the chat as `still_running`.
+        ///
+        /// A KEEP OR DISCARD QUESTION ASKED AFTER THE SCRIPT NEEDS NO PAUSE.
+        /// RevitFragment's own box for a DRAFT's one run (D-119) is shown once
+        /// the fragment has returned and its transaction committed - outside
+        /// Watch(), where no check counts - so it cannot trip the clock however
+        /// long the person takes; and the dispatcher's longer wait for it is
+        /// D-119's own, through AwaitingModeller. Read, not assumed.
         /// </summary>
         public static IDisposable Pause()
         {
