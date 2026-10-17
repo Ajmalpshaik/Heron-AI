@@ -2437,6 +2437,7 @@ compares with *less the boxes*, not with the figure the box is inside.
 and audit lines shaped like both builds, with a negative case - a transcript with no Heron call reports
 zero calls and NOT MEASURED for Revit's time - to a reply in that JSON-wrapped shape, and to synthetic
 journals: two boxes inside two runs, one in the chat's minutes outside every call and one before it, and
-a journal with no box, which leaves Revit's own time as it was. Run once on the owner's own transcript,
-on 2026-10-17 ([docs/04 §8.7](../docs/04-heron-mcp.md)) - the run that found rows 5b-1030 and 5b-1031;
-not re-run there since either fix, and `--journal` has not yet been run on a real journal.
+a journal with no box, which leaves Revit's own time as it was. Run on the owner's own transcript on
+2026-10-17 ([docs/04 §8.7](../docs/04-heron-mcp.md)) - the run that found rows 5b-1030 and 5b-1031 - and
+again the same day with both fixes and that build's real journal: 10 Keep boxes, 80.9 s, Revit's own time
+less the boxes 20.7 s of 101.6 s, 44 forms ([row 5b-1031](../docs/FRAGMENT-ISSUES.md) names the run).
