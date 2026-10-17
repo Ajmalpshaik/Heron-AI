@@ -1954,7 +1954,8 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// The refusal for a job a Revit dialog stopped, or null when none
         /// did. `rolledBack` is null on the read path, where no transaction
-        /// was open and so nothing can have changed; otherwise it is what
+        /// was open and the count before and after found nothing moved - it
+        /// is asked only after that count (row 5b-350); otherwise it is what
         /// SafeRollBack reported, and the sentence says the model is as it
         /// was ONLY when Revit confirmed it - WithVerdict's rule.
         /// </summary>
@@ -2401,7 +2402,9 @@ namespace Heron.Revit.Addin
         /// witness's whole account, as every rollback in this file says it
         /// (RollBackAndCheck): Revit's status, the additions counted back, and
         /// any earlier kept work the rollback took. `after` is null on the read
-        /// path, which opened no transaction and so has nothing to undo.
+        /// path, which opened no transaction and so has nothing to undo - and
+        /// is asked only after the count before and after found nothing moved
+        /// (row 5b-350), so that count is what the sentence rests on.
         ///
         /// NOT `Stopped`, which is the dialog's refusal and returns null when no
         /// dialog stopped the job; this one always answers.
@@ -2409,7 +2412,8 @@ namespace Heron.Revit.Addin
         private static string ClockStopped(string name, HeronRollbackWitness.Outcome after)
         {
             var model = after == null
-                ? "It was a read, so nothing in the model was changed."
+                ? "It was a read, and Heron counted the model before and after it, so nothing "
+                  + "in the model was changed."
                 : "Heron rolled the whole job back. " + after.Account();
 
             var said = "'" + name + "' " + HeronRunClock.Why + " " + model;

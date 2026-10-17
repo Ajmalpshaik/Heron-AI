@@ -48,7 +48,7 @@ purpose: >
      or upper floors that match - draw one storey's walls, curtain walls and
      slab (steps 3 to 5), collect them with SELECT_BY_LEVEL (DRAFT),
      levelId= that level, categories=Walls, Floors, then COPY_ELEMENTS (DRAFT,
-     version 3 - version 2 was PROVEN, and until NEEDS-CHECKING Group GC
+     version 3 - version 2 was PROVEN, and until NEEDS-CHECKING Group GP
      proves version 3 a kept change from it is refused, D-117) with
      expect_from naming that select, offset=0,0,0 and
      toLevels= the levels to repeat on - "Level 2..Roof" is every level from

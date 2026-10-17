@@ -29,7 +29,7 @@ capability: COPY_ELEMENTS
 # is how "not asked" is typed (HeronBindingNote.AbsentValue). Signed by Ajmal PS
 # on 2026-10-14 and promoted to PROVEN on this card's branch (Group DX, DX1).
 #
-# Version 3 (2026-10-17, FRAGMENT-ISSUES 5b-650): in a WORKSHARED model the
+# Version 3 (2026-10-17, FRAGMENT-ISSUES 5b-860): in a WORKSHARED model the
 # modeller can say where the copies go - each one on its own original's
 # workset (toWorkset "source"), or every one on a workset named by the
 # modeller - and `onWorksets` reads every copy's workset back from the model.
@@ -42,7 +42,7 @@ capability: COPY_ELEMENTS
 # building-shell skill unchanged. A choice in a model that is not workshared,
 # or a workset name the model does not have, is refused before anything is
 # copied. Changing impl/ made version 2's proof stale: DRAFT until it is proved
-# again (NEEDS-CHECKING Group GC). Version 2's proof is kept below as a record.
+# again (NEEDS-CHECKING Group GP). Version 2's proof is kept below as a record.
 version: 3
 source: OFFICIAL
 risk: MODIFY
@@ -166,7 +166,7 @@ contract:
       type: string
 
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until Group GC
+# fingerprint no longer describes the code and the card is DRAFT until Group GP
 # proves version 3 (D-30). The version 2 code it ran is still the path every
 # call that leaves toWorkset out takes.
 proof:

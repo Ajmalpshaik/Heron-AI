@@ -767,9 +767,13 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fg.md`](needs-checking/group-fg.md)
 
-## Group GC - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
+## Group FU - one Object Styles row by name: `LIST_CATEGORIES` version 3, `categories` narrows the answer, a missing name gets the nearest names (2026-10-17)
 
-**Its own file:** [`needs-checking/group-gc.md`](needs-checking/group-gc.md)
+**Its own file:** [`needs-checking/group-fu.md`](needs-checking/group-fu.md)
+
+## Group GP - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gp.md`](needs-checking/group-gp.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

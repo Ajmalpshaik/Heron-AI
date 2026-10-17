@@ -5,7 +5,7 @@
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). `offset` is in internal FEET.
 //
 // WHICH WORKSET THE COPIES GO ON (version 3, 2026-10-17, FRAGMENT-ISSUES
-// 5b-650). Revit puts every copy on the ACTIVE workset, whatever workset its
+// 5b-860). Revit puts every copy on the ACTIVE workset, whatever workset its
 // original is on. Seen 2026-10-15 on a BIM 360 project in Revit 2020:
 // builders-work openings copied from instances on BHVD_BW_WALL_OPENING landed
 // on the active workset and had to be moved with SET_ELEMENT_WORKSET after.
