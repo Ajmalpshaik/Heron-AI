@@ -150,6 +150,15 @@ except ImportError:
 _TAKES_LABELS = (_Annotations is not None
                  and "annotations" in inspect.signature(_Server.tool).parameters)
 
+# THE DESCRIPTION A HOST IS SERVED IS THE DOCSTRING CLEANED, ON EVERY PYTHON.
+# The SDK takes `fn.__doc__` as it finds it, and Python 3.12 - the owner's -
+# keeps every line of it indented four spaces where 3.13 strips them: measured
+# 2026-10-17, 3,014 characters of indentation across the list, paid for in
+# context and read by nobody. inspect.cleandoc is what ast.get_docstring
+# returns, so heron_tools' --sizes reads off the source exactly what a host is
+# handed (row 5b-489).
+_TAKES_DESCRIPTION = "description" in inspect.signature(_Server.tool).parameters
+
 
 class _Labelled(_Server):
     """
@@ -180,6 +189,8 @@ class _Labelled(_Server):
                 name = (args[0] if args else None) or options.get("name") or fn.__name__
                 options["annotations"] = _Annotations.model_validate(
                     tools.annotations(name))
+            if _TAKES_DESCRIPTION and "description" not in options and fn.__doc__:
+                options["description"] = inspect.cleandoc(fn.__doc__)
             return register(*args, **options)(_recorded(fn))
 
         return decorate
