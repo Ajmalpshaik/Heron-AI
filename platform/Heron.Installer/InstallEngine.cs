@@ -270,6 +270,12 @@ namespace Heron.Installer
         /// sentence naming what is still open. Nothing has been changed at
         /// that point, which is the whole value of waiting BEFORE deploying
         /// rather than discovering it halfway through.
+        ///
+        /// TWO SENTENCES, NOT ONE. While it waits, closing Revit is all a
+        /// person has to do. Once it has given up, closing Revit does nothing
+        /// and the install has to be started again - and until Group EP8 on
+        /// the owner's laptop, 2026-10-17, both doors ended on the waiting
+        /// sentence after they had stopped waiting.
         /// </summary>
         private bool WaitForRevitToClose(IList<string> releases, out string because)
         {
@@ -280,8 +286,10 @@ namespace Heron.Installer
                 var blocking = Blocking(releases);
                 if (blocking == null) return true;
 
-                because = blocking;
-                if (OnWaiting != null) OnWaiting(blocking);
+                because = blocking + " Heron has stopped waiting for it, so nothing was installed: " +
+                          "close it, then start the install again.";
+                if (OnWaiting != null)
+                    OnWaiting(blocking + " Close it and this will carry on by itself - nothing has been changed yet.");
                 if (Pause != null) Pause();
             }
 
@@ -289,7 +297,8 @@ namespace Heron.Installer
         }
 
         /// <summary>
-        /// What is open that would stop this run, or null when nothing is.
+        /// What is open that would stop this run, or null when nothing is -
+        /// said as what is open, with what follows from it left to the caller.
         /// </summary>
         private string Blocking(IList<string> releases)
         {
@@ -306,7 +315,7 @@ namespace Heron.Installer
                 {
                     return "A Revit is open (process " + r.ProcessId + ") and which " +
                            "release it is could not be read, so none can be replaced " +
-                           "safely. Close it and this will carry on by itself.";
+                           "safely.";
                 }
             }
 
@@ -316,9 +325,7 @@ namespace Heron.Installer
                 foreach (var release in releases)
                 {
                     if (!string.Equals(r.Release, release, StringComparison.Ordinal)) continue;
-                    return "Revit " + release + " is open (process " + r.ProcessId +
-                           "). Close it and this will carry on by itself - nothing " +
-                           "has been changed yet.";
+                    return "Revit " + release + " is open (process " + r.ProcessId + ").";
                 }
             }
 
