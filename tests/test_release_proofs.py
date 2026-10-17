@@ -725,8 +725,15 @@ def test_a_record_on_another_drive_is_named_whole():
     with Workspace() as ws:
         frag = ws.fragment()
 
+        # ONLY THE DRAFTS FOLDER is on the other drive, as the temp folder is
+        # on the owner's PC. Forcing the whole workspace would move the card's
+        # own files too, and its fingerprint with them, so a refusal for a
+        # stale proof would answer before the one this is about (seen on
+        # Linux CI, 2026-10-17).
+        far = HV.DRAFTS_DIR
+
         def relpath(path, start=os.curdir):
-            if inside(path, ws.root) != inside(start, ws.root):
+            if inside(path, far) != inside(start, far):
                 raise ValueError("path is on mount 'C:', start on mount 'D:'")
             return real(path, start)
 
