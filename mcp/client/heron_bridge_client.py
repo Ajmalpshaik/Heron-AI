@@ -19,6 +19,8 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py count 24312
     python mcp/client/heron_bridge_client.py doctor    # diagnose a failure
     python mcp/client/heron_bridge_client.py release   # hand this Revit back
+    python mcp/client/heron_bridge_client.py stop      # stop Heron, and the job
+                                                       # Revit is running now
     python mcp/client/heron_bridge_client.py validate list-levels
                                                        # run one fragment through the
                                                        # phases a proof needs, and
@@ -93,6 +95,10 @@ def local_app_data(environ=None, system=None):
 # file would follow the user to a PC where that process does not exist.
 DISCOVERY_DIR = os.path.join(local_app_data(), "Heron", "bridges")
 LOG_DIR = os.path.join(local_app_data(), "Heron", "logs")
+# HeronPaths.Runs: one record per fragment write, named by its workflow id,
+# which heron_run_record pages back from disk (FRAGMENT-ISSUES 5b-407).
+# Read here, never written - the add-in writes and prunes it.
+RUNS_DIR = os.path.join(local_app_data(), "Heron", "runs")
 PROTOCOL_VERSION = 2
 CONNECT_TIMEOUT_S = 2.0
 
@@ -2952,6 +2958,61 @@ def cmd_release():
     return 0
 
 
+def cmd_stop():
+    """
+    Stop Heron in every connected Revit, and the fragment Revit is running now.
+
+    D-129. The add-in answers `stop` on a bridge thread, before anything is
+    queued, so it reaches a Revit whose own thread is held by a job that will
+    not end: the job stops at its next check and is rolled back, and the chat
+    waiting on it is told so. Heron then stays stopped - nothing that changes a
+    model is sent - until Revit is restarted. Nothing here can resume it, on
+    purpose.
+
+    ONLY THE CHAT THAT HOLDS A REVIT CAN STOP IT. The add-in answers `stop`
+    after the lease, so run this with that chat's HERON_CLIENT_ID; with any
+    other it is refused `session_in_use` while another chat holds the Revit,
+    which this prints as it is.
+
+    IT HANDS BACK ONLY WHAT IT TOOK. A `stop` sent to a Revit nobody held
+    claims the lease, as every request does, and this gives it back. With
+    HERON_CLIENT_ID set the lease is the chat's own, mid-job, and handing it
+    back would cut that chat off - so it is left alone.
+    """
+    if refuse_off_windows():
+        return 2
+
+    live, starting, _, mismatched = discover()
+    if not live and starting:
+        print("Revit is still starting - its bridge is not answering yet.")
+        report_mismatched(mismatched)
+        return 1
+    if not live:
+        print("No Revit is connected.")
+        report_mismatched(mismatched)
+        return 1
+
+    borrowed = bool(os.environ.get("HERON_CLIENT_ID"))
+    failed = 0
+    for index, bridge in enumerate(live):
+        # The configured wait, not a literal of its own: the add-in answers
+        # `stop` at once, so a shorter one would buy nothing, and
+        # tests/test_config_and_health.py keeps literals to `release`.
+        reply = bridge.request("stop", timeout=2.0)
+        if reply is None:
+            failed += 1
+            print("%s  no reply" % describe(bridge, index))
+        else:
+            if not reply.get("ok"):
+                failed += 1
+            print("%s  %s" % (describe(bridge, index),
+                              reply.get("message") or reply.get("error")))
+        if not borrowed:
+            bridge.release()
+        bridge.close()
+    return 1 if failed else 0
+
+
 def cmd_doctor():
     """
     Self-diagnostics - the prototype of HERON-OPS-DIA-005.
@@ -3077,6 +3138,8 @@ def main(argv):
         return cmd_doctor()
     if argv[1] == "release":
         return cmd_release()
+    if argv[1] == "stop":
+        return cmd_stop()
     if argv[1] == "prove":
         rest, pairs, _, _, _ = pull_values(argv[2:])
         if rest is None:
