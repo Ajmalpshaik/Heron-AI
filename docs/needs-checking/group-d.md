@@ -16,7 +16,9 @@ has ever run"* until 2026-10-17.
 
 **If `revit_apply_move` answers *"There is nothing waiting to be approved"*, the MCP server is running old
 code** - restart it before D1. That trap, and the one about pinning `HERON_CLIENT_ID` when driving from
-a command line, are both written up in [Group B](group-b.md).
+a command line, are both written up in [Group B](group-b.md). Since 2026-10-17 the server says so itself
+on every answer and refuses the move while its code is old ([Group EU](group-eu.md)) - built, never seen
+in a real chat, so restart it first anyway.
 
 Checked without Revit on 2026-10-17: `tests/test_kernel.py` (`HeronUnits`, the millimetre-to-foot
 conversion the move uses) and `tests/test_write_safety.py` (the chat half of the rails) pass. **That is

@@ -662,7 +662,23 @@ def _store_drift(store, walked=None):
             % ("; ".join(parts), fix))
 
 
-def lookup(request, revit=None):
+def question_ceiling():
+    """The highest risk a QUESTION may be answered by - D-128.
+
+    The level just below the change door's own, read from the tool registry
+    rather than typed here (Golden Rule 19): `revit_change` is declared at the
+    write line, so everything under it changes nothing in the model. EXECUTE
+    stays in - isolating or zooming changes what a view shows, not the model -
+    and MODIFY and above go.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import heron_tools as TOOLS
+    return TOOLS.NAMES[TOOLS.risk_of("revit_change") - 1]
+
+
+def lookup(request, revit=None, question=False):
     """
     What the user asked for, resolved to a CAPABILITY through retrieval.
 
@@ -675,11 +691,18 @@ def lookup(request, revit=None):
     thing: `identity` is an exactly declared phrasing, `hybrid` is a ranked
     guess, and a reader shown only the answer cannot tell which they were
     given.
+
+    `question` is the HOST's word that the user is finding something out and
+    wants nothing in the model changed (D-128, D-01: the host decides what
+    the user meant, Heron never does). Then every fragment above
+    `question_ceiling()` is left out before ranking, and the answer says how
+    many. False, the default, is exactly the lookup this always was.
     """
     _S, _CAP, SKILL, _SE, _E, RETRIEVE = _brain()
+    ceiling = question_ceiling() if question else None
     opened = _Open()
     with opened as store:
-        answer = RETRIEVE.find(store, request, revit=revit)
+        answer = RETRIEVE.find(store, request, revit=revit, ceiling=ceiling)
         capability = (_capability_of(store, answer.fragment_id)
                       if answer.fragment_id else None)
         # WHETHER THE STORE HOLDS THIS CHECKOUT'S CARDS - row 5b-233. From the
@@ -727,7 +750,9 @@ def lookup(request, revit=None):
                                "risk": risks.get(c["id"]),
                                "why": c["why"]})
 
-        _rows, excluded = RETRIEVE.eligible(store, revit)
+        _rows, excluded = RETRIEVE.eligible(store, revit, ceiling=ceiling)
+        left_out = sum(1 for e in excluded
+                       if e.reason.startswith(RETRIEVE.QUESTION_REASON))
 
         # THE JOBS THIS IS ONE STEP OF - see heron_skill.methods_for. Not for
         # an exact declared phrasing that may run on its own: that request IS
@@ -790,6 +815,12 @@ def lookup(request, revit=None):
             "store_drift": store_drift,
             "revit": revit,
             "methods": methods,
+            # D-128. Whether the host asked this as a question, the ceiling
+            # that applied, and how many fragments above it were left out -
+            # so a reply can say what was not offered, never hide it.
+            "question": bool(question),
+            "ceiling": ceiling,
+            "left_out": left_out,
         }
 
 

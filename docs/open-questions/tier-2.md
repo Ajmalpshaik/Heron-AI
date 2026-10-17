@@ -468,7 +468,7 @@ works inside a link. Changing a link is still Article 7's, with its confirmation
 
 ---
 
-### 🟠 Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
+### ✅ Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? → **An entry of `proof.releases`, and `accept --second-route`** *(found and answered 2026-10-17)*
 
 **What was found**, preparing [NEEDS-CHECKING Group EQ](../needs-checking/group-eq.md) - a core set of PROVEN
 fragments proved again on every release, to back the *"2020 → latest"* claim with evidence. Three things in
@@ -505,5 +505,11 @@ that reads fragments today.
 
 **Ajmal PS decides.** Until he does, EQ1 to EQ6 (loading the add-in on each release) and EQ8 (the routes
 themselves, by hand in Revit) can still be run and recorded in Group EQ; only EQ7 waits.
+
+**Answer: the recommended shape - 2026-10-17. See [D-131](../decisions/D-131.md), Accepted.** Asked to accept
+the recommendation or choose another, the owner chose *"Accept recommended (Recommended)"*. Built the same
+day: `batch-prove --release`, `heron_validate.py accept --release` and `accept --second-route`, and the matrix
+reading `proof.releases`, held by `tests/test_release_proofs.py`. EQ7 has its commands; every run is still
+NEEDS REAL REVIT, and no fragment is proven on a new release by the answer.
 
 ---

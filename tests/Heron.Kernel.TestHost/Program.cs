@@ -90,6 +90,7 @@ namespace Heron.Kernel.TestHost
             Config();
             Permissions();
             ShowDoor();
+            SourceScan();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -895,6 +896,83 @@ namespace Heron.Kernel.TestHost
                      < HeronOperationRegistry.RiskOf("run_fragment_write"),
                   "and run_fragment_show sits between the read door and the write door - above "
                   + "Analyze, below Modify");
+        }
+
+        // ------------------------------------------------------------------
+        // HeronSourceScan - what a fragment opens, read before it runs. The
+        // read and show paths refuse a fragment that opens a transaction of
+        // its own, and so does any that declared noTransactionOpen (D-125).
+        // ------------------------------------------------------------------
+        private static void SourceScan()
+        {
+            Console.WriteLine();
+            Console.WriteLine("10. A fragment that opens a transaction of its own is seen before it runs");
+
+            Check(HeronSourceScan.OpensTransaction(
+                      "using (var t = new Transaction(doc, \"x\")) { t.Start(); t.Commit(); }")
+                  == "Transaction", "new Transaction(...) is seen");
+            Check(HeronSourceScan.OpensTransaction("var g = new TransactionGroup(doc, \"g\");")
+                  == "TransactionGroup", "a TransactionGroup is seen");
+            Check(HeronSourceScan.OpensTransaction("var s = new  SubTransaction (doc);")
+                  == "SubTransaction", "a SubTransaction is seen");
+            Check(HeronSourceScan.OpensTransaction("Transaction t = new(doc, \"x\");")
+                  == "Transaction", "and a target-typed new(...) is seen");
+
+            Check(HeronSourceScan.OpensTransaction(
+                      "// IT CANNOT RUN INSIDE A TRANSACTION.\n// new Transaction(doc, \"x\")\nvar a = 1;")
+                  == null, "a line comment naming one is not one");
+            Check(HeronSourceScan.OpensTransaction("/* new Transaction(doc, \"x\") */ var a = 1;")
+                  == null, "nor is a block comment");
+            Check(HeronSourceScan.OpensTransaction(
+                      "var s = \"new Transaction(doc)\"; var v = @\"new TransactionGroup(\"\"g\"\")\";"
+                      + " var i = $\"{1} new SubTransaction(doc)\";")
+                  == null, "nor a regular, verbatim or interpolated string");
+            Check(HeronSourceScan.OpensTransaction(
+                      "if (transaction.Commit() == TransactionStatus.Committed) { }") == null,
+                  "and using one's status, or a variable named for one, is not opening one");
+            Check(HeronSourceScan.OpensTransaction(null) == null
+                  && HeronSourceScan.OpensTransaction("") == null, "no source opens nothing");
+
+            var lines = "a // c\nb /* x\ny */ c\n\"s\ns\"";
+            Check(HeronSourceScan.CodeOnly(lines).Split('\n').Length == lines.Split('\n').Length,
+                  "blanking keeps every line where it was");
+
+            // OVER THE LIBRARY: every fragment the read or show door may run -
+            // declared READ, ANALYZE, SUGGEST or EXECUTE, and not one of D-112's
+            // edit-mode fragments - opens none, so the refusal costs nothing
+            // that works today. Found from this file up; skipped, and said, when
+            // the host runs somewhere the library is not.
+            var root = AppContext.BaseDirectory;
+            while (root != null && !Directory.Exists(Path.Combine(root, "brain", "fragments")))
+                root = Path.GetDirectoryName(root.TrimEnd(Path.DirectorySeparatorChar));
+            if (root == null)
+            {
+                Console.WriteLine("  NOT RUN  the fragment library was not found from {0}",
+                                  AppContext.BaseDirectory);
+                return;
+            }
+
+            var risky = new Regex(@"^risk:\s*(READ|ANALYZE|SUGGEST|EXECUTE)\s*$", RegexOptions.Multiline);
+            var looked = 0;
+            var opening = new List<string>();
+            foreach (var card in Directory.GetFiles(Path.Combine(root, "brain", "fragments"),
+                                                    "fragment.yaml", SearchOption.AllDirectories))
+            {
+                var text = File.ReadAllText(card);
+                if (!risky.IsMatch(text) || text.Contains("editScopeFailures")) continue;
+                var impl = Path.Combine(Path.GetDirectoryName(card), "impl");
+                if (!Directory.Exists(impl)) continue;
+                foreach (var code in Directory.GetFiles(impl, "fragment.cs", SearchOption.AllDirectories))
+                {
+                    looked++;
+                    var opens = HeronSourceScan.OpensTransaction(File.ReadAllText(code));
+                    if (opens != null)
+                        opening.Add(Path.GetFileName(Path.GetDirectoryName(card)) + " (" + opens + ")");
+                }
+            }
+            Check(looked > 0 && opening.Count == 0,
+                  "every one of the " + looked + " READ to EXECUTE fragment sources opens no "
+                  + "transaction of its own" + (opening.Count == 0 ? "" : " - " + string.Join(", ", opening)));
         }
     }
 }

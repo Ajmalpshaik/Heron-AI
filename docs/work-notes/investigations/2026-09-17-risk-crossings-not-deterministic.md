@@ -18,6 +18,8 @@ the ranked search answers, and ranking is what answers a question with a write. 
 is in the INDEX, not the ranker.
 
 **Not established, and no run below shows it:** which write made the identity miss on run 2.
+**Established 2026-10-17 - see the last section:** another checkout's `index()` rebuilding
+`identities` from cards that did not declare the sentence, reproduced on the 2026-09 code.
 Comparing the shared store against a copy showed only FTS5 shadow tables differing - `fragments`
 372, `identities` 2448, `vectors` 374, `utterances` 0, all equal.
 
@@ -237,3 +239,108 @@ Exit 0 whatever this finds. A crossing is a judgement a person
 makes, the same rule tools/check-routing.py sets - and weakening a
 question to buy back a rank is never the answer.
 ```
+
+## 2026-10-17 - which write made the identity miss, reproduced
+
+**The question this note left open is answered, by making it happen again.** The miss is
+**another checkout's `heron_search.index()` writing the same store** - on the 2026-09 code it
+rebuilt `identities` from its own cards on every open, so a tree that did not declare the sentence
+replaced the table between this tree's rebuild and its read. Row 116 carries the finding; this is
+the output.
+
+### The probe
+
+One question asked in a loop through `heron_brain.lookup` of a named tree, on a scratch
+`HERON_KNOWLEDGE`, with `HERON_AUDIT` pointed at a throwaway folder:
+
+```python
+import os, sys, collections
+tree, question, n = sys.argv[1], sys.argv[2], int(sys.argv[3])
+sys.path.insert(0, os.path.join(tree, "mcp", "server"))
+sys.path.insert(0, os.path.join(tree, "brain"))
+import heron_brain as brain
+seen = collections.Counter()
+for i in range(n):
+    got = brain.lookup(question, revit="2020")
+    seen[(got.get("route"), got.get("capability"))] += 1
+for k, v in seen.most_common():
+    print(os.path.basename(tree), question[:30], v, k)
+```
+
+### On the 2026-09 code - `5669e7e5` (#165, which declared the sentence) and its parent
+
+`git log -S "how many pipes are there" -- brain/fragments` names exactly one commit, `5669e7e5`,
+2026-09-17 01:51 - the morning of the four runs above. Any checkout taken before it lacked the
+declaration.
+
+```
+wt-new how many pipes are there 1 ('identity', 'COUNT_ELEMENTS')        # build
+wt-new how many pipes are there 20 ('identity', 'COUNT_ELEMENTS')       # alone, 20 asks
+# both at once - the parent asks "what size is this duct" 60 times beside it
+wt-new how many pipes are there 58 ('hybrid', 'CAP_OPEN_PIPE_ENDS')
+wt-new how many pipes are there 2 ('hybrid', 'COUNT_ELEMENTS')
+wt-old what size is this duct 58 ('hybrid', 'AUTO_SIZE_MEP')
+wt-old what size is this duct 2 ('hybrid', 'SELECT_TOUCHING')
+# alone again
+wt-new how many pipes are there 5 ('identity', 'COUNT_ELEMENTS')
+```
+
+`CAP_OPEN_PIPE_ENDS` is the very answer run 2 printed. Asked one after the other, the tree recovers
+at once - each open rebuilt from its own cards - so the miss needs the other tree **at the same
+time**, which is what a second live session is.
+
+### On today's code - `5ded99d` (#544, which declared *rename this view*) and its parent
+
+```
+wt-today-new rename this view 3 ('identity', 'RENAME_ELEMENTS')         # alone
+# both at once, 40 each
+wt-today-new rename this view 22 ('identity', 'RENAME_ELEMENTS')
+wt-today-new rename this view 17 ('hybrid', 'RENAME_ELEMENTS')
+wt-today-new rename this view 1 ('hybrid', 'REPORT_VIEW_SETTINGS')
+```
+
+**Still 18 misses in 40.** The digest guard of row 136 skips a rebuild only when the cards are the
+same; two trees whose cards differ still each rebuild from their own. What keeps the sweep stable is
+its private store, the default since 2026-09-29. `--shared`, or two worktrees pointed at one
+`HERON_KNOWLEDGE`, can still miss - whether a store named that way should refuse a second tree is
+row 131's policy question, still the owner's.
+
+### The md5 that moved on every run - a second, harmless write
+
+With one writer and the answers identical run after run, the store's md5 still changed every time.
+Every table compared equal before and after a sweep - FTS5 shadow tables included - so the write
+changed no row. Stepping through one open at a time found it:
+
+```
+after first open (593, '965b2481')          # (SQLite file change counter, md5)
+open_scope()    -> (594, 'e94033ad')        # a commit, nothing changed
+lookup how many pipes are there  WROTE (595, 'ac16138a')
+lookup what size is this duct    WROTE (596, '5bf4bec6')
+```
+
+`heron_scope.Store._create` `INSERT OR REPLACE`d the `scope` and `schema` rows of `meta` and
+committed on every open, so every lookup was a commit. It writes a row only when its value differs
+now, and the same walk prints no write at all:
+
+```
+after first open (591, '160f42a7')
+refresh ... EMBED.index_chunks   -  (591, '160f42a7')
+lookup how many pipes are there  -  (591, '160f42a7')
+lookup what size is this duct    -  (591, '160f42a7')
+```
+
+### The sweep after the change
+
+| | lexical | `model` (model2vec 0.10.0, `potion-base-8M`) |
+|---|---|---|
+| three private runs, `--revit 2024` | byte-identical reports | byte-identical reports |
+| store md5 before the run = after | yes, `160f42a7...` every run | yes, `d980de4e...` every run |
+| `THE STORE CHANGED WHILE THIS RAN` | never printed | never printed |
+| crossings | 4 | 2 |
+
+Three `--shared` runs on one persistent folder ended on `160f42a7...` each time - the md5 of a fresh
+private build. Before the change, five private runs already agreed on their answers; what did not
+reproduce was the file.
+
+**This note can now retire once row 116 is closed** - the crossings are what keep it open, and they
+are the per-sentence judgements the row names.

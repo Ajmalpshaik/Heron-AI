@@ -23,7 +23,9 @@ WHAT THIS PROVES
      modeller's chat - the main checkout on branch main. On this repository
      it states the count grep derives, and fast, with that rule set aside;
      with the rule in place it keeps it, whichever checkout this is - CI
-     checks a push to main out on branch main.
+     checks a push to main out on branch main. On any system but Windows it
+     ends by saying there is no Revit and no Heron tools here; asked as
+     Windows, the line is exactly what it was.
   1. "HAS MAIN MOVED?" fires on a merge and a "ready" - by gh, by gh api, and
      by the GitHub MCP tools - fetches origin/main, and names the commits the
      branch does not have. It stays silent for everything else, including
@@ -362,6 +364,47 @@ def run_all(home):
     check(no_decision(parsed), "and it decides nothing")
     check(raw.isascii() if hasattr(raw, "isascii") else True,
           "every character of the output is ASCII")
+
+    # NOT WINDOWS. The heron MCP server exits on any system but Windows, so a
+    # session started there has no Revit and no Heron tools - and on
+    # 2026-10-17 a task marked LOCAL SESSION was started in a cloud session
+    # with nothing at the start saying so. The piped hook answers for the
+    # system running this suite; line_for() is asked for the other one, so
+    # both halves are proved on either machine.
+    was = ("Heron: branch claude/some-work is 0 behind and 1 ahead of "
+           "origin/main (as last fetched). Fragments: 2 PROVEN, 1 DRAFT of 3.")
+    if os.name != "nt":
+        check(text.startswith(was + " Not Windows:")
+              and "no Revit" in text and "no Heron tools" in text
+              and "NEEDS REAL REVIT" in text,
+              "on this machine, which is not Windows, the line ends by saying "
+              "there is no Revit and no Heron tools here: %s" % text)
+    else:
+        check(text == was,
+              "on this machine, which is Windows, the line is exactly what "
+              "it was: %s" % text)
+    try:
+        import session_line as LINE_MODULE
+    except ImportError as exc:
+        check(False, "session_line.py can be imported (%s)" % exc)
+        LINE_MODULE = None
+    if LINE_MODULE is not None:
+        asks = LINE_MODULE.line_for.__code__.co_argcount >= 2
+        check(asks, "line_for() can be asked about a system other than the "
+                    "one it runs on")
+        as_windows = LINE_MODULE.line_for(start, "nt") if asks else None
+        as_linux = LINE_MODULE.line_for(start, "posix") if asks else None
+        check(as_windows == was,
+              "asked as Windows, the line is exactly what it was - no word "
+              "about the machine: %s" % as_windows)
+        check(bool(as_linux) and as_linux.startswith(was + " Not Windows:")
+              and "no Revit" in as_linux,
+              "asked as Linux or macOS, the same line ends with the sentence "
+              "that stops a task needing Revit: %s" % as_linux)
+        check(asks and LINE_MODULE.line_for(dict(start, cwd=plain),
+                                            "posix") is None,
+              "and the machine alone is not a Heron line: a folder with no "
+              "git and no fragments still gets NOTHING")
 
     commit(seed, "Somebody else merged first (#901)")
     git(seed, "push", "-q", "origin", "main")

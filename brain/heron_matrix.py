@@ -57,12 +57,24 @@ THE RELEASE A PROOF WAS TAKEN ON IS PROSE, NOT A FIELD
 A proof records `model: "Snowdon Towers Sample HVAC (9,641 elements), Revit
 2024, session 42676"`. The release is in there, in a sentence, so this agent
 reads it with a regular expression and SAYS THAT IT DID. It is the one input
-here that is parsed rather than declared, and if PROOF_REQUIRED ever grows a
-`revit:` field this should read that instead.
+here that is parsed rather than declared.
 
 The consequence matters more than the parsing: **a proof on 2024 is evidence
 about 2024.** Eight releases are claimed, and a fragment proven once is proven
 on one of them. Nothing here spreads a proof sideways.
+
+A FURTHER RELEASE IS A FIELD - D-131
+------------------------------------
+Every release proved after the one that made the fragment PROVEN is an entry
+of `proof.releases`, and an entry names its release in a `release:` field, so
+that field is read and no prose is parsed for it. `proof:` itself stays as it
+was signed, prose and all.
+
+An entry also carries the fingerprint it was taken against, and **a stale entry
+is not counted**: it is evidence about code that no longer runs. `proof:` is
+not held to that here, as before - a stale proof already fails the fragment's
+own validation. A cell is PROVEN from the proof or from a fresh entry, never
+from `revit:`, and only where a compiler has also agreed.
 """
 
 import io
@@ -185,6 +197,62 @@ def proof_release(frag):
     return found[0], None
 
 
+def release_entries(frag):
+    """The entries of `proof.releases` that are mappings, as written. D-131.
+
+    Shape problems are heron_fragment.release_problems's to report; this only
+    reads what can be read, so a malformed list counts for nothing rather than
+    raising in the middle of a matrix.
+    """
+    proof = getattr(frag, "proof", None)
+    if not isinstance(proof, dict):
+        return []
+    rows = proof.get("releases")
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict) and row.get("release")]
+
+
+def proven_releases(frag):
+    """Where this fragment is PROVEN. Returns ({release: source}, [stale]).
+
+    `source` is "proof" for the release the proof that made it PROVEN names,
+    and "proof.releases" for a fresh entry. `stale` lists the entries whose
+    fingerprint no longer matches the code: recorded, and not counted.
+
+    Only a fragment at PROVEN or PRODUCTION is proven anywhere - an entry on a
+    fragment set back to DRAFT is history, as the proof itself is.
+    """
+    if getattr(frag, "status", None) not in ("PROVEN", "PRODUCTION"):
+        return {}, []
+    found = {}
+    release, _why = proof_release(frag)
+    if release:
+        found[release] = "proof"
+    stale = []
+    rows = release_entries(frag)
+    # Hashed only when there is an entry to hold against it.
+    current = frag.fingerprint() if rows and hasattr(frag, "fingerprint") else None
+    for row in rows:
+        name = str(row["release"])
+        if not current or str(row.get("fingerprint") or "") != current:
+            stale.append(name)
+            continue
+        found.setdefault(name, "proof.releases")
+    return found, sorted(stale)
+
+
+def recorded_releases(frag):
+    """Every release a proof or an entry names, stale entries included.
+
+    What `accept --release` and `batch-prove --release` read, through
+    `proven_releases`: a release whose entry went stale is recorded and may be
+    proved again; one whose evidence still stands may not.
+    """
+    found, stale = proven_releases(frag)
+    return sorted(set(found) | set(stale))
+
+
 def build_matrix(library=None, evidence=UNSET, tfm=None):
     """One cell per fragment per release, plus why each cell says what it does."""
     library = library if library is not None else list(HF.load_all()[0].values())
@@ -205,8 +273,7 @@ def build_matrix(library=None, evidence=UNSET, tfm=None):
     notes = collections.Counter()
     for frag in library:
         claims = set(str(v) for v in (frag.data.get("revit") or []))
-        release, _why = proof_release(frag)
-        proven_on = release if frag.status in ("PROVEN", "PRODUCTION") else None
+        proven_on, _stale = proven_releases(frag)
 
         row = {}
         for rel in releases:
@@ -218,7 +285,7 @@ def build_matrix(library=None, evidence=UNSET, tfm=None):
                 # A fragment named in `failed` did not compile. One not named,
                 # in a release that WAS tested, did.
                 state = CLAIMED if frag.id in failed_on.get(rel, ()) else COMPILES
-            if proven_on == rel and state == COMPILES:
+            if rel in proven_on and state == COMPILES:
                 state = PROVEN
             row[rel] = state
             notes[state] += 1
@@ -279,7 +346,7 @@ def report(matrix, out=None):
     write("\n")
     write("CLAIMED   the fragment says so. Nobody checked\n")
     write("COMPILES  a compiler agreed - the API surface, not the behaviour\n")
-    write("PROVEN    a D-30 proof was recorded ON THAT RELEASE\n")
+    write("PROVEN    a D-30 proof, or a fresh proof.releases entry, ON THAT RELEASE\n")
     write("\n")
     write("A fragment can compile on all eight releases and be wrong on all\n")
     write("eight. The distance between the last two columns is what this\n")

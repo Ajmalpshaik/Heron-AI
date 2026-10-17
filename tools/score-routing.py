@@ -14,6 +14,7 @@ How does Heron's search do on the questions the owner ACTUALLY asked?
                                                 #    brain/retrieval-history.md
     python tools/score-routing.py --revit 2024  # behind one release's wall
     python tools/score-routing.py --list        # the answer key; asks nothing
+    python tools/score-routing.py --list-plain  # the plain questions; asks nothing
 
 WHAT IS DIFFERENT ABOUT THIS ONE
 --------------------------------
@@ -79,6 +80,17 @@ that is the owner's decision rather than a default: on 2026-09-23 he decided
 that a drop in this score is reported and never stops a pull request (D-100).
 Exit 2 means it could not do its job: nothing was scored, which is not a pass.
 
+AND A SECOND SET BESIDE HIS, NEVER INSIDE IT
+--------------------------------------------
+tests/data/plain-questions.yaml holds 120 plain questions a session wrote on
+2026-10-14 before reading any card - frozen on 2026-10-17 out of
+FRAGMENT-ISSUES rows 5b-477 and 5b-478, where they lived only as row text.
+They are asked after his, through the same lookup, and get their own report,
+their own table in brain/retrieval-history.md and their own comparison.
+Every one is a question, so the headline is how many reach a write; where the
+row names the read that answers one, where that read came back is scored too.
+A drop there is reported and never a gate either (D-100).
+
 A NUMBER FROM HERE IS A SAMPLE OF ONE STORE
 -------------------------------------------
 The knowledge store is one file every worktree on a machine writes (row 116),
@@ -138,6 +150,25 @@ ERROR = "?"            # the row could not be scored
 LANDED_CHANGE = "w"    # a tool or gap row that landed on a change
 LANDED_OTHER = "."     # a tool or gap row that landed on anything else
 LANDED_NOTHING = "0"   # the search matched nothing at all
+
+# THE SECOND SET, SCORED BESIDE HIS AND NEVER MIXED WITH IT. 120 plain
+# questions a session wrote before reading any card, frozen out of
+# FRAGMENT-ISSUES rows 5b-477 and 5b-478, where they had lived only as row
+# text no tool could read. Every one is a question, so its headline is not a
+# judgement call: how many reach something at or above the write line. Where
+# the row names the read that answers one, where that read came back is
+# scored too. Its own table, its own key fingerprint, its own comparison.
+PLAIN = os.path.join(ROOT, "tests", "data", "plain-questions.yaml")
+PLAIN_NAMED = ("declared", "ranked", "owners-call", "no-read")
+PLAIN_COLUMNS = ["Date", "Fragments", "Backend", "Revit", "Answer key",
+                 "Asked", "Reached a write", "Exact", "Named read 1st",
+                 "Named read in the top 3", "Per question"]
+PLAIN_HEADER = "| " + " | ".join(PLAIN_COLUMNS) + " |"
+# One character per plain question. A row with a named read keeps its place,
+# `1`-`5`, or NOT_FOUND; a row with none keeps LANDED_OTHER. Either becomes
+# LANDED_CHANGE when the answer writes, which outranks where the read sat:
+# the question was answered by a change, whatever came second.
+NAMED, UNNAMED = "named", "unnamed"
 
 
 def _sibling(name):
@@ -380,23 +411,23 @@ def history_row(stamp, summary, codes):
     return "| " + " | ".join(cells) + " |"
 
 
-def history_rows(text):
+def history_rows(text, header=TABLE_HEADER, columns=COLUMNS):
     """Every row of the table, oldest first, as dicts - or None if no table.
 
     None and [] are different answers and are kept apart (D-52): no table
     means the file lost its section, an empty table means nothing was ever
-    recorded.
+    recorded. `header` and `columns` name the plain questions' table instead.
     """
     lines = text.splitlines()
-    if TABLE_HEADER not in lines:
+    if header not in lines:
         return None
     rows = []
-    for line in lines[lines.index(TABLE_HEADER) + 2:]:
+    for line in lines[lines.index(header) + 2:]:
         if not line.startswith("|"):
             break
         cells = [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
-        if len(cells) == len(COLUMNS):
-            rows.append(dict(zip(COLUMNS, cells)))
+        if len(cells) == len(columns):
+            rows.append(dict(zip(columns, cells)))
     return rows
 
 
@@ -416,9 +447,18 @@ def _severity(kind, char):
         if char == NOT_FOUND:
             return 99
         return int(char) if char.isdigit() else None
+    if kind == NAMED:
+        # A plain question whose row names its read. Answered by a change is
+        # the worst; the read missing, or nothing at all, next; then its place.
+        if char == LANDED_CHANGE:
+            return 100
+        if char in (NOT_FOUND, LANDED_NOTHING):
+            return 99
+        return int(char) if char.isdigit() else None
     # A character this tool never writes - `?`, or a row somebody edited by
     # hand - is UNREADABLE. Reading it as "no change" would call a hole in the
-    # record an improvement.
+    # record an improvement. An UNNAMED plain question reads like a tool row:
+    # a change, or not.
     return {LANDED_CHANGE: 1, LANDED_OTHER: 0, LANDED_NOTHING: 0}.get(char)
 
 
@@ -467,7 +507,7 @@ def exit_code(drop):
     return 0
 
 
-def append_row(path, line):
+def append_row(path, line, header=TABLE_HEADER):
     """Add one row at the end of the table. False if the table is not there.
 
     THE FILE KEEPS ITS OWN LINE ENDINGS. A Windows checkout usually holds CRLF.
@@ -479,9 +519,9 @@ def append_row(path, line):
         raw = handle.read()
     eol = "\r\n" if "\r\n" in raw else "\n"
     lines = raw.replace("\r\n", "\n").split("\n")
-    if TABLE_HEADER not in lines:
+    if header not in lines:
         return False
-    at = lines.index(TABLE_HEADER) + 2
+    at = lines.index(header) + 2
     while at < len(lines) and lines[at].startswith("|"):
         at += 1
     lines.insert(at, line)
@@ -596,18 +636,29 @@ def backend_of(results):
 
     An exact phrase runs no route, so only ranked answers vote. Two different
     names in one run is possible while a model is warming, and is said.
+
+    "NOT USED" IS NO VOTE. heron_retrieve.ran() says it when no candidate of
+    one answer carried a nearness rank - the meaning route found nothing for
+    that sentence, on whichever backend was installed. It names no backend,
+    so it cannot make a run "mixed"; measured 2026-10-17, *who drew this
+    sheet* did that to the plain questions on lexical, and a label no later
+    run would repeat made the run comparable with nothing. A run where NO
+    answer carried a rank is still called "not used".
     """
-    near, rerank = {}, set()
+    near, rerank, unused = {}, set(), 0
     for r in results:
         if r.get("error") or r.get("route") != "hybrid":
             continue
-        said = (r.get("backends") or {}).get("nearness") or "not said"
-        near[said] = near.get(said, 0) + 1
         again = (r.get("backends") or {}).get("rerank")
         if again and again != "not used":
             rerank.add(again)
+        said = (r.get("backends") or {}).get("nearness") or "not said"
+        if said == "not used":
+            unused += 1
+            continue
+        near[said] = near.get(said, 0) + 1
     if not near:
-        name = "none ranked"
+        name = "not used" if unused else "none ranked"
     elif len(near) == 1:
         name = list(near)[0]
     else:
@@ -784,6 +835,268 @@ def compare(history_path, stamp, codes, summary, kinds, rows):
     return drop
 
 
+# ---------------------------------------------------------------------------
+# The plain questions - rows 5b-477 and 5b-478, scored beside his
+# ---------------------------------------------------------------------------
+
+def load_plain(path=PLAIN):
+    """(doc, rows, problems) - the 120 plain questions, and what is wrong with
+    their SHAPE. Whether a named read exists is `unknown_plain`'s question."""
+    import yaml
+
+    with io.open(path, encoding="utf-8") as handle:
+        doc = yaml.safe_load(handle) or {}
+    rows = doc.get("questions") or []
+    problems, seen = [], set()
+    if not rows:
+        problems.append("%s holds no questions" % os.path.relpath(path, ROOT))
+    for i, row in enumerate(rows, 1):
+        if not isinstance(row, dict):
+            problems.append("row %d is not a mapping of n, row and question" % i)
+            continue
+        n, named = row.get("n"), row.get("named")
+        question = " ".join(str(row.get("question") or "").split())
+        answer = row.get("answer")
+        if n != i:
+            problems.append("row %d is numbered %r - they run 1, 2, 3 in "
+                            "order, because the per-question record is by "
+                            "position" % (i, n))
+        if not question:
+            problems.append("#%s has no question" % n)
+        elif question.lower() in seen:
+            problems.append("#%s repeats an earlier question" % n)
+        seen.add(question.lower())
+        if answer is not None and (not isinstance(answer, list) or not answer
+                                   or not all(isinstance(a, str) and a
+                                              for a in answer)):
+            problems.append("#%s has answer %r - a list of capability names, "
+                            "or no answer at all" % (n, answer))
+        if named is not None and named not in PLAIN_NAMED:
+            problems.append("#%s has named %r - one of %s"
+                            % (n, named, ", ".join(PLAIN_NAMED)))
+        elif named == "no-read" and answer:
+            problems.append("#%s says no read answers it and names one (%s)"
+                            % (n, ", ".join(answer)))
+        elif named in ("declared", "ranked", "owners-call") and not answer:
+            problems.append("#%s is %s and names no read" % (n, named))
+        elif answer and named is None:
+            problems.append("#%s names a read and does not say how the row "
+                            "named it" % n)
+    return doc, rows, problems
+
+
+def plain_fingerprint(rows):
+    """Eight hex characters naming THIS set - questions and named reads."""
+    canon = [[row.get("n"), " ".join(str(row.get("question") or "").split()),
+              sorted(row.get("answer") or [])] for row in rows]
+    blob = json.dumps(canon, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:8]
+
+
+def plain_kinds(rows):
+    """NAMED or UNNAMED per row, in order - what `moved` reads each code as."""
+    return [NAMED if row.get("answer") else UNNAMED for row in rows]
+
+
+def unknown_plain(rows, capabilities):
+    """[(n, why)] - a named read this library does not have. Scored `?`."""
+    out = []
+    for row in rows:
+        missing = [a for a in row.get("answer") or [] if a not in capabilities]
+        if missing:
+            out.append((row.get("n"), "no fragment in this library provides "
+                                      "%s" % ", ".join(missing)))
+    return out
+
+
+def measure_plain(rows, lookup, rung, threshold, revit=None, bad=(),
+                  progress=None):
+    """Ask every plain question through `lookup`. Returns the results.
+
+    Never raises for one row: a failed lookup is named on its row, as
+    `measure` does for his. Rows named in `bad` are not asked.
+    """
+    results = []
+    for i, row in enumerate(rows, 1):
+        if progress and i % 10 == 0:
+            progress(i, len(rows))
+        question = " ".join(str(row["question"]).split())
+        base = {"n": row.get("n"), "row": row.get("row"), "question": question,
+                "answer": list(row.get("answer") or []), "error": None}
+        if row.get("n") in bad:
+            base["error"] = ("a named read is one this library does not have")
+            results.append(base)
+            continue
+        try:
+            found = lookup(row["question"], revit=revit)
+        except Exception as why:                            # noqa: BLE001
+            if type(why).__name__ == "BrainUnavailable":
+                raise
+            base["error"] = "%s: %s" % (type(why).__name__, why)
+            results.append(base)
+            continue
+        order = shortlist(found)
+        got_risk = (found.get("risk") or "").upper() or None
+        at, _ = place(order, set(base["answer"])) if base["answer"] else (None,
+                                                                          None)
+        base.update({"route": found.get("route"), "got": found.get("capability"),
+                     "got_risk": got_risk, "order": order, "place": at,
+                     "writes": got_risk is not None
+                     and rung(got_risk) >= threshold,
+                     "backends": found.get("backends") or {}})
+        if found.get("risks_unreadable"):
+            base["error"] = ("the fragments' risks could not be read (%s), so "
+                             "this row was not judged"
+                             % found["risks_unreadable"])
+        results.append(base)
+    return results
+
+
+def plain_code(result):
+    """The one character the plain table keeps for this row."""
+    if result.get("error"):
+        return ERROR
+    if not result.get("got"):
+        return LANDED_NOTHING
+    if result["writes"]:
+        return LANDED_CHANGE
+    if result["answer"]:
+        return str(result["place"]) if result["place"] else NOT_FOUND
+    return LANDED_OTHER
+
+
+def summarise_plain(results):
+    """The counts the plain table keeps."""
+    ok = [r for r in results if not r["error"]]
+    named = [r for r in ok if r["answer"]]
+    writes = [r for r in ok if r["writes"]]
+    by_row = {}
+    for r in writes:
+        by_row[r.get("row")] = by_row.get(r.get("row"), 0) + 1
+    return {"asked": len(ok), "writes": len(writes), "writes_by_row": by_row,
+            "exact": sum(1 for r in ok if r["route"] == "identity"),
+            "named": len(named),
+            "named_first": sum(1 for r in named if r["place"] == 1),
+            "named_top3": sum(1 for r in named if r["place"]
+                              and r["place"] <= 3),
+            "errors": len(results) - len(ok)}
+
+
+def plain_history_row(stamp, summary, codes):
+    """One line of the plain questions' table in brain/retrieval-history.md."""
+    cells = [stamp["date"], str(stamp["fragments"]), "`%s`" % stamp["backend"],
+             stamp["revit"] or "any", "`%s`" % stamp["key"],
+             str(summary["asked"]), str(summary["writes"]),
+             str(summary["exact"]),
+             "%d of %d" % (summary["named_first"], summary["named"]),
+             "%d of %d" % (summary["named_top3"], summary["named"]),
+             "`%s`" % codes]
+    return "| " + " | ".join(cells) + " |"
+
+
+def report_plain(results, summary):
+    """Print the plain questions' run."""
+    out = sys.stdout.write
+    by_row = ", ".join("row %s: %d" % kv for kv in sorted(
+        summary["writes_by_row"].items(), key=lambda kv: str(kv[0])))
+    out("\nTHE PLAIN QUESTIONS - %d asked, every one a question (rows 5b-477 "
+        "and 5b-478):\n\n" % summary["asked"])
+    out("  answered by something that CHANGES THE MODEL   %3d%s\n"
+        % (summary["writes"], "   (%s)" % by_row if by_row else ""))
+    out("  answered by an exact declared phrase           %3d   tests a "
+        "declaration, not the search\n" % summary["exact"])
+    out("  the read the row names, first                  %3d of %d\n"
+        % (summary["named_first"], summary["named"]))
+    out("  the read the row names, in the top three       %3d of %d\n"
+        % (summary["named_top3"], summary["named"]))
+
+    writes = [r for r in results if not r["error"] and r["writes"]]
+    out("\nA QUESTION ANSWERED BY A CHANGE (D-86) - %d:\n" % len(writes))
+    if not writes:
+        out("  none\n")
+    for r in writes:
+        out("  #%-3d %-46s -> %s (%s)%s\n"
+            % (r["n"], _short('"%s"' % r["question"], 46), r["got"],
+               r["got_risk"], "; the row names %s" % " or ".join(r["answer"])
+               if r["answer"] else ""))
+
+    missed = [r for r in results if not r["error"] and r["answer"]
+              and not r["writes"] and r["place"] != 1]
+    if missed:
+        out("\nA READ ANSWERED, BUT NOT THE ONE THE ROW NAMES - %d:\n"
+            % len(missed))
+        for r in missed:
+            out("  #%-3d %-4s %-46s got %s; the row names %s\n"
+                % (r["n"], _place_word(r["place"]),
+                   _short('"%s"' % r["question"], 46), r["got"] or "nothing",
+                   " or ".join(r["answer"])))
+
+    broken = [r for r in results if r["error"]]
+    if broken:
+        out("\nNOT SCORED - %d:\n" % len(broken))
+        for r in broken:
+            out("  #%-3d %s\n" % (r["n"], r["error"]))
+
+
+def compare_plain(history_path, stamp, codes, summary, kinds, rows):
+    """Print what moved since the last comparable plain run. True on a drop:
+    a question moving toward a change, or more of them answered by one."""
+    out = sys.stdout.write
+    try:
+        with io.open(history_path, encoding="utf-8") as handle:
+            table = history_rows(handle.read(), PLAIN_HEADER, PLAIN_COLUMNS)
+    except (IOError, OSError) as why:
+        out("\nNOTHING TO COMPARE THE PLAIN QUESTIONS WITH - %s could not be "
+            "read: %s\n" % (history_path, why))
+        return False
+    if table is None:
+        out("\nNOTHING TO COMPARE THE PLAIN QUESTIONS WITH - %s has no table "
+            "headed\n  %s\n" % (history_path, PLAIN_HEADER))
+        return False
+    before = last_comparable(table, stamp)
+    if before is None:
+        out("\nNOTHING TO COMPARE THE PLAIN QUESTIONS WITH - no earlier run of "
+            "set %s on the %s backend\nwith Revit %s. --record makes this one "
+            "the baseline.\n" % (stamp["key"], stamp["backend"],
+                                 stamp["revit"] or "any"))
+        return False
+    out("\nTHE PLAIN QUESTIONS SINCE THE LAST COMPARABLE RUN - %s, %s "
+        "fragments:\n" % (before["Date"], before["Fragments"]))
+    try:
+        was = int(before["Reached a write"])
+        out("  reached a write  %3d -> %3d%s\n"
+            % (was, summary["writes"], "" if was == summary["writes"]
+               else "  (%+d)" % (summary["writes"] - was)))
+    except (KeyError, ValueError):
+        was = None
+        out("  reached a write  could not read the earlier figure\n")
+    earlier = before.get("Per question", "")
+    if len(earlier) != len(codes):
+        out("  The earlier row records %d questions and this run asked %d, so "
+            "nothing is said\n  about any one question.\n"
+            % (len(earlier), len(codes)))
+        return was is not None and summary["writes"] > was
+    moves = moved(earlier, codes, kinds)
+    if not moves:
+        out("  Nothing moved: every question is where it was.\n")
+    for direction, title in (("down", "MOVED DOWN"), ("up", "MOVED UP"),
+                             ("unreadable", "COULD NOT BE COMPARED")):
+        these = [m for m in moves if m[3] == direction]
+        if not these:
+            continue
+        out("\n  %s - %d:\n" % (title, len(these)))
+        for i, a, b, _ in these:
+            out("    #%-3d %-4s -> %-4s %s\n"
+                % (rows[i]["n"], a, b, _short('"%s"' % " ".join(
+                    str(rows[i]["question"]).split()), 60)))
+    drop = (any(m[3] == "down" for m in moves)
+            or (was is not None and summary["writes"] > was))
+    if drop:
+        out("\n  THE PLAIN QUESTIONS DROPPED. Reported, never enforced (D-100) "
+            "- read the questions\n  above.\n")
+    return drop
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Score Heron's search on the owner's own questions.")
@@ -794,7 +1107,11 @@ def main(argv=None):
                         help="append this run's row to the history table")
     parser.add_argument("--list", action="store_true",
                         help="print the answer key and ask nothing")
+    parser.add_argument("--list-plain", action="store_true",
+                        help="print the plain questions and ask nothing")
     parser.add_argument("--questions", default=QUESTIONS,
+                        help=argparse.SUPPRESS)
+    parser.add_argument("--plain-questions", default=PLAIN,
                         help=argparse.SUPPRESS)
     parser.add_argument("--history", default=HISTORY, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -819,6 +1136,23 @@ def main(argv=None):
             print("%3d  %-10s %-28s %s" % (row["n"], row["kind"],
                                            row.get("answer") or "-",
                                            " ".join(row["question"].split())))
+        return 0
+
+    _plain_doc, plain_rows, plain_problems = load_plain(args.plain_questions)
+    if plain_problems:
+        sys.stderr.write("COULD NOT RUN: the plain questions are not well "
+                         "formed:\n")
+        for one in plain_problems:
+            sys.stderr.write("  %s\n" % one)
+        return 2
+    plain_kind = plain_kinds(plain_rows)
+
+    if args.list_plain:
+        for row in plain_rows:
+            print("%3d  %-4s %-12s %-30s %s"
+                  % (row["n"], row.get("row") or "-", row.get("named") or "-",
+                     " / ".join(row.get("answer") or []) or "-",
+                     " ".join(row["question"].split())))
         return 0
 
     import heron_brain as brain
@@ -871,6 +1205,9 @@ def main(argv=None):
     for n, why in bad:
         print("  ANSWER KEY #%s: %s. The row is not scored, and the owner "
               "decides the new answer." % (n, why))
+    plain_bad = unknown_plain(plain_rows, capabilities)
+    for n, why in plain_bad:
+        print("  PLAIN QUESTION #%s: %s. The row is not scored." % (n, why))
 
     # READ BEFORE ASKING, as check-risk-crossings.py does: asking can move the
     # store, and a fingerprint taken afterwards describes a different one.
@@ -885,6 +1222,10 @@ def main(argv=None):
             results = measure(rows, brain.lookup, capabilities, skills, tools,
                               rung, threshold, revit=args.revit,
                               bad=set(n for n, _ in bad), progress=progress)
+            plain = measure_plain(plain_rows, brain.lookup, rung, threshold,
+                                  revit=args.revit,
+                                  bad=set(n for n, _ in plain_bad),
+                                  progress=progress)
         except brain.BrainUnavailable as why:
             sys.stderr.write("COULD NOT RUN: %s\n" % why)
             return 2
@@ -910,26 +1251,48 @@ def main(argv=None):
     report(results, summary, stamp, rows)
     drop = compare(args.history, stamp, codes, summary, kinds, rows)
 
+    plain_summary = summarise_plain(plain)
+    plain_codes = "".join(plain_code(r) for r in plain)
+    plain_stamp = dict(stamp, backend=backend_of(plain),
+                       key=plain_fingerprint(plain_rows))
+    print("\n" + "=" * 72)
+    print("Plain questions: %d, set %s, frozen from FRAGMENT-ISSUES rows 5b-477 "
+          "and 5b-478 -\na session's words, never mixed with his. Backend: %s"
+          % (len(plain_rows), plain_stamp["key"], plain_stamp["backend"]))
+    report_plain(plain, plain_summary)
+    plain_drop = compare_plain(args.history, plain_stamp, plain_codes,
+                               plain_summary, plain_kind, plain_rows)
+
     line = history_row(stamp, summary, codes)
+    plain_line = plain_history_row(plain_stamp, plain_summary, plain_codes)
     if args.record:
-        if bad or summary["errors"]:
+        holes = len(bad) + summary["errors"] + plain_summary["errors"]
+        if holes:
             print("\nNOT RECORDED - %d row(s) could not be scored, and a row "
                   "with holes in it would be\ncompared with later runs as "
-                  "though it were whole." % (len(bad) + summary["errors"]))
+                  "though it were whole." % holes)
             return 2
-        if not append_row(args.history, line):
-            print("\nNOT RECORDED - %s has no table headed\n  %s"
-                  % (args.history, TABLE_HEADER))
-            return 2
-        print("\nRecorded in %s:\n%s" % (os.path.relpath(args.history, ROOT),
-                                         line))
+        # BOTH TABLES OR NEITHER. Checked before either row goes in, so a
+        # missing plain table cannot leave his row recorded and theirs not.
+        with io.open(args.history, encoding="utf-8") as handle:
+            held = handle.read()
+        for header, columns in ((TABLE_HEADER, COLUMNS),
+                                (PLAIN_HEADER, PLAIN_COLUMNS)):
+            if history_rows(held, header, columns) is None:
+                print("\nNOT RECORDED - %s has no table headed\n  %s"
+                      % (args.history, header))
+                return 2
+        for header, one in ((TABLE_HEADER, line), (PLAIN_HEADER, plain_line)):
+            append_row(args.history, one, header)
+            print("\nRecorded in %s:\n%s"
+                  % (os.path.relpath(args.history, ROOT), one))
     else:
-        print("\nThe row --record would append:\n%s" % line)
+        print("\nThe rows --record would append:\n%s\n%s" % (line, plain_line))
 
     print("\nExit 0 whatever this finds (D-100). A wrong answer here is a "
           "finding to read, and never\na reason to reword a question, change "
           "an answer or weaken an utterance to buy it back.")
-    return exit_code(drop)
+    return exit_code(drop or plain_drop)
 
 
 if __name__ == "__main__":
