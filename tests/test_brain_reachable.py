@@ -641,7 +641,7 @@ def main():
             check(got is not None and "FIXED-SIZE FAMILY" in got["purpose"],
                   "and the family method it names carries the fixed-size path")
 
-            # THE BUILDERS WORK LAYOUT, 2026-10-17 (row 5b-540). Before
+            # THE BUILDERS WORK LAYOUT, 2026-10-17 (row 5b-591). Before
             # CREATE_LINEAR_DIMENSION said "builders work", neither of the
             # owner's two sentences reached a capability any method needs -
             # words alone found curtain walls and worksets - so nothing named
