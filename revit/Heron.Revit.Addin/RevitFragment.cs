@@ -1126,31 +1126,40 @@ namespace Heron.Revit.Addin
 
             var shown = RevitDispatcher.Clean(name);
 
-            var box = new TaskDialog(HeronKeepQuestion.Title)
-            {
-                MainInstruction = HeronKeepQuestion.Headline(shown, neverProved),
-                MainContent = HeronKeepQuestion.Content(
-                    shown, target.Title, changed.Added.Count, changed.Changed.Count,
-                    changed.Deleted,
-                    HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
-                                               addedShown, alteredShown, isolatedIn != null),
-                    sendsOut, neverProved, refreshed),
-                AllowCancellation = true,
-                CommonButtons = TaskDialogCommonButtons.None,
-                DefaultButton = TaskDialogResult.CommandLink2,
-            };
-            box.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
-                HeronKeepQuestion.KeepLink, HeronKeepQuestion.KeepNote(shown));
-            box.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
-                HeronKeepQuestion.DiscardLink, HeronKeepQuestion.DiscardNote);
-
-            // HERON NEVER ANSWERS ITS OWN QUESTION: the dialog watch armed
-            // around this job stands down while the box is up, so only the
-            // modeller can answer it - HeronDialogWatch.HeronAsks. A box that
-            // could not be shown at all is not a yes.
+            // BUILT AND SHOWN UNDER ONE GUARD - row 5b-621. A box that could
+            // not be built or shown is not a yes: it is Closed, so Run rolls the
+            // group back and puts the selection back, and the isolation below
+            // is still ended. Built outside this guard, the first kept change
+            // in Revit 2024 threw past both and reached the chat as a raw .NET
+            // sentence.
             var result = TaskDialogResult.Cancel;
             try
             {
+                var box = new TaskDialog(HeronKeepQuestion.Title)
+                {
+                    MainInstruction = HeronKeepQuestion.Headline(shown, neverProved),
+                    MainContent = HeronKeepQuestion.Content(
+                        shown, target.Title, changed.Added.Count, changed.Changed.Count,
+                        changed.Deleted,
+                        HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
+                                                   addedShown, alteredShown, isolatedIn != null),
+                        sendsOut, neverProved, refreshed),
+                    AllowCancellation = true,
+                    CommonButtons = TaskDialogCommonButtons.None,
+                };
+                box.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                    HeronKeepQuestion.KeepLink, HeronKeepQuestion.KeepNote(shown));
+                box.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                    HeronKeepQuestion.DiscardLink, HeronKeepQuestion.DiscardNote);
+
+                // DISCARD IS THE DEFAULT, SET ONLY NOW: Revit's setter refuses
+                // a button the box does not have yet ("Corresponding button
+                // not found"), so set in the initializer it threw every time.
+                box.DefaultButton = TaskDialogResult.CommandLink2;
+
+                // HERON NEVER ANSWERS ITS OWN QUESTION: the dialog watch armed
+                // around this job stands down while the box is up, so only the
+                // modeller can answer it - HeronDialogWatch.HeronAsks.
                 using (HeronDialogWatch.HeronAsks())
                 {
                     result = box.Show();
@@ -1158,7 +1167,8 @@ namespace Heron.Revit.Addin
             }
             catch (Exception ex)
             {
-                HeronApplication.Log("The Keep or Discard box could not be shown: " + ex.Message);
+                HeronApplication.Log("The Keep or Discard box could not be built or shown: "
+                                     + ex.Message);
                 result = TaskDialogResult.Cancel;
             }
 

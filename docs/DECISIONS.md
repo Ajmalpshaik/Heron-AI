@@ -203,6 +203,8 @@ an edit.
 | [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
 | [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
 | [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
+| [D-133](#d-133--a-run-that-contradicts-a-proofreleases-entry-is-reported-as-one-that-contradicts-the-proof-is) | A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is | ✅ Accepted · 2026-10-17 |
+| [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) | The re-ranker reads a card's first declared sentences beside its identity, carried in the store | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1151,3 +1153,21 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (`LIBRARY`), [`AGENTS.md`](../AGENTS.md), [38 §4](38-the-cloud-environment.md), the [`heron-session`](../.claude/skills/heron-session/SKILL.md) start-up line, [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py), [`tests/test_tool_registry.py`](../tests/test_tool_registry.py)
 
 **Full record:** [`decisions/D-132.md`](decisions/D-132.md)
+
+## D-133 — A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"write a new decision noting D-131's gap is closed"*, after asking for the change (#601) to be merged · **Source:** the last of [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed)'s Consequences
+**Updates:** [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed)'s last Consequence - *"`brain/heron_runs.py` still reads the proof's release alone through `heron_matrix.proof_release`, so a run that contradicts an entry is not yet reported there"* - which stopped being true when #601 merged on 2026-10-17. D-131 itself is unchanged
+**Keeps:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - a proof is a person's evidence and a failure is a machine's, and nothing here picks between them · D-131 §2 - a stale entry is recorded and not counted · D-131 §6 - an entry's release is a field, read by HERON-FRG-MTX-009, never parsed again
+**Affects:** [`heron_runs.py`](../brain/heron_runs.py) (`measure`), [`HERON-FRG-PRF-002.yaml`](../brain/agents/HERON-FRG-PRF-002.yaml) (1.0.0 to 1.1.0), [`tests/test_runs.py`](../tests/test_runs.py) §8
+
+**Full record:** [`decisions/D-133.md`](decisions/D-133.md)
+
+## D-134 — The re-ranker reads a card's first declared sentences beside its identity, carried in the store
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation - shown the numbers measured on `main` `e309c81` and the costs, asked *"Ship it?"*, he chose *"Yes, ship it (Recommended)"* · **Source:** [row 5b-978](fragment-issues/section-5b-rows-401-425.md)
+**Numbering:** written as D-133, which `tools/next-id.py` found free on `main` and on every branch when it was written, 2026-10-17. #615 merged its own D-133 first, so this was renumbered D-134 with `tools/renumber.py` the same day; the owner's yes was given to it as D-133. The question put to him named row 5b-918, free then; branches took ids up to 5b-977 before this was written, so the row is 5b-978.
+**Keeps:** R-41 - with no re-ranker installed every answer is what it was, measured on the words-only and model-only backends · the rule in `heron_retrieve._fragment_passage` that a question never reads the library · [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model) · [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) - no write declares a question here, and every question a change answered is counted on every backend
+**Affects:** [`heron_rerank.py`](../brain/heron_rerank.py) (`PASSAGE_UTTERANCES`, `PASSAGE_WORDS`, `passage_said`), [`heron_search.py`](../brain/heron_search.py) (`rerank_said`, `INDEX_FORMAT` 3), [`heron_retrieve.py`](../brain/heron_retrieve.py) (`_fragment_passage`, `_carry_said`), [`tests/test_rerank.py`](../tests/test_rerank.py) section 12
+
+**Full record:** [`decisions/D-134.md`](decisions/D-134.md)

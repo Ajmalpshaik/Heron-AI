@@ -504,15 +504,36 @@ line after the last group in [`docs/NEEDS-CHECKING.md`](../../../docs/NEEDS-CHEC
 generated: its early groups are in **dependency order** (A, K, J, R, B...), not letter order, and
 other sections sit between them - only a person knows where a group belongs.
 [`needs-checking-register.py`](../../../tools/needs-checking-register.py) is a reader by design, and
-stays one. **Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `python tools/next-id.py`** - it prints the id free on main and on every branch.
+stays one. **Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `python tools/next-id.py`** - it prints the id free on main, on every branch, in every open pull request and in every worktree's working files on this machine, and names an id two of them add (**HELD TWICE**) or one main has taken from under this checkout or an open pull request (**TAKEN ON MAIN**), at any number. Take the `next` it prints, never a round number picked to stay clear: round numbers are how three pull requests came to hold 5b-540 at once. When it says the pull requests were **NOT READ** (no gh, or one not logged in), it has still read every branch - but TAKEN ON MAIN then judges this checkout alone. Run it again just before the pull request merges.
 
 **Resolving either conflict: keep BOTH sides, in order** - two-letter groups in letter order (`BY`
 before `BZ`), 5b rows in row-number order. Never take one side: a dropped group line leaves its
 `group-xx.md` on disk with nothing pointing at it, and the group silently leaves the register.
 `check-docs` §10 now fails on exactly that - a `docs/needs-checking/group-*.md` its index never names.
-**If both sides used the same group letter or row number**, the side merging second takes the next
-free one and renames everything that says it (`git grep` the old id): `tests/test_open_defects.py`
-fails on a 5b number used twice, and two `group-xx.md` files collide as an add/add conflict.
+**If both sides took the same id - a group, a 5b row, a `Q-nn` or a `D-nnn`** - the side merging
+second takes the next free one, and renames it with [`tools/renumber.py`](../../../tools/renumber.py)
+**before it merges main**, so the merge has nothing to collide on:
+
+```bash
+python tools/renumber.py --next                                   # the free id (next-id.py's answer)
+python tools/renumber.py --from D-116 --to D-131 --dry-run        # every change it would make
+python tools/renumber.py --from D-116 --to D-131                  # make them; Q-64, "Group EJ", 5b-489 the same
+```
+
+It renames only what this branch added since its merge-base with `origin/main` - headings, index rows,
+anchors, items (`EJ1`), the row's number cell, every reference, and the files named for the id
+(`decisions/D-116.md`, `group-ej.md`) - and **never main's own use of the same id**. A renamed
+decision's **Numbering:** line is history, so its words stay and the tool adds *"Renumbered from D-116
+to D-131 on <date> with `tools/renumber.py`, because `main` had given D-116 to another decision
+first"* (or names the branch that holds it); one with no Numbering line gets one under its Status line.
+Do not rewrite that line by hand to say the new number was "found free". It stages nothing, and refuses
+while a merge is half done. Exit **1** means it left something for you, named: a line of main's this
+branch edited, a bare group letter, which can be a word, or a decision with no Status line to write
+its Numbering line under. Not `git grep`: a grep
+cannot tell this branch's D-116 from main's. The gates still catch a clash left in:
+`check-docs` a number defined twice, `check-decision-titles` a number reused with another title,
+`tests/test_open_defects.py` a 5b number used twice, and two `group-xx.md` files collide as an add/add
+conflict.
 
 ## What this deliberately does not do
 
