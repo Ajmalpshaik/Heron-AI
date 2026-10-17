@@ -69,14 +69,11 @@ namespace Heron.Core
     ///
     ///     write.enabled = true      in %APPDATA%\Heron\config\heron.config
     ///
-    /// THE DISTANCE WAS MEASURED ON 2026-10-17. D3 in NEEDS-CHECKING: move
-    /// them, then MEASURE one - three free ducts in Revit 2024 read +200.0000
-    /// mm, a pinned one beside them did not move, one Ctrl+Z put them back.
-    /// That - not the compile, and not the run - is what catches a unit error,
-    /// and it covers one release and one category. Whether this switch should
-    /// be on is still D-19's question. This said "nobody has put a tape on
-    /// what it did" until then; FRAGMENT-ISSUES section 5b, the never-compiled
-    /// sentence's last copy.
+    /// WHAT IS STILL NOT PROVEN IS THE DISTANCE. D3 in NEEDS-CHECKING: move
+    /// them, then MEASURE one. Nobody has put a tape on what it did, and
+    /// that - not the compile, and not the run - is what would catch a unit
+    /// error. FRAGMENT-ISSUES section 5b, the never-compiled sentence's last
+    /// copy.
     ///
     /// PUBLISH AND ADMIN HAVE A SWITCH EACH, SINCE D-106 (2026-09-28).
     ///
