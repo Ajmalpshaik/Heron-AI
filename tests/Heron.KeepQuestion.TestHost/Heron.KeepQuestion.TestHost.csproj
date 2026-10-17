@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves Revit's Keep or Discard question (D-116) WITHOUT Revit.
+
+    The source-linking pattern Heron.FailureNote.TestHost uses, for the same
+    reason: HeronKeepQuestion.cs names no Autodesk type - it holds the words
+    the modeller reads, the rule that turns a dialog result into Keep or
+    Discard, and D-60's highlight cap - so it is linked here BY SOURCE rather
+    than through a project reference. Referencing Heron.Revit.Addin would drag
+    in RevitAPI.dll and make the testable half untestable on any machine
+    without Revit.
+
+    One copy of the rule, linked: a second copy written to test the first is
+    how two halves come to agree on paper and not in a running model.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+        tests/test_keep_question.py builds and runs it.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.KeepQuestion.TestHost</RootNamespace>
+    <AssemblyName>Heron.KeepQuestion.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronKeepQuestion.cs"
+             Link="HeronKeepQuestion.cs" />
+  </ItemGroup>
+
+</Project>

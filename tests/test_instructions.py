@@ -41,8 +41,11 @@ WHAT IT PROVES
   8. EVERY CHAT IS GIVEN `host.chat`, AND IT STAYS SHORT. The MCP server
      hands the host the registry's HOST instruction - read here through the
      same seam the server uses, heron_brain.host_instructions - with its
-     house rules guarded by cases and Article 9 arriving WITH its one
-     recorded exception, D-99. It is read in every chat, so it has a budget.
+     house rules guarded by cases and Article 9 arriving WITH how
+     revit_change meets it - D-116, Revit's Keep or Discard, which superseded
+     D-99's change kept with no preview - and its one recorded exception, the
+     owner's switch for that question. It is read in every chat, so it has a
+     budget.
 
   9. THE CONSTITUTION'S ENFORCEMENT TABLE SAYS WHAT THE REGISTRY DOES. Its
      third column said "yes" on every row while nothing handed an Article to
@@ -165,6 +168,19 @@ def host_and_table(rules, known):
               "a case guards, and the text says: %s" % rule)
     check("9" in used and "D-99" in rules.get("9", ""),
           "Article 9 arrives assembled, carrying its one recorded exception")
+    # D-116: AND HOW revit_change MEETS IT, NOT ONLY THE EXCEPTION. Until
+    # 2026-10-17 the exception was the whole of what a chat read about
+    # revit_change and a preview - "kept at once". A chat told that would tell
+    # a modeller a change is already kept while Revit is asking them.
+    nine = rules.get("9", "")
+    check("D-116" in nine and "Keep or Discard" in nine
+          and "Nothing is kept until they choose Keep" in nine,
+          "and with it how revit_change meets it: Revit asks Keep or Discard, and "
+          "nothing is kept until Keep (D-116)")
+    check("D-116" in text and "Keep or Discard" in text,
+          "which every chat is given")
+    check(any("D-116" in (c.get("must-contain") or []) for c in guards),
+          "and a case in host.chat guards it")
     check("You are one agent inside Heron" not in text,
           "and no internal agent's brief is mixed into it")
 

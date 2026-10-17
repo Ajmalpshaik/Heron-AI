@@ -43,6 +43,7 @@ straight back, silently, exactly as it arrived.
 
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -156,6 +157,47 @@ def main():
           "the same group and Assimilate keeps what they did, so the counts "
           "of the fragment under test cannot speak for the whole group. Found "
           "by review on PR #198, and it is row 117's own mistake made twice")
+
+    # ------------------------------------------------------------------
+    # D-116. REVIT ASKS KEEP OR DISCARD BEFORE A CHANGE IS KEPT, and the
+    # reply must say which the modeller chose - a change somebody looked at
+    # and a change kept with nobody asked read the same otherwise.
+    # ------------------------------------------------------------------
+    # READ SO THAT ITS ABSENCE FAILS RATHER THAN CRASHES (heron-ship 2a):
+    # against the code from before D-116 every check below must say so.
+    asked_path = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepQuestion.cs")
+    question = (io.open(asked_path, encoding="utf-8").read()
+                if os.path.exists(asked_path) else "")
+    check(bool(question), "HeronKeepQuestion.cs holds the words the modeller and the chat read")
+    check('Json.Bool("keptByModeller", keptByModeller)' in fragment,
+          "the add-in emits `keptByModeller` on every write's reply")
+    check("verdict = HeronKeepQuestion.KeptSentence + \" \" + verdict" in fragment
+          and '"The modeller chose Keep in Revit."' in question,
+          "and a Keep puts 'The modeller chose Keep in Revit.' in front of the KEPT "
+          "verdict - the sentence the chat prints whole")
+    check("HeronKeepQuestion.NothingToAskSentence" in fragment
+          and "was not asked." in question,
+          "and a run kept with no question - Revit counted no change - says it was "
+          "not asked, so a question that never appeared is not read as answered")
+
+    # A DISCARD IS ITS OWN CODE, so revit_change reports it through
+    # heron_failure.explain - which prints the add-in's own message - and the
+    # activity list says refused rather than failed.
+    check(re.search(r'Json\.Error\(\s*"modeller_discarded"', fragment) is not None,
+          "a Discard comes back as `modeller_discarded`, not as a verdict on an ok reply")
+    check("NOTHING WAS KEPT" in question and "MAY STILL HOLD" in question,
+          "and its message says NOTHING WAS KEPT only when Revit reported the "
+          "rollback - otherwise that the model may still hold the change")
+    failure = io.open(os.path.join(ROOT, "mcp", "server", "heron_failure.py"),
+                      encoding="utf-8").read()
+    check(re.search(r'"modeller_discarded":\s*\(REFUSED,\s*STOP', failure) is not None,
+          "heron_failure reads a Discard as the modeller refusing it - never a fault "
+          "to retry (Article 25)")
+    check("When the reply says the modeller chose Discard, that is their answer" in server
+          and "never send it again" in server,
+          "and revit_change tells the chat so in its own description")
+    check("THERE IS NO PREVIEW" not in server,
+          "and no longer says there is no preview - D-116 superseded D-99")
 
     if FAILURES:
         print("FAILED")

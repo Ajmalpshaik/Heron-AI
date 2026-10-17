@@ -63,6 +63,14 @@ namespace Heron.Core
                 { "revit.busyTimeoutSeconds", "10" },    // Revit never picked the request up
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
 
+                // HOW LONG THE BRIDGE WAITS FOR THE MODELLER to answer Revit's
+                // Keep or Discard question (D-116). Their time is theirs, not
+                // the job's, so it is added to the wait rather than counted
+                // inside the operation timeout - and the client's own deadline
+                // for a change it keeps is derived from it, so the bridge is
+                // still the side that answers.
+                { "revit.askTimeoutSeconds", "300" },
+
                 // MUST be declared here, not only read by HeronPermissions.
                 // Load() adopts a file value ONLY for a key in this table, so
                 // an undeclared key is silently ignored - and a setting that
@@ -82,6 +90,15 @@ namespace Heron.Core
                 // a key missing from this table is silently ignored.
                 { "admin.enabled", "false" },
                 { "publish.enabled", "false" },
+
+                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-116): the
+                // changed elements are shown and a dialog asks Keep or Discard.
+                // ON by default, unlike the switches above, because ON is the
+                // safe side here - it narrows what Changes lets through, and
+                // off puts back D-99, a change kept with nobody asked. The
+                // owner's alone: read inside the add-in, never sent on a
+                // request (Golden Rule 19).
+                { "write.askBeforeKeeping", "true" },
 
                 { "log.retainDays", "14" },
 

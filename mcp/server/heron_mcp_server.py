@@ -30,11 +30,12 @@ enforces. Found by a review 2026-09-11.
 TWO tools write, and the command marks them. revit_apply_move cannot run on
 its own - it applies a preview the user has already seen, once, and the add-in
 re-checks the model before it writes. revit_change carries a fragment straight
-to Revit and KEEPS what it did, with no preview in front of it - the owner's
-choice, recorded as D-99 and as Article 9's one exception. What stands in for
-the preview is named there: the owner's ribbon switch, the client's refusal of
-any fragment above Modify (since FRAGMENT-ISSUES row 5b-155), one undo entry,
-and the pin. Writing is switched off entirely until write.enabled is set - see
+to Revit, and Revit shows what it did and asks the modeller Keep or Discard
+before anything is kept - D-116, which supersedes D-99's change kept with no
+preview, and Article 9's exception says so. The owner's switch for the
+question is write.askBeforeKeeping, read in the add-in. Around it stand the
+owner's ribbon switch, one undo entry and the pin. Writing is switched off
+entirely until write.enabled is set - see
 HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
 own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
 it through only while the owner's Publish or Admin switch is on as well.
@@ -1527,14 +1528,23 @@ def revit_change(capability: str = "", values: str = "",
     When one is off the reply names it and says where to turn it on. Tell the
     user that; never try another capability to get round it.
 
-    THERE IS NO PREVIEW: what this does is kept at once. That is the owner's
-    choice, recorded as D-99 - Article 9's one exception. Article 7 still
-    stands: deleting elements, purging, bulk parameter writes, family
-    reloads, workset changes and anything touching a linked model need the
-    user's explicit yes for that specific change BEFORE you call this, and
-    nothing in Heron asks for it on your behalf. Article 10 still stands:
-    never save, sync or export on your own initiative - only when the user
-    asks, for that one request. An export cannot be undone.
+    REVIT ASKS BEFORE IT KEEPS (D-116, which supersedes D-99). The change runs,
+    Revit selects and isolates what it touched, and a dialog asks the modeller
+    Keep or Discard. Keep is one entry in Revit's undo list; Discard, Esc or
+    closing the dialog puts the model back. The owner can turn the question
+    off in heron.config, and then the change is kept at once as D-99 kept it.
+    When the reply says the modeller chose Discard, that is their answer, not
+    a failure: never send it again or try another capability to get round it
+    unless they ask. When it says Revit is still asking, tell them to answer
+    the dialog in Revit and do not send it again.
+
+    Article 7 still stands: deleting elements, purging, bulk parameter
+    writes, family reloads, workset changes and anything touching a linked
+    model need the user's explicit yes for that specific change BEFORE you
+    call this - the question in Revit comes after the change has run, and
+    does not replace that yes. Article 10 still stands: never save, sync or
+    export on your own initiative - only when the user asks, for that one
+    request. An export cannot be undone, and Discard does not take it back.
 
     To answer a question about the model, use revit_read instead - it needs
     no Changes switch and cannot change anything.
@@ -1645,11 +1655,16 @@ def revit_change(capability: str = "", values: str = "",
         # add-in checks that before binding anything and refuses if something
         # else left it. See `expect_from` and docs/36.
         "chain": "reset",
-        # THE FLAG THAT KEEPS IT, and the whole reason this tool exists.
+        # THE FLAG THAT ASKS TO KEEP IT, and the whole reason this tool exists.
         # Without it the executor still runs the change for real inside a
         # TransactionGroup and then rolls it back - which is how every one of
-        # the recorded proofs was taken. This line is what makes a run outlive
+        # the recorded proofs was taken. This line is what lets a run outlive
         # itself, and it is why this tool is MODIFY in the registry.
+        #
+        # ASKING IS NOT KEEPING (D-116). With the owner's switch on - the
+        # default - Revit shows the change and the MODELLER says Keep or
+        # Discard; this flag only makes the question possible. The switch is
+        # read inside the add-in and nothing sent from here can skip it.
         "apply": "true",
     }
 
@@ -1680,9 +1695,11 @@ def revit_change(capability: str = "", values: str = "",
     # "no answer" for a write nobody can ask about again.
     # THE OPERATION FROM THE FRAGMENT'S OWN CARD - run_fragment_write for
     # Modify and below, run_fragment_publish or run_fragment_admin above it.
+    # `keeping`, because Revit may stop and ask the modeller Keep or Discard
+    # before this is kept (D-116), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
-                            response_timeout=configuration.fragment_timeout())
+                            response_timeout=configuration.fragment_timeout(keeping=True))
     session.close()
     _ctx_reply(reply)
 
@@ -3288,8 +3305,9 @@ def _cannot_run():
         "compiles it inside Revit with no transaction open, so Revit itself "
         "refuses any change; it needs no Changes switch, and it refuses "
         "anything declared above ANALYZE. "
-        "A fragment that WRITES reaches Revit through revit_change, which KEEPS "
-        "what it did with no preview (D-99), and only while the owner has "
+        "A fragment that WRITES reaches Revit through revit_change, and Revit "
+        "shows the modeller what it did and asks Keep or Discard before "
+        "anything is kept (D-116), only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
         "HeronPermissions refuses it by name and nothing is sent. One declared "
         "ADMIN - a project or global parameter, a workset, a new family file - "

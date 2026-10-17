@@ -176,6 +176,28 @@ _KNOWN = {
                           "two open models share that name, so naming one cannot say which "
                           "was meant - nothing was written"),
 
+    # --- the modeller was asked in Revit (D-116) ----------------------------
+    #
+    # A DISCARD IS AN ANSWER, NOT A FAILURE. The change ran, Revit showed it,
+    # and the modeller chose Discard - so REFUSED, which is what the activity
+    # list calls it and what touched_the_model reads as nothing kept, and STOP,
+    # because sending it again would put the same question to somebody who has
+    # just answered it. Article 25: it never goes back round on its own.
+    "modeller_discarded": (REFUSED, STOP,
+                          "the modeller chose Discard when Revit asked, so the change was "
+                          "rolled back and nothing was kept - their decision, not a fault "
+                          "to retry"),
+    # The same answer, but Revit did not report the rollback as done - the one
+    # case of the three where a person has to look before anything else.
+    "discard_unconfirmed": (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "the modeller chose Discard, and Revit did not report the change "
+                          "rolled back - the model may still hold it"),
+    # The bridge stopped waiting while the dialog was still up: it ran, and is
+    # neither kept nor discarded until the modeller answers in Revit.
+    "awaiting_modeller": (RUNNING, WAIT,
+                          "Revit is still asking the modeller to Keep or Discard the change; "
+                          "nothing is kept until they choose Keep"),
+
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
                           "Revit took it and has not finished; it is still working"),
