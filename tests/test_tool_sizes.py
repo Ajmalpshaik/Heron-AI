@@ -92,6 +92,7 @@ MUST_KEEP = {
         "Publish",       # D-106's two switches beside it
         "Admin",
         "Article 7",     # destructive work needs the user's yes first
+        "Article 10",    # and nothing is saved, synced or exported unasked
         "revit_read",    # a question goes to the door that cannot write
         "Ctrl+Z",        # and one undo puts the model back
     ),

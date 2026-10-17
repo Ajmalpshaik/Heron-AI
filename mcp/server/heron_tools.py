@@ -379,10 +379,10 @@ ALSO_REACHES = {
 #
 # FEW, ON PURPOSE. Every tool here is paid for in context in every chat,
 # asked or not - about 9,000 characters of descriptions for these five,
-# measured 2026-10-01; what they cost today is `--sizes` below, and
-# tests/test_tool_sizes.py holds them to a budget - and every other tool is
-# still one search away. The
-# two doors and the lookup cover almost any request (#369); health and levels
+# measured 2026-10-01 (what they cost today is `--sizes` below, and
+# tests/test_tool_sizes.py holds them to a budget) - and every other tool is
+# still one search away. The two doors and the lookup cover almost any
+# request (#369); health and levels
 # are the first-time checks a modeller's chat makes. Loading a tool's
 # description changes nothing about what it may do: its risk and labels above
 # are unchanged, and the host still asks before a tool it was told can write.
