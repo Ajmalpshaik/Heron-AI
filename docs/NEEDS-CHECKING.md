@@ -767,6 +767,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
 
+## Group FB - the sheets of one revision, latest on the sheet or not, and a typed list of sheet numbers: `FIND_SHEETS_BY_REVISION_OR_NUMBER` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fb.md`](needs-checking/group-fb.md)
+
 ## Group FD - a text note's numbering, bullets, indent and bold set through Heron: `EDIT_TEXT_VALUES` mode format, and the read that checks it (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fd.md`](needs-checking/group-fd.md)
