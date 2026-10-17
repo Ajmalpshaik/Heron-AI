@@ -198,6 +198,12 @@ namespace Heron.Revit.Addin
                 application.ViewActivated += OnViewActivated;
                 application.ControlledApplication.DocumentClosing += OnDocumentClosing;
 
+                // WHAT A ROLLBACK MUST NOT TAKE: the elements each write job
+                // adds, and the modeller's own undos, as Revit reports them.
+                // Permanent, because a Ctrl+Z between two jobs is exactly the
+                // moment no request is running. See RevitFragment.Listen.
+                RevitFragment.Listen(application.ControlledApplication);
+
                 // WHAT THE COMPANION PAGE READS (D-108): the model, view and
                 // selection, written to a file only while the bridge is
                 // connected. Before BuildRibbon, whose SetBridgeIcon(false)
@@ -302,6 +308,7 @@ namespace Heron.Revit.Addin
                 // dispatcher has already been dropped.
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+                RevitFragment.StopListening(application.ControlledApplication);
                 HeronLiveState.Detach(application);
 
                 Dispatcher = null;

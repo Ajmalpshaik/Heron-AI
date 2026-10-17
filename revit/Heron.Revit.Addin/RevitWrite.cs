@@ -358,6 +358,11 @@ namespace Heron.Revit.Addin
             // user must be able to reverse Heron with one keystroke, and a
             // change that takes four Ctrl+Z to undo is one the user stops
             // trusting after the first time it surprises them.
+            //
+            // AND WATCHED, like every write job: a move adds nothing, but its
+            // rollback must not take the last kept job's elements with it any
+            // more than a fragment's may. RevitFragment.RollBackAndCheck.
+            using (var watch = RevitFragment.Watch(doc, name, name))
             using (var group = new TransactionGroup(doc, name))
             {
                 group.Start();
@@ -390,14 +395,19 @@ namespace Heron.Revit.Addin
 
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
-                            var undone = SafeRollBack(group);
-                            return Failed(workflow, preview, handler, undone
+                            var after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                            var undone = after.Held;
+                            return Failed(workflow, preview, handler, (undone
                                 ? "Revit did not accept the change, so nothing was moved."
-                                : "Revit did not accept the change. " + RollbackNotConfirmed);
+                                : "Revit did not accept the change. " + NotHeld(after))
+                                + Also(after));
                         }
                     }
 
-                    group.Assimilate();
+                    // A move adds nothing, so there is no note to carry: the
+                    // move's reply has no verdict, and Keep's only words are
+                    // about a job kept before this one.
+                    RevitFragment.Keep(group, doc, watch);
                 }
                 catch (Exception ex)
                 {
@@ -409,14 +419,17 @@ namespace Heron.Revit.Addin
                     // the user would be told the group could not be rolled back
                     // instead of what actually went wrong with their move. The
                     // second error is the less useful of the two, and it would
-                    // arrive at the worst possible moment. See SafeRollBack.
-                    // ROLLED BACK ONLY WHEN REVIT SAYS SO (row 10).
-                    var rolledBack = SafeRollBack(group);
+                    // arrive at the worst possible moment. See
+                    // RevitFragment.SafeRollBack, which RollBackAndCheck calls.
+                    // ROLLED BACK ONLY WHEN REVIT SAYS SO (row 10), and only
+                    // when the rollback check found nothing standing.
+                    var after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                    var rolledBack = after.Held;
                     return Failed(workflow, preview, handler,
                         (rolledBack
                             ? "The move failed and was rolled back completely, so the model is as it was."
-                            : "The move failed. " + RollbackNotConfirmed)
-                        + " Revit said: " + ex.Message);
+                            : "The move failed. " + NotHeld(after))
+                        + " Revit said: " + ex.Message + Also(after));
                 }
             }
 
@@ -513,52 +526,30 @@ namespace Heron.Revit.Addin
 
         // ------------------------------------------------------------ helpers
 
+        // THE MOVE'S OWN SafeRollBack LIVED HERE until 2026-10-17, a copy of
+        // RevitFragment's. Every group in Heron is now rolled back through
+        // RevitFragment.RollBackAndCheck, which calls the one SafeRollBack left
+        // - and that one carries this copy's reasoning: why a rollback must
+        // never throw, why it answers Revit's status (FRAGMENT-ISSUES row 10),
+        // and why both of its guards stay.
+
         /// <summary>
-        /// Roll back, and never throw doing it.
-        ///
-        /// A rollback is always a SECOND thing going wrong: something already
-        /// failed, and this is the cleanup. If the cleanup throws too, its
-        /// exception escapes and buries the original - the user is told the
-        /// group was not in a rollback-able state, which tells them nothing,
-        /// instead of what actually happened to their model.
-        ///
-        /// This is not a theoretical worry - it is a shipped bug in real Revit
-        /// tooling, met and fixed before Heron existed. The shape: an unguarded
-        /// rollback in a catch block throws a second time, that exception
-        /// escapes before the result is ever reported, and the caller waits
-        /// forever on an answer that is never coming. Heron's version of the
-        /// hazard is the same one because the API is: TransactionGroup has no
-        /// state in which RollBack() is guaranteed to succeed.
-        ///
-        /// Both guards are kept on purpose. The status check avoids provoking
-        /// an exception in the ordinary case; the catch handles everything the
-        /// status check cannot see - a group left un-rollback-able by an
-        /// Assimilate() that failed part way, or a GetStatus() that throws on
-        /// its own. Cheap first, then total.
+        /// Why the move's rollback is not called complete. A move adds no
+        /// element, so the rollback check's second witness has nothing to count
+        /// and this is Revit's status almost always - but when the check DID
+        /// find something standing, Revit's status is not what failed, and the
+        /// sentence says what was found instead.
         /// </summary>
-        /// <summary>
-        /// Roll the group back, never throwing - and say whether Revit CONFIRMS
-        /// it rolled back. FRAGMENT-ISSUES row 10: this was void, so the two
-        /// ways a rollback silently does nothing - a group whose status is not
-        /// Started, so the call is skipped, and a RollBack() that throws, so
-        /// it is swallowed - left the reply saying "rolled back completely"
-        /// on the strength of nothing.
-        /// </summary>
-        private static bool SafeRollBack(TransactionGroup group)
+        private static string NotHeld(HeronRollbackWitness.Outcome after)
         {
-            try
-            {
-                if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
-                return group.GetStatus() == TransactionStatus.RolledBack;
-            }
-            catch
-            {
-                // Nothing more can be done to the group, and throwing would
-                // replace the useful message with a useless one. The `using`
-                // block's Dispose() rolls back anything still open - but that
-                // is not a confirmation, so it is reported as none.
-                return false;
-            }
+            return after.Reported ? after.ModelSentence() : RollbackNotConfirmed;
+        }
+
+        /// <summary>What the rollback took from the job kept before, if anything.</summary>
+        private static string Also(HeronRollbackWitness.Outcome after)
+        {
+            var also = after.Also();
+            return also.Length == 0 ? "" : " " + also;
         }
 
         private const string RollbackNotConfirmed =
