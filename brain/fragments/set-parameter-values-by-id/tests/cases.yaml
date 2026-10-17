@@ -51,7 +51,7 @@ negative_by_key:
       the version 1 answer unchanged - resultJson format 1, stale as before,
       refused empty
 
-# Version 3, KEEP A FACE (5b-560): an optional keepFace - outside, or left,
+# Version 3, KEEP A FACE (5b-610): an optional keepFace - outside, or left,
 # right, top, bottom, near or far of a named view. Arranged on a NEW scratch
 # project, never a working model (NEEDS-CHECKING Group FE): a 250 mm exterior
 # wall on Level 1, a structural floor inside it only, and a Generic Model box

@@ -181,7 +181,7 @@ Func<Element, Parameter, bool> groupLocked = (element, p) =>
 };
 
 // ------------------------------------------------------------ keep a face
-// VERSION 3 (FRAGMENT-ISSUES 5b-560). `keepFace` names ONE face of every
+// VERSION 3 (FRAGMENT-ISSUES 5b-610). `keepFace` names ONE face of every
 // element written that must stay where it is while the values change: left,
 // right, top, bottom, near or far of a named view ("left of Section 3"), or
 // "outside", the face looking out of the building. Left out it reads "none"

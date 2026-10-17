@@ -1,6 +1,6 @@
 # The proof of set-parameter-values-by-id (SET_PARAMETER_VALUES_BY_ID,
 # FRG-PAR-027) at version 3 - keepFace, "keep this face where it is" -
-# NEEDS-CHECKING Group FE, row FE2. FRAGMENT-ISSUES 5b-560.
+# NEEDS-CHECKING Group FE, row FE2. FRAGMENT-ISSUES 5b-610.
 #
 #     python tools/batch-prove.py tools/jobs/keep-face-scratch-2026-10-17.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/keep-face-scratch-2026-10-17.yaml

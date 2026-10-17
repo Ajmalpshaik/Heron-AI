@@ -16,11 +16,11 @@ capability: SET_PARAMETER_VALUES_BY_ID
 # line is version 1's on purpose: it is searched, and a new word in it moves
 # other cards' answers (the routing measured for 5b-459).
 #
-# VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-560): an optional `keepFace` keeps
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-610): an optional `keepFace` keeps
 # ONE face of every element written where it is - its outside face, or the
 # left, right, top, bottom, near or far face in a named view. Kept out of the
 # purpose on purpose, as version 2 kept the identity line: the purpose is
-# searched, and the routing for 5b-560 was measured with it unchanged.
+# searched, and the routing for 5b-610 was measured with it unchanged.
 #
 #   WHY. On 2026-10-15/17 the owner set the instance Wall Width of 18 openings
 #   (TRG_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer, a real project in
@@ -70,7 +70,7 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   version 2 gave. The reply's list of what the fragment left behind gains
 #   one line, `faceKeeper (null)`, because every top-level name is printed.
 #
-#   THE STALE CHECK IS UNCHANGED, AND THAT IS A DECISION (5b-560). On the
+#   THE STALE CHECK IS UNCHANGED, AND THAT IS A DECISION (5b-610). On the
 #   first job "was 260" passed for a cell holding 255.5, because a number is
 #   compared by the text Revit SHOWS. Comparing the stored value instead was
 #   weighed and not taken: an id row's `was` is, by contract, what the table
@@ -142,7 +142,7 @@ contract:
     - name: rows
       type: string
       source: request
-    # VERSION 3 (5b-560). The ONE face of every element written that stays
+    # VERSION 3 (5b-610). The ONE face of every element written that stays
     # where it is: outside - the face looking out of the building - or left,
     # right, top, bottom, near or far of a named view, as "left of Section 3".
     # The face is measured off the element before the write and after it, and
@@ -243,11 +243,11 @@ utterances:
   - write these edited parameter values back to the elements
   - give each room its own name, matched by its room number
   - set a different value on each element found by its Mark
-  # ADDED 2026-10-17, 5b-560 - version 3's keepFace. On main that day both
+  # ADDED 2026-10-17, 5b-610 - version 3's keepFace. On main that day both
   # reached other cards on all four backends (DIMENSION_ROOMS,
   # ADD_FAMILY_MODEL_TEXT, CREATE_WALL_ELEVATION, CREATE_OPENING) and this card
   # was in the top 20 for neither. Declared, both reach it on all four and no
   # other declared sentence moved. Paraphrases do not reliably reach it - the
-  # purpose was left as it was so that nothing else moves (5b-560).
+  # purpose was left as it was so that nothing else moves (5b-610).
   - set the wall width to 100 and keep the outside face
   - change the opening depth keeping its outer face

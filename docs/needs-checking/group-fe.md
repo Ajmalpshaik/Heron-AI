@@ -8,7 +8,7 @@
 
 ## Group FE - change a value and keep a face where it is: `SET_PARAMETER_VALUES_BY_ID` version 3, `keepFace` (2026-10-17)
 
-[Row 5b-560](../fragment-issues/section-5b-rows-401-425.md). `SET_PARAMETER_VALUES_BY_ID` (FRG-PAR-027) was
+[Row 5b-610](../fragment-issues/section-5b-rows-401-425.md). `SET_PARAMETER_VALUES_BY_ID` (FRG-PAR-027) was
 PROVEN at version 2 and is **DRAFT at version 3**; version 2's proof is kept on the card as a record. Version 3
 adds one optional input, `keepFace`: `outside` - the face looking out of the building - or `left`, `right`,
 `top`, `bottom`, `near` or `far` of a named view (`left of Section 3`). Before the write each element's face is
@@ -24,7 +24,7 @@ version 2's.
 
 **What is built and what is not run.** The fragment compiles for all eight releases 2020 to 2027
 (`tools/check-fragments-compile.py`, 2026-10-17, in the cloud), and the job file below reads `WOULD RUN` under
-`batch-prove --dry-run`. Routing was measured main against branch (5b-560). **None of it has run in Revit.**
+`batch-prove --dry-run`. Routing was measured main against branch (5b-610). **None of it has run in Revit.**
 Every number below about what Revit does is the design's, not a measurement.
 
 **A NEW SCRATCH PROJECT, never a working model - and never any `4355-*` model.** With
