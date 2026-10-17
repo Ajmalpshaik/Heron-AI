@@ -382,6 +382,7 @@ separate them. Numbers in
 python tools/score-routing.py            # score, and say what moved since the last comparable run
 python tools/score-routing.py --record   # ...and append the row to brain/retrieval-history.md
 python tools/score-routing.py --list     # the answer key; asks nothing
+python tools/score-routing.py --list-plain   # the 120 plain questions; asks nothing
 ```
 
 The two tools above ask sentences written **for** the library. This one asks the 79 questions the
@@ -408,6 +409,14 @@ to catch.
 **It exits 0 whatever it finds**, like every routing check here, and exit 2 means nothing was scored.
 **A drop is reported and never stops a pull request** — the owner decided so on 2026-09-23
 ([D-100](../docs/DECISIONS.md)), and `exit_code()` in the tool names the decision.
+
+**Since 2026-10-17 it asks a second set after his**, and never adds it into his numbers: the 120 plain
+questions frozen out of FRAGMENT-ISSUES rows 5b-477 and 5b-478 into
+[`tests/data/plain-questions.yaml`](../tests/data/plain-questions.yaml) - a session's words, written
+before any card was read. Every one is a question, so its headline is how many reach a write; where the
+row names the read that answers one, where that read came back is scored too. It has its own table in
+`brain/retrieval-history.md`, its own fingerprint and its own comparison, and `--record` writes both
+rows or neither.
 **Nothing it reports is answered by rewording a question, changing an answer to match the search, or
 adding or weakening an utterance** — [row 113](../docs/FRAGMENT-ISSUES.md)'s forbidden move. It keeps its
 79 lookups out of the owner's audit trail by pointing `HERON_AUDIT` at a throwaway folder for the run.
@@ -863,6 +872,7 @@ a checker written from a build order can only ever ask whether the build order w
 python tools/batch-prove.py tools/jobs/example.yaml --dry-run   # read it, run nothing
 python tools/batch-prove.py my-jobs.yaml                        # run it against Revit
 python tools/batch-prove.py my-jobs.yaml --only set-mep-size
+python tools/batch-prove.py my-jobs.yaml --release 2025 --session <pid>   # PROVEN ones, on one more release
 ```
 
 Proving fragments one at a time costs a round trip each. On 2026-09-09 a throwaway script proved
@@ -885,6 +895,14 @@ reported six passes for it. A fragment at `PROVEN` or `PRODUCTION` is now refuse
 and never sent to Revit. There is deliberately **no flag to override that** — re-proving after the code
 changes is a staleness question, and [`tests/test_golden.py`](../tests/test_golden.py) already answers
 it by recomputing fingerprints.
+
+**`--release <year>` turns that rule round rather than off** ([D-131](../docs/decisions/D-131.md)). A proof
+on 2024 is evidence about 2024 only, so with `--release` it runs ONLY a fragment that is PROVEN on a proof
+still matching its code, and only on a release neither its proof nor a fresh `proof.releases` entry names -
+the rest are `ALREADY` or `NOT PROVEN`. Its run record and draft are `<slug>@<year>`, a record naming
+another Revit is `WRONG RELEASE` and exits 1, and the drafts are signed with `heron_validate.py accept
+--release`, which adds one entry and leaves `proof:` and `heron-status` as they were.
+[`tests/test_release_proofs.py`](../tests/test_release_proofs.py) holds it.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
@@ -912,7 +930,8 @@ library rather than typed, so it cannot go stale.
 
 **The exit code follows the batch, not the fragments.** Fourteen failures is the output — the thing it
 was run to find out — and exiting non-zero on them would make a successful proving run
-indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run.
+indistinguishable from a broken one. What earns a non-zero code is a job file that cannot be run, or
+a `--release` batch that ran on another Revit.
 
 ---
 
@@ -1437,6 +1456,14 @@ can be checked in one look. Touching a permission file owes a human review **wha
 declared** — the diff outranks the label. Touching a fragment owes a run against a real model, because
 [D-30](../docs/DECISIONS.md) is not satisfied by a compile.
 
+**Except a card whose routing text alone changed.** The card is parsed before and after: when only
+`semantic-identity`, `utterances`, `purpose` or a YAML comment moved, and nothing else in that
+fragment's folder did, the signal is `fragment-routing` - it owes `check-routing` and `check-intrusion`,
+not a Revit run, because Revit reads none of that text and D-30's fingerprint covers `impl/` alone.
+`purpose` is prose, and counts as routing because the lookup indexes it. Any other key - contract,
+risk, revit, runtime, status, proof, capability - or anything under `impl/` or `tests/`, or a card that
+is new or will not parse, keeps `fragment-behaviour`. [Row 5b-862](../docs/FRAGMENT-ISSUES.md).
+
 **It sets the homework and does not mark it.** Which gates ran is read out of an evidence record; this
 tool runs none of them. A tool that did both would one day mark its own.
 
@@ -1503,7 +1530,8 @@ than counted. Two unknowns are not a match.
 
 `--stated check-compile=PASS:ran on the PC` records a gate that ran somewhere this container is not —
 a .NET SDK, a Windows machine, a Revit. It is stored marked **stated**, never **derived**, and printed
-that way. A record that let an assertion sit beside a measurement in identical type is a record in
+that way. The result is `PASS`, `FAIL` or `NOT_RUN` (`NOT RUN` is accepted too; until row 5b-862 only
+that one was). A record that let an assertion sit beside a measurement in identical type is a record in
 which the assertion eventually gets believed as one.
 
 ### It cannot change anything, and that is the safety property
@@ -1969,12 +1997,13 @@ a heading naming a file that is not there, or a file that does not hold that hea
 `RegisterBroken` rather than returning a shorter register - *"a count that quietly omits a whole group is worse
 than no count"*, as the register says of itself.
 
-## `next-id.py` - which id is free, on main and on every branch
+## `next-id.py` - which id is free, on main, every branch, every open pull request and every worktree
 
 ```bash
-python tools/next-id.py               # fetch every branch, then the next free id in each register
-python tools/next-id.py --no-fetch    # from the branches as last fetched, and it says so
+python tools/next-id.py               # fetch, list the open pull requests, then the next free id in each register
+python tools/next-id.py --no-fetch    # no network: the branches as last fetched, no pull request, and it says so
 python tools/next-id.py --json        # the same answer, for a machine
+python tools/next-id.py --github OWNER/NAME   # when the remote's URL is not github.com's
 ```
 
 Four registers take an id a person picks: a NEEDS-CHECKING group, a FRAGMENT-ISSUES 5b row, an open question
@@ -1986,11 +2015,31 @@ prints, per register, **the id above the highest used anywhere**, main's highest
 above it**. An id two branches both hold is printed as **HELD TWICE**: one of them renames before it merges.
 This checkout's HEAD counts too when it holds commits no remote branch has.
 
+**Since 2026-10-17 it also reads the open pull requests and every worktree's working files.** The pull requests
+come from `gh api repos/OWNER/NAME/pulls?state=open` - the REST call, because `gh pr list` asks GraphQL and a
+Claude Code cloud session refuses that (HTTP 403, measured) - with the repository named, never inferred from a
+folder: one whose head is a branch already read labels that branch with its number, and one from a fork is
+fetched as `refs/pull/N/head`. The worktrees come from `git worktree list --porcelain`, each path read as the
+rest of its line, spaces and all, and their register files are read **from disk, saved or not, committed or
+not** - the row a session on the same PC has typed and not pushed. No gh, a gh not logged in, a remote that is
+not github.com, or a worktree whose folder is gone is **said in the report**, never guessed past, and never
+changes the exit code.
+
+For each piece of work it lists **what it adds that main has not got** - its ids less those where it left
+main, at any number - and names two collisions **below main's highest as well as above it**: **HELD TWICE**,
+an id two pieces of work add (a branch, its pull request and the worktree it is checked out in count as one),
+and **TAKEN ON MAIN**, an id an open pull request or this checkout adds that main has since merged from
+somebody else. A branch with no open pull request is never called TAKEN ON MAIN - it may be one that merged
+and was never deleted - so without gh only this checkout is judged, and the report says that too.
+
 **It writes no register file and reserves nothing**: an id is free as of the run, and only a pushed branch holds
 it. It does not write the NEEDS-CHECKING index either - [heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)
 says why that cannot be generated. Exits **0** with an answer and **2** when it could not look - no git, a fetch
 that failed, no main, or a register with no id on main at all, which means the register moved.
-[`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids.
+[`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids, a fake
+gh, a fork's `refs/pull/N/head`, and worktrees in folders whose names hold spaces - no network.
+
+**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
 
 ---
 
@@ -2214,8 +2263,8 @@ python tools/hook-report.py --log FILE      # another diary file
 ```
 
 Every hook in [`.claude/settings.json`](../.claude/settings.json) - the
-[guard](../.claude/skills/heron-guard/SKILL.md), the session line and the "has main moved?" advice of
-[`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
+[guard](../.claude/skills/heron-guard/SKILL.md), the session line, the "has main moved?" advice and the
+LOCAL-prompt note of [`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
 outside this repository, found through Heron's own path helpers and never a typed path. This counts it:
 per hook, how many decisions in how many sessions, each kind of decision, **how often it spoke at all**,
 and the things it said most.
@@ -2230,3 +2279,41 @@ several processes - is counted and shown, never fatal, and the one older copy ke
 read too. No diary on this machine is an answer, with the reason, not a crash.
 [`tests/test_hook_report.py`](../tests/test_hook_report.py) holds it to a diary written with known
 contents.
+
+## `time-family-build.py` - where a family build's minutes went
+
+```bash
+python tools/time-family-build.py CHAT.jsonl --audit AUDIT          # the report
+python tools/time-family-build.py CHAT.jsonl --audit AUDIT --json   # for a machine
+python tools/time-family-build.py CHAT.jsonl --since 2026-10-09T13:33:00Z --until 2026-10-09T13:55:00Z
+python tools/time-family-build.py --form-cards                      # which capabilities build forms
+```
+
+`CHAT.jsonl` is a Claude Code transcript; `AUDIT` is the add-in's `audit-YYYYMM.jsonl`, or the folder
+holding it - a folder is read for the add-in's monthly files only, because `audit-brain-*.jsonl` holds
+the brain's lookups, which are not Revit's time.
+
+**[docs/04 §8.7](../docs/04-heron-mcp.md)'s two family-build measurements were worked out by hand**, from
+the files [row 5b-378](../docs/FRAGMENT-ISSUES.md) names, so the next re-timing had nothing to be compared
+with like for like. This is that hand: request to finish, the model's own turns and their share, thinking
+tokens and seconds, the model and effort the chat ran, the Heron calls and the `revit_change` hand-back,
+Revit's own time and its first runs in a session, Heron's time around Revit a batch and a call, forms
+built and seconds a form.
+
+**Every number names the file and lines it was read from, and a number the files cannot show is NOT
+MEASURED, never estimated.** The chat's time is split at each line's own timestamp - the interval ending
+at an assistant line is the model's, at a tool's result the tool's, at a prompt the person's - so the
+three add up to request to finish exactly. Revit's time is the audit's `ms` for each line whose `at`
+falls inside one of this chat's Heron calls; a line inside the chat's minutes and outside every call is
+another chat's, and is counted apart. Thinking tokens, thinking seconds and effort are read only where
+the transcript records them (`output_tokens_details`, `thinkingDurationMs`, `effort`), and `output_tokens`
+is never passed off as thinking. Which capabilities build forms is read from the cards: a card that
+provides `formId` builds one a run, one that provides `formCount` builds what its reply says - and a
+reply that does not print it leaves the total NOT MEASURED rather than counting the rows sent. **Heron's
+server alone is always NOT MEASURED:** it keeps each call's seconds in memory only
+(`heron_companion.Activity`).
+
+**A report, not a gate: it exits 0 whatever it finds**, and 2 only when a file it was named is not there.
+[`tests/test_time_family_build.py`](../tests/test_time_family_build.py) holds it to synthetic transcripts
+and audit lines shaped like both builds, with a negative case - a transcript with no Heron call reports
+zero calls and NOT MEASURED for Revit's time. Not yet run on the owner's own transcripts.

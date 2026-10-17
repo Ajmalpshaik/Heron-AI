@@ -16,8 +16,6 @@ using Autodesk.Revit.DB;
 using Heron.Core;
 using Autodesk.Revit.UI;
 using Heron.Bridge;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
 
 namespace Heron.Revit.Addin
 {
@@ -81,8 +79,8 @@ namespace Heron.Revit.Addin
         /// program, and serving the old one from a cache would be the worst
         /// kind of wrong answer: right yesterday.
         /// </summary>
-        private static readonly Dictionary<string, Script<object>> Compiled =
-            new Dictionary<string, Script<object>>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, object> Compiled =
+            new Dictionary<string, object>(StringComparer.Ordinal);
 
         public static string Run(UIApplication app, string request)
         {
@@ -537,7 +535,7 @@ namespace Heron.Revit.Addin
             var ranWith = DescribeSupplied(supplied);
 
             var prologue = "";
-            Script<object> script = null;
+            object script = null;
 
             // WHAT A WRITE SETUP STEP LEAVES CANNOT BE BOUND BEFORE IT RUNS.
             //
@@ -625,7 +623,7 @@ namespace Heron.Revit.Addin
             var nothingToAsk = false;
             var selectionRestored = true;
 
-            ScriptState<object> state = null;
+            IList<HeronScriptHost.Variable> state = null;
             string threw = null;
 
             // Only meaningful on the writing path with apply off. Reported so a
@@ -1128,31 +1126,40 @@ namespace Heron.Revit.Addin
 
             var shown = RevitDispatcher.Clean(name);
 
-            var box = new TaskDialog(HeronKeepQuestion.Title)
-            {
-                MainInstruction = HeronKeepQuestion.Headline(shown, neverProved),
-                MainContent = HeronKeepQuestion.Content(
-                    shown, target.Title, changed.Added.Count, changed.Changed.Count,
-                    changed.Deleted,
-                    HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
-                                               addedShown, alteredShown, isolatedIn != null),
-                    sendsOut, neverProved, refreshed),
-                AllowCancellation = true,
-                CommonButtons = TaskDialogCommonButtons.None,
-                DefaultButton = TaskDialogResult.CommandLink2,
-            };
-            box.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
-                HeronKeepQuestion.KeepLink, HeronKeepQuestion.KeepNote(shown));
-            box.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
-                HeronKeepQuestion.DiscardLink, HeronKeepQuestion.DiscardNote);
-
-            // HERON NEVER ANSWERS ITS OWN QUESTION: the dialog watch armed
-            // around this job stands down while the box is up, so only the
-            // modeller can answer it - HeronDialogWatch.HeronAsks. A box that
-            // could not be shown at all is not a yes.
+            // BUILT AND SHOWN UNDER ONE GUARD - row 5b-621. A box that could
+            // not be built or shown is not a yes: it is Closed, so Run rolls the
+            // group back and puts the selection back, and the isolation below
+            // is still ended. Built outside this guard, the first kept change
+            // in Revit 2024 threw past both and reached the chat as a raw .NET
+            // sentence.
             var result = TaskDialogResult.Cancel;
             try
             {
+                var box = new TaskDialog(HeronKeepQuestion.Title)
+                {
+                    MainInstruction = HeronKeepQuestion.Headline(shown, neverProved),
+                    MainContent = HeronKeepQuestion.Content(
+                        shown, target.Title, changed.Added.Count, changed.Changed.Count,
+                        changed.Deleted,
+                        HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
+                                                   addedShown, alteredShown, isolatedIn != null),
+                        sendsOut, neverProved, refreshed),
+                    AllowCancellation = true,
+                    CommonButtons = TaskDialogCommonButtons.None,
+                };
+                box.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                    HeronKeepQuestion.KeepLink, HeronKeepQuestion.KeepNote(shown));
+                box.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                    HeronKeepQuestion.DiscardLink, HeronKeepQuestion.DiscardNote);
+
+                // DISCARD IS THE DEFAULT, SET ONLY NOW: Revit's setter refuses
+                // a button the box does not have yet ("Corresponding button
+                // not found"), so set in the initializer it threw every time.
+                box.DefaultButton = TaskDialogResult.CommandLink2;
+
+                // HERON NEVER ANSWERS ITS OWN QUESTION: the dialog watch armed
+                // around this job stands down while the box is up, so only the
+                // modeller can answer it - HeronDialogWatch.HeronAsks.
                 using (HeronDialogWatch.HeronAsks())
                 {
                     result = box.Show();
@@ -1160,7 +1167,8 @@ namespace Heron.Revit.Addin
             }
             catch (Exception ex)
             {
-                HeronApplication.Log("The Keep or Discard box could not be shown: " + ex.Message);
+                HeronApplication.Log("The Keep or Discard box could not be built or shown: "
+                                     + ex.Message);
                 result = TaskDialogResult.Cancel;
             }
 
@@ -1303,7 +1311,7 @@ namespace Heron.Revit.Addin
                     }
                 }
 
-                Script<object> stepScript;
+                object stepScript;
                 var compileError = Compile(stepPrologue + stepSource,
                                            PrologueLines(stepPrologue), out stepScript);
                 if (compileError != null)
@@ -1325,7 +1333,7 @@ namespace Heron.Revit.Addin
                     // for the step, so the reader can tell whose warning it was.
                     Discipline(stepTransaction, said, stepName);
 
-                    ScriptState<object> stepState;
+                    IList<HeronScriptHost.Variable> stepState;
                     var threw = RunScript(stepScript, globals, stepName, out stepState);
                     if (HeronRunClock.Tripped)
                     {
@@ -1373,15 +1381,24 @@ namespace Heron.Revit.Addin
             return Json.ReadObjectArray("{\"needs\":" + needsText + "}", "needs");
         }
 
-        private static ScriptOptions BuildOptions()
+        /// <summary>
+        /// The references and imports every script compiles with. Through
+        /// HeronScriptHost, which names the compiler's types so this file does
+        /// not - on a .NET Revit they live in a load context of Heron's own
+        /// (row 5b-575), and these Assembly objects are the default context's,
+        /// the ones Revit itself runs.
+        /// </summary>
+        private static object BuildOptions()
         {
-            return ScriptOptions.Default
-                .WithReferences(
+            return HeronScriptHost.Options(
+                new[]
+                {
                     typeof(object).Assembly,                    // mscorlib
                     typeof(Enumerable).Assembly,                // System.Core
                     typeof(Document).Assembly,                  // RevitAPI
-                    typeof(UIDocument).Assembly)                // RevitAPIUI
-                .WithImports(HeronFragmentImports.Namespaces);
+                    typeof(UIDocument).Assembly,                // RevitAPIUI
+                },
+                HeronFragmentImports.Namespaces);
         }
 
         /// <summary>
@@ -1481,14 +1498,10 @@ namespace Heron.Revit.Addin
         {
             // The release symbols as well, so the warm-up reads its source the
             // way Compile reads a fragment's - see Compile.
-            var guarded = HeronStackGuard.Apply(HeronFragmentSymbols.Prepend(WarmUpSource));
-            var script = CSharpScript.Create<object>(
-                guarded, BuildOptions(), typeof(HeronFragmentGlobals));
-
-            var errors = script.Compile()
-                .Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
-                .Select(d => d.ToString())
-                .ToList();
+            var guarded = HeronScriptHost.Guard(HeronFragmentSymbols.Prepend(WarmUpSource));
+            var errors = new List<string>();
+            var script = HeronScriptHost.Compile(
+                guarded, BuildOptions(), typeof(HeronFragmentGlobals), errors);
 
             if (errors.Count > 0)
             {
@@ -1499,11 +1512,14 @@ namespace Heron.Revit.Addin
 
             // Emit as well as compile: a real run emits, and that is Roslyn
             // code a compile alone never JIT-compiles.
-            script.CreateDelegate();
+            HeronScriptHost.Emit(script);
 
+            // WHICH COMPILER, AND FROM WHERE - row 5b-575. On a .NET Revit
+            // this line is the first place a run shows whether Heron compiled
+            // on its own Roslyn or on one another add-in loaded.
             log(string.Format(CultureInfo.InvariantCulture,
-                "Fragment warm-up compiled and emitted a throwaway script in {0} ms.",
-                clock.ElapsedMilliseconds));
+                "Fragment warm-up compiled and emitted a throwaway script in {0} ms, on {1}.",
+                clock.ElapsedMilliseconds, HeronScriptHost.Compiler()));
         }
 
         /// <summary>
@@ -1536,7 +1552,7 @@ namespace Heron.Revit.Addin
         /// a paragraph about compiling. Nothing catches that; it was found by
         /// reading the file. FRAGMENT-ISSUES section 5b.
         /// </summary>
-        private static string Compile(string source, int prologueLines, out Script<object> script)
+        private static string Compile(string source, int prologueLines, out object script)
         {
             script = null;
 
@@ -1549,7 +1565,7 @@ namespace Heron.Revit.Addin
             // opening the gate means the NEXT compile does not wait again.
             if (!WarmUpFinished.Wait(WarmUpPatience)) WarmUpFinished.Set();
 
-            ScriptOptions options;
+            object options;
             try
             {
                 options = BuildOptions();
@@ -1585,16 +1601,14 @@ namespace Heron.Revit.Addin
             // the reader is told to subtract - is what it was.
             // HeronFragmentSymbols says why each of those holds, and
             // tests/test_fragment_symbols.py shows it on every release.
-            var guarded = HeronStackGuard.Apply(HeronFragmentSymbols.Prepend(source));
+            //
+            // BOTH THROUGH HeronScriptHost, which is where the compiler's
+            // types are named - on a .NET Revit in a load context of Heron's
+            // own (row 5b-575). The guard parses with that same compiler.
+            var guarded = HeronScriptHost.Guard(HeronFragmentSymbols.Prepend(source));
 
-            var candidate = CSharpScript.Create<object>(guarded, options, typeof(HeronFragmentGlobals));
-
-            var diagnostics = candidate.Compile();
-
-            var errors = diagnostics
-                .Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
-                .Select(d => d.ToString())
-                .ToList();
+            var errors = new List<string>();
+            var candidate = HeronScriptHost.Compile(guarded, options, typeof(HeronFragmentGlobals), errors);
 
             if (errors.Count > 0)
             {
@@ -1633,7 +1647,7 @@ namespace Heron.Revit.Addin
         /// back by name, so the report is read out of the run rather than
         /// being something the fragment had to remember to build.
         /// </summary>
-        private static string Report(string name, ScriptState<object> state,
+        private static string Report(string name, IList<HeronScriptHost.Variable> state,
                                      Document target, UIDocument uidoc, UIDocument active,
                                      HashSet<string> bound,
                                      IDictionary<string, object> handedIn)
@@ -1725,7 +1739,7 @@ namespace Heron.Revit.Addin
 
             var left = new List<string>();
 
-            foreach (var variable in state.Variables)
+            foreach (var variable in state)
             {
                 // Skip what the host put in. Those are the `needs`, and
                 // echoing a whole Document back is neither useful nor small.
@@ -1922,8 +1936,8 @@ namespace Heron.Revit.Addin
         /// needs it outside one, and a second copy would be the half that
         /// drifts.
         /// </summary>
-        private static string RunScript(Script<object> script, HeronFragmentGlobals globals,
-                                        string name, out ScriptState<object> state)
+        private static string RunScript(object script, HeronFragmentGlobals globals,
+                                        string name, out IList<HeronScriptHost.Variable> state)
         {
             state = null;
             try
@@ -1938,7 +1952,7 @@ namespace Heron.Revit.Addin
                 // HeronRunClock for why what is read after it stays untimed.
                 using (HeronRunClock.Watch())
                 {
-                    state = script.RunAsync(globals).GetAwaiter().GetResult();
+                    state = HeronScriptHost.Run(script, globals);
                 }
                 return null;
             }
@@ -1954,7 +1968,8 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// The refusal for a job a Revit dialog stopped, or null when none
         /// did. `rolledBack` is null on the read path, where no transaction
-        /// was open and so nothing can have changed; otherwise it is what
+        /// was open and the count before and after found nothing moved - it
+        /// is asked only after that count (row 5b-350); otherwise it is what
         /// SafeRollBack reported, and the sentence says the model is as it
         /// was ONLY when Revit confirmed it - WithVerdict's rule.
         /// </summary>
@@ -2401,7 +2416,9 @@ namespace Heron.Revit.Addin
         /// witness's whole account, as every rollback in this file says it
         /// (RollBackAndCheck): Revit's status, the additions counted back, and
         /// any earlier kept work the rollback took. `after` is null on the read
-        /// path, which opened no transaction and so has nothing to undo.
+        /// path, which opened no transaction and so has nothing to undo - and
+        /// is asked only after the count before and after found nothing moved
+        /// (row 5b-350), so that count is what the sentence rests on.
         ///
         /// NOT `Stopped`, which is the dialog's refusal and returns null when no
         /// dialog stopped the job; this one always answers.
@@ -2409,7 +2426,8 @@ namespace Heron.Revit.Addin
         private static string ClockStopped(string name, HeronRollbackWitness.Outcome after)
         {
             var model = after == null
-                ? "It was a read, so nothing in the model was changed."
+                ? "It was a read, and Heron counted the model before and after it, so nothing "
+                  + "in the model was changed."
                 : "Heron rolled the whole job back. " + after.Account();
 
             var said = "'" + name + "' " + HeronRunClock.Why + " " + model;
@@ -3599,7 +3617,7 @@ namespace Heron.Revit.Addin
             return string.Join("; ", parts.ToArray());
         }
 
-        private static void Remember(string name, ScriptState<object> state,
+        private static void Remember(string name, IList<HeronScriptHost.Variable> state,
                                      Document target, HashSet<string> bound,
                                      string client,
                                      IDictionary<string, object> handedIn,
@@ -3615,7 +3633,7 @@ namespace Heron.Revit.Addin
             chain.By = name;
             chain.Inputs = ranWith;
 
-            foreach (var variable in state.Variables)
+            foreach (var variable in state)
             {
                 object value = null;
                 try { value = variable.Value; } catch { continue; }
@@ -5209,8 +5227,12 @@ namespace Heron.Revit.Addin
                         + ". A sheet is normally named by its NUMBER, like \"A101\".";
                 return null;
             }
+            // `oldViewId` IS THE VIEW TAKEN OFF THE SHEETS - PLACE_VIEW_ON_SHEET
+            // version 2 puts its `views` where this one sits (FRAGMENT-ISSUES
+            // row 5b-540). `none`, above, is no view: the plain placing job.
             else if (name == "planViewId" || name == "scopeViewId"
-                     || name == "targetViewId" || name == "templateId")
+                     || name == "targetViewId" || name == "templateId"
+                     || name == "oldViewId")
             {
                 wanted = typeof(View); kind = "view";
             }

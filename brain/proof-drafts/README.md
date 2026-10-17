@@ -29,6 +29,17 @@ or Discard** ([D-119](../../docs/DECISIONS.md)). A kept one is the positive case
 and writes the ordinary `runs/<fragment>.json` with the kept run in the positive's place. `draft` and
 `accept` refuse it if it was discarded, or if the fragment's code has changed since it ran.
 
+## A further release, and a second route
+
+`<fragment>@2025.yaml` and `runs/<fragment>@2025.json` are a fragment already PROVEN, run again on **one
+more Revit release** - by `batch-prove --release 2025`, or by hand with `validate --out` that path. Signing
+one with `accept <fragment> --release 2025 --by "Your Name"` adds one entry to the fragment's
+`proof.releases` and leaves its `proof:` as it was signed. `<fragment>@second-route.yaml` and
+`runs/<fragment>@second-route.json` are the same for a **second route** (`validate --cross`), signed with
+`accept <fragment> --second-route`, which fills only a `second_route` that says NOT ESTABLISHED
+([D-131](../../docs/decisions/D-131.md)). They carry their own names so the record a proof was signed on is
+never replaced, and they are gitignored like the rest.
+
 ## Why they live here and not in the fragment
 
 The agent has **no write path into `brain/fragments/`**. `write_draft` refuses a path under the library,

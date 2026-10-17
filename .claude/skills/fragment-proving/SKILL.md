@@ -1,6 +1,6 @@
 ---
 name: fragment-proving
-description: Use when proving fragments against a real Revit model - one at a time or a batch at once. Covers which fragments may be attempted at all, how to arrange a case so the answer means something, the five mistakes that account for nearly every failed proof (a selection too big, a positive case the model cannot fill, a category not visible in the view chosen, a value in the wrong units or shape, an answer given on a stale selection), how to write a job file for tools/batch-prove.py, how to read each verdict it reports, and what it deliberately cannot judge. Trigger on "prove this fragment", "prove a batch", "run fragments against the model", "why did the negative case fail", "arrange a proof", "batch-prove", or any work that ends in a proof draft.
+description: Use when proving fragments against a real Revit model - one at a time or a batch at once, or proving a fragment already PROVEN again on another Revit release, or adding its second route. Covers which fragments may be attempted at all, how to arrange a case so the answer means something, the five mistakes that account for nearly every failed proof (a selection too big, a positive case the model cannot fill, a category not visible in the view chosen, a value in the wrong units or shape, an answer given on a stale selection), how to write a job file for tools/batch-prove.py, how to read each verdict it reports, and what it deliberately cannot judge. Trigger on "prove this fragment", "prove a batch", "run fragments against the model", "why did the negative case fail", "arrange a proof", "batch-prove", or any work that ends in a proof draft.
 ---
 
 # Proving fragments
@@ -40,6 +40,10 @@ Picking names off a capability list, a to-do note or a conversation is how one b
 of 16 fragments already PROVEN** — the run reported six passes and produced nothing. `batch-prove`
 refuses a fragment at PROVEN or PRODUCTION and reports `ALREADY`, so the job file cannot repeat that
 mistake; do not build one that leans on the refusal to find out.
+
+**Proving a PROVEN fragment on ANOTHER Revit release is a different job**, with its own flag and its
+own record - see [the section on it](#a-proven-fragment-on-another-release-and-a-second-route) below
+([D-131](../../../docs/decisions/D-131.md)).
 
 ### A PUBLISH or ADMIN fragment is proved only through its switch
 
@@ -154,10 +158,21 @@ Three things the shape of the file is doing:
   `select-in-region → set-selection` works without the flag and hides the problem. With it:
   `values from read-element-parameters (25)`. The flag is deliberately opt-in — see `cmd_validate`
   and defect row 11 — because a kept chain outranks the selection.
+- **On a write proof, every setup step that only reads comes before every step that CHANGES the
+  model - or the job is refused.** A change step runs inside the fragment's own transaction group,
+  after the read steps, so a selector typed after it looked at the model before the change existed:
+  two text notes made, then `select-by-category-name`, handed on 0 (measured 2026-10-17, Revit 2020,
+  [row 5b-520](../../../docs/fragment-issues/section-5b-rows-401-425.md)). Since
+  [row 5b-917](../../../docs/fragment-issues/section-5b-rows-401-425.md) `validate --write` refuses
+  that order before anything is sent, and `batch-prove --dry-run` says `REFUSED`. A selection of
+  what a setup step MAKES cannot be arranged this way at all - the change step has to leave the
+  value the fragment takes itself.
 - **A setup step that CHANGES the model takes the run's own values, never `setup-set:`.** `validate`
   refuses the job before Revit is asked - *"setup values cannot reach a setup step that CHANGES the
   model"* - because such a step runs inside the fragment's own transaction group and the add-in binds it
-  from the run's values. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
+  from the run's values; `batch-prove --dry-run` says `REFUSED` for it. Both only since
+  [row 5b-917](../../../docs/fragment-issues/section-5b-rows-401-425.md): until then `validate` asked
+  Revit for a count first and the dry run said `WOULD RUN`. Measured 2026-10-15 making a filter for `set-view-filter-categories` to edit
   (row 5b-481): what worked was ONE value list both steps read - the names they share (`filterNames`,
   `categories`, `parameterName`) must then mean the same for both - or arranging on something the model
   already holds. A read-only setup chain (`select-by-category-name`) takes `setup-set:` as before.
@@ -173,7 +188,9 @@ pins one id across the whole batch by itself; a hand-run `validate` or `prove` n
 | Verdict | What it means | What to do |
 |---|---|---|
 | `PASS` | both halves held | read the draft, then accept it under your own name |
-| `ALREADY` | at PROVEN or PRODUCTION | nothing. Remove it from the job file |
+| `ALREADY` | at PROVEN or PRODUCTION - with `--release`, already proved on THAT release | nothing. Remove it from the job file |
+| `NOT PROVEN` | `--release` only: not PROVEN yet, or its proof is stale | prove it first, without `--release` |
+| `WRONG RELEASE` | `--release` only: the record says it ran on another Revit | connect that release, or pin it with `--session`. The batch exits 1 |
 | `POSITIVE EMPTY` | it ran and found nothing | **rule 2.** The arrangement is wrong, not the fragment |
 | `POSITIVE UNREADABLE` | nothing it returned is a quantity | read the fragment's own source. Its results may need a `role:`; a sentence result needs `type: string` and `role: result` |
 | `NEG NOT EMPTY` | the negative returned content | a **finding**. The fragment may be falling back to something it was not given |
@@ -259,6 +276,60 @@ python brain/heron_validate.py draft <fragment> --from brain/proof-drafts/runs/<
   the record carries a hash of what was sent. `draft` and `accept` refuse the same two.
 - **Not with `--vary`**: D-53's first tracked input is a positive run, and here the positive is kept.
 - `batch-prove` does not do this. It is one fragment at a time, and the signature is still a person's.
+
+## A PROVEN fragment on another release, and a second route
+
+**[D-131](../../../docs/decisions/D-131.md), accepted 2026-10-17.** A proof on 2024 is evidence about 2024
+and no other release. `proof:` stays the record that made the fragment PROVEN; each further release is one
+entry of **`proof.releases`**, and nothing here ever rewrites `proof:` or writes `heron-status`.
+
+**On one more release, as a batch.** In the Revit of that release, with the job file you would use anyway:
+
+```bash
+python tools/batch-prove.py jobs.yaml --release 2025 --dry-run        # check it, run nothing
+python tools/batch-prove.py jobs.yaml --release 2025 --session <pid>  # run it
+python brain/heron_validate.py review <fragment>@2025
+python brain/heron_validate.py accept <fragment> --release 2025 --by "Your Name"
+```
+
+- **It runs only what is PROVEN elsewhere.** A fragment already proved on 2025 - by its proof or by a fresh
+  entry - is `ALREADY`; a DRAFT, or a proof the code moved under, is `NOT PROVEN`.
+- **Its run record and draft are `<fragment>@2025`**, never the proof's own, so the record the proof was
+  signed on is never replaced.
+- **Pin `--session`.** The record says which Revit it ran on, and a run on another release than
+  `--release` is `WRONG RELEASE` - the batch exits 1, and `accept` refuses it too.
+- **`accept --release` writes one entry** - release, date, your name, model, both cases and the
+  fingerprint - and refuses a release already recorded, a draft against other code, and every evidence
+  refusal `accept` makes. An entry whose fingerprint went stale is replaced by the new one.
+- **The five rules above all apply.** A release is a different Revit, often a different model upgraded into
+  it: arrange the case again on what that model has.
+
+**One fragment at a time**, the same flow by hand - the record must be where `accept` reads it:
+
+```bash
+python mcp/client/heron_bridge_client.py validate --session <pid> \
+    --out brain/proof-drafts/runs/<fragment>@2025.json --negative-set name=value <fragment>
+python brain/heron_validate.py draft <fragment> --release 2025 --from brain/proof-drafts/runs/<fragment>@2025.json
+```
+
+**A second route on a PROVEN fragment** is written the same way, from a recorded run, and only where the
+proof says NOT ESTABLISHED - a route already written is never replaced:
+
+```bash
+python mcp/client/heron_bridge_client.py validate --cross count_elements \
+    --out brain/proof-drafts/runs/<fragment>@second-route.json --negative-set name=value <fragment>
+python brain/heron_validate.py draft <fragment> --second-route --from brain/proof-drafts/runs/<fragment>@second-route.json
+python brain/heron_validate.py accept <fragment> --second-route --by "Your Name"
+```
+
+The draft sets the route's answer beside the fragment's own from the same run. **Whether they agree is
+yours to read before you sign** - a route that disagrees is a finding for
+[FRAGMENT-ISSUES](../../../docs/FRAGMENT-ISSUES.md), not a route. **A person's route** - a schedule count,
+the Project Browser, the Properties palette - has no recorded run, so it cannot be written this way and
+`second_route` stays NOT ESTABLISHED; record what you saw on the NEEDS-CHECKING row instead.
+
+**Where it shows:** `python brain/heron_matrix.py --fragments` marks `P` on the proof's release and on each
+fresh entry's, and nowhere else - never from `revit:`, and only where a compiler has also agreed.
 
 ## Honesty
 

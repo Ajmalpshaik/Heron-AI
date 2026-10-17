@@ -247,3 +247,16 @@ utterances:
   # model, tagged in the host's builders-work plans, dimensioned from a grid.
   - dimension the linked cut-outs to the grid
   - dimension the openings in the electrical link from the grid
+  # ADDED 2026-10-17, row 5b-650 - the only card that says "builders work".
+  # The builders-work-layout method is offered only beside a lookup whose
+  # candidates include one of its needs, and before this neither "set up the
+  # builders work layout" nor "do the builders work for this layout" reached
+  # any of them on any backend measured: words alone found curtain walls and
+  # worksets. This is what this card already does for a builders work layout
+  # (versions 3 and 4), said in the words the modeller uses for the job.
+  #
+  # NOT "openings", ON PURPOSE. "dimension the openings on the builders work
+  # layout from the grid" took "dimension the wall openings" from
+  # DIMENSION_WALL_OPENINGS to this card on the model2vec backend; without
+  # the word it stays there on both backends measured.
+  - dimension the builders work layout from the grid

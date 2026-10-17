@@ -48,6 +48,15 @@ after SLOW_S seconds, and a host that sent a progressToken must be told the
 wait goes on every WAIT_NOTE_S - while a host that sent none is told
 nothing. That part needs only the MCP SDK, so it runs off Windows too; with
 no SDK it cannot run, and off Windows that leaves nothing checked: exit 3.
+
+AND OFF WINDOWS, THE LIBRARY ALONE (Q-67, D-132). Until 2026-10-17 the server
+exited 2 on any system but Windows, so a cloud session was offered no Heron
+tool at all - not even the search a chat runs before it builds a tool. Now it
+starts there with heron_tools.LIBRARY and nothing else. So off Windows the real
+server is started as a host starts it, and must offer exactly that list - no
+revit_ tool, which is how a chat knows there is no Revit here - answer a
+search inside the deadline, say there is no Revit on this machine rather than
+looking for one, and refuse a Revit tool by name at once rather than hang.
 """
 
 import json
@@ -65,6 +74,7 @@ sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp", "client"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "support"))
 from heron_tools import TOOLS                                  # noqa: E402
+import heron_tools as REGISTRY                                 # noqa: E402
 import heron_bridge_client as bridge                           # noqa: E402
 import live_revit_guard as GUARD                               # noqa: E402
 
@@ -326,7 +336,7 @@ def text_of(line):
 
 def as_a_host(guard, scratch):
     """The real server, started as a host starts it. Windows only: off it the
-    server refuses to start, by design."""
+    server serves the library alone, and library_only() holds that."""
     env = guard.for_child(os.environ, scratch)
     # THE FIX: the child's machine-local folder is a scratch one, so the
     # discovery folder it reads is empty - "no Revit connected". Only the
@@ -431,18 +441,98 @@ def as_a_host(guard, scratch):
         host.close()
 
 
+def library_only(guard, scratch):
+    """The real server, started as a host starts it on a machine with no
+    Revit. Off Windows only: on Windows as_a_host() holds every tool."""
+    print()
+    print("  off Windows: the library and nothing else (D-132)")
+    library = getattr(REGISTRY, "LIBRARY", None)
+    check(library is not None,
+          "heron_tools says which tools a machine with no Revit is served (LIBRARY)")
+    if library is None:
+        return
+    env = guard.for_child(os.environ, os.path.join(scratch, "library"))
+    env["LOCALAPPDATA"] = os.path.join(scratch, "local")
+    env["XDG_DATA_HOME"] = os.path.join(scratch, "local")
+    # A store of the child's own, so the run never rebuilds a store another
+    # chat reads - test_mcp_serves' rule, for its in-process server.
+    env["HERON_KNOWLEDGE"] = os.path.join(scratch, "knowledge")
+    env["HERON_AUDIT"] = os.path.join(scratch, "audit")
+    host = Host(env)
+    try:
+        t0 = time.time()
+        host.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+            "protocolVersion": "2024-11-05", "capabilities": {},
+            "clientInfo": {"name": "heron-stdio-test", "version": "0"}}})
+        host.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        init = host.read(DEADLINE)
+        check(init is not None,
+              "the server STARTS off Windows and answers initialize (%.1fs)%s"
+              % (time.time() - t0, "" if init is not None else
+                 " - it said: %s" % "".join(host.err).strip()[-300:]))
+        if init is None:
+            return
+        try:
+            told = json.loads(init)["result"].get("instructions") or ""
+        except (ValueError, KeyError, TypeError, AttributeError):
+            told = ""
+        check("no Revit" in told,
+              "and its instructions tell the chat there is no Revit on this machine")
+
+        host.send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
+        listed = host.read(DEADLINE)
+        try:
+            names = [t["name"] for t in json.loads(listed)["result"]["tools"]]
+        except Exception:                                   # noqa: BLE001
+            names = []
+        offered = set(names)
+        check(offered == set(library),
+              "the host is offered exactly heron_tools.LIBRARY (%d) - offered %d%s"
+              % (len(library), len(offered), "" if offered == set(library) else
+                 "; missing: %s; extra: %s"
+                 % (sorted(set(library) - offered) or "none",
+                    sorted(offered - set(library)) or "none")))
+        check(not any(n.startswith("revit_") for n in names),
+              "and no revit_ tool, so the list itself says there is no Revit here")
+
+        line, took = host.call(3, "heron_capabilities", {}, DEADLINE)
+        answered = text_of(line)
+        check(answered is not None and "job(s) Heron knows by name" in answered,
+              "heron_capabilities answers (%.1fs)" % took)
+
+        line, took = host.call(4, "heron_lookup",
+                               {"request": "select all the ducts"}, DEADLINE)
+        found = text_of(line)
+        check(found is not None and "would need" in found,
+              "heron_lookup answers a sentence in BIM language (%.1fs)" % took)
+        check(found is not None and "No Revit on this machine" in found,
+              "and says there is no Revit on this machine, rather than that "
+              "none is connected")
+
+        line, took = host.call(5, "revit_health", {}, DEADLINE)
+        check(line is not None,
+              "a Revit tool asked for anyway is answered at once, not left to "
+              "hang (%.1fs)" % took)
+        try:
+            reply = json.loads(line) if line else {}
+        except ValueError:
+            reply = {}
+        refused = ("error" in reply
+                   or (reply.get("result") or {}).get("isError") is True)
+        check(refused, "and the answer is a refusal - the tool is not served here")
+    finally:
+        host.close()
+
+
 def main():
     print("Heron over real stdio, as a host sees it")
     missing = sdk_missing()
-    if os.name != "nt":
-        print("  SKIPPED - the real server refuses to start off Windows by design,")
-        print("  so only the stand-in Revit's part can run here.")
-        if missing:
-            print()
-            print("COULD NOT RUN - no MCP SDK here (%s), so nothing was checked." % missing)
-            print("This is exit %d, which is NOT a pass. Install it with:" % COULD_NOT_RUN)
-            print("  pip install --user mcp")
-            return COULD_NOT_RUN
+    if os.name != "nt" and missing:
+        print()
+        print("COULD NOT RUN - no MCP SDK here (%s), so nothing was checked." % missing)
+        print("This is exit %d, which is NOT a pass. Install it with:" % COULD_NOT_RUN)
+        print("  pip install --user mcp")
+        return COULD_NOT_RUN
 
     # NO CALL HERE MAY REACH THE REVIT RUNNING ON THIS PC (row 5b-461). The
     # child is guarded as this process would be: a pipe open is refused, and
@@ -451,6 +541,8 @@ def main():
     guard = GUARD.Guard.around(bridge)
     if os.name == "nt":
         as_a_host(guard, scratch)
+    else:
+        library_only(guard, scratch)
     if missing:
         print()
         print("  NOT RUN - the stand-in Revit's part needs the MCP SDK (%s)" % missing)
@@ -477,8 +569,9 @@ def main():
         print("and gets an")
         print("answer from every one it asks - inside a deadline rather than eventually.")
     else:
-        print("PASSED - only the stand-in Revit's part: off Windows the real server")
-        print("refuses to start, so nothing here shows a host offered every tool.")
+        print("PASSED - off Windows the real server starts with the library alone,")
+        print("offers no Revit tool and answers a search inside the deadline; the")
+        print("Revit tools are held on Windows, where as_a_host() runs.")
     if not missing:
         print("A host that sent a progressToken is told every %d s that Heron is"
               % EVERY_S)

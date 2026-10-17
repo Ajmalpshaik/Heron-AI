@@ -295,6 +295,13 @@ def main():
     check("ClaudeAppCopy.Refusal" in door and "return Refused" in
           door[inside:door.index("new PowerShellRevitEnvironment")],
           "and refuses with ClaudeAppCopy's sentence, exit 1, changing nothing")
+    folder = door.find("new ProductFolder(")
+    check(inside != -1 and folder != -1 and inside < folder,
+          "and before --from makes its work folder under temp - from inside the app that "
+          "folder lands in the copy, and \"Nothing was changed\" would be untrue (review of #558)")
+    check("RunAndSave(" in door and "done.Save(" not in door,
+          "the Python side is run and logged by PythonSetup.RunAndSave, the one method both "
+          "doors call, not wired a second time here")
 
     print()
     print("  release-independent, and nowhere near Revit")

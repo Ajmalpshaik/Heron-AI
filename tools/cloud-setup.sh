@@ -146,8 +146,12 @@ fi
 # a bridge defect. Build it in-session, fresh:
 #
 #   dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 \
-#     -p:HeronTfm=net8.0 -p:OutputPath=bin/x64/Debug-net8.0/
+#     -p:HeronTfm=net10.0 -p:OutputPath=bin/x64/Debug-net10.0/
 #   python tests/test_bridge_roundtrip.py
+#
+# net10.0 because this image carries only the .NET 10 runtime. The suite asks
+# for the newest runtime it finds, and prints the build it wants when the host
+# is missing - follow that over this comment (FRAGMENT-ISSUES row 5b-942).
 
 say "ready"
 exit 0

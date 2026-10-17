@@ -169,9 +169,10 @@ TOOLS = {
 
     # THE READ-ONLY DOOR (package C2, 2026-09-23). The same executor as the
     # row above, reached through `run_fragment_read`, which opens NO
-    # transaction - so Revit itself refuses any change the fragment attempts,
-    # and it runs with Changes OFF because the add-in's gate lets ANALYZE
-    # through without the switch.
+    # transaction - so Revit refuses a change the fragment attempts, and the
+    # add-in counts the model around every read because that refusal once let
+    # an element through (row 5b-350) - and it runs with Changes OFF because
+    # the add-in's gate lets ANALYZE through without the switch.
     #
     # ANALYZE, because that is what `run_fragment_read` is declared in
     # HeronOperationRegistry.cs, and a tool's risk must equal its operation's
@@ -186,12 +187,13 @@ TOOLS = {
     "revit_read":               (ANALYZE, "run_fragment_read"),
 
     # THE SHOW DOOR (2026-10-17). The read door's executor and the read door's
-    # guarantee - `run_fragment_show` opens NO transaction, so Revit itself
-    # refuses any change to the model - one level higher, so a fragment that
-    # selects, zooms or opens a view runs with Changes OFF. The add-in's
-    # read-only ceiling is EXECUTE ("changes what is shown, never what
-    # exists"); until this row only the MCP side held EXECUTE back, because
-    # revit_read's ceiling is its own ANALYZE and revit_change needs Changes.
+    # guarantee - `run_fragment_show` opens NO transaction, so Revit refuses
+    # a change, and the add-in counts the model around it (row 5b-350) - one
+    # level higher, so a fragment that selects, zooms or opens a view runs
+    # with Changes OFF. The add-in's read-only ceiling is EXECUTE ("changes
+    # what is shown, never what exists"); until this row only the MCP side
+    # held EXECUTE back, because revit_read's ceiling is its own ANALYZE and
+    # revit_change needs Changes.
     #
     # EXECUTE, because that is what `run_fragment_show` is declared in
     # HeronOperationRegistry.cs, and door_refusal reads the ceiling from this
@@ -439,6 +441,20 @@ ALSO_REACHES = {
 # it one search away, and the refusals and the method list that name it.
 ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
                  "revit_health", "revit_levels")
+
+
+# WHAT A MACHINE WITH NO REVIT IS SERVED (Q-67, D-132). Off Windows there is
+# no named pipe and no Revit - a cloud session is the case - and the server
+# registers these and nothing else, so the host's list itself says there is
+# no Revit here: no revit_ tool appears. Each reads files that shipped with
+# Heron and is declared READ with no operation above; tests/test_tool_registry.py
+# holds that, and that every Heron tool the fragment-author agent is given is
+# here. On Windows this list changes nothing - every tool is served.
+#
+# The five the owner said yes to, by name. A tool joins only by a decision:
+# the next one that sends nothing to Revit is not added because it could be.
+LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
+           "heron_resolve", "heron_standards")
 
 
 class NotDeclared(Exception):

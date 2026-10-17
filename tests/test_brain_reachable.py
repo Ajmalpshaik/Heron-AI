@@ -622,6 +622,78 @@ def main():
                   "its one ranked capability - %s"
                   % [m["id"] for m in asked.get("methods") or []])
 
+            # GENERAL NOTES, 2026-10-17 (row 5b-940). Row 5b-520's steps -
+            # collect a view's notes, read them, edit, read again - sat in two
+            # cards' comments and nothing served them as one job. The
+            # capabilities are the ones the live lookup returned for these
+            # words on the spelling backend on main c2dd2b8a; only the skills
+            # decide here.
+            everything = SKILL.load_all()[0].values()
+            for said, returned in (
+                    ("update the general notes and keep their numbering",
+                     ["LIST_DATES_ON_SHEETS", "CREATE_WALL",
+                      "EXTRACT_DATES_FROM_TEXT", "REFRESH_VIEW",
+                      "EDIT_TEXT_VALUES"]),
+                    ("update the general notes in the legend and keep the "
+                     "numbering",
+                     ["CREATE_LEGEND_VIEW", "CREATE_WALL", "MOVE_TO_RAY_HIT",
+                      "EDIT_TEXT_VALUES", "EDIT_REVISION"]),
+                    ("change the wording of the general notes but keep the "
+                     "numbering",
+                     ["EDIT_TEXT_VALUES", "CREATE_WALL", "MOVE_TO_RAY_HIT",
+                      "READ_ELEMENT_PARAMETERS",
+                      "EDIT_REVISION_NUMBERING_SEQUENCE"])):
+                picked = [s.id for s in SKILL.methods_for(everything, said,
+                                                          returned)]
+                check(picked[:1] == ["update-general-notes"],
+                      "\"%s\" names the general notes method first beside "
+                      "the capabilities it reached - %s" % (said, picked))
+            # A QUESTION ABOUT NOTES IS NOT OFFERED THE CHANGE. The method
+            # leaves its read off `needs` for exactly this sentence.
+            read = [s.id for s in SKILL.methods_for(
+                everything, "read what the text notes in the open view say",
+                ["READ_ELEMENT_PARAMETERS", "CREATE_TEXT_NOTE",
+                 "EXTRACT_DATES_FROM_TEXT", "REPORT_SPOT_DIMENSIONS",
+                 "READ_SCHEDULE_CONTENTS"])]
+            check("update-general-notes" not in read,
+                  "and a question that only reads the notes is not offered "
+                  "it - %s" % read)
+            said = ("change the wording of the general notes but keep the "
+                    "numbering")
+            offered = [m["id"] for m in
+                       BRAIN.lookup(said).get("methods") or []]
+            check(offered[:1] == ["update-general-notes"],
+                  "the live lookup names it first too - %s" % offered)
+
+            notes = BRAIN.method("update-general-notes")
+            # Read as words: a step's own lines keep their breaks in the YAML.
+            steps = " ".join((notes or {}).get("purpose", "").split())
+            # Each step is FOUND before its order is compared: str.find
+            # answers -1 for a step that is not there, which would pass.
+            at = [steps.find(step) for step in (
+                "1. SELECT_VISIBLE_IN_VIEW", "2. READ_ELEMENT_PARAMETERS",
+                "4. EDIT_TEXT_VALUES, field=Text")]
+            check(notes is not None
+                  and [u["capability"] for u in notes["uses"]]
+                  == ["SELECT_VISIBLE_IN_VIEW", "EDIT_TEXT_VALUES"]
+                  and min(at) >= 0 and at == sorted(at),
+                  "the general notes method collects the notes, reads them, "
+                  "then edits - in that order %s" % at)
+            check(notes is not None and all(
+                      word in steps for word in (
+                          "5b-520", "#570", "Ajmal PS", "try-once",
+                          "D-119", "D-121")),
+                  "and says both cards are DRAFT until signed, and that on a "
+                  "real model the edit runs only through try-once, on a saved "
+                  "model")
+            check(notes is not None and "EVERY note it is handed" in steps,
+                  "and that a whole-wording set goes to one note, never to "
+                  "the view's whole set")
+            check(notes is not None and "step 1 again" in steps
+                  and "chain_mismatch" in steps,
+                  "and that the notes are collected again after the read, "
+                  "which takes the chain over")
+
             # THE OWNER'S FIXED-SIZE ASK. "A detailed generator, no
             # parameters" shared only "family" with the family method and
             # "family" and "parameters" with the profile one, so the profile
@@ -640,6 +712,90 @@ def main():
                   % [s.id for s in fixed])
             check(got is not None and "FIXED-SIZE FAMILY" in got["purpose"],
                   "and the family method it names carries the fixed-size path")
+
+            # THE OWNER'S SWAP ASKS (row 5b-740). Both named the family
+            # CREATION methods - "build a new family" - beside a request to
+            # replace one, or nothing at all. The capabilities are the ones
+            # the lookup returned for these words on 2026-10-17, the first on
+            # the built-in search and the second on the trained one; only the
+            # skills decide here.
+            jobs_now = SKILL.load_all()[0].values()
+            swap = SKILL.methods_for(
+                jobs_now, "swap this family for that one keeping their data",
+                ["REPLACE_MATERIAL", "SET_SHEET_TITLE_BLOCK",
+                 "ADD_FAMILY_TYPE_PARAMETER", "CHANGE_ELEMENT_TYPE",
+                 "REPORT_SHEET_TITLE_BLOCKS"])
+            check([s.id for s in swap][:1] == ["replace-in-place-family"],
+                  "\"swap this family for that one keeping their data\" names "
+                  "the replace method first - %s" % [s.id for s in swap])
+            openings = SKILL.methods_for(
+                jobs_now,
+                "replace these openings with the TRG family at the same place",
+                ["SELECT_OPENINGS", "COPY_TAGS_TO_REPLACEMENTS",
+                 "AUDIT_MEP_OPENINGS", "SET_SHEET_TITLE_BLOCK",
+                 "SET_VIEW_FILTER_CATEGORIES"])
+            check([s.id for s in openings][:1] == ["replace-in-place-family"],
+                  "\"replace these openings with the TRG family at the same "
+                  "place\" names the replace method first - %s"
+                  % [s.id for s in openings])
+            # And it is named beside nothing that replaces nothing: a hosted
+            # placement is kept out of its needs, and no utterance of it says
+            # "this", which the word splitter keeps as "thi" (row 5b-741).
+            for request, caps in (
+                    ("place windows in this wall", ["PLACE_HOSTED_FAMILY"]),
+                    ("who owns this element",
+                     ["REPORT_ELEMENT_OWNERSHIP", "READ_ELEMENT_OWNERSHIP",
+                      "SELECT_BY_WORKSET", "SET_ELEMENT_WORKSET"])):
+                named = [s.id for s in SKILL.methods_for(jobs_now, request, caps)]
+                check("replace-in-place-family" not in named,
+                      "%r does not name the replace method - %s"
+                      % (request, named))
+
+            # THE BUILDERS WORK LAYOUT, 2026-10-17 (row 5b-650). Before
+            # CREATE_LINEAR_DIMENSION said "builders work", neither of the
+            # owner's two sentences reached a capability any method needs -
+            # words alone found curtain walls and worksets - so nothing named
+            # the method. The capabilities are the ones the live lookup
+            # returned for these words on the spelling backend after that
+            # card's sentence was added; only the skills decide here.
+            for said, returned in (
+                    ("set up the builders work layout",
+                     ["RENAME_WORKSET", "CREATE_LINEAR_DIMENSION",
+                      "SET_CURTAIN_WALL_GRID", "REPORT_COVERAGE",
+                      "REPORT_SPRINKLER_LAYOUT_SPACES"]),
+                    ("do the builders work for this layout",
+                     ["REPORT_CURTAIN_WALL_TYPE", "COPY_FROM_LINK",
+                      "CREATE_LINEAR_DIMENSION", "MIRROR_ELEMENTS",
+                      "SET_CURTAIN_WALL_GRID"])):
+                picked = [s.id for s in SKILL.methods_for(
+                    SKILL.load_all()[0].values(), said, returned)]
+                check(picked[:1] == ["builders-work-layout"],
+                      "\"%s\" names the builders work method first beside "
+                      "the capabilities it reached - %s" % (said, picked))
+                offered = [m["id"] for m in
+                           BRAIN.lookup(said).get("methods") or []]
+                check(offered[:1] == ["builders-work-layout"],
+                      "and the live lookup names it first too - %s" % offered)
+
+            layout = BRAIN.method("builders-work-layout")
+            # Read as words: a step's own lines keep their breaks in the YAML.
+            steps = " ".join((layout or {}).get("purpose", "").split())
+            check(layout is not None and all(
+                      gap in steps for gap in (
+                          "GAP - KEEP A FACE",
+                          "GAP - A TAG ON AN OPENING INSIDE A LINK")),
+                  "the builders work method names its two gaps, so a chat "
+                  "says so at that step instead of working round one")
+            # Its third gap, replacing a family at the same place, is the
+            # replace method since row 5b-740 - so step 4 sends a chat there.
+            check(layout is not None
+                  and "GAP - REPLACE A FAMILY" not in steps
+                  and "replace-in-place-family (heron_method)" in steps
+                  and BRAIN.method("replace-in-place-family") is not None,
+                  "and its step 4 names the replace method, which is served")
+            check(layout is not None and "SYNC_WITH_CENTRAL" not in
+                  [u["capability"] for u in layout["uses"]],
+                  "and never syncs - it asks the modeller to")
 
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to

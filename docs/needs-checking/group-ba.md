@@ -75,7 +75,10 @@ merge without `confirm`, with `confirm=yes`, and with `confirm=1` for Seq. 2; de
 `confirm=2` for Seq. 1; two revisions handed to EDIT_REVISION; a show word and a sequence that do not exist;
 an empty description; arc length 0; `Numeric` deleted while Seq. 1 and Seq. 2 use it (refused, naming both);
 a custom list on a numeric sequence; a new sequence named `Numeric`. The same runs caught one defect before it
-shipped: [row 5b-245](../FRAGMENT-ISSUES.md).
+shipped: [row 5b-245](../FRAGMENT-ISSUES.md). *Note 2026-10-17, [row 5b-350](../fragment-issues/section-5b-rows-326-350.md): "nothing could change" here
+leaned on Revit refusing every change with no transaction open - LIST_REVISIONS afterwards is what showed the
+model unchanged. That refusal is not the whole guarantee, and the command line now refuses a MODIFY fragment
+without `--write`; these runs stand as recorded, and a repeat uses `--write` and no `--apply`, rolled back.*
 
 **Routing, measured 2026-09-28** through `heron_retrieve.find` on a scratch store built from this change: all
 eleven sentences in the owner's brief reach their tool by identity - *set issued to*, *tick issued* (EDIT_REVISION),
@@ -137,8 +140,8 @@ declared by anybody, so not tuned here; a register row is owed.
 | # | Check | Expected |
 |---|---|---|
 | **BA7** | **Revit 2020, the two legs ([D-30](../DECISIONS.md)) for version 2.** On "Project2", a scratch project, in front: LIST_REVISIONS first - the alphanumeric list must read A, B, C … Z and no ISSUED revision may be numbered alphanumeric. Then `python tools/batch-prove.py tools/jobs/edit-revision-numbering-revit-2020-2026-10-10.yaml --dry-run`, then with `--session <the Revit 2020 pid>` and without `--dry-run` | `PASS`: the positive `changed` *custom sequence A, B, C … Z (26 values) -> AA, BB, CC … ZZ (26 values)*, read back in `findings`; the negative (`AA, BB, CC, AA`) `refused` naming 'AA' 2 times with `changed` empty. Then LIST_REVISIONS: still A … Z (both legs rolled back), and every revision's numbering column as before |
-| **BA8** | Revit 2020, the refusals - `fragment` runs on Project2 WITHOUT `--write`, so nothing can change: `name=Numeric customSequence=A, B`; `name=Alphanumeric newName=Letters`; `name=Numeric minimumDigits=2`; `customSequence=AA, , CC`; `customSequence=AA, BB, ..., ZZ`; `customSequence=<blank>`; `name=Nonesuch` | Each `refused` by name, ending "Nothing was changed." - the last one naming Numeric and Alphanumeric. A valid call without `--write` reports Revit's own missing-transaction words instead, which is the measurement |
-| **BA9** | Revit 2020, the issued-revision refusal: on Project2, one revision numbered alphanumeric and ticked Issued BY HAND in the dialog (a setup step may not change the model), then BA7's positive values without `--write`. Un-tick it afterwards | `refused` *"'Alphanumeric' numbers ISSUED revision(s) Seq. N …"*, nothing changed |
+| **BA8** | Revit 2020, the refusals - `fragment` runs on Project2 with `--write` and no `--apply`, so whatever a run does is rolled back: `name=Numeric customSequence=A, B`; `name=Alphanumeric newName=Letters`; `name=Numeric minimumDigits=2`; `customSequence=AA, , CC`; `customSequence=AA, BB, ..., ZZ`; `customSequence=<blank>`; `name=Nonesuch` | Each `refused` by name, ending "Nothing was changed." - the last one naming Numeric and Alphanumeric. A valid call goes through and the group is ROLLED BACK instead, which is the measurement. (Written for runs WITHOUT `--write`, where a valid call came back in Revit's missing-transaction words; the command line refuses that for a MODIFY fragment since 2026-10-17 - [row 5b-350](../fragment-issues/section-5b-rows-326-350.md)) |
+| **BA9** | Revit 2020, the issued-revision refusal: on Project2, one revision numbered alphanumeric and ticked Issued BY HAND in the dialog, then BA7's positive values with `--write` and no `--apply` - not without `--write`, which the command line refuses for a MODIFY fragment since 2026-10-17 ([row 5b-350](../fragment-issues/section-5b-rows-326-350.md)). Un-tick it afterwards | `refused` *"'Alphanumeric' numbers ISSUED revision(s) Seq. N …"*, nothing changed, and the group rolled back |
 
 **2026-10-10 - EDIT_REVISION version 3: several revisions in one call. DRAFT, compiled, never run.** On the
 owner's job `4355-BHVD-3D-50C10-BL001A` (Revit 2020) seven revisions "IFI - Issued for Information" were issued
@@ -174,3 +177,38 @@ date"* by nearness (first to fourth), so the purpose keeps version 2's opening a
 | **BA10** | **Revit 2020, the two legs ([D-30](../DECISIONS.md)) for version 3 - the count.** On "Project2", a scratch project, in front - NEVER the job model. Arrange first, kept, by chat: CREATE_REVISION three times, description *HERON PROOF several*, numbering numeric, not issued; LIST_REVISIONS shows exactly three such rows. Then `python tools/batch-prove.py tools/jobs/edit-revision-several-2026-10-10.yaml --dry-run`, then with `--session <the Revit 2020 pid>` and without `--dry-run` | `PASS`. The binding note reads *elements from select-by-parameter-value (3)*. Positive (`confirmCount=3`, issued by M.Sagheer, issued to A.Rahmani, issue): `changed` names all three, apart by " \|\| ", each ending *issued*; `nowIssued` true. Negative (`confirmCount=2`): `refused` names all three and both numbers, `changed` empty. Then LIST_REVISIONS: the three still unissued with issued by and to blank (both legs rolled back) |
 | **BA11** | **Revit 2020, version 3 - the order, and the issued-revision refusal.** On the same scratch project, after BA10's three: CREATE_REVISION three times more, *HERON PROOF several issued*, numbering numeric, ISSUED - they must be the LAST three sequences. Then `tools/jobs/edit-revision-several-issued-2026-10-10.yaml`, dry run first | `PASS`. Positive (`confirmCount=3`, unissue, numbering alphanumeric): `changed` *un-issued; numbering Numeric -> Alphanumeric* on all three, `refused` empty - the request version 2 refused for Seq. 1 first. Negative (issued by, no unissue): `refused` naming all three as ISSUED and *issued by*, none changed - the refusal BA2's job could not arrange. Then LIST_REVISIONS: all three still issued and Numeric |
 | **BA12** | **By eye, in Revit, once - the one undo entry.** After a KEPT run of version 3 on the scratch project (three revisions, one call), open Revit's Undo list | ONE entry for the call, named after it, and one Undo puts all three back. Then signing: `accept` BA10's draft under the owner's own name - BA11's draft is the second leg of the same fragment and goes in its proof notes |
+
+**2026-10-17 - run on Revit 2020 (session 51568): `EDIT_REVISION` version 3 three times and `LIST_REVISIONS` once,
+four `PASS`es, every write leg rolled back. Two drafts wait for Ajmal PS's signature.** Not "Project2": the scratch
+"Project1" Ajmal PS had open - a new project from Revit 2020's mechanical template, never saved - where he made the
+rows BY HAND in Manage - Sheet Issues/Revisions (Heron's change tool was blocked in that chat, and `CREATE_REVISION`
+is DRAFT): Seq. 1-3 *HERON PROOF several*, not issued; Seq. 4-6 *HERON PROOF several issued*, ISSUED; all Numeric,
+on no sheet, Per Project. Each job file is its 2026-10-10 namesake with `in: "Project1"` added.
+
+- **BA10, the count** - [`edit-revision-several-project1-2026-10-17.yaml`](../../tools/jobs/edit-revision-several-project1-2026-10-17.yaml):
+  binding note *elements from select-by-parameter-value (3)*; positive `confirmCount=3` - `changed` names Seq. 1, 2 and
+  3, each *issued by (blank) -> 'M.Sagheer'; issued to (blank) -> 'A.Rahmani'; issued*, `nowIssued` true; negative
+  `confirmCount=2` - `refused` *"the find brought back 3 revision(s) (...) and confirmCount says 2 ... Nothing was
+  changed."*, `changed` empty. **This is the draft to sign.**
+- **BA11, the order and the issued-revision refusal** - [`edit-revision-several-issued-project1-2026-10-17.yaml`](../../tools/jobs/edit-revision-several-issued-project1-2026-10-17.yaml):
+  positive - Seq. 4-6 *un-issued; numbering Numeric -> Alphanumeric* in one call, `refused` empty: the 2020
+  numbering route, through version 3; negative (a new issued by, no un-issue) - `refused` naming all three as ISSUED,
+  `changed` empty. The refusal [row 5b-412](../fragment-issues/section-5b-rows-401-425.md) said was unmeasured.
+- **One revision** - [`edit-revision-one-project1-2026-10-17.yaml`](../../tools/jobs/edit-revision-one-project1-2026-10-17.yaml),
+  version 2's case through version 3's code, `confirmCount` sent blank: Seq. 1 issued by, to and issued; asked for
+  the description and date it held, `alreadyThat` *description 'HERON PROOF several'; date 'Date 1'* and nothing
+  written.
+- **BA3 and BA4, `LIST_REVISIONS`** - [`list-revisions-project1-2026-10-17.yaml`](../../tools/jobs/list-revisions-project1-2026-10-17.yaml):
+  positive on Project1 - all six rows with every column, and the 2020/2021 route read the project's Numeric scheme and
+  Alphanumeric A to Z by name; negative on Ajmal PS's family `TRG_GEN_CutOut_Rectangular_HVAC` - nothing, *"is a
+  family, and a family holds no revisions"*. A family is the only negative a revision read has: a project always
+  keeps one revision. Until that day this fragment threw on a family - [row 5b-880](../fragment-issues/section-5b-rows-401-425.md),
+  fixed in the same change, so its fingerprint moved and this is the code the draft is for.
+
+`LIST_REVISIONS` read Project1 before the first run, after the first and after the last: the six rows as he made
+them each time. Run records and drafts kept at `%TEMP%\heron-work\proofs-2026-10-17\keep`.
+
+| # | Check | Expected |
+|---|---|---|
+| **BA13** | Revit 2020, read only: `LIST_REVISIONS` on a project where a SHEET carries a revision - BL001A is fair, nothing is written | each revision's sheet line - *"N sheet(s): ..."* and what it prints on each - as the sheets' revision schedules show. 2026-10-17's run had no revision on a sheet; the sheet half was last seen on Revit 2024, 2026-09-13 |
+| **BA14** | Signing, after reading both drafts: `python brain/heron_validate.py accept edit-revision --by "Ajmal PS"` and `... accept list-revisions --by "Ajmal PS"`, from the checkout that holds them | proof blocks written; `heron-status: PROVEN` is a separate yes. BA12 - the one undo entry of a KEPT call - is still owed and needs a kept run, which a DRAFT gets only through `try-once` on a saved model. **DONE 2026-10-17: both signed by Ajmal PS and PROVEN** (`edit-revision` `d3169656228813bf`, `list-revisions` `bb5283ef92b73801`); BA12 now needs only a kept `revit_change` call, as the tool is PROVEN |

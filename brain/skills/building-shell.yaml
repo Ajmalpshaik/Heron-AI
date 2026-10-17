@@ -25,6 +25,15 @@ purpose: >
   is read from the library every time it is served: where the two differ, the
   list is right and this text is out of date.
 
+  0. SAVE IT FIRST, before step 1 - the last precondition, as an act.
+     REPORT_OPEN_DOCUMENTS (DRAFT on 2026-10-17) says whether the model has
+     NEVER BEEN SAVED: one with no file is lost, with everything built in
+     it, when Revit closes. Ask the modeller ONCE to save it - Ctrl+S, in a
+     folder and under a name of their own - and start when it has a file.
+     Heron cannot save the model it works in (OPEN-QUESTIONS Q-69). Declined,
+     say in one line what is at stake and go on. Twice in two days a whole
+     build was lost this way - a house with 9 sheets and a 32-floor tower,
+     2026-10-13 and 14.
   1. CREATE_LEVELS (PROVEN) first, every level the building will have. A wall,
      a slab and a roof each belong to a level, and a level added afterwards
      leaves what was already built on the wrong one. Count them before going
@@ -47,8 +56,10 @@ purpose: >
      A TYPICAL STOREY IS DRAWN ONCE AND COPIED. When floors repeat - a tower,
      or upper floors that match - draw one storey's walls, curtain walls and
      slab (steps 3 to 5), collect them with SELECT_BY_LEVEL (DRAFT),
-     levelId= that level, categories=Walls, Floors, then COPY_ELEMENTS (PROVEN,
-     version 2) with expect_from naming that select, offset=0,0,0 and
+     levelId= that level, categories=Walls, Floors, then COPY_ELEMENTS (DRAFT,
+     version 3 - version 2 was PROVEN, and until NEEDS-CHECKING Group GP
+     proves version 3 a kept change from it is refused, D-117) with
+     expect_from naming that select, offset=0,0,0 and
      toLevels= the levels to repeat on - "Level 2..Roof" is every level from
      Level 2 to Roof by height. Each copy BELONGS to its level at its
      original's offset, so it is never a ground-floor wall lifted by a height;
@@ -56,6 +67,8 @@ purpose: >
      and on the top storey keeps its height unconnected. A TWISTING TOWER is
      the same call with turnDegrees= the turn per storey and turnCentreMm= the
      plan point it turns about, in millimetres; leave both blank for none.
+     In a workshared model Revit puts every copy on the ACTIVE workset;
+     toWorkset=source keeps each copy on its original's workset.
      Read the answer: each level's line must say every copy belongs to it and
      every plan point sits where the turn puts it. On 2026-10-13 a 32-storey
      twisting tower took 33 CREATE_WALL and 36 CREATE_FLOOR calls without
@@ -180,6 +193,8 @@ utterances:
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
+  # Step 0's check that the model has a file to go back to.
+  - REPORT_OPEN_DOCUMENTS
   - CREATE_LEVELS
   - CREATE_GRIDS
   - CREATE_WALL

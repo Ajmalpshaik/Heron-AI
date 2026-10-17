@@ -468,7 +468,7 @@ works inside a link. Changing a link is still Article 7's, with its confirmation
 
 ---
 
-### 🟠 Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
+### ✅ Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? → **An entry of `proof.releases`, and `accept --second-route`** *(found and answered 2026-10-17)*
 
 **What was found**, preparing [NEEDS-CHECKING Group EQ](../needs-checking/group-eq.md) - a core set of PROVEN
 fragments proved again on every release, to back the *"2020 → latest"* claim with evidence. Three things in
@@ -505,5 +505,152 @@ that reads fragments today.
 
 **Ajmal PS decides.** Until he does, EQ1 to EQ6 (loading the add-in on each release) and EQ8 (the routes
 themselves, by hand in Revit) can still be run and recorded in Group EQ; only EQ7 waits.
+
+**Answer: the recommended shape - 2026-10-17. See [D-131](../decisions/D-131.md), Accepted.** Asked to accept
+the recommendation or choose another, the owner chose *"Accept recommended (Recommended)"*. Built the same
+day: `batch-prove --release`, `heron_validate.py accept --release` and `accept --second-route`, and the matrix
+reading `proof.releases`, held by `tests/test_release_proofs.py`. EQ7 has its commands; every run is still
+NEEDS REAL REVIT, and no fragment is proven on a new release by the answer.
+
+---
+
+### ✅ Q-67 — Should the Heron server start on a non-Windows machine with only its library tools, and every Revit tool answering that Revit is not reachable here? → **Yes - the library alone, and no Revit tool listed** *(found and answered 2026-10-17)*
+
+**What was found**, in a cloud session on 2026-10-17. The last lines of
+[`mcp/server/heron_mcp_server.py`](../../mcp/server/heron_mcp_server.py) exit **2** when `os.name != "nt"` -
+*"Heron's bridge uses Windows named pipes. Revit is Windows-only."* - before a single tool is served. So on
+Linux the host lists **no** `heron` tool and reports the server `CONNECTION_CLOSED`: not only the Revit tools
+but the ones that never touch Revit - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`,
+`heron_standards`. The [`heron-fragment-author`](../../.claude/agents/heron-fragment-author.md) agent is given
+exactly three Heron tools, `heron_lookup`, `heron_resolve` and `heron_capabilities`, and **in a cloud session
+it cannot search the library it is told to search first**. The exit is deliberate
+([docs/38 §4](../38-the-cloud-environment.md) says so), and the same module imports on Linux:
+`tests/test_mcp_serves.py` and `tests/test_served_claims.py` call its tools in-process there. Whether a
+non-Windows machine should be served the library without Revit was left by
+[row 5b-162](../fragment-issues/section-5b-rows-151-175.md) as *"a design question nobody has asked"*. A
+search of DECISIONS, `decisions/`, this register and the Constitution on 2026-10-17 found nothing that
+decides it either way. [D-02](../decisions/D-02.md) makes the bridge a Windows named pipe; it says nothing
+about the tools that do not use the bridge.
+
+**The one thing a yes must not break.** [`AGENTS.md`](../../AGENTS.md) tells an agent: *"If no `heron` tools
+are listed, Heron is not connected"* - say so, ask for `python tools/heron-ready.py`, stop. A library-only
+server lists `heron` tools where no Revit can ever be, so that sentence would read as *connected* when it is
+not. A yes therefore owes two things with it: the Revit tools **not listed** off Windows - never listed and
+then hanging or failing late - and the AGENTS.md line reworded to the test that still holds, *no `revit_`
+tool listed means no Revit here*. The session-start line [#573](https://github.com/Ajmalpshaik/Heron-AI/pull/573)
+added says, off Windows, *"no Revit and no Heron tools in this session"*
+(`session_line.py` in the [`heron-session`](../../.claude/skills/heron-session/SKILL.md) skill); a yes changes it to say the
+library tools are there and the Revit ones are not.
+
+**Recommended - reasoned, not built:** **yes**, on non-Windows only, with the library tools served and every
+tool that needs the bridge left unregistered, so the host's own tool list says there is no Revit here. Which
+`heron_*` tools reach the bridge is derived from the code when it is built, not typed here. Windows behaviour
+does not change by one line. Tests on Linux start the real server over stdio, list its tools, and fail if a
+bridge tool appears or a library tool is missing.
+
+**What the other choices cost.** Leaving it as it is keeps every cloud session - and the fragment-author agent
+in it - searching the library with `grep` instead of the ranked lookup a modeller's chat gets, so the two can
+disagree on what exists. Listing the Revit tools and having each refuse is honest, but it is a tool list that
+says Revit is here when it is not, which is the trap AGENTS.md's sentence exists to avoid.
+
+**Ajmal PS decides.** Until he does, the server keeps exiting 2 off Windows and nothing is built.
+
+**Answer: yes, as recommended - 2026-10-17. See [D-132](../DECISIONS.md).** Ajmal PS, asked in plain words
+what the yes would change: *"yes"*. Off Windows the server registers `heron_tools.LIBRARY` - the five tools
+this question names - and nothing else, so no `revit_` tool is listed; its instructions and a lookup's version
+line say there is no Revit on this machine. On Windows nothing changes. AGENTS.md's test and the
+`heron-session` start-up line are reworded to match, and `tests/test_mcp_stdio.py` starts the real server off
+Windows and holds all of it.
+
+---
+
+### 🟡 Q-69 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
+
+**What happened.** Twice in two days a whole build was lost because the model had never been saved and
+Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
+([row 5b-513](../fragment-issues/section-5b-rows-401-425.md)). Heron could not have saved either.
+`SAVE_DOCUMENT` version 2 (FRG-DOC-033, PROVEN, PUBLISH) saves only ANOTHER open document that already has
+a file, and refuses the one Heron works in by name ([row 5b-365](../fragment-issues/section-5b-rows-351-375.md)).
+
+**Why, from the code.** Revit saves nothing while any transaction, sub-transaction or transaction group the
+API opened is still open - *"Operation is not permitted when there is any open sub-transaction,
+transaction, or transaction group"*, the same words for `Document.Save` and `Document.SaveAs` (RevitAPI.xml
+2024; 2020 and 2027 read the same on 2026-10-07, row 5b-365). Every fragment `revit_change` runs goes to
+the add-in's write path, which opens ONE `TransactionGroup` in the document for the whole run
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 706) and assimilates or rolls it
+back at the end (line 900) - Article 8's one undo entry. So a fragment can never save the document it runs
+in, however it is written.
+
+**What would work, read from the code - NOT RUN.** In the same request, AFTER that group is closed (lines
+900 to 916, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
+the add-in could run the save itself at that point, on the fragment's behalf: `SAVE_DOCUMENT` version 3
+asks for it - the document it works in, by its own file for a Save, or a full `.rvt` or `.rfa` path the
+modeller typed for a Save As of a model that has none - and the add-in does it once the group has closed,
+then puts what happened at the end of the reply. Still behind the Publish switch; never a file name chosen
+by Heron; `SaveAsOptions.OverwriteExistingFile` left at Revit's own default, false, unless the modeller
+said to replace the file. The group itself does not change: one request, one `TransactionGroup`, one undo
+entry, and the save is not in it - a save is not a model change and cannot be undone. Where Revit asks
+the modeller Keep or Discard ([D-126](../decisions/D-126.md)), the box is answered inside the group, before
+that point (line 879), so a save there could only ever follow a Keep.
+
+**Why it was NOT built - three things need the owner, and the third is a guard:**
+
+1. **The add-in would do work of its own after the group closes.** Today everything a request does is
+   either the fragment's run inside the group or the reply. The ambient needs that already let a fragment
+   ask the add-in for something - [D-112](../DECISIONS.md)'s failure discipline, [D-114](../DECISIONS.md)'s family load
+   options - each came with a decision of its own, and this would be a third, of a new kind: an act the
+   add-in performs after Heron's Undo entry is closed.
+2. **What a preview does with a save.** [D-55](../decisions/D-55.md): a write's preview is the run itself,
+   rolled back. A save cannot be rolled back. Version 2 already writes its other document even on a preview
+   - its proof records a rolled-back group and `saved true` - so the library has never said which is
+   right. Either a preview saves too, or the add-in saves only when the group was KEPT and says so on a
+   preview; the second keeps a preview free of anything irreversible, and means a proof of this route must
+   be run with `--apply`. **And [D-117](../decisions/D-117.md), merged the same day, refuses `--apply` -
+   and `revit_change` - for a fragment that is DRAFT**, which version 3 would be until proved. The one way
+   a DRAFT's run is kept, [D-119](../decisions/D-119.md)'s `try-once` behind Keep or Discard, runs only on
+   a model saved with nothing unsaved ([D-121](../decisions/D-121.md)) - the one state in which a save has
+   nothing to do and a Save As is not needed. So with a preview that does not save, the route could never
+   be proved; with a preview that saves, it can be proved today, on a scratch model, the way version 2 was.
+3. **A Save As renames the model, and the chat's model pin would read that as a DIFFERENT model** -
+   Golden Rule 20's guard, Articles 12a and 12b. The pin compares the model's own id where both sides have
+   one ([`heron_write.py`](../../mcp/server/heron_write.py) line 255), and only a match on it or on the file
+   path lets a new title through (line 461, *"a save can rename it; same document"*). But that id,
+   `Document.CreationGUID`, arrived at Revit 2024 and is null on 2020 to 2023 and on every family document
+   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 664, measured
+   2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
+   release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1921)
+   about a model it has just saved. The next call is then aimed at the old title (line 1455) and refused
+   until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
+
+**The shapes the owner chooses between:**
+
+1. **Leave Heron as it is.** The methods ask the modeller to save before a big build, and
+   `REPORT_OPEN_DOCUMENTS` version 2 says which open model or family has NEVER BEEN SAVED. The cheapest; it
+   still rests on the modeller pressing Ctrl+S, which is how both builds were lost.
+2. **Save after the group, from the add-in - recommended.** As above: `SAVE_DOCUMENT` version 3, an
+   optional switch for a Save As of a never-saved model and one for replacing a file, and the add-in saving
+   once the group has closed. With it, two choices: a preview saves too, as version 2's save of another
+   document already does - the only way it can be proved while D-117 refuses a DRAFT kept for real, and
+   D-55 then gains one sentence saying a save is not rolled back - and the pin accepts a new title only
+   when the reply says THIS run did the Save As of the pinned document. One new decision for the
+   after-the-group act; nothing in Article 8 changes.
+3. **A save operation of its own**, beside `move_elements`, declared Publish in the operation registry and
+   run by the add-in with no group at all. No change to the fragment executor, but a new tool for the chat,
+   a new entry in the registry and the permission gate, and the same pin change as 2.
+
+What none of the three can do: save a model the modeller never asked to save (Article 10), or choose its
+name.
+
+**Measure before deciding** - [NEEDS-CHECKING Group EN](../needs-checking/group-en.md) EN4, on the owner's
+word only: a scratch fragment on the read path - no transaction and no group anywhere - calling
+`SaveAs` on a NEVER-SAVED scratch project, to see whether Revit lets an ExternalEvent callback save at all.
+**Not measured:** any of it. Whether a save from the callback raises Revit's own dialogs (a workshared
+model, a file on a network folder), what the add-in's dialog watch does with one met after the group
+([Group EL](../needs-checking/group-el.md), merged the same day), and how long the request runs for a big model - the add-in answers
+*still_running* after 60 seconds (`revit.operationTimeoutSeconds`) and the save carries on.
+
+**Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: `SAVE_DOCUMENT` still refuses
+the model it works in, and the methods ask the modeller to save first.
 
 ---

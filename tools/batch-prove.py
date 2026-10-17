@@ -13,6 +13,7 @@ The Revit Test Agent's running half - many fragments proved in one pass.
     python tools/batch-prove.py jobs.yaml --dry-run     read it, run nothing
     python tools/batch-prove.py jobs.yaml               run it against Revit
     python tools/batch-prove.py jobs.yaml --only set-mep-size
+    python tools/batch-prove.py jobs.yaml --release 2025   PROVEN ones, on one more release
 
 WHY THIS EXISTS
 ---------------
@@ -42,6 +43,18 @@ filtered by status. A fragment at PROVEN or PRODUCTION is refused here, reported
 `ALREADY`, and never sent to Revit. There is deliberately no flag to override
 that: re-proving after the code changes is a STALENESS question, and
 `tests/test_golden.py` already answers it by re-computing fingerprints.
+
+**`--release <year>` is not that flag - it asks a different question (D-131).**
+A proof on 2024 is evidence about 2024 and no other release, and the claim is
+2020 to 2027. With `--release` the rule turns round rather than off: ONLY a
+fragment at PROVEN or PRODUCTION whose proof still matches its code is run, and
+only when neither its proof nor a fresh `proof.releases` entry already names
+that release - those are `ALREADY` still, and anything not yet proven is `NOT
+PROVEN`. Its run record and draft are `<slug>@<year>`, never the proof's own,
+and a run whose record names another Revit is `WRONG RELEASE`. The draft is
+signed with `heron_validate.py accept --release`, which writes one entry and
+leaves `proof:` and `heron-status` exactly as they were - and the before/after
+status check below holds for this mode as for every other.
 
 **2. It passed fragments that had done nothing.** `heron_validate` judges
 whether the NEGATIVE came back empty - which is D-30's leg, and which a fragment
@@ -98,6 +111,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as HF                                     # noqa: E402
+# Which releases a fragment is already proven on (D-131) - the matrix's reading,
+# the one `accept --release` asks too.
+import heron_matrix as MX                                       # noqa: E402
 
 # The underscore names below - `_as_count`, `_as_found` and `_is_helper_object` - are
 # reached into deliberately. They are the validation agent's private
@@ -163,6 +179,8 @@ contract_of = HV.contract_of
 positive_worked = HV.positive_worked
 
 ALREADY = "ALREADY"
+NOT_PROVEN = "NOT PROVEN"
+WRONG_RELEASE = "WRONG RELEASE"
 NOT_IN_A_BATCH = "WILL NOT RUN IN A BATCH"
 NO_FRAGMENT = "NO FRAGMENT"
 REFUSED = "REFUSED"
@@ -178,6 +196,11 @@ MEANING = {
     PASS: "both halves held. A draft is waiting for a person to read",
     WOULD_RUN: "the job file is runnable as written",
     ALREADY: "already proved. Nothing was sent to Revit",
+    NOT_PROVEN: ("--release proves again only what is PROVEN, on a proof that "
+                 "still stands. Prove it without --release first. Nothing was "
+                 "sent to Revit"),
+    WRONG_RELEASE: ("the run record names another Revit than --release. Connect "
+                    "that release, or pin it with --session"),
     NOT_IN_A_BATCH: ("risk ADMIN or PUBLISH - D-106 lets no batch send it. "
                      "Prove it by name. Nothing was sent to Revit"),
     NO_FRAGMENT: "no fragment of that name in the library",
@@ -190,8 +213,9 @@ MEANING = {
     NEG_NOT_EMPTY: "the negative returned content. A FINDING, not a proof",
 }
 
-ORDER = [WOULD_RUN, PASS, ALREADY, NOT_IN_A_BATCH, POSITIVE_EMPTY, POSITIVE_UNREADABLE,
-         NEG_NOT_EMPTY, NO_NEGATIVE, DID_NOT_RUN, TIMEOUT, REFUSED, NO_FRAGMENT]
+ORDER = [WOULD_RUN, PASS, ALREADY, NOT_PROVEN, NOT_IN_A_BATCH, POSITIVE_EMPTY,
+         POSITIVE_UNREADABLE, NEG_NOT_EMPTY, NO_NEGATIVE, DID_NOT_RUN, TIMEOUT,
+         WRONG_RELEASE, REFUSED, NO_FRAGMENT]
 
 
 # ---------------------------------------------------------------------------
@@ -278,17 +302,24 @@ def read_jobs(path):
     return jobs, problems
 
 
-def job_refusal(job, library):
+def job_refusal(job, library, release=None):
     """Why this job cannot be run as written, or None.
 
     Every one of these is checked BEFORE Revit is touched, so a batch of fourteen
     does not discover on the eleventh that a name was mistyped on the first.
+
+    `release` is `--release`: the question becomes "proven, but not yet on
+    THIS release?" - see release_refusal.
     """
     frag = library.get(job["fragment"])
     if frag is None:
         return NO_FRAGMENT, "no fragment called '%s'" % job["fragment"]
 
-    if frag.status in FINISHED:
+    if release:
+        verdict, why = release_refusal(frag, release)
+        if verdict:
+            return verdict, why
+    elif frag.status in FINISHED:
         # HOLE 1. Not an error and not a failure - finished work, reported as
         # finished. The first batch spent a whole pass re-proving fifteen of
         # these and reported six passes for it.
@@ -321,6 +352,24 @@ def job_refusal(job, library):
                     "Arrange it with steps at MODIFY or below" % (step, step_risk))
             return REFUSED, "the setup step: %s" % step_refusal
 
+    # A WRITE SETUP MUST RUN IN ITS TYPED ORDER, AND A STEP THAT CHANGES THE
+    # MODEL TAKES NO SETUP VALUES - `validate --write` refuses both before it
+    # sends anything, so a dry run that said WOULD RUN here would be the row
+    # 5b-440 shape again (row 5b-917). `.get`, because `job_refusal` takes
+    # partial dicts.
+    if job.get("write"):
+        step_risks = [
+            (step, BRIDGE.fragment_risk(os.path.join(
+                card_root(library[step]), "brain", "fragments",
+                library[step].slug, "fragment.yaml")))
+            for step in job["setup"]]
+        setup_refusal = BRIDGE.setup_order_refusal(step_risks)
+        if setup_refusal is None and (job.get("setup-set")
+                                      or job.get("negative-setup-set")):
+            setup_refusal = BRIDGE.setup_values_refusal(step_risks)
+        if setup_refusal:
+            return REFUSED, setup_refusal
+
     # THE FRAGMENT'S OWN RISK, READ FROM ITS CARD BY THE CLIENT'S OWN READER.
     # `validate` without --allow-publish refuses a PUBLISH or ADMIN fragment
     # before it sends anything (D-106 point 6: no batch sends one), and this
@@ -332,7 +381,7 @@ def job_refusal(job, library):
     # job is fine; a batch is the wrong way to send it. So it gets its own
     # bucket, naming the one command that does send it - typed by a person,
     # per fragment, which is the decision D-106 asks for.
-    refusal = risk_refusal(job, frag)
+    refusal = risk_refusal(job, frag, release)
     if refusal:
         return refusal
 
@@ -404,6 +453,38 @@ def job_refusal(job, library):
     return None, None
 
 
+def release_refusal(frag, release):
+    """(verdict, why) when `--release` must not run this fragment, else (None, None).
+
+    HOLE 1 TURNED ROUND, NOT SWITCHED OFF. Re-proving what is finished on the
+    release it was proved on still buys nothing and is still ALREADY; what
+    `--release` runs is a fragment proven SOMEWHERE ELSE and not yet here.
+    A proof the code has moved under is not "proven somewhere": proving it
+    again comes first, without --release.
+    """
+    if frag.status not in FINISHED:
+        return NOT_PROVEN, ("heron-status is %s - a first proof is a run "
+                            "without --release" % frag.status)
+    if frag.proof_is_stale():
+        return NOT_PROVEN, ("its proof is STALE - the code moved under it. Prove "
+                            "it again without --release first (D-30)")
+    if release not in frag.supported:
+        return REFUSED, ("it does not claim Revit %s - its `revit:` is %s"
+                         % (release, ", ".join(frag.supported)))
+    fresh, _stale = MX.proven_releases(frag)
+    if release in fresh:
+        return ALREADY, ("already proved on Revit %s, by %s" % (
+            release, "its proof" if fresh[release] == "proof"
+            else "an entry of proof.releases"))
+    return None, None
+
+
+def record_name(fragment, release=None):
+    """The run record a job writes: the proof's own, or `<slug>@<year>`."""
+    return os.path.join("brain", "proof-drafts", "runs", "%s.json"
+                        % HV.proof_key(fragment, release=release))
+
+
 def card_root(frag):
     """The checkout a library fragment's card sits in, for the client's readers.
 
@@ -419,7 +500,7 @@ def card_root(frag):
     return os.path.dirname(os.path.dirname(os.path.dirname(folder)))
 
 
-def risk_refusal(job, frag):
+def risk_refusal(job, frag, release=None):
     """(verdict, why) when the client would not send this job's fragment.
 
     PUBLISH and ADMIN are NOT_IN_A_BATCH with the by-name command; an
@@ -447,8 +528,7 @@ def risk_refusal(job, frag):
              "setup-set": {}, "negative-setup-set": {}}
     whole.update(job)
     whole["write"] = True
-    argv = validate_command(whole, os.path.join(
-        "brain", "proof-drafts", "runs", "%s.json" % name))[2:]
+    argv = validate_command(whole, record_name(name, release))[2:]
     argv.insert(1, "--allow-publish")
     return NOT_IN_A_BATCH, (
         "risk %s; prove it by name with `heron_bridge_client.py %s`, with %s "
@@ -626,12 +706,15 @@ def readable_command(argv):
     return " ".join('"%s"' % a if " " in a else a for a in argv)
 
 
-def run_one(job, env, quiet=True, session=None):
+def run_one(job, env, quiet=True, session=None, release=None):
     """Run and draft one fragment. Returns (record, verdict, why).
 
-    `record` is None when the run produced nothing to judge.
+    `record` is None when the run produced nothing to judge. With `release`
+    the record is `<slug>@<year>.json`, so a run on another release never
+    replaces the record a proof was signed on (D-131).
     """
-    record_path = os.path.join(RUNS, "%s.json" % job["fragment"])
+    record_path = os.path.join(RUNS, "%s.json"
+                               % HV.proof_key(job["fragment"], release=release))
     argv = validate_command(job, record_path, session)
 
     # THE OLD RECORD GOES BEFORE THE RUN, BECAUSE "the file is there" IS NOT
@@ -684,9 +767,11 @@ def run_one(job, env, quiet=True, session=None):
     return record, None, None
 
 
-def draft(fragment, record_path, env):
+def draft(fragment, record_path, env, release=None):
     """Turn a run record into a proof draft. A draft, never a proof."""
     argv = [sys.executable, VALIDATOR, "draft", fragment, "--from", record_path]
+    if release:
+        argv += ["--release", release]
     result = subprocess.run(argv, cwd=ROOT, env=env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
     return result.returncode == 0
@@ -700,7 +785,23 @@ def statuses(library):
     return dict((slug, frag.status) for slug, frag in library.items())
 
 
-def report(results, dry_run):
+def wrong_release(record, release):
+    """Why this run is no evidence about `release`, or None. D-131.
+
+    `--release` is what the person SAID; the record says where it RAN - the
+    client writes the connected Revit's release into `model:`. With two Revits
+    open and no `--session`, those can differ, and a 2024 run filed as 2025
+    would be the one mistake this mode exists to make impossible.
+    """
+    named, why = HV.record_release(record)
+    if why:
+        return why
+    if named != release:
+        return "it ran on Revit %s, and this batch is for %s" % (named, release)
+    return None
+
+
+def report(results, dry_run, release=None):
     """The findings, worst first, and only what a person has to act on."""
     width = max([len(r["fragment"]) for r in results] + [10])
 
@@ -731,8 +832,13 @@ def report(results, dry_run):
     print("")
     if passed:
         print("%d draft(s) in brain/proof-drafts/, waiting for a person:" % len(passed))
-        print("  python brain/heron_validate.py review <fragment>")
-        print("  python brain/heron_validate.py accept <fragment> --by \"Your Name\"")
+        if release:
+            print("  python brain/heron_validate.py review <fragment>@%s" % release)
+            print("  python brain/heron_validate.py accept <fragment> --release %s "
+                  "--by \"Your Name\"" % release)
+        else:
+            print("  python brain/heron_validate.py review <fragment>")
+            print("  python brain/heron_validate.py accept <fragment> --by \"Your Name\"")
     print("NOTHING WAS ACCEPTED AND NOTHING WAS PROMOTED. A PASS here means the "
           "evidence held,")
     print("not that the fragment is proved - that is a person's signature, and "
@@ -757,7 +863,15 @@ def main(argv=None):
                              "connected. List them with `heron_bridge_client.py "
                              "list`. WITH TWO REVITS OPEN AND NO --session THE "
                              "TARGET IS ARBITRARY")
+    parser.add_argument("--release",
+                        help="prove again, on this Revit release, fragments "
+                             "already PROVEN on another (D-131), e.g. 2025. "
+                             "Runs only those with no record for it")
     args = parser.parse_args(argv)
+
+    if args.release and not HV.RELEASE_SHAPE.match(args.release):
+        print("--release takes a year, e.g. --release 2025")
+        return 1
 
     jobs, problems = read_jobs(args.jobs)
     for problem in problems:
@@ -790,6 +904,9 @@ def main(argv=None):
     print("client id: %s" % env["HERON_CLIENT_ID"])
     print("session:   %s" % (args.session if args.session else
                              "NOT PINNED - whichever Revit sorts first"))
+    if args.release:
+        print("release:   Revit %s - PROVEN fragments not yet proved on it (D-131)"
+              % args.release)
     if args.dry_run:
         print("mode:      DRY RUN - nothing will be sent to Revit")
     print("")
@@ -797,23 +914,27 @@ def main(argv=None):
     results = []
     for index, job in enumerate(jobs, 1):
         name = job["fragment"]
-        verdict, why = job_refusal(job, library)
+        verdict, why = job_refusal(job, library, args.release)
 
         if verdict is None and args.dry_run:
             # WHAT IT WOULD SEND, printed in full. A job file is read by a
             # person before it costs a Revit session, and the line that will
             # actually be run is the only honest thing to show them.
             verdict, why = WOULD_RUN, readable_command(validate_command(
-                job, os.path.join("brain", "proof-drafts", "runs",
-                                  "%s.json" % name), args.session)[2:])
+                job, record_name(name, args.release), args.session)[2:])
 
         elif verdict is None:
             print("[%d/%d] %s" % (index, len(jobs), name))
             record, verdict, why = run_one(job, env, quiet=not args.verbose,
-                                           session=args.session)
+                                           session=args.session,
+                                           release=args.release)
             if record is not None:
-                draft(name, record["run_record"], env)
+                draft(name, record["run_record"], env, args.release)
                 verdict, why = judge(record, library[name], job["expect"])
+                elsewhere = (wrong_release(record, args.release)
+                             if args.release else None)
+                if elsewhere:
+                    verdict, why = WRONG_RELEASE, elsewhere
             print("        %s  %s" % (verdict, why))
         else:
             print("[%d/%d] %s" % (index, len(jobs), name))
@@ -846,7 +967,7 @@ def main(argv=None):
         print("Another session is writing it. Read the findings below, then "
               "check what it did before trusting them.")
 
-    report(results, args.dry_run)
+    report(results, args.dry_run, args.release)
 
     if args.report:
         with io.open(args.report, "w", encoding="utf-8") as fh:
@@ -854,6 +975,7 @@ def main(argv=None):
                 "job_file": args.jobs,
                 "date": time.strftime("%Y-%m-%d"),
                 "dry_run": args.dry_run,
+                "release": args.release,
                 "results": results,
             }, indent=2, sort_keys=True))
         print("")
@@ -863,8 +985,11 @@ def main(argv=None):
     # not pass is this tool's OUTPUT - the thing it was run to find out - and
     # failing on it would make a successful proving run indistinguishable from a
     # broken one. What earns a non-zero code is the batch being unable to do its
-    # job: a name that is not a fragment, or a job file that cannot be run.
-    broken = [r for r in results if r["verdict"] in (NO_FRAGMENT, REFUSED)]
+    # job: a name that is not a fragment, or a job file that cannot be run -
+    # and, with --release, a run on another Revit than the one it was for,
+    # because then the whole batch answered a question nobody asked.
+    broken = [r for r in results
+              if r["verdict"] in (NO_FRAGMENT, REFUSED, WRONG_RELEASE)]
     return 1 if (broken or moved or gone) else 0
 
 

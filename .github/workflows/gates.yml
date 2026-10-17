@@ -476,9 +476,10 @@ jobs:
           #   test_loads_finalize.py   needs the MCP SDK - it runs the server's
           #                            own Finalize against a stand-in Revit
           #   test_mcp_serves.py       needs the MCP SDK
-          #   test_mcp_stdio.py        needs the MCP SDK - off Windows only its
-          #                            stand-in Revit part runs (docs/04 7.1),
-          #                            and that part serves the real server
+          #   test_mcp_stdio.py        needs the MCP SDK - off Windows it starts
+          #                            the real server with its library alone
+          #                            (D-132), and its stand-in Revit part
+          #                            runs (docs/04 7.1)
           #   test_served_claims.py    needs the MCP SDK
           #   test_routing_phrases.py  needs the trained embedding (model2vec)
           #

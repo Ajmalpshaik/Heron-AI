@@ -257,7 +257,9 @@ to drift. The tool list itself is `python mcp/server/heron_tools.py`, never a li
 ### 8.1 A door that only reads — `revit_read`
 
 The add-in has had `run_fragment_read` since [D-28](DECISIONS.md): it runs a fragment with **no transaction
-open**, so Revit itself refuses any change, and it is declared `ANALYZE`, below the read-only ceiling —
+open**, so Revit refuses a change, and the add-in counts the model around every read - a read that moved it
+is answered `read_changed_model`, never as a read ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)).
+It is declared `ANALYZE`, below the read-only ceiling —
 so it runs with **Changes OFF**. Until this tool nothing but the command line sent it, and a chat could
 reach a read only through `revit_change`, with Changes ON, inside a transaction.
 
@@ -505,6 +507,20 @@ left short is [5b-429](fragment-issues/section-5b-rows-401-425.md).
 **NOT MEASURED:** what the 617 s turn spent its thinking on - the thinking text is not stored - and the
 office PC ([Q-61](OPEN-QUESTIONS.md)).
 
+**THE NEXT RE-TIMING IS TAKEN THE SAME WAY - built 2026-10-17.** Both measurements above were worked out
+by hand from the chat's transcript and the add-in's audit trail, the files [row 5b-378](FRAGMENT-ISSUES.md)
+names. [`tools/time-family-build.py`](../tools/time-family-build.py) does that hand's work: given the
+chat's `.jsonl` and `audit-YYYYMM.jsonl` it prints request to finish, the model's share, thinking tokens
+and seconds, the model and effort the chat ran, the Heron calls and the `revit_change` hand-back, Revit's
+own time and its first runs, Heron's time around Revit a batch and a call, and forms built and seconds a
+form - each with the file and lines it was read from, and **NOT MEASURED** for what those files cannot
+show, never an estimate. Heron's server alone is one of those: it keeps each call's seconds in memory
+(`heron_companion.Activity`), so the server figure above came from the MCP client's log, which the tool
+does not read. [`tests/test_time_family_build.py`](../tests/test_time_family_build.py) holds it to
+synthetic transcripts shaped like both builds, with a negative case. **Not yet run on the owner's two
+transcripts**, which are on the laptop; its first real use is the re-timing of `CREATE_FAMILY_FORMS`
+([D-116](DECISIONS.md)).
+
 ### 8.8 What the tool list costs a chat — built 2026-10-17
 
 **What the owner asked:** cut what Heron's tool list costs in every chat. [D-03](DECISIONS.md) accepted
@@ -594,8 +610,10 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
 ([row 5b-497](fragment-issues/section-5b-rows-401-425.md)).
 
 - **`revit_show` is the third door.** It sends `run_fragment_show`, declared `EXECUTE` in the add-in and
-  routed to the read door's executor with **no transaction open** — so Revit still refuses any change to
-  the model, and what an `EXECUTE` fragment can change is the selection, the camera and the active view.
+  routed to the read door's executor with **no transaction open** — so Revit refuses a change to the
+  model, and the add-in counts the model around the run as it does a read
+  ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) - and what an `EXECUTE` fragment can change is
+  the selection, the camera and the active view.
   Its ceiling is its own row, through the same `door_refusal`: `MODIFY` and above are refused before
   anything is sent, and `revit_read` now sends an `EXECUTE` fragment here rather than to `revit_change`.
   Everything else is §8.1's: the pin, the proof line, the words path, `expect_from`.
