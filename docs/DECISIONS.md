@@ -198,6 +198,7 @@ an edit.
 | [D-124](#d-124--selecting-or-zooming-to-elements-inside-a-linked-model-is-not-touching-it-and-asks-for-no-confirmation) | Selecting or zooming to elements inside a linked model is not touching it, and asks for no confirmation | ✅ Accepted · 2026-10-17 |
 | [D-125](#d-125--a-fragment-says-what-transaction-it-needs-notransactionopen-for-one-that-must-run-with-none-and-modify-for-one-that-needs-herons) | A fragment says what transaction it needs: noTransactionOpen for one that must run with none, and MODIFY for one that needs Heron's | ✅ Accepted · 2026-10-17 |
 | [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ✅ Accepted · 2026-10-17 |
+| [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model) | A request the host calls a question is never offered a capability that changes the model | ✅ Accepted · 2026-10-17 |
 | [D-129](#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ✅ Accepted · 2026-10-17 |
 | [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
 | [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
@@ -1101,6 +1102,16 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs), [`RevitChangedSet.cs`](../revit/Heron.Revit.Addin/RevitChangedSet.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronDialogWatch.cs`](../revit/Heron.Revit.Addin/HeronDialogWatch.cs), [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs), [`HeronChangesWindow.cs`](../revit/Heron.Revit.Addin/HeronChangesWindow.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`host.chat.yaml`](../brain/instructions/host.chat.yaml), [Constitution Article 9](../HERON_CONSTITUTION.md), [Golden Rule 17](14-golden-rules.md)
 
 **Full record:** [`decisions/D-126.md`](decisions/D-126.md)
+
+## D-128 — A request the host calls a question is never offered a capability that changes the model
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"do it the best only"* - choosing option B of [the work note](work-notes/investigations/2026-10-17-plain-questions-owner-call.md), the one advised · **Source:** [FRAGMENT-ISSUES 5b-477 and 5b-478](fragment-issues/section-5b-rows-401-425.md) - of 120 plain questions, 32 reached a write on the trained backend and 27 on lexical
+**Numbering:** written as D-116 on 2026-10-17 and renumbered D-128 the same day, before it merged: main had given D-116 to D-123 to other work while this was open, and open pull requests claim D-124 to D-127. The owner's words name no number
+**Supersedes:** [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) item 2, *"Resolution, proposed and not built"* - its item 1, the reporting, stands unchanged
+**Keeps:** [D-01](#d-01--execution-host-claude-code-plugin) - the host decides what the user meant, and Heron never classifies it · [D-65](#d-65--heron-keeps-the-degraded-result-rule-and-hands-routing-to-the-host) - routing is the host's · [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) - which questions a write may declare · Golden Rule 19 - a risk is read from the registry, never typed
+**Affects:** [`heron_retrieve.py`](../brain/heron_retrieve.py) (`eligible`, `retrieve`, `find`: `ceiling`), [`heron_brain.py`](../mcp/server/heron_brain.py) (`lookup(question=...)`, `question_ceiling`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_lookup`'s `question`)
+
+**Full record:** [`decisions/D-128.md`](decisions/D-128.md)
 
 ## D-129 — A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again
 
