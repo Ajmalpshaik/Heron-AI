@@ -115,9 +115,9 @@ it real rather than nominal:
 3. **It must be sticky.** After an emergency stop, Heron stays stopped until a person restarts it. It
    does not quietly resume on the next request or after a restart.
 
-**[NOTE 2026-10-17]** Requirement 3 is not met as written, and that is an **open question, not a
-decision**: `HeronStop` is cleared by a restart of Revit, on its own stated reasoning, and the two are
-both recorded in [Q-64](open-questions/from-master-specification-part-2.md) for the owner. Requirements
+**[NOTE 2026-10-17]** Requirement 3 is **amended by [D-117](DECISIONS.md)**, on the owner's answer to
+[Q-64](open-questions/from-master-specification-part-2.md): a stop lasts until Revit is restarted, and a
+restart clears it - *"after a restart"* no longer holds, and the rest of the requirement does. Requirements
 1 and 2 moved the same day ([D-116](DECISIONS.md)): the bridge's `stop` operation reaches the add-in
 while Revit is busy - a pipe operation rather than the file named above - and a fragment already
 running is stopped at its next check and its `TransactionGroup` rolled back. A single long Revit API

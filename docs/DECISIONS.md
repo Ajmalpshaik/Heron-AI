@@ -188,6 +188,7 @@ an edit.
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
 | [D-116](#d-116--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ⏳ Proposed · 2026-10-17 |
+| [D-117](#d-117--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -989,7 +990,16 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Proposed · **Date:** 2026-10-17 · **Source:** the owner's task of 2026-10-17: *"A fragment that loops forever must stop, roll back and say so before the dispatcher gives up"*
 **Updates:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays)'s stated costs - four of the five are smaller now. D-46 itself is unchanged: there is still no Emergency Stop button
-**Keeps:** [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) · Golden Rule 16 · [row 5b-14](fragment-issues/section-5b-rows-001-025.md)'s named allow-list outside the gate · [Q-64](open-questions/from-master-specification-part-2.md) left open
+**Keeps:** [D-28](#d-28--generated-code-is-c-compiled-at-run-time-in-process) · Golden Rule 16 · [row 5b-14](fragment-issues/section-5b-rows-001-025.md)'s named allow-list outside the gate · [Q-64](open-questions/from-master-specification-part-2.md), answered as [D-117](#d-117--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it)
 **Affects:** [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs) (new), [`HeronStackGuard.cs`](../revit/Heron.Revit.Addin/HeronStackGuard.cs), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) (`stop`), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py)
 
 **Full record:** [`decisions/D-116.md`](decisions/D-116.md)
+
+## D-117 — A stop lasts until Revit restarts, and a restart clears it
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"Q-64: restart clears it, accept your recommendation"* · **Answers:** [Q-64](open-questions/from-master-specification-part-2.md)
+**Amends:** [21 §4](21-resilience-and-operations.md) requirement 3 - sticky until Revit restarts, not past it
+**Keeps:** [D-46](#d-46--the-emergency-stop-button-is-removed-the-switch-behind-it-stays) - no second control · [D-116](#d-116--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) item 7 - nothing over the bridge resumes
+**Affects:** [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) (comments only), [21 §4](21-resilience-and-operations.md), [D-116](decisions/D-116.md)
+
+**Full record:** [`decisions/D-117.md`](decisions/D-117.md)

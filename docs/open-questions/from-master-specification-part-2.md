@@ -353,7 +353,7 @@ into ranking, where it may find a different writer. **Build the READ, then move 
 
 ---
 
-### 🟡 Q-64 — Should a stop survive a restart of Revit? *(found 2026-10-17)*
+### ✅ Q-64 — Should a stop survive a restart of Revit? → **No: a restart clears it** *(found and answered 2026-10-17)*
 
 **Two sources disagree, and neither is edited to match the other.**
 
@@ -391,6 +391,11 @@ modeller editing a file to make Heron work again, and the reason it was removed 
 owner did not want a second control.
 
 **The owner decides.** Until then a restart clears it, and the message says so.
+
+**Answer: the first - a stop lasts until Revit is restarted, and a restart clears it. See
+[D-117](../decisions/D-117.md).** Ajmal PS, 2026-10-17: *"Q-64: restart clears it, accept your
+recommendation"*. Nothing in the code changes - it already did this - and 21 §4's requirement 3 is
+amended to match, with a note beside it rather than an edit to its words.
 
 → [D-116](../decisions/D-116.md), [D-46](../decisions/D-46.md), [21 §4](../21-resilience-and-operations.md),
 [NEEDS-CHECKING Group EJ](../needs-checking/group-ej.md)

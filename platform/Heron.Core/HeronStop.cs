@@ -37,12 +37,12 @@ namespace Heron.Core
     /// is a bigger, clearer reset than the button, and the user knows they
     /// did it.
     ///
-    /// AND THAT DISAGREES WITH docs/21 section 4, whose third requirement is
+    /// AND THAT DISAGREED WITH docs/21 section 4, whose third requirement was
     /// a stop that "does not quietly resume on the next request or after a
-    /// restart". Both are recorded, neither is edited to match the other, and
-    /// the owner decides: Q-64. Until that answer, this class is as it was -
-    /// in memory, cleared by a restart - and the sentence below says exactly
-    /// that.
+    /// restart". Both were recorded as Q-64, and the owner answered it on
+    /// 2026-10-17 (D-117): a restart clears it. So this class stays as it
+    /// was - in memory, cleared by a restart - and docs/21's requirement is
+    /// amended to match, not this.
     ///
     /// SINCE 2026-10-17 SOMETHING CAN SET IT AGAIN, and it can stop what is
     /// already running (D-116). The `stop` operation, answered on a bridge
@@ -144,8 +144,8 @@ namespace Heron.Core
         /// Revit, the one thing that clears this flag and that every modeller
         /// can do. It names no button because none clears it - the `stop`
         /// operation cannot resume, on purpose, and EmergencyStopCommand is
-        /// still on no ribbon. If Q-64 makes the stop survive a restart, this
-        /// is the sentence that changes with it.
+        /// still on no ribbon. D-117 settled that a restart is the way out, so
+        /// a decision that ever made the stop outlive one changes this too.
         /// </summary>
         public const string Message =
             "Heron is stopped. Nothing was sent to Revit. Ctrl+Z in Revit undoes anything " +
