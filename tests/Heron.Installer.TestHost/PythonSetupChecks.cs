@@ -25,8 +25,9 @@ namespace Heron.Installer.TestHost
     /// WHAT IT CANNOT PROVE: that pip installs anything on Windows, that
     /// heron-ready says READY there, or that the identity test answers the
     /// same inside a real Store-built Claude. ProcessProgramRunner is started
-    /// for real below, on whatever runs this; the Windows half of
-    /// WindowsClaudeAppLook is not. NEEDS-CHECKING Group EP owes both.
+    /// for real below, on whatever runs this; WindowsClaudeAppLook.SameEntry
+    /// is run against real folders and a junction only on Windows, which
+    /// .github/workflows/windows.yml is. NEEDS-CHECKING Group EP owes the rest.
     /// </summary>
     internal static class PythonSetupChecks
     {
@@ -393,6 +394,51 @@ namespace Heron.Installer.TestHost
             if (!OperatingSystem.IsWindows())
                 check(windowsLook.SameEntry(root, root) == null,
                       "off Windows the identity test answers cannot tell, which reads as outside");
+            else
+                SameEntryOnWindows(real, windowsLook, root, check);
+        }
+
+        /// <summary>
+        /// WindowsClaudeAppLook.SameEntry against real folders, on Windows only -
+        /// it asks Windows for each path's volume and file index, and nothing
+        /// else answers that.
+        ///
+        /// THE JUNCTION IS tests/test_heron_ready.py section 5's trick: a folder
+        /// that opens as another, the merged view a packaged app's child sees,
+        /// made with no administrator. `mklink /J` makes the same kind of link
+        /// _winapi.CreateJunction makes there. Run on every change to the
+        /// installer by .github/workflows/windows.yml. What it still cannot show
+        /// is the answer from inside a real Store-built Claude - Group EP4, EP5.
+        /// </summary>
+        private static void SameEntryOnWindows(IProgramRunner runner, WindowsClaudeAppLook look,
+                                               string root, Action<bool, string> check)
+        {
+            var target = Path.Combine(root, "same-target");
+            var other = Path.Combine(root, "same-other");
+            var junction = Path.Combine(root, "same-junction");
+            Directory.CreateDirectory(target);
+            Directory.CreateDirectory(other);
+
+            // NOT A SKIP WHEN IT CANNOT BE MADE. A junction needs no right a
+            // user lacks, so failing to make one is a finding, and the true
+            // case would otherwise go unchecked while the run stayed green.
+            var made = runner.Run("cmd.exe", new[] { "/c", "mklink", "/J", junction, target }, root, 30);
+            try
+            {
+                check(made.Started && made.ExitCode == 0 && Directory.Exists(junction),
+                      "a junction is made here with no administrator: " + (made.Output ?? "").Trim());
+                check(look.SameEntry(junction, target) == true,
+                      "a folder and a junction to it are ONE thing on disk - true");
+                check(look.SameEntry(other, target) == false,
+                      "two different folders are two - false");
+                check(look.SameEntry(Path.Combine(root, "same-missing"), target) == null,
+                      "a path that is not there cannot tell - null, which reads as outside");
+            }
+            finally
+            {
+                // The link alone, never what it points at.
+                if (Directory.Exists(junction)) Directory.Delete(junction);
+            }
         }
     }
 }

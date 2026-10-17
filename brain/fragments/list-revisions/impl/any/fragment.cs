@@ -45,6 +45,17 @@ var numbering = "";
 var numberingSequences = "";
 var arcLength = "";
 
+// A FAMILY HOLDS NO REVISIONS. Sheet Issues/Revisions belongs to a project, and
+// RevisionSettings.GetRevisionSettings throws on a family document with words
+// about an argument called "ccda" - measured 2026-10-17 on Revit 2020, asked
+// with a family in front. So a family is answered in the modeller's words, with
+// nothing found, rather than with Revit's.
+if (doc.IsFamilyDocument)
+{
+    findings.Add("'" + doc.Title + "' is a family, and a family holds no revisions - "
+               + "Sheet Issues/Revisions belongs to a project. Bring a project to the front.");
+}
+else
 {
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
 

@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-015
-semantic-identity: "put these views onto a sheet"
+semantic-identity: "put these views onto a sheet - or swap one view for another in the same place, taking the old one off"
 kind: action
 domain: revit.views
 capability: PLACE_VIEW_ON_SHEET
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,21 +32,74 @@ purpose: >
   starting point — a viewport that exists can be dragged; one never placed
   cannot.
 
+  **Version 2: replace one view with another on its sheets.** Name an
+  `oldViewId` and the one view in `views` takes its place, and the old view
+  comes off - read back in `swapped`, and anything not done said in `notDone`.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+# VERSION 2, IN FULL (FRAGMENT-ISSUES row 5b-540, NEEDS-CHECKING Group FC).
+# Kept here rather than in `purpose:` because purpose is indexed for search:
+# measured 2026-10-17, the longer text took this card's own placing sentences
+# down the keyword ranking ("add the view to the drawing sheet" #2 -> #15) and
+# drew sheet questions towards a change.
+#
+# WHAT IT DOES. With an `oldViewId`, the one view in `views` goes where the old
+# view sits - on every sheet the old view is on, or only on `sheetId` when one
+# is named - and the old view comes off those sheets. The old view stays in
+# the project. Any view a sheet can hold: a legend (on many sheets), a drafting
+# view, a plan or a section (on one sheet only, so the new one must not be on
+# a sheet already), and a schedule. Found on a real job: a shop-drawing legend
+# on four sheets whose as-built copy has to go exactly where it is.
+#
+# A VIEWPORT'S VIEW IS REPLACED, NOT CHANGED. A new viewport at the old one's
+# box centre, given the old viewport's TYPE (title shown or not), its rotation
+# and - on Revit 2022 and later - its title's position; then the old viewport
+# is deleted, and the new one takes its detail number (a callout elsewhere
+# points at it) and is pinned if the old one was. A schedule is a ScheduleSheetInstance hanging from its top-left
+# corner, so the new schedule takes the old one's corner, not its centre. `at`
+# is an OFFSET here, in mm from where the old view sat - 0,0,0 is the job.
+#
+# READ BACK, SHEET BY SHEET. Each `swapped` line names the sheet number, the
+# old view gone, the new one there, how far the new centre (a schedule's
+# corner) is from the old one in mm, and the viewport type kept. More than
+# 0.1 mm from where it was asked to go is not kept. A sheet where it could not
+# be done - the new view already on that sheet, a plan already on another
+# sheet, Revit refusing - is rolled back whole, keeps the old view exactly
+# where it was, and is named in `notDone` with the reason. Never silently
+# skipped. The whole run is still one undo.
+#
+# A SPLIT SCHEDULE IS REFUSED, NOT REBUILT (Revit 2022 and later), and a title
+# block's revision schedule is never swapped - it belongs to the title block.
 
 contract:
   needs:
     - name: doc
       type: Document
     - name: sheetId
+      # The sheet, by its NUMBER. Version 2 lets it be left out: when an
+      # oldViewId is named, left out means EVERY sheet the old view is on.
+      # Placing still needs it, and is refused in notDone without one.
       type: ElementId
       source: request
+      optional: true
+      absent: none
     - name: views
+      # Placing: the views to put on the sheet. Replacing: the ONE new view.
       type: IList<View>
       source: request
     - name: at
+      # Placing: the point on the sheet, in mm. Replacing: an offset in mm from
+      # where the old view sat - 0,0,0 is exactly there.
       type: XYZ
       source: request
+    - name: oldViewId
+      # Version 2. The view to take OFF the sheets - the new view goes where it
+      # is. Left out, or none, is the placing job exactly as version 1 did.
+      type: ElementId
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: placed
       role: result
@@ -55,9 +108,27 @@ contract:
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
+      # Placing: the views it declined. Replacing: the SHEETS left as they
+      # were, each with its reason in notDone.
       role: accounting
       type: IList<ElementId>
+    - name: swapped
+      # Version 2. One line per old view replaced, read back from the model:
+      # sheet number, old view gone, new view there, how far the new centre
+      # (a schedule's corner) is from the old one in mm, the viewport type kept.
+      role: result
+      type: IList<string>
+    - name: notDone
+      # Version 2. Every sheet where the replacing could not be done, with why,
+      # and why nothing was done at all when the views named cannot be swapped.
+      # Never a thing it did (D-52).
+      role: accounting
+      type: IList<string>
 
+# VERSION 1'S PROOF, KEPT AS A RECORD. It proves the placing job as it stood
+# at fingerprint 0b724478ecce6d08; version 2 changed impl/, so it is stale and
+# this card is DRAFT until both jobs are proved again (FRAGMENT-ISSUES row
+# 5b-540, NEEDS-CHECKING Group FC).
 proof:
   date: '2026-09-13'
   by: Ajmal PS
@@ -94,6 +165,21 @@ compatibility-note: >
   `Viewport.CanAddViewToSheet` are unchanged 2020 to 2027, and both the sheet
   and the views arrive as objects so nothing here builds an ElementId from an
   integer.
+
+  Version 2, read with tools/api-surface one release at a time on 2026-10-17:
+  `Viewport.GetBoxCenter`, `SetBoxCenter`, `Rotation`, `SheetId`, `ViewId`,
+  `ScheduleSheetInstance.Create` (four arguments), `Point`, `Rotation`,
+  `ScheduleId` and `IsTitleblockRevisionSchedule` are the same 2020 to 2027.
+  Two things differ, each behind `#if REVIT2020 || REVIT2021`:
+  `Viewport.LabelOffset` - the title's position - exists from 2022, so 2020
+  and 2021 leave the title where Revit draws a new viewport's and say so on
+  each line; and `ViewSchedule.IsSplit` exists from 2022, the release that
+  brought split schedules, so 2020 and 2021 have nothing to refuse.
+
+  `Viewport.ViewId` has a SETTER from 2023 (with `IsViewIdValidForViewport`),
+  so 2023 and later could change a viewport's view in place. It is not used:
+  2020 to 2022 cannot, and one path - a new viewport at the old box centre, the
+  old one deleted - keeps every release the same run, read back the same way.
 
 # ROUTING - repeated in DUPLICATE_VIEW and CREATE_3D_VIEW.
 #
@@ -132,9 +218,33 @@ compatibility-note: >
 #                                         in DISTINCT positions - the job when no
 #                                         point is given
 
+# ROUTING (2026-10-17, FRAGMENT-ISSUES row 5b-540) - version 2.
+#
+#   "swap the NOTES legend for AS-BUILT NOTES on all sheets"
+#                                      -> here, oldViewId NOTES, views AS-BUILT NOTES
+#   "what views are on this sheet"     -> LIST_VIEWS_ON_SHEET. A QUESTION, and it
+#                                         must never reach a change that takes a
+#                                         view off a sheet
+#   "which views are not on a sheet"   -> FIND_UNPLACED_VIEWS, the same
+#   "which sheets is this legend on"   -> LIST_VIEWS_ON_SHEET version 2, viewName =
+#                                         the legend - the question to ask BEFORE
+#                                         this job, and never answered by it
+#   "is this view already on a sheet"  -> LIST_VIEWS_ON_SHEET, the same. It reached
+#                                         this card with the re-ranker until declared
+#                                         there (row 5b-540)
+#   "line the viewports up across the sheets"
+#                                      -> ALIGN_VIEWPORTS_ACROSS_SHEETS - same
+#                                         view stays, only its place changes
+#   "point the reference at another view"
+#                                      -> REPOINT_VIEW_REFERENCE - a callout or
+#                                         section head, not a viewport
+
 utterances:
   - put this view on a sheet
   - place these views on the sheet
   - add the view to the drawing sheet
   - drop this plan on a sheet
   - put them on the sheet
+  - swap the NOTES legend for AS-BUILT NOTES on all sheets
+  - replace this view on the sheets with that one
+  - put this legend where the old one is
