@@ -504,7 +504,7 @@ line after the last group in [`docs/NEEDS-CHECKING.md`](../../../docs/NEEDS-CHEC
 generated: its early groups are in **dependency order** (A, K, J, R, B...), not letter order, and
 other sections sit between them - only a person knows where a group belongs.
 [`needs-checking-register.py`](../../../tools/needs-checking-register.py) is a reader by design, and
-stays one. **Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `python tools/next-id.py`** - it prints the id free on main and on every branch.
+stays one. **Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `python tools/next-id.py`** - it prints the id free on main, on every branch, in every open pull request and in every worktree's working files on this machine, and names an id two of them add (**HELD TWICE**) or one main has taken from under this checkout or an open pull request (**TAKEN ON MAIN**), at any number. Take the `next` it prints, never a round number picked to stay clear: round numbers are how three pull requests came to hold 5b-540 at once. When it says the pull requests were **NOT READ** (no gh, or one not logged in), it has still read every branch - but TAKEN ON MAIN then judges this checkout alone. Run it again just before the pull request merges.
 
 **Resolving either conflict: keep BOTH sides, in order** - two-letter groups in letter order (`BY`
 before `BZ`), 5b rows in row-number order. Never take one side: a dropped group line leaves its
