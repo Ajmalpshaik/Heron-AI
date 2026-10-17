@@ -132,6 +132,13 @@ utterances:
 # version 2, two sets holding the same sheets (row 5b-545) - and both go in
 # this list.
 #
+# NOT NAMED EITHER (2026-10-17, row 5b-550): FIND_SHEETS_BY_REVISION_OR_NUMBER,
+# which picks the sheets of one revision, or a typed list of sheet numbers,
+# for an issue. Every sheet here is made by step 1, so its number is already
+# known, and no step issues a revision or saves a set. It goes in beside
+# MANAGE_SHEET_SETS when that print-set step is added - the find first, the
+# set from its elements.
+#
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - CREATE_SHEET
