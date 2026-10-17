@@ -1387,6 +1387,16 @@ namespace Heron.Revit.Addin
         /// not - on a .NET Revit they live in a load context of Heron's own
         /// (row 5b-575), and these Assembly objects are the default context's,
         /// the ones Revit itself runs.
+        ///
+        /// THE ADD-IN ITSELF IS ONE OF THEM, because the stack guard writes
+        /// `global::Heron.Revit.Addin.HeronRunClock.Check();` into every
+        /// script. The globals type does NOT make it visible: the scripting
+        /// API references the globals type's assembly under its own alias, not
+        /// the global one, so without this line every fragment and the warm-up
+        /// failed to compile with CS0400 "The type or namespace name 'Heron'
+        /// could not be found in the global namespace" - FRAGMENT-ISSUES row
+        /// 5b-1000, Revit 2024, 2026-10-17. The guard's test host had always
+        /// added it, which is why its tests passed.
         /// </summary>
         private static object BuildOptions()
         {
@@ -1397,6 +1407,7 @@ namespace Heron.Revit.Addin
                     typeof(Enumerable).Assembly,                // System.Core
                     typeof(Document).Assembly,                  // RevitAPI
                     typeof(UIDocument).Assembly,                // RevitAPIUI
+                    typeof(HeronRunClock).Assembly,             // this add-in - the run clock's check
                 },
                 HeronFragmentImports.Namespaces);
         }
