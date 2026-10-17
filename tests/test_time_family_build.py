@@ -43,10 +43,23 @@ WHAT THIS PROVES
   7. A WINDOW, A FOLDER OF AUDIT FILES (the brain's own file left out), a torn
      audit line, and a transcript that is not there.
   8. WHICH CAPABILITIES BUILD FORMS IS READ FROM THE CARDS, not typed.
+  9. THE KEEP BOX, FROM REVIT'S JOURNAL (row 5b-1031): two boxes inside two
+     runs, one in the chat's minutes outside every call, one before the
+     chat - counted apart, a Discard counted, and Revit's own time less the
+     boxes run by run. A shown stamp earlier than its run is cut to the
+     run's start, and says so.
+ 10. THE NEGATIVE CASE: a journal with no Keep box - 0 boxes, and Revit's
+     own time the same with the journal as without it.
+ 11. NO JOURNAL, NO OFFSET, TWO JOURNALS: NOT MEASURED with the flag named;
+     without --journal-utc-offset only the whole journal's boxes are
+     counted; a DRAFT's box is read too; a journal that is not there exits 2.
+ 12. THE BOX'S WORDS ARE THE ADD-IN'S: the tool reads the headline and the
+     Keep link HeronKeepQuestion.cs shows.
 """
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -54,6 +67,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "time-family-build.py")
+KEEP_QUESTION = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepQuestion.cs")
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -257,6 +271,114 @@ def build_none(folder):
         result("10:00:35.100", "r1", "file text"),
         assistant("10:00:39.000", "N2", said("It says hello."), 10, 0),
     ])
+
+
+#: The PC's clock in the journals below: three hours ahead of UTC, so the
+#: journal's 15:00:11 is the chat's and the audit's 12:00:11Z.
+OFFSET = "+03:00"
+SHOWN = "' 0:< TaskDialog \"Keep what Heron just did?\""
+ANSWER = "        \"TaskDialogResult\"  , \"Keep what Heron just did?\" ,  _"
+
+
+def stamp(clock, letter="H"):
+    return "'%s 05-Jan-2026 %s;" % (letter, clock)
+
+
+def box(shown, answered, button):
+    """A Keep box as a journal writes it: five lines."""
+    return [stamp(shown), SHOWN, stamp(answered), "Jrn.Data  _", ANSWER, '        "%s"' % button]
+
+
+def write_journal(path, lines, encoding="utf-16"):
+    """Revit writes UTF-16 LE with a byte-order mark, or latin-1; Python's
+    "utf-16" codec writes the mark and little-endian on every machine this
+    runs on, but the mark and the order are spelled out to be sure."""
+    text = "\r\n".join(lines) + "\r\n"
+    with open(path, "wb") as fh:
+        if encoding == "utf-16":
+            fh.write(b"\xff\xfe" + text.encode("utf-16-le"))
+        else:
+            fh.write(text.encode(encoding))
+    return path
+
+
+def build_k(folder, early=False):
+    """A build with D-126's Keep box. The chat (UTC):
+
+        1 12:00:00   prompt
+        2 12:00:10   revit_change k1 CREATE_FAMILY_EXTRUSION
+        3 12:00:16   its result
+        4 12:00:20   revit_change k2 CREATE_FAMILY_SWEEP
+        5 12:00:30   its result
+        6 12:00:40   revit_change k3 CREATE_FAMILY_EXTRUSION
+        7 12:00:42   its result
+        8 12:00:50   "Done."
+
+    The audit - `at` is written once the job is over, so a run spans its
+    `at` less its `ms` to its `at`:
+
+        1 at 12:00:15.900, 5 500 ms - 10.4 to 15.9   extrusion, first in S1
+        2 at 12:00:29.800, 9 000 ms - 20.8 to 29.8   sweep, first in S1
+        3 at 12:00:41.500, 1 000 ms - 40.5 to 41.5   extrusion again
+
+    The journal, local time three hours ahead (lines in brackets):
+
+        D [4-9]    14:59:00 -> 14:59:02  Keep it     before the chat
+        A [10-15]  15:00:11 -> 15:00:15  Keep it     4.0 s inside run 1
+        B [16-20]  15:00:21.5 -> 15:00:29 Discard it 7.5 s inside run 2
+        C [21-26]  15:00:33 -> 15:00:35.5 Keep it    2.5 s, outside every call
+        [27-28]   another TaskDialog inside run 3 - not the Keep box
+
+    Boxes in the chat's minutes 3, 14.0 s; inside runs 2, 11.5 s. Revit's own
+    time 15.5 s, less the boxes 4.0 s; the first runs 14.5 s, less 3.0 s.
+    `early` stamps box A's TaskDialog line at 15:00:10.000, before run 1
+    began at 10.4: its journal seconds are 5.0, and 4.6 of them are in the run.
+    """
+    transcript = write(os.path.join(folder, "chat-k.jsonl"), [
+        prompt("12:00:00.000", "build the pump"),
+        assistant("12:00:10.000", "K1", call("k1", HERON + "revit_change",
+                                             capability="CREATE_FAMILY_EXTRUSION"), 100, 0),
+        result("12:00:16.000", "k1", "Kept in Family1.\n\n  formId  k-1"),
+        assistant("12:00:20.000", "K2", call("k2", HERON + "revit_change",
+                                             capability="CREATE_FAMILY_SWEEP"), 100, 0),
+        result("12:00:30.000", "k2", "The modeller chose Discard in Revit"),
+        assistant("12:00:40.000", "K3", call("k3", HERON + "revit_change",
+                                             capability="CREATE_FAMILY_EXTRUSION"), 100, 0),
+        result("12:00:42.000", "k3", "Kept in Family1.\n\n  formId  k-2"),
+        assistant("12:00:50.000", "K4", said("Done."), 10, 0),
+    ])
+    trail = write(os.path.join(folder, "audit-k-202601.jsonl"), [
+        audit("12:00:15.900", WRITE, 5500, EXTRUSION),
+        audit("12:00:29.800", WRITE, 9000, SWEEP),
+        audit("12:00:41.500", WRITE, 1000, EXTRUSION),
+    ])
+    journal = write_journal(os.path.join(folder, "journal.0001.txt"), [
+        "'Build: invented for this test",
+        stamp("14:58:00.000", "C") + "  started recording journal file",
+        "' 0:< Initial VM: invented",
+    ] + box("14:59:00.000", "14:59:02.000", "Keep it")
+      + box("15:00:10.000" if early else "15:00:11.000", "15:00:15.000", "Keep it")
+      + [stamp("15:00:21.500", "C") + "   " + SHOWN.lstrip("' "), stamp("15:00:29.000"),
+         "Jrn.Data  _", ANSWER, '        "Discard it"']
+      + box("15:00:33.000", "15:00:35.500", "Keep it")
+      + [stamp("15:00:40.800"), "' 0:< TaskDialog \"An invented warning\""])
+    return transcript, trail, journal
+
+
+def build_k_without_box(folder):
+    """The same build's journal with no Keep box in it - the owner's switch
+    `write.askBeforeKeeping` off, as every build before D-126 - written as
+    latin-1, the journal's other encoding."""
+    transcript, trail, _ = build_k(folder)
+    journal = write_journal(os.path.join(folder, "journal.0002.txt"), [
+        "'Build: invented for this test",
+        stamp("14:58:00.000", "C") + "  started recording journal file",
+        stamp("15:00:12.000"),
+        "' 0:< TaskDialog \"An invented warning\"",
+        stamp("15:00:13.000"),
+        "' 0:< caf\xe9 - a latin-1 byte",
+    ], encoding="latin-1")
+    return transcript, trail, journal
 
 
 # ---------------------------------------------------------------- running
@@ -563,6 +685,186 @@ def section_cards():
     check("report-family-forms" not in one + many, "a READ that counts forms builds none")
 
 
+def quantity(report, key):
+    return (report or {}).get("quantities", {}).get(key) or {}
+
+
+def section_keep_box(folder):
+    print()
+    print("9. The Keep box, from Revit's journal (row 5b-1031)")
+    print("-" * 72)
+    transcript, trail, journal = build_k(folder)
+    code, r = as_json([transcript, "--audit", trail, "--journal", journal,
+                       "--journal-utc-offset", OFFSET])
+    check(code == 0 and r is not None, "it reads the chat, the audit and the journal, exit 0")
+    if r is None:
+        return
+    name = "journal.0001.txt"
+    check(near(value(r, "revit_fragment_s"), 15.5),
+          "Revit's own time is still the audit's 15.5 s - the boxes in it")
+    check(value(r, "keep_boxes_in_journal") == 4, "4 Keep boxes in the whole journal")
+    check(value(r, "keep_boxes") == 3,
+          "3 in the chat's minutes - box D, before the prompt, is not this chat's")
+    check(lines_from(r, "keep_boxes", name) == [10, 11, 12, 14, 15, 16, 17, 19, 20,
+                                                21, 22, 23, 25, 26],
+          "... each named by its stamps, its TaskDialog line, its answer and its button")
+    check(near(value(r, "keep_boxes_s"), 14.0), "14.0 s shown to answered: 4.0, 7.5 and 2.5")
+    check(value(r, "keep_boxes_discarded") == 1
+          and quantity(r, "keep_boxes_discarded").get("by_answer")
+          == {"Keep it": 2, "Discard it": 1},
+          "1 not kept - the answers as read: Keep it 2, Discard it 1")
+    check(value(r, "keep_boxes_in_runs") == 2 and near(value(r, "keep_boxes_in_runs_s"), 11.5),
+          "2 boxes inside this chat's runs, 11.5 s of them")
+    check(lines_from(r, "keep_boxes_in_runs", "audit-k-202601.jsonl") == [1, 2],
+          "... in the runs on audit lines 1 and 2")
+    check(value(r, "keep_boxes_not_in_runs") == 1
+          and lines_from(r, "keep_boxes_not_in_runs", name) == [21, 22, 23, 25, 26],
+          "box C, answered between two calls, is inside no run - and is named")
+    check(near(value(r, "revit_fragment_less_boxes_s"), 4.0),
+          "Revit's own time less the boxes: 15.5 - 11.5 = 4.0 s")
+    check(lines_from(r, "revit_fragment_less_boxes_s", "audit-k-202601.jsonl") == [1, 2, 3]
+          and lines_from(r, "revit_fragment_less_boxes_s", name)
+          == [10, 11, 12, 14, 15, 16, 17, 19, 20],
+          "... from every joined run's audit line and the two boxes' journal lines")
+    check(near(value(r, "revit_first_runs_less_boxes_s"), 3.0),
+          "the first runs, 14.5 s, less their boxes: 3.0 s")
+    runs = [(x.get("audit"), x.get("ms"), x.get("ms_less_boxes"), len(x.get("boxes") or []))
+            for x in r.get("runs") or []]
+    check(runs == [("audit-k-202601.jsonl:1", 5500, 1500, 1),
+                   ("audit-k-202601.jsonl:2", 9000, 1500, 1),
+                   ("audit-k-202601.jsonl:3", 1000, 1000, 0)],
+          "run by run: 5 500 ms less a 4.0 s box, 9 000 less 7.5 s, 1 000 with no box")
+    boxes = (r.get("runs") or [{}])[0].get("boxes") or [{}]
+    check(boxes[0].get("lines") == [10, 11, 12, 14, 15] and boxes[0].get("journal") == name
+          and boxes[0].get("cut_to_run_start") is False,
+          "... and each run's box names its journal lines")
+    head = (r.get("journal") or [{}])[0]
+    check(head.get("encoding") == "UTF-16 LE" and head.get("boxes") == 4,
+          "the journal is read as UTF-16 LE from its byte-order mark")
+    sources = [key for key in ("keep_boxes_in_journal", "keep_boxes", "keep_boxes_s",
+                               "keep_boxes_discarded", "keep_boxes_in_runs",
+                               "keep_boxes_in_runs_s", "keep_boxes_not_in_runs",
+                               "revit_fragment_less_boxes_s", "revit_first_runs_less_boxes_s")
+               if quantity(r, key).get("status") != "MEASURED"
+               or not all(s.get("file") and s.get("lines") for s in quantity(r, key).get("from")
+                          or [{}])]
+    check(not sources, "every box figure is measured and names a file and lines"
+          + (" - not: %s" % ", ".join(sources) if sources else ""))
+
+    code, out = run([transcript, "--audit", trail, "--journal", journal,
+                     "--journal-utc-offset", OFFSET])
+    check(code == 0 and "Revit's own time less boxes" in out and name in out
+          and "less the box" in out, "the text report shows the boxes and each run less its box")
+
+    transcript, trail, journal = build_k(folder, early=True)
+    code, r = as_json([transcript, "--audit", trail, "--journal", journal,
+                       "--journal-utc-offset", OFFSET])
+    check(r is not None and near(value(r, "keep_boxes_s"), 15.0)
+          and near(value(r, "keep_boxes_in_runs_s"), 12.1)
+          and quantity(r, "keep_boxes_in_runs_s").get("cut") == 1,
+          "a box stamped before its run began: 5.0 s in the journal, 4.6 of them in the run, "
+          "and said to be cut")
+    first = ((r or {}).get("runs") or [{}])[0]
+    check(near(first.get("ms_less_boxes"), 900.0)
+          and ((first.get("boxes") or [{}])[0]).get("cut_to_run_start") is True,
+          "... that run: 5 500 ms less 4 600, and its box marked cut to the run's start")
+    check(near(value(r, "revit_fragment_less_boxes_s"), 3.4), "Revit's own time less them: 3.4 s")
+
+
+def section_keep_box_none(folder):
+    print()
+    print("10. The negative case - a journal with no Keep box")
+    print("-" * 72)
+    transcript, trail, journal = build_k_without_box(folder)
+    _, without = as_json([transcript, "--audit", trail])
+    code, r = as_json([transcript, "--audit", trail, "--journal", journal,
+                       "--journal-utc-offset", OFFSET])
+    check(code == 0 and r is not None, "exit 0")
+    if r is None or without is None:
+        return
+    check(value(r, "keep_boxes_in_journal") == 0 and value(r, "keep_boxes") == 0
+          and near(value(r, "keep_boxes_s"), 0.0) and value(r, "keep_boxes_in_runs") == 0,
+          "0 boxes - another TaskDialog is not the Keep box")
+    check(lines_from(r, "keep_boxes", "journal.0002.txt") == [1, 6],
+          "... and the zero names the journal it searched, lines 1 to 6")
+    check(near(value(r, "revit_fragment_s"), value(without, "revit_fragment_s"))
+          and near(value(r, "revit_fragment_s"), 15.5),
+          "Revit's own time is 15.5 s with the journal and without it")
+    check(near(value(r, "revit_fragment_less_boxes_s"), 15.5),
+          "... and less no box it is the same 15.5 s")
+    check([x.get("ms_less_boxes") for x in r.get("runs") or []] == [5500, 9000, 1000],
+          "every run less the boxes is its own ms")
+    check(((r.get("journal") or [{}])[0]).get("encoding") == "latin-1",
+          "a journal with no byte-order mark and no UTF-16 bytes is read as latin-1")
+
+
+def section_keep_box_flags(folder):
+    print()
+    print("11. No journal, no offset, two journals, a journal that is not there")
+    print("-" * 72)
+    transcript, trail, journal = build_k(folder)
+    _, r = as_json([transcript, "--audit", trail])
+    entry = quantity(r, "keep_boxes")
+    check(entry.get("status") == "NOT MEASURED" and "--journal" in (entry.get("why") or ""),
+          "no --journal: the boxes are NOT MEASURED, and the reason names the flag")
+    check(status(r, "revit_fragment_less_boxes_s") == "NOT MEASURED"
+          and near(value(r, "revit_fragment_s"), 15.5),
+          "... Revit's own time is still the audit's, and less the boxes is NOT MEASURED")
+
+    draft = write_journal(os.path.join(folder, "journal.0003.txt"), [
+        stamp("15:01:00.000", "C") + "  started recording journal file",
+        stamp("15:01:01.000"),
+        "' 0:< TaskDialog \"'Invented Fragment' has never been proved. Keep what it did?\"",
+        stamp("15:01:04.000"),
+        "Jrn.Data  _",
+        "        \"TaskDialogResult\"  , \"'Invented Fragment' has never been proved. "
+        "Keep what it did?\" ,  _",
+        '        "Discard it"',
+    ], encoding="utf-16-le")
+    _, r = as_json([transcript, "--audit", trail, "--journal", journal, "--journal", draft])
+    check(value(r, "keep_boxes_in_journal") == 5,
+          "two journals, no offset: 5 boxes in the whole of both - a DRAFT's box read too, from "
+          "UTF-16 LE with no byte-order mark")
+    entry = quantity(r, "keep_boxes")
+    check(entry.get("status") == "NOT MEASURED"
+          and "--journal-utc-offset" in (entry.get("why") or ""),
+          "... and with no offset the boxes in the chat's minutes are NOT MEASURED, the flag named")
+    check(status(r, "revit_fragment_less_boxes_s") == "NOT MEASURED",
+          "... and so is Revit's own time less the boxes")
+
+    code, out = run([transcript, "--journal", os.path.join(folder, "journal.9999.txt"),
+                     "--journal-utc-offset", OFFSET])
+    check(code == 2 and "No journal at" in out and "journal.9999.txt" in out,
+          "a journal that is not there: exit 2, named")
+    code, out = run([transcript, "--journal", journal, "--journal-utc-offset", "three"])
+    check(code == 2 and "is not Z or +HH:MM" in out, "an offset that is not +HH:MM: exit 2")
+    _, r = as_json([transcript, "--audit", trail, "--journal", journal,
+                    "--journal-utc-offset=-03:00"])
+    check(value(r, "keep_boxes_in_journal") == 4 and value(r, "keep_boxes") == 0,
+          "an offset the wrong way round puts every box outside the chat - and the whole "
+          "journal's 4 say they are there")
+
+
+def section_keep_box_words():
+    print()
+    print("12. The box's words are the add-in's")
+    print("-" * 72)
+    with open(TOOL, encoding="utf-8") as fh:
+        tool = fh.read()
+    with open(KEEP_QUESTION, encoding="utf-8") as fh:
+        added = fh.read()
+    headline = re.search(r'^KEEP_HEADLINE = "([^"]*)"', tool, re.MULTILINE)
+    link = re.search(r'^KEEP_LINK = "([^"]*)"', tool, re.MULTILINE)
+    check(headline is not None and '"%s"' % headline.group(1) in added,
+          "the tool's headline is the one HeronKeepQuestion.Headline shows a PROVEN run")
+    check(link is not None and 'KeepLink = "%s"' % link.group(1) in added,
+          "the tool's Keep link is HeronKeepQuestion.KeepLink")
+    draft = re.search(r'^KEEP_HEADLINE_DRAFT = r"(.*)"$', tool, re.MULTILINE)
+    check(draft is not None and r"has never been proved\. Keep what it did\?" in draft.group(1)
+          and "' has never been proved. Keep what it did?\"" in added,
+          "and the DRAFT headline the tool reads is the add-in's wording")
+
+
 def main():
     print("THE FAMILY-BUILD TIMER")
     print("=" * 72)
@@ -572,11 +874,15 @@ def main():
     folder = tempfile.mkdtemp(prefix="heron-time-build-")
     try:
         for i, section in enumerate((section_a, section_b, section_b2, section_none,
-                                     section_no_audit, section_sources, section_edges)):
+                                     section_no_audit, section_sources, section_edges,
+                                     section_cards, section_keep_box, section_keep_box_none,
+                                     section_keep_box_flags, section_keep_box_words)):
             sub = os.path.join(folder, str(i))
             os.makedirs(sub)
-            section(sub)
-        section_cards()
+            if section in (section_cards, section_keep_box_words):
+                section()
+            else:
+                section(sub)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
     print()
