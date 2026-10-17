@@ -82,6 +82,8 @@ for folder in (SERVER, CLIENT, BRAIN):
     if folder not in sys.path:
         sys.path.insert(0, folder)
 
+import heron_install as INSTALL                         # noqa: E402 - brain/, os alone
+
 OK, FIX, NOTE = "ok", "FIX", "--"
 
 MISSING = []
@@ -138,7 +140,49 @@ def _same_file(a, b):
             os.path.normcase(os.path.abspath(b))
 
 
-def packages():
+#: The line a person types on Windows for any of Heron's packages: every one
+#: pinned and hashed, the file HeronInstaller.exe installs from - the line
+#: requirements-lock.txt names at its own head. brain/heron_install.py owns it.
+LOCK_LINE = INSTALL.LOCK_LINE
+
+#: The Pythons the lock installs on: rpds-py, which jsonschema needs, starts at
+#: 3.11, and 3.14 is the newest its Windows wheels were downloaded for - the
+#: lock's header, and PythonSetup.OldestMinor and NewestMinor.
+LOCK_OLDEST_MINOR = 11
+LOCK_NEWEST_MINOR = 14
+
+
+def install_lines(job, windows=None, minor=None):
+    """The lines a section 2 FIX ends with, for job "yaml", "mcp" or "repair".
+
+    ON WINDOWS EVERY ONE IS THE LOCK. Unpinned, `pip install mcp` pulled a
+    cryptography that raised on import on 2026-09-16 (README.md), and the
+    --upgrade repair went the same unpinned way. The lock puts back the
+    versions measured to work: pip replaces any installed version that is not
+    the pinned one. OFF WINDOWS THE LINES STAY UNPINNED, because the lock
+    cannot install there at all: it pins pywin32, which has no wheel but
+    Windows', and pip refuses the whole file for that one line - measured on
+    Linux on 2026-10-17, "No matching distribution found for pywin32==312".
+    """
+    windows = (os.name == "nt") if windows is None else windows
+    minor = sys.version_info[1] if minor is None else minor
+    if job == "yaml":
+        line = INSTALL.install_line("pip install --user -r requirements.txt", windows)
+    elif job == "mcp":
+        line = INSTALL.install_line("pip install --user mcp", windows)
+    else:
+        line = INSTALL.install_line("pip install --user --upgrade mcp cryptography cffi",
+                                    windows)
+    if windows and not LOCK_OLDEST_MINOR <= minor <= LOCK_NEWEST_MINOR:
+        return ["The pinned packages are for Python 3.%d to 3.%d - install one with"
+                % (LOCK_OLDEST_MINOR, LOCK_NEWEST_MINOR),
+                "winget install Python.Python.3.12 --scope user, then in a NEW "
+                "terminal, in the Heron folder:",
+                line]
+    return [line]
+
+
+def packages(windows=None, minor=None):
     head("2. The Python packages Heron needs")
     try:
         import yaml                                     # noqa: F401
@@ -147,8 +191,8 @@ def packages():
     except ImportError:
         say(FIX, "PyYAML is missing",
             ["Without it every Heron lookup answers \"needs PyYAML\", and Claude",
-             "reads the tool cards off disk instead. Install it:",
-             "pip install --user -r requirements.txt"])
+             "reads the tool cards off disk instead. Install it:"]
+            + install_lines("yaml", windows, minor))
 
     sdk = None
     for module in ("mcp.server.mcpserver", "mcp.server.fastmcp"):
@@ -161,8 +205,8 @@ def packages():
         except Exception as exc:                        # noqa: BLE001 - a broken install, named
             say(FIX, "the MCP package is installed but breaks on import - %s: %s"
                 % (type(exc).__name__, exc),
-                ["README.md records the known case. Repair it with:",
-                 "pip install --user --upgrade mcp cryptography cffi"])
+                ["README.md records the known case. Repair it with:"]
+                + install_lines("repair", windows, minor))
             return
     if sdk:
         say(OK, "the MCP package - the line between Claude Code and Heron (%s)"
@@ -170,7 +214,7 @@ def packages():
     else:
         say(FIX, "the MCP package is missing",
             ["Without it Heron cannot start, and Claude has no Heron tools at",
-             "all. Install it: pip install --user mcp"])
+             "all. Install it:"] + install_lines("mcp", windows, minor))
 
 
 # ---------------------------------------------------------------------------
@@ -317,6 +361,11 @@ def search_model(check_only):
         return
     if check_only:
         say(NOTE, "model2vec is installed; --check does not load or download it")
+        return
+    if not HAVE_YAML[0]:
+        # heron_embed needs PyYAML on import: without this the run died here
+        # with a traceback, before the summary the installer reads (5b-1008).
+        say(NOTE, "model2vec is installed; not loaded - it needs PyYAML, above")
         return
     import heron_embed as EMBED
     started = time.time()

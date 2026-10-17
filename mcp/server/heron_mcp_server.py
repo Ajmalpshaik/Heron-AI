@@ -131,9 +131,17 @@ import heron_running_code as running_code           # noqa: E402
 RUNNING = running_code.RunningCode.of_checkout(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+# WHAT A PERSON IS TOLD TO INSTALL, when the SDK is missing or has no image
+# type: requirements-lock.txt's own line on Windows, the unpinned one elsewhere
+# (rows 5b-944, 5b-979). brain/heron_install.py says it for every part of
+# Heron; heron_brain, imported above, has put brain/ on the path.
+from heron_install import install_line                     # noqa: E402
+
+
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
-# `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
-# run - resolved to 1.x when this server was written and resolves to 2.x now.
+# `pip install --user mcp` - which is what tools/HeronRevit.ps1 told a user to
+# run until 2026-10-17 - resolved to 1.x when this server was written and
+# resolves to 2.x now.
 # In 2.x `mcp.server.fastmcp` does not exist: FastMCP was renamed MCPServer.
 # The import is the ONLY thing that changed for this file. Measured 2026-08-31
 # against both SDKs installed side by side: `MCPServer("heron")`, the
@@ -159,7 +167,8 @@ except ImportError:
         raise ImportError(
             "Heron's MCP server needs the MCP SDK, and this one has neither "
             "mcp.server.mcpserver (2.x) nor mcp.server.fastmcp (1.x): %s\n"
-            "Install it with:  pip install --user mcp" % exc
+            "Install it, in the Heron folder, with:  %s"
+            % (exc, install_line("pip install --user mcp"))
         )
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
@@ -5726,8 +5735,9 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
     if _Image is None:
         return _ended("refused",
                       "This MCP SDK has no image type, so Heron cannot hand a picture to the "
-                      "chat. Update it with:  pip install --user --upgrade mcp. Nothing has "
-                      "been sent to Revit.")
+                      "chat. Update it, in the Heron folder, with:  %s - then restart the "
+                      "chat. Nothing has been sent to Revit."
+                      % install_line("pip install --user --upgrade mcp"))
 
     try:
         session = binding.resolve()

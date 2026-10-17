@@ -386,7 +386,9 @@ def declared_by_fragments():
     try:
         import yaml
     except ImportError:
-        sys.stderr.write("This needs PyYAML: pip install --user pyyaml\n")
+        import heron_install as INSTALL
+        sys.stderr.write("This needs PyYAML - in the Heron folder: %s\n"
+                         % INSTALL.install_line("pip install --user pyyaml"))
         raise SystemExit(2)
 
     fragments = os.path.join(ROOT, "brain", "fragments")
@@ -617,6 +619,18 @@ def main():
     print("")
 
     import heron_brain as brain
+
+    # BUILT BEFORE THE FINGERPRINT - row 5b-980, as check-risk-crossings.py
+    # and score-routing.py do. On an empty scratch folder no store existed
+    # until the first lookup made one, so the block below said "md5
+    # unreadable". The same preparation every lookup makes, once. A store
+    # that cannot be opened is left to the lookups below, which each name why
+    # as before - this changes when the store is built, never whether.
+    try:
+        with brain._Open():
+            pass
+    except brain.BrainUnavailable:
+        pass
 
     # READ IT BEFORE ASKING ANYTHING. The sibling tool measured that a sweep
     # moves the store it is measuring, so a fingerprint taken afterwards would

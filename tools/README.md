@@ -424,6 +424,51 @@ adding or weakening an utterance** — [row 113](../docs/FRAGMENT-ISSUES.md)'s f
 [`tests/test_score_routing.py`](../tests/test_score_routing.py) plants a drop, in the arithmetic and in a
 private store through the real search, and proves both are caught.
 
+### A session's own sentences — main against the branch, on the backend you name
+
+```bash
+git worktree add --detach ../main-wt origin/main
+python tools/score-routing.py --sentences s.yaml --tree ../main-wt --backend all --shortlists --out main.json
+python tools/score-routing.py --sentences s.yaml --backend all --compare main.json --out branch.json
+python tools/score-routing.py --identities ids.txt --card RENAME_ELEMENTS --from main.json
+```
+
+Rows [5b-481, 5b-485 and 5b-510](../docs/fragment-issues/section-5b-rows-401-425.md) each built this kit by hand to measure a
+card's words. **`--sentences`** asks a frozen set instead of the two above, and **nothing it asks reaches
+`brain/retrieval-history.md`** (`--record` is refused beside it). The set is yaml: `groups:`, each a
+`group:` name and `sentences:`, and every sentence one expectation — `want <CAPABILITY>`, `not-a-write`
+(a question) or `neutral` — given once for the group with `expect:`, or per sentence as
+`{say: ..., expect: ...}`. A sentence in two groups is asked once; two expectations for it are refused.
+
+- **`--tree`** measures another checkout, such as a detached worktree of main, with **that tree's own
+  search code** over a store built from its cards. Default: this checkout.
+- **`--backend`** is `lexical`, `model`, `lexical+rerank`, `model+rerank`, `all`, or `installed` (the
+  default: whatever answers, named by what answered). **Each backend is asked in a process of its own on a
+  scratch store**, so a backend is never mixed with another, and the store every chat reads is never
+  touched. A backend this machine has not got is **NOT ASKED** and named; the others still run.
+- **Every answer carries the backends that produced it**, and a run whose answers ran on anything else —
+  the trained model asked for and lexical answering, a re-ranker on a run asked for without one (row 481),
+  a shortlist of two or more the cross-encoder did not re-read — is refused: **not written with `--out`,
+  and not compared when it is read back**.
+- **`--compare`** lists every sentence whose answer changed against an earlier record, per backend,
+  tagged **want**, **bad** or **neutral**, with the questions reaching a write and the wanted answers
+  reached, before and after. Sentences are matched by their words, so a set that grew still compares.
+- **`--shortlists`** records, per sentence, the shortlist the re-ranker read — at most its top 20, with
+  each passage, its fused score and its cross-encoder score. No hook in `heron_retrieve`: the tool wraps
+  its `_rerank` from outside, so it works on a main older than this tool too.
+- **`--identities <file> --card <CAPABILITY>`** is the fast loop: one candidate identity per line,
+  re-scored **offline** with `heron_rerank` on those shortlists, **one line per candidate** — wanted
+  sentences won, bad ones taken (questions counted apart), neutral ones taken. `--from` names the record;
+  without it, the shortlists just taken. A sentence answered by an exact phrase never reaches the
+  re-ranker and is skipped; one whose shortlist did not hold the card is **out of reach** — a new identity
+  moves the words and nearness routes too, so only a full run settles it. It needs a cross-encoder on
+  this machine and refuses without one.
+
+**It exits 0 whatever it finds** (D-100); exit 2 when nothing was measured, the set is malformed, or a
+record would be written on the wrong backend. The code and its tests need no model. A run with the
+cross-encoder needs `sentence-transformers` and huggingface.co once for the weights
+([`heron_rerank.py`](../brain/heron_rerank.py)).
+
 ---
 
 ## `check-api-surface.py` — the releases the compiler cannot reach
@@ -1651,6 +1696,48 @@ the ribbon switches, the Heron tools Claude Code lets run unasked, its approvals
 how many lines Claude remembers about Heron, and three timed lookups. **No file's contents** - only the
 few settings keys `SETTINGS_KEYS` and `PROJECT_KEYS` name - which the suite holds by planting a key, an
 address, memory text and a chat and checking none comes out.
+
+**On Windows every package FIX in section 2 is one line since 2026-10-17** -
+`python -m pip install --user --require-hashes -r requirements-lock.txt`, the line the lock names at its
+head and the installer runs - for PyYAML missing, the MCP package missing, and the MCP package breaking
+on import. **Off Windows the unpinned lines stay**, because the lock cannot install there: it pins
+`pywin32`, and pip refuses the whole file for that one line (*"No matching distribution found for
+pywin32==312"*, measured on Linux that day). On a Windows Python outside 3.11 to 3.14 - the range the
+lock's header gives - it says so first. `install_lines()` holds the rule, taking each line from
+[`brain/heron_install.py`](../brain/heron_install.py) - the one place every part of Heron asks what pip line to
+print; section 6 of the suite holds it on both platforms, `tests/test_install_lines.py` everything else.
+
+## `lock-python.py` — the pinned packages, regenerated and audited
+
+```bash
+python tools/lock-python.py                    # regenerate requirements-lock.txt, every version held
+python tools/lock-python.py --upgrade          # ... at the newest versions that resolve
+python tools/lock-python.py --upgrade pyjwt    # ... moving only the named ones
+python tools/lock-python.py --audit            # known advisories on the pinned versions - a report
+```
+
+**Written 2026-10-17**, because [`requirements-lock.txt`](../requirements-lock.txt) says never to edit a
+line by hand - a hand-edited version no longer matches its hashes and pip refuses the whole file - and
+then gives a `uv` line to retype. This runs that line: `uv pip compile` of what `requirements.txt`
+requires plus `mcp`, constrained to the versions in the lock now, for `x86_64-pc-windows-msvc` and
+Python 3.12, with `--generate-hashes`. **The header is kept as it stands**, because it is the record of
+what was measured; only the body is uv's. With every version held it wrote **the same bytes** that day.
+When a version moves it names each one and says the header's measurement no longer covers the file -
+re-measure the way the header says, then correct it. `tests/test_python_lock.py` holds the tool to the
+header's recipe: the same platform, Python and packages, and the header kept whole.
+
+**`--audit` asks the PyPI advisory database about each pinned `name==version`** through `pip-audit`, with
+`--disable-pip` so nothing is installed. The plain `pip-audit -r requirements-lock.txt --require-hashes`
+installs the file first and fails on the `pywin32` line on Linux - measured that day. **A report, not a
+gate: exit 0 whatever it finds**, each finding printed with its fixed version and, under GitHub Actions,
+as a warning on the run's page. **Exit 2 when it could not run** - no `uv`, no `pip-audit`, no network -
+because a check that did not happen is never clean. `.github/workflows/weekly.yml` runs the audit every
+Monday as its own job, outside the gates.
+
+**What its first run found, 2026-10-17:** two advisories on `pyjwt 2.14.0`, `PYSEC-2026-4141` and
+`PYSEC-2026-4183`, both fixed in 2.15.0, both in JWT verification - Heron's own Python never imports
+`jwt`. **Moved on the owner's word the same day**: `--upgrade pyjwt` took it to 2.15.1 and moved nothing
+else, the lock was measured again the way its header says, and `--audit` then found no advisory.
 
 ## `owner-queue.py` — what is waiting on the OWNER, derived rather than typed
 

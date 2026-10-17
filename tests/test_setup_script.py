@@ -69,6 +69,7 @@ SETUP = os.path.join(ROOT, "tools", "setup.ps1")
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronApplication.cs")
 HELPERS = os.path.join(ROOT, "tools", "HeronRevit.ps1")
 REQUIREMENTS = os.path.join(ROOT, "requirements.txt")
+LOCK = os.path.join(ROOT, "requirements-lock.txt")
 DEPENDENCIES = os.path.join(ROOT, "tools", "check-dependencies.py")
 
 FAILURES = []
@@ -321,17 +322,30 @@ def main():
         check(flag is not None and ("-not $Python.%s" % flag) in advice,
               "Write-PythonAdvice speaks up when %r is missing rather than "
               "passing it" % name)
-    # The install line is the one requirements.txt prints at its own head,
-    # read from there - so the two cannot drift apart.
-    manifest = text(REQUIREMENTS) or ""
-    found = re.search(r"pip install[^\n]*-r\s+requirements\.txt", manifest)
+    # The install line is the one requirements-lock.txt names at its own
+    # head, read from there - so the two cannot drift apart. One line for
+    # both packages, every version pinned and hashed: unpinned, `pip install
+    # mcp` pulled a cryptography that broke on import (row 5b-944). The lock
+    # holds everything requirements.txt requires - tests/test_python_lock.py.
+    head = (text(LOCK) or "").split("\n\n", 1)[0]
+    found = re.search(r"pip install[^\n]*-r\s+requirements-lock\.txt", head)
     check(found is not None,
-          "requirements.txt names its own install line at its head")
-    line = found.group(0) if found else "pip install --user -r requirements.txt"
+          "requirements-lock.txt names its own install line at its head")
+    line = (found.group(0) if found else
+            "pip install --user --require-hashes -r requirements-lock.txt")
     check(line in advice,
           "Write-PythonAdvice hands the user that same line, %r" % line)
-    check("pip install --user mcp" in advice,
-          "and still hands the user the MCP package's line")
+    printed = "\n".join(l for l in advice.splitlines()
+                        if not l.strip().startswith("#"))
+    others = sorted(set(m.strip() for m in re.findall(r"pip install[^\"\n]*", printed)
+                        if m.strip() != line))
+    check(not others,
+          "and no other pip line - nothing unpinned: %s" % others)
+    span = re.search(r"PYTHON 3\.(\d+) TO 3\.(\d+)", head)
+    span = "3.%s to 3.%s" % span.groups() if span else "3.? to 3.?"
+    check(span in advice,
+          "and says the lock is for Python %s - the lock's own header - for a "
+          "Python outside it" % span)
 
     print()
     print("7. It carries the five-field header docs/29 asks of every source file")

@@ -356,7 +356,8 @@ def read(dll, cases, temporary):
     path = os.path.join(os.path.dirname(dll), "cases-%s.json" % uuid.uuid4().hex)
     with io.open(path, "w", encoding="utf-8") as fh:
         json.dump([{"label": l, "forms": f, "project": p} for l, f, p in cases], fh)
-    env = dict(os.environ, TMPDIR=temporary)
+    # .NET reads TMPDIR on Linux but TMP, then TEMP, on Windows (row 5b-1002).
+    env = dict(os.environ, TMPDIR=temporary, TMP=temporary, TEMP=temporary)
     ran = subprocess.run(["dotnet", dll, path, SHORTEST_MM], stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, env=env)
     said = (ran.stdout or b"").decode("utf-8", "replace")
