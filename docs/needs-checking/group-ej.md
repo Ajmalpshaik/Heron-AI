@@ -6,47 +6,37 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group EJ - the family method looks at what it built: `ZOOM_TO_ELEMENTS` version 2, `EXPORT_VIEW_IMAGE` in a family, and `family-creation` step 13 (2026-10-17)
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
 
-Found on 2026-10-14 building two fixed monitor families on Revit 2020. Both were checked by
-`REPORT_FAMILY_FORMS`, every size as planned, and then by a desktop screen grab of the Revit window taken
-outside Heron - which showed the 55 inch family half off the screen, because the 3D view had never been
-zoomed. A part on the wrong side, a missing part or one floating off the body reads back with the right
-sizes. [Row 5b-489](../fragment-issues/section-5b-rows-401-425.md) has the whole of it.
+Until 2026-10-17 a Heron tool waiting on Revit said nothing until Revit answered. A slow fragment, a family
+build or a modeller answering a prompt in Revit can take minutes, and in that time the chat could not tell
+a wait from a hang. [docs/04 §7.1](../04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)
+has what was built.
 
-**What changed.**
-[`ZOOM_TO_ELEMENTS`](../../brain/fragments/zoom-to-elements/fragment.yaml) (FRG-SEL-030, DRAFT, version 2)
-declares the ambient `editScopeFailures` need, so the add-in runs it inside the job's group with **no
-transaction open** ([D-115](../DECISIONS.md)): `revit_change` is the only door a chat has for it, and that
-door ran version 1 inside Heron's transaction, where Revit changes no view (row 5b-456). When Show is
-refused, Revit's words now come first and `shown` stays 0. No new input; nothing in the add-in changed.
-[`EXPORT_VIEW_IMAGE`](../../brain/fragments/export-view-image/fragment.yaml) (FRG-VIEW-073, PROVEN) is **not
-changed** - its code shows no gap in a family - but it has only ever run in a project, so it is checked here
-where the method now uses it. `family-creation` step 13 now opens "View 1", shades it at Fine with
-`SET_VIEW_PROPERTIES`, zooms it to every solid form, exports it (and "Front") into a folder under
-`%TEMP%\heron-work`, and the agent opens the picture and looks before telling the modeller it is done.
+**What changed.** `revit_change`, `revit_read`, `revit_building_loads`, `revit_sprinkler_hydraulics` and
+`revit_sprinkler_layout` take the MCP SDK's `Context`, hidden from their arguments. While one of them waits
+on Revit, the bridge client's join loop calls back every `WAIT_NOTE_S`
+([`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py)), and the server sends an MCP progress
+notification saying *"Waiting for Revit - N s so far. The modeller may be answering a prompt in Revit."* -
+**only when the host sent a `progressToken`**. Nothing goes down the pipe: the add-in is unchanged and needs
+no rebuild.
 
-**What is compiled and what is not run.** The fragments compile on every release they claim
-(`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** `ZOOM_TO_ELEMENTS`'
-`impl/` moved, so its 2026-09-13 proof is stale and marked so; EJ3 and EJ4 are the runs that replace it.
-`EXPORT_VIEW_IMAGE`'s `impl/` did not move - its proof stands for a project.
+**What is tested and what is not run.** [`tests/test_mcp_stdio.py`](../../tests/test_mcp_stdio.py) runs the
+real server over stdio against [`tests/support/slow_revit_server.py`](../../tests/support/slow_revit_server.py),
+a stand-in Revit that takes the test's `SLOW_S` to answer: a host that sent a token gets a note every
+`WAIT_NOTE_S`, with its token, rising progress and the words, and none after the answer; a host that sent
+none gets nothing. Measured on Linux on 2026-10-17, SDK 2.2.0: a 90-second wait gave 8 notes, 10.0 s
+apart, and the host with no token got none in 30 s. **It has never run in a real chat or against a real Revit**, and Claude
+Code's docs do not say whether it sends a `progressToken` at all
+([WHAT-TO-INSTALL §5a](../WHAT-TO-INSTALL.md#5a-when-a-revit-job-runs-long--claude-codes-own-limits)).
 
-**ONE SCRATCH FAMILY, never a working model.** Make it before EJ1, in Revit 2020 first: a family from
-*Metric Generic Model.rft* saved as *Heron Look Scratch.rfa* under `%TEMP%\heron-work`, with a box body
-400 x 100 x 300 mm on Ref. Level, a bracket box 200 x 60 x 200 mm against its back, and one small cylinder
-on its front set to show at Fine only (`CREATE_FAMILY_FORMS`, `detailLevels=fine` on its row). Leave
-"Ref. Level" (the floor plan) in front. Changes and Publish both switched on in Revit's ribbon.
+**A SCRATCH PROJECT, never a working model.** Any project with a few MEP Spaces, saved as *Heron Wait
+Check.rvt*, in Revit 2020 first. Restart the Claude app first so it starts the new server.
 
 | # | Run | Look for |
 |---|---|---|
-| **EJ1** | `revit_change` capability `OPEN_VIEW`, `viewName=View 1`, with Ref. Level in front | View 1 on screen once the call has ended; `opened` true. OPEN_VIEW is PROVEN in a project and has never run in a family |
-| **EJ2** | `revit_change` capability `SET_VIEW_PROPERTIES`, `views=View 1`, `visualStyle=Shaded with Edges`, `detailLevel=Fine`, `scale=0` | View 1 shaded with edges and at Fine - the small cylinder now shows; the style and detail read back; the scale untouched. **Write down the style View 1 had BEFORE** - which one a family template starts in is not known |
-| **EJ3** | Pan and zoom View 1 by hand so half the family is off the screen. `revit_read` capability `SELECT_FAMILY_FORMS`, `forms=solid`; then at once `revit_change` capability `ZOOM_TO_ELEMENTS`, `alsoSelect=false`, `expect_from=select-family-forms` | The whole family on screen, nothing cut off at an edge; `viewAfter` "View 1"; `shown` equals the select's count (3); the selection untouched; the binding note names `editScopeFailures` and the elements as from select-family-forms. **The D-30 positive** for version 2 |
-| **EJ4** | EJ3's negative, two parts. (a) The proving client running `zoom-to-elements` **without** `--write`. (b) Ref. Level in front instead of View 1, then EJ3's two calls | (a) Refused before anything runs - the add-in's words that it runs only as a change (`needs_write_path`) - and the screen does not move. (b) `viewAfter` names Ref. Level or a view Revit chose, and it is NOT View 1: this tool opens no view by name, which is why the method opens it first |
-| **EJ5** | A scratch PROJECT with three walls on Level 2 and the Level 1 plan in front: `revit_read` capability `FILTER_ELEMENTS_BY_CATEGORY`, `category=Walls`, `levelId=` Level 2's id; then at once `revit_change` capability `ZOOM_TO_ELEMENTS`, `alsoSelect=false`, `expect_from=filter-elements-by-category` | The screen moves to them and `viewAfter` names the view Revit chose - version 1's own first case, on the door a chat actually uses. Through that door version 1 ran inside Heron's transaction; this is the case most likely to show the difference |
-| **EJ6** | Back in the family, View 1 zoomed as EJ3 left it: `revit_change` capability `EXPORT_VIEW_IMAGE`, `views=View 1, Front`, `folder=%TEMP%\heron-work\look-ej` (typed in full), `filePrefix=Heron Look`, `pixelWidth=1600` | `exported` 2; two PNG files in that folder, each 1600 px wide; View 1 shaded with edges with the small cylinder in it, Front showing the body with the bracket behind it. Open both. **The positive for EXPORT_VIEW_IMAGE in a family** |
-| **EJ7** | EJ6's negative: the same call with Publish switched **off** | Refused naming the Publish switch; no file written - the look the method says to report as not done |
-| **EJ8** | *An observation.* Pan View 1 so half the family is off the screen, then EJ6 into a second folder | Whether the picture shows the whole family anyway. A view exported as a set is drawn to fit by its options, so it probably does - but nobody has measured it. Write down which: it says whether the zoom in step 13 is for the picture or only for the modeller's screen |
-| **EJ9** | EJ3 and EJ6 once on Revit 2024 and once on 2027 | The same answers |
-| **EJ10** | Second route: Zoom to Fit (ZF) in View 1 by hand, then File > Export > Images and Animations > Image of View 1 by hand | The same framing as EJ3, and an image like EJ6's |
-| **EJ11** | *Watching, not a proof.* A chat builds a small fixed family - six or so forms - with one part placed on the WRONG side on purpose (the bracket in front of the body), then reaches step 13 | It opens View 1, zooms, exports, opens the picture, and says the bracket is on the wrong side BEFORE telling the modeller it is done. With Publish off it says the look was not done and asks the modeller to look at View 1. It never offers to send the picture anywhere |
+| **EJ1** | In a chat, a `revit_read` that takes longer than `WAIT_NOTE_S` - `revit_building_loads` on the scratch project, or a fragment's first run in a fresh Revit session, which compiles it | **The D-30 positive.** While it waits, Claude Code shows *"Waiting for Revit - N s so far ..."* on the tool line, N rising. Write down whether it showed at all: if nothing showed, Claude Code sent no `progressToken` and Heron rightly sent nothing - say so here, and that is the answer to WHAT-TO-INSTALL §5a's open question |
+| **EJ2** | The same chat: `heron_lookup` on any sentence, and a `revit_levels` | **The D-30 negative.** No note - neither tool carries the callback, and both answer at once |
+| **EJ3** | `revit_change` on a scratch-model change that shows a prompt in Revit, left unanswered for over a minute, then answered | Notes the whole time the prompt is open, then the change's own answer, and nothing after it. Undo the change |
+| **EJ4** | EJ1 with the call running past two minutes | Claude Code moves it to a background task; `/tasks` shows the latest note; the answer still arrives |
+| **EJ5** | EJ1 once on Revit 2024 and once on 2027 | The same. The notes are made outside Revit, so the release should not matter |

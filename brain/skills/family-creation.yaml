@@ -429,7 +429,7 @@ needs:
   - CREATE_MATERIAL
   - REPORT_FAMILY_FORMS
   # Step 13's look at what was built - the 3D view opened, shaded at Fine,
-  # zoomed to the forms, and a picture the agent opens (row 5b-489).
+  # zoomed to the forms, and a picture the agent opens (row 5b-496).
   - OPEN_VIEW
   - SET_VIEW_PROPERTIES
   - SELECT_FAMILY_FORMS

@@ -38,6 +38,16 @@ server finds the real ones, and so did this one until 2026-10-14 - 121 opens
 of a live Revit's pipe in a run, measured the day before, and still a pass.
 tests/support/live_revit_guard.py is installed in the child as well, refuses
 any named-pipe open, and fails the run if the real discovery folder was read.
+
+AND A REVIT THAT TAKES ITS TIME - ON ANY SYSTEM, WINDOWS OR NOT. A tool that
+sends a fragment can wait minutes: a slow fragment, a family build, a modeller
+answering a prompt in Revit. Until 2026-10-17 a host heard nothing in that
+time, and could not tell a wait from a hang. tests/support/slow_revit_server.py
+serves the real server over stdio in front of a stand-in Revit that answers
+after SLOW_S seconds, and a host that sent a progressToken must be told the
+wait goes on every WAIT_NOTE_S - while a host that sent none is told
+nothing. That part needs only the MCP SDK, so it runs off Windows too; with
+no SDK it cannot run, and off Windows that leaves nothing checked: exit 3.
 """
 
 import json
@@ -60,6 +70,23 @@ import live_revit_guard as GUARD                               # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+SLOW_SERVER = os.path.join(ROOT, "tests", "support", "slow_revit_server.py")
+
+# How long the stand-in Revit takes to answer: a minute and a half, which a
+# host told nothing would sit through in silence. Below the client's fragment
+# wait (heron_config.fragment_timeout, never under FRAGMENT_FLOOR_S), so the
+# answer comes from the stand-in and never from the client giving up.
+SLOW_S = 90
+
+# How often the client says the wait goes on - looked up, not assumed: a
+# client too old to say it has no such name, and the checks below must then
+# FAIL rather than this line crash (heron-ship 2a).
+EVERY_S = getattr(bridge, "WAIT_NOTE_S", None)
+
+# The call that sends no progressToken only has to outlast a few notes.
+QUIET_S = 3 * (EVERY_S or 10.0)
+
+COULD_NOT_RUN = 3
 
 # Generous next to the 6 s it takes, tight next to the failure, which was
 # unbounded. A number here is a claim about the worst acceptable wait.
@@ -77,9 +104,9 @@ def check(condition, what):
 class Host(object):
     """The smallest thing that behaves like an MCP host over stdio."""
 
-    def __init__(self, env):
+    def __init__(self, env, script=SERVER):
         self.proc = subprocess.Popen(
-            [sys.executable, "-u", SERVER], cwd=ROOT, env=env,
+            [sys.executable, "-u", script], cwd=ROOT, env=env,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, encoding="utf-8", bufsize=1)
         self.err = []
@@ -118,6 +145,173 @@ class Host(object):
             pass
 
 
+class Listener(object):
+    """Every line a server writes, with when it arrived - read on a thread of
+    its own, so two servers can be listened to at once."""
+
+    def __init__(self, host):
+        self.lines = []
+        self._host = host
+        threading.Thread(target=self._read, daemon=True).start()
+
+    def _read(self):
+        for line in self._host.proc.stdout:
+            try:
+                message = json.loads(line)
+            except ValueError:
+                continue
+            self.lines.append((time.time(), message))
+
+    def answer(self, ident, timeout):
+        """The response to `ident`, with when it came, or (None, None)."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            for at, message in list(self.lines):
+                if message.get("id") == ident and ("result" in message or "error" in message):
+                    return at, message
+            time.sleep(0.2)
+        return None, None
+
+    def progress(self):
+        """Every notifications/progress, with when it came."""
+        return [(at, m.get("params") or {}) for at, m in list(self.lines)
+                if m.get("method") == "notifications/progress"]
+
+
+def sdk_missing():
+    """Why the MCP SDK cannot be imported here, or None when it can.
+
+    BaseException, for test_mcp_serves.sdk_version's reason: a half-broken
+    install raises a panic out of a native extension, not an ImportError."""
+    try:
+        import mcp                                              # noqa: F401
+    except BaseException as exc:                                # noqa: BLE001
+        return "%s: %s" % (type(exc).__name__, exc)
+    return None
+
+
+def first_read_capability():
+    """A capability revit_read will send: the first fragment declaring risk
+    READ that has code behind it. Read from the cards, so no name is typed
+    here that a rename would leave behind."""
+    folder = os.path.join(ROOT, "brain", "fragments")
+    for name in sorted(os.listdir(folder)):
+        card = os.path.join(folder, name, "fragment.yaml")
+        code = os.path.join(folder, name, "impl", "any", "fragment.cs")
+        if not (os.path.isfile(card) and os.path.isfile(code)):
+            continue
+        seen = {}
+        with open(card, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                for key in ("capability", "risk"):
+                    if line.startswith(key + ":"):
+                        seen[key] = line.split(":", 1)[1].strip().strip("\"'")
+        if seen.get("risk") == "READ" and seen.get("capability"):
+            return seen["capability"]
+    return None
+
+
+def start_slow(guard, scratch, seconds):
+    """The real server, in front of a Revit that answers after `seconds`,
+    initialised as a host would."""
+    env = guard.for_child(os.environ, os.path.join(scratch, "slow-%d" % seconds))
+    env["LOCALAPPDATA"] = os.path.join(scratch, "local")
+    env["XDG_DATA_HOME"] = os.path.join(scratch, "local")
+    env["HERON_TEST_SLOW_REVIT_S"] = str(seconds)
+    host = Host(env, script=SLOW_SERVER)
+    listener = Listener(host)
+    host.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+        "protocolVersion": "2024-11-05", "capabilities": {},
+        "clientInfo": {"name": "heron-stdio-test", "version": "0"}}})
+    host.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+    return host, listener
+
+
+def slow_revit(guard, scratch):
+    """A host that asked for progress is told the wait goes on; one that did
+    not is told nothing. Both calls run at once, so the run costs SLOW_S."""
+    print()
+    print("  a Revit that takes %d s to answer (tests/support/slow_revit_server.py)" % SLOW_S)
+    capability = first_read_capability()
+    check(capability is not None, "the library has a READ capability to send (%s)" % capability)
+    if capability is None:
+        return
+
+    check(EVERY_S is not None,
+          "the bridge client has an interval for saying the wait goes on (WAIT_NOTE_S)")
+    every = EVERY_S or 10.0
+    token = "heron-wait-%d" % os.getpid()
+    told, told_hears = start_slow(guard, scratch, SLOW_S)
+    quiet, quiet_hears = start_slow(guard, scratch, QUIET_S)
+    try:
+        ready = (told_hears.answer(1, DEADLINE)[1], quiet_hears.answer(1, DEADLINE)[1])
+        check(all(ready), "both servers answer initialize")
+        if not all(ready):
+            return
+
+        sent = time.time()
+        told.send({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {
+            "name": "revit_read", "arguments": {"capability": capability},
+            "_meta": {"progressToken": token}}})
+        quiet.send({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {
+            "name": "revit_read", "arguments": {"capability": capability}}})
+
+        quiet_at, quiet_answer = quiet_hears.answer(2, QUIET_S + DEADLINE)
+        told_at, told_answer = told_hears.answer(2, SLOW_S + DEADLINE)
+
+        print()
+        print("  the host that sent a progressToken")
+        said = text_of(json.dumps(told_answer)) if told_answer else None
+        check(said is not None and "read Heron slow stand-in" in said,
+              "the answer still arrives, and is the stand-in's (%s)"
+              % ("%.0f s" % (told_at - sent) if told_at else "never"))
+        if told_at:
+            check(told_at - sent >= SLOW_S - 1,
+                  "and only once the stand-in answered - %.0f s, not before %d"
+                  % (told_at - sent, SLOW_S))
+        notes = told_hears.progress()
+        at = [when for when, _ in notes]
+        params = [p for _, p in notes]
+        # Notes at every, 2*every ... up to the answer: one fewer than fit in
+        # SLOW_S, and one more when the last falls just before the answer.
+        least = int(SLOW_S // every) - 1
+        check(least <= len(notes) <= least + 1,
+              "it is told the wait goes on: %d progress notifications in %d s, "
+              "one every %d s (%d expected, or %d)"
+              % (len(notes), SLOW_S, every, least, least + 1))
+        check(bool(notes) and all(p.get("progressToken") == token for p in params),
+              "every one carries the token the host sent")
+        check(bool(notes) and all("Waiting for Revit" in (p.get("message") or "") for p in params),
+              "every one says, in words, that Heron is waiting for Revit - %r"
+              % (params[0].get("message") if params else None))
+        values = [p.get("progress") for p in params]
+        check(bool(values) and all(isinstance(v, (int, float)) for v in values)
+              and all(b > a for a, b in zip(values, values[1:])),
+              "progress only rises, as MCP requires: %s" % values)
+        if at:
+            check(at[0] - sent <= every + 5,
+                  "the first comes within %d s of the call, not at the end (%.1f s)"
+                  % (every + 5, at[0] - sent))
+            gaps = [b - a for a, b in zip(at, at[1:])]
+            check(all(every - 3 <= g <= every + 3 for g in gaps),
+                  "and they come every %d s, never in a flood: gaps %s"
+                  % (every, ["%.1f" % g for g in gaps]))
+            check(told_at is None or at[-1] <= told_at,
+                  "none comes after the answer")
+
+        print()
+        print("  the host that sent none")
+        said = text_of(json.dumps(quiet_answer)) if quiet_answer else None
+        check(said is not None and "read Heron slow stand-in" in said,
+              "the answer arrives (%s)" % ("%.0f s" % (quiet_at - sent) if quiet_at else "never"))
+        check(not quiet_hears.progress(),
+              "and it is told nothing in %d s - only a host that asked is told "
+              "(%d notifications)" % (QUIET_S, len(quiet_hears.progress())))
+    finally:
+        told.close()
+        quiet.close()
+
+
 def text_of(line):
     if not line:
         return None
@@ -130,17 +324,9 @@ def text_of(line):
     return "".join(c.get("text", "") for c in d["result"].get("content", []))
 
 
-def main():
-    if os.name != "nt":
-        print("SKIPPED - the server refuses to start off Windows by design.")
-        return 0
-
-    print("Heron over real stdio, as a host sees it")
-    # NO CALL HERE MAY REACH THE REVIT RUNNING ON THIS PC (row 5b-461). The
-    # child is guarded as this process would be: a pipe open is refused, and
-    # whatever it touched is read back below.
-    scratch = tempfile.mkdtemp(prefix="heron-mcp-stdio-")
-    guard = GUARD.Guard.around(bridge)
+def as_a_host(guard, scratch):
+    """The real server, started as a host starts it. Windows only: off it the
+    server refuses to start, by design."""
     env = guard.for_child(os.environ, scratch)
     # THE FIX: the child's machine-local folder is a scratch one, so the
     # discovery folder it reads is empty - "no Revit connected". Only the
@@ -244,6 +430,33 @@ def main():
     finally:
         host.close()
 
+
+def main():
+    print("Heron over real stdio, as a host sees it")
+    missing = sdk_missing()
+    if os.name != "nt":
+        print("  SKIPPED - the real server refuses to start off Windows by design,")
+        print("  so only the stand-in Revit's part can run here.")
+        if missing:
+            print()
+            print("COULD NOT RUN - no MCP SDK here (%s), so nothing was checked." % missing)
+            print("This is exit %d, which is NOT a pass. Install it with:" % COULD_NOT_RUN)
+            print("  pip install --user mcp")
+            return COULD_NOT_RUN
+
+    # NO CALL HERE MAY REACH THE REVIT RUNNING ON THIS PC (row 5b-461). The
+    # child is guarded as this process would be: a pipe open is refused, and
+    # whatever it touched is read back below.
+    scratch = tempfile.mkdtemp(prefix="heron-mcp-stdio-")
+    guard = GUARD.Guard.around(bridge)
+    if os.name == "nt":
+        as_a_host(guard, scratch)
+    if missing:
+        print()
+        print("  NOT RUN - the stand-in Revit's part needs the MCP SDK (%s)" % missing)
+    else:
+        slow_revit(guard, scratch)
+
     print()
     print("  the Revit running on this PC, never reached (row 5b-461)")
     touched = guard.touched()
@@ -259,9 +472,18 @@ def main():
             print("  %s" % line)
         return 1
 
-    print("PASSED - a real host starts Heron, is offered every declared tool,")
-    print("and gets an")
-    print("answer from every one it asks - inside a deadline rather than eventually.")
+    if os.name == "nt":
+        print("PASSED - a real host starts Heron, is offered every declared tool,")
+        print("and gets an")
+        print("answer from every one it asks - inside a deadline rather than eventually.")
+    else:
+        print("PASSED - only the stand-in Revit's part: off Windows the real server")
+        print("refuses to start, so nothing here shows a host offered every tool.")
+    if not missing:
+        print("A host that sent a progressToken is told every %d s that Heron is"
+              % EVERY_S)
+        print("waiting for Revit, and one that sent none is told nothing - against a")
+        print("stand-in. Whether Claude Code SHOWS it is NEEDS-CHECKING EJ1.")
     print()
     # DERIVED, because it was typed as "13 of 348" and the library has been
     # 44 of 349 for some time. A number in a closing sentence goes stale the

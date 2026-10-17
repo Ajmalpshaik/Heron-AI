@@ -711,9 +711,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ei.md`](needs-checking/group-ei.md)
 
-## Group EJ - the family method looks at what it built: `ZOOM_TO_ELEMENTS` version 2, `EXPORT_VIEW_IMAGE` in a family, and `family-creation` step 13 (2026-10-17)
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ej.md`](needs-checking/group-ej.md)
+
+## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
+
+## Group EM - the family method looks at what it built: `ZOOM_TO_ELEMENTS` version 2, `EXPORT_VIEW_IMAGE` in a family, and `family-creation` step 13 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

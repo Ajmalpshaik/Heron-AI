@@ -21,7 +21,7 @@ positive:
       the view zooms to a box containing all 40, not to the first one. shown
       reads 40
 
-  # VERSION 2 - through revit_change, the only door a chat has (5b-489).
+  # VERSION 2 - through revit_change, the only door a chat has (5b-496).
   - given: >
       through revit_change, a project with a Level 2 plan in front and three
       duct fittings on Level 6 - version 1's first case, on the door a chat
