@@ -312,7 +312,9 @@ purpose: >
       Fine is in the picture; SELECT_FAMILY_FORMS forms "solid" through
       revit_read; ZOOM_TO_ELEMENTS through revit_change with expect_from
       "select-family-forms" and alsoSelect false, so the modeller's screen
-      shows the whole family too; then EXPORT_VIEW_IMAGE of
+      shows the whole family too - until its version 2 is proved,
+      revit_change refuses it as DRAFT (D-117): say so, ask the modeller to
+      press ZF in View 1, and go on; then EXPORT_VIEW_IMAGE of
       "View 1" - and "View 1, Front" for a product with a front, such as a
       monitor, a panel or a unit - at 1600 px, into a folder of its own
       under %TEMP%\heron-work, its whole path typed out (the tool takes

@@ -719,6 +719,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
 
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
+
 ## Group EM - the family method looks at what it built: `ZOOM_TO_ELEMENTS` version 2, `EXPORT_VIEW_IMAGE` in a family, and `family-creation` step 13 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)

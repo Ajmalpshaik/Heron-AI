@@ -24,7 +24,8 @@ capability: ZOOM_TO_ELEMENTS
 # answer. Version 1 was proved on the old read path, in a project's {3D}, and
 # never in the Family Editor - where the code asks nothing about the kind of
 # document, and the family method opens "View 1" first so Show zooms the 3D
-# view (NEEDS-CHECKING Group EM). DRAFT until version 2 is run in Revit.
+# view (NEEDS-CHECKING Group EM). DRAFT until version 2 is run in Revit -
+# and until then revit_change refuses it before sending it (D-117).
 version: 2
 source: OFFICIAL
 risk: EXECUTE
