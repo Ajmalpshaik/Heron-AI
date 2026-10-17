@@ -225,8 +225,9 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 
 What matters to you: **read and write are different things, and what keeps you safe is the switch,
 not the library.** `write.enabled` defaults to **`false`** whatever the fragment says, and stays there
-until the write path has been through the register — `D3`, a tape measure on the three ducts it moved
-on 2026-09-07, is still owed.
+until the write path has been through the register and the owner has decided — `D3`, the tape measure
+on the move, was taken on 2026-10-17 in Revit 2024 (+200.0000 mm, the pinned control unmoved), but the
+other rails and the decision itself ([D-19](DECISIONS.md)) are still open.
 
 **This paragraph said *"reading is proven far more widely — 106 `READ` fragments carry a proof against
 63 `MODIFY`"* until 2026-09-21, and it was true the day it was written.** The library moved to 145
