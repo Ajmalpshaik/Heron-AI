@@ -171,16 +171,16 @@ contract:
       type: int
       source: request
       optional: true
-      absent: "60000"
+      absent: 60000
     # VERSION 3. Comma-separated words; the record keeps a parameter whose
     # name or built-in name holds any of them, ignoring case - "level, mark,
-    # offset". Left out: "*" - every parameter. The inventory in `findings`
+    # offset". Left out: "all" - every parameter. The inventory in `findings`
     # is not filtered.
     - name: parameterFilter
       type: string
       source: request
       optional: true
-      absent: "*"
+      absent: all
   provides:
     - name: findings
       type: IList<string>

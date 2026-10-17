@@ -24,7 +24,7 @@ about.
 
 **What is compiled and what is not run.** Compiled on all eight releases 2020 to 2027
 (`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** The binding of the four
-new values left out - `elementIds` "none", `linkName` "host", `maxChars` "60000", `parameterFilter` "*" - is
+new values left out - `elementIds` "none", `linkName` "host", `maxChars` "60000", `parameterFilter` "all" - is
 the add-in's `absent:` rule from [Group EI](group-ei.md), which needs that add-in deployed.
 
 **A TEST COPY, never a working model.** Copy Snowdon-scratch_ajmal.al and save it as *Heron Record WS.rvt*;
