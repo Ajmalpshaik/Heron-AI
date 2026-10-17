@@ -46,6 +46,22 @@ HANDLER_FILES = [
     os.path.join(ROOT, "revit", "Heron.Bridge", "BridgeServer.cs"),
 ]
 
+# `stop` is answered in RevitDispatcher.Dispatch, before the queue (D-129).
+# NOT a whole handler file: the rest of it switches on ERROR CODES for the
+# banner (`case "revit_busy":`), which the pattern above would read as
+# operations nobody declared. Only Dispatch's own body answers anything.
+DISPATCHER_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitDispatcher.cs")
+
+
+def dispatcher_answers():
+    """What RevitDispatcher.Dispatch answers itself, or None if it was not found."""
+    text = io.open(DISPATCHER_CS, encoding="utf-8").read()
+    body = re.search(r"public string Dispatch\(string request\)(.*?)public void Execute\(",
+                     text, re.S)
+    if body is None:
+        return None
+    return set(re.findall(r'op\s*==\s*"([A-Za-z_][A-Za-z0-9_]*)"', body.group(1)))
+
 FAILURES = []
 
 
@@ -77,6 +93,7 @@ def csharp_handlers():
         text = io.open(path, encoding="utf-8").read()
         handled.update(re.findall(r'case\s+"([A-Za-z_][A-Za-z0-9_]*)"\s*:', text))
         handled.update(re.findall(r'op\s*==\s*"([A-Za-z_][A-Za-z0-9_]*)"', text))
+    handled.update(dispatcher_answers() or set())
     return handled
 
 
@@ -282,9 +299,13 @@ def main():
     check(not re.search(r'ReadString\(request,\s*"apply"\)', capture),
           "and reads no `apply` from the request - there is nothing a caller can "
           "send to keep the view")
-    check(capture.count("SafeRollBack(group)") >= 3,
-          "every way out of a group rolls it back - %d SafeRollBack(group) calls"
-          % capture.count("SafeRollBack(group)"))
+    # THROUGH THE ONE HELPER since 2026-10-17: every group in Heron is rolled
+    # back by RevitFragment.RollBackAndCheck, which checks what the rollback
+    # left (tests/test_rollback_witness.py) - and never keeps one either.
+    undone = len(re.findall(r"RevitFragment\.RollBackAndCheck\(\s*group\b", capture))
+    check(undone >= 3 and "KeepAndWatch(" not in capture,
+          "every way out of a group rolls it back - %d RollBackAndCheck(group) calls, "
+          "and nothing kept through KeepAndWatch" % undone)
 
     print()
     print("Selecting is EXECUTE, not READ and not MODIFY")
@@ -391,6 +412,30 @@ def main():
         check(declared_cs.get(op) == "READ",
               "'%s' skips the gate and is declared READ, which the gate would "
               "have permitted anyway" % op)
+
+    print()
+    print("And what the dispatcher answers BEFORE THE QUEUE is a named, READ-risk list too")
+    # D-129. The second place an operation can be answered without reaching
+    # Gate: RevitDispatcher.Dispatch runs on the listener thread, and Gate
+    # runs on Revit's, inside Execute. `stop` belongs there because the job it
+    # exists to stop is the one holding Revit's thread - queued, it would wait
+    # behind that very job. Read only Dispatch's own body: the rest of the
+    # file names operations to describe and to log, not to answer.
+    OUTSIDE_THE_QUEUE = set(["stop"])
+    answered_first = dispatcher_answers()
+    check(answered_first is not None,
+          "RevitDispatcher.Dispatch was found, and Execute after it")
+    answered_first = answered_first or set()
+    check(answered_first == OUTSIDE_THE_QUEUE,
+          "Dispatch answers only %s before the queue - found: %s"
+          % (", ".join(sorted(OUTSIDE_THE_QUEUE)),
+             ", ".join(sorted(answered_first)) or "none"))
+    for op in sorted(OUTSIDE_THE_QUEUE):
+        check(declared_cs.get(op) == "READ",
+              "'%s' is answered before the queue and is declared READ" % op)
+    check(not (OUTSIDE_THE_QUEUE & answered_in_bridge),
+          "and none of them is ALSO answered by BridgeServer - stop comes after the "
+          "lease, so only the chat holding this Revit can stop it")
 
     labels(declared_cs)
 
