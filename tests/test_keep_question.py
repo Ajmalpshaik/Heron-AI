@@ -141,7 +141,7 @@ def wiring():
               "%s sends no field that could skip the question" % os.path.basename(path))
 
     print("\n3. one box for both doors, inside the group: collect, show, ask, end the showing, decide")
-    run = NOTE_SUITE.body_of(executor, "public static string Run(UIApplication app, string request, bool writing)")
+    run = NOTE_SUITE.body_of(executor, "public static string Run(UIApplication app, string request, bool writing")
     # EVERY WRITE, SINCE 5b-407: the change report counts a write nobody is
     # asked about too, so the collector is no longer made only for a door
     # that asks - either form is still the one collector, held in a `using`.

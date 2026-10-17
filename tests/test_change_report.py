@@ -96,7 +96,7 @@ def wiring():
     code = NOTE.code_only(raw or "")
 
     print("\n1. the collector listens for exactly the length of the write")
-    run = NOTE.body_of(code, "public static string Run(UIApplication app, string request, bool writing)")
+    run = NOTE.body_of(code, "public static string Run(UIApplication app, string request, bool writing")
     check(bool(run), "Run(app, request, writing) is there")
     first = run.lstrip("{ \n\t\r")
     check(first.startswith("Elements = null;"),

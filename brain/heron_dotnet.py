@@ -154,6 +154,9 @@ PROJECTS = [
     # linked by source like the failure note; tests/test_rollback_witness.py
     # builds and runs it.
     "tests/Heron.RollbackWitness.TestHost/Heron.RollbackWitness.TestHost.csproj",
+    # The run guard's policy, linked by source like the failure note -
+    # tests/test_run_guard.py builds and runs it.
+    "tests/Heron.RunGuard.TestHost/Heron.RunGuard.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
     # Row 5b-575: another add-in's newer Roslyn loaded into the default context
     # first, and Heron's door still compiling on its own - linked by source like
