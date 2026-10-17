@@ -452,8 +452,8 @@ entry, and the save is not in it - a save is not a model change and cannot be un
    ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 628, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
-   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1804)
-   about a model it has just saved. The next call is then aimed at the old title (line 1352) and refused
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1802)
+   about a model it has just saved. The next call is then aimed at the old title (line 1363) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**
