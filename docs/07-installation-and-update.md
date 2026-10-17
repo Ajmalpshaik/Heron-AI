@@ -26,6 +26,18 @@
 
 The user never hand-edits configuration unless they deliberately enter Developer Mode.
 
+**[NOTE]** 2026-10-17 — **steps 5, 6, 8, 11, 12 and 15 are one run of the installer now**, on the owner's
+ask that day, DRAFT and **not yet run on Windows** ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)).
+After the add-in goes in for each Revit, `HeronInstaller.exe` and `heron-install` set up Heron's Python
+side when a product that talks to a chat was installed: the pinned packages in
+[`requirements-lock.txt`](../requirements-lock.txt) with `pip --user --require-hashes`, the knowledge store
+through `tools/heron-ready.py`, and `heron-ready --check` as the health check
+([`PythonSetup`](../platform/Heron.Installer/PythonSetup.cs)). It is **asked, not done unasked** - the
+window and the command say what Install will do before it is pressed, [Q-39](OPEN-QUESTIONS.md)'s rule and
+[section 9](#9-self-healing-52)'s *missing dependency → install → confirm* - and it installs packages
+only, never Python itself. Step 9 is unchanged: `.mcp.json` ships in the folder. Signing (Stage 8) is
+left until Heron is finished, by the owner's word the same day.
+
 ## 1a. The user journey — what actually happens
 
 **[NOTE]** Added 2026-08-27 from the owner's question: *someone sees this on GitHub, opens Claude Code,

@@ -719,9 +719,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
 
-## Group EL - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
 
 **Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
+
+## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
+
+## Group EQ - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eq.md`](needs-checking/group-eq.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

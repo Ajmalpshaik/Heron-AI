@@ -319,6 +319,28 @@ def main():
           "a wait is SAID, because a silent one looks like a hang")
 
     print()
+    print("ONE STEP - the Python side is ASKED in the window and DONE off its thread")
+    # 2026-10-17. Pressing Install after reading what it also does is the
+    # asking - Q-39 - so the sentence has to be on the page above the button,
+    # and it has to be PythonSetup's own rather than one written here.
+    told = window_code.find("PythonSetup.WhatInstallAlsoDoes")
+    check(told != -1 and told < window_code.index('Content = "Install"'),
+          "what Install also does is printed ABOVE the Install button")
+    check("new PythonSetup" not in window_code and "ShouldRun" not in window_code,
+          "the window neither runs it nor decides whether it runs")
+    worker = entry_code.find("new Thread(")
+    runs = entry_code.find("setup.Run()")
+    check(worker != -1 and runs > worker,
+          "it runs on the worker thread, after the add-in - pip takes minutes")
+    check("PythonSetup.ShouldRun(report, manifest)" in entry_code,
+          "only when PythonSetup says a product that talks to a chat went in")
+    check("window.Report(report, python)" in entry_code,
+          "and the window is handed PythonSetup's own lines to print")
+    inside = entry_code.find("ClaudeAppCopy.Inside(")
+    check(inside != -1 and inside < entry_code.index("new PowerShellRevitEnvironment"),
+          "opened from inside the Store Claude it refuses before anything runs - Q-63")
+
+    print()
     print("It is a window and nothing else")
     check("<UseWPF>true</UseWPF>" in proj, "WPF")
     check("net8.0-windows" in proj, "on net8.0-windows, which WPF needs")

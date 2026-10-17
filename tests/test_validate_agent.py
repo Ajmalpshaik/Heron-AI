@@ -565,7 +565,7 @@ def test_a_second_route_written_as_one_sentence():
     routes = HV.declared_second_route(Stand(sentence))
     check(routes == ["A schedule of the same category with that parameter as a field "
                      "and a Contains filter set to the same text, counted"],
-          "one sentence is ONE route, whole - not its first letter (row 5b-491)")
+          "one sentence is ONE route, whole - not its first letter (row 5b-511)")
 
     routes = HV.declared_second_route(Stand(["the Project Browser",
                                              {"given": "a Revit schedule"}]))

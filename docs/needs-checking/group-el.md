@@ -6,93 +6,42 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group EL - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
 
-Heron claims every release from 2020 to 2027. The evidence is much narrower, and it is derived, not typed:
+Found on 2026-10-03 loading `Catch_Basin new.rfa` into Family1 on Revit 2024: Revit opened its modal *"saved
+in a later version of Revit and cannot be retrieved in this version"* dialog inside `LOAD_FAMILY`, and the
+chat read `unknown_outcome`, then `revit_busy`, then `still_running` for over 90 s until somebody closed it
+by hand - [row 5b-300](../fragment-issues/section-5b-rows-276-300.md).
 
-```bash
-# which release each PROVEN fragment's proof names (the release is prose inside proof.model - heron_matrix.py says why)
-for f in $(grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml); do
-  awk '/^proof:/{p=1;next} p&&/^[^ #]/{p=0} p' "$f" | grep -o 'Revit 20[0-9][0-9]' | sort -u | tr '\n' ' '; echo
-done | sort | uniq -c
-# PROVEN fragments with no second route
-grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml | xargs grep -l 'second_route: NOT ESTABLISHED' | wc -l
-```
+**What changed.** The add-in subscribes to Revit's `DialogBoxShowing` at startup
+([`HeronDialogWatch`](../../revit/Heron.Revit.Addin/HeronDialogWatch.cs)), and the dispatcher arms it around
+`RevitOperations.Run` alone. While armed, a dialog is answered from
+[`HeronDialogRule`](../../revit/Heron.Revit.Addin/HeronDialogNote.cs): **Cancel, then Close if Revit will not
+take Cancel, and the job fails** - the fragment and move write paths roll their group back before they keep
+anything, and a read returns the refusal. The table holds **no row** yet: a row needs a DialogId Revit really
+reported, and none is recorded. The reply carries `dialogsAnswered` and `dialogs` (each dialog's id, kind,
+Revit's words and the answer); the audit line carries a `dialogs` number; both are absent when no dialog
+opened. The error is `dialog_refused` when Revit confirmed the rollback (or the job only read) and
+`dialog_unconfirmed` otherwise. A dialog already open before a job is untouched: Revit runs no job behind
+it, so the answer is still `revit_busy`. `HeronAsks()` stands the watch down for a prompt of Heron's own; no
+Heron prompt runs inside a job today.
 
-Run on 2026-10-17 this named **2024 and 2020 only, one proof on 2022, and none on 2021, 2023, 2025, 2026 or
-2027**. The add-in has been **loaded** in a real Revit on 2020, 2024 and 2027 only
-([row A12](../needs-checking-archive/group-a.md), build `48ae1dc`, 2026-09-19).
+**What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027
+(`tools/check-compile.py`, 2026-10-17), and `tests/test_dialog_note.py` builds and runs the table, the record
+and the reply in `tests/Heron.DialogNote.TestHost`. **None of it has run in Revit.** It works only once the
+add-in is rebuilt, deployed for each Revit and Revit restarted. No fragment changed, so no fingerprint moved -
+but a PROVEN fragment that met a dialog before (EL4) now stops where it used to wait.
 
-**Prepared in a cloud container on 2026-10-17, with no Revit. Nothing in this group has been run.**
-
-### Two things stop the proving half as written - read before the session
-
-1. **Heron has no place to put a proof on a second release.** `batch-prove` refuses a PROVEN fragment as
-   `ALREADY`, with no flag on purpose; `accept` refuses one whose proof still matches its code; and a
-   fragment's `proof:` holds one record. So EL7 cannot be run until
-   [Q-64](../open-questions/tier-2.md) is answered and what it chooses is built. EL1 to EL6 and EL8 do not wait for it.
-2. **`plan` printed the first LETTER of some second routes** - "A" for `select-by-parameter-value`, "R" for
-   `set-sheet-title-block` - for every case file that writes the route as one sentence. Fixed the same day,
-   [row 5b-491](../fragment-issues/section-5b-rows-401-425.md). EL8 reads that output.
-
-### The core set - 30 PROVEN fragments, for EL7
-
-Chosen by how often a fragment is used (how often its name appears in `tools/jobs/*.yaml`, as a fragment
-or as a setup step) and by which release-boundary API it touches. The risk column comes from greps over
-each fragment's `impl/`: units `UnitUtils|ForgeTypeId|UnitTypeId|DisplayUnitType` (2021), specs
-`SpecTypeId|ParameterType|GetDataType|GroupTypeId|BuiltInParameterGroup` (2022), ElementId
-`IntegerValue|new ElementId(` (2024), dimension subclasses `LinearDimension|AngularDimension|SpotDimension|NewDimension` (2025),
-release branches `#if REVIT20xx`, and reflection `GetMethod(|GetProperty(` (a member looked up by name, so
-a rename shows only at run time). **No PUBLISH or ADMIN fragment is in it** - `batch-prove` never sends one.
-`set-selection` and `describe-elements` are left out because their proofs are by tracking
-([D-53](../DECISIONS.md)); `set-selection` is still run on every release, as the setup step of most jobs.
-
-| Area | Fragment | Risk | Why it is in the set |
-|---|---|---|---|
-| read | `filter-elements-by-category` | READ | the most-used read |
-| read | `select-by-parameter-value` | READ | much used; proved on 2020 only |
-| read | `read-element-parameters` | READ | much used; the setup step of many jobs |
-| read | `group-and-count` | READ | much used; ElementId |
-| modify | `rename-elements` | MODIFY | much used; ElementId |
-| modify | `change-element-type` | MODIFY | much used |
-| modify | `set-parameter-values-by-id` | MODIFY | specs (2022), reflection |
-| modify | `create-wall` | MODIFY | much used |
-| modify | `create-floor` | MODIFY | specs (2022), reflection |
-| views | `find-views` | READ | much used |
-| views | `hide-elements` | MODIFY | much used |
-| views | `isolate-elements` | EXECUTE | much used |
-| views | `set-view-crop` | MODIFY | much used |
-| views | `create-view-filter` | MODIFY | specs (2022), reflection |
-| views | `apply-view-filter` | MODIFY | `#if REVIT2020`, ElementId, reflection |
-| views | `create-section-view` | MODIFY | units (2021) |
-| sheets | `list-sheets` | READ | much used |
-| sheets | `place-views-on-sheet` | MODIFY | much used |
-| sheets | `set-sheet-title-block` | MODIFY | much used |
-| schedules | `create-schedule` | MODIFY | the schedule write |
-| schedules | `read-schedule-contents` | READ | the schedule read |
-| schedules | `report-schedule-definition` | READ | ElementId |
-| MEP | `measure-run-quantities` | READ | much used |
-| MEP | `measure-mep-velocity` | READ | units (2021) |
-| MEP | `check-fixture-connectivity` | READ | much used |
-| annotation | `create-dimension` | MODIFY | dimension subclasses (2025) |
-| annotation | `tag-elements-in-view` | MODIFY | `#if REVIT2020` and `REVIT2021`, ElementId |
-| families | `add-family-parameters` | MODIFY | units, specs, reflection |
-| families | `set-family-type-values` | MODIFY | units, specs, ElementId, reflection |
-| families | `label-family-dimension` | MODIFY | units, specs, dimension subclasses |
-
-### The rows
-
-**A SCRATCH COPY, never a working model.** One named test model per release - the same project saved down or
-upgraded into each, so every release answers the same question - with a family open in the Family Editor for
-the three family rows. Write the model's name, its element count and the session number into every result.
+**SCRATCH FILES ONLY, never a working model.** Revit 2020 first: a project from the default metric template
+saved as *Heron Dialog Project.rvt*; a family from *Metric Generic Model.rft* with one extrusion, **saved in
+Revit 2024** as *Heron Later Release.rfa*. Changes ON for EL1, EL2 and EL4.
 
 | # | Run | Look for |
 |---|---|---|
-| **EL1** | **Revit 2021.** Install Heron for it with `HeronInstaller.exe` ([D-96](../DECISIONS.md)), or `tools/deploy-addin.ps1 -RevitVersion 2021` for a development build. Start Revit, open the test copy, connect the bridge, and in a chat ask `revit_health` | **Loaded:** the journal has `API_SUCCESS { Starting External Application: Heron AI` and no *"cannot run the external application"*. **Ribbon:** the **Heron** tab - write down every panel and button you see. **Bridge:** it connects, and the add-in log says `Heron loaded. Revit 2021`. **`revit_health`** answers and names 2021. A FAIL at any step is the finding: it proves the 2021 claim wrong today |
-| **EL2** | EL1 on **Revit 2022** | The same, naming 2022 |
-| **EL3** | EL1 on **Revit 2023** | The same, naming 2023 |
-| **EL4** | EL1 on **Revit 2025** - the first .NET 8 release | The same, naming 2025. The deployed assembly reads `.NETCoreApp,Version=v8.0` |
-| **EL5** | EL1 on **Revit 2026** - manifest isolation | The same, naming 2026 |
-| **EL6** | EL1 again on **2020, 2024 and 2027** with today's build | The same on all three. A12 was build `48ae1dc` and the add-in has changed since; a pass then is not a pass now |
-| **EL7** | **Waits on [Q-64](../open-questions/tier-2.md).** Once answered and built: the core set above on every release that passed EL1 to EL6, one job file per release in `tools/jobs/`, `--dry-run` first, each job with its `negative-set:` or `negative-in:` | **Per fragment, per release:** PASS / FAIL / NOT RUN (say why) / NEEDS REAL REVIT, never merged. **A FAIL gets a 5b row the same day**, with what was passed and what came back - the proof is never edited to pass |
-| **EL8** | **Second routes**, for the most-used PROVEN fragments that have none: `filter-elements-by-category`, `select-by-parameter-value`, `read-element-parameters`, `group-and-count`, `rename-elements`, `create-wall`, `find-views`, `hide-elements`, `set-view-crop`, `set-sheet-title-block`, `place-views-on-sheet`, `measure-run-quantities`. `python brain/heron_validate.py plan` prints each one's declared route - mostly a person's, in Revit: a schedule count, the Project Browser, the Properties palette | The route's answer **equals** the fragment's on the same model and selection, written into `proof.second_route` with the date, the model and both numbers. **Q-64 also asks who writes that line** on a fragment already PROVEN, because `accept` refuses one. A route whose answer differs is a finding, not a pass |
+| **EL1** | Row 300 reproduced. In Revit 2020, *Heron Dialog Project* in front: `revit_change` capability `LOAD_FAMILY` with *Heron Later Release.rfa* | **No dialog stays on screen**, and the answer arrives within seconds - not `unknown_outcome`, `revit_busy` or `still_running`. The error is `dialog_refused`; the message quotes Revit's words and says the job was rolled back; `dialogs` lists the dialog with its **id** (write the id down - it is the first real row's key), its kind and `answer` Cancel or Close; the project has no new family and no new Undo entry. The add-in log has one `Revit dialog during a Heron job` line. The D-30 positive |
+| **EL2** | Whether `OverrideResult` works for that dialog. Read EL1's `dialogs` entry | `answer` is Cancel or Close - Revit took the override. If it reads *none - Revit would not take an answer*, the dialog stayed open: close it by hand, record that here, and `BasicFileInfo.Extract` before `LoadFamily` (row 300's other fix) becomes the way for this dialog |
+| **EL3** | Whether an add-in's own TaskDialog raises `DialogBoxShowing`. A throwaway read fragment, through `run_fragment_read`, whose whole body shows `TaskDialog.Show("Heron EL3", "Close me if you can see me.")` and returns | **Either** the reply lists it in `dialogs` with its id and `dialog_refused` (it does raise the event - so any Heron prompt inside a job MUST sit inside `HeronAsks()`), **or** the dialog appears and waits for a click (it does not). Write down which, and the id if one came |
+| **EL4** | "Duplicate Types" is cancelled and the rollback holds. Two scratch projects, each with a drafting view holding a filled region of a type named *Heron Dup* with a **different** fill pattern; `revit_change` capability `TRANSFER_VIEWS_BETWEEN_DOCUMENTS` from one into the other | If Revit asks "Duplicate Types": the reply is `dialog_refused` naming it, and the target project has **no** new view, its *Heron Dup* is unchanged and there is no new Undo entry - the rollback held. If no dialog appears, write that down: the API then answers duplicate types without asking, and this row is answered by that |
+| **EL5** | The negative. `LOAD_FAMILY` with a family saved in Revit 2020, and any read such as `revit_health` | Neither reply carries `dialogsAnswered` or `dialogs`, the family loads as before, and the audit lines have no `dialogs` number - a job no dialog interrupted reads exactly as it did. **The D-30 negative** |
+| **EL6** | The modeller's own dialogs are left alone. With no Heron job running, open any Revit dialog that asks something (Manage > Purge Unused, then Cancel) | It shows and waits for the modeller as always. Then, with that dialog still open, ask the chat for any read: the answer is `revit_busy` - the job never started, so nothing touched the open dialog |
+| **EL7** | EL1, EL5 and EL6 once on Revit 2024 and once on 2027 | The same answers - the watch is in the add-in every release loads |
