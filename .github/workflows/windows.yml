@@ -91,13 +91,18 @@ jobs:
 
       # THE INSTALLER'S OWN COMMAND, word for word - PythonSetup.cs runs
       # exactly this, and the lock's header gives it as the one line to run.
+      # --only-binary=:all: joined PythonSetup's pip line on 2026-10-17
+      # (row 5b-882), so it is here too: the runner refuses a source archive
+      # exactly as a modeller's PC does.
       #
       # NO SOURCE BUILD is EP7's other half: a modeller's PC has no compiler,
       # so a package pip had to build here is one that fails there. pip
-      # says "Building wheel" when it builds one, and that fails the step.
+      # says "Building wheel" when it builds one, and that fails the step -
+      # kept beside --only-binary, so the check still bites if that flag is
+      # ever dropped from the line above.
       - name: pip installs the lock, hashed, into the user folder
         run: |
-          python -m pip install --user --require-hashes -r requirements-lock.txt 2>&1 \
+          python -m pip install --user --require-hashes --only-binary=:all: -r requirements-lock.txt 2>&1 \
             | tee "$RUNNER_TEMP/pip.txt"
 
           if grep -qi 'Building wheel' "$RUNNER_TEMP/pip.txt"; then
