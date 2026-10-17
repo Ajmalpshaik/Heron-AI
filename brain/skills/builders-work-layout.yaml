@@ -1,0 +1,224 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: builders-work-layout
+name: The builders work layout
+domain: revit.view
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Sets up the plans and sections a builders work layout is drawn on: the model
+  greyed back and the services hidden, the openings brought forward by view
+  filters, one view template for the plans and one for the sections, the
+  openings in the house family at their depth, dimensioned and tagged. Any
+  project: every name below in quotes - a filter, a colour, a workset, a
+  parameter, a size, a prefix - is an example from the first layout done this
+  way and a VALUE the modeller gives, never a default (D-33). Every length is
+  in millimetres (D-71).
+
+  Not the drawing set. Sheets, title blocks and schedules are drawing-set's
+  method; this one starts from the layout plans and sections that already
+  exist and stops before any sheet.
+
+  The status in brackets after each capability is what that capability's own
+  fragment.yaml said on 2026-10-17. The list of capabilities after this method
+  is read from the library every time it is served: where the two differ, the
+  list is right and this text is out of date.
+
+  TWO STEPS OF THIS JOB HAVE NO TOOL ON MAIN YET, and a third has half of one -
+  each marked GAP below and kept out of the list of capabilities, because
+  nothing there provides them: replacing a family with another at the same
+  place, setting an opening's depth with one face kept, and a tag on an
+  opening inside a link. At that step say so to the modeller and let them
+  choose; never work round a gap by guessing a value or typing an element id.
+
+  BEFORE EACH BIG STEP - 1, 2, 3, 4, 5, 6, 7 and every delete - ASK THE
+  MODELLER TO SYNCHRONIZE WITH CENTRAL, and wait for their word. Heron does not
+  sync: SYNC_WITH_CENTRAL is a PUBLISH behind its own switch and is not a step
+  of this method. Each step is its own undo entry, so the job as a whole is
+  NOT one undo, and the sync is the copy to go back to.
+
+  0. THE LINKS. LIST_LINKED_MODELS (PROVEN): which models are linked, each
+     one's name as step 6 types it, and whether it is loaded. An opening in a
+     link that is not loaded cannot be dimensioned or found.
+
+  1. THE PLAN'S LOOK, on ONE layout plan. SET_CATEGORY_VISIBILITY (PROVEN):
+     every model category on, then off the ones the modeller names - on the
+     first layout ducts, duct accessories, air terminals, cable trays,
+     electrical items and mechanical equipment. Then SET_CATEGORY_GRAPHICS
+     (PROVEN, version 2) on every model category but Generic Models, which
+     stay normal: halftone, projection and cut line colour and pattern colours
+     the grey the modeller gives, line weight 1 - "halftone=true;
+     projection-line-colour=128,128,128; cut-line-colour=128,128,128;
+     surface-foreground-colour=128,128,128;
+     cut-foreground-colour=128,128,128; projection-line-weight=1;
+     cut-line-weight=1" - and on Walls and Windows also "detail-level=coarse".
+     No solid fill on a category the modeller names (Mechanical Equipment on
+     the first one): its own call, the grey keys and
+     "surface-foreground-visible=false" together.
+     ONE CALL REPLACES A CATEGORY'S WHOLE OVERRIDE: a key left out of the
+     second call is cleared, not kept. Send every key each time - the coarse
+     detail level and the grey together, never one after the other.
+     Then look at the plan. If the layout is drawn over a LINKED model, its
+     walls must read grey too. SET_LINK_GRAPHICS's card says a host category
+     override does not reach inside a link (FRAGMENT-ISSUES 5b-650 records
+     that against the first layout, where host filters did); if the link is
+     not grey, stop and tell the modeller - SET_LINK_GRAPHICS greys the whole
+     link, its openings included, so it is not this step.
+
+  2. THE FILTERS, on the same plan. CREATE_VIEW_FILTERS_BY_RULE (PROVEN,
+     version 2) makes them on no view, by a shared parameter the modeller
+     names ("Filter By"), the operator in front of the value: for Generic
+     Models, an OUTSEL filter "does not contain Openings" and an INSEL filter
+     "contains Openings" - two names and two values in one call; for Levels
+     and Grids, a filter on Type Name "does not contain" the project's prefix
+     (OUTSEL_..._Level_Grid on the first layout); and a filter that hides
+     what the modeller names (Cable Tray Support on the first). The parameter
+     must be one THIS model can filter those categories by: the call asks
+     every category first and creates nothing, naming the category, when one
+     cannot take it.
+     Then APPLY_VIEW_FILTER (PROVEN, version 2) for each on the plan, its whole
+     row at once: OUTSEL with the grey of step 1 and visible=true; INSEL with
+     overrides "none" and visible=true, so the openings draw normal; the
+     level and grid filter with the overrides the modeller gives; the hiding
+     filter with visible=false.
+     WHAT THE FIRST LAYOUT SHOWED, on Revit 2020: a filter made here acts on a
+     LINKED model's elements too, through the shared parameter; and a filter
+     that hides wins even when a filter that shows sits below it, so an
+     element both match is hidden.
+
+  3. THE TEMPLATES. CREATE_VIEW_TEMPLATE_FROM_VIEW (PROVEN) from the plan set
+     up in steps 1 and 2, under the name the modeller gives - applyToSource
+     true only when the modeller wants that plan governed by it too - then
+     APPLY_VIEW_TEMPLATE (PROVEN) to the other layout plans - one look, set
+     once. For the sections, one section set up the way the modeller asks,
+     then SET_CATEGORY_VISIBILITY on it with Structural Rebar and the Sections
+     annotation category off, then the same two calls for the sections. A
+     template applied to a view overrules every override on it by hand, which
+     is what is wanted here, and is why the look is set before, never after.
+
+  4. THE OPENING FAMILIES. GAP - REPLACE A FAMILY WITH ANOTHER AT THE SAME
+     PLACE: each old opening family swapped for the house family where it
+     stands, keeping its workset, with only the size parameters the modeller
+     names set on the new one. That is its own job (the replace-family task)
+     and nothing on main does it yet. replace-in-place-family is for IN-PLACE
+     families and is not this. Until it exists the modeller swaps them; before
+     any old one is deleted, step 8.
+
+  5. THE OPENING DEPTH. GAP - KEEP A FACE: the depth parameter ("Wall Width")
+     set with the OUTSIDE face of the wall kept where it is. A plain parameter
+     write moves whichever face the family does not hold fixed, so it is not
+     this step. Its own job (the keep-a-face task), not on main yet; the
+     modeller sets it.
+
+  6. DIMENSIONS. CREATE_LINEAR_DIMENSION (DRAFT, version 4), one string per
+     call, the references `|` between them. In a SECTION: the opening's height
+     from the level and its distance from the grid to its faces - "level
+     Level 1 | face ID bottom | face ID top", "grid C | face ID left | face ID
+     right". In a PLAN: one chain per wall from the grid along its openings -
+     "grid 4 | face ID left | face ID right | face ID2 left | face ID2 right"
+     - with lineFrom and lineTo OUTSIDE the building, never across it. An
+     opening in a LINKED model: the link first, as LIST_LINKED_MODELS names
+     it - "grid C | link MODEL face ID bottom | link MODEL face ID top" - or
+     the placed link's id when the model is linked twice. ID is the opening's
+     id as Revit shows it. Look at the view after each string: `measured` is
+     what Revit measured, and a string through a tag is moved by the modeller.
+
+  7. TAGS. For openings in this model: SELECT_BY_PARAMETER_VALUE (PROVEN)
+     with parameterName the shared parameter, matchText "Openings",
+     matchMode contains and categories Generic Models, then
+     FIND_UNTAGGED_ELEMENTS (PROVEN) in that view, then TAG_ELEMENTS (PROVEN,
+     version 2) with the tag type the modeller names and addLeader=false,
+     each step's expect_from naming the one before. GAP - A TAG ON AN OPENING
+     INSIDE A LINK: TAG_ELEMENTS tags this model's elements only, and nothing
+     on main places a tag on a linked one; the modeller places those.
+     Then OFFSET_TAGS_FROM_HOST (DRAFT, version 2) puts every tag - this
+     model's and the link's alike, it finds a tag's element inside a loaded
+     link - at its own opening, in paper millimetres, addLeader=false. In a
+     PLAN, INSIDE the building, about 6 mm from the opening on the first
+     layout: one call per side of the building, the offset towards the
+     inside; orientVertical=true for the openings in walls running up and
+     down the sheet, orientHorizontal=true for the rest. In a SECTION, above
+     the opening: offsetRightMm=0 and offsetUpMm the distance the modeller
+     gives.
+
+  8. BEFORE ANYTHING IS DELETED - an old opening family, a dimension, a tag:
+     REPORT_ELEMENT_DEPENDENCIES (PROVEN) on exactly what will go, then name
+     to the modeller every tag and dimension that goes with it and the count,
+     and wait for their yes for that one delete (Article 7). Then
+     DELETE_ELEMENTS (PROVEN) with expect_from naming the select that found
+     them - never without it, which deletes whatever is selected in the
+     window.
+
+  9. THE CHECK. READ_MODEL_WARNINGS (PROVEN) for anything the job added, and
+     the modeller looks at one plan and one section. The calls not failing
+     is not the check.
+
+# The words the modeller says. Skills are not indexed (tools/check-skill-routing.py),
+# so these move no other sentence's answer: they name this job beside a lookup
+# whose candidates include one of `needs` (heron_skill.methods_for), and the
+# words they share with the request put it first. They keep to "builders",
+# "work" and "layout" on purpose: every other word here is one more request
+# this job would be offered beside - "set" alone is in hundreds. And never
+# "this": heron_skill._words makes it "thi", which is not a plain word, so a
+# phrase saying "this" shares a word with every request that does - measured
+# 2026-10-17, it offered this job beside "turn this tag vertical"
+# (FRAGMENT-ISSUES 5b-650, recorded there, not fixed here). "set up the
+# builders work layout" and "do the builders work for this layout" reach it
+# through the three words.
+utterances:
+  - do the builders work for the layout
+  - make the builders work layout
+  - prepare the builders work layout
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+#
+# THE GAPS ARE NOT LISTED HERE, ON PURPOSE, as in replace-in-place-family:
+# tests/test_skills.py and tests/test_brain_reachable.py assert that every
+# capability a skill needs has a provider. Each gap is named in the purpose,
+# which heron_method prints whole. NOT NAMED, ON PURPOSE: SYNC_WITH_CENTRAL -
+# the modeller syncs, see the purpose.
+needs:
+  - LIST_LINKED_MODELS
+  - SET_CATEGORY_VISIBILITY
+  - SET_CATEGORY_GRAPHICS
+  - CREATE_VIEW_FILTERS_BY_RULE
+  - APPLY_VIEW_FILTER
+  - CREATE_VIEW_TEMPLATE_FROM_VIEW
+  - APPLY_VIEW_TEMPLATE
+  - CREATE_LINEAR_DIMENSION
+  - SELECT_BY_PARAMETER_VALUE
+  - FIND_UNTAGGED_ELEMENTS
+  - TAG_ELEMENTS
+  - OFFSET_TAGS_FROM_HOST
+  # Step 8, before every delete. Never skipped.
+  - REPORT_ELEMENT_DEPENDENCIES
+  - DELETE_ELEMENTS
+  # The check. Never skipped.
+  - READ_MODEL_WARNINGS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, it is the model the modeller means, and the layout plans and sections the openings are drawn on already exist
+  - the modeller has given every value the steps name - the categories to hide, the grey, the filter names, the shared parameter and its values, the project's prefix, the template names, the tag type, the tag offset - and none is assumed (D-33)
+  - every link the openings are in is loaded, and the shared parameter the filters test is one this model can filter Generic Models by
+  - the modeller has synchronized with central before the first step, and says so again before each big step
+  - nothing is deleted without REPORT_ELEMENT_DEPENDENCIES first and the modeller's yes for that one delete
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-17 from a builders work layout done by hand on 2026-10-15
+  and 17, on Revit 2020, in a real project's plans and sections; no name,
+  value or id from that model is in this file beyond the examples in quotes.
+  Steps 4 and 5 are each a separate task; the tags were moved with OFFSET_TAGS_FROM_HOST version 2 and the dimensions
+  drawn with CREATE_LINEAR_DIMENSION versions 3 and 4, both still DRAFT.
+  The job as a whole has not been watched working through Heron, so it
+  stays DRAFT (D-30); no NEEDS-CHECKING group holds that run yet.
