@@ -202,6 +202,7 @@ an edit.
 | [D-129](#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again) | A fragment that never ends is stopped by a run clock it carries, and the bridge can stop Heron again | ✅ Accepted · 2026-10-17 |
 | [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
 | [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
+| [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1105,7 +1106,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-128 — A request the host calls a question is never offered a capability that changes the model
 
-**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"do it the best only"* - choosing option B of [the work note](work-notes/investigations/2026-10-17-plain-questions-owner-call.md), the one advised · **Source:** [FRAGMENT-ISSUES 5b-477 and 5b-478](fragment-issues/section-5b-rows-401-425.md) - of 120 plain questions, 32 reached a write on the trained backend and 27 on lexical
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"do it the best only"* - choosing option B of the work note `2026-10-17-plain-questions-owner-call.md` (retired once #565 merged; git history holds it at `5fa14fd8`), the one advised · **Source:** [FRAGMENT-ISSUES 5b-477 and 5b-478](fragment-issues/section-5b-rows-401-425.md) - of 120 plain questions, 32 reached a write on the trained backend and 27 on lexical
 **Numbering:** written as D-116 on 2026-10-17 and renumbered D-128 the same day, before it merged: main had given D-116 to D-123 to other work while this was open, and open pull requests claim D-124 to D-127. The owner's words name no number
 **Supersedes:** [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) item 2, *"Resolution, proposed and not built"* - its item 1, the reporting, stands unchanged
 **Keeps:** [D-01](#d-01--execution-host-claude-code-plugin) - the host decides what the user meant, and Heron never classifies it · [D-65](#d-65--heron-keeps-the-degraded-result-rule-and-hands-routing-to-the-host) - routing is the host's · [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) - which questions a write may declare · Golden Rule 19 - a risk is read from the registry, never typed
@@ -1142,3 +1143,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`RELEASE_REQUIRED`, `release_problems`), [`heron_validate.py`](../brain/heron_validate.py) (`draft` and `accept` with `--release` and `--second-route`), [`heron_matrix.py`](../brain/heron_matrix.py) (`proven_releases`), [`batch-prove.py`](../tools/batch-prove.py) (`--release`), [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md), [Group EQ](needs-checking/group-eq.md)
 
 **Full record:** [`decisions/D-131.md`](decisions/D-131.md)
+
+## D-132 — Off Windows the Heron server serves its library alone, and no Revit tool
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"yes"*, to Q-67 put to him in plain words · **Answers:** [Q-67](open-questions/tier-2.md)
+**Keeps:** [D-02](#d-02--mcp--add-in-transport-named-pipes) - the bridge is a Windows named pipe, and nothing here reaches it · [D-01](#d-01--execution-host-claude-code-plugin) · every tool on Windows, exactly as before
+**Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (`LIBRARY`), [`AGENTS.md`](../AGENTS.md), [38 §4](38-the-cloud-environment.md), the [`heron-session`](../.claude/skills/heron-session/SKILL.md) start-up line, [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py), [`tests/test_tool_registry.py`](../tests/test_tool_registry.py)
+
+**Full record:** [`decisions/D-132.md`](decisions/D-132.md)

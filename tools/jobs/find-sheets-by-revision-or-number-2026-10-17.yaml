@@ -1,0 +1,82 @@
+# The proof of find-sheets-by-revision-or-number (FIND_SHEETS_BY_REVISION_OR_NUMBER,
+# FRG-SHT-033), written 2026-10-17 - NEEDS-CHECKING Group FB, rows FB1 to FB4.
+# NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/find-sheets-by-revision-or-number-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/find-sheets-by-revision-or-number-2026-10-17.yaml
+#
+# READ: it opens no transaction and changes nothing. It needs no selection.
+#
+# THE MODEL: a NEW SCRATCH PROJECT, "Heron Sheets By Revision", from the
+# default metric template, Revit 2020 first - never a working model. Group FB
+# says how to arrange it by hand. In short:
+#   sheets 179 to 186, 1790, and one placeholder P-01;
+#   Seq 2 "FB ISSUED AS-BUILT" 14.10.2026 ticked on 179 to 185, and on 186 by a
+#     revision cloud in a view placed on it, nothing ticked;
+#   Seq 3 "FB DRAFT AS-BUILT"  14.10.2026 ticked on 1790 only;
+#   Seq 4 "FB LATER"           20.10.2026 ticked on 180 and 181 as well.
+# The template's own Revision 1 is Seq 1 and is on no sheet. IF REVIT NUMBERS
+# THE THREE OTHERWISE, change every sequence below to what Sheet
+# Issues/Revisions shows before running - the values are the arrangement.
+#
+# NEEDS THE ADD-IN BUILT FROM MAIN ON OR AFTER PR #545 - the four inputs are
+# `optional: true` with `absent:`, and an older add-in refuses a value left out.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the positive picked sheets and the negative picked none
+#   - NEG NOT EMPTY: a sheet came back that the negative's values must not
+#     pick - "17" picked 179 or 1790, or "as-built" picked sheets instead of
+#     refusing. A defect, not an arrangement fault
+#   - POS EMPTY: read `refused` and `revisionsMatched` first - a sequence that
+#     is not the one Revit gave is the arrangement, not the card
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - FB1's elements are EIGHT sheets, 179 to 186 - 180 and 181 included,
+#     whose latest revision is Seq 4, and 186, which carries Seq 2 only by a
+#     cloud. Seven or fewer is the very failure this card exists to remove
+#   - FB3's notFound, listedWithoutRevision and revisionsMatched, word for word
+#   - FB4's refusal names Seq 2 AND Seq 3; a one-name refusal is a defect
+#   - the second route (FB6): each sheet's own Revisions on Sheet dialog
+
+model: '"Heron Sheets By Revision" (a scratch project), Revit 2020'
+
+defaults:
+  in: "Heron Sheets By Revision"
+
+jobs:
+  - fragment: find-sheets-by-revision-or-number
+    expect: [elements]
+    set:
+      revisionSequence: "2"
+    negative-set:
+      sheetNumbers: "17"
+    note: >
+      FB1 and FB2 - the sheets of Seq 2, whatever came after it: 179 to
+      186, eight. The negative types "17", the leading digits of 179 and 1790, where no
+      sheet is numbered 17: elements empty and "17" in notFound - a whole
+      number is never matched as a part.
+
+  - fragment: find-sheets-by-revision-or-number
+    expect: [elements]
+    set:
+      revisionSequence: "2"
+      sheetNumbers: "179, 180, 1790, 999"
+    negative-set:
+      revisionSequence: "3"
+      sheetNumbers: "179, 180, 181"
+    note: >
+      FB3 - Seq 2 among a typed list: 179 and 180 picked; 1790 in
+      listedWithoutRevision (it carries Seq 3); 999 in notFound. The
+      negative asks for Seq 3 among three Seq 2 sheets: elements empty and
+      all three in listedWithoutRevision.
+
+  - fragment: find-sheets-by-revision-or-number
+    expect: [elements]
+    set:
+      revisionDescription: "FB ISSUED AS-BUILT"
+    negative-set:
+      revisionDescription: "as-built"
+    note: >
+      FB4 - the description whole picks the same eight sheets as FB1, and
+      "FB DRAFT AS-BUILT" is not chosen. The negative "as-built" fits Seq 2
+      and Seq 3 in part: refused, both named, elements empty.

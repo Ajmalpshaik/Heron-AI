@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -146,36 +146,47 @@ contract:
       type: string
 
 proof:
-  date: '2026-10-10'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: Project2 (3,661 elements), Revit 2020, session 36948
+  model: Project1 (3,247 elements), Revit 2020, session 51568
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     select-by-parameter-value with this phase''s own values - run inside a transaction, and
     Revit reported the transaction group ROLLED BACK afterwards. returned alreadyThat , changed
-    issued by (blank) -> ''M.Sagheer''; issued to (blank) -> ''A.Rahmani''; issued, findings
-    Read back: Seq. 2: numbering Numeric, date ''07-APR-2025'', description ''IFI - Issued
-    for Information'', ISSUED, issued to ''A.Rahmani'', issued by ''M.Sagheer'', show Cloud
-    and Tag (id 281406), nowIssued true, refused , revisionName Seq. 2 ''IFI - Issued for
-    Information''. inputs came elements from select-by-parameter-value (1); description as
-    given; revisionDate as given; issuedBy as given; issuedTo as given; show as given; numbering
-    as given; issueState as given. on Project2'
-  negative_case: 'run with description=IFI - Issued for Information, issueState=, issuedBy=,
-    issuedTo=, numbering=, revisionDate=07-APR-2025, show= arranged with categories=Revisions,
-    includeLinks=false, includeTypeParameters=false, matchMode=equals, matchText=2, parameterName=Revision
-    Sequence instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running select-by-parameter-value with this phase''s
-    own values - run inside a transaction, and Revit reported the transaction group ROLLED
-    BACK afterwards. returned alreadyThat description ''IFI - Issued for Information''; date
-    ''07-APR-2025'', changed , findings Read back: Seq. 2: numbering Numeric, date ''07-APR-2025'',
-    description ''IFI - Issued for Information'', not issued, issued to (blank), issued by
-    (blank), show Cloud and Tag (id 281406), nowIssued false, refused , revisionName Seq.
-    2 ''IFI - Issued for Information''. inputs came elements from select-by-parameter-value
-    (1); description as given; revisionDate as given; issuedBy as given; issuedTo as given;
-    show as given; numbering as given; issueState as given. on Project2'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: b928479162dc855d
+    Seq. 1 ''HERON PROOF several'': issued by (blank) -> ''M.Sagheer''; issued to (blank)
+    -> ''A.Rahmani''; issued || Seq. 2 ''HERON PROOF several'': issued by (blank) -> ''M.Sagheer'';
+    issued to (blank) -> ''A.Rahmani''; issued || Seq. 3 ''HERON PROOF several'': issued by
+    (blank) -> ''M.Sagheer''; issued to (blank) -> ''A.Rahmani''; issued, findings Read back:
+    Seq. 1: numbering Numeric, date ''Date 1'', description ''HERON PROOF several'', ISSUED,
+    issued to ''A.Rahmani'', issued by ''M.Sagheer'', show Cloud and Tag (id 49030) || Seq.
+    2: numbering Numeric, date ''Date 2'', description ''HERON PROOF several'', ISSUED, issued
+    to ''A.Rahmani'', issued by ''M.Sagheer'', show Cloud and Tag (id 926243) || Seq. 3: numbering
+    Numeric, date ''Date 3'', description ''HERON PROOF several'', ISSUED, issued to ''A.Rahmani'',
+    issued by ''M.Sagheer'', show Cloud and Tag (id 926244), nowIssued true, refused , revisionName
+    3 revisions: Seq. 1 ''HERON PROOF several'', Seq. 2 ''HERON PROOF several'', Seq. 3 ''HERON
+    PROOF several''. inputs came elements from select-by-parameter-value (3); confirmCount
+    as given; description as given; revisionDate as given; issuedBy as given; issuedTo as
+    given; show as given; numbering as given; issueState as given. on Project1'
+  negative_case: run with confirmCount=2, description=, issueState=issue, issuedBy=M.Sagheer,
+    issuedTo=A.Rahmani, numbering=, revisionDate=, show= arranged with categories=Revisions,
+    includeLinks=false, includeTypeParameters=false, matchMode=equals, matchText=HERON PROOF
+    several, parameterName=Revision Description instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-by-parameter-value
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThat , changed , findings , nowIssued false,
+    refused the find brought back 3 revision(s) (Seq. 1 'HERON PROOF several', Seq. 2 'HERON
+    PROOF several', Seq. 3 'HERON PROOF several') and confirmCount says 2 - check the find
+    caught exactly the revisions meant, and give the number it brought back. Nothing was changed.,
+    revisionName . inputs came elements from select-by-parameter-value (3); confirmCount as
+    given; description as given; revisionDate as given; issuedBy as given; issuedTo as given;
+    show as given; numbering as given; issueState as given. on Project1
+  second_route: 'LIST_REVISIONS (FRG-SHT-005, a different fragment) read Project1 before the
+    first of three runs that day, after the first, and after the last - one revision (Seq.
+    1), the ISSUED set (Seq. 4-6), then the count (Seq. 1-3, this draft) - and read the same
+    six rows each time: Seq. 1-3 not issued with issued by and to blank, Seq. 4-6 ISSUED,
+    all Numeric. Every leg was rolled back, and the values this fragment read back in findings
+    are the ones it was asked for.'
+  fingerprint: d3169656228813bf
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

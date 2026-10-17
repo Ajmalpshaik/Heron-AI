@@ -43,13 +43,200 @@ on a scratch family made for it, never on a family somebody is building; with `H
 | # | Run | Look for |
 |---|---|---|
 | **DA1** | the job file: ten rows in the value, five extrusions and five revolves on all three template planes, two voids, one material, one visibility; negative the same with row 7's plane misnamed | positive: `formCount` 10, `formIds` ten ids, `built` ten entries with their extents and the solids' volumes; negative: refused naming row 7, `formCount` 0. Both legs ROLLED BACK - REPORT_FAMILY_FORMS reads the scratch family's form count unchanged afterwards |
-| **DA2** | DA1's ten rows in a file under `%TEMP%\heron-work`, one per line with a `#` comment line, `forms` its full path, `--write --apply` | the same ten built and KEPT; `REPORT_FAMILY_FORMS` lists ten forms with the same ids, in the same order; the undo list shows ONE entry for the call |
+| **DA2** | DA1's ten rows in a file under `%TEMP%\heron-work`, one per line with a `#` comment line, `forms` its full path, `--write --apply` - **refused since D-117 for a DRAFT; kept through `try-once` instead, see *Run it* below** | the same ten built and KEPT; `REPORT_FAMILY_FORMS` lists ten forms with the same ids, in the same order; the undo list shows ONE entry for the call |
 | **DA3** | a row 0.5 mm deep; a `kind=blend` row; a file outside the temporary folder; a project in front | each refused with nothing built - the row named and the least depth said, a row is an extrusion or a revolve, the temporary folder named, `notAFamily` |
-| **DA4** | the second route: the same ten built one call at a time with the single-form tools on a second scratch family | the two families' `REPORT_FAMILY_FORMS` read the same kinds, extents and volumes; ten undo entries there, one here |
+| **DA4** | the second route: the same ten built one call at a time with the single-form tools on a second scratch family - **rolled back for now, see *Run it* below** | the two families' `REPORT_FAMILY_FORMS` read the same kinds, extents and volumes; ten undo entries there, one here |
 | **DA5** | a list the size of the pump set - about 100 rows | the time the call takes inside Revit (the audit log's `ms`), against the 11 batches it replaces |
 | **DA6** | DA1 to DA3 on **Revit 2020** and **2027** | the same answers - what Revit DOES has been measured on 2024 only, if at all |
 | **DA8** | [5b-430](../fragment-issues/section-5b-rows-401-425.md): on a PC where Revit's temporary folder is a GUID-named sub-folder of the user's (the owner's laptop - `%TEMP%` in a Revit-side read shows `...\Temp\<guid>\`), DA2 with the file under the chat's own `%TEMP%\heron-work`; negative the same rows in `%TEMP%\elsewhere\rows.txt` and in `%TEMP%\heron-workshop\rows.txt` | positive: built on the FIRST call, no copy into Revit's folder; negative: refused naming both folders read, `formCount` 0, nothing read. On the office PC, where the two folders are one, DA2 is the whole check |
 | **DA7** | the signature | `python brain/heron_validate.py accept create-family-forms --by "Ajmal PS"` on DA1's record, on the owner's word only |
+
+### Run it - inputs prepared 2026-10-17 in a cloud session, NONE OF IT RUN
+
+Every row but DA7 has its input committed under `tools/jobs/` and its exact command below. Nothing here
+has met Revit and no row above is marked run. **Before carrying them to the PC,**
+`python tests/test_family_forms_rows.py` reads every rows file, DA1's two values and DA4's ten calls with
+the fragment's own reader - its source up to the build half, the template's three datums standing in for
+the family - and prints the words of each refusal. It says nothing about what Revit builds.
+
+**Three things changed under the table since it was written, and the commands follow them:**
+
+- **DA2's `--write --apply` is refused now.** Since [D-117](../decisions/D-117.md) a change is kept only
+  from a PROVEN fragment, and `create-family-forms` is DRAFT. A DRAFT's change is kept one way:
+  `try-once` ([D-119](../decisions/D-119.md)) - the run, then Revit's Keep or Discard box, once per
+  version kept.
+- **DA4 cannot keep the five extrusions.** `create-family-extrusion` is DRAFT again - its signature went
+  STALE when its code moved (`python tools/check-signatures.py`) - so D-117 refuses `--apply` on it. DA4
+  runs all ten rolled back and compares each call's own `built`.
+- **REPORT_FAMILY_FORMS does not list in row order.** Its `formList` is sorted by kind, then id
+  ([`report-family-forms`](../../brain/fragments/report-family-forms/impl/any/fragment.cs)), so DA2
+  checks every id of `formIds` is on it, not the order.
+
+**Commands, not job files.** A batch-prove job deletes and rewrites
+`brain/proof-drafts/runs/create-family-forms.json` - DA1's record, the one DA7 signs. Only DA1 goes
+through `batch-prove`.
+
+**Order on the PC:** DA1, DA3, DA8 (laptop only), DA5 - all rolled back, on the EMPTY
+"Heron Forms Scratch" - then DA2 LAST, because it keeps ten forms in it. DA4 on its own family; DA6 in
+the 2020 and 2027 Revits. Run in Git Bash from the Heron folder, Changes on, the scratch family open and
+in front. Every file goes under `C:/Users/ajmal/AppData/Local/Temp/heron-work/da/` - the chat's
+`%TEMP%\heron-work` on both PCs ([5b-430](../fragment-issues/section-5b-rows-401-425.md)).
+
+#### DA2 - the ten rows from a file, KEPT, one undo entry
+
+Save the scratch family first (Ctrl+S): `try-once` refuses a model with changes not saved
+([D-121](../decisions/D-121.md)). The Keep is the owner's to press ([D-122](../decisions/D-122.md)).
+
+```bash
+mkdir -p C:/Users/ajmal/AppData/Local/Temp/heron-work/da
+cp tools/jobs/family-forms-ten-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py try-once --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt" < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --in "Heron Forms Scratch" report-family-forms < /dev/null
+```
+
+Look for: Revit shows the ten forms and asks Keep or Discard - press **Keep**; the client prints `KEPT`,
+`formCount` 10 and ten ids in `formIds`, and writes `brain/proof-drafts/runs/create-family-forms.once.json`.
+REPORT_FAMILY_FORMS: `formCount` 10, every `formIds` id on `formList`. Revit's Undo list: ONE entry for
+the call. The file's header and the line before row 6 are `#` lines and are not read.
+
+#### DA3 - the four refusals, each rolled back
+
+For the last one, a scratch project: File > New > Project on the metric default template, saved as
+**Heron Forms Project Scratch** under `%TEMP%\heron-work`, open and in front.
+
+```bash
+mkdir -p C:/Users/ajmal/AppData/Local/Temp/heron-work/da C:/Users/ajmal/heron-da-outside
+cp tools/jobs/family-forms-shallow-row-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-shallow.txt
+cp tools/jobs/family-forms-blend-row-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-blend.txt
+cp tools/jobs/family-forms-ten-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt
+cp tools/jobs/family-forms-ten-2026-10-17.rows.txt C:/Users/ajmal/heron-da-outside/forms-ten.txt
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-shallow.txt" < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-blend.txt" < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/heron-da-outside/forms-ten.txt" < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Project Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt" < /dev/null
+rm -r C:/Users/ajmal/heron-da-outside
+```
+
+Every one: `formCount` 0, `formIds` empty, the scratch family's forms unchanged. `refused`, in turn:
+
+1. *"... Row 3: the extrusion starts at -148.5 mm and ends at -148 mm, 0.5 mm deep - less than Revit's
+   shortest line, so it cannot be built. Make it at least N mm deep."* - N is that Revit's shortest curve
+   rounded up. Row 3 the only row named.
+2. *"... Row 10: kind is "blend" - a row here is an extrusion or a revolve. A blend, a sweep and a swept
+   blend each have a tool of their own."*
+3. *"The file C:\Users\ajmal\heron-da-outside\forms-ten.txt is not in the temporary folder, ..."* naming
+   Revit's temporary folder - and on the laptop *"..., nor in ...\Temp\heron-work\"* as well. Without
+   that "nor in", this PC is not DA8's kind.
+4. `notAFamily` true and *"The document in front is a project, not a family open in the Family Editor.
+   ..."*
+
+#### DA4 - the same ten, one call each, rolled back, on a second family
+
+A second scratch family the same way: the metric Generic Model template, saved as
+**Heron Forms Scratch 2**, open and in front.
+
+```bash
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-extrusion --set "workPlane=Ref. Level" --set "profile=circle 0,0 150" --set startMm=0 --set endMm=500 --set solid=true < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-extrusion --set "workPlane=Ref. Level" --set "profile=rect -300,-200 300,200 | circle 0,0 50" --set startMm=-20 --set endMm=0 --set solid=true < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-extrusion --set "workPlane=Center (Front/Back)" --set "profile=0,0; 600,0; 600,100; 100,100; 100,400; 0,400" --set startMm=-50 --set endMm=50 --set solid=true < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-extrusion --set "workPlane=Center (Left/Right)" --set "profile=polygon 0,250 60 6" --set startMm=-100 --set endMm=100 --set solid=true < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-extrusion --set "workPlane=Ref. Level" --set "profile=rect -20,-20 20,20" --set startMm=100 --set endMm=400 --set solid=false < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-revolution --set "workPlane=Center (Front/Back)" --set "profile=0,600; 150,600; 0,800" --set "axisLine=0,0 0,1000" --set startDegrees=0 --set endDegrees=360 --set solid=true < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-revolution --set "workPlane=Center (Front/Back)" --set "profile=0,0; 40,0; 40,80; 0,80" --set "axisLine=0,0 0,100" --set startDegrees=0 --set endDegrees=360 --set solid=false < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-revolution --set "workPlane=Center (Left/Right)" --set "profile=circle 300,100 20" --set "axisLine=0,0 0,1000" --set startDegrees=0 --set endDegrees=360 --set solid=true < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-revolution --set "workPlane=Center (Front/Back)" --set "profile=0,900; arc 50,950 0,1000" --set "axisLine=0,0 0,1000" --set startDegrees=0 --set endDegrees=360 --set solid=true < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch 2" create-family-revolution --set "workPlane=Center (Front/Back)" --set "profile=200,0; 260,0; 260,40; 200,40" --set "axisLine=0,0 0,1000" --set startDegrees=0 --set endDegrees=180 --set solid=true < /dev/null
+```
+
+Look for: call N's `built` reads the same X, Y and Z extents, and a solid the same volume, as entry N of
+DA1's positive `built` (in `brain/proof-drafts/runs/create-family-forms.json`, `||` between entries).
+`CREATE_FAMILY_FORMS` writes a volume under one litre in mm³ and the single-form tools always in litres -
+compare the number, not the words. Rows 1 and 3's material and visibility are not single-form values,
+so compare their shape only. **Owed, and not runnable today:** the same ten kept, REPORT_FAMILY_FORMS on
+both families and the ten undo entries - once `create-family-extrusion` is PROVEN again.
+
+#### DA5 - about 100 rows, timed
+
+```bash
+mkdir -p C:/Users/ajmal/AppData/Local/Temp/heron-work/da
+cp tools/jobs/family-forms-pump-set-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-pump-set.txt
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-pump-set.txt" < /dev/null
+grep '"fragment": "create-family-forms"' C:/Users/ajmal/AppData/Roaming/Heron/audit/audit-$(date -u +%Y%m).jsonl | tail -1
+```
+
+Look for: `formCount` equal to the file's row count (the test prints it), nothing refused, rolled back;
+the audit line's `"ms"` is Revit's time for the whole list. Set it against
+[5b-378](../fragment-issues/section-5b-rows-376-400.md)'s pump set. A `TIMEOUT` says nothing about the
+fragment (`revit.operationTimeoutSeconds` in `heron.config` sets the limit) - record it and stop. A refusal is a finding.
+
+#### DA6 - DA1 to DA3 again on Revit 2020 and on 2027
+
+In each release: the scratch family and the scratch project made again from THAT release's templates,
+under the same titles. Pin the Revit: `<pid>` is its process id from
+`python mcp/client/heron_bridge_client.py`, which lists every connected Revit. DA1 goes through
+`validate` with its own `--out`, so DA1's 2024 record is never replaced; DA2 runs rolled back, because
+its one Keep was spent on 2024 (`try-once` refuses a version already kept). DA3's four lines are the
+ones above with `--session <pid>` after `--write`.
+
+```bash
+mkdir -p C:/Users/ajmal/AppData/Local/Temp/heron-work/da
+cp tools/jobs/family-forms-ten-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt
+cp tools/jobs/family-forms-row7-plane-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-row7.txt
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py validate --session <pid> --in "Heron Forms Scratch" --out C:/Users/ajmal/AppData/Local/Temp/heron-work/da/da6-<release>.json --write --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt" --negative-set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-row7.txt" create-family-forms < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --session <pid> --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt" < /dev/null
+```
+
+Look for: DA1's and DA3's answers on 2024, word for word except the numbers Revit measures; DA2's
+`formCount` 10. A difference is a finding for [FRAGMENT-ISSUES](../FRAGMENT-ISSUES.md).
+
+#### DA8 - the laptop only: Revit's temporary folder a GUID-named sub-folder
+
+```bash
+mkdir -p C:/Users/ajmal/AppData/Local/Temp/heron-work/da C:/Users/ajmal/AppData/Local/Temp/elsewhere C:/Users/ajmal/AppData/Local/Temp/heron-workshop
+cp tools/jobs/family-forms-ten-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt
+cp tools/jobs/family-forms-ten-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/elsewhere/rows.txt
+cp tools/jobs/family-forms-ten-2026-10-17.rows.txt C:/Users/ajmal/AppData/Local/Temp/heron-workshop/rows.txt
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-work/da/forms-ten.txt" < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/elsewhere/rows.txt" < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --write --in "Heron Forms Scratch" create-family-forms --set "forms=C:/Users/ajmal/AppData/Local/Temp/heron-workshop/rows.txt" < /dev/null
+rm -r C:/Users/ajmal/AppData/Local/Temp/elsewhere C:/Users/ajmal/AppData/Local/Temp/heron-workshop
+```
+
+Look for: the first `formCount` 10 on the FIRST call, rolled back, with nothing copied into
+`...\Temp\<guid>\`; the other two `formCount` 0 and *"The file ... is not in the temporary folder,
+C:\Users\ajmal\AppData\Local\Temp\<guid>\, nor in C:\Users\ajmal\AppData\Local\Temp\heron-work\."* On the
+office PC both of those paths are inside Revit's own temporary folder and are READ - they are not
+negatives there.
+
+#### The fragment warm-up, ON against OFF
+
+`fragments.warmUp` is read at start-up by
+[`HeronApplication.cs`](../../revit/Heron.Revit.Addin/HeronApplication.cs), and `WarmUp`/`WarmUpBody` in
+[`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) compile a throwaway script on a
+background thread. What it should save is the FIRST fragment's compile after Revit starts. The switch is a
+line in `%APPDATA%\Heron\config\heron.config` - `C:/Users/ajmal/AppData/Roaming/Heron/config/heron.config`,
+`key=value`, `#` for comments; a missing line means ON. **Revit is closed and started again between the two
+halves**, and nothing else is run before the first fragment.
+
+1. Close Revit. Put `fragments.warmUp=false` in `heron.config` and save it.
+2. Start Revit, open "Heron Forms Scratch", press Heron to connect, and wait one minute.
+3. Run the same read twice, then read its two times and the log:
+
+```bash
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --in "Heron Forms Scratch" report-family-forms < /dev/null
+HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py fragment --in "Heron Forms Scratch" report-family-forms < /dev/null
+grep '"fragment": "report-family-forms"' C:/Users/ajmal/AppData/Roaming/Heron/audit/audit-$(date -u +%Y%m).jsonl | tail -2
+grep -E "Heron loaded|Fragment warm-up" C:/Users/ajmal/AppData/Local/Heron/logs/addin-$(date -u +%Y%m%d).log | tail -3
+```
+
+4. Close Revit. Change the line to `fragments.warmUp=true` and save it. Start Revit, the same model,
+   connect, wait the same minute, and run step 3 again.
+
+Read: OFF, the log has no `Fragment warm-up` line after the last `Heron loaded.`; ON, it has
+*"Fragment warm-up compiled and emitted a throwaway script in N ms."* (any other `Fragment warm-up` line
+means it failed and the ON half measures nothing). In each half the first audit `"ms"` is the cold run and
+the second the same fragment already compiled; the warm-up saves the difference between the two halves'
+first `ms`. Record all four, with the release and the PC.
 
 **Through the chat** (`revit_change`) the new capability needs its row in the shared knowledge store,
 which the store is given once this is merged to main and rebuilt from it; until then `heron_resolve`

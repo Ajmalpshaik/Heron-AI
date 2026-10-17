@@ -1,0 +1,49 @@
+# LIST_REVISIONS (FRG-SHT-005) re-proved on Revit 2020, 2026-10-17 - NEEDS-CHECKING
+# Group BA, rows BA3 and BA4 (the 2020/2021 numbering route, never run before
+# this day).
+#
+#     python tools/batch-prove.py tools/jobs/list-revisions-project1-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-revisions-project1-2026-10-17.yaml --session <the Revit 2020 pid>
+#
+# A READ. Nothing is changed and neither document has to be in front.
+#
+# WHY THE NEGATIVE IS A FAMILY. A project ALWAYS holds at least one revision -
+# Revit refuses to delete the last one (see DELETE_REVISION) - so `elements` and
+# `revisionTable` can never come back empty from any project, and the 2026-09-13
+# proof's negative (Project1's template revision ON NO SHEETS) is judged NEG NOT
+# EMPTY under the D-51 rules that came after it. A family document holds no
+# revisions at all. Until 2026-10-17 this fragment THREW on one ("ccda is not a
+# project document") - measured that day - and it now answers that the family
+# holds none. A read that answered from the wrong document - the active one,
+# the last one asked - would bring Project1's six revisions into it.
+#
+# THE TWO DOCUMENTS, BOTH OPEN IN ONE REVIT 2020 (session 51568 that day):
+#
+#   "Project1"   the positive - a new project the owner made that day from
+#                Revit 2020's mechanical template, never saved. Six revisions
+#                made BY HAND in Manage - Sheet Issues/Revisions: Seq. 1-3
+#                'HERON PROOF several' not issued, Seq. 4-6 'HERON PROOF several
+#                issued' ISSUED; all Numeric, on no sheet, Per Project
+#   "TRG_GEN_CutOut_Rectangular_HVAC"
+#                the negative - the owner's own Generic Models family, open in
+#                the Family Editor in the same Revit. Read only
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - revisionTable names all six rows with the columns the dialog shows
+#   - numberingSequences shows the project's two 2020 schemes - Numeric and
+#     Alphanumeric A ... Z - which is the 2020/2021 route reached by name
+#   - onNoSheets holds all six: no sheet in Project1 carries a revision
+
+model: Project1 (new, never saved, Revit 2020 mechanical template) and the family TRG_GEN_CutOut_Rectangular_HVAC, both open in Revit 2020
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: list-revisions
+    in: "Project1"
+    negative-in: "TRG_GEN_CutOut_Rectangular_HVAC"
+    expect: [revisionTable, elements]
+    note: >
+      Every revision on the scratch project, every column, against a family,
+      which holds none.

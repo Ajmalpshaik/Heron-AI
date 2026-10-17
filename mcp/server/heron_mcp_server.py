@@ -200,6 +200,20 @@ _TAKES_LABELS = (_Annotations is not None
 # handed (row 5b-491).
 _TAKES_DESCRIPTION = "description" in inspect.signature(_Server.tool).parameters
 
+# NO REVIT ON THIS MACHINE, AND THE LIBRARY ALONE (Q-67, D-132). The bridge is
+# a Windows named pipe and Revit is Windows-only, so off Windows - a cloud
+# session is the case - this server registers heron_tools.LIBRARY and nothing
+# else. It exited 2 here until 2026-10-17, which took the library search out
+# of every cloud session along with the Revit tools.
+#
+# Only when RUN as the server: a test or a tool that IMPORTS this module is
+# served every tool on any system, exactly as before - test_mcp_serves calls
+# them in-process on Linux, and heron_tools --sizes measures them all. On
+# Windows this is False and nothing below changes.
+LIBRARY_ONLY = __name__ == "__main__" and os.name != "nt"
+
+NO_REVIT_HERE = "No Revit on this machine (it is not Windows)"
+
 
 class _Labelled(_Server):
     """
@@ -226,8 +240,13 @@ class _Labelled(_Server):
             # A COPY, so one decorator applied twice cannot hand the second
             # tool the first one's label.
             options = dict(kwargs)
+            name = (args[0] if args else None) or options.get("name") or fn.__name__
+            if LIBRARY_ONLY and name not in tools.LIBRARY:
+                # NOT REGISTERED, so the host never lists it - never listed
+                # and then refused. Still callable from this file, as
+                # every tool is.
+                return _recorded(fn)
             if _TAKES_LABELS and "annotations" not in options:
-                name = (args[0] if args else None) or options.get("name") or fn.__name__
                 options["annotations"] = _Annotations.model_validate(
                     tools.annotations(name))
             if _TAKES_DESCRIPTION and "description" not in options and fn.__doc__:
@@ -266,13 +285,22 @@ def _host_instructions():
 
     A FAILURE IS SAID, NOT FATAL. A server that refused to start over its own
     instructions would take every Revit tool out of the host with it.
+
+    OFF WINDOWS THE CHAT IS TOLD FIRST THAT THERE IS NO REVIT HERE (D-132), so
+    a library that answers is never read as a Revit that is connected.
     """
     try:
-        return brain.host_instructions()
+        said = brain.host_instructions()
     except brain.BrainUnavailable as why:
-        return ("Heron could not give this chat its rules: %s\n"
+        said = ("Heron could not give this chat its rules: %s\n"
                 "They are in HERON_CONSTITUTION.md, and they bind this chat "
                 "whether or not they arrived here." % why)
+    if not LIBRARY_ONLY:
+        return said
+    return ("%s. Heron serves only its library here - %s - and no revit_ "
+            "tool, because there is no Revit to reach. Anything that needs a "
+            "model is done on the modeller's Windows PC.%s%s"
+            % (NO_REVIT_HERE, ", ".join(tools.LIBRARY), NEWLINE + NEWLINE, said))
 
 
 _depth = threading.local()
@@ -3942,7 +3970,12 @@ def _revit_version():
     `how` is NEVER None, including when there is no release. It used to be,
     and `(None, None)` meant two different things - nothing connected, or
     several connected and none chosen - which is FRAGMENT-ISSUES row 130.
+
+    With no Revit on this machine (D-132) nothing is looked for: "none is
+    connected" would be a different, wrong sentence.
     """
+    if LIBRARY_ONLY:
+        return None, NO_REVIT_HERE
     try:
         live, _starting, _mismatched = binding.sessions()
     except Exception as why:                                   # noqa: BLE001
@@ -6987,10 +7020,12 @@ def _groups_in_category(reply, where):
 
 
 if __name__ == "__main__":
-    if os.name != "nt":
-        # The bridge is a Windows named pipe, and Revit is Windows-only.
-        sys.stderr.write("Heron's bridge uses Windows named pipes. Revit is Windows-only.\n")
-        sys.exit(2)
+    if LIBRARY_ONLY:
+        # The bridge is a Windows named pipe, and Revit is Windows-only - so
+        # the library alone, never a server that waits on a Revit that cannot
+        # exist here (Q-67, D-132). stderr, because stdout is the MCP channel.
+        sys.stderr.write("%s. Heron serves only its library here: %s.\n"
+                         % (NO_REVIT_HERE, ", ".join(tools.LIBRARY)))
     # Load the trained encoder on a background thread BEFORE serving anything.
     # It is about a second in a fresh process and was measured still importing
     # forty seconds later when it first ran inside a request handler, on the
@@ -7006,26 +7041,29 @@ if __name__ == "__main__":
     # seconds so the Companion button in Revit finds this chat's page. It
     # reads a settings file and writes one note; it never touches the pipe,
     # and a fault in it never reaches the chat.
-    try:
-        companion_page = _companion_module()
-        companion_page.CHANGES.apply_hook = _apply_change
-        companion_page.CHANGES.load_hook = _load_settings
-        companion_page.TABLES.apply_hook = _apply_table
-        companion_page.LOADS_PANEL.recalculate_hook = _loads_recalculate
-        companion_page.LOADS_PANEL.report_hook = _loads_report
-        companion_page.LOADS_PANEL.finalize_hook = _loads_finalize
-        companion_page.LOADS_PANEL.runs_hook = _loads_runs
-        companion_page.LOADS_PANEL.run_hook = _loads_run
-        companion_page.LOADS_PANEL.confirm_hook = _loads_confirm
-        companion_page.SPRINKLER_PANEL.calculate_hook = _sprinkler_calculate
-        companion_page.SPRINKLER_PANEL.suggest_hook = _sprinkler_suggest
-        companion_page.SPRINKLER_PANEL.confirm_hook = _sprinkler_confirm
-        companion_page.SPRINKLER_PANEL.report_hook = _sprinkler_report
-        companion_page.LAYOUT_PANEL.preview_hook = _sprinkler_layout_preview
-        companion_page.LAYOUT_PANEL.place_hook = _sprinkler_layout_place
-        companion_page.keep(bound_pid=_companion_revit)
-    except Exception as why:                         # noqa: BLE001 - never cost the chat
-        sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
+    # Not off Windows: it serves the Companion button IN REVIT, and there
+    # is no Revit here (D-132).
+    if not LIBRARY_ONLY:
+        try:
+            companion_page = _companion_module()
+            companion_page.CHANGES.apply_hook = _apply_change
+            companion_page.CHANGES.load_hook = _load_settings
+            companion_page.TABLES.apply_hook = _apply_table
+            companion_page.LOADS_PANEL.recalculate_hook = _loads_recalculate
+            companion_page.LOADS_PANEL.report_hook = _loads_report
+            companion_page.LOADS_PANEL.finalize_hook = _loads_finalize
+            companion_page.LOADS_PANEL.runs_hook = _loads_runs
+            companion_page.LOADS_PANEL.run_hook = _loads_run
+            companion_page.LOADS_PANEL.confirm_hook = _loads_confirm
+            companion_page.SPRINKLER_PANEL.calculate_hook = _sprinkler_calculate
+            companion_page.SPRINKLER_PANEL.suggest_hook = _sprinkler_suggest
+            companion_page.SPRINKLER_PANEL.confirm_hook = _sprinkler_confirm
+            companion_page.SPRINKLER_PANEL.report_hook = _sprinkler_report
+            companion_page.LAYOUT_PANEL.preview_hook = _sprinkler_layout_preview
+            companion_page.LAYOUT_PANEL.place_hook = _sprinkler_layout_place
+            companion_page.keep(bound_pid=_companion_revit)
+        except Exception as why:                         # noqa: BLE001 - never cost the chat
+            sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 
     # One more look, so what start-up imported is fingerprinted before the
     # first call rather than at it.
