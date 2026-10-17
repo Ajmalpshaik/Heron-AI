@@ -16,6 +16,14 @@ How does Heron's search do on the questions the owner ACTUALLY asked?
     python tools/score-routing.py --list        # the answer key; asks nothing
     python tools/score-routing.py --list-plain  # the plain questions; asks nothing
 
+    # A SESSION'S OWN SENTENCES - main against a branch, on a named backend
+    python tools/score-routing.py --sentences s.yaml --tree ../main-wt \\
+        --backend lexical --backend model+rerank --shortlists --out main.json
+    python tools/score-routing.py --sentences s.yaml \\
+        --backend lexical --backend model+rerank --compare main.json
+    python tools/score-routing.py --identities ids.txt --card RENAME_ELEMENTS \\
+        --from main.json                        # re-score identities offline
+
 WHAT IS DIFFERENT ABOUT THIS ONE
 --------------------------------
 Every routing number Heron had was measured on sentences written FOR the
@@ -91,6 +99,19 @@ Every one is a question, so the headline is how many reach a write; where the
 row names the read that answers one, where that read came back is scored too.
 A drop there is reported and never a gate either (D-100).
 
+AND A SESSION'S OWN SENTENCES, WHICH NEVER REACH EITHER TABLE
+-------------------------------------------------------------
+Rows 5b-481, 5b-485 and 5b-510 each rebuilt the same scratch kit on the
+owner's PC to measure a card's words: a probe asking a frozen sentence set on
+a private store built from one checkout, a check that every answer ran on the
+backend asked for, a comparer of main against the branch, and a fast loop
+re-scoring candidate identities on the shortlists the re-ranker read. It is
+`--sentences` now. Each backend is asked in a process of its own, with the
+measured tree's search code and a store built from its cards, and the answers
+go to a record (`--out`) - never to brain/retrieval-history.md, which holds
+the two frozen sets above and nothing else. See "A session's own sentences"
+below.
+
 A NUMBER FROM HERE IS A SAMPLE OF ONE STORE
 -------------------------------------------
 The knowledge store is one file every worktree on a machine writes (row 116),
@@ -107,7 +128,9 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -1097,6 +1120,1032 @@ def compare_plain(history_path, stamp, codes, summary, kinds, rows):
     return drop
 
 
+# ---------------------------------------------------------------------------
+# A session's own sentences - main against a branch, on the backend named
+# ---------------------------------------------------------------------------
+#
+# Rows 5b-481, 5b-485 and 5b-510 each rebuilt this as a scratch kit on the
+# owner's PC, and each time a silent fallback measured nothing: row 481's
+# "both backends" were both re-ranked, found only later. So every backend is
+# asked in a process of its own, every answer carries the backends that
+# produced it, and a record whose answers ran on anything but the backend
+# asked for is refused, whether it is being written or read back.
+
+RECORD_KIND = "score-routing sentence record"
+RECORD_VERSION = 1
+WANT, NOT_A_WRITE, NEUTRAL = "want", "not-a-write", "neutral"
+# The four backends a card's words were measured on in rows 485 and 510:
+# lexical (CI's), the trained model, and each with the cross-encoder (the
+# owner's PC is the model with it). The names are the ones heron_retrieve.ran()
+# writes, joined the way backend_of() already labels a run.
+LEXICAL, MODEL = "lexical", "model"
+BACKENDS = (LEXICAL, MODEL, LEXICAL + "+rerank", MODEL + "+rerank")
+# Whatever this machine has, named by what answered rather than by what was
+# asked for - the run is still refused if its answers disagree with each other.
+INSTALLED = "installed"
+# What an answer's `backends` says when a route did not run. Anything else in
+# `rerank` means the cross-encoder re-read that shortlist.
+NOT_RAN = ("not used", "not said")
+
+TAGS = (WANT, "bad", NEUTRAL)
+
+
+class CouldNotAsk(Exception):
+    """A worker could not ask the sentences at all - nothing was measured."""
+
+
+def _norm(text):
+    return " ".join(str(text or "").split())
+
+
+def parse_expect(text):
+    """(kind, capability) for one expectation, or None when it is not one.
+
+    `want CAPABILITY` - this card should answer; `not-a-write` - a question,
+    which nothing that changes the model should answer; `neutral` - watched,
+    with no right answer either way.
+    """
+    words = _norm(text).split()
+    if (len(words) == 2 and words[0].lower() == WANT
+            and re.match(r"^[A-Z][A-Z0-9_]*$", words[1])):
+        return WANT, words[1]
+    if len(words) == 1 and words[0].lower() in (NOT_A_WRITE, NEUTRAL):
+        return words[0].lower(), None
+    return None
+
+
+def expect_word(kind, want):
+    return "%s %s" % (WANT, want) if kind == WANT else kind
+
+
+def load_sentences(path):
+    """(doc, items, problems) - a frozen sentence set, and what is wrong with
+    its SHAPE. Whether a wanted capability exists is the library's question.
+
+        groups:
+          - group: the three
+            expect: want RENAME_ELEMENTS     # for every sentence below
+            sentences:
+              - rename this view
+              - say: which views have SUP in the name
+                expect: not-a-write          # its own, over the group's
+
+    A sentence may sit in two groups (row 485 had one) and is asked once, but
+    only with ONE expectation: two would make every change to its answer both
+    a win and a loss.
+    """
+    import yaml
+
+    with io.open(path, encoding="utf-8") as handle:
+        doc = yaml.safe_load(handle) or {}
+    groups = doc.get("groups") if isinstance(doc, dict) else None
+    if not isinstance(groups, list) or not groups:
+        return doc, [], ["%s has no `groups:` list" % path]
+    problems, items, seen = [], [], {}
+    for g, group in enumerate(groups, 1):
+        if not isinstance(group, dict) or not _norm(group.get("group")):
+            problems.append("group %d has no `group:` name" % g)
+            continue
+        name = _norm(group["group"])
+        default = group.get("expect")
+        if default is not None and parse_expect(default) is None:
+            problems.append("group %r expects %r - want <CAPABILITY>, "
+                            "not-a-write or neutral" % (name, default))
+            default = None
+        said = group.get("sentences")
+        if not isinstance(said, list) or not said:
+            problems.append("group %r has no sentences" % name)
+            continue
+        for one in said:
+            if isinstance(one, dict):
+                say, expect = one.get("say"), one.get("expect", default)
+                if say is None:
+                    problems.append("group %r has a mapping with no `say:` - "
+                                    "a sentence with a colon in it needs "
+                                    "quotes: %r" % (name, one))
+                    continue
+            else:
+                say, expect = one, default
+            say = _norm(say)
+            if not say:
+                problems.append("group %r has an empty sentence" % name)
+                continue
+            parsed = parse_expect(expect)
+            if parsed is None:
+                problems.append("%r in group %r has %s - want <CAPABILITY>, "
+                                "not-a-write or neutral"
+                                % (say, name, "no expectation" if expect is None
+                                   else "the expectation %r" % (expect,)))
+                continue
+            held = seen.get(say.lower())
+            if held is not None:
+                if (held["kind"], held["want"]) != parsed:
+                    problems.append("%r is %s in group %r and %s in group %r "
+                                    "- one sentence, one expectation"
+                                    % (say, held["expect"], held["groups"][0],
+                                       expect_word(*parsed), name))
+                elif name not in held["groups"]:
+                    held["groups"].append(name)
+                continue
+            item = {"n": len(items) + 1, "say": say, "kind": parsed[0],
+                    "want": parsed[1], "expect": expect_word(*parsed),
+                    "groups": [name]}
+            seen[say.lower()] = item
+            items.append(item)
+    return doc, items, problems
+
+
+def sentence_fingerprint(items):
+    """Eight hex characters naming this set - its sentences and expectations.
+    Groups are labels and stay out of it."""
+    canon = [[item["say"], item["expect"]] for item in items]
+    blob = json.dumps(canon, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:8]
+
+
+def split_backend(name):
+    """(nearness, re-ranked) asked for, or (None, None) for `installed`."""
+    if name == INSTALLED:
+        return None, None
+    nearness, _sep, extra = name.partition("+")
+    return nearness, extra == "rerank"
+
+
+def _reranked(answer):
+    return (answer.get("backends") or {}).get("rerank") not in (None,) + NOT_RAN
+
+
+def backend_problems(asked, answers):
+    """[] when these answers are a run on `asked`, else what says they are not.
+
+    A RANK IS THE EVIDENCE, per answer (heron_retrieve.ran()). An exact phrase
+    or a remembered answer runs no route and casts no vote. A ranked answer
+    whose meaning route found nothing says "not used", which names no backend;
+    a run where NO ranked answer named the one asked for proved nothing. And a
+    shortlist of two or more that the re-ranker did not re-read, on a run that
+    asked for it, is the silent fallback rows 481 and 485 measured.
+    """
+    ranked = [a for a in answers if not a.get("error")
+              and a.get("route") == "hybrid"]
+    named = {}
+    for a in ranked:
+        said = (a.get("backends") or {}).get("nearness") or "not said"
+        if said != "not used":
+            named.setdefault(said, []).append(a["n"])
+    could_rerank = [a for a in ranked if (a.get("candidates") or 0) >= 2]
+    reread = [a["n"] for a in could_rerank if _reranked(a)]
+    unread = [a["n"] for a in could_rerank if not _reranked(a)]
+
+    def which(ns):
+        return "#" + ", #".join(str(n) for n in ns[:5]) + (
+            " and %d more" % (len(ns) - 5) if len(ns) > 5 else "")
+
+    problems = []
+    nearness, rerank = split_backend(asked)
+    if nearness is None:
+        if len(named) > 1:
+            problems.append("the answers ran on more than one nearness backend "
+                            "- %s" % "; ".join("%s %s" % (k, which(v))
+                                               for k, v in sorted(named.items())))
+        if reread and unread:
+            problems.append("the re-ranker re-read %d shortlists and not %d "
+                            "others - %s" % (len(reread), len(unread),
+                                             which(unread)))
+        return problems
+    for said, ns in sorted(named.items()):
+        if said != nearness:
+            problems.append("%d ranked answer(s) ran on %s nearness, not %s - %s"
+                            % (len(ns), said, nearness, which(ns)))
+    if ranked and nearness not in named:
+        problems.append("no ranked answer carried a %s nearness rank, so "
+                        "nothing here measured %s" % (nearness, nearness))
+    if rerank and unread:
+        problems.append("%d shortlist(s) of two or more were not re-read by the "
+                        "cross-encoder - %s" % (len(unread), which(unread)))
+    if not rerank and reread:
+        problems.append("the cross-encoder re-read %d shortlist(s) on a run "
+                        "asked for without it - %s" % (len(reread), which(reread)))
+    return problems
+
+
+def tree_problem(tree):
+    """Why `tree` is not a Heron checkout this can measure, or None."""
+    for part in (("brain", "heron_retrieve.py"), ("brain", "fragments"),
+                 ("mcp", "server", "heron_brain.py")):
+        if not os.path.exists(os.path.join(tree, *part)):
+            return "%s has no %s" % (tree, "/".join(part))
+    return None
+
+
+def tree_head(tree):
+    """(commit, dirty) of a checkout - (None, None) where git cannot say.
+
+    DIRTY COUNTS AN UNTRACKED CARD. A new fragment folder not yet added is
+    read into the store like any other, so a tree carrying one is not the
+    commit its head names.
+    """
+    try:
+        head = subprocess.run(["git", "-C", tree, "rev-parse",
+                               "--show-toplevel", "HEAD"],
+                              capture_output=True, encoding="utf-8",
+                              errors="replace", timeout=60)
+        said = head.stdout.strip().splitlines()
+        # A FOLDER INSIDE SOMEBODY ELSE'S CHECKOUT IS NOT ONE, and git would
+        # answer with the enclosing repository's commit.
+        if head.returncode != 0 or len(said) != 2 or (
+                os.path.normcase(os.path.realpath(said[0]))
+                != os.path.normcase(os.path.realpath(tree))):
+            return None, None
+        status = subprocess.run(["git", "-C", tree, "status", "--porcelain"],
+                                capture_output=True, encoding="utf-8",
+                                errors="replace", timeout=60)
+        dirty = (bool(status.stdout.strip()) if status.returncode == 0
+                 else None)
+        return said[1], dirty
+    except (OSError, subprocess.SubprocessError):
+        return None, None
+
+
+def ask_tree(tree, backend, items, shortlists=False, revit=None):
+    """Ask every sentence on one backend, with `tree`'s own search code over a
+    store built from `tree`'s cards. Returns the worker's run.
+
+    A PROCESS PER BACKEND, AND A STORE PER PROCESS. Which encoder and which
+    re-ranker answer is settled once per process (heron_embed, heron_rerank),
+    and a store's vectors are the encoder's that wrote them - so a second
+    backend in the same process, or on the same store, is the silent mix this
+    exists to stop. The store is a scratch folder deleted afterwards, never
+    the one every chat on the machine reads (row 5b-233).
+
+    Raises CouldNotAsk when nothing was measured.
+    """
+    work = tempfile.mkdtemp(prefix="heron-score-sentences-")
+    try:
+        job = os.path.join(work, "job.json")
+        answers = os.path.join(work, "answers.json")
+        with io.open(job, "w", encoding="utf-8") as handle:
+            json.dump({"tree": tree, "backend": backend,
+                       "sentences": [item["say"] for item in items],
+                       "shortlists": bool(shortlists), "revit": revit},
+                      handle, ensure_ascii=False)
+        env = dict(os.environ)
+        env["HERON_KNOWLEDGE"] = os.path.join(work, "knowledge")
+        env["HERON_AUDIT"] = os.path.join(work, "audit")
+        os.makedirs(env["HERON_KNOWLEDGE"])
+        # Rows 485 and 510 measured with one BLAS thread, one run at a time;
+        # this asks one backend at a time and keeps the thread.
+        env.setdefault("OPENBLAS_NUM_THREADS", "1")
+        env["PYTHONIOENCODING"] = "utf-8"
+        started = time.time()
+        done = subprocess.run([sys.executable, os.path.abspath(__file__),
+                               "--worker", job, answers],
+                              env=env, capture_output=True, encoding="utf-8",
+                              errors="replace")
+        took = time.time() - started
+        if not os.path.exists(answers):
+            tail = "\n".join((done.stderr or done.stdout or "").strip()
+                             .splitlines()[-8:])
+            raise CouldNotAsk("the worker on %s stopped with exit %s and wrote "
+                              "nothing:\n%s" % (backend, done.returncode, tail))
+        with io.open(answers, encoding="utf-8") as handle:
+            run = json.load(handle)
+        if run.get("refused"):
+            raise CouldNotAsk(run["refused"])
+        run["took_s"] = round(took, 1)
+        return run
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def _cell(row, key):
+    try:
+        return row[key]
+    except (IndexError, KeyError, TypeError):
+        return None
+
+
+def _spy_on_shortlists(retrieve, rerank, held):
+    """Wrap `retrieve._rerank` so each call leaves the shortlist it read in
+    `held`. False when this tree has no such seam.
+
+    NO HOOK IN heron_retrieve, AND THAT IS WHY IT WORKS ON MAIN TOO. `retrieve`
+    looks `_rerank` up as a module global on every call, so wrapping it here
+    reads the head of the list - at most heron_rerank.SHORTLIST, the most the
+    cross-encoder ever reads - with the passage each candidate is given, the
+    fused score that breaks a tie and the cross-encoder's score once it has
+    run. The order it returns is the real `_rerank`'s, untouched.
+    """
+    real = getattr(retrieve, "_rerank", None)
+    if not callable(real):
+        return False
+    size = getattr(rerank, "SHORTLIST", 20)
+
+    def spy(text, ranked, passage):
+        head = list(ranked[:size])
+        passages = [passage(c) for c in head]
+        out = real(text, ranked, passage)
+        held.append([{"id": c.id, "capability": _cell(c.row, "capability"),
+                      "identity": _cell(c.row, "semantic_identity"),
+                      "passage": said, "fused": c.score,
+                      "rerank": c.rerank_score}
+                     for c, said in zip(head, passages)])
+        return out
+
+    retrieve._rerank = spy
+    return True
+
+
+def _worker(job_path, out_path):
+    """The other half of ask_tree(), in its own process. Writes the answers,
+    or `refused` with why. Exit 0, or 2 when nothing was asked."""
+    with io.open(job_path, encoding="utf-8") as handle:
+        job = json.load(handle)
+
+    def write(doc):
+        with io.open(out_path, "w", encoding="utf-8") as handle:
+            json.dump(doc, handle, ensure_ascii=False)
+
+    def refuse(why):
+        write({"refused": why})
+        return 2
+
+    # THE MEASURED TREE'S SEARCH, AND NONE OF THIS ONE'S. This file put its own
+    # brain/ and mcp/server/ first on the path when it loaded; a module the
+    # other tree lacked would otherwise be borrowed from here without a word.
+    tree = os.path.realpath(job["tree"])
+    ours = set(os.path.normcase(os.path.realpath(os.path.join(ROOT, *p)))
+               for p in (("brain",), ("mcp", "server")))
+    sys.path[:] = [p for p in sys.path
+                   if os.path.normcase(os.path.realpath(p or os.curdir))
+                   not in ours]
+    sys.path[:0] = [os.path.join(tree, "mcp", "server"),
+                    os.path.join(tree, "brain")]
+    try:
+        import heron_embed as EMBED
+        import heron_rerank as RERANK
+        import heron_retrieve as RETRIEVE
+        import heron_scope as SCOPE
+        import heron_brain as BRAIN
+    except Exception as why:                                # noqa: BLE001
+        return refuse("%s's search could not be imported: %s: %s"
+                      % (tree, type(why).__name__, why))
+    for module in (EMBED, RERANK, RETRIEVE, SCOPE, BRAIN):
+        here = os.path.normcase(os.path.realpath(module.__file__))
+        if not here.startswith(os.path.normcase(tree) + os.sep):
+            return refuse("%s was loaded from %s, not from the tree measured"
+                          % (module.__name__, here))
+
+    # TURNED OFF BY SETTLING THE LOADER'S ANSWER BEFORE ANYTHING ASKS IT. Row
+    # 481: system Python ran the cross-encoder whatever HERON_EMBED_MODEL
+    # said. Each loader keeps its answer in one list and reads it first, so
+    # [None] there is "nothing installed" for the life of this process.
+    nearness, rerank = split_backend(job["backend"])
+    for off, module, cache in ((nearness == LEXICAL, EMBED, "_MODEL_CACHE"),
+                               (rerank is False, RERANK, "_CACHE")):
+        if not off:
+            continue
+        held = getattr(module, cache, None)
+        if not isinstance(held, list):
+            return refuse("%s has no %s to turn it off with" % (module.__name__,
+                                                                 cache))
+        held[:] = [None]
+    have = {"nearness": EMBED.backend()[0], "rerank": RERANK.backend()[0]}
+    if nearness is not None and have["nearness"] != nearness:
+        return refuse("%s was asked for, and this machine's encoder answers %s "
+                      "- nothing was asked" % (job["backend"], have["nearness"]))
+    if rerank and have["rerank"] != RERANK.CROSS_ENCODER:
+        return refuse("%s was asked for, and this machine has no cross-encoder "
+                      "(%s) - nothing was asked. %s"
+                      % (job["backend"], have["rerank"],
+                         "pip install --user sentence-transformers, which "
+                         "needs huggingface.co once for the weights"))
+
+    held = []
+    if job.get("shortlists") and not _spy_on_shortlists(RETRIEVE, RERANK, held):
+        return refuse("%s's heron_retrieve has no _rerank to read a shortlist "
+                      "at" % tree)
+
+    answers = []
+    for i, say in enumerate(job["sentences"], 1):
+        if i % 25 == 0:
+            sys.stderr.write("  asked %d of %d\n" % (i, len(job["sentences"])))
+        del held[:]
+        try:
+            found = BRAIN.lookup(say, revit=job.get("revit"))
+        except Exception as why:                            # noqa: BLE001
+            # ONE SENTENCE, NOT THE RUN - unless the store itself is gone.
+            if type(why).__name__ == "BrainUnavailable":
+                return refuse("COULD NOT ASK: %s" % why)
+            answers.append({"n": i, "say": say,
+                            "error": "%s: %s" % (type(why).__name__, why)})
+            continue
+        said = found.get("backends") or {}
+        answers.append({
+            "n": i, "say": say, "route": found.get("route"),
+            "capability": found.get("capability"),
+            "provider": found.get("provider"), "risk": found.get("risk"),
+            "order": shortlist(found),
+            "candidates": len(found.get("candidates") or []),
+            "backends": {"nearness": said.get("nearness"),
+                         "rerank": said.get("rerank")},
+            # AN UNREADABLE RISK COLUMN IS NOT A READ - row 5b-35, as above.
+            "error": ("the fragments' risks could not be read (%s)"
+                      % found["risks_unreadable"]
+                      if found.get("risks_unreadable") else None),
+            "shortlist": (held[-1] if held else None)
+            if job.get("shortlists") else None})
+
+    store = SCOPE.open_scope(SCOPE.GLOBAL)
+    try:
+        cards = [[r["capability"], r.get("risk")] for r in store.fragments()
+                 if r.get("capability")]
+        fragments = store.count()
+    finally:
+        store.close()
+    write({"tree": tree, "asked": job["backend"], "available": have,
+           "fragments": fragments, "capabilities": cards,
+           "shortlists": bool(job.get("shortlists")), "answers": answers})
+    return 0
+
+
+def highest_risks(cards, rung):
+    """{capability: its highest declared risk} from a worker's [[cap, risk]]."""
+    out = {}
+    for capability, risk in cards:
+        if capability not in out or rung(risk) > rung(out[capability]):
+            out[capability] = risk
+    return out
+
+
+def outcome(item, answer, rung, threshold):
+    """What one answer means for one sentence: (writes, place, ok).
+
+    `place` is where a wanted capability sits in the shortlist heron_lookup
+    shows; `ok` is None for a neutral sentence, or for an answer that could
+    not be scored.
+    """
+    if answer is None or answer.get("error"):
+        return None, None, None
+    writes = (answer.get("risk") is not None
+              and rung((answer.get("risk") or "").upper()) >= threshold)
+    if item["kind"] == WANT:
+        at, _ = place(answer.get("order") or [], {item["want"]})
+        return writes, at, answer.get("capability") == item["want"]
+    if item["kind"] == NOT_A_WRITE:
+        return writes, None, not writes
+    return writes, None, None
+
+
+def tag(item, before, after, writes):
+    """want, bad or neutral for one answer that changed. `writes(answer)`.
+
+    want X: X came to answer it is a want; X left it is bad; one wrong answer
+    for another is neutral. not-a-write: a question that reaches a write now
+    is bad, one that stopped reaching one is a want. neutral is neutral.
+    """
+    if item["kind"] == WANT:
+        if after.get("capability") == item["want"]:
+            return WANT
+        if before.get("capability") == item["want"]:
+            return "bad"
+        return NEUTRAL
+    if item["kind"] == NOT_A_WRITE:
+        if writes(after) and not writes(before):
+            return "bad"
+        if writes(before) and not writes(after):
+            return WANT
+    return NEUTRAL
+
+
+def _risked(answer):
+    return "%s (%s)" % (answer.get("capability") or "nothing",
+                        answer.get("risk") or "-")
+
+
+def report_run(label, run, items, rung, threshold):
+    """Print one backend's run. Returns its counts."""
+    out = sys.stdout.write
+    by_n = dict((a["n"], a) for a in run["answers"])
+    caps = run["capabilities"]
+    totals = {"asked": 0, "wanted": 0, "reached": 0, "questions": 0,
+              "to_a_write": 0, "exact": 0, "errors": 0}
+    groups, order = {}, []
+    missed, crossed, broken, unknown = [], [], [], []
+    for item in items:
+        answer = by_n.get(item["n"])
+        writes, at, ok = outcome(item, answer, rung, threshold)
+        if writes is None:
+            broken.append((item, (answer or {}).get("error") or "not asked"))
+            totals["errors"] += 1
+            continue
+        if item["kind"] == WANT and item["want"] not in caps:
+            unknown.append(item)
+            continue
+        for name in item["groups"]:
+            if name not in groups:
+                order.append(name)
+                groups[name] = dict((k, 0) for k in totals)
+        for counts in [totals] + [groups[g] for g in item["groups"]]:
+            counts["asked"] += 1
+            counts["exact"] += answer.get("route") == "identity"
+            if item["kind"] == WANT:
+                counts["wanted"] += 1
+                counts["reached"] += bool(ok)
+            elif item["kind"] == NOT_A_WRITE:
+                counts["questions"] += 1
+                counts["to_a_write"] += bool(writes)
+        if item["kind"] == WANT and not ok:
+            missed.append((item, answer, at))
+        if item["kind"] == NOT_A_WRITE and writes:
+            crossed.append((item, answer))
+
+    def frac(k, of):
+        return "%d of %d" % (k, of) if of else "-"
+
+    out("\n%s - %d fragments, %d sentences asked, %s s\n"
+        % (label.upper(), run["fragments"], len(run["answers"]),
+           run.get("took_s", "?")))
+    out("  %-40s %5s  %-10s %-19s %s\n" % ("group", "asked", "wanted",
+                                           "questions -> write", "exact"))
+    for name in order + ["all"]:
+        c = totals if name == "all" else groups[name]
+        out("  %-40s %5d  %-10s %-19s %d\n"
+            % (_short(name, 40), c["asked"], frac(c["reached"], c["wanted"]),
+               frac(c["to_a_write"], c["questions"]), c["exact"]))
+    if missed:
+        out("\n  WANTED, AND SOMETHING ELSE ANSWERED - %d:\n" % len(missed))
+        for item, answer, at in missed:
+            out("    #%-4d %-44s -> %s; wants %s%s\n"
+                % (item["n"], _short('"%s"' % item["say"], 44), _risked(answer),
+                   item["want"], " (%s)" % _place_word(at) if at else ""))
+    if crossed:
+        out("\n  A QUESTION ANSWERED BY A WRITE (D-86) - %d:\n" % len(crossed))
+        for item, answer in crossed:
+            out("    #%-4d %-44s -> %s\n"
+                % (item["n"], _short('"%s"' % item["say"], 44),
+                   _risked(answer)))
+    if unknown:
+        out("\n  NOT SCORED - the set wants a capability this library does not "
+            "have - %d:\n" % len(unknown))
+        for item in unknown:
+            out("    #%-4d %-44s wants %s\n"
+                % (item["n"], _short('"%s"' % item["say"], 44), item["want"]))
+    if broken:
+        out("\n  NOT SCORED - %d:\n" % len(broken))
+        for item, why in broken:
+            out("    #%-4d %s\n" % (item["n"], why))
+    return totals
+
+
+def compare_runs(label, before, after, items, rung, threshold):
+    """Print every sentence whose answer changed between two runs on one
+    backend, tagged. Returns the counts. Sentences are matched by their words,
+    so a set that grew compares what the two have in common."""
+    out = sys.stdout.write
+
+    def writes(answer):
+        return outcome({"kind": NEUTRAL}, answer, rung, threshold)[0]
+
+    was = dict((_norm(a["say"]).lower(), a) for a in before["answers"])
+    now = dict((a["n"], a) for a in after["answers"])
+    counts = {"both": 0, "changed": 0, "unreadable": 0, "only_here": 0,
+              "questions": 0, "write_before": 0, "write_after": 0,
+              "wanted": 0, "reached_before": 0, "reached_after": 0}
+    for tagged in TAGS:
+        counts[tagged] = 0
+    lines = []
+    for item in items:
+        a, b = was.get(item["say"].lower()), now.get(item["n"])
+        if a is None:
+            counts["only_here"] += 1
+            continue
+        if b is None or a.get("error") or b.get("error"):
+            counts["unreadable"] += 1
+            continue
+        counts["both"] += 1
+        if item["kind"] == NOT_A_WRITE:
+            counts["questions"] += 1
+            counts["write_before"] += bool(writes(a))
+            counts["write_after"] += bool(writes(b))
+        if item["kind"] == WANT:
+            counts["wanted"] += 1
+            counts["reached_before"] += a.get("capability") == item["want"]
+            counts["reached_after"] += b.get("capability") == item["want"]
+        if a.get("capability") == b.get("capability"):
+            continue
+        tagged = tag(item, a, b, writes)
+        counts["changed"] += 1
+        counts[tagged] += 1
+        lines.append((TAGS.index(tagged), item["n"], tagged, item, a, b))
+    out("\n%s - %d sentences in both records, %d answers changed "
+        "(want %d, bad %d, neutral %d):\n"
+        % (label.upper(), counts["both"], counts["changed"], counts[WANT],
+           counts["bad"], counts[NEUTRAL]))
+    for _rank, _n, tagged, item, a, b in sorted(lines, key=lambda x: x[:2]):
+        out("  %-7s #%-4d %-40s %s -> %s   [%s]\n"
+            % (tagged, item["n"], _short('"%s"' % item["say"], 40), _risked(a),
+               _risked(b), item["expect"]))
+    out("  questions reaching a write  %d -> %d of %d\n"
+        % (counts["write_before"], counts["write_after"], counts["questions"]))
+    out("  wanted answers reached      %d -> %d of %d\n"
+        % (counts["reached_before"], counts["reached_after"], counts["wanted"]))
+    if counts["only_here"]:
+        out("  %d sentence(s) are in this set and not in the earlier record\n"
+            % counts["only_here"])
+    if counts["unreadable"]:
+        out("  %d sentence(s) could not be scored on one side or the other\n"
+            % counts["unreadable"])
+    return counts
+
+
+def make_record(path, items, runs, tree, head, dirty, revit):
+    """The record --out writes. Everything --compare and --from read back.
+    `head` and `dirty` are the ones printed when the run began."""
+    return {"record": RECORD_KIND, "version": RECORD_VERSION,
+            "date": datetime.date.today().isoformat(),
+            "tree": {"path": tree, "head": head, "dirty": dirty},
+            "revit": revit,
+            "sentences": {"file": path, "fingerprint": sentence_fingerprint(items),
+                          "items": [{"say": i["say"], "expect": i["expect"],
+                                     "groups": i["groups"]} for i in items]},
+            "runs": runs}
+
+
+def load_record(path):
+    """(record, refused) - a record, and {backend: why} for every run in it
+    that is NOT a run on the backend it is filed under. Raises CouldNotAsk
+    when the file is not a record at all."""
+    try:
+        with io.open(path, encoding="utf-8") as handle:
+            record = json.load(handle)
+    except (IOError, OSError, ValueError) as why:
+        raise CouldNotAsk("%s could not be read as a record: %s" % (path, why))
+    if (not isinstance(record, dict) or record.get("record") != RECORD_KIND
+            or not isinstance(record.get("runs"), dict)):
+        raise CouldNotAsk("%s is not a record --out wrote" % path)
+    if record.get("version") != RECORD_VERSION:
+        raise CouldNotAsk("%s is a version %r record; this reads version %d"
+                          % (path, record.get("version"), RECORD_VERSION))
+    refused = {}
+    for label, run in record["runs"].items():
+        asked = run.get("asked")
+        if asked not in BACKENDS + (INSTALLED,) or (asked != INSTALLED
+                                                    and asked != label):
+            refused[label] = "filed under %s and asked for %r" % (label, asked)
+            continue
+        problems = backend_problems(label if asked == INSTALLED else asked,
+                                    run.get("answers") or [])
+        if asked == INSTALLED and label != backend_of(run.get("answers") or []):
+            problems.append("filed under %s, and its answers say %s"
+                            % (label, backend_of(run.get("answers") or [])))
+        if problems:
+            refused[label] = "; ".join(problems)
+    return record, refused
+
+
+def items_from_record(record):
+    """The sentence set a record was taken on, shaped as load_sentences()."""
+    items = []
+    for n, one in enumerate(record["sentences"]["items"], 1):
+        kind, want = parse_expect(one["expect"]) or (NEUTRAL, None)
+        items.append({"n": n, "say": one["say"], "kind": kind, "want": want,
+                      "expect": one["expect"], "groups": list(one["groups"])})
+    return items
+
+
+# ---------------------------------------------------------------------------
+# The fast loop - candidate identities for one card, on recorded shortlists
+# ---------------------------------------------------------------------------
+
+def load_identities(path):
+    """The candidate identities, one per line; blank and # lines skipped."""
+    with io.open(path, encoding="utf-8") as handle:
+        lines = [_norm(line) for line in handle.read().splitlines()]
+    out = []
+    for line in lines:
+        if line and not line.startswith("#") and line not in out:
+            out.append(line)
+    return out
+
+
+def _winner(shortlist_, scores):
+    """The capability first after a re-read - heron_retrieve._rerank's order:
+    the cross-encoder's score, then the fused score, then the id; anything it
+    did not score stays behind everything it did."""
+    scored = [(s, e) for s, e in zip(scores, shortlist_) if s is not None]
+    if not scored:
+        return shortlist_[0].get("capability") if shortlist_ else None
+    scored.sort(key=lambda se: (-se[0], -(se[1].get("fused") or 0.0),
+                                str(se[1].get("id"))))
+    return scored[0][1].get("capability")
+
+
+def rescore(items, run, card, identities, scorer, rung, threshold):
+    """What each candidate identity for `card` would win and take, on the
+    shortlists `run` recorded. Never asks the search. Returns a dict.
+
+    `scorer(question, passages)` is heron_rerank.scores in a real run - a
+    score per passage, or None. The baseline is re-scored too, so the
+    recorded identity and every candidate are judged by the same model.
+
+    WHAT IT CANNOT SEE, SAID RATHER THAN GUESSED. A new identity also moves
+    the words and nearness routes, so it can carry a card into a shortlist or
+    out of one; this keeps every shortlist as recorded. A sentence whose
+    shortlist did not hold the card is out of reach - only a full run says -
+    and one answered by an exact phrase never reached the re-ranker at all.
+    """
+    card_writes = rung(run["capabilities"].get(card)) >= threshold
+    # BY ITS WORDS, NOT ITS NUMBER: --sentences beside --from may be a set
+    # that grew since the record was taken.
+    by_say = dict((_norm(a["say"]).lower(), a) for a in run["answers"])
+    skipped = {"identity": 0, "no shortlist": 0, "not scored": 0,
+               "not in the record": 0}
+    reach = {"wanted": 0, "bad": 0, "neutral": 0}
+    blind = 0
+    prepared = []
+    for item in items:
+        answer = by_say.get(item["say"].lower())
+        if answer is None:
+            skipped["not in the record"] += 1
+            continue
+        if answer.get("error"):
+            skipped["not scored"] += 1
+            continue
+        if answer.get("route") != "hybrid":
+            skipped["identity"] += 1
+            continue
+        held = answer.get("shortlist")
+        if not held:
+            skipped["no shortlist"] += 1
+            continue
+        if item["kind"] == WANT:
+            role = "wanted" if item["want"] == card else "bad"
+        elif item["kind"] == NOT_A_WRITE and card_writes:
+            role = "bad"
+        else:
+            role = "neutral"
+        mine = [k for k, e in enumerate(held) if e.get("capability") == card]
+        if not mine:
+            reach[role] += 1
+            continue
+        swap = [k for k in mine if held[k].get("identity")
+                and held[k]["identity"] in (held[k].get("passage") or "")]
+        blind += len(swap) < len(mine)
+        base = scorer(item["say"], [e.get("passage") or "" for e in held])
+        if base is None or len(base) != len(held):
+            skipped["not scored"] += 1
+            continue
+        prepared.append((item, answer, held, swap, list(base), role))
+
+    lines = []
+    agree = 0
+    for identity in [None] + list(identities):
+        tally = {"wanted": 0, "won": 0, "bad": 0, "taken": 0, "questions": 0,
+                 "neutral": 0, "neutral_taken": 0}
+        for item, answer, held, swap, base, role in prepared:
+            scores = list(base)
+            if identity is not None and swap:
+                got = scorer(item["say"], [
+                    held[k]["passage"].replace(held[k]["identity"], identity, 1)
+                    for k in swap])
+                if got is not None and len(got) == len(swap):
+                    for k, value in zip(swap, got):
+                        scores[k] = value
+            won = _winner(held, scores) == card
+            if identity is None:
+                agree += _winner(held, scores) == answer.get("capability")
+            if role == "wanted":
+                tally["wanted"] += 1
+                tally["won"] += won
+            elif role == "bad":
+                tally["bad"] += 1
+                tally["taken"] += won
+                tally["questions"] += won and item["kind"] == NOT_A_WRITE
+            else:
+                tally["neutral"] += 1
+                tally["neutral_taken"] += won
+        lines.append((identity, tally))
+    return {"lines": lines, "skipped": skipped, "out_of_reach": reach,
+            "blind": blind, "read": len(prepared), "agree": agree,
+            "card_writes": card_writes}
+
+
+def report_rescore(label, card, found, took):
+    """Print one line per candidate: wanted won, bad taken, neutral taken."""
+    out = sys.stdout.write
+    sk, reach = found["skipped"], found["out_of_reach"]
+    out("\nRE-SCORED OFFLINE FOR %s (%s) on the %s shortlists - %d read, "
+        "%.1f s:\n" % (card, "a write" if found["card_writes"] else "not a "
+                       "write", label, found["read"], took))
+    out("  skipped: %d answered by an exact phrase or remembered (they never "
+        "reach the re-ranker),\n  %d with no shortlist, %d not scored, %d not "
+        "in the record\n" % (sk["identity"], sk["no shortlist"],
+                             sk["not scored"], sk["not in the record"]))
+    if any(reach.values()):
+        out("  OUT OF REACH - the recorded shortlist did not hold %s: %d wanted, "
+            "%d bad, %d neutral.\n  A new identity can carry it in; only a "
+            "full run says.\n" % (card, reach["wanted"], reach["bad"],
+                                  reach["neutral"]))
+    if found["blind"]:
+        out("  %d shortlist(s) gave the re-ranker a passage without the card's "
+            "identity in it, so no\n  candidate can move them.\n"
+            % found["blind"])
+    if label.endswith("+rerank") and found["agree"] != found["read"]:
+        out("  THE RECORDED IDENTITY, RE-SCORED HERE, PICKS ANOTHER WINNER ON %d "
+            "of %d - this cross-encoder\n  is not the one the record was taken "
+            "with, so read the lines below against the first.\n"
+            % (found["read"] - found["agree"], found["read"]))
+    out("\n  %-14s %-16s %-8s %s\n" % ("wanted won", "bad taken", "neutral",
+                                      "identity"))
+    for identity, t in found["lines"]:
+        out("  %-14s %-16s %-8s %s\n"
+            % ("%d of %d" % (t["won"], t["wanted"]),
+               "%d (%d question%s)" % (t["taken"], t["questions"],
+                                       "" if t["questions"] == 1 else "s"),
+               "%d" % t["neutral_taken"],
+               "(as recorded)" if identity is None else '"%s"' % identity))
+
+
+def sentences_main(args, rung, threshold):
+    """--sentences, --compare, --identities: everything a session's own set
+    does. Exit 0 whatever it finds (D-100); 2 when nothing was measured, or a
+    record would be written or read on the wrong backend."""
+    err = sys.stderr.write
+    asking = args.sentences and not args.source
+    if args.source and (args.tree or args.out or args.compare
+                        or args.shortlists):
+        err("COULD NOT RUN: --from re-scores a record and asks nothing, so "
+            "--tree, --out, --compare and --shortlists do not go with it\n")
+        return 2
+    if args.identities and not args.card:
+        err("COULD NOT RUN: --identities needs --card, the capability whose "
+            "identity they would replace\n")
+        return 2
+    if args.identities and asking and not args.shortlists:
+        err("COULD NOT RUN: --identities re-scores shortlists - take them with "
+            "--shortlists, or read a record with --from\n")
+        return 2
+    if args.record:
+        err("COULD NOT RUN: brain/retrieval-history.md holds the owner's and "
+            "the plain questions only - a sentence set's record is --out\n")
+        return 2
+    backends = []
+    for name in args.backend or [INSTALLED]:
+        for one in (BACKENDS if name == "all" else [name]):
+            if one not in BACKENDS + (INSTALLED,):
+                err("COULD NOT RUN: --backend %s - one of %s, all or %s\n"
+                    % (one, ", ".join(BACKENDS), INSTALLED))
+                return 2
+            if one not in backends:
+                backends.append(one)
+
+    items, unasked = [], {}
+    if args.sentences:
+        _doc, items, problems = load_sentences(args.sentences)
+        if problems:
+            err("COULD NOT RUN: the sentence set is not well formed:\n")
+            for one in problems:
+                err("  %s\n" % one)
+            return 2
+        if args.list:
+            for item in items:
+                print("%4d  %-32s %-40s %s" % (item["n"], item["expect"],
+                                               _short(", ".join(item["groups"]),
+                                                      40), item["say"]))
+            return 0
+
+    try:
+        if args.source:
+            record, refused = load_record(args.source)
+            runs = dict((k, v) for k, v in record["runs"].items()
+                        if k not in refused
+                        and (not args.backend or k in backends))
+            for label, why in sorted(refused.items()):
+                print("NOT READ - the %s run in %s: %s" % (label, args.source,
+                                                           why))
+            items = items or items_from_record(record)
+            tree = record["tree"]["path"]
+        else:
+            tree = os.path.realpath(args.tree or ROOT)
+            problem = tree_problem(tree)
+            if problem:
+                err("COULD NOT RUN: %s\n" % problem)
+                return 2
+            print("Sentences: %d in %s, set %s" % (len(items), args.sentences,
+                                                   sentence_fingerprint(items)))
+            head, dirty = tree_head(tree)
+            print("Tree: %s at %s%s" % (tree, (head or "no git")[:12],
+                                        ", WITH CHANGES NOT COMMITTED"
+                                        if dirty else ""))
+            runs = {}
+            for backend in backends:
+                sys.stderr.write("  asking %d sentences on %s ...\n"
+                                 % (len(items), backend))
+                # ONE BACKEND THIS MACHINE HAS NOT GOT IS NOT THE RUN. On a
+                # container with no trained model, `all` still measures the
+                # two lexical backends, and says which two it could not.
+                try:
+                    run = ask_tree(tree, backend, items, args.shortlists,
+                                   args.revit)
+                except CouldNotAsk as why:
+                    unasked[backend] = str(why)
+                    continue
+                label = backend if backend != INSTALLED else backend_of(
+                    run["answers"])
+                run["capabilities"] = highest_risks(run["capabilities"], rung)
+                runs[label] = run
+            for backend, why in unasked.items():
+                print("\nNOT ASKED ON %s - %s" % (backend.upper(), why))
+            if not runs:
+                err("COULD NOT RUN: no backend asked for could be asked\n")
+                return 2
+    except CouldNotAsk as why:
+        err("COULD NOT RUN: %s\n" % why)
+        return 2
+
+    wrong = {}
+    if asking:
+        for label, run in runs.items():
+            problems = backend_problems(run["asked"], run["answers"])
+            report_run(label, run, items, rung, threshold)
+            if problems:
+                wrong[label] = problems
+                print("\n  NOT A RUN ON %s - %s" % (label.upper(),
+                                                   "; ".join(problems)))
+            else:
+                print("\n  Every ranked answer ran on %s." % label)
+
+    if args.compare:
+        try:
+            earlier, refused = load_record(args.compare)
+        except CouldNotAsk as why:
+            err("COULD NOT RUN: %s\n" % why)
+            return 2
+        print("\n" + "=" * 72)
+        print("AGAINST %s - tree %s at %s, %s, set %s" % (
+            args.compare, earlier["tree"].get("path"),
+            (earlier["tree"].get("head") or "no git")[:12],
+            earlier.get("date"), earlier["sentences"].get("fingerprint")))
+        for label, run in runs.items():
+            if label in wrong:
+                print("\nNOT COMPARED ON %s - this run is not a run on it"
+                      % label.upper())
+            elif label in refused:
+                print("\nNOT COMPARED ON %s - the earlier run is not a run on "
+                      "it: %s" % (label.upper(), refused[label]))
+            elif label not in earlier["runs"]:
+                print("\nNOT COMPARED ON %s - the earlier record has no run on "
+                      "it (it has %s)" % (label.upper(), ", ".join(
+                          sorted(earlier["runs"])) or "none"))
+            else:
+                compare_runs(label, earlier["runs"][label], run, items, rung,
+                             threshold)
+
+    if args.identities:
+        import heron_rerank as RERANK
+        if RERANK.backend()[0] != RERANK.CROSS_ENCODER:
+            err("COULD NOT RUN: re-scoring needs a cross-encoder on this "
+                "machine, and there is none - %s\n" % RERANK.backend()[1])
+            return 2
+        identities = load_identities(args.identities)
+        if not identities:
+            err("COULD NOT RUN: %s holds no identity\n" % args.identities)
+            return 2
+        for label, run in sorted(runs.items()):
+            if label in wrong:
+                continue
+            if args.card not in run["capabilities"]:
+                err("COULD NOT RUN: no card in the %s run provides %s\n"
+                    % (label, args.card))
+                return 2
+            if not run.get("shortlists"):
+                print("\nNOT RE-SCORED ON %s - its run recorded no shortlists"
+                      % label.upper())
+                continue
+            started = time.time()
+            found = rescore(items, run, args.card, identities, RERANK.scores,
+                            rung, threshold)
+            report_rescore(label, args.card, found, time.time() - started)
+
+    if args.out:
+        if wrong:
+            print("\nNOT RECORDED - %s did not run on the backend asked for, and "
+                  "a record of it would be\nread as a measurement of that "
+                  "backend." % ", ".join(sorted(wrong)))
+            return 2
+        with io.open(args.out, "w", encoding="utf-8") as handle:
+            json.dump(make_record(args.sentences, items, runs, tree, head,
+                                  dirty, args.revit),
+                      handle, ensure_ascii=False, indent=1)
+        print("\nRecorded in %s - %s.%s" % (
+            args.out, ", ".join(sorted(runs)),
+            " Not on %s: it could not be asked." % ", ".join(sorted(unasked))
+            if unasked else ""))
+
+    print("\nExit 0 whatever this finds (D-100).")
+    return exit_code(False)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Score Heron's search on the owner's own questions.")
@@ -1114,13 +2163,61 @@ def main(argv=None):
     parser.add_argument("--plain-questions", default=PLAIN,
                         help=argparse.SUPPRESS)
     parser.add_argument("--history", default=HISTORY, help=argparse.SUPPRESS)
+    # A SESSION'S OWN SENTENCES - none of these reach the history tables.
+    parser.add_argument("--sentences", default=None,
+                        help="a frozen sentence set (yaml: groups, and per "
+                             "sentence want <CAPABILITY>, not-a-write or "
+                             "neutral); asks it instead of the two frozen sets")
+    parser.add_argument("--tree", default=None,
+                        help="measure this checkout - such as a detached "
+                             "worktree of main - on a store built from its "
+                             "cards; default: this one")
+    parser.add_argument("--backend", action="append", default=None,
+                        help="%s, all, or %s (the default: whatever this "
+                             "machine has, named by what answered); repeat "
+                             "for several" % (", ".join(BACKENDS), INSTALLED))
+    parser.add_argument("--out", default=None,
+                        help="write the record: every answer, with the "
+                             "backends that produced it")
+    parser.add_argument("--compare", default=None,
+                        help="an earlier record: list every changed answer, "
+                             "tagged want, bad or neutral, per backend")
+    parser.add_argument("--shortlists", action="store_true",
+                        help="record the shortlist the re-ranker read for "
+                             "each sentence - at most its top 20")
+    parser.add_argument("--identities", default=None,
+                        help="candidate semantic identities, one per line, "
+                             "re-scored offline for --card")
+    parser.add_argument("--card", default=None,
+                        help="the capability whose identity they replace")
+    parser.add_argument("--from", dest="source", default=None,
+                        help="the record whose shortlists --identities "
+                             "re-scores; asks nothing")
+    parser.add_argument("--worker", nargs=2, default=None,
+                        help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+
+    if args.worker:
+        return _worker(*args.worker)
 
     try:
         import yaml                                      # noqa: F401
     except ImportError:
         sys.stderr.write("COULD NOT RUN: this needs PyYAML - "
                          "pip install --user pyyaml\n")
+        return 2
+
+    if args.sentences or args.source:
+        _risk_name, threshold, ladder = _sibling(
+            "generate-jobs.py").write_threshold()
+        return sentences_main(args, lambda risk: ladder.get(
+            (risk or "").upper(), -1), threshold)
+    if (args.tree or args.backend or args.out or args.compare
+            or args.shortlists or args.identities or args.card):
+        sys.stderr.write("COULD NOT RUN: --tree, --backend, --out, --compare, "
+                         "--shortlists, --identities and --card measure a "
+                         "sentence set - name one with --sentences, or a "
+                         "record with --from\n")
         return 2
 
     doc, rows, problems = load_key(args.questions)

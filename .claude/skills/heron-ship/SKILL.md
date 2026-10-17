@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the eleven CI actually decides on, the reports whose findings are questions, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, and how to resolve a merge conflict in the NEEDS-CHECKING group index or at the end of the 5b rows.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the eleven CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, and how to resolve a merge conflict in the NEEDS-CHECKING group index or at the end of the 5b rows.
 allowed-tools:
   - Bash
   - Read
@@ -389,6 +389,37 @@ waiting on the owner. **They are not new and they are not yours.** **Read the to
 rather than one written here**: it said 62 and 59 until 2026-09-21, when they were 67 and 64, because
 the figures move with every fragment added. Derive `check-reachable`'s count the same way, for the
 same reason.
+
+## 3a. Routing evidence for a card's words - main against the branch
+
+`check-change` says a card whose routing text changed owes `check-routing` and `check-intrusion`. Those
+say every capability is still reachable; **what moved, sentence by sentence, is
+`score-routing.py --sentences`** ([`tools/README.md`](../../../tools/README.md) has every flag). Rows
+5b-481, 5b-485 and 5b-510 each built it by hand in a scratch folder; do not build it again.
+
+```bash
+git worktree add --detach ../main-wt origin/main
+python tools/score-routing.py --sentences s.yaml --tree ../main-wt --backend all --shortlists --out main.json
+python tools/score-routing.py --sentences s.yaml --backend all --compare main.json
+```
+
+- **Freeze the sentences before you edit the card**, each with `want <CAPABILITY>`, `not-a-write` or
+  `neutral`. A set written after the edit measures the edit's own words back.
+- **Name the backend.** Four were measured in row 485: `lexical` (CI's), `model`, and each `+rerank` -
+  the owner's PC is `model+rerank`. A backend this machine has not got is **NOT ASKED**, which is
+  **NOT RUN**, never a pass: a cloud container usually has `lexical` alone. Leave the others to the PC,
+  and say so - or, where PyPI and huggingface.co answer, put them in a **venv of their own** and run the
+  tool with its Python (each backend's process uses the same one). Measured 2026-10-17: all four in
+  about 8 minutes and 5.8 GB, PyPI's CUDA torch because download.pytorch.org was refused. **Never in
+  the system Python:** `heron_embed` falls back to sentence-transformers when model2vec is missing, so
+  every suite would then run on a backend CI does not.
+- **A refused run is the point, not a nuisance.** Row 481's "both backends" were both re-ranked, found
+  later. The tool now refuses to write, or to compare against, a run whose answers ran on another backend.
+- **Every `bad` line is a finding to report**, and it exits 0 (D-100). Never reword a sentence to buy it
+  back.
+- **Trying wordings for an identity?** `--identities ids.txt --card NAME --from main.json` re-scores
+  them offline on the recorded shortlists, one line per wording. It is a screen: build the winner in full,
+  on both trees, before you claim it.
 
 ## 4. The one that exits 1 on purpose
 
