@@ -195,6 +195,7 @@ an edit.
 | [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
 | [D-122](#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
 | [D-123](#d-123--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
+| [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model) | A request the host calls a question is never offered a capability that changes the model | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1065,3 +1066,13 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs) (new), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`Captures`), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [NEEDS-CHECKING group ER](needs-checking/group-er.md)
 
 **Full record:** [`decisions/D-123.md`](decisions/D-123.md)
+
+## D-128 — A request the host calls a question is never offered a capability that changes the model
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"do it the best only"* - choosing option B of [the work note](work-notes/investigations/2026-10-17-plain-questions-owner-call.md), the one advised · **Source:** [FRAGMENT-ISSUES 5b-477 and 5b-478](fragment-issues/section-5b-rows-401-425.md) - of 120 plain questions, 32 reached a write on the trained backend and 27 on lexical
+**Numbering:** written as D-116 on 2026-10-17 and renumbered D-128 the same day, before it merged: main had given D-116 to D-123 to other work while this was open, and open pull requests claim D-124 to D-127. The owner's words name no number
+**Supersedes:** [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) item 2, *"Resolution, proposed and not built"* - its item 1, the reporting, stands unchanged
+**Keeps:** [D-01](#d-01--execution-host-claude-code-plugin) - the host decides what the user meant, and Heron never classifies it · [D-65](#d-65--heron-keeps-the-degraded-result-rule-and-hands-routing-to-the-host) - routing is the host's · [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) - which questions a write may declare · Golden Rule 19 - a risk is read from the registry, never typed
+**Affects:** [`heron_retrieve.py`](../brain/heron_retrieve.py) (`eligible`, `retrieve`, `find`: `ceiling`), [`heron_brain.py`](../mcp/server/heron_brain.py) (`lookup(question=...)`, `question_ceiling`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_lookup`'s `question`)
+
+**Full record:** [`decisions/D-128.md`](decisions/D-128.md)

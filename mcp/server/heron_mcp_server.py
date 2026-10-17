@@ -3802,18 +3802,18 @@ def heron_resolve(capability: str) -> str:
 
 
 @server.tool()
-def heron_lookup(request: str) -> str:
+def heron_lookup(request: str, question: bool = False) -> str:
     """
-    Work out which capability would serve a request written in the user's own
-    words - "select all the ducts", "how many air terminals".
+    Which capability serves a request in the user's own words - "select all
+    the ducts". Answers with it and the values it needs typed, for revit_read
+    or revit_change next. Touches nothing.
 
-    Use when the user asks for Revit work and you need to know whether Heron
-    has a way of doing it. It answers with the capability AND the values it
-    needs typed, so the next call can be revit_read or revit_change itself.
-    Touches nothing.
+    question: true only when the user wants to find something out - "what size
+    is this pipe"; every capability that changes the model is left out.
+    Selecting, isolating or zooming is not a change. False for a change, even
+    asked as a question - "how many sprinklers do I need" - and when unsure.
 
-    To run it as well, skip this: revit_read or revit_change with `request`
-    set to the user's words does this lookup inside the same call.
+    revit_read or revit_change with `request` does this lookup itself.
     """
     # A plan never depends on which fragment happens to serve it today, which is
     # why the answer names a capability and never a fragment id. No heron_resolve
@@ -3821,17 +3821,31 @@ def heron_lookup(request: str) -> str:
     revit, how = _revit_version()
 
     try:
-        found = brain.lookup(request, revit=revit)
+        found = brain.lookup(request, revit=revit, question=question)
     except brain.BrainUnavailable as why:
         return str(why)
 
+    # D-128. Said on every answer to a question, found or not: what was not
+    # offered is part of the answer, and a reply that hid it would read as
+    # Heron knowing nothing that writes.
+    asked = []
+    if found.get("question"):
+        asked = ["  Asked as a question, so the %d fragments that change the "
+                 "model (above %s) were not offered (D-128). If the user wants "
+                 "a change, ask again without `question`."
+                 % (found.get("left_out") or 0, found.get("ceiling"))]
+
     if not found["capability"]:
-        lines = ["Heron has no way of doing that."]
+        lines = ["Heron has no way of doing that."
+                 if not found.get("question") else
+                 "Nothing in Heron that leaves the model unchanged matches "
+                 "that."]
         blocked = [e for e in found["excluded"] if "Revit" in e["reason"]]
         if blocked:
             lines.append("%d fragment(s) were excluded because they are not "
                          "declared for Revit %s. They exist - they are just "
                          "not for this release." % (len(blocked), revit))
+        lines.extend(line.strip() for line in asked)
         lines.extend(_drift_lines(found, indent="", gap=False))
         lines.append("Run heron_capabilities to see what it does know.")
         return "\n".join(lines)
@@ -3845,6 +3859,7 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+    lines.extend(asked)
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
     # a store that is not this checkout's library - row 5b-233.
     lines.extend(_drift_lines(found))
