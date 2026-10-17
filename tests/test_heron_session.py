@@ -113,8 +113,10 @@ def check(condition, what):
 def clean_env(**extra):
     """This process's environment without the variables that steer a hook.
 
-    APPDATA goes too: on Windows the knowledge folder is found through it, so
-    leaving it would make "no folder at all" impossible to set up there.
+    APPDATA goes too: on Windows the knowledge folder was found through it, so
+    leaving it would make "no folder at all" impossible to set up there. Since
+    D-135 it is HERON_DATA's, or the Windows profile's - so HERON_DATA goes as
+    well, and a case that wants no folder makes the profile unusable.
 
     PYTHON'S OWN USER FOLDER STAYS WHERE IT WAS. On Windows Python finds a
     `pip install --user` package through APPDATA as well, so a child started
@@ -128,7 +130,7 @@ def clean_env(**extra):
     """
     env = dict(os.environ)
     for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE",
-                 "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_REMOTE",
+                 "HERON_DATA", "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_REMOTE",
                  "CLAUDE_CODE_REMOTE_SDK_URL", "CCR_AGENT_PROXY_ENABLED"):
         env.pop(name, None)
     env.setdefault("PYTHONUSERBASE", site.getuserbase())

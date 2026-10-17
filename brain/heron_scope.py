@@ -126,7 +126,10 @@ def knowledge_dir():
     the user's knowledge, it roams with them, and a cache wipe must never take
     it. Until D-135 it was %APPDATA%\\Heron\\knowledge, which a Microsoft Store
     Claude keeps a private copy of and a Reset of that app deletes; the home
-    is `heron_paths.home()`, which carries the old folder in the first time.
+    is `heron_paths.data_home()`. ONLY A NAME: asking carries nothing. The MCP
+    server and heron-ready carry the old folder in, once, before they open
+    the store (`heron_paths.home()`), so a suite or a tool that only asks
+    never starts a copy on somebody's PC.
     HERON_KNOWLEDGE overrides it - which the tests use, and which is also the
     only way to run this on a machine with no home at all, where a good deal
     of Heron gets written.
@@ -135,7 +138,7 @@ def knowledge_dir():
     if override:
         return override
     import heron_paths as PATHS
-    home = PATHS.home()
+    home = PATHS.data_home()
     return os.path.join(home, "knowledge") if home else None
 
 

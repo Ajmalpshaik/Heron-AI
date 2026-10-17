@@ -420,6 +420,13 @@ def knowledge_store(check_only):
     if check_only:
         say(NOTE, "kept in %s; --check does not build it" % where)
         return
+    # D-135: Heron's data into its home, once on this PC, before the store is
+    # built there - from outside Claude this also reaches the files a Store
+    # Claude's copy hides from the chats. Copied, never moved.
+    home = BRAIN.carry_home()
+    if home:
+        say(NOTE, "Heron keeps its data in %s" % home,
+            "What the old places held was copied there once; nothing was deleted.")
     started = time.time()
     try:
         with BRAIN._Open() as store:

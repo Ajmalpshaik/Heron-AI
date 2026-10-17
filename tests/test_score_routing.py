@@ -1390,8 +1390,11 @@ def main():
     print()
     print("6. It refuses rather than scoring nothing")
     quiet = io.StringIO()
+    # Since D-135 the folder is HERON_DATA's or the Windows profile's, so
+    # both go too - or on Windows the owner's profile answers for it.
     held = dict((k, os.environ.pop(k, None)) for k in ("HERON_KNOWLEDGE",
-                                                        "APPDATA"))
+                                                        "APPDATA", "HERON_DATA",
+                                                        "USERPROFILE"))
     try:
         with contextlib.redirect_stderr(quiet), contextlib.redirect_stdout(quiet):
             code = tool.main([])

@@ -374,6 +374,30 @@ def run(yard):
     if old is not None:
         PATHS.WAIT_SECONDS = old
 
+    # ASKING IS NOT CARRYING. A suite or a tool that only looks a folder up
+    # must never start a copy on somebody's PC - only the doors do: the MCP
+    # server at start, before it opens the store, and heron-ready.
+    environ, copy, real = plant_old_places(os.path.join(yard, "pc-5c"))
+    home = os.path.join(yard, "pc-5c", "profile", ".heron")
+    was = PATHS.data_home
+    PATHS.data_home = lambda environ=None, system=None: home
+    try:
+        with planted(APPDATA=environ["APPDATA"], LOCALAPPDATA=environ["LOCALAPPDATA"]):
+            asked = (SCOPE.knowledge_dir(), SCOPE.shared_dir(), ask(GAPS, "brain_audit_dir"))
+    finally:
+        PATHS.data_home = was
+    check(same(asked[0], os.path.join(home, "knowledge"))
+          and same(asked[2], os.path.join(home, "audit")) and not os.path.exists(home),
+          "knowledge_dir(), shared_dir() and brain_audit_dir() name the default home "
+          "and carry nothing into it (%s)" % ("made" if os.path.exists(home) else "not made"))
+    server = read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"))
+    main_block = server[server.find('if __name__ == "__main__":'):]
+    carry_at, warm_at = main_block.find("brain.carry_home()"), main_block.find("brain.warm_store()")
+    check(carry_at != -1 and warm_at != -1 and carry_at < warm_at,
+          "the MCP server carries at start, before it opens the store")
+    check("BRAIN.carry_home()" in read(os.path.join(ROOT, "tools", "heron-ready.py")),
+          "and heron-ready carries before it builds the store")
+
     explicit = dict(environ, HERON_DATA=os.path.join(yard, "pc-5", "chosen"))
     got = ask(PATHS, "home", explicit, "nt")
     check(same(got, os.path.join(yard, "pc-5", "chosen"))

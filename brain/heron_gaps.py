@@ -192,9 +192,10 @@ def brain_audit_dir():
     writes, and Revit is never a child of a Microsoft Store Claude; the brain
     runs inside the MCP server, which is, and on such a PC everything it wrote
     there went into the app's private copy, which a Reset deletes (rows
-    5b-418, 5b-419). So the brain writes under `heron_paths.home()` - and
-    `read()` reads both folders, which is why moving it no longer blinds this
-    report the way pointing HERON_AUDIT away alone would have.
+    5b-418, 5b-419). So the brain writes under `heron_paths.data_home()` -
+    and `read()` reads both folders, which is why moving it no longer blinds
+    this report the way pointing HERON_AUDIT away alone would have. Only a
+    name, as knowledge_dir() is: the server carries the old file in at start.
 
     HERON_AUDIT still overrides it, and names ONE folder for both halves - what
     every suite that plants a trail relies on.
@@ -206,7 +207,7 @@ def brain_audit_dir():
     if here not in sys.path:
         sys.path.insert(0, here)
     import heron_paths as PATHS
-    home = PATHS.home()
+    home = PATHS.data_home()
     return os.path.join(home, "audit") if home else None
 
 
