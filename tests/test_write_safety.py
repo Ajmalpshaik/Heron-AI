@@ -20,9 +20,10 @@ project on Revit 2020 through 2027, and NEEDS-CHECKING records the write path
 moving three ducts under a single undo entry. FRAGMENT-ISSUES section 5b rows
 9 and 26.
 
-What has NOT happened is the measurement: D3, "move them, then MEASURE one",
-is not struck through. This file tests the half that can be tested without
-Revit at all, and it is deliberate about which half that is:
+The measurement - D3, "move them, then MEASURE one" - was taken in Revit 2024
+on 2026-10-17: +200.0000 mm, the pinned control unmoved. That is the model
+half. This file tests the half that can be tested without Revit at all, and
+it is deliberate about which half that is:
 
     TESTED HERE   reading a distance a person typed, and the document pin
                   and single-use approval that decide whether a write is

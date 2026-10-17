@@ -164,10 +164,14 @@ CASES = [
         "capability": "Preview changes nothing",
         "request": "move the ducts up 200 mm",
         "expected": "A preview with a count and what would be skipped. NOTHING moves.",
-        "status": PENDING,
-        "revit": [],
-        "proven_on": None,
-        "fingerprint": None,
+        "status": PROVEN,
+        "revit": ["2024"],
+        "proven_on": "2026-10-17",
+        # D1 in docs/needs-checking/group-d.md, which holds the whole run.
+        "evidence": "Heron D3 move test (a copy of Autodesk's rme_basic_sample_project), Revit 2024.3 "
+                    "session 8168, add-in 76006767. Preview: '3 ducts up 200 mm ... 725 would be "
+                    "skipped - 725 pinned'. Read straight after: all four test ducts still 3079 mm.",
+        "fingerprint": "d8bf15d9ba96878b",
         "depends": ["revit/Heron.Revit.Addin/RevitWrite.cs"],
     },
     {
@@ -175,10 +179,16 @@ CASES = [
         "capability": "The move, and the distance is right",
         "request": "Approve the 200 mm preview, then MEASURE one duct",
         "expected": "Exactly 200 mm. Not 200 feet, not 0.656 of anything.",
-        "status": PENDING,
-        "revit": [],
-        "proven_on": None,
-        "fingerprint": None,
+        "status": PROVEN,
+        "revit": ["2024"],
+        "proven_on": "2026-10-17",
+        # D3 and D6 in docs/needs-checking/group-d.md, which holds the whole run.
+        "evidence": "Three free ducts 892432, 892448, 892476: end-point Z 3173.1717 -> 3373.1717 mm "
+                    "and Middle Elevation 3079 -> 3279 mm, +200.0000 mm each; X, Y and length "
+                    "unchanged. Second route REPORT_BOUNDING_BOX minZ 9.75450 -> 10.41067 ft "
+                    "(+200.0000 mm). Negative: pinned 892462 and 392168 did not move. 'down 50 mm' "
+                    "gave -50.0000 mm.",
+        "fingerprint": "0017fdc195939a3d",
         "depends": [
             "revit/Heron.Revit.Addin/RevitWrite.cs",
             "platform/Heron.Core/HeronUnits.cs",
@@ -189,10 +199,14 @@ CASES = [
         "capability": "One user action, one undo",
         "request": "Press Ctrl+Z once after a move",
         "expected": "Everything back, in ONE undo step, named 'Heron: move ducts up 200 mm'.",
-        "status": PENDING,
-        "revit": [],
-        "proven_on": None,
-        "fingerprint": None,
+        "status": PROVEN,
+        "revit": ["2024"],
+        "proven_on": "2026-10-17",
+        # D5 in docs/needs-checking/group-d.md, which holds the whole run.
+        "evidence": "Ajmal PS opened Revit's Undo list: one entry 'Heron: move ducts up 200 mm' above "
+                    "his own 'Pin'. One Ctrl+Z: all three ducts read 3079 mm again and the 725 pins "
+                    "stayed. Redo and a second Ctrl+Z did the same; 'down 50 mm' undid in one step too.",
+        "fingerprint": "d8bf15d9ba96878b",
         "depends": ["revit/Heron.Revit.Addin/RevitWrite.cs"],
     },
     {
@@ -255,10 +269,13 @@ CASES = [
         "capability": "The audit says WHICH elements",
         "request": "Move ducts, then read the audit log",
         "expected": "The entry carries every moved element's UniqueId, keyed by Workflow ID.",
-        "status": PENDING,
-        "revit": [],
-        "proven_on": None,
-        "fingerprint": None,
+        "status": PROVEN,
+        "revit": ["2024"],
+        "proven_on": "2026-10-17",
+        "evidence": "audit-202610.jsonl, workflow wf-20261017-121011-0039-0ba5: elements = exactly "
+                    "the UniqueIds of 892432, 892448 and 892476; skippedElements = 725, the pinned "
+                    "control 892462 among them; undoEntry 'Heron: move ducts up 200 mm'.",
+        "fingerprint": "26d8c29493766dc1",
         "depends": [
             "revit/Heron.Revit.Addin/RevitWrite.cs",
             "platform/Heron.Core/HeronAudit.cs",

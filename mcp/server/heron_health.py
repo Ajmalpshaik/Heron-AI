@@ -36,10 +36,13 @@ and both halves of that are now false - it compiles on all eight Revit
 releases, and NEEDS-CHECKING records it moving three ducts under a single
 undo entry. This is the THIRD place that sentence was written down;
 HeronPermissions was corrected on 2026-09-20 and RevitWrite's banner on
-2026-09-21 (FRAGMENT-ISSUES section 5b rows 9 and 26). What is still true is
-narrower and is what the message below now says: nobody has put a tape
-measure on the result - D3 in NEEDS-CHECKING.md, "move them, then MEASURE
-one", is not struck through. A warning a reader can disprove in a minute
+2026-09-21 (FRAGMENT-ISSUES section 5b rows 9 and 26). What was still true
+after that was narrower: nobody had put a tape measure on the result - D3 in
+NEEDS-CHECKING.md, "move them, then MEASURE one". On 2026-10-17 somebody did,
+in Revit 2024: three free ducts +200.0000 mm, a pinned one beside them not
+moved, one undo. So the message below says what was measured and how little
+of the ground it covers. Whether writing should be on at all is still D-19's
+question and the owner's. A warning a reader can disprove in a minute
 discredits the half that still matters.
 """
 
@@ -177,10 +180,11 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
     if writing:
         components.append(Component(
             "write gate", WARNING,
-            "write.enabled is TRUE, so Heron is permitted to change the model. It has "
-            "moved elements in a real model and nobody has measured the result yet "
-            "(D-19, and D3 in NEEDS-CHECKING.md) - set it back to false unless you are "
-            "deliberately testing it"))
+            "write.enabled is TRUE, so Heron is permitted to change the model. Its move "
+            "was measured once, in Revit 2024 on free ducts - D3 in NEEDS-CHECKING.md - and "
+            "nothing else it can change has been measured that way; whether writing should "
+            "be on is still the owner's decision (D-19) - set it back to false unless you "
+            "are deliberately testing it"))
     else:
         components.append(Component(
             "write gate", HEALTHY,
