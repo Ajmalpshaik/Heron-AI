@@ -560,7 +560,7 @@ that point (line 879), so a save there could only ever follow a Keep.
    one ([`heron_write.py`](../../mcp/server/heron_write.py) line 255), and only a match on it or on the file
    path lets a new title through (line 461, *"a save can rename it; same document"*). But that id,
    `Document.CreationGUID`, arrived at Revit 2024 and is null on 2020 to 2023 and on every family document
-   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 663, measured
+   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 664, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
    model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1921)
