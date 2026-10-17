@@ -169,25 +169,35 @@ namespace Heron.Revit.Addin
             // NO GROUP ON A READ-ONLY DOCUMENT, because Revit will not start
             // one there - and nothing here makes anything a group would need
             // to undo. See the class summary.
-            var group = doc.IsReadOnly ? null : new TransactionGroup(doc, Label);
-            var rolledBack = true;
-            try
+            //
+            // AND WATCHED WHERE THERE IS ONE, like every write job's group: a
+            // capture is never kept, but its rollback must not take the last
+            // kept job's elements with it any more than a preview's may - see
+            // RevitFragment.RollBackAndCheck, which every rollback here goes
+            // through.
+            using (var watch = doc.IsReadOnly ? null : RevitFragment.Watch(doc, Label, Label))
             {
-                if (group != null) group.Start();
-                return Exported(doc, view, width, clamped, "view", null, 0, ref rolledBack, group);
-            }
-            catch (Exception ex)
-            {
-                // Exported rolls the group back in its own finally before an
-                // exception leaves it, so rolledBack is already Revit's word.
-                if (group != null) rolledBack = SafeRollBack(group);
-                return Json.Error("capture_failed",
-                    "Revit could not picture '" + view.Name + "': " + ex.Message + ". "
-                    + (rolledBack ? "Nothing was kept in the model." : NotConfirmed));
-            }
-            finally
-            {
-                if (group != null) group.Dispose();
+                var group = doc.IsReadOnly ? null : new TransactionGroup(doc, Label);
+                HeronRollbackWitness.Outcome after = null;
+                try
+                {
+                    if (group != null) group.Start();
+                    return Exported(doc, view, width, clamped, "view", null, 0, ref after, group, watch);
+                }
+                catch (Exception ex)
+                {
+                    // Exported rolls the group back in its own finally before an
+                    // exception leaves it; asked again, the helper gives the same
+                    // answer, and a group Start never began counts as undone.
+                    if (group != null) after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                    return Json.Error("capture_failed",
+                        "Revit could not picture '" + view.Name + "': " + ex.Message + ". "
+                        + Undone(after));
+                }
+                finally
+                {
+                    if (group != null) group.Dispose();
+                }
             }
         }
 
@@ -337,7 +347,8 @@ namespace Heron.Revit.Addin
             section.Min = new XYZ(low.X - margin, low.Y - margin, low.Z - margin);
             section.Max = new XYZ(high.X + margin, high.Y + margin, high.Z + margin);
 
-            var rolledBack = true;
+            HeronRollbackWitness.Outcome after = null;
+            using (var watch = RevitFragment.Watch(doc, Label, Label))
             using (var group = new TransactionGroup(doc, Label))
             {
                 try
@@ -362,24 +373,23 @@ namespace Heron.Revit.Addin
                         // group, rolled back below, still takes it away.
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
-                            rolledBack = SafeRollBack(group);
+                            after = RevitFragment.RollBackAndCheck(group, doc, watch);
                             return Json.Error("capture_failed",
                                 "Revit would not make the temporary 3D view. "
-                                + (rolledBack ? "Nothing was kept in the model."
-                                              : NotConfirmed));
+                                + Undone(after));
                         }
                     }
 
                     return Exported(doc, view, width, clamped, "elements",
                                     string.Join("; ", left.ToArray()), shown,
-                                    ref rolledBack, group);
+                                    ref after, group, watch);
                 }
                 catch (Exception ex)
                 {
-                    rolledBack = SafeRollBack(group);
+                    after = RevitFragment.RollBackAndCheck(group, doc, watch);
                     return Json.Error("capture_failed",
                         "Revit could not picture those elements: " + ex.Message + ". "
-                        + (rolledBack ? "Nothing was kept in the model." : NotConfirmed));
+                        + Undone(after));
                 }
             }
         }
@@ -493,7 +503,9 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string Exported(Document doc, View view, int width, bool clamped,
                                        string mode, string leftOut, int shown,
-                                       ref bool rolledBack, TransactionGroup group)
+                                       ref HeronRollbackWitness.Outcome after,
+                                       TransactionGroup group,
+                                       HeronRollbackWitness.Watch watch)
         {
             var folder = Path.Combine(HeronPaths.Captures, Guid.NewGuid().ToString("N"));
             byte[] picture = null;
@@ -525,13 +537,13 @@ namespace Heron.Revit.Addin
 
                 // THE PROMISE OF THIS FILE: whatever happened above, the group
                 // is undone before anything is said about it.
-                if (group != null) rolledBack = SafeRollBack(group);
+                if (group != null) after = RevitFragment.RollBackAndCheck(group, doc, watch);
             }
 
             if (failure != null)
             {
                 return Json.Error("capture_failed", failure + " "
-                    + (rolledBack ? "Nothing was kept in the model." : NotConfirmed));
+                    + Undone(after));
             }
 
             if (picture.Length > LargestPicture)
@@ -541,7 +553,7 @@ namespace Heron.Revit.Addin
                     + (picture.Length / 1000).ToString(CultureInfo.InvariantCulture)
                     + " KB at " + width.ToString(CultureInfo.InvariantCulture)
                     + " px wide, too large to hand to the chat. Ask again with a smaller "
-                    + "width. " + (rolledBack ? "Nothing was kept in the model." : NotConfirmed));
+                    + "width. " + Undone(after));
             }
 
             return Json.Ok(
@@ -553,7 +565,15 @@ namespace Heron.Revit.Addin
                 Json.Num("bytes", picture.Length),
                 Json.Num("shown", shown),
                 Json.Str("leftOut", string.IsNullOrEmpty(leftOut) ? null : leftOut),
-                Json.Bool("rolledBack", rolledBack),
+                // HELD, AS FAR AS IT WAS CHECKED: Revit's status, and the
+                // temporary view counted back (RevitFragment.RollBackAndCheck).
+                // `keptLost` and `rollbackNote` say what the rollback took from
+                // the job kept before this one, so the chat never says "nothing
+                // was changed" over a loss.
+                Json.Bool("rolledBack", after == null || after.Held),
+                Json.Num("keptLost", after == null ? 0 : after.Lost),
+                Json.Str("rollbackNote", after == null || after.Also().Length == 0
+                                             ? null : after.Also()),
                 Json.Bool("fileDeleted", deleted),
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
@@ -579,26 +599,23 @@ namespace Heron.Revit.Addin
             catch (UnauthorizedAccessException) { return false; }
         }
 
+        // THIS FILE'S OWN SafeRollBack LIVED HERE until 2026-10-17. Every
+        // rollback here now goes through RevitFragment.RollBackAndCheck, and
+        // the one SafeRollBack it calls carries this one's rule: a group that
+        // never started counts as undone, because Start is the line that
+        // failed and nothing was made inside it.
+
         /// <summary>
-        /// Roll the group back, never throwing, and say whether Revit CONFIRMS
-        /// it - the temporary view is gone only if it does. A rollback that
-        /// throws must not replace what is being reported.
-        ///
-        /// A group that never started counts as undone: Start is the line that
-        /// failed, so nothing was made inside it. Any other state but
-        /// RolledBack is reported as not confirmed.
+        /// What the rollback left, in the words a capture's refusal ends on:
+        /// nothing kept - said only when Revit confirmed it AND the temporary
+        /// view was counted back gone - then what the rollback took from the
+        /// job kept before this one, if anything. No group, nothing to say.
         /// </summary>
-        private static bool SafeRollBack(TransactionGroup group)
+        private static string Undone(HeronRollbackWitness.Outcome after)
         {
-            try
-            {
-                if (group.GetStatus() == TransactionStatus.Started) group.RollBack();
-                var status = group.GetStatus();
-                return status == TransactionStatus.RolledBack
-                    || status == TransactionStatus.Uninitialized;
-            }
-            catch (Autodesk.Revit.Exceptions.ApplicationException) { return false; }
-            catch (InvalidOperationException) { return false; }
+            var said = after == null || after.Held ? "Nothing was kept in the model." : NotConfirmed;
+            var also = after == null ? "" : after.Also();
+            return also.Length == 0 ? said : said + " " + also;
         }
 
         private const string NotConfirmed =

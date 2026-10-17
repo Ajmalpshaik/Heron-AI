@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the fragment write path's change report WITHOUT Revit.
+
+    The source-linking pattern Heron.FailureNote.TestHost uses, and for the
+    reason its project file states: HeronChangeReport.cs touches no Autodesk
+    type - it counts ids handed to it as text and writes JSON - so it is
+    linked here BY SOURCE rather than through a project reference, which
+    would drag in RevitAPI.dll and make the one testable piece untestable on
+    any machine without Revit.
+
+    Linking keeps ONE copy of the rule: whose change a transaction was, how
+    an element added and then deleted inside the job is counted, which ids
+    the reply carries and what the run record holds. RevitFragment's
+    DocumentChanged handler is the half that needs Revit, and
+    NEEDS-CHECKING says what it owes.
+
+    And the bridge's JSON writer and reader, linked the same way: the
+    report is written with Json's writers, and the dispatcher reads its
+    whole-job counts back with Json.ReadLong for the audit line - so the
+    two are checked against each other here.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.ChangeReport.TestHost</RootNamespace>
+    <AssemblyName>Heron.ChangeReport.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronChangeReport.cs"
+             Link="HeronChangeReport.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
+             Link="Json.cs" />
+  </ItemGroup>
+
+</Project>

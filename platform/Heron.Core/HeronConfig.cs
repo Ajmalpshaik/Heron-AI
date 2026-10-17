@@ -104,6 +104,13 @@ namespace Heron.Core
 
                 { "log.retainDays", "14" },
 
+                // THE RUN RECORDS (HeronRuns): how long each write's full
+                // detail - every element it changed, its whole reply - stays
+                // on disk for heron_run_record to page back. DERIVED, like
+                // the log, so pruning it loses no evidence: the audit line
+                // under DATA is kept for good. Below 1, nothing is pruned.
+                { "runs.retainDays", "14" },
+
                 // WHAT REVIT SHOWS WHILE HERON WORKS (HERON-REVIT-UI-022).
                 // On by default, unlike everything else here: the other
                 // defaults protect the model by staying off, and this one
