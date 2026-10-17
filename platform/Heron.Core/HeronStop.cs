@@ -36,6 +36,21 @@ namespace Heron.Core
     /// mysteriously refusing to work, with no memory of why. Restarting Revit
     /// is a bigger, clearer reset than the button, and the user knows they
     /// did it.
+    ///
+    /// AND THAT DISAGREED WITH docs/21 section 4, whose third requirement was
+    /// a stop that "does not quietly resume on the next request or after a
+    /// restart". Both were recorded as Q-68, and the owner answered it on
+    /// 2026-10-17 (D-130): a restart clears it. So this class stays as it
+    /// was - in memory, cleared by a restart - and docs/21's requirement is
+    /// amended to match, not this.
+    ///
+    /// SINCE 2026-10-17 SOMETHING CAN SET IT AGAIN, and it can stop what is
+    /// already running (D-129). The `stop` operation, answered on a bridge
+    /// listener thread before anything is queued - Revit's own thread is the
+    /// one a runaway job holds - calls Stop(); HeronRunClock sees the count
+    /// move at the running fragment's next check and stops it, rolled back.
+    /// Nothing over the bridge calls Resume(): a stop that the thing being
+    /// stopped could lift would be advice, not a stop.
     /// </summary>
     public static class HeronStop
     {
@@ -44,10 +59,29 @@ namespace Heron.Core
         // listener threads with nothing ordering the two.
         private static int _stopped;
 
+        // Every Stop() ever asked, whether or not it changed the state.
+        private static long _requests;
+
         /// <summary>Is Heron currently stopped?</summary>
         public static bool IsStopped
         {
             get { return Interlocked.CompareExchange(ref _stopped, 0, 0) != 0; }
+        }
+
+        /// <summary>
+        /// How many times Stop() has been asked since Revit started, counting
+        /// a stop asked while already stopped.
+        ///
+        /// A COUNT AND NOT THE FLAG, because the run clock needs to know
+        /// whether a stop arrived DURING a job. Reading IsStopped would trip a
+        /// read run while stopped at its first check - and reads are what the
+        /// gate deliberately lets through while stopped - and would miss a
+        /// second stop pressed while a job already running under the first
+        /// ignored it. A count that moved since the job began answers both.
+        /// </summary>
+        public static long Requests
+        {
+            get { return Interlocked.Read(ref _requests); }
         }
 
         /// <summary>
@@ -56,6 +90,7 @@ namespace Heron.Core
         /// </summary>
         public static bool Stop()
         {
+            Interlocked.Increment(ref _requests);
             return Interlocked.Exchange(ref _stopped, 1) == 0;
         }
 
@@ -82,10 +117,10 @@ namespace Heron.Core
         /// "the Heron button IS that control. It calls bridge.Stop(), so
         /// nothing can reach Revit at all" - so there was a working control,
         /// and the message sent the reader hunting for one that is not on the
-        /// ribbon. Nothing can set this flag today, so nobody has seen it;
-        /// the switch is kept for the file-based kill switch docs/21 section
-        /// 4 describes, and on the day that is built this is the first thing
-        /// a worried modeller reads.
+        /// ribbon. Nothing could set this flag then, so nobody had seen it;
+        /// the switch was kept for the kill switch docs/21 section 4
+        /// describes, and on the day that was built this became the first
+        /// thing a worried modeller reads.
         ///
         /// AND THE OBVIOUS REPLACEMENT IS ALSO WRONG, WHICH IS WHY THIS
         /// NAMES NO BUTTON AT ALL. The register's own repair said to name
@@ -104,10 +139,26 @@ namespace Heron.Core
         /// The Ctrl+Z half is unchanged: it was the most useful thing in the
         /// message and it is still true.
         /// FRAGMENT-ISSUES section 5b, row 2.
+        ///
+        /// BUILT 2026-10-17 (D-129), SO IT NAMES THE WAY OUT: a restart of
+        /// Revit, the one thing that clears this flag and that every modeller
+        /// can do. It names no button because none clears it - the `stop`
+        /// operation cannot resume, on purpose, and EmergencyStopCommand is
+        /// still on no ribbon. D-130 settled that a restart is the way out, so
+        /// a decision that ever made the stop outlive one changes this too.
         /// </summary>
         public const string Message =
             "Heron is stopped. Nothing was sent to Revit. Ctrl+Z in Revit undoes anything " +
-            "that already happened, and Heron stays stopped until whoever stopped it lets " +
-            "it work again.";
+            "that already happened. " + StaysStopped;
+
+        /// <summary>
+        /// How long the stop lasts and what still works, said once so that
+        /// the refusal above and the answers that report a stop - the `stop`
+        /// operation's own, and a job the run clock stopped part way - can
+        /// never name two different ways out.
+        /// </summary>
+        public const string StaysStopped =
+            "Heron stays stopped until Revit is restarted: reading the model still works, " +
+            "and nothing that changes it is sent until then.";
     }
 }

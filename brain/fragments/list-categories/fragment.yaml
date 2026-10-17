@@ -19,7 +19,7 @@ capability: LIST_CATEGORIES
 # category's own graphics before this, so "what colour is the signature
 # subcategory" was answered by a WRITE - the routing outcome D-86 does not
 # leave to judgement.
-# Version 3 (2026-10-17, FRAGMENT-ISSUES 5b-540): an optional `categories`
+# Version 3 (2026-10-17, FRAGMENT-ISSUES 5b-630): an optional `categories`
 # names the rows to report - "Generic Annotations", "Generic Annotations >
 # Signature", several with commas, capitals and extra spaces forgiven - and a
 # new count, `styleRows`, says how many rows came back. Left out it is "all",
@@ -29,7 +29,7 @@ capability: LIST_CATEGORIES
 # identity gained "the object style of each one": the re-ranker reads only
 # identity, capability and domain, and without those words "show the object
 # style of Generic Annotations" reached TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS,
-# a write, on both re-ranked backends (measured in row 5b-540).
+# a write, on both re-ranked backends (measured in row 5b-630).
 version: 3
 source: OFFICIAL
 risk: READ
@@ -194,7 +194,7 @@ compatibility-note: >
 #                                          backend alone it still reaches
 #                                          REMAP_LINE_STYLES, a write, as on main.
 #                                          Declaring it moved another question onto
-#                                          a write (row 5b-540)
+#                                          a write (row 5b-630)
 #   "what colour are the lines in this family" -> here
 #   "everything in duct accessories"    -> SELECT_BY_CATEGORY_NAME - and this
 #                                          fragment is what tells you the name

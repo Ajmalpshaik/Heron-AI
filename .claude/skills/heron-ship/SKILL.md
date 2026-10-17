@@ -504,7 +504,7 @@ line after the last group in [`docs/NEEDS-CHECKING.md`](../../../docs/NEEDS-CHEC
 generated: its early groups are in **dependency order** (A, K, J, R, B...), not letter order, and
 other sections sit between them - only a person knows where a group belongs.
 [`needs-checking-register.py`](../../../tools/needs-checking-register.py) is a reader by design, and
-stays one.
+stays one. **Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `python tools/next-id.py`** - it prints the id free on main and on every branch.
 
 **Resolving either conflict: keep BOTH sides, in order** - two-letter groups in letter order (`BY`
 before `BZ`), 5b rows in row-number order. Never take one side: a dropped group line leaves its

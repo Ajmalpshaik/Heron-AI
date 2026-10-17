@@ -35,7 +35,7 @@
 // AN INTERNAL CATEGORY HAS NO ROW. Object Styles shows model, annotation and
 // analytical categories; an internal one is counted and left out.
 //
-// VERSION 3 - NARROWED BY NAME (FRAGMENT-ISSUES 5b-540). `categories` names
+// VERSION 3 - NARROWED BY NAME (FRAGMENT-ISSUES 5b-630). `categories` names
 // the rows to report, comma separated: "Generic Annotations" is that
 // category's own row and every subcategory of it, "Generic Annotations >
 // Signature" is that one row, and a bare name no category has is every

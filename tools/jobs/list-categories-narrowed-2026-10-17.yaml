@@ -1,7 +1,7 @@
 # The proof of list-categories (LIST_CATEGORIES, FRG-DOC-031) version 3: Object
 # Styles narrowed BY NAME - one subcategory asked, one row back; a name the
-# family has not got, the nearest names and no table. NEEDS-CHECKING Group FE,
-# FRAGMENT-ISSUES row 5b-540. A READ: nothing is changed, so no `write:`.
+# family has not got, the nearest names and no table. NEEDS-CHECKING Group FU,
+# FRAGMENT-ISSUES row 5b-630. A READ: nothing is changed, so no `write:`.
 #
 #     python tools/batch-prove.py tools/jobs/list-categories-narrowed-2026-10-17.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/list-categories-narrowed-2026-10-17.yaml
@@ -35,11 +35,11 @@
 # names, bindable and objectStyles are filled in every document - version 2's
 # job has the same shape. What decides this proof is the negative's styleRows 0,
 # familySubcategories 0 and objectStyles' one line, read in the run record by
-# eye. Recorded in row 5b-540: whether always-filled results become
+# eye. Recorded in row 5b-630: whether always-filled results become
 # `role: accounting` is the owner's call, because it changes what version 1
 # declared.
 #
-# BY HAND AFTERWARDS (Group FE): "Generic Annotations" alone (2 rows),
+# BY HAND AFTERWARDS (Group FU): "Generic Annotations" alone (2 rows),
 # "  generic   annotations>SIGNATURE " (the same 1 row), "Signiture" (nearest
 # names, no table), and Object Styles read by eye against the one row.
 
