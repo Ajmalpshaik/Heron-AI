@@ -216,27 +216,35 @@ compatibility-note: >
 # ROUTING (2026-10-17, version 2, 5b-930)
 #
 #   "make a numbered note"                 -> here, listType ArabicNumbers.
-#                                             NOT DECLARED, ON A MEASUREMENT:
-#                                             it reaches here on main already,
-#                                             on the lexical and the trained
-#                                             backend, and declaring it sent
-#                                             "does this note have bullets" (a
-#                                             question) and three sentences
-#                                             about changing a note that is
-#                                             there to this card on the trained
-#                                             backend. Undeclared, all 34
-#                                             sentences measured win as on main
-#                                             on both backends (row 5b-930)
+#                                             Declared. Measured on main with
+#                                             #586 in, lexical and trained:
+#                                             version 2 is DRAFT, so it loses
+#                                             PROVEN's tie-break nudge - main
+#                                             with only its status set DRAFT
+#                                             sends "create a text note with a
+#                                             numbered list" and "add a note
+#                                             with lettered items a b c" to
+#                                             EDIT_TEXT_VALUES on lexical.
+#                                             Declared, the first comes back
+#                                             and "add general notes numbered
+#                                             1 2 3" comes here from
+#                                             RENUMBER_SEQUENTIAL; the second
+#                                             stays there until the card is
+#                                             PROVEN again. No question moved
+#                                             onto a write (row 5b-930)
+#   "turn this note into a numbered list"  -> EDIT_TEXT_VALUES, mode format -
+#                                             the note is already there.
+#                                             Declared on that card
 #   "number the paragraphs of this note"   -> EDIT_TEXT_VALUES - the note is
 #                                             already there. Its mode format
 #                                             sets lists on a note that exists
-#                                             (open PR #586, version 5)
+#                                             (version 5, #586)
 #   "is this note numbered"                -> READ_ELEMENT_PARAMETERS,
 #                                             parameterName Text - a question
-#                                             is a read. On main it reaches
-#                                             THIS card on both backends, and
-#                                             did before version 2; PR #586
-#                                             declares it on the read
+#                                             is a read. Before #586 it
+#                                             reached THIS card on both
+#                                             backends; #586 declares it on the
+#                                             read, and it reaches the read now
 utterances:
   - add a text note
   - put a note here
@@ -245,3 +253,5 @@ utterances:
   - note this on the plan
   - annotate this with some text
   - write on the drawing
+  # ADDED 2026-10-17, version 2 (5b-930) - the owner's words.
+  - make a numbered note
