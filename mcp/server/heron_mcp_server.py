@@ -1618,6 +1618,12 @@ def revit_change(capability: str = "", values: str = "",
     When one is off the reply names it and says where to turn it on. Tell the
     user that; never try another capability to get round it.
 
+    ONLY A PROVEN CAPABILITY RUNS HERE (Constitution Article 11, D-117). One
+    whose own file says DRAFT, or whose proof was taken before its code last
+    changed, is refused before anything is sent, and the reply names it and
+    its status. Tell the user that; never try another capability to get round
+    it. It is proved first on a test model, and then it can be asked for.
+
     THERE IS NO PREVIEW: what this does is kept at once. That is the owner's
     choice, recorded as D-99 - Article 9's one exception. Article 7 still
     stands: deleting elements, purging, bulk parameter writes, family
@@ -1640,7 +1646,7 @@ def revit_change(capability: str = "", values: str = "",
             return handed_back
         matched = capability
 
-    folder, status = _fragment_for(capability)
+    folder, _status = _fragment_for(capability)
     if folder is None:
         return _ended("refused",
                       "Heron has nothing that does '%s', so nothing has been sent to "
@@ -1680,6 +1686,20 @@ def revit_change(capability: str = "", values: str = "",
         return _ended("refused",
                       "'%s' does not say what risk it carries in a form Heron can read, "
                       "so nothing has been sent to Revit." % capability)
+
+    # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
+    # here KEEPS what it does. So a fragment its own files do not call PROVEN,
+    # or whose proof no longer describes its code (D-30), is refused HERE -
+    # before its code is read or a session is bound. Until D-117 it ran, and a
+    # line printed after the result said it was not proven: a warning given
+    # once the change was already in the model.
+    #
+    # THE CLIENT'S RULE, CALLED - the one `fragment --write --apply` asks -
+    # for the reason `risk_refusal` above is called rather than copied. The
+    # status is read from the fragment's own files, never from the index.
+    unproven = bridge.unproven_refusal(capability, brain.proof_status(folder))
+    if unproven:
+        return _ended("refused", unproven)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
@@ -1851,11 +1871,8 @@ def revit_change(capability: str = "", values: str = "",
         lines.append("")
         lines.append(str(verdict))
 
-    if status and status not in ("PROVEN", "PRODUCTION"):
-        lines.append("")
-        lines.append("'%s' is %s, not PROVEN - it has no recorded proof carrying a "
-                     "negative case. Look at what it did before trusting it."
-                     % (capability, status))
+    # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
+    # a fragment that is not PROVEN is now refused before it is sent (D-117).
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.

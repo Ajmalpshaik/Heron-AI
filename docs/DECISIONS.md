@@ -188,6 +188,7 @@ an edit.
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
 | [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
+| [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) | A change is kept only from a fragment whose proof still stands | ✅ Accepted · 2026-10-17 |
 | [D-118](#d-118--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
 
 ## Format
@@ -993,6 +994,17 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`create-family-forms`](../brain/fragments/create-family-forms/fragment.yaml) and [`combine-family-forms`](../brain/fragments/combine-family-forms/fragment.yaml), neither changed · [NEEDS-CHECKING Group DA](needs-checking/group-da.md), unchanged · [04](04-heron-mcp.md)
 
 **Full record:** [`decisions/D-116.md`](decisions/D-116.md)
+
+## D-117 — A change is kept only from a fragment whose proof still stands
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"accept D-116 and merge the PR"* · **Source:** the after-the-run warning in [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py)'s `revit_change`, and the [Constitution](../HERON_CONSTITUTION.md)'s Enforcement table naming no place Article 11 is enforced
+**Numbering:** written and accepted as D-116; renumbered D-117 on 2026-10-17 while merging `main`, where #546 had already given D-116 to another decision. The owner's words quoted above name it by that first number.
+**Enforces:** [Constitution Article 11](../HERON_CONSTITUTION.md) · [Golden Rule 18](14-golden-rules.md)
+**Supersedes:** one row of [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)'s table - *"a warning line when the fragment is not `PROVEN`"*, said after the change. It is now a refusal, said instead of sending anything
+**Keeps:** [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - no preview in front of a proven change · [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back) - the rolled-back run · [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) · [Golden Rule 19](14-golden-rules.md)
+**Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`proof_of`, `unproven_refusal`, `cmd_fragment`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`), [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) (the Enforcement table), the `heron-fragment-author` agent on both hosts
+
+**Full record:** [`decisions/D-117.md`](decisions/D-117.md)
 
 ## D-118 — A picture of a view, taken for the chat and deleted, is ANALYZE and not an export
 
