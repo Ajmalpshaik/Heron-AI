@@ -1999,12 +1999,13 @@ a heading naming a file that is not there, or a file that does not hold that hea
 `RegisterBroken` rather than returning a shorter register - *"a count that quietly omits a whole group is worse
 than no count"*, as the register says of itself.
 
-## `next-id.py` - which id is free, on main and on every branch
+## `next-id.py` - which id is free, on main, every branch, every open pull request and every worktree
 
 ```bash
-python tools/next-id.py               # fetch every branch, then the next free id in each register
-python tools/next-id.py --no-fetch    # from the branches as last fetched, and it says so
+python tools/next-id.py               # fetch, list the open pull requests, then the next free id in each register
+python tools/next-id.py --no-fetch    # no network: the branches as last fetched, no pull request, and it says so
 python tools/next-id.py --json        # the same answer, for a machine
+python tools/next-id.py --github OWNER/NAME   # when the remote's URL is not github.com's
 ```
 
 Four registers take an id a person picks: a NEEDS-CHECKING group, a FRAGMENT-ISSUES 5b row, an open question
@@ -2016,11 +2017,29 @@ prints, per register, **the id above the highest used anywhere**, main's highest
 above it**. An id two branches both hold is printed as **HELD TWICE**: one of them renames before it merges.
 This checkout's HEAD counts too when it holds commits no remote branch has.
 
+**Since 2026-10-17 it also reads the open pull requests and every worktree's working files.** The pull requests
+come from `gh api repos/OWNER/NAME/pulls?state=open` - the REST call, because `gh pr list` asks GraphQL and a
+Claude Code cloud session refuses that (HTTP 403, measured) - with the repository named, never inferred from a
+folder: one whose head is a branch already read labels that branch with its number, and one from a fork is
+fetched as `refs/pull/N/head`. The worktrees come from `git worktree list --porcelain`, each path read as the
+rest of its line, spaces and all, and their register files are read **from disk, saved or not, committed or
+not** - the row a session on the same PC has typed and not pushed. No gh, a gh not logged in, a remote that is
+not github.com, or a worktree whose folder is gone is **said in the report**, never guessed past, and never
+changes the exit code.
+
+For each piece of work it lists **what it adds that main has not got** - its ids less those where it left
+main, at any number - and names two collisions **below main's highest as well as above it**: **HELD TWICE**,
+an id two pieces of work add (a branch, its pull request and the worktree it is checked out in count as one),
+and **TAKEN ON MAIN**, an id an open pull request or this checkout adds that main has since merged from
+somebody else. A branch with no open pull request is never called TAKEN ON MAIN - it may be one that merged
+and was never deleted - so without gh only this checkout is judged, and the report says that too.
+
 **It writes no register file and reserves nothing**: an id is free as of the run, and only a pushed branch holds
 it. It does not write the NEEDS-CHECKING index either - [heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)
 says why that cannot be generated. Exits **0** with an answer and **2** when it could not look - no git, a fetch
 that failed, no main, or a register with no id on main at all, which means the register moved.
-[`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids.
+[`tests/test_next_id.py`](../tests/test_next_id.py) builds its own remote with branches that race for ids, a fake
+gh, a fork's `refs/pull/N/head`, and worktrees in folders whose names hold spaces - no network.
 
 **An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
 
