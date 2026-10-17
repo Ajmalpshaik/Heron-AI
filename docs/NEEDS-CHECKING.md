@@ -727,6 +727,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-en.md`](needs-checking/group-en.md)
 
+## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -52,6 +52,15 @@ installed.
 **Why `mcp` is on the optional list:** Heron's own tools and tests run without it. You need it the
 moment you want to ask Heron something from Claude.
 
+**From the next release, the installer does rows 4 and 5 and section 1a for you** - built 2026-10-17,
+**not yet run on Windows** ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)). When you install the
+AI Bridge connector, `HeronInstaller.exe` also installs Heron's Python packages at the pinned versions in
+[`requirements-lock.txt`](../requirements-lock.txt) - for your Windows user, no administrator rights,
+every file checked against its hash - then builds Heron's knowledge store and runs `heron-ready --check`,
+saying each step as it goes. It needs row 3 first: **it never installs Python itself**, and says so with
+the one command when `python` does not answer. `heron-install --no-python` leaves this half out.
+**v0.1.0 does not do this** - on it, rows 4 and 5 and section 1a are still done by hand.
+
 ## 1a. Every new PC — one command before the first chat
 
 Once on every PC, after the list above, in the Heron folder:
@@ -59,6 +68,9 @@ Once on every PC, after the list above, in the Heron folder:
 ```bash
 python tools/heron-ready.py
 ```
+
+From the next release the installer runs it for you, twice - to build, then `--check` as the verdict
+(above). By hand it is the same command, and still worth running after anything changes.
 
 It checks the list above and **builds what a first chat would otherwise build while you wait** —
 Heron's knowledge store, and the search model if you installed it. It installs nothing; anything
@@ -95,7 +107,11 @@ every package Claude had installed was in the copy and none was in the real fold
 `heron-ready --check` said **READY** inside Claude and **NOT READY** in his own terminal.
 
 1. **Install Python packages from your own terminal** — Windows Terminal or PowerShell, opened outside
-   Claude. Never ask Claude to install them for you: they would land only in its copy again.
+   Claude. Never ask Claude to install them for you: they would land only in its copy again. **Or let
+   the installer do it**: double-click `HeronInstaller.exe` in File Explorer, or run `heron-install` from
+   your own terminal. Since 2026-10-17 both refuse to run from inside Claude, because an add-in installed
+   from there would land where Revit never looks ([row 5b-495](fragment-issues/section-5b-rows-401-425.md),
+   not yet run on Windows).
 2. **Install the versions Claude's copy already holds.** `python tools/heron-ready.py`, run in your own
    terminal, prints the `pip install --user` line with each version pinned. A *different* version would
    leave two copies of one package mixed together in Claude's view. Leaving a package out is safe.
@@ -109,8 +125,9 @@ every package Claude had installed was in the copy and none was in the real fold
    its note inside Claude's copy ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Not yet
    tried in Revit.
 
-**Where Heron should run and keep its files on such a PC is not decided** — [Q-63](OPEN-QUESTIONS.md),
-the owner's to answer.
+**Installing is settled: from outside Claude, by the installer** — [Q-63](OPEN-QUESTIONS.md),
+2026-10-17. **Where Heron keeps what it writes while a chat runs is not decided** — points 3 to 5 above
+are unchanged by it, and that half of Q-63 is the owner's to answer.
 
 ## 2. Optional — the two search add-ons
 
