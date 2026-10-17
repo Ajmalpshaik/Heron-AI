@@ -57,6 +57,25 @@
 // (FRAGMENT-ISSUES 5b-335). Only the element's own parameter set says what it
 // carries, so `carried` looks there.
 //
+// WHERE A FAMILY STANDS IS WHERE ITS OWN LEVEL STANDS, NOT ITS INSERTION POINT
+// (version 3, FRAGMENT-ISSUES 5b-525). Elevation from Level and Offset from
+// Host both measure to the family's own Ref. Level, and that is where the
+// instance's transform puts the family's origin. The INSERTION POINT -
+// LocationPoint - is wherever the family's "Defines Origin" planes cross, and a
+// family may tick that on a plane that is not its level. Measured 2026-10-17,
+// Revit 2020, a scratch project: TRG_GEN_CutOut_Rectangular_HVAC ticks it on the
+// plane at the BOTTOM of its opening, which moves with Object Height. With
+// Elevation from Level 2152 its centre stood at 2152 and its insertion point at
+// 2002 (Object Height 250), 1827 (600) and 1627 (1000). Version 2 measured the
+// insertion point, so on 2026-10-15 a real job asked for 2152 was refused
+// "2014.5 mm above" and nothing was kept, with the cut-out where it was wanted.
+// Revit's own call reads the height the same way: given no level, it put that
+// family's own level at the point's Z, not its insertion point. So the height
+// here is the transform's, everywhere; plan is still read off the insertion
+// point, as version 2 read it; and where the two heights differ `readBack` says
+// so. On a family whose origin is its level - every family version 2 was proven
+// on - the two are one point and nothing reads differently.
+//
 // EVERY ONE IS READ BACK, after the model is rebuilt - where it stands, and the
 // level it is on by the rule FILTER_ELEMENTS_BY_CATEGORY finds levels with, so
 // the next step that looks for it on that level finds it. One that does not
@@ -133,6 +152,9 @@ var heightId = onLevelPlane
     ? BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM
     : BuiltInParameter.INSTANCE_ELEVATION_PARAM;
 
+// The height its own level stands at - see "WHERE A FAMILY STANDS" above.
+Func<FamilyInstance, double> standsAt = instance => instance.GetTransform().Origin.Z;
+
 var made = new List<FamilyInstance>();
 var askedAt = new List<XYZ>();
 
@@ -163,7 +185,7 @@ if (made.Count > 0) doc.Regenerate();
 for (var i = 0; i < made.Count; i++)
 {
     var stands = made[i].Location as LocationPoint;
-    if (stands != null && Math.Abs(stands.Point.Z - askedAt[i].Z) <= CloseEnough) continue;
+    if (stands != null && Math.Abs(standsAt(made[i]) - askedAt[i].Z) <= CloseEnough) continue;
 
     var height = carried(made[i], heightId);
     if (height == null || height.IsReadOnly || height.StorageType != StorageType.Double)
@@ -177,7 +199,7 @@ for (var i = 0; i < made.Count; i++)
             : string.Format(
                 "Revit put '{0}' {1} above '{2}' where {3} above it was asked, and it carries no "
                 + "Elevation from Level to correct that with. Nothing this layout did is kept", named,
-                stands == null ? "somewhere it gives back no point" : mm(stands.Point.Z - levelZ),
+                stands == null ? "somewhere it gives back no point" : mm(standsAt(made[i]) - levelZ),
                 level.Name, mm(askedAt[i].Z - levelZ)));
 
     // The height above the level, which is what both of these parameters hold.
@@ -248,9 +270,9 @@ for (var i = 0; i < made.Count; i++)
 
     var off = stands == null ? double.NaN
         : Math.Sqrt(Math.Pow(stands.Point.X - point.X, 2) + Math.Pow(stands.Point.Y - point.Y, 2));
-    var rise = stands == null ? double.NaN : stands.Point.Z - levelZ;
+    var rise = stands == null ? double.NaN : standsAt(instance) - levelZ;
 
-    if (stands == null || off > CloseEnough || Math.Abs(stands.Point.Z - point.Z) > CloseEnough
+    if (stands == null || off > CloseEnough || Math.Abs(standsAt(instance) - point.Z) > CloseEnough
         || foundOn != level.Id)
         throw new InvalidOperationException(string.Format(
             "Revit put '{0}' {1}{2}, where it was asked {3} above '{4}', on it. Nothing this layout "
@@ -263,6 +285,12 @@ for (var i = 0; i < made.Count; i++)
             mm(point.Z - levelZ), level.Name));
 
     var said = string.Format("{0}, standing {1} above it - {2}", kindWords, mm(rise), described(instance));
+
+    // Its insertion point, said only where it is not where the family stands.
+    var insertionGap = stands.Point.Z - standsAt(instance);
+    if (Math.Abs(insertionGap) > CloseEnough)
+        said += string.Format(", its insertion point {0} {1} that", mm(Math.Abs(insertionGap)),
+            insertionGap < 0 ? "below" : "above");
     int had;
     tally[said] = tally.TryGetValue(said, out had) ? had + 1 : 1;
 }
