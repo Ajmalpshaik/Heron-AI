@@ -203,6 +203,7 @@ an edit.
 | [D-130](#d-130--a-stop-lasts-until-revit-restarts-and-a-restart-clears-it) | A stop lasts until Revit restarts, and a restart clears it | ✅ Accepted · 2026-10-17 |
 | [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) | A proof on another Revit release is an entry of proof.releases, and a second route on a PROVEN fragment is written by accept, signed | ✅ Accepted · 2026-10-17 |
 | [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) | Off Windows the Heron server serves its library alone, and no Revit tool | ✅ Accepted · 2026-10-17 |
+| [D-133](#d-133--a-run-that-contradicts-a-proofreleases-entry-is-reported-as-one-that-contradicts-the-proof-is) | A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is | ✅ Accepted · 2026-10-17 |
 
 ## Format
 
@@ -1151,3 +1152,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (`LIBRARY`), [`AGENTS.md`](../AGENTS.md), [38 §4](38-the-cloud-environment.md), the [`heron-session`](../.claude/skills/heron-session/SKILL.md) start-up line, [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py), [`tests/test_tool_registry.py`](../tests/test_tool_registry.py)
 
 **Full record:** [`decisions/D-132.md`](decisions/D-132.md)
+
+## D-133 — A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation: *"write a new decision noting D-131's gap is closed"*, after asking for the change (#601) to be merged · **Source:** the last of [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed)'s Consequences
+**Updates:** [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed)'s last Consequence - *"`brain/heron_runs.py` still reads the proof's release alone through `heron_matrix.proof_release`, so a run that contradicts an entry is not yet reported there"* - which stopped being true when #601 merged on 2026-10-17. D-131 itself is unchanged
+**Keeps:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - a proof is a person's evidence and a failure is a machine's, and nothing here picks between them · D-131 §2 - a stale entry is recorded and not counted · D-131 §6 - an entry's release is a field, read by HERON-FRG-MTX-009, never parsed again
+**Affects:** [`heron_runs.py`](../brain/heron_runs.py) (`measure`), [`HERON-FRG-PRF-002.yaml`](../brain/agents/HERON-FRG-PRF-002.yaml) (1.0.0 to 1.1.0), [`tests/test_runs.py`](../tests/test_runs.py) §8
+
+**Full record:** [`decisions/D-133.md`](decisions/D-133.md)

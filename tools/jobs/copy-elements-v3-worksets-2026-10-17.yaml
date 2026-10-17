@@ -1,0 +1,83 @@
+# COPY_ELEMENTS version 3 - in a workshared model the copies go on each
+# original's own workset, or on a workset the modeller names, and the reply
+# reads every copy's workset back. NEEDS-CHECKING Group GP; FRAGMENT-ISSUES
+# row 5b-860.
+#
+#     python tools/batch-prove.py tools/jobs/copy-elements-v3-worksets-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/copy-elements-v3-worksets-2026-10-17.yaml
+#
+# NOT RUN. Written 2026-10-17 in a cloud session with no Revit: version 3 is
+# compiled for 2020 to 2027 and nothing more. NEVER a working model and never
+# any 4355-* model - two NEW projects, made by hand before the run, in Revit
+# 2020 first (the release the gap was seen on):
+#
+#   "Heron Copy Worksets WS"     a new project from the default metric
+#                                template, Collaborate > Worksets enabled, a
+#                                second user workset made and named "Heron
+#                                Openings" beside Workset1, and the project
+#                                saved under this name. With "Heron Openings"
+#                                ACTIVE, four walls drawn on Level 1; then
+#                                Workset1 made the ACTIVE workset again, so
+#                                Revit's own copy would land on Workset1 - the
+#                                positive
+#   "Heron Copy Worksets Plain"  a new project from the same template, never
+#                                made workshared, saved under this name, with
+#                                four walls on Level 1 - the negative
+#
+# Both open at the run; `in:` and `negative-in:` bring each to the front.
+# Read before the run: in the WS project the four walls' Workset reads Heron
+# Openings and the status bar's active workset reads Workset1. If either does
+# not, the arrangement is wrong, not the fragment.
+#
+# POSITIVE: four copies; onWorksets reads "Each copy asked onto its own
+# original's workset; Revit makes copies on the active workset, "Workset1"",
+# then "Read back, all 4 copies: Heron Openings 4" and "4 of 4 copies whose
+# workset can be set are on the workset asked for". Nothing on Workset1.
+#
+# NEGATIVE: the plain project - copies 0, onWorksets empty, refused "This model
+# is not workshared, so there is no workset to put the copies on - leave the
+# workset out and they are copied as before. Nothing was copied." A run that
+# made four copies there is the failure D-30's negative exists for.
+#
+# BOTH LEGS ARE ROLLED BACK (`write: true`). Group GP's other rows - a named
+# workset, mixed worksets in one call, onto levels, and toWorkset left out -
+# are run by hand with `heron_bridge_client.py validate`; this file runs GP1
+# and GP2.
+
+model: Heron Copy Worksets WS.rvt (positive) and Heron Copy Worksets Plain.rvt (negative), two new projects from the default metric template, Revit 2020
+
+defaults:
+  in: "Heron Copy Worksets WS"
+
+jobs:
+  - fragment: copy-elements
+    negative-in: "Heron Copy Worksets Plain"
+    write: true
+    expect: [copies, onWorksets]
+    setup:
+      - select-by-level
+    setup-set:
+      levelId: "Level 1"
+      categories: "Walls"
+    negative-setup-set:
+      levelId: "Level 1"
+      categories: "Walls"
+    set:
+      offset: "3000,0,0"
+      toLevels: ""
+      turnDegrees: ""
+      turnCentreMm: ""
+      toWorkset: "source"
+    negative-set:
+      offset: "3000,0,0"
+      toLevels: ""
+      turnDegrees: ""
+      turnCentreMm: ""
+      toWorkset: "source"
+    note: >
+      The negative changes the MODEL and nothing else: the same four walls on
+      Level 1, the same values, in a project that has no worksets. Read
+      refused and copies 0 there. In the positive read onWorksets whole - the
+      active workset named, every copy read back on Heron Openings, none
+      left on Workset1 - and select the copies afterwards in a copy of the
+      model to see the same in the Properties palette (GP3).

@@ -771,6 +771,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
 
+## Group FA - sheet sets v2: sheets added to and taken out of an existing set, the print range put back, and two sets holding the same sheets flagged: `MANAGE_SHEET_SETS` and `LIST_SHEET_SETS` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fa.md`](needs-checking/group-fa.md)
+
 ## Group FB - the sheets of one revision, latest on the sheet or not, and a typed list of sheet numbers: `FIND_SHEETS_BY_REVISION_OR_NUMBER` (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fb.md`](needs-checking/group-fb.md)
@@ -802,6 +806,10 @@ Step 6 is finished, and not before. At that point:
 ## Group GC - one family swapped for another, whatever each one's hosting: the method `replace-in-place-family` widened (2026-10-17)
 
 **Its own file:** [`needs-checking/group-gc.md`](needs-checking/group-gc.md)
+
+## Group GP - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gp.md`](needs-checking/group-gp.md)
 
 ## Group GW - Heron's own C# compiler on a .NET Revit, whatever another add-in loaded first (2026-10-17)
 
