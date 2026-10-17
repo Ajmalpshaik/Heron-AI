@@ -73,7 +73,7 @@
 // typed with a straight one finds nothing. Past 20,000 characters the rest are
 // counted, not printed.
 //
-// VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-630) adds what EDIT_TEXT_VALUES
+// VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-737) adds what EDIT_TEXT_VALUES
 // version 5 can now SET, so a check reads exactly what a format wrote: each
 // paragraph's bold, italic and underline - "bold 1; partly bold 3; underline
 // 5-6", all of a paragraph, part of it, or left out when none - and every
