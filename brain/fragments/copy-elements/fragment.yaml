@@ -123,9 +123,13 @@ contract:
       # "original" say the same); a user workset's name - every copy on it,
       # case and extra spaces forgiven, and a name in double quotes is always a
       # name; "active" - Revit's own way, every copy on the active workset.
+      # A named workset is made the active one for the copy and the active
+      # workset put back after - Revit's own place for copies; "source" gives
+      # each copy its original's Workset value, as SET_ELEMENT_WORKSET writes.
       # LEFT OUT IS "active": version 2 exactly, no workset read or written.
-      # Anything but "active" in a model that is not workshared, or a name it
-      # has no user workset for, refuses the call.
+      # Anything but "active" in a model that is not workshared, a name it has
+      # no user workset for, or a workset closed in this session, refuses the
+      # call.
       type: string
       source: request
       optional: true
@@ -147,8 +151,9 @@ contract:
       role: result
       type: string
     - name: onWorksets
-      # Version 3, when a workset was asked for: what was asked, every copy's
-      # workset READ BACK from the model with a count on each, how many copies
+      # Version 3, when a workset was asked for: what was asked and the active
+      # workset, every copy's workset READ BACK from the model with a count on
+      # each, how many copies
       # whose workset can be set are on the one asked for, and how many follow
       # their host or view (a curtain panel, a mullion) and were not set. ONE
       # string, as copiedTo. Empty when toWorkset is left out or "active".
@@ -221,12 +226,14 @@ compatibility-note: >
   the turn centre is millimetres to feet by arithmetic (D-20). Compiled 2020
   to 2027; run on Revit 2020 only (2026-10-14, Project2, 5b-460). Version 3
   adds `Document.IsWorkshared`, `FilteredWorksetCollector` of user worksets,
-  `Workset.IsOpen`, `Document.GetWorksetId`, `WorksetTable.GetActiveWorksetId`
-  and `GetWorkset`, `Element.GetDependentElements` and the integer
+  `ToWorksets`, `Workset.IsOpen`, `Document.GetWorksetId`, `WorksetTable`'s
+  `GetActiveWorksetId`, `SetActiveWorksetId` and `GetWorkset`, `WorksetId`'s
+  equality, `Element.GetDependentElements` and the integer
   `ELEM_PARTITION_PARAM` SET_ELEMENT_WORKSET already writes - each read off the
   reference assemblies as the same on all eight releases (tools/api-surface,
-  2026-10-17). A WorksetId is an int, untouched by 2024's 64-bit ids. Compiled
-  2020 to 2027; NOT RUN IN REVIT.
+  2026-10-17). No id is read as a number: a workset is a WorksetId compared
+  with ==, and the parameter is written only with the value an original's own
+  parameter holds. Compiled 2020 to 2027; NOT RUN IN REVIT.
 
 # WHY VERSION 2 COPIES PLAN TO PLAN - measured 2026-10-14 on Revit 2020 in a
 # scratch Project2, every probe rolled back (FRAGMENT-ISSUES 5b-460):

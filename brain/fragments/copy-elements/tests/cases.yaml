@@ -45,8 +45,10 @@ positive:
       each copy on its own original's workset - "A 2, B 2" read back - and the
       two on A are the copies of the two on A, found by their place in plan
 
-  - given: version 3, the same four instances on B, toWorkset "A"
-    expect: every copy on A - onWorksets reads back "A 4"
+  - given: version 3, four instances on A with A active, toWorkset "B"
+    expect: >
+      every copy on B - onWorksets reads back "B 4", says the copy was made
+      with B active, and A is the active workset again after the call
 
   - given: version 3, toWorkset left out, in the workshared project
     expect: >
@@ -85,6 +87,9 @@ negative:
     expect: >
       `copies` EMPTY, refused names the workset asked for and lists the model's
       user worksets, and ends "Nothing was copied"
+
+  - given: version 3 - toWorkset names a workset that is CLOSED in this session
+    expect: refused, nothing copied, and the active workset unchanged
 
 second_route:
   - a count of that category before and after, differing by exactly the number copied
