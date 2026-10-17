@@ -307,6 +307,13 @@ forms and one void kept for it: a `create-family-revolution` (PROVEN) bore 100 m
 signature owed. The first try named row 5's void, which lies wholly inside row 1's cylinder; it threw
 - [row 5b-1001](../fragment-issues/section-5b-rows-401-425.md).
 
+**Later the same day: that signature went stale, on purpose.** The owner signed `37adc81646c3aa9d` and
+promoted the card; 5b-1001's fix then changed the code - the `holds` check on a void's body threw where
+a line ran through one of the void's edges, and now tries a spare direction. The card is DRAFT again.
+Rolled back on a copy of the same family, Revit 2024.3, session 51856: row 5's void now cuts row 1's
+cylinder (0.48 L taken away), the bore cuts as above, the two voids alone are refused as above. The new
+draft is fingerprint `ca69cfbd3677c569`; **the owner's signature and promotion are owed again.** Ajmal PS signed it the same day and set the card to PROVEN himself.
+
 **The build timing - RUN 2026-10-17, after `create-family-forms` was promoted** ([pull request #624](https://github.com/Ajmalpshaik/Heron-AI/pull/624)).
 Until then it could not run: a family built by a chat goes through `revit_change`, which runs a PROVEN
 capability only ([D-117](../decisions/D-117.md)). Revit 2024.3, session 51856: a fixed end-suction pump set
@@ -319,4 +326,5 @@ The tool reports forms built and seconds a form as NOT MEASURED
 [docs/04 §8.7](../04-heron-mcp.md).
 
 **Still owed:** DA4's kept half; the warm-up OFF against ON on 2020 and 2027. DA7 and `combine-family-forms`'
-signature were given and both cards promoted in pull request #624.
+signature were given and both cards promoted in pull request #624, and `combine-family-forms` was signed
+again for 5b-1001's fix (`ca69cfbd3677c569`) in pull request #631.
