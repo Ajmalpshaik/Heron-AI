@@ -643,7 +643,7 @@ def write_snapshot(path):
         import heron_config as CONFIG
         values = CONFIG.load()
         for key in ("write.enabled", "admin.enabled", "publish.enabled",
-                    "bridge.autoConnect", "fragments.warmUp"):
+                    "write.askBeforeKeeping", "bridge.autoConnect", "fragments.warmUp"):
             facts["revit"]["switches"][key] = CONFIG.truthy(values, key)
     except Exception:                                   # noqa: BLE001 - a report, not a gate
         pass

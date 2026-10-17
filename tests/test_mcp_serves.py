@@ -588,8 +588,8 @@ async def exercise_door(module):
     check(assemble is not None and given == assemble(),
           "and they are the registry's host.chat, as assembled from the "
           "Constitution now")
-    for phrase in ("Revit's own Undo", "Show before you change", "D-99",
-                   "Never call a model, a system or a design"):
+    for phrase in ("Revit's own Undo", "Show before you change", "D-126",
+                   "Keep or Discard", "Never call a model, a system or a design"):
         check(phrase in given, "they include: %s" % phrase)
 
     print()
