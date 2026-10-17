@@ -57,7 +57,7 @@
 // VERSION 3: WHAT EACH ELEMENT PASSES THROUGH, AND A PARAMETER AGAINST IT.
 // ===========================================================================
 //
-// Asked on a real project (FRAGMENT-ISSUES 5b-540): "check all the cut-out wall
+// Asked on a real project (FRAGMENT-ISSUES 5b-760): "check all the cut-out wall
 // width". Eighteen opening families carried Wall Width 255 or 260, and what they
 // actually passed through was a 30 mm wall in the structural link, a 305 mm deep
 // louvre (an Air Terminal) in another, and damper actuators (Electrical

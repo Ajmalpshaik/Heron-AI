@@ -26,7 +26,46 @@ positive:
       where Object Styles shows a cut weight for it, and nothing in the first
       line about subcategories left out
 
+  - given: >
+      version 3, categories "Generic Annotations > Signature", in the same
+      scratch Generic Annotation family as above - Signature 0,0,255, weight 2,
+      Solid
+    expect: >
+      styleRows 1. objectStyles reads "Object Styles, 1 row(s), read off each
+      category - not a view's override. Only the name(s) asked: Generic
+      Annotations > Signature.", then the column line, then ONE row,
+      "Generic Annotations > Signature | 0,0,255 | 2 | - | Solid" - not the
+      family's other rows and not the Generic Annotations row itself.
+      "  generic   annotations>SIGNATURE " gives the same one row
+
+  - given: >
+      version 3, categories "Generic Annotations", in the same family
+    expect: >
+      styleRows 2 - the Generic Annotations row and its one subcategory,
+      Signature, and no other category's row
+
 negative:
+  - given: >
+      version 3, categories "Generic Models > Signature", in a scratch Generic
+      Model family with NO subcategory under its own category
+    expect: >
+      styleRows 0 and familySubcategories 0. objectStyles is ONE line - "Object
+      Styles: NO ROW - nothing in this document is named as asked (Generic
+      Models > Signature). Generic Models has no subcategory "Signature" - it
+      has no subcategories at all; its own row is "Generic Models". ..." - with
+      NO column line and no row under it. A column line over no rows would
+      read as "nothing there" when the truth is "nothing by that name"
+
+  - given: >
+      version 3, categories "Generic Annotations > Stamp" or the misspelt
+      "Signiture", in the scratch Generic Annotation family
+    expect: >
+      styleRows 0, no column line, and the nearest names first: "Generic
+      Annotations has no subcategory "Stamp" - nearest: Generic Annotations >
+      Signature", and for "Signiture" a list opening with Generic Annotations >
+      Signature. names, bindable and familySubcategories are the family's as
+      ever - the switch narrows objectStyles only
+
   - given: >
       a document opened on a non-English Revit - French or Arabic
     expect: >
@@ -67,3 +106,7 @@ second_route:
       Signature row (or Walls > Common Edges) read by eye - Line Weight
       Projection and Cut, Line Color, Line Pattern - against the row
       objectStyles printed for it
+  - >
+      version 3: the one row objectStyles printed for "Generic Annotations >
+      Signature" read against the Signature row of Manage > Object Styles >
+      Annotation Objects in the same family

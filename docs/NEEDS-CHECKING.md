@@ -751,13 +751,29 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
+## Group EU - Heron says when its own code changed under a chat, and changes nothing until the chat is reopened (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eu.md`](needs-checking/group-eu.md)
+
 ## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
 
-## Group FC - what each element passes through in the links, and a parameter against its thickness: `FIND_CLASHES` version 3 (2026-10-17)
+## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
 
-**Its own file:** [`needs-checking/group-fc.md`](needs-checking/group-fc.md)
+**Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
+
+## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fg.md`](needs-checking/group-fg.md)
+
+## Group FU - one Object Styles row by name: `LIST_CATEGORIES` version 3, `categories` narrows the answer, a missing name gets the nearest names (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fu.md`](needs-checking/group-fu.md)
+
+## Group GH - what each element passes through in the links, and a parameter against its thickness: `FIND_CLASHES` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gh.md`](needs-checking/group-gh.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

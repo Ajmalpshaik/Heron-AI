@@ -44,10 +44,13 @@ instructive rather than embarrassing:
     `param.Set(v)`. The write surface is the API, and no word list is the API.
 
 **The real answer to question 13 is not static and already exists.** D-28's
-executor runs a READ fragment with NO TRANSACTION OPEN, so Revit itself refuses
-any model change - enforced by the host rather than asserted by a checker. That
-is a better answer than any text search could give, and this tool says so
-instead of competing with it.
+executor runs a READ fragment with NO TRANSACTION OPEN, so Revit refuses a
+model change, and the add-in counts the model around every read - a read that
+moved it is answered `read_changed_model`, never as a read, because Revit's
+refusal once let an element through (FRAGMENT-ISSUES row 5b-350). Both are
+enforced at run time rather than asserted by a checker. That is a better
+answer than any text search could give, and this tool says so instead of
+competing with it.
 
 WHAT IT DOES INSTEAD
 --------------------
@@ -499,17 +502,20 @@ def ask(fid, name, doc, raw, code):
     if reader:
         say(BY_DESIGN,
             "declared %s, and a read runs with NO TRANSACTION OPEN - so Revit "
-            "itself refuses any model change. Enforced by the host, not "
-            "asserted here" % risk)
+            "refuses a model change, and the add-in counts the model around "
+            "the run and answers one that moved it read_changed_model (row "
+            "5b-350). Enforced at run time, not asserted here" % risk)
     elif risk == "EXECUTE":
         # THE SHOW DOOR, 2026-10-17. revit_show sends run_fragment_show, the
-        # read path one level up: no transaction, so the guarantee is still
-        # Revit's - and what is left for an EXECUTE fragment to change is
-        # what it is declared to change, the session and never the model.
+        # read path one level up: no transaction and the same count around
+        # the run (row 5b-350) - and what is left for an EXECUTE fragment to
+        # change is what it is declared to change, the session and never the
+        # model.
         say(BY_DESIGN,
             "declared EXECUTE, and the show door runs it with NO TRANSACTION "
-            "OPEN - Revit itself refuses any model change, so what it can "
-            "change is the selection, the camera or the active view; one that "
+            "OPEN - Revit refuses a model change, and the add-in counts the "
+            "model around the run (row 5b-350) - so what it can change is the "
+            "selection, the camera or the active view; one that "
             "needs a transaction fails there in Revit's own words. Sent "
             "through revit_change instead it runs inside the write path's "
             "transaction like any change, behind the Changes switch")

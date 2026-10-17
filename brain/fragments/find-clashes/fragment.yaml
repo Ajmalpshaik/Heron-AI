@@ -255,7 +255,7 @@ utterances:
   # clash" reached JOIN_GEOMETRY, a WRITE that joins walls and floors, on
   # both - a question answered by the tool that changes the model.
   - which of these clash
-  # ADDED 2026-10-17 with version 3 (row 5b-540). The first is the job's own
+  # ADDED 2026-10-17 with version 3 (row 5b-760). The first is the job's own
   # shape; the second is what each opening passes through, any category; the
   # third is the owner's own words on 4355-BHVD-3D-21P60-ST001I, which reached
   # CREATE_OPENING - a write - on his PC's backend (the trained model with the

@@ -1,6 +1,6 @@
 # The proof of find-clashes version 3 (FIND_CLASHES, FRG-QA-003), written
-# 2026-10-17 for FRAGMENT-ISSUES row 5b-540 - NEEDS-CHECKING Group FC, row
-# FC1. NOT RUN. Written in a cloud container with no Revit; compiled on all
+# 2026-10-17 for FRAGMENT-ISSUES row 5b-760 - NEEDS-CHECKING Group GH, row
+# GH1. NOT RUN. Written in a cloud container with no Revit; compiled on all
 # eight releases, nothing more.
 #
 #     python tools/batch-prove.py tools/jobs/find-clashes-v3-link-2026-10-17.yaml --dry-run
@@ -17,7 +17,7 @@
 # (4355-BHVD-3D-21P60-ST001I) - never written to, and not used here. A duct's
 # own "Width" is a length on every rectangular duct in the default
 # Mechanical template, so the proof needs no family built first. The opening
-# family's own run is FC9 in the group, outside this file.
+# family's own run is GH9 in the group, outside this file.
 #
 # A READ: nothing is written in either leg.
 #
@@ -30,7 +30,7 @@
 #          0,-4000 to 0,4000 (north-south on x = 0), base Level 1, unconnected
 #          height 3000 mm. Its thickness must read 200 in its type - say what
 #          it reads in the group row if it is anything else
-#        - (for FC3) a door of any loaded type in that wall at 0,3000
+#        - (for GH3) a door of any loaded type in that wall at 0,3000
 #      Save and close it.
 #   2. THE HOST - a new project from the default metric MECHANICAL template,
 #      NOT saved. Insert > Link Revit > HeronClashLink.rvt, Positioning "Auto -
@@ -69,7 +69,7 @@
 #   - positive `passedThrough`: the same wall named on D1's line; `linkedMatches`
 #     "1 link(s) read: 1 element(s) clash with linked Walls, NOT selected"
 #   - negative `comparison`: "0 element(s) differ, 1 agree"
-#   - the second route (FC2): Revit's own Tape Measure on the linked wall's two
+#   - the second route (GH2): Revit's own Tape Measure on the linked wall's two
 #     faces in the host plan, and the duct's Width in Properties
 #
 # NOT `--session` HERE: with two Revits connected to Heron, add
@@ -99,7 +99,7 @@ jobs:
       categories: "Walls"
       compareParameter: "Width"
     note: >
-      FC1 - a duct 300 wide through a 200 mm linked wall differs by 100 mm;
+      GH1 - a duct 300 wide through a 200 mm linked wall differs by 100 mm;
       the negative, a duct 200 wide through the same wall, agrees. Both legs
       read the link, ask for Walls and compare Width, so the only thing that
       changes is whether the value matches the wall.

@@ -14,7 +14,7 @@ positive:
       reads "1 of N element(s) clash" and names the duct and the beam's type,
       id in the link and Fire Rating - checked in a section with the link shown
 
-  # VERSION 3, added 2026-10-17 (row 5b-540, NEEDS-CHECKING Group FC). NONE
+  # VERSION 3, added 2026-10-17 (row 5b-760, NEEDS-CHECKING Group GH). NONE
   # OF THESE HAS BEEN RUN. The models are the job file's -
   # tools/jobs/find-clashes-v3-link-2026-10-17.yaml.
   - given: >
@@ -121,7 +121,7 @@ negative:
 second_route:
   - Revit's own Interference Check, run on the same two selections
 
-  # VERSION 3, added 2026-10-17 (row 5b-540). NONE OF THESE HAS BEEN RUN.
+  # VERSION 3, added 2026-10-17 (row 5b-760). NONE OF THESE HAS BEEN RUN.
   - given: >
       the two boxes, each with Wall Width set to 200, in the 200 mm linked
       wall, compareParameter Wall Width
