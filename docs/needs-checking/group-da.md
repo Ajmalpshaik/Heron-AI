@@ -307,6 +307,13 @@ forms and one void kept for it: a `create-family-revolution` (PROVEN) bore 100 m
 signature owed. The first try named row 5's void, which lies wholly inside row 1's cylinder; it threw
 - [row 5b-1001](../fragment-issues/section-5b-rows-401-425.md).
 
+**Later the same day: that signature went stale, on purpose.** The owner signed `37adc81646c3aa9d` and
+promoted the card; 5b-1001's fix then changed the code - the `holds` check on a void's body threw where
+a line ran through one of the void's edges, and now tries a spare direction. The card is DRAFT again.
+Rolled back on a copy of the same family, Revit 2024.3, session 51856: row 5's void now cuts row 1's
+cylinder (0.48 L taken away), the bore cuts as above, the two voids alone are refused as above. The new
+draft is fingerprint `ca69cfbd3677c569`; **the owner's signature and promotion are owed again.** Ajmal PS signed it the same day and set the card to PROVEN himself.
+
 **The build timing - NOT RUN.** A family built by a chat goes through `revit_change`, which runs a
 PROVEN capability only ([D-117](../decisions/D-117.md)); `create-family-forms` stays DRAFT until DA7 is
 signed and it is promoted, and `try-once`'s one keep for this version was DA2's.
