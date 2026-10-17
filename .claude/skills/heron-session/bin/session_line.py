@@ -16,6 +16,8 @@ session. It prints something like
     Heron: branch claude/x is 3 behind and 2 ahead of origin/main (as last
     fetched). Fragments: 328 PROVEN, 68 DRAFT of 396.
 
+and, on any system but Windows, one sentence more - see NOT WINDOWS below.
+
 WHY THESE TWO FACTS AND NO OTHERS
 ---------------------------------
 "Behind main" is the one that cost a whole pull request on 2026-09-22: a
@@ -24,6 +26,17 @@ main had moved. The fragment counts are the question every session asks first
 and AGENTS.md answers with a command; saying them here saves the command and
 never states a number anybody typed - both are DERIVED on the spot, from git
 and from each fragment's own `heron-status:` line.
+
+NOT WINDOWS
+-----------
+On any system but Windows the line ends by saying there is no Revit and no
+Heron tools here: the heron MCP server exits on every other system, so a task
+marked LOCAL or NEEDS REAL REVIT cannot run. On 2026-10-17 such a task was
+started in a cloud session by mistake and spent its first steps finding that
+out, because nothing at the start said so. Derived from os.name - the same test
+the server makes - and said only on a line that already has something to say:
+a folder with no Heron in it is not a Heron session. On Windows the line is
+exactly what it was.
 
 WHAT IT DELIBERATELY DOES NOT DO
 --------------------------------
@@ -132,6 +145,16 @@ def fragment_part(top):
     return "Fragments: %s of %d" % (", ".join(named), total)
 
 
+def machine_part(system):
+    """The sentence that stops a Revit task on a machine with no Revit, or None
+    on Windows. `system` is an os.name; the heron MCP server exits on anything
+    but "nt", so nothing in this session can reach a model."""
+    if system == "nt":
+        return None
+    return ("Not Windows: no Revit and no Heron tools in this session - "
+            "anything marked LOCAL or NEEDS REAL REVIT cannot run here")
+
+
 def modeller_checkout(where):
     """True when `where` is inside the main checkout with branch main out.
 
@@ -164,9 +187,10 @@ def modeller_checkout(where):
         here = parent
 
 
-def line_for(payload):
+def line_for(payload, system=None):
     """The whole line, or None when nothing could be derived or nothing is
-    wanted - a modeller's chat, see modeller_checkout()."""
+    wanted - a modeller's chat, see modeller_checkout(). `system` is the
+    os.name to answer for; None is this machine's."""
     where = payload.get("cwd") if isinstance(payload, dict) else None
     if not isinstance(where, str) or not os.path.isdir(where):
         where = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
@@ -177,6 +201,9 @@ def line_for(payload):
     parts = [p for p in (first, second) if p]
     if not parts:
         return None
+    third = machine_part(os.name if system is None else system)
+    if third:
+        parts.append(third)
     return "Heron: " + ". ".join(parts) + "."
 
 

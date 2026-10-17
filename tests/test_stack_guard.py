@@ -51,6 +51,18 @@ PASS, FAIL and NEEDS REAL REVIT.
 WHAT IT DOES NOT SAY, in the host's own closing words: that a guarded fragment
 survives runaway recursion in front of Revit. That needs a model, and it is
 NEEDS-CHECKING J9's to hold.
+
+AND SINCE 2026-10-17 IT HOLDS THE RUN CLOCK TOO (D-129). The same sweep checks
+that every loop in every fragment asks `HeronRunClock` first and every body
+the guard enters asks it on entry, and that with its two calls taken out the
+rewrite is the fragment token for token, plus one pair of braces per loop
+body that was one statement. Then it RUNS guarded runaways through
+CSharpScript on a 200 ms deadline - `while(true){}`,
+`try{while(true){}}catch(Exception){}`, a loop that catches the stop and
+loops on, a one-statement body, a recursion with no loop - and a stop asked
+from another thread mid-run, and holds each to stopping within the deadline.
+What that cannot say - a rollback in Revit, Revit coming back, a second pipe
+- is NEEDS-CHECKING Group EZ's.
 """
 
 import os

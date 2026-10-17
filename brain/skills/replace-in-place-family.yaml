@@ -3,7 +3,7 @@ heron-step: 17
 heron-since: 0.1.0
 heron-layer: brain
 
-# THE ID STAYS "replace-in-place-family" ON PURPOSE (row 5b-560). The method
+# THE ID STAYS "replace-in-place-family" ON PURPOSE (row 5b-740). The method
 # was widened on 2026-10-17 to swap a LOADABLE family too, whatever each one's
 # hosting, and the owner asked for this file to be widened, not a second
 # method written for the same job. Group DI, row 5b-443 and heron_method
@@ -263,12 +263,12 @@ purpose: >
 # whose candidates include one of `needs` (heron_skill.methods_for), and the
 # words they share with the request put it first.
 #
-# THE OWNER'S TWO SENTENCES ARE NOT DECLARED HERE, ON PURPOSE (row 5b-560).
+# THE OWNER'S TWO SENTENCES ARE NOT DECLARED HERE, ON PURPOSE (row 5b-740).
 # "replace these openings with the TRG family at the same place" and "swap
 # this family for that one keeping their data" share replace, swap, family,
 # place, their and data with the words below already. Declared, "openings",
 # "same" and "this" - which heron_skill._words turns into "thi", a word it
-# does not drop (row 5b-561) - named this method beside 19 to 21 more
+# does not drop (row 5b-741) - named this method beside 19 to 21 more
 # sentences on each search backend: "who owns this element", "move these
 # openings up 200". Measured 2026-10-17, main's skills against this file's.
 utterances:
@@ -289,7 +289,7 @@ utterances:
 # heron_method prints whole.
 #
 # PLACE_FAMILY_ON_FACE AND PLACE_HOSTED_FAMILY ARE NAMED IN STEP 6 AND LEFT OUT
-# HERE, ON PURPOSE (row 5b-560). In `needs`, heron_skill.methods_for named this
+# HERE, ON PURPOSE (row 5b-740). In `needs`, heron_skill.methods_for named this
 # method beside 16 to 17 more sentences that place one door, window, skylight
 # or face-based family and replace nothing - "place windows in this wall" -
 # because this method's own id says "place". Measured 2026-10-17 on both
@@ -336,7 +336,7 @@ note: >
   4355-BHVD-3D-60P00-BL006A: three in-place
   TCM_ACU_T002_AirCooledCondensingUnit1..3 : AAAA replaced by
   TRG_Mechanical Equipment_Split Air Conditioner Outdoor Unit_Wall Mounted.
-  Widened 2026-10-17 (row 5b-560) from a second swap done by hand on
+  Widened 2026-10-17 (row 5b-740) from a second swap done by hand on
   2026-10-15 on Revit 2020, project 4355-BHVD-3D-21P60-ST001I: 13 builders-work
   openings TCM_GEN_CutOut_Rectangular_NEW and TCM_GEN_CutOut_Cirular_NEW,
   Generic Models hosted on a face of the linked structural model, replaced by
@@ -348,4 +348,4 @@ note: >
   COPY_TAGS_TO_REPLACEMENTS (DRAFT) and steps 1 and 8 are
   REPORT_PARAMETER_INVENTORY; the GUID write is still missing. Neither swap
   has been watched working through this method, so it stays DRAFT (D-30);
-  its proof plan is Group FC of docs/NEEDS-CHECKING.md, on a NEW project.
+  its proof plan is Group GC of docs/NEEDS-CHECKING.md, on a NEW project.

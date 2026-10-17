@@ -641,7 +641,7 @@ def main():
             check(got is not None and "FIXED-SIZE FAMILY" in got["purpose"],
                   "and the family method it names carries the fixed-size path")
 
-            # THE OWNER'S SWAP ASKS (row 5b-560). Both named the family
+            # THE OWNER'S SWAP ASKS (row 5b-740). Both named the family
             # CREATION methods - "build a new family" - beside a request to
             # replace one, or nothing at all. The capabilities are the ones
             # the lookup returned for these words on 2026-10-17, the first on
@@ -668,7 +668,7 @@ def main():
                   % [s.id for s in openings])
             # And it is named beside nothing that replaces nothing: a hosted
             # placement is kept out of its needs, and no utterance of it says
-            # "this", which the word splitter keeps as "thi" (row 5b-561).
+            # "this", which the word splitter keeps as "thi" (row 5b-741).
             for request, caps in (
                     ("place windows in this wall", ["PLACE_HOSTED_FAMILY"]),
                     ("who owns this element",

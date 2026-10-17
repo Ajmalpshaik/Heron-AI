@@ -45,8 +45,10 @@ namespace Heron.Revit.Addin
     ///
     /// WHAT IS NOT KNOWN, said rather than assumed: whether the committed
     /// transaction lands in Revit's undo list as an entry of its own
-    /// (NEEDS-CHECKING ES), and whether a workshared view owned by somebody
-    /// else takes it. Both are answered by running it, not by reading this.
+    /// (NEEDS-CHECKING ES3), whether Revit then marks the model changed - a
+    /// save question on close for an isolate (ES14) - and whether a
+    /// workshared view owned by somebody else takes it (ES15). All three are
+    /// answered by running it, not by reading this.
     ///
     /// THE ACTIVE VIEW, AND ONLY THAT. A temporary isolate belongs to one
     /// view, and the one the modeller is looking at is the only one where
@@ -123,6 +125,21 @@ namespace Heron.Revit.Addin
                         (problem ?? "The ids typed could not be found in this model.")
                         + " NOTHING was isolated.");
                 }
+                // A TYPE IS NOT A PLACED ELEMENT, and the typed-id rule finds
+                // types too - an id an earlier answer printed may be one. A type
+                // has nothing to draw, so isolating it would either throw or
+                // count an element nobody can see. One refuses the request, as
+                // one unknown category word does.
+                var types = new List<string>();
+                foreach (var id in found)
+                    if (doc.GetElement(id) is ElementType) types.Add(id.ToString());
+                if (types.Count > 0)
+                {
+                    return Json.Error("bad_request_value",
+                        "These ids name element TYPES, not placed elements, and a type has "
+                        + "nothing to isolate: " + string.Join(", ", types.ToArray())
+                        + ". NOTHING was isolated. Give the ids of placed elements.");
+                }
                 wanted.AddRange(found);
 
                 // HOW MANY OF THEM THIS VIEW CAN SHOW AT ALL. An element on
@@ -130,11 +147,20 @@ namespace Heron.Revit.Addin
                 // isolated and still not seen - and "isolated 5" over a screen
                 // showing 3 reads as Heron losing two. D-52: what was asked
                 // for and what can be seen are reported side by side.
-                var shown = new HashSet<ElementId>(
-                    new FilteredElementCollector(doc, view.Id).ToElementIds());
-                inView = 0;
-                foreach (var id in wanted)
-                    if (shown.Contains(id)) inView++;
+                //
+                // NOT COUNTED UNDER AN EARLIER ISOLATE. Whether this collector
+                // honours a temporary hide is not known, and if it does, every
+                // element the earlier isolate hid would count as "not in this
+                // view" - an answer that blames the view's level for Revit's
+                // own temporary state. Not counted is said; miscounted is not.
+                if (!view.IsTemporaryHideIsolateActive())
+                {
+                    var shown = new HashSet<ElementId>(
+                        new FilteredElementCollector(doc, view.Id).ToElementIds());
+                    inView = 0;
+                    foreach (var id in wanted)
+                        if (shown.Contains(id)) inView++;
+                }
             }
             else
             {
@@ -206,6 +232,8 @@ namespace Heron.Revit.Addin
                     + "isolated. The view's own visibility settings were not touched.");
             }
 
+            // documentPath BESIDE THE TITLE AND THE KEYS, for the reason the
+            // reset gives below: the server's pin compares it.
             var fields = new List<string>
             {
                 Json.Num("isolated", wanted.Count),
@@ -213,6 +241,7 @@ namespace Heron.Revit.Addin
                 Json.Str("view", view.Name),
                 Json.Bool("replacedEarlier", replaced),
                 Json.Str("document", doc.Title),
+                Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Str("temporary",
@@ -264,6 +293,10 @@ namespace Heron.Revit.Addin
                 Json.Bool("reset", wasOn),
                 Json.Str("view", view.Name),
                 Json.Str("document", doc.Title),
+                // THE PATH TOO, as every other reply the pin reads carries it:
+                // on Revit 2020 to 2023, with no CreationGUID, two models made
+                // from one template are told apart by nothing else.
+                Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Str("said", wasOn

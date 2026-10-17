@@ -103,11 +103,21 @@ WHAT IT PROVES, when an SDK is installed
      and a reply with no readable picture, or a refusal, gives no image.
  15. `revit_show` AND THE TEMPORARY ISOLATE, against a stand-in Revit. A
      MODIFY capability is refused before a session is bound; an EXECUTE one
-     goes as run_fragment_show with no `apply`; a capability that works
-     inside a link goes the same way with no question first (D-124);
+     goes as run_fragment_show with no `apply`, and its answer says nothing
+     in the model changed only from the add-in's count (row 5b-350) - with
+     no count, or a lost answer, it says that was not measured; a
+     capability that works inside a link goes the same way with no question
+     first (D-124);
      revit_isolate_temporary and revit_reset_temporary
      send their fixed operations with the pin, and an add-in refusal
      reaches the chat in its own words.
+ 16. THE CHAT IS TOLD WHEN HERON'S OWN CODE CHANGED UNDER IT (NEEDS-CHECKING
+     B8), with a file changed after it was loaded. Nothing changed: no line.
+     Changed: a preview still reaches the stand-in Revit and answers in full,
+     with one line after it; revit_apply_move with that preview's approval
+     waiting, revit_change and the Companion's Apply are each refused and
+     send nothing. The bytes put back: the answer is as it was. The watch
+     itself is tests/test_running_code.py.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -716,7 +726,8 @@ async def exercise_show(module):
     reply = {"ok": True, "ran": "x", "document": "Project1",
              "documentPath": "C:/jobs/Project1.rvt", "projectKey": "key-1",
              "wasActiveDocument": True, "bound": "elements from the selection (3)",
-             "provides": {"shown": "3", "viewAfter": "{3D}"}, "providesCount": 2}
+             "provides": {"shown": "3", "viewAfter": "{3D}"}, "providesCount": 2,
+             "elementsCounted": 1234}
     revit = StandIn(reply)
     resolved = []
 
@@ -750,6 +761,28 @@ async def exercise_show(module):
               and "Only what is shown can have changed" in said,
               "the answer names the model, and says only the screen can have "
               "changed")
+        check("1,234" in said and "itself refuses" not in said,
+              "and says the model was unchanged from the add-in's own count, not "
+              "from Revit's refusal (row 5b-350)")
+
+        # AN ADD-IN THAT NEVER COUNTED MUST NOT BE SAID TO HAVE - revit_read's
+        # rule, on the same counted read path.
+        revit.reply = {k: v for k, v in reply.items() if k != "elementsCounted"}
+        said = await call("revit_show", {"capability": "ZOOM_TO_ELEMENTS"})
+        check("Nothing in the model was changed" not in said
+              and "not measured" in said,
+              "an answer with no count says the model was not measured")
+
+        # A LOST ANSWER CARRIED THE COUNT AWAY WITH IT.
+        revit.reply = {"ok": False, "error": "unknown_outcome",
+                       "message": "The request reached Revit but the answer was lost."}
+        said = await call("revit_show", {"capability": "ZOOM_TO_ELEMENTS",
+                                         "expect_from": "find-views"})
+        check("find-views" in said and "lost answer" in said
+              and "Nothing in the model was changed" not in said,
+              "a consuming show whose answer was lost says the count went with it, "
+              "and never that nothing was changed")
+        revit.reply = reply
 
         revit.asked[:] = []
         resolved[:] = []
@@ -792,6 +825,18 @@ async def exercise_show(module):
               and "is off" in said,
               "revit_reset_temporary sends reset_temporary with the pin, and says "
               "the isolate is off")
+
+        # THE RESET A WRONG-MODEL ISOLATE TELLS THE CHAT TO RUN is the job done
+        # there, not a second mistake - row 5b-593.
+        revit.reply = {"ok": True, "reset": True, "view": "Level 1",
+                       "document": "Project2", "projectKey": "key-2",
+                       "said": "The Temporary Hide/Isolate in \"Level 1\" is off."}
+        said = await call("revit_reset_temporary", {})
+        check(said.startswith("Reset the temporary hide/isolate in \"Level 1\" of Project2")
+              and "is not the model this chat works on" in said
+              and "before it could tell" not in said,
+              "and a reset in another model says which model, and that the isolate there "
+              "is ended - not that Heron failed - found %r" % said[:120])
 
         revit.reply = {"ok": False, "error": "not_this_view",
                        "message": "\"A101\" cannot hide or isolate temporarily."}
@@ -1697,6 +1742,115 @@ async def exercise_earlier(module):
         module.pinned.forget()
 
 
+async def exercise_running_code(module):
+    """
+    Section 16: a chat whose server is still running code a pull has since
+    changed is told so on every answer, and nothing it asks changes the model
+    (NEEDS-CHECKING B8). The server's own watch is swapped for one over a
+    scratch checkout, so the file changed here is never one of Heron's.
+    """
+    import types
+    server = module.server
+    print()
+    print("  the chat is told when Heron's own code changed under it (B8)")
+
+    running = getattr(module, "running_code", None)
+    real = getattr(module, "RUNNING", None)
+    check(running is not None and real is not None,
+          "the server keeps a watch on its own code")
+    line = getattr(running, "SAID", "close and reopen the chat")
+
+    home = tempfile.mkdtemp(prefix="heron-running-code-")
+    source = os.path.join(home, "Heron", "mcp", "server", "heron_changed.py")
+    os.makedirs(os.path.dirname(source))
+
+    def write(text, seconds):
+        with io.open(source, "w", encoding="utf-8", newline="") as fh:
+            fh.write(text)
+        when = os.stat(source).st_mtime_ns + int(seconds * 1e9)
+        os.utime(source, ns=(when, when))
+
+    write("VALUE = 1\n", 0)
+    loaded = types.ModuleType("heron_changed")
+    loaded.__file__ = source
+    if running is not None:
+        module.RUNNING = running.RunningCode.of_checkout(
+            os.path.join(home, "Heron"), {"heron_changed": loaded})
+
+    async def call(name, arguments):
+        try:
+            return text_of(await server.call_tool(name, arguments)) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(%s could not be called: %s: %s)" % (name, type(exc).__name__, exc)
+
+    revit = StandIn({"ok": True, "willMove": 3, "willSkip": 0, "category": "Ducts",
+                     "document": "Project1", "documentPath": "C:/jobs/Project1.rvt",
+                     "projectKey": "key-1", "approvalToken": "approval-1",
+                     "expiresInSeconds": 120})
+    resolved = []
+
+    def resolve():
+        resolved.append(1)
+        return revit
+
+    module.binding.resolve = resolve
+    module.pinned.forget()
+    module.approval.clear()
+    try:
+        before = await call("revit_preview_move", {"category": "ducts", "distance": "200"})
+        check("This would move" in before and line not in before,
+              "nothing changed: a preview answers, and carries no line")
+        module.approval.clear()
+
+        write("VALUE = 2\n", 10)
+        revit.asked[:] = []
+        said = await call("revit_preview_move", {"category": "ducts", "distance": "200"})
+        check([a[0] for a in revit.asked] == ["preview_move"],
+              "a file changed after it was loaded: a preview still reaches Revit - "
+              "a read is never refused for it - asked %r" % [a[0] for a in revit.asked])
+        check(said.startswith(before) and said.endswith(line) and said.count(line) == 1,
+              "and answers in full, with the line once after it: %r" % said[-160:])
+
+        revit.asked[:], resolved[:] = [], []
+        said = await call("revit_apply_move", {})
+        check("Nothing has been sent to Revit" in said and "Close and reopen the chat" in said,
+              "revit_apply_move with that preview's approval waiting is refused, and "
+              "says nothing was sent: %r" % said[:200])
+        check(not resolved and not revit.asked,
+              "and it is: no session bound, nothing asked - found %r"
+              % [a[0] for a in revit.asked])
+        check(said.count("close and reopen") + said.count("Close and reopen") == 1,
+              "said once, not twice")
+
+        capability, _folder = first_with("MODIFY", "PROVEN")
+        said = await call("revit_change", {"capability": capability or ""})
+        check("Nothing has been sent to Revit" in said and "old code" in said
+              and not resolved and not revit.asked,
+              "revit_change (%s) is refused before anything is bound or sent: %r"
+              % (capability, said[:160]))
+
+        through = getattr(module, "_through", None)
+        said = through(module.revit_change, origin="companion")(capability or "", "") \
+            if through else ""
+        check("old code" in (said or "") and not resolved and not revit.asked,
+              "and so is the Companion's Apply, which runs revit_change's own body: %r"
+              % (said or "")[:160])
+
+        write("VALUE = 1\n", 20)
+        revit.asked[:] = []
+        module.approval.clear()
+        said = await call("revit_preview_move", {"category": "ducts", "distance": "200"})
+        check(said == before,
+              "the bytes put back: the answer is as it was, with no line")
+    finally:
+        del module.binding.resolve
+        module.pinned.forget()
+        module.approval.clear()
+        if real is not None:
+            module.RUNNING = real
+        shutil.rmtree(home, ignore_errors=True)
+
+
 def main():
     version, broken = sdk_version()
     print("Heron's MCP server, served by a real SDK")
@@ -1786,6 +1940,7 @@ def main():
         asyncio.run(exercise_earlier(server_module))
         asyncio.run(exercise_change_report(server_module))
         asyncio.run(exercise_view_image(server_module))
+        asyncio.run(exercise_running_code(server_module))
 
         guard.stop()
         print()
