@@ -141,8 +141,11 @@ def wiring():
 
     print("\n3. one box for both doors, inside the group: collect, show, ask, end the showing, decide")
     run = NOTE_SUITE.body_of(executor, "public static string Run(UIApplication app, string request, bool writing")
-    check(re.search(r"using\s*\(\s*var\s+changed\s*=\s*asking\s*\|\|\s*askToKeep\s*\?\s*new\s+RevitChangedSet\(",
-                    run) is not None,
+    # EVERY WRITE, SINCE 5b-407: the change report counts a write nobody is
+    # asked about too, so the collector is no longer made only for a door
+    # that asks - either form is still the one collector, held in a `using`.
+    check(re.search(r"using\s*\(\s*var\s+changed\s*=\s*(?:asking\s*\|\|\s*askToKeep\s*\?\s*)?"
+                    r"new\s+RevitChangedSet\(", run) is not None,
           "the collector is held in a `using` for either door, so its handler comes off "
           "however the group ends")
     check(before(run, "group.Start();", "changed.Begin();"),
