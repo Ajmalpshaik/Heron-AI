@@ -376,7 +376,7 @@ is the whole of the response.
 
 ### 🟠 Q-64 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
 
-**What was found**, preparing [NEEDS-CHECKING Group EK](../needs-checking/group-ek.md) - a core set of PROVEN
+**What was found**, preparing [NEEDS-CHECKING Group EL](../needs-checking/group-el.md) - a core set of PROVEN
 fragments proved again on every release, to back the *"2020 → latest"* claim with evidence. Three things in
 Heron stop it, each on purpose:
 
@@ -409,7 +409,7 @@ list beside it, **`proof.releases:`**, one entry per further release, each with 
 loses the earlier release's record. A separate register outside the fragment would be read by nothing
 that reads fragments today.
 
-**Ajmal PS decides.** Until he does, EK1 to EK6 (loading the add-in on each release) and EK8 (the routes
-themselves, by hand in Revit) can still be run and recorded in Group EK; only EK7 waits.
+**Ajmal PS decides.** Until he does, EL1 to EL6 (loading the add-in on each release) and EL8 (the routes
+themselves, by hand in Revit) can still be run and recorded in Group EL; only EL7 waits.
 
 ---

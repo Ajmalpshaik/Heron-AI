@@ -3,96 +3,44 @@
 > One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-17 so that it can be read
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
 > for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
-> reads it back into the register for every tool that reads the register, so a row here is seen
+> reads it back into the register for every tool that reads it, so a row here is seen
 > exactly as it was seen there.
 
-## Group EK - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
+## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
 
-Heron claims every release from 2020 to 2027. The evidence is much narrower, and it is derived, not typed:
+Asked for by the owner on 2026-10-17: one read-only call that describes up to 50 elements fully. Version 2
+([Group DI](group-di.md)) took only a selection or a chained set, had no cap - 535 elements came back as a
+6.2 MB record (DI3) - and an id from a linked model found nothing.
+[FRAGMENT-ISSUES row 5b-489](../fragment-issues/section-5b-rows-401-425.md).
 
-```bash
-# which release each PROVEN fragment's proof names (the release is prose inside proof.model - heron_matrix.py says why)
-for f in $(grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml); do
-  awk '/^proof:/{p=1;next} p&&/^[^ #]/{p=0} p' "$f" | grep -o 'Revit 20[0-9][0-9]' | sort -u | tr '\n' ' '; echo
-done | sort | uniq -c
-# PROVEN fragments with no second route
-grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml | xargs grep -l 'second_route: NOT ESTABLISHED' | wc -l
-```
+**What was built - version 3 of the same capability, not a new one.** `elementIds` takes ids as Revit shows
+them, matched as text in the model looked in; an id that names nothing lands in `missing` and the rest are
+described. `linkName` looks the ids up inside a placed link's own document. The record holds the first 50
+of N and adds, per element, the unique id, level (and which parameter gave it), owner view, workset in a
+workshared model, curve length and a placed link's model title; per parameter, sorted by name, the
+built-in name and the raw value in Revit's internal units. It stops at `maxChars` - 60000 when left out -
+with a last line naming every element not written; `parameterFilter` keeps only the parameters asked
+about.
 
-Run on 2026-10-17 this named **2024 and 2020 only, one proof on 2022, and none on 2021, 2023, 2025, 2026 or
-2027**. The add-in has been **loaded** in a real Revit on 2020, 2024 and 2027 only
-([row A12](../needs-checking-archive/group-a.md), build `48ae1dc`, 2026-09-19).
+**What is compiled and what is not run.** Compiled on all eight releases 2020 to 2027
+(`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** The binding of the four
+new values left out - `elementIds` "none", `linkName` "host", `maxChars` "60000", `parameterFilter` "all" - is
+the add-in's `absent:` rule from [Group EI](group-ei.md), which needs that add-in deployed.
 
-**Prepared in a cloud container on 2026-10-17, with no Revit. Nothing in this group has been run.**
-
-### Two things stop the proving half as written - read before the session
-
-1. **Heron has no place to put a proof on a second release.** `batch-prove` refuses a PROVEN fragment as
-   `ALREADY`, with no flag on purpose; `accept` refuses one whose proof still matches its code; and a
-   fragment's `proof:` holds one record. So EK7 cannot be run until
-   [Q-64](../open-questions/tier-2.md) is answered and what it chooses is built. EK1 to EK6 and EK8 do not wait for it.
-2. **`plan` printed the first LETTER of some second routes** - "A" for `select-by-parameter-value`, "R" for
-   `set-sheet-title-block` - for every case file that writes the route as one sentence. Fixed the same day,
-   [row 5b-489](../fragment-issues/section-5b-rows-401-425.md). EK8 reads that output.
-
-### The core set - 30 PROVEN fragments, for EK7
-
-Chosen by how often a fragment is used (how often its name appears in `tools/jobs/*.yaml`, as a fragment
-or as a setup step) and by which release-boundary API it touches. The risk column comes from greps over
-each fragment's `impl/`: units `UnitUtils|ForgeTypeId|UnitTypeId|DisplayUnitType` (2021), specs
-`SpecTypeId|ParameterType|GetDataType|GroupTypeId|BuiltInParameterGroup` (2022), ElementId
-`IntegerValue|new ElementId(` (2024), dimension subclasses `LinearDimension|AngularDimension|SpotDimension|NewDimension` (2025),
-release branches `#if REVIT20xx`, and reflection `GetMethod(|GetProperty(` (a member looked up by name, so
-a rename shows only at run time). **No PUBLISH or ADMIN fragment is in it** - `batch-prove` never sends one.
-`set-selection` and `describe-elements` are left out because their proofs are by tracking
-([D-53](../DECISIONS.md)); `set-selection` is still run on every release, as the setup step of most jobs.
-
-| Area | Fragment | Risk | Why it is in the set |
-|---|---|---|---|
-| read | `filter-elements-by-category` | READ | the most-used read |
-| read | `select-by-parameter-value` | READ | much used; proved on 2020 only |
-| read | `read-element-parameters` | READ | much used; the setup step of many jobs |
-| read | `group-and-count` | READ | much used; ElementId |
-| modify | `rename-elements` | MODIFY | much used; ElementId |
-| modify | `change-element-type` | MODIFY | much used |
-| modify | `set-parameter-values-by-id` | MODIFY | specs (2022), reflection |
-| modify | `create-wall` | MODIFY | much used |
-| modify | `create-floor` | MODIFY | specs (2022), reflection |
-| views | `find-views` | READ | much used |
-| views | `hide-elements` | MODIFY | much used |
-| views | `isolate-elements` | EXECUTE | much used |
-| views | `set-view-crop` | MODIFY | much used |
-| views | `create-view-filter` | MODIFY | specs (2022), reflection |
-| views | `apply-view-filter` | MODIFY | `#if REVIT2020`, ElementId, reflection |
-| views | `create-section-view` | MODIFY | units (2021) |
-| sheets | `list-sheets` | READ | much used |
-| sheets | `place-views-on-sheet` | MODIFY | much used |
-| sheets | `set-sheet-title-block` | MODIFY | much used |
-| schedules | `create-schedule` | MODIFY | the schedule write |
-| schedules | `read-schedule-contents` | READ | the schedule read |
-| schedules | `report-schedule-definition` | READ | ElementId |
-| MEP | `measure-run-quantities` | READ | much used |
-| MEP | `measure-mep-velocity` | READ | units (2021) |
-| MEP | `check-fixture-connectivity` | READ | much used |
-| annotation | `create-dimension` | MODIFY | dimension subclasses (2025) |
-| annotation | `tag-elements-in-view` | MODIFY | `#if REVIT2020` and `REVIT2021`, ElementId |
-| families | `add-family-parameters` | MODIFY | units, specs, reflection |
-| families | `set-family-type-values` | MODIFY | units, specs, ElementId, reflection |
-| families | `label-family-dimension` | MODIFY | units, specs, dimension subclasses |
-
-### The rows
-
-**A SCRATCH COPY, never a working model.** One named test model per release - the same project saved down or
-upgraded into each, so every release answers the same question - with a family open in the Family Editor for
-the three family rows. Write the model's name, its element count and the session number into every result.
+**A TEST COPY, never a working model.** Copy Snowdon-scratch_ajmal.al and save it as *Heron Record WS.rvt*;
+if Collaborate > Worksets says the copy is not workshared, enable worksets on the copy. Keep its placed
+links loaded. Read the ids each row types with Manage > IDs of Selection, and for a linked element from the
+linked file opened alone.
 
 | # | Run | Look for |
 |---|---|---|
-| **EK1** | **Revit 2021.** Install Heron for it with `HeronInstaller.exe` ([D-96](../DECISIONS.md)), or `tools/deploy-addin.ps1 -RevitVersion 2021` for a development build. Start Revit, open the test copy, connect the bridge, and in a chat ask `revit_health` | **Loaded:** the journal has `API_SUCCESS { Starting External Application: Heron AI` and no *"cannot run the external application"*. **Ribbon:** the **Heron** tab - write down every panel and button you see. **Bridge:** it connects, and the add-in log says `Heron loaded. Revit 2021`. **`revit_health`** answers and names 2021. A FAIL at any step is the finding: it proves the 2021 claim wrong today |
-| **EK2** | EK1 on **Revit 2022** | The same, naming 2022 |
-| **EK3** | EK1 on **Revit 2023** | The same, naming 2023 |
-| **EK4** | EK1 on **Revit 2025** - the first .NET 8 release | The same, naming 2025. The deployed assembly reads `.NETCoreApp,Version=v8.0` |
-| **EK5** | EK1 on **Revit 2026** - manifest isolation | The same, naming 2026 |
-| **EK6** | EK1 again on **2020, 2024 and 2027** with today's build | The same on all three. A12 was build `48ae1dc` and the add-in has changed since; a pass then is not a pass now |
-| **EK7** | **Waits on [Q-64](../open-questions/tier-2.md).** Once answered and built: the core set above on every release that passed EK1 to EK6, one job file per release in `tools/jobs/`, `--dry-run` first, each job with its `negative-set:` or `negative-in:` | **Per fragment, per release:** PASS / FAIL / NOT RUN (say why) / NEEDS REAL REVIT, never merged. **A FAIL gets a 5b row the same day**, with what was passed and what came back - the proof is never edited to pass |
-| **EK8** | **Second routes**, for the most-used PROVEN fragments that have none: `filter-elements-by-category`, `select-by-parameter-value`, `read-element-parameters`, `group-and-count`, `rename-elements`, `create-wall`, `find-views`, `hide-elements`, `set-view-crop`, `set-sheet-title-block`, `place-views-on-sheet`, `measure-run-quantities`. `python brain/heron_validate.py plan` prints each one's declared route - mostly a person's, in Revit: a schedule count, the Project Browser, the Properties palette | The route's answer **equals** the fragment's on the same model and selection, written into `proof.second_route` with the date, the model and both numbers. **Q-64 also asks who writes that line** on a fragment already PROVEN, because `accept` refuses one. A route whose answer differs is a finding, not a pass |
+| **EK1** | **The D-30 positive.** 50 MIXED ids typed in `elementIds`, nothing selected - 10 ducts in FloorPlan: M1, 10 pipes (10 more ducts if the model has no pipes), 10 walls, 10 mechanical equipment, 5 duct tags, 4 air terminals and the one placed link of your choice - with fullRecord, includeTypeParameters and includeTags true, sampleOnly false, maxChars 1000000. The selection-chain half is `tools/jobs/report-parameter-inventory-v3-2026-10-17.yaml` | header "50 element(s)" and "50 id(s) typed, 50 found", `missing` empty, no RECORD CUT line, and **every field filled where it applies**: a unique id on every block; a level - walls *from LevelId*, ducts and pipes *from RBS_START_LEVEL_PARAM*; a workset name; the duct tags' owner view by name, every model element *owner view: none*; a length in mm on the ducts, pipes and walls equal to Properties' Length; the link's *link document* title. Parameters sorted by name, each with its built-in name or `-` and a raw value |
+| **EK2** | EK1's 50 ids with **maxChars left out** | the binding note *maxChars not given - "60000", the card's own default*; `record` no longer than 60000 characters, ending in *RECORD CUT AT THE 60000-CHARACTER BUDGET* naming the elements written whole, the one cut and every id not written; those ids asked for again come back, nothing before them repeated |
+| **EK3** | 60 ids - EK1's and 10 more ducts | *FIRST 50 OF 60* with the 51st id named as the next; the inventory in `findings` read from all 60 |
+| **EK4** | **The D-30 negative.** One real duct id, `999999999` and `abc` in `elementIds`; then three ids that name nothing; then the job file's negative - its selection with two unknown ids typed | `missing` holds `999999999` and *abc (not an id - digits only)* and the duct is still described whole; the three unknown alone give no ELEMENT block and *None of the 3 id(s) typed ...*; the job's negative describes nothing and says the selected elements were NOT read |
+| **EK5** | **The linked model.** Three structural framing ids from inside the placed *Snowdon Towers Sample Structural* link with `linkName` "Structural" | *read in '...Structural...' through the link* with its id; three framing blocks, each id the link's own, its level from the link, its location in the link's coordinates with *in this model's coordinates* beside it; *tags not read*; `missing` empty |
+| **EK6** | EK5's ids **without** `linkName`; then `linkName` "ZZZNOTHINGHERE"; then the link unloaded in Manage Links | in the host each id lands in `missing` or names something that is not structural framing - the case version 3 exists for; no match names every placed link and leaves the three in `missing`; unloaded says *present but NOT LOADED* - never "nothing found" |
+| **EK7** | `parameterFilter` "level, offset" on EK1's ids; then `maxChars` 100 | each parameter heading *N kept of M*, every kept line holding *level* or *offset* in its name or built-in name, the inventory in `findings` unfiltered; 100 raised to 5000 in the header, the record no longer than that with its RECORD CUT line |
+| **EK8** | 10 ducts selected and two other ids typed; then EK1's ids on a model that is not workshared | only the two typed are described, a finding saying the 10 selected were not read; no workset line anywhere and *worksets not shown - not a workshared model* |
+| **EK9** | EK1 and EK5 once on **Revit 2020** and once on **2027** | the same answers. The members were read off the reference assemblies for every release and compiled, not run |
+| **EK10** | Second route: Manage > Select by ID with each typed id, and Properties' Workset, Level and Length for it; for a linked id, the linked file opened alone | the element Revit selects is the one the block describes, and the three values agree |
