@@ -8,7 +8,7 @@
 
 ## Group FD - a text note's numbering, bullets, indent and bold set through Heron: `EDIT_TEXT_VALUES` mode format, and the read that checks it (2026-10-17)
 
-[FRAGMENT-ISSUES 5b-560](../fragment-issues/section-5b-rows-401-425.md). `EDIT_TEXT_VALUES` version 5 adds
+[FRAGMENT-ISSUES 5b-630](../fragment-issues/section-5b-rows-401-425.md). `EDIT_TEXT_VALUES` version 5 adds
 mode **format**: on a text note, it sets numbers, bullets, lowercase or uppercase letters or no list, a
 list's start number, an indent, and bold, italic or underline - on every paragraph or on the paragraphs
 named - and changes no word. `READ_ELEMENT_PARAMETERS` version 4 reads it back: each paragraph's list, each

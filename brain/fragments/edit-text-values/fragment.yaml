@@ -97,7 +97,7 @@ purpose: >
 #   the scratch copy "Heron note scratch", Revit 2020: replace, set 8 -> 3 and
 #   8 -> 4 paragraphs, prefix and suffix, each with its negative.
 
-# VERSION 5 (2026-10-17, FRAGMENT-ISSUES 5b-560) - MODE "format" SETS A NOTE'S
+# VERSION 5 (2026-10-17, FRAGMENT-ISSUES 5b-630) - MODE "format" SETS A NOTE'S
 # LISTS AND STYLES. KEPT OUT OF THE PURPOSE ON PURPOSE, as version 4 was:
 # MEASURED that day on four backends, a purpose paragraph naming numbers,
 # bullets and bold sent up to six QUESTIONS about a note ("is the first line of
@@ -284,7 +284,7 @@ compatibility-note: >
 #   "change the wording of this note"    -> here, field Text, mode set
 #   "change the wording of this note but keep the numbering" -> here, field Text (version 4, 5b-520)
 #   "number the paragraphs of this note" -> here, field Text, mode format,
-#                                           text numbers (version 5, 5b-560)
+#                                           text numbers (version 5, 5b-630)
 #   "turn the bullets into numbers"      -> here, mode format, text numbers
 #   "make the first line bold"           -> here, mode format, text bold 1
 #   "is this note numbered" / "which paragraphs are bold" -> READ_ELEMENT_PARAMETERS,
@@ -316,7 +316,7 @@ utterances:
   - find and replace in the text notes
   - change the wording of this note
   - change the wording of this note but keep the numbering
-  # ADDED 2026-10-17, 5b-560 - version 5's mode format, the owner's words.
+  # ADDED 2026-10-17, 5b-630 - version 5's mode format, the owner's words.
   - number the paragraphs of this note
   - make this note a numbered list
   - turn the bullets into numbers

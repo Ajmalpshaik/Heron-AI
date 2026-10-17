@@ -1,5 +1,5 @@
 # The proofs of a text note's lists and styles - NEEDS-CHECKING Group FD,
-# FRAGMENT-ISSUES 5b-560:
+# FRAGMENT-ISSUES 5b-630:
 #
 #   edit-text-values (v5)        EDIT_TEXT_VALUES            FRG-PAR-009   mode format
 #   read-element-parameters (v4) READ_ELEMENT_PARAMETERS     FRG-PAR-001   parameterName Text

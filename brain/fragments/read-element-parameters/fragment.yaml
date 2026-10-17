@@ -71,7 +71,7 @@ purpose: >
 #   Version 2's proof below no longer describes the code and is kept as a
 #   record; the card is DRAFT until the version 3 proof is signed.
 
-# VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-560). EDIT_TEXT_VALUES version 5's
+# VERSION 4 (2026-10-17, FRAGMENT-ISSUES 5b-630). EDIT_TEXT_VALUES version 5's
 # mode format can now SET a note's lists and its bold, italic and underline, so
 # the check reads all of it: `noteWording` adds each paragraph's bold, italic
 # and underline - "bold 1; partly bold 3; underline 5-6" - and every list's own
@@ -159,7 +159,7 @@ compatibility-note: >
 #   "read what the text notes in this view say" -> here, parameterName Text (version 3, 5b-520)
 #   "change the wording of this note but keep the numbering" -> EDIT_TEXT_VALUES
 #   "is this note numbered" / "which paragraphs of this note are bold" -> here,
-#                                           parameterName Text (version 4, 5b-560)
+#                                           parameterName Text (version 4, 5b-630)
 #   "number the paragraphs of this note" / "make the first line bold" ->
 #                                           EDIT_TEXT_VALUES, mode format
 #
@@ -261,7 +261,7 @@ utterances:
   # 5b-520 instead.
   - read what the text notes in this view say
   - what does this text note say
-  # ADDED 2026-10-17, 5b-560 - version 4 reads each paragraph's list and its
+  # ADDED 2026-10-17, 5b-630 - version 4 reads each paragraph's list and its
   # bold, italic and underline, so a CHECK of a note's formatting is a read.
   # Measured that day: once EDIT_TEXT_VALUES version 5 could format a note,
   # these three questions reached it, a write - on main they reached
@@ -269,17 +269,17 @@ utterances:
   - is this note numbered
   - which paragraphs of this note are bold
   - check the numbering of this note
-  # ADDED 2026-10-17, 5b-560 - ONE VALUE OFF AN ELEMENT again: measured on
+  # ADDED 2026-10-17, 5b-630 - ONE VALUE OFF AN ELEMENT again: measured on
   # lexical reaching SET_AIR_TERMINAL_FLOW, a write, once the three above were
   # declared, as row 520 measured it when two note questions were. Level is
   # this card's special case.
   - what level are these air terminals on
-  # ADDED 2026-10-17, 5b-560 - a QUESTION reaching EDIT_TEXT_VALUES, a write,
+  # ADDED 2026-10-17, 5b-630 - a QUESTION reaching EDIT_TEXT_VALUES, a write,
   # on lexical and on the trained model, on main as on this branch. Row 520
   # left it undeclared because declaring it then moved "what level are these
   # air terminals on" onto a write; that one is declared above now.
   - show me the wording of the text notes
-  # ADDED 2026-10-17, 5b-560 - four QUESTIONS measured on this branch reaching
+  # ADDED 2026-10-17, 5b-630 - four QUESTIONS measured on this branch reaching
   # a write once the above were in: the first EDIT_TEXT_VALUES on the trained
   # model, the other three CREATE_TEXT_NOTE (the trained model, and the trained
   # model with the re-ranker). On main they reached two date reads and an

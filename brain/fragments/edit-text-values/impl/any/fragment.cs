@@ -117,7 +117,7 @@
 // Version 4 kept formatting that was already there; nothing could SET it - put
 // numbers on a note that has none, turn bullets into numbers or letters, start
 // a list at 3, indent a paragraph, make one bold (2026-10-17, FRAGMENT-ISSUES
-// 5b-560). Mode "format" does, on field Text only, through the same
+// 5b-630). Mode "format" does, on field Text only, through the same
 // GetFormattedText -> edit -> SetFormattedText, and never changes a character.
 //
 //   text          what to set, several joined with ';', each followed by the
