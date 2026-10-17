@@ -341,7 +341,10 @@ purpose: >
   The family is saved by the modeller (Ctrl+S): Revit will not save the
   document open in its window while Heron holds it. A nested part made in
   step 11 is the exception - SAVE_DOCUMENT saves it while Heron works in the
-  host.
+  host. A big build in a family that has never been saved is saved FIRST,
+  as step 0 asks, never only at the end: closed with no file, it is lost
+  with every form in it, and Heron cannot save it for the modeller until
+  OPEN-QUESTIONS Q-69 is answered.
 
   NOT YET: reference lines and angles - a part that swings or tilts about a
   pivot. A reference line can be made through the API, and an angle labelled,

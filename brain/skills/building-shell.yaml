@@ -25,6 +25,15 @@ purpose: >
   is read from the library every time it is served: where the two differ, the
   list is right and this text is out of date.
 
+  0. SAVE IT FIRST, before step 1 - the last precondition, as an act.
+     REPORT_OPEN_DOCUMENTS (DRAFT on 2026-10-17) says whether the model has
+     NEVER BEEN SAVED: one with no file is lost, with everything built in
+     it, when Revit closes. Ask the modeller ONCE to save it - Ctrl+S, in a
+     folder and under a name of their own - and start when it has a file.
+     Heron cannot save the model it works in (OPEN-QUESTIONS Q-69). Declined,
+     say in one line what is at stake and go on. Twice in two days a whole
+     build was lost this way - a house with 9 sheets and a 32-floor tower,
+     2026-10-13 and 14.
   1. CREATE_LEVELS (PROVEN) first, every level the building will have. A wall,
      a slab and a roof each belong to a level, and a level added afterwards
      leaves what was already built on the wrong one. Count them before going
@@ -180,6 +189,8 @@ utterances:
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
+  # Step 0's check that the model has a file to go back to.
+  - REPORT_OPEN_DOCUMENTS
   - CREATE_LEVELS
   - CREATE_GRIDS
   - CREATE_WALL
