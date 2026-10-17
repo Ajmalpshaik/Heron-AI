@@ -607,7 +607,7 @@ namespace Heron.Revit.Addin
                 // fragment may have caught the clock's throw and returned
                 // normally; what it left is then a part-done answer, and
                 // reporting it as the answer would be the wrong half.
-                if (HeronRunClock.Tripped) return Stopped(name, false, false);
+                if (HeronRunClock.Tripped) return ClockStopped(name, null);
 
                 // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
                 // built around a question nobody answered is not the answer
@@ -692,10 +692,11 @@ namespace Heron.Revit.Addin
 
                         threw = RunScript(script, globals, name, out state);
 
+                        // A run the clock stopped part way is the likeliest
+                        // way to leave a transaction open, so it is said - the
+                        // advice is the same.
                         if (target.IsModifiable)
                         {
-                            // Stopped part way is the likeliest way to get
-                            // here, so it is said - the advice is the same.
                             return Json.Error("operation_failed",
                                 "'" + name + "' left a transaction of its own open, so Heron "
                                 + "cannot keep or roll back its work. Press Undo in Revit and "
@@ -704,7 +705,7 @@ namespace Heron.Revit.Addin
                                     ? " It had been stopped part way: it " + HeronRunClock.Why
                                     : ""));
                         }
-                        if (HeronRunClock.Tripped) return Stopped(name, true, SafeRollBack(group));
+                        if (HeronRunClock.Tripped) return ClockStopped(name, RollBackAndCheck(group, target, watch));
                         if (threw != null)
                         {
                             var after = RollBackAndCheck(group, target, watch);
@@ -731,7 +732,7 @@ namespace Heron.Revit.Addin
                         if (HeronRunClock.Tripped)
                         {
                             SafeRollBack(transaction);
-                            return Stopped(name, true, SafeRollBack(group));
+                            return ClockStopped(name, RollBackAndCheck(group, target, watch));
                         }
 
                         if (threw != null)
@@ -1107,7 +1108,7 @@ namespace Heron.Revit.Addin
                     if (HeronRunClock.Tripped)
                     {
                         SafeRollBack(stepTransaction);
-                        return Stopped(stepName, true, SafeRollBack(group));
+                        return ClockStopped(stepName, RollBackAndCheck(group, target, watch));
                     }
                     if (threw != null)
                     {
@@ -1942,20 +1943,20 @@ namespace Heron.Revit.Addin
         /// may not have thrown at all, and "stopped and rolled back" is the
         /// fact the chat needs in order not to send the same thing again.
         ///
-        /// WHAT HAPPENED TO THE MODEL IS SAID AS FAR AS REVIT CONFIRMED IT,
-        /// the rule RefusedBy keeps below and for the same 2026-09-09 reason.
-        /// A read opened no transaction, so there is nothing to undo.
+        /// WHAT HAPPENED TO THE MODEL IS SAID FROM WHAT WAS CHECKED - the
+        /// witness's whole account, as every rollback in this file says it
+        /// (RollBackAndCheck): Revit's status, the additions counted back, and
+        /// any earlier kept work the rollback took. `after` is null on the read
+        /// path, which opened no transaction and so has nothing to undo.
+        ///
+        /// NOT `Stopped`, which is the dialog's refusal and returns null when no
+        /// dialog stopped the job; this one always answers.
         /// </summary>
-        private static string Stopped(string name, bool writing, bool rolledBack)
+        private static string ClockStopped(string name, HeronRollbackWitness.Outcome after)
         {
-            var model = !writing
+            var model = after == null
                 ? "It was a read, so nothing in the model was changed."
-                : rolledBack
-                    ? "Heron rolled the whole job back, and Revit confirmed it: the model is "
-                      + "exactly as it was."
-                    : "Heron rolled the whole job back and Revit did NOT confirm it, so THE "
-                      + "MODEL MAY STILL HOLD PART OF THIS JOB. Check what it would have changed "
-                      + "before trusting anything here, and do not save until you have.";
+                : "Heron rolled the whole job back. " + after.Account();
 
             var said = "'" + name + "' " + HeronRunClock.Why + " " + model;
 
