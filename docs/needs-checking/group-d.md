@@ -53,7 +53,7 @@ control: the move then had exactly three to take, and two pinned ducts to leave 
 by hand because Heron could not:** the first arranging call, a PROVEN `CREATE_DUCT` through
 `revit_change`, failed before anything was kept - the D-126 Keep or Discard box threw *"Corresponding
 button not found. Parameter name: defaultButton"* - and the model read 21,562 elements before and after.
-That is a separate defect, handed to its own task; the move does not use that box.
+That is a separate defect - [row 5b-621](../fragment-issues/section-5b-rows-401-425.md), fixed in #614 and not yet run in Revit; the move does not use that box.
 
 **The tape measure.** A read-only probe sent through the bridge under `find-views`' READ contract - no
 transaction, the element count read the same before and after every one - printed, for each duct, its
