@@ -1,0 +1,531 @@
+# 120 PLAIN QUESTIONS A MODELLER ASKS, FROZEN - AND THE READ EACH ONE SHOULD REACH.
+#
+# Read by tools/score-routing.py, which asks every question through the same
+# function heron_lookup uses - beside the owner's own questions in
+# owner-questions.yaml - and says whether the answer READS the model or
+# CHANGES it. Held honest by tests/test_score_routing.py.
+#
+# WHERE THE QUESTIONS CAME FROM. FRAGMENT-ISSUES rows 5b-477 and 5b-478
+# (docs/fragment-issues/section-5b-rows-401-425.md), "The 60, frozen:" in
+# each. The gap-pass session wrote them on 2026-10-14 BEFORE it read any
+# card, and asked them through heron_retrieve.find on private stores, on the
+# trained backend. Until 2026-10-17 they lived only inside that row text,
+# which no tool reads. They were copied here by a script that splits the row
+# text on its separator - never retyped - in the rows' order: n 1-60 are row
+# 477's, n 61-120 are row 478's.
+#
+# THEY ARE A SESSION'S WORDS, NOT THE OWNER'S. owner-questions.yaml is his;
+# this is not, and its numbers are never mixed with his.
+#
+# EVERY ONE IS A QUESTION, so the headline is not a judgement call: a question
+# answered by something at or above the write line - read from the operation
+# registry, never typed here - is D-86's harm, whatever else is true.
+#
+# WHERE AN ANSWER IS NAMED, it is the read the row itself names, and nothing
+# else. Rows that name none carry no `answer` and are scored on read against
+# write alone. `named` says how the row put it:
+#   declared     the row declared the sentence on that read (PRs #534, #535)
+#   ranked       the row says that read answers it by ranking, undeclared
+#   owners-call  "a PROVEN read answers it, so declaring there is the
+#                owner's call" - the read is named. He ruled on 2026-10-17:
+#                23 of the 24 are declared on their reads; "which elements
+#                are on the wrong workset" is not, because no tool judges
+#                "wrong". `corrections` lists the answers his word changed
+#   no-read      "no read was found that answers it" - no answer is named, and
+#                none may be: the rows forbid declaring a sentence on a read
+#                that does not answer it
+# An answer is a LIST where the row names more than one read; any of them
+# counts.
+#
+# WHAT MAY NEVER HAPPEN TO THIS FILE (FRAGMENT-ISSUES row 113, D-34, D-86):
+#   * a question reworded to suit the search
+#   * an answer changed to match what the search returns
+#   * an utterance added to a fragment, or weakened, to win a row
+# An answer is added or changed only on the owner's word, or because the row
+# it came from changed, with the day it happened. The scorer fingerprints the
+# questions and answers together, so a run after any change says it is not
+# comparable with the runs before it.
+
+source:
+  rows: [477, 478]
+  written: "2026-10-14, by the gap-pass session, before any card was read"
+  frozen: "2026-10-17"
+
+# {n, was, now, date, said} - one entry per answer the owner's word changed.
+# He was shown a table in a work note, 2026-10-17-plain-questions-owner-call.md
+# (retired once #565 merged; git history holds it at 5fa14fd8), with these
+# three marked as differing from the row, and chose its advice.
+corrections:
+  - n: 15
+    was: [REPORT_ROOM_SPACE_DATA]
+    now: [FILTER_ELEMENTS_BY_CATEGORY]
+    date: "2026-10-17"
+    said: "do it the best only"
+  - n: 49
+    was: [READ_ELEMENT_PARAMETERS]
+    now: [DESCRIBE_ELEMENTS]
+    date: "2026-10-17"
+    said: "do it the best only"
+  - n: 84
+    was: [REPORT_ROOM_SPACE_DATA]
+    now: [FILTER_ELEMENTS_BY_CATEGORY]
+    date: "2026-10-17"
+    said: "do it the best only"
+
+questions:
+  - n: 1
+    row: 477
+    question: "where is this fan coil unit"
+    answer: [REPORT_LOCATION]
+    named: declared
+  - n: 2
+    row: 477
+    question: "where does this pipe start and end"
+    answer: [REPORT_LOCATION]
+    named: declared
+  - n: 3
+    row: 477
+    question: "which way is this unit facing"
+  - n: 4
+    row: 477
+    question: "how long is this duct run"
+  - n: 5
+    row: 477
+    question: "what size is this pipe"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 6
+    row: 477
+    question: "what is the flow in this duct"
+    answer: [READ_ELEMENT_PARAMETERS, MEASURE_MEP_VELOCITY]
+    named: owners-call
+  - n: 7
+    row: 477
+    question: "which system is this duct on"
+    answer: [READ_MEP_SYSTEM]
+    named: owners-call
+  - n: 8
+    row: 477
+    question: "is this pipe connected at both ends"
+  - n: 9
+    row: 477
+    question: "how many sprinklers are on level 2"
+  - n: 10
+    row: 477
+    question: "what is the slope of this pipe"
+  - n: 11
+    row: 477
+    question: "what is the elevation of this duct"
+    answer: [READ_ELEMENT_LEVEL]
+    named: declared
+  - n: 12
+    row: 477
+    question: "what level is this equipment on"
+    answer: [READ_ELEMENT_LEVEL]
+    named: declared
+  - n: 13
+    row: 477
+    question: "which room is this diffuser in"
+  - n: 14
+    row: 477
+    question: "what is the area of this room"
+  # TWO SOURCES DISAGREED ON #15 AND #84. Rows 477 and 478 name
+  # REPORT_ROOM_SPACE_DATA "the shape of row 401"; row 401 itself chose
+  # FILTER_ELEMENTS_BY_CATEGORY (category Rooms, a level) because
+  # REPORT_ROOM_SPACE_DATA refuses an empty selection. The owner settled it on
+  # 2026-10-17 for the filter - see `corrections`.
+  - n: 15
+    row: 477
+    question: "how many rooms are on level 1"
+    answer: [FILTER_ELEMENTS_BY_CATEGORY]
+    named: owners-call
+  - n: 16
+    row: 477
+    question: "which rooms have no number"
+  - n: 17
+    row: 477
+    question: "what is the ceiling height of this room"
+  - n: 18
+    row: 477
+    question: "which views are not on any sheet"
+  - n: 19
+    row: 477
+    question: "what is the view template of this view"
+    answer: [REPORT_VIEW_TEMPLATE_CONTROL]
+    named: owners-call
+  - n: 20
+    row: 477
+    question: "what scale is this section"
+    answer: [READ_VIEW_SCALE]
+    named: declared
+  - n: 21
+    row: 477
+    question: "which sheets have no title block"
+  - n: 22
+    row: 477
+    question: "how many sheets are in the set"
+  - n: 23
+    row: 477
+    question: "what is the detail level of this view"
+    answer: [REPORT_VIEW_SETTINGS]
+    named: declared
+  - n: 24
+    row: 477
+    question: "which filters are on this view"
+  - n: 25
+    row: 477
+    question: "what phase is this view showing"
+  - n: 26
+    row: 477
+    question: "which links are loaded"
+  - n: 27
+    row: 477
+    question: "is the structural link pinned"
+  - n: 28
+    row: 477
+    question: "what workset is this element on"
+  - n: 29
+    row: 477
+    question: "who owns this element"
+  - n: 30
+    row: 477
+    question: "which families are loaded in the project"
+  - n: 31
+    row: 477
+    question: "how many types does this family have"
+  - n: 32
+    row: 477
+    question: "what parameters does this family have"
+  - n: 33
+    row: 477
+    question: "is this family shared"
+    named: no-read
+  - n: 34
+    row: 477
+    question: "which elements are on the wrong workset"
+    answer: [SELECT_BY_WORKSET]
+    named: owners-call
+  - n: 35
+    row: 477
+    question: "what is the insulation on this pipe"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 36
+    row: 477
+    question: "does this duct have lining"
+  - n: 37
+    row: 477
+    question: "what fittings are on this run"
+    named: no-read
+  - n: 38
+    row: 477
+    question: "how many air terminals are there"
+    answer: [COUNT_ELEMENTS]
+    named: owners-call
+  - n: 39
+    row: 477
+    question: "which air terminals have no flow"
+    answer: [REPORT_CONNECTOR_LOADS]
+    named: owners-call
+  - n: 40
+    row: 477
+    question: "what is the total airflow of this system"
+  - n: 41
+    row: 477
+    question: "which pipes are not in a system"
+    answer: [READ_MEP_SYSTEM]
+    named: owners-call
+  - n: 42
+    row: 477
+    question: "which ducts are not connected"
+    answer: [SELECT_BY_CONNECTION_STATUS]
+    named: declared
+  - n: 43
+    row: 477
+    question: "what is the voltage of this panel"
+  - n: 44
+    row: 477
+    question: "which circuits are on this panel"
+  - n: 45
+    row: 477
+    question: "how many outlets are on this circuit"
+    answer: [SELECT_BY_ELECTRICAL_CIRCUIT]
+    named: ranked
+  - n: 46
+    row: 477
+    question: "what is the load on this panel"
+  - n: 47
+    row: 477
+    question: "which doors have no tag"
+    answer: [FIND_UNTAGGED_ELEMENTS]
+    named: owners-call
+  - n: 48
+    row: 477
+    question: "how many walls are there"
+    answer: [COUNT_ELEMENTS]
+    named: owners-call
+  - n: 49
+    row: 477
+    question: "what type is this wall"
+    answer: [DESCRIBE_ELEMENTS]
+    named: owners-call
+  - n: 50
+    row: 477
+    question: "how thick is this wall"
+  - n: 51
+    row: 477
+    question: "what is the fire rating of this door"
+  - n: 52
+    row: 477
+    question: "what material is this floor"
+  - n: 53
+    row: 477
+    question: "which grids are there"
+  - n: 54
+    row: 477
+    question: "what is the distance between these grids"
+    answer: [LIST_GRIDS]
+    named: declared
+  - n: 55
+    row: 477
+    question: "what are the levels and their heights"
+  - n: 56
+    row: 477
+    question: "what is the project number"
+    answer: [REPORT_PROJECT_INFORMATION]
+    named: ranked
+  - n: 57
+    row: 477
+    question: "who is the project client"
+    answer: [REPORT_PROJECT_INFORMATION]
+    named: ranked
+  - n: 58
+    row: 477
+    question: "when was this model last synced"
+  - n: 59
+    row: 477
+    question: "is this model workshared"
+  - n: 60
+    row: 477
+    question: "what revision is on this sheet"
+  - n: 61
+    row: 478
+    question: "which sheets have no views on them"
+  - n: 62
+    row: 478
+    question: "what is the sheet number of this sheet"
+    answer: [LIST_SHEETS, READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 63
+    row: 478
+    question: "who drew this sheet"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 64
+    row: 478
+    question: "which views are on sheet M-101"
+    answer: [LIST_VIEWS_ON_SHEET]
+    named: declared
+  - n: 65
+    row: 478
+    question: "what title block does this sheet use"
+  - n: 66
+    row: 478
+    question: "which schedules are in the project"
+  - n: 67
+    row: 478
+    question: "what fields are in this schedule"
+  - n: 68
+    row: 478
+    question: "is this schedule filtered"
+    answer: [REPORT_SCHEDULE_DEFINITION]
+    named: owners-call
+  - n: 69
+    row: 478
+    question: "how many rows does this schedule have"
+  - n: 70
+    row: 478
+    question: "which schedules are not on a sheet"
+  - n: 71
+    row: 478
+    question: "which families are not used"
+  - n: 72
+    row: 478
+    question: "how big is this family file"
+    named: no-read
+  - n: 73
+    row: 478
+    question: "what category is this family"
+    answer: [DESCRIBE_ELEMENTS]
+    named: owners-call
+  - n: 74
+    row: 478
+    question: "which types of this family are loaded"
+  - n: 75
+    row: 478
+    question: "does this family have connectors"
+  - n: 76
+    row: 478
+    question: "is this family nested"
+    named: no-read
+  - n: 77
+    row: 478
+    question: "which rooms have no area"
+  - n: 78
+    row: 478
+    question: "which rooms are not enclosed"
+  - n: 79
+    row: 478
+    question: "what is the volume of this room"
+  - n: 80
+    row: 478
+    question: "which spaces have no airflow"
+  - n: 81
+    row: 478
+    question: "what is the occupancy of this space"
+  - n: 82
+    row: 478
+    question: "which room is this space in"
+    named: no-read
+  - n: 83
+    row: 478
+    question: "what is the name of this room"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  # See #15: row 478 and row 401 named different reads; settled the same way.
+  - n: 84
+    row: 478
+    question: "which rooms are on level 2"
+    answer: [FILTER_ELEMENTS_BY_CATEGORY]
+    named: owners-call
+  - n: 85
+    row: 478
+    question: "what is the panel name of this panel"
+    answer: [REPORT_PANEL_CIRCUITS]
+    named: ranked
+  - n: 86
+    row: 478
+    question: "how many circuits are on this panel"
+  - n: 87
+    row: 478
+    question: "what is the load on this circuit"
+  - n: 88
+    row: 478
+    question: "which lights are not on a circuit"
+    answer: [SELECT_BY_ELECTRICAL_CIRCUIT]
+    named: declared
+  - n: 89
+    row: 478
+    question: "what is the voltage of this outlet"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 90
+    row: 478
+    question: "which fixtures are not connected to a pipe"
+  - n: 91
+    row: 478
+    question: "what is the pipe size at this fixture"
+  - n: 92
+    row: 478
+    question: "what is the slope of this drain"
+  - n: 93
+    row: 478
+    question: "which pipes have no insulation"
+  - n: 94
+    row: 478
+    question: "what is the system classification of this pipe"
+    answer: [READ_MEP_SYSTEM]
+    named: owners-call
+  - n: 95
+    row: 478
+    question: "which links are not loaded"
+  - n: 96
+    row: 478
+    question: "is the architecture link pinned"
+  - n: 97
+    row: 478
+    question: "what is the path of this link"
+    named: no-read
+  - n: 98
+    row: 478
+    question: "are the links relative or absolute"
+    named: no-read
+  - n: 99
+    row: 478
+    question: "which phase was this created in"
+  - n: 100
+    row: 478
+    question: "which elements are demolished"
+  - n: 101
+    row: 478
+    question: "what phases does this project have"
+  - n: 102
+    row: 478
+    question: "which materials are used on this wall"
+  - n: 103
+    row: 478
+    question: "what is the thermal resistance of this wall"
+  - n: 104
+    row: 478
+    question: "which walls are room bounding"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 105
+    row: 478
+    question: "what is the height of this wall"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 106
+    row: 478
+    question: "what is the top constraint of this wall"
+    answer: [READ_ELEMENT_PARAMETERS]
+    named: owners-call
+  - n: 107
+    row: 478
+    question: "which doors are in this wall"
+  - n: 108
+    row: 478
+    question: "what is the fire rating of these doors"
+  - n: 109
+    row: 478
+    question: "how many windows are on level 1"
+  - n: 110
+    row: 478
+    question: "which elements are hidden in this view"
+  - n: 111
+    row: 478
+    question: "what is hidden in this view"
+  - n: 112
+    row: 478
+    question: "which categories are turned off in this view"
+  - n: 113
+    row: 478
+    question: "what is the view range of this plan"
+    answer: [REPORT_VIEW_SETTINGS]
+    named: declared
+  - n: 114
+    row: 478
+    question: "what is the cut plane height"
+    answer: [REPORT_VIEW_SETTINGS]
+    named: declared
+  - n: 115
+    row: 478
+    question: "which dimensions are overridden"
+  - n: 116
+    row: 478
+    question: "which text notes say TBC"
+  - n: 117
+    row: 478
+    question: "which tags are orphaned"
+  - n: 118
+    row: 478
+    question: "what revisions are in the project"
+    answer: [LIST_REVISIONS]
+    named: declared
+  - n: 119
+    row: 478
+    question: "which sheets have revision 3"
+  - n: 120
+    row: 478
+    question: "what export settings are there"
+    named: no-read

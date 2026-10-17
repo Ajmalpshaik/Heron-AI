@@ -421,6 +421,28 @@ namespace Heron.Revit.Addin
                     + "a read, where nothing is allowed to open one. Nothing was run.");
             }
 
+            // AND ONE THAT OPENS A TRANSACTION WITHOUT SAYING SO. The check
+            // above trusts the declaration; a fragment that opens its own and
+            // declares nothing - or declares noTransactionOpen, a promise to
+            // open none - would start and commit one on the read or show path,
+            // where none is open to stop it, or inside the write path's group
+            // with no failure discipline handed to it. Read off the source as
+            // code before anything runs - see HeronSourceScan for what it can
+            // and cannot see.
+            var opens = HeronSourceScan.OpensTransaction(source);
+            if (opens != null && !ownsTransactions && (!writing || wantsNoTransaction))
+            {
+                return Json.Error("opens_own_transaction",
+                    "'" + name + "' opens a Revit " + opens + " of its own, and it runs where "
+                    + "none may be opened - "
+                    + (wantsNoTransaction
+                        ? "it declares noTransactionOpen, a promise to open none (D-125). "
+                        : "a read, or a run that changes only what is on screen. ")
+                    + "Nothing was run. A fragment that changes the model is declared MODIFY "
+                    + "and runs through revit_change; one that must open its own transactions "
+                    + "declares editScopeFailures (D-112).");
+            }
+
             // THE CALLER'S HALF. A contract may declare a need as
             // `source: request` - a view, a category, a name to match, a
             // distance - and nothing could supply one, so 288 of the 308
@@ -1942,7 +1964,8 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// The refusal for a job a Revit dialog stopped, or null when none
         /// did. `rolledBack` is null on the read path, where no transaction
-        /// was open and so nothing can have changed; otherwise it is what
+        /// was open and the count before and after found nothing moved - it
+        /// is asked only after that count (row 5b-350); otherwise it is what
         /// SafeRollBack reported, and the sentence says the model is as it
         /// was ONLY when Revit confirmed it - WithVerdict's rule.
         /// </summary>
@@ -2389,7 +2412,9 @@ namespace Heron.Revit.Addin
         /// witness's whole account, as every rollback in this file says it
         /// (RollBackAndCheck): Revit's status, the additions counted back, and
         /// any earlier kept work the rollback took. `after` is null on the read
-        /// path, which opened no transaction and so has nothing to undo.
+        /// path, which opened no transaction and so has nothing to undo - and
+        /// is asked only after the count before and after found nothing moved
+        /// (row 5b-350), so that count is what the sentence rests on.
         ///
         /// NOT `Stopped`, which is the dialog's refusal and returns null when no
         /// dialog stopped the job; this one always answers.
@@ -2397,7 +2422,8 @@ namespace Heron.Revit.Addin
         private static string ClockStopped(string name, HeronRollbackWitness.Outcome after)
         {
             var model = after == null
-                ? "It was a read, so nothing in the model was changed."
+                ? "It was a read, and Heron counted the model before and after it, so nothing "
+                  + "in the model was changed."
                 : "Heron rolled the whole job back. " + after.Account();
 
             var said = "'" + name + "' " + HeronRunClock.Why + " " + model;

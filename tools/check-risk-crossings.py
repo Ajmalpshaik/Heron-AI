@@ -107,6 +107,22 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 #   * global.db is ONE file for every worktree on the machine. Another session
 #     re-indexing it moves this tool's answer with no commit in this repo.
 #
+# WHICH WRITE MADE THE IDENTITY MISS - FOUND 2026-10-17, by reproducing it.
+# Two checkouts on one store: the tree at #165 (5669e7e5, which declared
+# "how many pipes are there" that day) asked it 60 times while its parent,
+# which did not declare it, asked something else 60 times. All 60 missed the
+# identity and 58 reached CAP_OPEN_PIPE_ENDS; asked alone, 20 of 20 hit. In
+# 2026-09 index() rebuilt `identities` on every open, so the OTHER tree's
+# rebuild landed between this tree's rebuild and its read. It still does
+# today whenever two trees' cards differ: 5ded99d against its parent missed
+# "rename this view" 18 times in 40. A private store has one tree and one
+# writer, which is why the default below is private. The full record is in
+# docs/work-notes/investigations/2026-09-17-risk-crossings-not-deterministic.md.
+#
+# AND THE SWEEP NO LONGER WRITES WHAT IT READS. Every open re-wrote the
+# store's three `meta` rows, so the md5 moved on every run with no row
+# changed; heron_scope.Store._create writes them only when one differs now.
+#
 # So a bare number from this tool is a sample. Printing the store's identity
 # next to the number is what makes two samples worth comparing - and if they
 # disagree while the fingerprint matches, the ranker really is the suspect.
@@ -443,16 +459,19 @@ def _sweep(args, private):
     """The sweep itself, against whichever store main() chose."""
     import heron_brain as brain
 
-    if private:
-        # BUILT BEFORE THE FINGERPRINT, or the block below would describe a
-        # store that did not exist yet.
-        with brain._Open():
-            pass
+    # BUILT BEFORE THE FINGERPRINT, or the block below would describe a store
+    # that did not exist yet. Shared as well as private since 2026-10-17: a
+    # --shared run against a folder with no store yet printed "md5 unreadable"
+    # above the first answer, and the first lookup built it a moment later.
+    with brain._Open():
+        pass
 
-    # READ IT BEFORE ASKING ANYTHING. This tool is not read-only about the
+    # READ IT BEFORE ASKING ANYTHING. This tool was not read-only about the
     # store - measured 2026-09-17, one sweep against a private copy changed
     # that copy's md5 - so a fingerprint taken afterwards would describe a
-    # store this run had already moved.
+    # store this run had already moved. That write was the `meta` rows, and
+    # it is gone since 2026-10-17; the order stays, because a fingerprint
+    # taken first is right whether or not something writes.
     index = _index_fingerprint()
 
     crossings, allowed, unresolved = [], [], []
@@ -542,7 +561,9 @@ def _sweep(args, private):
     # nothing else on the machine could reach came back with a different md5.
     # Saying so every run is cheaper than somebody re-discovering it: the next
     # reader comparing two fingerprints needs to know that RUNNING THIS is one
-    # of the things that can move them.
+    # of the things that can move them. Since 2026-10-17 a sweep leaves the
+    # store byte for byte as it found it, so on a private store this block
+    # printing at all is the finding.
     if index.get("path") and index.get("md5"):
         after = _md5(index["path"])
         if after and after != index["md5"]:
@@ -552,7 +573,10 @@ def _sweep(args, private):
             print("  after    %s" % after)
             if private:
                 print("  Asking moved the index, and this store has no other")
-                print("  writer - so that is this tool, as row 116 measured.")
+                print("  writer - so that is this tool. A lookup has not been")
+                print("  meant to write the store since 2026-10-17 (row 116),")
+                print("  so this is a REGRESSION in the read path: compare the")
+                print("  tables of a copy taken before and after to find it.")
             else:
                 print("  Asking moved the index. That is this tool, another")
                 print("  session, or both - global.db is ONE file for every")
