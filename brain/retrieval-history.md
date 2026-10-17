@@ -1471,6 +1471,14 @@ set under its new key `b5734ccb` (three answers changed on his word) - and named
 the scratch copy had predicted: #2 and #76 down a place, read to read; #19 and #43 up.
 `tests/test_routing_phrases.py` on the trained backend fails the same four checks as on `main`.
 
+**Re-measured after merging `main`'s #555** (570 fragments; row 5b-499 made `ISOLATE_ELEMENTS` a
+MODIFY), with *"isolating"* taken out of the shipped wording - it now says *"Selecting or zooming is not a
+change"*. The host's flags: all 120 plain questions, 32 of his 79, 1 of 150 write-card utterances. His
+79, handed a change flag off → with the host's flags: **8 → 1** on both backends; first place 18 → 18 and
+17 → 17; in the top three 27 → 29 and 28 → 32. Plain questions to a write, flag off / on: 13 / 0 and
+9 / 0, as before. `check-risk-crossings --revit 2024` reports 6 on lexical, the same six as a clean
+`main` - #555's isolate re-rating, not this change.
+
 **One move outside the frozen sets, found by `check-routing`, recorded and not fixed.** On `lexical`
 only, `PLACE_HOSTED_FAMILY`'s routing-table claim *"put doors in the walls at these points"* now reaches
 `CREATE_WALL` - a change to a different change, on a near tie; `CREATE_WALL` was second before. Measured

@@ -4143,8 +4143,8 @@ def heron_lookup(request: str, question: bool = False) -> str:
 
     question: true only when the user wants to find something out - "what size
     is this pipe"; every capability that changes the model is left out.
-    Selecting, isolating or zooming is not a change. False for a change, even
-    asked as a question - "how many sprinklers do I need" - and when unsure.
+    Selecting or zooming is not a change. False for a change, even asked as
+    a question - "how many sprinklers do I need" - and when unsure.
 
     revit_read or revit_change with `request` does this lookup itself.
     """
