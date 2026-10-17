@@ -47,12 +47,12 @@ WHAT IT DOES NOT
   tests/test_mcp_serves.py proves through a real SDK that the description a
   host is served is the one measured here.
 
-IS IT A GATE OR A REPORT? A GATE - D-116. A tool over budget exits 1 and
+IS IT A GATE OR A REPORT? A GATE - D-118. A tool over budget exits 1 and
 stops a pull request. The owner decided it on 2026-10-17, asked as D-100 was
 asked of the routing score (which stays a report): a size is exact and this
 suite takes a second, so two of D-100's three reasons do not hold, and the
 third - a gate teaches people to cut words to buy the number back - is what
-section 4 is for. Making it a report needs a decision that supersedes D-116.
+section 4 is for. Making it a report needs a decision that supersedes D-118.
 """
 
 import ast
@@ -95,6 +95,7 @@ MUST_KEEP = {
         "Admin",
         "Article 7",     # destructive work needs the user's yes first
         "Article 10",    # and nothing is saved, synced or exported unasked
+        "Article 11",    # only a PROVEN capability is kept - D-117
         "revit_read",    # a question goes to the door that cannot write
         "Ctrl+Z",        # and one undo puts the model back
     ),

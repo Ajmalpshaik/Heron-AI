@@ -397,6 +397,17 @@ namespace Heron.Revit.Addin
                         }
                     }
 
+                    // A REVIT DIALOG HERON DECLINED STOPS THE MOVE before it is
+                    // kept, as it stops a fragment - see HeronDialogWatch.
+                    if (HeronDialogWatch.Refused)
+                    {
+                        var unwound = SafeRollBack(group);
+                        return Failed(workflow, preview, handler,
+                            HeronDialogWatch.Armed.RefusedSentence() + (unwound
+                                ? " The move was rolled back completely, so the model is as it was."
+                                : " " + RollbackNotConfirmed));
+                    }
+
                     group.Assimilate();
                 }
                 catch (Exception ex)

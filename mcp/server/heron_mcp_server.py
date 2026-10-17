@@ -1585,10 +1585,12 @@ def revit_change(capability: str = "", values: str = "",
 
     It runs only while the owner has Changes ON in Revit's ribbon, and a
     Publish or Admin capability needs the owner's Publish or Admin switch on
-    as well. A refusal names the switch: tell the user, and never try another
-    capability to get round it. There is no preview (D-99): Article 7's
-    explicit yes comes BEFORE this call for destructive work, and Article 10
-    holds - nothing is saved, synced or exported unless the user asked.
+    as well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    or one whose proof is older than its code, is refused before anything is
+    sent. A refusal names the switch or the status: tell the user, and never
+    try another capability to get round it. There is no preview (D-99):
+    Article 7's explicit yes comes BEFORE this call for destructive work, and
+    Article 10 holds - nothing is saved, synced or exported unasked.
 
     To answer a question, use revit_read - it cannot change anything. One
     Ctrl+Z in Revit undoes what this did to the model, never a save, a sync or
@@ -1609,6 +1611,11 @@ def revit_change(capability: str = "", values: str = "",
     #     turns it on, and only while Changes is on too. The refusal names the
     #     one that is off (heron_failure: admin_disabled, publish_disabled).
     #   - Articles 7, 9 and 10 in full: host.chat, every chat's instructions.
+    #   - Article 11's refusal (D-117) in full: a capability whose own file says
+    #     DRAFT, or whose proof was taken before its code last changed, is
+    #     refused before anything is sent, and the reply names it and its
+    #     status; it is proved first on a test model, and then it can be asked
+    #     for. The refusal says so itself (tests/test_mcp_serves.py).
     # The Changes switch is read inside the add-in, never here - a client
     # deciding its own permission is not a permission.
     matched = ""
@@ -1618,7 +1625,7 @@ def revit_change(capability: str = "", values: str = "",
             return handed_back
         matched = capability
 
-    folder, status = _fragment_for(capability)
+    folder, _status = _fragment_for(capability)
     if folder is None:
         return _ended("refused",
                       "Heron has nothing that does '%s', so nothing has been sent to "
@@ -1658,6 +1665,20 @@ def revit_change(capability: str = "", values: str = "",
         return _ended("refused",
                       "'%s' does not say what risk it carries in a form Heron can read, "
                       "so nothing has been sent to Revit." % capability)
+
+    # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
+    # here KEEPS what it does. So a fragment its own files do not call PROVEN,
+    # or whose proof no longer describes its code (D-30), is refused HERE -
+    # before its code is read or a session is bound. Until D-117 it ran, and a
+    # line printed after the result said it was not proven: a warning given
+    # once the change was already in the model.
+    #
+    # THE CLIENT'S RULE, CALLED - the one `fragment --write --apply` asks -
+    # for the reason `risk_refusal` above is called rather than copied. The
+    # status is read from the fragment's own files, never from the index.
+    unproven = bridge.unproven_refusal(capability, brain.proof_status(folder))
+    if unproven:
+        return _ended("refused", unproven)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
@@ -1829,11 +1850,8 @@ def revit_change(capability: str = "", values: str = "",
         lines.append("")
         lines.append(str(verdict))
 
-    if status and status not in ("PROVEN", "PRODUCTION"):
-        lines.append("")
-        lines.append("'%s' is %s, not PROVEN - it has no recorded proof carrying a "
-                     "negative case. Look at what it did before trusting it."
-                     % (capability, status))
+    # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
+    # a fragment that is not PROVEN is now refused before it is sent (D-117).
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
