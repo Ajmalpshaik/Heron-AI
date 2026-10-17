@@ -14,8 +14,9 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Puts the plan in the same place on every sheet: one sheet is the master and
-  every other sheet's viewport moves to match it. The fix for a set where the
+  Lines the viewports up across sheets - puts the plan in the same place on
+  every sheet: one sheet is the master and every other sheet's viewport moves
+  to match it. The fix for a set where the
   building shifts as somebody pages through the drawings.
 
   **TWO THINGS DECIDE WHETHER THIS IS EVEN MEANINGFUL, AND BOTH ARE CHECKED
@@ -143,5 +144,6 @@ compatibility-note: >
 utterances:
   - the plan jumps when i flick through the sheets
   - line up the viewports across the sheets
+  - line the viewports up on every sheet
   - put the plan in the same place on every sheet
   - align the views on these sheets

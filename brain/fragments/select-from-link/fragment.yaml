@@ -112,6 +112,9 @@ compatibility-note: >
 #   "copy those grids into ours"     -> COPY_FROM_LINK. Nothing here writes,
 #                                       and nothing here CAN write into a link
 #   "get the latest architecture"    -> RELOAD_LINKS
+#   "zoom to the beams in the
+#    structural link"                -> ZOOM_TO_LINKED_ELEMENTS. This one
+#                                       reads them and moves nothing on screen
 #   "does our duct clash with
 #    their beam"                     -> a SKILL. It is this fragment, then the
 #                                       link's transform applied, then a clash
@@ -121,6 +124,8 @@ compatibility-note: >
 utterances:
   - how many beams are in the structural link
   - what is in the architects model
-  - select elements inside a linked model
+  # "select elements inside a linked model" MOVED 2026-10-17 to
+  # ZOOM_TO_LINKED_ELEMENTS, which puts them in the selection; this one reads
+  # them and selects nothing (FRAGMENT-ISSUES 5b-500).
   - read the elements from this link
   - what ducts does the linked mep model have

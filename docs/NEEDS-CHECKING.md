@@ -739,6 +739,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-er.md`](needs-checking/group-er.md)
 
+## Group ES - "show me / zoom to / isolate these" with Changes OFF: `revit_show`, the temporary isolate, and `ZOOM_TO_LINKED_ELEMENTS` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-es.md`](needs-checking/group-es.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
