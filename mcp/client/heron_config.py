@@ -48,14 +48,14 @@ DEFAULTS = {
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
     # The extra wait for a job that has put a Keep or Discard box up: a DRAFT's
-    # one run (D-119), or a keep from a chat while the owner asks (D-123).
+    # one run (D-119), or a keep from a chat while the owner asks (D-124).
     "revit.askTimeoutSeconds": "300",
     "write.enabled": "false",
     # The two switches above Changes (D-106): each lets one more level
     # through, and only while write.enabled is on as well.
     "admin.enabled": "false",
     "publish.enabled": "false",
-    # D-123: Revit asks the modeller Keep or Discard before a change is kept.
+    # D-124: Revit asks the modeller Keep or Discard before a change is kept.
     # On by default - off puts back D-99. Read by the add-in; this side reads
     # it only to know how long a change it keeps may take to answer.
     "write.askBeforeKeeping": "true",
@@ -202,7 +202,7 @@ def busy_timeout(values=None):
 
 
 def asks_before_keeping(values=None):
-    """Whether Revit asks Keep or Discard before keeping a change (D-123)."""
+    """Whether Revit asks Keep or Discard before keeping a change (D-124)."""
     values = load() if values is None else values
     return truthy(values, "write.askBeforeKeeping")
 
@@ -235,7 +235,7 @@ def fragment_timeout(values=None, keeping=False):
     How long to wait for a FRAGMENT to come back. Never below the add-in's.
 
     `keeping` IS A RUN SENT WITH apply - one the add-in may stop and ASK the
-    modeller about (D-123). A job that puts the Keep or Discard box up is
+    modeller about (D-124). A job that puts the Keep or Discard box up is
     given revit.askTimeoutSeconds on top of its operation timeout, so this
     side adds it too - exactly what try_once_timeout adds for a DRAFT's one
     run (D-119), because it is the same box and the same wait. Without it the

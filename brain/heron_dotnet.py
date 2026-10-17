@@ -138,7 +138,7 @@ PROJECTS = [
     # binding note above - tests/test_failure_note.py builds and runs it.
     "tests/Heron.FailureNote.TestHost/Heron.FailureNote.TestHost.csproj",
     "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
-    # Revit's Keep or Discard question (D-123) - its words, the rule that only
+    # Revit's Keep or Discard question (D-124) - its words, the rule that only
     # the Keep link keeps, and D-60's cap - linked by source like FailureNote.
     # tests/test_keep_question.py builds and runs it.
     "tests/Heron.KeepQuestion.TestHost/Heron.KeepQuestion.TestHost.csproj",

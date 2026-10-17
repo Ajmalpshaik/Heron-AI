@@ -12,11 +12,11 @@ using Heron.Revit.Addin;
 namespace Heron.KeepQuestion.TestHost
 {
     /// <summary>
-    /// The words of Revit's Keep or Discard box, and D-60's cap - D-123 -
+    /// The words of Revit's Keep or Discard box, and D-60's cap - D-124 -
     /// checked without Revit.
     ///
     /// ONE BOX, TWO DOORS: a DRAFT's one run (D-119) and a keep from a chat
-    /// (D-123). Two things can be wrong here with no Revit anywhere near, and
+    /// (D-124). Two things can be wrong here with no Revit anywhere near, and
     /// each would cost a modeller something real:
     ///
     ///   * D-60'S CAP. Above 500 in one set, nothing of that set is drawn and

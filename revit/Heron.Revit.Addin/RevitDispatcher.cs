@@ -81,7 +81,7 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// The banner of the job running now, for the same reason as _running:
         /// AwaitingModeller has to move it out of the way of the box, and the
-        /// box's code is never handed the dispatcher (D-123).
+        /// box's code is never handed the dispatcher (D-124).
         /// </summary>
         [ThreadStatic]
         private static HeronActivityBanner _runningBanner;
@@ -172,7 +172,7 @@ namespace Heron.Revit.Addin
             var job = _running;
             if (job != null) job.MarkAskedModeller();
 
-            // AND THE BANNER STEPS ASIDE (D-123). It is Topmost, so it would
+            // AND THE BANNER STEPS ASIDE (D-124). It is Topmost, so it would
             // sit over the box it is waiting on; Execute brings it back the
             // moment the job returns, before it says how the job ended.
             var banner = _runningBanner;
@@ -431,7 +431,7 @@ namespace Heron.Revit.Addin
                             _runningBanner = null;
 
                             // The box is answered or the job is over: the
-                            // banner comes back to say how it ended (D-123).
+                            // banner comes back to say how it ended (D-124).
                             if (job.AskedModeller) _banner.StepAside(false);
                         }
                     }
@@ -602,6 +602,13 @@ namespace Heron.Revit.Addin
                 case "move_elements":
                     return "Moving elements";
 
+                // THE READING COLOUR, AND THE WORDS SAY WHY. Given element ids
+                // it makes a 3D view somebody watching may glimpse in the
+                // Project Browser, and the group around it is always undone
+                // (D-123) - so the card says a picture, never a change.
+                case "capture_view":
+                    return "Taking a picture of a view for the chat";
+
                 case "run_fragment_read":
                     var name = Clean(Json.ReadString(request, "name"));
                     return name.Length == 0 ? "Running a job" : "Running a job: " + name;
@@ -669,13 +676,13 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// The banner's last line for a finished job: the modeller's own Keep
-        /// or Discard when the job asked them one (D-123), otherwise Explain's
+        /// or Discard when the job asked them one (D-124), otherwise Explain's
         /// line for the error code.
         /// </summary>
         private static string Ended(string failure, string response)
         {
             // A KEEP OR DISCARD THE MODELLER ANSWERED IS NO FAILURE, and "Done"
-            // over a change they just discarded would read as kept (D-123).
+            // over a change they just discarded would read as kept (D-124).
             if (failure == null)
             {
                 var answered = Json.ReadString(response, "modellerAnswer");
@@ -717,6 +724,9 @@ namespace Heron.Revit.Addin
                 case "document_not_in_front": return "That model is not open here";
                 case "read_only":       return "That model is read-only";
                 case "nothing_to_move": return "Nothing to move";
+                case "no_such_view":
+                case "ambiguous_view":  return "No single view by that name";
+                case "picture_too_large": return "The picture was too large to send";
                 case "preview_expired":
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":

@@ -64,7 +64,7 @@ namespace Heron.Core
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
 
                 // HOW MUCH LONGER A JOB MAY TAKE ONCE IT HAS ASKED THE MODELLER
-                // (D-119, D-123). A job that stops on a Keep or Discard box in
+                // (D-119, D-124). A job that stops on a Keep or Discard box in
                 // Revit - a DRAFT run with "apply": "ask", or a keep from a chat
                 // while write.askBeforeKeeping is on - is waiting for a person
                 // reading their model, which is not a slow operation - so this
@@ -93,7 +93,7 @@ namespace Heron.Core
                 { "admin.enabled", "false" },
                 { "publish.enabled", "false" },
 
-                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-123): the
+                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-124): the
                 // changed elements are shown and a dialog asks Keep or Discard.
                 // ON by default, unlike the switches above, because ON is the
                 // safe side here - it narrows what Changes lets through, and

@@ -104,6 +104,15 @@ TOOLS = {
     "revit_views":              (READ,    "list_views"),
     "revit_sheets":             (READ,    "list_sheets"),
 
+    # A picture of one view, for the chat to look at its own work (D-123).
+    # ANALYZE, because that is what `capture_view` is declared in the add-in:
+    # given element ids it makes a temporary 3D view inside a TransactionGroup
+    # the add-in ALWAYS rolls back, with no apply flag anywhere to keep it.
+    # NOT an export, and deliberately not named export-*: the picture goes
+    # into Heron's own Derived folder, comes back in the reply and is deleted
+    # there, which is not the "shared location" Article 10 and D-107 mean.
+    "revit_view_image":         (ANALYZE, "capture_view"),
+
     # Rooms and spaces (HERON-REVIT-RM-028). READ. Placing a room, deleting an
     # unplaced one or moving a boundary all change somebody's area schedule,
     # which on most jobs is a contractual document.
@@ -149,7 +158,7 @@ TOOLS = {
     # its own permission is not a permission.
     #
     # NO PREVIEW WAS A DECISION RATHER THAN A SILENCE - D-99, 2026-09-23 - and
-    # D-123 supersedes it: Revit shows the change and asks the modeller Keep
+    # D-124 supersedes it: Revit shows the change and asks the modeller Keep
     # or Discard before it is kept, inside the add-in, under the owner's
     # write.askBeforeKeeping. Nothing in this row decides whether it asks.
     #

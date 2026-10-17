@@ -1536,7 +1536,7 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         # replaces it, so a resend is refused on the expectation that run
         # satisfied (the A20 run, 2026-10-01) - nor when it keeps a change,
         # which request()'s own docstring already says MUST pass False.
-        # A RUN THAT KEEPS MAY BE ASKED ABOUT IN REVIT (D-123), so it waits for
+        # A RUN THAT KEEPS MAY BE ASKED ABOUT IN REVIT (D-124), so it waits for
         # the modeller's answer too - see fragment_timeout.
         reply = bridge.request(operation, op_args=args,
                                response_timeout=heron_config.fragment_timeout(

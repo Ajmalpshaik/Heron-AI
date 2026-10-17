@@ -195,7 +195,7 @@ def main():
     # revit_change was added 2026-09-15 at the owner's explicit instruction,
     # and typing it here is the deliberate act this test exists to require. It
     # was the first writer with NO preview in front of it - from 2026-09-23 a
-    # recorded exception to Article 9, D-99. Since D-123 (2026-10-17) Revit
+    # recorded exception to Article 9, D-99. Since D-124 (2026-10-17) Revit
     # shows its change and asks the modeller Keep or Discard before it is
     # kept, under the owner's write.askBeforeKeeping, read by HeronPermissions
     # inside the add-in beside write.enabled. A THIRD writer still fails here.
@@ -203,7 +203,7 @@ def main():
           "the writing tools are exactly revit_apply_move and revit_change "
           "- found: %s" % (writers or "none"))
 
-    # WHETHER REVIT ASKS IS NOT A RISK LEVEL, AND NOT THE CALLER'S (D-123,
+    # WHETHER REVIT ASKS IS NOT A RISK LEVEL, AND NOT THE CALLER'S (D-124,
     # Golden Rule 19). It is the owner's switch, read where write.enabled is
     # read - so neither registry may carry it, and the tool that keeps a
     # change stays exactly MODIFY whether the question is on or off. A row
@@ -259,6 +259,32 @@ def main():
           "preview_move is ANALYZE, not MODIFY - it describes a change, it is not one")
     check(not tools.writes("revit_preview_move"),
           "and so the preview tool does not count as a write")
+
+    print()
+    print("A picture for the chat is ANALYZE, and its group can never be kept (D-123)")
+    # capture_view is the one Analyze operation that opens a transaction:
+    # given element ids it makes a temporary 3D view. What keeps it at
+    # Analyze is that the TransactionGroup around it is ALWAYS rolled back,
+    # so the checks below read RevitCapture.cs for every way a group could be
+    # kept - and fail the day one appears.
+    check(declared_cs.get("capture_view") == "ANALYZE",
+          "capture_view is ANALYZE - found %r" % declared_cs.get("capture_view"))
+    check(tools.operation_of("revit_view_image") == "capture_view"
+          if "revit_view_image" in tools.TOOLS else False,
+          "revit_view_image is the tool that sends it")
+    capture_cs = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitCapture.cs")
+    capture = io.open(capture_cs, encoding="utf-8").read() if os.path.isfile(capture_cs) else ""
+    check(capture != "", "RevitCapture.cs is there to read")
+    check("Assimilate(" not in capture,
+          "RevitCapture.cs never assimilates a group - nothing it makes is kept")
+    check(not re.search(r'group\.Commit\(', capture),
+          "and never commits one")
+    check(not re.search(r'ReadString\(request,\s*"apply"\)', capture),
+          "and reads no `apply` from the request - there is nothing a caller can "
+          "send to keep the view")
+    check(capture.count("SafeRollBack(group)") >= 3,
+          "every way out of a group rolls it back - %d SafeRollBack(group) calls"
+          % capture.count("SafeRollBack(group)"))
 
     print()
     print("Selecting is EXECUTE, not READ and not MODIFY")

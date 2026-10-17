@@ -31,7 +31,7 @@ TWO tools write, and the command marks them. revit_apply_move cannot run on
 its own - it applies a preview the user has already seen, once, and the add-in
 re-checks the model before it writes. revit_change carries a fragment straight
 to Revit, and Revit shows what it did and asks the modeller Keep or Discard
-before anything is kept - D-123, which supersedes D-99's change kept with no
+before anything is kept - D-124, which supersedes D-99's change kept with no
 preview, and Article 9's exception says so. The owner's switch for the
 question is write.askBeforeKeeping, read in the add-in. Around it stand the
 owner's ribbon switch, one undo entry and the pin. Writing is switched off
@@ -86,6 +86,8 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import base64
+import binascii
 import functools
 import inspect
 import io
@@ -154,6 +156,18 @@ try:                                                       # noqa: E402
     from mcp.types import ToolAnnotations as _Annotations
 except ImportError:
     _Annotations = None
+
+# A PICTURE GOES BACK AS THE SDK'S OWN IMAGE HELPER, and it moved with the
+# server class - so it is looked up the same way, newest first (D-45). Both
+# SDKs carry it beside the class above; None means an SDK without one, and
+# then revit_view_image says so rather than the server failing to start.
+try:                                                       # noqa: E402
+    from mcp.server.mcpserver import Image as _Image       # SDK 2.x
+except ImportError:
+    try:
+        from mcp.server.fastmcp import Image as _Image     # SDK 1.x
+    except ImportError:
+        _Image = None
 
 _TAKES_LABELS = (_Annotations is not None
                  and "annotations" in inspect.signature(_Server.tool).parameters)
@@ -380,6 +394,11 @@ def _recorded(fn):
 
 
 def _note(tool, started, seconds, reply=None, error=None, outcome=None):
+    # A TOOL THAT ANSWERS WITH A PICTURE ANSWERS WITH A LIST - its words, then
+    # the image (revit_view_image). The list shows the words, never the repr
+    # of an image object.
+    if isinstance(reply, (list, tuple)):
+        reply = next((part for part in reply if isinstance(part, str)), "")
     try:
         _companion_module().ACTIVITY.record(tool, started, seconds, reply=reply, error=error,
                                             outcome=outcome)
@@ -1590,7 +1609,7 @@ def revit_change(capability: str = "", values: str = "",
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
     try another capability to get round it. Revit asks Keep or Discard first
-    (D-123). Article 7's explicit yes comes BEFORE this call for destructive
+    (D-124). Article 7's explicit yes comes BEFORE this call for destructive
     work, and Article 10 holds - nothing is saved, synced or exported unasked.
 
     To answer a question, use revit_read - it cannot change anything. One
@@ -1612,7 +1631,7 @@ def revit_change(capability: str = "", values: str = "",
     #     turns it on, and only while Changes is on too. The refusal names the
     #     one that is off (heron_failure: admin_disabled, publish_disabled).
     #   - Articles 7, 9 and 10 in full: host.chat, every chat's instructions.
-    #   - D-123's question, said where the chat meets it: Revit shows the change
+    #   - D-124's question, said where the chat meets it: Revit shows the change
     #     and asks the modeller Keep or Discard while the owner's
     #     write.askBeforeKeeping is on, and a Discard's own verdict says it is
     #     their answer, not a failure, to send again only if they ask - the
@@ -1747,7 +1766,7 @@ def revit_change(capability: str = "", values: str = "",
         # the recorded proofs was taken. This line is what lets a run outlive
         # itself, and it is why this tool is MODIFY in the registry.
         #
-        # ASKING IS NOT KEEPING (D-123). With the owner's switch on - the
+        # ASKING IS NOT KEEPING (D-124). With the owner's switch on - the
         # default - Revit shows the change and the MODELLER says Keep or
         # Discard; this flag only makes the question possible. The switch is
         # read inside the add-in and nothing sent from here can skip it.
@@ -1782,7 +1801,7 @@ def revit_change(capability: str = "", values: str = "",
     # THE OPERATION FROM THE FRAGMENT'S OWN CARD - run_fragment_write for
     # Modify and below, run_fragment_publish or run_fragment_admin above it.
     # `keeping`, because Revit may stop and ask the modeller Keep or Discard
-    # before this is kept (D-123), and their time to look is added to the wait.
+    # before this is kept (D-124), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
                             response_timeout=configuration.fragment_timeout(keeping=True),
@@ -1866,7 +1885,7 @@ def revit_change(capability: str = "", values: str = "",
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
 
-    # THE MODELLER WAS ASKED IN REVIT AND DID NOT KEEP IT (D-123). The reply is
+    # THE MODELLER WAS ASKED IN REVIT AND DID NOT KEEP IT (D-124). The reply is
     # an ok one - the run worked, and the add-in's verdict already says nothing
     # was kept and why - but the call ended in their no: the activity list
     # says refused, and no after-change table offers values Revit does not hold.
@@ -3391,7 +3410,7 @@ def _cannot_run():
         "anything declared above ANALYZE. "
         "A fragment that WRITES reaches Revit through revit_change, and Revit "
         "shows the modeller what it did and asks Keep or Discard before "
-        "anything is kept (D-123), only while the owner has "
+        "anything is kept (D-124), only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
         "HeronPermissions refuses it by name and nothing is sent. One declared "
         "ADMIN - a project or global parameter, a workset, a new family file - "
@@ -5101,6 +5120,104 @@ def revit_views() -> str:
                  "schedule instance, so schedules are not reported as unplaced. "
                  "Nothing was changed.")
     return "\n".join(lines)
+
+
+@server.tool()
+def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> list:
+    """
+    Take a picture of a Revit view and LOOK at it - so you can check what you
+    just did the way a modeller glances at the screen, instead of trusting a
+    count.
+
+    Say what to picture in one of two ways:
+
+    - `view`: a view or sheet name as the Project Browser shows it. Empty
+      means the view in front. It is pictured exactly as it stands - its
+      template, crop and filters - and nothing about it is changed. If two
+      views share the name, the answer lists each as "ViewType: Name" to type
+      back.
+    - `elements`: element ids, comma separated, as Heron's answers print them.
+      Heron frames just those in a temporary isometric 3D view - a section box
+      round them with a margin, model categories only, levels, grids and links
+      left out of the box - and takes the view away again.
+
+    `width` is the picture's width in pixels, 320 to 2400 (default 1280).
+
+    IT CHANGES NOTHING. The temporary view is made inside a group Revit always
+    rolls back - there is no way to keep it - and the picture is written into
+    Heron's own folder on this PC, read back and deleted. Nothing is exported
+    anywhere another person reads. Use revit_views first if you need a view's
+    name.
+    """
+    if _Image is None:
+        return _ended("refused",
+                      "This MCP SDK has no image type, so Heron cannot hand a picture to the "
+                      "chat. Update it with:  pip install --user --upgrade mcp. Nothing has "
+                      "been sent to Revit.")
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # THE PIN TRAVELS WITH THE REQUEST, as for a selection: given element ids
+    # the add-in makes a view before it answers, so the guard has to stand in
+    # front of that, not behind it. Empty when this chat has pinned nothing.
+    reply = session.request("capture_view",
+                            op_args={"view": (view or "").strip(),
+                                     "elementIds": (elements or "").strip(),
+                                     "pixelWidth": width,
+                                     "expectProject": pinned.project_information_id or ""})
+    session.close()
+    _ended_by_reply("revit_view_image", reply)
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return _ended("refused", wrong_model)
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    try:
+        picture = base64.b64decode(reply.get("png") or "", validate=True)
+    except (TypeError, ValueError, binascii.Error):
+        picture = b""
+    if not picture.startswith(b"\x89PNG"):
+        _ended("failed")
+        return ("%s answered without a picture Heron can read, so there is nothing to "
+                "look at. Ask again; if it repeats, the add-in may be older than this "
+                "server." % where)
+
+    if reply.get("mode") == "elements":
+        lines = ["A picture of %d element(s) in %s, in a temporary 3D view, %s px wide."
+                 % (reply.get("shown", 0), where, reply.get("pixelWidth"))]
+        if reply.get("leftOut"):
+            lines.append("Left out of the frame: %s." % reply.get("leftOut"))
+    else:
+        lines = ["A picture of %r (%s) in %s, %s px wide."
+                 % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth"))]
+    if reply.get("widthClamped"):
+        lines.append("The width asked for was outside 320 to 2400 px, so %s was used."
+                     % reply.get("pixelWidth"))
+
+    # THE TWO PROMISES, SAID ONLY WHEN THE ADD-IN SAYS THEY WERE KEPT.
+    if reply.get("rolledBack") is False:
+        lines.append("! Revit did NOT confirm the temporary view was taken away. Look under "
+                     "3D Views in the Project Browser, and at Undo, before going on.")
+    elif reply.get("mode") == "elements":
+        lines.append("The temporary view is gone - Revit rolled it back. Nothing was changed.")
+    else:
+        lines.append("Nothing was changed.")
+    if reply.get("fileDeleted") is False:
+        lines.append("! The picture's file could not be deleted from Heron's captures "
+                     "folder on this PC. That folder is safe to empty.")
+
+    return [NEWLINE.join(lines), _Image(data=picture, format="png")]
 
 
 def _schedules_counted(sheets):

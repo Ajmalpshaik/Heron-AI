@@ -548,7 +548,7 @@ namespace Heron.Revit.Addin
                 && string.Equals(Json.ReadString(request, "apply"), "true",
                                  StringComparison.OrdinalIgnoreCase);
 
-            // AND BEFORE A CHANGE IS KEPT, REVIT ASKS THE MODELLER - D-123, the
+            // AND BEFORE A CHANGE IS KEPT, REVIT ASKS THE MODELLER - D-124, the
             // same box as D-119's "ask" above. The owner's switch, read fresh
             // here and never taken from the request (Golden Rule 19): a caller
             // may ask to keep, and only the modeller says yes. A run that keeps
@@ -563,7 +563,7 @@ namespace Heron.Revit.Addin
                                          StringComparison.Ordinal);
 
             // A keep from a chat that Revit counted no change in is kept without
-            // the box, and the verdict says so (D-123). And whether the
+            // the box, and the verdict says so (D-124). And whether the
             // modeller's own selection is as they left it after a Discard.
             var nothingToAsk = false;
             var selectionRestored = true;
@@ -611,7 +611,7 @@ namespace Heron.Revit.Addin
                 {
                     group.Start();
 
-                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-123.
+                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-124.
                     // From here, so the setup steps count too: Keep keeps them.
                     // The `using` takes the handler off however this block ends.
                     if (changed != null) changed.Begin();
@@ -737,7 +737,7 @@ namespace Heron.Revit.Addin
                     if (HeronDialogWatch.Refused)
                         return DialogRefusal(name, SafeRollBack(group));
 
-                    // D-119 AND D-123: THE MODELLER DECIDES, here, with the work
+                    // D-119 AND D-124: THE MODELLER DECIDES, here, with the work
                     // done and the group still open - so Keep and Discard are
                     // exactly `apply` and its absence, chosen by a person who
                     // has seen the result rather than sent by a caller who has
@@ -866,7 +866,7 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// Show the modeller what the fragment did and ask: keep it, or put
         /// the model back. Returns Keep, Discard or Closed - or null when there
-        /// was nothing to ask about. D-119, and D-123 for a keep from a chat.
+        /// was nothing to ask about. D-119, and D-124 for a keep from a chat.
         ///
         /// MODAL, AND THAT IS BOTH ITS GUARANTEE AND ITS LIMIT. Nothing on the
         /// wire can answer it - only a person at this Revit - and while it is
@@ -2086,7 +2086,7 @@ namespace Heron.Revit.Addin
                         + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
                         + "would undo whatever you did before this.";
 
-                // D-123: KEPT WITH NOBODY ASKED BECAUSE REVIT COUNTED NO CHANGE,
+                // D-124: KEPT WITH NOBODY ASKED BECAUSE REVIT COUNTED NO CHANGE,
                 // said first rather than left for the reader to infer. Who
                 // answered a box that was shown is WithAnswer's to say.
                 if (nothingToAsk) verdict = HeronKeepQuestion.NothingToAskSentence + " " + verdict;

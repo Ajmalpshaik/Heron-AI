@@ -11,10 +11,10 @@ namespace Heron.Revit.Addin
 {
     /// <summary>
     /// The words of Revit's Keep or Discard question, and D-60's highlight
-    /// cap - D-123, which makes one question of two.
+    /// cap - D-124, which makes one question of two.
     ///
     /// ONE QUESTION, TWO DOORS. D-119 put a Keep or Discard box in front of a
-    /// DRAFT fragment's one run on a live model ("apply": "ask"). D-123 puts
+    /// DRAFT fragment's one run on a live model ("apply": "ask"). D-124 puts
     /// the same box in front of every change a chat keeps through
     /// revit_change, while the owner's write.askBeforeKeeping is on. Either
     /// way the run has happened inside Heron's TransactionGroup, the changed
@@ -40,7 +40,7 @@ namespace Heron.Revit.Addin
         /// added.
         ///
         /// D-60 calls 500 "the default of a setting". No setting reads it yet,
-        /// so it is a constant here, and D-123 records that gap.
+        /// so it is a constant here, and D-124 records that gap.
         /// </summary>
         public const int HighlightCap = 500;
 

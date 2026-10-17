@@ -196,13 +196,13 @@ def main():
           "and a refusal is told to the activity list as one")
 
     # ------------------------------------------------------------------
-    # D-123. REVIT ASKS KEEP OR DISCARD BEFORE A CHANGE IS KEPT - D-119's box,
+    # D-124. REVIT ASKS KEEP OR DISCARD BEFORE A CHANGE IS KEPT - D-119's box,
     # one box for both doors - and the reply must say who decided: a change
     # somebody looked at and a change kept with nobody asked read the same
     # otherwise.
     # ------------------------------------------------------------------
     # READ SO THAT ITS ABSENCE FAILS RATHER THAN CRASHES (heron-ship 2a):
-    # against the code from before D-123 every check below must say so.
+    # against the code from before D-124 every check below must say so.
     asked_path = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepQuestion.cs")
     question = (io.open(asked_path, encoding="utf-8").read()
                 if os.path.exists(asked_path) else "")
@@ -230,7 +230,7 @@ def main():
           "revit_change ends a box the modeller did not keep as refused, before any "
           "after-change table is offered")
     check("There is no preview (D-99)" not in server and "THERE IS NO PREVIEW" not in server,
-          "and its description no longer says there is no preview - D-123 superseded D-99")
+          "and its description no longer says there is no preview - D-124 superseded D-99")
 
     if FAILURES:
         print("FAILED")
