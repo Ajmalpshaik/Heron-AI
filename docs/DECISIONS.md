@@ -187,6 +187,7 @@ an edit.
 | [D-113](#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about) | A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about | ⏳ Proposed · 2026-10-06 |
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
+| [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
 | [D-117](#d-117--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export) | A picture of a view, taken for the chat and deleted, is ANALYZE and not an export | ✅ Accepted · 2026-10-17 |
 
 ## Format
@@ -984,6 +985,14 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** `open-view` only. Nothing in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) or [`heron_fragment.py`](../brain/heron_fragment.py) changes
 
 **Full record:** [`decisions/D-115.md`](decisions/D-115.md)
+
+## D-116 — A list of family forms built in one call undoes as one, and cuts stay a separate call
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation, answering both halves of the question: *"Yes, one undo per list"* and *"No, keep cuts separate"* · **Question:** [Q-62](OPEN-QUESTIONS.md)
+**Keeps:** Golden Rule 16 and Constitution Article 8 - one call, one TransactionGroup, one undo · all or nothing - one row that fails keeps none of the list
+**Affects:** [`create-family-forms`](../brain/fragments/create-family-forms/fragment.yaml) and [`combine-family-forms`](../brain/fragments/combine-family-forms/fragment.yaml), neither changed · [NEEDS-CHECKING Group DA](needs-checking/group-da.md), unchanged · [04](04-heron-mcp.md)
+
+**Full record:** [`decisions/D-116.md`](decisions/D-116.md)
 
 ## D-117 — A picture of a view, taken for the chat and deleted, is ANALYZE and not an export
 
