@@ -423,6 +423,51 @@ adding or weakening an utterance** — [row 113](../docs/FRAGMENT-ISSUES.md)'s f
 [`tests/test_score_routing.py`](../tests/test_score_routing.py) plants a drop, in the arithmetic and in a
 private store through the real search, and proves both are caught.
 
+### A session's own sentences — main against the branch, on the backend you name
+
+```bash
+git worktree add --detach ../main-wt origin/main
+python tools/score-routing.py --sentences s.yaml --tree ../main-wt --backend all --shortlists --out main.json
+python tools/score-routing.py --sentences s.yaml --backend all --compare main.json --out branch.json
+python tools/score-routing.py --identities ids.txt --card RENAME_ELEMENTS --from main.json
+```
+
+Rows [5b-481, 5b-485 and 5b-510](../docs/fragment-issues/section-5b-rows-401-425.md) each built this kit by hand to measure a
+card's words. **`--sentences`** asks a frozen set instead of the two above, and **nothing it asks reaches
+`brain/retrieval-history.md`** (`--record` is refused beside it). The set is yaml: `groups:`, each a
+`group:` name and `sentences:`, and every sentence one expectation — `want <CAPABILITY>`, `not-a-write`
+(a question) or `neutral` — given once for the group with `expect:`, or per sentence as
+`{say: ..., expect: ...}`. A sentence in two groups is asked once; two expectations for it are refused.
+
+- **`--tree`** measures another checkout, such as a detached worktree of main, with **that tree's own
+  search code** over a store built from its cards. Default: this checkout.
+- **`--backend`** is `lexical`, `model`, `lexical+rerank`, `model+rerank`, `all`, or `installed` (the
+  default: whatever answers, named by what answered). **Each backend is asked in a process of its own on a
+  scratch store**, so a backend is never mixed with another, and the store every chat reads is never
+  touched. A backend this machine has not got is **NOT ASKED** and named; the others still run.
+- **Every answer carries the backends that produced it**, and a run whose answers ran on anything else —
+  the trained model asked for and lexical answering, a re-ranker on a run asked for without one (row 481),
+  a shortlist of two or more the cross-encoder did not re-read — is refused: **not written with `--out`,
+  and not compared when it is read back**.
+- **`--compare`** lists every sentence whose answer changed against an earlier record, per backend,
+  tagged **want**, **bad** or **neutral**, with the questions reaching a write and the wanted answers
+  reached, before and after. Sentences are matched by their words, so a set that grew still compares.
+- **`--shortlists`** records, per sentence, the shortlist the re-ranker read — at most its top 20, with
+  each passage, its fused score and its cross-encoder score. No hook in `heron_retrieve`: the tool wraps
+  its `_rerank` from outside, so it works on a main older than this tool too.
+- **`--identities <file> --card <CAPABILITY>`** is the fast loop: one candidate identity per line,
+  re-scored **offline** with `heron_rerank` on those shortlists, **one line per candidate** — wanted
+  sentences won, bad ones taken (questions counted apart), neutral ones taken. `--from` names the record;
+  without it, the shortlists just taken. A sentence answered by an exact phrase never reaches the
+  re-ranker and is skipped; one whose shortlist did not hold the card is **out of reach** — a new identity
+  moves the words and nearness routes too, so only a full run settles it. It needs a cross-encoder on
+  this machine and refuses without one.
+
+**It exits 0 whatever it finds** (D-100); exit 2 when nothing was measured, the set is malformed, or a
+record would be written on the wrong backend. The code and its tests need no model. A run with the
+cross-encoder needs `sentence-transformers` and huggingface.co once for the weights
+([`heron_rerank.py`](../brain/heron_rerank.py)).
+
 ---
 
 ## `check-api-surface.py` — the releases the compiler cannot reach
