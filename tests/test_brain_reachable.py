@@ -626,13 +626,14 @@ def main():
             # collect a view's notes, read them, edit, read again - sat in two
             # cards' comments and nothing served them as one job. The
             # capabilities are the ones the live lookup returned for these
-            # words on the spelling backend on main e592b1ca; only the skills
+            # words on the spelling backend on main c2dd2b8a; only the skills
             # decide here.
             everything = SKILL.load_all()[0].values()
             for said, returned in (
                     ("update the general notes and keep their numbering",
-                     ["LIST_DATES_ON_SHEETS", "EXTRACT_DATES_FROM_TEXT",
-                      "CREATE_WALL", "REFRESH_VIEW", "EDIT_TEXT_VALUES"]),
+                     ["LIST_DATES_ON_SHEETS", "CREATE_WALL",
+                      "EXTRACT_DATES_FROM_TEXT", "REFRESH_VIEW",
+                      "EDIT_TEXT_VALUES"]),
                     ("update the general notes in the legend and keep the "
                      "numbering",
                      ["CREATE_LEGEND_VIEW", "CREATE_WALL", "MOVE_TO_RAY_HIT",

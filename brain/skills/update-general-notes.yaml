@@ -26,10 +26,11 @@ purpose: >
      expect_from="select-visible-in-view". Its noteWording gives one line
      per note: the note's id, its wording with \r where a paragraph ends
      (Enter) and \v where a line breaks inside one (Shift+Enter), each
-     paragraph's list type and indent, and any character a keyboard does not
-     type plainly - a curly apostrophe (U+2019) above all. Find the general
-     notes here. Words to be replaced are typed exactly as shown: a curly
-     apostrophe as the curly one, never as a straight '.
+     paragraph's list type and indent, each list's start number, which
+     paragraphs are bold, italic or underlined, and any character a keyboard
+     does not type plainly - a curly apostrophe (U+2019) above all. Find the
+     general notes here. Words to be replaced are typed exactly as shown: a
+     curly apostrophe as the curly one, never as a straight '.
 
   3. SHOW THE MODELLER AND WAIT. The note's id, the exact old wording and the
      exact new wording, \r and \v included, and the list each paragraph keeps.
@@ -37,7 +38,8 @@ purpose: >
      change (Article 9).
 
   4. EDIT_TEXT_VALUES, field=Text, on notes collected again after the read
-     (THE CHAIN NAMES THE LAST RUN, below), with one of two modes:
+     (THE CHAIN NAMES THE LAST RUN, below), with one of the two modes that
+     change wording:
        replace  text=<the old words, as step 2 showed them>,
                 replacement=<the new words>. Safe across every note of the
                 view: a note without those words is left untouched.
@@ -55,11 +57,15 @@ purpose: >
   5. READ AGAIN - steps 1 and 2 - and compare each paragraph's list type with
      what step 2 showed before. The agreed wording and every list the same is
      done. Anything else is told to the modeller; one Undo in Revit puts the
-     note back.
+     note back, or a list that came back wrong is set again with
+     EDIT_TEXT_VALUES mode format, text="numbers 1-8" for paragraphs 1 to 8
+     (FRAGMENT-ISSUES row 5b-737, not run in Revit).
 
   BOTH CARDS ARE DRAFT. READ_ELEMENT_PARAMETERS and EDIT_TEXT_VALUES stay
-  DRAFT until Ajmal PS signs their two proof drafts (FRAGMENT-ISSUES row
-  5b-520, pull request #570). A read runs while DRAFT and says so; it changes
+  DRAFT until Ajmal PS signs them. FRAGMENT-ISSUES row 5b-520 (pull request
+  #570) left two proof drafts; row 5b-737 (#586) widened both cards the same
+  day, so those drafts no longer describe the code, and the proof now owed is
+  NEEDS-CHECKING group FD. A read runs while DRAFT and says so; it changes
   nothing. The edit is different: revit_change refuses a DRAFT (D-117), so on
   a real model the ONLY way step 4 runs is try-once, behind Revit's Keep or
   Discard (D-119), and only when the modeller asks for it (D-122):
@@ -127,9 +133,10 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-17 from the owner's brief, on FRAGMENT-ISSUES row 5b-940:
   the steps of row 5b-520 (pull request #570) were spread over two cards'
-  comments and nothing served them as one job. No new capability. Only
-  Revit 2020 has run these cards, every run rolled back on a scratch copy;
-  2021 to 2027 are compiled only. A legend is one view placed on many
+  comments and nothing served them as one job. No new capability. Row
+  5b-520's versions of the two cards ran in Revit 2020 only, every run rolled
+  back on a scratch copy; the versions row 5b-737 made have not run in Revit
+  at all, and 2021 to 2027 are compiled only. A legend is one view placed on many
   sheets, so a note changed in it changes on every sheet that shows it.
   Two things here are read from the code and have not been run: that
   try-once edits the notes selected in Revit - it resets the chain, and the
