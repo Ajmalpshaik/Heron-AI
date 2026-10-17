@@ -325,19 +325,43 @@ namespace Heron.Revit.Addin
                 try
                 {
                     var op = Json.ReadString(job.Request, "op") ?? "(none)";
+
+                    // A REVIT DIALOG THE JOB OPENS IS ANSWERED, NOT WAITED ON -
+                    // FRAGMENT-ISSUES section 5b row 300. Armed here, after
+                    // TryStart and around Run alone, so it answers only what
+                    // THIS job raises. A dialog already open before the job
+                    // never gets this far: Revit runs no ExternalEvent behind
+                    // a modal dialog, Dispatch's busy wait runs out, and the
+                    // caller is told revit_busy as before.
+                    HeronDialogWatch.Arm();
+                    HeronDialogNote dialogs = null;
                     try
                     {
-                        response = RevitOperations.Run(app, job.Request);
+                        try
+                        {
+                            response = RevitOperations.Run(app, job.Request);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Never let one bad request throw out of here: this
+                            // runs on Revit's own thread, and an escaping
+                            // exception is Revit's problem, not just Heron's.
+                            _log("Operation failed: " + ex);
+                            response = Json.Error("operation_failed", ex.Message);
+                        }
                     }
-                    catch (Exception ex)
+                    finally
                     {
-                        // Never let one bad request throw out of here: this
-                        // runs on Revit's own thread, and an escaping
-                        // exception is Revit's problem, not just Heron's.
-                        _log("Operation failed: " + ex);
-                        response = Json.Error("operation_failed", ex.Message);
+                        dialogs = HeronDialogWatch.Disarm();
                     }
                     clock.Stop();
+
+                    // WHAT IT MET GOES ON THE REPLY - `dialogsAnswered` and
+                    // each dialog's id, words and answer - and nothing at all
+                    // when it met none. A path that came back a success from a
+                    // job a dialog stopped is turned into the refusal here.
+                    response = HeronDialogNote.Attach(response, dialogs,
+                                                      HeronOperationRegistry.Writes(op));
 
                     // THE RUN RECORD, for a fragment write that got as far as
                     // describing what it changed - and taken for EVERY
@@ -429,6 +453,13 @@ namespace Heron.Revit.Addin
                         if (count.HasValue)
                             numbers.Add(new KeyValuePair<string, long>(touched, count.Value));
                     }
+
+                    // AND HOW MANY REVIT DIALOGS IT MET, on every operation -
+                    // a dialog is not a fragment's alone. Absent when it met
+                    // none, like the reply: every job is armed, so absent here
+                    // means none opened, never that nobody looked.
+                    if (dialogs.Count > 0)
+                        numbers.Add(new KeyValuePair<string, long>("dialogs", dialogs.Count));
 
                     HeronAudit.Record(job.WorkflowId, op,
                         failure == null,
@@ -651,6 +682,8 @@ namespace Heron.Revit.Addin
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                case "dialog_refused":  return "A Revit dialog stopped the job - nothing kept";
+                case "dialog_unconfirmed": return "A Revit dialog stopped the job - check the model";
                 default:                return "Did not finish";
             }
         }

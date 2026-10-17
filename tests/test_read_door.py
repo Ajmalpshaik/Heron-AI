@@ -52,6 +52,9 @@ MCP SDK, so CI runs it:
      after `_runs_as_matched` has checked the door would run the matched
      provider and that its proof is not stale, and every candidate it hands
      back carries its contract.
+  8. ARTICLE 11 IS THE CHANGE DOOR'S, NOT THIS ONE'S (D-117). revit_change
+     refuses a fragment no current proof stands behind before it binds a
+     session; revit_read never asks, because a read keeps nothing.
 
 WHAT IT CANNOT DO
 -----------------
@@ -334,8 +337,8 @@ def main():
                          "_provides_lines(shown)"),
     }
     for door in ("revit_read", "revit_change"):
-        body = body_of(text, door) or ""
-        check(all(part in body for part in printed_through[door]),
+        door_body = body_of(text, door) or ""
+        check(all(part in door_body for part in printed_through[door]),
               "%s prints what a fragment left through _provides_lines - both "
               "doors, one copy" % door)
     provides_lines = lifted(text, "_provides_lines")
@@ -426,6 +429,34 @@ def main():
           "and whether the door would run the provider that was matched")
     check(words.count("_contract_lines(") >= 2,
           "and every candidate handed back carries its contract, not only the first")
+
+    print()
+    print("9. Article 11 is asked at the change door, and not at this one (D-117)")
+    # A READ MAY RUN A DRAFT: it opens no transaction, so Revit itself refuses
+    # any change, and its answer says DRAFT (section 6). A CHANGE KEEPS what
+    # it does, so a DRAFT, or a proof its code has moved past, is refused
+    # there before anything is sent.
+    unproven = getattr(CLIENT, "unproven_refusal", None)
+    check(unproven is not None, "the client has unproven_refusal to ask")
+    read_code = "\n".join(line for line in body.splitlines()
+                          if not line.lstrip().startswith("#"))
+    check("unproven_refusal(" not in read_code,
+          "revit_read does not ask it - a DRAFT read still runs, and says DRAFT")
+    asked = change.find("bridge.unproven_refusal(")
+    bound = change.find("binding.resolve(")
+    check(asked > 0 and bound > 0 and asked < bound,
+          "revit_change asks it, before a session is bound")
+    if unproven is not None and proof_status is not None:
+        # `pick` is section 6's, made whenever proof_status exists.
+        draft_read = pick.get("DRAFT")
+        said = unproven(draft_read or "X", proof_status(draft_read or ""))
+        check(said is not None and "Nothing was sent to Revit" in said,
+              "so the DRAFT read %s, asked for as a change, would be refused"
+              % draft_read)
+        check(unproven(pick.get("PROVEN") or "X",
+                       proof_status(pick.get("PROVEN") or "")) is None,
+              "while the PROVEN read %s, whose code has not moved, would not"
+              % pick.get("PROVEN"))
 
     print()
     if FAILURES:

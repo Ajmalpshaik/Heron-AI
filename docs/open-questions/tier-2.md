@@ -322,6 +322,13 @@ a widening of the two single-form tools, for the reasons in
 [NEEDS-CHECKING Group DA](../needs-checking/group-da.md), which also holds its proof plan. Left for him:
 whether a whole list should undo as one, and whether cuts belong in the same call.
 
+**Answer: one undo per list, and cuts stay a separate call - 2026-10-17. See [D-116](../DECISIONS.md).**
+Asked both halves in plain words with a worked example each - a pump family's 107 forms undone by one
+Ctrl+Z, and a flange's disc and four holes built in one call and cut in a second - the owner chose
+*"Yes, one undo per list"* and *"No, keep cuts separate"*. `CREATE_FAMILY_FORMS` as written already does
+both, so no code changed. **This answers the shape, not the proof**: the fragment is still DRAFT until
+Group DA has run in Revit.
+
 ---
 
 ### 🟡 Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? *(found 2026-10-10)*
@@ -371,5 +378,24 @@ packaged; and how the merged view behaves when one file name is in both places.
 
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes, and the warning - if merged -
 is the whole of the response.
+
+**2026-10-17 - the INSTALL half is settled in code; the RUN-TIME half is still his.** Asked that day to
+settle Q-63 as part of the one-step installer, with the shapes above put to him, the owner answered *no
+preference*. So what every shape needs was built, and nothing that moves DATA:
+
+1. **Heron's packages are installed by the installer**, which a person starts from File Explorer or their
+   own terminal - never a child of the app - so they land in the real folders, and Claude's children read
+   those through the overlay, as the add-in's files are read today. That is row 5b-417's cause removed for
+   every install from now on; a copy that already holds packages Claude installed is unchanged.
+2. **Both installers refuse to run from inside the app's copy** and name that route
+   ([row 5b-495](../fragment-issues/section-5b-rows-401-425.md)) - an add-in installed from there would
+   land where Revit never looks.
+
+That is the one supported route for INSTALLING: from outside Claude, by the installer. DRAFT, not run on
+Windows - [NEEDS-CHECKING Group EP](../needs-checking/group-ep.md). **Still open, and still Ajmal PS's:**
+where Heron's Python side keeps what it WRITES while a chat runs. Rows 5b-416, 5b-418 and 5b-419 are
+untouched by this, because the server is still a child of the app wherever its packages live. Moving DATA
+out of AppData is shape 3, a decision about the platform boundary; *no preference* was not read as a
+decision to make it.
 
 ---

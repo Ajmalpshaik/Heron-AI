@@ -56,6 +56,8 @@ Revit is open, and reports per product per release.
 | [`ReleaseDownload.cs`](Heron.Installer/ReleaseDownload.cs) | fetches a product's files from a **named release**, verifies them before use, unpacks them. Nothing downloaded is executed |
 | [`ProductFolder.cs`](Heron.Installer/ProductFolder.cs) | the same as the download, minus the wire: Heron's files already on this PC, no internet |
 | [`UpdateCheck.cs`](Heron.Installer/UpdateCheck.cs) | the verdict on whether a newer release exists — up to date, newer, ahead, or cannot tell |
+| [`PythonSetup.cs`](Heron.Installer/PythonSetup.cs) | the second half of one install (2026-10-17): Heron's Python side after the add-in — pinned packages from `requirements-lock.txt`, the knowledge store and `heron-ready --check` — only when a product with `needsPython` went in. Decides against a fake runner; **not run on Windows**, Group `EP` |
+| [`ClaudeAppCopy.cs`](Heron.Installer/ClaudeAppCopy.cs) | whether this run is inside a Microsoft Store Claude's private copy of AppData, where an install lands where Revit never looks (Q-63). Both doors refuse there. **Not run on Windows**, Group `EP` |
 
 **It is not Kernel plumbing**, and outside this folder only its own test host references it — the
 window and the command line below sit on it, and nothing outside the installer does.
