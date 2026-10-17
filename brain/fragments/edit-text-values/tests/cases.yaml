@@ -47,7 +47,41 @@ positive:
       changed, 8 paragraphs before and after, the list on all 8 - the added
       words land in paragraph 1 and paragraph 8 and take their neighbour's style
 
+  - given: >
+      VERSION 5, mode "format". A text note of four paragraphs typed with Enter,
+      no list and nothing bold, field "Text", text "numbers 2-4; bold 1",
+      replacement empty
+    expect: >
+      changed, the four paragraphs word for word unchanged, and `noteFormatting` reads
+      back "1 no list, 2-4 ArabicNumbers from 1; bold 1" - on the plan,
+      paragraphs 2-4 numbered 1. 2. 3. and paragraph 1 bold. NOT RUN: it needs
+      Revit (NEEDS-CHECKING FD1, tools/jobs/note-format-2026-10-17.yaml)
+
+  - given: >
+      VERSION 5. The same note, text "numbers", replacement "2-4", then
+      "lowercase letters", then "start 3", then "indent 1 3"
+    expect: >
+      each changed and read back as asked: 2-4 ArabicNumbers, then
+      LowerCaseLetters, then "from 3" (c. d. e.), then paragraph 3 at indent 1.
+      A paragraph Revit renumbers with its list but that was not named is said
+      by number in `noteFormatting` and puts the note in `unverified`
+
 negative:
+  - given: >
+      VERSION 5, mode "format". The same four-paragraph note, text "numbers
+      2-5" - paragraph 5 is not there
+    expect: >
+      REFUSED - "the paragraphs named are not there" - NOTHING WAS CHANGED,
+      `changed` empty, the note on the plan exactly as typed. Checked against
+      each note BEFORE anything is applied, so a note is never half formatted
+
+  - given: >
+      VERSION 5. text "start 3" on paragraphs with no list, or "indent 99", or
+      a word it does not know ("bolden 1")
+    expect: >
+      "start 3" and "indent 99" - the note in `readOnly`, NOT edited, the reason
+      in plain words; "bolden 1" - REFUSED before any element is read
+
   - given: two ducts, field "Text", mode "set"
     expect: >
       REFUSED - not one is a text note - and nothing written. One value on a

@@ -31,7 +31,11 @@
 #   - `pip download --only-binary=:all: --platform win_amd64 --require-hashes`
 #     for Python 3.11, 3.12, 3.13 and 3.14: all 30 packages arrived as Windows
 #     wheels whose hashes matched, so no PC compiles anything.
-# NOT RUN ON WINDOWS. That is NEEDS-CHECKING Group EP, on the owner's PC.
+# ON A WINDOWS CI RUNNER, since 2026-10-17: .github/workflows/windows.yml runs
+# the command above on Python 3.12 and 3.13, with no source build, then
+# tests/test_mcp_serves.py PASSES there, on every change to this file.
+# NOT RUN ON WINDOWS ON A MODELLER'S PC - from the unzipped heron-project.zip,
+# by HeronInstaller.exe. That is NEEDS-CHECKING Group EP, on the owner's PC.
 #
 # PYTHON 3.11 OR LATER. rpds-py, which jsonschema needs, starts at 3.11, so the
 # installer refuses an older Python by name rather than letting pip fail on it.
