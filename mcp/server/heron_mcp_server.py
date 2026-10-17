@@ -121,6 +121,16 @@ import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
 import heron_run_records as runs                    # noqa: E402
+import heron_running_code as running_code           # noqa: E402
+
+# WHAT THIS CHAT IS RUNNING, fingerprinted now - before a pull can land under
+# it. A git pull changes the files and not this process, and on 2026-09-07 that
+# had revit_apply_move answering from code a fix had already replaced
+# (NEEDS-CHECKING B8). heron_running_code says how, and what is decided when
+# the two differ: every reply says so, and nothing changes the model.
+RUNNING = running_code.RunningCode.of_checkout(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
 # `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
 # run - resolved to 1.x when this server was written and resolves to 2.x now.
@@ -310,7 +320,10 @@ def _through(tool, reply_out=None, origin="chat"):
         # the caller's own word, still standing from before the call.
         _ctx.reply_out, _ctx.origin, _ctx.outcome = reply_out, origin, None
         try:
-            return body(*a, **k)
+            # The page's Apply is a write from this same process, so old code
+            # refuses it here exactly as _recorded refuses the chat's.
+            refused = _refused_for_old_code(body.__name__)
+            return refused if refused is not None else body(*a, **k)
         finally:
             if reply_out is not None:
                 reply_out["ended"] = getattr(_ctx, "outcome", None)
@@ -372,6 +385,12 @@ def _recorded(fn):
     exception pass through untouched, and a fault in the recording is
     dropped: the list is display, and must never cost a tool its answer. A
     tool called from inside another is not listed twice.
+
+    AND THE ONE PLACE A CHAT HEARS THAT ITS CODE IS OLD. While RUNNING finds
+    a file changed since it was loaded, a tool that changes the model is
+    refused before its body runs, and every answer ends with one line saying
+    to reopen the chat - a read still answers in full (heron_running_code has
+    the decision). Nothing changed, nothing is added: a stat per file.
     """
     @functools.wraps(fn)
     def run(*a, **k):
@@ -387,7 +406,9 @@ def _recorded(fn):
         kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
         started, clock = time.strftime("%H:%M:%S"), time.time()
         try:
-            reply = fn(*a, **k)
+            reply = _refused_for_old_code(fn.__name__)
+            if reply is None:
+                reply = fn(*a, **k)
         except Exception as error:
             if outer:
                 _note(fn.__name__, started, time.time() - clock, error=error)
@@ -398,8 +419,49 @@ def _recorded(fn):
                 _depth.busy = False
         if outer:
             _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
+            reply = _said_old_code(reply)
         return reply
     return run
+
+
+def _changes_model(tool):
+    """heron_tools.writes, and a tool nobody declared is never harmless."""
+    try:
+        return tools.writes(tool)
+    except tools.NotDeclared:
+        return True
+
+
+def _old_code():
+    """What RUNNING finds changed - and nothing when the watch itself faults,
+    which leaves a tool as it was before the watch existed rather than
+    costing every tool its answer."""
+    try:
+        return RUNNING.changed()
+    except Exception:                                # noqa: BLE001 - never cost a tool its answer
+        return []
+
+
+def _refused_for_old_code(tool):
+    """The refusal, said as one, when `tool` would change the model and this
+    process is not running the code on disk - else None."""
+    if _changes_model(tool) and _old_code():
+        return _ended("refused", running_code.REFUSED)
+    return None
+
+
+def _said_old_code(reply):
+    """The reply with one line after it while this process is not running the
+    code on disk, and untouched otherwise. A refusal for it already says so."""
+    if not _old_code():
+        return reply
+    if isinstance(reply, str):
+        if running_code.REFUSED in reply:
+            return reply
+        return reply + NEWLINE + NEWLINE + running_code.SAID
+    if isinstance(reply, (list, tuple)):
+        return list(reply) + [running_code.SAID]
+    return reply
 
 
 def _note(tool, started, seconds, reply=None, error=None, outcome=None):
@@ -2841,6 +2903,12 @@ def revit_read(capability: str = "", values: str = "",
     with io.open(source_path, "r", encoding="utf-8") as fh:
         source = fh.read()
 
+    # NOTHING WRITTEN TO DISK, EITHER: no transaction is needed to write a
+    # file, so the missing one does not stop it (heron_tools.disk_refusal).
+    on_disk = tools.disk_refusal("revit_read", capability, source)
+    if on_disk:
+        return _ended("refused", on_disk)
+
     needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
                                                folder, "fragment.yaml"))
     if needs is None:
@@ -3034,6 +3102,12 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     with io.open(source_path, "r", encoding="utf-8") as fh:
         source = fh.read()
 
+    # NOTHING WRITTEN TO DISK, EITHER: no transaction is needed to write a
+    # file, so the missing one does not stop it (heron_tools.disk_refusal).
+    on_disk = tools.disk_refusal("revit_show", capability, source)
+    if on_disk:
+        return _ended("refused", on_disk)
+
     # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
     # called from the client exactly as both other doors call it.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
@@ -3200,6 +3274,8 @@ def revit_isolate_temporary(ids: str = "", category: str = "") -> str:
                      "another level, outside its range or hidden by its own settings, "
                      "and isolating cannot show them here."
                      % ("{:,}".format(seen), "{:,}".format(isolated)))
+    # WHOSE IT WAS IS NOT KNOWN - the modeller's, or an earlier Heron call's,
+    # a resend after a lost answer included - so it is not said.
     if reply.get("replacedEarlier"):
         lines.append("  A temporary isolate was already on in this view, and this "
                      "replaced it rather than adding to it.")
@@ -3235,15 +3311,22 @@ def revit_reset_temporary() -> str:
     if not reply.get("ok"):
         return reply.get("message") or reply.get("error") or "The request was refused."
 
+    # THE WRONG MODEL, SAID - BUT NOT AS A FAILURE when it reset something. An
+    # isolate that landed in the wrong model's view tells the chat to call
+    # this to end it, so ending it there is the job done, not a mistake. When
+    # nothing was on, the pin's own sentence is used, as every tool here uses
+    # it (row 5b-594 records what that sentence gets wrong after the act).
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         if reply.get("reset"):
-            _ended("failed")
-            return ("Heron reset the temporary hide/isolate in \"%s\" of %s before it could "
-                    "tell that %s is not the model this chat works on (%s). Only that "
-                    "view's temporary display changed; nothing in either model was changed."
+            _ended("ok")
+            return ("Reset the temporary hide/isolate in \"%s\" of %s. %s is not the model "
+                    "this chat works on (%s) - if that isolate was the one Heron made in the "
+                    "wrong model, it is ended now. Only that view's temporary display "
+                    "changed; nothing in either model was changed. Say 'use this model' to "
+                    "move this chat onto %s."
                     % (reply.get("view"), reply.get("document"), reply.get("document"),
-                       pinned.title))
+                       pinned.title, reply.get("document")))
         return _ended("refused", wrong_model)
 
     return "%s (%s, Revit %s, session %s)" % (
@@ -6907,4 +6990,7 @@ if __name__ == "__main__":
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 
+    # One more look, so what start-up imported is fingerprinted before the
+    # first call rather than at it.
+    _old_code()
     server.run()

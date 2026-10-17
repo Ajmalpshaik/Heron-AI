@@ -186,8 +186,8 @@ _KNOWN = {
                           "requests - so nothing was isolated"),
     "nothing_to_isolate": (REFUSED, FIX_FIRST,
                           "nothing was named to isolate - no element ids and no category"),
-    "no_view":           (REFUSED, FIX_FIRST,
-                          "the model in front has no active view to work in"),
+    # "no_view" is shared with capture_view below - one key, one sentence
+    # true of both. A second entry for it here was silently overwritten.
     "not_this_view":     (REFUSED, FIX_FIRST,
                           "the active view has no temporary hide/isolate - a sheet, a "
                           "schedule or a legend - so nothing was done"),
@@ -250,6 +250,11 @@ _KNOWN = {
     "needs_write_path":  (REFUSED, FIX_FIRST,
                           "this fragment works in one of Revit's edit modes and opens its "
                           "own transactions, so it runs only as a change - nothing ran"),
+    # A FRAGMENT THAT OPENS A TRANSACTION ITS DECLARATION DOES NOT ADMIT -
+    # read off its source before anything ran (HeronSourceScan), so REFUSED.
+    "opens_own_transaction": (REFUSED, STOP,
+                          "the fragment opens a Revit transaction of its own where none may "
+                          "be opened - nothing ran"),
     "not_implemented":   (REFUSED, STOP,
                           "the operation is declared and not built yet"),
     "worksets_unreadable": (REFUSED, FIX_FIRST,
@@ -289,7 +294,8 @@ _KNOWN = {
                           "a view name and element ids were both given - one picture is one "
                           "or the other, and nothing was pictured"),
     "no_view":           (REFUSED, FIX_FIRST,
-                          "Revit had no view in front to picture, and none was named"),
+                          "Revit had no view in front to work in, and none was named - "
+                          "nothing was done"),
     "no_such_view":      (REFUSED, FIX_FIRST, "no view in that model has that name"),
     "ambiguous_view":    (REFUSED, FIX_FIRST,
                           "more than one view has that name; the answer lists each one as it "
@@ -330,6 +336,19 @@ _KNOWN = {
     "setup_failed":      (ROLLED_BACK, FIX_FIRST,
                           "an arrangement step could not be given what it needs, so nothing "
                           "was run and the model is as it was"),
+    # THE RUN CLOCK'S TWO (D-129). The add-in stopped a fragment part way and
+    # rolled the whole job back before answering - so ROLLED_BACK, never the
+    # fail-closed unknown, which would tell the owner to go and check a model
+    # the add-in put back. Whether Revit CONFIRMED that rollback is in the
+    # message, as it is for `operation_failed`. A fragment that ran out of
+    # time is fixed before it is sent again; one stopped by a person is not
+    # sent again at all, and Heron stays stopped until Revit restarts.
+    "ran_too_long":      (ROLLED_BACK, FIX_FIRST,
+                          "the fragment ran past Heron's time limit, so Heron stopped it and "
+                          "rolled the job back - a loop that never ends is the usual cause"),
+    "stopped_mid_run":   (ROLLED_BACK, STOP,
+                          "Heron was told to stop while the fragment ran, so it was stopped "
+                          "part way and rolled back; Heron stays stopped until Revit restarts"),
 
     # --- a read that did not leave the model as it was - row 5b-350 ---------
     # Not "it only reads, so it is merely a refusal", which is what an
