@@ -203,6 +203,13 @@ namespace Heron.Revit.Addin
                 application.ViewActivated += OnViewActivated;
                 application.ControlledApplication.DocumentClosing += OnDocumentClosing;
 
+                // THE RUN GUARD (Constitution Article 10): saves, syncs,
+                // exports and prints, new and opened documents, and changes
+                // to any open model - heard for the whole session, acted on
+                // only while the dispatcher has a job armed. Before the
+                // bridge can start, so no job can ever run unguarded.
+                HeronRunGuard.Attach(application, Log);
+
                 // WHAT A ROLLBACK MUST NOT TAKE: the elements each write job
                 // adds, and the modeller's own undos, as Revit reports them.
                 // Permanent, because a Ctrl+Z between two jobs is exactly the
@@ -319,6 +326,7 @@ namespace Heron.Revit.Addin
                 // dispatcher has already been dropped.
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+                HeronRunGuard.Detach(application);
                 RevitFragment.StopListening(application.ControlledApplication);
                 HeronDialogWatch.Detach(application);
                 HeronLiveState.Detach(application);

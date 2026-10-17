@@ -763,6 +763,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
 
+## Group EX - the run guard: a running job cannot save, sync, export or print what its operation does not allow (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ex.md`](needs-checking/group-ex.md)
+
 ## Group EY - the family method looks at what it built: `revit_show` and `revit_view_image` in a family, and `family-creation` step 13 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-ey.md`](needs-checking/group-ey.md)
@@ -794,6 +798,10 @@ Step 6 is finished, and not before. At that point:
 ## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fg.md`](needs-checking/group-fg.md)
+
+## Group FP - a family placed at the height asked when its insertion point is not its own level: PLACE_FAMILY_INSTANCES version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-fp.md`](needs-checking/group-fp.md)
 
 ## Group FU - one Object Styles row by name: `LIST_CATEGORIES` version 3, `categories` narrows the answer, a missing name gets the nearest names (2026-10-17)
 

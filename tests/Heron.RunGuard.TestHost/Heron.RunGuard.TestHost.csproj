@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the run guard's policy WITHOUT Revit.
+
+    HeronRunPolicy.cs touches no Autodesk type - it judges an operation's risk
+    against where a document came from - so it is linked here BY SOURCE, the
+    pattern Heron.FailureNote.TestHost uses and for its reason: referencing
+    Heron.Revit.Addin would drag in RevitAPI.dll and make the one testable
+    piece untestable on any machine without Revit. One copy of the rule.
+
+    Heron.Core is a PROJECT REFERENCE, as Heron.Kernel.TestHost has it: the
+    policy is written in the kernel's own HeronRisk and asks HeronPermissions
+    the gate's question, and Heron.Core has no Revit reference at all - that
+    is its defining property. Testing the assembly the add-in actually loads
+    is the honest choice there, and a source link of HeronPermissions would
+    have to drag HeronConfig and HeronPaths in after it.
+
+    Json.cs is linked as FailureNote's host links it: the policy splices its
+    record onto the reply with the bridge's writers, and the reader that
+    takes `guardBlocked` back off it is the one the dispatcher uses.
+
+    Why it exists at all: until this change nothing in code held Constitution
+    Article 10 - a MODIFY fragment could call Save, a sync or an export and
+    nothing stood in its way.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.RunGuard.TestHost</RootNamespace>
+    <AssemblyName>Heron.RunGuard.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\platform\Heron.Core\Heron.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronRunPolicy.cs"
+             Link="HeronRunPolicy.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
+             Link="Json.cs" />
+  </ItemGroup>
+
+</Project>

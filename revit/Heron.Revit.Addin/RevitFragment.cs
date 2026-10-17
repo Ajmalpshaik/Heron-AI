@@ -82,11 +82,6 @@ namespace Heron.Revit.Addin
         private static readonly Dictionary<string, object> Compiled =
             new Dictionary<string, object>(StringComparer.Ordinal);
 
-        public static string Run(UIApplication app, string request)
-        {
-            return Run(app, request, false);
-        }
-
         /// <summary>
         /// The same executor, optionally inside a transaction so a fragment at
         /// risk: MODIFY can run at all.
@@ -104,13 +99,18 @@ namespace Heron.Revit.Addin
         /// arrive here the same way, declared Publish and Admin (D-106): the
         /// run is identical and only the switch that let it through differs.
         ///
+        /// `risk` IS THAT REGISTRY RISK, passed in rather than decided here,
+        /// and it is used for one thing: asking the same switches AGAIN just
+        /// before a group is kept (Article 13 - never cache a permission
+        /// decision). The gate's answer is as old as the job by then.
+        ///
         /// THE WHOLE JOB RUNS ON THE RUN CLOCK - D-129. Its time starts here,
         /// before the binding and the compile, because the dispatcher's wait
         /// started when Revit took the job, and both have to be counted from
         /// the same moment for the clock's answer to arrive first. See
         /// HeronRunClock.
         /// </summary>
-        public static string Run(UIApplication app, string request, bool writing)
+        public static string Run(UIApplication app, string request, bool writing, HeronRisk risk)
         {
             // NOTHING FROM AN EARLIER RUN IS HANDED ON. The dispatcher takes
             // what the last write changed straight after this returns, and a
@@ -252,6 +252,13 @@ namespace Heron.Revit.Addin
                 // something else.
                 try { uidoc = new UIDocument(target); } catch { uidoc = null; }
             }
+
+            // THE RUN GUARD LEARNS WHICH MODEL THIS IS, so a change the job
+            // makes HERE is never mistaken for a change to another open model
+            // - which the guard refuses, because no rollback of Heron's
+            // reaches it. Armed, it assumes the model in front, and a
+            // document named by the caller need not be that one.
+            HeronRunGuard.Target(target);
 
             // WHICH MODEL THE CHAT THINKS IT IS IN, CHECKED BEFORE ANYTHING
             // RUNS. Golden Rule 20, enforced on the only side that can still
@@ -677,6 +684,15 @@ namespace Heron.Revit.Addin
                 // reporting it as the answer would be the wrong half.
                 if (HeronRunClock.Tripped) return ClockStopped(name, null);
 
+                // THE RUN GUARD ON THE READ PATH. Nothing of Heron's is open
+                // to roll back, but a read can still reach past its model - a
+                // save of another one, an export, a new family file - and the
+                // guard has cancelled what it could. The job is refused
+                // either way: an answer from a job that tried to publish is
+                // not the answer that was asked for.
+                var guardedRead = Guarded(threw, ReadOpensNothing);
+                if (guardedRead != null) return guardedRead;
+
                 // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
                 // built around a question nobody answered is not the answer
                 // that was asked for. Ahead of `threw`, because a call the
@@ -755,7 +771,9 @@ namespace Heron.Revit.Addin
                             // this path must never produce. Every other refusal
                             // on this page is free because nothing had run yet;
                             // this one is not, so it pays for itself here.
-                            return HeronRollbackWitness.Told(late, RollBackAndCheck(group, target, watch).Unsaid());
+                            var lateAfter = RollBackAndCheck(group, target, watch);
+                            return Guarded(late, lateAfter.Account())
+                                ?? HeronRollbackWitness.Told(late, lateAfter.Unsaid());
                         }
                     }
 
@@ -789,6 +807,7 @@ namespace Heron.Revit.Addin
                         if (threw != null)
                         {
                             var after = RollBackAndCheck(group, target, watch);
+                            threw = Guarded(threw, after.Held ? after.ModelSentence() : null) ?? threw;
                             return Stopped(name, after)
                                 ?? HeronRollbackWitness.Told(threw, after.Unsaid());
                         }
@@ -819,6 +838,7 @@ namespace Heron.Revit.Addin
                         {
                             SafeRollBack(transaction);
                             var after = RollBackAndCheck(group, target, watch);
+                            threw = Guarded(threw, after.Held ? after.ModelSentence() : null) ?? threw;
                             return Stopped(name, after)
                                 ?? HeronRollbackWitness.Told(threw, after.Unsaid());
                         }
@@ -839,10 +859,26 @@ namespace Heron.Revit.Addin
                         // ran, so the group's rollback is what undoes it.
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
-                            return Json.Error("operation_failed",
+                            var notKept = Json.Error("operation_failed",
                                 RefusedBy("'" + name + "' ran, and Revit would not keep it.",
                                           said, RollBackAndCheck(group, target, watch)));
+                            return Guarded(notKept, null) ?? notKept;
                         }
+                    }
+
+                    // THE LAST LOOK BEFORE ANYTHING IS KEPT: the run guard,
+                    // Revit's dialogs, the modeller, and the switches.
+                    //
+                    // THE RUN GUARD'S RECORD. A save, sync, export or print it
+                    // cancelled, a new document it refused, a change to
+                    // another open model - each means the job did something
+                    // its operation may not, and it is rolled back whatever
+                    // `apply` says. Constitution Article 10. First, because a
+                    // change to another model is the one outcome no rollback
+                    // here can reach, and the modeller must hear it.
+                    if (HeronRunGuard.Policy != null && HeronRunGuard.Policy.Refuses)
+                    {
+                        return Guarded(null, RollBackAndCheck(group, target, watch).Account());
                     }
 
                     // A REVIT DIALOG HERON DECLINED STOPS THE JOB HERE, before
@@ -889,6 +925,17 @@ namespace Heron.Revit.Addin
                         var stopped = Stopped(name, RollBackAndCheck(group, target, watch));
                         if (putBack != null) putBack();
                         return stopped;
+                    }
+
+                    // AND THE SWITCHES, ASKED AGAIN, LAST - after the modeller,
+                    // whose Keep can come minutes later. See WhyNotKept.
+                    var off = apply ? WhyNotKept(name, risk) : null;
+                    if (off != null)
+                    {
+                        var withdrawn = Json.Error("permission_withdrawn",
+                            string.Concat(off, " ", RollBackAndCheck(group, target, watch).Account()));
+                        if (putBack != null) putBack();
+                        return withdrawn;
                     }
 
                     // ASSIMILATE, so the whole group collapses to ONE undo step
@@ -1387,6 +1434,16 @@ namespace Heron.Revit.Addin
         /// not - on a .NET Revit they live in a load context of Heron's own
         /// (row 5b-575), and these Assembly objects are the default context's,
         /// the ones Revit itself runs.
+        ///
+        /// THE ADD-IN ITSELF IS ONE OF THEM, because the stack guard writes
+        /// `global::Heron.Revit.Addin.HeronRunClock.Check();` into every
+        /// script. The globals type does NOT make it visible: the scripting
+        /// API references the globals type's assembly under its own alias, not
+        /// the global one, so without this line every fragment and the warm-up
+        /// failed to compile with CS0400 "The type or namespace name 'Heron'
+        /// could not be found in the global namespace" - FRAGMENT-ISSUES row
+        /// 5b-1000, Revit 2024, 2026-10-17. The guard's test host had always
+        /// added it, which is why its tests passed.
         /// </summary>
         private static object BuildOptions()
         {
@@ -1397,6 +1454,7 @@ namespace Heron.Revit.Addin
                     typeof(Enumerable).Assembly,                // System.Core
                     typeof(Document).Assembly,                  // RevitAPI
                     typeof(UIDocument).Assembly,                // RevitAPIUI
+                    typeof(HeronRunClock).Assembly,             // this add-in - the run clock's check
                 },
                 HeronFragmentImports.Namespaces);
         }
@@ -2130,6 +2188,61 @@ namespace Heron.Revit.Addin
             }
             catch { }
         }
+
+        /// <summary>
+        /// The run guard's refusal, when it has one - null when the job did
+        /// nothing it may not, so the caller's own answer stands.
+        ///
+        /// `fragmentReply` is the answer the job would otherwise have given,
+        /// usually an error: a save the guard cancelled tends to throw under
+        /// the fragment that called it. Its words are quoted, not lost.
+        /// `modelState` is what happened to the model it ran in, said only as
+        /// far as Revit confirmed it - null when the quoted answer already
+        /// says so itself.
+        ///
+        /// TWO CODES, BECAUSE THE NEXT STEP DIFFERS. A change to another open
+        /// model is committed there and no rollback of Heron's reaches it, so
+        /// somebody has to look at that model: `changed_other_model`.
+        /// Everything else the guard refuses left nothing behind in a model
+        /// that Heron did not roll back: `run_guard`.
+        /// </summary>
+        private static string Guarded(string fragmentReply, string modelState)
+        {
+            var policy = HeronRunGuard.Policy;
+            if (policy == null || !policy.Refuses) return null;
+
+            var quoted = fragmentReply == null ? null : Json.ReadString(fragmentReply, "message");
+            var said = policy.Refusal(modelState, quoted);
+            return policy.ChangedOtherModel
+                ? Json.Error("changed_other_model", said)
+                : Json.Error("run_guard", said);
+        }
+
+        /// <summary>
+        /// Why a group that may otherwise be kept is not, when the switches or
+        /// the stop now refuse it - read AGAIN, fresh, just before the keep.
+        /// Null when it may be kept; otherwise the refusal's words, to which
+        /// the caller adds what Revit confirmed about the rollback.
+        ///
+        /// The gate read them before the job started, and that answer is as
+        /// old as the job; a modeller who turns Changes off - or Admin, or
+        /// Publish - while it runs has said not to keep it. Constitution
+        /// Article 13: never cache a permission decision. The decision itself
+        /// is HeronRunPolicy.Withdrawn, proved without Revit; the caller rolls
+        /// the group back through RollBackAndCheck, like every rollback here.
+        /// </summary>
+        private static string WhyNotKept(string name, HeronRisk risk)
+        {
+            var stopped = HeronStop.IsStopped;
+            var why = HeronRunPolicy.Withdrawn(risk, HeronConfig.Load(), stopped);
+            if (why == null) return null;
+            return HeronRunPolicy.WithdrawnRefusal(name, why, stopped && risk >= HeronRisk.Modify, null);
+        }
+
+        /// <summary>The read path's half of what Guarded says about the model.</summary>
+        private const string ReadOpensNothing =
+            "It ran as a read, which opens no transaction of Heron's, so there was nothing of "
+            + "Heron's to roll back in the model it ran in.";
 
         /// <summary>
         /// The modeller's own selection, put back after a rollback - D-60.
