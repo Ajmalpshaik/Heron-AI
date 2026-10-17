@@ -187,3 +187,28 @@ utterances:
   # level, and this card is the PROVEN one that reads a wall's level.
   - which level are these walls on
   - what is the base constraint of these walls
+  # ADDED 2026-10-17, ON THE OWNER'S WORD - "do it the best only", the advised
+  # choices in docs/work-notes/investigations/2026-10-17-plain-questions-
+  # owner-call.md. FRAGMENT-ISSUES 5b-477 and 5b-478 measured these plain
+  # questions and left declaring them on this PROVEN read as his call. ONE
+  # VALUE OFF AN ELEMENT, the judgement above, for ten more: Size, Flow,
+  # Insulation Type, Sheet Number, Drawn By, Name, Voltage, Room Bounding,
+  # Unconnected Height and Top Constraint. Measured reaching AUTO_SIZE_PIPE,
+  # AUTO_SIZE_MEP, SET_MEP_INSULATION, DUPLICATE_SHEETS or CREATE_SHEET,
+  # CREATE_PIPE, SYNC_SPACES_WITH_LINKED_ROOMS, SET_FAMILY_CONNECTOR_ROLES,
+  # SET_LINK_ROOM_BOUNDING, CREATE_WALL and SET_WALL_CONSTRAINTS - all writes.
+  # The flow is here and not on MEASURE_MEP_VELOCITY, which gives a velocity
+  # and needs a limit; the sheet number is here for ONE sheet, where
+  # LIST_SHEETS lists every sheet. All 23 declared that day, measured together
+  # on scratch stores and both backends: no answer on any frozen set became
+  # riskier (brain/retrieval-history.md, 2026-10-17).
+  - what size is this pipe
+  - what is the flow in this duct
+  - what is the insulation on this pipe
+  - what is the sheet number of this sheet
+  - who drew this sheet
+  - what is the name of this room
+  - what is the voltage of this outlet
+  - which walls are room bounding
+  - what is the height of this wall
+  - what is the top constraint of this wall

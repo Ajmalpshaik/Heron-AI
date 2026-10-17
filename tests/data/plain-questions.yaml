@@ -27,8 +27,10 @@
 #   declared     the row declared the sentence on that read (PRs #534, #535)
 #   ranked       the row says that read answers it by ranking, undeclared
 #   owners-call  "a PROVEN read answers it, so declaring there is the
-#                owner's call" - the read is named, and declaring the
-#                sentence on it waits on the owner
+#                owner's call" - the read is named. He ruled on 2026-10-17:
+#                23 of the 24 are declared on their reads; "which elements
+#                are on the wrong workset" is not, because no tool judges
+#                "wrong". `corrections` lists the answers his word changed
 #   no-read      "no read was found that answers it" - no answer is named, and
 #                none may be: the rows forbid declaring a sentence on a read
 #                that does not answer it
@@ -48,6 +50,27 @@ source:
   rows: [477, 478]
   written: "2026-10-14, by the gap-pass session, before any card was read"
   frozen: "2026-10-17"
+
+# {n, was, now, date, said} - one entry per answer the owner's word changed.
+# He was shown the table in docs/work-notes/investigations/2026-10-17-plain-
+# questions-owner-call.md, with these three marked as differing from the row,
+# and chose its advice.
+corrections:
+  - n: 15
+    was: [REPORT_ROOM_SPACE_DATA]
+    now: [FILTER_ELEMENTS_BY_CATEGORY]
+    date: "2026-10-17"
+    said: "do it the best only"
+  - n: 49
+    was: [READ_ELEMENT_PARAMETERS]
+    now: [DESCRIBE_ELEMENTS]
+    date: "2026-10-17"
+    said: "do it the best only"
+  - n: 84
+    was: [REPORT_ROOM_SPACE_DATA]
+    now: [FILTER_ELEMENTS_BY_CATEGORY]
+    date: "2026-10-17"
+    said: "do it the best only"
 
 questions:
   - n: 1
@@ -106,17 +129,15 @@ questions:
   - n: 14
     row: 477
     question: "what is the area of this room"
-  # TWO SOURCES DISAGREE ON #15 AND #84, AND BOTH ARE RECORDED RATHER THAN
-  # SETTLED HERE. Rows 477 and 478 name REPORT_ROOM_SPACE_DATA "the shape of
-  # row 401"; row 401 itself chose FILTER_ELEMENTS_BY_CATEGORY (category Rooms,
-  # a level) because REPORT_ROOM_SPACE_DATA refuses an empty selection. The
-  # answer stays what these rows name until the owner rules - it is on his
-  # table of 2026-10-17 (docs/work-notes/investigations/2026-10-17-plain-
-  # questions-owner-call.md).
+  # TWO SOURCES DISAGREED ON #15 AND #84. Rows 477 and 478 name
+  # REPORT_ROOM_SPACE_DATA "the shape of row 401"; row 401 itself chose
+  # FILTER_ELEMENTS_BY_CATEGORY (category Rooms, a level) because
+  # REPORT_ROOM_SPACE_DATA refuses an empty selection. The owner settled it on
+  # 2026-10-17 for the filter - see `corrections`.
   - n: 15
     row: 477
     question: "how many rooms are on level 1"
-    answer: [REPORT_ROOM_SPACE_DATA]
+    answer: [FILTER_ELEMENTS_BY_CATEGORY]
     named: owners-call
   - n: 16
     row: 477
@@ -246,7 +267,7 @@ questions:
   - n: 49
     row: 477
     question: "what type is this wall"
-    answer: [READ_ELEMENT_PARAMETERS]
+    answer: [DESCRIBE_ELEMENTS]
     named: owners-call
   - n: 50
     row: 477
@@ -371,11 +392,11 @@ questions:
     question: "what is the name of this room"
     answer: [READ_ELEMENT_PARAMETERS]
     named: owners-call
-  # See #15: row 478 and row 401 name different reads for this one too.
+  # See #15: row 478 and row 401 named different reads; settled the same way.
   - n: 84
     row: 478
     question: "which rooms are on level 2"
-    answer: [REPORT_ROOM_SPACE_DATA]
+    answer: [FILTER_ELEMENTS_BY_CATEGORY]
     named: owners-call
   - n: 85
     row: 478
