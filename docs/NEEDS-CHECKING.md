@@ -807,6 +807,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-gc.md`](needs-checking/group-gc.md)
 
+## Group GP - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gp.md`](needs-checking/group-gp.md)
+
 ## Group GW - Heron's own C# compiler on a .NET Revit, whatever another add-in loaded first (2026-10-17)
 
 **Its own file:** [`needs-checking/group-gw.md`](needs-checking/group-gw.md)
