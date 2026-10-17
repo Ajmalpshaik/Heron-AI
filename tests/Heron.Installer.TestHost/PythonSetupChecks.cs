@@ -25,8 +25,9 @@ namespace Heron.Installer.TestHost
     /// WHAT IT CANNOT PROVE: that pip installs anything on Windows, that
     /// heron-ready says READY there, or that the identity test answers the
     /// same inside a real Store-built Claude. ProcessProgramRunner is started
-    /// for real below, on whatever runs this; the Windows half of
-    /// WindowsClaudeAppLook is not. NEEDS-CHECKING Group EP owes both.
+    /// for real below, on whatever runs this; WindowsClaudeAppLook.SameEntry
+    /// is run against real folders and a junction only on Windows, which
+    /// .github/workflows/windows.yml is. NEEDS-CHECKING Group EP owes the rest.
     /// </summary>
     internal static class PythonSetupChecks
     {
@@ -224,6 +225,9 @@ namespace Heron.Installer.TestHost
             check(!pip.Contains("--upgrade") && !pip.Contains("-U"),
                   "and never --upgrade: the versions are the pinned ones, not the newest");
             check(pip.Contains("--no-input"), "--no-input: pip asks nobody a question here");
+            check(pip.Contains("--only-binary=:all:"),
+                  "--only-binary=:all:: a wheel or nothing - no PC builds a package from source, and no " +
+                  "unhashed build tool is fetched (review of #558)");
             var check3 = new List<string>(good.Arguments[3]);
             check(check3.Count == 2 && check3[1] == "--check",
                   "the verdict is heron-ready --check, in a process of its own");
@@ -250,6 +254,22 @@ namespace Heron.Installer.TestHost
             check(Says(alias.Lines[0], "App execution aliases", "winget"),
                   "and it says that `python` is the Store shortcut, with both ways out");
 
+            // A PYTHON THAT STARTED IS NOT A MISSING ONE - review of #558.
+            var broken = new ScriptedRunner(delegate (string kind)
+            {
+                return Exit(1, "Fatal Python error: init_fs_encoding: failed to get the Python codec\n");
+            });
+            var brokenSaid = new PythonSetup(root, broken).Run().Lines[0];
+            check(Says(brokenSaid, "started but did not say", "exit 1", "Fatal Python error") &&
+                  !Says(brokenSaid, "winget"),
+                  "a Python that starts and fails is told so, with its own words - not told to install Python");
+            var hung = new ScriptedRunner(delegate (string kind)
+            {
+                return new ProgramRun { Started = true, ExitCode = -1, TimedOut = true };
+            });
+            check(Says(new PythonSetup(root, hung).Run().Lines[0], "did not answer within"),
+                  "and one stopped at its ceiling says that, not that Python is missing");
+
             Console.WriteLine();
             Console.WriteLine("TOO OLD A PYTHON IS REFUSED BY NAME, BEFORE PIP FAILS ON IT");
             var old = new ScriptedRunner(delegate (string kind) { return Ok("HERON-PYTHON 3.10.11 C:\\Python310\\python.exe"); });
@@ -259,6 +279,14 @@ namespace Heron.Installer.TestHost
                   "the sentence names the Python found and the oldest that works");
             var two = new ScriptedRunner(delegate (string kind) { return Ok("HERON-PYTHON 2.7.18 C:\\Python27\\python.exe"); });
             check(!new PythonSetup(root, two).Run().Ready && two.Kinds.Count == 1, "and a Python 2 is refused too");
+            var newer = new ScriptedRunner(delegate (string kind) { return Ok("HERON-PYTHON 3.15.0 C:\\Python315\\python.exe"); });
+            var tooNew = new PythonSetup(root, newer).Run();
+            check(newer.Kinds.Count == 1 && !tooNew.Ready,
+                  "a Python NEWER than the lock was measured on is refused before pip too - review of #558");
+            check(Says(tooNew.Lines[0], "3.15.0", "3." + PythonSetup.OldestMinor, "3." + PythonSetup.NewestMinor),
+                  "naming the Python found and the measured range");
+            check(PythonSetup.NewestMinor == 14,
+                  "the newest is 3.14 - the last Python the lock's wheels were downloaded for");
             var banner = new ScriptedRunner(delegate (string kind)
             {
                 return kind == "probe" ? Ok("Welcome to the site Python 3.9\n" + Python312) : AllGood(kind);
@@ -278,8 +306,47 @@ namespace Heron.Installer.TestHost
             check(string.Join(",", hashes.Kinds.ToArray()) == "probe,pip",
                   "nothing after pip runs - a failure further down would only hide this one");
             check(!bad.Ready && !bad.Steps[1].Succeeded, "not ready, and the packages step failed");
-            check(Says(bad.Lines[1], "DO NOT MATCH THE HASHES", "internet"),
-                  "pip's own last line is carried, and the person is told what to try");
+            check(Says(bad.Lines[1], "DO NOT MATCH THE HASHES", "not the one Heron pinned"),
+                  "pip's own error line is carried, and the advice fits a hash that did not match");
+            // REAL pip ends a hash failure with the hashes, not the headline -
+            // the fake above ended on the headline and hid that (review of #558).
+            var realHash = new ScriptedRunner(delegate (string kind)
+            {
+                return kind == "pip"
+                    ? Exit(1, "ERROR: THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE. If you " +
+                              "have updated the package versions, please update the hashes.\n" +
+                              "    mcp==2.2.0 from https://files.pythonhosted.org/mcp-2.2.0-py3-none-any.whl:\n" +
+                              "        Expected sha256 1111\n" +
+                              "             Got        5f3e\n")
+                    : AllGood(kind);
+            });
+            var realSaid = new PythonSetup(root, realHash).Run().Lines[1];
+            check(Says(realSaid, "DO NOT MATCH THE HASHES") && !Says(realSaid, "pip stopped: Got"),
+                  "the ERROR: line is carried, not the last detail line under it");
+            var offline = new ScriptedRunner(delegate (string kind)
+            {
+                return kind == "pip"
+                    ? Exit(1, "WARNING: Retrying ... NewConnectionError ...\nERROR: Could not find a version that " +
+                              "satisfies the requirement mcp==2.2.0\nERROR: No matching distribution found for mcp==2.2.0\n")
+                    : AllGood(kind);
+            });
+            check(Says(new PythonSetup(root, offline).Run().Lines[1], "internet", "proxy"),
+                  "a pip that could not reach the files is told to check the internet and the proxy");
+            var venv = new ScriptedRunner(delegate (string kind)
+            {
+                return kind == "pip"
+                    ? Exit(1, "ERROR: Can not perform a '--user' install. User site-packages are not visible in this virtualenv.\n")
+                    : AllGood(kind);
+            });
+            var venvSaid = new PythonSetup(root, venv).Run().Lines[1];
+            check(Says(venvSaid, "virtual environment") && !Says(venvSaid, "internet"),
+                  "a Python inside a virtual environment is told that, not to check the internet");
+            var other = new ScriptedRunner(delegate (string kind)
+            {
+                return kind == "pip" ? Exit(2, "ERROR: Exception: something pip did not expect\n") : AllGood(kind);
+            });
+            check(Says(new PythonSetup(root, other).Run().Lines[1], "fixing what pip says", "log"),
+                  "anything else is sent to pip's own words and the log");
             check(Says(bad.Lines[1], "Revit add-in"),
                   "and told the add-in does not depend on it, so they do not reinstall it");
             var slow = new ScriptedRunner(delegate (string kind)
@@ -310,6 +377,21 @@ namespace Heron.Installer.TestHost
             check(string.Join(",", warmBroke.Kinds.ToArray()) == "probe,pip,warm,check" && stillChecked.Ready,
                   "the build step is not the verdict - the check still runs and decides");
 
+            // WHAT THE BUILD STEP SAYS FOLLOWS WHAT IT ANSWERED - review of #558.
+            Func<int, string> warmSays = delegate (int code)
+            {
+                var r = new ScriptedRunner(delegate (string kind)
+                {
+                    return kind == "warm" ? Exit(code, "Traceback (most recent call last):\nKeyError: 'x'\n") : AllGood(kind);
+                });
+                return new PythonSetup(root, r).Run().Lines[2];
+            };
+            check(Says(warmSays(0), "built"), "exit 0 says the store was built");
+            check(Says(warmSays(1), "listed something to fix") && !Says(warmSays(1), "heron-ready built"),
+                  "exit 1 says it listed something to fix - never that it built");
+            check(Says(warmSays(2), "stopped unexpectedly", "exit 2", "KeyError") && !Says(warmSays(2), "heron-ready built"),
+                  "a crash says so, with its own last line - never that it built");
+
             Console.WriteLine();
             Console.WriteLine("THE LOG IS WRITTEN, AND A LOG THAT CANNOT BE IS A SENTENCE, NOT A CRASH");
             var logPath = Path.Combine(root, "logs", "python-setup.log");
@@ -322,6 +404,19 @@ namespace Heron.Installer.TestHost
                   "a path under a FILE answers a sentence rather than throwing");
             check(Says(PythonSetup.LogPath(), "Heron", "python-setup.log"),
                   "the default log goes under the user's own temp, in a Heron folder");
+
+            // ONE METHOD FOR BOTH DOORS - review of #558.
+            var savedPath = Path.Combine(root, "logs", "both-doors.log");
+            var shownReady = new PythonSetup(root, new ScriptedRunner(AllGood)).RunAndSave(savedPath);
+            check(File.Exists(savedPath), "RunAndSave writes the log");
+            check(shownReady.Ready && shownReady.Shown.Count == shownReady.Lines.Count,
+                  "READY shows the steps' lines and nothing more");
+            var shownNot = new PythonSetup(root, notReady).RunAndSave(savedPath);
+            check(!shownNot.Ready && shownNot.Shown.Count == shownNot.Lines.Count + 1 &&
+                  Says(shownNot.Shown[shownNot.Shown.Count - 1], savedPath),
+                  "not READY adds one line: where the log is");
+            check(new PythonSetup(root, new ScriptedRunner(AllGood)).Run().Shown.Count == 0,
+                  "and a bare Run() shows nothing of its own - only RunAndSave fills it");
 
             Console.WriteLine();
             Console.WriteLine("IT RUNS ONLY WHEN A PRODUCT THAT TALKS TO A CHAT WENT IN - R-3, Q-PE-2");
@@ -348,7 +443,7 @@ namespace Heron.Installer.TestHost
             Console.WriteLine();
             Console.WriteLine("IT IS ASKED BEFORE IT IS DONE - Q-39");
             check(Says(PythonSetup.WhatInstallAlsoDoes, "pinned", "no administrator", "heron-ready",
-                        "3." + PythonSetup.OldestMinor, "internet"),
+                        "3." + PythonSetup.OldestMinor, "3." + PythonSetup.NewestMinor, "internet"),
                   "the sentence shown before Install names what it installs, without admin, the check, " +
                   "the Python it needs and the internet");
 
@@ -393,6 +488,51 @@ namespace Heron.Installer.TestHost
             if (!OperatingSystem.IsWindows())
                 check(windowsLook.SameEntry(root, root) == null,
                       "off Windows the identity test answers cannot tell, which reads as outside");
+            else
+                SameEntryOnWindows(real, windowsLook, root, check);
+        }
+
+        /// <summary>
+        /// WindowsClaudeAppLook.SameEntry against real folders, on Windows only -
+        /// it asks Windows for each path's volume and file index, and nothing
+        /// else answers that.
+        ///
+        /// THE JUNCTION IS tests/test_heron_ready.py section 5's trick: a folder
+        /// that opens as another, the merged view a packaged app's child sees,
+        /// made with no administrator. `mklink /J` makes the same kind of link
+        /// _winapi.CreateJunction makes there. Run on every change to the
+        /// installer by .github/workflows/windows.yml. What it still cannot show
+        /// is the answer from inside a real Store-built Claude - Group EP4, EP5.
+        /// </summary>
+        private static void SameEntryOnWindows(IProgramRunner runner, WindowsClaudeAppLook look,
+                                               string root, Action<bool, string> check)
+        {
+            var target = Path.Combine(root, "same-target");
+            var other = Path.Combine(root, "same-other");
+            var junction = Path.Combine(root, "same-junction");
+            Directory.CreateDirectory(target);
+            Directory.CreateDirectory(other);
+
+            // NOT A SKIP WHEN IT CANNOT BE MADE. A junction needs no right a
+            // user lacks, so failing to make one is a finding, and the true
+            // case would otherwise go unchecked while the run stayed green.
+            var made = runner.Run("cmd.exe", new[] { "/c", "mklink", "/J", junction, target }, root, 30);
+            try
+            {
+                check(made.Started && made.ExitCode == 0 && Directory.Exists(junction),
+                      "a junction is made here with no administrator: " + (made.Output ?? "").Trim());
+                check(look.SameEntry(junction, target) == true,
+                      "a folder and a junction to it are ONE thing on disk - true");
+                check(look.SameEntry(other, target) == false,
+                      "two different folders are two - false");
+                check(look.SameEntry(Path.Combine(root, "same-missing"), target) == null,
+                      "a path that is not there cannot tell - null, which reads as outside");
+            }
+            finally
+            {
+                // The link alone, never what it points at.
+                if (Directory.Exists(junction)) Directory.Delete(junction);
+            }
         }
     }
 }

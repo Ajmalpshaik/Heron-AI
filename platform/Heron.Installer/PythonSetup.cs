@@ -62,6 +62,13 @@ namespace Heron.Installer
     {
         internal readonly List<PythonStep> _steps = new List<PythonStep>();
         internal readonly StringBuilder _log = new StringBuilder();
+        internal readonly List<string> _show = new List<string>();
+
+        /// <summary>
+        /// What a door prints after RunAndSave: the steps' lines, and where the
+        /// log is when it did not say READY. Empty after a bare Run().
+        /// </summary>
+        public IReadOnlyList<string> Shown { get { return _show; } }
 
         public IReadOnlyList<PythonStep> Steps { get { return _steps; } }
 
@@ -170,6 +177,15 @@ namespace Heron.Installer
         /// </summary>
         public const int OldestMinor = 11;
 
+        /// <summary>
+        /// Python 3.14 is the newest the lock was measured on: every pinned
+        /// package arrived as a Windows wheel for 3.11 to 3.14, and for a newer
+        /// Python some would not. With --only-binary pip would refuse those
+        /// anyway; refusing here first says why in Heron's words rather than
+        /// pip's. Raise it with the lock, never alone (review of #558).
+        /// </summary>
+        public const int NewestMinor = 14;
+
         /// <summary>What a run with no Python, or too old a one, is told to do.</summary>
         public const string InstallPython = "winget install Python.Python.3.12 --scope user";
 
@@ -198,7 +214,7 @@ namespace Heron.Installer
             "Heron's Python side for your Windows user: it installs Heron's Python " +
             "packages at pinned versions (no administrator rights), builds Heron's " +
             "knowledge store, and checks the whole set-up with heron-ready. It needs " +
-            "Python 3." + OldestMinor + " or later, and the internet once for the packages.";
+            "Python 3." + OldestMinor + " to 3." + NewestMinor + ", and the internet once for the packages.";
 
         private readonly string _root;
         private readonly IProgramRunner _runner;
@@ -265,6 +281,23 @@ namespace Heron.Installer
         }
 
         /// <summary>
+        /// Run, write the log, and hand back what a person should read - the
+        /// steps' own lines, and where the log is when it did not say READY.
+        ///
+        /// ONE METHOD FOR BOTH DOORS. The window and heron-install wired these
+        /// four lines each until the review of #558 found two copies of one
+        /// rule outside everything that tests it.
+        /// </summary>
+        public PythonSetupReport RunAndSave(string logPath)
+        {
+            var report = Run();
+            var saved = report.Save(logPath);
+            report._show.AddRange(report.Lines);
+            if (!report.Ready) report._show.Add(saved);
+            return report;
+        }
+
+        /// <summary>
         /// Why this folder cannot set up Heron's Python side, or null when it can.
         ///
         /// Two file names, answered before anything is run. A Heron folder
@@ -287,6 +320,10 @@ namespace Heron.Installer
         ///
         ///   --user              this Windows user only, no administrator - Q-39
         ///   --require-hashes    a file that is not the one resolved is refused
+        ///   --only-binary=:all: a wheel or nothing. The lock lists source
+        ///                       archives too, and building one needs a
+        ///                       compiler a modeller has not got - and fetches
+        ///                       build tools no hash checks (review of #558)
         ///   --no-input          a question pip asks nobody can answer here
         ///   --disable-pip-version-check, --no-warn-script-location
         ///                       two warnings a modeller cannot act on, which
@@ -299,6 +336,7 @@ namespace Heron.Installer
                 "-m", "pip", "install",
                 "--user",
                 "--require-hashes",
+                "--only-binary=:all:",
                 "--no-input",
                 "--disable-pip-version-check",
                 "--no-warn-script-location",
@@ -313,8 +351,10 @@ namespace Heron.Installer
 
         /// <summary>
         /// Find Python, install the packages, build what a first chat would
-        /// build, then check. Each step runs only when the one before it
-        /// worked, because a failure further down would only hide the first.
+        /// build, then check. Finding Python and installing the packages each
+        /// stop the run when they fail, because a failure further down would
+        /// only hide the first. The build never stops it: the check is the
+        /// verdict, and it runs whatever the build did.
         /// </summary>
         public PythonSetupReport Run()
         {
@@ -355,24 +395,38 @@ namespace Heron.Installer
                 // Store when no Python is installed; it starts, prints a line
                 // about the Store, and exits 9009. Told apart from "nothing
                 // found at all" because the fix has one more step in it.
-                var sentence = run.Started && run.ExitCode == 9009
-                    ? "`python` on this PC is Windows' shortcut to the Microsoft Store, not a Python. " +
-                      "Install Python for your user (" + InstallPython + "), or turn the shortcut off " +
-                      "in Settings > Apps > Advanced app settings > App execution aliases, then run " +
-                      "the installer again."
-                    : "No Python answered to the plain command `python`, which is the one Claude Code " +
-                      "starts Heron with. Install Python for your user (" + InstallPython + "), open a " +
-                      "new window, and run the installer again.";
+                //
+                // AND A PYTHON THAT STARTED IS NOT A MISSING ONE - review of
+                // #558. Told to install Python with winget, the owner of a
+                // Python with a broken set-up would install a second one.
+                string sentence;
+                if (!run.Started)
+                    sentence = "No Python answered to the plain command `python`, which is the one Claude Code " +
+                               "starts Heron with. Install Python for your user (" + InstallPython + "), open a " +
+                               "new window, and run the installer again.";
+                else if (run.ExitCode == 9009)
+                    sentence = "`python` on this PC is Windows' shortcut to the Microsoft Store, not a Python. " +
+                               "Install Python for your user (" + InstallPython + "), or turn the shortcut off " +
+                               "in Settings > Apps > Advanced app settings > App execution aliases, then run " +
+                               "the installer again.";
+                else if (run.TimedOut)
+                    sentence = "`python` did not answer within " + AskSeconds + " seconds. Run python --version " +
+                               "in a new window to see what it does, then run the installer again.";
+                else
+                    sentence = "`python` started but did not say which Python it is (exit " + run.ExitCode +
+                               "): " + LastMeaningfulLine(run.Output) + ". Run python --version in a new " +
+                               "window to see what is wrong with it, then run the installer again.";
                 Add(report, "python", false, "Heron's Python side was not set up. " + sentence);
                 return false;
             }
 
-            if (major != 3 || minor < OldestMinor)
+            if (major != 3 || minor < OldestMinor || minor > NewestMinor)
             {
                 Add(report, "python", false,
                     "Heron's Python side was not set up: `python` is Python " + version + " (" + where +
-                    "), and Heron's packages need Python 3." + OldestMinor + " or later. Install a newer " +
-                    "one for your user (" + InstallPython + ") and run the installer again.");
+                    "), and Heron's packages are measured on Python 3." + OldestMinor + " to 3." + NewestMinor +
+                    ". Install Python 3.12 for your user (" + InstallPython + "), make it the one `python` " +
+                    "starts, and run the installer again.");
                 return false;
             }
 
@@ -392,17 +446,19 @@ namespace Heron.Installer
                 return true;
             }
 
-            // PIP'S OWN LAST LINE, because it names the package and the cause
+            // PIP'S OWN ERROR LINE, because it names the package and the cause
             // - a file it could not reach, a hash that did not match - and a
-            // sentence of Heron's own could only guess at which.
+            // sentence of Heron's own could only guess at which. Its LAST line
+            // is usually a detail under it ("Got 5f3e...") or a hint, so the
+            // last line starting ERROR: is taken first (review of #558).
             var said = run.TimedOut
                 ? "pip did not finish in " + (PipSeconds / 60) + " minutes."
                 : !run.Started
                     ? "pip could not be started."
-                    : "pip stopped: " + LastMeaningfulLine(run.Output);
+                    : "pip stopped: " + PipCause(run.Output);
             Add(report, "packages", false,
-                "Heron's Python packages were not installed. " + said + " Check the internet " +
-                "connection and run the installer again; nothing about the Revit add-in depends on this.");
+                "Heron's Python packages were not installed. " + said + " " + PipAdvice(run) +
+                " Nothing about the Revit add-in depends on this.");
             return false;
         }
 
@@ -411,16 +467,26 @@ namespace Heron.Installer
             Say("Building Heron's knowledge store - the first time takes the longest");
             var run = Do(report, Command, new[] { ReadyScript(_root) }, WarmSeconds);
 
-            // NOT A VERDICT. heron-ready exits 1 for anything it would fix,
-            // including what only the next check settles; the check below
-            // decides. What is said here is that the building was done.
-            Add(report, "warm", run.Started && !run.TimedOut,
-                run.TimedOut
-                    ? "Building Heron's knowledge store did not finish in " + (WarmSeconds / 60) +
-                      " minutes. A chat will finish it the first time it starts."
-                    : !run.Started
-                        ? "heron-ready could not be started to build Heron's knowledge store."
-                        : "heron-ready built what a first chat would otherwise build while you wait.");
+            // NOT A VERDICT - the check below decides. But what is SAID follows
+            // what it answered: until the review of #558 this said "built" for
+            // a run that crashed, or that left the store alone. heron-ready
+            // exits 0 when everything is here and built, 1 when it listed
+            // something to fix, and anything else is a stop it did not plan.
+            string said;
+            if (run.TimedOut)
+                said = "Building Heron's knowledge store did not finish in " + (WarmSeconds / 60) +
+                       " minutes. A chat will finish it the first time it starts.";
+            else if (!run.Started)
+                said = "heron-ready could not be started to build Heron's knowledge store.";
+            else if (run.ExitCode == 0)
+                said = "heron-ready built what a first chat would otherwise build while you wait.";
+            else if (run.ExitCode == 1)
+                said = "heron-ready ran to build Heron's knowledge store and listed something to fix - " +
+                       "the check below says what.";
+            else
+                said = "heron-ready stopped unexpectedly (exit " + run.ExitCode + ") while building Heron's " +
+                       "knowledge store: " + LastMeaningfulLine(run.Output);
+            Add(report, "warm", run.Started && !run.TimedOut && run.ExitCode == 0, said);
         }
 
         private void Check(PythonSetupReport report)
@@ -506,12 +572,51 @@ namespace Heron.Installer
             return "it printed nothing";
         }
 
+        /// <summary>
+        /// pip's own cause: the last line that starts ERROR:, else its last
+        /// line that says anything.
+        /// </summary>
+        internal static string PipCause(string output)
+        {
+            var lines = (output ?? "").Split('\n');
+            for (var i = lines.Length - 1; i >= 0; i--)
+            {
+                var line = lines[i].Trim();
+                if (line.StartsWith("ERROR:", StringComparison.Ordinal))
+                    return line.Length <= 300 ? line : line.Substring(0, 297) + "...";
+            }
+            return LastMeaningfulLine(output);
+        }
+
+        /// <summary>
+        /// What to try, matched to what pip said. "Check the internet" was the
+        /// only advice until the review of #558, and it is wrong for a hash that
+        /// did not match and for a Python inside a virtual environment.
+        /// </summary>
+        internal static string PipAdvice(ProgramRun run)
+        {
+            var text = (run == null ? "" : run.Output ?? "");
+            if (text.IndexOf("User site-packages are not visible", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "`python` is inside a virtual environment, where --user installs nothing. Start the " +
+                       "installer from a window with no environment active, then run it again.";
+            if (text.IndexOf("DO NOT MATCH THE HASHES", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "A downloaded file is not the one Heron pinned, so nothing was installed. Try again " +
+                       "later; if it says the same, report it - do not install the package another way.";
+            foreach (var sign in new[] { "Could not fetch", "NewConnectionError", "Max retries", "ProxyError",
+                                         "SSLError", "Temporary failure in name resolution", "timed out",
+                                         "No matching distribution" })
+                if (text.IndexOf(sign, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "pip could not reach the files. Check the internet connection - a company proxy " +
+                           "may need to allow pypi.org and files.pythonhosted.org - and run the installer again.";
+            return "Run the installer again after fixing what pip says; the log has its whole output.";
+        }
+
         // ------------------------------------------------------------ small
 
         private ProgramRun Do(PythonSetupReport report, string program,
                               IReadOnlyList<string> arguments, int seconds)
         {
-            report._log.AppendLine("> " + program + " " + string.Join(" ", ToArray(arguments)));
+            report._log.AppendLine("> " + program + " " + string.Join(" ", arguments));
             var run = _runner.Run(program, arguments, _root, seconds) ?? new ProgramRun();
             report._log.AppendLine(run.Output ?? "");
             report._log.AppendLine("(" + (!run.Started ? "not started"
@@ -519,13 +624,6 @@ namespace Heron.Installer
                                           : "exit " + run.ExitCode) + ")");
             report._log.AppendLine();
             return run;
-        }
-
-        private static string[] ToArray(IReadOnlyList<string> list)
-        {
-            var array = new string[list.Count];
-            for (var i = 0; i < list.Count; i++) array[i] = list[i];
-            return array;
         }
 
         private static void Add(PythonSetupReport report, string name, bool succeeded, string said)

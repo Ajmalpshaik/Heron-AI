@@ -641,6 +641,90 @@ def main():
             check(got is not None and "FIXED-SIZE FAMILY" in got["purpose"],
                   "and the family method it names carries the fixed-size path")
 
+            # THE OWNER'S SWAP ASKS (row 5b-740). Both named the family
+            # CREATION methods - "build a new family" - beside a request to
+            # replace one, or nothing at all. The capabilities are the ones
+            # the lookup returned for these words on 2026-10-17, the first on
+            # the built-in search and the second on the trained one; only the
+            # skills decide here.
+            jobs_now = SKILL.load_all()[0].values()
+            swap = SKILL.methods_for(
+                jobs_now, "swap this family for that one keeping their data",
+                ["REPLACE_MATERIAL", "SET_SHEET_TITLE_BLOCK",
+                 "ADD_FAMILY_TYPE_PARAMETER", "CHANGE_ELEMENT_TYPE",
+                 "REPORT_SHEET_TITLE_BLOCKS"])
+            check([s.id for s in swap][:1] == ["replace-in-place-family"],
+                  "\"swap this family for that one keeping their data\" names "
+                  "the replace method first - %s" % [s.id for s in swap])
+            openings = SKILL.methods_for(
+                jobs_now,
+                "replace these openings with the TRG family at the same place",
+                ["SELECT_OPENINGS", "COPY_TAGS_TO_REPLACEMENTS",
+                 "AUDIT_MEP_OPENINGS", "SET_SHEET_TITLE_BLOCK",
+                 "SET_VIEW_FILTER_CATEGORIES"])
+            check([s.id for s in openings][:1] == ["replace-in-place-family"],
+                  "\"replace these openings with the TRG family at the same "
+                  "place\" names the replace method first - %s"
+                  % [s.id for s in openings])
+            # And it is named beside nothing that replaces nothing: a hosted
+            # placement is kept out of its needs, and no utterance of it says
+            # "this", which the word splitter keeps as "thi" (row 5b-741).
+            for request, caps in (
+                    ("place windows in this wall", ["PLACE_HOSTED_FAMILY"]),
+                    ("who owns this element",
+                     ["REPORT_ELEMENT_OWNERSHIP", "READ_ELEMENT_OWNERSHIP",
+                      "SELECT_BY_WORKSET", "SET_ELEMENT_WORKSET"])):
+                named = [s.id for s in SKILL.methods_for(jobs_now, request, caps)]
+                check("replace-in-place-family" not in named,
+                      "%r does not name the replace method - %s"
+                      % (request, named))
+
+            # THE BUILDERS WORK LAYOUT, 2026-10-17 (row 5b-650). Before
+            # CREATE_LINEAR_DIMENSION said "builders work", neither of the
+            # owner's two sentences reached a capability any method needs -
+            # words alone found curtain walls and worksets - so nothing named
+            # the method. The capabilities are the ones the live lookup
+            # returned for these words on the spelling backend after that
+            # card's sentence was added; only the skills decide here.
+            for said, returned in (
+                    ("set up the builders work layout",
+                     ["RENAME_WORKSET", "CREATE_LINEAR_DIMENSION",
+                      "SET_CURTAIN_WALL_GRID", "REPORT_COVERAGE",
+                      "REPORT_SPRINKLER_LAYOUT_SPACES"]),
+                    ("do the builders work for this layout",
+                     ["REPORT_CURTAIN_WALL_TYPE", "COPY_FROM_LINK",
+                      "CREATE_LINEAR_DIMENSION", "MIRROR_ELEMENTS",
+                      "SET_CURTAIN_WALL_GRID"])):
+                picked = [s.id for s in SKILL.methods_for(
+                    SKILL.load_all()[0].values(), said, returned)]
+                check(picked[:1] == ["builders-work-layout"],
+                      "\"%s\" names the builders work method first beside "
+                      "the capabilities it reached - %s" % (said, picked))
+                offered = [m["id"] for m in
+                           BRAIN.lookup(said).get("methods") or []]
+                check(offered[:1] == ["builders-work-layout"],
+                      "and the live lookup names it first too - %s" % offered)
+
+            layout = BRAIN.method("builders-work-layout")
+            # Read as words: a step's own lines keep their breaks in the YAML.
+            steps = " ".join((layout or {}).get("purpose", "").split())
+            check(layout is not None and all(
+                      gap in steps for gap in (
+                          "GAP - KEEP A FACE",
+                          "GAP - A TAG ON AN OPENING INSIDE A LINK")),
+                  "the builders work method names its two gaps, so a chat "
+                  "says so at that step instead of working round one")
+            # Its third gap, replacing a family at the same place, is the
+            # replace method since row 5b-740 - so step 4 sends a chat there.
+            check(layout is not None
+                  and "GAP - REPLACE A FAMILY" not in steps
+                  and "replace-in-place-family (heron_method)" in steps
+                  and BRAIN.method("replace-in-place-family") is not None,
+                  "and its step 4 names the replace method, which is served")
+            check(layout is not None and "SYNC_WITH_CENTRAL" not in
+                  [u["capability"] for u in layout["uses"]],
+                  "and never syncs - it asks the modeller to")
+
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to
         # do nothing" and "Heron cannot read what it knows" send a user in
