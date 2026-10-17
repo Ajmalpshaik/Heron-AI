@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-031
-semantic-identity: "what categories does this model actually have, and how each one draws in Object Styles"
+semantic-identity: "what categories does this model actually have, and the object style of each one - how it draws in Object Styles"
 kind: filter
 domain: revit.document
 capability: LIST_CATEGORIES
@@ -19,7 +19,18 @@ capability: LIST_CATEGORIES
 # category's own graphics before this, so "what colour is the signature
 # subcategory" was answered by a WRITE - the routing outcome D-86 does not
 # leave to judgement.
-version: 2
+# Version 3 (2026-10-17, FRAGMENT-ISSUES 5b-630): an optional `categories`
+# names the rows to report - "Generic Annotations", "Generic Annotations >
+# Signature", several with commas, capitals and extra spaces forgiven - and a
+# new count, `styleRows`, says how many rows came back. Left out it is "all",
+# version 2's answer exactly. A name the document has not got is answered with
+# the nearest names it has, and no table. Asking for one subcategory's colour
+# printed all 303 Object Styles rows of a family, twice in one chat. The
+# identity gained "the object style of each one": the re-ranker reads only
+# identity, capability and domain, and without those words "show the object
+# style of Generic Annotations" reached TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS,
+# a write, on both re-ranked backends (measured in row 5b-630).
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -55,14 +66,31 @@ risk: READ
 # list as its first three items, each cut to sixty characters, and a string
 # whole (RevitFragment.Describe), so the rows travel as text.
 #
-# NARROWED BY ONE SWITCH, NOT BY NAME. In a family the family's own category
+# LEFT OUT, NARROWED BY ONE SWITCH. In a family the family's own category
 # (doc.OwnerFamily.FamilyCategory) and every subcategory of it come first; every
 # other category follows as its own row, sorted by name, and its subcategories
 # only with `everySubcategory` - a project has hundreds, and a reply would carry
-# every one. A category or subcategory NAME to narrow to would be a string, and
-# the add-in binds an absent value only for an optional bool
-# (HeronBindingNote.AbsentValue, row 5b-227), so a name would have been a new
-# required input for every caller of version 1. Recorded in row 5b-464.
+# every one.
+#
+# NARROWED BY NAME (version 3). Row 5b-464 left this out because the add-in
+# then bound an absent value only for an optional bool. Since row 5b-488 a
+# need marked `optional: true` with `absent: <text>` is read, when left out,
+# as if that text had been typed (HeronBindingNote.DeclaredAbsent) - so
+# `categories` is a string with `absent: all`, and no caller of version 2 has
+# to send it. A category named alone is its own row and every subcategory of
+# it; "category > subcategory" is that one row; a bare name no category has is
+# every subcategory of that name, under whichever categories have one. Rows
+# come in the order asked, each once. `everySubcategory` does nothing to a
+# narrowed answer, and the first line says so when it is set.
+#
+# A NAME IT HAS NOT GOT IS ANSWERED WITH THE NEAREST NAMES, NEVER AN EMPTY
+# TABLE. A column line over no rows reads as "nothing there"; what is true is
+# "not by that name". With nothing matched, objectStyles is one line - what was
+# asked and up to five nearest names each, nearest by spelling, a name holding
+# the words first - and styleRows is 0. A category found but not its
+# subcategory is answered with that category's own subcategories; an internal
+# category is named as internal. A comma splits names, so a subcategory whose
+# own name holds a comma cannot be asked for by name.
 #
 # AN INTERNAL CATEGORY HAS NO ROW. Object Styles shows model, annotation and
 # analytical categories; an internal one is counted in the first line and left
@@ -88,6 +116,16 @@ contract:
       type: bool
       source: request
       optional: true
+    # VERSION 3. The categories and subcategories to report, comma separated -
+    # "Generic Annotations", "Generic Annotations > Signature". Capitals and
+    # extra spaces are forgiven. Left out it is "all" (`absent: all`,
+    # HeronBindingNote.DeclaredAbsent): every row, version 2's answer exactly;
+    # an empty value is the same.
+    - name: categories
+      type: string
+      source: request
+      optional: true
+      absent: all
   provides:
     - name: names
       role: result
@@ -112,6 +150,12 @@ contract:
       # a family whose category has none: that is the proof's negative leg.
       role: result
       type: int
+    - name: styleRows
+      # VERSION 3. How many Object Styles rows objectStyles carries - 1 for one
+      # subcategory asked by name, 0 when nothing asked is in the document. A
+      # thing it FOUND, so a result.
+      role: result
+      type: int
     - name: findings
       type: IList<string>
 
@@ -130,6 +174,8 @@ compatibility-note: >
   `Document.OwnerFamily` and `Family.FamilyCategory` - read off tools/api-surface
   for all eight releases on 2026-10-14, each 2020-2027 with one signature; the
   same members CREATE_LINE_STYLE and SET_FAMILY_FORM_SUBCATEGORY already call.
+  Version 3 adds no Revit member: narrowing by name and the nearest names are
+  string work on the names version 2 already reads.
 
 # ROUTING - repeated in SELECT_BY_CATEGORY_NAME and REPORT_FILTERABLE_PARAMETERS;
 # the object-style rows in CREATE_LINE_STYLE, SET_FAMILY_FORM_SUBCATEGORY and
@@ -139,6 +185,16 @@ compatibility-note: >
 #   "what colour is the signature subcategory" -> here - its Object Styles row
 #   "what line weight is the hidden lines subcategory" -> here
 #   "list the object styles in this family" -> here
+#   "what colour is the Signature subcategory" -> here, categories
+#                                          "Generic Annotations > Signature" -
+#                                          one row, not the whole table
+#   "show the object style of Generic Annotations" -> here, categories "Generic
+#                                          Annotations" - on the trained model and
+#                                          both re-ranked backends; on the lexical
+#                                          backend alone it still reaches
+#                                          REMAP_LINE_STYLES, a write, as on main.
+#                                          Declaring it moved another question onto
+#                                          a write (row 5b-630)
 #   "what colour are the lines in this family" -> here
 #   "everything in duct accessories"    -> SELECT_BY_CATEGORY_NAME - and this
 #                                          fragment is what tells you the name
