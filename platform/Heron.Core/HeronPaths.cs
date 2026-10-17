@@ -94,6 +94,15 @@ namespace Heron.Core
         /// </summary>
         public static string Companion { get { return Ensure(Path.Combine(Derived, "companion")); } }
 
+        /// <summary>
+        /// DERIVED - where capture_view puts a view's picture for the moment
+        /// it takes to read it back (D-116). Each capture writes into its own
+        /// folder here and deletes it before it answers; the picture travels
+        /// to the chat inside the reply, never as a path. Anything left here
+        /// is a capture Revit did not finish, and is safe to delete.
+        /// </summary>
+        public static string Captures { get { return Ensure(Path.Combine(Derived, "captures")); } }
+
         /// <summary>DERIVED - logs. Verbose, rotated, disposable.</summary>
         public static string Logs { get { return Ensure(Path.Combine(Derived, "logs")); } }
 

@@ -485,6 +485,13 @@ namespace Heron.Revit.Addin
                 case "move_elements":
                     return "Moving elements";
 
+                // THE READING COLOUR, AND THE WORDS SAY WHY. Given element ids
+                // it makes a 3D view somebody watching may glimpse in the
+                // Project Browser, and the group around it is always undone
+                // (D-116) - so the card says a picture, never a change.
+                case "capture_view":
+                    return "Taking a picture of a view for the chat";
+
                 case "run_fragment_read":
                     var name = Clean(Json.ReadString(request, "name"));
                     return name.Length == 0 ? "Running a job" : "Running a job: " + name;
@@ -577,6 +584,9 @@ namespace Heron.Revit.Addin
                 case "document_not_in_front": return "That model is not open here";
                 case "read_only":       return "That model is read-only";
                 case "nothing_to_move": return "Nothing to move";
+                case "no_such_view":
+                case "ambiguous_view":  return "No single view by that name";
+                case "picture_too_large": return "The picture was too large to send";
                 case "preview_expired":
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":

@@ -208,6 +208,14 @@ namespace Heron.Revit.Addin
                 case "list_annotation":
                     return RevitAnnotation.List(app);
 
+                // A picture of one view, for the chat to look at what it did.
+                // D-116, and its own file because it is the one Analyze
+                // operation that opens a transaction: given element ids it
+                // makes a temporary 3D view inside a TransactionGroup that is
+                // ALWAYS rolled back - there is no apply flag to send.
+                case "capture_view":
+                    return RevitCapture.Capture(app, request);
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 
