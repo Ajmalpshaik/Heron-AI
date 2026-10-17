@@ -322,6 +322,13 @@ a widening of the two single-form tools, for the reasons in
 [NEEDS-CHECKING Group DA](../needs-checking/group-da.md), which also holds its proof plan. Left for him:
 whether a whole list should undo as one, and whether cuts belong in the same call.
 
+**Answer: one undo per list, and cuts stay a separate call - 2026-10-17. See [D-116](../DECISIONS.md).**
+Asked both halves in plain words with a worked example each - a pump family's 107 forms undone by one
+Ctrl+Z, and a flange's disc and four holes built in one call and cut in a second - the owner chose
+*"Yes, one undo per list"* and *"No, keep cuts separate"*. `CREATE_FAMILY_FORMS` as written already does
+both, so no code changed. **This answers the shape, not the proof**: the fragment is still DRAFT until
+Group DA has run in Revit.
+
 ---
 
 ### 🟡 Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? *(found 2026-10-10)*
@@ -371,5 +378,91 @@ packaged; and how the merged view behaves when one file name is in both places.
 
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes, and the warning - if merged -
 is the whole of the response.
+
+**2026-10-17 - the INSTALL half is settled in code; the RUN-TIME half is still his.** Asked that day to
+settle Q-63 as part of the one-step installer, with the shapes above put to him, the owner answered *no
+preference*. So what every shape needs was built, and nothing that moves DATA:
+
+1. **Heron's packages are installed by the installer**, which a person starts from File Explorer or their
+   own terminal - never a child of the app - so they land in the real folders, and Claude's children read
+   those through the overlay, as the add-in's files are read today. That is row 5b-417's cause removed for
+   every install from now on; a copy that already holds packages Claude installed is unchanged.
+2. **Both installers refuse to run from inside the app's copy** and name that route
+   ([row 5b-495](../fragment-issues/section-5b-rows-401-425.md)) - an add-in installed from there would
+   land where Revit never looks.
+
+That is the one supported route for INSTALLING: from outside Claude, by the installer. DRAFT, not run on
+Windows - [NEEDS-CHECKING Group EP](../needs-checking/group-ep.md). **Still open, and still Ajmal PS's:**
+where Heron's Python side keeps what it WRITES while a chat runs. Rows 5b-416, 5b-418 and 5b-419 are
+untouched by this, because the server is still a child of the app wherever its packages live. Moving DATA
+out of AppData is shape 3, a decision about the platform boundary; *no preference* was not read as a
+decision to make it.
+
+---
+
+### ✅ Q-64 — Is a picture of a Revit view "model data" under D-82, or may it be handed to the chat? → **Not model data** *(found and answered 2026-10-17)*
+
+**What is asked.** The owner asked on 2026-10-17 for a read-only tool that returns a PNG of a Revit view
+into the chat, so the AI can check its own work. It is built as `revit_view_image` and the add-in's
+`capture_view` - [D-123](../decisions/D-123.md), **Proposed** - and it is not merged.
+[D-82](../decisions/D-82.md) says *"Revit models, families, model data - never leave the PC"*;
+[D-26](../decisions/D-26.md) put element data - counts, sizes, parameters - in the conversation. A
+picture sits between the two, and neither was written with one in mind.
+
+**The two answers, and what each does:**
+
+1. **Not model data.** It cannot be opened or rebuilt into a model, and it is what the model shows, the
+   same kind of thing as a count. The tool ships as D-123 describes.
+2. **Model data.** It shows the geometry and layout of the building at a glance, and in the conversation
+   it has gone to the cloud. **The tool does not ship**: its pull request is closed, or the tool and
+   `capture_view` are taken out of it before merge.
+
+D-123 holds the second thing to accept with the first - that `capture_view` is the first ANALYZE
+operation to open a transaction, always rolled back - and [NEEDS-CHECKING group ER](../needs-checking/group-er.md)
+the run that would prove it.
+
+**Answer: NOT MODEL DATA — 2026-10-17. See [D-123](../decisions/D-123.md), now Accepted.** The owner:
+*"A picture is not model data, ship it"*. `revit_view_image` ships as D-123 describes; it is still
+DRAFT until [NEEDS-CHECKING group ER](../needs-checking/group-er.md) is run in Revit.
+
+---
+
+### 🟠 Q-66 — Where does a proof on a second Revit release go, and who writes a second route on a fragment already PROVEN? *(found 2026-10-17)*
+
+**What was found**, preparing [NEEDS-CHECKING Group EQ](../needs-checking/group-eq.md) - a core set of PROVEN
+fragments proved again on every release, to back the *"2020 → latest"* claim with evidence. Three things in
+Heron stop it, each on purpose:
+
+1. **`tools/batch-prove.py` refuses a PROVEN or PRODUCTION fragment** as `ALREADY` and never sends it to Revit.
+   Its docstring says *"There is deliberately no flag to override that"* - it was written against re-proving
+   unchanged code on the same release, which bought nothing.
+2. **`heron_validate.py accept` refuses a PROVEN fragment whose proof still matches its code** - *"Signing it
+   again would overwrite a good proof with the same thing."*
+3. **A fragment's `proof:` holds ONE record**, and its release is prose inside `model:`.
+   [`brain/heron_matrix.py`](../../brain/heron_matrix.py) reads one release per fragment and says so: *"a proof
+   on 2024 is evidence about 2024 ... Nothing here spreads a proof sideways"*, and *"if PROOF_REQUIRED ever
+   grows a `revit:` field this should read that instead."*
+
+So a run of `create-floor` on 2025 that passes both halves has nowhere to be written, and the only way to
+record it today would overwrite the 2024 proof. **A second route has the same problem from the other side**:
+`second_route` is a field of that one record, and `accept` will not reopen it.
+
+**Recommended - reasoned, not built:** keep `proof:` as the record that made the fragment PROVEN, and add a
+list beside it, **`proof.releases:`**, one entry per further release, each with the same fields D-30 asks for
+(`date`, `by`, `model`, `positive_case`, `negative_case`) and the fingerprint of the code it ran. Then:
+
+- `batch-prove --release` runs only PROVEN fragments, and only on a release they have no entry for. It writes
+  drafts and never touches `heron-status` - the guarantee it already checks.
+- `accept --release` writes one entry, signed by a person, and refuses a release already recorded.
+- `heron_matrix.py` marks a cell PROVEN from either the proof or an entry - never from the claim.
+- A second route for a PROVEN fragment is written into `proof.second_route` by `accept --second-route`,
+  signed, from a recorded run - never typed by hand.
+
+**What the other choices cost.** Leaving it as it is keeps the claim unbacked. Re-proving into `proof:`
+loses the earlier release's record. A separate register outside the fragment would be read by nothing
+that reads fragments today.
+
+**Ajmal PS decides.** Until he does, EQ1 to EQ6 (loading the add-in on each release) and EQ8 (the routes
+themselves, by hand in Revit) can still be run and recorded in Group EQ; only EQ7 waits.
 
 ---

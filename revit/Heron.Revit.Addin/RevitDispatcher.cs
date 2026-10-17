@@ -60,6 +60,24 @@ namespace Heron.Revit.Addin
         private readonly object _queueLock = new object();
         private readonly TimeSpan _busyTimeout;
         private readonly TimeSpan _operationTimeout;
+
+        /// <summary>
+        /// The extra wait for a job that has asked the modeller to keep or
+        /// discard a DRAFT's change (D-119). See AwaitingModeller.
+        /// </summary>
+        private readonly TimeSpan _askTimeout;
+
+        /// <summary>
+        /// The job Revit's thread is running now, so code deep inside it can
+        /// say "I am waiting for a person" without being handed the job.
+        ///
+        /// [ThreadStatic] ON PURPOSE: only Revit's own thread runs a job, so
+        /// only that thread ever finds one here. A call from anywhere else
+        /// finds null and changes nothing, which is the safe answer.
+        /// </summary>
+        [ThreadStatic]
+        private static RevitJob _running;
+
         private readonly Action<string> _log;
         private readonly string _session;
 
@@ -124,6 +142,27 @@ namespace Heron.Revit.Addin
                 Math.Max(1, config.GetInt("revit.busyTimeoutSeconds", 10)));
             _operationTimeout = TimeSpan.FromSeconds(
                 Math.Max(1, config.GetInt("revit.operationTimeoutSeconds", 60)));
+            _askTimeout = TimeSpan.FromSeconds(
+                Math.Max(1, config.GetInt("revit.askTimeoutSeconds", 300)));
+        }
+
+        /// <summary>
+        /// Revit's own thread, from inside a running job: the job is about to
+        /// show the modeller a Keep or Discard box and wait for them (D-119).
+        ///
+        /// THE AWAITING-THE-MODELLER EXEMPTION. Dispatch gives up on a job
+        /// that has not finished within revit.operationTimeoutSeconds and
+        /// answers "still running" - right for slow work, wrong for a person
+        /// reading their model before they choose. A job marked here is given
+        /// revit.askTimeoutSeconds more before the caller stops waiting.
+        ///
+        /// It only ever LENGTHENS a wait, and only for the job running now.
+        /// It cannot shorten one, start one, or answer the box.
+        /// </summary>
+        internal static void AwaitingModeller()
+        {
+            var job = _running;
+            if (job != null) job.MarkAskedModeller();
         }
 
         /// <summary>
@@ -281,7 +320,27 @@ namespace Heron.Revit.Addin
                     "or a command may be running. Finish what is open in Revit and ask again.");
             }
 
-            if (!job.WaitForFinish(_operationTimeout))
+            // THE MODELLER IS NOT A TIMEOUT (D-119). A job that put a Keep or
+            // Discard box up is waiting for a person, so it gets the ask
+            // timeout on top - asked AFTER the first wait ran out, because the
+            // box can go up at any moment of it.
+            var finished = job.WaitForFinish(_operationTimeout)
+                || (job.AskedModeller && job.WaitForFinish(_askTimeout));
+
+            if (!finished && job.AskedModeller)
+            {
+                // The box is still open in Revit, and it still decides. This
+                // caller stops waiting; whatever the modeller presses stands,
+                // and the banner comes down when they do.
+                RecordRefusal(job.WorkflowId, request, "awaiting_modeller");
+                return Json.Error("awaiting_modeller",
+                    "Revit is still waiting for you to choose Keep or Discard, and Heron " +
+                    "has stopped waiting for the answer. Whatever you press in Revit stands - " +
+                    "Discard puts the model back exactly as it was. This run is not recorded; " +
+                    "do not repeat the request while the box is open.");
+            }
+
+            if (!finished)
             {
                 // It IS running - Revit picked it up. Nothing can safely
                 // interrupt it, and calling this "busy" would invite a retry of
@@ -325,19 +384,49 @@ namespace Heron.Revit.Addin
                 try
                 {
                     var op = Json.ReadString(job.Request, "op") ?? "(none)";
+
+                    // A REVIT DIALOG THE JOB OPENS IS ANSWERED, NOT WAITED ON -
+                    // FRAGMENT-ISSUES section 5b row 300. Armed here, after
+                    // TryStart and around Run alone, so it answers only what
+                    // THIS job raises. A dialog already open before the job
+                    // never gets this far: Revit runs no ExternalEvent behind
+                    // a modal dialog, Dispatch's busy wait runs out, and the
+                    // caller is told revit_busy as before.
+                    HeronDialogWatch.Arm();
+                    HeronDialogNote dialogs = null;
                     try
                     {
-                        response = RevitOperations.Run(app, job.Request);
+                        try
+                        {
+                            // So AwaitingModeller can find this job - see _running.
+                            _running = job;
+                            response = RevitOperations.Run(app, job.Request);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Never let one bad request throw out of here: this
+                            // runs on Revit's own thread, and an escaping
+                            // exception is Revit's problem, not just Heron's.
+                            _log("Operation failed: " + ex);
+                            response = Json.Error("operation_failed", ex.Message);
+                        }
+                        finally
+                        {
+                            _running = null;
+                        }
                     }
-                    catch (Exception ex)
+                    finally
                     {
-                        // Never let one bad request throw out of here: this
-                        // runs on Revit's own thread, and an escaping
-                        // exception is Revit's problem, not just Heron's.
-                        _log("Operation failed: " + ex);
-                        response = Json.Error("operation_failed", ex.Message);
+                        dialogs = HeronDialogWatch.Disarm();
                     }
                     clock.Stop();
+
+                    // WHAT IT MET GOES ON THE REPLY - `dialogsAnswered` and
+                    // each dialog's id, words and answer - and nothing at all
+                    // when it met none. A path that came back a success from a
+                    // job a dialog stopped is turned into the refusal here.
+                    response = HeronDialogNote.Attach(response, dialogs,
+                                                      HeronOperationRegistry.Writes(op));
 
                     // WHICH MODEL THE WORK ACTUALLY RAN AGAINST, read out
                     // of its own answer. This is the only authoritative
@@ -410,6 +499,13 @@ namespace Heron.Revit.Addin
                     var warnings = fragmentRun ? Json.ReadLong(response, "warnings") : null;
                     if (warnings.HasValue)
                         numbers.Add(new KeyValuePair<string, long>("warnings", warnings.Value));
+
+                    // AND HOW MANY REVIT DIALOGS IT MET, on every operation -
+                    // a dialog is not a fragment's alone. Absent when it met
+                    // none, like the reply: every job is armed, so absent here
+                    // means none opened, never that nobody looked.
+                    if (dialogs.Count > 0)
+                        numbers.Add(new KeyValuePair<string, long>("dialogs", dialogs.Count));
 
                     HeronAudit.Record(job.WorkflowId, op,
                         failure == null,
@@ -485,6 +581,13 @@ namespace Heron.Revit.Addin
                 case "move_elements":
                     return "Moving elements";
 
+                // THE READING COLOUR, AND THE WORDS SAY WHY. Given element ids
+                // it makes a 3D view somebody watching may glimpse in the
+                // Project Browser, and the group around it is always undone
+                // (D-123) - so the card says a picture, never a change.
+                case "capture_view":
+                    return "Taking a picture of a view for the chat";
+
                 case "run_fragment_read":
                     var name = Clean(Json.ReadString(request, "name"));
                     return name.Length == 0 ? "Running a job" : "Running a job: " + name;
@@ -497,9 +600,14 @@ namespace Heron.Revit.Addin
                 // and a trial that rolls back is still Revit doing the work.
                 case "run_fragment_write":
                     var writing = Clean(Json.ReadString(request, "name"));
-                    var keeping = string.Equals(Json.ReadString(request, "apply"), "true",
+                    var applyWord = Json.ReadString(request, "apply");
+                    var keeping = string.Equals(applyWord, "true",
                                                 StringComparison.OrdinalIgnoreCase);
-                    var verb = keeping ? "Changing the model" : "Trying a change";
+                    // D-119: it runs, and the modeller decides in Revit.
+                    var asking = string.Equals(applyWord, "ask",
+                                               StringComparison.OrdinalIgnoreCase);
+                    var verb = asking ? "Trying a new tool - you choose Keep or Discard"
+                             : keeping ? "Changing the model" : "Trying a change";
                     return writing.Length == 0 ? verb : verb + ": " + writing;
 
                 // THE TWO ABOVE MODIFY SAY WHICH KIND OF CHANGE, because the
@@ -531,7 +639,7 @@ namespace Heron.Revit.Addin
         /// it is nothing. It can never say more than a name, whatever it
         /// contains.
         /// </summary>
-        private static string Clean(string text)
+        internal static string Clean(string text)
         {
             if (string.IsNullOrEmpty(text)) return string.Empty;
 
@@ -577,10 +685,18 @@ namespace Heron.Revit.Addin
                 case "document_not_in_front": return "That model is not open here";
                 case "read_only":       return "That model is read-only";
                 case "nothing_to_move": return "Nothing to move";
+                case "no_such_view":
+                case "ambiguous_view":  return "No single view by that name";
+                case "picture_too_large": return "The picture was too large to send";
                 case "preview_expired":
                 case "model_moved_on":  return "The model changed - ask again";
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
+                case "ask_needs_change_path": return "That job cannot be tried this way";
+                case "ask_needs_model_in_front": return "Bring that model to the front first";
+                case "ask_needs_saved_model": return "Save the model first - nothing was run";
+                case "dialog_refused":  return "A Revit dialog stopped the job - nothing kept";
+                case "dialog_unconfirmed": return "A Revit dialog stopped the job - check the model";
                 default:                return "Did not finish";
             }
         }
@@ -611,6 +727,7 @@ namespace Heron.Revit.Addin
             private readonly ManualResetEventSlim _finished = new ManualResetEventSlim(false);
             private int _state = Queued;
             private int _bannerEnded;
+            private int _askedModeller;
 
             public RevitJob(string request, string workflowId)
             {
@@ -670,6 +787,15 @@ namespace Heron.Revit.Addin
                 _finished.Set();
                 return true;
             }
+
+            /// <summary>
+            /// Set on Revit's thread when the job puts a Keep or Discard box
+            /// up, read on the listener thread that is waiting for it. Never
+            /// cleared: a job that asked once is a job a person is part of.
+            /// </summary>
+            public void MarkAskedModeller() { Interlocked.Exchange(ref _askedModeller, 1); }
+
+            public bool AskedModeller { get { return Volatile.Read(ref _askedModeller) == 1; } }
 
             public bool WaitForStart(TimeSpan timeout) { return _started.Wait(timeout); }
             public bool WaitForFinish(TimeSpan timeout) { return _finished.Wait(timeout); }

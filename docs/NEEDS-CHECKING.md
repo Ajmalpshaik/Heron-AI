@@ -711,6 +711,34 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ei.md`](needs-checking/group-ei.md)
 
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ej.md`](needs-checking/group-ej.md)
+
+## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
+
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
+
+## Group EM - a DRAFT run once on the live model, behind Keep or Discard: `"apply": "ask"` and `try-once` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
+
+## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ep.md`](needs-checking/group-ep.md)
+
+## Group EQ - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
+
+**Its own file:** [`needs-checking/group-eq.md`](needs-checking/group-eq.md)
+
+## Group ER - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-er.md`](needs-checking/group-er.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

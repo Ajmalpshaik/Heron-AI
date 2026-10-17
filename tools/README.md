@@ -1490,7 +1490,8 @@ a regression that arrives the same day something else is fixed. (That list names
 **cannot run** there, since [row 5b-49](../docs/FRAGMENT-ISSUES.md).)
 
 It records only what a command derives — gate exits, the suite map, and the counts this repository has
-been wrong about in prose. **Not a dump of the tree.** A record big enough to hide a change in is a
+been wrong about in prose, among them what the MCP tool list costs a chat (`heron_tools.py --sizes`'
+description totals). **Not a dump of the tree.** A record big enough to hide a change in is a
 record nobody reads.
 
 ### Three rulings, and the third is the one usually missing
@@ -1949,7 +1950,9 @@ python tools/split-needs-checking.py --write    # move it
 Gives each group of [`docs/NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) its own file in
 [`docs/needs-checking/`](../docs/needs-checking/), and keeps NEEDS-CHECKING.md as the register's index: the page's
 rules, and each group's heading in its place with one line naming its file. A `## Group X` section moves whole; so
-does a dated section whose rows all belong to one group. A section with rows of two groups, or none, stays in full.
+does a dated section whose rows all belong to one group. A section with rows of two groups, or none, stays in full. A group
+file may hold more than one section - `group-ac.md` holds three dated ones - and every section it holds stays in
+it ([row 5b-425](../docs/fragment-issues/section-5b-rows-401-425.md)).
 Exits **0**, **1** when a check refused and nothing was written, **2** when the register could not be read.
 
 **The register is still one text, and that is what is proved.** Nothing is written unless the new files read back
