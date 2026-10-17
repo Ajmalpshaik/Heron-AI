@@ -33,5 +33,13 @@ negative:
     expect: >
       also in `onNoSheets` - the same row, and correctly so: nothing goes out under it yet
 
+  - given: >
+      a FAMILY document - "TRG_GEN_CutOut_Rectangular_HVAC", Revit 2020,
+      2026-10-17. A family holds no revisions; a project always keeps one
+    expect: >
+      `elements`, `onNoSheets` and `revisionTable` empty, and one finding that
+      it is a family and a family holds no revisions - never Revit's "ccda is
+      not a project document", which it threw until that day (row 5b-880)
+
 second_route:
   - Revit's own Revisions dialog with "Show" set, or a Sheet List schedule with a revision column, compared sheet for sheet

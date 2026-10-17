@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,14 @@ semantic-identity: "every revision in the project and which sheets carry each on
 # 2026-09-13 fingerprint no longer matches it. What that proof recorded - the
 # sheet lines and `onNoSheets` - is unchanged here and still the arrangement to
 # re-prove from. `can_promote` refuses to carry a stale proof forward.
+#
+# 2026-10-17, STILL DRAFT: A FAMILY IS ANSWERED, NOT THROWN ON. Asked with a
+# family in front on Revit 2020, this threw "ccda is not a project document"
+# (RevisionSettings.GetRevisionSettings) - FRAGMENT-ISSUES row 5b-880. A family
+# now answers that it holds no revisions, with nothing found. That is also what
+# makes a negative case possible at all: a PROJECT always keeps at least one
+# revision (Revit refuses to delete the last), so `elements` and
+# `revisionTable` can never come back empty from one.
 kind: filter
 domain: revit.sheets
 capability: LIST_REVISIONS
@@ -83,17 +91,46 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: >
-    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
-  positive_case: >
-    Snowdon Towers: 1 revision, 'Date 1 Revision 1 - 1 sheet: M001', onNoSheets 0.
-  negative_case: >
-    Project1: the template's Revision 1 came back as ON NO SHEETS with its id, and shownOn 0. That is the discriminating case - it did not report an empty list, and it did not claim the revision was in use. A revision that exists and reaches no drawing is exactly what this has to tell apart.
-  second_route: >
-    LIST_SHEETS independently reported 17 sheets on Snowdon and 0 on Project1, matching the sheet set this fragment walked.
-  fingerprint: "d88910771ab270e4"
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, TRG_GEN_CutOut_Rectangular_HVAC
+    - active was Project1, Revit 2020, session 51568'
+  positive_case: 'run as it would normally be run. returned arcLength 20 mm on paper (0.065617
+    ft, Revit''s internal value), elements 6 item(s) [Seq. 1 - HERON PROOF several, Seq. 2
+    - HERON PROOF several, Seq. 3 - HERON PROOF several, ...], findings 6 item(s) [Date 1  HERON
+    PROOF several  - ON NO SHEETS. Either not clou..., Date 2  HERON PROOF several  - ON NO
+    SHEETS. Either not clou..., Date 3  HERON PROOF several  - ON NO SHEETS. Either not clou...,
+    ...], numbering Per Project - every sheet prints a revision''s project-wide number, numberingSequences
+    Numeric (the project''s one numeric scheme): numeric, starting number 1, prefix (blank),
+    suffix (blank) - used by Seq. 1, Seq. 2, Seq. 3, Seq. 4, Seq. 5, Seq. 6 || Alphanumeric
+    (the project''s one alphanumeric scheme): alphanumeric, custom sequence A, B, C, D, E,
+    F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z (26 values), prefix (blank),
+    suffix (blank) - used by no revision, onNoSheets 6 item(s) [49030, 926243, 926244, ...],
+    revisionTable Seq. 1: numbering Numeric, date ''Date 1'', description ''HERON PROOF several'',
+    not issued, issued to (blank), issued by (blank), show Cloud and Tag; would print ''1'',
+    but it is on no sheet (id 49030) || Seq. 2: numbering Numeric, date ''Date 2'', description
+    ''HERON PROOF several'', not issued, issued to (blank), issued by (blank), show Cloud
+    and Tag; would print ''2'', but it is on no sheet (id 926243) || Seq. 3: numbering Numeric,
+    date ''Date 3'', description ''HERON PROOF several'', not issued, issued to (blank), issued
+    by (blank), show Cloud and Tag; would print ''3'', but it is on no sheet (id 926244) ||
+    Seq. 4: numbering Numeric, date ''Date 4'', description ''HERON PROOF several issued'',
+    ISSUED, issued to (blank), issued by (blank), show Cloud and Tag; would print ''4'', but
+    it is on no sheet (id 926245) || Seq. 5: numbering Numeric, date ''Date 5'', description
+    ''HERON PROOF several issued'', ISSUED, issued to (blank), issued by (blank), show Cloud
+    and Tag; would print ''5'', but it is on no sheet (id 926246) || Seq. 6: numbering Numeric,
+    date ''Date 6'', description ''HERON PROOF several issued'', ISSUED, issued to (blank),
+    issued by (blank), show Cloud and Tag; would print ''6'', but it is on no sheet (id 926247).
+    on Project1'
+  negative_case: run against 'TRG_GEN_CutOut_Rectangular_HVAC' instead - chosen because it
+    should not contain what this fragment reports. returned arcLength , elements 0 item(s),
+    findings 1 item(s) ['TRG_GEN_CutOut_Rectangular_HVAC' is a family, and a family ...],
+    numbering , numberingSequences , onNoSheets 0 item(s), revisionTable . on TRG_GEN_CutOut_Rectangular_HVAC
+  second_route: The six rows are the ones Ajmal PS typed by hand that day in Manage - Sheet
+    Issues/Revisions (three HERON PROOF several, three HERON PROOF several issued ticked Issued),
+    and EDIT_REVISION (FRG-SHT-016, a different fragment) read the same rows back in its own
+    findings in three runs the same day - descriptions, dates, Issued ticks and Numeric numbering
+    agreeing row for row.
+  fingerprint: bb5283ef92b73801
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -115,8 +152,12 @@ compatibility-note: >
   2020 to 2022 and are gone from 2023. The add-in compiles fragments with no
   release symbol defined, so a `#if` would take one branch on every release;
   each of those members is reached by name and the one this Revit has is used.
-  Only the 2022+ route has run on a model; the 2020/2021 route is compiled, not
-  run.
+  Both routes have run on a model: 2022+ on Revit 2024 in September, and the
+  2020/2021 route on Revit 2020 on 2026-10-17, where it read the project's
+  Numeric scheme and its Alphanumeric A to Z. 2021 is compiled, not run.
+
+  `Document.IsFamilyDocument` and `Document.Title`, which answer a family, are
+  unchanged 2020 to 2027.
 
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
@@ -144,6 +185,11 @@ compatibility-note: >
 #   "set the cloud arc length"         -> SET_REVISION_SETTINGS
 #   "make an alphabetic sequence"      -> CREATE_REVISION_NUMBERING_SEQUENCE
 #   "rename the numbering"             -> EDIT_REVISION_NUMBERING_SEQUENCE
+#   "sheets on revision 15"            -> FIND_SHEETS_BY_REVISION_OR_NUMBER -
+#                                         the sheets of ONE revision, picked
+#                                         for the next step (a sheet set, a
+#                                         PDF); this answers the question for
+#                                         every revision. Row 5b-550
 
 utterances:
   - which sheets have this revision
