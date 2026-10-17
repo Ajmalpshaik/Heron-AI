@@ -318,6 +318,11 @@ def search_model(check_only):
     if check_only:
         say(NOTE, "model2vec is installed; --check does not load or download it")
         return
+    if not HAVE_YAML[0]:
+        # heron_embed needs PyYAML on import: without this the run died here
+        # with a traceback, before the summary the installer reads (5b-1029).
+        say(NOTE, "model2vec is installed; not loaded - it needs PyYAML, above")
+        return
     import heron_embed as EMBED
     started = time.time()
     name, why = EMBED.backend()
