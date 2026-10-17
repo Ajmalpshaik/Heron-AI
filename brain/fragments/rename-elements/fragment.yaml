@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-005
-# THE IDENTITY NAMES VIEWS, SHEETS AND THE REST (2026-10-16, FRAGMENT-ISSUES 5b-489).
+# THE IDENTITY NAMES VIEWS, SHEETS AND THE REST (2026-10-16, FRAGMENT-ISSUES 5b-510).
 # It said only "find and replace part of these elements' names", and the
 # re-ranker reads a card's identity, capability and domain and nothing else -
 # so on the live backend "rename the plan", "rename these sheets" and "rename
