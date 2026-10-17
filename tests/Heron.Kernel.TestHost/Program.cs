@@ -351,8 +351,16 @@ namespace Heron.Kernel.TestHost
             Console.WriteLine("4. HeronStop - set by a person, cleared by a person");
 
             Check(!HeronStop.IsStopped, "starts clear");
+
+            // D-129. The run clock reads the COUNT, not the flag, so a stop
+            // asked while already stopped still reaches a running fragment,
+            // and a read begun while stopped is not tripped by the old one.
+            var asked = HeronStop.Requests;
             Check(HeronStop.Stop(), "Stop() reports that THIS call changed it");
+            Check(HeronStop.Requests == asked + 1, "and the stop count moved by one");
             Check(!HeronStop.Stop(), "and a second Stop() reports that it did not");
+            Check(HeronStop.Requests == asked + 2,
+                  "while the count moves again - a second stop is still a stop asked for");
             Check(HeronStop.IsStopped, "stopped");
 
             // ROW 2. The message used to send the reader to "Heron AI >
@@ -368,7 +376,20 @@ namespace Heron.Kernel.TestHost
             Check(HeronStop.Message.IndexOf("Nothing was sent to Revit", StringComparison.Ordinal) >= 0,
                   "and says plainly that nothing was sent");
 
+            // THE KILL SWITCH WAS BUILT ON 2026-10-17, SO THE WAY OUT IS
+            // NAMED (D-129). HeronStop's own rule: whoever builds what sets
+            // the flag owns this sentence, the same day. A restart is the one
+            // thing that clears it - nothing over the bridge resumes.
+            Check(HeronStop.Message.IndexOf("until Revit is restarted", StringComparison.Ordinal) >= 0,
+                  "and it names the one way out there is: restarting Revit");
+            Check(HeronStop.Message.EndsWith(HeronStop.StaysStopped, StringComparison.Ordinal),
+                  "in the same words every other answer about a stop uses");
+            Check(HeronStop.StaysStopped.IndexOf("Nothing was sent", StringComparison.OrdinalIgnoreCase) < 0,
+                  "and that shared half claims nothing about this request - a job the run "
+                  + "clock stopped part way DID reach Revit");
+
             Check(HeronStop.Resume(), "Resume() reports that THIS call changed it");
+            Check(HeronStop.Requests == asked + 2, "and resuming leaves the stop count alone");
             Check(!HeronStop.Resume(), "and a second Resume() reports that it did not");
             Check(!HeronStop.IsStopped, "clear again, and left that way for whatever runs next");
         }

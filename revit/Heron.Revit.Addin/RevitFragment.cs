@@ -105,6 +105,12 @@ namespace Heron.Revit.Addin
         /// Golden Rule 19. `run_fragment_publish` and `run_fragment_admin`
         /// arrive here the same way, declared Publish and Admin (D-106): the
         /// run is identical and only the switch that let it through differs.
+        ///
+        /// THE WHOLE JOB RUNS ON THE RUN CLOCK - D-129. Its time starts here,
+        /// before the binding and the compile, because the dispatcher's wait
+        /// started when Revit took the job, and both have to be counted from
+        /// the same moment for the clock's answer to arrive first. See
+        /// HeronRunClock.
         /// </summary>
         public static string Run(UIApplication app, string request, bool writing)
         {
@@ -112,6 +118,11 @@ namespace Heron.Revit.Addin
             // what the last write changed straight after this returns, and a
             // refusal or a read must not leave it the list a previous job made.
             Elements = null;
+
+            // A USING DECLARATION, so the clock ends with the method however it
+            // returns, and this body stays where every reader of it - the
+            // suites that read it as text included - expects to find it.
+            using var runClock = HeronRunClock.Begin();
 
             var source = Json.ReadString(request, "source");
             var name = Json.ReadString(request, "name") ?? "(unnamed)";
@@ -640,6 +651,12 @@ namespace Heron.Revit.Addin
                 var changed = ReadChangedModel(name, target, counted, threw);
                 if (changed != null) return changed;
 
+                // A STOPPED RUN IS STOPPED WHETHER OR NOT IT THREW. The
+                // fragment may have caught the clock's throw and returned
+                // normally; what it left is then a part-done answer, and
+                // reporting it as the answer would be the wrong half.
+                if (HeronRunClock.Tripped) return ClockStopped(name, null);
+
                 // A REVIT DIALOG HERON DECLINED STOPS A READ TOO: an answer
                 // built around a question nobody answered is not the answer
                 // that was asked for. Ahead of `threw`, because a call the
@@ -735,13 +752,20 @@ namespace Heron.Revit.Addin
 
                         threw = RunScript(script, globals, name, out state);
 
+                        // A run the clock stopped part way is the likeliest
+                        // way to leave a transaction open, so it is said - the
+                        // advice is the same.
                         if (target.IsModifiable)
                         {
                             return Json.Error("operation_failed",
                                 "'" + name + "' left a transaction of its own open, so Heron "
                                 + "cannot keep or roll back its work. Press Undo in Revit and "
-                                + "look at the model before trusting it.");
+                                + "look at the model before trusting it."
+                                + (HeronRunClock.Tripped
+                                    ? " It had been stopped part way: it " + HeronRunClock.Why
+                                    : ""));
                         }
+                        if (HeronRunClock.Tripped) return ClockStopped(name, RollBackAndCheck(group, target, watch));
                         if (threw != null)
                         {
                             var after = RollBackAndCheck(group, target, watch);
@@ -760,6 +784,16 @@ namespace Heron.Revit.Addin
                         Discipline(transaction, said, null);
 
                         threw = RunScript(script, globals, name, out state);
+
+                        // BEFORE `threw`, and on its own: a fragment that
+                        // caught the clock's throw comes back with nothing
+                        // thrown, and committing that would keep a job Heron
+                        // stopped half way.
+                        if (HeronRunClock.Tripped)
+                        {
+                            SafeRollBack(transaction);
+                            return ClockStopped(name, RollBackAndCheck(group, target, watch));
+                        }
 
                         if (threw != null)
                         {
@@ -1271,6 +1305,11 @@ namespace Heron.Revit.Addin
 
                     ScriptState<object> stepState;
                     var threw = RunScript(stepScript, globals, stepName, out stepState);
+                    if (HeronRunClock.Tripped)
+                    {
+                        SafeRollBack(stepTransaction);
+                        return ClockStopped(stepName, RollBackAndCheck(group, target, watch));
+                    }
                     if (threw != null)
                     {
                         SafeRollBack(stepTransaction);
@@ -1871,7 +1910,14 @@ namespace Heron.Revit.Addin
                 // Revit API thread - which is where it has to run. If a
                 // fragment ever does await, this is the line that will deadlock
                 // and the reason will not be obvious.
-                state = script.RunAsync(globals).GetAwaiter().GetResult();
+                //
+                // TIMED, AND ONLY HERE (D-129). The checks HeronStackGuard put
+                // in count while the script runs and at no other moment - see
+                // HeronRunClock for why what is read after it stays untimed.
+                using (HeronRunClock.Watch())
+                {
+                    state = script.RunAsync(globals).GetAwaiter().GetResult();
+                }
                 return null;
             }
             catch (Exception failure)
@@ -2321,6 +2367,36 @@ namespace Heron.Revit.Addin
 
                 return new HeronFailureNote.Posted(severity, text, elements);
             }
+        }
+
+        /// <summary>
+        /// The answer for a job the run clock stopped - D-129. Its own two
+        /// codes, never `fragment_threw`: what threw was Heron, the fragment
+        /// may not have thrown at all, and "stopped and rolled back" is the
+        /// fact the chat needs in order not to send the same thing again.
+        ///
+        /// WHAT HAPPENED TO THE MODEL IS SAID FROM WHAT WAS CHECKED - the
+        /// witness's whole account, as every rollback in this file says it
+        /// (RollBackAndCheck): Revit's status, the additions counted back, and
+        /// any earlier kept work the rollback took. `after` is null on the read
+        /// path, which opened no transaction and so has nothing to undo.
+        ///
+        /// NOT `Stopped`, which is the dialog's refusal and returns null when no
+        /// dialog stopped the job; this one always answers.
+        /// </summary>
+        private static string ClockStopped(string name, HeronRollbackWitness.Outcome after)
+        {
+            var model = after == null
+                ? "It was a read, so nothing in the model was changed."
+                : "Heron rolled the whole job back. " + after.Account();
+
+            var said = "'" + name + "' " + HeronRunClock.Why + " " + model;
+
+            if (HeronRunClock.StoppedByPerson)
+            {
+                return Json.Error("stopped_mid_run", said + " " + HeronStop.StaysStopped);
+            }
+            return Json.Error("ran_too_long", said);
         }
 
         /// <summary>

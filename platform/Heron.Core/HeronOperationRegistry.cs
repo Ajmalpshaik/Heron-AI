@@ -151,6 +151,15 @@ namespace Heron.Core
                 // never use this to free somebody else's Revit.
                 { "release",            HeronRisk.Read },
 
+                // STOPPING - D-129. Read, because it changes no model: it sets
+                // HeronStop, which the gate reads before anything that CHANGES
+                // the model, and which the run clock reads inside a fragment
+                // that is already running. Answered by RevitDispatcher on a
+                // listener thread before anything is queued, so the gate never
+                // sees it - which a Read operation loses nothing by. It can
+                // only stop; nothing over the bridge lets Heron work again.
+                { "stop",               HeronRisk.Read },
+
                 // ANALYZE - reads the model and computes over it. preview_move
                 // is here rather than at Modify because it genuinely changes
                 // nothing: it is the description of a change, not the change.
