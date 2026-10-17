@@ -14,6 +14,48 @@ positive:
       reads "1 of N element(s) clash" and names the duct and the beam's type,
       id in the link and Fire Rating - checked in a section with the link shown
 
+  # VERSION 3, added 2026-10-17 (row 5b-760, NEEDS-CHECKING Group GH). NONE
+  # OF THESE HAS BEEN RUN. The models are the job file's -
+  # tools/jobs/find-clashes-v3-link-2026-10-17.yaml.
+  - given: >
+      two generic-model boxes 600 x 400 mm and 255 mm deep in this model, each
+      with an instance length "Wall Width" of 255, standing in a 200 mm linked
+      wall; against EMPTY, includeLinks true, categories Walls,
+      compareParameter Wall Width
+    expect: >
+      passedThrough names both, each through "Walls 'Basic Wall: ...' (id N
+      in the link), wall 200 mm thick, centre 0 mm off the element's
+      centre"; comparison reads 2 differ and names each "Wall Width 255 mm -
+      55 mm MORE than ... wall 200 mm thick"; mismatched holds the two boxes'
+      ids, this model's own
+
+  - given: >
+      the same, one box moved so the wall's centreline sits 100 mm behind the
+      box's centre, and the link's 30 mm wall at another box
+    expect: >
+      that box's line says "wall 200 mm thick, only 127 (or 128) mm of it
+      inside the element, centre 100 mm behind the element's centre, to the
+      wall's ... side" - the WALL's centre, not the overlap's; the 30 mm wall
+      reads "wall 30 mm thick", and a Wall Width of 255 there reads 225 mm
+      MORE - the first-use case
+
+  - given: >
+      a box through a linked Air Terminal 305 mm deep along the box's facing,
+      categories all
+    expect: >
+      "Air Terminals '...' (id N in the link), 305 mm deep along the
+      element's facing", and with Wall Width 255 "50 mm LESS than" it. With
+      categories building it is not looked for at all
+
+  - given: >
+      a duct in this model through a 200 mm wall in this model (not a
+      link), includeHost true, categories Walls, compareParameter Width, the
+      duct 200 mm wide
+    expect: >
+      "this model: Walls '...' (id N), wall 200 mm thick" and comparison
+      1 agree, 0 differ - the host searched with the elements handed in left
+      out, and `clashes` empty because `against` was
+
 negative:
   - given: a DIAGONAL duct running past a beam without touching it
     expect: >
@@ -78,3 +120,53 @@ negative:
 
 second_route:
   - Revit's own Interference Check, run on the same two selections
+
+  # VERSION 3, added 2026-10-17 (row 5b-760). NONE OF THESE HAS BEEN RUN.
+  - given: >
+      the two boxes, each with Wall Width set to 200, in the 200 mm linked
+      wall, compareParameter Wall Width
+    expect: >
+      comparison reads 0 differ, 2 agree; mismatched EMPTY. The negative
+      leg of the proof: the same arrangement, the parameter right
+
+  - given: >
+      a box clear of every linked element, compareParameter Wall Width
+    expect: >
+      passedThrough lists it under "through nothing"; comparison counts it
+      under "pass through nothing it could be compared with" - NOT under
+      agree, and not in mismatched
+
+  - given: categories "Wals, Air Terminals", includeLinks true
+    expect: >
+      linkedMatches' first line and passedThrough's read "NOTHING WAS LOOKED
+      FOR, in the links or here - 'Wals' is not a category this model
+      knows"; linksSearched 0; nothing compared. Never a half-read answer
+      for the one name it knew
+
+  - given: compareParameter "Comments" (text) or a Number parameter holding 255
+    expect: >
+      comparison names "'Comments' not a length on N element(s)" and
+      compares none - a number with no unit is not 255 mm
+
+  - given: >
+      a box whose INSTANCE carries two parameters named "Wall Width" (a
+      shared one beside a family one)
+    expect: >
+      "'Wall Width' NOT READ - 2 parameters share that name on 1
+      element(s)", never either value (D-54 s3, 5b-203). One on the instance
+      and one on its type is not this case: the instance's is read, as the
+      lookup lands there first
+
+  - given: >
+      a void-only opening family with no solid of its own, includeLinks true
+    expect: >
+      either its hits are marked "(box)" and linkedMatches says it was tested
+      by its bounding box, or - if Revit gives it no box either - it is NOT
+      tested and named so. Never counted through nothing
+
+  - given: categories, includeHost and compareParameter all LEFT OUT
+    expect: >
+      clashes, clashing, clear, notChecked, findings and linkedMatches exactly
+      as version 2 gave them, comparison "No parameter named - nothing
+      compared", mismatched empty. A caller that never heard of version 3
+      gets version 2

@@ -1,0 +1,105 @@
+# The proof of find-clashes version 3 (FIND_CLASHES, FRG-QA-003), written
+# 2026-10-17 for FRAGMENT-ISSUES row 5b-760 - NEEDS-CHECKING Group GH, row
+# GH1. NOT RUN. Written in a cloud container with no Revit; compiled on all
+# eight releases, nothing more.
+#
+#     python tools/batch-prove.py tools/jobs/find-clashes-v3-link-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/find-clashes-v3-link-2026-10-17.yaml
+#
+# WHAT VERSION 3 ADDED. `passedThrough` - what each element's solid passes
+# through, in the links and in this model, with category, 'Family: Type',
+# thickness and side; `categories` - what is looked for; `compareParameter`
+# - a length on each element compared with the thickness it passes through,
+# every difference in `comparison` and the elements in `mismatched`.
+#
+# WHY DUCTS AND NOT THE OPENING FAMILY. The job that asked for this was
+# opening families with a "Wall Width" parameter in a real project
+# (4355-BHVD-3D-21P60-ST001I) - never written to, and not used here. A duct's
+# own "Width" is a length on every rectangular duct in the default
+# Mechanical template, so the proof needs no family built first. The opening
+# family's own run is GH9 in the group, outside this file.
+#
+# A READ: nothing is written in either leg.
+#
+# THE MODELS - MAKE THEM FIRST, in Revit 2020 (any release 2020 to 2027).
+# NEW projects, never a real one.
+#
+#   1. THE LINK SOURCE - a new project from the default METRIC template,
+#      SAVED as "HeronClashLink.rvt" in a test folder. In "FloorPlan: Level 1":
+#        - a wall "Basic Wall: Generic - 200mm", its location line from
+#          0,-4000 to 0,4000 (north-south on x = 0), base Level 1, unconnected
+#          height 3000 mm. Its thickness must read 200 in its type - say what
+#          it reads in the group row if it is anything else
+#        - (for GH3) a door of any loaded type in that wall at 0,3000
+#      Save and close it.
+#   2. THE HOST - a new project from the default metric MECHANICAL template,
+#      NOT saved. Insert > Link Revit > HeronClashLink.rvt, Positioning "Auto -
+#      Origin to Origin". In "FloorPlan: Level 1" (or the template's first
+#      mechanical plan), three rectangular ducts, middle elevation 1500 mm:
+#        - D1, 300 wide x 200 high, from -1000,0 to 3000,0 - through the wall,
+#          its centre 1000 mm east of it
+#        - D2, 200 wide x 200 high, from -2000,-2000 to 2000,-2000 - through
+#          the wall, centred on it
+#        - D3, 300 wide x 200 high, from 1000,-3500 to 3000,-3500 - clear of it
+#      Read the three ducts' ids (select each, Manage > IDs of Selection).
+#
+# EDIT BEFORE THE RUN - batch-prove has no way to fill these in:
+#   - D1ID and D2ID below: the ids read in step 2
+#   - `in:` below: the title Revit shows for the host - "Project1", "Project2"
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: D1 is in `mismatched` and D2 is not. PASS does not read the WORDS -
+#     the next block does
+#   - POSITIVE EMPTY: D1 is not in mismatched. Read `comparison`'s first line:
+#     "pass through nothing" means the link test found no wall - is the link
+#     loaded and origin to origin? "could not be read" means Width did not
+#     read as a length
+#   - NEG NOT EMPTY: D2, Width 200 in a 200 wall, came back mismatched - a
+#     defect in the comparison, not an arrangement fault
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - positive `comparison`: "'Width' compared ...: 1 element(s) differ, 0
+#     agree" and "element D1ID '...' Width 300 mm - 100 mm MORE than
+#     HeronClashLink: Walls 'Basic Wall: Generic - 200mm' (id N in the
+#     link), wall 200 mm thick, centre 1000 mm to the wall's exterior side of
+#     the element's centre" - EXTERIOR OR INTERIOR is the wall's own: write
+#     down which, and check it against the wall's flip arrows in the link.
+#     "HeronClashLink" is the link's title, and reads "HeronClashLink.rvt"
+#     where Windows shows file extensions
+#   - positive `passedThrough`: the same wall named on D1's line; `linkedMatches`
+#     "1 link(s) read: 1 element(s) clash with linked Walls, NOT selected"
+#   - negative `comparison`: "0 element(s) differ, 1 agree"
+#   - the second route (GH2): Revit's own Tape Measure on the linked wall's two
+#     faces in the host plan, and the duct's Width in Properties
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands, naming the one with the host.
+
+model: 'a new, unsaved project from the default metric Mechanical template linking the saved project "HeronClashLink.rvt" origin to origin - in the link one Generic - 200mm wall on x = 0; in the host three rectangular ducts at 1500 mm, D1 300 wide through the wall 1000 mm off its centre, D2 200 wide through it, D3 clear of it, Revit 2020'
+
+defaults:
+  in: "Project1"
+  setup:
+    - filter-elements-by-id
+    - set-selection
+
+jobs:
+  - fragment: find-clashes
+    expect: mismatched
+    set:
+      elementIds: "D1ID"
+      against: ""
+      includeLinks: "true"
+      categories: "Walls"
+      compareParameter: "Width"
+    negative-set:
+      elementIds: "D2ID"
+      against: ""
+      includeLinks: "true"
+      categories: "Walls"
+      compareParameter: "Width"
+    note: >
+      GH1 - a duct 300 wide through a 200 mm linked wall differs by 100 mm;
+      the negative, a duct 200 wide through the same wall, agrees. Both legs
+      read the link, ask for Walls and compare Width, so the only thing that
+      changes is whether the value matches the wall.
