@@ -328,6 +328,10 @@ CARRIED_NOTE = "carried.json"
 CARRYING_LOCK = "carrying.lock"
 LOCK_SECONDS = 600
 
+#: How long a process that finds the lock taken waits for the carry to end.
+#: The laptop's whole carry - 39 files, 25,000 audit lines - is a second or two.
+WAIT_SECONDS = 60
+
 #: A Microsoft Store Claude's package folders under %LOCALAPPDATA%\Packages.
 STORE_CLAUDE = "AnthropicPBC.Claude_"
 
@@ -578,18 +582,35 @@ def home(environ=None, system=None):
             return found
         if not os.path.isdir(found):
             os.makedirs(found)
+        note = os.path.join(found, CARRIED_NOTE)
         lock = os.path.join(found, CARRYING_LOCK)
-        try:
-            handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except OSError:
-            if time.time() - os.path.getmtime(lock) < LOCK_SECONDS:
-                return found                        # another process is carrying
-            os.remove(lock)
-            handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        # TWO CHATS STARTED TOGETHER: the second WAITS for the first's carry
+        # rather than going on with a half-filled home - where it would find
+        # no store, build a new one, and leave the old store standing beside it
+        # as "left". Up to WAIT_SECONDS, then it goes on regardless.
+        deadline = time.time() + WAIT_SECONDS
+        while True:
+            try:
+                handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                break
+            except OSError:
+                if os.path.isfile(note):
+                    return found                    # the other process finished
+                try:
+                    age = time.time() - os.path.getmtime(lock)
+                except OSError:
+                    continue                        # let go just now: try again
+                if age >= LOCK_SECONDS:
+                    os.remove(lock)                 # left by a process that died
+                    continue
+                if time.time() >= deadline:
+                    return found
+                time.sleep(0.25)
         try:
             os.write(handle, str(os.getpid()).encode("ascii"))
             os.close(handle)
-            _note(found, carry_forward(found, old_homes(env)), "first use")
+            if not os.path.isfile(note):            # finished while this one waited
+                _note(found, carry_forward(found, old_homes(env)), "first use")
         finally:
             os.remove(lock)
     except Exception:                               # noqa: BLE001 - never fatal, see above

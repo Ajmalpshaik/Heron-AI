@@ -331,6 +331,49 @@ def run(yard):
     ask(PATHS, "home", environ, "nt")
     check(not os.path.exists(os.path.join(home, "knowledge", "projects", "p9.hvac.json")),
           "the next home() carries nothing more - the note says it was done")
+    # TWO CHATS AT ONCE: the second waits for the first's carry, and a lock left
+    # by a process that died is taken over rather than blocking every chat.
+    environ, copy, real = plant_old_places(os.path.join(yard, "pc-5b"))
+    home = os.path.join(yard, "pc-5b", "profile", ".heron")
+    lock = os.path.join(home, getattr(PATHS, "CARRYING_LOCK", "carrying.lock"))
+    write(lock, "4242")
+    old = getattr(PATHS, "WAIT_SECONDS", None)
+    PATHS.WAIT_SECONDS = 0.5
+    PATHS._carried_here.clear() if hasattr(PATHS, "_carried_here") else None
+    ask(PATHS, "home", environ, "nt")
+    check(not os.path.isfile(os.path.join(home, PATHS_MARKER())),
+          "a carry another process holds is not run a second time beside it")
+    import threading
+
+    def finish():
+        write(os.path.join(home, PATHS_MARKER()), json.dumps({"format": "1", "runs": [{"how": "the other"}]}))
+        os.remove(lock)
+    PATHS.WAIT_SECONDS = 10
+    PATHS._carried_here.clear() if hasattr(PATHS, "_carried_here") else None
+    other = threading.Timer(0.6, finish)
+    other.start()
+    ask(PATHS, "home", environ, "nt")
+    done_when_answered = os.path.isfile(os.path.join(home, PATHS_MARKER()))
+    other.join()
+    noted = json.loads(read(os.path.join(home, PATHS_MARKER())))
+    check(done_when_answered,
+          "the second chat WAITED: the first's carry was finished when it was answered")
+    check(len(noted.get("runs", [])) == 1 and noted["runs"][0].get("how") == "the other"
+          and not os.path.exists(os.path.join(home, "knowledge")),
+          "and it did not carry again (%d run(s) noted)" % len(noted.get("runs", [])))
+    os.remove(os.path.join(home, PATHS_MARKER()))
+    write(lock, "4242")
+    gone = time_ago(getattr(PATHS, "LOCK_SECONDS", 600) + 5)
+    os.utime(lock, (gone, gone))
+    PATHS._carried_here.clear() if hasattr(PATHS, "_carried_here") else None
+    ask(PATHS, "home", environ, "nt")
+    check(os.path.isfile(os.path.join(home, PATHS_MARKER()))
+          and os.path.isfile(os.path.join(home, "knowledge", "projects", "p1.hvac.json"))
+          and not os.path.exists(lock),
+          "a lock left by a process that died is taken over, and the carry runs")
+    if old is not None:
+        PATHS.WAIT_SECONDS = old
+
     explicit = dict(environ, HERON_DATA=os.path.join(yard, "pc-5", "chosen"))
     got = ask(PATHS, "home", explicit, "nt")
     check(same(got, os.path.join(yard, "pc-5", "chosen"))
@@ -377,6 +420,11 @@ def run(yard):
         return 1
     print("PASSED - the home, the two readers, the carry and the Companion's folder")
     return 0
+
+
+def time_ago(seconds):
+    import time
+    return time.time() - seconds
 
 
 def PATHS_MARKER():
