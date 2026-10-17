@@ -3413,7 +3413,7 @@ def main(argv):
             print("                        --setup set-selection")
             print("                        With --write a step that changes the model runs")
             print("                        last, so one that reads typed after it is refused")
-            print("  --keep-chain         keep what the setup chain left, instead of")
+            print("  --keep-chain          keep what the setup chain left, instead of")
             print("                        resetting it. Needed when the setup PRODUCES a")
             print("                        value the fragment consumes - the selection")
             print("                        survives a reset and a value does not. Needs")
