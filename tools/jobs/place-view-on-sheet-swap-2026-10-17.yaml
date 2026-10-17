@@ -1,0 +1,111 @@
+# The proof of place-view-on-sheet version 2 (PLACE_VIEW_ON_SHEET, FRG-VIEW-015)
+# - put one view where another view is, on every sheet that one is on.
+# Written 2026-10-17 for FRAGMENT-ISSUES row 5b-540, NEEDS-CHECKING Group FC,
+# rows FC1, FC2, FC3 and FC9. NOT RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/place-view-on-sheet-swap-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/place-view-on-sheet-swap-2026-10-17.yaml
+#
+# MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+#
+# A SCRATCH PROJECT, NEVER THE REAL 4355 MODEL, AND IN A LOCAL SESSION ON THE
+# OWNER'S PC. Make "Heron Swap Scratch" from any template and arrange it by hand
+# (docs/needs-checking/group-fc.md says it step by step):
+#   - sheets HSW-01, HSW-02, HSW-03 and HSW-04
+#   - a legend "NOTES" with a text note in it, placed on HSW-01 AND HSW-02, each
+#     viewport with a DIFFERENT viewport type (one with a title, one "No Title")
+#   - its copy "AS-BUILT NOTES" (Duplicate View > Duplicate with Detailing,
+#     renamed), placed on NO sheet
+#   - a schedule "HSW SCHEDULE A" placed on HSW-03, and "HSW SCHEDULE B" on none
+#   - a drafting view "HSW DRAFT A" placed on HSW-04, and "HSW DRAFT B" placed on
+#     HSW-01 - a drafting view goes on one sheet only, so B cannot go on HSW-04
+#   Note each old viewport's position BEFORE the run: select it, read its box
+#   centre from the sheet (or snap a detail line to it) - the run must not move it.
+#
+# FOUR VALUES, AND `at` IS AN OFFSET HERE: 0,0,0 is exactly where the old view
+# sat. `sheetId` is left out - every sheet the old view is on. If a name below
+# is shared with another view, write it "Legend: NOTES" or "Schedule: ...".
+#
+# THREE JOBS, ONE FRAGMENT, AND THE ORDER MATTERS. Each job overwrites the same
+# run record and draft, so the draft left at the end is the LAST job's - the
+# legend on two sheets, the pair to sign. Read the first two verdicts as they
+# print: version 1's placing job (FC9) and the schedule (FC2) are checks, not
+# the proof.
+#
+# THE SWAP NEGATIVE IS THE SAME IN BOTH SWAP JOBS: HSW DRAFT B is already on
+# HSW-01, so it cannot go where HSW DRAFT A is, on HSW-04. swapped and placed
+# must come back EMPTY, HSW-04 named in notDone, and DRAFT A still on HSW-04
+# afterwards.
+#
+# WHAT EACH VERDICT MEANS HERE:
+#   - PASS: the swap read back on every sheet, and the negative changed nothing
+#   - POSITIVE EMPTY: the swap did not happen on any sheet - read notDone, it
+#     says why sheet by sheet
+#   - NEG NOT EMPTY: a drafting view was placed on a second sheet - a defect
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - every swapped line: the sheet number, 'NOTES' gone, 'AS-BUILT NOTES' in its
+#     place, "centre 0.0 mm from the old one", and each sheet's OWN viewport
+#     type - HSW-01's and HSW-02's are different on purpose
+#   - on Revit 2022 and later "title position copied"; on 2020 and 2021 "title
+#     where Revit draws a new one"
+#   - the schedule job's line says "corner 0.0 mm"
+#   - the second route (FC5): run the legend job once by hand with the change
+#     KEPT, and look at both sheets
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: '"Heron Swap Scratch" (docs/needs-checking/group-fc.md) - a legend on two sheets, a schedule on one, a drafting view on one and its twin on another, Revit 2020 first'
+
+defaults:
+  in: "Heron Swap Scratch"
+  write: true
+  setup: []
+
+jobs:
+  - fragment: place-view-on-sheet
+    expect: placed
+    set:
+      sheetId: "HSW-02"
+      views: "FloorPlan: Level 1"
+      at: "200,200,0"
+    negative-set:
+      sheetId: "HSW-02"
+      views: "HSW DRAFT A"
+      at: "200,200,0"
+    note: >
+      FC9 - version 1, the placing job, unchanged. A free floor plan on HSW-02
+      at 200,200 mm; the negative hands in DRAFT A, already on HSW-04, which
+      Revit refuses - placed empty, its id in refused. If the template has no
+      "Level 1" floor plan off any sheet, name one that is.
+
+  - fragment: place-view-on-sheet
+    expect: swapped
+    set:
+      oldViewId: "HSW SCHEDULE A"
+      views: "HSW SCHEDULE B"
+      at: "0,0,0"
+    negative-set:
+      oldViewId: "HSW DRAFT A"
+      views: "HSW DRAFT B"
+      at: "0,0,0"
+    note: >
+      FC2 - a schedule on one sheet. swapped holds one line, HSW-03, "corner
+      0.0 mm". The negative: DRAFT B is on HSW-01 already, so HSW-04 is in
+      notDone and keeps DRAFT A.
+
+  - fragment: place-view-on-sheet
+    expect: swapped
+    set:
+      oldViewId: "NOTES"
+      views: "AS-BUILT NOTES"
+      at: "0,0,0"
+    negative-set:
+      oldViewId: "HSW DRAFT A"
+      views: "HSW DRAFT B"
+      at: "0,0,0"
+    note: >
+      FC1 - THE PROOF. The legend on HSW-01 and HSW-02: two lines in swapped,
+      each "centre 0.0 mm" with that sheet's own viewport type. The negative as
+      in the first job.

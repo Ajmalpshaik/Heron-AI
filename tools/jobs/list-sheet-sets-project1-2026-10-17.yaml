@@ -1,0 +1,49 @@
+# The proof of list-sheet-sets (LIST_SHEET_SETS, FRG-SHT-032) as it was run on
+# 2026-10-17 - NEEDS-CHECKING Group EA, row EA1. It replaces the arrangement in
+# list-sheet-sets-bl001a-2026-10-14.yaml for this run: the owner chose to work
+# in the scratch project he had open rather than open the job model BL001A.
+#
+#     python tools/batch-prove.py tools/jobs/list-sheet-sets-project1-2026-10-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/list-sheet-sets-project1-2026-10-17.yaml --session <the Revit 2020 pid>
+#
+# A READ. No transaction is opened and nothing is changed, so there is no
+# `write:` below and neither document has to be in front.
+#
+# THE TWO DOCUMENTS, BOTH OPEN IN ONE REVIT 2020 (session 51568 that day):
+#
+#   "Project1"   the positive - a new project the owner made that day from
+#                Revit 2020's mechanical template, never saved. He saved ONE
+#                set in File - Print - Print... - Selected views/sheets -
+#                Select... - Save As, named "HERON PROOF SET", four elevation
+#                views ticked; a second set, "Set 1", with the same four views
+#                was saved in the same visit to the dialog. A read before the
+#                run: setCount 2
+#   "EQ-2020 rme_advanced_sample_project"
+#                the negative - another chat's scratch copy of the Revit 2020
+#                MEP sample, open and idle in the same Revit. A read before the
+#                run: setCount 0, "No View/Sheet Set is saved"
+#
+# WHY THE NEGATIVE IS A DIFFERENT DOCUMENT. This reads the whole document and
+# takes no value, so the only thing a negative leg can vary is the document. A
+# read that answered from the wrong one - the active document, the last one
+# asked - would bring Project1's sets into the sample's answer.
+#
+# WHAT TO READ BEYOND THE VERDICT - BATCH-PROVE CANNOT JUDGE THESE:
+#   - setCount on Project1 equals the number of names the owner sees in the
+#     dialog's Name list, leaving out <in-session>
+#   - every view reads "name (view type)" - an elevation says Elevation
+#   - on the negative, findings says no set is saved
+
+model: Project1 (new, never saved, Revit 2020 mechanical template) and "EQ-2020 rme_advanced_sample_project" (a scratch copy of the Revit 2020 MEP sample), both open in Revit 2020
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: list-sheet-sets
+    in: "Project1"
+    negative-in: "EQ-2020 rme_advanced_sample_project"
+    expect: [setCount, sheetSets]
+    note: >
+      THE PROOF. Every saved set on the scratch project, every member named,
+      against a project with none.
