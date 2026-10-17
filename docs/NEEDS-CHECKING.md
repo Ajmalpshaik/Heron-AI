@@ -799,9 +799,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fy.md`](needs-checking/group-fy.md)
 
+## Group GC - one family swapped for another, whatever each one's hosting: the method `replace-in-place-family` widened (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gc.md`](needs-checking/group-gc.md)
+
 ## Group GW - Heron's own C# compiler on a .NET Revit, whatever another add-in loaded first (2026-10-17)
 
 **Its own file:** [`needs-checking/group-gw.md`](needs-checking/group-gw.md)
+
+## Group HE - a new text note of several paragraphs, numbered, lettered or bulleted: `CREATE_TEXT_NOTE` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-he.md`](needs-checking/group-he.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
