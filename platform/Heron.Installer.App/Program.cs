@@ -150,11 +150,7 @@ namespace Heron.Installer.App
                     {
                         window.Dispatcher.Invoke(delegate { window.Waiting(step); });
                     };
-                    var done = setup.Run();
-                    var lines = new List<string>(done.Lines);
-                    var saved = done.Save(PythonSetup.LogPath());
-                    if (!done.Ready) lines.Add(saved);
-                    python = lines;
+                    python = setup.RunAndSave(PythonSetup.LogPath()).Shown;
                 }
 
                 window.Dispatcher.Invoke(delegate { window.Report(report, python); });
