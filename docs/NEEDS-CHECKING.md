@@ -719,6 +719,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ek.md`](needs-checking/group-ek.md)
 
+## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
+
+**Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
+
 ## Group EM - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
 **Its own file:** [`needs-checking/group-em.md`](needs-checking/group-em.md)
