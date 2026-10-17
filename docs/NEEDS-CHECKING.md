@@ -783,6 +783,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fy.md`](needs-checking/group-fy.md)
 
+## Group HE - a new text note of several paragraphs, numbered, lettered or bulleted: `CREATE_TEXT_NOTE` version 2 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-he.md`](needs-checking/group-he.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

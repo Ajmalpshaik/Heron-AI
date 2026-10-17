@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put a text note on this view at this point"
 kind: action
 domain: revit.annotation
 capability: CREATE_TEXT_NOTE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -29,6 +29,50 @@ purpose: >
   carries, and a note created with the wrong one is a drawing that fails its
   own standard while reading correctly on screen.
 
+# VERSION 2 (2026-10-17, FRAGMENT-ISSUES 5b-930) - PARAGRAPHS, AND A NUMBERED
+# OR BULLETED LIST. Kept out of the purpose on purpose, as EDIT_TEXT_VALUES
+# keeps its own: the purpose is searched, and list words there would pull
+# QUESTIONS about a note ("is this note numbered") to a tool that makes one.
+#
+#   noteText         a paragraph break is typed \r, a soft line break
+#                    (Shift+Enter) \v and a backslash \\ - the marks
+#                    EDIT_TEXT_VALUES takes and READ_ELEMENT_PARAMETERS shows a
+#                    note's wording in. A chat's values arrive one per line, so
+#                    without them a new note could only be one paragraph. A
+#                    backslash that is meant is typed \\ - "C:\revit" would
+#                    become "C:", a paragraph break and "evit"
+#   listType         one list for every paragraph, or one per paragraph with
+#                    commas between, the last carrying on - "None,
+#                    ArabicNumbers" keeps a GENERAL NOTES heading out of the
+#                    numbering. Revit's words None, Bullet, ArabicNumbers,
+#                    LowerCaseLetters, UpperCaseLetters, or the plain ones no
+#                    list, bullets, numbers, lowercase letters, uppercase
+#                    letters. Left out: None, which is version 1's note exactly
+#   listStartNumber  the number the first numbered or lettered paragraph takes,
+#                    3 for "3.", 2 for "b.". Left out: 1, Revit's own start
+#
+#   Both may be left out (`optional: true` with `absent:`, row 5b-488's
+#   mechanism), so every caller of version 1 is bound as before.
+#
+#   REFUSED BEFORE THE NOTE IS MADE: a list word Revit has not got, more list
+#   words than paragraphs, a start number that is not a whole number or is
+#   outside GetMinimumListStartNumber..GetMaximumListStartNumber, a start number
+#   other than 1 with nothing numbered or lettered, and two DIFFERENT lists on
+#   paragraphs side by side - SetListType's remarks, every release: paragraphs
+#   next to each other in lists at one indent are one list, and a type set on
+#   one reaches all of them.
+#
+#   IT READS THE NOTE BACK: the wording, every paragraph's list type (over the
+#   paragraph WITH its closing carriage return, the range EDIT_TEXT_VALUES
+#   version 4 measured the getters need on Revit 2020) and the start number. A
+#   note that reads back other than asked is in the drawing, so it goes in
+#   `unverified`, never `created`, and `noteFormatting` names the paragraph.
+#
+#   NOT RUN IN REVIT. Compiled for all eight releases; the proof plan is in
+#   tests/cases.yaml and NEEDS-CHECKING group HE. Version 1's proof below no
+#   longer describes the code and is kept as a record; the card is DRAFT until
+#   version 2's proof is signed.
+
 contract:
   needs:
     - name: doc
@@ -45,10 +89,36 @@ contract:
     - name: textTypeId
       type: ElementId
       source: request
+    # VERSION 2. One list type for every paragraph, or one per paragraph with
+    # commas between. Left out, "None" - version 1's note.
+    - name: listType
+      type: string
+      source: request
+      optional: true
+      absent: None
+    # VERSION 2. The number the first numbered or lettered paragraph takes.
+    # Left out, 1 - Revit's own start.
+    - name: listStartNumber
+      type: string
+      source: request
+      optional: true
+      absent: 1
   provides:
     - name: created
       role: result
       type: ElementId
+    - name: unverified
+      # Version 2. A note Revit made that reads back other than asked - its
+      # wording, a paragraph's list or the start number. It is in the drawing
+      # (Ctrl+Z takes it out), so it is never `created` (D-52).
+      role: accounting
+      type: ElementId
+    - name: noteFormatting
+      # Version 2. The note's paragraphs and each one's list as READ BACK -
+      # "1 no list, 2-4 ArabicNumbers from 1" - or what reads back different.
+      # A sentence about what was made, never a thing it found (D-52).
+      role: accounting
+      type: string
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
@@ -81,7 +151,18 @@ tests: tests/
 
 compatibility-note: >
   `TextNote.Create(Document, ElementId, XYZ, string, ElementId)` is unchanged
-  2020 to 2027. The text type arrives as an `ElementId` from a live element, so
+  2020 to 2027. Version 2 adds `TextNote.GetFormattedText` / `SetFormattedText`,
+  FormattedText's `GetPlainText()`, `GetListType`, `SetListType`,
+  `GetListStartNumber`, `SetListStartNumber`, `GetMinimumListStartNumber`,
+  `GetMaximumListStartNumber` and its empty constructor, `TextRange(int, int)`
+  and the five `ListType` values it sets: every one read off RevitAPI.xml and
+  the shipped RevitAPI.dll for each release 2020 to 2027 on 2026-10-17 (the
+  dll through tools/api-surface), the same signature on all eight and the
+  remarks the same but for "NULL" written "null" from 2022 - so no #if.
+  TextNote.Create's own remarks say a '\r' or '\v' in the text makes a new
+  line, on every release.
+
+  The text type arrives as an `ElementId` from a live element, so
   nothing here builds one from an int and 2024's 64-bit ids do not reach this
   code.
 
@@ -131,6 +212,31 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "change the wording of this note"      -> EDIT_TEXT_VALUES, field Text
+#
+# ROUTING (2026-10-17, version 2, 5b-930)
+#
+#   "make a numbered note"                 -> here, listType ArabicNumbers.
+#                                             NOT DECLARED, ON A MEASUREMENT:
+#                                             it reaches here on main already,
+#                                             on the lexical and the trained
+#                                             backend, and declaring it sent
+#                                             "does this note have bullets" (a
+#                                             question) and three sentences
+#                                             about changing a note that is
+#                                             there to this card on the trained
+#                                             backend. Undeclared, all 34
+#                                             sentences measured win as on main
+#                                             on both backends (row 5b-930)
+#   "number the paragraphs of this note"   -> EDIT_TEXT_VALUES - the note is
+#                                             already there. Its mode format
+#                                             sets lists on a note that exists
+#                                             (open PR #586, version 5)
+#   "is this note numbered"                -> READ_ELEMENT_PARAMETERS,
+#                                             parameterName Text - a question
+#                                             is a read. On main it reaches
+#                                             THIS card on both backends, and
+#                                             did before version 2; PR #586
+#                                             declares it on the read
 utterances:
   - add a text note
   - put a note here
