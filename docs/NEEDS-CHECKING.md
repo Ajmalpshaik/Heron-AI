@@ -751,6 +751,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-et.md`](needs-checking/group-et.md)
 
+## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ev.md`](needs-checking/group-ev.md)
+
+## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
+
+**Its own file:** [`needs-checking/group-ez.md`](needs-checking/group-ez.md)
+
 ## Group FC - every column of a schedule in one call, and a heading turned back to horizontal: `SET_SCHEDULE_APPEARANCE` version 3 (2026-10-17)
 
 **Its own file:** [`needs-checking/group-fc.md`](needs-checking/group-fc.md)

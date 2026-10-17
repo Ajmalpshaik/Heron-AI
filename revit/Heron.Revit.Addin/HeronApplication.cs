@@ -163,6 +163,11 @@ namespace Heron.Revit.Addin
                 var config = HeronConfig.Load();
                 PruneLogs(config.GetInt("log.retainDays", 14));
 
+                // AND THE RUN RECORDS, by the same rule: DERIVED, so deleting
+                // an old one is always a valid recovery action, and every
+                // delete asks HeronPaths.IsSafeToDelete first (HeronRuns).
+                HeronRuns.Prune(config.GetInt("runs.retainDays", 14));
+
                 var revitVersion = application.ControlledApplication.VersionNumber;
                 var addinVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 

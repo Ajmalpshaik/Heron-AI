@@ -3,7 +3,7 @@
 // `headingOrientation` are in scope; leaves `changed`, `notPresent`, `refused`
 // and `appliedAppearance` behind.
 //
-// VERSION 3 (FRAGMENT-ISSUES row 5b-540). Two gaps found 2026-10-15 on a real
+// VERSION 3 (FRAGMENT-ISSUES row 5b-620). Two gaps found 2026-10-15 on a real
 // project, Revit 2020:
 //
 //   ONE COLUMN PER CALL. "Make all the fields horizontal and centre" took one

@@ -29,7 +29,7 @@ positive:
       the hidden column still hidden. Every input left empty stays untouched,
       or the fragment un-hides work somebody did deliberately
 
-  # VERSION 3 (row 5b-540).
+  # VERSION 3 (row 5b-620).
   - given: fieldName "all", alignment "centre", headingOrientation "horizontal"
     expect: >
       every column of the schedule centred with its heading horizontal, in ONE

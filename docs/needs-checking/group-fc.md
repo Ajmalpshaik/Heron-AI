@@ -12,7 +12,7 @@ Found on 2026-10-15 on a real project, Revit 2020 (never written to for proving)
 all the fields formatting horizontal and centre"* on a schedule: it took one call per field - one undo
 entry per column - and no call could turn a heading back to horizontal, because `headingSideways` false
 meant "leave it" and only Vertical was ever written.
-[Row 5b-540](../fragment-issues/section-5b-rows-401-425.md) has the finding.
+[Row 5b-620](../fragment-issues/section-5b-rows-401-425.md) has the finding.
 
 **What changed.** [`SET_SCHEDULE_APPEARANCE`](../../brain/fragments/set-schedule-appearance/fragment.yaml)
 (FRG-VIEW-061, was PROVEN, now DRAFT, version 3). `fieldName` "all" (also "every", "*", "all fields",
@@ -49,7 +49,7 @@ sheet. Note each field's alignment and heading orientation from the Formatting t
 | **FC7** | fieldName=all, newHeading=X, alignment=centre; then fieldName=Mark, headingSideways=true, headingOrientation=horizontal | First: no heading changed, `refused` says *heading NOT written* over 5 columns, every column centred. Second: `refused` says the two ask for opposite things and NOTHING changed |
 | **FC8** | FC1 and FC2 once on Revit 2024 and once on 2027 | The same answers |
 | **FC9** | Second route: Revit's schedule Properties > Formatting, each field in turn | Alignment and heading orientation as `appliedAppearance` said, field for field |
-| **FC10** | *Routing, on the owner's PC.* `heron_lookup` *"make all the schedule columns horizontal and centred"* and *"set every heading horizontal"* | `SET_SCHEDULE_APPEARANCE` first for both. Measured in the cloud on both embedding backends without the re-ranker (row 5b-540); the re-ranked backends were not measured there |
+| **FC10** | *Routing, on the owner's PC.* `heron_lookup` *"make all the schedule columns horizontal and centred"* and *"set every heading horizontal"* | `SET_SCHEDULE_APPEARANCE` first for both. Measured in the cloud on both embedding backends without the re-ranker (row 5b-620); the re-ranked backends were not measured there |
 | **FC11** | *Not the proof - an observation.* fieldName=all, hideOrShow=hide, then show | What Revit does with every column hidden - write it down. If Revit refuses, the refusal is named per column; if it allows it, `show` must bring all five back |
 
 Signing: Ajmal PS signs the FC1/FC2 draft; then he says whether the card goes back to PROVEN.

@@ -53,7 +53,7 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
-# VERSION 3 (2026-10-17, FRAGMENT-ISSUES row 5b-540). Kept out of the purpose
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES row 5b-620). Kept out of the purpose
 # on purpose: the purpose is searched, and a paragraph about "all" and
 # "horizontal" would pull other cards' sentences.
 #
@@ -255,7 +255,7 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "turn the
   # heading sideways": OFFSET_ELEMENTS on the trained backend answered it.
   - turn the heading sideways
-  # ADDED 2026-10-17, row 5b-540 - version 3 does every column in one call
+  # ADDED 2026-10-17, row 5b-620 - version 3 does every column in one call
   # and turns a heading back to horizontal.
   - make all the schedule columns horizontal and centred
   - set every heading horizontal
@@ -265,4 +265,4 @@ utterances:
   # - a write - on both re-ranked backends, on main and on this branch alike.
   # Declaring them fixed three of the four and moved "align the text notes
   # horizontally" on the trained model from MOVE_ANNOTATION, which lines
-  # annotation up, to ALIGN_ELEMENTS. Recorded in row 5b-540 for the owner.
+  # annotation up, to ALIGN_ELEMENTS. Recorded in row 5b-620 for the owner.
