@@ -341,12 +341,14 @@ def main():
     # records it moving three ducts under a single undo entry. A test that
     # pins an expired sentence keeps the sentence alive, which is how the
     # same claim survived in four files (FRAGMENT-ISSUES section 5b row 26).
-    # What is still true and still worth warning about is the MEASUREMENT -
-    # D3, "move them, then MEASURE one" - so that is what is checked, by
-    # naming the row rather than the prose around it.
+    # What is still worth saying is the MEASUREMENT - D3, "move them, then
+    # MEASURE one" - so that is what is checked, by naming the row rather than
+    # the prose around it. On 2026-10-17 D3 was measured in Revit 2024, so the
+    # sentence now says how far that measurement reaches instead of that
+    # nobody had taken one.
     check("D3" in gate.detail and "measured" in gate.detail.lower(),
           "and it says why - not that the path is untried, which expired, "
-          "but that nobody has measured what it did")
+          "but how far its measurement (D3) reaches")
     check("never been proven" not in gate.detail
           and "never been compiled" not in gate.detail,
           "and it does not repeat a sentence a reader can disprove in a minute")
