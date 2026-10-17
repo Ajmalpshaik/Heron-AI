@@ -104,6 +104,21 @@ class FakeBridge(object):
         pass
 
 
+def kept_one():
+    """The first MODIFY fragment whose proof stands - one D-117 lets be kept -
+    or None. Asked of the client's own proof reader, never typed here."""
+    proof_of = getattr(CLIENT, "proof_of", None)
+    folder = os.path.join(ROOT, "brain", "fragments")
+    for name in sorted(os.listdir(folder)):
+        card = os.path.join(folder, name, "fragment.yaml")
+        if not os.path.isfile(card) or CLIENT.fragment_risk(card) != "MODIFY":
+            continue
+        found = proof_of(name) if proof_of else {"status": "PROVEN", "stale": False}
+        if found and found.get("status") == "PROVEN" and not found.get("stale"):
+            return name
+    return None
+
+
 def run(name, landed, in_front, **kwargs):
     bridge = FakeBridge(landed, in_front)
     saved = (CLIENT.refuse_off_windows, CLIENT.discover)
@@ -161,7 +176,17 @@ def main():
 
     print()
     print("3. cmd_fragment sends it as `document` and says where the run landed")
+    # A KEPT WRITE NEEDS A PROOF THAT STANDS (D-117), so the fragment kept
+    # here is one whose files say so, found rather than typed. The one sent
+    # on 2026-10-04, `set-family-connector-roles`, is DRAFT and now refused.
+    kept = kept_one()
+    check(kept is not None, "the library has a MODIFY fragment whose proof stands")
     code, sent, out = run("set-family-connector-roles", FAMILY, False,
+                          writing=True, apply_it=True, in_document=FAMILY)
+    check(code == 2 and not sent,
+          "a DRAFT asked to be kept in a named document is refused before "
+          "anything is sent - Article 11 does not depend on the window")
+    code, sent, out = run(kept or "", FAMILY, False,
                           writing=True, apply_it=True, in_document=FAMILY)
     check(code == 0 and len(sent) == 1
           and sent[0][1].get("document") == FAMILY,
