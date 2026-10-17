@@ -80,6 +80,9 @@ compatibility-note: >
 #   "print this to pdf"          -> NOT here, same reason
 #   "put this view on a sheet"   -> PLACE_VIEW_ON_SHEET
 #   "list the sheets"            -> LIST_SHEETS - useful FIRST, to pick which
+#   "create a view/sheet set with these sheets for DWG export" -> MANAGE_SHEET_SETS
+#                                 - the set first; this exports after. It
+#                                 answered here on both backends. Row 5b-1005
 
 utterances:
   - export the views to dwg

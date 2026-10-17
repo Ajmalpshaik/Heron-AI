@@ -189,6 +189,10 @@ compatibility-note: >
 #                                           (2026-10-17, row 5b-466); before
 #                                           it, CREATE_SHEETS on both backends
 #   "take these sheets out of the set"   -> here, mode remove (row 5b-466)
+#   "create a view/sheet set with these sheets for DWG export" -> here - the
+#                                           set is made first, and
+#                                           EXPORT_VIEWS_TO_DWG exports from
+#                                           it after. Row 5b-1005
 #   "save these elements as a set"       -> CREATE_SELECTION_FILTER. A
 #                                           selection set and a sheet set are
 #                                           different things with one word
@@ -199,6 +203,10 @@ compatibility-note: >
 utterances:
   - save these sheets as a named set
   - make a print set
+  # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-1005: asked on 2026-10-14 with the
+  # Revit 2020 filter, it reached EXPORT_VIEWS_TO_DWG, a PUBLISH, on both
+  # backends. Making the set is this card's job; the export comes after.
+  - create a view/sheet set with these sheets for DWG export
   - delete that sheet set
   - rename the print set
   - i need a set for the issue
