@@ -799,6 +799,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-fy.md`](needs-checking/group-fy.md)
 
+## Group GW - Heron's own C# compiler on a .NET Revit, whatever another add-in loaded first (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gw.md`](needs-checking/group-gw.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

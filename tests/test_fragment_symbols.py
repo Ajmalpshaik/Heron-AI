@@ -38,7 +38,9 @@ WITHOUT A COMPILER - read from the files
      any release, each under its own #if - so a release added to the props
      and not to the helper fails here, not in front of a modeller;
   2. every script RevitFragment compiles goes through the helper, and through
-     it BEFORE the stack guard, which parses the source too;
+     it BEFORE the stack guard, which parses the source too - both reached
+     through HeronScriptHost since row 5b-575, whose engine holds the one
+     other compile in the add-in;
   3. no fragment's #if names anything but a release symbol. The gate's build
      also defines DEBUG, TRACE and the framework's own symbols; the add-in
      hands over release symbols only, so a fragment that tested one of those
@@ -83,6 +85,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 HOST = os.path.join(ROOT, "tests", "Heron.StackGuard.TestHost")
 HELPER = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronFragmentSymbols.cs")
 EXECUTOR = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
+ENGINE = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronScriptEngine.cs")
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 COULD_NOT_RUN = 3
 
@@ -176,10 +179,22 @@ def without_a_compiler(table, conditions):
           % ("" if not extra else " - " + ", ".join(extra)))
 
     # 2. EVERY SCRIPT GOES THROUGH IT, AND THROUGH IT BEFORE THE GUARD.
+    #
+    # Through HeronScriptHost since 2026-10-17 (row 5b-575): RevitFragment
+    # names no Roslyn type, so a compile is HeronScriptHost.Compile and the
+    # guard HeronScriptHost.Guard, and the one CSharpScript.Create left is the
+    # engine's, which compiles whatever the host hands it and nothing else.
     executor = read(EXECUTOR) or ""
-    creates = len(re.findall(r"CSharpScript\.Create\b", executor))
-    guarded = re.findall(r"HeronStackGuard\.Apply\(([^;]*)\);", executor)
+    creates = len(re.findall(r"HeronScriptHost\.Compile\(", executor))
+    guarded = re.findall(r"HeronScriptHost\.Guard\(([^;]*)\);", executor)
     check(creates > 0, "RevitFragment compiles scripts at all")
+    elsewhere = sorted(
+        name for name in os.listdir(os.path.dirname(EXECUTOR))
+        if name.endswith(".cs") and name != os.path.basename(ENGINE)
+        and re.search(r"CSharpScript\.Create\b", read(os.path.join(os.path.dirname(EXECUTOR), name)) or ""))
+    check(len(re.findall(r"CSharpScript\.Create\b", read(ENGINE) or "")) == 1 and not elsewhere,
+          "and the engine's is the only other compile in the add-in%s"
+          % ("" if not elsewhere else " - also " + ", ".join(elsewhere)))
     check(len(guarded) == creates,
           "every script RevitFragment compiles is guarded first (%d compiled, %d guarded)"
           % (creates, len(guarded)))
