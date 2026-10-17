@@ -254,4 +254,9 @@ utterances:
   # any of them on any backend measured: words alone found curtain walls and
   # worksets. This is what this card already does for a builders work layout
   # (versions 3 and 4), said in the words the modeller uses for the job.
-  - dimension the openings on the builders work layout from the grid
+  #
+  # NOT "openings", ON PURPOSE. "dimension the openings on the builders work
+  # layout from the grid" took "dimension the wall openings" from
+  # DIMENSION_WALL_OPENINGS to this card on the model2vec backend; without
+  # the word it stays there on both backends measured.
+  - dimension the builders work layout from the grid

@@ -165,11 +165,15 @@ purpose: >
 # whose candidates include one of `needs` (heron_skill.methods_for), and the
 # words they share with the request put it first. They keep to "builders",
 # "work" and "layout" on purpose: every other word here is one more request
-# this job would be offered beside, and "set up" is in half of them
-# (FRAGMENT-ISSUES 5b-540). "set up the builders work layout" still reaches
-# it through those three words.
+# this job would be offered beside - "set" alone is in hundreds. And never
+# "this": heron_skill._words makes it "thi", which is not a plain word, so a
+# phrase saying "this" shares a word with every request that does - measured
+# 2026-10-17, it offered this job beside "turn this tag vertical"
+# (FRAGMENT-ISSUES 5b-540, recorded there, not fixed here). "set up the
+# builders work layout" and "do the builders work for this layout" reach it
+# through the three words.
 utterances:
-  - do the builders work for this layout
+  - do the builders work for the layout
   - make the builders work layout
   - prepare the builders work layout
 
