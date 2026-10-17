@@ -30,6 +30,13 @@ PC starts where the old one is. This holds the three things it promises:
      outside it, and a pip line pinned to its versions - as a WARNING that
      moves no exit code (row 5b-417). Faked in folders here: the real
      redirection is Windows', and only the owner's laptop has it.
+  6. On Windows every FIX line for a package - PyYAML missing, the MCP
+     package missing, the MCP package breaking on import - is the one line
+     requirements-lock.txt names at its head, pinned and hashed, and no
+     unpinned pip line is printed. Off Windows the lines stay what they were:
+     the lock pins pywin32, which has no wheel but Windows'. Asked of the
+     tool's section 2 in this process, with the platform given and the
+     imports faked - so it runs here, and says nothing of a real Windows pip.
 
 Every run points HERON_KNOWLEDGE at a scratch folder, so the shared store on
 the machine running this is never touched (row 5b-233).
@@ -40,7 +47,9 @@ not here to look at, and Windows' redirection of a Store app's AppData is
 faked with a junction, not seen.
 """
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -50,6 +59,17 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "heron-ready.py")
+LOCK = os.path.join(ROOT, "requirements-lock.txt")
+
+#: The line a Windows FIX must name - the one requirements-lock.txt names at
+#: its own head, and HeronInstaller.exe runs.
+LOCK_LINE = "python -m pip install --user --require-hashes -r requirements-lock.txt"
+
+#: The lines it named everywhere until 2026-10-17: unpinned, so never again on
+#: Windows, and still off it, where the lock cannot install.
+OFF_WINDOWS = {"yaml": "pip install --user -r requirements.txt",
+               "mcp": "pip install --user mcp",
+               "repair": "pip install --user --upgrade mcp cryptography cffi"}
 
 FAILURES = []
 
@@ -164,6 +184,94 @@ def store_claude(work, plain_code):
           "and says nothing of it where there is no Store Claude")
 
 
+class _Breaks(object):
+    """An import finder that makes the MCP package raise on import - the shape
+    of 2026-09-16, a native binding that raised the moment `mcp` loaded."""
+
+    def find_spec(self, name, path=None, target=None):
+        if name == "mcp" or name.startswith("mcp."):
+            raise RuntimeError("a native binding raised on import (faked)")
+        return None
+
+
+def section_two(tool, broken=False, **platform):
+    """What the tool's section 2 prints with PyYAML and the MCP package
+    missing - or, `broken`, with the MCP package raising on import - asked
+    for the platform in `platform`. sys.modules is put back afterwards."""
+    faked = ("yaml", "mcp.server.mcpserver", "mcp.server.fastmcp")
+    saved = dict((name, module) for name, module in sys.modules.items()
+                 if name in faked or name == "mcp" or name.startswith("mcp."))
+    for name in saved:
+        del sys.modules[name]
+    finder = _Breaks()
+    if broken:
+        sys.meta_path.insert(0, finder)
+    else:
+        for name in faked:
+            sys.modules[name] = None        # import raises ModuleNotFoundError
+    printed = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(printed):
+            tool.packages(**platform)
+    finally:
+        if finder in sys.meta_path:
+            sys.meta_path.remove(finder)
+        for name in faked:
+            if name in sys.modules and sys.modules[name] is None:
+                del sys.modules[name]
+        sys.modules.update(saved)
+    return printed.getvalue()
+
+
+def pip_lines(out):
+    """Every printed line that is a pip command, stripped."""
+    return [line.strip() for line in out.splitlines() if "pip " in line]
+
+
+def lock_on_windows():
+    """Section 6 - on Windows the FIX lines are the lock; off it, not."""
+    lock = io.open(LOCK, encoding="utf-8").read() if os.path.exists(LOCK) else ""
+    check(("#     %s\n" % LOCK_LINE) in lock.split("\n\n", 1)[0],
+          "requirements-lock.txt names %r at its own head - the line the "
+          "checks below hold the tool to" % LOCK_LINE)
+
+    tool = load_tool()
+    code = tool.packages.__code__
+    asks = code.co_varnames[:code.co_argcount]
+    can = "windows" in asks and "minor" in asks
+    check(can, "section 2 can be asked for one platform's lines - "
+               "packages(windows, minor); it takes %s" % (list(asks),))
+
+    def section(broken=False, **platform):
+        return section_two(tool, broken, **(platform if can else {}))
+
+    out = section(windows=True, minor=12)
+    pips = pip_lines(out)
+    check(len(pips) == 2 and all(line == LOCK_LINE for line in pips),
+          "on Windows, PyYAML missing and the MCP package missing each end in "
+          "the lock line, and no other pip line is printed: %s" % pips)
+    out = section(broken=True, windows=True, minor=12)
+    pips = pip_lines(out)
+    check("breaks on import" in out and pips == [LOCK_LINE],
+          "a broken MCP import is repaired with the lock line too - the "
+          "measured versions put back, never an unpinned --upgrade: %s" % pips)
+    out = section(windows=True, minor=10)
+    pips = pip_lines(out)
+    check("3.11 or later" in out and len(pips) == 2
+          and all(line == LOCK_LINE for line in pips),
+          "on a Windows Python older than 3.11 it says the lock needs 3.11 or "
+          "later, and still names no unpinned line: %s" % pips)
+
+    out = section(windows=False, minor=12)
+    check(OFF_WINDOWS["yaml"] in out and OFF_WINDOWS["mcp"] in out
+          and "requirements-lock" not in out,
+          "off Windows the lines stay what they were - the lock pins pywin32, "
+          "which nothing but Windows installs: %s" % pip_lines(out))
+    out = section(broken=True, windows=False, minor=12)
+    check(OFF_WINDOWS["repair"] in out and "requirements-lock" not in out,
+          "and so does the repair of a broken import: %s" % pip_lines(out))
+
+
 def main():
     if not os.path.exists(TOOL):
         check(False, "tools/heron-ready.py exists")
@@ -179,8 +287,10 @@ def main():
         os.makedirs(store)
         code, out = run(store, PYTHONPATH=shadow)
         check(code == 1, "with no PyYAML it exits 1 (got %d)" % code)
-        check("pip install --user -r requirements.txt" in out,
-              "and names the command that installs it")
+        wanted = LOCK_LINE if os.name == "nt" else OFF_WINDOWS["yaml"]
+        check(wanted in out,
+              "and names the command that installs it on this platform: %s"
+              % wanted)
         check(os.listdir(store) == [],
               "and builds no knowledge store without it")
 
@@ -258,6 +368,10 @@ def main():
         print()
         print("5. A Microsoft Store Claude's own copy of AppData is named, as a warning")
         store_claude(work, plain_code=code_check)
+
+        print()
+        print("6. On Windows every package FIX is the pinned, hashed lock line")
+        lock_on_windows()
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
@@ -269,7 +383,8 @@ def main():
         return 1
     print("PASSED - a missing package is named with its command, the exit code")
     print("follows what is printed, the store is built before a chat asks, and a")
-    print("Store Claude's own copy of AppData is named as a warning.")
+    print("Store Claude's own copy of AppData is named as a warning, and on")
+    print("Windows every package FIX is the pinned, hashed lock line.")
     print("It says nothing about a real Windows PC.")
     return 0
 

@@ -26,3 +26,30 @@ jobs:
   gates:
     name: Everything, against today's dependencies
     uses: ./.github/workflows/gates.yml
+
+  # THE PINNED PYTHON PACKAGES, asked about once a week. requirements-lock.txt
+  # is what HeronInstaller.exe puts on a modeller's PC, every version exact -
+  # so an advisory published after it was written reaches every PC until
+  # somebody moves the pin. Nothing in a pull request would ever say so.
+  #
+  # A REPORT, NOT A GATE. A finding is a question for a person - does Heron
+  # reach that code? should the pin move? - so the audit exits 0 whatever it
+  # finds, prints each one, and puts each on this run's page as a warning.
+  # The job goes red only when the audit could NOT run (exit 2): a check that
+  # did not happen is never reported as clean. tools/README.md, lock-python.py.
+  lock-audit:
+    name: Known advisories on the pinned Python packages (a report)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: python -m pip install --quiet pip-audit
+
+      - name: Audit requirements-lock.txt
+        run: python tools/lock-python.py --audit

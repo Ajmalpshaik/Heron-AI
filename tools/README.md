@@ -1640,6 +1640,46 @@ how many lines Claude remembers about Heron, and three timed lookups. **No file'
 few settings keys `SETTINGS_KEYS` and `PROJECT_KEYS` name - which the suite holds by planting a key, an
 address, memory text and a chat and checking none comes out.
 
+**On Windows every package FIX in section 2 is one line since 2026-10-17** -
+`python -m pip install --user --require-hashes -r requirements-lock.txt`, the line the lock names at its
+head and the installer runs - for PyYAML missing, the MCP package missing, and the MCP package breaking
+on import. **Off Windows the unpinned lines stay**, because the lock cannot install there: it pins
+`pywin32`, and pip refuses the whole file for that one line (*"No matching distribution found for
+pywin32==312"*, measured on Linux that day). On a Windows Python older than 3.11 it says the lock needs
+3.11 first. `install_lines()` holds the rule; section 6 of the suite holds it on both platforms.
+
+## `lock-python.py` — the pinned packages, regenerated and audited
+
+```bash
+python tools/lock-python.py                    # regenerate requirements-lock.txt, every version held
+python tools/lock-python.py --upgrade          # ... at the newest versions that resolve
+python tools/lock-python.py --upgrade pyjwt    # ... moving only the named ones
+python tools/lock-python.py --audit            # known advisories on the pinned versions - a report
+```
+
+**Written 2026-10-17**, because [`requirements-lock.txt`](../requirements-lock.txt) says never to edit a
+line by hand - a hand-edited version no longer matches its hashes and pip refuses the whole file - and
+then gives a `uv` line to retype. This runs that line: `uv pip compile` of what `requirements.txt`
+requires plus `mcp`, constrained to the versions in the lock now, for `x86_64-pc-windows-msvc` and
+Python 3.12, with `--generate-hashes`. **The header is kept as it stands**, because it is the record of
+what was measured; only the body is uv's. With every version held it wrote **the same bytes** that day.
+When a version moves it names each one and says the header's measurement no longer covers the file -
+re-measure the way the header says, then correct it. `tests/test_python_lock.py` holds the tool to the
+header's recipe: the same platform, Python and packages, and the header kept whole.
+
+**`--audit` asks the PyPI advisory database about each pinned `name==version`** through `pip-audit`, with
+`--disable-pip` so nothing is installed. The plain `pip-audit -r requirements-lock.txt --require-hashes`
+installs the file first and fails on the `pywin32` line on Linux - measured that day. **A report, not a
+gate: exit 0 whatever it finds**, each finding printed with its fixed version and, under GitHub Actions,
+as a warning on the run's page. **Exit 2 when it could not run** - no `uv`, no `pip-audit`, no network -
+because a check that did not happen is never clean. `.github/workflows/weekly.yml` runs the audit every
+Monday as its own job, outside the gates.
+
+**What its first run found, 2026-10-17:** two advisories on `pyjwt 2.14.0`, `PYSEC-2026-4141` and
+`PYSEC-2026-4183`, both fixed in 2.15.0, both in JWT verification - Heron's own Python never imports
+`jwt`. Left pinned, as a question for the owner: `--upgrade pyjwt` moves only that pin (2.15.1 that
+day), and the lock must then be measured again.
+
 ## `owner-queue.py` — what is waiting on the OWNER, derived rather than typed
 
 ```bash
