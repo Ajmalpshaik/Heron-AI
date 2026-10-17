@@ -2,7 +2,54 @@ positive:
   - given: a plan view, a point, "PROVIDE 300 CLEARANCE ABOVE", and the project's standard text type
     expect: one note at that point, in that style, and its id in `created`
 
+  - given: >
+      VERSION 2. A plan view, "GENERAL NOTES\rALL DIMENSIONS IN MM\rDO NOT
+      SCALE\vFROM THIS DRAWING\rSEE DETAIL A", listType "None, ArabicNumbers",
+      listStartNumber left out
+    expect: >
+      one note of 4 paragraphs in `created`, `noteFormatting` reading back
+      "1 no list, 2-4 ArabicNumbers from 1": GENERAL NOTES with no number, then
+      1. 2. 3. on the drawing, and "FROM THIS DRAWING" on its own line inside
+      paragraph 3 with no number of its own (Shift+Enter, typed \v)
+
+  - given: >
+      VERSION 2. The same view, "FIRST\rSECOND\rTHIRD", listType
+      "lowercase letters", listStartNumber "3"
+    expect: >
+      created, "1-3 LowerCaseLetters from 3" - c. d. e. on the drawing
+
+  - given: >
+      VERSION 2. "PROVIDE 300 CLEARANCE ABOVE" with listType and listStartNumber
+      both left out
+    expect: >
+      created exactly as version 1 made it - one paragraph, "1 no list" - so a
+      caller that never heard of lists gets the note it always got
+
 negative:
+  - given: >
+      VERSION 2. "FIRST\rSECOND", listType "Bullet, ArabicNumbers" - two
+      different lists side by side
+    expect: >
+      REFUSED before anything is made, NO NOTE WAS MADE, naming paragraphs 1
+      and 2. Revit makes paragraphs next to each other in lists one list, so a
+      number straight after a bullet cannot stand (SetListType's remarks)
+
+  - given: >
+      VERSION 2. "FIRST\rSECOND", listType "Numbered"
+    expect: >
+      REFUSED, NO NOTE WAS MADE, naming 'Numbered' and the words Revit takes
+
+  - given: >
+      VERSION 2. "ONE PARAGRAPH", listType "Bullet", listStartNumber "5"
+    expect: >
+      REFUSED, NO NOTE WAS MADE - a bullet has no number to start from
+
+  - given: >
+      VERSION 2. "ONLY ONE", listType "None, Bullet, ArabicNumbers"
+    expect: >
+      REFUSED, NO NOTE WAS MADE - three list types for one paragraph says the
+      paragraph breaks were not typed
+
   - given: the same call on a 3D view
     expect: >
       refused, with the reason. A text note is 2D annotation and a 3D view has
@@ -26,3 +73,7 @@ negative:
 
 second_route:
   - Revit's own Text tool at the same point, with the note's Type Selector compared against the project's standard
+  - >
+    VERSION 2. Double-click the made note in Revit: the editor's list buttons
+    show Numbers on paragraphs 2-4 and none on paragraph 1, and the paragraph
+    start number box reads what listStartNumber gave

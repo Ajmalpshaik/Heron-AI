@@ -185,12 +185,19 @@ def main():
           "the header says it has not been run on Windows, rather than implying it")
     check("test_mcp_serves" in lock and "--require-hashes" in lock,
           "and names what WAS run on it")
-    stated = re.search(r"PYTHON 3\.(\d+) OR LATER", lock)
+    stated = re.search(r"PYTHON 3\.(\d+) TO 3\.(\d+)", lock)
     oldest = re.search(r"OldestMinor\s*=\s*(\d+)", setup)
+    newest = re.search(r"NewestMinor\s*=\s*(\d+)", setup)
     check(stated is not None and oldest is not None
           and stated.group(1) == oldest.group(1),
-          "the Python it says it needs (3.%s) is the one PythonSetup refuses below (3.%s)"
+          "the oldest Python it says it needs (3.%s) is the one PythonSetup refuses below (3.%s)"
           % (stated.group(1) if stated else "?", oldest.group(1) if oldest else "?"))
+    check(stated is not None and newest is not None
+          and stated.group(2) == newest.group(1),
+          "and the newest it was measured on (3.%s) is the one PythonSetup refuses above (3.%s)"
+          % (stated.group(2) if stated else "?", newest.group(1) if newest else "?"))
+    check('"--only-binary=:all:"' in setup,
+          "and it installs wheels only, so the source archives listed here are never built")
     check('LockFile = "requirements-lock.txt"' in setup,
           "PythonSetup installs from this file and no other")
     check('"--require-hashes"' in setup,

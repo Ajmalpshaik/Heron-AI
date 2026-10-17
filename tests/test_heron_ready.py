@@ -293,6 +293,19 @@ def main():
               % wanted)
         check(os.listdir(store) == [],
               "and builds no knowledge store without it")
+        # THE INSTALLER READS THIS SUMMARY - PythonSetup.NotReadyItems takes
+        # the "  - " lines under the line starting NOT READY. Reworded or
+        # re-indented, the installer would only say "did not say READY", and
+        # nothing else would go red (review of #558).
+        lines = out.splitlines()
+        heading = [i for i, line in enumerate(lines) if line.startswith("NOT READY")]
+        check(len(heading) == 1,
+              "the summary is ONE line starting NOT READY, which the installer looks for")
+        items = [line[4:] for line in lines[heading[0] + 1:]
+                 if line.startswith("  - ")] if heading else []
+        check(any("PyYAML is missing" in item for item in items),
+              "and each thing to fix is a '  - ' line under it, as the installer reads it: %s"
+              % (items or "none"))
 
         print()
         print("2. The exit code follows the FIX lines")

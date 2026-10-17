@@ -514,6 +514,56 @@ NEEDS REAL REVIT, and no fragment is proven on a new release by the answer.
 
 ---
 
+### ✅ Q-67 — Should the Heron server start on a non-Windows machine with only its library tools, and every Revit tool answering that Revit is not reachable here? → **Yes - the library alone, and no Revit tool listed** *(found and answered 2026-10-17)*
+
+**What was found**, in a cloud session on 2026-10-17. The last lines of
+[`mcp/server/heron_mcp_server.py`](../../mcp/server/heron_mcp_server.py) exit **2** when `os.name != "nt"` -
+*"Heron's bridge uses Windows named pipes. Revit is Windows-only."* - before a single tool is served. So on
+Linux the host lists **no** `heron` tool and reports the server `CONNECTION_CLOSED`: not only the Revit tools
+but the ones that never touch Revit - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`,
+`heron_standards`. The [`heron-fragment-author`](../../.claude/agents/heron-fragment-author.md) agent is given
+exactly three Heron tools, `heron_lookup`, `heron_resolve` and `heron_capabilities`, and **in a cloud session
+it cannot search the library it is told to search first**. The exit is deliberate
+([docs/38 §4](../38-the-cloud-environment.md) says so), and the same module imports on Linux:
+`tests/test_mcp_serves.py` and `tests/test_served_claims.py` call its tools in-process there. Whether a
+non-Windows machine should be served the library without Revit was left by
+[row 5b-162](../fragment-issues/section-5b-rows-151-175.md) as *"a design question nobody has asked"*. A
+search of DECISIONS, `decisions/`, this register and the Constitution on 2026-10-17 found nothing that
+decides it either way. [D-02](../decisions/D-02.md) makes the bridge a Windows named pipe; it says nothing
+about the tools that do not use the bridge.
+
+**The one thing a yes must not break.** [`AGENTS.md`](../../AGENTS.md) tells an agent: *"If no `heron` tools
+are listed, Heron is not connected"* - say so, ask for `python tools/heron-ready.py`, stop. A library-only
+server lists `heron` tools where no Revit can ever be, so that sentence would read as *connected* when it is
+not. A yes therefore owes two things with it: the Revit tools **not listed** off Windows - never listed and
+then hanging or failing late - and the AGENTS.md line reworded to the test that still holds, *no `revit_`
+tool listed means no Revit here*. The session-start line [#573](https://github.com/Ajmalpshaik/Heron-AI/pull/573)
+added says, off Windows, *"no Revit and no Heron tools in this session"*
+(`session_line.py` in the [`heron-session`](../../.claude/skills/heron-session/SKILL.md) skill); a yes changes it to say the
+library tools are there and the Revit ones are not.
+
+**Recommended - reasoned, not built:** **yes**, on non-Windows only, with the library tools served and every
+tool that needs the bridge left unregistered, so the host's own tool list says there is no Revit here. Which
+`heron_*` tools reach the bridge is derived from the code when it is built, not typed here. Windows behaviour
+does not change by one line. Tests on Linux start the real server over stdio, list its tools, and fail if a
+bridge tool appears or a library tool is missing.
+
+**What the other choices cost.** Leaving it as it is keeps every cloud session - and the fragment-author agent
+in it - searching the library with `grep` instead of the ranked lookup a modeller's chat gets, so the two can
+disagree on what exists. Listing the Revit tools and having each refuse is honest, but it is a tool list that
+says Revit is here when it is not, which is the trap AGENTS.md's sentence exists to avoid.
+
+**Ajmal PS decides.** Until he does, the server keeps exiting 2 off Windows and nothing is built.
+
+**Answer: yes, as recommended - 2026-10-17. See [D-132](../DECISIONS.md).** Ajmal PS, asked in plain words
+what the yes would change: *"yes"*. Off Windows the server registers `heron_tools.LIBRARY` - the five tools
+this question names - and nothing else, so no `revit_` tool is listed; its instructions and a lookup's version
+line say there is no Revit on this machine. On Windows nothing changes. AGENTS.md's test and the
+`heron-session` start-up line are reworded to match, and `tests/test_mcp_stdio.py` starts the real server off
+Windows and holds all of it.
+
+---
+
 ### 🟡 Q-69 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and

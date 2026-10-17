@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Language | Python |
-| Runs | as a normal process on the user's PC |
+| Runs | as a normal process on the user's PC. **Off Windows** - a cloud session - it serves only its library tools (`heron_tools.LIBRARY`) and no `revit_` tool, because no Revit can be there ([D-132](../docs/DECISIONS.md)) |
 | Changing it needs | no rebuild and no Revit restart — the chat closed and reopened, which starts a new server (rule 5) |
 | Talks to | Claude Code over MCP (stdio) · the Revit add-in over a **local named pipe** |
 

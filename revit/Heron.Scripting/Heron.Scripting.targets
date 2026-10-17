@@ -1,0 +1,41 @@
+<Project>
+
+  <!--
+    Put Heron's C# compiler beside the assembly being built - FRAGMENT-ISSUES
+    row 5b-575. Imported by Heron.Revit.Addin.csproj on Revit 2025 and later,
+    and by tests/Heron.ScriptIsolation.TestHost, so the test proves the
+    packaging the add-in ships rather than a copy of it.
+
+    Heron.Scripting.dll and every Microsoft.CodeAnalysis*.dll come out of
+    Heron.Scripting's own output, with the translated message folders. They
+    are copied as FILES, not referenced: the importing project cannot compile
+    against the engine (ReferenceOutputAssembly false), and none of it reaches
+    the importer's deps.json - HeronScriptHost loads them by path into Heron's
+    own load context, and nothing in the default context ever asks for them.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Heron.Scripting.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="HeronCompilerAssembly" />
+  </ItemGroup>
+
+  <Target Name="HeronCopyCompiler" AfterTargets="CopyFilesToOutputDirectory">
+    <PropertyGroup>
+      <HeronCompilerDir>@(HeronCompilerAssembly->'%(RootDir)%(Directory)')</HeronCompilerDir>
+    </PropertyGroup>
+    <Error Condition="'$(HeronCompilerDir)' == ''"
+           Text="Heron.Scripting was not built, so this output would have no C# compiler beside it and no fragment could run on a .NET Revit (row 5b-575)." />
+    <ItemGroup>
+      <HeronCompilerFile Include="$(HeronCompilerDir)Heron.Scripting.dll" />
+      <HeronCompilerFile Include="$(HeronCompilerDir)Microsoft.CodeAnalysis*.dll" />
+      <HeronCompilerFile Include="$(HeronCompilerDir)*\Microsoft.CodeAnalysis*.resources.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(HeronCompilerFile)"
+          DestinationFiles="@(HeronCompilerFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true">
+      <Output TaskParameter="CopiedFiles" ItemName="FileWrites" />
+    </Copy>
+  </Target>
+
+</Project>
