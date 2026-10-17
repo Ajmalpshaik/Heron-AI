@@ -1,5 +1,7 @@
-// NOT STANDALONE. Assumes `doc` and `rows` are in scope, and leaves `written`,
-// `resultJson`, `stale`, `refused` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `rows` and `keepFace` are in scope, and
+// leaves `written`, `resultJson`, `stale`, `refused` and `findings` behind.
+// `keepFace` is version 3's and the card reads it as "none" when it is left
+// out - see "keep a face" below.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one: the operation's
 // TransactionGroup makes the whole Apply one entry in Revit's undo list.
@@ -178,6 +180,616 @@ Func<Element, Parameter, bool> groupLocked = (element, p) =>
     catch { return true; }
 };
 
+// ------------------------------------------------------------ keep a face
+// VERSION 3 (FRAGMENT-ISSUES 5b-560). `keepFace` names ONE face of every
+// element written that must stay where it is while the values change: left,
+// right, top, bottom, near or far of a named view ("left of Section 3"), or
+// "outside", the face looking out of the building. Left out it reads "none"
+// (the card's `absent:`), faceKeeper is null, and every line below that asks
+// it steps aside: the run is version 2's, statement for statement.
+//
+// MEASURED, NEVER WORKED OUT FROM A VALUE. Before anything is written the
+// face is measured off the element's geometry - its outermost point in that
+// direction. After the write and one regeneration it is measured again, the
+// element is moved back by exactly the difference, and after a second
+// regeneration it is measured a third time. On the first job 13 of 18
+// openings held a Wall Width of 255.5 while Revit SHOWED 260 - the project
+// rounds to 10 mm - so a move worked out from the shown value was 2.25 mm
+// out. Nothing here reads the value to decide a move.
+//
+// THE SAME TRANSACTION as the write, so Ctrl+Z takes back both at once. A
+// face that is not back within 0.1 mm throws, and the operation's
+// TransactionGroup takes back every row - all or nothing, as for a value
+// Revit turns down after the check.
+//
+// ONE TOP-LEVEL NAME, as `keyed` was for version 2: every top-level variable
+// is printed in the reply, so the whole mode lives inside one object.
+var faceKeeper = new[] { keepFace }.Select(asked =>
+{
+    var said = (asked ?? "").Trim();
+    if (said.Length == 0 || said.Equals("none", StringComparison.OrdinalIgnoreCase)) return null;
+
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var metre = 1.0 / 0.3048;
+    var tolerance = 0.1 / 304.8;
+    Func<double, int, string> plain = (value, places) =>
+    {
+        var rounded = Math.Round(value, places);
+        if (rounded == 0) rounded = 0;   // never "-0"
+        return rounded.ToString("0.####", invariant);
+    };
+    Func<double, string> mmNumber = feet => double.IsNaN(feet) ? "null" : plain(feet * 304.8, 3);
+    Func<XYZ, string> facing = d => "x " + plain(d.X, 2) + ", y " + plain(d.Y, 2);
+
+    // ------------------------------------------------- what was asked
+    // "<side> of <view>", "<side>: <view>" or "<side> face of <view>".
+    var cut = said.IndexOfAny(new[] { ' ', ':', '|' });
+    var side = (cut < 0 ? said : said.Substring(0, cut)).Trim().ToLowerInvariant();
+    var viewName = cut < 0 ? "" : said.Substring(cut + 1).Trim().TrimStart(':', '|').Trim();
+    if (viewName.Equals("face", StringComparison.OrdinalIgnoreCase)) viewName = "";
+    if (viewName.StartsWith("face ", StringComparison.OrdinalIgnoreCase)) viewName = viewName.Substring(5).Trim();
+    if (viewName.Equals("of", StringComparison.OrdinalIgnoreCase)) viewName = "";
+    if (viewName.StartsWith("of ", StringComparison.OrdinalIgnoreCase)) viewName = viewName.Substring(3).Trim();
+
+    string ruleProblem = null;
+    XYZ viewToward = null;
+    var sides = new[] { "left", "right", "top", "bottom", "near", "far", "outside" };
+    if (Array.IndexOf(sides, side) < 0)
+    {
+        ruleProblem = "keepFace '" + said + "' names no face Heron knows. Say outside, or left, right, top, " +
+                      "bottom, near or far of a named view - left of Section 3 - or none.";
+    }
+    else if (side == "outside" && viewName.Length > 0)
+    {
+        ruleProblem = "keepFace outside needs no view - the outside is found from the building, not from a view. " +
+                      "Say outside on its own, or a side of a view (left of " + viewName + ").";
+    }
+    else if (side != "outside" && viewName.Length == 0)
+    {
+        ruleProblem = "keepFace " + side + " needs a view - which face is " + side + " depends on how the model " +
+                      "is looked at. Say '" + side + " of <view name>'.";
+    }
+    else if (side != "outside")
+    {
+        // A VIEW IS FOUND BY ITS NAME, NEVER A TEMPLATE. A floor plan and a
+        // ceiling plan may share a name; that is no guess when both make
+        // the asked side point the same way, and refused when they do not.
+        Func<View, XYZ> sideOf = v =>
+            side == "left" ? v.RightDirection.Negate()
+            : side == "right" ? v.RightDirection
+            : side == "top" ? v.UpDirection
+            : side == "bottom" ? v.UpDirection.Negate()
+            : side == "near" ? v.ViewDirection
+            : v.ViewDirection.Negate();
+        var named = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
+            .Where(v => !v.IsTemplate && string.Equals(v.Name, viewName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var inModel = named.Where(v => v.ViewType == ViewType.FloorPlan || v.ViewType == ViewType.CeilingPlan
+                                       || v.ViewType == ViewType.EngineeringPlan || v.ViewType == ViewType.AreaPlan
+                                       || v.ViewType == ViewType.Elevation || v.ViewType == ViewType.Section
+                                       || v.ViewType == ViewType.Detail || v.ViewType == ViewType.ThreeD)
+                           .ToList();
+        if (named.Count == 0)
+            ruleProblem = "No view in this model is called '" + viewName + "', so its " + side + " is not known.";
+        else if (inModel.Count == 0)
+            ruleProblem = "'" + viewName + "' is a " + named[0].ViewType + " view - only a plan, section, " +
+                          "elevation, detail or 3D view has a " + side + " in the model.";
+        else
+        {
+            viewToward = sideOf(inModel[0]).Normalize();
+            if (inModel.Skip(1).Any(v => !sideOf(v).Normalize().IsAlmostEqualTo(viewToward)))
+            {
+                ruleProblem = inModel.Count + " views are called '" + viewName + "' and their " + side +
+                              " faces point different ways, so which is meant would be a guess.";
+                viewToward = null;
+            }
+        }
+    }
+
+    // ------------------------------------------------- measuring a face
+    // Every point of an element's geometry, in this model's coordinates: the
+    // ends of every edge of every solid, every curve and mesh. Visible
+    // geometry first; an element with none (a void-only cut-out) is measured
+    // with its hidden geometry, and every later measure of it the same way.
+    Func<Element, bool, List<XYZ>> pointsOf = (element, hidden) =>
+    {
+        var points = new List<XYZ>();
+        Action<GeometryElement, Transform> walk = null;
+        walk = (geometry, place) =>
+        {
+            if (geometry == null) return;
+            foreach (GeometryObject piece in geometry)
+            {
+                var instance = piece as GeometryInstance;
+                if (instance != null)
+                {
+                    walk(instance.GetSymbolGeometry(), place.Multiply(instance.Transform));
+                    continue;
+                }
+                var solid = piece as Solid;
+                if (solid != null)
+                {
+                    if (solid.Faces.Size == 0) continue;
+                    foreach (Edge edge in solid.Edges)
+                        foreach (var p in edge.Tessellate()) points.Add(place.OfPoint(p));
+                    continue;
+                }
+                var curve = piece as Curve;
+                if (curve != null)
+                {
+                    foreach (var p in curve.Tessellate()) points.Add(place.OfPoint(p));
+                    continue;
+                }
+                var mesh = piece as Mesh;
+                if (mesh != null)
+                {
+                    foreach (var p in mesh.Vertices) points.Add(place.OfPoint(p));
+                    continue;
+                }
+                var spot = piece as Point;
+                if (spot != null) points.Add(place.OfPoint(spot.Coord));
+            }
+        };
+        GeometryElement whole = null;
+        try
+        {
+            whole = element.get_Geometry(new Options
+            {
+                DetailLevel = ViewDetailLevel.Fine,
+                IncludeNonVisibleObjects = hidden
+            });
+        }
+        catch (Exception) { }
+        walk(whole, Transform.Identity);
+        return points;
+    };
+    Func<List<XYZ>, XYZ, double> outermost = (points, toward) => points.Max(p => p.DotProduct(toward));
+
+    // ------------------------------------------- the outside: three signs
+    // THE MODEL AND ITS LOADED LINKS, each with the transform that takes its
+    // coordinates into this model's. A link not loaded is counted and said.
+    var models = new List<Tuple<Document, Transform, string>>();
+    var linksNotLoaded = 0;
+    if (side == "outside" && ruleProblem == null)
+    {
+        models.Add(Tuple.Create(doc, Transform.Identity, "this model"));
+        foreach (RevitLinkInstance link in new FilteredElementCollector(doc).OfClass(typeof(RevitLinkInstance)))
+        {
+            Document linkDoc = null;
+            try { linkDoc = link.GetLinkDocument(); } catch (Exception) { }
+            if (linkDoc == null) { linksNotLoaded++; continue; }
+            models.Add(Tuple.Create(linkDoc, link.GetTotalTransform(), link.Name));
+        }
+    }
+
+    // Elements of one category whose box meets a box given in THIS model's
+    // coordinates, looked for in the model or link's own.
+    Func<Tuple<Document, Transform, string>, XYZ, XYZ, BuiltInCategory, List<Element>> nearBy =
+        (model, low, high, category) =>
+        {
+            var back = model.Item2.Inverse;
+            var corners = new List<XYZ>();
+            foreach (var x in new[] { low.X, high.X })
+                foreach (var y in new[] { low.Y, high.Y })
+                    foreach (var z in new[] { low.Z, high.Z })
+                        corners.Add(back.OfPoint(new XYZ(x, y, z)));
+            var box = new Outline(new XYZ(corners.Min(p => p.X), corners.Min(p => p.Y), corners.Min(p => p.Z)),
+                                  new XYZ(corners.Max(p => p.X), corners.Max(p => p.Y), corners.Max(p => p.Z)));
+            return new FilteredElementCollector(model.Item1).OfCategory(category).WhereElementIsNotElementType()
+                .WherePasses(new BoundingBoxIntersectsFilter(box)).ToList();
+        };
+
+    // A wall's middle line where it passes nearest a point given in this
+    // model's coordinates: the foot of the line, its horizontal normal and
+    // its along direction - all in this model's coordinates - or null.
+    Func<Tuple<Document, Transform, string>, Wall, XYZ, Tuple<XYZ, XYZ, XYZ>> wallLineNear = (model, wall, at) =>
+    {
+        var located = wall.Location as LocationCurve;
+        if (located == null || located.Curve == null) return null;
+        var curve = located.Curve;
+        var mine = model.Item2.Inverse.OfPoint(at);
+        IntersectionResult hit = null;
+        try { hit = curve.Project(new XYZ(mine.X, mine.Y, curve.GetEndPoint(0).Z)); } catch (Exception) { }
+        if (hit == null) return null;
+        XYZ along;
+        try { along = curve.ComputeDerivatives(hit.Parameter, false).BasisX; } catch (Exception) { return null; }
+        along = new XYZ(along.X, along.Y, 0);
+        if (along.GetLength() < 1e-9) return null;
+        along = along.Normalize();
+        var foot = model.Item2.OfPoint(new XYZ(hit.XYZPoint.X, hit.XYZPoint.Y, mine.Z));
+        var alongHere = model.Item2.OfVector(along).Normalize();
+        return Tuple.Create(foot, alongHere.CrossProduct(XYZ.BasisZ).Normalize(), alongHere);
+    };
+
+    Func<Element, double?> levelHeight = element =>
+    {
+        var ids = new List<ElementId> { element.LevelId };
+        foreach (var which in new[] { BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM,
+                                      BuiltInParameter.INSTANCE_SCHEDULE_ONLY_LEVEL_PARAM,
+                                      BuiltInParameter.FAMILY_LEVEL_PARAM })
+        {
+            try
+            {
+                var p = element.get_Parameter(which);
+                if (p != null && p.StorageType == StorageType.ElementId) ids.Add(p.AsElementId());
+            }
+            catch (Exception) { }
+        }
+        var placed = element as FamilyInstance;
+        if (placed != null && placed.Host is Level) ids.Add(placed.Host.Id);
+        foreach (var id in ids)
+        {
+            var level = id == null ? null : doc.GetElement(id) as Level;
+            if (level != null) return level.ProjectElevation;
+        }
+        return null;
+    };
+
+    // A STRUCTURAL floor at a spot, in a band from 1 m below the element's
+    // level to 0.5 m above it - in this model or any loaded link. Answers
+    // where it found one, or null.
+    Func<XYZ, double, string> slabAt = (spot, levelZ) =>
+    {
+        var top = new XYZ(spot.X, spot.Y, levelZ + 0.5 * metre);
+        var bottom = new XYZ(spot.X, spot.Y, levelZ - 1.0 * metre);
+        var reach = new XYZ(0.01, 0.01, 0);
+        foreach (var model in models)
+        {
+            var back = model.Item2.Inverse;
+            Line probe;
+            try { probe = Line.CreateBound(back.OfPoint(top), back.OfPoint(bottom)); }
+            catch (Exception) { continue; }
+            foreach (var candidate in nearBy(model, bottom - reach, top + reach, BuiltInCategory.OST_Floors))
+            {
+                if (!(candidate is Floor)) continue;
+                var structural = candidate.get_Parameter(BuiltInParameter.FLOOR_PARAM_IS_STRUCTURAL);
+                if (structural == null || structural.AsInteger() != 1) continue;
+                GeometryElement shape = null;
+                try { shape = candidate.get_Geometry(new Options()); } catch (Exception) { }
+                if (shape == null) continue;
+                foreach (GeometryObject piece in shape)
+                {
+                    var solid = piece as Solid;
+                    if (solid == null || solid.Faces.Size == 0) continue;
+                    try
+                    {
+                        if (solid.IntersectWithCurve(probe, new SolidCurveIntersectionOptions()).SegmentCount > 0)
+                            return "floor " + candidate.Id + " in " + model.Item3;
+                    }
+                    catch (Exception) { }
+                }
+            }
+        }
+        return null;
+    };
+
+    // OUTSIDE. Measured on 18 openings in a real project, three signs agreed
+    // every time, and each is asked here on its own:
+    //   slab  - no structural floor 1 m and 3 m out on that side, at the
+    //           element's level, in this model or a loaded link, and one on
+    //           the other side;
+    //   skin  - a thin linked wall (at most half as thick as the wall the
+    //           element sits in) runs beside it on that side only;
+    //   ducts - this model's ducts and duct accessories nearby sit on the
+    //           OTHER side, the inside.
+    // A sign that finds nothing to go on says so and does not vote. None
+    // voting, or two voting different ways, refuses the element and names
+    // what each sign found - never a guess.
+    // Answers the direction, or null with why, and the signs as JSON.
+    Func<Element, List<XYZ>, Tuple<XYZ, string, string>> outsideOf = (element, points) =>
+    {
+        var low = new XYZ(points.Min(p => p.X), points.Min(p => p.Y), points.Min(p => p.Z));
+        var high = new XYZ(points.Max(p => p.X), points.Max(p => p.Y), points.Max(p => p.Z));
+        var middle = (low + high) * 0.5;
+
+        // THE WALL IT SITS IN: one whose middle line passes within half its
+        // thickness of the element's middle, in this model or a loaded link.
+        var pad = new XYZ(0.5 * metre, 0.5 * metre, 0);
+        var holders = new List<Tuple<XYZ, XYZ, double, string>>();   // foot, normal, width, which
+        foreach (var model in models)
+        {
+            foreach (var candidate in nearBy(model, low - pad, high + pad, BuiltInCategory.OST_Walls))
+            {
+                var wall = candidate as Wall;
+                if (wall == null) continue;
+                if (model.Item1.Equals(doc) && wall.Id == element.Id) continue;
+                double width;
+                try { width = wall.Width; } catch (Exception) { continue; }
+                var line = wallLineNear(model, wall, middle);
+                if (line == null) continue;
+                var apart = middle - line.Item1;
+                if (Math.Abs(apart.DotProduct(line.Item2)) > width / 2 + 0.001 * metre) continue;
+                if (Math.Abs(apart.DotProduct(line.Item3)) > 0.001 * metre) continue;   // past the wall's end
+                var box = candidate.get_BoundingBox(null);
+                if (box != null)
+                {
+                    var zs = new[] { model.Item2.OfPoint(box.Min).Z, model.Item2.OfPoint(box.Max).Z };
+                    if (middle.Z < zs.Min() - 0.001 * metre || middle.Z > zs.Max() + 0.001 * metre) continue;
+                }
+                holders.Add(Tuple.Create(line.Item1, line.Item2, width, "wall " + wall.Id + " in " + model.Item3));
+            }
+        }
+        var unloaded = linksNotLoaded > 0 ? " (" + linksNotLoaded + " link(s) not loaded were not looked in)" : "";
+        if (holders.Count == 0)
+            return Tuple.Create((XYZ)null, "it sits in no wall of this model or its loaded links" + unloaded +
+                                           ", so which side is outside cannot be told", (string)null);
+        var normal = holders[0].Item2;
+        var across = holders.FirstOrDefault(h => Math.Abs(h.Item2.DotProduct(normal)) < 0.9998);
+        if (across != null)
+            return Tuple.Create((XYZ)null, "it sits where two walls meet (" + holders[0].Item4 + " and " +
+                                           across.Item4 + "), so which face is outside would be a guess", (string)null);
+        var foot0 = holders[0].Item1;
+        var halfWall = holders.Max(h => h.Item3) / 2;
+
+        // Each sign answers +1 (outside faces `normal`), -1 (outside faces
+        // away from it) or 0 (nothing to go on), and what it found, in words.
+        var sideA = "the side facing " + facing(normal);
+        var sideB = "the side facing " + facing(normal.Negate());
+        Func<int, string> named = vote => vote > 0 ? sideA : sideB;
+
+        // slab
+        int slabVote = 0;
+        string slabSaid;
+        var levelZ = levelHeight(element);
+        if (levelZ == null)
+        {
+            slabSaid = "not used - the element has no level, so no slab at its level can be looked for";
+        }
+        else
+        {
+            var found = new Dictionary<int, List<string>>();
+            foreach (var way in new[] { 1, -1 })
+            {
+                var toward = normal.Multiply(way);
+                var reachOut = outermost(points, toward) - middle.DotProduct(toward);
+                found[way] = new List<string>();
+                foreach (var metres in new[] { 1.0, 3.0 })
+                {
+                    var where = slabAt(middle + toward.Multiply(reachOut + metres * metre), levelZ.Value);
+                    if (where != null) found[way].Add(metres + " m out: " + where);
+                }
+            }
+            if (found[1].Count == 0 && found[-1].Count > 0) slabVote = 1;
+            else if (found[-1].Count == 0 && found[1].Count > 0) slabVote = -1;
+            slabSaid = slabVote != 0
+                ? "outside is " + named(slabVote) + " - no structural floor 1 m or 3 m out there, and "
+                  + string.Join("; ", found[-slabVote].ToArray()) + " on the other side"
+                : found[1].Count > 0
+                    ? "not used - a structural floor on both sides (" + found[1][0] + "; " + found[-1][0] + ")"
+                    : "not used - no structural floor 1 m or 3 m out on either side at its level" + unloaded;
+        }
+
+        // skin
+        var skins = new Dictionary<int, List<string>> { { 1, new List<string>() }, { -1, new List<string>() } };
+        var skinPad = new XYZ(1.5 * metre, 1.5 * metre, 0);
+        foreach (var model in models.Skip(1))
+        {
+            foreach (var candidate in nearBy(model, low - skinPad, high + skinPad, BuiltInCategory.OST_Walls))
+            {
+                var wall = candidate as Wall;
+                if (wall == null) continue;
+                double width;
+                try { width = wall.Width; } catch (Exception) { continue; }
+                if (width <= 0 || width > halfWall) continue;
+                var line = wallLineNear(model, wall, middle);
+                if (line == null || Math.Abs(line.Item2.DotProduct(normal)) < 0.9998) continue;
+                if (Math.Abs((middle - line.Item1).DotProduct(line.Item3)) > 0.001 * metre) continue;
+                var offset = (line.Item1 - foot0).DotProduct(normal);
+                if (Math.Abs(offset) <= halfWall || Math.Abs(offset) > halfWall + 1.0 * metre) continue;
+                skins[offset > 0 ? 1 : -1].Add("wall " + wall.Id + " (" + mmNumber(width) + " mm) in " + model.Item3);
+            }
+        }
+        var skinVote = skins[1].Count > 0 && skins[-1].Count == 0 ? 1
+                     : skins[-1].Count > 0 && skins[1].Count == 0 ? -1 : 0;
+        var skinSaid = skinVote != 0
+            ? "outside is " + named(skinVote) + " - thin linked wall " + string.Join(", ", skins[skinVote].Take(3).ToArray())
+            : skins[1].Count > 0
+                ? "not used - thin linked walls on both sides (" + skins[1][0] + "; " + skins[-1][0] + ")"
+                : "not used - no thin linked wall within 1 m of either face" + unloaded;
+
+        // ducts
+        var ductPad = new XYZ(3.0 * metre, 3.0 * metre, 1.0 * metre);
+        var count = new Dictionary<int, int> { { 1, 0 }, { -1, 0 } };
+        foreach (var category in new[] { BuiltInCategory.OST_DuctCurves, BuiltInCategory.OST_DuctAccessory })
+        {
+            foreach (var near in nearBy(models[0], low - ductPad, high + ductPad, category))
+            {
+                var spots = new List<XYZ>();
+                var onCurve = near.Location as LocationCurve;
+                var onPoint = near.Location as LocationPoint;
+                if (onCurve != null && onCurve.Curve != null)
+                {
+                    spots.Add(onCurve.Curve.GetEndPoint(0));
+                    spots.Add(onCurve.Curve.GetEndPoint(1));
+                }
+                else if (onPoint != null) spots.Add(onPoint.Point);
+                foreach (var spot in spots)
+                {
+                    var offset = (spot - foot0).DotProduct(normal);
+                    if (Math.Abs(offset) <= halfWall) continue;   // in the wall itself
+                    count[offset > 0 ? 1 : -1]++;
+                }
+            }
+        }
+        var ductVote = count[1] > count[-1] ? -1 : count[-1] > count[1] ? 1 : 0;
+        var ductSaid = ductVote != 0
+            ? "outside is " + named(ductVote) + " - " + count[-ductVote] + " duct end(s) or duct accessories "
+              + "within 3 m on the other side, the inside, and " + count[ductVote] + " on this one"
+            : count[1] > 0
+                ? "not used - as many duct ends or duct accessories on each side (" + count[1] + ")"
+                : "not used - no duct or duct accessory of this model within 3 m";
+
+        var signsJson = "{" + esc("slab") + ": " + esc(slabSaid) + ", " + esc("skin") + ": " + esc(skinSaid)
+                      + ", " + esc("ducts") + ": " + esc(ductSaid) + "}";
+        var votes = new[] { slabVote, skinVote, ductVote };
+        var all = "slab: " + slabSaid + "; skin: " + skinSaid + "; ducts: " + ductSaid;
+        if (votes.All(v => v == 0))
+            return Tuple.Create((XYZ)null, "none of the three signs of the outside applies here - " + all, signsJson);
+        if (votes.Contains(1) && votes.Contains(-1))
+            return Tuple.Create((XYZ)null, "the signs of the outside disagree - " + all, signsJson);
+        return Tuple.Create(normal.Multiply(votes.Contains(1) ? 1 : -1), (string)null, signsJson);
+    };
+
+    // ------------------------------------------- each element, three times
+    var faceToward = new Dictionary<string, XYZ>();
+    var hiddenToo = new Dictionary<string, bool>();
+    var before = new Dictionary<string, double>();
+    var afterWrite = new Dictionary<string, double>();
+    var settled = new Dictionary<string, double>();
+    var signs = new Dictionary<string, string>();
+    var turnedDown = new List<string>();
+    var refusedWhy = new Dictionary<string, string>();
+    var keptCount = 0;
+
+    // BEFORE ANYTHING IS WRITTEN: the face can be found and the element can
+    // be moved. Measures the face and keeps it. Null when it can be kept.
+    Func<Element, string> checkFace = element =>
+    {
+        if (ruleProblem != null) return null;   // said once, for the whole run
+        var key = element.UniqueId;
+        if (faceToward.ContainsKey(key)) return null;   // another row on the same element
+        if (refusedWhy.ContainsKey(key)) return refusedWhy[key];
+        string why = null;
+        if (element.Pinned)
+            why = "it is pinned, and keeping its " + side + " face means moving it - unpin it, or leave keepFace out";
+        else if (element.GroupId != null && element.GroupId != ElementId.InvalidElementId)
+            why = "it is in a model group, which cannot move one member at a time";
+        else
+        {
+            var hidden = false;
+            var points = pointsOf(element, false);
+            if (points.Count == 0)
+            {
+                hidden = true;
+                points = pointsOf(element, true);
+            }
+            if (points.Count == 0) why = "it has no geometry to measure a face on";
+            else
+            {
+                var found = side == "outside"
+                    ? outsideOf(element, points)
+                    : Tuple.Create(viewToward, (string)null, (string)null);
+                if (found.Item3 != null) signs[key] = found.Item3;
+                if (found.Item1 == null) why = found.Item2;
+                else
+                {
+                    faceToward[key] = found.Item1;
+                    hiddenToo[key] = hidden;
+                    before[key] = outermost(points, found.Item1);
+                }
+            }
+        }
+        if (why == null) return null;
+        turnedDown.Add(element.Id.ToString());
+        refusedWhy[key] = "its " + side + " face cannot be kept - " + why;
+        return refusedWhy[key];
+    };
+
+    // AFTER THE WRITE AND ONE REGENERATION: where each face went, the move
+    // that puts it back, a second regeneration and a third measure. Null when
+    // every face is back within 0.1 mm; otherwise why, and the caller throws.
+    Func<IEnumerable<Element>, string> keepFaces = elements =>
+    {
+        var moving = new List<Element>();
+        foreach (var element in elements)
+        {
+            if (faceToward.ContainsKey(element.UniqueId) && !moving.Any(m => m.UniqueId == element.UniqueId))
+                moving.Add(element);
+        }
+        foreach (var element in moving)
+        {
+            var key = element.UniqueId;
+            var points = pointsOf(element, hiddenToo[key]);
+            if (points.Count == 0)
+                return element.Id + " has no geometry after the write, so its " + side + " face cannot be put back.";
+            afterWrite[key] = outermost(points, faceToward[key]);
+        }
+        foreach (var element in moving)
+        {
+            var key = element.UniqueId;
+            var back = before[key] - afterWrite[key];
+            if (Math.Abs(back) < 1e-9) continue;
+            try { ElementTransformUtils.MoveElement(doc, element.Id, faceToward[key].Multiply(back)); }
+            catch (Exception failure)
+            {
+                return failure.Message + " (Revit, moving " + element.Id + " back by " + mmNumber(back) + " mm).";
+            }
+        }
+        doc.Regenerate();
+        var off = new List<string>();
+        foreach (var element in moving)
+        {
+            var key = element.UniqueId;
+            var points = pointsOf(element, hiddenToo[key]);
+            settled[key] = points.Count == 0 ? double.NaN : outermost(points, faceToward[key]);
+            if (double.IsNaN(settled[key]) || Math.Abs(settled[key] - before[key]) > tolerance)
+                off.Add(element.Id + " (" + mmNumber(settled[key] - before[key]) + " mm from where it was)");
+        }
+        if (off.Count > 0)
+        {
+            return "The " + side + " face of " + off.Count + " element(s) did not go back to where it was after the " +
+                   "move - " + string.Join(", ", off.Take(5).ToArray()) + (off.Count > 5 ? " and more" : "") +
+                   ". Revit may hold them to a host or a constraint.";
+        }
+        keptCount = moving.Count;
+        return null;
+    };
+
+    // What one element's face did, for its readBack entry; empty for an
+    // element whose face was not kept.
+    Func<Element, string> faceJson = element =>
+    {
+        var key = element.UniqueId;
+        if (!faceToward.ContainsKey(key) || !settled.ContainsKey(key)) return "";
+        var d = faceToward[key];
+        return ", " + esc("face") + ": {" + esc("side") + ": " + esc(side) + ", "
+             + esc("toward") + ": [" + plain(d.X, 4) + ", " + plain(d.Y, 4) + ", " + plain(d.Z, 4) + "], "
+             + esc("measured") + ": " + esc(hiddenToo[key] ? "hidden geometry" : "geometry") + ", "
+             + esc("beforeMm") + ": " + mmNumber(before[key]) + ", "
+             + esc("writeMovedItMm") + ": " + mmNumber(afterWrite[key] - before[key]) + ", "
+             + esc("movedBackMm") + ": " + mmNumber(before[key] - afterWrite[key]) + ", "
+             + esc("nowMm") + ": " + mmNumber(settled[key]) + ", "
+             + esc("offByMm") + ": " + mmNumber(settled[key] - before[key])
+             + (signs.ContainsKey(key) ? ", " + esc("signs") + ": " + signs[key] : "") + "}";
+    };
+
+    Func<string> summaryJson = () =>
+        "{" + esc("asked") + ": " + esc(said) + ", " + esc("side") + ": " + esc(side) + ", "
+        + esc("view") + ": " + esc(viewName.Length > 0 ? viewName : null) + ", "
+        + esc("problem") + ": " + esc(ruleProblem) + ", "
+        + esc("kept") + ": " + keptCount + ", "
+        + esc("turnedDown") + ": " + turnedDown.Count + ", "
+        + esc("toleranceMm") + ": 0.1}";
+
+    Func<string> keptSentence = () =>
+    {
+        var moved = afterWrite.Keys.Where(k => settled.ContainsKey(k))
+                              .Select(k => Math.Abs(afterWrite[k] - before[k])).ToList();
+        return "The " + side + " face of " + keptCount + " element(s) was kept where it was: the write moved it "
+             + mmNumber(moved.Min()) + (moved.Max() - moved.Min() > tolerance ? " to " + mmNumber(moved.Max()) : "")
+             + " mm and each element was moved back by exactly what was measured, in the same undo entry.";
+    };
+
+    // When the face stopped the run: the rule itself, or some elements.
+    Func<int, string> stoppedSentence = staleRows => ruleProblem != null
+        ? "Nothing was written: " + ruleProblem
+        : "Nothing was written: the " + side + " face of " + turnedDown.Count + " element(s) cannot be kept - "
+          + "stale says why for each of its " + staleRows + " row(s).";
+
+    return new
+    {
+        Problem = ruleProblem,
+        Check = checkFace,
+        Keep = keepFaces,
+        Json = faceJson,
+        Summary = summaryJson,
+        Kept = (Func<int>)(() => keptCount),
+        Said = keptSentence,
+        Stopped = stoppedSentence,
+        Stopping = (Func<bool>)(() => ruleProblem != null || turnedDown.Count > 0)
+    };
+}).First();
+
 // ------------------------------------------------------------- which way
 // BY KEY when the first row is key=... - an id row starts with an element id,
 // so nothing a version 1 caller sends can land there by accident. One
@@ -189,6 +801,14 @@ var keyed = (rows ?? "").Split(';').Where(r => r.Trim().Length > 0).Take(1)
 // ------------------------------------------------------------------ parse
 var plan = new List<Tuple<Element, string, string>>();   // element, parameter, new value
 var staleJson = new List<string>();
+
+// A keepFace that cannot be used stops the run once, as its own stale row.
+if (!keyed && faceKeeper != null && faceKeeper.Problem != null)
+{
+    stale.Add("keepFace: " + faceKeeper.Problem);
+    staleJson.Add("{" + esc("id") + ": null, " + esc("name") + ": " + esc("keepFace")
+                  + ", " + esc("why") + ": " + esc(faceKeeper.Problem) + "}");
+}
 
 foreach (var raw in (keyed ? "" : (rows ?? "")).Split(';'))
 {
@@ -239,6 +859,10 @@ foreach (var raw in (keyed ? "" : (rows ?? "")).Split(';'))
         }
     }
 
+    // Version 3: the face to keep is found and measured now, before any row
+    // is written - one that cannot be kept stops the run like a stale row.
+    if (why == null && faceKeeper != null) why = faceKeeper.Check(element);
+
     if (why != null)
     {
         stale.Add(id + ": " + why);
@@ -260,7 +884,9 @@ var applied = stale.Count == 0 && plan.Count > 0;
 
 if (stale.Count > 0)
 {
-    findings.Add(string.Format(
+    findings.Add(faceKeeper != null && faceKeeper.Stopping()
+        ? faceKeeper.Stopped(stale.Count)
+        : string.Format(
         "Nothing was written: {0} row(s) no longer match what the table showed. " +
         "Refresh the table, look at them, and apply again.", stale.Count));
 }
@@ -305,6 +931,14 @@ else
 
     doc.Regenerate();
 
+    // Version 3: each face put back where it was, in this same transaction.
+    // One that will not go back takes every row back with it.
+    if (faceKeeper != null)
+    {
+        var notKept = faceKeeper.Keep(plan.Select(step => step.Item1));
+        if (notKept != null) throw new InvalidOperationException("Nothing was kept. " + notKept);
+    }
+
     foreach (var step in plan)
     {
         var again = theOne(step.Item1, step.Item2);
@@ -314,7 +948,8 @@ else
         readBack.Add("{" + esc("id") + ": " + esc(step.Item1.Id.ToString()) + ", "
                      + esc("name") + ": " + esc(step.Item2) + ", "
                      + esc("value") + ": " + esc(now) + ", "
-                     + esc("raw") + ": " + esc(nowRaw) + "}");
+                     + esc("raw") + ": " + esc(nowRaw)
+                     + (faceKeeper == null ? "" : faceKeeper.Json(step.Item1)) + "}");
     }
 }
 
@@ -387,6 +1022,8 @@ if (keyed)
     if (problem == null && categoryNames.Count == 0)
         problem = "The first row says no category to look in - add in=<categories>, for example " +
                   "in=Rooms, so a key cannot land on a kind of element you did not mean.";
+    if (problem == null && faceKeeper != null && faceKeeper.Problem != null)
+        problem = faceKeeper.Problem;
 
     var categories = new List<Category>();
     if (problem == null)
@@ -579,6 +1216,9 @@ if (keyed)
                 why = whyNot(element, pair.Item1);
                 if (why != null) break;
             }
+            // Version 3: the face to keep, found and measured before any row
+            // is written; one that cannot be kept refuses this row alone.
+            if (why == null && faceKeeper != null) why = faceKeeper.Check(element);
             if (why != null)
             {
                 refuse(row.Item1, why + " - not written (id " + element.Id + ")");
@@ -650,6 +1290,14 @@ if (keyed)
     // Revit holds now, not what was asked.
     var keyedReadBack = new List<string>();
     if (done.Count > 0) doc.Regenerate();
+    // Version 3: each face put back where it was, in this same transaction.
+    // One that will not go back takes every row back with it - a row already
+    // written cannot be refused on its own once its element has moved.
+    if (done.Count > 0 && faceKeeper != null)
+    {
+        var notKept = faceKeeper.Keep(done.Select(row => row.Item2));
+        if (notKept != null) throw new InvalidOperationException("Nothing was kept. " + notKept);
+    }
     foreach (var row in done)
     {
         written++;
@@ -663,7 +1311,8 @@ if (keyed)
                          + esc("name") + ": " + esc(pair.Item1) + ", "
                          + esc("asked") + ": " + esc(pair.Item2) + ", "
                          + esc("value") + ": " + esc(now) + ", "
-                         + esc("raw") + ": " + esc(nowRaw) + "}");
+                         + esc("raw") + ": " + esc(nowRaw)
+                         + (faceKeeper == null ? "" : faceKeeper.Json(row.Item2)) + "}");
             if (again != null && again.StorageType == StorageType.String && (now ?? "") != (pair.Item2 ?? ""))
                 findings.Add(row.Item1 + ": " + pair.Item1 + " reads back '" + now + "', not '" + pair.Item2 + "'");
         }
@@ -688,4 +1337,14 @@ if (keyed)
                + esc("stale") + ": [], "
                + esc("refused") + ": [" + string.Join(", ", refusedJson.ToArray()) + "], "
                + esc("readBack") + ": [" + string.Join(", ", keyedReadBack.ToArray()) + "]}";
+}
+
+// ------------------------------------------------------------ keep a face
+// Version 3: what keepFace asked and how it went, on the answer itself.
+// Nothing here runs when keepFace is left out.
+if (faceKeeper != null)
+{
+    if (faceKeeper.Kept() > 0) findings.Add(faceKeeper.Said());
+    resultJson = resultJson.Substring(0, resultJson.Length - 1)
+               + ", " + esc("keepFace") + ": " + faceKeeper.Summary() + "}";
 }

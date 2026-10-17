@@ -50,3 +50,51 @@ negative_by_key:
     expect: >
       the version 1 answer unchanged - resultJson format 1, stale as before,
       refused empty
+
+# Version 3, KEEP A FACE (5b-560): an optional keepFace - outside, or left,
+# right, top, bottom, near or far of a named view. Arranged on a NEW scratch
+# project, never a working model (NEEDS-CHECKING Group FE): a 250 mm exterior
+# wall on Level 1, a structural floor inside it only, and a Generic Model box
+# in the wall whose instance length "Wall Width" sets its depth symmetrically
+# about its origin, set to 255.5 while Length units round to 10 mm (so Revit
+# SHOWS 260). Mark BOX-OUT. A second box, BOX-MID, in an interior wall with
+# the floor on both sides.
+positive_keep_face:
+  - given: >
+      key=Mark|in=Generic Models;BOX-OUT|Wall Width=100 with keepFace=outside
+    expect: >
+      written 1; readBack Wall Width 100 and a face entry with side outside,
+      writeMovedItMm -77.75 (inward: half of 155.5, from the stored value, not
+      the 80 the shown 260 would give), movedBackMm 77.75, offByMm 0; signs.slab names the
+      floor on the inside; the box's outside face measured by hand (a
+      dimension to it from a grid) the same before and after; ONE entry in
+      Revit's undo list, and one Ctrl+Z puts the value and the position back
+  - given: >
+      the same box, id row id|uniqueId|Wall Width|260|100 (the SHOWN value),
+      keepFace=outside
+    expect: >
+      the same answer - "was 260" passes the stale check as before (the check
+      is unchanged, by decision), and the move comes from the measured face
+  - given: a box's Height changed with keepFace=bottom of South (an elevation)
+    expect: written 1; the box's bottom face where it was; its top moved by the whole change
+
+negative_keep_face:
+  - given: >
+      key=Mark|in=Generic Models;BOX-MID|Wall Width=100 with keepFace=outside,
+      BOX-MID in an interior wall with the structural floor on both sides
+    expect: >
+      written 0; refused names BOX-MID and says none of the three signs of the
+      outside applies - slab on both sides, no thin linked wall, no duct - and
+      BOX-MID's Wall Width and position unchanged (read back)
+  - given: keepFace=left (no view named)
+    expect: written 0; findings says left needs a view and how to name one; nothing written
+  - given: keepFace=left of No Such View
+    expect: written 0; findings says no view is called that; nothing written
+  - given: BOX-OUT pinned, keepFace=outside, by id
+    expect: written 0; stale names it - pinned, keeping a face means moving it; nothing written
+  - given: >
+      id rows exactly as version 2, keepFace left out
+    expect: >
+      the version 2 answer unchanged - resultJson has no keepFace key, BOX-OUT
+      shrinks about its LocationPoint (its outside face moves 77.75 mm in), no
+      element is moved

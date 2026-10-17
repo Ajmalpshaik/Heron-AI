@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -15,7 +15,76 @@ capability: SET_PARAMETER_VALUES_BY_ID
 # of version 1 are read and written exactly as before. The semantic-identity
 # line is version 1's on purpose: it is searched, and a new word in it moves
 # other cards' answers (the routing measured for 5b-459).
-version: 2
+#
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES 5b-560): an optional `keepFace` keeps
+# ONE face of every element written where it is - its outside face, or the
+# left, right, top, bottom, near or far face in a named view. Kept out of the
+# purpose on purpose, as version 2 kept the identity line: the purpose is
+# searched, and the routing for 5b-560 was measured with it unchanged.
+#
+#   WHY. On 2026-10-15/17 the owner set the instance Wall Width of 18 openings
+#   (TRG_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer, a real project in
+#   Revit 2020) from 255.5 or 260 to 100 and kept the outside face where it
+#   was. Wall Width was measured to shrink symmetrically about the
+#   LocationPoint, so by hand it took this tool once and MOVE_ELEMENTS five
+#   times - six entries in Revit's undo list. And 13 of the 18 really held
+#   255.5 while Revit SHOWED 260 (the project rounds lengths to 10 mm), so a
+#   move worked out from the shown value was 2.25 mm wrong.
+#
+#   WHAT IT DOES. Before anything is written the face is measured off each
+#   element's geometry - its outermost point in that direction. After the
+#   write and one regeneration it is measured again, the element is moved back
+#   by exactly the difference, and after a second regeneration it is measured a
+#   third time. All in the transaction the write is in: ONE undo entry. A face
+#   not back within 0.1 mm throws, and every row is taken back. readBack gives
+#   each element's face before, how far the write moved it, the move, where it
+#   is now and how far off; resultJson gains `keepFace` with what was asked.
+#   Nothing about the move is worked out from a value, so the rounding trap
+#   above cannot reach it.
+#
+#   OUTSIDE is the face looking out of the building, found from the wall the
+#   element sits in (this model or a loaded link) and three signs, each
+#   measured on all 18 openings and agreeing every time: (1) no STRUCTURAL
+#   floor 1 m and 3 m out on that side at the element's level, in this model or
+#   a loaded link, and one on the other side; (2) a thin linked wall - at most
+#   half as thick as the wall the element sits in - beside it on that side
+#   only; (3) this model's ducts and duct accessories within 3 m sit on the
+#   other side, the inside. A sign with nothing to go on does not vote. None
+#   voting, or two voting different ways, refuses the element - by id rows the
+#   whole run, by key that row - naming what each sign found. Never a guess.
+#
+#   A VIEW SIDE is the view's own direction: left and right along its right
+#   direction, top and bottom along its up direction, near toward the viewer
+#   and far away. A template, a sheet, a schedule, a legend or a drafting view
+#   has no side in the model and is refused by name.
+#
+#   REFUSED BEFORE ANYTHING IS WRITTEN: a pinned element (keeping a face means
+#   moving it), a member of a model group (it cannot move alone), an element
+#   with no geometry to measure, and a keepFace that names no face Heron knows
+#   or a view that is not there.
+#
+#   ABSENT IS VERSION 2, STATEMENT FOR STATEMENT. Left out, keepFace reads
+#   "none" (`absent:`, PR #545's rule, HeronBindingNote.DeclaredAbsent), the
+#   one new top-level name `faceKeeper` is null, and every line that asks it
+#   steps aside - resultJson, written, stale, refused and findings are what
+#   version 2 gave. The reply's list of what the fragment left behind gains
+#   one line, `faceKeeper (null)`, because every top-level name is printed.
+#
+#   THE STALE CHECK IS UNCHANGED, AND THAT IS A DECISION (5b-560). On the
+#   first job "was 260" passed for a cell holding 255.5, because a number is
+#   compared by the text Revit SHOWS. Comparing the stored value instead was
+#   weighed and not taken: an id row's `was` is, by contract, what the table
+#   SHOWED, and turning "260" back into 260 mm and comparing would refuse
+#   every row whose stored value the project's rounding hides - for ever,
+#   since the caller has only the shown text to send. A caller that HAS the
+#   stored value sends it as the optional sixth field, and that is compared
+#   exactly (Codex review of #362). keepFace never reads the value to decide a
+#   move, so the trap that cost 2.25 mm cannot reach it.
+#
+#   Version 2's proof below no longer describes the code and is kept as a
+#   record; the card is DRAFT until the version 3 proof is signed (NEEDS-CHECKING
+#   Group FE).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -73,6 +142,18 @@ contract:
     - name: rows
       type: string
       source: request
+    # VERSION 3 (5b-560). The ONE face of every element written that stays
+    # where it is: outside - the face looking out of the building - or left,
+    # right, top, bottom, near or far of a named view, as "left of Section 3".
+    # The face is measured off the element before the write and after it, and
+    # the element is moved back by exactly the difference in the same undo
+    # entry; readBack says how far for each. Left out: "none" - version 2's run,
+    # unchanged. Any element, any parameter whose change moves a face.
+    - name: keepFace
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     # Rows written AND read back.
     - name: written
@@ -162,3 +243,11 @@ utterances:
   - write these edited parameter values back to the elements
   - give each room its own name, matched by its room number
   - set a different value on each element found by its Mark
+  # ADDED 2026-10-17, 5b-560 - version 3's keepFace. On main that day both
+  # reached other cards on all four backends (DIMENSION_ROOMS,
+  # ADD_FAMILY_MODEL_TEXT, CREATE_WALL_ELEVATION, CREATE_OPENING) and this card
+  # was in the top 20 for neither. Declared, both reach it on all four and no
+  # other declared sentence moved. Paraphrases do not reliably reach it - the
+  # purpose was left as it was so that nothing else moves (5b-560).
+  - set the wall width to 100 and keep the outside face
+  - change the opening depth keeping its outer face
