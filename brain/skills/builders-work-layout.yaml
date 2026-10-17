@@ -67,7 +67,7 @@ purpose: >
      detail level and the grey together, never one after the other.
      Then look at the plan. If the layout is drawn over a LINKED model, its
      walls must read grey too. SET_LINK_GRAPHICS's card says a host category
-     override does not reach inside a link (FRAGMENT-ISSUES 5b-591 records
+     override does not reach inside a link (FRAGMENT-ISSUES 5b-650 records
      that against the first layout, where host filters did); if the link is
      not grey, stop and tell the modeller - SET_LINK_GRAPHICS greys the whole
      link, its openings included, so it is not this step.
@@ -169,7 +169,7 @@ purpose: >
 # "this": heron_skill._words makes it "thi", which is not a plain word, so a
 # phrase saying "this" shares a word with every request that does - measured
 # 2026-10-17, it offered this job beside "turn this tag vertical"
-# (FRAGMENT-ISSUES 5b-591, recorded there, not fixed here). "set up the
+# (FRAGMENT-ISSUES 5b-650, recorded there, not fixed here). "set up the
 # builders work layout" and "do the builders work for this layout" reach it
 # through the three words.
 utterances:
