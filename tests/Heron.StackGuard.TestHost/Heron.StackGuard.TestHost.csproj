@@ -40,6 +40,14 @@
     Heron.Core, so both are linked by source as the guard is. That lets a
     guarded `while (true) {}` be RUN here against a 200 ms deadline and
     seen to stop, which is the clock's whole claim, with no Revit at all.
+
+    AND THE ADD-IN'S OWN REFERENCE LIST (FRAGMENT-ISSUES row 5b-1000).
+    Every guarded script here is compiled with HeronFragmentReferences, the
+    list RevitFragment.BuildOptions hands the compiler, through
+    HeronScriptEngine.Options, the call that turns it into options - both
+    linked by source, neither names a Revit type. This host once kept a
+    list of its own that carried the run clock's assembly when the add-in's
+    did not, so every test passed and every fragment failed in Revit.
   -->
 
   <PropertyGroup>
@@ -59,6 +67,10 @@
              Link="HeronRunClock.cs" />
     <Compile Include="..\..\platform\Heron.Core\HeronStop.cs"
              Link="HeronStop.cs" />
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronFragmentReferences.cs"
+             Link="HeronFragmentReferences.cs" />
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronScriptEngine.cs"
+             Link="HeronScriptEngine.cs" />
   </ItemGroup>
 
   <ItemGroup>
