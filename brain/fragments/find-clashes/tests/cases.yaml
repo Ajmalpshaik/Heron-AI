@@ -30,12 +30,14 @@ positive:
       ids, this model's own
 
   - given: >
-      the same, one box moved so the wall sits 100 mm behind its centre, and
-      the link's 30 mm wall at another box
+      the same, one box moved so the wall's centreline sits 100 mm behind the
+      box's centre, and the link's 30 mm wall at another box
     expect: >
-      that box's line says "centre 100 mm behind the element's centre, to
-      the wall's ... side"; the 30 mm wall reads "wall 30 mm thick", and a
-      Wall Width of 255 there reads 225 mm MORE - the first-use case
+      that box's line says "wall 200 mm thick, only 127 (or 128) mm of it
+      inside the element, centre 100 mm behind the element's centre, to the
+      wall's ... side" - the WALL's centre, not the overlap's; the 30 mm wall
+      reads "wall 30 mm thick", and a Wall Width of 255 there reads 225 mm
+      MORE - the first-use case
 
   - given: >
       a box through a linked Air Terminal 305 mm deep along the box's facing,
@@ -147,11 +149,13 @@ second_route:
       compares none - a number with no unit is not 255 mm
 
   - given: >
-      a box family whose type and instance BOTH carry a parameter named
-      "Wall Width" (a shared one beside a family one)
+      a box whose INSTANCE carries two parameters named "Wall Width" (a
+      shared one beside a family one)
     expect: >
       "'Wall Width' NOT READ - 2 parameters share that name on 1
-      element(s)", never either value (D-54 s3, 5b-203)
+      element(s)", never either value (D-54 s3, 5b-203). One on the instance
+      and one on its type is not this case: the instance's is read, as the
+      lookup lands there first
 
   - given: >
       a void-only opening family with no solid of its own, includeLinks true

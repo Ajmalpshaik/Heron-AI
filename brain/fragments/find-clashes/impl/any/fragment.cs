@@ -94,13 +94,13 @@
 // element holds less of it than that - an opening shallower than the wall - the
 // line says how much.
 //
-// THE SIDE IS WHERE THE PART INSIDE THE ELEMENT SITS. The part of the other
-// element inside this one is cut out with Revit's own Boolean, and its centre
-// is measured from the element's centre, along the wall's face normal, up for a
-// floor, or along the element's own axis. In front of or behind is the
-// element's own facing; a wall also says which of its faces that is toward.
-// Where Revit refuses the Boolean, the other element's own centre is used and
-// the line says so.
+// THE SIDE IS WHERE THE OTHER ELEMENT'S OWN CENTRE SITS - a wall's
+// centreline - measured from the element's centre along the wall's face
+// normal, up for a floor, or along the element's own axis. In front of or
+// behind is the element's own facing; a wall also says which of its faces that
+// is toward. Where its own faces do not give its thickness - a curved wall, a
+// sweep on it, a sloped floor - the centre of the part inside the element
+// (cut out by Revit's own Boolean) is used, and the line says so.
 //
 // EQUAL IS REVIT'S OWN WORD FOR THE SAME POINT - `Application.VertexTolerance`
 // - not a number chosen here. A hit with no thickness is not compared, an
@@ -283,11 +283,23 @@ Func<Element, string> typeNameOf = element =>
 };
 
 // A linked element as text: the category, 'Family: Type', its id IN THE LINK
-// (never this model's), and its Fire Rating.
+// (never this model's), and its Fire Rating. Version 2's words exactly - an
+// element with no type reads '' here, where typeNameOf falls back to its name.
 Func<Document, Element, string> describeLinked = (linked, element) =>
-    string.Format("{0} '{1}' (id {2} in the link), Fire Rating {3}",
+{
+    var typeName = "";
+    try
+    {
+        var type = linked.GetElement(element.GetTypeId()) as ElementType;
+        if (type != null)
+            typeName = string.IsNullOrEmpty(type.FamilyName)
+                ? type.Name : type.FamilyName + ": " + type.Name;
+    }
+    catch (Exception) { }
+    return string.Format("{0} '{1}' (id {2} in the link), Fire Rating {3}",
         element.Category == null ? "element" : element.Category.Name,
-        typeNameOf(element), element.Id, fireRatingOf(element));
+        typeName, element.Id, fireRatingOf(element));
+};
 
 var linkBlocked = "";
 
@@ -555,9 +567,11 @@ Func<Element, List<Solid>, XYZ, XYZ, XYZ, Tuple<string, double>> measure =
         thicknessText = thickness > 0 ? string.Format("wall {0:0} mm thick", thickness * mm)
             : "wall thickness NOT READ";
     }
-    else if (other is HostObject)
+    else if (other is CeilingAndFloor || other is RoofBase)
     {
-        // A floor, roof or ceiling: its type's layers, measured up.
+        // A floor, roof or ceiling: its type's layers, measured up. NOT every
+        // HostObject - a duct, a pipe, a tray, a face wall and a slab edge are
+        // HostObjects too, and they are measured along the element below.
         kind = "slab";
         axis = XYZ.BasisZ;
         try
@@ -589,31 +603,38 @@ Func<Element, List<Solid>, XYZ, XYZ, XYZ, Tuple<string, double>> measure =
 
     if (axis == null || centre == null) return Tuple.Create(thicknessText, thickness);
 
-    // WHERE IT SITS: the part inside the element, cut out by Revit's Boolean.
+    // HOW MUCH OF IT IS INSIDE: the part inside the element, cut out by
+    // Revit's own Boolean - an opening shallower than the wall says so.
     var inside = overlapOf(own, otherSolids);
-    var middle = centreOf(inside);
-    var fromWhat = "";
     var held = "";
-    if (middle != null)
-    {
-        var depth = extentAlong(inside, axis);
-        if (depth != null && thickness > 0 && thickness - (depth[1] - depth[0]) > vertexTolerance)
-            held = string.Format(", only {0:0} mm of it inside the element", (depth[1] - depth[0]) * mm);
-    }
+    var depth = inside.Count == 0 ? null : extentAlong(inside, axis);
+    if (depth != null && thickness > 0 && thickness - (depth[1] - depth[0]) > vertexTolerance)
+        held = string.Format(", only {0:0} mm of it inside the element", (depth[1] - depth[0]) * mm);
+
+    // WHERE IT SITS: the other element's OWN centre along the axis - a wall's
+    // centreline, wherever its faces fall against the element. Its own reach
+    // along the axis is its two faces for a straight wall or a flat slab;
+    // where that reach is not its thickness - a curved wall, a sweep on it, a
+    // sloped floor - the centre of the part inside the element is taken
+    // instead, and said.
+    var reach = extentAlong(otherSolids, axis);
+    var fromWhat = "";
+    double? along = null;
+    if (reach != null && (kind == "other"
+        || (thickness > 0 && Math.Abs((reach[1] - reach[0]) - thickness) <= vertexTolerance)))
+        along = (reach[0] + reach[1]) / 2.0;
     else
     {
-        // Revit refused the Boolean: the other element's own centre, said.
-        var extent = extentAlong(otherSolids, axis);
-        if (extent != null)
+        var middle = centreOf(inside);
+        if (middle != null)
         {
-            var shift = (extent[0] + extent[1]) / 2.0 - centre.DotProduct(axis);
-            middle = centre + axis * shift;
-            fromWhat = " (its own centre - Revit could not cut out the part inside the element)";
+            along = middle.DotProduct(axis);
+            fromWhat = " (the centre of the part inside the element - its own faces do not give its thickness here)";
         }
     }
-    if (middle == null) return Tuple.Create(thicknessText + ", side NOT MEASURED", thickness);
+    if (along == null) return Tuple.Create(thicknessText + held + ", side NOT MEASURED", thickness);
 
-    var offset = (middle - centre).DotProduct(axis);
+    var offset = along.Value - centre.DotProduct(axis);
     var off = Math.Abs(offset) * mm;
     var side = "";
     var facingDot = facing == null ? 0.0 : axis.DotProduct(facing);
@@ -770,6 +791,7 @@ var byBox = 0;
 var through = 0;
 var throughNothing = new List<ElementId>();
 var notTested = new List<ElementId>();
+var refusedAgainst = new List<ElementId>();
 var elementLines = new List<string>();
 
 // The comparison's tally.
@@ -808,8 +830,12 @@ foreach (var element in places.Count > 0 ? elements : new List<Element>())
     var carried = own.Count > 0;
     if (!carried && searchLinks) linkUntested++;
     var partly = !carried && (searchLinks || searchHost);
-    var tested = !partly && ((againstGiven && !notChecked.Contains(element.Id))
-                             || (carried && (searchLinks || searchHost)));
+    // REVIT REFUSED ITS TEST AGAINST `against` - it is in `notChecked`, with
+    // Revit's reason in `findings`. Whatever else it was tested against, it was
+    // not tested there, so it never reads "through nothing".
+    var refusedThere = againstGiven && notChecked.Contains(element.Id);
+    var tested = !partly && !refusedThere
+                 && (againstGiven || (carried && (searchLinks || searchHost)));
 
     var centre = carried ? centreOf(own) : null;
     var facing = facingOf(element);
@@ -908,6 +934,7 @@ foreach (var element in places.Count > 0 ? elements : new List<Element>())
     if (hitTexts.Count == 0)
     {
         if (tested) throughNothing.Add(element.Id);
+        else if (refusedThere) refusedAgainst.Add(element.Id);
         else notTested.Add(element.Id);
     }
     else
@@ -916,8 +943,8 @@ foreach (var element in places.Count > 0 ? elements : new List<Element>())
         if (elementLines.Count < 100)
             elementLines.Add(string.Format("  element {0} '{1}'{2}: {3} - {4}{5}", element.Id,
                 typeNameOf(element), valueText, hitTexts.Count, string.Join("; ", hitTexts.ToArray()),
-                partly ? " - it has no solid and no box, so the links and this model were NOT searched with it"
-                : ""));
+                (partly ? " - it has no solid and no box, so the links and this model were NOT searched with it"
+                : "") + (refusedThere ? " - and Revit refused its test against `against`" : "")));
     }
 
     // THE COMPARISON. A failure to read is counted by its reason, a hit with
@@ -943,9 +970,9 @@ foreach (var element in places.Count > 0 ? elements : new List<Element>())
         if (Math.Abs(gap) <= vertexTolerance) continue;
         differs = true;
         if (mismatchLines.Count < 100)
-            mismatchLines.Add(string.Format("  element {0} '{1}' {2} {3:0} mm - {4} mm {5} than {6}",
+            mismatchLines.Add(string.Format("  element {0} '{1}' {2} {3:0.#} mm - {4:0.#} mm {5} than {6}",
                 element.Id, typeNameOf(element), parameterWord, value.Item1 * mm,
-                Math.Round(Math.Abs(gap) * mm), gap > 0 ? "MORE" : "LESS", hit.Item1));
+                Math.Abs(gap) * mm, gap > 0 ? "MORE" : "LESS", hit.Item1));
     }
     if (differs) mismatched.Add(element.Id);
     else agree++;
@@ -1003,7 +1030,7 @@ else
     passedThrough.Add(string.Format("{0} element(s) looked at in {1}, for {2}: {3} pass through something, "
         + "{4} through nothing, {5} NOT tested{6}. Linked elements are text, never selected",
         done.Count, string.Join(" and ", places.ToArray()), lookingFor, through, throughNothing.Count,
-        notTested.Count, byBox > 0 ? string.Format("; {0} tested by their bounding box, their hits marked "
+        notTested.Count + refusedAgainst.Count, byBox > 0 ? string.Format("; {0} tested by their bounding box, their hits marked "
         + "(box)", byBox) : ""));
     passedThrough.AddRange(elementLines);
     if (through > elementLines.Count)
@@ -1015,6 +1042,10 @@ else
     if (notTested.Count > 0)
         passedThrough.Add("  NOT tested - no solid and no box: element " + string.Join(", ", notTested.Take(50)
             .Select(id => id.ToString()).ToArray()) + (notTested.Count > 50 ? " and more" : ""));
+    if (refusedAgainst.Count > 0)
+        passedThrough.Add("  NOT tested - Revit refused its test against `against` (findings says why) and "
+            + "nothing else was hit: element " + string.Join(", ", refusedAgainst.Take(50)
+            .Select(id => id.ToString()).ToArray()) + (refusedAgainst.Count > 50 ? " and more" : ""));
 }
 
 // ---- version 3: the comparison ------------------------------------------------
@@ -1031,8 +1062,8 @@ else
     comparison.Add(string.Format("'{0}' compared with the thickness of what each element passes through: "
         + "{1} element(s) differ, {2} agree, {3} pass through nothing it could be compared with, {4} could "
         + "not be read, {5} NOT tested. Equal is within Revit's own vertex tolerance ({6:0.##} mm)",
-        parameterWord, mismatched.Count, agree, nothingToCompare, notRead, notTested.Count,
-        vertexTolerance * mm));
+        parameterWord, mismatched.Count, agree, nothingToCompare, notRead,
+        notTested.Count + refusedAgainst.Count, vertexTolerance * mm));
     comparison.AddRange(mismatchLines);
     if (mismatched.Count > 0 && mismatchLines.Count >= 100)
         comparison.Add("  the first 100 differences are named");

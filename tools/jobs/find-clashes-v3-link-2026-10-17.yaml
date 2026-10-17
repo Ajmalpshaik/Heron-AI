@@ -63,7 +63,9 @@
 #     HeronClashLink: Walls 'Basic Wall: Generic - 200mm' (id N in the
 #     link), wall 200 mm thick, centre 1000 mm to the wall's exterior side of
 #     the element's centre" - EXTERIOR OR INTERIOR is the wall's own: write
-#     down which, and check it against the wall's flip arrows in the link
+#     down which, and check it against the wall's flip arrows in the link.
+#     "HeronClashLink" is the link's title, and reads "HeronClashLink.rvt"
+#     where Windows shows file extensions
 #   - positive `passedThrough`: the same wall named on D1's line; `linkedMatches`
 #     "1 link(s) read: 1 element(s) clash with linked Walls, NOT selected"
 #   - negative `comparison`: "0 element(s) differ, 1 agree"
