@@ -531,7 +531,7 @@ namespace Heron.Revit.Addin
                 && string.Equals(Json.ReadString(request, "apply"), "true",
                                  StringComparison.OrdinalIgnoreCase);
 
-            // AND BEFORE IT IS KEPT, REVIT ASKS THE MODELLER - D-116. The owner's
+            // AND BEFORE IT IS KEPT, REVIT ASKS THE MODELLER - D-117. The owner's
             // switch, read fresh here and never taken from the request (Golden
             // Rule 19): a caller may ask to keep, and only the modeller says
             // yes. A run that keeps nothing is never asked - it is rolled back
@@ -582,7 +582,7 @@ namespace Heron.Revit.Addin
                 {
                     group.Start();
 
-                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-116.
+                    // WHAT REVIT SAYS THIS RUN TOUCHED, for the question - D-117.
                     // From here, so the setup steps count too: Keep keeps them.
                     // The `using` takes the handler off however this block ends.
                     if (changed != null) changed.Begin();
@@ -704,7 +704,7 @@ namespace Heron.Revit.Addin
                     // preview.
                     //
                     // AND WHEN THE OWNER'S SWITCH SAYS ASK, THE MODELLER DECIDES
-                    // WHICH, with the group still open (D-116). The whole run is
+                    // WHICH, with the group still open (D-117). The whole run is
                     // one ExternalEvent callback, so nothing else reaches the
                     // model while the dialog is up.
                     if (asking)
@@ -1396,7 +1396,7 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// D-116: Revit itself asks the modeller whether to keep what this run
+        /// D-117: Revit itself asks the modeller whether to keep what this run
         /// did, and the group is kept or rolled back on that answer. Called with
         /// the group open and no transaction in it.
         ///
@@ -1601,7 +1601,7 @@ namespace Heron.Revit.Addin
         ///
         /// FOR THE QUESTION'S ON-SCREEN HALF ONLY - isolating and ending it.
         /// Whether IsolateElementsTemporary needs a transaction at all is not
-        /// measured (NEEDS-CHECKING EJ7); inside one it is allowed either way,
+        /// measured (NEEDS-CHECKING EL7); inside one it is allowed either way,
         /// so it is given one rather than guessed at.
         /// </summary>
         private static bool InItsOwnTransaction(Document doc, string label, Action work)
@@ -1905,7 +1905,7 @@ namespace Heron.Revit.Addin
                         + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
                         + "would undo whatever you did before this.";
 
-                // D-116: KEPT BECAUSE THE MODELLER SAID SO, and said first, so
+                // D-117: KEPT BECAUSE THE MODELLER SAID SO, and said first, so
                 // the chat can tell a change somebody looked at from one kept
                 // with nobody asked - the owner's switch off, or a run Revit
                 // counted no change in, which says so rather than staying quiet.

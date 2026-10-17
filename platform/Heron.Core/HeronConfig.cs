@@ -64,7 +64,7 @@ namespace Heron.Core
                 { "revit.operationTimeoutSeconds", "60" },  // it started, but has not finished
 
                 // HOW LONG THE BRIDGE WAITS FOR THE MODELLER to answer Revit's
-                // Keep or Discard question (D-116). Their time is theirs, not
+                // Keep or Discard question (D-117). Their time is theirs, not
                 // the job's, so it is added to the wait rather than counted
                 // inside the operation timeout - and the client's own deadline
                 // for a change it keeps is derived from it, so the bridge is
@@ -91,7 +91,7 @@ namespace Heron.Core
                 { "admin.enabled", "false" },
                 { "publish.enabled", "false" },
 
-                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-116): the
+                // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-117): the
                 // changed elements are shown and a dialog asks Keep or Discard.
                 // ON by default, unlike the switches above, because ON is the
                 // safe side here - it narrows what Changes lets through, and

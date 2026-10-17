@@ -176,7 +176,7 @@ _KNOWN = {
                           "two open models share that name, so naming one cannot say which "
                           "was meant - nothing was written"),
 
-    # --- the modeller was asked in Revit (D-116) ----------------------------
+    # --- the modeller was asked in Revit (D-117) ----------------------------
     #
     # A DISCARD IS AN ANSWER, NOT A FAILURE. The change ran, Revit showed it,
     # and the modeller chose Discard - so REFUSED, which is what the activity

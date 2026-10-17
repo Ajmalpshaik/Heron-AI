@@ -48,14 +48,14 @@ DEFAULTS = {
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
     # How long the add-in waits for the modeller to answer Revit's Keep or
-    # Discard (D-116) - added to the wait for a change that keeps, never to a read.
+    # Discard (D-117) - added to the wait for a change that keeps, never to a read.
     "revit.askTimeoutSeconds": "300",
     "write.enabled": "false",
     # The two switches above Changes (D-106): each lets one more level
     # through, and only while write.enabled is on as well.
     "admin.enabled": "false",
     "publish.enabled": "false",
-    # D-116: Revit asks the modeller Keep or Discard before a change is kept.
+    # D-117: Revit asks the modeller Keep or Discard before a change is kept.
     # On by default - off puts back D-99. Read by the add-in; this side reads
     # it only to know how long a change it keeps may take to answer.
     "write.askBeforeKeeping": "true",
@@ -202,13 +202,13 @@ def busy_timeout(values=None):
 
 
 def ask_timeout(values=None):
-    """What the add-in will wait for the modeller's Keep or Discard (D-116)."""
+    """What the add-in will wait for the modeller's Keep or Discard (D-117)."""
     values = load() if values is None else values
     return max(1.0, _number(values, "revit.askTimeoutSeconds", 300))
 
 
 def asks_before_keeping(values=None):
-    """Whether Revit asks Keep or Discard before keeping a change (D-116)."""
+    """Whether Revit asks Keep or Discard before keeping a change (D-117)."""
     values = load() if values is None else values
     return truthy(values, "write.askBeforeKeeping")
 
@@ -241,7 +241,7 @@ def fragment_timeout(values=None, keeping=False):
     How long to wait for a FRAGMENT to come back. Never below the add-in's.
 
     `keeping` IS A RUN SENT WITH apply - one the add-in may stop and ASK the
-    modeller about (D-116). While the dialog is up the add-in waits for the
+    modeller about (D-117). While the dialog is up the add-in waits for the
     answer, up to revit.askTimeoutSeconds, and then gives the rest of the job
     a fresh operation timeout, so this side waits for both on top of its
     usual deadline. Without them the client gave up on a modeller still

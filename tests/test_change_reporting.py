@@ -159,12 +159,12 @@ def main():
           "by review on PR #198, and it is row 117's own mistake made twice")
 
     # ------------------------------------------------------------------
-    # D-116. REVIT ASKS KEEP OR DISCARD BEFORE A CHANGE IS KEPT, and the
+    # D-117. REVIT ASKS KEEP OR DISCARD BEFORE A CHANGE IS KEPT, and the
     # reply must say which the modeller chose - a change somebody looked at
     # and a change kept with nobody asked read the same otherwise.
     # ------------------------------------------------------------------
     # READ SO THAT ITS ABSENCE FAILS RATHER THAN CRASHES (heron-ship 2a):
-    # against the code from before D-116 every check below must say so.
+    # against the code from before D-117 every check below must say so.
     asked_path = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepQuestion.cs")
     question = (io.open(asked_path, encoding="utf-8").read()
                 if os.path.exists(asked_path) else "")
@@ -197,7 +197,7 @@ def main():
           and "never send it again" in server,
           "and revit_change tells the chat so in its own description")
     check("THERE IS NO PREVIEW" not in server,
-          "and no longer says there is no preview - D-116 superseded D-99")
+          "and no longer says there is no preview - D-117 superseded D-99")
 
     if FAILURES:
         print("FAILED")

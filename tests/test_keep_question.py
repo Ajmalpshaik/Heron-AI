@@ -14,7 +14,7 @@ Revit asks the modeller Keep or Discard before a change from a chat is kept.
 
 WHY THIS EXISTS
 ---------------
-D-99 kept every revit_change at once, with no preview. D-116 supersedes it:
+D-99 kept every revit_change at once, with no preview. D-117 supersedes it:
 the change runs inside Heron's TransactionGroup, Revit selects and isolates
 what it touched, and a TaskDialog asks Keep or Discard. Keep is one undo entry;
 Discard rolls the group back and puts the modeller's selection back.
@@ -35,9 +35,9 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 missing line or a line in the wrong place.
 
 Neither half proves Revit then does what it is told. That is the PC's, and
-NEEDS-CHECKING Group EJ says what it owes.
+NEEDS-CHECKING Group EL says what it owes.
 
-MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-116 every
+MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-117 every
 wiring section fails and the host does not build, and this suite exits 1 rather
 than raising.
 

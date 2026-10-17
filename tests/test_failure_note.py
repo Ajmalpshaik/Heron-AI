@@ -214,7 +214,7 @@ def wiring():
           "the write path opens %d transaction(s) - the fragment's and one per "
           "setup step" % len(opened))
     # BEFORE ANYTHING RUNS IN IT OR IT COMMITS. This read "before its script
-    # runs" until 2026-10-17, when D-116 added a transaction that runs no
+    # runs" until 2026-10-17, when D-117 added a transaction that runs no
     # script - the one that isolates a change on screen while Revit asks Keep
     # or Discard. Its work is a delegate called `work`, and the rule it must
     # keep is the same one: the options are set before the first thing that
@@ -231,7 +231,7 @@ def wiring():
               "BEFORE anything runs in it or it commits" % where)
     own = body_of(code, "bool InItsOwnTransaction(")
     check(bool(own) and re.search(r"new\s+Transaction\s*\(", own) is not None,
-          "the Keep or Discard question's on-screen transaction (D-116) is one of them")
+          "the Keep or Discard question's on-screen transaction (D-117) is one of them")
     calls = len(re.findall(r"(?<![\w.])Discipline\s*\(\s*\w", code)) - \
         len(re.findall(r"void\s+Discipline\s*\(", code))
     check(calls == len(opened),

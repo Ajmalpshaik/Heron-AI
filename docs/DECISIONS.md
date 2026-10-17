@@ -170,7 +170,7 @@ an edit.
 | [D-96](#d-96--a-downloaded-heron-is-installed-by-the-installer-and-only-by-the-installer) | A downloaded Heron is installed by the installer, and only by the installer | ✅ Accepted · 2026-09-21 |
 | [D-97](#d-97--the-library-is-built-out-first-and-proved-in-one-pass-later) | The library is built out first, and proved in one pass later | ✅ Accepted · 2026-08-30 |
 | [D-98](#d-98--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) | A context fragment is consumed by the host, not by another fragment | ⏳ Proposed · 2026-08-31 |
-| [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) | A change asked for in a chat is kept at once, with no preview, and Article 9 says so | ✅ Accepted · 2026-09-23 · superseded by D-116 once that is accepted |
+| [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) | A change asked for in a chat is kept at once, with no preview, and Article 9 says so | ✅ Accepted · 2026-09-23 · superseded by D-117 once that is accepted |
 | [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) | A drop in the score of the owner's own questions is reported, never a gate | ✅ Accepted · 2026-09-23 |
 | [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) | Risk is part of routing, not only part of permission | ⏳ Proposed · 2026-08-31 |
 | [D-102](#d-102--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) | Several fragments may jointly feed one, and the orphan check asks per need | ✅ Accepted · 2026-08-31 |
@@ -187,7 +187,8 @@ an edit.
 | [D-113](#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about) | A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about | ⏳ Proposed · 2026-10-06 |
 | [D-114](#d-114--a-fragment-that-reloads-a-family-is-handed-revits-load-options-by-the-add-in) | A fragment that reloads a family is handed Revit's load options by the add-in | ⏳ Proposed · 2026-10-06 |
 | [D-115](#d-115--a-fragment-that-must-run-with-no-transaction-open-declares-d-112s-switch-too-and-the-first-is-open_view) | A fragment that must run with no transaction open declares D-112's switch too, and the first is OPEN_VIEW | ✅ Accepted · 2026-10-13 |
-| [D-116](#d-116--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ⏳ Proposed · 2026-10-17 |
+| [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
+| [D-117](#d-117--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) | Revit asks the modeller Keep or Discard before a change from a chat is kept | ⏳ Proposed · 2026-10-17 |
 
 ## Format
 
@@ -854,7 +855,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-09-23 · **Source:** Ajmal PS, 2026-09-23, asked as decision D1 of the earlier-brain plan
 **Amends:** [Constitution Article 9](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 17](14-golden-rules.md) · **Keeps:** [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
-**Superseded by:** [D-116](#d-116--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), proposed 2026-10-17 for the owner to confirm - Revit asks the modeller Keep or Discard before a change from a chat is kept, and D-99's behaviour remains only as the owner's switch for that question
+**Superseded by:** [D-117](#d-117--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), proposed 2026-10-17 for the owner to confirm - Revit asks the modeller Keep or Discard before a change from a chat is kept, and D-99's behaviour remains only as the owner's switch for that question
 
 **Full record:** [`decisions/D-99.md`](decisions/D-99.md)
 
@@ -986,10 +987,18 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-115.md`](decisions/D-115.md)
 
-## D-116 — Revit asks the modeller Keep or Discard before a change from a chat is kept
+## D-116 — A list of family forms built in one call undoes as one, and cuts stay a separate call
+
+**Status:** Accepted · **Date:** 2026-10-17 · **Accepted:** Ajmal PS, 2026-10-17, in conversation, answering both halves of the question: *"Yes, one undo per list"* and *"No, keep cuts separate"* · **Question:** [Q-62](OPEN-QUESTIONS.md)
+**Keeps:** Golden Rule 16 and Constitution Article 8 - one call, one TransactionGroup, one undo · all or nothing - one row that fails keeps none of the list
+**Affects:** [`create-family-forms`](../brain/fragments/create-family-forms/fragment.yaml) and [`combine-family-forms`](../brain/fragments/combine-family-forms/fragment.yaml), neither changed · [NEEDS-CHECKING Group DA](needs-checking/group-da.md), unchanged · [04](04-heron-mcp.md)
+
+**Full record:** [`decisions/D-116.md`](decisions/D-116.md)
+
+## D-117 — Revit asks the modeller Keep or Discard before a change from a chat is kept
 
 **Status:** Proposed · **Date:** 2026-10-17 · **Source:** Ajmal PS agreed it should be added, in the task that asked for it on 2026-10-17 - drafted for the owner to confirm before it is Accepted
 **Supersedes:** [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - a change asked for in a chat is no longer kept at once; Revit shows it and the modeller keeps it · **Keeps:** [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-60](#d-60--a-preview-selects-what-it-would-change-and-what-it-would-skip-up-to-500), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on), [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group), Golden Rules 16 and 19, Constitution Article 7
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs), [`RevitChangedSet.cs`](../revit/Heron.Revit.Addin/RevitChangedSet.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs), [`HeronChangesWindow.cs`](../revit/Heron.Revit.Addin/HeronChangesWindow.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`host.chat.yaml`](../brain/instructions/host.chat.yaml), [Constitution Article 9](../HERON_CONSTITUTION.md), [Golden Rule 17](14-golden-rules.md)
 
-**Full record:** [`decisions/D-116.md`](decisions/D-116.md)
+**Full record:** [`decisions/D-117.md`](decisions/D-117.md)

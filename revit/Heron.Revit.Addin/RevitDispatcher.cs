@@ -62,7 +62,7 @@ namespace Heron.Revit.Addin
         private readonly TimeSpan _operationTimeout;
 
         /// <summary>
-        /// How long the modeller has to answer Revit's Keep or Discard (D-116)
+        /// How long the modeller has to answer Revit's Keep or Discard (D-117)
         /// before this side stops waiting and says so - revit.askTimeoutSeconds.
         /// </summary>
         private readonly TimeSpan _askTimeout;
@@ -147,7 +147,7 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// Revit's own thread, from RevitFragment: the modeller is being asked
-        /// Keep or Discard (true), or has answered (false) - D-116.
+        /// Keep or Discard (true), or has answered (false) - D-117.
         ///
         /// TWO THINGS FOLLOW, and this class is the one that knows both the job
         /// and the banner. The job's caller stops counting the modeller's time
@@ -320,7 +320,7 @@ namespace Heron.Revit.Addin
 
             var finished = job.WaitForFinish(_operationTimeout);
 
-            // THE MODELLER IS BEING ASKED, OR WAS (D-116). Their time to look at
+            // THE MODELLER IS BEING ASKED, OR WAS (D-117). Their time to look at
             // the change is theirs, not the job's, so it is not counted against
             // the operation: wait for the answer, then give the rest of the job
             // a fresh operation timeout. Without this every Keep or Discard
@@ -663,7 +663,7 @@ namespace Heron.Revit.Addin
                 case "fragment_threw":
                 case "operation_failed": return "The job failed in Revit";
 
-                // D-116. The modeller's own answer, so it is not a failure -
+                // D-117. The modeller's own answer, so it is not a failure -
                 // and the second says the rollback did not report success.
                 case "modeller_discarded": return "Discarded - nothing was kept";
                 case "discard_unconfirmed": return "Discarded - check the model";
@@ -699,7 +699,7 @@ namespace Heron.Revit.Addin
             private int _state = Queued;
             private int _bannerEnded;
 
-            // D-116: 0 never asked, 1 the modeller is being asked, 2 answered.
+            // D-117: 0 never asked, 1 the modeller is being asked, 2 answered.
             private const int NotAsked = 0;
             private const int QuestionOpen = 1;
             private const int QuestionAnswered = 2;
@@ -768,7 +768,7 @@ namespace Heron.Revit.Addin
             public bool WaitForFinish(TimeSpan timeout) { return _finished.Wait(timeout); }
 
             /// <summary>
-            /// AWAITING THE MODELLER - D-116. Revit's thread opens the question
+            /// AWAITING THE MODELLER - D-117. Revit's thread opens the question
             /// and closes it; the caller's thread reads it to decide whether the
             /// wait it is in is the job's or the modeller's.
             /// </summary>

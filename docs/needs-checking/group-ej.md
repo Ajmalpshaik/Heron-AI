@@ -6,39 +6,37 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group EJ - Revit asks Keep or Discard before a change from a chat is kept: D-116 (2026-10-17)
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
 
-[D-116](../DECISIONS.md#d-116--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept)
-(proposed, the owner to confirm) supersedes D-99. `revit_change` still runs its change inside one
-`TransactionGroup`; then, with the group open, Revit selects and isolates what it touched and a dialog asks
-**Keep** or **Discard**. Keep is one undo entry, `Heron: <name>`; Discard, Esc or the close button rolls the
-group back and puts the modeller's own selection back. The owner's switch is `write.askBeforeKeeping` in
-`heron.config`, on by default.
+Until 2026-10-17 a Heron tool waiting on Revit said nothing until Revit answered. A slow fragment, a family
+build or a modeller answering a prompt in Revit can take minutes, and in that time the chat could not tell
+a wait from a hang. [docs/04 §7.1](../04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)
+has what was built.
 
-**What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027
-(`tools/check-compile.py`, 2026-10-17), and every Revit member it calls exists on all eight
-(`tools/check-api-surface.py`). `tests/test_keep_question.py` runs the Revit-free half - the words, the rule
-that only the Keep link keeps, and D-60's cap - in its test host, and reads the wiring as text. **None of it
-has run in Revit.** Nothing here is PROVEN.
+**What changed.** `revit_change`, `revit_read`, `revit_building_loads`, `revit_sprinkler_hydraulics` and
+`revit_sprinkler_layout` take the MCP SDK's `Context`, hidden from their arguments. While one of them waits
+on Revit, the bridge client's join loop calls back every `WAIT_NOTE_S`
+([`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py)), and the server sends an MCP progress
+notification saying *"Waiting for Revit - N s so far. The modeller may be answering a prompt in Revit."* -
+**only when the host sent a `progressToken`**. Nothing goes down the pipe: the add-in is unchanged and needs
+no rebuild.
 
-**Before any row: rebuild the add-in, deploy it for each Revit, restart Revit, and restart the Claude app**
-- the question lives in the add-in, and the client's longer wait for a change that keeps lives in the
-server. Changes must be ON.
+**What is tested and what is not run.** [`tests/test_mcp_stdio.py`](../../tests/test_mcp_stdio.py) runs the
+real server over stdio against [`tests/support/slow_revit_server.py`](../../tests/support/slow_revit_server.py),
+a stand-in Revit that takes the test's `SLOW_S` to answer: a host that sent a token gets a note every
+`WAIT_NOTE_S`, with its token, rising progress and the words, and none after the answer; a host that sent
+none gets nothing. Measured on Linux on 2026-10-17, SDK 2.2.0: a 90-second wait gave 8 notes, 10.0 s
+apart, and the host with no token got none in 30 s. **It has never run in a real chat or against a real Revit**, and Claude
+Code's docs do not say whether it sends a `progressToken` at all
+([WHAT-TO-INSTALL §5a](../WHAT-TO-INSTALL.md#5a-when-a-revit-job-runs-long--claude-codes-own-limits)).
 
-**A NEW SCRATCH PROJECT, never a working model.** In Revit 2020 first: a project from the default metric
-template, saved as *Heron Keep Question.rvt*, with Level 1 and Level 2 and two walls on Level 1. Open the
-South elevation for EJ1 to EJ4.
+**A SCRATCH PROJECT, never a working model.** Any project with a few MEP Spaces, saved as *Heron Wait
+Check.rvt*, in Revit 2020 first. Restart the Claude app first so it starts the new server.
 
 | # | Run | Look for |
 |---|---|---|
-| **EJ1** | Select one of the two walls. Then in the chat: *"create a level called EJ Test at 6000 mm"* (`revit_change` capability `CREATE_LEVEL`). When the dialog appears, read it, then choose **Keep** | The dialog says `'CREATE_LEVEL' ran in Heron Keep Question`, **Revit counts 1 element added** (or more if Revit adds its plan views - write down the numbers it gives), and that the added elements are selected and isolated; the new level is the only thing visible in the elevation while it is up. After Keep: the elevation is back to normal (isolation ended), the new level is selected, the Undo list's top entry is **one** `Heron: CREATE_LEVEL`, and the chat's verdict begins *"The modeller chose Keep in Revit."* Then press **Ctrl+Z once**: the level is gone and nothing else moved. **The D-30 positive.** If **no dialog appears** and the verdict says *"Revit reported nothing added, changed or deleted"*, the change collector did not hear Revit inside Heron's group - D-116's accepted failure, and this row fails |
-| **EJ2** | Same model and view. Select the two walls. Note the element count of the Levels (e.g. a level schedule or Project Browser). Ask the same level again, `EJ Test 2` at 7000 mm, and choose **Discard** | The level count is **unchanged**, there is **no** new `Heron:` entry at the top of the Undo list, the elevation is not isolated, and the **two walls are selected again** - the modeller's own selection, put back. The chat says *"The modeller chose Discard in Revit, so NOTHING WAS KEPT"* and does **not** try again or try another capability. **The D-30 negative** |
-| **EJ3** | Ask the same level twice more. The first time press **Esc**; the second time close the dialog with its **X** | Both times exactly EJ2's result: nothing kept, no undo entry, selection back. Only the Keep link keeps |
-| **EJ4** | Ask the same level again and **wait 90 seconds** before choosing **Keep** | The chat gets the final answer - the KEPT verdict with *"The modeller chose Keep in Revit."* - and never *"still running"*. One undo entry, as EJ1. *Then, separately and only if there is time:* set `revit.askTimeoutSeconds = 60` in `heron.config`, restart Revit and the Claude app, ask again and wait 3 minutes: the chat is told Revit is **still asking** and not to send it again; then choose Discard and see the model unchanged. Put the setting back to 300 |
-| **EJ5** | Open a second scratch project (*Heron Keep Back.rvt*), leave it in front, and ask the chat to create the level in *Heron Keep Question* by name | The dialog says the model **is not the one in front** and nothing is selected or isolated in *either* window. Keep works as EJ1 in the named model; nothing appears in the model in front |
-| **EJ6** | In *Heron Keep Question*, an edit-scope run: ask for a stair (`CREATE_STAIRS`, D-112) between Level 1 and Level 2. Choose **Keep**; then ask again and choose **Discard** | Keep: the stair is there and **one** `Heron:` undo entry. Discard: no stair, no new undo entry. The run must not be refused with "left a transaction of its own open" |
-| **EJ7** | *An observation, not a proof.* Does `View.IsolateElementsTemporary` need a transaction? Run, with `revit_read` (no transaction open), a scratch fragment outside the repository that calls `uidoc.ActiveView.IsolateElementsTemporary` on one wall's id | Write down which: it isolates (no transaction needed), or Revit refuses with a modification-outside-a-transaction error (needed). The add-in gives it one either way; this says whether that was necessary. Then turn the isolation off by hand |
-| **EJ8** | *Watching, not a proof.* During EJ1 | The amber activity banner is **not** over the dialog while it is up, and comes back for a moment after the answer |
-| **EJ9** | Set `write.askBeforeKeeping = false` in `heron.config`, restart Revit, and ask for a level `EJ Off` | **No dialog**: kept at once, as D-99 kept it - one undo entry, and the verdict does **not** say the modeller chose Keep. Put the setting back to `true` and restart |
-| **EJ10** | With the switch on, ask the chat to open the South elevation (`OPEN_VIEW`) while a plan is in front | **No dialog** - Revit reports no change to the model - and the verdict says *"the modeller was not asked"*. The view opens |
-| **EJ11** | EJ1 and EJ2 once on Revit 2024 and once on 2027 | The same answers - the question is in the add-in every release loads |
+| **EJ1** | In a chat, a `revit_read` that takes longer than `WAIT_NOTE_S` - `revit_building_loads` on the scratch project, or a fragment's first run in a fresh Revit session, which compiles it | **The D-30 positive.** While it waits, Claude Code shows *"Waiting for Revit - N s so far ..."* on the tool line, N rising. Write down whether it showed at all: if nothing showed, Claude Code sent no `progressToken` and Heron rightly sent nothing - say so here, and that is the answer to WHAT-TO-INSTALL §5a's open question |
+| **EJ2** | The same chat: `heron_lookup` on any sentence, and a `revit_levels` | **The D-30 negative.** No note - neither tool carries the callback, and both answer at once |
+| **EJ3** | `revit_change` on a scratch-model change that shows a prompt in Revit, left unanswered for over a minute, then answered | Notes the whole time the prompt is open, then the change's own answer, and nothing after it. Undo the change |
+| **EJ4** | EJ1 with the call running past two minutes | Claude Code moves it to a background task; `/tasks` shows the latest note; the answer still arrives |
+| **EJ5** | EJ1 once on Revit 2024 and once on 2027 | The same. The notes are made outside Revit, so the release should not matter |
