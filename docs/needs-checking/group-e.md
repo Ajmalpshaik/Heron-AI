@@ -13,16 +13,16 @@ Each of these is a rail. A rail that has never been tested is decoration.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **E1** | Preview, wait **over 2 minutes**, then approve | Refuses as **expired**. Nothing moves |
-| **E2** | Preview, draw one more duct, then approve | Refuses — **the model moved on**. Names both counts |
-| **E3** | Preview, click into a **second open project**, approve | Refuses, names **both** models, and says the approved one is **still open** |
-| **E4** | Preview, then **close** the first project, approve | Refuses and says it was **CLOSED** — a different message from E3. Golden Rule 20 treats these differently |
-| **E5** | E4 again on a model that has a **link loaded** | Still says closed. Proves the `IsLinked` filter — a loaded link must not count as "still open" |
-| **E6** | Approve **twice** in a row | The second finds nothing to approve. It must **not** move them a further 200 mm |
-| **E7** | Pin a duct, then preview | Reported as **skipped**, and left alone after the move |
-| **E8** | On a **workshared** model with a duct owned by another user, preview | Reported as skipped, and the move does not fail because of it |
-| **E9** | Open a dialog in Revit, then ask to move | *"Revit is busy"* — a clean refusal, not a hang. Recovers by itself |
-| **E10** | Put two ducts in a **Revit group**, then ask to move that category up 200 mm | They are reported as **did NOT move at all**, by count, with the words *"almost certainly inside a group"* — and the ungrouped ones still move. **This is the case Revit will not tell you about**: `MoveElements` returns normally and moves nothing for a group member, no exception and no warning, so counting "it did not throw" as "it moved" reports a clean success for elements that have not shifted a millimetre. Proved against a real model in the owner's earlier work; Heron now compares positions either side instead of trusting the call. A group member is **not** pinned, so `E7`'s skip filter does not catch it |
+| ~~**E1**~~ | ~~Preview, wait **over 2 minutes**, then approve~~ | Refuses as **expired**. Nothing moves - **PASSED 2026-10-17 on the owner's laptop** ([the run](#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)) - *Heron D3 move test*, Revit 2024. Preview at 15:31:31, approved at 15:33:47 after a 135 s wait: *"That preview is more than 2 minutes old, so it no longer describes the model. Ask again for a fresh one - nothing was changed."* Re-read at 15:33:52: the three free ducts' lowest and highest points the same to 13 decimals (10.4106684280786 and 11.7230043860838 ft), the 725 pinned ducts' box the same |
+| **E2** | Preview, draw one more duct, then approve | Refuses — **the model moved on**. Names both counts - **NOT RUN 2026-10-17 - it needs a duct drawn between the preview and the approval, and Heron could not draw one here** ([the run](#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)): `revit_change` was refused by this session's auto-mode safety check before anything was sent, and the D3 chat reported the same afternoon that every kept `revit_change` fails at the Keep or Discard box on this add-in build (not re-tried here). A preview was made at 15:34 for the owner to draw against; he was away and it expired unused. **The owner moved the row to a separate Revit session.** Note for the reader: since [5b row 11](../fragment-issues/section-5b-rows-001-025.md) the refusal names the preview's count and what changed (*"It described 3 ducts, and one new one has appeared"*), not two counts |
+| **E3** | Preview, click into a **second open project**, approve | Refuses, names **both** models, and says the approved one is **still open** - **RUN 2026-10-17 - PASSED between models with different project keys, FAILED between two made from one template** ([row 5b-1060](../fragment-issues/section-5b-rows-401-425.md), [the run](#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)). With *Rails-F Snowdon Facades* (a copy of Revit 2024's Snowdon Facades sample, key `7cacd49c-...-00012b83`) brought to the front 9 s after a preview in *Heron D3 move test*: *"That preview was made for Heron D3 move test, but Rails-F Snowdon Facades is in front now. Heron D3 move test is still open - click back to it and ask again. Nothing was changed."* With *Rails-S dynamo sample* (a copy of Revit 2024's `DynamoSample_2024.rvt`) in front instead, whose key is the D3 model's, `8764c510-...-0000c160`: *"The model changed since that preview. It described 3 ducts, and 3 of them are gone. Nothing was changed."* - refused, but named neither model and did not say the approved one was still open. Nothing moved either time (re-read). Every project made from the default template carries that key ([5b-324](../fragment-issues/section-5b-rows-301-325.md)), so the second is the common case |
+| **E4** | Preview, then **close** the first project, approve | Refuses and says it was **CLOSED** — a different message from E3. Golden Rule 20 treats these differently - **NOT RUN 2026-10-17 - it needs a model closed by hand** ([the run](#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)). The clean arrangement: preview in a model of one project key, close it, approve with a model of the other key in front, **and no other open project carrying the first key** - `IsStillOpen` would find it and answer *still open*. The one model that fitted, *EQ-2024 Snowdon Towers Sample HVAC* (another chat's scratch copy, ducts, key `7cacd49c-...`), was previewed (*"This would move 1,053 ducts up 200 mm"*); closing it with `save-document` `closeWindow` was refused by this session's auto-mode safety check as another chat's model, and not worked around. **The owner moved the row to a separate Revit session** |
+| **E5** | E4 again on a model that has a **link loaded** | Still says closed. Proves the `IsLinked` filter — a loaded link must not count as "still open" - **NOT RUN 2026-10-17 - it needs a Revit link made by hand** (`link-files` is DRAFT, and `revit_change` was blocked here). **Only a link carrying the CLOSED model's own project key exercises the filter** - any other link has a different key and would not be found anyway. Worked out on the day: link *Rails-S dynamo sample* (key `8764c510-...`) into *Rails-F Snowdon Facades* (key `7cacd49c-...`), preview in an `8764c510-...` model with ducts, close it, approve with Rails-F in front ([the run](#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)). **The owner moved the row to a separate Revit session** |
+| ~~**E6**~~ | ~~Approve **twice** in a row~~ | The second finds nothing to approve. It must **not** move them a further 200 mm - **PASSED 2026-10-17, both halves** ([the run](#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)) - *Heron D3 move test*. In the chat: *"Moved 3 ducts up 200 mm in Heron D3 move test. 725 were skipped - 725 pinned."*, then at once *"There is nothing waiting to be approved. Ask for the change and Heron will show what it would do first. Nothing has been sent to Revit."* Re-read: the three ducts up 200.000 mm once (lowest point 9.75450044907594 to 10.4106684280786 ft), not 400. In the add-in: after a move had run, the SAME approval sent again from the client library came back `no_preview`, *"There is nothing waiting to be approved..."*, and the audit holds one move for it |
+| ~~**E7**~~ | ~~Pin a duct, then preview~~ | Reported as **skipped**, and left alone after the move - **PASSED 2026-10-17** ([the run](#the-2026-10-17-run-of-e1-e10-g1-g2-and-g4)) - *Heron D3 move test*, 725 of its 728 ducts pinned by the owner by hand for D3. Preview *"725 would be skipped - 725 pinned"*; after the move *"725 were skipped - 725 pinned"*; the audit's `skipReasons` *"725 pinned"* and `skippedElements` 725 UniqueIds. Re-read after every move that day: the 725 pinned ducts' box unchanged, 62043 x 52871 x 12615 mm, lowest point 8.13376554093945 ft, highest 49.52156081653 ft |
+| **E8** | On a **workshared** model with a duct owned by another user, preview | Reported as skipped, and the move does not fail because of it - **NOT RUN 2026-10-17 - this PC cannot set it up.** It needs a workshared central and a second Revit user holding a duct; the owner's laptop has one Revit user and no central. E23's test central waits on the office PC |
+| **E9** | Open a dialog in Revit, then ask to move | *"Revit is busy"* — a clean refusal, not a hang. Recovers by itself - **NOT RUN 2026-10-17 - it needs a Revit dialog opened by hand while Heron asks.** The owner was away and moved the row to a separate Revit session. [B10](group-b.md) proved the same `revit_busy` refusal for a read on 2026-09-07; this row is the move's own |
+| **E10** | Put two ducts in a **Revit group**, then ask to move that category up 200 mm | They are reported as **did NOT move at all**, by count, with the words *"almost certainly inside a group"* — and the ungrouped ones still move. **This is the case Revit will not tell you about**: `MoveElements` returns normally and moves nothing for a group member, no exception and no warning, so counting "it did not throw" as "it moved" reports a clean success for elements that have not shifted a millimetre. Proved against a real model in the owner's earlier work; Heron now compares positions either side instead of trusting the call. A group member is **not** pinned, so `E7`'s skip filter does not catch it - **NOT RUN 2026-10-17 - it needs two ducts grouped by hand** (Ctrl+G): `group-elements` is DRAFT and `revit_change` was blocked here. Any scratch project with three or more free-standing ducts will do. **The owner moved the row to a separate Revit session** |
 | ~~**E11**~~ | With Project1 unsaved and never saved, run a read tool (`revit_select_by_category`), then… — [full row](../needs-checking-archive/group-e.md#row-e11) | It runs. |
 | ~~**E12**~~ | Run `revit_change` in Project1, click into a second open project, ask for the same change again RUN… — [full row](../needs-checking-archive/group-e.md#row-e12) |
 | ~~**E13**~~ | The same, but click into a family editor rather than a second project RUN 2026-09-15 - PASSED.… — [full row](../needs-checking-archive/group-e.md#row-e13) |
@@ -219,3 +219,54 @@ central with two local copies**.
 | **E24** | E23's preview on the largest workshared category to hand (a thousand elements or more), timed, and the same preview on a **detached, non-workshared** copy of the same model | **Record both times.** Revit's own documentation says `GetModelUpdatesStatus` returns a *"locally cached value"*, so it should not reach the central server and the two should be close; a workshared preview markedly slower says otherwise, and the plan asked for exactly this number - **NOT RUN 2026-09-23 - deferred with E23.** Its plain copy is ready beside it, `D:\Ajmal\Heron-Proving\E23-E24\Snowdon-E24-detached.rvt`. The preview reads every element of its category in the whole model (`RevitWrite.Partition`), and accepts ducts, pipes, pipe fittings and pipe accessories - so the largest category is one of those four |
 
 **Run on the owner's PC, 2026-09-23 - the four rows about the fragment write path PASSED, the two about central were deferred.** Revit 2024, the test project `D:\Ajmal\Heron-Proving\Heron-C3-test.rvt`, the add-in built from `main` at `173a4524` and deployed on all three installed releases with the three Heron DLLs hash-checked against the build; a wrapper around the client's own `main()` kept each raw reply. What Revit posts at commit now reaches Heron and not Revit's own handling: a duplicate Mark was dismissed and quoted, a broken constraint rolled the whole job back with Revit's words, and nothing was deleted, unlocked or moved. The evidence is in each row.
+
+### The 2026-10-17 run of E1-E10, G1, G2 and G4
+
+**On the owner's laptop, Revit 2024.3, session 8168, add-in `0.1.0+76006767`** - deployed at 13:39 that day
+from `origin/main` `76006767` by the Group EQ chat - after the [D3 tape measure](group-d.md) in the same Revit.
+Driven from this session's own Heron server (`revit_preview_move`, `revit_apply_move`) with `write.enabled`
+already `true`: the ribbon's Changes switch, set by the owner on 2026-10-09, and not touched by this run.
+
+**The model** - *Heron D3 move test*: Autodesk's `rme_basic_sample_project.rvt` (Revit 2020 format) opened in
+2024 by the D3 chat and **never saved** - the owner's word, *"this is a scrap model"*. 728 ducts, 725 of them
+pinned by the owner by hand for D3, three free-standing ducts left unpinned (892432, 892448, 892476).
+
+**Measured, not assumed.** Every row was re-read through PROVEN reads - `select-by-pin-state` (`wantPinned`
+false, then true, `categories=Ducts`) chained into `report-bounding-box` - before and after: the free ducts'
+lowest and highest points in feet, and the pinned ducts' combined box. *Moved 200 mm* is the lowest point
+rising by 0.65616797900266 ft, which is 200.000 mm.
+
+**Two project keys, and they decide E3 to E5.** The move tells models apart by
+`ProjectInformation.UniqueId`. Read off the replies that day: *Heron D3 move test* and a copy of Revit 2024's
+`DynamoSample_2024.rvt` both carry `8764c510-57b7-44c3-bddf-266d86c26380-0000c160`, the key every model made
+from the default template carries ([5b-324](../fragment-issues/section-5b-rows-301-325.md)); a copy of the
+Snowdon Facades sample and the EQ chat's copy of the Snowdon HVAC sample both carry
+`7cacd49c-ac17-4591-ad0a-cbc9bb40015a-00012b83`, so every Snowdon sample shares one. **Arrange E4 and E5 across
+the two, and with no other open project holding the first key.**
+
+| ID | Result |
+|---|---|
+| E1 | PASSED |
+| E2 | NOT RUN - a duct drawn by hand |
+| E3 | PASSED between different keys, FAILED between one template's models - row 5b-1060 |
+| E4 | NOT RUN - a model closed by hand |
+| E5 | NOT RUN - a link made by hand |
+| E6 | PASSED, chat and add-in halves |
+| E7 | PASSED |
+| E8 | NOT RUN - no central and no second user on this PC |
+| E9 | NOT RUN - a dialog opened by hand |
+| E10 | NOT RUN - two ducts grouped by hand |
+| G1 | PASSED - row 5b-1062 on its wording |
+| G2 | RUN - the lost-answer path PASSED; the bridge itself not killed |
+| G4 | PASSED - row 5b-1061 on the second workflow id |
+
+**Why five rows wait for a person.** Each needs something drawn, grouped, linked, closed or a dialog opened
+between Heron's preview and its approval. Heron's own tools for those were out of reach in this session:
+`revit_change` was refused by the session's auto-mode safety check before anything was sent, `group-elements`
+and `link-files` are DRAFT, and closing another chat's model was refused as that chat's. **The owner moved those
+rows to a separate Revit session on 2026-10-17.** The test copies are in
+`%TEMP%\heron-work\move-rails\models\` - *Rails-F Snowdon Facades*, *Rails-S dynamo sample* and two copies of
+`rme_basic_sample_project.rvt` (*Rails-X2*, *Rails-X3*) - and *Heron D3 move test* goes when that Revit closes.
+
+**Found on the way, outside the move:** `save-document` with `closeWindow` closed a window and then answered
+*"ROLLED BACK NOTHING WAS KEPT ... Send it again with apply to keep it"* - [row 5b-1063](../fragment-issues/section-5b-rows-401-425.md).
