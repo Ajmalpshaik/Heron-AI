@@ -352,6 +352,24 @@ def job_refusal(job, library, release=None):
                     "Arrange it with steps at MODIFY or below" % (step, step_risk))
             return REFUSED, "the setup step: %s" % step_refusal
 
+    # A WRITE SETUP MUST RUN IN ITS TYPED ORDER, AND A STEP THAT CHANGES THE
+    # MODEL TAKES NO SETUP VALUES - `validate --write` refuses both before it
+    # sends anything, so a dry run that said WOULD RUN here would be the row
+    # 5b-440 shape again (row 5b-917). `.get`, because `job_refusal` takes
+    # partial dicts.
+    if job.get("write"):
+        step_risks = [
+            (step, BRIDGE.fragment_risk(os.path.join(
+                card_root(library[step]), "brain", "fragments",
+                library[step].slug, "fragment.yaml")))
+            for step in job["setup"]]
+        setup_refusal = BRIDGE.setup_order_refusal(step_risks)
+        if setup_refusal is None and (job.get("setup-set")
+                                      or job.get("negative-setup-set")):
+            setup_refusal = BRIDGE.setup_values_refusal(step_risks)
+        if setup_refusal:
+            return REFUSED, setup_refusal
+
     # THE FRAGMENT'S OWN RISK, READ FROM ITS CARD BY THE CLIENT'S OWN READER.
     # `validate` without --allow-publish refuses a PUBLISH or ADMIN fragment
     # before it sends anything (D-106 point 6: no batch sends one), and this

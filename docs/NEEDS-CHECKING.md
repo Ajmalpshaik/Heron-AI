@@ -807,6 +807,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-gc.md`](needs-checking/group-gc.md)
 
+## Group GH - what each element passes through in the links, and a parameter against its thickness: `FIND_CLASHES` version 3 (2026-10-17)
+
+**Its own file:** [`needs-checking/group-gh.md`](needs-checking/group-gh.md)
+
 ## Group GP - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
 
 **Its own file:** [`needs-checking/group-gp.md`](needs-checking/group-gp.md)
