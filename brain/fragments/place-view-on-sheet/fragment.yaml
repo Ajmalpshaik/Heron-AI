@@ -226,6 +226,12 @@ compatibility-note: >
 #                                         must never reach a change that takes a
 #                                         view off a sheet
 #   "which views are not on a sheet"   -> FIND_UNPLACED_VIEWS, the same
+#   "which sheets is this legend on"   -> LIST_VIEWS_ON_SHEET version 2, viewName =
+#                                         the legend - the question to ask BEFORE
+#                                         this job, and never answered by it
+#   "is this view already on a sheet"  -> LIST_VIEWS_ON_SHEET, the same. It reached
+#                                         this card with the re-ranker until declared
+#                                         there (row 5b-540)
 #   "line the viewports up across the sheets"
 #                                      -> ALIGN_VIEWPORTS_ACROSS_SHEETS - same
 #                                         view stays, only its place changes
