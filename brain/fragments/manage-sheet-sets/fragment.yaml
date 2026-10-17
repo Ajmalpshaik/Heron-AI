@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,40 @@ semantic-identity: "save these sheets as a named set for printing"
 kind: action
 domain: revit.sheets
 capability: MANAGE_SHEET_SETS
-version: 1
+# VERSION 2 (2026-10-17, FRAGMENT-ISSUES 5b-466 and 5b-545): modes "add" and
+# "remove" change what an EXISTING set holds, under its own name - version 1
+# could only delete it and make it again. And the print range is read first
+# and put back afterwards: version 1 set it to "Selected views/sheets" and
+# left it there, and the print manager is not transactional, so an Undo left
+# Revit's Print dialog changed. No new required input - add and remove take
+# the elements and setName create already takes. DRAFT until version 2 is run
+# in Revit: NEEDS-CHECKING Group FA. Ajmal PS's yes to change the PROVEN card
+# was his starting the task, 2026-10-17. Version 1's proof is kept below as
+# the record it is; its fingerprint no longer matches this code.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# ADD AND REMOVE KEEP THE SET AND ITS NAME. The sheets and views given go
+# into it, or come out of it; the rest of it stays. One already in it (add),
+# or never in it (remove), is reported in `unchanged` and left alone. A call
+# that would change nothing is refused, and so is one that would leave the
+# set holding nothing - deleting the set is its own mode.
+#
+# KEPT OUT OF THE PURPOSE ON PURPOSE (2026-10-17, row 5b-545). Measured on
+# fresh scratch stores, main against this branch, both backends: with this
+# paragraph in the purpose, "which sheets to print" - a row in
+# SET_PRINT_SETTINGS' routing table that names this card - left it behind the
+# 2020 wall, for SET_PRINT_SETTINGS (trained model) and
+# REPORT_SHEET_TITLE_BLOCKS (spelling route). Without it that sentence comes
+# back here on both - row 5b-545 has the whole before and after.
+#
+# AND THE PURPOSE'S FIRST SENTENCE IS VERSION 1'S, ON PURPOSE. Measured the
+# same way after main a673d8d2: a clause on adding and removing there - in
+# three wordings, down to the one word "edits" - took "how many sets are
+# there", Ajmal PS's own question of 2026-10-14, from LIST_SHEET_SETS to
+# COUNT_ELEMENTS on the spelling route. Add and remove reach this card through
+# the two utterances below, and are described here and on `mode`.
 purpose: >
   Creates, renames or deletes the named sheet sets that appear in Revit's print
   and export dialogs - the saved lists an issue is printed from.
@@ -30,8 +60,8 @@ purpose: >
 
   **THE PRINT MANAGER IS NOT TRANSACTIONAL.** The print range stays changed
   even if the surrounding transaction rolls back - it is application state, not
-  document state. That is worth knowing before assuming an undo puts everything
-  back.
+  document state - so it is read before it is set and put back afterwards,
+  whatever happened in between, and the reply says which.
 
   **A SET IS A LIST OF VIEWS, AND A DELETED VIEW LEAVES A HOLE.** The set is
   written from the elements given, and what it holds afterwards is read back
@@ -48,7 +78,8 @@ contract:
     - name: setName
       type: string
       source: request
-    # "create" | "rename" | "delete"
+    # "create" | "rename" | "delete" | "add" | "remove". Add and remove use
+    # `elements` and `setName`, as create does.
     - name: mode
       type: string
       source: request
@@ -72,6 +103,24 @@ contract:
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
+      role: accounting
+      type: string
+    - name: changed
+      # Version 2. How many sheets and views went into the set (add) or came
+      # out of it (remove). 0 for create, rename and delete, and 0 whenever
+      # nothing was saved.
+      role: result
+      type: int
+    - name: unchanged
+      # Version 2. Handed in and left as they were - already in the set for
+      # add, never in it for remove. Given, not found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: printRange
+      # Version 2. What happened to the Print dialog's range: put back to
+      # what it was, already "Selected views/sheets", or NOT put back - with
+      # what it was, so the modeller can set it back. Blank when the print
+      # manager never opened. A note about Revit's state, never a finding.
       role: accounting
       type: string
 
@@ -105,6 +154,15 @@ compatibility-note: >
   One implementation for every release. The print manager, its sheet-set
   setting and the save, rename and delete on it are unchanged 2020 to 2027 -
   and so is the requirement to set the print range before touching any of them.
+  Version 2's members - `PrintManager.PrintRange` read and set,
+  `ViewSheetSetting.Save()` and `Revert()`, `IViewSheetSet.Views` read and set,
+  `ViewSet.IsEmpty` - were looked up on every release with
+  tools/api-surface --members on 2026-10-17: the same signature 2020 through
+  2027. 2023's `OrderedViewList` and `IsAutomatic` order a set and are not
+  read or written, so where an added sheet lands in a manually ordered set
+  is Revit's choice (NEEDS-CHECKING Group FA). Members are compared by
+  ElementId's own equality, never as a number, so 2024's 64-bit ids do not
+  reach this code.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -127,9 +185,10 @@ compatibility-note: >
 #   "list the view/sheet sets"           -> LIST_SHEET_SETS - every saved set,
 #                                           its sheets and views, and the
 #                                           empty ones flagged
-#   "add these sheets to the set"        -> NOT YET. No mode here adds to or
-#                                           takes from an existing set - row
-#                                           5b-466
+#   "add these sheets to the set"        -> here, mode add. Since version 2
+#                                           (2026-10-17, row 5b-466); before
+#                                           it, CREATE_SHEETS on both backends
+#   "take these sheets out of the set"   -> here, mode remove (row 5b-466)
 #   "save these elements as a set"       -> CREATE_SELECTION_FILTER. A
 #                                           selection set and a sheet set are
 #                                           different things with one word
@@ -144,3 +203,5 @@ utterances:
   - rename the print set
   - i need a set for the issue
   - rename the sheet set
+  - add these sheets to the set
+  - take these sheets out of the set
