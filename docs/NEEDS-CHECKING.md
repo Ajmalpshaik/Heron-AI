@@ -711,9 +711,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ei.md`](needs-checking/group-ei.md)
 
-## Group EJ - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
+## Group EL - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
-**Its own file:** [`needs-checking/group-ej.md`](needs-checking/group-ej.md)
+**Its own file:** [`needs-checking/group-el.md`](needs-checking/group-el.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
