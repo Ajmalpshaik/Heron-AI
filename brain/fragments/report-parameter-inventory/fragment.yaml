@@ -86,7 +86,7 @@ purpose: >
 # names every name an element or type carries more than once - read, copy and
 # compare those by GUID.
 #
-# VERSION 3 (2026-10-17, FRAGMENT-ISSUES row 5b-489, NEEDS-CHECKING Group EJ) -
+# VERSION 3 (2026-10-17, FRAGMENT-ISSUES row 5b-489, NEEDS-CHECKING Group EK) -
 # ONE READ-ONLY CALL THAT DESCRIBES UP TO 50 ELEMENTS FULLY. Widened, not
 # added: same capability, same FRG id.
 #
@@ -227,7 +227,7 @@ contract:
       role: accounting
       type: IList<string>
 
-# VERSION 3 HAS NOT RUN IN REVIT - compiled only; NEEDS-CHECKING Group EJ is its
+# VERSION 3 HAS NOT RUN IN REVIT - compiled only; NEEDS-CHECKING Group EK is its
 # proof plan. VERSION 2 RAN 2026-10-12 on 4355-BHVD-3D-60A10-BL003A (Revit 2020),
 # read only, both legs held - NEEDS-CHECKING DI, row 5b-443 - and was never
 # signed. The proof below is version 1's, kept as it was signed: the code has

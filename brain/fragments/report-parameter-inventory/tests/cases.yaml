@@ -35,7 +35,7 @@ positive:
       tag on it with view, tag type, head in mm and leader - checked against the
       Properties palette, Edit Type and each view the tags are in
 
-  # ---- VERSION 3 (NEEDS-CHECKING Group EJ) ----------------------------------
+  # ---- VERSION 3 (NEEDS-CHECKING Group EK) ----------------------------------
   # Run on a TEST COPY, never the central: a copy of Snowdon-scratch_ajmal.al
   # saved as "Heron Record WS.rvt". If Collaborate > Worksets says the copy is
   # not workshared, enable worksets on the copy. Read only - nothing changes.
@@ -146,7 +146,7 @@ negative:
       element ids typed", parameterNames 0 - never an empty success, and no
       longer a refusal before it runs
 
-  # ---- VERSION 3 (NEEDS-CHECKING Group EJ) ----------------------------------
+  # ---- VERSION 3 (NEEDS-CHECKING Group EK) ----------------------------------
 
   - given: >
       THE D-30 NEGATIVE. On Heron Record WS.rvt, elementIds "<one real duct

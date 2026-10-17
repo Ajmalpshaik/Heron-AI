@@ -1,14 +1,14 @@
 # REPORT_PARAMETER_INVENTORY version 3 - up to 50 elements described fully in
 # one read, ids typed or selected, a link's ids too, in a size it says.
-# NEEDS-CHECKING Group EJ; FRAGMENT-ISSUES row 5b-489.
+# NEEDS-CHECKING Group EK; FRAGMENT-ISSUES row 5b-489.
 #
 # NOT RUN. Written 2026-10-17 in a cloud session with no Revit: version 3 is
 # compiled for 2020 to 2027 and nothing more. Run it on a TEST COPY - a copy
 # of Snowdon-scratch_ajmal.al saved as "Heron Record WS.rvt", worksets enabled
 # on the copy if Collaborate > Worksets says it has none. It only reads.
 #
-# What this file runs is EJ1's selection half and EJ4's negative. The typed
-# 50 ids of EJ1, the cut of EJ2, the link of EJ5 and the rest of Group EJ need
+# What this file runs is EK1's selection half and EK4's negative. The typed
+# 50 ids of EK1, the cut of EK2, the link of EK5 and the rest of Group EK need
 # ids read off the model first (Manage > IDs of Selection), so they are run by
 # hand with `heron_bridge_client.py validate` - this file cannot know them.
 #

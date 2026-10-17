@@ -3,44 +3,40 @@
 > One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-17 so that it can be read
 > alone. **The register's rules, and every group's place in it, are on that page.** A new row
 > for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
-> reads it back into the register for every tool that reads it, so a row here is seen
+> reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group EJ - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
+## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
 
-Asked for by the owner on 2026-10-17: one read-only call that describes up to 50 elements fully. Version 2
-([Group DI](group-di.md)) took only a selection or a chained set, had no cap - 535 elements came back as a
-6.2 MB record (DI3) - and an id from a linked model found nothing.
-[FRAGMENT-ISSUES row 5b-489](../fragment-issues/section-5b-rows-401-425.md).
+Until 2026-10-17 a Heron tool waiting on Revit said nothing until Revit answered. A slow fragment, a family
+build or a modeller answering a prompt in Revit can take minutes, and in that time the chat could not tell
+a wait from a hang. [docs/04 §7.1](../04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)
+has what was built.
 
-**What was built - version 3 of the same capability, not a new one.** `elementIds` takes ids as Revit shows
-them, matched as text in the model looked in; an id that names nothing lands in `missing` and the rest are
-described. `linkName` looks the ids up inside a placed link's own document. The record holds the first 50
-of N and adds, per element, the unique id, level (and which parameter gave it), owner view, workset in a
-workshared model, curve length and a placed link's model title; per parameter, sorted by name, the
-built-in name and the raw value in Revit's internal units. It stops at `maxChars` - 60000 when left out -
-with a last line naming every element not written; `parameterFilter` keeps only the parameters asked
-about.
+**What changed.** `revit_change`, `revit_read`, `revit_building_loads`, `revit_sprinkler_hydraulics` and
+`revit_sprinkler_layout` take the MCP SDK's `Context`, hidden from their arguments. While one of them waits
+on Revit, the bridge client's join loop calls back every `WAIT_NOTE_S`
+([`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py)), and the server sends an MCP progress
+notification saying *"Waiting for Revit - N s so far. The modeller may be answering a prompt in Revit."* -
+**only when the host sent a `progressToken`**. Nothing goes down the pipe: the add-in is unchanged and needs
+no rebuild.
 
-**What is compiled and what is not run.** Compiled on all eight releases 2020 to 2027
-(`tools/check-fragments-compile.py`, 2026-10-17). **None of it has run in Revit.** The binding of the four
-new values left out - `elementIds` "none", `linkName` "host", `maxChars` "60000", `parameterFilter` "all" - is
-the add-in's `absent:` rule from [Group EI](group-ei.md), which needs that add-in deployed.
+**What is tested and what is not run.** [`tests/test_mcp_stdio.py`](../../tests/test_mcp_stdio.py) runs the
+real server over stdio against [`tests/support/slow_revit_server.py`](../../tests/support/slow_revit_server.py),
+a stand-in Revit that takes the test's `SLOW_S` to answer: a host that sent a token gets a note every
+`WAIT_NOTE_S`, with its token, rising progress and the words, and none after the answer; a host that sent
+none gets nothing. Measured on Linux on 2026-10-17, SDK 2.2.0: a 90-second wait gave 8 notes, 10.0 s
+apart, and the host with no token got none in 30 s. **It has never run in a real chat or against a real Revit**, and Claude
+Code's docs do not say whether it sends a `progressToken` at all
+([WHAT-TO-INSTALL §5a](../WHAT-TO-INSTALL.md#5a-when-a-revit-job-runs-long--claude-codes-own-limits)).
 
-**A TEST COPY, never a working model.** Copy Snowdon-scratch_ajmal.al and save it as *Heron Record WS.rvt*;
-if Collaborate > Worksets says the copy is not workshared, enable worksets on the copy. Keep its placed
-links loaded. Read the ids each row types with Manage > IDs of Selection, and for a linked element from the
-linked file opened alone.
+**A SCRATCH PROJECT, never a working model.** Any project with a few MEP Spaces, saved as *Heron Wait
+Check.rvt*, in Revit 2020 first. Restart the Claude app first so it starts the new server.
 
 | # | Run | Look for |
 |---|---|---|
-| **EJ1** | **The D-30 positive.** 50 MIXED ids typed in `elementIds`, nothing selected - 10 ducts in FloorPlan: M1, 10 pipes (10 more ducts if the model has no pipes), 10 walls, 10 mechanical equipment, 5 duct tags, 4 air terminals and the one placed link of your choice - with fullRecord, includeTypeParameters and includeTags true, sampleOnly false, maxChars 1000000. The selection-chain half is `tools/jobs/report-parameter-inventory-v3-2026-10-17.yaml` | header "50 element(s)" and "50 id(s) typed, 50 found", `missing` empty, no RECORD CUT line, and **every field filled where it applies**: a unique id on every block; a level - walls *from LevelId*, ducts and pipes *from RBS_START_LEVEL_PARAM*; a workset name; the duct tags' owner view by name, every model element *owner view: none*; a length in mm on the ducts, pipes and walls equal to Properties' Length; the link's *link document* title. Parameters sorted by name, each with its built-in name or `-` and a raw value |
-| **EJ2** | EJ1's 50 ids with **maxChars left out** | the binding note *maxChars not given - "60000", the card's own default*; `record` no longer than 60000 characters, ending in *RECORD CUT AT THE 60000-CHARACTER BUDGET* naming the elements written whole, the one cut and every id not written; those ids asked for again come back, nothing before them repeated |
-| **EJ3** | 60 ids - EJ1's and 10 more ducts | *FIRST 50 OF 60* with the 51st id named as the next; the inventory in `findings` read from all 60 |
-| **EJ4** | **The D-30 negative.** One real duct id, `999999999` and `abc` in `elementIds`; then three ids that name nothing; then the job file's negative - its selection with two unknown ids typed | `missing` holds `999999999` and *abc (not an id - digits only)* and the duct is still described whole; the three unknown alone give no ELEMENT block and *None of the 3 id(s) typed ...*; the job's negative describes nothing and says the selected elements were NOT read |
-| **EJ5** | **The linked model.** Three structural framing ids from inside the placed *Snowdon Towers Sample Structural* link with `linkName` "Structural" | *read in '...Structural...' through the link* with its id; three framing blocks, each id the link's own, its level from the link, its location in the link's coordinates with *in this model's coordinates* beside it; *tags not read*; `missing` empty |
-| **EJ6** | EJ5's ids **without** `linkName`; then `linkName` "ZZZNOTHINGHERE"; then the link unloaded in Manage Links | in the host each id lands in `missing` or names something that is not structural framing - the case version 3 exists for; no match names every placed link and leaves the three in `missing`; unloaded says *present but NOT LOADED* - never "nothing found" |
-| **EJ7** | `parameterFilter` "level, offset" on EJ1's ids; then `maxChars` 100 | each parameter heading *N kept of M*, every kept line holding *level* or *offset* in its name or built-in name, the inventory in `findings` unfiltered; 100 raised to 5000 in the header, the record no longer than that with its RECORD CUT line |
-| **EJ8** | 10 ducts selected and two other ids typed; then EJ1's ids on a model that is not workshared | only the two typed are described, a finding saying the 10 selected were not read; no workset line anywhere and *worksets not shown - not a workshared model* |
-| **EJ9** | EJ1 and EJ5 once on **Revit 2020** and once on **2027** | the same answers. The members were read off the reference assemblies for every release and compiled, not run |
-| **EJ10** | Second route: Manage > Select by ID with each typed id, and Properties' Workset, Level and Length for it; for a linked id, the linked file opened alone | the element Revit selects is the one the block describes, and the three values agree |
+| **EJ1** | In a chat, a `revit_read` that takes longer than `WAIT_NOTE_S` - `revit_building_loads` on the scratch project, or a fragment's first run in a fresh Revit session, which compiles it | **The D-30 positive.** While it waits, Claude Code shows *"Waiting for Revit - N s so far ..."* on the tool line, N rising. Write down whether it showed at all: if nothing showed, Claude Code sent no `progressToken` and Heron rightly sent nothing - say so here, and that is the answer to WHAT-TO-INSTALL §5a's open question |
+| **EJ2** | The same chat: `heron_lookup` on any sentence, and a `revit_levels` | **The D-30 negative.** No note - neither tool carries the callback, and both answer at once |
+| **EJ3** | `revit_change` on a scratch-model change that shows a prompt in Revit, left unanswered for over a minute, then answered | Notes the whole time the prompt is open, then the change's own answer, and nothing after it. Undo the change |
+| **EJ4** | EJ1 with the call running past two minutes | Claude Code moves it to a background task; `/tasks` shows the latest note; the answer still arrives |
+| **EJ5** | EJ1 once on Revit 2024 and once on 2027 | The same. The notes are made outside Revit, so the release should not matter |
