@@ -554,7 +554,7 @@ This prevents background agents from consuming resources needed by Revit.
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > these five priorities, Part 1's `P0` to `P5` and Part 2's `P0` to `P6` are three ladders, and no
 > accepted decision picks one (`heron_queue.py` is code, not that choice); the choice is open and is put
-> to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-75](open-questions/tier-2.md).
 
 ## 23. Resource Manager
 
@@ -660,7 +660,7 @@ The equivalent of an employee performance review.
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > whether *select all ducts* takes every duct or only the visible ones is a choice no accepted decision
 > or rule has made ([D-59](DECISIONS.md) settles links, not views), and what the code picked does not make
-> it; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> it; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-78](open-questions/tier-2.md).
 
 ## 28. Golden Test Library
 
@@ -924,7 +924,7 @@ The system should use trust level when selecting knowledge.
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > this scale and §47's four levels disagree, and so does the order of `PROVEN` and `PRODUCTION`; with
 > [D-14](DECISIONS.md) still Proposed the choice is open and is put to the owner in
-> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 39. Community Contribution System
 
@@ -1045,7 +1045,7 @@ This gives the "company employee" model without allowing uncontrolled changes.
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > these three modes are one more approval vocabulary beside the others in the four parts, and what
 > separates *Ask* from *Require Approval* is not defined; with [D-14](DECISIONS.md) still Proposed the
-> choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-72](open-questions/tier-2.md).
 
 ## 45. Heron Organizational Model
 
@@ -1076,7 +1076,7 @@ This gives the "company employee" model without allowing uncontrolled changes.
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > this picture, §48's and [Part 1 §73](00-master-specification.md)'s are three different top-level
 > organisations, and no accepted decision picks one; the choice is open and is put to the owner in
-> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
 
 ## 46. Most Important New Addition: Heron Constitution
 
@@ -1149,7 +1149,7 @@ Only proven knowledge should become the strongest default recommendation.
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > these four levels and §38's scale disagree, and so does the order of `PROVEN` and `PRODUCTION`; with
 > [D-14](DECISIONS.md) still Proposed the choice is open and is put to the owner in
-> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 48. Final Architecture
 
@@ -1257,7 +1257,7 @@ Revit QA              required beside Code QA and BIM QA (D-13; Part 2 §48)
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > the organisation itself - a Kernel over three branches here, §45's departments and
 > [Part 1 §73](00-master-specification.md)'s are three different top-level pictures, and no accepted
-> decision picks one; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> decision picks one; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
 
 ```mermaid
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
@@ -1370,7 +1370,7 @@ Heron Kernel · Capability Registry · Workflow Engine · Agent Registry · Agen
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > several of the 30 have no section of their own above, and several sections above are not on the list
 > (§6, §8, §12 and §30 among them); which of the two governs is open, and is put to the owner in
-> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
 
 ## Build order
 

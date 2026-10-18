@@ -350,7 +350,7 @@ Executive / Orchestration · Conversation · Revit · MCP · Knowledge / RAG · 
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > which organisation picture holds — this list, §79's tree, the parts' other pictures — is the owner's
-> choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
 
 ## 9. Agent Responsibility Rule
 
@@ -396,7 +396,7 @@ APPROVED / PRODUCTION / DEPRECATED / ARCHIVED
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one status vocabulary is the owner's choice, still open — [D-14](DECISIONS.md) is Proposed, and code
-> that picked one does not make the pick — and it is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> that picked one does not make the pick — and it is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 11. Agent Creation System
 
@@ -470,7 +470,7 @@ Historical information should remain available.
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one lifecycle vocabulary is the owner's choice, still open — [D-14](DECISIONS.md) is Proposed — and it
-> is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 17. Conversation System
 
@@ -607,7 +607,7 @@ This prevents accidental knowledge contamination.
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one list of knowledge scopes — this one, §45's table and §79's *Memory* branch differ — is the owner's
-> choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md). `SCOPES` in
+> choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-74](open-questions/tier-2.md). `SCOPES` in
 > `brain/heron_scope.py` is code, and does not make the pick.
 
 ## 25. Fragment System
@@ -963,7 +963,7 @@ DRAFT -> TESTING -> VALIDATED -> PROVEN -> PRODUCTION -> DEPRECATED
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > the status vocabulary, and whether `PROVEN` comes before `PRODUCTION` as here or at the top as in
 > [Part 4 §47](00d-additional-requirements.md), is the owner's choice, still open — [D-14](DECISIONS.md)
-> is Proposed — and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> is Proposed — and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 45. Memory System
 
@@ -985,7 +985,7 @@ DRAFT -> TESTING -> VALIDATED -> PROVEN -> PRODUCTION -> DEPRECATED
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one list of scopes is the owner's choice, still open (§24's note), and is put to the owner in
-> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-74](open-questions/tier-2.md).
 
 ## 46. Personal Learning
 
@@ -1109,7 +1109,7 @@ Background processes should slow down when Revit requires resources.
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one priority ladder is the owner's choice, still open — the parts give different ladders, and code that
 > picked one (`brain/heron_queue.py`) does not make the pick — and it is put to the owner in
-> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-75](open-questions/tier-2.md).
 
 ## 53. Event System
 
@@ -1665,7 +1665,7 @@ HERON AI
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one organisation picture and one list of knowledge scopes are the owner's choices, still open (§8's
-> and §24's notes), and are put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> and §24's notes), and are put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md) and [Q-74](open-questions/tier-2.md).
 
 ## 80. North Star
 

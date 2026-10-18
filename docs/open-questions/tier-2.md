@@ -1135,3 +1135,39 @@ choice out of a work note that will be deleted.
 the owner publishes it.
 
 ---
+
+### 🔵 Q-78 — When a modeller says *"select all ducts"*, does Heron select every duct in the model, or only the ducts visible in the open view? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 leaves a choice
+no accepted decision has made as written.
+
+- **[Part 4 §27](../00d-additional-requirements.md)** expects *"all visible ducts"* to be selected.
+- **What runs:** the PROVEN fragment [`filter-elements-by-category`](../../brain/fragments/filter-elements-by-category/fragment.yaml)
+  takes every element of the category in the model, optionally on one level - not only what the open view shows.
+  [27 Step 4](../27-build-order.md) proved it that way, and its answer names the count and the model:
+  *"Selected 126 ducts in Tower-A.rvt"*.
+- **What is decided already:** [D-59](../decisions/D-59.md) settles reading into linked models, not views.
+  [Golden Rule 20](../14-golden-rules.md) settles which model, not which part of it. Nothing settles *view or
+  model*. That the code picked one does not make the pick (D-139 item 4).
+
+**The shapes the owner chooses between:**
+
+1. **The whole model by default, the open view when the modeller says so - recommended.** *"Select all ducts"*
+   selects every duct in the bound model, as Revit's *Select All Instances > In Entire Project* does, and the
+   answer says how many and that some may be outside the open view; *"in this view"* or *"visible"* narrows it
+   to the view. **Cost:** a decision, and a correction to Part 4 §27 under D-139; the view half needs a check
+   that a view-scoped selection capability exists before it is promised.
+2. **The open view by default**, as Part 4 §27 says and as *Select All Instances > Visible in View* does.
+   **Cost:** the PROVEN fragment's behaviour changes, so it needs a new proof; and a modeller in a plan with
+   ducts hidden would see a smaller count than the model holds.
+3. **Ask every time.** **Cost:** a question on the commonest request, which [D-33](../decisions/D-33.md) keeps for
+   inputs Heron cannot know.
+
+**Why the first.** It is what was proved on two releases, the answer already says how many and in which model so
+nothing is hidden, and it matches what a modeller gets from Revit's own *In Entire Project*; the view stays one
+word away.
+
+**Ajmal PS decides.** Until he does, nothing changes: the fragment keeps selecting the whole model, and Part 4 §27
+keeps its words with a note.
+
+---

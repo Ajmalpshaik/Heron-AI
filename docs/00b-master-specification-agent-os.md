@@ -164,7 +164,7 @@ This should be a **logical** organization, not necessarily separate software pro
 > | Platform | Kernel & Platform, MCP / Bridge, Session & Bridge Management, Installation & Update, Operations, Health & Resilience, Workspace & Folder Architecture, GitHub, Agent Lifecycle & HR, Documentation, Reporting & Output | [28](28-agent-registry.md) |
 > | User Interface | The Claude chat; the Revit ribbon and its switches; the Companion page beside Revit, which shows the model and is never a second place to talk | [D-01](DECISIONS.md), [D-106](DECISIONS.md), [D-108](DECISIONS.md) |
 >
-> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the parts draw the organisation differently and no accepted decision picks one picture; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the parts draw the organisation differently and no accepted decision picks one picture; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
 
 ## 4. Agent Operating System
 
@@ -446,7 +446,7 @@ PROPOSED -> DESIGNED -> IMPLEMENTED -> TRAINING -> TESTING
 > claims an agent is `DRAFT`. One status vocabulary for agents, fragments and knowledge is
 > [D-14](DECISIONS.md), still Proposed.
 >
-> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): `APPROVED` now names its approver, a person - [Golden Rule 13](14-golden-rules.md), [Golden Rule 7](14-golden-rules.md) (no agent approves itself), [Article 20](../HERON_CONSTITUTION.md), and for leaving shadow [D-39](DECISIONS.md) (a person's signature). **Left as written:** the stage names. This ladder and the trust model's differ, and `heron_creator.py` assigns `PROPOSED`, which the enforced ladder lacks; code does not pick between them, and the choice is open ([D-14](DECISIONS.md) is Proposed) and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): `APPROVED` now names its approver, a person - [Golden Rule 13](14-golden-rules.md), [Golden Rule 7](14-golden-rules.md) (no agent approves itself), [Article 20](../HERON_CONSTITUTION.md), and for leaving shadow [D-39](DECISIONS.md) (a person's signature). **Left as written:** the stage names. This ladder and the trust model's differ, and `heron_creator.py` assigns `PROPOSED`, which the enforced ladder lacks; code does not pick between them, and the choice is open ([D-14](DECISIONS.md) is Proposed) and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 11. Agent Trust Score
 
@@ -517,7 +517,7 @@ The old agent remains recoverable. **Never permanently delete important historic
 > into another tool stay in the register and say where they went ([D-77](DECISIONS.md),
 > [D-78](DECISIONS.md)).
 >
-> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the retirement stages are one more status ladder beside §10's and §21's; one vocabulary is open ([D-14](DECISIONS.md) is Proposed) and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the retirement stages are one more status ladder beside §10's and §21's; one vocabulary is open ([D-14](DECISIONS.md) is Proposed) and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 14. Agent Communication Protocol
 
@@ -697,7 +697,7 @@ Project-specific information should override generic information ~~when appropri
 > store ([D-41](DECISIONS.md)). Proven, experimental and temporary are not levels of one list here:
 > *proven* is a fragment's status, *experimental* and *temporary* are scopes.
 >
-> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): *"when appropriate"* left Heron to judge which knowledge wins; it now asks - [D-33](DECISIONS.md) (Heron never supplies a value the user did not give; it asks, and asks once), as [D-111](DECISIONS.md) applies it to a project's governing standards. **Left as written** (D-139 point 4): the list itself, which mixes scopes with statuses and differs from the scopes the other parts name; one list of knowledge scopes is open - `SCOPES` in `heron_scope.py` is code, not the pick - and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): *"when appropriate"* left Heron to judge which knowledge wins; it now asks - [D-33](DECISIONS.md) (Heron never supplies a value the user did not give; it asks, and asks once), as [D-111](DECISIONS.md) applies it to a project's governing standards. **Left as written** (D-139 point 4): the list itself, which mixes scopes with statuses and differs from the scopes the other parts name; one list of knowledge scopes is open - `SCOPES` in `heron_scope.py` is code, not the pick - and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-74](open-questions/tier-2.md).
 
 ## 21. Knowledge Trust
 
@@ -718,7 +718,7 @@ RAG should prefer high-trust knowledge.
 > exact match unasked, and a status nudge settles near-ties. One vocabulary for all of this is
 > [D-14](DECISIONS.md), still Proposed.
 >
-> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the trust ladder, including where `PROVEN` sits beside `PRODUCTION`; the status vocabulary is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the trust ladder, including where `PROVEN` sits beside `PRODUCTION`; the status vocabulary is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 22. Knowledge Conflict Resolution
 
@@ -1217,7 +1217,7 @@ If the user starts a heavy Revit operation, background indexing should reduce or
 > tells a request Revit never picked up from one still running ([D-09](DECISIONS.md),
 > [03 §4](03-heron-revit.md)).
 >
-> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the parts give different priority ladders, and the queue holding this one is code, not the pick; one ladder is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the parts give different priority ladders, and the queue holding this one is code, not the pick; one ladder is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-75](open-questions/tier-2.md).
 
 ## 51. Event-Driven Architecture
 
@@ -1463,7 +1463,7 @@ This prevents accidental learning from becoming production truth.
 > fragment for it, and a person proves it. The stages are the fragment lifecycle
 > (`heron_fragment.STATUSES`), not this section's.
 >
-> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the learning stages are another status ladder; the code using the fragment lifecycle instead does not pick one, and the status vocabulary is open ([D-14](DECISIONS.md) is Proposed) and put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the learning stages are another status ladder; the code using the fragment lifecycle instead does not pick one, and the status vocabulary is open ([D-14](DECISIONS.md) is Proposed) and put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
 
 ## 65. Conversation Intelligence
 
