@@ -9,7 +9,8 @@ allowed-tools:
 
 **One rule, checked at the moment it can still be cheap.**
 [`tools/check-structure.py`](../../../tools/check-structure.py) already refuses the Revit vendor
-namespace outside `revit/` — [docs/16 §4](../../../docs/16-version-support-strategy.md), the boundary
+namespace outside `revit/` (and `tools/`, whose scripts talk about the code rather than being it - both
+let it through there) — [docs/16 §4](../../../docs/16-version-support-strategy.md), the boundary
 that keeps the core testable without Revit. This asks the same question **when the edit is proposed**,
 instead of when somebody remembers to run the sweep.
 

@@ -187,10 +187,12 @@ pins one id across the whole batch by itself; a hand-run `validate` or `prove` n
 
 | Verdict | What it means | What to do |
 |---|---|---|
+| `WOULD RUN` | `--dry-run` only: the job is runnable as written | run it without `--dry-run` |
 | `PASS` | both halves held | read the draft, then accept it under your own name |
 | `ALREADY` | at PROVEN or PRODUCTION - with `--release`, already proved on THAT release | nothing. Remove it from the job file |
 | `NOT PROVEN` | `--release` only: not PROVEN yet, or its proof is stale | prove it first, without `--release` |
 | `WRONG RELEASE` | `--release` only: the record says it ran on another Revit | connect that release, or pin it with `--session`. The batch exits 1 |
+| `WILL NOT RUN IN A BATCH` | risk `PUBLISH` or `ADMIN` - no batch sends one ([D-106](../../../docs/DECISIONS.md)) | prove it by name with the `validate --allow-publish ... --write` command the report prints, the owner's switch on (above). Nothing was sent to Revit |
 | `POSITIVE EMPTY` | it ran and found nothing | **rule 2.** The arrangement is wrong, not the fragment |
 | `POSITIVE UNREADABLE` | nothing it returned is a quantity | read the fragment's own source. Its results may need a `role:`; a sentence result needs `type: string` and `role: result` |
 | `NEG NOT EMPTY` | the negative returned content | a **finding**. The fragment may be falling back to something it was not given |
@@ -200,7 +202,8 @@ pins one id across the whole batch by itself; a hand-run `validate` or `prove` n
 | `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written | fix the file. Nothing was sent to Revit |
 
 A failure is the tool's **output**, not an error — it exits 0 with fourteen failures and non-zero only
-when the batch itself could not run. Set the failures aside and pass the clean ones.
+when the batch itself could not run: a `NO FRAGMENT`, a `REFUSED`, a `WRONG RELEASE`, or the library
+changing under it. Set the failures aside and pass the clean ones.
 
 ## What the runner cannot judge, and where `expect:` comes in
 
