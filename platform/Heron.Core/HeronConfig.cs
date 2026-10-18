@@ -95,12 +95,12 @@ namespace Heron.Core
 
                 // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-126): the
                 // changed elements are shown and a dialog asks Keep or Discard.
-                // ON by default, unlike the switches above, because ON is the
-                // safe side here - it narrows what Changes lets through, and
-                // off puts back D-99, a change kept with nobody asked. The
-                // owner's alone: read inside the add-in, never sent on a
-                // request (Golden Rule 19).
-                { "write.askBeforeKeeping", "true" },
+                // OFF by default since D-138 - the owner, 2026-10-18: "make the
+                // box off by default", after it stopped every change of his
+                // jobs. ON is still the safer side, and the Ask to Keep button
+                // on the ribbon turns it on. The owner's alone: read inside the
+                // add-in, never sent on a request (Golden Rule 19).
+                { "write.askBeforeKeeping", "false" },
 
                 { "log.retainDays", "14" },
 
