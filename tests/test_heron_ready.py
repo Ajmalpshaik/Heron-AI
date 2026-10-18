@@ -61,6 +61,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "heron-ready.py")
 LOCK = os.path.join(ROOT, "requirements-lock.txt")
 
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
+
 #: The line a Windows FIX must name - the one requirements-lock.txt names at
 #: its own head, and HeronInstaller.exe runs.
 LOCK_LINE = "python -m pip install --user --require-hashes -r requirements-lock.txt"

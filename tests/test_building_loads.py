@@ -47,6 +47,12 @@ import heron_building_loads as B                              # noqa: E402
 import heron_hvac as H                                        # noqa: E402
 import heron_takeoff as T                                     # noqa: E402
 from test_takeoff import ROOM, copy, raises, run_all          # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 PROJECT = {"design_weather": "doha-0.4", "room_dry_bulb_c": 24, "room_rh_pct": 50,
            "supply_dry_bulb_c": 13, "ground_reflectance": 0.2,

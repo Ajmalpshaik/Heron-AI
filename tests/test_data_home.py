@@ -73,6 +73,12 @@ import heron_scope as SCOPE                                    # noqa: E402
 import heron_gaps as GAPS                                      # noqa: E402
 import heron_audit as AUDIT                                    # noqa: E402
 import heron_bridge_client as BRIDGE                           # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 FAILURES = []
 PACKAGE = "AnthropicPBC.Claude_fnn82j28hfe8t"

@@ -49,6 +49,13 @@ import importlib.util
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FAILURES = []
 
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
+
 
 def load(root=None):
     """Import the tool by path, optionally pointed at a temporary tree."""

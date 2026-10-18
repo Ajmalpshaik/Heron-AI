@@ -66,6 +66,12 @@ HOOK = os.path.join(SKILL, "bin", "heron_guard.py")
 SETTINGS = os.path.join(ROOT, ".claude", "settings.json")
 
 sys.path.insert(0, os.path.join(SKILL, "bin"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 FAILURES = []
 
