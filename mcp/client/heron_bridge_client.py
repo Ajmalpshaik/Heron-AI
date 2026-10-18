@@ -132,7 +132,7 @@ def user_temp_folder(environ=None, system=None):
     """
     The user's own temporary folder: `temp_folder()` less its last part when
     that part is a GUID, once; otherwise `temp_folder()` as it is. What
-    HeronPaths.SharedDerived is built on, by the same rule (D-136).
+    HeronPaths.SharedDerived is built on, by the same rule (D-137).
 
     WHY (row 5b-1100). Revit runs with a temporary folder of its own - a
     GUID-named sub-folder of the user's, new at each start; on the owner's

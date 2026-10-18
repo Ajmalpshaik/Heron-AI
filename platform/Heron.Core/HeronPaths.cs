@@ -99,7 +99,7 @@ namespace Heron.Core
         /// 2026-10-17 from both sides. Only what a chat writes FOR the add-in to
         /// read belongs here.
         ///
-        /// IN THE USER'S OWN TEMPORARY FOLDER, NOT THIS PROCESS'S (D-136,
+        /// IN THE USER'S OWN TEMPORARY FOLDER, NOT THIS PROCESS'S (D-137,
         /// FRAGMENT-ISSUES 5b-1100). Revit runs with a temporary folder of its
         /// own - a GUID-named sub-folder of the user's, new at each start, seen on
         /// the owner's laptop as ...\Temp\63835622-bdd8-4d57-a4a9-19a6afb83cd6 -
@@ -158,7 +158,7 @@ namespace Heron.Core
         /// deleted by the chat's MCP process; read, never written, by the add-in.
         /// Under SharedDerived since D-135, so the chat and Revit name one folder
         /// on every PC - mcp/companion/heron_companion.py companion_dir() - and
-        /// in the user's own temporary folder since D-136, not Revit's own.
+        /// in the user's own temporary folder since D-137, not Revit's own.
         /// </summary>
         public static string Companion { get { return Ensure(Path.Combine(SharedDerived, "companion")); } }
 

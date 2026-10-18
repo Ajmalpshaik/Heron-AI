@@ -48,7 +48,7 @@ WHAT IT PROVES
      HeronPaths.Companion from Path.GetTempPath() - not from %LOCALAPPDATA%,
      which the app copies (row 5b-416, D-109). Both take a last GUID-named
      part off that folder by one pattern, because Revit runs with such a
-     sub-folder of the user's own (row 5b-1100, D-136) - and a chat given
+     sub-folder of the user's own (row 5b-1100, D-137) - and a chat given
      one, planted here, still writes where the add-in looks.
 """
 
@@ -471,7 +471,7 @@ def run(yard):
           "and SharedDerived on Path.GetTempPath() less Revit's own folder (%s)"
           % " ".join(shared.split())[:120])
 
-    # D-136, row 5b-1100: REVIT RUNS WITH A TEMPORARY FOLDER OF ITS OWN - a
+    # D-137, row 5b-1100: REVIT RUNS WITH A TEMPORARY FOLDER OF ITS OWN - a
     # GUID-named sub-folder of the user's, new at each start. Measured on the
     # owner's laptop on 2026-10-18; the chat's own TMP was the user's folder.
     revit = "C:\\Users\\ajmal\\AppData\\Local\\Temp\\63835622-bdd8-4d57-a4a9-19a6afb83cd6"
