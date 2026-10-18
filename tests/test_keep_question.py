@@ -245,6 +245,47 @@ def wiring():
                   "%s: DefaultButton = %s comes after that link is added to its box"
                   % (os.path.relpath(path, ROOT).replace(os.sep, "/"), hit.group(1)))
 
+    # THE OWNER'S ASK, 2026-10-18, proving Group ET on Revit 2024.3: the box
+    # sat over a view that did not show the change, and a modal box cannot be
+    # panned past. So the view is zoomed to what changed, with room round it,
+    # and put back on every answer but Keep. Not yet run in Revit - ET14.
+    print("\n3c. the view is zoomed to the change, and put back unless it is kept")
+    check(before(ask, "front.Selection.SetElementIds(show);", "ZoomTo(")
+          and before(ask, "ZoomTo(", "RefreshActiveView()"),
+          "the view is zoomed to what is selected, before the redraw and the box")
+    check(re.search(r"putBack\s*=\s*\(\)\s*=>\s*\{[^}]*cameraBack\(\)[^}]*\}", ask) is not None
+          and ask.count("cameraBack()") == 1,
+          "the camera goes back only through putBack - so Discard, Esc, the X, a box that "
+          "failed, a Revit dialog and a withdrawn switch all put it back, and Keep does not")
+    check("isolatedIn != null, cameraBack != null)" in ask,
+          "the box says the view was zoomed only when it was")
+    zoom = NOTE_SUITE.body_of(executor, "private static Action ZoomTo(")
+    check(bool(zoom), "ZoomTo is there")
+    check(before(zoom, "Zoomable(", "GetZoomCorners()"),
+          "a view that is not zoomed to - a sheet, a schedule, a perspective - is left as it was")
+    check(before(zoom, "GetZoomCorners()", "ZoomAndCenterRectangle("),
+          "where the camera was is read BEFORE it moves")
+    check("get_BoundingBox(view)" in zoom and "get_BoundingBox(null)" in zoom,
+          "each element's box in the view, or its model box when the view has none")
+    check("HeronKeepQuestion.ZoomMarginFeet(" in zoom,
+          "the room round it is HeronKeepQuestion's, which the host proves")
+    check("Transaction" not in zoom,
+          "a zoom is not a model change, so it opens no transaction")
+    check(re.search(r"catch\s*\(\s*Exception\b", zoom) is not None
+          and "HeronApplication.Log(" in zoom and zoom.count("PutCameraBack(") == 2,
+          "a zoom that throws is logged, never thrown past the box (row 5b-621), and the "
+          "camera is put back at once")
+    zoomable = NOTE_SUITE.body_of(executor, "private static bool Zoomable(")
+    check("is ViewPlan" in zoomable and "is ViewSection" in zoomable
+          and "IsPerspective" in zoomable and "ViewSheet" not in zoomable
+          and "ViewSchedule" not in zoomable,
+          "only a plan, a section or elevation, a drafting view or a 3D view that is not a "
+          "perspective is zoomed")
+    back = NOTE_SUITE.body_of(executor, "private static bool PutCameraBack(")
+    check(before(back, "GetOpenUIViews()", "ZoomAndCenterRectangle(")
+          and re.search(r"catch\s*\(\s*Exception\b", back) is not None,
+          "putting it back finds the view's window again, and a failure is logged, not thrown")
+
     showing = NOTE_SUITE.body_of(executor, "View Isolate(")
     check("view.IsTemporaryHideIsolateActive()" in showing,
           "a view the modeller has already isolated in is not isolated again")

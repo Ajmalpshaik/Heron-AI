@@ -5,6 +5,7 @@
 // Heron-Layer:  revit
 // See docs/29-metadata-standard.md
 
+using System;
 using System.Globalization;
 
 namespace Heron.Revit.Addin
@@ -18,9 +19,9 @@ namespace Heron.Revit.Addin
     /// the same box in front of every change a chat keeps through
     /// revit_change, while the owner's write.askBeforeKeeping is on. Either
     /// way the run has happened inside Heron's TransactionGroup, the changed
-    /// elements are selected and isolated, and RevitFragment.AskTheModeller
-    /// shows this file's words. Keep assimilates the group - one undo entry -
-    /// and Discard rolls it back.
+    /// elements are selected, isolated and zoomed to, and
+    /// RevitFragment.AskTheModeller shows this file's words. Keep assimilates
+    /// the group - one undo entry - and Discard rolls it back.
     ///
     /// THIS FILE NAMES NO AUTODESK TYPE, on purpose. The words and the cap
     /// are the half that can be wrong without Revit, so
@@ -63,6 +64,39 @@ namespace Heron.Revit.Addin
         {
             return count > 0 && count <= HighlightCap;
         }
+
+        /// <summary>
+        /// The room left round the change when the view is zoomed to it, in
+        /// Revit's internal feet: a quarter of the larger side of the box
+        /// round everything shown, and never less than 1000 mm. The owner's
+        /// ask, 2026-10-18 - see the change "with a little space around it".
+        ///
+        /// THE MINIMUM IS WHAT MAKES ONE ELEMENT ZOOMABLE. A single pipe or a
+        /// level is a box with no depth in a plan or an elevation, and a
+        /// rectangle with no height is not one Revit can centre on. A size
+        /// that is not a size - NaN, infinite, below zero - gives the minimum.
+        /// </summary>
+        /// <param name="width">The box's size along X, in feet.</param>
+        /// <param name="depth">Along Y, in feet.</param>
+        /// <param name="height">Along Z, in feet.</param>
+        public static double ZoomMarginFeet(double width, double depth, double height)
+        {
+            var larger = 0.0;
+            foreach (var side in new[] { width, depth, height })
+            {
+                if (!double.IsNaN(side) && !double.IsInfinity(side) && side > larger)
+                    larger = side;
+            }
+            return Math.Max(larger * ZoomMarginShare, ZoomMarginMinimumMm / MmPerFoot);
+        }
+
+        /// <summary>A quarter of the larger side - ZoomMarginFeet.</summary>
+        public const double ZoomMarginShare = 0.25;
+
+        /// <summary>Never less than this much room, in millimetres - ZoomMarginFeet.</summary>
+        public const double ZoomMarginMinimumMm = 1000;
+
+        private const double MmPerFoot = 304.8;
 
         public const string Title = "Heron - keep this change?";
         public const string KeepLink = "Keep it";
@@ -152,8 +186,11 @@ namespace Heron.Revit.Addin
         /// <param name="addedShown">Were the added elements selected?</param>
         /// <param name="changedShown">Were the changed elements selected?</param>
         /// <param name="isolated">Was the selection also isolated in the active view?</param>
+        /// <param name="zoomed">Was the active view zoomed to the selection?
+        /// Said only when something is selected - with nothing selected there
+        /// was nothing to zoom to.</param>
         public static string OnScreen(int added, int changed, bool inFront, bool addedShown,
-                                      bool changedShown, bool isolated)
+                                      bool changedShown, bool isolated, bool zoomed)
         {
             if (!inFront)
             {
@@ -175,6 +212,15 @@ namespace Heron.Revit.Addin
                 ? "Nothing is selected on screen."
                 : shown + (isolated ? " selected and isolated in the active view."
                                     : " selected in the active view.");
+
+            // WHY THE PICTURE MOVED, AND WHAT EACH ANSWER DOES TO IT. Keep
+            // leaves the modeller looking at what they kept; every other way
+            // out puts the camera back where they left it.
+            if (zoomed && shown.Length > 0)
+            {
+                sentence += " The view is zoomed to them, with some room around. Keep leaves it "
+                          + "there; Discard puts the view back where it was.";
+            }
 
             if (added > HighlightCap)
                 sentence += " " + TooMany(added, "added");

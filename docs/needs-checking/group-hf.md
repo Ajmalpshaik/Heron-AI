@@ -30,6 +30,26 @@ Companion button, which needs the add-in rebuilt and deployed from this change.
 | **HF2** | *The 40 lines the copy hides.* From the owner's terminal, outside the app: `python brain/heron_paths.py --carry` | About 40 audit lines added - the brain file only the real `%APPDATA%\Heron\audit` held - and the store named as LEFT, the home's own kept. A second `--carry` adds nothing |
 | **HF3** | *New writes land outside the copy.* After HF1, ask a chat for a loads report on a project, and anything else Heron answers | From the owner's terminal: the project's new run under `%USERPROFILE%\.heron\knowledge\projects` and new lines in `%USERPROFILE%\.heron\audit\audit-brain-<month>.jsonl`. **Negative:** the copy's `Heron\knowledge` and `Heron\audit` unchanged in count and size |
 | **HF4** | *The Companion button, on the new folder - this is [BK14](group-bk.md) again.* The add-in rebuilt and deployed from this change; a Revit the OWNER starts (never one started from Claude's shell); a chat open with the Companion on; press **Companion** on the Heron tab | The chat's page opens in the browser. `%TEMP%\Heron\companion` holds the chat's `chat-<pid>.json`. **Negative:** with no chat running, *"No Claude chat with Heron is running on this PC"*, and nothing opens |
-| **HF5** | *A PC whose Claude is NOT the Store build* - the office PC - after the update and a Claude restart | The first chat carries `%APPDATA%\Heron\knowledge` and the brain's audit into `%USERPROFILE%\.heron`; `carried.json` names one old place; the old folder unchanged |
+| **HF5** | **NOT RUN 2026-10-18 - the office PC is retired, and the laptop, the only PC left, runs Claude only as the Store build** - [why, and what HF5 would need](#2026-10-18-the-office-pc-is-retired), below. *A PC whose Claude is NOT the Store build*, after the update and a Claude restart | The first chat carries `%APPDATA%\Heron\knowledge` and the brain's audit into `%USERPROFILE%\.heron`; `carried.json` names one old place; the old folder unchanged |
 | **HF6** | *Removing the old copies - only on the owner's word, never as a check.* | Not a check to run: the owner decides whether to delete the copy's `Heron\knowledge` and `Heron\audit` (or Reset the app) once HF1 to HF3 pass |
 | **HF7** | *The default backup holds both folders - [row 5b-1069](../fragment-issues/section-5b-rows-401-425.md).* After HF1, from the owner's terminal outside the app, with neither `HERON_DATA` nor `HERON_BACKUP` set: `python tools/heron-backup.py backup`, then `python tools/heron-backup.py drill`, then `python tools/heron-backup.py list` | The backup lands in `%USERPROFILE%\.heron\backup\<stamp>` and names two folders - `%APPDATA%\Heron` (the add-in's config and audit) and `%USERPROFILE%\.heron` (knowledge, `knowledge\projects`, the brain's audit) - each `knowledge\*.db` skipped; the drill says both came back byte for byte; `list` still shows any backup taken in `%APPDATA%\Heron\backup` before. **The D-30 negative:** neither folder changed across the drill, and `%APPDATA%\Heron\backup` gained nothing |
+
+### 2026-10-18: the office PC is retired
+
+**The fact, from the owner, Ajmal PS, on 2026-10-18:** *"no office pc no more"*. The office PC - Revit 2020,
+2024 and 2027 - is retired, and it was the PC HF5 named. The laptop is now the owner's only PC. Read there
+the same day: one Claude, the Microsoft Store build `AnthropicPBC.Claude_2.31226.1.0_x64__fnn82j28hfe8t`, and
+no Claude Code installed on its own - `Get-Command claude -All` returned nothing, and
+`%USERPROFILE%\.local\bin\claude.exe` is not there.
+
+- **HF5 - NOT RUN.** It needs a Claude that is not the Store build, and the only PC left runs Claude only as
+  the Store build.
+- **Claude Code installed on its own on the laptop would not, by itself, let HF5 run as written.** Reasoned
+  from the code, not run: `old_homes()` in [`brain/heron_paths.py`](../../brain/heron_paths.py) finds each
+  Store Claude's copy by its own `%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_...\LocalCache\Roaming\Heron`
+  path, from any process, inside the app or not. On the laptop that copy holds Heron's data (its 41 files,
+  above), so a first chat from a Claude Code installed on its own would carry from two old places, not the
+  one HF5 looks for. And the carry runs once per home: after HF1, `carried.json` is already there and a later
+  chat carries nothing. HF5's look-for fits a PC with no Store Claude copy, and none is left.
+- **Owed to Ajmal PS:** whether HF5 waits for such a PC, is rewritten for the laptop, or is dropped. Its
+  look-for is not changed here.

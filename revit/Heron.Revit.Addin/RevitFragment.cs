@@ -1071,8 +1071,8 @@ namespace Heron.Revit.Addin
         /// wire can answer it - only a person at this Revit - and while it is
         /// open the modeller sees the view in front but cannot pan, zoom or
         /// select. So the change is put where they can see it first: what it
-        /// added and changed is selected and isolated in the active view, each
-        /// set only up to D-60's cap, and only in the model in front.
+        /// added and changed is selected, isolated and zoomed to in the active
+        /// view, each set only up to D-60's cap, and only in the model in front.
         ///
         /// IT ASKS AND NEVER DECIDES THE GROUP. Run keeps or rolls back on the
         /// answer, in the one place that first asks the job's dialog watch
@@ -1085,9 +1085,12 @@ namespace Heron.Revit.Addin
         ///   2. Nothing counted, nothing asked - for a keep from a chat only
         ///      (null). A DRAFT's one run is always asked: its Keep is its
         ///      proof's positive case.
-        ///   3. Save the modeller's selection, then select and isolate.
-        ///      `putBack` restores it, and Run calls it after any rollback
-        ///      (D-60); after a Keep the changed elements stay selected.
+        ///   3. Save the modeller's selection, then select and isolate; then
+        ///      zoom the view to what is selected, with room round it - the
+        ///      owner's ask, 2026-10-18. `putBack` restores the selection and
+        ///      the camera, and Run calls it after any rollback (D-60); after a
+        ///      Keep the changed elements stay selected and the view stays
+        ///      zoomed to them.
         ///   4. REDRAW, or the box would sit over a view showing the model as it
         ///      was. If the redraw fails the box says so, rather than inviting a
         ///      Keep on a picture that may not show the change.
@@ -1133,6 +1136,7 @@ namespace Heron.Revit.Addin
             var alteredShown = inFront && HeronKeepQuestion.Highlights(altered.Count);
 
             View isolatedIn = null;
+            Action cameraBack = null;
             if (addedShown || alteredShown)
             {
                 var show = new List<ElementId>();
@@ -1154,6 +1158,22 @@ namespace Heron.Revit.Addin
                     HeronApplication.Log("Could not show the change on screen: " + ex.Message);
                     addedShown = false;
                     alteredShown = false;
+                }
+
+                // ZOOMED TO WHAT IS SELECTED, because the box is modal and a
+                // change off screen is one the modeller cannot pan to. The
+                // camera goes back through putBack, so every way out but Keep
+                // - Discard, Esc, the X, a box that failed, a Revit dialog, a
+                // withdrawn switch - puts it back; Keep leaves them looking at
+                // what they kept.
+                if (addedShown || alteredShown)
+                {
+                    cameraBack = ZoomTo(front, target, show);
+                    if (cameraBack != null)
+                    {
+                        var selectionBack = putBack;
+                        putBack = () => { cameraBack(); return selectionBack(); };
+                    }
                 }
             }
 
@@ -1189,7 +1209,8 @@ namespace Heron.Revit.Addin
                         shown, target.Title, changed.Added.Count, changed.Changed.Count,
                         changed.Deleted,
                         HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
-                                                   addedShown, alteredShown, isolatedIn != null),
+                                                   addedShown, alteredShown,
+                                                   isolatedIn != null, cameraBack != null),
                         sendsOut, neverProved, refreshed),
                     AllowCancellation = true,
                     CommonButtons = TaskDialogCommonButtons.None,
@@ -2299,6 +2320,138 @@ namespace Heron.Revit.Addin
             return InItsOwnTransaction(doc, "Heron: show the change",
                                        () => view.IsolateElementsTemporary(show))
                 ? view : null;
+        }
+
+        /// <summary>
+        /// Zoom the active view to `show`, with room round it, for the
+        /// question - the owner's ask, 2026-10-18, proving Group ET on Revit
+        /// 2024.3. Returns how to put the camera back where it was, or null
+        /// when the view was left as it was.
+        ///
+        /// LEFT AS IT WAS: a view that is not Zoomable, one with no window
+        /// open, and one where nothing shown has a box. And on any failure,
+        /// which is logged and never thrown - the box must still be asked, and
+        /// row 5b-621 is what a throw this close to it costs. If the camera
+        /// had already moved, it is put back at once.
+        ///
+        /// NO TRANSACTION. Moving the camera is not a change to the model, so
+        /// the group's rollback does not undo it either - which is why the
+        /// caller puts it back itself. That it runs inside the open
+        /// TransactionGroup on every release is NEEDS-CHECKING ET14's to show.
+        ///
+        /// THE BOX ROUND THE CHANGE is each element's box in this view, or its
+        /// model box when the view gives none, all eight corners through the
+        /// box's own transform: a rotated element's box is not square to the
+        /// model's axes.
+        /// </summary>
+        private static Action ZoomTo(UIDocument front, Document doc, ICollection<ElementId> show)
+        {
+            View view = null;
+            IList<XYZ> was = null;
+            try
+            {
+                view = front.ActiveView;
+                if (!Zoomable(view)) return null;
+
+                UIView screen = null;
+                foreach (var open in front.GetOpenUIViews())
+                {
+                    if (open != null && open.ViewId == view.Id) { screen = open; break; }
+                }
+                if (screen == null) return null;
+
+                var minX = double.MaxValue; var minY = double.MaxValue; var minZ = double.MaxValue;
+                var maxX = double.MinValue; var maxY = double.MinValue; var maxZ = double.MinValue;
+                var boxed = 0;
+                foreach (var id in show)
+                {
+                    var element = doc.GetElement(id);
+                    if (element == null) continue;
+                    var box = element.get_BoundingBox(view) ?? element.get_BoundingBox(null);
+                    if (box == null || box.Min == null || box.Max == null) continue;
+
+                    var own = box.Transform ?? Transform.Identity;
+                    foreach (var x in new[] { box.Min.X, box.Max.X })
+                    foreach (var y in new[] { box.Min.Y, box.Max.Y })
+                    foreach (var z in new[] { box.Min.Z, box.Max.Z })
+                    {
+                        var p = own.OfPoint(new XYZ(x, y, z));
+                        minX = Math.Min(minX, p.X); maxX = Math.Max(maxX, p.X);
+                        minY = Math.Min(minY, p.Y); maxY = Math.Max(maxY, p.Y);
+                        minZ = Math.Min(minZ, p.Z); maxZ = Math.Max(maxZ, p.Z);
+                    }
+                    boxed++;
+                }
+                if (boxed == 0) return null;
+
+                was = screen.GetZoomCorners();
+                if (was == null || was.Count < 2) return null;
+
+                var room = HeronKeepQuestion.ZoomMarginFeet(maxX - minX, maxY - minY, maxZ - minZ);
+                screen.ZoomAndCenterRectangle(new XYZ(minX - room, minY - room, minZ - room),
+                                              new XYZ(maxX + room, maxY + room, maxZ + room));
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Could not zoom the view to the change: " + ex.Message);
+                if (view != null && was != null && was.Count >= 2)
+                    PutCameraBack(front, view.Id, was[0], was[1]);
+                return null;
+            }
+
+            var viewId = view.Id;
+            var corner1 = was[0];
+            var corner2 = was[1];
+            return () => PutCameraBack(front, viewId, corner1, corner2);
+        }
+
+        /// <summary>
+        /// Is `view` one the question zooms? A plan, a section or elevation, a
+        /// drafting view, or a 3D view that is not a perspective - each a
+        /// picture a rectangle can frame.
+        ///
+        /// LEFT AS IT WAS, AND THE BOX DOES NOT SAY ZOOMED: a sheet, which is
+        /// read as a whole page; a schedule, which has no picture; a legend,
+        /// which draws symbols rather than the elements; and a perspective 3D
+        /// view, because how a rectangle moves a perspective camera is not
+        /// measured, and putting the camera back exactly is the half that
+        /// must hold.
+        /// </summary>
+        private static bool Zoomable(View view)
+        {
+            if (view == null || view.IsTemplate) return false;
+            if (view is ViewPlan || view is ViewSection || view is ViewDrafting) return true;
+            var threeD = view as View3D;
+            return threeD != null && !threeD.IsPerspective;
+        }
+
+        /// <summary>
+        /// The camera put back where the modeller left it - ZoomTo's other
+        /// half, called through putBack after every answer but Keep. The
+        /// view's window is found again by its id rather than held, because
+        /// the job may have closed it. TRUE when it went back; a failure is
+        /// logged, never thrown.
+        /// </summary>
+        private static bool PutCameraBack(UIDocument front, ElementId viewId, XYZ corner1,
+                                          XYZ corner2)
+        {
+            try
+            {
+                foreach (var open in front.GetOpenUIViews())
+                {
+                    if (open == null || open.ViewId != viewId) continue;
+                    open.ZoomAndCenterRectangle(corner1, corner2);
+                    return true;
+                }
+                HeronApplication.Log("Could not put the view back where it was: its window is "
+                                     + "no longer open.");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Could not put the view back where it was: " + ex.Message);
+                return false;
+            }
         }
 
         /// <summary>
