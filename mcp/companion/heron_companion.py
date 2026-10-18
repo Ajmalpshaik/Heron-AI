@@ -1268,8 +1268,10 @@ LAYOUT_PANEL = LayoutPanel()
 
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
-    HeronPaths.Companion, mirrored (D-109)."""
-    return os.path.join(bridge.local_app_data(), "Heron", "companion")
+    HeronPaths.Companion, mirrored (D-109). Under the temporary folder since
+    D-135, not %LOCALAPPDATA%: a Microsoft Store Claude keeps a private copy of
+    that for this process, and Revit never sees it (row 5b-416)."""
+    return os.path.join(bridge.temp_folder(), "Heron", "companion")
 
 
 def enabled(path=None):

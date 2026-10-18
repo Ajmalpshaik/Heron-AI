@@ -2276,7 +2276,7 @@ def main(argv=None):
     # measured, and exit 2 is how this repository says so.
     if SCOPE.knowledge_dir() is None:
         sys.stderr.write(
-            "COULD NOT RUN: no %APPDATA% and no HERON_KNOWLEDGE, so there is\n"
+            "COULD NOT RUN: no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is\n"
             "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
             "folder - an empty one is enough - and run this again.\n")
         return 2

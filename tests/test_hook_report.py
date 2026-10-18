@@ -92,7 +92,8 @@ def main():
 
 def run_all(home):
     env = dict(os.environ)
-    for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE"):
+    for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE",
+                 "HERON_DATA"):
         env.pop(name, None)
     # The per-user local folder, as .NET reads it: LOCALAPPDATA on Windows,
     # XDG_DATA_HOME elsewhere. Both, so this runs the same on either.
@@ -167,6 +168,8 @@ def run_all(home):
     inside = os.path.join(ROOT, "tests")
     bare = dict(env, LOCALAPPDATA=inside, XDG_DATA_HOME=inside)
     bare.pop("APPDATA", None)
+    # D-135: the knowledge folder is the Windows profile's now, so it goes too.
+    bare.pop("USERPROFILE", None)
     code, out = report([], bare)
     check(code == 0 and "No hook log on this machine" in out,
           "a machine with no usable log folder says why, and still exits 0")

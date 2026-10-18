@@ -831,6 +831,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-he.md`](needs-checking/group-he.md)
 
+## Group HF - Heron's data out of a Store Claude's copy, and the Companion's note where Revit looks: D-135 on a real PC (2026-10-18)
+
+**Its own file:** [`needs-checking/group-hf.md`](needs-checking/group-hf.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -170,8 +170,21 @@ def _stop(*_args, **_kwargs):
     raise _Measured()
 
 
+def _home_beside(env):
+    """D-135: a planted %APPDATA% stood for the folder the shared store is in.
+    That folder is HERON_DATA's since, or the Windows profile's - so HERON_DATA
+    is planted beside it, and an %APPDATA% taken away takes the profile too,
+    or on Windows the owner's real profile would answer for it."""
+    if "APPDATA" not in env or "HERON_DATA" in env:
+        return env
+    if env["APPDATA"]:
+        return dict(env, HERON_DATA=os.path.join(env["APPDATA"], "Heron"))
+    return dict(env, HERON_DATA=None, USERPROFILE=None)
+
+
 def _set_env(values):
     """Set each variable in VALUES - None unsets it. Returns what was there."""
+    values = _home_beside(values)
     kept = dict((k, os.environ.get(k)) for k in values)
     for key, value in values.items():
         if value is None:
@@ -1377,8 +1390,11 @@ def main():
     print()
     print("6. It refuses rather than scoring nothing")
     quiet = io.StringIO()
+    # Since D-135 the folder is HERON_DATA's or the Windows profile's, so
+    # both go too - or on Windows the owner's profile answers for it.
     held = dict((k, os.environ.pop(k, None)) for k in ("HERON_KNOWLEDGE",
-                                                        "APPDATA"))
+                                                        "APPDATA", "HERON_DATA",
+                                                        "USERPROFILE"))
     try:
         with contextlib.redirect_stderr(quiet), contextlib.redirect_stdout(quiet):
             code = tool.main([])
