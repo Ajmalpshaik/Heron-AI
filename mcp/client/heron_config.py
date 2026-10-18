@@ -244,9 +244,17 @@ def fragment_timeout(values=None, keeping=False):
     side adds it too - exactly what try_once_timeout adds for a DRAFT's one
     run (D-119), because it is the same box and the same wait. Without it the
     client gave up on a modeller still looking at the change, and their
-    answer reached nobody. A read, a run that rolls back, or a change with
-    the owner's switch off never asks, so it keeps the deadline it always
-    had.
+    answer reached nobody. A read or a run that rolls back never asks, so it
+    keeps the deadline it always had.
+
+    ADDED ON EVERY KEEP, WHATEVER Ask to Keep SAYS - D-142. Until then it was
+    added only while this side's own copy of heron.config had the owner's
+    switch on. The delete box is asked with the switch OFF too, for any kept
+    change Revit counts a deletion in, and nothing on this side can know
+    before the run whether it will delete: a forced box would have outlived
+    this wait, and the chat heard "answer lost" for a question still open in
+    Revit. A keep that asks nothing comes back as fast as it always did - the
+    longer wait is only ever the most this side waits.
 
     Same rule as response_timeout, for the same reason: the far side is the
     one that gets to answer, because only it knows whether Revit took the
@@ -269,7 +277,7 @@ def fragment_timeout(values=None, keeping=False):
     """
     values = load() if values is None else values
     waited = max(FRAGMENT_FLOOR_S, response_timeout(values))
-    if keeping and asks_before_keeping(values):
+    if keeping:
         waited += ask_timeout(values)
     return waited
 
