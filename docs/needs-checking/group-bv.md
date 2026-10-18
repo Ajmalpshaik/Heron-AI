@@ -37,6 +37,17 @@ model.** Every one is `DRAFT`. The proof plan is
 [`tools/jobs/family-kinds-2026-10-02.yaml`](../../tools/jobs/family-kinds-2026-10-02.yaml), with BV19 and BV20 in [`tools/jobs/family-beam-2026-10-02.yaml`](../../tools/jobs/family-beam-2026-10-02.yaml) and BV21 to BV23 in [`tools/jobs/family-recheck-2026-10-02.yaml`](../../tools/jobs/family-recheck-2026-10-02.yaml); its arrangements
 are new families from the metric templates the owner's Revit ships, saved once and left open in front.
 
+> **2026-10-18 - where these tools stand now, read off disk.** *None has met a model* and *Every one is
+> `DRAFT`* above describe 2026-10-02. On 2026-10-03 every tool listed above except
+> `add-family-type-parameter` was run in Revit 2024 - each once, in a new family from Revit's own template,
+> with Project1 as the negative, both legs rolled back - and signed by Ajmal PS (PR #395; the `proof:` block in
+> each card). `add-family-type-parameter` was not proved ([row 5b-302](../fragment-issues/section-5b-rows-301-325.md)).
+> Since then the code of `report-family-template`, `set-family-settings` and `set-family-connector-roles` moved
+> under their signatures, so they are DRAFT again - `python tools/check-signatures.py` lists them STALE.
+> Today's status of any of them: `grep '^heron-status:' brain/fragments/<name>/fragment.yaml`. **The rows
+> below are not closed by those proofs:** each asks for more than the one case a proof ran - several families,
+> a look on screen, a release, a *record which* - and none of that is recorded as run, so every row stays open.
+
 | # | Check | Expected |
 |---|---|---|
 | **BV1** | `report-family-template` in a new family from each of: Generic Model, Generic Model wall based, ceiling based, floor based, roof based, face based, line based, Generic Model Adaptive, Curtain Panel Pattern Based, Generic Model Pattern Based, Curtain Wall Panel, Detail Item, Profile, Generic Annotation, Structural Framing - Beams and Braces | Each kind named as the card says - the Curtain Wall Panel as the classic panel, NOT pattern-based - and **record**: the words Revit shows for Host in each; whether `IsCurtainPanelFamily` reads true for the classic Curtain Wall Panel, and for the Generic Model Pattern Based family as well as the Curtain Panel Pattern Based one - the card reads it as pattern-based only if it does; the framing family's Material for Model Behavior and Section Shape; whether the face-based one reads `WorkPlaneBased` with the Work Plane-Based switch off - the card's rule for calling it face-based; the line-based template's Length and the planes it is measured between; the pattern-based template's points 1 to 4 and its reference lines with their ids. **Negative:** in a project, refused as not a family with nothing else returned - the empty answer the batch runner's judge needs; and the plain Generic Model reads level-based, no host, no points |

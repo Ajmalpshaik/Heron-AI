@@ -20,10 +20,10 @@ rolled-back group; `URL` is the family's own built-in parameter.
 
 | # | Run | Look for |
 |---|---|---|
-| **CI1** | `validate --in "Family3" --negative-in "Family3" --write --setup add-family-parameters set-family-type-values` with `values=Nut Material=glass; URL=https://ajmalps.com` | **RAN 2026-10-06:** type `T1` made, `Nut Material = "Glass"` (found in another case - the one material that matches) and `URL = "https://ajmalps.com"`, both read back from the type; the group ROLLED BACK |
-| **CI2** | the same, `values=Nut Material=Unobtainium; URL=https://ajmalps.com` | **RAN 2026-10-06:** refused - *no material "Unobtainium" in this family ... the closest are "Default", "Glass", "Poche"* - `written 0`, `typeCreated false`: the URL beside it was not written either, and no material was made |
-| **CI3** | `values=Nut Material=<By Category>` | **RAN 2026-10-06:** `Nut Material = <By Category>` read back - the parameter cleared |
-| **CI4** | the signature | **DONE 2026-10-06:** `heron_validate.py accept set-family-type-values --by "Ajmal PS"` on the CI1/CI2 record, on the owner's word - PROVEN |
+| ~~**CI1**~~ | `validate --in "Family3" --negative-in "Family3" --write --setup add-family-parameters set-family-type-values` with `values=Nut Material=glass; URL=https://ajmalps.com` | **RAN 2026-10-06:** type `T1` made, `Nut Material = "Glass"` (found in another case - the one material that matches) and `URL = "https://ajmalps.com"`, both read back from the type; the group ROLLED BACK - **Struck 2026-10-18:** run as looked for, and signed with CI4. Version 3 ([Group CL](group-cl.md)) has been signed over it since. |
+| ~~**CI2**~~ | the same, `values=Nut Material=Unobtainium; URL=https://ajmalps.com` | **RAN 2026-10-06:** refused - *no material "Unobtainium" in this family ... the closest are "Default", "Glass", "Poche"* - `written 0`, `typeCreated false`: the URL beside it was not written either, and no material was made - **Struck 2026-10-18:** run as looked for, and signed with CI4. Version 3 ([Group CL](group-cl.md)) has been signed over it since. |
+| ~~**CI3**~~ | `values=Nut Material=<By Category>` | **RAN 2026-10-06:** `Nut Material = <By Category>` read back - the parameter cleared - **Struck 2026-10-18:** run as looked for, 2026-10-06. |
+| ~~**CI4**~~ | the signature | **DONE 2026-10-06:** `heron_validate.py accept set-family-type-values --by "Ajmal PS"` on the CI1/CI2 record, on the owner's word - PROVEN - **Struck 2026-10-18:** done, as it says. Version 3 ([Group CL](group-cl.md)) has been signed over it since. |
 | **CI5** | a material name that two materials share in different cases | refused naming both, nothing written. **Not run** - a family holding both was not arranged |
 | **CI6** | CI1 on **Revit 2020** and **2027** | The same answers. Compiled for 2020 to 2027; `ParameterType.Material` / `URL` before 2022 is read by reflection and has not run there |
 
