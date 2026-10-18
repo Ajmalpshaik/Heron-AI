@@ -324,6 +324,7 @@ that in ten Keep boxes the owner answered ([row 5b-1031](../fragment-issues/sect
 The tool reports forms built and seconds a form as NOT MEASURED
 ([row 5b-1030](../fragment-issues/section-5b-rows-401-425.md)). The whole report is in
 [docs/04 §8.7](../04-heron-mcp.md).
+Re-run 2026-10-18 with both rows fixed: forms built 44, seconds a form 10.9 s, Revit's own time less the boxes 20.7 s ([docs/04 §8.7](../04-heron-mcp.md), the re-run).
 
 **Still owed:** DA4's kept half; the warm-up OFF against ON on 2020 and 2027. DA7 and `combine-family-forms`'
 signature were given and both cards promoted in pull request #624; `combine-family-forms`' second signature, after 5b-1001's fix, was given the same day (above).
