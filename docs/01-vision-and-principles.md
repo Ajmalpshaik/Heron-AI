@@ -65,7 +65,7 @@ If an important decision is required, Heron asks.
 
 ## 6. The Golden Rules
 
-The fifteen permanent architecture rules live in their own document: [14 — Golden Rules](14-golden-rules.md), together with four more proposed during engineering review. They are the constitution of the platform. Anything in this repository that contradicts them is a bug in the design, not a feature.
+The permanent architecture rules live in their own document: [14 — Golden Rules](14-golden-rules.md) — rules 1 to 15 from the specification, and 16 to 21 from engineering review, accepted by the owner on 2026-08-28 ([Q-19](OPEN-QUESTIONS.md)). Together with the [Constitution](../HERON_CONSTITUTION.md), they are the constitution of the platform. Anything in this repository that contradicts them is a bug in the design, not a feature.
 
 ## 7. Target experience
 
@@ -91,7 +91,7 @@ The core architecture must not be permanently welded to Revit. Future platform a
 The correct reading:
 
 - The **architecture** in this repository is committed to now — it shapes every file that gets written.
-- The **agent catalogue** (~150 named agents) is a target organisation chart, reached over time.
+- The **agent catalogue** ([08](08-agent-catalog.md), about 150 named agents in the specification) is a target organisation chart, reached over time. How much of it is built is `python tools/agent-count.py`, not a number typed here.
 - The **v1 scope** is deliberately small and is defined in [ROADMAP.md](ROADMAP.md).
 
-Building 150 agents before one duct has been selected end-to-end would be the fastest way to kill the project. The first milestone is a single thin vertical slice through every layer.
+Building 150 agents before one duct has been selected end-to-end would be the fastest way to kill the project. The first milestone is a single thin vertical slice through every layer — reached: Phase 0 is proven in Revit 2020 and 2024 (the [README's Status](../README.md#status)).

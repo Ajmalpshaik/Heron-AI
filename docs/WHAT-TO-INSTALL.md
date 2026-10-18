@@ -56,9 +56,11 @@ installed.
 moment you want to ask Heron something from Claude.
 
 **From the next release, the installer does rows 4 and 5 and section 1a for you** - built 2026-10-17,
-**run once on the owner's laptop that evening, from a local build**: READY, its Python half about 70 s on a
-PC that had none of the packages ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)). When you install the
-AI Bridge connector, `HeronInstaller.exe` also installs Heron's Python packages at the pinned versions in
+**run on the owner's laptop that evening and again on 2026-10-18, each time from a local build**: READY,
+its Python half about 70 s on a PC that had none of the packages, and on 2026-10-18 a Python 3.10 and a
+3.15 refused by name with the command that fixes it ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)).
+When you install the AI Bridge connector, `HeronInstaller.exe` also installs Heron's Python packages at
+the pinned versions in
 [`requirements-lock.txt`](../requirements-lock.txt) - for your Windows user, no administrator rights,
 every file checked against its hash - then builds Heron's knowledge store and runs `heron-ready --check`,
 saying each step as it goes. It needs row 3 first: **it never installs Python itself**, and says so with
@@ -91,7 +93,9 @@ Then, the three things only you can do:
    again; it names what is missing.
 3. **Switch on what the job needs on the Heron ribbon, before you ask.** They start off on every new
    PC: **Changes** for any change, **Admin** for a new family file, **Publish** to save it. A refusal
-   costs a turn.
+   costs a turn. **Ask to Keep** starts off too: on, Revit shows each change and asks *Keep* or
+   *Discard* before it stays; off, a change is kept at once as one undo entry
+   ([D-138](decisions/D-138.md) - built, the switch not yet run in Revit).
 
 Claude Code's own memory of your old PC does not come across. It does not need to: Heron hands Claude
 a job's whole method — every step of building a family, in order — through its `heron_method` tool.
@@ -263,7 +267,10 @@ note. Its docs do not say, and Heron sends nothing without one. EJ1 is the run t
 | | Where |
 |---|---|
 | **The Revit add-in** | `%AppData%\Autodesk\Revit\Addins\<release>\Heron` — per-user, no administrator rights |
-| **Heron's settings and its knowledge store** | `%APPDATA%\Heron` — but with a Microsoft Store Claude, the knowledge store and each project's memory are in Claude's private copy ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
+| **The add-in's settings and its audit trail** | `%APPDATA%\Heron` — `heron.config` is in `config\`. With a Microsoft Store Claude the app also keeps a copy of its own ([Q-70](OPEN-QUESTIONS.md)) |
+| **Heron's knowledge store, each project's memory, the brain's audit** | `%USERPROFILE%\.heron` — `C:\Users\<you>\.heron`, outside any app's private copy ([D-135](decisions/D-135.md)); `HERON_DATA` moves it. `python brain/heron_paths.py --where` names it |
+| **The Companion's notes** | `%TEMP%\Heron\companion` — safe to delete ([D-136](decisions/D-136.md)) |
+| **Bridges, logs, run records, the install a rollback goes back to** | `%LOCALAPPDATA%\Heron` — machine-local, never roamed ([D-17](DECISIONS.md)) |
 | **Python packages** | Your own Python's user folder — and with a Microsoft Store Claude, a second copy of whatever Claude installed, which only Claude sees ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
 | **The search add-ons' model files** | `C:\Users\<you>\.cache\huggingface` |
 | **The Heron folder** | The code and the tools. **None of the installs above** — so a Heron folder copied to another PC needs this page's list done again there |
@@ -273,10 +280,11 @@ After the first download, the search add-ons read their files from your own PC.
 
 ## 7. What is not decided yet
 
-- **Nothing installs Python or its packages for you.** The installer puts Heron into Revit and installs
-  no Python, and setup *tells* rather than installs — [Q-39](open-questions/answered.md)'s words:
-  pulling a runtime onto somebody's machine unasked is what a careful user and a corporate laptop are
-  both right to refuse. Whether a release should ever bundle Python is still open
+- **Nothing installs Python itself for you.** From the next release the installer installs Heron's
+  Python *packages* - asked, before Install is pressed, never unasked - and `tools/setup.ps1` still
+  *tells* rather than installs. Python itself stays yours to install: [Q-39](open-questions/answered.md)'s
+  words, pulling a runtime onto somebody's machine unasked is what a careful user and a corporate laptop
+  are both right to refuse. Whether a release should ever bundle Python is still open
   ([Q-38](open-questions/from-master-specification-part-2.md#q-38--what-is-the-exact-install-command-new)).
 - **Whether the re-ranker should read standards documents only**, and not tool cards, is a code change
   nobody has made.

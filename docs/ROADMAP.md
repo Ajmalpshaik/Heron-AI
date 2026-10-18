@@ -7,10 +7,19 @@
 > [D-10](DECISIONS.md)), and Phase 0 is complete. What remains open, and whether any of it gates a
 > phase, is in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) — derive it there rather than reading a count here.
 >
-> **Where each phase stands is not kept on this page.** The step-by-step state — Phase 0 complete,
-> Step 6 run once and still owed `D3`, Phase 2 built and barely proven — is the Status table in the
-> root [README](../README.md#status), and what is genuinely unfinished is `python tools/check-gaps.py`.
+> **Where each phase stands is not kept on this page.** The step-by-step state — Phase 0 proven, Step 6's
+> move measured in Revit 2024 with a failure forced mid-move still owed, Phase 2 built with the fragment
+> library mostly `PROVEN` and every skill still `DRAFT` — is the Status table in the root
+> [README](../README.md#status), and what is genuinely unfinished is `python tools/check-gaps.py`.
 > This page is the route, not the progress.
+>
+> **The build did not keep to this order, and that is recorded rather than smoothed over.** Pieces of
+> later phases were built while Phase 1 was still being proved: Phase 6's installer (in the
+> [v0.1.0 release](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), 2026-10-08), Phase 5's
+> run-time compile of a fragment's C# inside Revit ([D-28](DECISIONS.md)), Phase 4's Capability Gap report
+> (`python brain/heron_gaps.py`), and the whole agent register, which `python tools/agent-count.py`
+> reconciles against the code. **Built is not proven** — each of them is held to [D-30](DECISIONS.md) like
+> everything else, and what has met a real Revit is in [NEEDS-CHECKING](NEEDS-CHECKING.md).
 
 ---
 
@@ -146,7 +155,10 @@ happened.
 
 **Phase 0.5 — add the second runtime.** One `net48` version and one `net8` version, both working.
 This is where the .NET break stops being theoretical, and it is much cheaper to face here than after
-six phases of code assume one runtime.
+six phases of code assume one runtime. **Half met:** on the owner's laptop on 2026-10-17 Heron loaded on
+Revit 2020, 2024, 2026 and 2027 — `net472`, `net48`, `net8.0` and `net10.0` — but on 2026 no fragment
+could run ([row 5b-575](fragment-issues/section-5b-rows-401-425.md)); the repair is in code and has not
+been run in Revit ([Group EQ](needs-checking/group-eq.md), [Group GW](needs-checking/group-gw.md)).
 
 ---
 
@@ -163,7 +175,11 @@ six phases of code assume one runtime.
 - **Revit Context Agent** — document, version, view, selection, links, worksets, phase *(Part 4 §13)*
 - **Workflow Engine** with retries, timeouts, rollback and **checkpoints** *([23 §3–4](23-heron-kernel.md))*
 - **Evidence System** — every important decision states its reasons *([23 §6](23-heron-kernel.md))*
-- ~~**Emergency Stop** in the Revit ribbon~~ — built in Step 6, **button removed 2026-09-06** ([D-46](DECISIONS.md)). `HeronStop` and both gates remain; they have no trigger until the file-based kill switch of [21 §4](21-resilience-and-operations.md) is built
+- ~~**Emergency Stop** in the Revit ribbon~~ — built in Step 6, **button removed 2026-09-06** ([D-46](DECISIONS.md)).
+  `HeronStop` has a trigger again: the bridge's `stop` operation ([D-129](DECISIONS.md)),
+  `python mcp/client/heron_bridge_client.py stop --session <pid>`, which lasts until Revit restarts
+  ([D-130](DECISIONS.md)). Run once in Revit 2024 on 2026-10-18 on a scratch copy — a running job stopped and
+  rolled back, and a stranger's stop refused ([Group EZ](needs-checking/group-ez.md), EZ3)
   *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
 - **Golden Test Library** started — it only has value if it grows from day one *(Part 4 §28)*
@@ -235,7 +251,7 @@ knowledge — build it here, not later, because retrofitting it means rewriting 
 - **Capability Gap report** — *"here are the ten things people asked for that I could not do"*
 - Personal pattern learning, with confirmation before saving
 
-**[Note]** The Capability Gap report should arrive **much earlier than this phase** if it can — it is a read-only report over the audit log and it tells you what to build next from real usage. Build it as soon as the audit log exists.
+**[Note]** The Capability Gap report should arrive **much earlier than this phase** if it can — it is a read-only report over the audit log and it tells you what to build next from real usage. Build it as soon as the audit log exists. **It did arrive early:** `python brain/heron_gaps.py`.
 
 ---
 
@@ -281,7 +297,7 @@ knowledge — build it here, not later, because retrofitting it means rewriting 
 | Autonomous agent creation | the human-approval boundary is proven in practice |
 | Non-Revit platforms (AutoCAD, IFC, Rhino) | Revit works properly |
 | Multi-user server infrastructure | there is more than one user |
-| The full 150-agent catalogue | real usage says which ones are actually needed |
+| The full 150-agent catalogue | real usage says which ones are actually needed — **overtaken:** the register in [28](28-agent-registry.md) was built out anyway, and `python tools/agent-count.py` says how much of it is code, host-provided or deferred. Built, not used or proven |
 
 The catalogue in [08](08-agent-catalog.md) is the destination, reached by building what usage demands —
 not by working down a list.

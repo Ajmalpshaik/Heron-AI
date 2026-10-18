@@ -5,8 +5,12 @@ people who actually do BIM work are worth more than contributions from people wh
 
 > **Current stage: built ahead of what is proven, though less far than it was.** Phase 0 — the whole
 > path from a sentence to a selection changing on screen — is proven in real Revit 2020 and 2024. The
-> add-in has since been deployed to Revit 2020, 2024 and 2027, and D-28's executor compiles a
-> fragment's C# inside Revit's own process, so fragments do now meet real models.
+> add-in has since loaded in Revit 2020, 2024, 2026 and 2027
+> ([Group EQ](docs/needs-checking/group-eq.md)), and D-28's executor compiles a fragment's C# inside
+> Revit's own process, so fragments do now meet real models — on every one of those but 2026, where no
+> fragment could run until a repair that has not yet been run in Revit
+> ([Group GW](docs/needs-checking/group-gw.md)). The [README's Status](README.md#status) says what else
+> has met a real Revit.
 >
 > **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are
 > `DRAFT`**, which is Heron's word for *not proven as it stands* - most of those have never met a
@@ -109,18 +113,23 @@ If you commit any of these by accident, **report it privately** via
    say which versions you tested and how.
 5. **Tests, written to fail before your fix.**
 6. **Run the checks.** These four need nothing but Python 3 — no Revit, no Windows, no .NET SDK —
-   and all four must exit 0:
+   and all four must exit 0, with `git diff --check` clean:
 
    ```
    python tools/check-structure.py    # parts in place, no layering violation
    python tools/check-docs.py         # every link and every stated count
    python tools/check-metadata.py     # headers, and the registry against the code
    python tools/check-package.py      # the manifest Revit reads before anything else
+   git diff --check                   # no whitespace errors
    ```
 
-   They are not all of CI's checks: the `gates` job in
-   [`.github/workflows/gates.yml`](.github/workflows/gates.yml) runs more, and any one of them turns a
-   pull request red. [AGENTS.md](AGENTS.md) names them.
+   They are not all of CI's checks. The `gates` job in
+   [`.github/workflows/gates.yml`](.github/workflows/gates.yml) also runs `check-signatures`,
+   `check-licence`, `check-narrow-errors`, `check-products`, `check-decision-titles`, `check-routing` and
+   `check-intrusion`, and a non-zero from any of them turns a pull request red. Some need something
+   first: `check-decision-titles` needs the whole git history, and `check-routing` and
+   `check-intrusion` need a knowledge store - an empty folder named by `HERON_KNOWLEDGE` will do. The
+   [`heron-ship`](.claude/skills/heron-ship/SKILL.md) skill says what each one catches and how to run it.
 
    `python tools/check-gaps.py` exits non-zero while real work is outstanding, which is its job — read
    it, but do not expect a 0. [tools/README.md](tools/README.md) explains the rest.

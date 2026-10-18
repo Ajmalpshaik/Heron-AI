@@ -27,7 +27,10 @@
 The user never hand-edits configuration unless they deliberately enter Developer Mode.
 
 **[NOTE]** 2026-10-17 — **steps 5, 6, 8, 11, 12 and 15 are one run of the installer now**, on the owner's
-ask that day, DRAFT and **not yet run on Windows** ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)).
+ask that day, DRAFT. **Run on the owner's laptop on 2026-10-17 and 2026-10-18 from a local build of
+`main`**, not yet from a published release: READY, the packages installed for his user and the knowledge
+store built, and a Python outside 3.11 to 3.14 refused by name
+([NEEDS-CHECKING Group EP](needs-checking/group-ep.md), EP1 to EP3).
 After the add-in goes in for each Revit, `HeronInstaller.exe` and `heron-install` set up Heron's Python
 side when a product that talks to a chat was installed: the pinned packages in
 [`requirements-lock.txt`](../requirements-lock.txt) with `pip --user --require-hashes`, the knowledge store
@@ -92,7 +95,7 @@ Two different things are being conflated, and separating them is
 | What | Where | Why |
 |---|---|---|
 | **Heron's code** | the plugin location | Replaced wholesale on update. The user never edits it |
-| **Heron's brain** — skills, fragments, learned patterns, audit log | `%APPDATA%\Heron` | **The user's.** Must survive every update, uninstall and folder deletion |
+| **Heron's brain** — skills, fragments, learned patterns, audit log | `%APPDATA%\Heron` for the add-in's settings and audit; `%USERPROFILE%\.heron` for the Python side's knowledge store, project memory and audit since [D-135](decisions/D-135.md) | **The user's.** Must survive every update, uninstall and folder deletion |
 | **Runtime state** — bridges, logs, caches | `%LOCALAPPDATA%\Heron` | Machine-local, rebuildable, safe to delete |
 | **The project folder** | wherever the user opens | **Project scope** — this project's standards, decisions and notes |
 
@@ -129,9 +132,9 @@ what open source means — but nobody has to.
 
 | | **BIM user** | **Developer** |
 |---|---|---|
-| Gets Heron by | one install command, prebuilt release | `git clone`, build from source |
+| Gets Heron by | the release download, `heron-project.zip`, prebuilt and unsigned — [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md) | `git clone`, build from source |
 | Needs | Claude Code, Revit, **Python** *([Q-39](OPEN-QUESTIONS.md))* | Claude Code, Revit, **Python**, .NET SDK |
-| Add-in deployed by | **`HeronInstaller.exe`, and nothing else** — [D-96](DECISIONS.md) | `tools/deploy-addin.ps1` |
+| Add-in deployed by | **`HeronInstaller.exe`, and nothing else** — [D-96](DECISIONS.md) — run from outside the Claude app ([Q-63](OPEN-QUESTIONS.md)) | `tools/setup.ps1`, or `tools/deploy-addin.ps1` for one release |
 | Sees | *"Selected 126 ducts in Tower-A"* | agent chains, logs, the build pipeline |
 
 **THE RIGHT-HAND COLUMN DOES NOT WORK FOR THE LEFT-HAND ONE, AND THAT WAS FOUND BY DOING IT.**
@@ -147,7 +150,9 @@ mark, and is why the developer column is unaffected.
 
 **[NOTE — open]** The exact plugin install command must be verified against current Claude Code plugin
 documentation before it goes in the README. Publishing an install command that does not work is worse
-than publishing none. Tracked as [Q-38](OPEN-QUESTIONS.md).
+than publishing none. [Q-38](OPEN-QUESTIONS.md) is answered as far as it can be — deferred to
+publication ([D-42](DECISIONS.md)). Meanwhile a modeller's route is the release download and
+`HeronInstaller.exe`, which needs no command at all.
 
 ---
 
@@ -187,7 +192,12 @@ Build in **CI** (GitHub Actions), produce a signed artefact per Revit version, a
 
 This makes step 7 disappear from the normal user's install, which is exactly what §1 of the spec asks for.
 
-Tracked as [Q-6](OPEN-QUESTIONS.md).
+**Built this way.** [`.github/workflows/release.yml`](../.github/workflows/release.yml) builds one zip
+per product per Revit release when a `v*` tag is pushed, through `tools/build-release-assets.py`, and
+`HeronInstaller.exe` copies the right one ([D-96](DECISIONS.md)). The first release,
+[v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0) of 2026-10-08, was built and
+uploaded by that workflow. **It is not signed**: signing is Stage 8, left until Heron is finished on the
+owner's word.
 
 ---
 
@@ -557,3 +567,19 @@ none of them was attempted here:
 - **The install command itself.** [Q-38](OPEN-QUESTIONS.md) is still open: the plugin install command
   in the README is unverified, and everything above starts from a git clone and a `dotnet build`. **The
   developer path is proved; the BIM user's path is not.**
+
+**What has run since, recorded in the register rather than here.**
+
+- **2026-10-08, the published release** ([Group AC](needs-checking/group-ac.md)): `heron-project.zip`
+  downloaded from v0.1.0 and unzipped into an empty folder, then `heron-install.exe --releases 2027
+  --products heron-bridge` with no `--from` - *"Files come from Heron's published release"*, *"1
+  installed, 0 failed"*, and the version check *"This is the newest published version (0.1.0)"*. Revit
+  2027 loading those published bytes was **not seen** - it stopped at Autodesk licensing - and the
+  window's own Install (`AC2`) was not run.
+- **2026-10-17, the owner's laptop** ([Group EP](needs-checking/group-ep.md), EP1): `HeronInstaller.exe`,
+  built locally from `main`, fetched v0.1.0's add-in from the published release, checked each zip against
+  its `checksums.txt`, installed it into Revit 2020, 2024, 2026 and 2027 and set up Heron's Python side;
+  Revit 2026 then loaded Heron and connected from the ribbon.
+
+So the download half of the BIM user's path has run. An update to a newer version - there is none yet -
+with its consent, a migration and version pinning have not.

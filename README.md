@@ -226,7 +226,7 @@ every typed copy has gone stale.
 | **an AI agent** | [**AGENTS.md**](AGENTS.md) — short, and the only file written for you |
 | **a developer** | [**docs/PROJECT-MAP.md**](docs/PROJECT-MAP.md) — which folder owns what, where to start a change, which source wins — then [CONTRIBUTING.md](CONTRIBUTING.md) |
 | **a BIM modeller** | [01 — Vision & Principles](docs/01-vision-and-principles.md), then **What keeps the model safe** above. The switch keeps you safe, not the library |
-| **setting up a PC** | [**docs/WHAT-TO-INSTALL.md**](docs/WHAT-TO-INSTALL.md) — everything a PC needs, Python first, and what is optional. **Nothing is released yet** |
+| **setting up a PC** | [**docs/WHAT-TO-INSTALL.md**](docs/WHAT-TO-INSTALL.md) — everything a PC needs, Python first, and what is optional. **An early build, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), is published for testing only** — unsigned, and the note at the top of this page still stands |
 | **a BIM manager** | [16 — Version Support](docs/16-version-support-strategy.md) and [12 — Security & Permissions](docs/12-security-and-permissions.md) |
 
 Full routes, with what to read at each stop: [**PROJECT-MAP §E**](docs/PROJECT-MAP.md#e-routes-by-role).

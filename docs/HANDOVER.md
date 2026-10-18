@@ -31,8 +31,9 @@ that day**:
 - **"Revit is open"** — and say WHICH model, because that now decides what can be proved. Until
   2026-09-06 this line said Revit was "the one thing months of work here have been waiting on", and
   that was wrong: **nothing could execute a fragment at all**. The executor is built now, so Revit
-  being open is finally the thing that matters — and [the top section](#where-this-stands-right-now--read-this-then-9a-or-9)
-  lists exactly which six models finish the fragments that are still half-proved.
+  being open is finally the thing that matters — the newest sitting under
+  [the top section](#where-this-stands-right-now--read-this-then-9a-or-9) says what is waiting for it, and
+  `python tools/owner-queue.py` lists every row that needs Revit open.
 - **"Work only on Heron-AI and AJ-Tools"** — the standing scope. `AJ-AI-Brain` is the earlier project
   and is **read-only reference**.
 
@@ -99,9 +100,12 @@ when the thing you hit is on no list at all.
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
 > **The dated notes in this block stop at 2026-09-27.** Everything since — the HVAC loads and
-> sprinkler work, the family-editing fragments, the project-location setters — is in
-> [Latest sittings](#latest-sittings) below and in `git log --oneline -30 origin/main`. Read those for
-> the newest state; the notes here still hold for what they name.
+> sprinkler work, the family-editing fragments, the project-location setters, and the safety rails
+> that met Revit on 2026-10-18 — is in [Latest sittings](#latest-sittings) below and in
+> `git log --oneline -30 origin/main`. Read the newest sitting first. The notes here still hold for what
+> they name, except two lines of the installer note of 2026-09-22: a release **has** been published —
+> v0.1.0, 2026-10-08 ([Group AC](needs-checking/group-ac.md)) — and the installer **has** run on Windows,
+> on the owner's laptop ([Group EP](needs-checking/group-ep.md)).
 
 > ## TALK WAS RUN IN REVIT, LOST A MESSAGE, AND WAS REMOVED - 2026-09-27, evening
 >
@@ -223,6 +227,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-10-18 | [THE SAFETY RAILS MET REVIT, AND HERON'S DATA LEFT THE STORE APP'S COPY](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md) |
 | 2026-10-14 | [SIXTY PLAIN QUESTIONS, AND WHAT ANSWERED THEM](handover-archive/2026-10-14-sixty-plain-questions-and-what-answered-them.md) |
 | 2026-10-14 | [THE GAP PASS: NEW TOOLS FOR WHAT THE LIBRARY COULD NOT DO](handover-archive/2026-10-14-the-gap-pass-new-tools-for-what-the-library-could-not-do.md) |
 | 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](handover-archive/2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
@@ -234,7 +239,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-09-28 | [REVIT'S OWN DUCT SIZING TORE UP HERON'S MAIN, AND THE FIX PUTS THE TRANSITION ON THE UNIT](handover-archive/2026-09-28-revit-s-own-duct-sizing-tore-up-heron-s-main-and-the-fix.md) |
 | 2026-09-24 | [THE RE-RANKER RAN FOR THE FIRST TIME, AND IT MAKES PICKING A TOOL WORSE](handover-archive/2026-09-24-the-re-ranker-ran-for-the-first-time-and-it-makes-picking-a.md) |
 | 2026-09-23 | [THE THREE ROWS C1 LEFT OPEN ARE FIXED, AND THE SETUP SCRIPT HAS TO BE PASTED AGAIN](handover-archive/2026-09-23-the-three-rows-c1-left-open-are-fixed-and-the-setup-script.md) |
-| 2026-09-23 | [THE GUARD RAN ONLY WHERE ITS SKILL WAS LOADED, AND NOTHING SAID WHEN MAIN HAD MOVED](handover-archive/2026-09-23-the-guard-ran-only-where-its-skill-was-loaded-and-nothing.md) |
 
 ## The session archive — what happened before today
 
@@ -311,7 +315,7 @@ matter how green the gates are.
 | The bridge answers `ping` | Revit 2020 and 2024 |
 | One button connects **and** disconnects; the icon shows which | Toggled repeatedly, every transition logged |
 | Per-session token, minted per connect | 2024's token on the 2020 pipe → `unauthorized` |
-| Newest connection wins — **the pipe only, since Step 6** | *"A newer connection took the session"*, older one dropped. Still true of the transport; a lease now decides who may actually send anything ([D-22](DECISIONS.md)). **The lease itself is unproven** |
+| Newest connection wins — **the pipe only, since Step 6** | *"A newer connection took the session"*, older one dropped. Still true of the transport; a lease now decides who may actually send anything ([D-22](DECISIONS.md)). **The lease was seen refusing once:** Revit 2024, 2026-10-18 — a second chat's `stop` answered *"in use by another chat"* while the first chat's job ran ([Group EZ](needs-checking/group-ez.md), EZ3) |
 | Two Revits at once, separate pipes | `heron.2024.*` and `heron.2020.*` together |
 | **The thread hop** | `5,844 elements` from 2024, `3,167` from 2020 |
 | **"Revit is busy" instead of a hang** | Dialog open → clean refusal after 10s, recovers by itself |
@@ -636,9 +640,11 @@ It is kept as ONE register rather than a copy in each file, because two lists of
 and this repository has been bitten by that more than once. Add to it every time something is built
 away from Revit; delete an item only when it has actually passed.
 
-**The single most important line in it is `D3`:** move the ducts 200 mm, then *measure one*. That is
+**The line that mattered most in it was `D3`:** move the ducts 200 mm, then *measure one*. That is
 what catches a unit error, and a unit error is the failure that looks fine until somebody measures it
-months later.
+months later. **It passed on 2026-10-17 in Revit 2024** — +200.0000 mm on three ducts, measured two ways,
+with `D1` to `D6` beside it ([Group D](needs-checking/group-d.md)). What the move has still not been
+through: any release but 2024, a duct joined to a fitting, and a failure forced mid-move (golden `G-12`).
 
 The one-command path back to a working machine:
 
@@ -822,8 +828,9 @@ platforms, one shim, one set of assertions, and passes the whole lease end to en
 "32 checks" in section 5 - and neither could be settled from this container, which has no built
 host. Both are gone rather than one being guessed at: the suite prints its own total when it runs.
 
-**What no compiler will ever do is tell you a duct moved the right distance.** `D3` is still the line
-that matters most in this repository.
+**What no compiler will ever do is tell you a duct moved the right distance.** `D3` was the line that
+mattered most in this repository, and a tape measure answered it in Revit 2024 on 2026-10-17
+([Group D](needs-checking/group-d.md)).
 
 ### The two things left that need Windows but NOT Revit
 
@@ -846,14 +853,15 @@ run it on is how this file gets its rows.
 
 ### Then the rest of the register, in order
 
-47 items need a real Revit. They are in dependency order and each says what PASS actually looks like.
-The three that matter most:
+How many items need a real Revit is the **REVIT OPEN** bucket of `python tools/owner-queue.py`, never a
+number typed here. They are in dependency order and each says what PASS actually looks like. The three
+this section named as mattering most:
 
 | | |
 |---|---|
-| **C3** | With `write.enabled` still false, a move must be **refused**, naming the setting. Prove the gate before testing the write, or a passing move proves nothing |
-| **D3** | Move the ducts 200 mm, then **MEASURE ONE.** The single most important line in the register — a unit error is the failure that looks fine until somebody measures it months later |
-| **D5** | **One** Ctrl+Z puts it all back, as a single undo entry. Two means Golden Rule 16 is broken |
+| **C3** | With `write.enabled` still false, a move must be **refused**, naming the setting. Prove the gate before testing the write, or a passing move proves nothing. **Still open** |
+| **D3** | Move the ducts 200 mm, then **MEASURE ONE.** **PASSED 2026-10-17, Revit 2024** ([Group D](needs-checking/group-d.md)) |
+| **D5** | **One** Ctrl+Z puts it all back, as a single undo entry. Two means Golden Rule 16 is broken. **PASSED 2026-10-17, Revit 2024** |
 
 ### Record what you prove, as you prove it
 
@@ -871,16 +879,15 @@ proven against a build that no longer exists — and that is the library doing i
 chat id, and an add-in still on protocol 1 will refuse to talk. That refusal is correct behaviour, but if
 an old DLL is still deployed it will look like Heron has stopped working.
 
-**2. Seven capabilities are wanted and unprovided**, listed at the top of this file. `check-gaps` reports
-them, the register does not, and that is on purpose: a register row is a **test somebody must run**, and
+**2. Capabilities that are wanted and unprovided** are listed by `python tools/check-gaps.py`, not here
+and not in the register, and that is on purpose: a register row is a **test somebody must run**, and
 these are **code somebody must decide to write**. Do not add them to `NEEDS-CHECKING.md` — it would turn
 a list of things waiting on a machine into a list of things waiting on a decision, and those are the two
 categories this repository has spent two sessions learning to keep apart.
 
-**3. The brain is not reachable from the host**, so Phase 2's third done-clause is open — and unlike
-the rest of the register, **nothing external is stopping it.** One MCP tool that resolves a request
-through the capability registry is what the clause asks for. It is in [§1](#1-where-the-project-stands)
-with the evidence, and in [§8](#8-what-is-waiting-on-the-owner) as the choice it creates.
+**3. ~~The brain is not reachable from the host~~ — closed on 2026-08-29**, the day it was found:
+`heron_capabilities`, `heron_resolve` and `heron_lookup` resolve a request through the capability
+registry ([27 — Phase 2's status](27-build-order.md#step-14--ten-real-skills-none-of-them-hard-coded)).
 
 ---
 
