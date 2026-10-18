@@ -41,6 +41,79 @@ window and the command say what Install will do before it is pressed, [Q-39](OPE
 only, never Python itself. Step 9 is unchanged: `.mcp.json` ships in the folder. Signing (Stage 8) is
 left until Heron is finished, by the owner's word the same day.
 
+### The installer as built — one run, from the release to READY
+
+Checked against [`release.yml`](../.github/workflows/release.yml), the window's
+[`Program.cs`](../platform/Heron.Installer.App/Program.cs),
+[`InstallEngine`](../platform/Heron.Installer/InstallEngine.cs),
+[`ReleaseDownload`](../platform/Heron.Installer/ReleaseDownload.cs) and
+[`ReleaseAssets`](../platform/Heron.Installer/ReleaseAssets.cs),
+[`WindowsAdapters`](../platform/Heron.Installer/WindowsAdapters.cs) and
+[`PythonSetup`](../platform/Heron.Installer/PythonSetup.cs). `heron-install` runs the same engine with
+the ticks given on its command line.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    REL["<b>GitHub release</b> — a v* tag, built by release.yml<br/>heron-project.zip · one zip per product per Revit · checksums.txt"]
+    ZIP["<b>heron-project.zip</b>, unzipped<br/>the Heron folder · HeronInstaller.exe at the top"]
+    EXE["<b>HeronInstaller.exe</b>, from Explorer<br/>refuses inside a Store Claude"]
+    TICK["<b>Tick products and Revit releases</b><br/>releases found by tools/HeronRevit.ps1"]
+    WAIT["<b>Waits while a ticked Revit is open</b><br/>never closes it"]
+    DL["<b>Fetch #lt;product#gt;-#lt;release#gt;.zip</b><br/>from the newest published release"]
+    SUM{"matches<br/>checksums.txt?"}
+    NO(["refused · nothing installed"])
+    COPY["<b>tools/deploy-addin.ps1</b> copies it into<br/>%APPDATA%\Autodesk\Revit\Addins\#lt;release#gt;<br/>the old install kept in %LOCALAPPDATA%\Heron"]
+    PY["<b>Heron's Python side</b> — when a needsPython product went in<br/>pinned packages · knowledge store · heron-ready --check"]
+    REP(["<b>the report</b> · per product, per release · READY or what to fix"])
+
+    REL ==> ZIP ==> EXE ==> TICK ==> WAIT ==> DL ==> SUM
+    SUM -->|no| NO
+    SUM ==>|yes| COPY ==> PY ==> REP
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class REL,ZIP host
+    class EXE,TICK,DL,SUM plat
+    class WAIT revit
+    class COPY addin
+    class PY brain
+    class NO,REP user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+GitHub release (v* tag, release.yml)  heron-project.zip, <product>-<release>.zip each, checksums.txt
+  -> heron-project.zip, unzipped      the Heron folder; HeronInstaller.exe at the top
+  -> HeronInstaller.exe from Explorer refuses inside a Microsoft Store Claude (Q-63)
+  -> tick products and Revit releases releases found by tools/HeronRevit.ps1
+  -> wait while a ticked Revit is open never closes it
+  -> fetch <product>-<release>.zip    from the newest PUBLISHED release (a draft is not one)
+  -> matches checksums.txt?           no  -> refused, nothing installed
+                                      yes -> tools/deploy-addin.ps1 copies it into
+                                             %APPDATA%\Autodesk\Revit\Addins\<release>\<folder>,
+                                             the old install kept in %LOCALAPPDATA%\Heron\install-backup
+  -> Heron's Python side              only when a product with needsPython went in:
+                                      pinned packages, knowledge store, heron-ready --check
+  -> the report                       per product, per release
+```
+
+</details>
+
+**Two branches the diagram leaves out.** A Heron folder that already holds a build of Heron for any
+release installs from its builds and downloads nothing — the developer's and the offline route
+(`InstallerScreen.AnythingBuilt`). And
+`heron-install --no-python` leaves the Python side out. **What has run:** the download half from the
+published v0.1.0 ([Group AC](needs-checking/group-ac.md), 2026-10-08) and the whole flow from a local
+build of `main` on the owner's laptop ([Group EP](needs-checking/group-ep.md), 2026-10-17 and
+2026-10-18) — not yet from a published release that carries the Python half.
+
 ## 1a. The user journey — what actually happens
 
 **[NOTE]** Added 2026-08-27 from the owner's question: *someone sees this on GitHub, opens Claude Code,
@@ -558,7 +631,9 @@ Answering these four questions does not finish [section 6](#6-update-system). Th
 none of them was attempted here:
 
 - **A real update over the wire.** Everything above deploys from a local build. Version detection,
-  download, and the *"A new Heron AI update is available"* consent flow have never run.
+  download, and the *"A new Heron AI update is available"* consent flow have never run. *(Since: the
+  download and the version check have run - below. An update to a newer version, and its consent, have
+  not.)*
 - **A migration.** [Section 8](#8-note-migration-is-the-hard-part) is the hard part and no fragment,
   skill, registry or index migration has ever been written or run. Question 2 proves an upgrade leaves
   settings **untouched**; it says nothing about an upgrade that must legitimately **change** them.
@@ -566,7 +641,10 @@ none of them was attempted here:
   implementation to test.
 - **The install command itself.** [Q-38](OPEN-QUESTIONS.md) is still open: the plugin install command
   in the README is unverified, and everything above starts from a git clone and a `dotnet build`. **The
-  developer path is proved; the BIM user's path is not.**
+  developer path is proved; the BIM user's path is not.** *(Since: Q-38 is answered only as far as
+  "deferred to publication" - [D-42](DECISIONS.md) - so the plugin command is still unverified, and a
+  modeller's route is the release download and `HeronInstaller.exe`, whose download half has run -
+  below.)*
 
 **What has run since, recorded in the register rather than here.**
 
@@ -580,6 +658,9 @@ none of them was attempted here:
   built locally from `main`, fetched v0.1.0's add-in from the published release, checked each zip against
   its `checksums.txt`, installed it into Revit 2020, 2024, 2026 and 2027 and set up Heron's Python side;
   Revit 2026 then loaded Heron and connected from the ribbon.
+- **2026-10-18, the laptop again** ([Group EP](needs-checking/group-ep.md), EP3): a Python 3.10 and a 3.15,
+  each put first on the path for one run, were refused by name with the command that fixes it. Still
+  from a local build: the only published release is v0.1.0, which carries no Python half.
 
 So the download half of the BIM user's path has run. An update to a newer version - there is none yet -
 with its consent, a migration and version pinning have not.
