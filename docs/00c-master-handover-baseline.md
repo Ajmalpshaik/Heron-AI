@@ -7,8 +7,11 @@
 > [02 §7a](02-architecture-overview.md#7a-as-built--the-parts-that-run-today), the [README](../README.md)
 > and the [project map](PROJECT-MAP.md). Where this file and [DECISIONS.md](DECISIONS.md) differ,
 > **DECISIONS.md wins** ([PROJECT-MAP §D](PROJECT-MAP.md#d-truth-hierarchy--which-source-wins)).
-> Its text and diagrams are kept verbatim; where a section no longer matches what is built, a dated
-> **As built** note sits directly under it.
+> Its text and diagrams are kept verbatim, except where
+> [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)
+> corrects a wrong fact, or words an accepted decision has settled, with the original kept beside the
+> correction; where a section no longer matches what is built, a dated **As built** note sits directly
+> under it.
 
 > **Status:** Source-of-truth record, **part 3 of 4** — the consolidated **handover baseline**,
 > as provided by the owner on 2026-08-27.
@@ -20,8 +23,10 @@
 > | **Part 3 — this document** | **The consolidated baseline.** Supersedes nothing; unifies both. |
 > | [Part 4](00d-additional-requirements.md) | Additional requirements — the Kernel, Workflow Engine, Constitution and 30 mandatory components |
 >
-> **This part is authoritative on the Golden Rules** — it replaces Part 1's ten rules with fifteen.
-> See [14 — Golden Rules](14-golden-rules.md).
+> **This part is authoritative on the first fifteen Golden Rules** — it replaces Part 1's ten rules with
+> fifteen ([D-12](DECISIONS.md)). Rules 16 to 21 are binding as well — accepted by the owner on
+> 2026-08-28, closing [Q-19](open-questions/answered.md) — and are not in this part.
+> See [14 — Golden Rules](14-golden-rules.md), the binding list.
 >
 > **As built (2026-10-18):** the live list of Golden Rules is [14](14-golden-rules.md), not §78 below.
 > Rules 16 to 21 were accepted by the owner on 2026-08-28, closing [Q-19](OPEN-QUESTIONS.md), so §78's
@@ -29,6 +34,9 @@
 > `grep -c '^### [0-9]*\. ' docs/14-golden-rules.md`. The note under §78 has the difference.
 >
 > Verbatim record. Do not edit to "fix" it — record changes as decisions in [DECISIONS.md](DECISIONS.md).
+> The one correction a decision allows so far is [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)'s:
+> a wrong fact, or words an accepted decision has settled, corrected in place with the original kept
+> beside it, ~~struck through~~, and a wrong diagram folded under *Original diagram, as written*.
 
 | Field | Value |
 |---|---|
@@ -60,7 +68,7 @@
 
 This document defines the complete intended architecture and operating model of Heron AI, so that another AI, architect, programmer or development team can understand:
 
-What Heron AI is · why it is being built · how the system should work · how users interact with it · how Revit is connected · how MCP works · how RAG works · how fragments work · how skills work · how memory works · how agents work · how agents are created · how agents communicate · how knowledge is imported · how existing knowledge is detected · how knowledge evolves · how code is generated · how code is tested · how Revit compatibility is maintained · how GitHub is integrated · how updates work · how background processes work · how the system learns · how the system protects production knowledge · how the platform can grow into an enterprise-level system.
+What Heron AI is · why it is being built · how the system should work · how users interact with it · how Revit is connected · how MCP works · how RAG works · how fragments work · how skills work · how memory works · how agents work · how agents are created **(future)** · how agents communicate **(future)** · how knowledge is imported · how existing knowledge is detected · how knowledge evolves **(future)** · how code is generated · how code is tested · how Revit compatibility is maintained · how GitHub is integrated **(future)** · how updates work · how background processes work **(future)** · how the system learns **(future)** · how the system protects production knowledge · how the platform can grow into an enterprise-level system **(not built - deferred, D-41)**.
 
 **This document is the handover baseline.**
 
@@ -83,6 +91,13 @@ What Heron AI is · why it is being built · how the system should work · how u
 > | The fragment library | Mostly `PROVEN`, the rest `DRAFT` — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` | [D-30](DECISIONS.md) |
 > | Skills | Every one `DRAFT` — the same `grep` over `brain/skills/*.yaml` | [`brain/README.md`](../brain/README.md) |
 > | Everything else | Built, not proven, or not built — phase by phase | [ROADMAP](ROADMAP.md), [27 — Build order](27-build-order.md) |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the list above now marks what is future, as this section asks and [D-12](DECISIONS.md) adopted. *(future)*
+> marks a topic whose modules are `DRAFT` and reached by no conversation — agent creation, events,
+> evolution, the GitHub modules, the scheduler, learning: `python tools/module-reach.py --list` finds none
+> of them reachable from `mcp/`, and the notes under §11, §53, §30, §48, §51 and §46 say the same. The
+> enterprise system is marked deferred, not struck: [D-41](DECISIONS.md) keeps Heron single-user now.
 
 ## 2. Product Vision
 
@@ -115,9 +130,18 @@ The user should not need programming knowledge, nor to understand C#, .NET, the 
 ### 3.2 Internal Complexity
 
 ```text
+USER -> NATURAL LANGUAGE -> ORCHESTRATOR: CLAUDE CODE, THE HOST (D-01)
+-> SPECIALIZED AGENTS -> KNOWLEDGE -> TOOLS -> VALIDATION -> EXECUTION -> RESULT
+```
+
+<details><summary>Original block, as written - corrected under D-139</summary>
+
+```text
 USER -> NATURAL LANGUAGE -> HERON ORCHESTRATOR -> SPECIALIZED AGENTS
 -> KNOWLEDGE -> TOOLS -> VALIDATION -> EXECUTION -> RESULT
 ```
+
+</details>
 
 > **As built (2026-10-18):** the *HERON ORCHESTRATOR* box is Claude Code, the host — Heron never
 > classifies intent ([D-01](DECISIONS.md)). *VALIDATION* happens on both sides of *EXECUTION*: before it,
@@ -126,6 +150,12 @@ USER -> NATURAL LANGUAGE -> HERON ORCHESTRATOR -> SPECIALIZED AGENTS
 > changed and asks Keep or Discard ([D-126](DECISIONS.md), [D-138](DECISIONS.md)), and the answer carries
 > what the fragment reported, with a run record kept (`heron_run_record`). §5's note has the parts as
 > they run.
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *HERON ORCHESTRATOR* became the host, and the original block is folded above — [D-01](DECISIONS.md)
+> makes Claude Code the conversation layer and the agent host. *VALIDATION* before *EXECUTION* was right
+> and stays ([Golden Rule 17](14-golden-rules.md#17-no-autonomous-write-to-a-live-model-without-a-preview-or-a-proven-fragment),
+> [Article 9](../HERON_CONSTITUTION.md), [D-117](DECISIONS.md)).
 
 ## 4. Primary Platform Components
 
@@ -146,6 +176,8 @@ USER -> NATURAL LANGUAGE -> HERON ORCHESTRATOR -> SPECIALIZED AGENTS
 > | **Heron Platform** — [`platform/`](../platform/README.md) | `HeronInstaller.exe` and `heron-install`, configuration and the switches, the audit trail, permissions | The update system is one line after an install; the package manager, agent creation and GitHub agents are `brain/` modules, DRAFT; backup is `tools/heron-backup.py` |
 
 ## 5. High-Level Architecture
+
+<details><summary>Original block, as written - corrected under D-139</summary>
 
 ```text
                          HERON AI
@@ -174,8 +206,12 @@ USER -> NATURAL LANGUAGE -> HERON ORCHESTRATOR -> SPECIALIZED AGENTS
                           REVIT
 ```
 
-> **As built (2026-10-18)** — the diagram above is kept as the owner wrote it. This is the same stack as
-> it runs today; [02 §7a](02-architecture-overview.md#7a-as-built--the-parts-that-run-today) draws it in
+</details>
+
+> **As built (2026-10-18)** — the diagram above is kept as the owner wrote it, folded under *Original
+> block, as written*, and the diagram below replaces it
+> ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)).
+> This is the same stack as it runs today; [02 §7a](02-architecture-overview.md#7a-as-built--the-parts-that-run-today) draws it in
 > more detail. It shows parts, not every tool: `python mcp/server/heron_tools.py` lists those.
 
 ```mermaid
@@ -236,10 +272,16 @@ Heron Platform, platform/: installs and configures the add-in; config, switches,
 > | PLATFORM SYSTEM — updates, packages, GitHub, workspace | `platform/`: the installer, configuration, the switches, the audit trail. Updates, packages and GitHub: see §48 to §50 | [06](06-heron-platform.md), [Group AC](needs-checking/group-ac.md) |
 > | MCP LAYER | `mcp/server/`, over stdio to the host; Revit reached through a named pipe, local only. Off Windows the server serves its library tools alone | [D-02](DECISIONS.md), [D-132](DECISIONS.md) |
 > | HERON REVIT ADD-IN | `revit/`: the gate, one `ExternalEvent`, the fragment's C# compiled and run inside Revit | [D-09](DECISIONS.md), [D-28](DECISIONS.md) |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the owner's block drew *CONVERSATION AGENT* and *ORCHESTRATOR* inside Heron; both are the host's —
+> [D-01](DECISIONS.md), and the Orchestrator rows of [28](28-agent-registry.md), provided by the host
+> ([D-80](DECISIONS.md)). So the block is folded under *Original block, as written*, and the diagram in
+> this note stands in its place; the table above maps every box of the original.
 
 ## 6. The Orchestrator
 
-The central workflow coordinator. It does **not** perform every task itself. It determines:
+~~The central workflow coordinator.~~ **The central workflow coordinator is Claude Code, the host — not a part of Heron ([D-01](DECISIONS.md)).** It does **not** perform every task itself. It determines:
 
 What does the user want? · Which capability is required? · Which agents are required? · Which knowledge is required? · Which skill should be used? · Which fragment should be used? · What validations are required? · What execution path should be followed? · What should happen if something fails? · What should be learned afterward?
 
@@ -252,6 +294,10 @@ What does the user want? · Which capability is required? · Which agents are re
 > | What validations? | The add-in's gate, in code: the proof still stands, and the switches allow the risk | [D-117](DECISIONS.md), [12](12-security-and-permissions.md) |
 > | What if something fails? | Failure analysis is a table that never retries a change blindly (`mcp/server/heron_failure.py`) | [D-21](DECISIONS.md) |
 > | What should be learned? | `heron_gaps` reports what was asked for and could not be done; nothing promotes itself | [D-63](DECISIONS.md), [D-30](DECISIONS.md) |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the coordinator is named as the host — [D-01](DECISIONS.md), and the Orchestrator and Intent rows of
+> [28](28-agent-registry.md), provided by the host ([D-80](DECISIONS.md)).
 
 ## 7. Dynamic Agent Selection
 
@@ -260,9 +306,18 @@ Heron must not activate every agent for every request.
 *"Select all ducts."*
 
 ```text
+Claude Code, the host: the intent (D-01) -> Capability Registry -> RAG Librarian
+-> Revit Selection Agent -> Validation -> Execution
+```
+
+<details><summary>Original block, as written - corrected under D-139</summary>
+
+```text
 Intent Agent -> Capability Registry -> RAG Librarian
 -> Revit Selection Agent -> Validation -> Execution
 ```
+
+</details>
 
 A complex coding request can activate a much larger workflow.
 
@@ -271,6 +326,11 @@ A complex coding request can activate a much larger workflow.
 > request with no tool of its own goes `heron_lookup` → `revit_read`, `revit_show` or `revit_change`, by
 > capability. A coding request is the host's work, with the `heron-fragment-author` subagent when a new
 > fragment is needed (§73).
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *Intent Agent* became the host, which reads the intent, and the original block is folded above —
+> [D-01](DECISIONS.md), and the Intent row of [28](28-agent-registry.md), provided by the host
+> ([D-80](DECISIONS.md)). *Validation* before *Execution* was right and stays.
 
 ## 8. Agent Organization
 
@@ -287,6 +347,10 @@ Executive / Orchestration · Conversation · Revit · MCP · Knowledge / RAG · 
 > Personalization and Operations, Health & Resilience; and four were
 > added — MEP Design Engineering, Session & Bridge Management, Learning & Self-Growth, Reporting & Output.
 > Built is not proven: a department reads *built* when a source file's header claims each agent's id.
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> which organisation picture holds — this list, §79's tree, the parts' other pictures — is the owner's
+> choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ## 9. Agent Responsibility Rule
 
@@ -329,6 +393,10 @@ APPROVED / PRODUCTION / DEPRECATED / ARCHIVED
 > `brain/heron_deployment.py`, from [24](24-trust-model.md)); one vocabulary for every object is still
 > only proposed ([D-14](DECISIONS.md)). The Agent Creator may only ever assign `PROPOSED`
 > (`brain/heron_creator.py`, [Golden Rule 13](14-golden-rules.md)).
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> one status vocabulary is the owner's choice, still open — [D-14](DECISIONS.md) is Proposed, and code
+> that picked one does not make the pick — and it is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ## 11. Agent Creation System
 
@@ -365,12 +433,17 @@ A new agent should **not** become production-trusted immediately.
 
 New agents initially operate in **Shadow Mode**. They can analyze, suggest and compare results — but must **not** automatically modify production systems.
 
-After sufficient successful testing, the agent can be promoted.
+~~After sufficient successful testing,~~ **After at least one disagreement has been examined and explained, and a person has signed,** the agent can be promoted.
 
 > **As built (2026-10-18):** the harness exists — `brain/heron_shadow.py`, whose product is a log of
 > disagreements, never an agreement rate — and it is `DRAFT`, reached by no conversation. Promotion out of
 > shadow is decided on an **analysed disagreement, not a count of agreements**
 > ([D-39](DECISIONS.md)). No agent has been through it.
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *sufficient successful testing* became the two things promotion out of shadow needs — a disagreement
+> examined and explained, and a human signature, never a count ([D-39](DECISIONS.md),
+> [D-30](DECISIONS.md)).
 
 ## 15. Agent Performance
 
@@ -394,10 +467,14 @@ Historical information should remain available.
 > `DEPRECATED` or `ARCHIVED`, the two retired states the status ladder has (`RETIRED` in
 > `brain/heron_deployment.py`); `ACTIVE`, `REVIEW`, `REPLACEMENT` and `MIGRATION` are not states anything
 > records.
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> one lifecycle vocabulary is the owner's choice, still open — [D-14](DECISIONS.md) is Proposed — and it
+> is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ## 17. Conversation System
 
-Translates between the user and the technical system. It determines: user intent · user role · technical level · required response style · whether execution is requested · whether explanation is requested.
+~~Translates between the user and the technical system.~~ **Claude Code, the host, is the conversation layer: it translates between the user and the technical system ([D-01](DECISIONS.md)).** It determines: user intent · ~~user role · technical level · required response style~~ **the answer's shape, from the question's shape — role and technical level are not inferred ([D-27](DECISIONS.md))** · whether execution is requested · whether explanation is requested.
 
 > **As built (2026-10-18): the host does the conversation, and Heron has one voice.** Intent, and whether
 > to act or explain, are read by Claude Code ([D-01](DECISIONS.md)). Role and technical level are **not**
@@ -405,6 +482,11 @@ Translates between the user and the technical system. It determines: user intent
 > shape — a count gets a number, a breakdown a table ([D-27](DECISIONS.md)). The server's instructions ask
 > the chat for this (`brain/instructions/host.chat.yaml`); it is advice to a model, not a check
 > ([14, rule 1](14-golden-rules.md)).
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the conversation layer is named as the host ([D-01](DECISIONS.md)), and *user role · technical level ·
+> required response style* became the answer's shape, read from the question's — Heron has one voice and
+> infers no persona ([D-27](DECISIONS.md)).
 
 ## 18. BIM Modeler Mode
 
@@ -412,12 +494,18 @@ Translates between the user and the technical system. It determines: user intent
 
 Heron should **not** respond: *"FilteredElementCollector with OST_DuctCurves..."*
 
-Instead: *"All ducts are selected."*
+Instead: ~~*"All ducts are selected."*~~ ***"Selected 126 ducts in Tower-A.rvt."*** — the count, and the model it was done in.
 
 Technical details remain internal unless requested.
 
 > **As built (2026-10-18):** there is no mode to switch into — this is Heron's only voice
 > ([D-27](DECISIONS.md), §17's note).
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the reply names the count and the model — [Article 12b](../HERON_CONSTITUTION.md) *(state which
+> document you acted on, even for reads)*, [Golden Rule 20](14-golden-rules.md#20-bind-the-document-not-just-the-session),
+> and [27 Step 4](27-build-order.md#step-4--the-first-real-bim-answer), whose proof asks for exactly this
+> reply and gives this example.
 
 ## 19. Developer Mode
 
@@ -436,12 +524,22 @@ The same system therefore supports both BIM Modeler and Developer workflows.
 Not simply vector search. The workflow:
 
 ```text
+User Request -> Intent (the host, D-01) -> Domain Detection -> Knowledge Scope
+-> Metadata Filtering -> Keyword Search + Semantic (Vector) Search
+-> Ranking -> Trust Evaluation -> Conflict Detection -> Context Assembly
+```
+
+<details><summary>Original block, as written - corrected under D-139</summary>
+
+```text
 User Request -> Intent -> Domain Detection -> Knowledge Scope
 -> Keyword Search -> Semantic Search -> Vector Search -> Metadata Filtering
 -> Ranking -> Trust Evaluation -> Conflict Detection -> Context Assembly
 ```
 
-> **As built (2026-10-18):** the order is different, and on purpose. `brain/heron_retrieve.py` filters
+</details>
+
+> **As built (2026-10-18):** the order as written, folded above, is different, and on purpose. `brain/heron_retrieve.py` filters
 > **first**, then searches only what survives — [D-12](DECISIONS.md) adopted this section's Trust Evaluation
 > stage and rejected its placement of metadata filtering after the searches
 > ([20 §1](20-knowledge-trust-and-conflict.md)).
@@ -454,6 +552,12 @@ User Request -> Intent -> Domain Detection -> Knowledge Scope
 > | Ranking · Trust Evaluation | **Steps 3 and 4:** the two lists fused by reciprocal rank; a small nudge by status that may settle a near-tie and never overturn a clear winner; an optional re-reader of the top results when one is installed (`heron_rerank.py`, [D-134](DECISIONS.md)) |
 > | Conflict Detection | Two scopes answering one question with different numbers is said out loud, never settled (`heron_conflict.py`) — and the answer says how contested the ranking was |
 > | Context Assembly | What an agent is given and nothing else (`heron_context.py`, served as `heron_context`) |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *Metadata Filtering* moved before the searches, and *Semantic Search -> Vector Search* became one
+> route beside the keyword search — [D-12](DECISIONS.md) rejected filtering last and adopted the order of
+> [20 §1](20-knowledge-trust-and-conflict.md#1-rag-operating-system), which has two searches, fused;
+> `brain/heron_retrieve.py` runs that order. *Intent* is the host's ([D-01](DECISIONS.md)).
 
 ## 21. RAG Librarian Agent
 
@@ -500,6 +604,11 @@ This prevents accidental knowledge contamination.
 > no community store, and company knowledge, when it is shared, is a git repository
 > ([D-41](DECISIONS.md)). A project's store is named by the model's own identity, not its template's
 > ([D-113](DECISIONS.md)), and one scope cannot open another's file ([Golden Rule 5](14-golden-rules.md)).
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> one list of knowledge scopes — this one, §45's table and §79's *Memory* branch differ — is the owner's
+> choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md). `SCOPES` in
+> `brain/heron_scope.py` is code, and does not make the pick.
 
 ## 25. Fragment System
 
@@ -578,7 +687,7 @@ This is the main self-growing knowledge mechanism.
 
 ## 31. Revit Version Evolution
 
-A fragment works in Revit 2020–2022. Revit 2023 introduces an API change. Heron must first determine: **can the same implementation remain compatible?**
+A fragment works in Revit ~~2020–2022~~ **2020–2023**. Revit ~~2023~~ **2024** introduces an API change **— `ElementId` becomes 64-bit**. Heron must first determine: **can the same implementation remain compatible?**
 
 If yes — keep one implementation. If no — use an adapter or version-specific implementation.
 
@@ -609,6 +718,14 @@ The semantic capability remains the same.
 > release it claims (`tools/check-fragments-compile.py`). A compile is not a run: Heron has loaded in a
 > real Revit 2020, 2024, 2026 and 2027, and on 2026 no fragment has run yet
 > ([16 §6](16-version-support-strategy.md), [Group EQ](needs-checking/group-eq.md)).
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the example's break moved from 2023 to 2024. Revit 2023 changed nothing Heron compiles around: the
+> breaks are at 2021, 2022, 2024, 2025, 2026 and 2027 — the break table of the
+> [`revit-version-support`](../.claude/skills/revit-version-support/SKILL.md) skill and
+> [16 §2](16-version-support-strategy.md#2-the-two-breaks-that-matter) — and
+> `grep -rn REVIT2023 revit/` finds only the symbol list in `HeronFragmentSymbols.cs`. The bands in the
+> block are an illustration and are left as written.
 
 ## 32. Compatibility Agents
 
@@ -842,6 +959,11 @@ DRAFT -> TESTING -> VALIDATED -> PROVEN -> PRODUCTION -> DEPRECATED
 > against a named real model, with a negative case, signed by a person ([D-30](DECISIONS.md)), and back to
 > `DRAFT` when its code changes. One vocabulary for every kind of object is still only proposed
 > ([D-14](DECISIONS.md)).
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the status vocabulary, and whether `PROVEN` comes before `PRODUCTION` as here or at the top as in
+> [Part 4 §47](00d-additional-requirements.md), is the owner's choice, still open — [D-14](DECISIONS.md)
+> is Proposed — and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ## 45. Memory System
 
@@ -860,6 +982,10 @@ DRAFT -> TESTING -> VALIDATED -> PROVEN -> PRODUCTION -> DEPRECATED
 > holds the fragment library; a project's answers — its governing standards, its load and sprinkler runs —
 > are kept under the model's own identity and asked once ([D-111](DECISIONS.md), [D-113](DECISIONS.md)).
 > User memory (`brain/heron_memory.py`) is `DRAFT` and no conversation reaches it.
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> one list of scopes is the owner's choice, still open (§24's note), and is put to the owner in
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ## 46. Personal Learning
 
@@ -921,8 +1047,17 @@ The user receives: *"A new update is available. Update now?"*
 
 ```text
 Current Version -> Backup -> Dependency Analysis -> Compatibility Check
+-> Update: the installer installs a release built by CI (D-91, D-96) -> Test -> Health Check
+```
+
+<details><summary>Original block, as written - corrected under D-139</summary>
+
+```text
+Current Version -> Backup -> Dependency Analysis -> Compatibility Check
 -> Update -> Build -> Test -> Health Check
 ```
+
+</details>
 
 If the update fails: **Rollback**.
 
@@ -935,6 +1070,12 @@ If the update fails: **Rollback**.
 > | Update · **Build** | **No build on the user's PC.** CI builds; the installer downloads the release, checks every file against its `checksums.txt` and replaces what is there | [07 §3](07-installation-and-update.md), [D-96](DECISIONS.md) |
 > | Test · Health check | `tools/heron-ready.py --check` is the verdict at the end of an install; `heron_diagnose` and `revit_health` afterwards | [Group EP](needs-checking/group-ep.md) |
 > | Rollback | `tools/deploy-addin.ps1 -Rollback` restored every file on 2020, 2024 and 2027 on 2026-09-19 — the files, not a second load of Revit | [07 §10.6](07-installation-and-update.md) |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *Update -> Build* became an install of a release built by CI, and the original block is folded above —
+> product files come from a versioned release ([D-91](DECISIONS.md)), a downloaded Heron is installed by
+> the installer and only by it ([D-96](DECISIONS.md)), and nothing is built on the user's PC
+> ([07 §3](07-installation-and-update.md#3-note--significant-step-7-is-the-problem-heron-builds-required-components)).
 
 ## 51. Background Agents
 
@@ -964,6 +1105,11 @@ Background processes should slow down when Revit requires resources.
 > [Part 2 §50](00b-master-specification-agent-os.md)). `brain/heron_scheduler.py` holds the rule that
 > P2 to P6 never run during a user task, and fails closed — with no way to see the user, it dispatches
 > nothing. It is `DRAFT`, and nothing calls it.
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> one priority ladder is the owner's choice, still open — the parts give different ladders, and code that
+> picked one (`brain/heron_queue.py`) does not make the pick — and it is put to the owner in
+> [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ## 53. Event System
 
@@ -1000,7 +1146,7 @@ Agent Failure -> Failure Analysis -> Identify Cause -> Select Repair Agent
 | Failure | Response |
 |---|---|
 | MCP failure | Reconnect |
-| Missing dependency | Repair/install |
+| Missing dependency | ~~Repair/install~~ **Say what is missing and how to install it; the installer installs, never Heron on its own** |
 | Stale vector index | Rebuild |
 | Invalid fragment | Quarantine |
 | Broken configuration | Restore |
@@ -1017,6 +1163,13 @@ Agent Failure -> Failure Analysis -> Identify Cause -> Select Repair Agent
 > | Invalid fragment | One broken fragment costs that fragment, never the whole library | [D-48](DECISIONS.md) |
 > | Broken configuration | A missing file, or a value nobody can parse, reads as the default — and the switches default to off | `platform/Heron.Core/HeronConfig.cs` |
 > | Failed code | A failed change rolls back whole, in its one `TransactionGroup`; no repair workflow runs | [Golden Rule 16](14-golden-rules.md), §54's note |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *Repair/install* became naming what is missing, which settles this table against §56 — a package
+> install is one of §56's high-risk operations, and a high-risk action needs controlled approval
+> ([Golden Rule 9](14-golden-rules.md#9-high-risk-actions-require-controlled-approval)); a downloaded
+> Heron is installed by the installer and only by it ([D-96](DECISIONS.md)), from a versioned release
+> ([D-91](DECISIONS.md)).
 
 ## 56. Security
 
@@ -1096,7 +1249,7 @@ Canonical Knowledge -> Rebuild Embeddings -> Rebuild Index -> Restore RAG
 
 ## 61. Model Routing
 
-A Model Router determines the appropriate model based on task complexity · coding requirement · reasoning requirement · speed · cost · reliability.
+~~A Model Router determines~~ **The host, which makes the model calls, determines** the appropriate model based on task complexity · coding requirement · reasoning requirement · speed · cost · reliability.
 
 Simple task → efficient model. Complex architecture → stronger reasoning. Code generation → coding-capable model. Critical decision → strong model + validation.
 
@@ -1105,6 +1258,10 @@ Simple task → efficient model. Complex architecture → stronger reasoning. Co
 > Heron kept one clause: a result from a degraded or fallback model never counts as evidence toward a
 > proof. `brain/heron_router.py` declares a reasoning intent and never names a model; it is `DRAFT`, and
 > no conversation reaches it.
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *A Model Router* became the host — [D-65](DECISIONS.md) gives task-to-model routing to the host, which
+> makes every model call ([D-01](DECISIONS.md)); the clause itself stays, now named as the host's.
 
 ## 62. Token and Cost Optimization
 
@@ -1198,13 +1355,17 @@ Exposes: agent registry · workflow · fragments · skills · logs · RAG · dep
 
 ## 70. Admin Mode
 
-Controls: users · permissions · standards · company knowledge · packages · updates · agents · security · audit logs.
+Controls: users **(not built - deferred, D-41)** · permissions · standards · company knowledge · packages · updates · agents · security · audit logs.
 
 > **As built (2026-10-18): no Admin Mode.** There are no users to control ([D-41](DECISIONS.md)). What an
 > administrator would control is the owner's: the **Admin** and **Publish** switches on the ribbon, which
 > only the owner turns on ([D-106](DECISIONS.md)), and `heron.config` on the PC. A company's standards are
 > asked once per project and kept for it ([D-111](DECISIONS.md)); `brain/heron_company.py` cites a
 > company standard and is `DRAFT`.
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *users* is marked deferred, not struck — [D-41](DECISIONS.md) keeps Heron single-user now and leaves a
+> shared company scope for when there is demand.
 
 ## 71. Disaster Recovery
 
@@ -1225,16 +1386,22 @@ Restore -> Validate -> Rebuild Index -> Health Check
 
 *"Select all ducts."*
 
+<details><summary>Original block, as written - corrected under D-139</summary>
+
 ```text
 Conversation Agent -> Intent Agent -> Capability Registry -> RAG Librarian
 -> Fragment Matcher -> Revit Version Agent -> Revit Selection Agent
 -> MCP -> Revit -> Validation -> Success -> Memory/Telemetry
 ```
 
-User only sees: *"All ducts selected."*
+</details>
 
-> **As built (2026-10-18)** — the chain above is kept as the owner wrote it. The path that ran in Revit
-> 2020 and 2024 at Phase 0 is much shorter: the ducts were highlighted on screen and confirmed by eye
+User only sees: ~~*"All ducts selected."*~~ ***"Selected 126 ducts in Tower-A.rvt."*** — the count, and the model.
+
+> **As built (2026-10-18)** — the chain above is kept as the owner wrote it, folded under *Original
+> block, as written*, and the path below replaces it
+> ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)).
+> The path that ran in Revit 2020 and 2024 at Phase 0 is much shorter: the ducts were highlighted on screen and confirmed by eye
 > ([HANDOVER §3](HANDOVER.md), [Step 4](27-build-order.md)).
 
 ```mermaid
@@ -1288,10 +1455,29 @@ flowchart TD
 > count, per category, and names the model, so a selection made in the wrong model or one that found
 > nothing cannot pass as done ([Step 4](27-build-order.md)). Memory and telemetry are the audit line;
 > nothing is learned from the run.
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> the owner's chain began with a Conversation Agent and an Intent Agent, which are the host's
+> ([D-01](DECISIONS.md), and the rows of [28](28-agent-registry.md) provided by the host,
+> [D-80](DECISIONS.md)), and checked only after Revit had acted, where the binding rules bind and check
+> the model first ([Golden Rule 20](14-golden-rules.md#20-bind-the-document-not-just-the-session),
+> [Article 12a](../HERON_CONSTITUTION.md)). So it is folded, and the path drawn above stands in its place.
+> *"All ducts selected."* became a reply naming the count and the model ([Article 12b](../HERON_CONSTITUTION.md),
+> [27 Step 4](27-build-order.md#step-4--the-first-real-bim-answer)).
 
 ## 73. Real Example — New Tool
 
 *"Create a tool to automatically dimension ducts."*
+
+```text
+Requirement -> Existing Capability Search -> Existing Fragment Search
+-> Fragment Creation, at DRAFT -> Architecture -> Revit API -> .NET
+-> Code Generation -> Code Review -> Build -> Unit Test -> Revit Test
+-> Regression -> QA -> PROVEN on one recorded proof (D-30)
+-> Skill Creation -> Documentation -> Deployment
+```
+
+<details><summary>Original block, as written - corrected under D-139</summary>
 
 ```text
 Requirement -> Existing Capability Search -> Existing Fragment Search
@@ -1300,7 +1486,9 @@ Requirement -> Existing Capability Search -> Existing Fragment Search
 -> Skill Creation -> Fragment Creation -> Documentation -> Deployment
 ```
 
-> **As built (2026-10-18):** the order is the other way round — the fragment is made **first**, and the
+</details>
+
+> **As built (2026-10-18):** the order as written, folded above, is the other way round — the fragment is made **first**, and the
 > code is written into it, because its proof is bound to its files. In a chat, the host hands the job to
 > the [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) subagent, which searches the
 > library, widens an existing fragment where one nearly fits, otherwise writes a new one at `DRAFT`,
@@ -1309,6 +1497,14 @@ Requirement -> Existing Capability Search -> Existing Fragment Search
 > `PROVEN` only when a person signs a proof with a negative case ([D-30](DECISIONS.md)). There is no
 > deployment step: the fragment's C# is compiled inside Revit when it runs ([D-28](DECISIONS.md)). A skill
 > card is written only when the job needs words of its own (§43's note). §33's note draws the path.
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *Fragment Creation* moved to before the code is written, at `DRAFT`, and *PROVEN on one recorded proof*
+> follows QA — an important object has its identity and lifecycle from the start
+> ([Golden Rule 10](14-golden-rules.md#10-every-important-object-must-have-identity-version-and-lifecycle)),
+> a new fragment enters at the bottom of the lifecycle ([Article 20](../HERON_CONSTITUTION.md)), its proof
+> rests on its own files and goes stale when they change ([D-30](DECISIONS.md)), and a change is kept only
+> from a fragment whose proof still stands ([D-117](DECISIONS.md)).
 
 ## 74. Real Example — Import Existing Folder
 
@@ -1385,7 +1581,7 @@ USER WORK -> OBSERVATION -> EXECUTION -> RESULT -> SUCCESS / FAILURE
 | 2 | One agent should have one primary responsibility. |
 | 3 | Reuse proven knowledge before creating new knowledge. |
 | 4 | Never break a working Revit version unnecessarily. |
-| 5 | Personal knowledge must remain separate from company knowledge. |
+| 5 | ~~Personal knowledge must remain separate from company knowledge.~~ **Knowledge from one scope must remain separate from another — personal, company, and project.** |
 | 6 | Experimental knowledge must remain separate from production knowledge. |
 | 7 | One agent creates; another agent validates. |
 | 8 | Background work must not interfere with user work. |
@@ -1397,12 +1593,22 @@ USER WORK -> OBSERVATION -> EXECUTION -> RESULT -> SUCCESS / FAILURE
 | 14 | Every important autonomous operation must be auditable. |
 | 15 | The platform must be modular enough that individual agents, skills and fragments can be replaced without redesigning the entire system. |
 
+**Rules 16 to 21 are binding as well** — accepted by the owner on 2026-08-28, closing
+[Q-19](open-questions/answered.md), on the same footing as 1 to 15 — **and they live in
+[14 — Golden Rules](14-golden-rules.md), the binding list:**
+[16 — One user action, one undo — per document](14-golden-rules.md#16-one-user-action-one-undo--per-document) ·
+[17 — No autonomous write to a live model without a preview or a proven fragment](14-golden-rules.md#17-no-autonomous-write-to-a-live-model-without-a-preview-or-a-proven-fragment) ·
+[18 — Generated code never touches a live model on its first run](14-golden-rules.md#18-generated-code-never-touches-a-live-model-on-its-first-run) ·
+[19 — No text Heron reads may raise Heron's own permission level](14-golden-rules.md#19-no-text-heron-reads-may-raise-herons-own-permission-level) ·
+[20 — Bind the document, not just the session](14-golden-rules.md#20-bind-the-document-not-just-the-session) ·
+[21 — Re-read before acting. A preview expires](14-golden-rules.md#21-re-read-before-acting-a-preview-expires).
+
 > **As built (2026-10-18): fifteen here, more in force.** [14 — Golden Rules](14-golden-rules.md) is the
 > live list, and its *At a glance* table says where the code holds each rule and where a rule is policy
 > only. Rules 16 to 21 were accepted by the owner on 2026-08-28, closing [Q-19](OPEN-QUESTIONS.md), on the
 > same footing as 1 to 15; count the whole list with `grep -c '^### [0-9]*\. ' docs/14-golden-rules.md`.
 >
-> | # | What is different from the table above | Where |
+> | # | What is different from the table as the owner wrote it | Where |
 > |---|---|---|
 > | 5 | Worded today as *knowledge from one scope must remain separate from another — personal, company, and project*: project named explicitly, as Part 1's rule 5 had it | [D-26](DECISIONS.md) |
 > | 16 | One user action, one undo — per document | [14](14-golden-rules.md) |
@@ -1411,6 +1617,12 @@ USER WORK -> OBSERVATION -> EXECUTION -> RESULT -> SUCCESS / FAILURE
 > | 19 | No text Heron reads may raise Heron's own permission level | [14](14-golden-rules.md) |
 > | 20 | Bind the document, not just the session — from the field | [00e](00e-field-notes-proven-bridge.md) |
 > | 21 | Re-read before acting. A preview expires — from the field | [00e](00e-field-notes-proven-bridge.md) |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> rule 5 carries its binding words, project knowledge named
+> ([14, rule 5](14-golden-rules.md#5-knowledge-from-one-scope-must-remain-separate-from-another--personal-company-and-project),
+> [D-26](DECISIONS.md)), and the line under the table names rules 16 to 21, binding since
+> [Q-19](open-questions/answered.md) and kept in [14](14-golden-rules.md), which is the list of record.
 
 ## 79. Final Heron AI Organization
 
@@ -1450,13 +1662,17 @@ HERON AI
 > differ from this tree, and `python tools/agent-count.py` prints each with its state. *Executive /
 > Orchestrator* and *Conversation* are the host's ([D-01](DECISIONS.md), [D-80](DECISIONS.md)), and *Memory*
 > here has no *Temporary* branch, which is a scope as built (§45's note).
+>
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> one organisation picture and one list of knowledge scopes are the owner's choices, still open (§8's
+> and §24's notes), and are put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ## 80. North Star
 
 > A BIM professional should be able to work with Heron AI as if they are working with a highly
 > experienced engineering organization behind them.
 
-The user gives the requirement. Heron determines the process. Specialized agents perform the work. RAG provides knowledge. Fragments provide reusable implementation knowledge. Skills provide capabilities. MCP connects the AI to Revit. Revit executes the operation. QA validates the result. Memory records experience. Background agents maintain the system. The Evolution Engine improves the system.
+The user gives the requirement. ~~Heron determines the process.~~ **Claude Code, the host, determines the process; Heron's tools say which capability does the work.** Specialized agents perform the work. RAG provides knowledge. Fragments provide reusable implementation knowledge. Skills provide capabilities. MCP connects the AI to Revit. Revit executes the operation. QA validates the result. Memory records experience. Background agents maintain the system. The Evolution Engine improves the system.
 
 And the entire organization remains **modular, controlled, auditable and scalable**.
 
@@ -1475,10 +1691,67 @@ And the entire organization remains **modular, controlled, auditable and scalabl
 > *Modular, controlled, auditable*: held in code — the three doors take a capability, never a fragment
 > id; the add-in's gate; the audit trail ([14](14-golden-rules.md), rules 15, 9 and 14). *Scalable* to
 > more than one user is not built ([D-41](DECISIONS.md)).
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> *Heron determines the process* became the host — [D-01](DECISIONS.md), and the Orchestrator row of
+> [28](28-agent-registry.md), provided by the host ([D-80](DECISIONS.md)).
 
 ---
 
 ## Heron AI — Final Operating Model
+
+```text
+                HUMAN
+                  |
+                  v
+          NATURAL LANGUAGE
+                  |
+                  v
+             ORCHESTRATOR
+     (Claude Code, the host - D-01)
+                  |
+          +-------+-------+
+          v               v
+      KNOWLEDGE         AGENTS
+          |               |
+       RAG/Memory      Specialists
+          |               |
+          +-------+-------+
+                  v
+               SKILLS
+                  |
+                  v
+             FRAGMENTS
+                  |
+                  v
+              MCP / TOOLS
+                  |
+                  v
+              VALIDATION
+  (before the change: the proof still
+   stands, the switches allow it, the
+   model is re-read - D-117, Golden
+   Rules 17 and 21, Article 9)
+                  |
+                  v
+               REVIT
+                  |
+                  v
+              VALIDATION
+                  |
+                  v
+                RESULT
+                  |
+                  v
+              LEARNING
+                  |
+                  v
+              EVOLUTION
+                  |
+                  +--------> BACKGROUND
+```
+
+<details><summary>Original block, as written - corrected under D-139</summary>
 
 ```text
                 HUMAN
@@ -1523,8 +1796,10 @@ And the entire organization remains **modular, controlled, auditable and scalabl
                   +--------> BACKGROUND
 ```
 
-> **As built (2026-10-18)** — the model above is kept as the owner wrote it; §5's note draws the parts as
-> they run. Read top to bottom, it differs in four places:
+</details>
+
+> **As built (2026-10-18)** — the model as the owner wrote it is kept, folded above under *Original block,
+> as written*; §5's note draws the parts as they run. Read top to bottom, it differs in four places:
 >
 > | The model says | As built | Where |
 > |---|---|---|
@@ -1532,3 +1807,12 @@ And the entire organization remains **modular, controlled, auditable and scalabl
 > | VALIDATION after REVIT only | Checks run **before** the change too: the add-in refuses unless the fragment's proof still stands and the switches allow it. After it, Keep or Discard while *Ask to Keep* is on | [D-117](DECISIONS.md), [D-126](DECISIONS.md), [D-138](DECISIONS.md) |
 > | LEARNING → EVOLUTION | A report of what was asked and not done (`heron_gaps`), and a person signing each proof; evolution proposes and never acts | [D-63](DECISIONS.md), [D-30](DECISIONS.md) |
 > | BACKGROUND | Nothing runs in the background | §51's note |
+>
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
+> in the block above the fold, *ORCHESTRATOR* is named as the host ([D-01](DECISIONS.md)), and a
+> *VALIDATION* stands before *REVIT* as well as after it — a write needs a preview or a proven fragment
+> first ([Golden Rule 17](14-golden-rules.md#17-no-autonomous-write-to-a-live-model-without-a-preview-or-a-proven-fragment),
+> [Article 9](../HERON_CONSTITUTION.md)), the model is re-read before acting
+> ([Golden Rule 21](14-golden-rules.md#21-re-read-before-acting-a-preview-expires)), and a change is kept
+> only from a fragment whose proof still stands ([D-117](DECISIONS.md)). *LEARNING*, *EVOLUTION* and
+> *BACKGROUND* are left as written: no accepted decision moves them, and the table says what runs.
