@@ -174,8 +174,11 @@ def main():
                         ("ghp_" + "A1b2C3d4" * 3, "a forge token"),
                         ("github_pat_" + "x" * 20, "a fine-grained token"),
                         ("xoxb-1-2-3", "a chat token"),
-                        ("-----BEGIN RSA PRIVATE KEY-----", "a private key"),
-                        ("AKIAIOSFODNN7EXAMPLE", "a cloud key id")):
+                        # From pieces, like the four above, so the tree
+                        # carries no literal of the shape (D-139).
+                        ("-----BEGIN RSA " + "PRIVATE KEY-----",
+                         "a private key"),
+                        ("AK" + "IA" + "IOSFODNN7EXAMPLE", "a cloud key id")):
         answer = ask(settings(**{"ai-provider": value}))
         check(answer.get("refused") == "SECRET_IN_CONFIGURATION",
               "%s is refused" % what)

@@ -51,6 +51,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`check-signatures.py`](check-signatures.py) | a fragment the owner signed, still sitting at DRAFT | CI; `check-docs.py` §9 asks it too |
 | [`check-licence.py`](check-licence.py) | the licence on every fragment and skill Heron ships | CI; before bringing knowledge in from outside |
 | [`check-narrow-errors.py`](check-narrow-errors.py) | a broken database reported as an empty one | CI; after touching a `sqlite3` error handler |
+| [`check-secrets.py`](check-secrets.py) | a credential in a tracked file, or a tracked file named like one | CI; before pushing anything that holds a key, a token or a config |
 | [`check-products.py`](check-products.py) | the product manifest: a duplicate `addInId`, a `partOf` typo, a release the repository does not build | CI; after editing `platform/heron-products.json` |
 | [`check-decision-titles.py`](check-decision-titles.py) | a decision number keeps the title it was first written with | CI, on the whole history; before merging a new `D-nnn` |
 | [`check-routing.py`](check-routing.py) | every fragment still wins its own sentences; a routing row naming no capability fails | CI; after any change to a card's words |
@@ -1442,6 +1443,37 @@ can look for.
 
 It asks only that a handler **distinguishes the normal case from a fault** before swallowing —
 a check on the message and a `raise` — not any particular wording. Exits 1 on a finding.
+
+---
+
+## `check-secrets.py` — a credential in a file this repository publishes
+
+```bash
+python tools/check-secrets.py
+```
+
+**Article 17 and [D-07](../docs/DECISIONS.md) in one gate ([D-139](../docs/DECISIONS.md)).** This
+repository is public, so a key in a tracked file is published to every clone the moment it reaches
+`main`. [docs/12 §5a](../docs/12-security-and-permissions.md) asked for a scan as the second layer behind
+the redactor, and nothing ran one until 2026-10-18.
+
+It asks two questions, each of the one place that already owns the answer:
+
+- **the contents** of every tracked file, against `heron_secrets.PATTERNS` - the shapes the redactor
+  already takes out of a log, so a shape added there is caught here with no edit;
+- **the names** of every tracked file, against the **Secrets** block of [`.gitignore`](../.gitignore),
+  matched by git itself and **ignoring case on every system** - a Windows checkout ignores case and the
+  Linux runner does not, so without that a tracked `.ENV` failed locally and passed CI. `.gitignore`
+  stops a new file; it does nothing about one added with `git add -f` or tracked before its line was
+  written.
+
+It **never prints a value** - a finding is a file, a line, a column and a shape, and a file *name* goes
+through the redactor first. It reads only tracked files, never history; a symbolic link is scanned as
+the target text git publishes, never followed; a file with a UTF-16 mark - what PowerShell 5 writes with
+`>` - is read as text; a file that is not text is counted, not read. **There is no allow-list:** a test
+that needs a fake builds it from pieces, the way `heron_secrets.FAKE_FORGE_TOKEN` does. Exits 1 on a
+finding and 2 when it could not look - no git, not a checkout, no entries in the Secrets block, or a
+tracked file it could not open.
 
 ---
 

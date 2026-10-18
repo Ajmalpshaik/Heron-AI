@@ -52,10 +52,14 @@ Concrete protections:
 > **As built (2026-10-18):** 1 holds - the Python side keeps its data in `%USERPROFILE%\.heron`
 > ([D-135](DECISIONS.md)) and the add-in its own in `%APPDATA%\Heron` (`HeronPaths.Data`), never in the
 > checkout; 2 holds -
-> [`.gitignore`](../.gitignore) blocks the data class anyway. **3 is not built:** no secret or PII scan
-> was found in `tools/`, `.github/workflows/` or the hooks in `.claude/settings.json`.
-> [CONTRIBUTING.md](../CONTRIBUTING.md) names real model data and credentials as reasons a change is
-> rejected, which is a reviewer's check, not a scan.
+> [`.gitignore`](../.gitignore) blocks the data class anyway. **3 was not built** when this note was
+> written: no secret or PII scan was found in `tools/`, `.github/workflows/` or the hooks in
+> `.claude/settings.json`. [CONTRIBUTING.md](../CONTRIBUTING.md) names real model data and credentials as
+> reasons a change is rejected, which is a reviewer's check, not a scan.
+>
+> **3, the same day, half of it ([D-139](DECISIONS.md)):** the *secret* half is
+> [`tools/check-secrets.py`](../tools/check-secrets.py), a gate on every pull request. **The PII half is
+> still not built** - nothing scans a tracked file for a person's name, address or e-mail.
 
 ### 2a. As built — what is public, what stays on the PC, what never leaves (2026-10-18)
 
