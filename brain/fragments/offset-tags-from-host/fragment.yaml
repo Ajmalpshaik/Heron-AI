@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -256,6 +256,70 @@ contract:
       # (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312,
+    alreadyThere 0 item(s), elementTagHasModel false, everyCategory false, fromBoxCentre 0,
+    invariant CultureInfo, keepHead false, leaderMode -1, leaderNotAsAsked 0 item(s), leaderWord
+    keep, leadersOn 0, moved 1, noDirection 0 item(s), noHostLocation 0 item(s), notInView
+    0 item(s), notSupported 0 item(s), notTags 0 item(s), number Func`2, offAxis 0 item(s),
+    offsetRightMm 500, offsetUpMm 0, orientHorizontal false, orientMode -1, orientModel false,
+    orientToHost false, orientVertical false, orientationName Func`2, orientationsGiven 0
+    item(s), otherCategory 0 item(s), reasons 0 item(s), refusal (null), refused 0 item(s),
+    report 1 tag(s) moved to 500 mm right and 0 mm up on paper from their own element (50000
+    and 0 mm in the model at 1:100), each leader left as it was, each turned as it was. 0
+    turned. 0 already there. Read back: every moved head within 0 mm of its target on paper;
+    0 with a leader on; 1 Horizontal, 0 Vertical and 0 Model among the tags moved or already
+    there. Left alone: 0 of a category not asked for, 0 in another view, 0 not tags. No element
+    location: 0. Measured from the element''s box centre: 0. No direction to follow: 0. Turned
+    to the nearer of Horizontal and Vertical while running off both: 0. Not supported: 0.
+    Leader not as asked: 0. Refused: 0. Viewport on A101: box centre (422.5, 296) mm before
+    and (571.11, 296) mm after, and the box changed size from 529.87 x 529.93 to 827.09 x
+    529.93 mm. NOT put back: a box that grew moves its centre without moving the plan. Check
+    the sheet, scale 100, turned 0, viewportKept Viewport on A101: box centre (422.5, 296)
+    mm before and (571.11, 296) mm after, and the box changed size from 529.87 x 529.93 to
+    827.09 x 529.93 mm. NOT put back: a box that grew moves its centre without moving the
+    plan. Check the sheet, wanted HashSet`1. inputs came view as given; elements from the
+    selection (1); tagCategories as given (1); offsetRightMm as given; offsetUpMm as given;
+    addLeader as given; orientHorizontal not given - false (optional); orientVertical not
+    given - false (optional); orientModel not given - false (optional); orientToHost not given
+    - false (optional); keepHead not given - false (optional). on Project1'
+  negative_case: 'run with addLeader=keep, categoryName=Door Tags, inViewOnly=FloorPlan: Level
+    1, offsetRightMm=500, offsetUpMm=0, tagCategories=Room Tags, view=FloorPlan: Level 1 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MmToFeet 0.00328083989501312, alreadyThere 0 item(s), elementTagHasModel
+    false, everyCategory false, fromBoxCentre 0, invariant CultureInfo, keepHead false, leaderMode
+    -1, leaderNotAsAsked 0 item(s), leaderWord keep, leadersOn 0, moved 0, noDirection 0 item(s),
+    noHostLocation 0 item(s), notInView 0 item(s), notSupported 0 item(s), notTags 0 item(s),
+    number Func`2, offAxis 0 item(s), offsetRightMm 500, offsetUpMm 0, orientHorizontal false,
+    orientMode -1, orientModel false, orientToHost false, orientVertical false, orientationName
+    Func`2, orientationsGiven 0 item(s), otherCategory 1 item(s) [345556], reasons 0 item(s),
+    refusal (null), refused 0 item(s), report 0 tag(s) moved to 500 mm right and 0 mm up on
+    paper from their own element (50000 and 0 mm in the model at 1:100), each leader left
+    as it was, each turned as it was. 0 turned. 0 already there. Read back: every moved head
+    within 0 mm of its target on paper; 0 with a leader on; 0 Horizontal, 0 Vertical and 0
+    Model among the tags moved or already there. Left alone: 1 of a category not asked for,
+    0 in another view, 0 not tags. No element location: 0. Measured from the element''s box
+    centre: 0. No direction to follow: 0. Turned to the nearer of Horizontal and Vertical
+    while running off both: 0. Not supported: 0. Leader not as asked: 0. Refused: 0. Viewport
+    on A101: box centre (422.5, 296) mm before and (422.5, 296) mm after - it did not move,
+    scale 100, turned 0, viewportKept Viewport on A101: box centre (422.5, 296) mm before
+    and (422.5, 296) mm after - it did not move, wanted HashSet`1. inputs came view as given;
+    elements from the selection (1); tagCategories as given (1); offsetRightMm as given; offsetUpMm
+    as given; addLeader as given; orientHorizontal not given - false (optional); orientVertical
+    not given - false (optional); orientModel not given - false (optional); orientToHost not
+    given - false (optional); keepHead not given - false (optional). on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c777e60d43c319bf
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

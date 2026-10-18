@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,6 +99,69 @@ contract:
     - name: findings
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project2, Family1 - active was Project2,
+    Revit 2020, session 13520'
+  positive_case: 'run as it would normally be run. returned CubicFeetToCubicMetres 0.028316846592,
+    FeetToMetres 0.3048, SquareFeetToSquareMetres 0.09290304, airflowSymbol L/s, backslash
+    \, calculator SpatialElementGeometryCalculator, doorsCategory 1 item(s) [id -2000023],
+    esc Func`2, fieldNames 3 item(s) [Design Cooling Load, Design Heating Load, Specified
+    Supply Airflow], findingRows 2 item(s) ["Space 1 Space 1: no element bounds its top face
+    - make the ..., "Space 2 Space 2: no element bounds its top face - make the ...], findings
+    2 item(s) [Space 1 Space 1: no element bounds its top face - make the c..., Space 2 Space
+    2: no element bounds its top face - make the c...], heights 3 item(s) [FAMILY_HEIGHT_PARAM,
+    FAMILY_HEIGHT_PARAM, FAMILY_HEIGHT_PARAM], includeLinks false, invariant CultureInfo,
+    length Func`4, linkedNotRead 0 entry(ies), linksSearched 0, metres Func`2, middleOf Func`3,
+    num Func`2, numOrNull Func`2, onThisFace Func`4, options SpatialElementBoundaryOptions,
+    panelHeights 1 item(s) [CURTAIN_WALL_PANELS_HEIGHT], panelWidths 1 item(s) [CURTAIN_WALL_PANELS_WIDTH],
+    phase Phase, placeAt Func`3, placedOpenings HashSet`1, point Func`2, powerSymbol W, quote
+    ", seenOpenings 0 entry(ies), shown Func`3, siteJson {"latitude_deg":42.358662,"longitude_deg":-71.05674,"utc_offset_h":-5,"elevation_m":4.8768,"project_to_true_north_deg":0,"named":"Boston,
+    MA"}, spaceRows 2 item(s) [{"id":"345464","unique_id":"b0af5cdc-5ff0-412e-a8d6-081ab2f9...,
+    {"id":"345465","unique_id":"b0af5cdc-5ff0-412e-a8d6-081ab2f9...], spaces 2, symbolOf Func`2,
+    takeoffJson {"format":1,"document":"Project2","units":{"power":"W","airflow":"L/s"},"site":{"latitude_deg":42.358662,"longitude_deg":-71.05674,"utc_offset_h":-5,"elevation_m":4.8768,"project_to_true_north_deg":0,"named":"Boston,
+    MA"},"links_read":0,"types":{"339":{"name":"Floor: Generic 150mm","category":"Floors","u_w_m2k":null,"shgc":null,"absorptance":0.7,"link":null},"398":{"name":"Basic
+    Wall: Generic - 200mm","category":"Walls","u_w_m2k":null,"shgc":null,"absorptance":0.7,"link":null}},"spaces":[{"id":"345464","unique_id":"b0af5cdc-5ff0-412e-a8d6-081ab2f91604-00054578","number":"1","name":"Space
+    1","level":"Level 1","area_m2":27.84,"volume_m3":0,"height_m":4,"zone":"Default","space_type":null,"placed":true,"current":{"Design
+    Cooling Load":"0 W","Design Heating Load":"0 W","Specified Supply Airflow":"0.0 L/s"},"terminals":[],"faces":[{"element":null,"type":null,"link":null,"bounded_by":"nothing","side":"top","normal":[0,0,1],"area_m2":27.84,"beyond":"unknown","beyond_space":null,"loops":[[[0.1,0.1,4],[4.9,0.1,4],[4.9,5.9,4],[0.1,5.9,4]]],"openings":[]},{"element":"345446","type":"339","link":null,"bounded_by":"element","side":"bottom","normal":[0,0,-1],"area_m2":27.84,"beyond":"unknown","beyond_space":null,"loops":[[[0.1,0.1,0],[0.1,5.9,0],[4.9,5.9,0],[4.9,0.1,0]]],"openings":[]},{"element":"345432","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[0,-1,0],"area_m2":14.4,"beyond":"outside","beyond_space":null,"loops":[[[0.1,0.1,3],[0.1,0.1,0],[4.9,0.1,0],[4.9,0.1,3]]],"openings":[]},{"element":"345436","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[1,0,0],"area_m2":17.4,"beyond":"space","beyond_space":"345465","loops":[[[4.9,0.1,3],[4.9,0.1,0],[4.9,5.9,0],[4.9,5.9,3]]],"openings":[]},{"element":"345434","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[0,1,0],"area_m2":14.4,"beyond":"outside","beyond_space":null,"loops":[[[4.9,5.9,3],[4.9,5.9,0],[0.1,5.9,0],[0.1,5.9,3]]],"openings":[]},{"element":"345435","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[-1,0,0],"area_m2":17.4,"beyond":"outside","beyond_space":null,"loops":[[[0.1,5.9,3],[0.1,5.9,0],[0.1,0.1,0],[0.1,0.1,3]]],"openings":[]}]},{"id":"345465","unique_id":"b0af5cdc-5ff0-412e-a8d6-081ab2f91604-00054579","number":"2","name":"Space
+    2","level":"Level 1","area_m2":27.84,"volume_m3":0,"height_m":4,"zone":"Default","space_type":null,"placed":true,"current":{"Design
+    Cooling Load":"0 W","Design Heating Load":"0 W","Specified Supply Airflow":"0.0 L/s"},"terminals":[],"faces":[{"element":null,"type":null,"link":null,"bounded_by":"nothing","side":"top","normal":[0,0,1],"area_m2":27.84,"beyond":"unknown","beyond_space":null,"loops":[[[5.1,0.1,4],[9.9,0.1,4],[9.9,5.9,4],[5.1,5.9,4]]],"openings":[]},{"element":"345446","type":"339","link":null,"bounded_by":"element","side":"bottom","normal":[0,0,-1],"area_m2":27.84,"beyond":"unknown","beyond_space":null,"loops":[[[5.1,0.1,0],[5.1,5.9,0],[9.9,5.9,0],[9.9,0.1,0]]],"openings":[]},{"element":"345432","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[0,-1,0],"area_m2":14.4,"beyond":"outside","beyond_space":null,"loops":[[[5.1,0.1,3],[5.1,0.1,0],[9.9,0.1,0],[9.9,0.1,3]]],"openings":[]},{"element":"345433","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[1,0,0],"area_m2":17.4,"beyond":"outside","beyond_space":null,"loops":[[[9.9,0.1,3],[9.9,0.1,0],[9.9,5.9,0],[9.9,5.9,3]]],"openings":[]},{"element":"345434","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[0,1,0],"area_m2":14.4,"beyond":"outside","beyond_space":null,"loops":[[[9.9,5.9,3],[9.9,5.9,0],[5.1,5.9,0],[5.1,5.9,3]]],"openings":[]},{"element":"345436","type":"398","link":null,"bounded_by":"element","side":"wall","normal":[-1,0,0],"area_m2":17.4,"beyond":"space","beyond_space":"345464","loops":[[[5.1,5.9,3],[5.1,5.9,0],[5.1,0.1,0],[5.1,0.1,3]]],"openings":[]}]}],"findings":["Space
+    1 Space 1: no element bounds its top face - make the ceiling, roof, floor or wall there
+    room-bounding, or set the Space''s limits.","Space 2 Space 2: no element bounds its top
+    face - make the ceiling, roof, floor or wall there room-bounding, or set the Space''s
+    limits."]}, terminalsBySpace 0 entry(ies), thermal Func`3, thicknessOf Func`3, typeKey
+    Func`5, typeRows 2 item(s) ["339":{"name":"Floor: Generic 150mm","category":"Floors","u_...,
+    "398":{"name":"Basic Wall: Generic - 200mm","category":"Wall...], types 2 entry(ies),
+    uParameter BuiltInParameter, uValue Func`2, widths 3 item(s) [FURNITURE_WIDTH, FURNITURE_WIDTH,
+    FURNITURE_WIDTH], windowsCategory 1 item(s) [id -2000014]. inputs came includeLinks as
+    given. on Project2'
+  negative_case: 'run against ''Family1'' with categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1, includeLinks=False instead - chosen because it should not contain what this fragment
+    reports. returned CubicFeetToCubicMetres 0.028316846592, FeetToMetres 0.3048, SquareFeetToSquareMetres
+    0.09290304, airflowSymbol (null), backslash \, calculator SpatialElementGeometryCalculator,
+    doorsCategory 1 item(s) [id -2000023], esc Func`2, fieldNames 3 item(s) [Design Cooling
+    Load, Design Heating Load, Specified Supply Airflow], findingRows 2 item(s) ["The model''s
+    True North could not be read.", "The model has no MEP Spaces. Rooms carry no load - place
+    Sp...], findings 2 item(s) [The model''s True North could not be read., The model has
+    no MEP Spaces. Rooms carry no load - place Spa...], heights 3 item(s) [FAMILY_HEIGHT_PARAM,
+    FAMILY_HEIGHT_PARAM, FAMILY_HEIGHT_PARAM], includeLinks false, invariant CultureInfo,
+    length Func`4, linkedNotRead 0 entry(ies), linksSearched 0, metres Func`2, middleOf Func`3,
+    num Func`2, numOrNull Func`2, onThisFace Func`4, options SpatialElementBoundaryOptions,
+    panelHeights 1 item(s) [CURTAIN_WALL_PANELS_HEIGHT], panelWidths 1 item(s) [CURTAIN_WALL_PANELS_WIDTH],
+    phase (null), placeAt Func`3, placedOpenings HashSet`1, point Func`2, powerSymbol (null),
+    quote ", seenOpenings 0 entry(ies), shown Func`3, siteJson {"latitude_deg":null,"longitude_deg":null,"utc_offset_h":null,"elevation_m":null,"project_to_true_north_deg":null,"named":null},
+    spaceRows 0 item(s), spaces 0, symbolOf Func`2, takeoffJson {"format":1,"document":"Family1","units":{"power":null,"airflow":null},"site":{"latitude_deg":null,"longitude_deg":null,"utc_offset_h":null,"elevation_m":null,"project_to_true_north_deg":null,"named":null},"links_read":0,"types":{},"spaces":[],"findings":["The
+    model''s True North could not be read.","The model has no MEP Spaces. Rooms carry no load
+    - place Spaces first."]}, terminalsBySpace 0 entry(ies), thermal Func`3, thicknessOf Func`3,
+    typeKey Func`5, typeRows 0 item(s), types 0 entry(ies), uParameter BuiltInParameter, uValue
+    Func`2, widths 3 item(s) [FURNITURE_WIDTH, FURNITURE_WIDTH, FURNITURE_WIDTH], windowsCategory
+    1 item(s) [id -2000014]. inputs came includeLinks as given. on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 8997ec4cdeca5182
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

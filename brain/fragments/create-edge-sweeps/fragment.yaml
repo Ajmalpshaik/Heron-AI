@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned edgeCount 4,
+    findings 2 item(s) [1 slab edge(s) of "Slab Edge" made along 4 edge(s), read bac..., 345449:
+    slab edge along 4 edge(s).], lines 1 item(s) [345449: slab edge along 4 edge(s).], made
+    1, options Options, refusal (null), report 345449: slab edge along 4 edge(s)., sweepIds
+    1 item(s) [345790], type SlabEdgeType, typeClass RuntimeType, what slabedge. inputs came
+    elements from filter-elements-by-category (1); kind as given; typeName as given. on Project1'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, kind=slab
+    edge, typeName=Slab Edge arranged with category=Walls, levelId=Level 1 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running filter-elements-by-category with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    edgeCount 0, findings 7 item(s) [0 slab edge(s) of "Slab Edge" made along 0 edge(s), read
+    bac..., 345432: a slab edge goes on a floor, and this is not one., 345433: a slab edge
+    goes on a floor, and this is not one., ...], lines 6 item(s) [345432: a slab edge goes
+    on a floor, and this is not one., 345433: a slab edge goes on a floor, and this is not
+    one., 345434: a slab edge goes on a floor, and this is not one., ...], made 0, options
+    Options, refusal (null), report 345432: a slab edge goes on a floor, and this is not one.
+    | 345433: a slab edge goes on a floor, and this is not one. | 345434: a slab edge goes
+    on a floor, and this is not one. | 345435: a slab edge goes on a floor, and this is not
+    one. | 345436: a slab edge goes on a floor, and this is not one. | 345557: a slab edge
+    goes on a floor, and this is not one., sweepIds 0 item(s), type SlabEdgeType, typeClass
+    RuntimeType, what slabedge. inputs came elements from filter-elements-by-category (6);
+    kind as given; typeName as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a5253eff4711ea5f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

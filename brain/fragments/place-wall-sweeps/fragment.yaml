@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,6 +69,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    category BuiltInCategory, findings 1 item(s) [6 sweep(s) of "Cornice" made on the exterior
+    side at 2500 mm...], heightMm 2500, lines 0 item(s), made 6, refusal (null), report ,
+    reveal false, sideText exterior, sweepIds 6 item(s) [345784, 345785, 345786, ...], type
+    ElementType, types 1 item(s) [Cornice], wantedType Cornice. inputs came elements from
+    the selection (6); sweepTypeName as given; side as given; heightMm as given; reveal as
+    given. on Project1
+  negative_case: 'run with categoryName=Text Notes, heightMm=2500, inViewOnly=FloorPlan: Level
+    1, reveal=False, side=exterior, sweepTypeName=Cornice instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    category BuiltInCategory, findings 2 item(s) [0 sweep(s) of "Cornice" made on the exterior
+    side at 2500 mm..., 345498: not a wall.], heightMm 2500, lines 1 item(s) [345498: not
+    a wall.], made 0, refusal (null), report 345498: not a wall., reveal false, sideText exterior,
+    sweepIds 0 item(s), type ElementType, types 1 item(s) [Cornice], wantedType Cornice. inputs
+    came elements from the selection (1); sweepTypeName as given; side as given; heightMm
+    as given; reveal as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ca282e202c8f2fda
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

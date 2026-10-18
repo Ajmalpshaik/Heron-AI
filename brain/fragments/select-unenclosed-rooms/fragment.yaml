@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -119,23 +119,33 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,425 elements), Revit 2024, session 20224
-  positive_case: run as it would normally be run. returned candidates 3 item(s) [Room 1, Room
-    2, Room 3], elements 2 item(s) [Room 2, Room 3], includeRooms true, includeSpaces false,
-    roomsChecked 3, unenclosed 2 item(s) [925712, 925713], unplaced 0 item(s). inputs came
-    includeRooms as given; includeSpaces as given. on test projject
-  negative_case: run with includeRooms=false, includeSpaces=true instead - chosen because
-    it should not contain what this fragment reports. returned candidates 0 item(s), elements
-    0 item(s), includeRooms false, includeSpaces true, roomsChecked 0, unenclosed 0 item(s),
-    unplaced 0 item(s). inputs came includeRooms as given; includeSpaces as given. on test
-    projject
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    place-room-at-point with this phase's own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned candidates 3 item(s) [Room
+    1, Room 2, Room], elements 1 item(s) [Room], includeAreas false, includeLinks false, includeRooms
+    true, includeSpaces false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s),
+    linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, nestedLinks 0, roomsChecked 3, unenclosed 1 item(s) [345565], unplaced
+    0 item(s). inputs came includeRooms as given; includeSpaces as given; includeAreas as
+    given; includeLinks not given - false (optional). on Project1
+  negative_case: 'run with asSpace=False, categoryName=Text Notes, inViewOnly=FloorPlan: Level
+    1, includeAreas=False, includeRooms=False, includeSpaces=True, level=Level 1, points=30000,30000,0
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running place-room-at-point with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    candidates 2 item(s) [Space 1, Space 2], elements 0 item(s), includeAreas false, includeLinks
+    false, includeRooms false, includeSpaces true, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, nestedLinks 0, roomsChecked 2, unenclosed 0 item(s), unplaced
+    0 item(s). inputs came includeRooms as given; includeSpaces as given; includeAreas as
+    given; includeLinks not given - false (optional). on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: bb00b9831629bf23
-
+  fingerprint: 8a806180ecbe4893
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
