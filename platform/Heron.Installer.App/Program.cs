@@ -107,7 +107,7 @@ namespace Heron.Installer.App
                                                IReadOnlyList<string> releases,
                                                IReadOnlyList<InstallStep> removals)
             {
-                Install(window, manifest, root, revit, deployer, products, releases, removals);
+                Install(window, screen, manifest, root, revit, deployer, products, releases, removals);
             };
 
             return new Application().Run(window);
@@ -119,6 +119,7 @@ namespace Heron.Installer.App
         /// user kills halfway through an install.
         /// </summary>
         private static void Install(InstallerWindow window,
+                                    InstallerScreen screen,
                                     ProductManifest manifest,
                                     string root,
                                     IRevitEnvironment revit,
@@ -136,7 +137,9 @@ namespace Heron.Installer.App
 
             var worker = new Thread(delegate ()
             {
+                ShowWhatIsOpen(window, screen, revit);
                 var report = engine.Apply(manifest, products, releases, removals);
+                ShowWhatIsOpen(window, screen, revit);
 
                 // THE OTHER HALF OF ONE INSTALL, ON THE SAME THREAD - pip and
                 // the knowledge store take minutes, and the window says each
@@ -153,10 +156,29 @@ namespace Heron.Installer.App
                     python = setup.RunAndSave(PythonSetup.LogPath()).Shown;
                 }
 
+                ShowWhatIsOpen(window, screen, revit);
                 window.Dispatcher.Invoke(delegate { window.Report(report, python); });
             });
             worker.IsBackground = true;
             worker.Start();
+        }
+
+        /// <summary>
+        /// The line above the report, worked out again from the Revits open
+        /// now and drawn - when a run starts, when the add-in half is done,
+        /// and before the report. Row 5b-1068: worked out once, when the
+        /// window opened, it still said Revit 2026 was open after Revit had
+        /// closed and the install had ended READY.
+        ///
+        /// ON THE WORKER THREAD, because asking Windows starts PowerShell;
+        /// only the drawing goes back onto the window's.
+        /// </summary>
+        private static void ShowWhatIsOpen(InstallerWindow window,
+                                           InstallerScreen screen,
+                                           IRevitEnvironment revit)
+        {
+            screen.RefreshCloseRevitFirst(revit.RunningRevits());
+            window.Dispatcher.Invoke(delegate { window.RedrawCloseRevitFirst(); });
         }
 
         /// <summary>
