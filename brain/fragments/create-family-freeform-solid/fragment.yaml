@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -107,6 +107,56 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Family1, Revit 2020, session 13520 - the count is NOT recorded because 3,035 elements
+    was measured on Project2, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned apart Func`3, areas 1 item(s) [153.876226690783],
+    axesFacing Func`2, built Solid freeform sweep of a 1-loop profile (153.88 mm2, reaching
+    7 mm from the path) along a right-hand helix of 6 turn(s) round Z, radius 55 mm, pitch
+    25 mm, from 55,0,0 - a smooth curve through 97 points, 2078.92 mm long. Reads X -62 to
+    62, Y -62 to 62, Z -6.98 to 156.94 mm; volume 0.295 L., coiled true, feet Func`2, findings
+    4 item(s) [Built: Solid freeform sweep of a 1-loop profile (153.88 mm2,..., NOT PARAMETRIC.
+    A freeform form is a fixed shape, kept as it..., The profile was laid square to the path''s
+    start, its first c..., ...], formId dff1df74-a6f1-49fe-acd3-169ec0b5980e-00000a7a, how
+    sweep, invariant CultureInfo, laid Func`5, lay Func`6, length 2078.92213918372, lofting
+    false, loopOf Func`3, loops 1 item(s) [Autodesk.Revit.DB.CurveLoop], mm Func`2, notAFamily
+    false, number Func`2, numbers Func`3, outlines 1 item(s) [System.Collections.Generic.List`1[System.Func`4[Autodesk.Rev...],
+    pathLoop CurveLoop, plain Func`2, problems 0 item(s), reach 7.00000000000001, refused
+    (null), roundStarts 1 entry(ies), route 1 item(s) [Autodesk.Revit.DB.HermiteSpline], routeSaid
+    a right-hand helix of 6 turn(s) round Z, radius 55 mm, pitch 25 mm, from 55,0,0 - a smooth
+    curve through 97 points, sections 0 item(s), shortest 0.7803686370625, solid true, spot
+    Func`2, square 2 item(s) [(0.999949948, -0.010005041, 0.000000000), (-0.000718994, -0.071859544,
+    0.997414502)], startParameter 0, tidy Func`2. inputs came kind as given; profiles as given;
+    path as given; solid as given. on Family1'
+  negative_case: run with categoryName=Walls, inViewOnly=Heron 3D, kind=sweep, path=spline
+    0,0,0; 1000,1000,0; 1000,0,0; 0,1000,0, profiles=circle 0,0 20, solid=true instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned apart Func`3, areas
+    1 item(s) [1256.1324627819], axesFacing Func`2, built , coiled false, feet Func`2, findings
+    1 item(s) [Nothing was built. The path comes within 7.59 mm of itself, ...], formId ,
+    how sweep, invariant CultureInfo, laid Func`5, lay Func`6, length 4673.63746064263, lofting
+    false, loopOf Func`3, loops 1 item(s) [Autodesk.Revit.DB.CurveLoop], mm Func`2, notAFamily
+    false, number Func`2, numbers Func`3, outlines 1 item(s) [System.Collections.Generic.List`1[System.Func`4[Autodesk.Rev...],
+    pathLoop CurveLoop, plain Func`2, problems 1 item(s) [The path comes within 7.59 mm of
+    itself, near 208.86,503.8,0...], reach 20, refused Nothing was built. The path comes within
+    7.59 mm of itself, near 208.86,503.8,0 and again near 208.86,496.2,0, 3582.78 mm further
+    along it - less than twice the 20 mm the profile reaches from it, so the form would run
+    into itself. Revit builds such a sweep without complaint, as a solid that is not whole
+    (measured), so it is refused here. Space the path out or make the profile smaller., roundStarts
+    1 entry(ies), route 1 item(s) [Autodesk.Revit.DB.HermiteSpline], routeSaid a smooth path
+    through 4 points from 0,0,0, sections 0 item(s), shortest 0.7803686370625, solid true,
+    spot Func`2, square 2 item(s) [(0.935476413, -0.353389134, 0.000000000), (0.000000000,
+    0.000000000, 1.000000000)], startParameter 0, tidy Func`2. inputs came kind as given;
+    profiles as given; path as given; solid as given. on Family1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6f337d5ecf03de86
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

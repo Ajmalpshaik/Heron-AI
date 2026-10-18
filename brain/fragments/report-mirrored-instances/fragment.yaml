@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -75,6 +75,33 @@ contract:
       # things found (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection, mirror-elements with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned categoryIds 1 item(s) [-2000080], categoryNames 1 item(s) [Furniture], facingFlipped
+    2 item(s) [345459, 345460], findings 10 item(s) [2 family instance(s) checked in Furniture:
+    2 MIRRORED, 0 han..., BY CATEGORY - instances / MIRRORED / hand flipped / facing f...,   Furniture:
+    2 / 2 / 0 / 2, ...], handFlipped 0 item(s), instancesChecked 2, mirrored 2 item(s) [345459,
+    345460], rowsShown 200. inputs came categories as given (1). on Project2'
+  negative_case: 'run with asCopy=False, categories=Walls, categoryName=Furniture, inViewOnly=FloorPlan:
+    Level 1, planeFrom=5000,0,0, planeTo=5000,6000,0 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection, mirror-elements with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned categoryIds
+    1 item(s) [-2000011], categoryNames 1 item(s) [Walls], facingFlipped 0 item(s), findings
+    9 item(s) [0 family instance(s) checked in Walls: 0 MIRRORED, 0 hand fl..., BY CATEGORY
+    - instances / MIRRORED / hand flipped / facing f...,   Walls: NO FAMILY INSTANCES - none
+    placed, or a category ma..., ...], handFlipped 0 item(s), instancesChecked 0, mirrored
+    0 item(s), rowsShown 200. inputs came categories as given (1). on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: afaee89d7b0f91b0
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

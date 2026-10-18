@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,23 +99,33 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,509 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned deleted true, refused , renumbered
-    1 entry(ies), sequenceNumber 1, target Revision. inputs came sequenceNumber as given.
-    on test projject
-  negative_case: run with sequenceNumber=99 instead - chosen because it should not contain
-    what this fragment reports - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned deleted false, refused No revision with sequence
-    number 99., renumbered 0 entry(ies), sequenceNumber 99, target (null). inputs came sequenceNumber
-    as given. on test projject
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-parameter-value, create-revision with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alsoDeleted 0 item(s), cloudsTouched no revision cloud, deleted true, refused , renumbered
+    No other revision was renumbered. Now: Seq. 2 ''HERON PROOF second'', revisionName Seq.
+    1 ''Revision 1'', sheetsTouched on no sheet. inputs came elements from create-revision
+    (1); confirm as given. on Project2'
+  negative_case: 'run with categories=Revisions, categoryName=Text Notes, confirm=Seq. 9 -
+    Not This One, description=HERON PROOF second, inViewOnly=FloorPlan: Level 1, includeTypeParameters=False,
+    issueState=, issuedBy=Heron, issuedTo=Ajmal PS, matchMode=equals, matchText=Revision 1,
+    numbering=Numeric, parameterName=Revision Description, revisionDate=18-10-2026, show=tag
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-parameter-value, create-revision with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alsoDeleted 0 item(s), cloudsTouched no revision cloud, deleted
+    false, refused Deleting Seq. 1 ''Revision 1'' needs the owner''s yes for THIS revision:
+    pass confirm=49030 (its id) or confirm=Seq. 1 - Revision 1 only after he has agreed. confirm=''Seq.
+    9 - Not This One'' does not name it. Nothing was deleted. It carries no revision cloud
+    and is on no sheet., renumbered , revisionName Seq. 1 ''Revision 1'', sheetsTouched on
+    no sheet. inputs came elements from create-revision (1); confirm as given. on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a51adc903f810205
-
+  fingerprint: 398071485c558abb
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

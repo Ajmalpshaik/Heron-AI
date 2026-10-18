@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -54,6 +54,46 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,027 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values. returned CubicMetresPerCubicFoot
+    0.028316846592, MaxLines 200, MmPerFoot 304.8, SquareMetresPerSquareFoot 0.09290304, culture
+    CultureInfo, detailLines 0, findings 1 item(s) [5 solid(s) read from 5 element(s); 0 with
+    no solid geometry.], geometry Walls 345432 | 1 solid(s), 6 face(s) 66.48 m2, 12 edge(s)
+    46400 mm, volume 6.12 m3 | box -100,-100,0 to 10100,100,3000 mm
+
+    Walls 345433 | 1 solid(s), 6 face(s) 39.6 m2, 8 edge(s) 30000 mm, volume 3.6 m3 | box
+    9900,0,0 to 10100,6100,3000 mm
+
+    Walls 345434 | 1 solid(s), 6 face(s) 65.2 m2, 10 edge(s) 45600 mm, volume 6 m3 | box -100,5900,0
+    to 10000,6100,3000 mm
+
+    Walls 345435 | 1 solid(s), 6 face(s) 38.32 m2, 6 edge(s) 29200 mm, volume 3.48 m3 | box
+    -100,0,0 to 100,6000,3000 mm
+
+    Walls 345436 | 1 solid(s), 6 face(s) 38.32 m2, 8 edge(s) 35200 mm, volume 3.48 m3 | box
+    4900,0,0 to 5100,6000,3000 mm, how summary, lines 5 item(s) [Walls 345432 | 1 solid(s),
+    6 face(s) 66.48 m2, 12 edge(s) 46..., Walls 345433 | 1 solid(s), 6 face(s) 39.6 m2, 8
+    edge(s) 3000..., Walls 345434 | 1 solid(s), 6 face(s) 65.2 m2, 10 edge(s) 456..., ...],
+    mm Func`2, noGeometry 0 item(s), options Options, point Func`2, solidCount 5, solidsOf
+    Func`2. inputs came elements from the selection (5); detail as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, detail=summary, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-category-name, set-selection with this
+    phase''s own values. returned CubicMetresPerCubicFoot 0.028316846592, MaxLines 200, MmPerFoot
+    304.8, SquareMetresPerSquareFoot 0.09290304, culture CultureInfo, detailLines 0, findings
+    1 item(s) [0 solid(s) read from 0 element(s); 1 with no solid geometry.], geometry , how
+    summary, lines 0 item(s), mm Func`2, noGeometry 1 item(s) [345497], options Options, point
+    Func`2, solidCount 0, solidsOf Func`2. inputs came elements from the selection (1); detail
+    as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1ca86c755ba97c4f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

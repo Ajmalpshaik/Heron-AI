@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -52,6 +52,33 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project2, Family1 - active was Project2,
+    Revit 2020, session 13520'
+  positive_case: 'run as it would normally be run. returned findings 1 item(s) [3 viewport
+    type(s); 2 used by no viewport: Title No Line, No...], lines 3 item(s) [Title w Line |
+    title M_View Title | show title Yes | extensi..., Title No Line | title M_View Title |
+    show title Yes | extens..., No Title | title M_View Title | show title No | extension
+    li...], shown Func`3, typeCount 3, unused 2 item(s) [Title No Line, No Title], useCount
+    1 entry(ies), viewportTypes Title w Line | title M_View Title | show title Yes | extension
+    line Yes | box No | used by 1 viewport(s)
+
+    Title No Line | title M_View Title | show title Yes | extension line No | box No | used
+    by 0 viewport(s)
+
+    No Title | title M_View Title | show title No | extension line No | box No | used by 0
+    viewport(s). on Project2'
+  negative_case: 'run against ''Family1'' with categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports. returned
+    findings 1 item(s) [0 viewport type(s); 0 used by no viewport.], lines 0 item(s), shown
+    Func`3, typeCount 0, unused 0 item(s), useCount 0 entry(ies), viewportTypes . on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c5ef0d4992c3421b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

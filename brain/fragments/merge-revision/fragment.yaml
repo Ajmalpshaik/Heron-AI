@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -90,6 +90,38 @@ contract:
       # this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-parameter-value, create-revision with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    cloudsMoved 0 item(s), merged true, mergedInto Seq. 2 ''HERON PROOF second'' (was Seq.
+    2 ''HERON PROOF second''), order Before: Seq. 1 ''Revision 1'', Seq. 2 ''HERON PROOF second''.
+    After: Seq. 2 ''HERON PROOF second''., refused , revisionName Seq. 1 ''Revision 1'', sheetsTouched
+    it was on no sheet. inputs came elements from create-revision (1); direction as given;
+    confirm as given. on Project2'
+  negative_case: 'run with categories=Revisions, categoryName=Text Notes, confirm=Seq. 9 -
+    Not This One, description=HERON PROOF second, direction=down, inViewOnly=FloorPlan: Level
+    1, includeTypeParameters=False, issueState=, issuedBy=Heron, issuedTo=Ajmal PS, matchMode=equals,
+    matchText=Revision 1, numbering=Numeric, parameterName=Revision Description, revisionDate=18-10-2026,
+    show=tag instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-parameter-value, create-revision with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned cloudsMoved 0 item(s), merged false, mergedInto
+    , order Before: Seq. 1 ''Revision 1'', Seq. 2 ''HERON PROOF second''., refused Merging
+    Seq. 1 ''Revision 1'' down into Seq. 2 ''HERON PROOF second'' REMOVES Seq. 1 ''Revision
+    1'', so it needs the owner''s yes for it: pass confirm=49030 (its id) or confirm=Seq.
+    1 - Revision 1 only after he has agreed. confirm=''Seq. 9 - Not This One'' does not name
+    it. Nothing changed. It carries 0 revision cloud(s), and it shows on 0 sheet(s)., revisionName
+    Seq. 1 ''Revision 1'', sheetsTouched . inputs came elements from create-revision (1);
+    direction as given; confirm as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: edbbda52f3639bf6
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

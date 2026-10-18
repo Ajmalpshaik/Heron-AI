@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,6 +71,28 @@ contract:
       # How many of the ten and of the added parameters are set, and which of
       # the ten are empty.
       type: string
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project2, Family1 - active was Project2,
+    Revit 2020, session 13520'
+  positive_case: 'run as it would normally be run. returned fields 6, findings Project Information
+    of ''Project2'': 6 value(s) set - 6 of Revit''s 10 and 0 added parameter(s), each ''label
+    = value'' in Revit''s own labels; empty, so a title block label for it prints blank: Organization
+    Name, Organization Description, Building Name, Author., notAProject false, projectInfo
+    Organization Name = (empty)  ||  Organization Description = (empty)  ||  Building Name
+    = (empty)  ||  Author = (empty)  ||  Project Issue Date = Issue Date  ||  Project Status
+    = Project Status  ||  Client Name = Owner  ||  Project Address = Enter address here  ||  Project
+    Name = Project Name  ||  Project Number = 0001. on Project2'
+  negative_case: 'run against ''Family1'' with categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports. returned
+    fields 0, findings The document in front, "Family1", is a family, and Project Information
+    belongs to a project - nothing was read., notAProject true, projectInfo . on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 105cf1038c186628
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

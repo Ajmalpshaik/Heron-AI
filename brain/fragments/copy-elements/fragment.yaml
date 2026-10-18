@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -170,48 +170,40 @@ contract:
 # proves version 3 (D-30). The version 2 code it ran is still the path every
 # call that leaves toWorkset out takes.
 proof:
-  date: '2026-10-14'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Project2 (3,109 elements), Revit 2020, session 33484
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-level with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned centreText 5000, 4000, copiedTo
-    From Level 1 onto 3 level(s), each turned 2.8125 deg more than the one before, anticlockwise,
-    about (5000, 4000) mm. 5 element(s) of 5 given stand on a level; the rest ride with them.
-
-    Level 8 (+28000 mm): 5 copied; 5 of 5 belong to Level 8, 5 at their original''s offset,
-    each exactly 28000 mm above its original; 4 of 4 plan point(s) where a turn of 2.8125
-    deg puts them; all 6 panel(s), mullion(s) and hosted part(s) on their host''s level.
-
-    Level 9 (+32000 mm): 5 copied; 5 of 5 belong to Level 9, 5 at their original''s offset,
-    each exactly 32000 mm above its original; 4 of 4 plan point(s) where a turn of 5.625 deg
-    puts them; all 6 panel(s), mullion(s) and hosted part(s) on their host''s level.
-
-    Level 10 (+36000 mm): 5 copied; 5 of 5 belong to Level 10, 5 at their original''s offset,
-    each exactly 36000 mm above its original; 4 of 4 plan point(s) where a turn of 8.4375
-    deg puts them; all 6 panel(s), mullion(s) and hosted part(s) on their host''s level.
-
-    3 wall copy(ies) had no level as far above their new base as their original''s top was
-    tied to, so each keeps its height with its top unconnected., copies 15 item(s) [346115,
-    346116, 346117, ...], levelsText Level 8..Level 10, notCopied 0, refused (null), source
-    5 item(s) [345434, 345435, 345436, ...], turn 2.8125, turnProblem (null), turnText 2.8125.
-    inputs came elements from select-by-level (5); offset as given; toLevels as given; turnDegrees
-    as given; turnCentreMm as given. on Project2'
-  negative_case: 'run with levelId=Level 1, categories=Walls, Floors, offset=0,0,0, toLevels=Level
-    99, turnDegrees=2.8125, turnCentreMm=5000, 4000 instead - chosen because it should not
-    contain what this fragment reports - the arrangement was re-made first by running select-by-level
-    with this phase''s own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned centreText 5000, 4000, copiedTo , copies 0 item(s),
-    levelsText Level 99, notCopied 0, refused This model has no level named "Level 99". Its
-    levels, lowest first: Level 1, Level 2, Level 3, Level 4, Level 5, Level 6, Level 7, Level
-    8, Level 9, Level 10. Nothing was copied., source 5 item(s) [345434, 345435, 345436, ...],
-    turn 2.8125, turnProblem (null), turnText 2.8125. inputs came elements from select-by-level
-    (5); offset as given; toLevels as given; turnDegrees as given; turnCentreMm as given.
-    on Project2'
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned centreText ,
+    copiedTo , copies 5 item(s) [345687, 345688, 345689, ...], copyOnWorkset Func`2, levelsText
+    , notCopied 0, onWorksets , putOnWorksets Action`3, readBackWorksets Action, refused (null),
+    source 5 item(s) [345432, 345433, 345434, ...], turn 0, turnProblem (null), turnText ,
+    worksetActive WorksetId, worksetCategory Func`2, worksetFollowers 0 item(s), worksetMarks
+    Func`2, worksetMode (null), worksetName Func`2, worksetNamed WorksetId, worksetNames 0
+    entry(ies), worksetPool (null), worksetProblem (null), worksetText , worksetUnmatched
+    0 item(s), worksetWanted 0 entry(ies). inputs came elements from the selection (5); offset
+    as given; toLevels as given; turnDegrees as given; turnCentreMm as given; toWorkset as
+    given. on Project2
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, offset=0,0,0,
+    toLevels=Level 99, toWorkset=, turnCentreMm=, turnDegrees= instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned centreText ,
+    copiedTo , copies 0 item(s), copyOnWorkset Func`2, levelsText Level 99, notCopied 0, onWorksets
+    , putOnWorksets Action`3, readBackWorksets Action, refused This model has no level named
+    "Level 99". Its levels, lowest first: Level 1, Level 2, Level 3. Nothing was copied.,
+    source 5 item(s) [345432, 345433, 345434, ...], turn 0, turnProblem (null), turnText ,
+    worksetActive WorksetId, worksetCategory Func`2, worksetFollowers 0 item(s), worksetMarks
+    Func`2, worksetMode (null), worksetName Func`2, worksetNamed WorksetId, worksetNames 0
+    entry(ies), worksetPool (null), worksetProblem (null), worksetText , worksetUnmatched
+    0 item(s), worksetWanted 0 entry(ies). inputs came elements from the selection (5); offset
+    as given; toLevels as given; turnDegrees as given; turnCentreMm as given; toWorkset as
+    given. on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: e99fc62f3cec4117
+  fingerprint: dda6816d621240de
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

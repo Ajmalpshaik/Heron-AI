@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -75,6 +75,43 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: "run as it would normally be run - the arrangement was re-made first by running\
+    \ select-by-categories with this phase's own values - run inside a transaction, and Revit\
+    \ reported the transaction group ROLLED BACK afterwards. returned added 3, addedOn 3 item(s)\
+    \ [345461, 345462, 345463], alreadyHad 0, findings 4 item(s) [3 elbow(s) added and read\
+    \ back in \"Level 1\", 0 end(s) alread..., Grids 345461: Revit refused the elbow - The\
+    \ bubble is not vi..., Grids 345462: Revit refused the elbow - The bubble is not vi...,\
+    \ ...], lines 3 item(s) [Grids 345461: Revit refused the elbow - The bubble is not vi...,\
+    \ Grids 345462: Revit refused the elbow - The bubble is not vi..., Grids 345463: Revit\
+    \ refused the elbow - The bubble is not vi...], noBubble 0, refusal (null), report Grids\
+    \ 345461: Revit refused the elbow - The bubble is not visible at the datumEnd of the datum\
+    \ plane.\r\nParameter name: datumEnd | Grids 345462: Revit refused the elbow - The bubble\
+    \ is not visible at the datumEnd of the datum plane.\r\nParameter name: datumEnd | Grids\
+    \ 345463: Revit refused the elbow - The bubble is not visible at the datumEnd of the datum\
+    \ plane.\r\nParameter name: datumEnd, tried 3 item(s) [(Autodesk.Revit.DB.Grid, End1),\
+    \ (Autodesk.Revit.DB.Grid, End1), (Autodesk.Revit.DB.Grid, End1)], wantedEnds 2 item(s)\
+    \ [End0, End1], which bubble. inputs came elements from select-by-categories (3); view\
+    \ as given; ends as given. on Project2"
+  negative_case: 'run with categoryName=Text Notes, ends=bubble, inViewOnly=FloorPlan: Level
+    1, view=FloorPlan: Level 1 arranged with categories=Text Notes, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-categories with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned added 0, addedOn 0 item(s), alreadyHad 0, findings 2 item(s) [0 elbow(s) added
+    and read back in "Level 1", 0 end(s) alread..., Text Notes 345497: not a grid or level.],
+    lines 1 item(s) [Text Notes 345497: not a grid or level.], noBubble 0, refusal (null),
+    report Text Notes 345497: not a grid or level., tried 0 item(s), wantedEnds 2 item(s)
+    [End0, End1], which bubble. inputs came elements from select-by-categories (1); view as
+    given; ends as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: facd792f27e7512d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

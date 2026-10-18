@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -54,6 +54,32 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,027 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run. returned MaxFiles 50000, MaxMatches 200,
+    fileCount 4040, files 4 item(s) [C:\ProgramData\Autodesk\RVT 2020\Libraries\US Imperial\Furni...,
+    C:\ProgramData\Autodesk\RVT 2020\Libraries\US Imperial\Furni..., C:\ProgramData\Autodesk\RVT
+    2020\Libraries\US Imperial\Furni..., ...], findings 1 item(s) [4 family file(s) match
+    "desk" among 4040 looked at in 2 fold...], foldersSearched 2 item(s) [C:\ProgramData\Autodesk\RVT
+    2020\Libraries\US Imperial\Detai..., C:\ProgramData\Autodesk\RVT 2020\Libraries\US Imperial\],
+    given , roots 2 item(s) [C:\ProgramData\Autodesk\RVT 2020\Libraries\US Imperial\Detai...,
+    C:\ProgramData\Autodesk\RVT 2020\Libraries\US Imperial\], stopped false, words 1 item(s)
+    [desk]. inputs came search as given; folder as given. on Project2
+  negative_case: 'run with categoryName=Text Notes, folder=, inViewOnly=FloorPlan: Level 1,
+    search=zzqx nothing instead - chosen because it should not contain what this fragment
+    reports. returned MaxFiles 50000, MaxMatches 200, fileCount 4040, files 0 item(s), findings
+    1 item(s) [0 family file(s) match "zzqx nothing" among 4040 looked at i...], foldersSearched
+    2 item(s) [C:\ProgramData\Autodesk\RVT 2020\Libraries\US Imperial\Detai..., C:\ProgramData\Autodesk\RVT
+    2020\Libraries\US Imperial\], given , roots 2 item(s) [C:\ProgramData\Autodesk\RVT 2020\Libraries\US
+    Imperial\Detai..., C:\ProgramData\Autodesk\RVT 2020\Libraries\US Imperial\], stopped false,
+    words 2 item(s) [zzqx, nothing]. inputs came search as given; folder as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d782472b4ea826d7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

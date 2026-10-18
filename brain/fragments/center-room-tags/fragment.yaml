@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -84,6 +84,29 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned boundaryOptions
+    SpatialElementBoundaryOptions, centred 2, centroidOf Func`2, interiorPointUsed 0 item(s),
+    landedAt 2 entry(ies), notRoomTags 0 item(s), orphanTags 0 item(s), refused 0 item(s).
+    inputs came elements from the selection (2). on Project2
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running select-by-category-name, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned boundaryOptions SpatialElementBoundaryOptions, centred 0, centroidOf Func`2,
+    interiorPointUsed 0 item(s), landedAt 0 entry(ies), notRoomTags 5 item(s) [345432, 345433,
+    345434, ...], orphanTags 0 item(s), refused 0 item(s). inputs came elements from the selection
+    (5). on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3fa828aaf1086daf
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

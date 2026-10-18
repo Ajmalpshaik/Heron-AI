@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -71,6 +71,34 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyThat
+    0 item(s), attempted 2 item(s) [Default, Default], changed 2, changedIds 2 item(s) [345448,
+    345451], currentType Func`2, findings 2 item(s) [System type "Exhaust Air": 2 changed
+    and read back, 0 alread..., Revit can carry a system type along the whole connected run,...],
+    isDuctType true, isPipeType false, label Func`2, lines 0 item(s), notChanged 0 item(s),
+    report . inputs came elements from the selection (2); systemType as given. on Project2'
+  negative_case: 'run with categoryName=Pipes, inViewOnly=Heron 3D, systemType=Exhaust Air
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyThat 0 item(s), attempted 0 item(s), changed 0, changedIds
+    0 item(s), currentType Func`2, findings 2 item(s) [System type "Exhaust Air": 0 changed
+    and read back, 0 alread..., Pipes 345455: left alone - "Exhaust Air" is a duct system
+    ty...], isDuctType true, isPipeType false, label Func`2, lines 1 item(s) [Pipes 345455:
+    left alone - "Exhaust Air" is a duct system ty...], notChanged 1 item(s) [345455], report
+    Pipes 345455: left alone - "Exhaust Air" is a duct system type and this is a pipe.. inputs
+    came elements from the selection (1); systemType as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d9685e263fe550b8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

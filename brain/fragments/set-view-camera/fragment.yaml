@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -86,6 +86,32 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, camera View3D,
+    createIfMissing true, eye XYZ, findings 1 item(s) [Made perspective view "Heron Camera":
+    eye 5000,-10000,1600 m...], madeNew true, name Heron Camera, perspective false, point
+    Func`2, readBack eye 5000,-10000,1600 mm, looking 0,1,0, perspective, refused (null),
+    target XYZ. inputs came viewName as given; eyeMm as given; targetMm as given; perspective
+    as given; createIfMissing as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, createIfMissing=False, eyeMm=5000,-10000,1600,
+    inViewOnly=FloorPlan: Level 1, perspective=False, targetMm=5000,3000,1600, viewName=No
+    Such View instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MmPerFoot 304.8, camera (null), createIfMissing false, eye XYZ, findings 1 item(s)
+    [No 3D view is named "No Such View", so NOTHING WAS CHANGED. ...], madeNew false, name
+    No Such View, perspective false, point Func`2, readBack , refused No 3D view is named
+    "No Such View", so NOTHING WAS CHANGED. Say createIfMissing to make a new perspective
+    view of that name., target XYZ. inputs came viewName as given; eyeMm as given; targetMm
+    as given; perspective as given; createIfMissing as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f146f1d6cccc6b75
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
