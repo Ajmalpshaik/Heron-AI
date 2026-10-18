@@ -314,8 +314,10 @@ confidential selects a local provider adapter, and nothing above that layer need
 > ([D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host)).
 > Its batch work, the embeddings, runs on the machine with no provider at all
 > ([D-24](DECISIONS.md#d-24--embeddings-are-computed-locally-by-default),
-> [D-26](DECISIONS.md#d-26--the-model-file-is-never-uploaded)). No provider adapter exists:
-> [37](37-the-provider-adapter.md) scopes one.
+> [D-26](DECISIONS.md#d-26--the-model-file-is-never-uploaded)). One provider adapter is built,
+> [`heron_provider.py`](../brain/heron_provider.py) (DRAFT): a local Ollama on `127.0.0.1` only. Nothing
+> in `brain/` or `mcp/server/` imports it, and it has not met a provider
+> ([37](37-the-provider-adapter.md)).
 
 ---
 

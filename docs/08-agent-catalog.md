@@ -16,6 +16,65 @@
 > no such number is typed on this page. **"Built" there means a file claims the id and its tests pass**
 > ([37 §4](37-the-provider-adapter.md)); it is not a proof against a real Revit ([D-30](DECISIONS.md)).
 
+## At a glance — the departments and their state
+
+As `python tools/agent-count.py` sorted the registry on 2026-10-18. It prints the numbers; the picture
+only names the departments that are not simply *every row built*. [28](28-agent-registry.md) has the
+same as a table.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    REG["<b>docs/28</b> · the registry<br/>one row per agent, by department"]
+    AC{{"<b>python tools/agent-count.py</b><br/>matches every row to a<br/>Heron-Agent header in the code"}}
+    ALL["<b>Every row built</b><br/>all the other departments"]
+    ORC["<b>Orchestration & Communication</b><br/>built, except what the host does:<br/>Orchestrator · Intent · Persona · User Result"]
+    DEV["<b>Development</b><br/>built, except what the host does:<br/>Requirement · Planning · Architecture<br/>Code Generation · Revit API Domain"]
+    DOC["<b>Documentation</b><br/>built, except what D-77 defers:<br/>Release Notes · Change Log"]
+    LEFT["<b>LEFT</b> · the only state that is work<br/>none, in any department, on 2026-10-18"]
+    NP{{"<b>Built is not proven.</b><br/>It means a file claims the id.<br/>Proven is a run on a real model · D-30"}}
+
+    REG --> AC
+    AC --> ALL
+    AC --> ORC
+    AC --> DEV
+    AC --> DOC
+    AC -.-> LEFT
+    ALL -.- NP
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class REG,NP user
+    class AC,ALL brain
+    class ORC,DEV host
+    class DOC plat
+    class LEFT revit
+```
+
+**Blue is Claude Code** doing the work in the chat, on purpose ([D-01](DECISIONS.md),
+[D-80](DECISIONS.md)); it is never counted as work left. **Dashed is waiting on a decision**, not on
+anybody's time.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+docs/28 (one row per agent) -> python tools/agent-count.py (rows matched to Heron-Agent headers)
+  -> every row built ............ all the other departments
+  -> Orchestration & Communication: built, except what the host does
+       (Orchestrator, Intent, Persona, User Result)
+  -> Development: built, except what the host does
+       (Requirement, Planning, Architecture, Code Generation, Revit API Domain)
+  -> Documentation: built, except Release Notes and Change Log, deferred by D-77
+  -> LEFT, the only state that is work: none, in any department, on 2026-10-18
+Built is not proven: it means a file claims the id. Proven is a run on a real model (D-30).
+```
+
+</details>
+
 ---
 
 ## Summary
@@ -60,12 +119,14 @@ The table below names the principal agents per step. The authoritative per-agent
 | **1 — prove the pipe** | MCP Server, MCP Connection, Revit Connection, Revit Version | all T1 |
 | **2 — thread hop** | Revit Application, Revit Document, Revit Transaction *(skeleton only)* | all T1 |
 | **3 — MCP server** | MCP Tool Registry, MCP Health, Revit Plugin Health | all T1 |
-| **4 — first BIM answer** | Revit Selection, Revit Category, Revit Element · **Intent**, **Communication/Persona** | T1 + two T2 |
+| **4 — first BIM answer** | Revit Selection, Revit Category, Revit Element · **Intent**, **Communication/Persona** | T1 + two T2, both the host's ([D-01](DECISIONS.md)) |
 | **5 — multi-Revit** | MCP Recovery, MCP Version, MCP Compatibility | all T1 |
-| **6 — first write** | **Transaction Safety**, Revit Context, Revit Warning, MCP Security, Failure Analysis | T1 + one T2 |
+| **6 — first write** | **Transaction Safety**, Revit Context, Revit Warning, MCP Security, Failure Analysis | all T1 — Failure Analysis was T2 until [D-21](DECISIONS.md) |
 
-**Every agent in that table is T1 except three** — plain deterministic modules with no model call at
-all. Only Intent, Persona and Failure Analysis reason.
+**Every agent in that table is T1 except two** — plain deterministic modules with no model call at
+all. Only Intent and Persona reason, and both are the host's ([D-01](DECISIONS.md)), so Heron builds
+neither. Failure Analysis was the third until [D-21](DECISIONS.md) made it a table of Heron's own
+error codes.
 
 ### Why the agents cannot be built first
 
@@ -103,10 +164,10 @@ demand — built from usage, not from a list.
 
 | Agent | Tier | Responsibility |
 |---|---|---|
-| Orchestrator | T2 | Central coordinator — understand, select, sequence, validate, return |
-| Intent Agent | T2 | Classify what the user is asking for |
-| Communication / Persona Agent | T2 | Detect persona and technical level; choose response style |
-| Failure Analysis Agent | T2 | Determine why something failed |
+| Orchestrator | T2 | Central coordinator — understand, select, sequence, validate, return. **The host's** ([D-01](DECISIONS.md)) |
+| Intent Agent | T2 | Classify what the user is asking for. **The host's** ([D-01](DECISIONS.md)) |
+| Communication / Persona Agent | T2 | Detect persona and technical level; choose response style. **The host's** ([D-01](DECISIONS.md)) |
+| Failure Analysis Agent | T1 | Determine why something failed. **T1, not T2, since [D-21](DECISIONS.md)**: Heron's failures are its own bounded set of codes |
 | Fix Agent (selected per failure) | T3 | Apply a targeted repair |
 
 ## Installation (§9)
@@ -182,7 +243,7 @@ Push / PR / Release are `PUBLISH`-level and require explicit per-action confirma
 | Architecture Monitor | T2 | Detect architectural drift |
 | Capability Gap Agent | T1 | *"X is needed repeatedly and no agent covers it."* |
 
-**Capability Gap Agent is the highest value / lowest cost agent in the catalogue** — it is a report over the audit log and should be built early. See [06 §6](06-heron-platform.md).
+**Capability Gap Agent is the highest value / lowest cost agent in the catalogue** — it is a report over the audit log and should be built early. See [06 §6](06-heron-platform.md). *As built: it was, on 2026-09-07 — [`brain/heron_gaps.py`](../brain/heron_gaps.py), served as `heron_gaps`.*
 
 ## Development (§41)
 
@@ -190,7 +251,7 @@ Requirement · Planning · Architecture · Code Generation · C# · .NET · Revi
 
 Build and the test runners are **T1**. Requirement, Architecture, Code Generation, Code Review, Security Review and QA are **T2/T3**.
 
-**[NOTE]** `C# Agent`, `.NET Agent` and `Revit API Agent` overlap heavily and are strong candidates for merging into a single **Code Domain Agent** with retrieval over three knowledge sets. Three near-identical agents is exactly the duplication the Fragment Merge Agent exists to prevent — the same discipline should apply to agents themselves.
+**[NOTE]** `C# Agent`, `.NET Agent` and `Revit API Agent` overlap heavily and are strong candidates for merging into a single **Code Domain Agent** with retrieval over three knowledge sets. Three near-identical agents is exactly the duplication the Fragment Merge Agent exists to prevent — the same discipline should apply to agents themselves. *As built: the registry split the `.NET Agent` three ways by risk instead ([28](28-agent-registry.md), "When to split an agent"), and the Revit API Domain Agent is the host's ([D-80](DECISIONS.md)).*
 
 ## BIM Standards (§46)
 

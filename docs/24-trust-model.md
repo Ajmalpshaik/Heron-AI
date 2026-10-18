@@ -126,6 +126,30 @@ direct implementation of proposed [Golden Rule 17](14-golden-rules.md) — *no a
 model without a preview or a proven fragment* — and it makes [Golden Rule 6](14-golden-rules.md)
 mechanically enforceable: L1 knowledge is structurally unable to reach a live model.
 
+### 3a. The two axes at a glance — the DESIGN beside what the code holds (2026-10-18)
+
+**The first three columns are the design**, proposed by [D-14](DECISIONS.md) and still `Proposed` (Q-34).
+**The last column is what the code does today.** Where they differ, the design is not edited to match:
+the code is what has to catch up, or the owner decides otherwise.
+
+| Axis 1 — lifecycle stage | Band (§3) | May be used for — design | Today |
+|---|---|---|---|
+| `DISCOVERED` | L1 | nothing automatic | in `STATUSES`; no card uses it |
+| `DRAFT` | L1 | nothing automatic | **in use.** Reads and shows run it and say it is unproven; `revit_change` refuses to keep its change ([D-117](DECISIONS.md)); its one exception is a single run behind Revit's Keep or Discard box ([D-119](DECISIONS.md)) |
+| `TESTING`, `VALIDATED` | L2 | `READ` / `ANALYZE` / `SUGGEST` | in `STATUSES`; no card uses them |
+| `SHADOW` | L3 | `MODIFY` with a preview the user accepts | **not** in `STATUSES`; `tools/check-metadata.py` accepts it in a source file's header |
+| `PROVEN` | L3 | `MODIFY` with a preview the user accepts | **in use**, on one signed proof, not N runs ([D-30](DECISIONS.md)). `revit_change` keeps its change; with Ask to Keep off, the default, nobody sees a preview first - the break [Golden Rule 17](14-golden-rules.md) records |
+| `PRODUCTION` | L4 | `MODIFY` unattended | in `STATUSES`; no card uses it |
+| `DEPRECATED`, `ARCHIVED` | — | history only | in `STATUSES`; no card uses them |
+
+| Axis 2 — source | Design | Today |
+|---|---|---|
+| `OFFICIAL` · `COMPANY` · `PROJECT` · `USER` · `COMMUNITY` · `IMPORTED` · `UNKNOWN` | fixed at creation; ranks before level (§4 step 4) | a card's `source:` field, and every card in the library is `OFFICIAL`. Nothing ranks by it: the hierarchy is named and not applied ([20 §2](20-knowledge-trust-and-conflict.md)) |
+
+Derive the *Today* column rather than trusting it: `STATUSES` in
+[`heron_fragment.py`](../brain/heron_fragment.py), and
+`grep -h '^heron-status:\|^source:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
+
 ---
 
 ## 4. Selection formula
@@ -227,6 +251,13 @@ exists** — nothing here is new policy.
 **One row is undecided and it is the only one.** Everything Heron reads today comes from a source whose
 trust is already settled by a binding rule. [Q-51](OPEN-QUESTIONS.md) is the single open cell, and it
 opens on the day the RAG index exists — which is the same day retrieval becomes worth having.
+
+> **As built (2026-10-18):** that row is no longer undecided. Q-51 was answered on 2026-09-20 by
+> [D-81](DECISIONS.md#d-81--carried-text-is-stamped-not-scanned): text Heron did not write is **stamped**
+> with its source and attributed, never scanned. The clause store the row waited for exists now -
+> the STANDARDS path in [`heron_context.py`](../brain/heron_context.py) asks it - though the part list
+> still carries the old comment `# the clauses cited - source does not exist yet`. D-81 records the
+> attribution half, a stamped part never spoken in Heron's own voice, as still owed.
 
 **The last row is a strength, and it is easy to trade away by accident.** Most of `ASSURANCE_CASE.md` —
 TLS, a semi-trusted provider API, DNS rebinding against a local viewer — describes attack surface Heron

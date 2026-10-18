@@ -3,6 +3,67 @@
 Terms used throughout the Heron AI documentation. Where a term is contested or newly defined
 during review, the defining document is linked.
 
+**How the words most used below fit together** — one request, from the modeller's words to Revit's
+undo list. Every box is a term defined on this page.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    W(["<b>The modeller's words</b><br/><i>move these ducts up 200 mm</i>"])
+    H["<b>Host</b> — Claude Code<br/>works out what was meant"]
+    SK["<b>Skill</b> — a job in BIM words<br/>names the capabilities it needs"]
+    D["<b>Door</b><br/>revit_read · revit_show · revit_change"]
+    C["<b>Capability</b><br/>what is to be done"]
+    F["<b>Fragment</b><br/>the C# that does it, and its card"]
+    PR["<b>Proof</b><br/>a named real model · a negative case<br/>a fingerprint · a person signs"]
+    SW{{"<b>A change?</b><br/>only while the Changes switch is on,<br/>and Admin or Publish if it needs one"}}
+    A(["<b>The answer</b><br/>the model untouched"])
+    K{{"<b>Ask to Keep</b> on?<br/>then Revit asks Keep or Discard<br/>Discard rolls it all back"}}
+    U(["<b>One named undo entry</b><br/>Heron: …"])
+
+    W --> H
+    SK -.->|"heron_method hands it over"| H
+    H -->|"a capability or the words,<br/>never a fragment"| D
+    D --> C
+    C -->|"provided by"| F
+    PR -->|"makes it PROVEN<br/>until its code changes"| F
+    F --> SW
+    SW -->|"no — a read"| A
+    SW -->|"yes"| K
+    K -->|"Keep, or the switch is off"| U
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef proven fill:#DCFCE7,stroke:#16A34A,color:#14532D
+    class W,A user
+    class H host
+    class SK,D,C,F brain
+    class PR proven
+    class SW,K addin
+    class U revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+The modeller's words  -> Host (Claude Code) works out what was meant
+                         a Skill, a job of several steps, reaches the host whole through heron_method
+Host -> a Door (revit_read, revit_show, revit_change), with a Capability or the words, never a fragment
+Capability -> provided by a Fragment: the C# that does it, and its card
+Proof (named real model, negative case, fingerprint, signed by a person) -> the fragment is PROVEN,
+  until its code changes
+A change? no, a read -> the answer, the model untouched
+          yes        -> only while the Changes switch is on (and Admin or Publish if it needs one)
+                     -> Ask to Keep on: Revit asks Keep or Discard; Discard rolls it all back
+                     -> Keep, or Ask to Keep off -> one named undo entry, "Heron: ..."
+```
+
+</details>
+
 ---
 
 ## Heron concepts
@@ -85,7 +146,7 @@ during review, the defining document is linked.
 | **Embedding** | A vector representation of text, used for semantic similarity search. |
 | **Hybrid search** | Combining keyword (BM25/FTS) and vector search, then fusing the rankings. The recommended retrieval strategy. [05 §4](05-heron-brain.md) |
 | **Golden file test** | A test that compares output against a recorded expected result. How "never break a working version" is enforced. [13 §4](13-testing-and-quality.md) |
-| **Sandbox** | An isolated environment — a detached model copy — where unproven code runs before it is allowed near a live project. |
+| **Sandbox** | In the specification, an isolated environment — a detached model copy — where unproven code runs before it is allowed near a live project. **Heron has none by that name today.** The runner that watches a new agent's first run was renamed *watched, not contained*, because it isolates nothing ([D-84](DECISIONS.md)); and a `DRAFT` fragment's first run is its one *try-once* on the saved model in front, behind Keep or Discard ([D-119](DECISIONS.md), [D-121](DECISIONS.md)). |
 | **Prompt injection** | Instructions hidden in content the system reads (a family name, an imported document) attempting to make the model act on them. Countered by Golden Rule 19. |
 | **Audit log** | The append-only structured record of every significant action. What makes invisible background work acceptable. The add-in writes its own; the brain writes a second for what it answered without Revit ([D-62](DECISIONS.md)). [12 §5](12-security-and-permissions.md) |
 
@@ -153,6 +214,12 @@ during review, the defining document is linked.
 | **L2 TESTED** | `TESTING`, `VALIDATED` | `READ` / `ANALYZE` / `SUGGEST` |
 | **L3 VERIFIED** | `SHADOW`, `PROVEN` | `MODIFY` **with an accepted preview** |
 | **L4 PROVEN** | `PRODUCTION` | `MODIFY` unattended |
+
+**This band is part of the proposed model, not what a change from the chat obeys today.** That rule is
+narrower and set elsewhere: `revit_change` runs a `PROVEN` capability only, while the Changes switch is on
+([D-117](DECISIONS.md), [D-19](DECISIONS.md)); Revit asks Keep or Discard only while Ask to Keep is on,
+and it is off by default — the one exception the [Constitution](../HERON_CONSTITUTION.md)'s Article 9
+records ([D-138](DECISIONS.md)). No fragment has reached `PRODUCTION`.
 
 **Permission levels:** `READ` · `ANALYZE` · `SUGGEST` · `EXECUTE` · `MODIFY` · `PUBLISH` · `ADMIN`
 

@@ -105,7 +105,8 @@ Intent -> Domain -> Knowledge Scope
 >   [19 §1](19-context-and-cost.md#1-context-manager)).
 >
 > Document clauses come back in their own labelled answer, never fused with fragments and never behind
-> the version filter ([`brain/README.md`](../brain/README.md)).
+> the version filter ([`brain/README.md`](../brain/README.md)). The lookup order as it runs, with the
+> identity and cache routes ahead of the search, is drawn in [19 §5](19-context-and-cost.md#5-cost-optimization).
 
 ---
 

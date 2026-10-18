@@ -623,7 +623,9 @@ a compile.
 
 ## Stage 5 — Fetch from the GitHub release
 
-**Status: BUILT, NOT PROVEN — 2026-09-21. Nothing has been published and no release exists.**
+**Status: BUILT, NOT PROVEN — 2026-09-21.** Nothing had been published then. **Since:** v0.1.0 was
+published 2026-10-08 ([Group AC](../../../needs-checking/group-ac.md), `AC1`) and the installer has fetched
+from it (Group AC; [Group EP](../../../needs-checking/group-ep.md)); `AC2`-`AC5` are still owed.
 
 > **THE STAGE HAD NOTHING TO TALK TO, and that was the first thing to fix.** This repository had
 > **no releases at all** and nothing that could make one, so *"the installer reads the manifest from a
@@ -685,7 +687,7 @@ developer just compiled.
 | **PASS** | `tools/build-release-assets.py` ran for real: **24 assets, 54 MB, checksums over 25 files, exit 0**. Runtimes read out of the zipped bytes for six releases and all correct |
 | **PASS** | `tests/test_release_assets.py` — no product is named, the configuration cannot be got wrong, the project folder is derived the same way in all three places that ask, a `PLANNED` product with no source is skipped **out loud** and one past `PLANNED` **fails**, Autodesk's assemblies never travel, `checksums.txt` is written last |
 | **PASS** | The download path, **run against a live local server**: verified and unpacked; a changed file refused **with nothing written to disk**; a file missing from `checksums.txt` refused; a release with no checksums refused; 404, 403 and a dead host each producing their own sentence; a zip that would escape its folder refused whole |
-| **NOT RUN** | **The workflow.** It is YAML for GitHub's runner and this is not one. **Nothing has been published and no release exists** |
+| **NOT RUN** | **The workflow.** It is YAML for GitHub's runner and this is not one. **Nothing had been published then**; the workflow built and uploaded v0.1.0 on 2026-10-08 ([Group AC](../../../needs-checking/group-ac.md), `AC1`) |
 | **NEEDS REAL REVIT** | Every line under *Done when* above, and `AC1` to `AC5` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
 
 **The one thing this cannot close on its own** is [Q-PE-13](03-open-questions.md): the assets carry the

@@ -29,6 +29,23 @@ the only place that says how many are built.
 > summed to 196 — a straight arithmetic error on my part, caught when adding the agents below.
 > The count is now computed from the rows rather than asserted.
 
+## At a glance — each department's state
+
+Read from `python tools/agent-count.py` on 2026-10-18. It sorts every row into one of four states:
+**BUILT** (a source file's `Heron-Agent` header claims the id), **HOST** (Claude Code does the work -
+[D-01](DECISIONS.md), [D-80](DECISIONS.md)), **DEFERRED** (a named decision says it cannot be built yet)
+and **LEFT** (none of those - the only state that is work). On that day it printed nothing LEFT in any
+department. **Built is not proven**: it says a file claims the id, not that the code has met a Revit
+([37 §4](37-the-provider-adapter.md), [D-30](DECISIONS.md)). Re-run the command rather than trust this
+table - it prints the numbers, which are not typed here.
+
+| Department | State | Rows not built in this repository, and why |
+|---|---|---|
+| Orchestration & Communication | built, except the host's rows | Orchestrator, Intent, Communication / Persona, User Result - the host's ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) |
+| Development | built, except the host's rows | Requirement, Planning, Architecture, Code Generation, Revit API Domain - the host's ([D-80](DECISIONS.md)) |
+| Documentation | built, except the rows a decision defers | Release Notes, Change Log - deferred by [D-77](DECISIONS.md) until it is revisited |
+| Revit Engineering · MEP Design Engineering · MCP / Bridge · Session & Bridge Management · Knowledge & RAG · Fragment Lifecycle · User & Personalization · Learning & Self-Growth · Skill Lifecycle · Import & Migration · Standards & BIM QA · Agent Lifecycle & HR · Kernel & Platform · Workspace & Folder Architecture · Naming & Taxonomy · GitHub · Installation & Update · Operations, Health & Resilience · Reporting & Output | every row built | - |
+
 ---
 
 ## 1. Orchestration & Communication — 6
@@ -302,7 +319,7 @@ fragment-side one.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log. **Built 2026-09-07** - `brain/heron_gaps.py`, served as the `heron_gaps` MCP tool. It splits failures into DEFECTS and CORRECT REFUSALS, because the loudest error in the trail (`needs_unbound`, 38 of 176) is the executor behaving correctly, and counting it as a gap would commission a fragment that already exists. Its first run found 131 `compile_failed` on 2026-09-06 and none on 2026-09-07 | T1 | READ | — |
+| `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log. **Built 2026-09-07** - `brain/heron_gaps.py`, served as the `heron_gaps` MCP tool. It splits failures into DEFECTS and CORRECT REFUSALS, because the loudest error in the trail on 2026-09-07 (`needs_unbound`, 38 of 176) was the executor behaving correctly, and counting it as a gap would commission a fragment that already exists. Its first run found 131 `compile_failed` on 2026-09-06 and none on 2026-09-07 | T1 | READ | — |
 | `HERON-AHR-WFP-015` | **Workforce Planning Agent** | The agent that says **no**. Before anything is hired: does a capability already cover this, can an existing agent be extended, is this a fragment rather than an agent? **This is the guard against agent explosion** ↗ | T2 | SUGGEST | — |
 | `HERON-AHR-SBX-016` | **Agent Sandbox Agent** | **Watches** a newly built agent's first run — the Revit door and the production scopes shut, every attempt to open one written down, the run marked so it can never count as evidence. **Watched, not contained**: it holds a cooperating agent and does not contain a hostile one, which is what [D-84](DECISIONS.md) settled rather than built ↗ | T1 | READ | — |
 | `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 252 agents ↗ | T1 | READ | — |
@@ -515,10 +532,10 @@ keeps discovering it believed.
 | `HERON-DOC-SKL-003` | Skill Documentation Agent | Generated from skill metadata. **Built 2026-09-15** — `tools/generate-skill-catalog.py`, the parallel to the fragment catalogue one layer up. Every skill with the words somebody actually says to reach it, and an **effective status**: the lowest rung on [09](09-skills-and-fragments.md)'s ladder among the fragments serving it. A card can say anything; the chain underneath is the fact. Reachability is per Revit release, never overall | T1 | — | — |
 | `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata. **Built 2026-09-08** — `tools/generate-fragment-catalog.py`, the parallel to the agent map one layer up. Every fragment on one searchable page, including whether its declared negative case can actually be run. It reported 0 stranded cases on its first run against a library holding 18, which is why a generator acquired a test | T1 | — | — |
 | `HERON-DOC-REL-005` | Release Notes Agent | Release Notes Agent — structured notes per release. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)**: there are no releases, so it would be built against an imagined shape. **Unblocked by the first RELEASE tag** — that word is load-bearing, because on 2026-09-17 `git tag` returned two working-tree safety markers and the trigger as written had already fired on them. **As built (2026-10-18): the first release tag exists** - [`v0.1.0`](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), published 2026-10-08, its notes written from the template in [`release.yml`](../.github/workflows/release.yml) - so the trigger above has fired; the row stays deferred until D-77 is revisited, which is the owner's | T2 | — | — |
-| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool already sweeps all 140 markdown files, recomputes every count claim against its derived source and resolves every internal link. **The guarding half only**: it checks the architecture docs are true, and writes none of them. Proved by planting a dead anchor in [`docs/06`](06-heron-platform.md) and requiring it to be caught | T2 | — | — |
+| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool sweeps every markdown file in the repository (its first section prints how many), recomputes every count claim against its derived source and resolves every internal link. **The guarding half only**: it checks the architecture docs are true, and writes none of them. Proved by planting a dead anchor in [`docs/06`](06-heron-platform.md) and requiring it to be caught | T2 | — | — |
 | `HERON-DOC-RDM-007` | README Agent | Keeps the README current. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool reads `README.md` by name in four sections and enforces its counts against their derived source; its own comments record three occasions when the README was wrong and this is why it is not now. **The guarding half only**: nothing writes the README. Proved by planting a false count in it and requiring the guard to fail | T2 | — | — |
 | `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗. **Since [D-77](DECISIONS.md) it also carries `ARC-006` and `RDM-007`.** A dead link had been FOUND and not failed on since 2026-08-31; wiring section 1 to the exit code that day turned up three, one of them a `D-30` anchor linked correctly ten times and wrongly once | T1 | READ | — |
-| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - 683 files carry `Heron-Since: 0.1.0` and there is **one version**, so a change log would be a single section listing all of them: true and useless. **A second problem outlives the first**: `Fixed` and `Improved` cannot be told apart from a diff, and the only mechanical route is a word list over commit subjects, which is the synonym table [D-34](DECISIONS.md) refuses. Whoever builds this after the first tag needs a commit convention or the host under [D-01](DECISIONS.md) | T1 | — | — |
+| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - that day 683 files carried `Heron-Since: 0.1.0` and there was **one version**, so a change log would be a single section listing all of them: true and useless. **A second problem outlives the first**: `Fixed` and `Improved` cannot be told apart from a diff, and the only mechanical route is a word list over commit subjects, which is the synonym table [D-34](DECISIONS.md) refuses. Whoever builds this after the first tag needs a commit convention or the host under [D-01](DECISIONS.md) | T1 | — | — |
 
 ---
 
@@ -550,16 +567,16 @@ keeps discovering it believed.
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
 | **Total** | **252** | **169** | **63** | **20** |
 
-> ### Nine of these need no building, and that is not the same as missing
+> ### Some of these need no building, and that is not the same as missing
 >
-> **The host provides nine of the 252**, and this table counts them like any other row because they
+> **The host provides the rows named below**, and this table counts them like any other row because they
 > are part of the architecture — something *does* orchestrate, classify intent and write the reply.
 > It is simply not a file in this repository.
 >
-> | department | of which the host's |
+> | department | the host's rows |
 > |---|---|
-> | Orchestration & Communication | **4 of 6** — Orchestrator, Intent, Persona, User Result |
-> | Development | **5 of 21** — Requirement, Planning, Architecture, Code Generation, Revit API Domain |
+> | Orchestration & Communication | Orchestrator, Intent, Persona, User Result |
+> | Development | Requirement, Planning, Architecture, Code Generation, Revit API Domain |
 >
 > Every one is language and judgement work that Claude Code is already doing by the time it reads the
 > request. Building them inside Heron would mean writing a worse copy of the thing that is already
@@ -568,7 +585,7 @@ keeps discovering it believed.
 > heron so this ai can do this work am i right"*. He was.
 >
 > **They stay in the register rather than being deleted**, and the reason is recorded rather than
-> assumed: `tools/agent-count.py` keeps HOST as a third state precisely because *"collapsing HOST into
+> assumed: `tools/agent-count.py` keeps HOST as a state of its own precisely because *"collapsing HOST into
 > LEFT produces a to-do list with four items on it that will never be done — which is how this
 > repository's own build-state page came to recommend building the Orchestrator."* Removing the rows
 > is the same failure one step further on: the next reader finds nothing that orchestrates and builds
@@ -576,7 +593,8 @@ keeps discovering it believed.
 > the two must agree.
 >
 > **Read the build state from `python tools/agent-count.py`**, never from this table. It reports BUILT,
-> HOST and LEFT in separate columns, and only LEFT is work.
+> HOST, DEFER and LEFT in separate columns - HOST is where the count of these rows is printed - and only
+> LEFT is work.
 
 
 **[NOTE]** The distribution is the point. **169 of 252 agents never call a model** — they are ordinary
@@ -653,7 +671,7 @@ no named validator is a defect in this registry, not an acceptable state.
 | A name | `Naming` | `Naming Validation` + `Reference Update` |
 | Knowledge structure | `Knowledge Evolution` | `Knowledge Validation` |
 | **A report** | `Report Composition` + `Report Rendering` | **`Report Validation`** *(is it right)* + `Report Redaction` *(may it leave)* |
-| **Documentation** | the 8 Documentation agents | **`Documentation Validation`** |
+| **Documentation** | the other Documentation agents | **`Documentation Validation`** |
 | **An inferred standard** | `Reference Model Profiler` | **`Profile Validation`** |
 | A workflow change | `Workflow Optimizer` | `Experiment` *(is the new shape actually better)* |
 | An experiment verdict | `Experiment` | **a human** — see below |
