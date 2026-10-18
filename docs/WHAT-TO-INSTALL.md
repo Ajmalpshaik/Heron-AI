@@ -9,14 +9,16 @@
 
 > **The first release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), was
 > published on 2026-10-08**, on the owner's word, so a new teammate could install Heron. It is an early,
-> **unsigned** build, and the [main README](../README.md) still asks modellers not to install Heron until
-> it is announced.
+> **unsigned** build — [D-91](DECISIONS.md) says a release is signed, and whether a decision should say
+> releases stay unsigned until signing is built is [Q-77](open-questions/tier-2.md), still open — and the
+> [main README](../README.md) still asks modellers not to install Heron until it is announced.
 >
 > **The installer is in that release, never in the code.** Searching the code will not find
 > `HeronInstaller.exe` — it is built, and [`.gitignore`](../.gitignore) keeps it out on purpose. It sits
-> at the top of `heron-project.zip` on the release page: row 6 below. With a copy of the code,
+> at the top of `heron-project.zip` on the release page: row 6 below. With a `git clone` of the code,
 > `.\tools\setup.ps1` builds and installs Heron with no installer at all —
-> [section 4](#4-only-to-build-heron-yourself).
+> [section 4](#4-only-to-build-heron-yourself). A downloaded copy is installed with the installer only
+> ([D-96](DECISIONS.md)): PowerShell's usual setting, `RemoteSigned`, refuses a downloaded script that is not signed.
 
 ## At a glance
 
@@ -287,8 +289,10 @@ A modeller installing a release needs none of this.
 | **Git** | To copy the source from GitHub | A released download needs no Git |
 | **The .NET SDK — version 10, not 8** | To compile the Revit add-in for every release Heron supports | Revit 2027 runs on .NET 10, so only the 10 SDK builds every release — [30](30-compiling-away-from-windows.md) has the rest, and how on Linux |
 
-A developer deploys the add-in with `tools/setup.ps1` rather than the installer, which also checks
-Python, `mcp` and PyYAML first — [07](07-installation-and-update.md).
+A developer working from a `git clone` deploys the add-in with `tools/setup.ps1` rather than the
+installer; it builds each release, deploys it through `tools/deploy-addin.ps1`, and checks Python, `mcp`
+and PyYAML first — [07](07-installation-and-update.md). From a downloaded zip the script is refused
+([D-96](DECISIONS.md)).
 
 **To make the download itself**, installer included: `python tools/build-release-assets.py --out dist`
 builds every product for every release and puts `HeronInstaller.exe` at the top of

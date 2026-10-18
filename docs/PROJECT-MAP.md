@@ -214,11 +214,59 @@ name it, because a checker has to be able to name what it checks.
 
 Two different questions, and mixing them is how a defect gets promoted into policy.
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    subgraph AL ["What Heron is ALLOWED to do — top wins"]
+        direction TB
+        GR["<b>14 — Golden Rules</b><br/>21 rules"]
+        CO["<b>The Constitution</b><br/>30 Articles · may not contradict a rule"]
+        DE["<b>DECISIONS.md</b><br/>accepted decisions"]
+        GR --> CO --> DE
+    end
+    subgraph AC ["What Heron ACTUALLY DOES — top wins"]
+        direction TB
+        CD["<b>The code</b><br/>and tool output from it"]
+        PF["<b>A recorded proof</b><br/>named model · negative case · fingerprint"]
+        MD["<b>Metadata</b><br/>a fragment's heron-status"]
+        CD --> PF --> MD
+    end
+    IN["<b>The intent</b><br/>docs/00 to 00e and the numbered documents"]
+    CX["<b>Only context</b><br/>registers · handover · work notes"]
+    DE --> IN --> CX
+    CD -.->|"a conflict is a DEFECT in the code,<br/>never a change to the rule"| AL
+
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class GR,CO,DE host
+    class CD,PF,MD brain
+    class IN,CX user
+    style AL fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+    style AC fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+ALLOWED to do (top wins)       Golden Rules  >  Constitution  >  DECISIONS.md  >  the intent  >  context
+ACTUALLY DOES (top wins)       the code and its tool output  >  a recorded proof  >  metadata
+Where the two lists meet       code that breaks a rule is a defect; the rule is never edited to match it
+```
+
+</details>
+
 ### What Heron is *allowed* to do
 
-1. [**HERON_CONSTITUTION.md**](../HERON_CONSTITUTION.md) — 30 Articles, binding.
-2. [**14 — Golden Rules**](14-golden-rules.md) — 21 rules, all official.
-3. [**DECISIONS.md**](DECISIONS.md) — accepted decisions.
+1. [**14 — Golden Rules**](14-golden-rules.md) — 21 rules, all official.
+2. [**HERON_CONSTITUTION.md**](../HERON_CONSTITUTION.md) — 30 Articles, binding. It is the run-time
+   subset of the rules, and its own Amendment section says *"An Article may not contradict a Golden
+   Rule"* ([D-43](DECISIONS.md)) — so where the two disagree, the rule wins and the Article is the defect.
+3. [**DECISIONS.md**](DECISIONS.md) — accepted decisions. The Constitution and the Golden Rules win over
+   it (its own header); it wins over the specification, the registers and every work note.
+
+*This list put the Constitution first until 2026-10-18, against the Amendment section quoted above.*
 
 **An implementation that conflicts with these is a defect.** Running code does not silently amend
 policy, and a rule is never edited to match code that broke it.
@@ -236,7 +284,10 @@ it implements**: `check-structure.py` exiting 0 says the layering holds, not tha
 
 Specifications and permanent architecture — the numbered documents, `docs/00`–`00e` and `docs/01` onward; [README.md](README.md) says which of them are research or a design not yet built. Historical specifications
 keep their historical wording. Where one is superseded, point at the deciding decision rather than
-rewriting the history.
+rewriting the history. **The one exception is [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)**,
+for the four parts `00` to `00d`: a wrong fact, or words an accepted decision settled, is corrected in
+place with the original kept beside it, struck through, and a dated note naming the evidence. A policy
+choice no decision has made is not corrected; it goes to [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ### What is only context
 
@@ -306,9 +357,10 @@ not the library.** Heron reads the model and changes nothing until the ribbon's 
 a change from the chat runs only a `PROVEN` capability whose proof still stands ([D-117](DECISIONS.md)),
 inside one named `TransactionGroup` that is one entry in Revit's undo list; while **Ask to Keep** is on,
 Revit shows the change and asks **Keep or Discard** before it is kept ([D-126](DECISIONS.md),
-[D-138](DECISIONS.md)). `D3`, the tape measure on the move, was taken on 2026-10-17 in Revit 2024
-(+200.0000 mm, the pinned control unmoved); the other rails of [Group D](needs-checking/group-d.md) are
-still owed.
+[D-138](DECISIONS.md)). All six rows of [Group D](needs-checking/group-d.md) passed on 2026-10-17 in
+Revit 2024 — `D3`, the tape measure on the move, read +200.0000 mm with the pinned control unmoved, and
+one Ctrl+Z put it back. Still owed: any other release, a duct joined to a fitting, and a failure forced
+mid-move (golden `G-12`).
 
 A fragment marked `DRAFT` **is not proven as it stands** — it is new, or its code changed under its
 proof — and `revit_change` refuses it. It may run once on the saved model in front, behind the same Keep
