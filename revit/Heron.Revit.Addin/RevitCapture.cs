@@ -175,6 +175,11 @@ namespace Heron.Revit.Addin
             // kept job's elements with it any more than a preview's may - see
             // RevitFragment.RollBackAndCheck, which every rollback here goes
             // through.
+            //
+            // THE NAME IS READ BEFORE THE GROUP, because the catch below runs
+            // after Exported has rolled it back, and nothing here reads an
+            // element after a rollback (5b-1090).
+            var viewName = view.Name;
             using (var watch = doc.IsReadOnly ? null : RevitFragment.Watch(doc, Label, Label))
             {
                 var group = doc.IsReadOnly ? null : new TransactionGroup(doc, Label);
@@ -191,7 +196,7 @@ namespace Heron.Revit.Addin
                     // answer, and a group Start never began counts as undone.
                     if (group != null) after = RevitFragment.RollBackAndCheck(group, doc, watch);
                     return Json.Error("capture_failed",
-                        "Revit could not picture '" + view.Name + "': " + ex.Message + ". "
+                        "Revit could not picture '" + viewName + "': " + ex.Message + ". "
                         + Undone(after));
                 }
                 finally
@@ -507,6 +512,15 @@ namespace Heron.Revit.Addin
                                        TransactionGroup group,
                                        HeronRollbackWitness.Watch watch)
         {
+            // READ OFF THE VIEW NOW, while it is still in the model. Given
+            // element ids, VIEW is the temporary 3D view, and the rollback in
+            // the finally below takes it away: read after that, Revit throws
+            // "The referenced object is not valid" and the finished picture is
+            // thrown away with it (FRAGMENT-ISSUES 5b-1090). Nothing below the
+            // finally touches `view`.
+            var viewName = view.Name;
+            var viewType = view.ViewType.ToString();
+
             var folder = Path.Combine(HeronPaths.Captures, Guid.NewGuid().ToString("N"));
             byte[] picture = null;
             var deleted = false;
@@ -555,7 +569,7 @@ namespace Heron.Revit.Addin
             if (picture.Length > LargestPicture)
             {
                 return Json.Error("picture_too_large",
-                    "The picture of '" + view.Name + "' came to "
+                    "The picture of '" + viewName + "' came to "
                     + (picture.Length / 1000).ToString(CultureInfo.InvariantCulture)
                     + " KB at " + width.ToString(CultureInfo.InvariantCulture)
                     + " px wide, too large to hand to the chat. Ask again with a smaller "
@@ -564,8 +578,8 @@ namespace Heron.Revit.Addin
 
             return Json.Ok(
                 Json.Str("mode", mode),
-                Json.Str("view", view.Name),
-                Json.Str("viewType", view.ViewType.ToString()),
+                Json.Str("view", viewName),
+                Json.Str("viewType", viewType),
                 Json.Num("pixelWidth", width),
                 Json.Bool("widthClamped", clamped),
                 Json.Num("bytes", picture.Length),
