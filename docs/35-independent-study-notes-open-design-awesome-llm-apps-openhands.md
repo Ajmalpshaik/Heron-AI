@@ -25,6 +25,17 @@ This note is intentionally separate from the implementation plan. It records wha
 > §3.7's rule about path-specific provenance is the one that changed how the research was done: the
 > licence was checked at each path rather than assumed from the repository name.
 
+### At a glance — what each repository gave Heron
+
+Read from this note's own *What NOT to copy* sections and from [34 §2.15–2.19](34-patterns-adapted.md),
+which records what was built and the licence at each path read. **No code was taken** ([D-25](DECISIONS.md)).
+
+| Repository · licence at the paths read | Taken, as an idea | Refused | Where it went in Heron |
+|---|---|---|---|
+| OpenDesign · Apache-2.0 | a file no rule recognises widens the checks; check the thing delivered, not the tree; a finding carries its evidence | its product shape, template words, marketplace and runtime stack (§3.8) | [`check-change.py`](../tools/check-change.py) and [`check-package.py`](../tools/check-package.py) - [34 §2.16, §2.17, §2.19](34-patterns-adapted.md) |
+| Awesome LLM Apps · Apache-2.0 | write the intent down first, then judge the diff against it; baseline, one change, keep or revert | generic frameworks, demo apps, self-evolving behaviour (§4.6) | [`check-change.py`](../tools/check-change.py), [`change-evidence.py`](../tools/change-evidence.py) - [D-68](DECISIONS.md), [34 §2.15](34-patterns-adapted.md) |
+| OpenHands · MIT (the archived Agent Canvas was not opened) | mock only the part you cannot have, and make a mock look like one | its coding-agent UI, sandbox and backend stack (§5.7) | a rule, not code - [13 §3a](13-testing-and-quality.md), [34 §2.18](34-patterns-adapted.md) |
+
 ---
 
 ## 1. Audit result for document 34

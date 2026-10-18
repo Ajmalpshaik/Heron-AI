@@ -27,6 +27,68 @@ plan could be read before any code was. If it is accepted it becomes a `D-` entr
 > [FRAGMENT-ISSUES row 115](fragment-issues/section-5-rows-101-125.md), *"proved on both legs, awaiting
 > signature"*. `chain_empty` and `chain_contradiction` are tested off Revit only.
 
+### At a glance — the check as built
+
+Read from [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), which sends either a reset
+or an expectation and never both, and the binder in
+[`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), which asks the questions below in this
+order before anything binds.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    CALL["<b>A call that runs a fragment</b><br/>revit_read · revit_change · revit_show<br/>revit_edit_table · and the others"]
+    Q0{{"Does it name what it expects<br/>with expect_from?"}}
+    RESET["<b>Reset</b> · the default, as before<br/>what the last fragment left is forgotten"]
+    Q1{{"Is anything carried<br/>for this chat on this model?"}}
+    Q2{{"Was it left by<br/>the fragment named?"}}
+    Q3{{"Did that fragment run<br/>with the inputs named?"}}
+    BIND["<b>Bound</b><br/>and the answer says where the values came from"]
+    NO["<b>Refused · nothing bound, nothing ran</b><br/>chain_empty · chain_mismatch · chain_inputs_differ<br/>chain_contradiction: a request that resets and expects"]
+
+    CALL --> Q0
+    Q0 -->|no| RESET
+    Q0 -->|yes| Q1
+    Q1 -->|yes| Q2
+    Q2 -->|yes| Q3
+    Q3 -->|yes| BIND
+    Q1 -.->|no| NO
+    Q2 -.->|no| NO
+    Q3 -.->|no| NO
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class CALL host
+    class Q0 brain
+    class RESET,Q1,Q2,Q3,BIND addin
+    class NO revit
+```
+
+**Green is the MCP side, which decides what to send; amber is the add-in inside Revit, which forgets,
+checks and binds.** The pair §6 asks for - the same carried
+values bound under a matching declaration and refused under a mismatched one - was run on a real model
+on 2026-09-16, as the note above says, and awaits a signature.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+A call that runs a fragment (revit_read, revit_change, revit_show, revit_edit_table, ...)
+  -> does it name what it expects with expect_from?
+       no  -> reset, the default as before: what the last fragment left is forgotten
+       yes -> is anything carried for this chat on this model?      no -> refused: chain_empty
+           -> was it left by the fragment named?                    no -> refused: chain_mismatch
+           -> did that fragment run with the inputs named?          no -> refused: chain_inputs_differ
+           -> bound, and the answer says where the values came from
+A request that both resets and expects is refused first: chain_contradiction.
+A refusal binds nothing and runs nothing.
+```
+
+</details>
+
 **The owner asked the question that produced it**, on 2026-09-16, in his own words: *an agent that
 cannot remember is crippled — so add a layer that confirms the remembered thing is the right thing,
 before it is used.* This note says what that would take, what is already built, and what it costs.

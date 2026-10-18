@@ -1,5 +1,11 @@
 # Heron AI — Advanced Internal Architecture, Agent Operating System & Self-Evolution Specification
 
+> **The original specification, kept as the owner wrote it on 2026-08-27. It says what Heron was asked
+> to be, not what is built.** What runs today is in
+> [02 §7a](02-architecture-overview.md#7a-as-built--the-parts-that-run-today), the [README](../README.md)
+> and the [project map](PROJECT-MAP.md). Where this file and [DECISIONS.md](DECISIONS.md) differ,
+> **DECISIONS.md wins** ([PROJECT-MAP §D](PROJECT-MAP.md#d-truth-hierarchy--which-source-wins)).
+
 > **Status:** Source-of-truth record, **part 2 of 4**, as provided by the owner on 2026-08-27.
 > Part 1 is [00 — Master Specification](00-master-specification.md) (the platform and its organisation).
 > Part 3 is [00c — Handover Baseline](00c-master-handover-baseline.md), **authoritative on the Golden

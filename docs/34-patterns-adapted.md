@@ -31,7 +31,7 @@ transfers; the shape almost never does.
 | **Adopted and built** | **6** — tiered depth, the cut marker, **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)), and the three the improvement gate is made of ([§2.15](#215-built---compare-the-finished-diff-against-what-the-change-said-it-was-for), [§2.16](#216-built---a-file-no-rule-recognises-widens-the-checks-rather-than-passing-quietly), [§2.17](#217-built---check-the-thing-that-gets-delivered-not-the-tree-it-was-built-from)). All tested |
 | **Adopted as a rule rather than as code** | **1** — [§2.18](#218-adopted-as-a-rule---mock-only-the-thing-you-genuinely-cannot-have) |
 | **Already held** | **7** — Heron had them, and in five cases more strictly |
-| **Blocked on an owner decision** | **2** — `Q-50`, `Q-51`, `Q-53`. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
+| **Blocked on an owner decision** | **3** — `Q-50`, `Q-51`, `Q-53`, one each for §2.10 to §2.12. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
 | **Rejected with a reason** | **3** — one of them **measured and rejected**, not argued ([§2.13](#213--measured-and-rejected--a-third-retrieval-stream-tried-at-six-settings)) |
 
 > **As built (2026-10-18):** nothing in the *Blocked on an owner decision* row is blocked any more — the
