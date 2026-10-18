@@ -47,3 +47,31 @@ are the shape. Note the Undo list (the arrow beside Undo) before each row.
 | **EM5** | `try-once`, and leave the box open for two minutes before pressing Keep | The answer arrives - no *"still running"* at 60 s. Then set `revit.askTimeoutSeconds = 60`, restart Revit, and leave the box open three minutes: the command line says the box is still open and the run is not recorded; pressing Discard afterwards still puts the model back |
 | **EM6** | EM1 and EM2 once on Revit 2024 and once on Revit 2027 | The same - one undo entry on Keep, none on Discard |
 | **EM7** | *Not a proof - a check on the old add-in.* Before deploying, `try-once` against the add-in that is installed now | *"older than the Keep or Discard box"* - it ran as a preview, rolled back, nothing recorded, and no box appeared |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+The DRAFT fragments tried were `create-text-note` (EM1, EM3), `create-fill-pattern` (EM2, EM5) and
+`create-line-pattern` (EM6, on 2027). The model was saved before each try through `save-document` run from
+*Heron Guard B 2024* - run from the model it would save, it refuses: *"Revit will not save a document while
+Heron's Undo entry is open in it"*.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| EM1 | 2024 | `try-once create-text-note` *HERON EM1* in `Level 1 HVAC Plan`; he clicked **Keep it**. `create-text-note.once.json` `answer keep`, `kept true`, `view_refreshed true`; 21,568 → 21,569; Undo list one new entry `Heron: create-text-note`. The note sat far from the building, so it was small in the view - see ET's note on zooming | **PASS** |
+| EM2 | 2024 | `try-once create-fill-pattern` *HERON EM2 Hatch*: Discard clicked → `discard`, `kept false`, rolled back; again with Esc → `closed`, the same. The model stayed saved (no *unsaved changes*), the Undo list unchanged | **PASS** |
+| EM3 | 2024 | `validate create-text-note --write --kept` with the negative `noteText FIRST\rSECOND`, `listType Numbered` - every value restated, because negative values replace the positive's rather than add to them: only the negative ran, *"NO NOTE WAS MADE"*; `heron_validate draft` wrote the positive as the kept run (*"the modeller saw the result in Revit and pressed Keep"*), status still DRAFT. One comment line added to the impl: `validate --kept` refused *"taken against different code ... Nothing was sent to Revit"*; the impl restored. `accept` is the owner's | **PASS** (signature owed) |
+| EM4 | 2024 | (a) unsaved model: `ask_needs_saved_model` *"Nothing was run"*. (b) B in front: `ask_needs_model_in_front`. (c) `create-line` (PROVEN) and `read-selection` (READ): refused by the command line, nothing sent. And `try-once` on the version already kept: *"already ran once and was KEPT ... Nothing was sent to Revit"* | **PASS** |
+| EM5 | 2024 | He left the box about two minutes: the answer came after 122 s, KEPT, recorded. The 60 s timeout half NOT RUN | **PASS** (first half) |
+| EM6 | 2027 | `try-once create-line-pattern` *Heron EM6 Centre*: Discard → `discard`, the model still saved at 9,813; again, Keep → `keep`, 9,814. One `Heron: create-line-pattern` undo entry | **PASS** on 2027 (2024 is EM1/EM2) |
+| EM7 | - | The add-in before the box was not installed anywhere | **NOT RUN** |

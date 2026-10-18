@@ -40,3 +40,21 @@ Check.rvt*, in Revit 2020 first. Restart the Claude app first so it starts the n
 | **EJ3** | `revit_change` on a scratch-model change that shows a prompt in Revit, left unanswered for over a minute, then answered | Notes the whole time the prompt is open, then the change's own answer, and nothing after it. Undo the change |
 | **EJ4** | EJ1 with the call running past two minutes | Claude Code moves it to a background task; `/tasks` shows the latest note; the answer still arrives |
 | **EJ5** | EJ1 once on Revit 2024 and once on 2027 | The same. The notes are made outside Revit, so the release should not matter |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+**Not run.** During ET4's keep (about 57 s with the box open, through `revit_change`) the owner was asked whether
+the chat's tool line showed *"Waiting for Revit - N s so far"*; he had been watching Revit and the question did
+not land. Nothing was recorded, so EJ1 to EJ5 stay **NOT RUN** - whether Claude Code sends a `progressToken` is
+still open.
