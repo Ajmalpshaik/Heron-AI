@@ -1,0 +1,229 @@
+model: Project2 (scratch, never saved), Revit 2020
+defaults:
+  in: Project2
+  write: true
+  setup:
+  - select-by-category-name
+  - set-selection
+  set:
+    categoryName: Walls
+    inViewOnly: 'FloorPlan: Level 1'
+  negative-set:
+    categoryName: Text Notes
+    inViewOnly: 'FloorPlan: Level 1'
+jobs:
+- fragment: place-areas
+  setup:
+  - create-area-plan
+  - create-area-boundary-lines
+  expect: areaIds
+  set:
+    level: Level 1
+    areaSchemeName: Gross Building
+    viewName: Heron Area Plan
+    areaPlanName: Heron Area Plan
+    traceWalls: outside
+    loopsMm: ''
+    pointsMm: 2500,3000
+    names: Office
+    numbers: A1
+  negative-set:
+    level: Level 1
+    areaSchemeName: Gross Building
+    viewName: Heron Area Plan
+    areaPlanName: No Such Plan
+    traceWalls: outside
+    loopsMm: ''
+    pointsMm: 2500,3000
+    names: Office
+    numbers: A1
+- fragment: report-areas
+  setup:
+  - create-area-plan
+  - create-area-boundary-lines
+  - place-areas
+  expect: schemeTotalsM2
+  set:
+    level: Level 1
+    areaSchemeName: Gross Building
+    viewName: Heron Area Plan
+    areaPlanName: Heron Area Plan
+    traceWalls: outside
+    loopsMm: ''
+    pointsMm: 2500,3000
+    names: Office
+    numbers: A1
+    schemeNameContains: Gross
+    listEachArea: true
+  negative-set:
+    level: Level 1
+    areaSchemeName: Gross Building
+    viewName: Heron Area Plan
+    areaPlanName: Heron Area Plan
+    traceWalls: outside
+    loopsMm: ''
+    pointsMm: 2500,3000
+    names: Office
+    numbers: A1
+    schemeNameContains: ZZZ NO SUCH SCHEME
+    listEachArea: true
+- fragment: refit-room-elevations
+  setup:
+  - create-room-elevations
+  expect: refittedViews
+  set:
+    planView: 'FloorPlan: Level 1'
+    origin: 2500,3000,0
+    slotCount: 4
+    scale: 50
+    roomNumbers: '1'
+    marginMm: 300
+  negative-set:
+    planView: 'FloorPlan: Level 1'
+    origin: 2500,3000,0
+    slotCount: 4
+    scale: 50
+    roomNumbers: '999'
+    marginMm: 300
+- fragment: offset-tags-from-host
+  expect: moved
+  set:
+    categoryName: Room Tags
+    inViewOnly: 'FloorPlan: Level 1'
+    view: 'FloorPlan: Level 1'
+    tagCategories: Room Tags
+    offsetRightMm: 500
+    offsetUpMm: 0
+    addLeader: keep
+  negative-set:
+    categoryName: Room Tags
+    inViewOnly: 'FloorPlan: Level 1'
+    view: 'FloorPlan: Level 1'
+    tagCategories: Door Tags
+    offsetRightMm: 500
+    offsetUpMm: 0
+    addLeader: keep
+- fragment: set-revision-settings
+  setup: []
+  expect: changed
+  set:
+    numbering: per sheet
+    arcLengthMm: '12.5'
+  negative-set:
+    numbering: ZZZ no such numbering
+    arcLengthMm: '12.5'
+- fragment: place-rooms
+  setup:
+  - create-wall
+  expect: created
+  set:
+    level: Level 2
+    wallType: Generic - 200mm
+    points: 0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0
+    height: 3000
+    structural: false
+    levelId: Level 2
+    placeKind: rooms
+    phaseId: New Construction
+    planViewId: 'FloorPlan: Level 2'
+  negative-set:
+    level: Level 2
+    wallType: Generic - 200mm
+    points: 0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0
+    height: 3000
+    structural: false
+    levelId: Level 1
+    placeKind: rooms
+    phaseId: New Construction
+    planViewId: 'FloorPlan: Level 1'
+- fragment: dimension-wall-openings
+  expect: created
+  setup:
+  - select-by-category-name
+  - set-selection
+  - place-hosted-family
+  set:
+    categoryName: Walls
+    inViewOnly: 'FloorPlan: Level 1'
+    view: 'FloorPlan: Level 1'
+    offsetMm: 500
+    withOverall: false
+    side: ''
+    symbol: 'M_Fixed: 0915 x 1220mm'
+    level: Level 1
+    points: 1500,0,0; 7500,0,0
+    toRoomAt: 1500,1000,0; 7500,1000,0
+    hingeAt: 1800,0,0; 7800,0,0
+    sillHeight: '900'
+    rotation: ''
+  negative-set:
+    categoryName: Text Notes
+    inViewOnly: 'FloorPlan: Level 1'
+    view: 'FloorPlan: Level 1'
+    offsetMm: 500
+    withOverall: false
+    side: ''
+    symbol: 'M_Fixed: 0915 x 1220mm'
+    level: Level 1
+    points: 1500,0,0; 7500,0,0
+    toRoomAt: 1500,1000,0; 7500,1000,0
+    hingeAt: 1800,0,0; 7800,0,0
+    sillHeight: '900'
+    rotation: ''
+- fragment: dimension-grids-and-levels
+  expect: created
+  keep-chain: true
+  setup:
+  - select-by-categories
+  setup-set:
+    categories: Grids
+    inViewOnly: 'FloorPlan: Level 1'
+  negative-setup-set:
+    categories: Text Notes
+    inViewOnly: 'FloorPlan: Level 1'
+  set:
+    view: 'FloorPlan: Level 1'
+    offsetMm: 1000
+  negative-set:
+    view: 'FloorPlan: Level 1'
+    offsetMm: 1000
+- fragment: create-beam-system
+  setup: []
+  expect: beamSystem
+  set:
+    boundaryMm: 0,0; 10000,0; 10000,6000; 0,6000
+    level: Level 2
+    beamType: 'UB-Universal Beams: UB305x165x40'
+    spacingMm: 1500
+    directionEdge: 0
+  negative-set:
+    boundaryMm: 0,0; 10000,0
+    level: Level 2
+    beamType: 'UB-Universal Beams: UB305x165x40'
+    spacingMm: 1500
+    directionEdge: 0
+- fragment: create-duct-runs
+  setup: []
+  expect: runsDrawn
+  set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Default'
+    level: Level 1
+    runs: '400x200: 1000,3000,2700; 4000,3000,2700 | 300x300: 6000,3000,2700; 9000,3000,2700'
+  negative-set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Default'
+    level: Level 1
+    runs: ''
+- fragment: check-family-standards
+  setup: []
+  write: false
+  expect: offStandard
+  set:
+    namePattern: ZZZ*
+    requiredParameters: HERON NOT A PARAMETER
+    mustHaveConnectors: true
+  negative-set:
+    namePattern: ''
+    requiredParameters: ''
+    mustHaveConnectors: false

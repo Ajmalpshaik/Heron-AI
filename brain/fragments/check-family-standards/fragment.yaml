@@ -143,7 +143,11 @@ contract:
       # the keynote table, not checked), each naming up to the first ten family
       # types, and the classification file read. In a family document: the
       # classification lines of familyReport, and the file read.
-      role: result
+      # ACCOUNTING, not a result: it is written whatever the patterns asked -
+      # a run that finds nothing off standard still counts blank OmniClass
+      # Numbers here (measured 2026-10-18 on Revit 2020: offStandard 0 and this
+      # line filled). offStandard and warned decide (D-51).
+      role: accounting
       type: string
       
 proof:

@@ -1,0 +1,87 @@
+# Batch 3, 2026-10-18 - Revit 2020, scratch Project2 + scratch Family1 (Generic Models), both
+# never saved. Reruns of batch 1's arrangement faults (ducts sit above the Level 1 plan's view
+# range, so they are selected in the 3D view "Heron 3D"), plus family and project reads.
+# Every MODIFY run ROLLED BACK.
+model: "Project2 + Family1 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project2"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: "Ducts"
+    inViewOnly: "Heron 3D"
+  negative-set:
+    categoryName: "Walls"
+    inViewOnly: "Heron 3D"
+
+jobs:
+  - fragment: report-connectors
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D"}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D"}
+
+  - fragment: find-dead-ends
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", stubLength: 3048}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", stubLength: 3048}
+
+  - fragment: report-view-cut-planes
+    setup: []
+    expect: cutPlanes
+    set: {viewName: "Section: Section 1"}
+    negative-set: {viewName: "Section: No Such Section"}
+
+  - fragment: report-view-settings
+    setup: []
+    expect: viewSettings
+    set: {views: "FloorPlan: Level 1"}
+    negative-set: {views: "Heron Wall Schedule"}
+
+  - fragment: report-category-overrides
+    setup: [set-category-solid-fill]
+    write: true
+    expect: overriddenCategories
+    set: {view: "FloorPlan: Level 1", categories: "Walls", overrides: "halftone=true", allCategories: "false"}
+    negative-set: {view: "FloorPlan: Level 1", categories: "Doors", overrides: "halftone=true", allCategories: "false"}
+
+  - fragment: check-family-standards
+    setup: []
+    expect: offStandard
+    set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-set: {namePattern: "*", requiredParameters: "", mustHaveConnectors: false}
+
+  - fragment: find-unused-families
+    setup: []
+    expect: elements
+    set: {}
+    negative-in: "Family1"
+    negative-set: {}
+
+  - fragment: report-area-volume-computations
+    setup: []
+    set: {}
+    negative-in: "Family1"
+    negative-set: {}
+
+  - fragment: create-room-separation-lines
+    setup: []
+    write: true
+    expect: created
+    set: {view: "FloorPlan: Level 1", points: "0,3000,0; 5000,3000,0", asSpace: false}
+    negative-set: {view: "FloorPlan: Level 1", points: "0,3000,0", asSpace: false}
+
+  - fragment: create-family-freeform-solid
+    in: "Family1"
+    setup: []
+    write: true
+    expect: built
+    set: {kind: "sweep", profiles: "circle 0,0 7", path: "helix 0,0,0 55 25 6", solid: "true"}
+    negative-set: {kind: "sweep", profiles: "circle 0,0 20", path: "spline 0,0,0; 1000,1000,0; 1000,0,0; 0,1000,0", solid: "true"}
+
+  - fragment: create-line-style
+    in: "Family1"
+    setup: []
+    write: true
+    expect: style
+    set: {styleName: "Heron Test Style", colour: "0,0,255", weight: 1, patternName: "Solid", updateExisting: true, familyCategory: true}
+    negative-set: {styleName: "Heron Test Style", colour: "0,0,255", weight: 1, patternName: "ZZZ No Such Pattern", updateExisting: true, familyCategory: true}

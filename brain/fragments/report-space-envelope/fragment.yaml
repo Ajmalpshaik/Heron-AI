@@ -77,9 +77,12 @@ contract:
       source: request
       optional: true
   provides:
-    # The whole take-off as one JSON string, format 1.
+    # The whole take-off as one JSON string, format 1. ACCOUNTING, not a result:
+    # it is written whatever was found - a document with no Spaces still gets
+    # the format, units and site skeleton (found 2026-10-18 on Revit 2020, a
+    # Generic Models family). `spaces` is the evidence (D-51).
     - name: takeoffJson
-      role: result
+      role: accounting
       type: string
     # How many MEP Spaces were read, placed or not.
     - name: spaces
