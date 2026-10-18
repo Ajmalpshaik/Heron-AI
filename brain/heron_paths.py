@@ -126,7 +126,8 @@ seen real from both sides the same night.
 The add-in's own DATA - its settings and its audit trail - stays where
 HeronPaths.Data puts it: Revit is not a child of the app, so it writes the
 real disk. The Companion's notes are DERIVED and moved to the temporary
-folder on both sides; `heron_bridge_client.temp_folder()` owns that one.
+folder on both sides - the user's own, not Revit's GUID-named sub-folder of it
+(D-136); `heron_bridge_client.user_temp_folder()` owns that one.
 
 `carry_forward()` copies what the old places hold into the home and deletes
 nothing. `home()` runs it once on a PC, by itself, and leaves a note.

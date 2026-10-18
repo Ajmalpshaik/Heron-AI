@@ -210,6 +210,78 @@ namespace Heron.Kernel.TestHost
             Check(!HeronPaths.IsSafeToDelete(temp)
                   && !HeronPaths.IsSafeToDelete(Path.Combine(temp, "someone-elses.txt")),
                   "the temporary folder itself, and another program's file in it, are refused");
+
+            RevitsOwnTemp();
+        }
+
+        // ------------------------------------------------------------------
+        // D-136, row 5b-1100: REVIT RUNS WITH A TEMPORARY FOLDER OF ITS OWN -
+        // a GUID-named sub-folder of the user's, new at each start; on the
+        // owner's laptop ...\Temp\63835622-bdd8-4d57-a4a9-19a6afb83cd6. The
+        // chat names the user's own, so the Companion must name it too, from
+        // inside Revit. Planted in a scratch folder: TMP is what
+        // Path.GetTempPath reads first on Windows and TMPDIR elsewhere, read
+        // again at every call, and put back before anything else runs.
+        // ------------------------------------------------------------------
+        private static void RevitsOwnTemp()
+        {
+            var name = Environment.OSVersion.Platform == PlatformID.Win32NT ? "TMP" : "TMPDIR";
+            var saved = Environment.GetEnvironmentVariable(name);
+            var user = Path.GetFullPath(Path.Combine(Path.GetTempPath(),
+                "heron-kernel-temp-" + Guid.NewGuid().ToString("N").Substring(0, 8)));
+            const string guid = "63835622-bdd8-4d57-a4a9-19a6afb83cd6";
+            var revits = Path.Combine(user, guid);
+            Directory.CreateDirectory(revits);
+            try
+            {
+                Func<string, string> companionWith = planted =>
+                {
+                    Environment.SetEnvironmentVariable(name, planted);
+                    return Path.GetFullPath(HeronPaths.Companion);
+                };
+                Func<string, string, bool> same = (a, b) => string.Equals(
+                    a.TrimEnd(Path.DirectorySeparatorChar), Path.GetFullPath(b).TrimEnd(Path.DirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase);
+
+                var got = companionWith(revits + Path.DirectorySeparatorChar);
+                Check(same(Path.GetTempPath(), revits),
+                      "the plant took: this process's temporary folder is a Revit-style <temp>\\<GUID>");
+                Check(same(got, Path.Combine(user, "Heron", "companion")),
+                      "with Revit's own temporary folder, the Companion's is still the user's "
+                      + "<temp>\\Heron\\companion - where the chat writes (" + got + ")");
+                Check(same(HeronPaths.SharedDerived, Path.Combine(user, "Heron")),
+                      "and SharedDerived is the user's <temp>\\Heron (" + HeronPaths.SharedDerived + ")");
+                Check(!Directory.Exists(Path.Combine(revits, "Heron")),
+                      "nothing of Heron's is made inside Revit's own temporary folder");
+                Check(HeronPaths.IsSafeToDelete(got) && !HeronPaths.IsSafeToDelete(revits)
+                      && !HeronPaths.IsSafeToDelete(user),
+                      "the Companion's folder is DERIVED; Revit's folder and the user's are refused");
+
+                got = companionWith(revits);
+                Check(same(got, Path.Combine(user, "Heron", "companion")),
+                      "the same with no separator at the end (" + got + ")");
+                got = companionWith(Path.Combine(revits, "7d1f0b52-3c4e-4a6f-9b2d-0e8c5a1f6b3d"));
+                Check(same(got, Path.Combine(revits, "Heron", "companion")),
+                      "only the last part is taken off, once (" + got + ")");
+
+                // THE NEGATIVES: a temporary folder whose last part is not a
+                // GUID is the user's own, and is used as it is.
+                foreach (var other in new[] { "heron-work", guid + "x", guid.Replace("-", ""), "{" + guid + "}" })
+                {
+                    var folder = Path.Combine(user, other);
+                    got = companionWith(folder);
+                    Check(same(got, Path.Combine(folder, "Heron", "companion")),
+                          "a temporary folder named '" + other + "' is not Revit's own, and is kept (" + got + ")");
+                }
+                got = companionWith(user);
+                Check(same(got, Path.Combine(user, "Heron", "companion")),
+                      "and the user's own temporary folder is used as it is (" + got + ")");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(name, saved);
+                try { Directory.Delete(user, true); } catch (IOException) { }
+            }
         }
 
         // ------------------------------------------------------------------

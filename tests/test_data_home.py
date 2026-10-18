@@ -46,7 +46,10 @@ WHAT IT PROVES
   6. THE COMPANION'S NOTE IS WHERE REVIT LOOKS. The chat writes it under the
      temporary folder as .NET names it, and HeronPaths.cs builds
      HeronPaths.Companion from Path.GetTempPath() - not from %LOCALAPPDATA%,
-     which the app copies (row 5b-416, D-109).
+     which the app copies (row 5b-416, D-109). Both take a last GUID-named
+     part off that folder by one pattern, because Revit runs with such a
+     sub-folder of the user's own (row 5b-1100, D-136) - and a chat given
+     one, planted here, still writes where the add-in looks.
 """
 
 import hashlib
@@ -442,24 +445,77 @@ def run(yard):
     got = ask(BRIDGE, "temp_folder", {}, "posix")
     check(got == "/tmp", "and /tmp without it (%r)" % (got,))
     sys.path.insert(0, COMPANION_PY)
+    COMPANION = None
     try:
         import heron_companion as COMPANION
         folder = COMPANION.companion_dir()
     except Exception as error:                     # noqa: BLE001 - reported
         folder = error
     check(isinstance(folder, str) and same(folder, os.path.join(
+              BRIDGE.user_temp_folder() if hasattr(BRIDGE, "user_temp_folder") else
               BRIDGE.temp_folder() if hasattr(BRIDGE, "temp_folder") else "?",
               "Heron", "companion")),
-          "the chat writes its note in <temp>\\Heron\\companion (%r)" % (folder,))
+          "the chat writes its note in <the user's temp>\\Heron\\companion (%r)" % (folder,))
     check(isinstance(folder, str) and not folder.lower().startswith(
               BRIDGE.local_app_data().lower() + os.sep + "heron"),
           "not in %LOCALAPPDATA%\\Heron, which the app copies")
     text = read(PATHS_CS)
     body = re.search(r"public static string Companion\s*\{(.*?)\}\s*\n", text, re.S)
     body = body.group(1) if body else ""
-    check("GetTempPath" in body and "Derived" not in body,
-          "HeronPaths.Companion is built from Path.GetTempPath(), not from DERIVED (%s)"
+    check("SharedDerived" in body and not re.search(r"(?<!Shared)Derived", body),
+          "HeronPaths.Companion is built under SharedDerived, not under DERIVED (%s)"
           % " ".join(body.split())[:120])
+    shared = re.search(r"public static string SharedDerived\s*\{(.*?)\}\s*\n", text, re.S)
+    shared = shared.group(1) if shared else ""
+    check("UserTemp(Path.GetTempPath())" in shared,
+          "and SharedDerived on Path.GetTempPath() less Revit's own folder (%s)"
+          % " ".join(shared.split())[:120])
+
+    # D-136, row 5b-1100: REVIT RUNS WITH A TEMPORARY FOLDER OF ITS OWN - a
+    # GUID-named sub-folder of the user's, new at each start. Measured on the
+    # owner's laptop on 2026-10-18; the chat's own TMP was the user's folder.
+    revit = "C:\\Users\\ajmal\\AppData\\Local\\Temp\\63835622-bdd8-4d57-a4a9-19a6afb83cd6"
+    users = "C:\\Users\\ajmal\\AppData\\Local\\Temp"
+    for given, want, what in (
+            (revit, users, "Revit's own <temp>\\<GUID> is the user's <temp>"),
+            (revit + "\\", users, "with a separator at the end too"),
+            (revit + "\\7d1f0b52-3c4e-4a6f-9b2d-0e8c5a1f6b3d", revit, "only the last part is taken off, once"),
+            (users, users, "the user's own folder is kept as it is"),
+            (users + "\\heron-work", users + "\\heron-work", "a folder that is not a GUID is kept"),
+            (revit + "x", revit + "x", "nor one a letter longer than a GUID"),
+            (users + "\\63835622bdd84d57a4a919a6afb83cd6", users + "\\63835622bdd84d57a4a919a6afb83cd6",
+             "nor a GUID spelled without its hyphens - Revit's has them"),
+            ("C:\\63835622-bdd8-4d57-a4a9-19a6afb83cd6", "C:\\", "a GUID straight under a drive is the drive")):
+        got = ask(BRIDGE, "user_temp_folder", {"TMP": given}, "nt")
+        check(got == want, "user_temp_folder(): %s (%r)" % (what, got))
+    got = ask(BRIDGE, "user_temp_folder", {"TMPDIR": "/tmp/63835622-bdd8-4d57-a4a9-19a6afb83cd6/"}, "posix")
+    check(got == "/tmp", "and elsewhere the same rule on TMPDIR (%r)" % (got,))
+
+    # THE TWO HALVES ON ONE RULE. The C# pattern and this one, read off both.
+    cs = re.search(r'GuidName\s*=\s*new Regex\(\s*@"\\A\(\?:(.*?)\)\\z"', text)
+    py = getattr(getattr(BRIDGE, "GUID_NAME", None), "pattern", None)
+    check(cs is not None and py is not None and cs.group(1) == py,
+          "HeronPaths.cs and heron_bridge_client.py name a GUID by one pattern (%r, %r)"
+          % (cs.group(1) if cs else None, py))
+
+    # AND THE CHAT'S OWN NOTE, with this process's temporary folder planted as
+    # Revit's would be: the chat lands where the add-in looks.
+    planted_temp = os.path.join(yard, "temp-6")
+    keys = ("TMP", "TEMP", "TMPDIR")
+    saved = dict((key, os.environ.get(key)) for key in keys)
+    try:
+        for key in keys:
+            os.environ[key] = os.path.join(planted_temp, "63835622-bdd8-4d57-a4a9-19a6afb83cd6")
+        folder = ask(COMPANION, "companion_dir") if COMPANION is not None else None
+        check(same(folder, os.path.join(planted_temp, "Heron", "companion")),
+              "a chat run with a Revit-style temporary folder writes in the user's "
+              "<temp>\\Heron\\companion (%r)" % (folder,))
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
     print()
     if FAILURES:

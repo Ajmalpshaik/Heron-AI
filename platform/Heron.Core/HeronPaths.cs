@@ -8,6 +8,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Heron.Core
 {
@@ -97,10 +98,57 @@ namespace Heron.Core
         /// temporary folder is not copied: measured on the owner's laptop on
         /// 2026-10-17 from both sides. Only what a chat writes FOR the add-in to
         /// read belongs here.
+        ///
+        /// IN THE USER'S OWN TEMPORARY FOLDER, NOT THIS PROCESS'S (D-136,
+        /// FRAGMENT-ISSUES 5b-1100). Revit runs with a temporary folder of its
+        /// own - a GUID-named sub-folder of the user's, new at each start, seen on
+        /// the owner's laptop as ...\Temp\63835622-bdd8-4d57-a4a9-19a6afb83cd6 -
+        /// while a chat names the user's own; so Path.GetTempPath() alone named a
+        /// folder no chat writes, and the Companion button said no chat was
+        /// running while four were. UserTemp takes that one GUID part off.
         /// </summary>
         public static string SharedDerived
         {
-            get { return Path.Combine(Path.GetTempPath(), AppFolder); }
+            get { return Path.Combine(UserTemp(Path.GetTempPath()), AppFolder); }
+        }
+
+        /// <summary>
+        /// A Revit-style GUID, the way Revit spells its folder: 8-4-4-4-12 hex
+        /// digits with hyphens. mcp/client/heron_bridge_client.py GUID_NAME is
+        /// the same pattern, and tests/test_data_home.py reads both to hold them
+        /// together - so the chat and the add-in take off exactly the same names.
+        /// </summary>
+        private static readonly Regex GuidName = new Regex(
+            @"\A(?:[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})\z",
+            RegexOptions.CultureInvariant);
+
+        /// <summary>
+        /// The user's own temporary folder, from the one a process was given:
+        /// that folder less its last part when that part is a GUID, once;
+        /// otherwise the folder as it is.
+        ///
+        /// WHY THIS RULE AND NOT THE USER'S TEMP FROM THE REGISTRY
+        /// (Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.User)).
+        /// This one has already run in a real Revit: create-family-forms finds
+        /// %TEMP%\heron-work beside Revit's own folder the same way (row 5b-430;
+        /// it parses the name with Guid.TryParse, which takes other spellings
+        /// too), and NEEDS-CHECKING DA8 passed with it on the laptop in Revit
+        /// 2024.3 on 2026-10-17. It reads nothing but the folder the process was
+        /// given, so the chat applies the very same rule to its own and the two
+        /// agree whatever that folder is - a terminal server's per-session
+        /// Temp\2 included, where the registry would still name Temp (reasoned,
+        /// not measured). The registry value is a REG_EXPAND_SZ, absent on some
+        /// PCs, that nobody has read from inside Revit or a Store Claude. A
+        /// folder not named by a GUID is left alone, so a Revit that runs with
+        /// the user's own folder, and every other process, is unchanged.
+        /// </summary>
+        private static string UserTemp(string temporary)
+        {
+            if (string.IsNullOrEmpty(temporary)) return temporary;
+            var trimmed = temporary.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!GuidName.IsMatch(Path.GetFileName(trimmed) ?? "")) return temporary;
+            var parent = Path.GetDirectoryName(trimmed);
+            return string.IsNullOrEmpty(parent) ? temporary : parent;
         }
 
         /// <summary>
@@ -109,9 +157,10 @@ namespace Heron.Core
         /// Companion button in Revit can open the page (D-109). Written and
         /// deleted by the chat's MCP process; read, never written, by the add-in.
         /// Under SharedDerived since D-135, so the chat and Revit name one folder
-        /// on every PC - mcp/companion/heron_companion.py companion_dir().
+        /// on every PC - mcp/companion/heron_companion.py companion_dir() - and
+        /// in the user's own temporary folder since D-136, not Revit's own.
         /// </summary>
-        public static string Companion { get { return Ensure(Path.Combine(Path.GetTempPath(), AppFolder, "companion")); } }
+        public static string Companion { get { return Ensure(Path.Combine(SharedDerived, "companion")); } }
 
         /// <summary>
         /// DERIVED - where capture_view puts a view's picture for the moment

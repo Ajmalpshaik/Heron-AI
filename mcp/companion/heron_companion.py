@@ -1270,8 +1270,10 @@ def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109). Under the temporary folder since
     D-135, not %LOCALAPPDATA%: a Microsoft Store Claude keeps a private copy of
-    that for this process, and Revit never sees it (row 5b-416)."""
-    return os.path.join(bridge.temp_folder(), "Heron", "companion")
+    that for this process, and Revit never sees it (row 5b-416). The user's own
+    temporary folder since D-136, by the add-in's rule: Revit runs with a
+    GUID-named sub-folder of it (row 5b-1100)."""
+    return os.path.join(bridge.user_temp_folder(), "Heron", "companion")
 
 
 def enabled(path=None):

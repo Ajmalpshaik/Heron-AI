@@ -45,6 +45,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -118,6 +119,38 @@ def temp_folder(environ=None, system=None):
         return env.get("SystemRoot") or env.get("windir") or "C:\\Windows"
     found = env.get("TMPDIR", "")
     return found if found.strip() else "/tmp"
+
+
+#: A Revit-style GUID, the way Revit spells its temporary folder: 8-4-4-4-12
+#: hex digits with hyphens. HeronPaths.cs GuidName is the same pattern, and
+#: tests/test_data_home.py reads both to hold them together.
+GUID_NAME = re.compile(
+    r"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}")
+
+
+def user_temp_folder(environ=None, system=None):
+    """
+    The user's own temporary folder: `temp_folder()` less its last part when
+    that part is a GUID, once; otherwise `temp_folder()` as it is. What
+    HeronPaths.SharedDerived is built on, by the same rule (D-136).
+
+    WHY (row 5b-1100). Revit runs with a temporary folder of its own - a
+    GUID-named sub-folder of the user's, new at each start; on the owner's
+    laptop on 2026-10-18, ...\\Temp\\63835622-bdd8-4d57-a4a9-19a6afb83cd6 -
+    while this process is given the user's. Built on GetTempPath() alone, the
+    add-in looked in that sub-folder and the Companion button said no chat was
+    running while four were. Both halves now take the GUID part off; a chat is
+    normally given no such folder, and is then unchanged.
+    """
+    import ntpath
+    import posixpath
+    nt = (os.name if system is None else system) == "nt"
+    paths = ntpath if nt else posixpath
+    folder = temp_folder(environ, system)
+    trimmed = folder.rstrip("\\/") if nt else folder.rstrip("/")
+    if not GUID_NAME.fullmatch(paths.basename(trimmed)):
+        return folder
+    return paths.dirname(trimmed) or folder
 
 
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery

@@ -206,6 +206,7 @@ an edit.
 | [D-133](#d-133--a-run-that-contradicts-a-proofreleases-entry-is-reported-as-one-that-contradicts-the-proof-is) | A run that contradicts a proof.releases entry is reported, as one that contradicts the proof is | ✅ Accepted · 2026-10-17 |
 | [D-134](#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store) | The re-ranker reads a card's first declared sentences beside its identity, carried in the store | ✅ Accepted · 2026-10-17 |
 | [D-135](#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them) | Heron's Python side keeps its data in %USERPROFILE%\.heron, and the Companion's notes in the temporary folder, where a Store Claude's copy cannot reach them | ✅ Accepted · 2026-10-18 |
+| [D-136](#d-136--both-halves-name-the-companions-folder-in-the-users-own-temporary-folder-taking-a-last-guid-named-part-off-the-one-they-are-given-because-revit-runs-with-a-temporary-folder-of-its-own) | Both halves name the Companion's folder in the user's own temporary folder, taking a last GUID-named part off the one they are given, because Revit runs with a temporary folder of its own | ✅ Accepted · 2026-10-18 |
 
 ## Format
 
@@ -1181,3 +1182,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_paths.py`](../brain/heron_paths.py), [`heron_scope.py`](../brain/heron_scope.py), [`heron_gaps.py`](../brain/heron_gaps.py), [`heron_audit.py`](../brain/heron_audit.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_companion.py`](../mcp/companion/heron_companion.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron-ready.py`](../tools/heron-ready.py), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs), [`tests/test_data_home.py`](../tests/test_data_home.py)
 
 **Full record:** [`decisions/D-135.md`](decisions/D-135.md)
+
+## D-136 — Both halves name the Companion's folder in the user's own temporary folder, taking a last GUID-named part off the one they are given, because Revit runs with a temporary folder of its own
+
+**Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** chosen by the session on Ajmal PS's instruction in the task of 2026-10-18: *"Pick one, say why in the code comment, and record it - a new decision superseding D-135 point 3 if the rule changes"* · **Source:** [row 5b-1100](fragment-issues/section-5b-rows-401-425.md), [row 5b-430](fragment-issues/section-5b-rows-401-425.md), [NEEDS-CHECKING HF4](needs-checking/group-hf.md)
+**Supersedes:** [D-135](#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them) point 3 - which temporary folder both halves name. D-135 itself is unchanged, and its points 1, 2, 4 and 5 stand
+**Keeps:** D-135's reason for the temporary folder - a Store Claude's copy has none, so a chat's write there lands on the real disk · [D-17](#d-17--runtime-state-is-machine-local-not-roaming) - runtime state stays machine-local · [D-109](#d-109--a-companion-button-in-revit-opens-the-page-and-a-companion-switch-turns-it-off-without-touching-heron) - the button, the note and its 30 seconds
+**Affects:** [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`SharedDerived`, `UserTemp`, `GuidName`, `Companion`), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`GUID_NAME`, `user_temp_folder`), [`heron_companion.py`](../mcp/companion/heron_companion.py) (`companion_dir`), [`tests/test_data_home.py`](../tests/test_data_home.py) section 6, [`tests/Heron.Kernel.TestHost`](../tests/Heron.Kernel.TestHost/Program.cs) section 2
+
+**Full record:** [`decisions/D-136.md`](decisions/D-136.md)
