@@ -502,16 +502,19 @@ def grant():
 
     print("\n10. a change the grant covers is kept with no box - never a publish, never a DRAFT")
     check(re.search(r"keptUnderGrant\s*=\s*UnderTheGrant\(\s*client\s*,\s*grantKey\s*,\s*asking\s*,"
-                    r"\s*sendsOut\s*,", run) is not None,
+                    r"\s*askToKeep\s*,\s*apply\s*,\s*sendsOut\s*,", run) is not None,
           "the grant is asked about with whether this is a DRAFT's one run and whether it is a publish")
     under = NOTE_SUITE.body_of(executor, "private static string UnderTheGrant(")
     check("Decide(client, grantKey, asking || sendsOut," in under,
           "both are always asked - Decide is told so")
+    check(run.count("UnderTheGrant(") == 1 and before(run, "var grantKey = RevitOperations.DocumentKey(target);",
+                                                     "group.Start();"),
+          "asked once per run, about the model the job started on")
     check("if (keptUnderGrant != null) askToKeep = false;" in run
           and before(run, "if (keptUnderGrant != null) askToKeep = false;", "answered = AskTheModeller("),
           "covered, the box is not put up - decided before the box, never after an answer")
-    check(re.search(r"AskTheModeller\([^;]*!asking\s*&&\s*!sendsOut\s*&&\s*HeronKeepGrant\.CanHold\(",
-                    run) is not None,
+    check("offerRest = !asking && !sendsOut && HeronKeepGrant.CanHold(client, grantKey);" in under
+          and re.search(r"AskTheModeller\([^;]*\bofferRest\s*,\s*askedAgain\s*,", run) is not None,
           "the third link is offered only for a keep from a chat that is not a publish, and "
           "only for a chat and model a grant can be held by")
     ask = NOTE_SUITE.body_of(executor, "private static string AskTheModeller(")
@@ -525,8 +528,9 @@ def grant():
                  "DefaultButton = TaskDialogResult.CommandLink2"),
           "Discard is still the default, set after every link (row 5b-621)")
     check("askedAgain" in ask, "a box up despite a grant says why")
-    if_ends = NOTE_SUITE.body_of(executor, "private static string UnderTheGrant(")
-    check("HeronKeepGrant.Ends(decided)" in if_ends and "RepaintAskToKeep()" in if_ends,
+    ended = NOTE_SUITE.body_of(executor, "private static void GrantEnded(")
+    check("if (HeronKeepGrant.Ends(decided)) GrantEnded(decided, grantedAt);" in under
+          and "HeronApplication.Log(" in ended and "RepaintAskToKeep()" in ended,
           "a grant another chat or model ended is logged and taken off the ribbon at once")
 
     print("\n11. the reply says it was kept without asking, under the grant given at HH:MM")
@@ -541,7 +545,7 @@ def grant():
     check('Json.Bool("asked", false)' in with_grant and '"keptUnderGrant"' in with_grant
           and '"grantedAt"' in with_grant,
           "and the reply's fields: asked false, keptUnderGrant, grantedAt")
-    check("return keptUnderGrant != null ? WithGrant(verdict, keptUnderGrant) : verdict;" in run,
+    check("if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);" in run,
           "on every change the grant covered")
     answer = NOTE_SUITE.body_of(executor, "private static string WithAnswer(")
     check("answered == Keep || answered == RestOfJob" in answer,
@@ -551,9 +555,10 @@ def grant():
           "the activity banner says a change was kept without asking, and when the job was allowed")
 
     print("\n12. what ends it: the switch, a closing model, ten quiet minutes, Revit closing")
-    check(re.search(r"else\s+if\s*\(\s*apply\s*\)\s*\{\s*var\s+ended\s*=\s*HeronKeepGrant\.Session\.End\(\);",
-                    run) is not None
-          and before(run, "keptUnderGrant = UnderTheGrant(", "else if (apply)"),
+    under = NOTE_SUITE.body_of(executor, "private static string UnderTheGrant(")
+    check(re.search(r"if\s*\(\s*!asking\s*&&\s*!askToKeep\s*\)\s*\{\s*if\s*\(\s*apply\s*\)\s*"
+                    r"GrantEnded\(HeronKeepGrant\.EndedSwitch,\s*HeronKeepGrant\.Session\.End\(\)\);",
+                    under) is not None,
           "a keep with the question off - by the button or in heron.config - ends a grant "
           "still held, so turning it on again never finds an old job's grant")
     application = code(APPLICATION)

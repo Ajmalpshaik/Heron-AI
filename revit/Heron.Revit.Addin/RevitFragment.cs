@@ -650,7 +650,11 @@ namespace Heron.Revit.Addin
 
             // The HH:MM of the modeller's "keep the rest of this job" this
             // change was kept under, with no box - D-138. Null when it was not.
+            // And what UnderTheGrant says for the box: why it is up although a
+            // grant was in play, and whether it may offer the third link.
             string keptUnderGrant = null;
+            string askedAgain = null;
+            var offerRest = false;
 
             // WHAT REVIT SAID WHILE THE JOB RAN - every setup step that writes
             // and the fragment itself - and what Heron did about each. Filled
@@ -714,6 +718,10 @@ namespace Heron.Revit.Addin
                 // Golden Rule 16. Named for the fragment, so Revit's own undo
                 // history reads as something a person did.
                 var label = "Heron: " + name;
+
+                // WHICH MODEL A JOB'S GRANT IS HELD FOR (D-138), read as the job
+                // starts - the model it was asked of, whatever the run does.
+                var grantKey = RevitOperations.DocumentKey(target);
 
                 // WATCHED FROM BEFORE THE GROUP STARTS: the last kept job's
                 // elements are counted here, so what the modeller removed
@@ -903,35 +911,9 @@ namespace Heron.Revit.Addin
                     // counted as part of it, and the report is sealed.
                     described = changed.Describe();
 
-                    // D-138: ONE KEEP PER JOB. A change the box would ask about
-                    // is kept without it when the modeller pressed "Keep, and
-                    // keep the rest of this job without asking" for this chat
-                    // on this model within the last ten minutes. Never a
-                    // publish and never a DRAFT's one run - those are asked
-                    // whatever was granted. Another chat or another model ends
-                    // the grant, and the box then says why it is back.
-                    var grantKey = RevitOperations.DocumentKey(target);
-                    string askedAgain = null;
-                    if (asking || askToKeep)
-                    {
-                        keptUnderGrant = UnderTheGrant(client, grantKey, asking, sendsOut,
-                                                       out askedAgain);
-                        if (keptUnderGrant != null) askToKeep = false;
-                    }
-                    else if (apply)
-                    {
-                        // A KEEP WITH THE QUESTION OFF: the switch was turned off,
-                        // by the button or in heron.config. Either way a grant
-                        // still held ends here, so turning it on again never
-                        // finds an old job's grant waiting.
-                        var ended = HeronKeepGrant.Session.End();
-                        if (ended != null)
-                        {
-                            HeronApplication.Log(
-                                HeronKeepGrant.EndedLine(HeronKeepGrant.EndedSwitch, ended));
-                            HeronApplication.RepaintAskToKeep();
-                        }
-                    }
+                    keptUnderGrant = UnderTheGrant(client, grantKey, asking, askToKeep, apply,
+                                                   sendsOut, out askedAgain, out offerRest);
+                    if (keptUnderGrant != null) askToKeep = false;   // D-138: no box
 
                     // D-119 AND D-126: THE MODELLER DECIDES, here, with the work
                     // done and the group still open - so Keep and Discard are
@@ -941,15 +923,11 @@ namespace Heron.Revit.Addin
                     // a keep from a chat while the owner's switch is on.
                     // AFTER the dialog check above: a job a Revit dialog
                     // stopped is rolled back, and nobody is asked to keep it.
-                    // The third link, D-138's, only for a keep from a chat that
-                    // is not a publish, and only for a chat a grant can be held by.
                     Func<bool> putBack = null;
                     if (asking || askToKeep)
                     {
                         answered = AskTheModeller(app, target, name, asking, sendsOut, changed,
-                                                  !asking && !sendsOut
-                                                      && HeronKeepGrant.CanHold(client, grantKey),
-                                                  askedAgain, out refreshed, out putBack);
+                                                  offerRest, askedAgain, out refreshed, out putBack);
                         if (answered != null) apply = answered == Keep || answered == RestOfJob;
                         else nothingToAsk = true;
                     }
@@ -1008,9 +986,9 @@ namespace Heron.Revit.Addin
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
                                       nothingToAsk,
                                       answered != null && answered != Keep && answered != RestOfJob,
-                                      selectionRestored, described, keptUnderGrant);
-            if (answered != null) return WithAnswer(verdict, answered, refreshed);
-            return keptUnderGrant != null ? WithGrant(verdict, keptUnderGrant) : verdict;
+                                      selectionRestored, keptUnderGrant, described);
+            if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);
+            return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
 
         /// <summary>
@@ -1046,29 +1024,56 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// D-138: is this change covered by the modeller's "keep the rest of
-        /// this job without asking"? The grant's HH:MM when it is - keep it
-        /// with no box - or null, ask. `askedAgain` is the line the box then
-        /// adds when a grant was in play: still standing but this is a publish
-        /// or a DRAFT's one run, or ended - and why.
+        /// this job without asking" - the same chat, on the same model, within
+        /// ten minutes of its last change? The grant's HH:MM when it is - keep
+        /// it with no box - or null, ask. Never a publish and never a DRAFT's
+        /// one run: those are asked whatever was granted.
+        ///
+        /// `askedAgain` is the line the box adds when a grant was in play -
+        /// still standing but this is a publish or a DRAFT's one run, or ended
+        /// by another chat, another model or ten quiet minutes, and which.
+        /// `offerRest` is whether the box may offer the third link at all:
+        /// only for a keep from a chat that is not a publish, and only for a
+        /// chat and model a grant can be held by.
+        ///
+        /// A KEEP WITH THE QUESTION OFF - by the button or in heron.config -
+        /// ends a grant still held, so turning it on again never finds an old
+        /// job's grant waiting.
         ///
         /// It decides by the chat's id and the model's key only. Whether there
         /// is a grant at all is the modeller's click; nothing here reads the
-        /// request for it.
+        /// request for it. Called from Run, once, before the box.
         /// </summary>
         private static string UnderTheGrant(string client, string grantKey, bool asking,
-                                            bool sendsOut, out string askedAgain)
+                                            bool askToKeep, bool apply, bool sendsOut,
+                                            out string askedAgain, out bool offerRest)
         {
+            askedAgain = null;
+            offerRest = !asking && !sendsOut && HeronKeepGrant.CanHold(client, grantKey);
+
+            if (!asking && !askToKeep)
+            {
+                if (apply) GrantEnded(HeronKeepGrant.EndedSwitch, HeronKeepGrant.Session.End());
+                return null;
+            }
+
             string grantedAt;
             var decided = HeronKeepGrant.Session.Decide(client, grantKey, asking || sendsOut,
                                                         DateTime.UtcNow, out grantedAt);
             askedAgain = HeronKeepGrant.WhyAskedAgain(decided, grantedAt, sendsOut);
-
-            if (HeronKeepGrant.Ends(decided))
-            {
-                HeronApplication.Log(HeronKeepGrant.EndedLine(decided, grantedAt));
-                HeronApplication.RepaintAskToKeep();
-            }
+            if (HeronKeepGrant.Ends(decided)) GrantEnded(decided, grantedAt);
             return decided == HeronKeepGrant.Covered ? grantedAt : null;
+        }
+
+        /// <summary>
+        /// A grant ended inside a run: logged, and taken off the ribbon at once.
+        /// Nothing when there was none to end.
+        /// </summary>
+        private static void GrantEnded(string why, string grantedAt)
+        {
+            if (grantedAt == null) return;
+            HeronApplication.Log(HeronKeepGrant.EndedLine(why, grantedAt));
+            HeronApplication.RepaintAskToKeep();
         }
 
         /// <summary>
@@ -2869,9 +2874,8 @@ namespace Heron.Revit.Addin
                                           HeronRollbackWitness.Outcome rolledBack,
                                           string keptNote, HeronFailureNote said,
                                           bool nothingToAsk, bool discardedByModeller,
-                                          bool selectionRestored,
-                                          HeronChangeReport.Described changed,
-                                          string keptUnderGrant)
+                                          bool selectionRestored, string keptUnderGrant,
+                                          HeronChangeReport.Described changed)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
