@@ -121,7 +121,7 @@ The §60 tree mixes code that gets replaced on update with knowledge the user sp
 
 → [06 §2](../06-heron-platform.md)
 
-### ✅ A14. Building on the user's machine contradicts the user promise
+### 🟡 A14. Building on the user's machine contradicts the user promise
 
 Step 7 of the install ("Heron builds required components") requires the .NET SDK, MSBuild and Revit SDK assemblies on a BIM modeller's locked-down laptop.
 
@@ -151,7 +151,7 @@ Recommendation: structured filter → hybrid keyword+vector → rank fusion → 
 
 → [05 §4](../05-heron-brain.md)
 
-### ✅ A18. Worksharing is barely addressed
+### 🟡 A18. Worksharing is barely addressed
 
 Real projects are worksharing-enabled. Element ownership failures, checkout, sync timing and workset visibility are **normal outcomes**, not errors.
 
@@ -173,12 +173,12 @@ Part 2* in its heading was closed afterwards by the decision named here; the mar
 | **A7** | Article 9 ([D-43](../DECISIONS.md)), with [D-126](../DECISIONS.md) and [D-138](../DECISIONS.md) | Revit selects what a change touched and asks Keep or Discard while the owner's *Ask to Keep* switch is on; off by default, a change is kept at once as one named undo entry |
 | **A8** | [D-05](../DECISIONS.md) | Revit 2020 to the latest release, every one; the runtimes are set in `Directory.Build.props` |
 | **A9** | [D-26](../DECISIONS.md), answering [Q-12](../OPEN-QUESTIONS.md) | the model file is never uploaded; the rest of the work travels like any conversation |
-| **A10** | Golden Rule 19, accepted 2026-08-28 ([Q-19](../OPEN-QUESTIONS.md)), and Article 14 ([D-43](../DECISIONS.md)) | nothing Heron reads may raise its own permission level; writing stays off by default ([D-19](../DECISIONS.md)) |
+| **A10** | [D-106](../DECISIONS.md), with Golden Rule 19 ([Q-19](../OPEN-QUESTIONS.md)) and Article 14 ([D-43](../DECISIONS.md)) | the gate is in the add-in, which reads an operation's risk from its own tool registry by name; nothing Heron reads may raise its own permission level; writing stays off by default ([D-19](../DECISIONS.md)) |
 | **A13** | [D-31](../DECISIONS.md) | product, data and derived were already separated, and the code is the record |
-| **A14** | [D-91](../DECISIONS.md) | product files come from a versioned GitHub release. **Not yet signed:** v0.1.0 went out unsigned on 2026-10-08, on the owner's word, and [Q-77](../OPEN-QUESTIONS.md) asks what makes signing due |
+| **A14** - **partly, stays open** | [D-91](../DECISIONS.md) | product files come from a versioned GitHub release, nothing is built on the PC ([D-96](../DECISIONS.md)). **Not yet signed:** v0.1.0 went out unsigned on 2026-10-08, on the owner's word, and [Q-77](../OPEN-QUESTIONS.md) asks what makes signing due |
 | **A15** | [D-29](../DECISIONS.md) | a skill is what is asked for; a fragment is a composable piece of how, not a whole answer |
 | **A16** | [D-30](../DECISIONS.md) | one recorded proof against a named real model, with a negative case, not a count of runs |
-| **A18** | Article 12 ([D-43](../DECISIONS.md)) | element ownership is a normal outcome, reported and never seized |
+| **A18** - **partly, stays open** | Article 12 ([D-43](../DECISIONS.md)) | element ownership is a normal outcome, reported and never seized. Checkout and workset visibility are not addressed by any decision |
 
 **A11 is answered in part, so it keeps its marker.** [Q-14](../OPEN-QUESTIONS.md) answered the manual half,
 with a written register in dependency order, [NEEDS-CHECKING](../NEEDS-CHECKING.md), and D-30 says what a

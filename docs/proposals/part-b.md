@@ -58,7 +58,7 @@ Record model statistics over time — element counts, warnings, file size, purge
 
 Trivial to collect, and it is the report BIM managers already produce by hand.
 
-### ✅ B9. Degraded / offline mode
+### 🔵 B9. Degraded / offline mode
 
 State plainly what still works with no internet: proven fragments, cached skills, health checks, local retrieval. A tool that stops entirely when the connection drops will not be trusted on site.
 
@@ -71,7 +71,7 @@ was set on 2026-10-18.
 |---|---|---|
 | **B6** | [D-58](../DECISIONS.md) | **Not Heron's to build.** Token use and cost per request belong to the host; Heron measures the latency it can see |
 | **B7** | [D-41](../DECISIONS.md), answering [Q-32](../OPEN-QUESTIONS.md) | Decided, not built: single-user now, and company knowledge becomes a private git repository when there is demand |
-| **B9** | Part 4 §31 | Offline / Degraded Mode is an official requirement, as [Part 0b](part-0b.md) records |
+| **B9** - **not closed** | Part 4 §31 | Offline / Degraded Mode is an official requirement, as [Part 0b](part-0b.md) records - a requirement, not built, and no decision settles it |
 
 The rest are still ideas. **B3** is the same job as [F29](f29.md), whose two options are the owner's.
 
