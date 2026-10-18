@@ -835,6 +835,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hf.md`](needs-checking/group-hf.md)
 
+## Group HG - the Ask to Keep switch, and one Keep per job: D-138 (2026-10-18)
+
+**Its own file:** [`needs-checking/group-hg.md`](needs-checking/group-hg.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -907,6 +907,12 @@ namespace Heron.Revit.Addin
                 var answered = Json.ReadString(response, "modellerAnswer");
                 if (answered == "discard" || answered == "closed") return "Discarded - nothing was kept";
                 if (answered == "keep") return "Kept - one undo step";
+
+                // D-138: the job's grant, said on the banner while it is in use.
+                if (answered == "keep_rest") return "Kept - the rest of this job: no asking";
+                var grantedAt = Json.ReadString(response, "grantedAt");
+                if (!string.IsNullOrEmpty(grantedAt))
+                    return "Kept without asking - job allowed at " + grantedAt;
             }
             return Explain(failure);
         }

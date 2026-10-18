@@ -155,6 +155,19 @@ def block_after(code, at):
     return ""
 
 
+def until_block_ends(code, at):
+    """From `at` to the `}` that closes the block `at` sits in."""
+    depth = 0
+    for i in range(at, len(code)):
+        if code[i] == "{":
+            depth += 1
+        elif code[i] == "}":
+            if depth == 0:
+                return code[at:i]
+            depth -= 1
+    return code[at:]
+
+
 def body_of(code, header):
     at = code.find(header)
     return "" if at < 0 else block_after(code, at)
@@ -316,6 +329,27 @@ def wiring():
                         block_after(exported, finally_at)) is not None,
           "RevitCapture.Exported rolls the group back through the helper in its finally, "
           "before anything is said about it")
+    # AND NOTHING IS READ OFF THE VIEW AFTER THAT (5b-1090). Given element ids
+    # the view is the temporary 3D view the rollback takes away; the reply read
+    # its name afterwards, Revit threw, and every picture of elements was lost
+    # on 2024 and 2027. So `view.` is never read after Exported's finally, nor
+    # after the helper's call in any block of RevitCapture.cs.
+    read_view = r"\bview\s*\."
+    finished = block_after(exported, finally_at) if finally_at >= 0 else ""
+    tail = exported[finally_at:] if finished else ""
+    tail = tail[tail.find(finished) + len(finished):] if finished else ""
+    check(bool(finished) and re.search(read_view, tail) is None,
+          "RevitCapture.Exported reads nothing off the view once its finally has rolled "
+          "the group back - the temporary view is gone by then")
+    check(finally_at >= 0
+          and re.search(r"\bview\s*\.\s*Name\b", exported[:finally_at]) is not None
+          and re.search(r"\bview\s*\.\s*ViewType\b", exported[:finally_at]) is not None,
+          "and the reply's view name and type are read before that rollback")
+    for at in calls(capture, "RollBackAndCheck"):
+        rest = until_block_ends(capture, at)
+        check(re.search(read_view, rest) is None,
+              "RevitCapture.cs: nothing is read off the view after the rollback at code "
+              "line %d" % (capture.count("\n", 0, at) + 1))
     setup = body_of(code, "string RunSetupSteps(")
     signature = code[code.find("string RunSetupSteps("):code.find(setup) if setup else 0]
     check(bool(setup) and re.search(r"HeronRollbackWitness\.Watch\s+watch", signature) is not None,

@@ -680,6 +680,33 @@ namespace Heron.Revit.Addin
             new Lazy<System.Reflection.PropertyInfo>(() => typeof(Document).GetProperty("CreationGUID"));
 
         /// <summary>
+        /// Which model a job's keep-without-asking grant is held for - D-138 -
+        /// as the three strings RevitFragment's rollback witness keys a model
+        /// by: its CreationGUID where the release has one, its path, its title.
+        /// Two copies of one model open at once differ by path; a family not
+        /// yet saved is told apart by its title.
+        ///
+        /// HERE, NOT IN RevitFragment, because HeronApplication asks it when a
+        /// model closes, and naming RevitFragment there would load Roslyn
+        /// outside the one guarded call (CallFragmentWarmUp). A Save As makes a
+        /// new key, so a job's grant ends and the next change is asked - the
+        /// safe side of a model whose name has just changed.
+        /// </summary>
+        internal static string DocumentKey(Document doc)
+        {
+            if (doc == null) return null;
+
+            string guid = null;
+            try { guid = CreationGuid(doc); } catch (Exception) { guid = null; }
+            var path = "";
+            try { path = doc.PathName ?? ""; } catch (Exception) { path = ""; }
+            var title = "";
+            try { title = doc.Title ?? ""; } catch (Exception) { title = ""; }
+
+            return (guid ?? "") + "|" + path + "|" + title;
+        }
+
+        /// <summary>
         /// A BIM word to a Revit category, or the refusal to give back.
         ///
         /// Shared with the write path on purpose. One table means "ducts"

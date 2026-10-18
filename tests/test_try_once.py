@@ -152,7 +152,10 @@ def test_the_add_in():
           and before(run, "answered = AskTheModeller(",
                      "if (apply) keptNote = KeepAndWatch(group"),
           "the box comes after the fragment's transaction commits and before Assimilate")
-    check("apply = answered == Keep;" in run,
+    # D-138 ADDS ONE ANSWER THAT KEEPS - the third link, "keep the rest of
+    # this job without asking" - and it is offered only for a keep from a
+    # chat, never for this DRAFT's one run (tests/test_keep_question.py 10).
+    check("apply = answered == Keep || answered == RestOfJob;" in run,
           "the modeller's Keep is what sets apply - nothing on the wire can")
 
     answer = body_of(run, "private static string WithAnswer(")
