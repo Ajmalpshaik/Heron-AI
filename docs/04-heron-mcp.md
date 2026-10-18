@@ -566,6 +566,18 @@ D-126 had a box, so they compare with this one on the model's share and on Heron
 Revit's own time. The transcript and the audit as read are kept at `%TEMP%\heron-work\pump-1017\` on the
 laptop, so the tool can be run on them again once row 5b-1030 is fixed.
 
+**RE-RUN 2026-10-18 - the same build, on the tool with rows 5b-1030 and 5b-1031 fixed** ([pull requests
+#634](https://github.com/Ajmalpshaik/Heron-AI/pull/634) and [#635](https://github.com/Ajmalpshaik/Heron-AI/pull/635)).
+`tools/time-family-build.py` as on `main` at `e7c0301e`, on the same transcript, audit and window, with
+`--journal journal.0016.txt --journal-utc-offset +03:00` added. As it prints them: **forms built 44**, read
+from the five `CREATE_FAMILY_FORMS` replies; **seconds a form 10.9 s**, request to finish over forms built;
+**Revit's own time less the boxes 20.7 s** of 101.6 s (the 9 first runs 16.3 s of 71.4 s), from ten Keep boxes
+inside the chat's runs, every one *"Keep it"*, 80.9 s - the count read from the journal by hand above. Heron's
+server alone is still **NOT MEASURED**, for the reason above. Every other figure in the table came out the
+same but the `revit_change` hand-back, 28,190 characters, not 28,698: the first run counted each escaped
+newline and quote in Heron's wrapped reply twice (row 5b-1030), and the tool as it stood at `5d99a553` still
+prints 28,698 and no form on the same files.
+
 ### 8.8 What the tool list costs a chat — built 2026-10-17
 
 **What the owner asked:** cut what Heron's tool list costs in every chat. [D-03](DECISIONS.md) accepted
