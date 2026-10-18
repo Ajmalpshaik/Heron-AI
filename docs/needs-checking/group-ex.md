@@ -149,8 +149,9 @@ to disk would be `export-families` (PUBLISH) under no switch at all. Publish sta
 did, and a level nobody has added yet is held to the strict rule. **What this does not judge is where the
 file goes.** EXECUTE needs no switch, and the guard cannot tell a scratch folder from a shared one, so an
 EXECUTE job writes its copy into either as freely - Article 10's *"export to a shared location"* is not
-held there. **For the owner:** narrowing it to a temporary folder is one test of the Save As event's path
-in the policy, and it would refuse `open-family-for-editing` whenever its folder is anywhere else.
+held there. **The owner's call, 2026-10-18: keep it to any path for now.** Narrowing it to a temporary
+folder would be one test of the Save As event's path in the policy, and it would refuse
+`open-family-for-editing` whenever its folder is anywhere else; it stays open to be asked again.
 
 **3. Revit's own step in a save the guard cancelled (5b-1092).** A commit in another open model is **the
 save's, not a change**, when every transaction it names is `Store dependencies` - the English name,
