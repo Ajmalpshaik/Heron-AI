@@ -1177,3 +1177,35 @@ word away.
 keeps its words with a note.
 
 ---
+
+### 🔵 Q-79 — DISCLAIMER says Heron *"reports compliance with a standard"*, and the chat is told never to call a model compliant. Should the DISCLAIMER say what the chat says? *(found 2026-10-18 in the second documentation pass)*
+
+**What was found.**
+
+- **[`DISCLAIMER.md`](../../DISCLAIMER.md), *On standards checking*:** *"Where Heron reports compliance with a standard -
+  ISO 19650, QCS, Ashghal requirements, a company standard - it reports against the source documents it has been
+  given, and cites them. **It does not certify compliance.**"*
+- **[`host.chat.yaml`](../../brain/instructions/host.chat.yaml)**, the instruction every chat reads: *"A check that
+  passes means the model meets the values that were checked, and that is what you say. Never call a model, a
+  system or a design compliant - whether it complies is the engineer's or the authority's decision."* It came in
+  with the earlier-brain plan's C2 (#307).
+- **[D-36](../decisions/D-36.md)** makes the DISCLAIMER load-bearing and says it *"must change with the code rather
+  than after it"*. No decision says which wording is Heron's.
+
+The two agree that Heron certifies nothing. They differ in one word: the DISCLAIMER says Heron *reports
+compliance*; the chat never says *compliant*.
+
+**The shapes the owner chooses between:**
+
+1. **The DISCLAIMER takes the chat's words - recommended.** *"Where Heron checks a model against a standard ... it
+   reports which checked values the model meets and which it does not, against the source documents it has been
+   given, and cites them. It does not certify compliance."* **Cost:** one paragraph of a legal page, which only the
+   owner changes.
+2. **Leave both.** **Cost:** the page a company reads before using Heron says a word the product is told never to say.
+
+**Why the first.** It is the stricter of the two, it is what the chat already does, and it is the wording an engineer
+or an authority expects from a tool: values met, not compliance granted.
+
+**Ajmal PS decides.** Until he does, nothing changes.
+
+---

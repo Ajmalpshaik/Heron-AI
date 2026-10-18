@@ -22,7 +22,7 @@
 > · ✅ answered. Many answered questions keep their colour instead: the **Answer:** paragraph under a
 > question is what marks it answered, and `check-docs.py` counts it either way
 
-**Progress: 65 answered · 13 open · nothing blocking any phase**
+**Progress: 65 answered · 14 open · nothing blocking any phase**
 
 **The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
 raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in
