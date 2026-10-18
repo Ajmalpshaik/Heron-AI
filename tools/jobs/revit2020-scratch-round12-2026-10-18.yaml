@@ -1,0 +1,16 @@
+# Batch 12, 2026-10-18 - Revit 2020 session 2648, scratch Family1 (Generic Models, never saved):
+# its own two template reference planes, Center (Front/Back) and Center (Left/Right), seen in
+# "FloorPlan: Ref. Level". ROLLED BACK.
+model: "Family1 (scratch Generic Models family, never saved), Revit 2020"
+defaults:
+  in: "Family1"
+  write: true
+jobs:
+  - fragment: set-reference-plane-length
+    expect: changed
+    keep-chain: true
+    setup: [select-by-categories]
+    setup-set: {categories: "Reference Planes", inViewOnly: "FloorPlan: Ref. Level"}
+    negative-setup-set: {categories: "Reference Planes", inViewOnly: "FloorPlan: Ref. Level"}
+    set: {lengthMm: 5000}
+    negative-set: {lengthMm: 0}

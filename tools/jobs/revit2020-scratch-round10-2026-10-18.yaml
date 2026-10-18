@@ -1,0 +1,35 @@
+# Batch 10, 2026-10-18 - Revit 2020 session 2648, scratch Project1 (never saved). Batch 9's model
+# plus, kept: six families loaded from the Revit 2020 US Metric library (supply and return
+# diffusers, a mitred rectangular elbow, a rectangular balancing damper, a gate valve, an inline
+# fan), two supply diffusers on Level 1 at 2000,2000 and 7000,2000 (work-plane based, so at the
+# level), a return diffuser at 2500,4500 + 2500 mm, and the fan at 9300,3000 + 2700 mm, 700 mm
+# from the east wall. Every write ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: false
+  setup: [select-by-category-name, set-selection]
+  set: {categoryName: "Air Terminals", inViewOnly: "Heron 3D"}
+  negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D"}
+jobs:
+  - fragment: place-accessory-on-run
+    write: true
+    expect: placed
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", accessorySymbol: "M_Balancing Damper - Rectangular: Standard", positionAlong: 0.5}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", accessorySymbol: "ZZZNOTHINGHERE", positionAlong: 0.5}
+  - fragment: create-mep-system
+    write: true
+    expect: memberIds
+    set: {categoryName: "Air Terminals", inViewOnly: "Heron 3D", systemType: "Supply Air", systemName: "Heron Supply", baseEquipment: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", systemType: "Supply Air", systemName: "Heron Supply", baseEquipment: ""}
+  - fragment: check-equipment-clearance
+    expect: blocked
+    set: {categoryName: "Mechanical Equipment", inViewOnly: "Heron 3D", frontClearance: 1000, sideClearance: 1000, backClearance: 1000, topClearance: 1000, includeLinks: false}
+    negative-set: {categoryName: "Mechanical Equipment", inViewOnly: "Heron 3D", frontClearance: 1, sideClearance: 1, backClearance: 1, topClearance: 1, includeLinks: false}
+  - fragment: check-room-mep-completeness
+    expect: shortRooms
+    set: {categoryName: "Rooms", inViewOnly: "FloorPlan: Level 1", devices: "Air Terminals", ruleRoomNames: "Room", ruleCategories: "Air Terminals", ruleMinimums: 2, includeLinks: false}
+    negative-set: {categoryName: "Rooms", inViewOnly: "FloorPlan: Level 1", devices: "Air Terminals", ruleRoomNames: "Room", ruleCategories: "Air Terminals", ruleMinimums: 1, includeLinks: false}
+  - fragment: check-ceiling-coordination
+    set: {categoryName: "Air Terminals", inViewOnly: "Heron 3D", tolerance: 100, includeLinks: false}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", tolerance: 100, includeLinks: false}
