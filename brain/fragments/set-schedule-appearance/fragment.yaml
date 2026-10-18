@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -142,35 +142,38 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-09'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 43652
+  model: Project1 (3,081 elements), Revit 2020, session 30308
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned appliedAppearance 1
-    item(s) [''Heat Recovery Unit Summary'' / field ''Mark'': prints as ''AJ H...], changed
-    1, columnWidthMm 0, handed 3, headingSideways false, notPresent 2 item(s) [''Mark'' on
-    ''Space Schedule'' - not a column in this schedule, ''Mark'' on ''<Revision Schedule>
-    15'' - not a column in this sc...], refused 0 item(s), requestUnusable false, scheduleBehind
-    Func`2, schedulesSeen 3, wantedAlignment . inputs came elements from the selection (3);
-    fieldName as given; newHeading as given; columnWidthMm as given; alignment as given; headingSideways
-    as given; hideOrShow as given. on Snowdon-scratch_ajmal.al'
-  negative_case: run with alignment=, categoryName=Title Blocks, columnWidthMm=0, fieldName=Mark,
-    headingSideways=False, hideOrShow=, inViewOnly=Notes, Symbols & Schedules, newHeading=AJ
-    Heading instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running select-by-category-name, set-selection with this
-    phase's own values - run inside a transaction and ROLLED BACK, so the model was left exactly
-    as it was. returned appliedAppearance 0 item(s), changed 0, columnWidthMm 0, handed 1,
-    headingSideways false, notPresent 0 item(s), refused 1 item(s) [not one of the 1 element(s)
-    handed in is a schedule, so NOTH...], requestUnusable false, scheduleBehind Func`2, schedulesSeen
-    0, wantedAlignment . inputs came elements from the selection (1); fieldName as given;
-    newHeading as given; columnWidthMm as given; alignment as given; headingSideways as given;
-    hideOrShow as given. on Snowdon-scratch_ajmal.al
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned answersTo Func`3,
+    appliedAppearance 1 item(s) [''Heron Duct Schedule'' / field ''Length'': prints as ''HERON
+    LEN...], changed 1, columnWidthMm 0, everyWord length, handed 2, headingSideways false,
+    meansEvery false, notPresent 1 item(s) [''Length'' on ''<Revision Schedule>'' - not a
+    column in this sch...], orientationKnown true, orientationLeft true, refused 0 item(s),
+    requestUnusable false, scheduleBehind Func`2, schedulesSeen 2, trimmedFieldName Length,
+    wantedAlignment , wantedOrientation . inputs came elements from the selection (2); fieldName
+    as given; newHeading as given; columnWidthMm as given; alignment as given; headingSideways
+    as given; hideOrShow as given; headingOrientation as given. on Project1'
+  negative_case: run with alignment=, categoryName=Schedule Graphics, columnWidthMm=0, fieldName=ZZZNOTHINGHERE,
+    headingOrientation=, headingSideways=False, hideOrShow=, inViewOnly=Heron Test Sheet,
+    newHeading=HERON LENGTH instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned answersTo Func`3, appliedAppearance 0 item(s),
+    changed 0, columnWidthMm 0, everyWord zzznothinghere, handed 2, headingSideways false,
+    meansEvery false, notPresent 2 item(s) ['ZZZNOTHINGHERE' on '<Revision Schedule>' - not
+    a column in ..., 'ZZZNOTHINGHERE' on 'Heron Duct Schedule' - not a column in ...], orientationKnown
+    true, orientationLeft true, refused 0 item(s), requestUnusable false, scheduleBehind Func`2,
+    schedulesSeen 2, trimmedFieldName ZZZNOTHINGHERE, wantedAlignment , wantedOrientation
+    . inputs came elements from the selection (2); fieldName as given; newHeading as given;
+    columnWidthMm as given; alignment as given; headingSideways as given; hideOrShow as given;
+    headingOrientation as given. on Project1
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: dcd8f1b2021fb0b6
-
+  fingerprint: 8d6b9b7988fd07d4
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
