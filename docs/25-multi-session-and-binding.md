@@ -77,6 +77,10 @@ a live process id does not. Enforced by `HeronPaths` ([D-17](DECISIONS.md)).
    verify the PID is running *and* the pipe answers before listing a session as available — and remove
    the stale file when it does not.
 
+> **As built (2026-10-18):** off Windows there is nothing to discover. The bridge is a Windows named
+> pipe, so in a cloud session the Heron server serves its library tools alone and declares no `revit_`
+> tool at all ([D-132](DECISIONS.md)).
+
 ---
 
 ## 2a. The session list — static facts in the file, dynamic facts on demand
@@ -195,7 +199,8 @@ Whichever way it refuses, the refusal must say **"nothing has been sent to Revit
 The user's first thought on any refusal is *did it half-do something?*, and answering that unasked is
 the difference between a safe stop and a frightening one.
 
-Settles part of [Q-11](OPEN-QUESTIONS.md); the mechanism is built in [Step 5](27-build-order.md).
+The mechanism is built in [Step 5](27-build-order.md), in
+[`heron_session.py`](../mcp/server/heron_session.py).
 
 ### What the lease protects — **per process, not per document**
 
@@ -302,7 +307,8 @@ A lease removes that job from the user twice over — it prevents the collision,
 thing that makes `(free)` / `(in use)` truthful in the picker (§2a). Without a lease there is no
 honest availability column to show, and the user goes on being the lock.
 
-Tracked as [Q-36](OPEN-QUESTIONS.md).
+Tracked as [Q-36](OPEN-QUESTIONS.md), answered: option B, built in Step 6 as
+[`HeronLease`](../platform/Heron.Core/HeronLease.cs) ([D-22](DECISIONS.md)).
 
 ---
 
@@ -339,6 +345,18 @@ Every step was individually correct. Nobody made a mistake. The model was still 
    non-active document directly. What is never acceptable is *silently following* the user's clicking.
 6. **Reads may use the active document**, but the result must **state which document it read**.
    *"Found 126 ducts in Tower-A.rvt"* is safe; *"Found 126 ducts"* is not.
+
+> **As built (2026-10-18):** a write is **aimed** at the pinned model rather than guarded against the
+> one in front. `revit_change` sends the pinned model's path and title with every request; the add-in
+> matches the **path alone** when there is one, and the title only for a model never saved, refusing a
+> title two open models share (`ambiguous_document`) or a model no longer open (`no_such_document`)
+> before anything runs — [D-74](DECISIONS.md), still *Proposed*, and `RevitFragment.Run`. So rule 3's
+> *"never by window title"* is kept for a saved model and not for an unsaved one. The model's own id is
+> `Document.CreationGUID`, readable on Revit 2024 and later, and a project's kept answers are filed under
+> it ([D-113](DECISIONS.md), *Proposed*); the Project Information `UniqueId` is not identity, because a
+> new project inherits it from its template. [`DocumentPin`](../mcp/server/heron_write.py) holds all
+> three. **NEEDS REAL REVIT:** E16 to E18 in [Group E](needs-checking/group-e.md), which would show the
+> aiming in front of a model, have not been run.
 
 **[NOTE]** Rule 6 costs one clause in a sentence and eliminates a whole class of confusion. It is the
 same instinct as the Evidence System ([23 §6](23-heron-kernel.md)) — say what you acted on.
@@ -508,8 +526,11 @@ field, which is a year of pain Heron does not have to repeat.
 Carried forward:
 
 - Per-PID named pipes ✅ *(already [D-02](DECISIONS.md))*
-- Discovery via `%APPDATA%\...\bridges\<pid>.json` ✅ **new — closes a gap in D-02**
+- Discovery via one `<pid>.json` per bridge — in Heron `%LOCALAPPDATA%\Heron\bridges\<pid>.json` (§2) ✅
+  **new — closes a gap in D-02**
 - Two pipe server instances per bridge — one serving, one listening — so a new connection is instant ✅
+  *(more in Heron since 2026-10-13 — `PipeInstances` in [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)
+  — so a displaced pipe can finish writing an answer it owes, §3)*
 - Explicit user connect per Revit; an unconnected Revit is invisible ✅
 - One chat, one Revit; ask once; never guess; fail closed on disconnect ✅
 - Progress banner during execution ✅

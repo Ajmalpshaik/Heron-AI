@@ -34,6 +34,14 @@ stale claims in Heron's own documents. [§4a](#4a-what-the-second-pass-changed-c
 inputs for a **BIM-modeller-facing platform**, not for a developer-assist harness. Several of the
 projects below are the second thing, and the useful part of them is the mechanism, never the shape.
 
+> **As built (2026-10-18):** every question this matrix raised has been answered since — Q-49 by the
+> [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook, Q-50 as [D-60](DECISIONS.md), Q-51 as
+> [D-81](DECISIONS.md) on 2026-09-20, Q-52 by measuring it and declining
+> ([34 §2.13](34-patterns-adapted.md)), Q-53 as [D-66](DECISIONS.md) — and so have the two it gathered
+> evidence for, Q-46 as [D-64](DECISIONS.md) and Q-48 as [D-59](DECISIONS.md). Each answer is in
+> [`open-questions/tier-3.md`](open-questions/tier-3.md). Where a section below calls one of them open,
+> it records the day it was written.
+
 ---
 
 ## 1. The most valuable finding is that six of them agree with Heron
@@ -71,9 +79,10 @@ works — nothing here has met a Revit model. What it does mean is that **the de
 wrong by being unusual are not unusual**, and that the three conventions were at least not got wrong.
 
 **The fifth and sixth were found only by the file-level pass.** The fifth is the one that matters most
-today: it lands on [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md), which are still unanswered.
-The sixth is the one that matters most **next**, because it is the discipline the 218 DRAFT fragments are
-waiting on.
+today: it lands on [Q-46](OPEN-QUESTIONS.md) and [Q-48](OPEN-QUESTIONS.md), both answered since, as
+[D-64](DECISIONS.md) and [D-59](DECISIONS.md).
+The sixth is the one that matters most **next**, because it is the discipline the `DRAFT` fragments are
+waiting on (`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` counts them).
 
 ---
 
@@ -719,8 +728,9 @@ Its own opening paragraph:
 with no level"* rather than as a clean zero. Theirs is a static-analysis blind spot reading as *"this
 relationship does not exist."* **Same failure, same fix, different industry.**
 
-**This is direct evidence for two questions the owner has not yet answered**, and it is evidence rather
-than an opinion because it comes from a project with no stake in Heron:
+**This is direct evidence for two questions the owner had not yet answered** - he answered both the same
+day, as [D-64](DECISIONS.md) and [D-59](DECISIONS.md) - and it is evidence rather than an opinion because
+it comes from a project with no stake in Heron:
 
 - **[Q-46](OPEN-QUESTIONS.md)** — 59 fragments go looking, can drop a candidate, and name none of them.
 - **[Q-48](OPEN-QUESTIONS.md)** — 62 reading fragments collect the host document and say nothing about
@@ -779,7 +789,7 @@ written with.
 `ETHOS.md`, and the tree.
 
 **The row's premise was wrong.** It said *"23 named specialist roles"* and rejected the project for
-creating a second registry beside [28](28-agent-registry.md)'s 250 agents.
+creating a second registry beside [28](28-agent-registry.md)'s agent register.
 
 At file level `agents/` holds **one** file — `openai.yaml`. What the landing page calls roles are **54
 top-level skill directories**, each a `SKILL.md`. **There is no registry to be a second of.** The
@@ -1339,6 +1349,9 @@ that earns its place: gstack's `setup-gbrain` installs it, and it is a **brain l
 
 #### It measured [Q-52](OPEN-QUESTIONS.md), which is open here
 
+> **As built (2026-10-18):** Q-52 was answered the same day - *No. Measured.* - after a third stream
+> was tried at six settings ([34 §2.13](34-patterns-adapted.md), [`open-questions/tier-3.md`](open-questions/tier-3.md)).
+
 > Every page write **extracts entity refs and creates typed edges with zero LLM calls**… The graph is
 > what produces the **+31.4 P@5 lift over vector-only RAG**. Benchmarked: **P@5 49.1%, R@5 97.9%** on a
 > 240-page corpus, over its **graph-disabled variant** and over ripgrep-BM25 + vector-only RAG.
@@ -1356,7 +1369,7 @@ comparison matters:
 
 **So the closer analogue says the lift is real and large.** What does **not** transfer is the number:
 their corpus is 240 pages of prose about people and companies, where an entity reference is a
-cross-reference between documents. Heron's is 360 fragments where an edge means *this one's output fits
+cross-reference between documents. Heron's is a fragment library where an edge means *this one's output fits
 that one's input*. **The direction is evidence; the magnitude is not.** Recorded in
 [Q-52](OPEN-QUESTIONS.md) as the strongest argument yet for testing it, and
 [`measure-routes.py`](../tools/measure-routes.py) already holds the before.

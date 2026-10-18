@@ -219,6 +219,10 @@ the same *look first, decide second* that settled four questions on 2026-08-28 b
 already doing the job. **If a real creator does not fit, this paragraph is wrong and the fix is a
 decision entry, not a quiet edit.**
 
+> **As built (2026-10-18):** creators have been written since — `create-wall`, `create-level` and
+> `create-text-note` among them — as `kind: action` with `risk: MODIFY`, and no fourth kind was added:
+> `grep -h '^kind:' brain/fragments/*/fragment.yaml | sort | uniq -c` lists the kinds in use.
+
 ---
 
 ## 2. What travels, and what cannot
