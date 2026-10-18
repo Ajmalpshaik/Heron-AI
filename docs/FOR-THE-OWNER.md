@@ -61,8 +61,8 @@ can be done this morning or not at all.
 | | Safe on a live project? |
 |---|---|
 | Fragments that are **`PROVEN`** and **`READ`** | **Yes.** A `READ` fragment cannot modify a model — that is enforced, not promised |
-| Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only.** The rollback fix has never been seen in front of a model |
-| `delete-elements` | **No. Do not run it** until the owner says otherwise. It wiped a model twice on 2026-09-09 and the second hung Revit hard enough to need a forced close ([section 1c](fragment-issues/section-1c.md)). It has since been proved on a test model with the elements counted before and after ([row 55](fragment-issues/section-5-rows-051-075.md)), and its `heron-status` now reads `PROVEN` — whether that lifts this rule is the owner's call, because a delete can take far more than it was handed, and nothing asks before it runs ([row 5b-161](fragment-issues/section-5b-rows-151-175.md), open) |
+| Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only**, until the owner says otherwise. The rollback check built 2026-10-17 passed the rows run in Revit 2024 and 2027 on 2026-10-18, on scratch copies ([Group EO](needs-checking/group-eo.md)) — but a rollback that reported success and kept a rename anyway ([A16b](needs-checking/group-a.md)) has never been run again and is still open |
+| `delete-elements` | **No. Do not run it** until the owner says otherwise. It wiped a model twice on 2026-09-09 and the second hung Revit hard enough to need a forced close ([section 1c](fragment-issues/section-1c.md)). It has since been proved on a test model with the elements counted before and after ([row 55](fragment-issues/section-5-rows-051-075.md)), and its `heron-status` now reads `PROVEN` — whether that lifts this rule is the owner's call, because a delete can take far more than it was handed, and with *Ask to Keep* off — the default — nothing asks before it is kept ([row 5b-161](fragment-issues/section-5b-rows-151-175.md), open) |
 
 Derive the counts rather than reading them here:
 
@@ -76,6 +76,17 @@ done | sort | uniq -c | sort -rn
 **If a write ever looks wrong: close the model WITHOUT saving.** Three rollback failures are on record
 — the worst took a model from 9,628 elements to 3,966 — and in every one the file on disk was fine. The
 damage stays in the live session. That is the difference between a bug and a data-loss bug.
+
+**How a change from a chat is kept — your switches on the Heron ribbon.** Nothing changes the model
+unless **Changes** is on ([D-19](DECISIONS.md)); **Admin** and **Publish** guard their own kinds of job
+([D-106](DECISIONS.md)). **Ask to Keep** decides whether Revit shows you the change first
+([D-126](DECISIONS.md), [D-138](DECISIONS.md)): **off by default**, and then a change is kept at once as
+one named entry in Revit's undo list; **on**, Revit selects what changed and asks *Keep* or *Discard*,
+and nothing stays until you press Keep. The box's third link keeps the change and the rest of that chat's
+job on that model without asking, until ten quiet minutes pass. Even under that grant, a publish and a
+never-proved fragment's one run are asked. **Built for 2020 to 2027; the Ask to Keep switch itself has
+not been run in Revit yet** — the Keep or Discard box it turns on was, in Revit 2024 and 2027 on
+2026-10-18 ([Group ET](needs-checking/group-et.md)).
 
 ---
 
@@ -105,6 +116,14 @@ clause number the plan has carried since the start.
 | [HANDOVER.md](HANDOVER.md) | Work note | Where the last session stopped | Stays — it is the cold start |
 | [handover-archive/](handover-archive/README.md) | Archive | Finished sittings, one file each | Kept, never read to work |
 | [work-notes/](work-notes/README.md) | Work notes | Plans somebody is executing | **Yes — that is the test** |
+
+**On your PC, Heron's own files are in three places** ([D-135](DECISIONS.md), [D-136](DECISIONS.md)):
+the add-in's settings (`heron.config`) and its audit trail in `%APPDATA%\Heron`; the brain's knowledge
+store, each project's memory and its audit in `%USERPROFILE%\.heron`, where a Reset of the Store Claude
+app cannot reach them; and the Companion's notes in `%TEMP%\Heron\companion`.
+`python brain/heron_paths.py --where` names the brain's home on the PC it runs on and the old places it
+was carried from, and
+[WHAT-TO-INSTALL §6](WHAT-TO-INSTALL.md#6-where-everything-lives-on-your-pc) has the rest.
 
 **The rule that matters: a question, a decision or an unproven claim must NEVER live only in
 `work-notes/`.** That folder's lifecycle ends in deletion. On 2026-09-12 a work note was found holding

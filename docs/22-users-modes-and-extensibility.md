@@ -26,6 +26,12 @@ a 27-step pipeline costing minutes. Getting this classification right is the fir
 It also determines what Heron should **say back**. A development request deserves *"this will take a
 few minutes, I'll show you before it touches your model"*. A command deserves silence and a result.
 
+> **As built (2026-10-18):** the host does this classifying, never Heron
+> ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin)). The one place the kind crosses into
+> Heron is `heron_lookup`'s `question` flag. When the host calls a request a question, nothing that
+> changes the model is offered
+> ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)).
+
 ---
 
 ## 2. Role-aware communication
@@ -67,6 +73,18 @@ which is itself a security boundary ([21 §9](21-resilience-and-operations.md)).
 
 That means mode cannot be inferred from conversation. **Persona** may be inferred — it only changes
 wording. **Mode** must be granted. Conflating the two would let a user talk their way into `ADMIN`.
+
+> **As built (2026-10-18): no modes, and the permission boundary is the switches on the Revit
+> ribbon.** *Changes* is `write.enabled`, off by default
+> ([D-19](DECISIONS.md#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)).
+> *Admin* and *Publish* are switches only the owner turns on
+> ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)).
+> *Ask to Keep* is off by default
+> ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
+> They are set on the ribbon or in `heron.config` and read inside the add-in, never from a request, so
+> no text a chat sends can raise them ([Golden Rule 19](14-golden-rules.md)). There is no generic
+> execute capability: an `ADMIN` fragment from the library runs only while the Admin switch is on
+> ([04 §3](04-heron-mcp.md#3-note-tool-granularity--the-central-mcp-design-decision)).
 
 ---
 
@@ -130,6 +148,13 @@ enforcement is a much smaller additional benefit than it sounds, and a much larg
 
 Tracked as [Q-32](OPEN-QUESTIONS.md).
 
+> **Decided 2026-08-28 —
+> [D-41](DECISIONS.md#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer),
+> as recommended.** Option A now: scopes are folders, one file each. Option B when there is demand:
+> company knowledge is a private git repository, and the admin is whoever reviews the pull requests.
+> Option C is not built without real demand. The tension above is closed, and nothing for B or C is
+> built.
+
 ---
 
 ## 5. Data isolation
@@ -153,6 +178,13 @@ Mapped onto the Product / Data / Derived split ([06 §2](06-heron-platform.md)):
 | Project Data | Data | per-project store |
 | Company Data | Data | shared location or private repo |
 | Community Data | Product | shipped or downloaded, treated as untrusted until validated |
+
+> **As built (2026-10-18):** [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) separates product,
+> data and derived in code ([D-31](DECISIONS.md#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record)).
+> Heron's Python side keeps its data in `%USERPROFILE%\.heron`
+> ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)).
+> The knowledge stores are derived and can be rebuilt from the cards on disk
+> ([10 §1](10-memory-and-knowledge.md#1-memory-scopes)).
 
 ---
 
@@ -227,6 +259,15 @@ Heron enforces, never a statement Heron trusts.
 This makes [Q-18](OPEN-QUESTIONS.md) — may community packages contain executable code at all? — the
 decisive question for the whole ecosystem. Declarative-only skills and fragments are dramatically safer
 than arbitrary plugin code running inside a client's Revit session.
+
+> **As built (2026-10-18):** Q-18 is answered by
+> [D-35](DECISIONS.md#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about).
+> A shared fragment may carry code. One without an approval record is refused, and approval is the
+> same recorded proof D-30 asks of every fragment. A Heron product is one `.addin` manifest and one DLL,
+> listed in [`platform/heron-products.json`](../platform/heron-products.json)
+> ([D-88](DECISIONS.md#d-88--one-product-is-one-addin-manifest-plus-one-dll-each-with-its-own-addinid),
+> [D-93](DECISIONS.md#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer)).
+> No third-party plugin system is built.
 
 ---
 

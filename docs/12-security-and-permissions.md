@@ -37,6 +37,21 @@ The important boundary is `EXECUTE | MODIFY`. Everything above it changes someth
 temporary isolate as fixed operations ([04 §8.9](04-heron-mcp.md)). A selection or a zoom inside a linked
 model is the same: not touching the link, so no confirmation ([D-124](DECISIONS.md)).
 
+> **As built (2026-10-18):** the seven levels are `HeronRisk` in
+> [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs) and the same seven in
+> [`heron_tools.py`](../mcp/server/heron_tools.py); `python mcp/server/heron_tools.py` lists every MCP
+> tool with its level, and no tool declares `SUGGEST`. The *Confirmation* column is met by switches the
+> owner sets on Revit's ribbon, read inside the add-in and all off by default in
+> [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs): **Changes** (`write.enabled`) for
+> `MODIFY` and above ([D-19](DECISIONS.md)), and **Admin** (`admin.enabled`) and **Publish**
+> (`publish.enabled`), each on top of Changes ([D-106](DECISIONS.md)). As built, `PUBLISH` is a Revit
+> export, print, save or sync, and `ADMIN` is project parameters, worksets, global parameters or a new
+> family file — not the git, release and package actions the table names. With Changes on, a change
+> asked for in a chat is kept at once as one undo entry unless **Ask to Keep** (`write.askBeforeKeeping`,
+> off by default) is on, when Revit shows it and asks Keep or Discard ([D-126](DECISIONS.md),
+> [D-138](DECISIONS.md)) — so `MODIFY`'s *preview + confirm* is the owner's switch, recorded as a break
+> of [Golden Rule 17](14-golden-rules.md).
+
 ---
 
 ## 2. High-risk operations (§53)
@@ -80,6 +95,16 @@ Therefore:
 
 Stated as a rule: **no text Heron reads may ever raise Heron's own permission level.**
 
+> **As built (2026-10-18):** points 1, 4 and 5 hold — risk is declared per tool in
+> [`heron_tools.py`](../mcp/server/heron_tools.py) and per operation in
+> [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), the add-in decides in
+> `HeronPermissions.Allows()`, and every request is a line in the audit trail (§5). Points 2 and 3 are
+> met differently: **no code returns `REQUIRES_CONFIRMATION`**. A call above what the switches allow is
+> refused, and the refusal names the switch (`HeronPermissions.RefusedBy`). The confirmation is the
+> owner's switch on the ribbon and, while Ask to Keep is on, Revit's Keep or Discard box for that one
+> change ([D-126](DECISIONS.md), [D-138](DECISIONS.md)); nothing in a request can set either
+> ([Golden Rule 19](14-golden-rules.md)).
+
 ---
 
 ## 4. **[NOTE]** Data confidentiality — the question that decides deployability
@@ -111,7 +136,9 @@ Also needed regardless of position:
 - **Zero-retention** confirmation from the provider where the deployment requires it.
 - An honest answer to *"does using Heron breach our NDA?"* — the person deploying it will be asked.
 
-Tracked as [Q-12](OPEN-QUESTIONS.md).
+Tracked as [Q-12](OPEN-QUESTIONS.md), answered on 2026-08-28 as [D-26](DECISIONS.md). The plain
+statement the first bullet asks for is [DISCLAIMER — What Heron sends where](../DISCLAIMER.md); the
+second bullet's redaction is not built, because [Q-40](OPEN-QUESTIONS.md)'s answer was no.
 
 ---
 
@@ -133,6 +160,13 @@ Recorded for every important action: user request · selected agents · selected
 Storage: append-only, structured (JSONL), rotated, and **local**. The audit log contains project information and must obey the same egress rules as everything else.
 
 The audit log is what makes the "invisible background work" of §2.2 acceptable rather than alarming. Invisible on screen, fully recorded on disk. This is now [Golden Rule 14](14-golden-rules.md).
+
+> **As built (2026-10-18):** [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs) writes one JSON
+> line per request, keyed by Workflow ID, under the data folder, and **never prunes it** — not rotated,
+> on purpose, because the trail must outlive an update and a reinstall. What is pruned is derived: the
+> verbose add-in log (`log.retainDays`) and each write's full detail in
+> [`HeronRuns.cs`](../platform/Heron.Core/HeronRuns.cs) (`runs.retainDays`). The brain writes its own
+> audit file beside it ([D-62](DECISIONS.md)).
 
 ---
 
@@ -157,6 +191,14 @@ Requirements:
 
 This is Article 17 of the [Constitution](../HERON_CONSTITUTION.md).
 
+> **As built (2026-10-18):** items 2 and 3 are [`brain/heron_secrets.py`](../brain/heron_secrets.py) — a
+> handle that never prints its value, and one redactor that the brain's commit, release, repository,
+> import, sandbox and memory paths call. Item 1's store reaches that module as an injected backend, and
+> **no Credential Manager or DPAPI backend exists in the code**; the add-in's audit line does not pass
+> through the redactor. Item 4 is **not built**: no pre-commit hook or tool in this repository scans for
+> secrets. Searched 2026-10-18 (`grep -rln "CredentialManager\|ProtectedData\|DPAPI"`, the hooks in
+> `.claude/settings.json`, and `tools/`).
+
 ---
 
 ## 6. **[NOTE]** Safety rules specific to an AI that edits live models
@@ -172,5 +214,10 @@ Proposed additions to the Golden Rules, in [14](14-golden-rules.md):
 > **19.** No text Heron reads may raise Heron's own permission level.
 
 These four are what separate a tool a BIM manager will approve for use on live projects from one they will ban after the first incident.
+
+> **As built (2026-10-18):** all four were accepted on 2026-08-28 and are official — [14](14-golden-rules.md)
+> holds their current wording, and records rule 17 as broken on the record by the owner's Ask to Keep
+> switch ([D-99](DECISIONS.md), then [D-126](DECISIONS.md) and [D-138](DECISIONS.md)) and rule 18 by a
+> `DRAFT` fragment's one run behind Keep or Discard ([D-119](DECISIONS.md)).
 
 The fifth originally proposed here — *"Heron never syncs, publishes or shares on its own initiative"* — is now **official Golden Rule 12** ([Baseline §78](00c-master-handover-baseline.md)). Its Revit-specific half, Sync With Central, moved into rule 17 above.

@@ -16,7 +16,11 @@ Used carelessly, it can damage a model you are about to deliver.
 - **Work on a copy, or make sure the model is backed up.** Every time.
 - **Never use it for the first time on a live deliverable.** Try it on a test model.
 - **Verify every change before issuing.** Heron shows you what it did — check it.
-- **Use the preview.** Heron will tell you what an operation will affect before it runs. Read it.
+- **Turn on Ask to Keep if you want to see a change before it stays.** It is on Revit's ribbon and
+  **off by default**: a change asked for in a chat is then kept at once, as one entry in Revit's undo
+  list. With it on, Revit selects what changed and asks Keep or Discard, and nothing stays until you
+  choose Keep ([D-126](docs/DECISIONS.md), [D-138](docs/DECISIONS.md)). A move still shows its preview
+  first, and a never-proved tool's one run is always asked.
 - **Know how to undo.** Every Heron change is a single entry in Revit's undo stack **for one
   document**, by design ([Golden Rule 16](docs/14-golden-rules.md)). Revit's own API cannot span two,
   so a job touching two models can never be one Ctrl+Z - nothing in Heron writes to two today, and a
@@ -85,8 +89,7 @@ process, or your obligations under the project's information requirements.
 Heron can generate new automation. A newly built agent's first run is **watched, not contained**: it
 is handed a world whose Revit door and production scopes are shut, every attempt to open one is
 written down, and the run is marked so it can never count as evidence toward promotion. Human
-approval is still required before anything becomes production capability, and nothing generated has
-ever run near a model.
+approval is still required before anything becomes production capability.
 
 **That is most of the value and none of the guarantee, and saying so is deliberate.** The agent runs
 as ordinary Python in the supervising process. One that cooperates is held; one that calls `open()`,
@@ -99,6 +102,13 @@ promise that decision withdrew** ([row 5b-52](docs/FRAGMENT-ISSUES.md)).
 What it does catch is the honest accident — a new agent reaching for Revit because nobody told it not
 to — and that is most of them. Treat newly generated tools with the same scepticism you would give a
 script a colleague wrote yesterday.
+
+> **As built (2026-10-18):** a fragment Heron writes on the spot is generated code too, and it is the
+> one kind that does reach a model. Since [D-119](docs/DECISIONS.md) a `DRAFT` fragment may run once on
+> the saved model in front of you, as one undo step held behind Revit's Keep or Discard box - asked
+> every time, whatever Ask to Keep says ([D-138](docs/DECISIONS.md)) - and nothing it did stays unless
+> you press Keep. Such runs have been made on scratch copies of Autodesk sample models in Revit 2024
+> and 2027 — evidence: [NEEDS-CHECKING Group EM](docs/needs-checking/group-em.md), its 2026-10-18 run.
 
 ---
 

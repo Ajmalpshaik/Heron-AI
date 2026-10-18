@@ -5,6 +5,17 @@
 >
 > This document covers the biggest structural idea in Part 2: the agent framework is an
 > **operating system**, not a collection of agents.
+>
+> **As built (2026-10-18):** most sections below have a module in `brain/`, each `DRAFT` and tested
+> without Revit, none proven: §2 [`heron_capability.py`](../brain/heron_capability.py)
+> (`HERON-KRN-CAP-008`), §3 [`heron_agents.py`](../brain/heron_agents.py) (`HERON-AHR-REG-008`), §4's
+> shadow runs [`heron_shadow.py`](../brain/heron_shadow.py), §5's scoring
+> [`heron_evaluator.py`](../brain/heron_evaluator.py), §6 [`heron_hr.py`](../brain/heron_hr.py), §7
+> [`heron_gaps.py`](../brain/heron_gaps.py), §8 [`heron_retirement.py`](../brain/heron_retirement.py) and
+> §10 [`heron_events.py`](../brain/heron_events.py). Each file's header names its agent id. How many of the
+> registry's agents are built is `python tools/agent-count.py`, never a number typed here; a signed run of
+> an add-in agent is kept in [`brain/agent-proofs/`](../brain/agent-proofs/README.md), apart from its
+> status.
 
 ---
 

@@ -9,12 +9,19 @@ See docs/29-metadata-standard.md
 
 # 46 — Sprinkler hydraulics from the model: a Revit sprinkler system in, a checked hydraulic calculation out
 
-> **Status: A DESIGN, with phase 1 built beside it (§12). Nothing in it is proven.** Asked 2026-10-04 by
+> **Status: A DESIGN, with phases 1 and 1b built beside it (§12, §13.4). BUILT, NOT PROVEN.** Asked 2026-10-04 by
 > the owner, after the Loads panel ([44](44-building-loads-from-the-model.md)): *"same like that we need
 > for firefighting also ... for sprinkler what we can do"*, then *"write the sprinkler panel design ...
 > make the good plan ... and do it"*. Every fragment it adds starts DRAFT ([D-30](DECISIONS.md)). A
 > hydraulic calculation is life safety: the fire consultant approves every value and the authority -
 > QCDD on a Qatar project - approves the design.
+>
+> **As built (2026-10-18):** both phases merged 2026-10-06 as #415 (commit `e2066de9`) - the
+> `revit_sprinkler_hydraulics` tool (`python mcp/server/heron_tools.py` lists it, at `ANALYZE`), the
+> Companion's Sprinkler panel, and `REPORT_SPRINKLER_NETWORK` (FRG-MEP-059), which is DRAFT and compiles
+> on 2020, 2024 and 2027. **NEEDS REAL REVIT:** no row of [group CE](needs-checking/group-ce.md) has been
+> run, and no solve has been compared with a listed hydraulic program (§11). The arithmetic is tested,
+> not proven, by `tests/test_fire.py`.
 
 **In Revit words.** Today you can ask Heron *"what pressure does the riser need for these ten
 sprinklers"*, and you have to type in every pipe, every length and every head. This feature lets you say

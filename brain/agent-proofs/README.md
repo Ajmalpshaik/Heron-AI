@@ -36,7 +36,10 @@ python tools/prove-agent.py check      which proofs have gone stale
 
 `fingerprint` is a hash of the agent's source, normalised to `/` separators and `\n` line endings. If
 the source changes, `check` reports **STALE** — an answer about code that has since moved on, which is
-different from a wrong answer.
+different from a wrong answer. **Measured 2026-10-18, `check` reports every proof here STALE**: each
+agent's source has changed since it was signed, so each is a record of what was seen then, not evidence
+about the code today. Which agents have a proof at all: `ls brain/agent-proofs/*.yaml` - the file name
+is the agent's id in [the registry](../../docs/28-agent-registry.md).
 
 The normalisation is not cosmetic. The fragment side learned it on 2026-09-06, when all sixteen proven
 fragments reported STALE the first time they were read on a different operating system. None of them

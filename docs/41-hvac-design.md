@@ -3,10 +3,17 @@
 > **Status: BUILT, NOT PROVEN.** Written 2026-10-02, on the owner's request, with the engine it
 > describes: [`brain/heron_hvac.py`](../brain/heron_hvac.py) and
 > [`brain/heron_psychro.py`](../brain/heron_psychro.py), served as the `heron_hvac` MCP tool, owned by
-> `HERON-MEP-HVD-001` in the [agent registry](28-agent-registry.md). **What is proven is arithmetic**:
+> `HERON-MEP-HVD-001` in the [agent registry](28-agent-registry.md). **What is tested is arithmetic**:
 > [`tests/test_hvac.py`](../tests/test_hvac.py) holds every calculation to published values, worked
-> examples and hand sums. **Nothing here has been checked against a real project or a HAP run** - §14
-> says what that would take. A design value is the engineer of record's, always.
+> examples and hand sums - tested, not proven (§14). **Nothing here has been checked against a real
+> project or a HAP run** - §14 says what that would take. A design value is the engineer of record's,
+> always.
+>
+> **As built (2026-10-18):** the engine has since met a Revit model through
+> [44](44-building-loads-from-the-model.md)'s building runner: on *Heron loads test*, Revit 2024,
+> 2026-10-06, Spaces calculated and written back ([Group CC](needs-checking/group-cc.md) CC11), and one
+> roof term matched a hand sum (CC19). That is a model meeting the engine, not a comparison with HAP or
+> TRACE, so the status above stands.
 
 ---
 

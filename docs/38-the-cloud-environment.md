@@ -42,9 +42,10 @@ Tick **"Also include default list of common package managers"**, then add:
     PYTHONUTF8=1
     PYTHONIOENCODING=utf-8
 
-`HERON_KNOWLEDGE` is the one that is not optional. `heron_scope.knowledge_dir()` reads `%APPDATA%`
-first and returns `None` on Linux without it, and every brain call then dies with *"No %APPDATA% and
-no HERON_KNOWLEDGE, so there is nowhere to keep knowledge"*.
+`HERON_KNOWLEDGE` is the one that is not optional. `heron_scope.knowledge_dir()` reads it first, then
+Heron's home - `HERON_DATA`, or `%USERPROFILE%\.heron` on Windows ([D-135](DECISIONS.md)) - and returns
+`None` on Linux with neither, and every brain call that keeps knowledge then dies with *"No HERON_DATA,
+no Windows profile and no HERON_KNOWLEDGE, so there is nowhere to keep knowledge"*.
 [`.github/workflows/gates.yml`](../.github/workflows/gates.yml) does the same thing for the same
 reason, so this is the supported path rather than a workaround.
 
@@ -110,8 +111,8 @@ than on shared words. This is the only thing on this page that cannot be checked
 
 ## 3. What the setup script does, and the three things it will not do
 
-In order: the .NET 10 SDK and `python-is-python3` from apt; PyYAML, `mcp`, `model2vec`, `sqlite-vec`
-and `pypdf` from pip; the knowledge directory; then a fragment index rebuild and a NuGet restore, run
+In order: the .NET 10 SDK and `python-is-python3` from apt, side by side with PyYAML, `mcp`, `model2vec`,
+`sqlite-vec` and `pypdf` from pip; the knowledge directory; then a fragment index rebuild and a NuGet restore, run
 in parallel. The rebuild and the restore are bounded with `timeout`. Every failure is kept in a named
 log rather than raised, and the script's last lines say what did not arrive - `dotnet ... NOT
 INSTALLED`, or `python packages MISSING:` and the names - because the exit code cannot say it.
@@ -136,8 +137,8 @@ objection, so without it the boundary guard would let every edit through, and no
 shortlist it already has. [`requirements-optional.txt`](../requirements-optional.txt) gives the same
 reasoning in the same words.
 
-**It does not build the bridge test host**, although the host builds and runs here perfectly well —
-32 checks, [30 §5](30-compiling-away-from-windows.md). The environment is snapshotted after the script
+**It does not build the bridge test host**, although the host builds and runs here perfectly well -
+[30 §5](30-compiling-away-from-windows.md). The environment is snapshotted after the script
 finishes, and a test host inside a snapshot is a **stale** test host, which reads exactly like a bridge
 defect. Build it in-session instead, fresh:
 
@@ -172,17 +173,20 @@ real edit does.
 | Every CI gate | yes - `check-decision-titles` after `git fetch --unshallow`, since a session starts from a shallow clone |
 | The C# compiles, Revit 2020–2027 | yes — `python tools/check-compile.py` |
 | Every fragment's C#, against every release it claims | yes |
-| Every test suite but the three below | yes |
-| `test_bridge_roundtrip` — 32 checks | yes, after the build in §3 |
-| `test_mcp_serves`, `test_served_claims` | yes — the script installs `mcp` |
+| Every test suite but the ones below | yes |
+| `test_bridge_roundtrip` | yes, after the build in §3 |
+| `test_mcp_serves`, `test_served_claims`, `test_mcp_stdio`, `test_loads_finalize` | yes — the script installs `mcp` |
+| `test_routing_phrases` | yes, where §2's one-line check answers `model`; otherwise it exits 3, COULD NOT RUN |
 | The `heron` server's library tools - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, `heron_standards` | yes - served from 2026-10-17, and no `revit_` tool ([D-132](DECISIONS.md)) |
 | The brain: lookup, gaps, routing, retrieval | yes |
 | **Proving a fragment or skill against a model** | **no. Needs Revit** |
 | **Add-in load, upgrade, rollback, manifest discovery** | **no. Needs a real Windows install** |
 
-So a cloud session goes **further than CI does**. `gates.yml` leaves exactly three suites unrun because
-the MCP SDK and the .NET host drag in dependencies a hosted runner should not carry; this environment
-installs one and builds the other on request, so **nothing in `tests/` is out of its reach**.
+So a cloud session goes **further than CI does**. `gates.yml` leaves the suites it names in its
+`known-not-runnable.txt` list unrun - the MCP SDK and the .NET host drag in dependencies a hosted runner
+should not carry, and the trained embedding is not there; this environment installs the SDK and the
+embedding and builds the host on request, so **nothing in `tests/` is out of its reach** once §2's check
+answers `model`.
 
 No total is written here on purpose. One was — *"196 of 199"* — and
 [`check-docs.py`](../tools/check-docs.py) caught it on this page's first run: the source said **219**.
@@ -202,7 +206,7 @@ Measured 2026-09-23 and again 2026-10-08, both in cloud sessions
 ([row 5b-162](fragment-issues/section-5b-rows-151-175.md)).
 
 **Since 2026-10-17 the server starts here, with its library alone** ([D-132](DECISIONS.md), answering
-Q-67). Off Windows it registers `heron_tools.LIBRARY` and nothing else, so the host lists those five
+Q-67). Off Windows it registers `heron_tools.LIBRARY` and nothing else, so the host lists those library
 `heron_` tools and **no `revit_` tool** - which is how a chat in a cloud session knows there is no Revit
 here - and its instructions and a lookup's version line say *"No Revit on this machine (it is not
 Windows)"*. The paragraph above is what was true before, kept as it was. A session that started before

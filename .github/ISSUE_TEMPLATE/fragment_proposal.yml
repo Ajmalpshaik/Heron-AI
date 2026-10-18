@@ -69,6 +69,8 @@ body:
         - "SUGGEST — proposes a change without applying it"
         - "EXECUTE — non-destructive action (selection, view)"
         - "MODIFY — changes the model"
+        - "PUBLISH — export, print, save or sync (its own switch, off by default)"
+        - "ADMIN — project-wide settings, worksets, parameters, or a new document (its own switch, off by default)"
     validations:
       required: true
 

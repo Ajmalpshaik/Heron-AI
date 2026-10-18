@@ -4,17 +4,17 @@
 
 | | |
 |---|---|
-| Language | C# today; Python later for the outside-Revit half |
+| Language | C#. The Python side keeps its own paths in [`brain/heron_paths.py`](../brain/heron_paths.py), which follows the same product / data / derived split ([D-135](../docs/DECISIONS.md)) |
 | Runs | wherever it is referenced |
 | Rule | **plumbing, never intelligence** |
 
 ## What's here
 
-**Four projects** — `Heron.Core`, and the installer, which this folder's own *What will be here* had
-listed since it was written. The installer is three projects on purpose: the engine is
+`Heron.Core`, and the installer. The installer is three projects on purpose: the engine is
 release-independent and runs anywhere, the window needs Windows, and the command line
 (`heron-install`, added 2026-09-22) is the door an AI can knock on without a mouse. Derive the list
-with `find platform -name '*.csproj'` rather than trusting this sentence.
+with `find platform -name '*.csproj'`. Beside them, [`heron-products.json`](heron-products.json) is the
+product list the installer reads; nothing about a product is written in code.
 
 ### `Heron.Core`
 
@@ -23,8 +23,8 @@ One file per class (`ls platform/Heron.Core/*.cs`), each the Kernel half of an a
 
 | Class | Does | Step |
 |---|---|---|
-| [`HeronPaths.cs`](Heron.Core/HeronPaths.cs) | **The Path Manager** — the single place that knows where anything lives. Product, data and derived are separate in code, and `IsSafeToDelete` returns false for anything under either | 1 |
-| [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest` | 1 |
+| [`HeronPaths.cs`](Heron.Core/HeronPaths.cs) | **The Path Manager** — the single place that knows where anything lives. Product, data and derived are separate in code, and `IsSafeToDelete` says yes only inside the derived folders - never for product or data. The Companion's notes are under the user's temporary folder, stepped out of the GUID-named one Revit runs with ([D-135](../docs/DECISIONS.md), [D-136](../docs/DECISIONS.md)) | 1 |
+| [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest`. Holds the ribbon's switches as settings - `write.enabled` (Changes) and `write.askBeforeKeeping` (Ask to Keep), both `false` by default | 1 |
 | [`HeronIdentity.cs`](Heron.Core/HeronIdentity.cs) | Stable identity for the things Heron must be able to name twice | 1 |
 | [`HeronOperationRegistry.cs`](Heron.Core/HeronOperationRegistry.cs) | The Tool Registry — every operation Heron will run, and the risk level of each | 3 |
 | [`HeronAppend.cs`](Heron.Core/HeronAppend.cs) | One line onto the end of a file another Revit process may be appending to at the same moment — or a plain answer that it could not be done. Used by the audit trail and the add-in log | 1 |
@@ -32,8 +32,9 @@ One file per class (`ls platform/Heron.Core/*.cs`), each the Kernel half of an a
 | [`HeronAtomicWrite.cs`](Heron.Core/HeronAtomicWrite.cs) | Write a file so an interrupted write cannot destroy what was already there — never delete-then-move | 6 |
 | [`HeronRuns.cs`](Heron.Core/HeronRuns.cs) | The run records: one file per fragment write under `HeronPaths.Runs` (DERIVED), named by its workflow id, holding every element it changed and its whole reply — written atomically, pruned by `runs.retainDays`, read back by `heron_run_record` | 7 |
 | [`HeronLease.cs`](Heron.Core/HeronLease.cs) | Who currently holds a Revit, and who may therefore send it anything ([D-22](../docs/DECISIONS.md)) | 6 |
-| [`HeronPermissions.cs`](Heron.Core/HeronPermissions.cs) | The seven permission levels of [docs/12 §1](../docs/12-security-and-permissions.md), in order | 6 |
-| [`HeronStop.cs`](Heron.Core/HeronStop.cs) | Emergency Stop — one switch that stops Heron doing anything further | 6 |
+| [`HeronPermissions.cs`](Heron.Core/HeronPermissions.cs) | The seven permission levels of [docs/12 §1](../docs/12-security-and-permissions.md), in order, and what each switch lets through - Changes, Admin and Publish ([D-106](../docs/DECISIONS.md)), and whether Revit asks Keep or Discard ([D-126](../docs/DECISIONS.md)) | 6 |
+| [`HeronStop.cs`](Heron.Core/HeronStop.cs) | Emergency Stop — one switch that stops Heron doing anything further. There is no ribbon button ([D-46](../docs/DECISIONS.md)); the bridge's `stop` operation sets it, the run clock rolls a running fragment back on it, and a Revit restart clears it ([D-129](../docs/DECISIONS.md), [D-130](../docs/DECISIONS.md)) | 6 |
+| [`HeronSourceScan.cs`](Heron.Core/HeronSourceScan.cs) | What a fragment's own C# opens, read before it is compiled - so a fragment on the read or show path that would open a `Transaction` of its own is refused rather than trusted to Revit | 17 |
 | [`HeronUnits.cs`](Heron.Core/HeronUnits.cs) | Unit conversion. Millimetres, which is what the user says, to whatever Revit wants | 6 |
 
 ### `Heron.Installer` — RUN ON THE OWNER'S PC, NOT EVERY ROW
@@ -56,8 +57,8 @@ Revit is open, and reports per product per release.
 | [`ReleaseDownload.cs`](Heron.Installer/ReleaseDownload.cs) | fetches a product's files from a **named release**, verifies them before use, unpacks them. Nothing downloaded is executed |
 | [`ProductFolder.cs`](Heron.Installer/ProductFolder.cs) | the same as the download, minus the wire: Heron's files already on this PC, no internet |
 | [`UpdateCheck.cs`](Heron.Installer/UpdateCheck.cs) | the verdict on whether a newer release exists — up to date, newer, ahead, or cannot tell |
-| [`PythonSetup.cs`](Heron.Installer/PythonSetup.cs) | the second half of one install (2026-10-17): Heron's Python side after the add-in — pinned packages from `requirements-lock.txt`, the knowledge store and `heron-ready --check` — only when a product with `needsPython` went in. Decides against a fake runner; **not run on Windows**, Group `EP` |
-| [`ClaudeAppCopy.cs`](Heron.Installer/ClaudeAppCopy.cs) | whether this run is inside a Microsoft Store Claude's private copy of AppData, where an install lands where Revit never looks (Q-63). Both doors refuse there. **Not run on Windows**, Group `EP` |
+| [`PythonSetup.cs`](Heron.Installer/PythonSetup.cs) | the second half of one install (2026-10-17): Heron's Python side after the add-in — pinned packages from `requirements-lock.txt`, the knowledge store and `heron-ready --check` — only when a product with `needsPython` went in. Decides against a fake runner; **run on the owner's laptop 2026-10-17 and 2026-10-18, not every row** — Group [`EP`](../docs/needs-checking/group-ep.md) says which passed and which are NOT RUN |
+| [`ClaudeAppCopy.cs`](Heron.Installer/ClaudeAppCopy.cs) | whether this run is inside a Microsoft Store Claude's private copy of AppData, where an install lands where Revit never looks (Q-63). Both doors refuse there. **Its refusal was run from a Store-built Claude on the owner's laptop, 2026-10-17** — Group [`EP`](../docs/needs-checking/group-ep.md), row EP4 |
 
 **It is not Kernel plumbing**, and outside this folder only its own test host references it — the
 window and the command line below sit on it, and nothing outside the installer does.
@@ -75,7 +76,8 @@ ever loading into one.
 > dotnet run --project tests/Heron.Installer.TestHost -c Release | grep -c '^  ok '
 > ```
 >
-> This line typed **38** until 2026-09-21 and nothing measurable matched it — row 5b-81.
+> Since 2026-10-17 [`.github/workflows/windows.yml`](../.github/workflows/windows.yml) also builds and runs
+> that test host on a Windows runner - no Revit and no person there, so a green run is not an install.
 
 ### `Heron.Installer.App` — SEEN ON THE OWNER'S PC, NOT EVERY ROW
 
@@ -97,18 +99,20 @@ fails if the window names a product, asks a product anything, or grows an Update
 > cleanly after one layout fix, and installed the AI Bridge for real —
 > [`docs/needs-checking/group-ab.md`](../docs/needs-checking/group-ab.md). **Not every row passed**:
 > which are still owed or blocked is that file's and
-> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md)'s answer, not this one's. **The group is named rather
-> than its range**, because `AB8` was added on 2026-09-21 and this line still said `AB1` to `AB7` an
-> hour later.
+> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md)'s answer, not this one's. The one-install lines it gained
+> on 2026-10-17 - the Python half and the Store-Claude refusal - are Group
+> [`EP`](../docs/needs-checking/group-ep.md).
 
-### `Heron.Installer.Cli` — BUILT, NOT RUN ON WINDOWS
+### `Heron.Installer.Cli` — RUN ON THE OWNER'S LAPTOP, NOT EVERY ROW
 
 `heron-install`, Stage 6 — routes 1 and 2, the AI installing. The choices arrive already made on a
 command line; everything after that is the same engine the window uses. [`Arguments.cs`](Heron.Installer.Cli/Arguments.cs)
 reads the command line and refuses an unknown flag by name; [`Program.cs`](Heron.Installer.Cli/Program.cs)
 wires things together and decides nothing. `net8.0`, no window, so it runs where Heron is developed.
-**Its runs on a PC with Revit are owed** — Group `AE` in
-[`docs/needs-checking/group-ae.md`](../docs/needs-checking/group-ae.md).
+**It has run on a PC with Revit** - the one install of Group [`EP`](../docs/needs-checking/group-ep.md),
+2026-10-17 and 2026-10-18, on the owner's laptop. **Its own rows are still owed** - Group `AE` in
+[`docs/needs-checking/group-ae.md`](../docs/needs-checking/group-ae.md): `--list`, the wait while Revit
+is open, and the refused sources.
 
 ## What will be here
 

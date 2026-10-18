@@ -8,12 +8,21 @@
 # Agent proof drafts — evidence waiting for a person
 
 Everything here was written by [`tools/prove-agent.py`](../../tools/prove-agent.py). **None of it is a
-proof yet.**
+proof yet.** Unlike the fragment drafts in [`../proof-drafts/`](../proof-drafts/README.md), these are
+not ignored by git, so a draft written here shows up as a change until it is accepted or deleted.
 
 A draft is what came back when one add-in agent was run against **two different models**: what each
 answered, which numbers moved between them, and which held the same. It is arranged into the shape
 [D-30](../../docs/DECISIONS.md) asks for and then it stops, because the last step is a judgement no
 machine can make — *is that answer right for this building?*
+
+```
+python tools/prove-agent.py sessions                      which Revits are connected
+python tools/prove-agent.py track HERON-REVIT-LVL-027 --operation list_levels --first <id> --second <id>
+```
+
+`track` writes that kind, and refuses when the two sessions report the same document. It needs two
+Revits open on the PC, so it runs only on Windows with Revit.
 
 `prove-agent.py vary` writes the other kind: one agent on **one** model across several values of one
 argument, where the input that has to be followed is the argument rather than the model

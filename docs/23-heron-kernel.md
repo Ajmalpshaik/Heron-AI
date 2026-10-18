@@ -85,6 +85,33 @@ those. It owns what Claude Code has no opinion about: Heron's registries, Heron'
 Heron's state and checkpoints, Heron's event bus and Heron's logging. The two compose cleanly —
 Claude Code is the *host*, the Kernel is Heron's *spine*.
 
+> **As built (2026-10-18): the parts exist, and there is no single Kernel object that every module talks
+> through.**
+>
+> - **The C# half is [`platform/Heron.Core`](../platform/README.md).** It holds configuration, identity,
+>   permissions, paths, the audit trail, the lease, the emergency stop, units, run records and the Tool
+>   Registry (`HeronOperationRegistry`). It has no Revit reference, and
+>   [`tests/Heron.Kernel.TestHost`](../tests/Heron.Kernel.TestHost/Program.cs) runs it with none. So the
+>   test above holds, though this half is C#, not the Python the paragraph assumed. It sits at the bottom
+>   of the stack and depends on nothing.
+> - **The Python half is separate modules,** each DRAFT: the event bus
+>   [`heron_events.py`](../brain/heron_events.py), the workflow engine
+>   [`heron_workflow.py`](../mcp/server/heron_workflow.py), the instruction registry
+>   [`heron_instructions.py`](../brain/heron_instructions.py), feature flags
+>   [`heron_flags.py`](../brain/heron_flags.py), the resource manager
+>   [`heron_resources.py`](../brain/heron_resources.py) and the model router
+>   [`heron_router.py`](../brain/heron_router.py).
+> - **The registries are derived from files, not held**
+>   ([D-40](DECISIONS.md#d-40--the-dependency-graph-is-sqlite-and-an-edge-is-derived-before-it-is-stored)).
+>   Capabilities come from [`heron_capability.py`](../brain/heron_capability.py), skills from
+>   [`heron_skill.py`](../brain/heron_skill.py), fragments from
+>   [`heron_fragment.py`](../brain/heron_fragment.py), MCP tools from `heron_tools.TOOLS` and agents from
+>   [28](28-agent-registry.md).
+>
+> Modules import one another directly. What holds the layering is
+> [`tools/check-structure.py`](../tools/check-structure.py), which fails the build when one part depends on
+> another it must not. Whether every module should go through one Kernel is left to the owner.
+
 ---
 
 ## 2. The four registries
@@ -132,6 +159,13 @@ did both. The split is:
 This is the difference between a plan and a plan's execution. Keeping them apart means the retry logic
 is written once, in one place, rather than reinvented inside every multi-step workflow — and it keeps
 the Orchestrator thin, which [Golden Rule 2](14-golden-rules.md) requires.
+
+> **As built (2026-10-18):** the Orchestrator is the host
+> ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin)). For a job of several steps, Heron hands
+> the host the method through `heron_method`: what must be true first, the steps in order, and each
+> capability with its risk ([04 §8.7](04-heron-mcp.md#87-a-new-pc-as-quick-as-the-old-one--built-2026-10-09)).
+> The Workflow Engine with checkpoints is [`heron_workflow.py`](../mcp/server/heron_workflow.py)
+> (DRAFT). No tool the server serves calls it yet: `grep -rn 'heron_workflow' mcp/server/heron_mcp_server.py`.
 
 ---
 
@@ -209,6 +243,15 @@ something plausible with nothing behind it. Requiring evidence alongside confide
 checkable. Recommendation: **for any `MODIFY` operation, an answer with no evidence is refused, not
 downgraded.**
 
+> **As built (2026-10-18):** an answer from `revit_read` or `revit_show` says how far the fragment it
+> ran is proven. It is `PROVEN` on a named model and unchanged since, or `PROVEN` with its code moved
+> since the proof, or never proved
+> ([04 §8.1](04-heron-mcp.md#81-a-door-that-only-reads--revit_read)). A kept change names a **run
+> record** that holds every element id and the whole reply, and `heron_run_record` reads it back without
+> Revit ([`HeronRuns.cs`](../platform/Heron.Core/HeronRuns.cs)). A change is kept only from a fragment
+> whose proof still stands
+> ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)).
+
 ---
 
 ## 7. Immutable provenance
@@ -231,6 +274,11 @@ folder.
 
 That is a strong argument for the file-based fragment format over a database-only one: provenance,
 diffing, review and rollback all arrive without being built.
+
+> **As built (2026-10-18):** fragments are files in git, and a fragment's history is `git log` over its
+> folder ([09 §4](09-skills-and-fragments.md#4-knowledge-identity-30)). A proof carries the fingerprint
+> of the code it proved, so a change to the code makes the proof stale, and the reply says so
+> ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
 
 ---
 
@@ -261,6 +309,14 @@ This also makes §25's local/cloud routing a configuration choice rather than an
 which matters directly for the confidentiality question ([Q-12](OPEN-QUESTIONS.md)): a project marked
 confidential selects a local provider adapter, and nothing above that layer needs to know.
 
+> **As built (2026-10-18):** [`heron_router.py`](../brain/heron_router.py) (DRAFT) declares the intent
+> and chooses who chooses, never a model. Heron makes no model call of its own
+> ([D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host)).
+> Its batch work, the embeddings, runs on the machine with no provider at all
+> ([D-24](DECISIONS.md#d-24--embeddings-are-computed-locally-by-default),
+> [D-26](DECISIONS.md#d-26--the-model-file-is-never-uploaded)). No provider adapter exists:
+> [37](37-the-provider-adapter.md) scopes one.
+
 ---
 
 ## 9. Prompt / Instruction Registry
@@ -281,6 +337,13 @@ Three properties worth designing in:
 3. **Composable** — the [Constitution](../HERON_CONSTITUTION.md) rules relevant to an agent are
    assembled into its instructions from one source, rather than copy-pasted into each.
 
+> **As built (2026-10-18):** built as [`brain/instructions/`](../brain/instructions/), with
+> `host.chat`, `agent.base`, `agent.read` and `agent.modify`, and
+> [`heron_instructions.py`](../brain/heron_instructions.py), which validates them and runs their cases.
+> `host.chat` is every chat's server instructions. The Constitution's Articles are assembled into it at
+> start-up, never copied, and [`tests/test_instructions.py`](../tests/test_instructions.py) holds its word
+> budget ([04 §8.3](04-heron-mcp.md#83-the-rules-reach-the-ai--the-servers-instructions)).
+
 ---
 
 ## 10. Resource Manager
@@ -296,6 +359,11 @@ CPU while Revit is unresponsive to the user.
 Practical measures: time since last successful `ExternalEvent` execution, and whether a modal dialog is
 open. Both are already needed by the health system ([03 §3](03-heron-revit.md)) and by the "Revit is
 busy" state ([04 §6](04-heron-mcp.md)). One signal, three consumers.
+
+> **As built (2026-10-18):** [`heron_resources.py`](../brain/heron_resources.py) (DRAFT) reads CPU, RAM
+> and disk where the platform offers them, and reports what it cannot see as unmeasured. *Revit is busy*
+> is answered in the add-in instead: the dispatcher tells a request Revit never picked up from one still
+> running ([03 §4](03-heron-revit.md#4-note--critical-the-revit-api-threading-constraint)).
 
 ---
 
@@ -315,3 +383,8 @@ back to last-known-good.
 They are also configuration, and therefore a security boundary
 ([21 §9](21-resilience-and-operations.md)) — flipping a flag is `ADMIN`, and no text Heron reads may
 flip one ([Golden Rule 19](14-golden-rules.md)).
+
+> **As built (2026-10-18):** [`heron_flags.py`](../brain/heron_flags.py) (DRAFT) holds the three states,
+> refuses any other word, and lets only a person move a flag. The switches a modeller actually meets
+> are the add-in's: Changes, Admin, Publish and Ask to Keep on the ribbon
+> ([22 §3](22-users-modes-and-extensibility.md#3-the-three-modes)).

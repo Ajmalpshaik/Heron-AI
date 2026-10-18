@@ -9,9 +9,23 @@ See docs/29-metadata-standard.md
 
 # 36 — Remembering between steps, and the check that makes it safe
 
-**A DESIGN NOTE, NOT A DECISION.** Nothing here has been built, and no decision number has been
-spent on it. It exists so the plan can be read before any code is written. If it is accepted it
-becomes a `D-` entry in [DECISIONS.md](DECISIONS.md) and this file becomes its background.
+**A DESIGN NOTE, NOT A DECISION.** No decision number has been spent on it. It was written so the
+plan could be read before any code was. If it is accepted it becomes a `D-` entry in
+[DECISIONS.md](DECISIONS.md) and this file becomes its background.
+
+> **As built (2026-10-18): BUILT; RUN ON A REAL MODEL, NOT SIGNED.** §4's opt-in expectation was built
+> on 2026-09-16 and merged the next day (#165, commit `5669e7e5`) as the request's `expectChain`,
+> checked by the add-in's binder in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)
+> before anything binds, and as the
+> `expect_from` input of `revit_read`, `revit_show`, `revit_change`, `revit_edit_table`,
+> `revit_building_loads` and `revit_sprinkler_hydraulics`. A call that declares nothing still resets, as
+> §4 asks. Four refusals each have their own name - `chain_empty`, `chain_mismatch`,
+> `chain_inputs_differ`, `chain_contradiction` - held by
+> [`tests/test_chain_expectation.py`](../tests/test_chain_expectation.py). **§6's pair was run** on
+> `4355-BHVD-3D-50C10-BL001A`, Revit 2020, on 2026-09-16: the same carried values bound under a matching
+> declaration and were refused under a mismatched one, and `chain_mismatch` fired too -
+> [FRAGMENT-ISSUES row 115](fragment-issues/section-5-rows-101-125.md), *"proved on both legs, awaiting
+> signature"*. `chain_empty` and `chain_contradiction` are tested off Revit only.
 
 **The owner asked the question that produced it**, on 2026-09-16, in his own words: *an agent that
 cannot remember is crippled — so add a layer that confirms the remembered thing is the right thing,
@@ -37,7 +51,7 @@ The refusal, verbatim:
 
 **Both fragments work. Neither is at fault.** What is missing is the join. And the join is missing
 *on purpose*: `cmd_fragment` sends `chain: "reset"` on every call
-([`heron_bridge_client.py:1025`](../mcp/client/heron_bridge_client.py)), so the 120 elements are
+([`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), in `cmd_fragment`), so the 120 elements are
 forgotten before the next command starts.
 
 **THE RESET IS RIGHT, AND THIS NOTE DOES NOT PROPOSE REMOVING IT.** The hazard it prevents is named
@@ -57,7 +71,7 @@ be safe".**
 ## 2. Three quarters of the answer is already built
 
 This is the part that makes the proposal small. `Chain`
-([`RevitFragment.cs:1040`](../revit/Heron.Revit.Addin/RevitFragment.cs)) already records:
+(the `Chain` class in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)) already records:
 
 ```csharp
 public readonly Dictionary<string, object> Values;
@@ -109,7 +123,7 @@ expect-chain: elements from select-by-category-name
 
 and the executor's binding step — the one already written as
 *"1. THE CHAIN"* / *"2. THE SELECTION"* at
-[`RevitFragment.cs:1284`](../revit/Heron.Revit.Addin/RevitFragment.cs) — would gain a third
+`BindNeeds` in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) — would gain a third
 question between them: **does what is carried match what was declared?**
 
 - **Matches** → use it, and say so in the read-back exactly as now.

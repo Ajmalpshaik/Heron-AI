@@ -3,6 +3,9 @@
 > Resolves a conflict across all four specification documents.
 > **[NOTE]** blocks are engineering commentary. This document proposes a resolution and needs
 > confirmation — see [Q-34](OPEN-QUESTIONS.md).
+>
+> **As built (2026-10-18):** still a proposal - [D-14](DECISIONS.md) is `Proposed`, the owner having
+> agreed the direction and asked to see it working first (Q-34). §3 says what the code holds today.
 
 ---
 
@@ -67,6 +70,15 @@ Applies identically to **fragments, skills, capabilities and agents**.
 | `PRODUCTION` | Trusted by default | **Human approval.** Explicit, recorded |
 | `DEPRECATED` | Superseded, unreliable, or incompatible | — |
 | `ARCHIVED` | Retained for history | Never deleted |
+
+> **As built (2026-10-18):** the lifecycle the code holds is
+> [`heron_fragment.py`](../brain/heron_fragment.py)'s `STATUSES` - this table without `SHADOW`;
+> [`tools/check-metadata.py`](../tools/check-metadata.py) accepts `SHADOW` in a source file's header, so
+> the two lists differ. The library's cards use two of the stages, `DRAFT` and `PROVEN`
+> (`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`). **`PROVEN` does not mean
+> N runs:** [D-30](DECISIONS.md), accepted, promotes a fragment on one recorded proof - a named real
+> model, a negative case and a staleness fingerprint - *"not by a count of runs"*. On that point the
+> gate in the table above is not what is built.
 
 **Absorbing the old vocabularies:**
 
@@ -204,11 +216,11 @@ exists** — nothing here is new policy.
 | **The host** (Claude Code) | **Trusted to orchestrate. Never to authorise** | [D-01](DECISIONS.md) gives it conversation, intent and planning. [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), verbatim: *"The read/change word comes from the tool registry, looked up by operation name (Golden Rule 19). **Nothing in the request decides it**"* |
 | **A request arriving on the pipe** | **Trusted as transport. Untrusted as authority** | the boundary is [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs)'s guard — *undeclared is refused*, then the stop, then the permission level — reading risk from `HeronOperationRegistry` by operation name. [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) checks the same thing earlier and **says in its own words that it is not the boundary**: *"a client-side guard against a MISTAKE, not a boundary against malice — a caller that skips this client is unaffected"* |
 | **The model's own content** — *documents, family names, parameter descriptions, imported folders, model text and community packages* | **Semi-trusted. Data, never instruction** | [Golden Rule 19](14-golden-rules.md), quoted verbatim. **That list is the rule's own and is not to be paraphrased** — the first draft of this row wrote *type names, parameter values, comments*, which are three things the rule does not say and two of its six left out |
-| **A linked document's content** | **Semi-trusted — and it may be silently absent** | [Q-48](OPEN-QUESTIONS.md): 62 reading fragments collect the host only and say so nowhere |
+| **A linked document's content** | **Semi-trusted — and it may be silently absent** | [Q-48](OPEN-QUESTIONS.md): reading fragments that collect the host only, and say so nowhere, were counted there |
 | **The Revit API's answer** | **Trusted — about the document it names, and no other** | [25 §4](25-multi-session-and-binding.md) — *document binding, the most dangerous finding* — and [25 §5](25-multi-session-and-binding.md)'s stale read. A bare number is how somebody acts on a count from a model they were not looking at, so every answer names its document |
 | **An imported community package** | **Semi-trusted until validated — and its licence is unread** | [22 §5](22-users-modes-and-extensibility.md) — *Data isolation* — classes Community Data as *"shipped or downloaded, **treated as untrusted until validated**"*; [Q-53](OPEN-QUESTIONS.md) is that nothing checks what it permits |
 | **An indexed standard or specification** | ⚠️ **UNDECIDED — [Q-51](OPEN-QUESTIONS.md)** | the source does not exist yet. [`heron_context.py`](../brain/heron_context.py) says so in the part list: `STANDARD = "standard"  # the clauses cited - source does not exist yet` |
-| **The network** | **Not in the threat model at all** | [D-24](DECISIONS.md) and [D-26](DECISIONS.md): local, offline, no account. Heron needs no network to answer |
+| **The network** | **Not in the threat model at all** | [D-24](DECISIONS.md) and [D-26](DECISIONS.md): local, offline, no account. Heron needs no network to answer. *As built (2026-10-18): one local listener now exists - the Companion page's web server on `127.0.0.1` ([D-108](DECISIONS.md)), with its own guards against other websites and DNS rebinding ([40 §11](40-heron-companion.md)); still nothing faces the network* |
 
 **Two things this table makes visible that prose did not.**
 
@@ -222,3 +234,8 @@ TLS, a semi-trusted provider API, DNS rebinding against a local viewer — descr
 not luck; it is [D-24](DECISIONS.md) and [D-26](DECISIONS.md) being expensive on purpose. Any future
 feature that puts Heron on the network is not adding a feature, it is **adding this whole table's worth
 of rows**.
+
+> **As built (2026-10-18):** the Companion ([D-108](DECISIONS.md)) is a local viewer, so DNS rebinding
+> against it is now Heron's surface - answered by the `Host` check and the rest of
+> [40 §11](40-heron-companion.md). The provider adapter ([37](37-the-provider-adapter.md)) talks only to
+> `127.0.0.1` and nothing served uses it yet.

@@ -12,7 +12,8 @@ Please treat them accordingly.
 
 Report privately through **[GitHub Security Advisories](https://github.com/Ajmalpshaik/Heron-AI/security/advisories/new)**.
 
-If that is unavailable, contact the maintainer directly and mark the message as a security report.
+If that is unavailable, contact the maintainer, [@Ajmalpshaik](https://github.com/Ajmalpshaik), directly
+and mark the message as a security report.
 
 Please include:
 
@@ -49,15 +50,23 @@ them, that is a vulnerability worth reporting:
 
 - **The permission gate lives in the Revit add-in**, not in the AI layer
   ([`HeronPermissions`](platform/Heron.Core/HeronPermissions.cs)). Every operation declares its risk in
-  code; one that changes a model is refused while `write.enabled` is off, which is the default, and a
-  write runs as a preview that is rolled back unless it is applied. *(The specification,
+  code; one that changes a model is refused while `write.enabled` (the ribbon's **Changes**) is off,
+  which is the default, and an `ADMIN` or `PUBLISH` operation also needs a switch of its own, each off by
+  default ([D-106](docs/DECISIONS.md)). With Changes on, a change asked for in a chat is kept at once,
+  as one entry in Revit's undo list, unless the owner has turned **Ask to Keep** on, when Revit shows the
+  change and asks Keep or Discard first ([D-126](docs/DECISIONS.md), [D-138](docs/DECISIONS.md) - off by
+  default); a fragment with no standing proof is refused there ([D-117](docs/DECISIONS.md)). Only a
+  person in Revit sets a switch or answers the box; nothing in a request can. *(The specification,
   [12](docs/12-security-and-permissions.md), names a `REQUIRES_CONFIRMATION` reply; no code returns
   that word.)*
 - **No text Heron reads may raise Heron's own permission level.** Content from documents, model text,
   family names and community packages is data, never instruction. *(Golden Rule 19)*
 - **Every model change runs in one named `TransactionGroup`** and rolls back completely on failure.
   *(Golden Rule 16)*
-- **Generated code never touches a live model on its first run.** *(Golden Rule 18)*
+- **Generated code never touches a live model on its first run** - with one recorded exception: a
+  `DRAFT` fragment may run once on the saved model in front, as one undo step held behind Revit's Keep or
+  Discard box, which is asked every time, and nothing it did stays unless the modeller presses Keep
+  ([D-119](docs/DECISIONS.md)). *(Golden Rule 18)*
 - **No automatic external publishing of private knowledge.** *(Golden Rule 12)*
 - **Heron never triggers Sync With Central on its own initiative.** *(Golden Rule 17)*
 - **Project knowledge never leaves the machine** without explicit, per-item human review of the
@@ -78,5 +87,8 @@ the repository.
 
 ## Supported versions
 
-Heron AI is built but not released. No released version exists yet, so nothing is currently under
-a support commitment. This section will list supported versions once releases begin.
+One release exists: [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), an early,
+unsigned build published so a teammate could install Heron
+([WHAT-TO-INSTALL](docs/WHAT-TO-INSTALL.md)). Heron is not yet announced, and **no version is under a
+support commitment**: a fix lands on `main`, and reaches a modeller with whichever release follows it.
+This section will list supported versions once that changes.

@@ -13,8 +13,8 @@ no individual, and assume no knowledge of any other project.
 | [revit-ribbon-and-windows](revit-ribbon-and-windows/SKILL.md) | Ribbon buttons, why one fails to appear, and the `ExternalEvent` pattern a modeless window must use to reach the Revit API without crashing Revit |
 | [fragment-proving](fragment-proving/SKILL.md) | How to arrange a fragment's proof so the answer means something, the five mistakes that account for nearly every failed one, and how to run a batch of them |
 | [heron-guard](heron-guard/SKILL.md) | **A hook, not a document.** Refuses an edit that would put the Revit vendor namespace outside `revit/` **at the moment the edit is proposed**, rather than when somebody remembers the sweep. Wired from [`../settings.json`](../settings.json), so it runs in **every** session and not only one that loaded the skill. Deny-tier, fails closed, `HERON_GUARD=off` turns it off |
-| [heron-session](heron-session/SKILL.md) | **Hooks, not a document.** At every session start, one line: where the branch stands against `origin/main`, and how many fragments are PROVEN and DRAFT. Before a pull request is merged or marked ready, fetches `origin/main` and tells the AI which commits the branch does not have. Before a prompt marked LOCAL, in a cloud container, one line telling the AI to say so and stop. **Advice only — none ever blocks.** Wired from [`../settings.json`](../settings.json) like the guard. Also the diary every Heron hook writes one line per decision to, outside the repository, and `tools/hook-report.py` to read it |
-| [heron-ship](heron-ship/SKILL.md) | **What to run before pushing, in what order, and which failures are the machine rather than the change** — stating a change's intent and its before/after evidence, the four gates you run and **every gate CI's `gates` job decides on** (listed in [`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml) - no count is typed here; this row said *ten* after it became eleven), the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the checks that need something this container has not got - a tool, a store or the whole git history |
+| [heron-session](heron-session/SKILL.md) | **Hooks, not a document.** At every session start, one line: where the branch stands against `origin/main`, how many fragments are PROVEN and DRAFT, and - on any system but Windows - that no Revit can be reached and Heron serves only its library tools. Before a pull request is merged or marked ready, fetches `origin/main` and tells the AI which commits the branch does not have. Before a prompt marked LOCAL, in a cloud container, one line telling the AI to say so and stop. **Advice only — none ever blocks.** Wired from [`../settings.json`](../settings.json) like the guard. Also the diary every Heron hook writes one line per decision to, outside the repository, and `tools/hook-report.py` to read it |
+| [heron-ship](heron-ship/SKILL.md) | **What to run before pushing, in what order, and which failures are the machine rather than the change** — stating a change's intent and its before/after evidence, the four gates you run and **every gate CI's `gates` job decides on** (listed in [`../../.github/workflows/gates.yml`](../../.github/workflows/gates.yml) - no count is typed here), the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the checks that need something this container has not got - a tool, a store or the whole git history |
 
 ## What belongs here
 
@@ -34,8 +34,8 @@ A skill that drifts from the code is worse than no skill, because it is believed
 That applies to using one as much as to changing code: if guidance here turns out to be mistaken,
 incomplete or stale while you are following it, correcting it is part of the task you are already doing.
 
-Four agents in [`../agents/`](../agents) carry that work, three of them working prototypes of an agent
-already specified in [the registry](../../docs/28-agent-registry.md):
+The `skill-*` agents in [`../agents/`](../agents) carry that work, most of them working prototypes of
+an agent already specified in [the registry](../../docs/28-agent-registry.md):
 
 | Agent | For | Registry |
 |---|---|---|
@@ -65,5 +65,6 @@ prose is not:
 python tools/check-docs.py
 python tools/check-metadata.py
 python tools/check-structure.py
+python tools/check-package.py
 python tests/test_bridge_roundtrip.py
 ```

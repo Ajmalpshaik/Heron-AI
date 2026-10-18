@@ -2,6 +2,17 @@
 
 > **Status:** a scope, not an implementation. Written 2026-09-17 after the last of the five blocking
 > decisions closed and the register stopped being the bottleneck.
+>
+> **As built (2026-10-18): BUILT, NOT RUN AGAINST A PROVIDER.** The first adapter §3 asks for was built
+> the same day (#168, commit `c4aed3b1`): [`brain/heron_provider.py`](../brain/heron_provider.py) - one
+> `LOCAL` adapter for Ollama at `127.0.0.1:11434` (`HERON_OLLAMA_URL` moves it), standard library only,
+> with `probe`, `call`, `usage_tokens` and `register`. Its `call` takes a model and a prompt, not §2.4's
+> intent-shaped signature. [`tests/test_provider.py`](../tests/test_provider.py) runs it over real
+> sockets - a refused connection with nothing listening, a 401, a late answer - and its first run found
+> the kind of shape mismatch §6 predicted, in `counts_as_evidence()` rather than `record()`: it read keys
+> the adapter's result did not carry (NEEDS-CHECKING [K3](needs-checking/group-k.md)). **K3 is still NOT RUN:** it needs Ollama installed
+> with one model pulled. Nothing in `brain/` or `mcp/server/` imports the adapter yet, so no answer Heron
+> serves goes through it.
 
 Three agents in this system decide **which** model to use, **whether it is reachable** and **what it
 cost**. All three are built, all three are tested, and **not one of them has ever met a provider.**
@@ -120,7 +131,7 @@ model barely exercises** — a real `401` is the thing K3 explicitly asks for.
 | | |
 |---|---|
 | **K3** in NEEDS-CHECKING | the row that names this as its precondition |
-| **5 Development agents** | `DEV-REQ-001`, `DEV-PLN-002`, `DEV-ARC-003`, `DEV-GEN-004`, `DEV-RAP-007` — all T2 or T3, so all of them need a model call and none can run |
+| **These Development agents** | `DEV-REQ-001`, `DEV-PLN-002`, `DEV-ARC-003`, `DEV-GEN-004`, `DEV-RAP-007` — all T2 or T3, so all of them need a model call and none can run. *As built (2026-10-18): the registry now records all five as **provided by the host** ([D-80](DECISIONS.md)) - Claude Code does that language work - so they wait on no adapter; `python tools/agent-count.py` counts them in its HOST column* |
 | **every other T2/T3 in the register** | they are counted as built because a file claims them; what they have never done is make a call |
 
 That last row is the uncomfortable one and it should be said plainly: **"built" in this register means a
@@ -132,8 +143,8 @@ everything except the part that needs a model.
 ## 5. What this scope does NOT include
 
 **No agent row.** The only `adapter` rows in [docs/28](28-agent-registry.md) are the deferred CAD ones —
-AutoCAD, Navisworks, IFC, Rhino. This is **infrastructure under three existing agents**, not a
-twenty-sixth Revit Engineering row, and giving it an id would be inventing a row nobody wrote.
+AutoCAD, Navisworks, IFC, Rhino. This is **infrastructure under three existing agents**, not one
+more Revit Engineering row, and giving it an id would be inventing a row nobody wrote.
 
 **No model choice for the product.** Which local model, and whether Heron ships one, is a product
 decision and the owner's.

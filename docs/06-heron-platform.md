@@ -52,6 +52,15 @@ If these three sit in one tree, the first update that "cleans and reinstalls" de
 
 Tracked as [Q-13](OPEN-QUESTIONS.md).
 
+> **As built (2026-10-18):** answered by
+> [D-31](DECISIONS.md#d-31--product-data-and-derived-are-already-separated-and-the-code-is-the-record).
+> The split is in code: [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) is the only thing that
+> builds a Heron path, and `IsSafeToDelete` returns false for anything under data. Runtime state stays
+> on the machine ([D-17](DECISIONS.md#d-17--runtime-state-is-machine-local-not-roaming)). Heron's
+> Python side keeps its data in `%USERPROFILE%\.heron`, where a Microsoft Store Claude's private copy of
+> AppData cannot reach it
+> ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)).
+
 ---
 
 ## 3. Agent Registry
@@ -84,6 +93,12 @@ Statuses: `PROPOSED` → `DEVELOPMENT` → `TESTING` → `APPROVED` → `ACTIVE`
 | **Tier** (T1 service / T2 reasoner / T3 worker) | See [02 §6](02-architecture-overview.md). Makes cost and latency inspectable, and stops silent promotion of a cheap service into an expensive LLM call. |
 | **Risk level** | Which permission level this agent's actions require. Drives the security gate. |
 | **Contract schema path** | The JSON Schema for INPUT/OUTPUT. Makes contracts machine-checkable and diffable across versions. |
+
+> **As built (2026-10-18):** the register is [28](28-agent-registry.md), and it carries tier and risk.
+> Each agent's contract is a YAML file in [`brain/agents/`](../brain/agents/), not a JSON Schema, and
+> status is the module's own `Heron-Status` header. Nothing that can be derived is stored twice
+> ([D-40](DECISIONS.md#d-40--the-dependency-graph-is-sqlite-and-an-edge-is-derived-before-it-is-stored)).
+> `python tools/agent-count.py` counts the register by department.
 
 ---
 
@@ -125,6 +140,16 @@ The **Capability Gap Agent** detects *"the system repeatedly needs capability X,
 
 **[NOTE]** This is the most valuable agent in the entire specification and probably the cheapest to build. It is essentially a report over the audit log — which requests failed, which required fallback, which the user corrected. It needs no autonomy at all to be useful. Recommendation: build it early, as a **read-only report**, long before agent auto-creation exists. It will tell you what to build next, from real usage rather than guesswork.
 
+> **As built (2026-10-18):** built as that read-only report,
+> [`brain/heron_gaps.py`](../brain/heron_gaps.py), and served as `heron_gaps`. A want is recorded when a
+> capability is asked for by name and nothing provides it
+> ([D-63](DECISIONS.md#d-63--a-want-is-recorded-when-a-capability-is-asked-for-by-name-and-nobody-provides-it)).
+> §4's first boundary is in code: the Agent Creator,
+> [`heron_creator.py`](../brain/heron_creator.py), may only ever assign `PROPOSED`. A new tool for the
+> modeller is written at DRAFT by the
+> [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) subagent, and a person signs its
+> proof ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
+
 ---
 
 ## 7. Naming & Taxonomy Department
@@ -163,6 +188,18 @@ User says *"Install this capability."* The Package Manager resolves dependencies
 
 **[NOTE]** Installing a package means **executing third-party code inside Revit, inside the user's project**. This is the highest-severity supply-chain surface in the platform. Before any marketplace exists, decide: signing, source allowlist, version pinning, and whether community packages may contain executable code at all (as opposed to declarative skills/fragments only). Tracked as [Q-18](OPEN-QUESTIONS.md).
 
+> **As built (2026-10-18):** Q-18 is answered by
+> [D-35](DECISIONS.md#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about).
+> A shared fragment may carry code, and one without an approval record is refused, not warned about.
+> Heron's own products come from a signed, versioned GitHub release
+> ([D-91](DECISIONS.md#d-91--product-files-come-from-a-signed-versioned-github-release)), and the
+> product list is a manifest read as data,
+> [`platform/heron-products.json`](../platform/heron-products.json)
+> ([D-93](DECISIONS.md#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer)).
+> Heron's Python packages are pinned in [`requirements-lock.txt`](../requirements-lock.txt). The
+> Package Manager's resolver is a DRAFT module, [`heron_packages.py`](../brain/heron_packages.py). It
+> works out an install order and refuses to guess one. No marketplace exists.
+
 ---
 
 ## 11. Marketplace / Community
@@ -178,3 +215,8 @@ Every community package carries: version, author, dependencies, compatibility, q
 API Documentation, Agent Documentation, Skill Documentation, Fragment Documentation, Release Notes, Architecture Documentation, README, Change Log.
 
 **[NOTE]** Documentation should be **generated from the registries and metadata that already exist**, not written separately and kept in sync by hand. The agent registry, skill metadata and fragment metadata are already structured; the docs are a rendering of them. Anything hand-maintained alongside them will drift within weeks.
+
+> **As built (2026-10-18):** the documents are hand-written, so the rule is held the other way round.
+> A number a command can derive is never typed. The command is named instead, and where one is typed
+> anyway, `python tools/check-docs.py` checks the counts it can derive
+> ([`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md)).

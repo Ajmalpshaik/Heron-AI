@@ -76,6 +76,17 @@ Tracked as decision **D-03**, [Q-5](OPEN-QUESTIONS.md).
 
 **[NOTE]** There is a second reason to prefer B. MCP tool schemas are sent to the model on every request. A catalogue of 300 fine-grained Revit tools is a large, permanent context cost. The mitigation is **capability discovery** (already in the spec §5): expose a small stable core set plus a `heron_find_capability` search tool, and register the specific tool only once it is actually needed. This should be designed in from the start, not retrofitted.
 
+> **As built (2026-10-18):** [D-03](DECISIONS.md#d-03--mcp-tool-granularity-thick-and-specific) accepted
+> Option B. The tool surface is a list of thick, specific tools; `python mcp/server/heron_tools.py`
+> prints it with each tool's risk. The fragment library is not one tool per fragment. It is reached
+> **by capability** through three doors, `revit_read`, `revit_show` and `revit_change` (§8.1, §8.9), and
+> never by code or fragment id. The library's own fragment is what runs. `heron_lookup` is the search
+> tool this note asks for, and `heron_method` hands over a job of several steps (§8.7). The small core
+> set is `heron_tools.ALWAYS_LOADED`, given to every chat at start; the host's own tool search finds
+> the rest (§8.6). No generic `revit_execute` exists. The nearest thing is `revit_change` running a
+> library fragment declared `ADMIN`, which works only while the owner's Admin switch is on
+> ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)).
+
 ---
 
 ## 4. **[NOTE]** Where the permission gate lives
@@ -94,8 +105,17 @@ Concretely:
 This is the practical implementation of Golden Rule 9.
 
 **What was built differs, and §8 says where.** No tool returns `REQUIRES_CONFIRMATION`. The add-in's
-gate is one switch per risk level, and `revit_change` keeps its change at once with no preview — a
-recorded exception, [D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so).
+gate is one switch per risk level: Changes (`write.enabled`, off by default,
+[D-19](DECISIONS.md#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)), Admin
+and Publish ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)).
+The confirmation is Revit's own **Keep or Discard** box. It appears after the run, while the
+transaction group is still open, so Discard takes the whole change back
+([D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept),
+superseding [D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)'s
+*kept at once*). It is shown while the owner's *Ask to Keep* switch is on, and that switch is **off by
+default**. Off, `revit_change` keeps its change at once, as D-99 recorded
+([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
+A DRAFT's one run and a publish are always asked.
 
 ---
 
@@ -118,6 +138,14 @@ Requirements:
 - The server refuses to operate outside a declared compatible range, with a clear message: *"Heron add-in in Revit 2024 is version 0.3.1, this Heron needs 0.4.x. Restart Revit to finish updating."*
 - Never silently degrade. A half-updated pair that mostly works is worse than a clean refusal.
 
+> **As built (2026-10-18):** the gate is the **protocol number**, not a version range. The add-in
+> writes its add-in version and protocol version where the client reads them
+> ([`BridgeIdentity.cs`](../revit/Heron.Bridge/BridgeIdentity.cs)). The client refuses a bridge whose
+> protocol differs from its own `PROTOCOL_VERSION`, with *"Restart that Revit to finish updating. Heron
+> will not talk to it until the two agree"*
+> ([`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), `report_mismatched`). The add-in
+> version is shown by `heron_version` and gates nothing.
+
 ---
 
 ## 6. **[NOTE]** Failure and recovery behaviour
@@ -133,6 +161,14 @@ The MCP Recovery Agent must distinguish clearly between:
 | Operation ran and failed inside Revit | Not a transport failure — pass the real error up to Failure Analysis. |
 
 The spec's rule applies at every level: **do not blindly retry the same failed action.** Retry is correct only for transport-level faults, never for a Revit operation that genuinely failed.
+
+> **As built (2026-10-18):** failure analysis is a table, not a model call
+> ([D-21](DECISIONS.md#d-21--failure-analysis-is-a-table-not-a-model-call),
+> [`heron_failure.py`](../mcp/server/heron_failure.py)). In the add-in, *busy* and *slow* are two
+> different waits ([03 §4](03-heron-revit.md)). An unknown outcome on an operation that can write is
+> never classified as retryable. A modeller's **Discard** is never retried: it is their answer, not a
+> fault ([D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept)
+> item 4, [Article 25](../HERON_CONSTITUTION.md)).
 
 ---
 
@@ -280,6 +316,16 @@ reach a read only through `revit_change`, with Changes ON, inside a transaction.
 `tests/test_mcp_serves.py` calls the tool through a real SDK against a stand-in Revit.
 
 ### 8.2 `revit_change` keeps its change at once — and says so
+
+> **As built (2026-10-18):** D-99 is superseded. Since
+> [D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept),
+> Revit can ask the modeller **Keep** or **Discard** before a change is kept. Since
+> [D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking),
+> the owner's *Ask to Keep* switch on the ribbon decides whether it does, and the switch is **off by
+> default**. Off, the behaviour below is what runs. Since
+> [D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands),
+> `revit_change` keeps a change only from a fragment whose proof still stands. A DRAFT gets D-119's one
+> run, which is always asked. The section below is kept as it was written on 2026-09-23.
 
 The owner chose on 2026-09-23 to keep `revit_change` changing at once rather than add a preview
 ([D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)),
@@ -712,3 +758,19 @@ with Changes on, and the show door's refusal names `revit_isolate_temporary` for
 `tests/Heron.Kernel.TestHost` section 9 runs the gate over every switch combination, and
 `tests/test_mcp_serves.py` calls all three tools through a real SDK. **None of it has run in Revit** —
 [NEEDS-CHECKING Group ES](needs-checking/group-es.md).
+
+### 8.10 What a chat is not offered — built 2026-10-17
+
+- **Off Windows, the library alone**
+  ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)).
+  A cloud session has no named pipe and no Revit. The server registers only `heron_tools.LIBRARY` there,
+  so no `revit_` tool appears, and its instructions open by saying no Revit can be reached
+  (`LIBRARY_ONLY` in `heron_mcp_server.py`). On Windows every tool is served, as before.
+  `tests/test_mcp_stdio.py` and `tests/test_tool_registry.py` hold it.
+- **A question is never offered a change**
+  ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)).
+  When the host calls a request a question, it passes `question` to `heron_lookup`. Every capability
+  above the level just below the change door's is then left out, the identity route included, and the
+  answer says how many were left out ([`heron_retrieve.py`](../brain/heron_retrieve.py)). The host
+  decides that it is a question; Heron does not
+  ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin)).

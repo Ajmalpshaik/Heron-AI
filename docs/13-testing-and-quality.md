@@ -73,6 +73,12 @@ Two things determine whether it works:
 2. **Every fixed bug adds a case.** That is the discipline that makes the library grow from real
    failures rather than from imagination, and it is the same signal the Capability Gap report uses.
 
+> **As built (2026-10-18):** the library is [`tests/golden/cases.py`](../tests/golden/cases.py), audited
+> by [`tests/test_golden.py`](../tests/test_golden.py) without Revit - it checks the cases are coherent,
+> recomputes each proof's fingerprint and reports the STALE ones, and says what is proven. It does not
+> run a case: a case is proven only by a person watching Revit. Fragments carry their own proof in their
+> card's `proof:` block ([D-30](DECISIONS.md)) instead of a golden file.
+
 ---
 
 ## 3. **[NOTE — the hardest engineering problem in the project]** Testing against Revit
@@ -101,6 +107,14 @@ Levels 5–7 require a running Revit with a document open. That is genuinely dif
 - Evaluate **Design Automation for Revit** for level 6 before building a machine room.
 
 Tracked as [Q-14](OPEN-QUESTIONS.md).
+
+> **As built (2026-10-18):** Q-14 is answered - a written register, not an automated runner:
+> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) holds every unproven claim in dependency order with what PASS
+> looks like ([answer](open-questions/answered.md)). In practice levels 5 to 7 run through the bridge from
+> the owner's PC: [`tools/batch-prove.py`](../tools/batch-prove.py) runs fragments against the open model
+> and writes a proof draft a person signs ([D-30](DECISIONS.md)). No self-hosted runner with Revit and no
+> Design Automation run exists; CI compiles every release ([`.github/workflows/gates.yml`](../.github/workflows/gates.yml))
+> and runs no Revit.
 
 ---
 

@@ -16,9 +16,10 @@ regardless of how much of it is built.
 
 ---
 
-**Which agents each step builds:** [08 — Agent Catalogue](08-agent-catalog.md).
-All of Phase 0 and 1 needs **45 of the 250 agents** — under a fifth. Steps 1-6 build 10, 3, 7, 7, 6 and 9
-respectively, and the large majority are plain deterministic modules with no model call at all.
+**Which agents each step builds:** [08 — Agent Catalogue](08-agent-catalog.md), whose Step column says
+it per agent. Phase 0 and 1 need under a fifth of the catalogue, and the large majority are plain
+deterministic modules with no model call at all. How many are built now is
+`python tools/agent-count.py`, never a number typed here.
 
 ---
 
@@ -133,7 +134,8 @@ Do not skip ahead. A write path built before the safety path is a write path tha
 3. **Re-count immediately before executing** the accepted preview *([Golden Rule 21](14-golden-rules.md))*
 4. **Document pinning** by identity *([Golden Rule 20](14-golden-rules.md))*
 5. **Permission gate in the add-in** — declared risk level per tool *([Q-5](OPEN-QUESTIONS.md), Part 4 §29)*
-6. **Emergency Stop** in the ribbon
+6. **Emergency Stop** in the ribbon — built, then its button removed by [D-46](DECISIONS.md); the
+   bridge's `stop` operation is its trigger now ([D-129](DECISIONS.md), [D-130](DECISIONS.md))
 7. Then, and only then: `revit_move_elements`
 
 **Prove it:** *"move them up 200 mm"* → preview → accept → it moves → **one Ctrl+Z puts it back exactly**.
@@ -147,12 +149,16 @@ that already assumes it can just write.
 
 ## ⛔ Gate — Phase 1 ends here, and it ends UNPROVEN
 
-Step 6 is written, compiles on all eight Revit releases, and **has run once**: three ducts moved up
-200 mm in Revit 2024 on 2026-09-07, with the banner going amber for about 300 ms
-([B8](NEEDS-CHECKING.md)). Phase 1's own definition of done — *one Ctrl+Z puts it back, a failure
-leaves the model untouched* — was **half** witnessed on 2026-10-17: one Ctrl+Z put a measured move back
-in Revit 2024, and a tape measure read **+200.0000 mm** on three ducts with a pinned one beside them
-unmoved (`D1` to `D6`). *A failure leaves the model untouched* still has not been forced.
+Step 6 is written, compiles on all eight Revit releases, and **has run in one release, Revit 2024**:
+three ducts moved up 200 mm on 2026-09-07, with the banner going amber for about 300 ms
+([B8](NEEDS-CHECKING.md)), and nobody measured it. Phase 1's own definition of done — *one Ctrl+Z puts
+it back, a failure leaves the model untouched* — was **half** witnessed on 2026-10-17: one Ctrl+Z put a
+measured move back in Revit 2024, and a tape measure read **+200.0000 mm** on three ducts with a pinned
+one beside them unmoved ([Group D](needs-checking/group-d.md), `D1` to `D6`). *A failure leaves the
+model untouched* has been seen for a **fragment run**, not for the move: on 2026-10-18 a runaway fragment
+stopped by its run clock rolled back with the element count unchanged and nothing in the Undo list, in
+Revit 2024 and 2027 on scratch copies ([Group EZ](needs-checking/group-ez.md), EZ1 and EZ4). A failure
+forced in the middle of the move itself (golden `G-12`) has not been run.
 [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is that debt, in full. This paragraph said
 *"has never loaded into Revit"* until 2026-09-21 ([row 5b-54](FRAGMENT-ISSUES.md)).
 
@@ -374,6 +380,17 @@ cheaper than discovering it in week two.
 > followed** — the clause above is the part no step was ever assigned, which is why no step reported it
 > missing.
 
+> **Where the three clauses stand now — derive the numbers, they move with every proving session.**
+>
+> - **A capability re-authored from an existing library carries its own proof: met.** Most fragments are
+>   `PROVEN`, each on a recorded run against a named model with a negative case, signed by the owner
+>   ([D-30](DECISIONS.md)) — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
+> - **Ten real skills work: not met.** Every skill is still `DRAFT` —
+>   `grep -h '^heron-status:' brain/skills/*.yaml | sort | uniq -c` — so none has a recorded proof of its
+>   own.
+> - **The Orchestrator resolves through capabilities: met since 2026-08-29**, as above.
+>   `heron_lookup` and `heron_method` are how a chat reaches the library today.
+
 ---
 
 ## Steps 15, 16 and 17 — recorded 2026-09-06, because they were in use and were not written down
@@ -413,6 +430,19 @@ exists"*, and only this table tells them apart.
 ([29](29-metadata-standard.md)) requires the header, but nothing was checking that its value pointed at a
 step that exists — which is how three of them came to.
 
+**It has happened again, in source headers rather than fragments: `Heron-Step: 18`.** It first appeared
+on 2026-09-12 in [docs/34](34-project-perfection-and-continuous-upgrade-plan.md), and since then heads
+tools, tests and documents written after that day; no section of this file defines it. Count where it is
+used with:
+
+```bash
+grep -rhE '^(# |// |<!-- )?Heron-Step:' --include=*.py --include=*.cs --include=*.ps1 --include=*.md . \
+  | grep -oE '[0-9]+' | sort -n | uniq -c
+```
+
+Read it as a batch marker of the 15–17 kind until whoever owns this build order says what Step 18 is.
+Still nothing checks that a header's step is one this file defines.
+
 ---
 
 ## Honest scale — Phase 2
@@ -440,10 +470,11 @@ being a tool bridge and starts being a platform, and it is also where it starts 
 [the existing Revit MCP servers](26-prior-art-revit-mcp.md) do not.
 
 This section used to read *"Steps 7+ follow ROADMAP Phase 2"* and end with **"but none of it matters
-until Step 6 works."** The second half was overtaken by events rather than proved wrong: Step 6 still
-does not *work* in the sense that sentence meant, and Phase 2 began anyway because the owner has no
-Revit for a week and there is a phase's worth of work that does not need one. The debt did not go away —
-it moved to [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) and stayed there.
+until Step 6 works."** The second half was overtaken by events rather than proved wrong: Step 6 did not
+*work* in the sense that sentence meant, and Phase 2 began anyway because the owner had no Revit for a
+week and there was a phase's worth of work that did not need one. The debt did not go away — it moved to
+[`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), and the move was first measured working seven weeks later, in
+Revit 2024 on 2026-10-17 ([Group D](needs-checking/group-d.md)).
 
 ---
 
