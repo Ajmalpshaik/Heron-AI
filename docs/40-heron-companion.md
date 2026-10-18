@@ -200,29 +200,39 @@ The modeller types           "make these ducts red"
 Claude Code                  decides what was meant (D-01). Heron never classifies intent
    |  MCP over stdio
 mcp/server/heron_mcp_server.py   ONE process PER CHAT, started by Claude Code
-   |   revit_change(capability, values)          line 1039
+   |   revit_change(capability, values)
    |   1. finds the fragment folder from the capability          _fragment_for
-   |   2. refuses a PUBLISH/ADMIN fragment unless allowed          risk_refusal  (client line 1100)
-   |   3. names the operation from the fragment's OWN card         write_operation (client line 1141)
+   |   2. refuses a PUBLISH/ADMIN fragment unless allowed          bridge.risk_refusal
+   |   3. names the operation from the fragment's OWN card         bridge.write_operation
    |      -> run_fragment_write for MODIFY and below
-   |   4. reads the fragment's C# source and its contract (needs)
-   |   5. binding.resolve()  -> which Revit (docs/25; never guessed)
-   |   6. _aim_at_pin(args)  -> document + documentPath of the PINNED model (D-74)
-   |   7. session.request(op, source, needs, values, apply="true", idempotent=False)
-   |   8. session.close()    -> the connection is dropped after every tool call
+   |   4. refuses a fragment that is not PROVEN, nothing sent      bridge.unproven_refusal (D-117)
+   |   5. reads the fragment's C# source and its contract (needs)
+   |   6. binding.resolve()  -> which Revit (docs/25; never guessed)
+   |   7. _aim_at_pin(args)  -> document + documentPath of the PINNED model (D-74)
+   |   8. session.request(op, source, needs, values, apply="true", idempotent=False)
+   |   9. session.close()    -> the connection is dropped after every tool call
    |  named pipe  heron.<version>.<pid>   (local only; ACL = this Windows user; per-session token)
 revit/Heron.Bridge/BridgeServer.cs
    |   token check -> ping/info/release answered here -> LEASE claim (D-22) -> hand to the add-in
 revit/Heron.Revit.Addin/RevitDispatcher.cs     queue, banner "READING"/"CHANGING" (D-50), audit line
    |  ExternalEvent (D-09) — Revit's own thread
-RevitOperations.Gate(op)     line 265: the op's risk from HeronOperationRegistry, by NAME
+RevitOperations.Gate(op)     the op's risk from HeronOperationRegistry, by NAME
    |   run_fragment_write is MODIFY -> refused unless the owner's Changes switch is ON
    |   (write.enabled, read fresh by HeronPermissions.Allows, D-19)            -> "write_disabled"
 RevitFragment.Run            compiles the C#, finds the pinned document by path then title,
-   |                         TransactionGroup("Heron: <fragment>")   line 532
-   |                         apply=true -> Assimilate (one undo entry) ; otherwise RollBack (D-55)
+   |                         TransactionGroup("Heron: <fragment>")
+   |                         apply=true -> Ask to Keep on: Revit's Keep or Discard box (D-126), unless
+   |                                       this job's "keep the rest" still holds (D-138)
+   |                                       Keep -> Assimilate (one undo entry); anything else -> RollBack
+   |                                       Ask to Keep off, the default: Assimilate at once
+   |                         otherwise RollBack (D-55)
 The model
 ```
+
+*Brought to the code on 2026-10-18:* step 4 and the Keep or Discard lines were added since this was
+written (D-117 on 2026-10-17, D-126 and D-138), and the line numbers it carried were taken out - they had
+moved. Every name is a function or class in the code today; `bridge.` is
+[`mcp/client/heron_bridge_client.py`](../mcp/client/heron_bridge_client.py).
 
 **How a write is approved today, in order:** the owner's **Changes** switch on the ribbon
 (`write.enabled`, off by default, read inside the add-in); **Admin** and **Publish** switches for those
@@ -240,9 +250,14 @@ preview, one-use approval and re-count (`PendingApproval`, `heron_write.py`). Ar
 
 1. **The newest connection takes the pipe.** `BridgeServer` keeps two pipe instances: one serving,
    one waiting. When a second client connects, the first one's pipe is disposed
-   (`ListenLoopAsync`, lines 224–238). If the first had a request in flight, **Revit still finishes
+   (`ListenLoopAsync`). If the first had a request in flight, **Revit still finishes
    the work, but the answer is lost** — the client reports `unknown_outcome` and must not retry a
    write (`heron_bridge_client.py`, `request`).
+   *As built (2026-10-18): no longer so for an answer in flight.* Since 2026-10-14
+   ([row 5b-458](fragment-issues/section-5b-rows-401-425.md), run on Revit 2020) a connection displaced
+   while Revit is still answering keeps its pipe until that answer is written; one only waiting is
+   dropped at once, as before, and the bridge holds up to 16 instances (`PipeInstances`). The newest
+   connection still takes the session, so §4's reasoning stands.
 2. **The lease decides who may send anything** ([D-22](decisions/D-22.md), `HeronLease.cs`): one
    client id per Revit, renewed on every request, five minutes by default. The owner runs every
    door with the same id, `HERON_CLIENT_ID=ajmal-pc`, so the owner's own chats do not refuse each other —
@@ -302,6 +317,11 @@ CLAUDE CODE ──stdio──► MCP SERVER PROCESS (one per chat) ────�
                                                 ──► run_fragment_write ──► pipe ──► gate ──► Revit
 BROWSER (Edge/Chrome) ◄── the modeller
 ```
+
+*This is the design as recommended on 2026-09-29.* What was built differs in two places: the selection
+is watched on `Idling` on every release, not `SelectionChanged` (§21.2), and since 2026-10-04 not at all
+(§21.6); and the page grew the Loads and Sprinkler panels and the Companion button's note. The diagram
+**At a glance** is the page as built.
 
 **Why this and not (b):**
 
@@ -1081,9 +1101,15 @@ because each of its writes runs `revit_change`'s own body (`_apply_change`, `_ap
 
 | Since | What it means on the page | Evidence |
 |---|---|---|
-| 2026-10-17, [D-117](decisions/D-117.md) (#547) | A change is kept only from a PROVEN fragment. **The Table's Apply and the Loads panel's Finalize are refused before anything is sent:** `SET_PARAMETER_VALUES_BY_ID` is version 3 and DRAFT since #583 the same day - its proof is owed in [group FE](needs-checking/group-fe.md) - and Finalize's diffusers go through `SET_AIR_TERMINAL_FLOW`, DRAFT with no proof. The Sprinkler Layout's Apply is not affected | `revit_change`, called with each in a cloud container on 2026-10-18, refused it: *"... is DRAFT - no recorded proof stands behind its code ... Nothing was sent to Revit."*; `PLACE_FAMILY_INSTANCES` reads PROVEN (version 3, proof dated 2026-10-17) |
+| 2026-10-17, [D-117](decisions/D-117.md) (#547) | A change is kept only from a PROVEN fragment. **The Table's Apply and the Loads panel's Finalize are refused before anything is sent:** `SET_PARAMETER_VALUES_BY_ID` is version 3 and DRAFT since #583 the same day - its proof is owed in [group FE](needs-checking/group-fe.md) - and Finalize's diffusers go through `SET_AIR_TERMINAL_FLOW`, DRAFT with no proof. The Sprinkler Layout's Apply is not affected | `revit_change`, called with each in a cloud container on 2026-10-18, refused it: *"... is DRAFT - no recorded proof stands behind its code ... Nothing was sent to Revit."*; `PLACE_FAMILY_INSTANCES` reads PROVEN (version 3, proof dated 2026-10-17). Recorded as [row 5b-1129](fragment-issues/section-5b-rows-401-425.md), open |
 | 2026-10-18, [D-138](decisions/D-138.md) (#660) | With *Ask to Keep* on - off by default - Revit asks Keep or Discard for a write from the page as for one from the chat ([D-126](decisions/D-126.md)) | the [README](../mcp/companion/README.md)'s *Changes* row; compiled 2020-2027, **NOT RUN IN REVIT** |
 
 Neither is a new defect of the page: the refusal is Article 11 doing its job. The Table and Finalize work
 again when their fragments are PROVEN - [group FE](needs-checking/group-fe.md) for
 `SET_PARAMETER_VALUES_BY_ID`, [group AQ](needs-checking/group-aq.md) for `SET_AIR_TERMINAL_FLOW`.
+
+**One thing the chat is told is wrong today, and it is recorded, not repaired**
+([row 5b-1133](fragment-issues/section-5b-rows-401-425.md)): the `heron_companion` tool's reply says the
+page *"shows the model, the view and the selection ... and changes nothing"*. The Selected card is off
+since §21.6, and the page's Apply, Finalize and Place change the model under the same switches as a chat.
+Until the reply is fixed, describe the page from this section, not from that reply.
