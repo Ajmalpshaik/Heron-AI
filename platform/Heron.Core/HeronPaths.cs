@@ -96,11 +96,12 @@ namespace Heron.Core
         /// Derived is one this add-in never sees (FRAGMENT-ISSUES 5b-416). The
         /// temporary folder is not copied: measured on the owner's laptop on
         /// 2026-10-17 from both sides. Only what a chat writes FOR the add-in to
-        /// read belongs here.
+        /// read belongs here. The temporary folder is the user's, found by
+        /// SharedTemp even from inside Revit, whose own is not (D-136).
         /// </summary>
         public static string SharedDerived
         {
-            get { return Path.Combine(Path.GetTempPath(), AppFolder); }
+            get { return Path.Combine(SharedTemp(Path.GetTempPath()), AppFolder); }
         }
 
         /// <summary>
@@ -111,7 +112,56 @@ namespace Heron.Core
         /// Under SharedDerived since D-135, so the chat and Revit name one folder
         /// on every PC - mcp/companion/heron_companion.py companion_dir().
         /// </summary>
-        public static string Companion { get { return Ensure(Path.Combine(Path.GetTempPath(), AppFolder, "companion")); } }
+        public static string Companion { get { return Ensure(Path.Combine(SharedTemp(Path.GetTempPath()), AppFolder, "companion")); } }
+
+        /// <summary>
+        /// The temporary folder a chat and Revit share: the one given, stepped
+        /// out of for as long as its last part is named like a GUID (D-136).
+        ///
+        /// Revit runs with a temporary folder of its own - a sub-folder of the
+        /// user's, named by a GUID and new at each start, seen on the owner's
+        /// laptop on 2026-10-18 as Temp\63835622-bdd8-4d57-a4a9-19a6afb83cd6 -
+        /// while every chat names the user's. So Path.GetTempPath() alone named
+        /// two folders, and the Companion button looked where no chat writes
+        /// (FRAGMENT-ISSUES 5b-1100). EVERY such level, not one, so the two
+        /// still agree on a PC whose own temporary folder is named like a GUID.
+        /// Only the 8-4-4-4-12 form with its hyphens counts, the form Revit's
+        /// has; a Remote Desktop session's numbered folder is every process's
+        /// in that session, the chat's too, and is kept.
+        /// mcp/client/heron_bridge_client.py shared_temp_folder() is the same
+        /// rule, and tests/test_data_home.py holds the two together.
+        /// </summary>
+        private static string SharedTemp(string temporary)
+        {
+            var folder = Path.GetFullPath(temporary);
+            while (true)
+            {
+                var bare = folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (bare.Length == 0) return folder;
+                var parent = Path.GetDirectoryName(bare);
+                if (string.IsNullOrEmpty(parent) || !NamedLikeGuid(Path.GetFileName(bare))) return folder;
+                folder = parent;
+            }
+        }
+
+        /// <summary>A GUID as Revit names its temporary folder: 8-4-4-4-12 hex digits.</summary>
+        private static bool NamedLikeGuid(string name)
+        {
+            if (name == null || name.Length != 36) return false;
+            for (var i = 0; i < name.Length; i++)
+            {
+                var c = name[i];
+                if (i == 8 || i == 13 || i == 18 || i == 23)
+                {
+                    if (c != '-') return false;
+                }
+                else if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         /// <summary>
         /// DERIVED - where capture_view puts a view's picture for the moment

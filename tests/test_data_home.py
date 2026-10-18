@@ -46,7 +46,9 @@ WHAT IT PROVES
   6. THE COMPANION'S NOTE IS WHERE REVIT LOOKS. The chat writes it under the
      temporary folder as .NET names it, and HeronPaths.cs builds
      HeronPaths.Companion from Path.GetTempPath() - not from %LOCALAPPDATA%,
-     which the app copies (row 5b-416, D-109).
+     which the app copies (row 5b-416, D-109). And both step out of a
+     GUID-named temporary folder, as Revit's own is, so a Revit-style TMP on
+     either side still gives one folder (row 5b-1100, D-136).
 """
 
 import hashlib
@@ -117,6 +119,29 @@ class planted(object):
         for key, value in self.values.items():
             if value is not None:
                 os.environ[key] = value
+        return self
+
+    def __exit__(self, *exc):
+        for key, value in self.saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+class planted_temp(object):
+    """os.environ with TMP, TEMP and TMPDIR all naming one folder, as Revit's
+    process has them (row 5b-1100), put back after."""
+
+    KEYS = ("TMP", "TEMP", "TMPDIR")
+
+    def __init__(self, folder):
+        self.folder = folder
+
+    def __enter__(self):
+        self.saved = dict((key, os.environ.get(key)) for key in self.KEYS)
+        for key in self.KEYS:
+            os.environ[key] = self.folder
         return self
 
     def __exit__(self, *exc):
@@ -460,6 +485,49 @@ def run(yard):
     check("GetTempPath" in body and "Derived" not in body,
           "HeronPaths.Companion is built from Path.GetTempPath(), not from DERIVED (%s)"
           % " ".join(body.split())[:120])
+
+    # ROW 5b-1100 (D-136). Revit runs with a temporary folder of its own, a
+    # GUID-named sub-folder of the user's, new at each start - seen on the
+    # owner's laptop on 2026-10-18 as Temp\63835622-bdd8-4d57-a4a9-19a6afb83cd6.
+    # Both halves step out of such a folder, so the chat names the folder the
+    # add-in reads even when its own TMP is Revit-style.
+    # tests/Heron.Kernel.TestHost section 2 plants the same on the add-in's.
+    revit = "63835622-bdd8-4d57-a4a9-19a6afb83cd6"
+    user = "C:\\Users\\someone\\AppData\\Local\\Temp"
+    check(hasattr(BRIDGE, "shared_temp_folder"),
+          "heron_bridge_client names the temporary folder both halves share at all")
+    for given, want, what in (
+            (user + "\\" + revit, user,
+             "a GUID-named temporary folder, as Revit's is, gives the one it sits in"),
+            (user + "\\" + revit.upper() + "\\", user,
+             "in capitals and with a separator at its end too"),
+            (user + "\\0f8fad5b-d9cb-469f-a165-70867728950e\\" + revit, user,
+             "every GUID-named level is stepped out of, as the add-in does"),
+            (user, user, "the user's own temporary folder is used as it is"),
+            (user + "\\2", user + "\\2",
+             "a Remote Desktop session's numbered one is used as it is - the chat has it too"),
+            (user + "\\" + revit.replace("-", ""), user + "\\" + revit.replace("-", ""),
+             "a GUID without its hyphens is used as it is - Revit's has them"),
+            (user + "\\{" + revit + "}", user + "\\{" + revit + "}",
+             "and one in braces"),
+            (user + "\\" + revit[:35] + "g", user + "\\" + revit[:35] + "g",
+             "and one with a letter past f")):
+        got = ask(BRIDGE, "shared_temp_folder",
+                  {"TMP": given, "TEMP": given, "USERPROFILE": "C:\\Users\\someone"}, "nt")
+        check(got == want, "%s (%r)" % (what, got))
+    got = ask(BRIDGE, "shared_temp_folder", {"TMPDIR": "/var/tmp/" + revit + "/"}, "posix")
+    check(got == "/var/tmp", "elsewhere the same, on TMPDIR (%r)" % (got,))
+
+    companion = sys.modules.get("heron_companion")
+    user_temp = os.path.join(yard, "Temp")
+    with planted_temp(os.path.join(user_temp, revit)):
+        folder = ask(companion, "companion_dir") if companion else "?"
+    check(same(folder, os.path.join(user_temp, "Heron", "companion")),
+          "with a Revit-style TMP and TEMP the chat still writes in the user's "
+          "<temp>\\Heron\\companion, where the add-in reads (%r)" % (folder,))
+    check("SharedTemp" in body,
+          "HeronPaths.Companion steps out of a GUID-named temporary folder too, "
+          "through SharedTemp (%s)" % " ".join(body.split())[:120])
 
     print()
     if FAILURES:
