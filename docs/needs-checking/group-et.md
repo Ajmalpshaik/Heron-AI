@@ -20,6 +20,15 @@ group back and puts the modeller's own selection back. The owner's switch is `wr
 (`tools/check-api-surface.py`). `tests/test_keep_question.py` runs the Revit-free half - the words, the rule
 that only the Keep link keeps, and D-60's cap - in its test host, and reads the wiring as text. Nothing here is PROVEN.
 
+**SINCE 2026-10-18 THE BOX ALSO ZOOMS THE VIEW TO THE CHANGE** - the owner's ask while proving this group
+on Revit 2024.3 in *Heron Safety 2024*, chosen over zooming less. With the target model in front and something
+selected to show, the active view is zoomed to the box round it, with a quarter of its larger side - never less
+than 1000 mm - of room. Keep leaves the view there; Discard, Esc, the X and every failure put the camera back
+where it was. A sheet, a schedule, a legend and a perspective 3D view are left as they were, and so is a view
+where nothing shown has a box; the box says *zoomed* only when it was. Compiled for all eight releases and every
+member found on all eight (2026-10-18), the words and the margin run in the test host - **NOT YET RUN IN
+REVIT**: **ET14**.
+
 **THE FIRST REVIT RUN CRASHED BEFORE THE BOX, and the fix has not run in Revit.** 2026-10-17, Revit 2024.3 on
 the owner's laptop, add-in `main` at `76006767`: a PROVEN `CREATE_DUCT` kept through `revit_change` came back
 to the chat as *"Corresponding button not found. Parameter name: defaultButton"*, the log named
@@ -52,6 +61,7 @@ South elevation for ET1 to ET4.
 | **ET11** | ET1 and ET2 once on Revit 2024 and once on 2027 | The same answers - the question is in the add-in every release loads |
 | **ET12** | *Watching, not a proof.* On every row above that shows the question | It waits for a click. If it ever closes by itself, or the chat reports `dialog_refused` or a Discard nobody chose, the job's dialog watch (Group EL) is answering Heron's own question and `HeronDialogWatch.HeronAsks()` is not standing it down - write down the row and what the chat said |
 | **ET13** | **Run first, after the 5b-621 fix.** Close every Revit, deploy the add-in LOCALLY for each release, restart Revit 2024 and the Claude app. In a SCRATCH copy of `rme_basic_sample_project.rvt`, ask the chat for the same duct the crash met: `CREATE_DUCT`, `systemType=Supply Air`, `ductType=Rectangular Duct: Mitered Elbows / Tees`, `level=Level 1`, `points=0,-28000,3000; 8000,-28000,3000`. When the box appears, press **Enter** without clicking. Ask again and choose **Keep it**. Then ET1 on 2020 and 2027 | **The box appears** - no *"Corresponding button not found"* in the chat, and no `set_DefaultButton` in the day's add-in log. **Discard it** is the highlighted link, so Enter discards: the element count is as before, no new `Heron:` undo entry, the view is not left isolated, and the selection is the modeller's own. Keep: one duct, one `Heron: CREATE_DUCT` undo entry. If the box still does not appear, the chat must say nothing was kept, the view must not be left isolated and the selection must be put back - write down the log line that starts *"The Keep or Discard box could not be built or shown"* |
+| **ET14** | **The view zoomed to the change - the owner's ask, 2026-10-18.** Rebuild and deploy the add-in for each release, restart Revit and the Claude app. In *Heron Keep Question*, on Revit 2020 first. **(a)** Open the **Level 1** plan and zoom in tight on the two walls, so the empty area well away from them is off screen; take a screenshot. Ask the chat for a wall on Level 1 from `20000,20000` to `26000,20000` mm (`CREATE_WALL`). Read the box, then choose **Discard it**. **(b)** Ask for the same wall again and press **Esc**; once more, and close the box with its **X**. **(c)** Ask for it again and choose **Keep it**. **(d)** Open the **South** elevation, zoomed in on Level 1's head only, and ask for a level `ET Zoom` at 9000 mm; **Discard it**. **(e)** With a **sheet** in front, ask for a level `ET Sheet` at 9500 mm; **Discard it**. Then (a), (c) and (e) on **Revit 2024** and on **2027** | **(a)** While the box is up, the plan is zoomed onto the new wall with clear room round it - the wall touches no edge of the window - and the box says *"The view is zoomed to them, with some room around. Keep leaves it there; Discard puts the view back where it was."* After Discard the plan is back **exactly** as in the screenshot: the same centre and the same zoom. **(b)** Esc and the X each do exactly what Discard did. **(c)** After Keep the plan **stays** zoomed onto the kept wall, the wall is selected, and the top of the Undo list is **one** `Heron: CREATE_WALL` - the zoom adds no undo entry. **(d)** The elevation is zoomed onto the new level line, and goes back exactly on Discard. **(e)** The sheet does **not** move, and the box does **not** say zoomed. On every run the day's add-in log has no line *"Could not zoom the view to the change"* or *"Could not put the view back where it was"*. **If one appears** - above all on 2020, where the zoom runs inside Heron's open transaction group - write the line down: the box must still have appeared, must not have said zoomed, and Discard must still have left the model unchanged. Nothing about the zoom is PROVEN until this row passes |
 
 ### The 2026-10-18 run
 
@@ -82,5 +92,5 @@ for the session and deleted by name at the end - none is committed.
 | **ET12** | 2024, 2027 | Every box waited for a click - none closed by itself, no `dialog_refused` on a Heron box. [EL3](group-el.md) shows the watch DOES answer an add-in's own TaskDialog, so `HeronAsks()` is what keeps it off this one | **PASS** (watching) |
 
 **Asked for by the owner while running ET:** when the box shows a change, zoom the view to it with a little
-margin. It does not zoom today - it only selects and isolates at the view's current zoom. Handed to a separate
-session on 2026-10-18; nothing here changes the box.
+margin. On the add-in run here it did not zoom - it only selected and isolated at the view's current zoom. Built
+the same day in another session and merged as **ET14** (#648); not run in Revit by this run.

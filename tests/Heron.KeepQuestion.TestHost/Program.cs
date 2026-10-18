@@ -67,7 +67,7 @@ namespace Heron.KeepQuestion.TestHost
             Check(!HeronKeepQuestion.Highlights(501), "501 is not");
             Check(!HeronKeepQuestion.Highlights(-3), "a count below zero draws nothing");
 
-            var perSet = HeronKeepQuestion.OnScreen(4, 4120, true, true, false, true);
+            var perSet = HeronKeepQuestion.OnScreen(4, 4120, true, true, false, true, false);
             Check(perSet.Contains("The added elements are selected and isolated"),
                   "4 added are still shown when 4,120 changed are too many");
             Check(perSet.Contains("4,120 changed elements are too many to highlight (more than 500)"),
@@ -75,7 +75,7 @@ namespace Heron.KeepQuestion.TestHost
             Check(!perSet.Contains("added elements are too many"),
                   "and the set that fits is not called too many");
 
-            var both = HeronKeepQuestion.OnScreen(900, 700, true, false, false, false);
+            var both = HeronKeepQuestion.OnScreen(900, 700, true, false, false, false, false);
             Check(both.Contains("Nothing is selected on screen.")
                   && both.Contains("900 added") && both.Contains("700 changed"),
                   "two sets over the cap: nothing drawn, and both are named");
@@ -93,7 +93,7 @@ namespace Heron.KeepQuestion.TestHost
             Console.WriteLine();
             Console.WriteLine("4. the box's words");
             var said = HeronKeepQuestion.Content("CREATE_LEVEL", "Project1", 1, 2, 0,
-                HeronKeepQuestion.OnScreen(1, 2, true, true, true, true), false, false, true);
+                HeronKeepQuestion.OnScreen(1, 2, true, true, true, true, false), false, false, true);
             Check(said.Contains("'CREATE_LEVEL' ran in Project1"), "it names what ran, and where");
             Check(said.Contains("1 element added, 2 elements changed and no elements deleted"),
                   "it gives Revit's counts, singular and plural right");
@@ -109,25 +109,25 @@ namespace Heron.KeepQuestion.TestHost
                   "a keep from a chat warns about neither an export nor a DRAFT's redraw");
 
             var tried = HeronKeepQuestion.Content("NEW_TOOL", "Project1", 1, 0, 0,
-                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true), false, true, true);
+                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), false, true, true);
             Check(tried.StartsWith("Heron ran it once, for real, on this model, and the view now shows the result."),
                   "a DRAFT's one run says it ran once, for real, and the view shows the result");
             var unseen = HeronKeepQuestion.Content("NEW_TOOL", "Project1", 1, 0, 0,
-                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true), false, true, false);
+                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), false, true, false);
             Check(unseen.Contains("COULD NOT REDRAW THE VIEW") && unseen.Contains("Discard unless you can see it"),
                   "and when the view could not be redrawn it says so, rather than invite a Keep on an old picture");
 
             var publish = HeronKeepQuestion.Content("EXPORT_VIEWS_TO_DWG", "Project1", 0, 1, 0,
-                HeronKeepQuestion.OnScreen(0, 1, true, false, true, false), true, false, true);
+                HeronKeepQuestion.OnScreen(0, 1, true, false, true, false, false), true, false, true);
             Check(publish.Contains("is done already, and Discard cannot take it back"),
                   "a publish says an export, a save or a sync is not undone by Discard");
             Check(publish.Contains("The changed elements are selected in the active view."),
                   "selected and not isolated is said as just selected");
 
-            var behind = HeronKeepQuestion.OnScreen(3, 0, false, false, false, false);
+            var behind = HeronKeepQuestion.OnScreen(3, 0, false, false, false, false, false);
             Check(behind.Contains("not the one in front"),
                   "a model that is not in front is not drawn on, and the box says so");
-            Check(HeronKeepQuestion.OnScreen(0, 0, true, false, false, false)
+            Check(HeronKeepQuestion.OnScreen(0, 0, true, false, false, false, false)
                       .Contains("Nothing it added or changed can be shown"),
                   "a run that only made views or types says nothing can be shown");
             Check(HeronKeepQuestion.Content(null, null, 0, 0, 1, null, false, false, true)
@@ -156,6 +156,40 @@ namespace Heron.KeepQuestion.TestHost
             var unsure = HeronKeepQuestion.Discarded("CREATE_LEVEL", false, true);
             Check(unsure.Contains("MAY STILL HOLD") && !unsure.Contains("NOTHING WAS KEPT"),
                   "a Discard Revit did not report rolled back never claims nothing was kept");
+
+            Console.WriteLine();
+            Console.WriteLine("6. the view zoomed to the change - the owner's ask, 2026-10-18");
+            var zoomed = HeronKeepQuestion.OnScreen(1, 2, true, true, true, true, true);
+            Check(zoomed.Contains("The view is zoomed to them, with some room around."),
+                  "a zoomed view says so, so the modeller knows why the picture moved");
+            Check(zoomed.Contains("Keep leaves it there; Discard puts the view back where it was."),
+                  "and what each answer does to the view: Keep stays, Discard puts it back");
+            Check(HeronKeepQuestion.Content("CREATE_LEVEL", "Project1", 1, 2, 0, zoomed, false, false, true)
+                      .Contains("zoomed to them"),
+                  "and the box's body carries it");
+            Check(!HeronKeepQuestion.OnScreen(1, 2, true, true, true, true, false).Contains("zoom"),
+                  "a view that was not zoomed never claims it was");
+            Check(!HeronKeepQuestion.OnScreen(900, 700, true, false, false, false, true).Contains("zoom"),
+                  "nothing selected is never called zoomed to - there is nothing to be zoomed to");
+            Check(!HeronKeepQuestion.OnScreen(3, 0, false, false, false, false, true).Contains("zoom"),
+                  "nor is a model that is not in front");
+            Check(HeronKeepQuestion.OnScreen(1, 0, true, true, false, false, true)
+                      .StartsWith("The added elements are selected in the active view. The view is zoomed"),
+                  "selected but not isolated can still be zoomed to, and says both");
+
+            const double feet = 304.8;
+            Check(Math.Abs(HeronKeepQuestion.ZoomMarginFeet(0, 0, 0) - 1000 / feet) < 1e-9,
+                  "a point-sized change still gets 1000 mm of room - a rectangle Revit can centre on");
+            Check(Math.Abs(HeronKeepQuestion.ZoomMarginFeet(20000 / feet, 3000 / feet, 500 / feet)
+                           - 5000 / feet) < 1e-9,
+                  "a 20 m run gets a quarter of its larger side - 5000 mm - round it");
+            Check(Math.Abs(HeronKeepQuestion.ZoomMarginFeet(2000 / feet, 1000 / feet, 0) - 1000 / feet) < 1e-9,
+                  "a quarter below 1000 mm is lifted to the 1000 mm minimum");
+            Check(Math.Abs(HeronKeepQuestion.ZoomMarginFeet(1000 / feet, 12000 / feet, 0) - 3000 / feet) < 1e-9,
+                  "the larger side decides, whichever side it is");
+            Check(Math.Abs(HeronKeepQuestion.ZoomMarginFeet(double.NaN, -4, double.PositiveInfinity)
+                           - 1000 / feet) < 1e-9,
+                  "a size that is not a size gives the minimum, never NaN or infinity");
 
             Console.WriteLine();
             if (Failures.Count > 0)
