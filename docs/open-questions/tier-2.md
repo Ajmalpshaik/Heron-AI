@@ -293,9 +293,15 @@ it can see of one - a change to the snapshot code, agreed on its own and not mad
 **The owner decides**, after the comparison. Until it is made, the minutes on the two PCs can be neither
 blamed on Heron nor cleared of it.
 
+**2026-10-18 - the office PC is retired.** The owner, Ajmal PS: *"no office pc no more"*
+([NEEDS-CHECKING Group HF](../needs-checking/group-hf.md), HF5). The comparison above cannot be made as
+written. What this question still asks of the laptop alone - which model, effort level and fast-mode
+setting a modeller's chat should run - is the owner's to say; this note records the fact and answers
+nothing.
+
 ---
 
-### 🔵 Q-62 — Should one `revit_change` call build many family forms? *(found 2026-10-10)*
+### ✅ Q-62 — Should one `revit_change` call build many family forms? → **Yes: one undo per list, and cuts stay a separate call ([D-116](../decisions/D-116.md))** *(found 2026-10-10, answered 2026-10-17)*
 
 Today one call builds one form, or several loops that share one plane and one depth. The pump set timed
 in [FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) had 107 forms: they went in as
