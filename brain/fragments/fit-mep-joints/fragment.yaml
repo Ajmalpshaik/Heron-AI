@@ -82,7 +82,10 @@ contract:
     # The whole answer as ONE string, because a string reaches the reader
     # whole and a list is cut to three items of sixty characters.
     - name: summary
-      role: result
+      # ACCOUNTING, not a result: one sentence written on every run, a run that
+      # fits nothing included ("0 joint(s) ... all 0 fitted", measured
+      # 2026-10-18 on Revit 2020). fitted and created decide (D-51, 5b-1116).
+      role: accounting
       type: string
     - name: freeEnds
       # Ends with nothing meeting them, so not joints at all - left open on

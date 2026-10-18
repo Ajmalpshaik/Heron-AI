@@ -1,0 +1,22 @@
+# Batch 24, 2026-10-18 - batch 23's model. Trace starts from ONE segment of the joined Return Air L;
+# the negative starts from the lone Supply Air main (nothing joined to it). The offset's negative
+# asks for a stretch past the run's end (the main is 12000 mm). ROLLED BACK where it writes.
+model: "Project2 (Systems template, scratch, never saved), Revit 2020"
+defaults:
+  in: "Project2"
+  write: true
+  setup: [select-in-region, set-selection]
+  setup-set: {minMm: "100,-200,2800", maxMm: "11900,200,3200", exact: false, categories: "Ducts"}
+  negative-setup-set: {minMm: "100,-200,2800", maxMm: "11900,200,3200", exact: false, categories: "Ducts"}
+jobs:
+  - fragment: trace-connectivity
+    write: false
+    expect: reached
+    setup-set: {minMm: "7800,3900,2900", maxMm: "8200,4100,3100", exact: false, categories: "Ducts"}
+    negative-setup-set: {minMm: "5800,-100,2900", maxMm: "6200,100,3100", exact: false, categories: "Ducts"}
+    set: {start: "selected", tolerance: 10}
+    negative-set: {start: "selected", tolerance: 10}
+  - fragment: offset-mep-section
+    expect: runs
+    set: {run: "selected", startMm: 3000, endMm: 6000, offsetMm: 500, angleDegrees: 45}
+    negative-set: {run: "selected", startMm: 20000, endMm: 25000, offsetMm: 500, angleDegrees: 45}
