@@ -1971,6 +1971,9 @@ def revit_change(capability: str = "", values: str = "",
     _BATCH.turn(started, time.monotonic())
 
     lines = ["%s ran in %s." % (capability, reply.get("document"))]
+    never_saved = _never_saved_line(reply)
+    if never_saved:
+        lines.insert(0, never_saved)
     if matched:
         lines.append(_matched_line(request, matched))
 
@@ -2055,6 +2058,32 @@ def revit_change(capability: str = "", values: str = "",
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
 _BATCH = runs.Batch()
+
+
+def _never_saved_line(reply):
+    """
+    The FIRST line of a kept change's reply when the model has no file on
+    disk, or None.
+
+    WHY IT IS THE FIRST LINE AND ON EVERY KEPT CHANGE. Three models were lost
+    this way - a house of balancing boxes, a 32-floor tower, a 44-part pump
+    family - each built through this tool into a model never saved, then
+    closed with No to Revit's save question. A reminder in the chat's closing
+    words was read past every time. Never in the batch's short form either:
+    the cost of one line is nothing beside the cost of the model.
+
+    ONLY WHAT THE ADD-IN SAID. `documentPath` is sent as JSON null for a model
+    never saved (RevitFragment.Report); a reply without the key - an add-in
+    from before it - says nothing here rather than guessing. And only on a
+    KEPT verdict: a rollback or a Discard left nothing in the model to lose.
+    """
+    if not isinstance(reply, dict) or "documentPath" not in reply:
+        return None
+    if reply.get("documentPath") or reply.get("verdictKind") != "kept":
+        return None
+    return ("NEVER SAVED: '%s' has no file on disk. Save it now (Ctrl+S) - closing "
+            "Revit and answering No to its save question loses all of this work."
+            % (reply.get("document") or "this model"))
 
 
 #: A need Revit fills itself, never the caller - the only kind an
