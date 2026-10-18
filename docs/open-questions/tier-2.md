@@ -775,3 +775,63 @@ none; and which other keys of `heron.config` differ between the two files on the
 change from its own file, and `revit_health` still reports the server's.
 
 ---
+
+### 🟡 Q-71 — Should a stop reach a Revit whose lease nobody holds, from any client id? *(found 2026-10-18)*
+
+**What happened.** On 2026-10-18, running [Group EZ](../needs-checking/group-ez.md) EZ3's negative on the
+owner's laptop, `python mcp/client/heron_bridge_client.py stop` was sent with a stranger's
+`HERON_CLIENT_ID` while two Revits were connected ([row 5b-1094](../fragment-issues/section-5b-rows-401-425.md)).
+Revit 2024, whose lease the run held, refused it - *"in use by another chat"* - as [D-129](../decisions/D-129.md)
+says it should. Revit 2020, another chat's and idle, took it: *"Heron is stopped. Nothing was running."*
+Heron there refused every change until that Revit was restarted ([D-130](../decisions/D-130.md)).
+
+**Half of it is fixed, in the client only.** `stop` now goes to one Revit: `--session <pid>`, or the only
+one connected; with two connected and no `--session` it sends nothing and lists them
+([`tests/test_bridge_stop.py`](../../tests/test_bridge_stop.py)). **The add-in is not changed**, and this
+question is the other half.
+
+**The rule as it stands, read from the code.** `BridgeServer` claims the lease for every request but `ping`,
+`info` and `release`, before the add-in sees it ([`BridgeServer.cs`](../../revit/Heron.Bridge/BridgeServer.cs),
+`HeronLease.Claim`). A Revit nobody holds - no request for five minutes, or handed back with `release` -
+grants the lease to any client id, so `stop` from anyone reaches `AnswerStop` in
+[`RevitDispatcher.cs`](../../revit/Heron.Revit.Addin/RevitDispatcher.cs). D-129's *"only the chat holding a
+Revit can stop it"* holds only while a chat holds it. **And the trail cannot say who:** the `stop` record
+carries the Revit's own session (release and process id), whether a job was running and whether the stop
+changed anything - not the caller's client id.
+
+**Why it matters more than one test run.** "Idle" is not "nobody's": a chat bound to a Revit loses its lease
+after five quiet minutes and stays bound. Anything that sends `stop` - a second terminal today, the MCP
+server when it learns to (D-129: *"nothing in the MCP server sends it yet"*) - can stop that chat's Revit
+until it is restarted, with no sign in that chat of who did it.
+
+**The shapes the owner chooses between:**
+
+1. **Leave the add-in as it is.** Any client id stops a Revit nobody holds, as a deliberate act - the client
+   now asks for `--session` when there is a choice. **Cost:** nothing. **Leaves:** a stop with any id and the
+   right `--session` still stops another chat's quiet Revit, and the MCP server, when it sends `stop`, has no
+   rule but its own.
+2. **A stop must name the Revit it is for - recommended.** The add-in refuses a `stop` whose request does not
+   carry its own session (release and process id), whoever sends it; the client sends the one it chose.
+   **Cost:** a C# change in `RevitDispatcher.AnswerStop` and one argument from the client, rebuilt and
+   deployed for 2020 to 2027, and a Revit run with two connected ([EZ6](../needs-checking/group-ez.md)). No
+   lease change. An older client's stop - the one that went to every Revit - is then refused, which is the
+   point. **Leaves:** a stranger who names the session still stops an idle Revit. That stays a choice someone
+   made rather than a broadcast, and adding the caller's client id to the `stop` record would make it seen.
+3. **A Revit nobody holds takes a stop only from the chat that held it last.** The lease remembers its last
+   holder after it lapses, and `stop` from any other id is refused `session_in_use` as a held Revit refuses
+   it. **Cost:** a change to `HeronLease` in `Heron.Core` and to `BridgeServer` - the dispatcher today cannot
+   tell a lease this request has just claimed from one it renewed - rebuilt for every release, and a run.
+   **Leaves:** a second terminal can stop that Revit only with the chat's own id, which D-129 already asks
+   for; a person who wants Heron stopped in a Revit no chat has used since it started can still do it, and
+   one that a chat used and left cannot be stopped by anyone else until it restarts.
+
+What none of the three changes: a held Revit refuses a stop from another chat, a stop lasts until Revit
+restarts (D-130), and nothing over the bridge resumes.
+
+**Not measured:** how often a bound chat's lease lapses in a working day, and whether any other caller
+sends `stop` today - a grep of `mcp/server/` finds no request that sends it.
+
+**Ajmal PS decides.** Until he does, nothing Heron does at runtime changes in the add-in: a Revit nobody
+holds takes a stop from any client id. The client sends it to one Revit only.
+
+---
