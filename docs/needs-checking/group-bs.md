@@ -32,3 +32,7 @@ proof plan is [`tools/jobs/family-settings-shared-2026-10-01.yaml`](../../tools/
 | **BS3** | Revit's shared parameter file set to one holding a Text parameter `Heron Test Tag`: parameterNames `Heron Test Tag`, type, group `Identity Data` | Added, shared, with the file's GUID - Family Types shows the shared marker; a tag in a test project reads it once the family is loaded. **Negative:** `Not In The File` - refused naming the file and the close names, nothing added |
 | **BS4** | BS3 with NO shared parameter file set in Revit | Refused - set the office's file in Manage > Shared Parameters - and the setting still empty afterwards |
 | **BS5** | BS1 and BS3 on **Revit 2020** | The same answers - the shared parameter call takes the BuiltInParameterGroup overload there |
+
+## The run of 2026-10-18 (Revit 2020, Family4) - `SET_FAMILY_SETTINGS` re-proved and PROVEN
+
+**BS1 in part.** On Family4 (a Duct Accessory damper frame, Revit 2020, session 64176), `validate --write`, rolled back: `Work Plane-Based=yes` - `changed 1`, *Work Plane-Based No -> Yes*; negative `Work Plane-Based=no` on the family already No - `changed 0`, `alreadySet 1`. Signed by Ajmal PS, card PROVEN (row [5b-1105](../fragment-issues/section-5b-rows-401-425.md) for the contract fix the draft needed). `Shared`, BS1's own negative (`maybe`) and BS2-BS5 were NOT RUN.
