@@ -21,6 +21,9 @@ No Revit API, no MCP yet. Just: can something outside Revit reach inside it?
     python mcp/client/heron_bridge_client.py release   # hand this Revit back
     python mcp/client/heron_bridge_client.py stop      # stop Heron, and the job
                                                        # Revit is running now
+    python mcp/client/heron_bridge_client.py stop --session 63712
+                                                       # ...in that Revit; with two
+                                                       # connected it must be named
     python mcp/client/heron_bridge_client.py validate list-levels
                                                        # run one fragment through the
                                                        # phases a proof needs, and
@@ -3073,9 +3076,9 @@ def cmd_release():
     return 0
 
 
-def cmd_stop():
+def cmd_stop(session=None):
     """
-    Stop Heron in every connected Revit, and the fragment Revit is running now.
+    Stop Heron in ONE Revit, and the fragment that Revit is running now.
 
     D-129. The add-in answers `stop` on a bridge thread, before anything is
     queued, so it reaches a Revit whose own thread is held by a job that will
@@ -3093,6 +3096,15 @@ def cmd_stop():
     claims the lease, as every request does, and this gives it back. With
     HERON_CLIENT_ID set the lease is the chat's own, mid-job, and handing it
     back would cut that chat off - so it is left alone.
+
+    ONE REVIT, NAMED WHEN THERE IS A CHOICE. This sent `stop` to every
+    connected Revit until row 5b-1094: on 2026-10-18 a stop meant for Revit
+    2024 was refused there and taken by another chat's idle Revit 2020,
+    which then refused every change until it was restarted. A stop lasts
+    until Revit restarts, so with two connected and no `--session` NOTHING
+    is sent and the Revits are listed - the refusal `fragment` gives.
+    Whether an idle Revit should take a stop from any client id is the
+    add-in's rule, not this one's, and is Q-71.
     """
     if refuse_off_windows():
         return 2
@@ -3106,6 +3118,14 @@ def cmd_stop():
         print("No Revit is connected.")
         report_mismatched(mismatched)
         return 1
+
+    live, refusal = only_session(live, session)
+    if refusal is not None:
+        print(refusal)
+        print("")
+        print("Nothing was sent, so no Revit was stopped. A stop lasts until that")
+        print("Revit is restarted, so it goes only to the one you name.")
+        return 2
 
     borrowed = bool(os.environ.get("HERON_CLIENT_ID"))
     failed = 0
@@ -3254,7 +3274,15 @@ def main(argv):
     if argv[1] == "release":
         return cmd_release()
     if argv[1] == "stop":
-        return cmd_stop()
+        # Read here, so a word that is not a session is refused before
+        # anything is discovered or sent - never taken as one (row 5b-1094).
+        rest, session = pull_session(argv[2:])
+        if rest:
+            print("stop takes only --session <pid>, which Revit to stop:")
+            print("  stop --session 63712")
+            print("Nothing was sent to Revit.")
+            return 2
+        return cmd_stop(session=session)
     if argv[1] == "prove":
         rest, pairs, _, _, _ = pull_values(argv[2:])
         if rest is None:
