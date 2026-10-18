@@ -8,7 +8,7 @@
 
 ## Group HL - anything a kept change deletes is asked in Revit first: D-142 (2026-10-18)
 
-[D-142](../decisions/D-142.md) (the owner's decision, 2026-10-18), from [row 5b-1180](../fragment-issues/section-5b-rows-401-425.md).
+[D-142](../decisions/D-142.md) (the owner's decision, 2026-10-18), from [row 5b-1200](../fragment-issues/section-5b-rows-401-425.md).
 (HH to HK were left free when this was written: other sessions were adding groups the same day.)
 **What changed.** A change that would be KEPT - `revit_change`, the words alone, the command line's
 `--write --apply`, a DRAFT's `try-once` - in which Revit counts any element deleted is rolled back, and
