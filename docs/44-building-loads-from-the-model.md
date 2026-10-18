@@ -29,12 +29,100 @@ builds starts DRAFT ([D-30](DECISIONS.md)).
 > point 5) is not built. `REPORT_SPACE_ENVELOPE` is DRAFT. **The proof is partial:**
 > [Group CC](needs-checking/group-cc.md) ran on *Heron loads test*, Revit 2024, on 2026-10-06 - several
 > rows PASS; CC8 and CC13 FAILED, are fixed in code and are NOT RUN AGAIN; the rest are NOT RUN (§12.9).
+> *Read again 2026-10-18:* CC22 and CC24 FAILED that day too - CC22 is fixed in code and NOT RUN AGAIN,
+> and CC24's undo count is [row 5b-314](fragment-issues/section-5b-rows-301-325.md), still open; CC11 is
+> PART (its Space half PASSED). The re-run is §12.9's list.
 > Every load is a design aid until the engineer's comparison §10 names has been made.
+>
+> **Checked 2026-10-18 - Finalize writes nothing today.** Its first write, `SET_PARAMETER_VALUES_BY_ID`,
+> went to version 3 and DRAFT on 2026-10-17 (#583; its proof is owed in
+> [group FE](needs-checking/group-fe.md)), its diffuser write `SET_AIR_TERMINAL_FLOW` is DRAFT
+> ([group AQ](needs-checking/group-aq.md)), and `revit_change` - whose body Finalize runs - keeps a change
+> only from a PROVEN fragment since [D-117](decisions/D-117.md). Called in a cloud container, it refused
+> both before anything was sent. Reading, calculating, the take-off check and the report are untouched
+> ([40 §21.9](40-heron-companion.md)).
 
 **In Revit words.** Today Heron can work out one room's cooling load if you type in its walls and windows.
 This feature lets Heron *read* every Space in the model - its floor, its outside walls and which way they
 face, its windows - work out every Space's load in one go, show you the table, let you change the people
 and lights, give you a PDF, and on your word write the loads and airflows into the Spaces and the diffusers.
+
+## At a glance
+
+**From the Spaces in Revit to a load sheet, and back into Revit on the modeller's word.** Everything up to
+Finalize reads the model and writes nothing to it.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    U(["<b>Modeller</b><br/><i>calculate the loads<br/>for this building</i>"])
+    SP["<b>Revit Spaces</b><br/>walls · roofs · floors<br/>windows · doors · types"]
+    RD["<b>REPORT_SPACE_ENVELOPE</b><br/>a read · no transaction"]
+    TK["<b>heron_takeoff</b><br/>the take-off<br/>the model's checks"]
+    BL["<b>heron_building_loads</b><br/>every Space through heron_hvac<br/>zone and block load"]
+    LP["<b>Companion · Loads panel</b><br/>Recalculate · 3D view<br/>The take-off is right"]
+    RP["<b>heron_loads_report</b><br/>the sheet: HTML · CSV<br/>PDF by Edge or Chrome"]
+    FN["<b>Finalize</b> · MODIFY<br/>reads the model again<br/>refuses if it moved"]
+    RC["<b>revit_change's own body</b><br/>SET_PARAMETER_VALUES_BY_ID<br/>SET_AIR_TERMINAL_FLOW"]
+
+    U ==>|revit_building_loads| RD
+    SP ==> RD
+    RD ==>|takeoffJson| TK
+    TK ==> BL
+    BL ==> LP
+    LP -->|Report| RP
+    LP ==>|Finalize · Changes on| FN
+    FN ==> RC
+    RC ==>|loads · airflow<br/>diffuser flows| SP
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class U user
+    class SP revit
+    class RD,RC addin
+    class TK,BL,RP brain
+    class LP,FN plat
+```
+
+**Built, not proven.** The read and the calculation ran on *Heron loads test* in Revit 2024 on
+2026-10-06 - [Group CC](needs-checking/group-cc.md), PART (the status above). **Finalize is refused today**
+(the status above), and when it runs it is more than one undo entry
+([row 5b-314](fragment-issues/section-5b-rows-301-325.md), open). Every load is a peak estimate and a
+design aid, not an hourly simulation like HAP. Checked against `revit_building_loads`, `_loads_recalculate`,
+`_loads_report`, `_loads_confirm` and `_loads_finalize` in `mcp/server/heron_mcp_server.py`,
+`heron_brain.building_loads` and `loads_report`, and `LoadsPanel` in `mcp/companion/heron_companion.py`.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+"calculate the loads for this building"  ->  revit_building_loads
+   |
+Revit Spaces  ->  REPORT_SPACE_ENVELOPE (a read, no transaction)  ->  takeoffJson
+   |
+heron_takeoff            the take-off, the model's checks
+heron_building_loads     every Space through heron_hvac; zone and block load
+   |
+Companion - Loads panel  Recalculate, 3D view, The take-off is right
+   |-- Report    ->  heron_loads_report: HTML, CSV, a PDF by Edge or Chrome
+   |-- Finalize  (MODIFY, Changes on)  reads the model again, refuses if it moved
+                     ->  revit_change's own body: SET_PARAMETER_VALUES_BY_ID, then SET_AIR_TERMINAL_FLOW
+                     ->  the Spaces' loads and airflow, the diffusers' flows - back in Revit
+```
+
+</details>
+
+**The panel's buttons** - from `LoadsPanel` and its hooks:
+
+| Button | What it does | Touches the model? |
+|---|---|---|
+| Recalculate | runs the brain again on the take-off the panel holds, with the inputs as edited | No |
+| The take-off is right | gate 1: records the modeller's check against this take-off; until then the sheet says DRAFT and Finalize is shut | No |
+| Report | asks where, then writes the sheet - HTML, CSV, the take-off CSV, and a PDF when Edge or Chrome is found | No - files on this PC |
+| Finalize | reads the model again and refuses if the geometry moved; writes the Spaces' loads and airflow, then the diffusers' flows; reads them back; makes the Spaces schedule once | **Yes** - `companion_loads_finalize`, `MODIFY`. Refused today |
 
 ---
 
