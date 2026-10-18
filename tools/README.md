@@ -584,9 +584,17 @@ Restore refuses without `--confirm`, refuses a backup that fails verification, a
 of whatever it is about to overwrite** — the thing a restore destroys is the only record of the machine
 a second ago.
 
-**What it does not protect against, plainly:** the default copy sits under the data folder it protects.
-That survives an uninstall, an update, and a deleted audit folder. It does not survive losing the disk.
-Pass `--to` a path on another drive for that.
+**Two folders since [D-135](../docs/decisions/D-135.md)** ([row 5b-1069](../docs/fragment-issues/section-5b-rows-401-425.md)).
+With no `HERON_DATA`, one backup holds `%APPDATA%\Heron` — the add-in's settings and trail — under
+`appdata/`, and the home `heron_paths.data_home()` names — the knowledge folder, each project's memory,
+the brain's audit — under `home/`. The manifest records each part's `source`; a restore puts each part
+back into that folder and no other, and refuses before writing anything when one cannot be made on this
+PC. With `HERON_DATA` set it is that one folder, flat, as it always was.
+
+**What it does not protect against, plainly:** the default copy sits in `<home>\backup`, beside what it
+protects — no longer `%APPDATA%\Heron\backup`, which inside a Microsoft Store Claude is the app's copy a
+Reset deletes; backups already there are still listed. That survives an uninstall, an update, and a
+deleted audit folder. It does not survive losing the disk. Pass `--to` a path on another drive for that.
 
 The working prototype of `HERON-WSP-BAK-010` and `HERON-WSP-RST-011`.
 

@@ -77,14 +77,33 @@ run health checks, compare."*
 the Backup Agent rather than after it. A backup nobody has restored is a
 folder of files with a hopeful name.
 
+TWO FOLDERS SINCE D-135, AND EACH GOES BACK WHERE IT CAME FROM
+-----------------------------------------------------------------
+D-135 moved the Python side's DATA - the knowledge folder, each project's
+memory, the brain's audit - out of `%APPDATA%\\Heron` into the home that
+`heron_paths.data_home()` names, `%USERPROFILE%\\.heron` on Windows. The
+add-in's settings and trail stayed in `%APPDATA%\\Heron`. So with no
+HERON_DATA one backup holds both, each under a folder of its own named for
+its part (`appdata/`, `home/`), and its manifest records each part's
+`source`. A restore puts each part back into that recorded folder, never the
+other, and refuses before writing anything when one of them cannot be made on
+this PC (row 5b-1069).
+
+With HERON_DATA set it is that one folder, laid out flat, exactly as before:
+that is what the drill's tests plant, and a person who points HERON_DATA
+somewhere has said which folder they mean.
+
 WHAT THIS DOES NOT PROTECT AGAINST, SAID PLAINLY
 -------------------------------------------------
-By default the copy lands under `%APPDATA%\\Heron\\backup`, because docs/06
-section 2 lists Backup in the Data class. That survives an uninstall, an
-update, and somebody deleting the audit folder. **It does not survive losing
-the disk, or the profile.** Pass `--to` a path on another drive for that. The
-default is the useful one, not the complete one, and calling it disaster
-recovery would be a lie.
+By default the copy lands under `<home>\\backup`, because docs/06 section 2
+lists Backup in the Data class. It was `%APPDATA%\\Heron\\backup` until
+row 5b-1069, which inside a Microsoft Store Claude is the app's private copy:
+a Reset deletes it along with what it backs up. Backups already taken there
+are still listed. That survives an uninstall, an update, and somebody
+deleting the audit folder. **It does not survive losing the disk, or the
+profile.** Pass `--to` a path on another drive for that. The default is the
+useful one, not the complete one, and calling it disaster recovery would be
+a lie.
 """
 
 import io
@@ -99,10 +118,17 @@ import datetime
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+import heron_paths as PATHS                                   # noqa: E402
+
 MANIFEST = "manifest.json"
 
+# The two folders a backup holds with no HERON_DATA, in this order, each under
+# a folder of this name inside the backup.
+APPDATA_PART = "appdata"
+HOME_PART = "home"
+
 # Skipped, with the reason a restore will quote. Matched against the path
-# relative to the data root, with forward slashes, case-insensitively.
+# relative to each folder backed up, with forward slashes, case-insensitively.
 EXCLUDED = (
     (re.compile(r"^knowledge/.*\.db$", re.I),
      "a derived SQLite index, rebuilt from the fragment files on first use "
@@ -118,30 +144,66 @@ def w(s):
     sys.stdout.write(s.encode("ascii", "replace").decode("ascii"))
 
 
-def data_root():
-    """
-    `%APPDATA%\\Heron` - the Data class, and the only thing worth backing up.
+def _same(one, other):
+    return os.path.normcase(os.path.abspath(one)) == \
+        os.path.normcase(os.path.abspath(other))
 
-    HERON_DATA overrides it, which is what the drill and the tests use. Python
-    cannot call HeronPaths, which is C# and the authority; this resolves the
-    one directory and nothing else builds a path here.
+
+def appdata_root():
     """
-    override = os.environ.get("HERON_DATA")
-    if override:
-        return override
-    appdata = os.environ.get("APPDATA")
-    if not appdata:
-        return None
-    return os.path.join(appdata, "Heron")
+    `%APPDATA%\\Heron` - the add-in's DATA: its settings and its audit trail.
+
+    Python cannot call HeronPaths, which is C# and the authority; this resolves
+    the one directory and nothing else builds a path here.
+    """
+    appdata = (os.environ.get("APPDATA") or "").strip()
+    return os.path.join(appdata, "Heron") if appdata else None
+
+
+def sources():
+    """
+    [(part, folder)] - what one backup copies, in order, there or not.
+
+    HERON_DATA set: that folder alone, part None, laid out flat - what the
+    drill and the tests use, and a person's own choice of folder. Otherwise
+    `%APPDATA%\\Heron` and the home `heron_paths.data_home()` names, where
+    D-135 moved the knowledge folder, each project's memory and the brain's
+    audit. `data_home()` is a name only: asking it carries nothing.
+    """
+    chosen = (os.environ.get("HERON_DATA") or "").strip()
+    if chosen:
+        return [(None, chosen)]
+    found = []
+    appdata = appdata_root()
+    if appdata:
+        found.append((APPDATA_PART, appdata))
+    home = PATHS.data_home()
+    if home and not (appdata and _same(home, appdata)):
+        found.append((HOME_PART, home))
+    return found
 
 
 def backup_root():
-    """Where copies go. Under Data by default - see the caveat in the header."""
+    """Where copies go: `<home>\\backup` by default - see the header for why
+    not `%APPDATA%\\Heron\\backup` any more - and that only with no home."""
     override = os.environ.get("HERON_BACKUP")
     if override:
         return override
-    root = data_root()
-    return os.path.join(root, "backup") if root else None
+    home = PATHS.data_home()
+    if home:
+        return os.path.join(home, "backup")
+    appdata = appdata_root()
+    return os.path.join(appdata, "backup") if appdata else None
+
+
+def old_backup_root():
+    """`%APPDATA%\\Heron\\backup`, where a backup with no --to went until row
+    5b-1069 - listed still, so one taken there is not lost from view. None
+    when HERON_BACKUP or HERON_DATA names the place itself."""
+    if os.environ.get("HERON_BACKUP") or (os.environ.get("HERON_DATA") or "").strip():
+        return None
+    appdata = appdata_root()
+    return os.path.join(appdata, "backup") if appdata else None
 
 
 def excluded_reason(relative):
@@ -181,15 +243,22 @@ def survey(root):
 def take(destination=None, label=None, source=None):
     """Copy the data class. Returns the manifest, or None with a reason printed.
 
-    `source` IS THE FOLDER BEING COPIED, and it defaults to the data root
-    because that is what a backup is. It exists because `restore` needs a
-    safety copy of WHAT IT IS ABOUT TO OVERWRITE, which is the data root only
-    when the restore goes there - see restore().
+    `source` IS ONE FOLDER TO COPY, laid out flat, and it defaults to
+    `sources()` because that is what a backup is. It exists because `restore`
+    needs a safety copy of WHAT IT IS ABOUT TO OVERWRITE, which is the data
+    folder only when the restore goes there - see restore().
     """
-    root = source or data_root()
-    if not root or not os.path.isdir(root):
+    return _take([(None, source)] if source else sources(), destination, label)
+
+
+def _take(parts, destination=None, label=None):
+    """Copy each (part, folder) there is. Part None is one folder, flat; a
+    named part goes under a folder of its name, its `source` recorded."""
+    present = [(part, root) for part, root in parts
+               if root and os.path.isdir(root)]
+    if not present:
         w("There is no %s to back up. Heron has not written anything yet.\n"
-          % (root or "data folder"))
+          % (" or ".join(root for _part, root in parts if root) or "data folder"))
         return None
 
     where = destination or backup_root()
@@ -199,22 +268,27 @@ def take(destination=None, label=None, source=None):
         w("A backup called %s already exists. Nothing was written.\n" % stamp)
         return None
 
-    kept, skipped = survey(root)
-    files = []
-    for relative in kept:
-        source = os.path.join(root, relative.replace("/", os.sep))
-        landing = os.path.join(target, relative.replace("/", os.sep))
-        folder = os.path.dirname(landing)
-        if not os.path.isdir(folder):
-            os.makedirs(folder)
-        shutil.copy2(source, landing)
-        files.append({"path": relative,
-                      "bytes": os.path.getsize(landing),
-                      "sha256": digest(landing)})
+    # EVERY FOLDER IS SURVEYED BEFORE ANYTHING IS COPIED: the copy lands in
+    # <home>\backup, so a home surveyed after the first part was copied lists
+    # this backup's own half-written files as skipped.
+    surveyed = [(part, root, survey(root)) for part, root in present]
+    files, skipped = [], []
+    for part, root, (kept, left) in surveyed:
+        prefix = part + "/" if part else ""
+        for relative in kept:
+            origin = os.path.join(root, relative.replace("/", os.sep))
+            landing = os.path.join(target, (prefix + relative).replace("/", os.sep))
+            folder = os.path.dirname(landing)
+            if not os.path.isdir(folder):
+                os.makedirs(folder)
+            shutil.copy2(origin, landing)
+            files.append({"path": prefix + relative,
+                          "bytes": os.path.getsize(landing),
+                          "sha256": digest(landing)})
+        skipped.extend({"path": prefix + e["path"], "why": e["why"]} for e in left)
 
     manifest = {
         "taken": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "source": root,
         "files": files,
         "excluded": skipped,
         "note": ("Backs up the DATA class only. The derived index is excluded "
@@ -226,6 +300,16 @@ def take(destination=None, label=None, source=None):
                  "folder after a restore is this backup MERGED over what was "
                  "there, not a copy of it."),
     }
+    if present[0][0] is None:
+        manifest["source"] = present[0][1]
+    else:
+        # EACH PART RECORDS ITS OWN FOLDER, and a restore puts it back there.
+        manifest["parts"] = [{"name": part, "source": root} for part, root in present]
+        manifest["absent"] = [{"name": part, "source": root} for part, root in parts
+                              if root and (part, root) not in present]
+        manifest["note"] += (" Each part - a folder of this backup - goes back "
+                             "into the folder its `source` names, and only "
+                             "that one.")
     io.open(os.path.join(target, MANIFEST), "w", encoding="utf-8").write(
         json.dumps(manifest, indent=2, sort_keys=True))
     manifest["at"] = target
@@ -241,18 +325,26 @@ def read_manifest(path):
 
 
 def backups():
-    """Every backup that has a readable manifest, newest first."""
-    where = backup_root()
-    if not where or not os.path.isdir(where):
-        return []
-    found = []
-    for name in sorted(os.listdir(where), reverse=True):
-        path = os.path.join(where, name)
-        if not os.path.isdir(path):
+    """Every backup that has a readable manifest, newest first - in the backup
+    folder, and in the old one a backup went to before row 5b-1069. A name
+    in both is the backup folder's."""
+    places = [backup_root()]
+    old = old_backup_root()
+    if old and not (places[0] and _same(old, places[0])):
+        places.append(old)
+    found, seen = [], set()
+    for where in places:
+        if not where or not os.path.isdir(where):
             continue
-        manifest = read_manifest(path)
-        if manifest:
-            found.append((name, path, manifest))
+        for name in sorted(os.listdir(where), reverse=True):
+            path = os.path.join(where, name)
+            if name in seen or not os.path.isdir(path):
+                continue
+            manifest = read_manifest(path)
+            if manifest:
+                seen.add(name)
+                found.append((name, path, manifest))
+    found.sort(key=lambda row: row[0], reverse=True)
     return found
 
 
@@ -295,20 +387,55 @@ def restore(path, into=None, confirm=False):
     if problems:
         return [], ["refusing to restore a backup that does not verify"] + problems
 
-    target = into or data_root()
-    if not target:
+    # WHERE EACH PART GOES: the folder it came from, as its manifest records
+    # it - or, given `into`, that folder (flat) or a folder of the part's
+    # name inside it, laid out as the backup is. The drill passes `into`.
+    order = [p.get("name") for p in manifest.get("parts", [])] or [None]
+    if manifest.get("parts"):
+        folders = dict((p.get("name"), os.path.join(into, p.get("name")) if into
+                        else p.get("source")) for p in manifest["parts"])
+    else:
+        folders = {None: into or manifest.get("source")}
+    if not all(folders.values()):
         return [], ["there is nowhere to restore to"]
+
+    plan = []
+    for entry in manifest["files"]:
+        part, rest = None, entry["path"]
+        if manifest.get("parts"):
+            part, _slash, rest = entry["path"].partition("/")
+        if part not in folders:
+            return [], ["%s is in no part this backup records. Nothing was "
+                        "changed." % entry["path"]]
+        plan.append((entry, part,
+                     os.path.join(folders[part], rest.replace("/", os.sep))))
+
+    # A FOLDER IT CANNOT PUT BACK STOPS IT HERE, BEFORE ANYTHING IS WRITTEN:
+    # a backup from a profile this PC has not got would otherwise make that
+    # profile's folder, or fail with one part restored and the other not.
+    if not into:
+        for part in order:
+            parent = os.path.dirname(os.path.abspath(folders[part]))
+            if not os.path.isdir(parent):
+                return [], ["refusing to restore: %s came from %s, and %s is "
+                            "not on this PC. Nothing was changed."
+                            % (part or "this backup", folders[part], parent)]
 
     if not confirm:
         return [], ["restore needs --confirm. It would overwrite %d file(s) in %s"
-                    % (len(manifest["files"]), target)]
+                    % (len(manifest["files"]),
+                       " and ".join(folders[part] for part in order))]
 
     safety = None
-    if os.path.isdir(target) and any(
-            os.path.exists(os.path.join(target, e["path"].replace("/", os.sep)))
-            for e in manifest["files"]):
-        # OF `target`, NOT OF THE DATA ROOT. Measured 2026-09-22 restoring
-        # into a folder that is not the data root: it copied the data root -
+    at_risk = [(part, folders[part]) for part in order
+               if os.path.isdir(folders[part]) and any(
+                   os.path.exists(landing) for _e, one, landing in plan
+                   if one == part)]
+    if at_risk:
+        # OF THE FOLDERS AT RISK, NOT OF THE DATA ROOT - each one a part of
+        # its own when the backup has parts, so the safety copy restores the
+        # same way. Measured 2026-09-22 restoring into a folder that is not
+        # the data root: it copied the data root -
         # a folder that was never at risk - destroyed the other one, and
         # printed "The state it replaced was copied to ... first", which was
         # false. Not reachable from the command line, where only `drill`
@@ -319,9 +446,9 @@ def restore(path, into=None, confirm=False):
         # second one "A backup called X already exists. Nothing was written."
         # and it carried on regardless.
         try:
-            safety = take(source=target,
-                          label="before-restore-" +
-                          datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+            safety = _take(at_risk,
+                           label="before-restore-" +
+                           datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
         except (IOError, OSError) as why:
             safety = None
             w("The safety copy could not be written: %s\n" % why)
@@ -334,12 +461,12 @@ def restore(path, into=None, confirm=False):
         if safety is None:
             return [], ["refusing to restore: the safety copy of %s could "
                         "not be taken, and restoring would overwrite it with "
-                        "no way back. Nothing was changed." % target]
+                        "no way back. Nothing was changed."
+                        % " and ".join(folder for _part, folder in at_risk)]
 
     restored = []
-    for entry in manifest["files"]:
+    for entry, _part, landing in plan:
         source = os.path.join(path, entry["path"].replace("/", os.sep))
-        landing = os.path.join(target, entry["path"].replace("/", os.sep))
         folder = os.path.dirname(landing)
         if not os.path.isdir(folder):
             os.makedirs(folder)
@@ -357,7 +484,9 @@ def drill():
     this and calls an untested restore path a belief.
 
     Take a backup, restore it somewhere that is NOT the live data folder, and
-    compare content hashes both ways. Nothing the user has is touched.
+    compare content hashes both ways. Nothing the user has is touched. With
+    two folders, each part is restored into a scratch folder of its own name,
+    so the compare also proves no file landed in the other part's folder.
     """
     import tempfile
     w("DRILL - back up, restore into scratch, compare\n")
@@ -367,10 +496,11 @@ def drill():
     # AUTOMATED drill, and on a machine where Heron has written nothing yet
     # this exited 1 - the code a broken restore path uses. That is the third
     # state, and tests/README.md gives it 3.
-    root = data_root()
-    if not root or not os.path.isdir(root):
+    folders = [root for _part, root in sources() if root]
+    present = [root for root in folders if os.path.isdir(root)]
+    if not present:
         w("NOT RUN - there is no %s, so there is nothing to back up and "
-          "nothing\n" % (root or "data folder"))
+          "nothing\n" % (" or ".join(folders) or "data folder"))
         w("to restore. Heron has not written anything yet. The restore path "
           "is not\nclaimed to work and is not claimed to be broken.\n")
         return 3
@@ -382,6 +512,12 @@ def drill():
             return 1
         w("  backed up %d file(s), skipped %d\n"
           % (len(made["files"]), len(made["excluded"])))
+        for part in made.get("parts", []):
+            w("    %d from %s\n" % (sum(1 for f in made["files"]
+                                      if f["path"].startswith(part["name"] + "/")),
+                                  part["source"]))
+        for part in made.get("absent", []):
+            w("    none from %s - it is not there yet\n" % part["source"])
 
         problems = verify(made["at"])
         w("  verify: %s\n" % ("every file matches its hash" if not problems
@@ -395,7 +531,9 @@ def drill():
             for line in failed:
                 w("  FAIL %s\n" % line)
             return 1
-        w("  restored %d file(s) into a scratch folder\n" % len(restored))
+        w("  restored %d file(s) into a scratch folder%s\n"
+          % (len(restored), ", each folder's into its own"
+             if made.get("parts") else ""))
 
         mismatched = []
         for entry in made["files"]:
@@ -413,7 +551,7 @@ def drill():
         w("\n")
         w("The restore path works. The index was NOT part of it and is rebuilt\n")
         w("on first use, which is what docs/21 s8 asks for.\n")
-        w("Nothing under %s was touched.\n" % (data_root() or "the data folder"))
+        w("Nothing under %s was touched.\n" % " or ".join(present))
         return 0
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
@@ -436,6 +574,12 @@ def main(argv):
         total = sum(f["bytes"] for f in made["files"])
         w("Backed up %d file(s), %d KB, to %s\n"
           % (len(made["files"]), total // 1024, made["at"]))
+        for part in made.get("parts", []):
+            w("  %d from %s\n" % (sum(1 for f in made["files"]
+                                    if f["path"].startswith(part["name"] + "/")),
+                                part["source"]))
+        for part in made.get("absent", []):
+            w("  none from %s - it is not there yet\n" % part["source"])
         for entry in made["excluded"]:
             w("  skipped %s - %s\n" % (entry["path"], entry["why"]))
         if not os.environ.get("HERON_BACKUP") and destination is None:
@@ -492,6 +636,10 @@ def main(argv):
         if problems:
             return 1
         w("Restored %d file(s) from %s.\n" % (len(restored), wanted)),
+        for part in rows[0][2].get("parts", []):
+            w("  %d into %s\n" % (sum(1 for p in restored
+                                    if p.startswith(part["name"] + "/")),
+                                part["source"]))
         w("Nothing was REMOVED: a file in the folder that this backup does "
           "not hold\nis still there. The folder is this backup merged over "
           "what was there.\n")
