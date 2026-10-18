@@ -46,6 +46,12 @@ sys.path.insert(0, os.path.join(ROOT, "tests"))
 import heron_fire as FIRE                                     # noqa: E402
 import heron_sprinkler_run as R                               # noqa: E402
 import test_sprinkler_takeoff as NET                          # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 TEE = "tee or cross, flow turned 90 degrees|DN50"
 ELBOW = "90 degree standard elbow|DN25"

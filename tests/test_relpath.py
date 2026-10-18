@@ -53,6 +53,12 @@ TOOLS = os.path.join(ROOT, "tools")
 sys.path.insert(0, BRAIN)
 
 import heron_relpath as RELPATH                                 # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 REAL = os.path.relpath
 

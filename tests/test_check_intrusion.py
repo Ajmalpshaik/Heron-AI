@@ -70,6 +70,12 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "check-intrusion.py")
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 FAILURES = []
 
@@ -164,7 +170,8 @@ def run_in_main_folder(tool, top, on_main):
     def stop(*_args, **_kwargs):
         raise _Measured()
 
-    env = dict((k, os.environ.get(k)) for k in ("APPDATA", "HERON_KNOWLEDGE"))
+    env = dict((k, os.environ.get(k))
+               for k in ("APPDATA", "HERON_KNOWLEDGE", "HERON_DATA"))
     was_index, was_from = SEARCH.index, SCOPE.refreshes_from
     was_branch = getattr(SCOPE, "on_main_branch", None)
     SEARCH.index = stop
@@ -172,6 +179,9 @@ def run_in_main_folder(tool, top, on_main):
     SCOPE.on_main_branch = lambda root=None: on_main
     os.environ.pop("HERON_KNOWLEDGE", None)
     os.environ["APPDATA"] = appdata
+    # D-135: the shared store is under HERON_DATA (the Windows profile on the
+    # owner's PC), so it is planted where this case expects it.
+    os.environ["HERON_DATA"] = os.path.join(appdata, "Heron")
     said = io.StringIO()
     try:
         with contextlib.redirect_stdout(said):

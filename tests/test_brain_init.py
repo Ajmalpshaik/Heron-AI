@@ -38,6 +38,12 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 # A knowledge directory of this test's own, so nothing here depends on the
 # machine and nothing writes outside it. Set BEFORE heron_scope is imported.
@@ -238,12 +244,16 @@ def main():
     print()
     print("7. Every failure the contract declares is named and reached")
     # NOWHERE_TO_PUT_IT - no knowledge directory at all.
+    # Since D-135 the folder is HERON_DATA's or the Windows profile's, not
+    # %APPDATA%'s - so all three go, or on Windows the profile would answer.
     keep = os.environ.pop("HERON_KNOWLEDGE")
-    appdata = os.environ.pop("APPDATA", None)
+    gone = dict((key, os.environ.pop(key, None))
+                for key in ("APPDATA", "HERON_DATA", "USERPROFILE"))
     answer = ask(["global"])
     os.environ["HERON_KNOWLEDGE"] = keep
-    if appdata is not None:
-        os.environ["APPDATA"] = appdata
+    for key, value in gone.items():
+        if value is not None:
+            os.environ[key] = value
     check(answer.get("refused") == "NOWHERE_TO_PUT_IT",
           "with nowhere to keep knowledge, it refuses rather than picking "
           "a folder")

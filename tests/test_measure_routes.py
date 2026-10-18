@@ -49,6 +49,13 @@ import importlib.util
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FAILURES = []
 
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
+
 
 def load(root=None):
     """Import the tool by path, optionally pointed at a temporary tree."""
@@ -92,8 +99,21 @@ def _stop(*_args, **_kwargs):
     raise _Measured()
 
 
+def _home_beside(env):
+    """D-135: a planted %APPDATA% stood for the folder the shared store is in.
+    That folder is HERON_DATA's since, or the Windows profile's - so HERON_DATA
+    is planted beside it, and an %APPDATA% taken away takes the profile too,
+    or on Windows the owner's real profile would answer for it."""
+    if "APPDATA" not in env or "HERON_DATA" in env:
+        return env
+    if env["APPDATA"]:
+        return dict(env, HERON_DATA=os.path.join(env["APPDATA"], "Heron"))
+    return dict(env, HERON_DATA=None, USERPROFILE=None)
+
+
 def _set_env(values):
     """Set each variable in VALUES - None unsets it. Returns what was there."""
+    values = _home_beside(values)
     kept = dict((k, os.environ.get(k)) for k in values)
     for key, value in values.items():
         if value is None:

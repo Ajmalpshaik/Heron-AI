@@ -7041,6 +7041,9 @@ if __name__ == "__main__":
     # forty seconds later when it first ran inside a request handler, on the
     # event loop - the host waited and no reply ever came. Until it finishes,
     # every answer uses the lexical backend and says so. See heron_embed.warm().
+    # First, Heron's data into its home, once on this PC (D-135): a second or
+    # two the first time, one look for a note after that.
+    brain.carry_home()
     brain.warm()
     # And the knowledge store, behind it, so the chat's first lookup finds the
     # one-time work done (6.4-7.3 s measured 2026-10-01). Only where it cannot

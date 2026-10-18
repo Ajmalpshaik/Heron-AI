@@ -448,6 +448,16 @@ namespace Heron.Installer.TestHost
             Check(gaveUp.Results.Count == 0, "and nothing was installed");
             Check(Names(gaveUp.AbandonedBecause, "Revit 2024 is open"),
                   "and the last word is which Revit is still open");
+            // THE LAST WORD IS NOT THE WAITING ONE. Group EP8 on the owner's
+            // laptop, 2026-10-17: Revit 2026 stayed open past the ceiling and
+            // both doors ended on "Close it and this will carry on by itself" -
+            // after they had stopped waiting, so closing Revit did nothing.
+            Check(!Names(gaveUp.AbandonedBecause, "carry on by itself"),
+                  "and it no longer promises to carry on by itself - it has stopped waiting");
+            Check(Names(gaveUp.AbandonedBecause, "stopped waiting", "start the install again"),
+                  "it says it stopped, and to start the install again once Revit is closed");
+            Check(!Names(murkyReport.AbandonedBecause, "carry on by itself"),
+                  "the same for a Revit whose release could not be read");
 
             Console.WriteLine();
             Console.WriteLine("One product failing does not stop the others - R-19");

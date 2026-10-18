@@ -87,12 +87,31 @@ namespace Heron.Core
         public static string Live { get { return Ensure(Path.Combine(Derived, "live")); } }
 
         /// <summary>
+        /// DERIVED, in the temporary folder - %TEMP%\Heron. Machine-local,
+        /// rebuildable and safe to delete, like Derived; somewhere else only
+        /// because of what a Microsoft Store Claude does (D-135). Windows keeps a
+        /// private copy of %LOCALAPPDATA% for that app and every process it
+        /// starts, the chat's MCP process included, and Revit - not such a
+        /// process - reads only the real folder; so a file a chat writes under
+        /// Derived is one this add-in never sees (FRAGMENT-ISSUES 5b-416). The
+        /// temporary folder is not copied: measured on the owner's laptop on
+        /// 2026-10-17 from both sides. Only what a chat writes FOR the add-in to
+        /// read belongs here.
+        /// </summary>
+        public static string SharedDerived
+        {
+            get { return Path.Combine(Path.GetTempPath(), AppFolder); }
+        }
+
+        /// <summary>
         /// DERIVED - one small file per running chat whose Companion page is
         /// up, saying which port it is on and holding a one-time code, so the
         /// Companion button in Revit can open the page (D-109). Written and
         /// deleted by the chat's MCP process; read, never written, by the add-in.
+        /// Under SharedDerived since D-135, so the chat and Revit name one folder
+        /// on every PC - mcp/companion/heron_companion.py companion_dir().
         /// </summary>
-        public static string Companion { get { return Ensure(Path.Combine(Derived, "companion")); } }
+        public static string Companion { get { return Ensure(Path.Combine(Path.GetTempPath(), AppFolder, "companion")); } }
 
         /// <summary>
         /// DERIVED - where capture_view puts a view's picture for the moment
@@ -160,7 +179,8 @@ namespace Heron.Core
             catch (PathTooLongException) { return false; }
 
             if (IsWithin(full, Path.GetFullPath(Data))) return false;
-            return IsWithin(full, Path.GetFullPath(Derived));
+            return IsWithin(full, Path.GetFullPath(Derived))
+                || IsWithin(full, Path.GetFullPath(SharedDerived));
         }
 
         /// <summary>

@@ -106,8 +106,9 @@ def catalogue(skills, capabilities, gaps, ms=None, directory=None):
 
 
 def current_file(directory=None):
-    """One file per month, matching HeronAudit's own rhythm and its glob."""
-    target = directory if directory is not None else GAPS.audit_dir()
+    """One file per month, matching HeronAudit's own rhythm and its glob -
+    in the brain's own folder, under Heron's home since D-135."""
+    target = directory if directory is not None else GAPS.brain_audit_dir()
     if not target:
         return None
     stamp = datetime.datetime.utcnow().strftime("%Y%m")
@@ -255,11 +256,12 @@ def context(path, depth, parts, characters, refused=None, ms=None,
 
 
 def main(argv):
-    directory = GAPS.audit_dir()
+    directory = GAPS.brain_audit_dir()
     print("Heron brain audit trail")
     print("=" * 70)
     if not directory:
-        print("Nowhere to write: neither HERON_AUDIT nor APPDATA is set.")
+        print("Nowhere to write: neither HERON_AUDIT nor HERON_DATA is set, and")
+        print("this is not Windows, where the home is %USERPROFILE%\\.heron.")
         print("That is normal on Linux and in a plain checkout. The brain")
         print("records nothing and the request is unaffected.")
         return 0

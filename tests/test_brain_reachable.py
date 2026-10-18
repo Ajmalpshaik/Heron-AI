@@ -68,6 +68,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 FAILURES = []
 
@@ -777,6 +783,38 @@ def main():
                 check(offered[:1] == ["builders-work-layout"],
                       "and the live lookup names it first too - %s" % offered)
 
+            # AND WHERE A RE-RANKER READS - row 5b-1032. The two live checks
+            # above passed on the spelling backend and the trained one, and
+            # failed on the owner's PC: the cross-encoder reads a card's
+            # identity and its first eight utterances (D-134), and
+            # CREATE_LINEAR_DIMENSION declared its builders work phrase
+            # twelfth, so the card fell out of the five and nothing linked the
+            # method. CI has no re-ranker, so this builds the passage one is
+            # given - as heron_search.index stores it - rather than ranking it.
+            import heron_fragment as FRAG
+            import heron_rerank as RERANK
+            import heron_retrieve as RETRIEVE
+            passage = getattr(RETRIEVE, "_fragment_passage", None)
+            capped = getattr(RERANK, "passage_said", None)
+            check(passage is not None and capped is not None,
+                  "heron_retrieve and heron_rerank still say what a re-ranker "
+                  "reads of a card")
+            wanted = set(SKILL.load_all()[0]["builders-work-layout"].needs())
+            told = []
+            for card in (FRAG.load_all()[0].values()
+                         if passage and capped else []):
+                if card.data.get("capability") not in wanted:
+                    continue
+                row = {"semantic_identity": card.data.get("semantic-identity"),
+                       "capability": card.data.get("capability"),
+                       "domain": card.data.get("domain")}
+                read = RETRIEVE.Candidate(card.data.get("id"), row)
+                read.said = capped(card.utterances())
+                if "builders work" in passage(read).lower():
+                    told.append(row["capability"])
+            check(told, "a capability the builders work method needs says "
+                        "\"builders work\" where a re-ranker reads - %s" % told)
+
             layout = BRAIN.method("builders-work-layout")
             # Read as words: a step's own lines keep their breaks in the YAML.
             steps = " ".join((layout or {}).get("purpose", "").split())
@@ -805,6 +843,9 @@ def main():
         print("When it cannot read what it knows")
         saved = os.environ.pop("HERON_KNOWLEDGE", None)
         had_appdata = os.environ.pop("APPDATA", None)
+        # D-135: the home is HERON_DATA's or the Windows profile's now.
+        had_home = dict((key, os.environ.pop(key, None))
+                        for key in ("HERON_DATA", "USERPROFILE"))
         try:
             refused = None
             try:
@@ -821,6 +862,9 @@ def main():
                 os.environ["HERON_KNOWLEDGE"] = saved
             if had_appdata is not None:
                 os.environ["APPDATA"] = had_appdata
+            for key, value in had_home.items():
+                if value is not None:
+                    os.environ[key] = value
 
         print()
         if FAILURES:

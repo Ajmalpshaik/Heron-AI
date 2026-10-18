@@ -543,7 +543,7 @@ def report(revit):
     import heron_retrieve as RETRIEVE
 
     # NO STORE, NO CHECK - AND SAY SO IN ONE LINE RATHER THAN A TRACEBACK.
-    # With no %APPDATA% and no HERON_KNOWLEDGE there is nowhere to keep a
+    # With no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE there is nowhere to keep a
     # knowledge store, and heron_scope raises ValueError from four frames
     # down. Until 2026-09-21 that arrived as an unhandled traceback and exit
     # 1, while .github/workflows/gates.yml said of this tool and its pair
@@ -553,7 +553,7 @@ def report(revit):
     # do its job": nothing was checked, so it is NOT a pass. Row 5b-71.
     if SCOPE.knowledge_dir() is None:
         sys.stderr.write(
-            "COULD NOT RUN: no %APPDATA% and no HERON_KNOWLEDGE, so there is\n"
+            "COULD NOT RUN: no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is\n"
             "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
             "folder - an empty one is enough - and run this again.\n")
         return 2
