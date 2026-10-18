@@ -62,3 +62,10 @@ are new families from the metric templates the owner's Revit ships, saved once a
 | **BV22** | `create-conceptual-form` revolving: in the same Mass family a closed profile drawn beside a vertical reference line, axis the line, angle empty; then `90` | A full turn and then a quarter turn about the line, their volumes read back - **record whether Revit returned one form or several** (its remark allows several), and that the extent reported takes in every one of them. **Negative:** an arc as the axis, refused as not a straight line |
 | **BV23** | `set-family-settings` in a new Structural Framing - Beams and Braces family: `Material for Model Behavior=Precast Concrete; Section Shape=Rectangle Parameterized`; then the family loaded and one beam placed between two columns | Both read back and seen in Family Category and Parameters; the placed beam **shows the behaviour Autodesk's help gives Precast Concrete** - auto-join with shape handles - record it. **Negative:** `Material for Model Behavior=Granite` refused naming Revit's list |
 | **BV16** | BV1 to BV13 and BV17 to BV23 on **Revit 2020** | The same answers where the call exists; the filled region in a 3D family and the masking region REFUSED by name; the Family Type parameter and the type catalog on their older calls |
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `report-family-template` - positive Family4: `familyKind` level-based, every plane listed; negative Project1: `notAFamily` true, every result empty.
+- `set-family-connector-roles` - positive Family4 on a connector made by the run's own `add-family-connector` setup step: flow Out and a description, `changed` 2; negative on *Center (Front/Back)*: no connector, nothing changed.

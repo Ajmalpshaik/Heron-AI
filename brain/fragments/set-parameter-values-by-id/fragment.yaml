@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -193,39 +193,41 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Project1 (3,080 elements), Revit 2020, session 33484
+  model: Family3, Revit 2020, session 64176 - the count is NOT recorded because 2,157 elements
+    was measured on Family4, the document in front, and this ran against another one (row
+    15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned applied false, backslash \, esc
-    Func`2, findings 0 item(s), groupLocked Func`3, isYesNo Func`2, keyed true, plan 0 item(s),
-    quote ", readBack 0 item(s), readValue Func`2, refused 0 item(s), resultJson {"format":
-    2, "applied": true, "written": 2, "key": "Number", "in": ["Rooms"], "where": [], "problem":
-    null, "stale": [], "refused": [], "readBack": [{"key": "2", "id": "347550", "name": "Comments",
-    "asked": "HERON-PROOF-POS", "value": "HERON-PROOF-POS", "raw": "HERON-PROOF-POS"}, {"key":
-    "3", "id": "347552", "name": "Comments", "asked": "HERON-PROOF-POS", "value": "HERON-PROOF-POS",
-    "raw": "HERON-PROOF-POS"}]}, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue
-    Func`2, theOne Func`3, ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked
-    5 item(s) [no, false, off, ...], written 2, yesNoProperty (null), yesNoSpec (null), yesNoSpecs
-    (null). inputs came rows as given. on Project1'
-  negative_case: 'run with rows=key=Number|in=Rooms;12|Comments=HERON-PROOF-NEG instead -
-    chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned applied false,
-    backslash \, esc Func`2, findings 1 item(s) [1 row(s) not written, 0 written - refused
-    says why, by key.], groupLocked Func`3, isYesNo Func`2, keyed true, plan 0 item(s), quote
-    ", readBack 0 item(s), readValue Func`2, refused 1 item(s) [12: 2 elements in Rooms have
-    Number ''12'' (ids 347570, 347572...], resultJson {"format": 2, "applied": false, "written":
-    0, "key": "Number", "in": ["Rooms"], "where": [], "problem": null, "stale": [], "refused":
-    [{"key": "12", "why": "2 elements in Rooms have Number ''12'' (ids 347570, 347572) - which
-    one is meant would be a guess, so none is written"}], "readBack": []}, same Func`2, stale
-    0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3, ticked 5 item(s) [yes,
-    true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false, off, ...], written 0,
-    yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came rows as given.
-    on Project1'
+    the transaction group ROLLED BACK afterwards. returned applied true, backslash \, esc
+    Func`2, faceKeeper (null), findings 0 item(s), groupLocked Func`3, isYesNo Func`2, keyed
+    false, plan 1 item(s) [(Autodesk.Revit.DB.Extrusion, Visible, No)], quote ", readBack
+    1 item(s) [{"id": "3422", "name": "Visible", "value": "No", "raw": "0"}], readValue Func`2,
+    refused 0 item(s), resultJson {"format": 1, "applied": true, "written": 1, "stale": [],
+    "readBack": [{"id": "3422", "name": "Visible", "value": "No", "raw": "0"}]}, same Func`2,
+    stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3, ticked 5 item(s)
+    [yes, true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false, off, ...], written
+    1, yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null). inputs came rows as given;
+    keepFace not given - "none", the card''s own default (optional). on Family3'
+  negative_case: 'run with rows=3422|323e861b-0aef-4bc5-a21e-480e0d84cd7e-00000d5e|Visible|No|Yes
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    applied false, backslash \, esc Func`2, faceKeeper (null), findings 1 item(s) [Nothing
+    was written: 1 row(s) no longer match what the table...], groupLocked Func`3, isYesNo
+    Func`2, keyed false, plan 0 item(s), quote ", readBack 0 item(s), readValue Func`2, refused
+    0 item(s), resultJson {"format": 1, "applied": false, "written": 0, "stale": [{"id": "3422",
+    "name": "Visible", "why": "it was changed in Revit since the table was read - it now reads
+    ''Yes''", "now": "Yes", "nowRaw": "1"}], "readBack": []}, same Func`2, stale 1 item(s)
+    [3422: it was changed in Revit since the table was read - it ...], staleJson 1 item(s)
+    [{"id": "3422", "name": "Visible", "why": "it was changed in ...], storedValue Func`2,
+    theOne Func`3, ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s)
+    [no, false, off, ...], written 0, yesNoProperty (null), yesNoSpec (null), yesNoSpecs (null).
+    inputs came rows as given; keepFace not given - "none", the card''s own default (optional).
+    on Family3'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 10df47f9b61a2f16
+  fingerprint: 68740bad40c8e5a7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

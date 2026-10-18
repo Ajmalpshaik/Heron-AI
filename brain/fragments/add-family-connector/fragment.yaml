@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -128,41 +128,49 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, chosen
-    Tuple`3, connector pipe connector, Domestic Cold Water, round 200 mm, at X 300, Y 0, Z
-    250, pointing right (+X), on the face lying on "Box Right", dbNamespace Autodesk.Revit.DB,
-    face PlanarFace, faceName Box Right, findings 2 item(s) [Made a pipe connector, Domestic
-    Cold Water, round 200 mm, at..., Flow direction, description and electrical load are Revit's
-    ...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength
-    Func`2, mm Func`2, notAFamily false, notOffered 4 item(s) [Fitting, Global, UndefinedSystemType,
-    ...], ownName Func`2, pointing Func`2, refused (null), revitAssembly RuntimeAssembly,
-    sameKind Func`3, shownAs 6 entry(ies), sizedBy 1 item(s) [connector diameter <- Neck Diameter],
-    sizes 1 item(s) [Autodesk.Revit.DB.FamilyParameter], spaced Func`2, squash Func`2, systems
-    25 item(s) [(duct, SupplyAir, SupplyAir), (duct, ReturnAir, ReturnAir), (duct, ExhaustAir,
-    ExhaustAir), ...]. inputs came facePlane as given; system as given; sizeParameters as
-    given. on Family1
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, chosen (null), connector
-    , dbNamespace Autodesk.Revit.DB, face (null), faceName Box Right, findings 1 item(s) [The
-    document in front is a project, not a family open in the...], flags BindingFlags, halfMillimetre
-    0.00164041994750656, invariant CultureInfo, isLength Func`2, mm Func`2, notAFamily true,
-    notOffered 4 item(s) [Fitting, Global, UndefinedSystemType, ...], ownName Func`2, pointing
-    Func`2, refused The document in front is a project, not a family open in the Family Editor.
-    A connector is added inside the family - open it first., revitAssembly RuntimeAssembly,
-    sameKind Func`3, shownAs 6 entry(ies), sizedBy 0 item(s), sizes 0 item(s), spaced Func`2,
-    squash Func`2, systems 25 item(s) [(duct, SupplyAir, SupplyAir), (duct, ReturnAir, ReturnAir),
-    (duct, ExhaustAir, ExhaustAir), ...]. inputs came facePlane as given; system as given;
-    sizeParameters as given. on Project1
+  model: Family4 (2,157 elements), Revit 2020, session 64176
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, alsoJoined 0, axisOf
+    Func`2, chosen Tuple`3, connector duct connector, Supply Air, rectangular 150 x 300 mm,
+    at X 0, Y -300, Z 0, pointing back (+Y), on the face lying on "Duct Front", dbNamespace
+    Autodesk.Revit.DB, face PlanarFace, faceIn (null), faceName Duct Front, findings 2 item(s)
+    [Made a duct connector, Supply Air, rectangular 150 x 300 mm,..., Flow direction, description
+    and electrical load are Revit''s ...], flags BindingFlags, halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, isLength Func`2, kindOf Func`2, mm Func`2, notAFamily false, notOffered
+    2 item(s) [UndefinedSystemType, Undefined], ownName Func`2, pointing Func`2, refused (null),
+    revitAssembly RuntimeAssembly, sameKind Func`3, shownAs 6 entry(ies), sideStep The way
+    round it: a thin solid joined or cut with nothing - 1 mm deep, sized to the flange or
+    port, one face on the plane and the rest inside the body - takes the connector, because
+    a form''s own face is used before a joined one. EXTRUDE_BETWEEN_PLANES makes one., sizedBy
+    2 item(s) [connector width <- Frame Length, connector height <- Duct Height], sizes 2
+    item(s) [Autodesk.Revit.DB.FamilyParameter, Autodesk.Revit.DB.FamilyParameter], spaced
+    Func`2, squash Func`2, systems 31 item(s) [(duct, SupplyAir, SupplyAir), (duct, ReturnAir,
+    ReturnAir), (duct, ExhaustAir, ExhaustAir), ...]. inputs came facePlane as given; system
+    as given; sizeParameters as given. on Family4'
+  negative_case: 'run with facePlane=Center (Front/Back), system=Supply Air, sizeParameters=Frame
+    Length, Duct Height instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned along Func`3, alsoJoined 0, axisOf Func`2, chosen Tuple`3, connector
+    , dbNamespace Autodesk.Revit.DB, face (null), faceIn (null), faceName Center (Front/Back),
+    findings 1 item(s) [Nothing was made. No solid face lies on "Center (Front/Back)...],
+    flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength
+    Func`2, kindOf Func`2, mm Func`2, notAFamily false, notOffered 2 item(s) [UndefinedSystemType,
+    Undefined], ownName Func`2, pointing Func`2, refused Nothing was made. No solid face lies
+    on "Center (Front/Back)". Build the geometry to it first - EXTRUDE_BETWEEN_PLANES locks
+    a box to named planes., revitAssembly RuntimeAssembly, sameKind Func`3, shownAs 6 entry(ies),
+    sideStep The way round it: a thin solid joined or cut with nothing - 1 mm deep, sized
+    to the flange or port, one face on the plane and the rest inside the body - takes the
+    connector, because a form''s own face is used before a joined one. EXTRUDE_BETWEEN_PLANES
+    makes one., sizedBy 0 item(s), sizes 2 item(s) [Autodesk.Revit.DB.FamilyParameter, Autodesk.Revit.DB.FamilyParameter],
+    spaced Func`2, squash Func`2, systems 31 item(s) [(duct, SupplyAir, SupplyAir), (duct,
+    ReturnAir, ReturnAir), (duct, ExhaustAir, ExhaustAir), ...]. inputs came facePlane as
+    given; system as given; sizeParameters as given. on Family4'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 1b7f5b610b537227
+  fingerprint: 925405b09ad576fa
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

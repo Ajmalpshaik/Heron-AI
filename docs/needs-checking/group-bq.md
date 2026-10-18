@@ -34,3 +34,9 @@ and both are `DRAFT`. The proof plan is
 | **BQ4** | FLEX_FAMILY with Blade Count 8, then 2 | Eight blades, then two, the same spacing; the copies' ids different each time, as the card says |
 | **BQ5** | count `3`, step `Y 400 last`, then LOCK_FORM_TO_PLANES on the last blade's far face to a plane a Length parameter moves, then a flex of that length | Three blades, the last 400 mm from the first. **Record whether the blades re-space when the plane moves** - the card says only that a flex is where it shows |
 | **BQ6** | BQ1 to BQ5 on **Revit 2020** | The same answers - the Integer kind check takes the other branch there |
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `array-family-forms` - positive Family3, the airflow arrow `count=3 step=X 20`: 2 copies and the array; negative `step=Y 20`: refused, the row would leave the arrow's plane. Its `labelled` flag is accounting now (row [5b-1107](../fragment-issues/section-5b-rows-401-425.md)).

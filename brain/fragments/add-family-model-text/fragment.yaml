@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -106,6 +106,63 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Family4 (2,157 elements), Revit 2020, session 64176
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s)
+    [X, Y, Z], axisOf Func`2, datums 32 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0,
+    Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)...,
+    (Autodesk.Revit.DB.ReferencePlane, 0, -0.246062992125984, Fr..., ...], dbNamespace Autodesk.Revit.DB,
+    defaultSide 3 item(s) [right, front, top], direction Func`2, facing 3 item(s) [facing
+    left or right, facing front or back, horizontal], fieldNames 11 item(s) [text, workPlane,
+    at, ...], findings 2 item(s) [Placed 1 model text(s) - one entry in the undo list: "HERON
+    ..., New Model Text type(s): "20 mm" (Arial, copied from "Model T...], flags BindingFlags,
+    fontOf Func`2, halfMillimetre 0.00164041994750656, ignoreCase RegexOptions, inPlane 3
+    item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant CultureInfo, isMaterial
+    Func`2, mm Func`2, mostRows 200, notAFamily false, number Func`2, ownName Func`2, pair
+    Func`2, placed "HERON TEST" (id 3514) on "Center (Front/Back)" (facing front or back,
+    Y 0 mm), at X 0, Z 250 mm, type "20 mm" 20 mm, 2 mm deep, aligned left, read from the
+    front - running +X (right), up +Z (up), sketched on the plane itself. Its letters reach
+    X 0 to 179.25, Y -2 to 0, Z 249.69 to 270.41 mm., plain Func`2, problems 0 item(s), refused
+    (null), revitAssembly RuntimeAssembly, rowAlign 1 item(s) [Left], rowAt 1 item(s) [System.Double[]],
+    rowByCategory 1 item(s) [False], rowDepth 1 item(s) [2], rowHeight 1 item(s) [20], rowMaterial
+    1 item(s) [(null)], rowOffset 1 item(s) [0], rowParameter 1 item(s) [(null)], rowPlane
+    1 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)...], rowShows
+    1 item(s) [(null)], rowSide 1 item(s) [front], rowText 1 item(s) [HERON TEST], sameKind
+    Func`3, shortened Func`2, sides 6 entry(ies), sizeOf Func`2, squash Func`2, textCount
+    1, textIds d5850e96-87ea-4a15-a325-61d133f41731-00000dba, textTypes 2 item(s) [Model Text
+    1, ModelTextType]. inputs came texts as given. on Family4'
+  negative_case: 'run with texts=text="HERON TEST" workPlane=No Such Plane at=0,250 heightMm=20
+    depthMm=2 instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned along Func`3, axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, datums 32 item(s)
+    [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane,
+    0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.ReferencePlane, 0, -0.246062992125984,
+    Fr..., ...], dbNamespace Autodesk.Revit.DB, defaultSide 3 item(s) [right, front, top],
+    direction Func`2, facing 3 item(s) [facing left or right, facing front or back, horizontal],
+    fieldNames 11 item(s) [text, workPlane, at, ...], findings 1 item(s) [Nothing was placed.
+    Row 1: no reference plane or level is ca...], flags BindingFlags, fontOf Func`2, halfMillimetre
+    0.00164041994750656, ignoreCase RegexOptions, inPlane 3 item(s) [System.Int32[], System.Int32[],
+    System.Int32[]], invariant CultureInfo, isMaterial Func`2, mm Func`2, mostRows 200, notAFamily
+    false, number Func`2, ownName Func`2, pair Func`2, placed , plain Func`2, problems 1 item(s)
+    [Row 1: no reference plane or level is called "No Such Plane"...], refused Nothing was
+    placed. Row 1: no reference plane or level is called "No Such Plane". This family has
+    Casing Back, Casing Bottom, Casing Front, Casing Top, Center (Front/Back), Center (Left/Right),
+    Corner Back End, Corner Bottom End, Corner Front End, Corner Plate Left, Corner Plate
+    Right, Corner Top End, Duct Back, Duct Bottom, Duct Centre, Duct Front, Duct Top, Flange
+    Back, Flange Bottom, Flange Face Left., revitAssembly RuntimeAssembly, rowAlign 0 item(s),
+    rowAt 0 item(s), rowByCategory 0 item(s), rowDepth 0 item(s), rowHeight 0 item(s), rowMaterial
+    0 item(s), rowOffset 0 item(s), rowParameter 0 item(s), rowPlane 0 item(s), rowShows 0
+    item(s), rowSide 0 item(s), rowText 0 item(s), sameKind Func`3, shortened Func`2, sides
+    6 entry(ies), sizeOf Func`2, squash Func`2, textCount 0, textIds , textTypes 1 item(s)
+    [Model Text 1]. inputs came texts as given. on Family4'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: dcf0f0cc77075f84
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

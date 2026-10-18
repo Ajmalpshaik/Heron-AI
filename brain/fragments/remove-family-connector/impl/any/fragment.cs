@@ -200,11 +200,21 @@ if (refused == null)
         if (c.IsPrimary && !primaryDomains.Contains(c.Domain)) primaryDomains.Add(c.Domain);
     }
 
+    // IDS AND WORDS ARE TAKEN BEFORE ANYTHING IS DELETED. A deleted
+    // ConnectorElement throws "The referenced object is not valid" on every
+    // read, its Id included - so a second target that went with the first,
+    // and the read-back below, must never touch the element objects again.
+    // Met 2026-10-18 proving this card: every positive threw (row 5b-1106).
+    var targetIds = targets.Select(c => c.Id).ToList();
+    var targetWords = targets.Select(c => row(c)).ToList();
+    var allIds = all.Select(c => c.Id).ToList();
+
     var alsoWent = new List<string>();
-    foreach (var c in targets)
+    for (var t = 0; t < targets.Count; t++)
     {
-        var words = row(c);
-        var id = c.Id;
+        var c = targets[t];
+        var words = targetWords[t];
+        var id = targetIds[t];
         if (doc.GetElement(id) == null) { removed.Add(words + " - went with an earlier one."); continue; }
         ICollection<ElementId> went;
         try { went = doc.Delete(id); }
@@ -226,11 +236,11 @@ if (refused == null)
     // READ BACK - every connector asked for is gone, and only those.
     var left = new FilteredElementCollector(doc).OfClass(typeof(ConnectorElement)).Cast<ConnectorElement>()
         .OrderBy(c => c.Id.ToString(), StringComparer.Ordinal).ToList();
-    var stillThere = targets.Select(c => c.Id).Where(id => doc.GetElement(id) != null).ToList();
+    var stillThere = targetIds.Where(id => doc.GetElement(id) != null).ToList();
     if (stillThere.Count > 0)
         throw new InvalidOperationException("Connector " + string.Join(", ", stillThere.Select(i => i.ToString()))
             + " is still in the family after Revit deleted it. The call failed, and Heron rolls the whole call back.");
-    var lostOthers = all.Where(c => !asked.Contains(c.Id) && !left.Any(l => l.Id == c.Id)).Select(c => c.Id.ToString()).ToList();
+    var lostOthers = allIds.Where(i => !asked.Contains(i) && !left.Any(l => l.Id == i)).Select(i => i.ToString()).ToList();
     if (lostOthers.Count > 0)
         throw new InvalidOperationException("Deleting the connectors asked for also took connector "
             + string.Join(", ", lostOthers) + ", which was not named. The call failed, and Heron rolls the whole call back.");
