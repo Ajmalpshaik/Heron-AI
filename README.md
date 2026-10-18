@@ -78,6 +78,40 @@ until it has one recorded proof against a named real model, with a negative case
 grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
 ```
 
+**A fragment's life:**
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    W["Written<br/><b>DRAFT</b>"] --> C["Compiles for every<br/>Revit release it claims"]
+    C --> P["Proof run on a named real model<br/>a positive and a negative case"]
+    P --> S["A person signs it<br/>D-30"]
+    S --> PR(["<b>PROVEN</b>"])
+    PR -.->|"its code changes — the proof goes stale"| W
+
+    classDef draft fill:#F1F5F9,stroke:#94A3B8,stroke-width:1.5px,color:#334155,stroke-dasharray:4 3
+    classDef step fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef proven fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D
+    class W draft
+    class C,P,S step
+    class PR proven
+```
+
+Only a `PROVEN` fragment's change is kept in a model ([D-117](docs/DECISIONS.md)). A `DRAFT` can be tried
+once, on a saved model, and Revit always asks Keep or Discard ([D-119](docs/DECISIONS.md)).
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Written (DRAFT) -> compiles for every Revit release it claims
+  -> proof run on a named real model, a positive and a negative case
+  -> a person signs it (D-30) -> PROVEN
+PROVEN -> its code changes -> the proof goes stale -> DRAFT again
+```
+
+</details>
+
 ---
 
 ## How it fits together
@@ -178,6 +212,61 @@ tool ([D-132](docs/DECISIONS.md)). Everything that needs a model runs on the mod
 ---
 
 ## What keeps the model safe
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    A(["You ask for a change in the chat"])
+    P{{"Is the tool PROVEN,<br/>and its proof still current?"}}
+    S{{"Ribbon switches on?<br/>Changes · and Admin or Publish<br/>if the job needs one"}}
+    K{{"Ask to Keep on?"}}
+    B{{"Revit asks<br/><b>Keep</b> or <b>Discard</b>"}}
+    KEEP(["Kept — one Undo entry<br/>named Heron: …"])
+    NO["Refused, and it says why<br/>the model is not touched"]
+    BACK["Rolled back<br/>the model is as it was"]
+    T["A new DRAFT tool<br/>one try, on a saved model — D-119<br/>the switches still apply"]
+
+    A --> P
+    P -->|no| NO
+    P -->|yes| S
+    S -->|off| NO
+    S -->|on| K
+    K -->|"off — the default"| KEEP
+    K -->|on| B
+    B -->|Keep| KEEP
+    B -->|"Discard · Esc · close"| BACK
+    T -.->|always asked| B
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef check fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef good fill:#DCFCE7,stroke:#16A34A,stroke-width:1.5px,color:#14532D
+    classDef stop fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef draft fill:#F1F5F9,stroke:#94A3B8,stroke-width:1.5px,color:#334155,stroke-dasharray:4 3
+    class A user
+    class P,S,K,B check
+    class KEEP good
+    class NO,BACK stop
+    class T draft
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+You ask for a change in the chat
+  -> is the tool PROVEN, its proof still current?   no  -> refused, says why, model not touched (D-117)
+  -> are the ribbon switches on? Changes, and Admin
+     or Publish if the job needs one                off -> refused, says why, model not touched
+  -> Ask to Keep on?                                off (the default) -> kept at once
+                                                    on  -> Revit asks Keep or Discard
+       Keep -> kept          Discard, Esc or close -> rolled back, the model is as it was
+Kept = one Undo entry named "Heron: ..."
+
+A new DRAFT tool: one try, on a saved model (D-119); the switches still apply,
+and Revit always asks Keep or Discard.
+```
+
+</details>
 
 | Guard | What it does | Where |
 |---|---|---|
@@ -334,8 +423,9 @@ written. The fourth is **the public-code / private-knowledge separation being ve
 of that verification exists in this repository*. Client project data must never be able to reach a
 public repository, so an unrecorded check is not a passed one.
 
-What is in place by construction: knowledge lives outside the repository entirely, under `%APPDATA%`
-or `HERON_KNOWLEDGE` ([`brain/heron_scope.py`](brain/heron_scope.py)), and [D-26](docs/DECISIONS.md)
+What is in place by construction: knowledge lives outside the repository entirely, in Heron's home on the
+PC — `%USERPROFILE%\.heron` on Windows since [D-135](docs/DECISIONS.md) — or under `HERON_KNOWLEDGE`
+([`brain/heron_scope.py`](brain/heron_scope.py)), and [D-26](docs/DECISIONS.md)
 keeps Revit model files from leaving the machine at all. **That is an argument, not a verification** —
 F38 is where somebody writes down having actually looked.
 See [17 — Open Source & Distribution](docs/17-open-source-and-distribution.md).

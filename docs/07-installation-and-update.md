@@ -153,6 +153,11 @@ performed by the user's own hand.
 README before running it, the command is the same for everyone, and what it downloads is a **versioned
 release artefact** — not whatever the default branch happens to say today.
 
+> **As built (2026-10-18):** the one release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0),
+> is **not signed** — signing is the last stage and has not been done. What the installer does check is
+> every download against the release's `checksums.txt` before anything reaches the Addins folder
+> (`ReleaseAssets.cs`).
+
 | Pattern | Verdict |
 |---|---|
 | *"Paste this URL and let the AI do what it says"* | **No.** Arbitrary instruction execution |

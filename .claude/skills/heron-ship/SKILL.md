@@ -139,7 +139,7 @@ caught it.
 
 **The two with `HERON_KNOWLEDGE` need somewhere to put a knowledge store** and exit **2** saying so
 when there is none — an empty folder is enough, and CI makes one. **Set it on Windows too.**
-`%APPDATA%` answers there, but it answers with the ONE store every checkout and every live Heron chat
+Heron's home answers there (`%USERPROFILE%\.heron`, D-135), but with the ONE store every checkout and every live Heron chat
 on the machine reads: until 2026-10-08, when `check-routing` found that store did not hold your
 branch's fragments it rebuilt it from your branch, and from then on every other session's
 `heron_lookup` named your unmerged fragments ([row 5b-233](../../../docs/FRAGMENT-ISSUES.md), measured
@@ -463,7 +463,7 @@ Not failures. They need a tool, and the error says which.
 
 | | needs | error you will see |
 |---|---|---|
-| `check-routing.py`, `check-intrusion.py` | a knowledge store | `No %APPDATA% and no HERON_KNOWLEDGE` |
+| `check-routing.py`, `check-intrusion.py` | a knowledge store | `No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE` |
 | `check-compile.py`, `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | `FileNotFoundError: 'dotnet'` |
 | `check-decision-titles.py` | the **whole git history** | `NOT RUN - this clone's history is cut short (shallow)` |
 | `batch-prove.py` | **a real Revit**, and the owner | — |
