@@ -85,6 +85,12 @@ PLAIN_ROWS = os.path.join(ROOT, "docs", "fragment-issues",
                           "section-5b-rows-401-425.md")
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 for _stream in (sys.stdout, sys.stderr):
     try:
