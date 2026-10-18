@@ -56,13 +56,26 @@ namespace Heron.Revit.Addin
     /// because a file written for a job that was refused is a file on disk
     /// that no rollback reaches.
     ///
+    /// A FAMILY THE PROJECT ALREADY HOLDS, OPENED WITH EditFamily, IS NOT A
+    /// NEW FILE - but Revit 2024.3 raises DocumentCreated for it, with no
+    /// title yet, just as it does for NewFamilyDocument (FRAGMENT-ISSUES
+    /// 5b-1091), so the event alone cannot tell the two apart. The job's own
+    /// code can: the executor hands it over through Reads, and a new FAMILY
+    /// document under code that calls EditFamily and names no call that
+    /// starts a document is EditFamily's (FromEditFamily). It is never
+    /// refused as new. Saving it writes the project's family out to a file,
+    /// which a job that acts may do with its own copy and a read may not.
+    ///
     /// A CHANGE TO ANOTHER OPEN MODEL cannot be cancelled - Revit raises it
     /// after the transaction has committed - so it is recorded, the job is
     /// refused, and the sentence says plainly that the other model's change
     /// stands. D-47 allows a job to cross models; it also says such a job
     /// must say so BEFORE it starts, and none does yet. Reading another model
     /// - transfer-views-between-documents, the pattern D-47's correction
-    /// names - changes nothing there and is never caught.
+    /// names - changes nothing there and is never caught. NOR IS REVIT'S OWN
+    /// STEP IN A SAVE: Save() on another open model commits "Store
+    /// dependencies" there before the save is cancelled (5b-1092), and that
+    /// commit is the save's, said as Revit's, not a change the job made.
     /// </summary>
     internal sealed class HeronRunPolicy
     {
@@ -87,6 +100,12 @@ namespace Heron.Revit.Addin
             OpenAtStart,
             OpenedByJob,
             CreatedByJob,
+
+            /// <summary>
+            /// A family the project already holds, opened by the job with
+            /// EditFamily - the job's own copy, never a file it started.
+            /// </summary>
+            EditedByJob,
         }
 
         /// <summary>
@@ -100,6 +119,13 @@ namespace Heron.Revit.Addin
             internal readonly string Document;
             internal readonly bool Cancelled;
             internal int Times;
+
+            /// <summary>
+            /// What Revit committed on its own in that model as the save
+            /// began - "Store dependencies" - or null. The save's, not a
+            /// change the job made.
+            /// </summary>
+            internal string RevitCommitted;
 
             internal Seen(Act what, string document, bool cancelled)
             {
@@ -117,13 +143,44 @@ namespace Heron.Revit.Addin
             internal readonly string Transactions;
             internal int Times;
 
-            internal Elsewhere(string document, string transactions)
+            /// <summary>Every transaction named is one of SaveSteps.</summary>
+            internal readonly bool OnlySaveSteps;
+
+            internal Elsewhere(string document, string transactions, bool onlySaveSteps)
             {
                 Document = document;
                 Transactions = transactions;
+                OnlySaveSteps = onlySaveSteps;
                 Times = 1;
             }
         }
+
+        /// <summary>
+        /// The calls besides EditFamily that can hand a job a new document:
+        /// every Application method in RevitAPI.dll, 2020 to 2027, that
+        /// returns a Document and is not OpenDocumentFile - read with
+        /// `tools/api-surface --members` on 2026-10-18. OpenIFCDocument builds
+        /// a project out of an IFC file, OpenBuildingComponentDocument (2020
+        /// to 2023) a family out of an .adsk one, so Revit may report either
+        /// as created. OpenDocumentFile is left out on the evidence: EX4 saw
+        /// a family it opened closed as the job's own, never refused as new.
+        /// </summary>
+        private static readonly string[] Starters =
+        {
+            "NewFamilyDocument", "NewProjectDocument", "NewProjectTemplateDocument",
+            "OpenIFCDocument", "OpenBuildingComponentDocument",
+        };
+
+        /// <summary>
+        /// What Revit commits on its own in a model as a save of it begins.
+        /// Seen 2026-10-18 on Revit 2024.3 (5b-1092): Save() on another open
+        /// model committed "Store dependencies" there before the guard
+        /// cancelled the save. THE ENGLISH NAME, matched exactly: a Revit in
+        /// another language names it otherwise, and its commit is then
+        /// reported as a change to that model - the false alarm, never the
+        /// silence.
+        /// </summary>
+        private static readonly string[] SaveSteps = { "Store dependencies" };
 
         private readonly List<Seen> _stopped = new List<Seen>();
         private readonly List<string> _refusedDocuments = new List<string>();
@@ -132,6 +189,16 @@ namespace Heron.Revit.Addin
         private readonly List<string> _closed = new List<string>();
         private readonly List<KeyValuePair<string, string>> _notClosed =
             new List<KeyValuePair<string, string>>();
+
+        private bool _callsEditFamily;
+        private bool _startsDocuments;
+
+        /// <summary>
+        /// The last thing recorded - a Seen or an Elsewhere - or null. A save
+        /// and Revit's own step for it arrive next to each other, in either
+        /// order, and nothing recorded between them.
+        /// </summary>
+        private object _last;
 
         public HeronRunPolicy(string operation, HeronRisk risk)
         {
@@ -196,9 +263,54 @@ namespace Heron.Revit.Addin
                     // or a change the creation itself is refused, and a file
                     // written for a refused job is one no rollback can reach.
                     return Risk != HeronRisk.Admin;
+                case Origin.EditedByJob:
+                    // The job's own COPY of a family the project holds. Saving
+                    // it writes the project's family out to a file: a job that
+                    // acts may, with its own copy - open-family-for-editing's
+                    // SaveAs to the folder it was given, the file it then opens
+                    // in a window - and a read may not, because a read looks
+                    // inside a family and never writes one out. A level nobody
+                    // has added yet is held to the strict rule.
+                    return Risk < HeronRisk.Execute || Risk > HeronRisk.Admin;
                 default:
                     return true;
             }
+        }
+
+        /// <summary>
+        /// The job's own C# - the fragment, and each setup step - handed over
+        /// by the executor before any of it runs. Read AS IT IS, comments and
+        /// strings included, so a starter named anywhere holds the job to the
+        /// strict rule: the reading errs towards refusing. (Code that builds
+        /// a call's name at run time and reaches it by reflection can hide
+        /// it; no guard inside Revit's own process is a defence against that,
+        /// as HeronRunGuard.HeronExports says.)
+        /// </summary>
+        internal void Reads(string code)
+        {
+            if (string.IsNullOrEmpty(code)) return;
+            if (code.IndexOf("EditFamily", StringComparison.Ordinal) >= 0) _callsEditFamily = true;
+            foreach (var starter in Starters)
+            {
+                if (code.IndexOf(starter, StringComparison.Ordinal) >= 0) _startsDocuments = true;
+            }
+        }
+
+        /// <summary>
+        /// Whether a document Revit reports as CREATED is a family the project
+        /// already holds, opened with EditFamily - 5b-1091. Only a family
+        /// document, and only under code that calls EditFamily and names no
+        /// call that starts one; anything else is a file the job started,
+        /// judged as it always was. EX10 - NewFamilyDocument and SaveAs under
+        /// a change - stays refused, because its code names the starter.
+        ///
+        /// ASKED WHEN REVIT RAISES DocumentCreated, which is when the guard
+        /// must place the document - and when it has no title yet, so a match
+        /// of its name against the project's families cannot be made then.
+        /// </summary>
+        internal bool FromEditFamily(bool isFamilyDocument)
+        {
+            return isFamilyDocument && _callsEditFamily && !_startsDocuments;
         }
 
         /// <summary>
@@ -233,16 +345,35 @@ namespace Heron.Revit.Addin
         internal void Stopped(Act act, string document, bool cancelled)
         {
             var title = Name(document);
+            Seen seen = null;
             foreach (var one in _stopped)
             {
                 if (one.What == act && one.Cancelled == cancelled
                     && string.Equals(one.Document, title, StringComparison.Ordinal))
                 {
                     one.Times++;
-                    return;
+                    seen = one;
+                    break;
                 }
             }
-            _stopped.Add(new Seen(act, title, cancelled));
+            if (seen == null)
+            {
+                seen = new Seen(act, title, cancelled);
+                _stopped.Add(seen);
+            }
+
+            // REVIT'S OWN STEP, COMMITTED JUST BEFORE THIS SAVE IN THE MODEL
+            // BEING SAVED, is the save's - 5b-1092. Taken off the changes
+            // elsewhere, so the answer is run_guard, and kept on the save, so
+            // the modeller is still told the model's undo list holds it.
+            var step = _last as Elsewhere;
+            if (step != null && step.OnlySaveSteps && IsCancelledSaveOf(seen, step.Document))
+            {
+                seen.RevitCommitted = step.Transactions;
+                step.Times--;
+                if (step.Times == 0) _elsewhere.Remove(step);
+            }
+            _last = seen;
         }
 
         /// <summary>
@@ -251,18 +382,38 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal bool Created(string document)
         {
+            _last = null;
             if (!RefusesNewDocument) return false;
             _refusedDocuments.Add(Name(document));
             return true;
         }
 
-        /// <summary>A committed change to another open model.</summary>
+        /// <summary>
+        /// A committed change to another open model - unless it is Revit's own
+        /// step in a save the guard cancelled there, which is the save's.
+        ///
+        /// ONLY BY NAME AND ONLY NEXT TO THE SAVE. Next to the save alone would
+        /// be the guard failing open: a job that commits its own change in
+        /// another model and saves it straight after - EX9's probe, then a
+        /// save that raised no step of Revit's, as EX3's Save As raised none -
+        /// would hear "stopped before it happened" about a change nobody can
+        /// undo. The name alone would hide such a step anywhere in the job.
+        /// </summary>
         internal void ChangedElsewhere(string document, IList<string> transactions)
         {
             var title = Name(document);
             var named = transactions == null || transactions.Count == 0
                 ? ""
                 : string.Join(", ", Quoted(transactions));
+            var onlySaveSteps = OnlySaveSteps(transactions);
+
+            // JUST AFTER THE CANCEL, the other order Revit may raise them in.
+            var save = _last as Seen;
+            if (onlySaveSteps && IsCancelledSaveOf(save, title))
+            {
+                save.RevitCommitted = named;
+                return;
+            }
 
             foreach (var one in _elsewhere)
             {
@@ -270,29 +421,53 @@ namespace Heron.Revit.Addin
                     && string.Equals(one.Transactions, named, StringComparison.Ordinal))
                 {
                     one.Times++;
+                    _last = one;
                     return;
                 }
             }
-            _elsewhere.Add(new Elsewhere(title, named));
+            var added = new Elsewhere(title, named, onlySaveSteps);
+            _elsewhere.Add(added);
+            _last = added;
         }
 
         /// <summary>A document Revit reported opening while the job ran.</summary>
         internal void Opened(string document)
         {
+            _last = null;
             _opened.Add(Name(document));
         }
 
         /// <summary>A background document the job left open, closed unsaved.</summary>
         internal void Closed(string document)
         {
+            _last = null;
             _closed.Add(Name(document));
         }
 
         /// <summary>A background document the job left open that would not close.</summary>
         internal void CouldNotClose(string document, string why)
         {
+            _last = null;
             _notClosed.Add(new KeyValuePair<string, string>(Name(document),
                 string.IsNullOrEmpty(why) ? "Revit gave no reason" : why));
+        }
+
+        /// <summary>A save, Save As or sync of that model, which the guard cancelled.</summary>
+        private static bool IsCancelledSaveOf(Seen seen, string title)
+        {
+            if (seen == null || !seen.Cancelled) return false;
+            if (seen.What != Act.Save && seen.What != Act.SaveAs && seen.What != Act.Sync) return false;
+            return string.Equals(seen.Document, title, StringComparison.Ordinal);
+        }
+
+        private static bool OnlySaveSteps(IList<string> transactions)
+        {
+            if (transactions == null || transactions.Count == 0) return false;
+            foreach (var name in transactions)
+            {
+                if (Array.IndexOf(SaveSteps, name) < 0) return false;
+            }
+            return true;
         }
 
         // ---------------------------------------------------------- verdicts
@@ -385,6 +560,17 @@ namespace Heron.Revit.Addin
             {
                 text.Append(" Stopped before it happened: ")
                     .Append(string.Join("; ", cancelled.ToArray())).Append('.');
+            }
+
+            // SAID, NOT HIDDEN: the model's undo list does hold the entry, and
+            // a modeller who finds it there must not think it is the job's.
+            foreach (var one in _stopped)
+            {
+                if (string.IsNullOrEmpty(one.RevitCommitted)) continue;
+                text.Append(" Revit committed ").Append(one.RevitCommitted).Append(" in '")
+                    .Append(one.Document).Append("' itself as ").Append(Describe(one.What))
+                    .Append(" it began - Revit's own step, not a change this job made. It shows ")
+                    .Append("in that model's undo list.");
             }
 
             if (happened.Count > 0)
@@ -504,10 +690,16 @@ namespace Heron.Revit.Addin
             var stopped = new List<string>();
             foreach (var one in _stopped)
             {
-                stopped.Add(Json.Obj(Json.Str("act", Word(one.What)),
-                                     Json.Str("document", one.Document),
-                                     Json.Bool("cancelled", one.Cancelled),
-                                     Json.Num("times", one.Times)));
+                var fields = new List<string>
+                {
+                    Json.Str("act", Word(one.What)),
+                    Json.Str("document", one.Document),
+                    Json.Bool("cancelled", one.Cancelled),
+                    Json.Num("times", one.Times),
+                };
+                if (!string.IsNullOrEmpty(one.RevitCommitted))
+                    fields.Add(Json.Str("revitCommitted", one.RevitCommitted));
+                stopped.Add(Json.Obj(fields.ToArray()));
             }
 
             var elsewhere = new List<string>();

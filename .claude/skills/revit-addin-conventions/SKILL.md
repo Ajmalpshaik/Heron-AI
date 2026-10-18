@@ -160,10 +160,12 @@ Revit ([NEEDS-CHECKING group EL](../../../docs/needs-checking/group-el.md)).
 
 Constitution Article 10 is held in code since 2026-10-17. `HeronRunGuard`, armed by the dispatcher around
 each job, cancels a save, Save As, sync, export or print of a model that was open when the job began -
-unless the operation is `run_fragment_publish` - refuses a new document unless it is `run_fragment_admin`,
+unless the operation is `run_fragment_publish` - refuses a new document unless it is `run_fragment_admin`
+(a family `EditFamily` opened is not a new document, though Revit reports it as one - row 5b-1091),
 refuses a job that changes another open model, and closes what the job left open in the background.
-Every decision is `HeronRunPolicy`'s, proved without Revit by `tests/test_run_guard.py`. Built, not yet
-run in Revit ([NEEDS-CHECKING group EX](../../../docs/needs-checking/group-ex.md)).
+Every decision is `HeronRunPolicy`'s, proved without Revit by `tests/test_run_guard.py`. First run in
+Revit 2024 on 2026-10-18; its EditFamily and "Store dependencies" rules not yet
+([NEEDS-CHECKING group EX](../../../docs/needs-checking/group-ex.md)).
 
 - **Never call `Cancel()` on a Revit event without asking `e.Cancellable` first** - it throws on one that
   cannot be cancelled. The suite reads every call.
@@ -172,12 +174,17 @@ run in Revit ([NEEDS-CHECKING group EX](../../../docs/needs-checking/group-ex.md
   The suite fails an export in the add-in's code outside one. Only an export is let through by it.
 - **A path that works in a document other than the one in front names it with `HeronRunGuard.Target`**,
   or its own changes read as a change to another model.
+- **A path that runs a fragment's C# hands every piece of it to `HeronRunGuard.Code` before it runs** -
+  the fragment and each setup step; `RevitFragment` does. Revit raises `DocumentCreated` for `EditFamily`
+  as for `NewFamilyDocument`, and the code is how the guard tells them apart; skip it and every family
+  `EditFamily` opens is refused as a new file below Admin.
 - **A path that keeps a fragment's group asks `HeronRunGuard.Policy.Refuses`, and reads the switches again
   with `HeronRunPolicy.Withdrawn`, first** - `RevitFragment` does both. The gate's answer is as old as the
   job by then, and Article 13 says never cache a permission decision.
 - **A save, a sync or an export of a model that was already open belongs in a PUBLISH fragment.** At any
   other level it is refused in Revit, whatever the card says. A file the job opened itself - or, under
-  Admin, started - is its own to save.
+  Admin, started - is its own to save. A family `EditFamily` opened is its own to save at EXECUTE and
+  above, and never under a read.
 
 ## Logging
 

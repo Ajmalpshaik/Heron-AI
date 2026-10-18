@@ -40,6 +40,7 @@ namespace Heron.Revit.Addin
         private static HeronRunPolicy _policy;
         private static readonly List<Document> OpenAtStart = new List<Document>();
         private static readonly List<Document> CreatedByJob = new List<Document>();
+        private static readonly List<Document> EditedByJob = new List<Document>();
         private static Document _target;
 
         /// <summary>
@@ -111,9 +112,10 @@ namespace Heron.Revit.Addin
         ///
         /// WHAT IS OPEN NOW IS WHAT THE JOB DID NOT OPEN, and it is the
         /// authority for every later question. DocumentOpened is listened for
-        /// as well, and recorded, but a document opened in a way Revit may
-        /// not report that way - EditFamily is the one nobody has watched yet
-        /// - is still known to be the job's because it was not here before.
+        /// as well, and recorded, but a document opened in a way Revit does
+        /// not report that way is still known to be the job's because it was
+        /// not here before. EditFamily is one: Revit 2024.3 raised
+        /// DocumentCreated for it, not DocumentOpened (5b-1091) - see Code.
         /// That snapshot is the one thing here that may not fail quietly:
         /// without it every open model would look like the job's own, which
         /// is the guard failing OPEN. So it is not caught - the dispatcher
@@ -158,6 +160,17 @@ namespace Heron.Revit.Addin
         internal static void Target(Document document)
         {
             if (_policy != null && document != null) _target = document;
+        }
+
+        /// <summary>
+        /// One piece of the job's own C# - the fragment, or one setup step -
+        /// before any of it runs. Revit raises DocumentCreated for EditFamily
+        /// as it does for NewFamilyDocument, and the code is what tells the
+        /// two apart; HeronRunPolicy.Reads decides what it means.
+        /// </summary>
+        internal static void Code(string code)
+        {
+            if (_policy != null) _policy.Reads(code);
         }
 
         /// <summary>
@@ -306,6 +319,13 @@ namespace Heron.Revit.Addin
                  + " of '" + title + "' during " + policy.Operation + ".");
         }
 
+        /// <summary>
+        /// A new document. EITHER A FILE THE JOB STARTED - refused below
+        /// Admin - OR A FAMILY THE PROJECT ALREADY HOLDS, opened with
+        /// EditFamily, which Revit 2024.3 reports here too, untitled
+        /// (5b-1091). The policy tells them apart from the job's code; a
+        /// document whose kind cannot be read is the file the job started.
+        /// </summary>
         private static void OnCreated(object sender, DocumentCreatedEventArgs e)
         {
             var policy = _policy;
@@ -316,6 +336,18 @@ namespace Heron.Revit.Addin
                 if (e.Status != RevitAPIEventStatus.Succeeded) return;
                 var document = e.Document;
                 if (document == null) return;
+
+                bool family;
+                try { family = document.IsFamilyDocument; }
+                catch (Exception) { family = false; }
+
+                if (policy.FromEditFamily(family))
+                {
+                    EditedByJob.Add(document);
+                    _log("Run guard took a new family document as one EditFamily opened during "
+                         + policy.Operation + " - the job's code calls EditFamily and starts no document.");
+                    return;
+                }
 
                 CreatedByJob.Add(document);
                 if (policy.Created(Title(document)))
@@ -494,6 +526,8 @@ namespace Heron.Revit.Addin
                 return HeronRunPolicy.Origin.OpenAtStart;
             if (Contains(CreatedByJob, document))
                 return HeronRunPolicy.Origin.CreatedByJob;
+            if (Contains(EditedByJob, document))
+                return HeronRunPolicy.Origin.EditedByJob;
             return HeronRunPolicy.Origin.OpenedByJob;
         }
 
@@ -536,6 +570,7 @@ namespace Heron.Revit.Addin
             _target = null;
             OpenAtStart.Clear();
             CreatedByJob.Clear();
+            EditedByJob.Clear();
         }
     }
 }

@@ -33,8 +33,10 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
                 unsubscribed, no Cancel() without asking Cancellable first,
                 armed and disarmed around the job in a finally, the record on
                 the reply and the audit line, the risk passed in and the
-                switches asked again before Assimilate. A weak test of
-                behaviour and a strong one of a missing line.
+                switches asked again before Assimilate, and the job's own
+                code handed to the guard so a family EditFamily opens is not
+                taken for a new file (5b-1091). A weak test of behaviour and
+                a strong one of a missing line.
 
 Neither proves Revit raises the events, lets them be cancelled, or closes
 what it is told to. That is the PC's: docs/needs-checking/group-ex.md.
@@ -196,6 +198,25 @@ def guard_file():
     check("CloseLeftovers(" in disarm and "finally" in disarm,
           "disarming closes the leftovers and always forgets the job")
 
+    # 5b-1091: Revit 2024.3 raised DocumentCreated for doc.EditFamily, and the
+    # guard refused it as a new document below Admin - two PROVEN fragments
+    # came back run_guard. The policy tells the two apart; these say the guard
+    # asks it, before anything is refused, and keeps the answer for the job.
+    created = block(code, "static void OnCreated(")
+    asks = created.find("FromEditFamily(")
+    check("IsFamilyDocument" in created and asks >= 0,
+          "a new document is asked whether it is a family, and the policy whether the "
+          "job's own code explains it by EditFamily - 5b-1091")
+    check(asks >= 0 and created.find(".Created(") > asks,
+          "and that is asked BEFORE it is recorded as a refused new document")
+    check("EditedByJob.Add(" in created, "a family EditFamily opened is kept apart for the job")
+    check("EditedByJob" in block(code, "static HeronRunPolicy.Origin OriginOf("),
+          "and OriginOf answers EditedByJob for it, so its saves are judged by that rule")
+    check("EditedByJob.Clear()" in block(code, "static void Forget("),
+          "and it is forgotten with the job")
+    check(".Reads(" in block(code, "static void Code("),
+          "the guard hands the job's code to the policy, which decides")
+
     # HERON'S OWN EXPORT IS THE ONE LET THROUGH, and only where it is wrapped:
     # capture_view's ExportImage, into Heron's own folder. Any other export in
     # the add-in's own code would be cancelled under a read - so every one
@@ -263,6 +284,17 @@ def executor():
     code = strip(read(EXECUTOR) or "")
     check("HeronRunGuard.Target(" in code,
           "the executor names the model it chose, so its own changes are never 'elsewhere'")
+
+    run = block(code, "public static string Run(")
+    handed = run.find("HeronRunGuard.Code(source)")
+    check(handed >= 0, "the executor hands the guard the fragment's own code - 5b-1091")
+    check(0 <= handed < run.find("RunSetupSteps(") and handed < run.find("RunScript(")
+          and handed < run.find("Compile("),
+          "before any of it is compiled or run, so a family EditFamily opens is known "
+          "for what it is when Revit reports it")
+    check(re.search(r'ReadObjectArray\(request, "setup"\)[\s\S]{0,400}HeronRunGuard\.Code\(',
+                    read(EXECUTOR) or "") is not None,
+          "and every setup step's code as well - a starter in a step counts")
 
     keep = code.find("KeepAndWatch(group")
     check(keep > 0, "the write path still keeps its group, through KeepAndWatch")
