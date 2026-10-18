@@ -210,6 +210,90 @@ namespace Heron.Kernel.TestHost
             Check(!HeronPaths.IsSafeToDelete(temp)
                   && !HeronPaths.IsSafeToDelete(Path.Combine(temp, "someone-elses.txt")),
                   "the temporary folder itself, and another program's file in it, are refused");
+
+            RevitStyleTemp();
+        }
+
+        // ------------------------------------------------------------------
+        // FRAGMENT-ISSUES 5b-1100 (D-136). Revit runs with a temporary folder
+        // of its own - a GUID-named sub-folder of the user's, new at each
+        // start, seen on the owner's laptop on 2026-10-18 as
+        // Temp\63835622-bdd8-4d57-a4a9-19a6afb83cd6 - while every chat writes
+        // its note in the user's. So the button read <GUID>\Heron\companion
+        // and said no chat was running while four were.
+        //
+        // Planted here as Revit has it: TMP, TEMP and TMPDIR all naming such a
+        // folder under a scratch folder that stands for the user's own, which
+        // is deleted after. Path.GetTempPath() reads TMP on Windows and TMPDIR
+        // elsewhere, so the plant reaches it on both. tests/test_data_home.py
+        // section 6 plants the same on the chat's side.
+        // ------------------------------------------------------------------
+        private static void RevitStyleTemp()
+        {
+            const string revit = "63835622-bdd8-4d57-a4a9-19a6afb83cd6";
+            var names = new[] { "TMP", "TEMP", "TMPDIR" };
+            var saved = new Dictionary<string, string>();
+            foreach (var name in names) saved[name] = Environment.GetEnvironmentVariable(name);
+            var user = Path.Combine(Path.GetFullPath(Path.GetTempPath()),
+                                    "heron-kernel-temp-" + Guid.NewGuid().ToString("N"));
+            Func<string, string> companionIn = folder =>
+            {
+                foreach (var name in names) Environment.SetEnvironmentVariable(name, folder);
+                return Path.GetFullPath(HeronPaths.Companion);
+            };
+            Func<string, string, bool> same = (a, b) => string.Equals(
+                Path.GetFullPath(a).TrimEnd(Path.DirectorySeparatorChar),
+                Path.GetFullPath(b).TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase);
+            var shared = Path.Combine(user, "Heron", "companion");
+            try
+            {
+                Directory.CreateDirectory(user);
+                var revitTemp = Path.Combine(user, revit);
+
+                var got = companionIn(revitTemp);
+                Check(same(Path.GetTempPath(), revitTemp),
+                      "the plant took: Path.GetTempPath() names the Revit-style folder ("
+                      + Path.GetTempPath() + ")");
+                Check(same(got, shared),
+                      "with a Revit-style temporary folder the Companion's folder is still the "
+                      + "user's <temp>\\Heron\\companion, where every chat writes (" + got + ")");
+                Check(same(HeronPaths.SharedDerived, Path.Combine(user, "Heron")),
+                      "and SharedDerived is the user's <temp>\\Heron (" + HeronPaths.SharedDerived + ")");
+                Check(HeronPaths.IsSafeToDelete(got) && !HeronPaths.IsSafeToDelete(revitTemp)
+                      && !HeronPaths.IsSafeToDelete(user),
+                      "still DERIVED and safe to delete - and Revit's own temporary folder, and the "
+                      + "user's, are refused");
+
+                got = companionIn(Path.Combine(user, revit.ToUpperInvariant()) + Path.DirectorySeparatorChar);
+                Check(same(got, shared),
+                      "in capitals and with a separator at its end, as GetTempPath gives it (" + got + ")");
+
+                got = companionIn(Path.Combine(user, "0f8fad5b-d9cb-469f-a165-70867728950e", revit));
+                Check(same(got, shared),
+                      "every GUID-named level is stepped out of, so a PC whose own temporary folder "
+                      + "is named like one still gives both sides one folder (" + got + ")");
+
+                // THE NEGATIVE CASES: a temporary folder not named like Revit's
+                // is used as it is, as D-135 had it. A Remote Desktop session's
+                // numbered one is in every process's TMP in that session, the
+                // chat's too, so stepping out of it would split the two again.
+                foreach (var kept in new[] { "2", revit.Replace("-", ""), "{" + revit + "}",
+                                             revit.Substring(0, 35) + "g", revit + "-old" })
+                {
+                    var folder = Path.Combine(user, kept);
+                    got = companionIn(folder);
+                    Check(same(got, Path.Combine(folder, "Heron", "companion")),
+                          "a temporary folder named '" + kept + "' is used as it is (" + got + ")");
+                }
+            }
+            finally
+            {
+                foreach (var name in names) Environment.SetEnvironmentVariable(name, saved[name]);
+                try { Directory.Delete(user, true); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
         }
 
         // ------------------------------------------------------------------

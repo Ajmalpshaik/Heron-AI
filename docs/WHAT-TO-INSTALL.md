@@ -134,7 +134,9 @@ every package Claude had installed was in the copy and none was in the real fold
    ([row 5b-418](fragment-issues/section-5b-rows-401-425.md)).
 5. **Revit's Companion button** reads each chat's note from `%TEMP%\Heron\companion`, which both sides see,
    once the add-in is rebuilt from the same change; an add-in installed before it still looks in the old
-   folder and will not find the chat ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Not yet tried in Revit.
+   folder and will not find the chat ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Revit runs with a
+   temporary folder of its own inside that one, so the add-in steps out of it to find yours
+   ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md), [D-136](decisions/D-136.md)). Not yet tried in Revit.
 
 **Installing is settled: from outside Claude, by the installer** — [Q-63](OPEN-QUESTIONS.md),
 2026-10-17. **Where Heron keeps what it writes is settled too:** outside the app's copy, where a Reset
