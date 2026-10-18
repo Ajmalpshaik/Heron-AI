@@ -229,9 +229,13 @@ result -> back through IPC -> MCP -> AI
 > **As built (2026-10-18):** Q-4 is answered: `ExternalEvent`, one queue, one handler
 > ([D-09](DECISIONS.md#d-09--revit-thread-marshalling-externalevent),
 > [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs)). `Idling` does two light jobs.
-> It watches the selection for the Companion
+> Once a second it writes which model and view are in front, for the Companion
 > ([D-108](DECISIONS.md#d-108--the-modeller-can-see-and-edit-herons-work-in-a-local-companion-page-and-the-chat-stays-the-only-place-to-talk-to-heron)
-> point 4), and it keeps the Ask to Keep button's label current
+> point 4). It has read no selection since 2026-10-04, when the owner took the Selected card off the
+> page (`WatchSelection` is false in
+> [`HeronLiveState.cs`](../revit/Heron.Revit.Addin/HeronLiveState.cs),
+> [40 §21.6](40-heron-companion.md#216-the-page-after-the-owners-first-test-2026-10-04)). It also keeps
+> the Ask to Keep button's label current
 > ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)
 > item 8).
 >
@@ -429,7 +433,9 @@ requires level 4 (`PRODUCTION`).
 > on the ribbon, **off by default**. Off, a change is kept at once as one undo entry, as D-99 recorded.
 > On, one click can keep the rest of a job without asking
 > ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
-> A DRAFT's one run and a publish are always asked. The move tools keep their own preview
+> A DRAFT's one run is always asked. A publish is asked whenever Ask to Keep is on, even under a job's
+> grant, and with the switch off it is kept at once like any other change (`askToKeep` and
+> `UnderTheGrant` in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)). The move tools keep their own preview
 > (`revit_preview_move`, then `revit_apply_move`). No fragment is `PRODUCTION`, and
 > `revit_change` keeps a change only from a fragment whose proof still stands
 > ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)).

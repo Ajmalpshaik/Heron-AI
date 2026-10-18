@@ -20,6 +20,40 @@
 
 ---
 
+## At a glance — the 21 rules, and where the code holds each (2026-10-18)
+
+A reading aid, not the rules: **the numbered text below governs**, and a one-line summary never
+replaces it. *Held in code* names the place that refuses, or does what the rule asks, read in the
+code on 2026-10-18. *Policy only* means no such place was found that day. A rule with no code behind it
+binds all the same. Code that holds a rule is not proof that it works in Revit: that is
+[NEEDS-CHECKING](NEEDS-CHECKING.md)'s.
+
+| # | The rule, in one line | Held in code |
+|---|---|---|
+| 1 | The modeller thinks in BIM; Heron carries the technical part | Policy only. The server's instructions ask the chat to answer in Revit words ([`host.chat.yaml`](../brain/instructions/host.chat.yaml)), which is advice to a model, not a check |
+| 2 | One agent, one primary job | Policy only |
+| 3 | Reuse what is proven before making anything new | In part: a new fragment is refused `REUSE_EXISTS` when one already does the job (`author` in [`heron_generate.py`](../brain/heron_generate.py), run by the [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) subagent) |
+| 4 | Never break a working Revit release | In part: CI compiles the add-in and every fragment for every release they claim (`tools/check-compile.py`, `tools/check-fragments-compile.py`). A compile is not a run: [Group EQ](needs-checking/group-eq.md) |
+| 5 | Personal, company and project knowledge stay apart | One SQLite file per scope, and a store may not attach another (`_no_second_file` in [`heron_scope.py`](../brain/heron_scope.py)) |
+| 6 | Experimental stays apart from production | `revit_change` keeps a change only from a fragment whose proof still stands (`unproven_refusal` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)) |
+| 7 | One agent creates, another validates | The proving tool never writes `heron-status`, leaves a draft's `by:` empty, and `accept` needs a person's name ([`heron_validate.py`](../brain/heron_validate.py)) |
+| 8 | Background work never gets in the user's way | In part: Heron's banner in Revit never takes a click or the focus ([`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs)). The scheduler that would hold background work back is DRAFT and nothing calls it ([`heron_scheduler.py`](../brain/heron_scheduler.py)) |
+| 9 | High-risk actions need controlled approval | The add-in's gate: an undeclared operation is refused, then the emergency stop, then the risk the registry declares against the Changes, Admin and Publish switches (`Gate` in [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs)) |
+| 10 | Every important object has identity, version and lifecycle | CI's `tools/check-metadata.py` - the five-field header on every source file; a fragment card's `id`, `version` and `heron-status` are required (`REQUIRED` in [`heron_fragment.py`](../brain/heron_fragment.py)) |
+| 11 | The index is never the source of truth | The stores are built from the files: an empty or stale one is rebuilt when the server starts ([`heron_brain.py`](../mcp/server/heron_brain.py)), and `python brain/heron_scope.py --rebuild` does it on purpose |
+| 12 | Nothing private is published without a person's review | In part: a Revit export is PUBLISH and runs only while the owner's Publish switch is on ([D-107](DECISIONS.md#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export)), and while a job runs the run guard cancels a save, sync, export or print it did not ask for ([`HeronRunGuard.cs`](../revit/Heron.Revit.Addin/HeronRunGuard.cs)). Git push, pull requests and releases: policy only |
+| 13 | Heron may propose changes to its core, never apply them | In part: the Agent Creator can only ever assign `PROPOSED` ([`heron_creator.py`](../brain/heron_creator.py), DRAFT, and nothing calls it yet) |
+| 14 | Every important autonomous operation is auditable | One append-only line per request, keyed by Workflow ID, kept under DATA and never pruned ([`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs), written by the dispatcher); the brain keeps its own ([`heron_audit.py`](../brain/heron_audit.py)) |
+| 15 | A part can be replaced without redesigning the whole | The three doors take a capability, never a fragment id (`revit_read`, `revit_show`, `revit_change` in [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py)) |
+| 16 | One user action, one undo, per document | A change runs in one `TransactionGroup` named `Heron: <name>` ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs)) |
+| 17 | No unattended write without a preview or a proven fragment | `revit_change` refuses a DRAFT (rule 6's row). Revit's Keep or Discard box ([`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs)) is shown while Ask to Keep is on, and that switch is **off by default - the break recorded under rule 17** ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)). The run guard cancels a sync a job did not ask for |
+| 18 | Generated code never touches a live model first | **Broken once, on the record** ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)): a DRAFT's one run is refused unless its model is in front and saved with nothing unsaved, and Revit always asks Keep or Discard (`AskRefusal` in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)) |
+| 19 | No text Heron reads may raise its permission | An operation's risk is declared in code and looked up by name, never read from a request (`HeronOperationRegistry`, [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs)); configuration has a `Load` and a `Save` and no `ApplyFromRequest` ([`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs)) |
+| 20 | Bind the document, not just the session | Before a fragment runs, the add-in refuses a model other than the one the chat has been working on ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)); the move pins its document by identity ([`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs)); `tests/test_document_pin.py` |
+| 21 | Re-read before acting; a preview expires | The move's preview expires (`preview_expired`), and its apply takes the element ids again just before writing and refuses if they changed (`model_moved_on` in [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs)) |
+
+---
+
 ## Official rules (1–15)
 
 ### 1. User focuses on BIM. Heron handles technical complexity.

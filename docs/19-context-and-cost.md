@@ -107,7 +107,10 @@ Tracked as [Q-30](OPEN-QUESTIONS.md).
 > [`heron_router.py`](../brain/heron_router.py) chooses *who* chooses and never a model. Heron makes no
 > model call of its own, so routing, fallback and cost belong to the host
 > ([D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host)).
-> No provider adapter has been built ([37](37-the-provider-adapter.md)).
+> One provider adapter is built and unused: [`heron_provider.py`](../brain/heron_provider.py) (DRAFT)
+> talks to a local Ollama on `127.0.0.1` only, nothing in `brain/` or `mcp/server/` imports it, and it
+> has not met a provider ([37](37-the-provider-adapter.md), NEEDS-CHECKING
+> [K3](needs-checking/group-k.md)).
 
 **[NOTE]** Whatever is chosen, never hard-code model identifiers in agent definitions. Models change
 faster than architectures. Declare *"this needs strong reasoning"*, and resolve it in one place.
@@ -199,6 +202,61 @@ added later. If step 4 is ever reached for *"select all ducts"* after the first 
 > Step 2 runs in one tool call: the declared words of a PROVEN capability, with every value given
 > ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). How often a request was
 > answered with no model needed is measured by `tools/measure-routes.py`.
+
+The order as it runs, in `find` in [`heron_retrieve.py`](../brain/heron_retrieve.py) and the doors' one-call
+path. Set it beside the diagram above: no step executes off the cache, and no step calls a model.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    W(["<b>The modeller's words</b>, passed on by the host"])
+    F["<b>1 · Filter first</b><br/>this Revit release and this scope only<br/>a question is never offered a change — D-128"]
+    I{{"2 · Are these a fragment's exact declared words?"}}
+    RUN["<b>Runs in this one call</b> — no model call<br/>only a PROVEN fragment, with every value given"]
+    C{{"3 · Were these words resolved before?"}}
+    CAND["<b>A candidate, never a decision</b> — D-61"]
+    S["<b>4 · Word match and meaning, fused</b><br/>meaning when model2vec is installed<br/>the re-ranker re-reads the top 20, when installed"]
+    H(["<b>Back to the host</b><br/>ranked candidates, each with what it needs<br/>the host chooses or asks — D-01, D-58"])
+
+    W --> F --> I
+    I -->|"yes"| RUN
+    I -->|"no"| C
+    RUN -.->|"a DRAFT, or a value missing"| H
+    C -->|"yes"| CAND
+    C -->|"no"| S
+    CAND --> H
+    S --> H
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    class W user
+    class F,CAND,S brain
+    class I,C user
+    class RUN addin
+    class H host
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+The modeller's words, passed on by the host
+1. Filter first: this Revit release and this scope only; a question is never offered a change (D-128)
+2. A fragment's exact declared words?
+     yes -> runs in this one call, no model call - only a PROVEN fragment, with every value given
+            (a DRAFT, or a value missing: back to the host as a candidate)
+     no  -> 3
+3. These words resolved before?
+     yes -> a candidate, never a decision (D-61) -> back to the host
+     no  -> 4
+4. Word match and meaning, fused (meaning when model2vec is installed);
+   the re-ranker re-reads the top 20, when installed -> back to the host
+Back to the host: ranked candidates, each with what it needs; the host chooses or asks (D-01, D-58)
+```
+
+</details>
 
 ---
 
