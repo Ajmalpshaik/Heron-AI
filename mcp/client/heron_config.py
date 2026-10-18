@@ -206,7 +206,14 @@ def busy_timeout(values=None):
 
 
 def asks_before_keeping(values=None):
-    """Whether Revit asks Keep or Discard before keeping a change (D-126)."""
+    """Whether Revit asks Keep or Discard before keeping a change (D-126).
+
+    NOTHING ON THIS SIDE DECIDES BY IT SINCE D-142: fragment_timeout, its one
+    caller, waits for a box on every keep, because the delete box is asked
+    with the switch off too. Kept as this side's reading of the owner's switch,
+    the same as the add-in's - tests/test_keep_question.py holds the two to
+    one rule - and tools/check-reachable.py lists it as reached by tests only.
+    """
     values = load() if values is None else values
     return truthy(values, "write.askBeforeKeeping")
 

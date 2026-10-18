@@ -325,10 +325,13 @@ namespace Heron.Revit.Addin
                 return null;
             }
 
-            var code = answer == HeronDeleteQuestion.TooLate ? "delete_too_late" : "delete_declined";
-            return DeleteFields(Json.Error(code,
-                    HeronDeleteQuestion.Declined(asking, name, measured.Account(), restored)),
-                going.Count, onScreen, answer, asking);
+            // EACH CODE WRITTEN OUT, as every refusal in the add-in is, so the
+            // failure table's check can find what the add-in produces.
+            var declined = HeronDeleteQuestion.Declined(asking, name, measured.Account(), restored);
+            var refusal = answer == HeronDeleteQuestion.TooLate
+                ? Json.Error("delete_too_late", declined)
+                : Json.Error("delete_declined", declined);
+            return DeleteFields(refusal, going.Count, onScreen, answer, asking);
         }
 
         /// <summary>
