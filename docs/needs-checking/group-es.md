@@ -59,3 +59,34 @@ add-in is rebuilt, deployed for each Revit, Revit restarted and the Claude app r
 | **ES14** | **Whether a temporary isolate marks the model changed.** Save the model; `revit_isolate_temporary` with `category=ducts`; then `revit_reset_temporary`; then close the model | No question to save on close - a temporary isolate is a display state, and Revit's own button asks none. If Revit DOES ask, the transaction `RevitTemporaryView` commits marks the model modified, and "changes nothing in the model" in the tool's words is not the whole truth: record it in [row 5b-593](../fragment-issues/section-5b-rows-401-425.md) and say it in the answer |
 | **ES15** | *Not a proof - an observation, on a workshared model.* A plan view another user has borrowed (Worksharing Display shows it owned by them); `revit_isolate_temporary` with `category=ducts` there | Either the isolate lands, as Revit's own button does without borrowing, or Revit refuses and the answer quotes Revit's words with `isolate_failed`, the view untouched. Which it is was not known when this was written ([row 5b-593](../fragment-issues/section-5b-rows-401-425.md)) |
 | **ES16** | Revit 2023 or later: ES5's job with `alsoSelect=true` while the structural link is HIDDEN in `{3D}` (Visibility/Graphics, Revit Links) | The camera still moves; if Revit refuses to select a hidden linked element, a finding says *"The selection was NOT changed: Revit would not select them..."* and quotes Revit - the run does not end in an exception ([row 5b-593](../fragment-issues/section-5b-rows-401-425.md)) |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+The owner turned **Changes, Admin and Publish off** on Revit 2024's ribbon at 06:36:57-06:37:03 and back on at
+06:42:28-06:42:33 (the add-in log's lines). **Seen beside it:** this session's shell and Heron server read the
+Claude app's private copy of `heron.config`, which still said `true` throughout; only Revit read the real one.
+*Heron Safety 2024* has no placed links, so ES5 to ES8 and ES16 could not be arranged on it.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| ES1 | 2024 | `SELECT_BY_CATEGORY_NAME` Ducts in *Level 1 HVAC Plan* (256) → `revit_show SET_SELECTION` (256 selected) → `revit_show ZOOM_TO_ELEMENTS` `alsoSelect false` with `expect_from=set-selection` (256 shown). Neither refused for Changes; 21,573 elements before and after; the Undo list unchanged. With `expect_from=select-by-category-name` the zoom was refused - the chain had moved on to set-selection's | **PASS** |
+| ES2 | 2024 | (a) `revit_show HIDE_ELEMENTS`: *"is declared MODIFY, and revit_show runs nothing above EXECUTE ... Nothing has been sent to Revit."* (b) The raw `run_fragment_show` from a script, the client's check skipped: **refused by the session's auto-mode safety check before it ran** | (a) **PASS**, (b) **NOT RUN** |
+| ES3 | 2024 | `revit_isolate_temporary` ducts: **the Undo list gains `Heron: isolate Ducts temporarily`**, with Changes off. His Ctrl+Z left the Undo list as it was and the view isolated - the key press undid nothing, so whether Ctrl+Z ends it is not answered. `revit_reset_temporary`: *"is off"*. Each later isolate AND each reset also added an entry (`Heron: isolate 2 element(s) temporarily`, `Heron: reset temporary hide/isolate`) | answered: **it is in the Undo list**; Ctrl+Z **inconclusive** |
+| ES4 | 2024 | `ids` 392168 (Level 1) and 419031 (Level 2): *"Only 1 of the 2 are in this view at all"*. Both `ids` and `category`: *"two different requests ... NOTHING was isolated"*. The second reset: *"nothing to reset and nothing was done"*. The sheet half not run | **PASS** |
+| ES9 | 2024 | `revit_show OPEN_VIEW` *Level 2 HVAC Plan*: opened, Changes off. *Mechanical Plan* (a template): `opened false`, *"[view template, cannot be opened]"* | **PASS** |
+| ES11 | 2024 | `revit_show ISOLATE_ELEMENTS`: refused before sending, naming `revit_isolate_temporary` | **PASS** |
+| ES5-ES8, ES10, ES12-ES16 | - | No links; the rest not arranged | **NOT RUN** |
+
+With the switches off, a `create-duct` preview from the command line came back `write_disabled` and
+`save-document` `publish_disabled` - the gates held where the server's own copy of the switches said otherwise.
