@@ -72,9 +72,9 @@ for the session and deleted by name at the end - none is committed.
 
 | # | Release | What was run and what came back | State |
 |---|---|---|---|
-| **EV1** | 2024 | With `CREATE_DUCT`, not `CREATE_TEXT_NOTE`, kept through the box: *"changed: 3 added ((no category) 1, Duct Systems 1, Ducts 1), 3 modified ((no category) 3)"* and a `record:` line; `heron_run_record` listed 891698, 891699, 891700 as `fragment added`; the audit line carried `elementsAdded 3`, `elementsModified 3`, `changeEvents 1`. Kept on 2027 too (`CREATE_LEVEL`, *"1 added (Levels 1)"*) | **PASS** |
-| **EV3** | 2024 | Not on the job file; on every rolled-back preview this day the counts were what the job did - *"added 6"*, none listed deleted - and the model held none of it afterwards | **part** (seen, not the row's job) |
-| **EV5** | 2024, 2027 | Real names: Ducts, Duct Systems, Levels, Text Notes; one element of each duct job under *(no category)* | **PASS** |
+| EV1 | 2024 | With `CREATE_DUCT`, not `CREATE_TEXT_NOTE`, kept through the box: *"changed: 3 added ((no category) 1, Duct Systems 1, Ducts 1), 3 modified ((no category) 3)"* and a `record:` line; `heron_run_record` listed 891698, 891699, 891700 as `fragment added`; the audit line carried `elementsAdded 3`, `elementsModified 3`, `changeEvents 1`. Kept on 2027 too (`CREATE_LEVEL`, *"1 added (Levels 1)"*) | **PASS** |
+| EV3 | 2024 | Not on the job file; on every rolled-back preview this day the counts were what the job did - *"added 6"*, none listed deleted - and the model held none of it afterwards | **part** (seen, not the row's job) |
+| EV5 | 2024, 2027 | Real names: Ducts, Duct Systems, Levels, Text Notes; one element of each duct job under *(no category)* | **PASS** |
 | **EV2, EV4, EV6, EV7** | - | Not arranged | **NOT RUN** |
 
 The batch rule seen on 2027: the second `CREATE_LEVEL` reply printed *"and 4 values unchanged from the last

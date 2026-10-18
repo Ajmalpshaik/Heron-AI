@@ -64,10 +64,10 @@ copy of Revit 2020's `basic_sample_family.rfa`. The loads were rolled-back runs 
 
 | # | Release | What was run and what came back | State |
 |---|---|---|---|
-| **EL1** | 2024 | `load-family` *Heron Later Release.rfa*: answered in 7 s, `dialog_refused` quoting *"The file Heron Later Release.rfa was saved in a later version of Revit and cannot be retrieved in this version."*, rolled back, audit `dialogs 1`, one *"Revit dialog during a Heron job"* log line, and no dialog window left (only Revit's main window visible). **The dialog has no id** - the log reads `id ''` - so it cannot be the table's first row by id | **PASS** |
-| **EL2** | 2024 | `answer` Cancel - Revit took the override | **PASS** |
-| **EL3** | 2024 | READ probe whose body is `TaskDialog.Show("Heron EL3", "Close me if you can see me.")`: `dialog_refused` in under a second, task dialog, **no id**, answered Cancel. **An add-in's own TaskDialog DOES raise `DialogBoxShowing`** - so a Heron prompt inside a job must sit inside `HeronAsks()`, and the Keep box does (it always waited for a click) | answered: **it raises the event** |
-| **EL4** | - | Not arranged | **NOT RUN** |
-| **EL5** | 2024 | `load-family` *Heron 2020 Family.rfa*: loaded, three types, no `dialogs` or `dialogsAnswered` on the reply, no log line, no `dialogs` on the audit line | **PASS** |
-| **EL6** | 2024 | His Manage > Purge Unused left open, then a `count`: `revit_busy` after 10 s, *"A dialog may be open"*; his window still open and untouched until he cancelled it. **Seen beside it:** the activity banner read *"Heron AI is reading your model ... Counting what is in the model - 8.4 s"* while Revit never ran the count | **PASS** |
-| **EL7** | 2027 | EL5 on 2027: loaded, 35 elements added, no dialogs, rolled back. EL1 cannot exist on 2027 - no later release; EL6 not repeated | **PASS** (EL5) |
+| EL1 | 2024 | `load-family` *Heron Later Release.rfa*: answered in 7 s, `dialog_refused` quoting *"The file Heron Later Release.rfa was saved in a later version of Revit and cannot be retrieved in this version."*, rolled back, audit `dialogs 1`, one *"Revit dialog during a Heron job"* log line, and no dialog window left (only Revit's main window visible). **The dialog has no id** - the log reads `id ''` - so it cannot be the table's first row by id | **PASS** |
+| EL2 | 2024 | `answer` Cancel - Revit took the override | **PASS** |
+| EL3 | 2024 | READ probe whose body is `TaskDialog.Show("Heron EL3", "Close me if you can see me.")`: `dialog_refused` in under a second, task dialog, **no id**, answered Cancel. **An add-in's own TaskDialog DOES raise `DialogBoxShowing`** - so a Heron prompt inside a job must sit inside `HeronAsks()`, and the Keep box does (it always waited for a click) | answered: **it raises the event** |
+| EL4 | - | Not arranged | **NOT RUN** |
+| EL5 | 2024 | `load-family` *Heron 2020 Family.rfa*: loaded, three types, no `dialogs` or `dialogsAnswered` on the reply, no log line, no `dialogs` on the audit line | **PASS** |
+| EL6 | 2024 | His Manage > Purge Unused left open, then a `count`: `revit_busy` after 10 s, *"A dialog may be open"*; his window still open and untouched until he cancelled it. **Seen beside it:** the activity banner read *"Heron AI is reading your model ... Counting what is in the model - 8.4 s"* while Revit never ran the count | **PASS** |
+| EL7 | 2027 | EL5 on 2027: loaded, 35 elements added, no dialogs, rolled back. EL1 cannot exist on 2027 - no later release; EL6 not repeated | **PASS** (EL5) |
