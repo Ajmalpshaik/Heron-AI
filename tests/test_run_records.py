@@ -40,6 +40,10 @@ WHAT IT PROVES
      change print whole every time. A value the last reply of the same
      capability showed word for word is counted rather than printed - only
      with a run record to read it from, and never a value that changed.
+  6a. A KEEP THE MODELLER PRESSED IN REVIT IS SAID AS THEIRS (5b-1093). The
+     add-in's `asking` sentence is printed once beside every asked KEPT
+     verdict, the paragraph or the short sentence; a Discard prints its own
+     verdict exactly, and a reply with no `asking` prints as before.
   7. THE TOOL IS DECLARED READ AND CALLS NO OPERATION, and revit_change uses
      these and nothing of its own.
 
@@ -372,6 +376,45 @@ def batching(runs):
     check(same == [], "a new batch prints every value again")
 
 
+def asked(runs):
+    print("\n6a. a Keep the modeller pressed in Revit is said as theirs (5b-1093)")
+    said = "You were asked in Revit and pressed KEEP after seeing the result."
+    kept = reply_with(asked=True, modellerAnswer="keep", kept=True, viewRefreshed=True,
+                      asking=said)
+    b = runs.Batch(gap=3.0)
+    b.turn(1.0, 1.1)
+    first = runs.verdict_line(kept, b) or ""
+    b.turn(1.2, 1.3)
+    second = runs.verdict_line(kept, b) or ""
+    check(kept["verdict"] in first and first.count(said) == 1,
+          "the first asked Keep of a batch prints the paragraph and says once that the "
+          "modeller pressed KEEP - found %r" % first)
+    check(kept["verdictShort"] in second and kept["verdict"] not in second
+          and second.count(said) == 1,
+          "the next in the same batch prints the short sentence, and still says it: each "
+          "Keep is its own answer - found %r" % second)
+    carried = dict(kept, verdict=said + " " + kept["verdict"])
+    check((runs.verdict_line(carried, runs.Batch()) or "").count(said) == 1,
+          "a verdict that already carries the sentence is never given it twice")
+
+    discarded = reply_with(verdict="The modeller chose Discard in Revit, so NOTHING WAS "
+                                   "KEPT ...", verdictKind="discarded", verdictShort=None,
+                           asked=True, modellerAnswer="discard", kept=False,
+                           asking="You were asked in Revit and pressed DISCARD.")
+    closed = dict(discarded, modellerAnswer="closed",
+                  asking="You were asked in Revit and closed the box, which discards.")
+    check(runs.verdict_line(discarded, b) == discarded["verdict"]
+          and runs.verdict_line(closed, b) == closed["verdict"],
+          "a Discard, or a box closed, prints the add-in's own verdict exactly - it already "
+          "says who chose")
+    before = reply_with()
+    check(runs.verdict_line(before, runs.Batch()) == before["verdict"]
+          and runs.verdict_line(dict(kept, asking=""), runs.Batch()) == kept["verdict"]
+          and runs.verdict_line(dict(kept, asking=None), runs.Batch()) == kept["verdict"],
+          "and a reply with no `asking` - an add-in from before D-126 - prints exactly "
+          "as before")
+
+
 def declared(runs):
     print("\n7. the tool is READ and calls no operation; revit_change uses these")
     check(tools.TOOLS.get("heron_run_record") == (tools.READ, None),
@@ -412,6 +455,7 @@ def main():
         newest(runs, folder)
         change_lines(runs)
         batching(runs)
+        asked(runs)
         declared(runs)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
