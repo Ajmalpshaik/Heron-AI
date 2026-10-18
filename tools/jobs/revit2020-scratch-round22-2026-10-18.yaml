@@ -1,0 +1,31 @@
+# Batch 22, 2026-10-18 - Revit 2020 session 30308, scratch Project1 (never saved), round 21's model
+# plus two 600 x 600mm Grid ceilings the owner drew by hand at 2600 mm above Level 1, one per room
+# (Revit 2020's API cannot create a ceiling), and two M_Return Diffuser terminals placed kept:
+# one at 2500,3000 + 2000 mm (600 mm under the left ceiling) and one at 7500,3000 + 2600 mm (on
+# the right ceiling's plane). ROLLED BACK where it writes.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: false
+  setup: [select-by-category-name, set-selection]
+  set: {categoryName: "Rooms", inViewOnly: "FloorPlan: Level 1"}
+  negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1"}
+jobs:
+  - fragment: measure-ceiling-height
+    expect: mainHeight
+    set: {categoryName: "Rooms", inViewOnly: "FloorPlan: Level 1", includeLinks: false}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", includeLinks: false}
+  - fragment: read-ceiling-grid
+    expect: spacingX
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "1000,1000,2500", maxMm: "2000,2000,2700", exact: false, categories: "Ceilings"}
+    negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    set: {ceiling: "selected"}
+    negative-set: {ceiling: "selected"}
+  - fragment: check-ceiling-coordination
+    expect: outOfPlane
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "2000,2500,1500", maxMm: "3000,3500,2300", exact: false, categories: "Air Terminals"}
+    negative-setup-set: {minMm: "7000,2500,2400", maxMm: "8000,3500,2800", exact: false, categories: "Air Terminals"}
+    set: {tolerance: 10, includeLinks: false}
+    negative-set: {tolerance: 10, includeLinks: false}
