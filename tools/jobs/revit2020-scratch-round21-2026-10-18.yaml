@@ -1,0 +1,77 @@
+# Batch 21, 2026-10-18 - Revit 2020 session 30308, scratch Project1 (never saved). Kept since
+# round 20: walls 345492..345496 (10000 x 6000 + partition, Level 1) with their exterior faces
+# painted Glass, Room 1 and Room 2, a floor, a door in the partition with an M_Door Tag on a
+# straight leader, sheet A101 "Heron Test Sheet" carrying the note "ISSUED FOR INFORMATION
+# 18-OCT-2026" and the "Heron Duct Schedule", an M_Box mass at 30000,0, a U-shaped Monolithic
+# stair at 20000..27000 with the two 1100mm railings Revit added. Every write ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: [select-by-category-name, set-selection]
+  set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1"}
+  negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1"}
+jobs:
+  - fragment: list-dates-on-sheets
+    setup: []
+    write: false
+    expect: uniqueDateCount
+    set: {}
+    negative-in: "Family1"
+    negative-set: {}
+  - fragment: create-revisions-from-sheet-dates
+    setup: []
+    expect: revisionsCreated
+    set: {description: "IFI - Issued for Information", dateFormat: "", onlyDates: "", issuedBy: "", issuedTo: "", numbering: "", issueState: ""}
+    negative-in: "Family1"
+    negative-set: {description: "IFI - Issued for Information", dateFormat: "", onlyDates: "", issuedBy: "", issuedTo: "", numbering: "", issueState: ""}
+  - fragment: select-by-material
+    setup: []
+    write: false
+    expect: elements
+    set: {materialName: "Glass", includePaint: true, categories: "Walls"}
+    negative-set: {materialName: "Glass", includePaint: false, categories: "Walls"}
+  - fragment: force-tag-leader-lshape
+    expect: bent
+    set: {categoryName: "Door Tags", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", legMm: 10}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", legMm: 10}
+  - fragment: create-mass-floors
+    expect: added
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "29000,-1000,-1000", maxMm: "31000,1000,1000", exact: false, categories: "Mass"}
+    negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    set: {levelNames: "Level 1, Level 2"}
+    negative-set: {levelNames: "Level 1, Level 2"}
+  - fragment: create-railing
+    expect: railingIds
+    set: {categoryName: "Stairs", inViewOnly: "FloorPlan: Level 1", railingTypeName: "900mm", placement: "treads", pathMm: "", level: "Level 1"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", railingTypeName: "900mm", placement: "treads", pathMm: "", level: "Level 1"}
+  - fragment: edit-railing
+    expect: editedIds
+    set: {categoryName: "Railings", inViewOnly: "FloorPlan: Level 1", pathMm: "", host: "", railingTypeName: "", flip: true, reset: false}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", pathMm: "", host: "", railingTypeName: "", flip: true, reset: false}
+  - fragment: compare-view-templates
+    setup: []
+    write: false
+    expect: differences
+    set: {templateA: "Architectural Plan", templateB: "Site Plan"}
+    negative-set: {templateA: "Architectural Plan", templateB: "Architectural Plan"}
+  - fragment: list-categories
+    in: "Family1"
+    setup: [create-line-style]
+    expect: familySubcategories
+    set: {styleName: "Heron Test Style", colour: "0,0,255", weight: 1, patternName: "Solid", updateExisting: true, familyCategory: true, everySubcategory: false, categories: ""}
+    negative-set: {styleName: "Heron Test Style", colour: "0,0,255", weight: 1, patternName: "ZZZ No Such Pattern", updateExisting: true, familyCategory: true, everySubcategory: false, categories: ""}
+  - fragment: set-curtain-wall-mullions
+    setup: []
+    expect: applied
+    set: {curtainWallType: "Curtain Wall: Storefront", mullions: "vertical interior=Rectangular Mullion: 30mm Square"}
+    negative-set: {curtainWallType: "Curtain Wall: Storefront", mullions: "vertical interior=Rectangular Mullion: ZZZ No Such Size"}
+  - fragment: set-schedule-appearance
+    expect: changed
+    set: {categoryName: "Schedule Graphics", inViewOnly: "Heron Test Sheet", fieldName: "Length", newHeading: "HERON LENGTH", columnWidthMm: 0, alignment: "", headingSideways: false, hideOrShow: "", headingOrientation: ""}
+    negative-set: {categoryName: "Schedule Graphics", inViewOnly: "Heron Test Sheet", fieldName: "ZZZNOTHINGHERE", newHeading: "HERON LENGTH", columnWidthMm: 0, alignment: "", headingSideways: false, hideOrShow: "", headingOrientation: ""}
+  - fragment: import-parameter-values
+    expect: valuesWritten
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/params-positive.csv", includeTypeParameters: false, blankCells: "skip"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", csvPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/params-negative.csv", includeTypeParameters: false, blankCells: "skip"}
