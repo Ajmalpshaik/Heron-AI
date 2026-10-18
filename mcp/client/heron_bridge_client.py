@@ -47,7 +47,10 @@ Two rules from the field notes (docs/00e, docs/25) are enforced here:
 import hashlib
 import io
 import json
+import ntpath
 import os
+import posixpath
+import re
 import subprocess
 import sys
 import threading
@@ -110,7 +113,9 @@ def temp_folder(environ=None, system=None):
     folder is not copied: on the owner's laptop on 2026-10-17 a folder and a
     file written there from inside the app were seen on the real disk from
     outside it. HeronPaths.Companion is built on Path.GetTempPath() for the
-    same reason, and tests/test_data_home.py holds the two together.
+    same reason, and tests/test_data_home.py holds the two together. Both
+    halves name the Companion's folder through `shared_temp_folder()` below,
+    which steps out of Revit's own temporary folder (D-136).
     """
     env = os.environ if environ is None else environ
     if (os.name if system is None else system) == "nt":
@@ -121,6 +126,35 @@ def temp_folder(environ=None, system=None):
         return env.get("SystemRoot") or env.get("windir") or "C:\\Windows"
     found = env.get("TMPDIR", "")
     return found if found.strip() else "/tmp"
+
+
+_GUID_NAME = re.compile(r"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\Z")
+
+
+def shared_temp_folder(environ=None, system=None):
+    """
+    The temporary folder a chat and Revit share - HeronPaths.SharedTemp,
+    mirrored (D-136): `temp_folder()`, stepped out of for as long as its last
+    part is named like a GUID.
+
+    Revit runs with a temporary folder of its own, a sub-folder of the user's
+    named by a GUID and new at each start - seen on the owner's laptop on
+    2026-10-18 as Temp\\63835622-bdd8-4d57-a4a9-19a6afb83cd6 - so the add-in's
+    Path.GetTempPath() named a folder no chat writes (row 5b-1100). The
+    add-in steps out of it; this does the same, so a chat whose own TMP is
+    Revit-style still names the folder the add-in reads. Every such level and
+    only the 8-4-4-4-12 form with its hyphens, as HeronPaths.cs has it; a
+    folder not named so is returned exactly as `temp_folder()` gave it.
+    """
+    nt = (os.name if system is None else system) == "nt"
+    paths = ntpath if nt else posixpath
+    folder = temp_folder(environ, system)
+    while True:
+        bare = folder.rstrip("\\/" if nt else "/")
+        parent = paths.dirname(bare)
+        if not bare or not parent or not _GUID_NAME.match(paths.basename(bare)):
+            return folder
+        folder = parent
 
 
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery
