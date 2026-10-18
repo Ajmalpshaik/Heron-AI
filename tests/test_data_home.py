@@ -189,6 +189,25 @@ def plant_old_places(top):
     return environ, copy, real
 
 
+def home_of(environ):
+    """`PATHS.home(environ, "nt")` for a planted PC, with `data_home()` answering
+    the planted profile's .heron for that one call (row 5b-1071).
+
+    The planted profile is a folder of this machine, and off Windows it has no
+    drive. From Python 3.13 `ntpath.isabs()` says such a path is not a whole
+    one, so the real `data_home(env, "nt")` rightly answers None and `home()`
+    had nothing to carry into - six FAILs on 3.13 that 3.11 and 3.12 never
+    showed. `data_home()`'s own Windows rule is section 1's, on Windows
+    spellings; here the subject is the carry."""
+    was = PATHS.data_home
+    PATHS.data_home = lambda env=None, system=None: os.path.join(
+        environ["USERPROFILE"], getattr(PATHS, "HOME_FOLDER", ".heron"))
+    try:
+        return ask(PATHS, "home", environ, "nt")
+    finally:
+        PATHS.data_home = was
+
+
 def main():
     yard = tempfile.mkdtemp(prefix="heron-data-home-")
     try:
@@ -317,7 +336,7 @@ def run(yard):
     print("\n5. It happens once, by itself, and only for the default home")
     environ, copy, real = plant_old_places(os.path.join(yard, "pc-5"))
     home = os.path.join(yard, "pc-5", "profile", ".heron")
-    got = ask(PATHS, "home", environ, "nt")
+    got = home_of(environ)
     check(same(got, home), "home() is the default home (%r)" % (got,))
     note = os.path.join(home, PATHS_MARKER())
     check(os.path.isfile(note), "the first home() carried, and left a note saying so")
@@ -328,7 +347,7 @@ def run(yard):
           "the note names the places it carried from")
     write(os.path.join(copy, "knowledge", "projects", "p9.hvac.json"), "written later")
     PATHS._carried_here.clear() if hasattr(PATHS, "_carried_here") else None
-    ask(PATHS, "home", environ, "nt")
+    home_of(environ)
     check(not os.path.exists(os.path.join(home, "knowledge", "projects", "p9.hvac.json")),
           "the next home() carries nothing more - the note says it was done")
     # TWO CHATS AT ONCE: the second waits for the first's carry, and a lock left
@@ -340,7 +359,7 @@ def run(yard):
     old = getattr(PATHS, "WAIT_SECONDS", None)
     PATHS.WAIT_SECONDS = 0.5
     PATHS._carried_here.clear() if hasattr(PATHS, "_carried_here") else None
-    ask(PATHS, "home", environ, "nt")
+    home_of(environ)
     check(not os.path.isfile(os.path.join(home, PATHS_MARKER())),
           "a carry another process holds is not run a second time beside it")
     import threading
@@ -352,7 +371,7 @@ def run(yard):
     PATHS._carried_here.clear() if hasattr(PATHS, "_carried_here") else None
     other = threading.Timer(0.6, finish)
     other.start()
-    ask(PATHS, "home", environ, "nt")
+    home_of(environ)
     done_when_answered = os.path.isfile(os.path.join(home, PATHS_MARKER()))
     other.join()
     noted = json.loads(read(os.path.join(home, PATHS_MARKER())))
@@ -366,7 +385,7 @@ def run(yard):
     gone = time_ago(getattr(PATHS, "LOCK_SECONDS", 600) + 5)
     os.utime(lock, (gone, gone))
     PATHS._carried_here.clear() if hasattr(PATHS, "_carried_here") else None
-    ask(PATHS, "home", environ, "nt")
+    home_of(environ)
     check(os.path.isfile(os.path.join(home, PATHS_MARKER()))
           and os.path.isfile(os.path.join(home, "knowledge", "projects", "p1.hvac.json"))
           and not os.path.exists(lock),
