@@ -40,13 +40,13 @@ Run standards checks, model health reports and clash summaries across many model
 
 Fits the Background Scheduler already specified, and it is the highest-value use of a licence that is otherwise idle for 14 hours a day.
 
-### 🔵 B6. Visible cost meter
+### ✅ B6. Visible cost meter
 
 *"This session: 12 requests, 3 new fragments, $0.40."*
 
 Users trust systems whose cost they can see. It also makes the T1/T2/T3 discipline self-enforcing — an expensive path becomes visible immediately.
 
-### 🔵 B7. Team knowledge sharing before public community
+### ✅ B7. Team knowledge sharing before public community
 
 §35 goes from personal knowledge straight to a GitHub PR into a public community. Most of the value lands earlier: **a company-internal shared brain**, on a network share or a private repository.
 
@@ -58,8 +58,21 @@ Record model statistics over time — element counts, warnings, file size, purge
 
 Trivial to collect, and it is the report BIM managers already produce by hand.
 
-### 🔵 B9. Degraded / offline mode
+### ✅ B9. Degraded / offline mode
 
 State plainly what still works with no internet: proven fragments, cached skills, health checks, local retrieval. A tool that stops entirely when the connection drops will not be trusted on site.
+
+### Closed since - recorded 2026-10-18
+
+The ideas above are left as they were written. The three marked ✅ were settled afterwards; the marker
+was set on 2026-10-18.
+
+| | Settled by | How |
+|---|---|---|
+| **B6** | [D-58](../DECISIONS.md) | **Not Heron's to build.** Token use and cost per request belong to the host; Heron measures the latency it can see |
+| **B7** | [D-41](../DECISIONS.md), answering [Q-32](../OPEN-QUESTIONS.md) | Decided, not built: single-user now, and company knowledge becomes a private git repository when there is demand |
+| **B9** | Part 4 §31 | Offline / Degraded Mode is an official requirement, as [Part 0b](part-0b.md) records |
+
+The rest are still ideas. **B3** is the same job as [F29](f29.md), whose two options are the owner's.
 
 ---

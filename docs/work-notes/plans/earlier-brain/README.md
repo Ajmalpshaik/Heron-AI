@@ -6,6 +6,8 @@
 > **Status:** **Active — being built package by package.** The status of every package, and of PR
 > [#299](https://github.com/Ajmalpshaik/Heron-AI/pull/299), lives in
 > [`02-work-packages.md` §0](02-work-packages.md) **and nowhere else.** Opened 2026-09-23. **Owner:** Ajmal PS.
+> **Read 2026-10-18:** §0 there shows every package merged, done or dropped on the owner's word except
+> **C8**, *not started*. What keeps this folder open is C8 and the PC proofs in [05](05-pc-proving.md).
 
 ---
 
