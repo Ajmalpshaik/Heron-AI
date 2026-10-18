@@ -1294,6 +1294,22 @@ async def exercise_change_report(module):
         check("NOTHING WAS KEPT. ... rolled back" in rolled,
               "a rollback is printed whole, inside a batch or not")
 
+        # THE MODELLER PRESSED KEEP IN REVIT (5b-1093): the add-in's `asking`
+        # sentence reaches the chat on each reply, beside whichever verdict.
+        said = "You were asked in Revit and pressed KEEP after seeing the result."
+        revit.reply = dict(kept, asked=True, modellerAnswer="keep", kept=True,
+                           viewRefreshed=True, asking=said)
+        module._BATCH = runs.Batch()
+        asked_first = await call("revit_change", asked)
+        asked_next = await call("revit_change", asked)
+        check(asked_first.count(said) == 1 and "Revit accepted the transaction" in asked_first,
+              "an asked Keep says once that the modeller pressed KEEP, beside the paragraph "
+              "(row 5b-1093)")
+        check(asked_next.count(said) == 1 and "Revit accepted the transaction" not in asked_next,
+              "and the next in the batch says it again beside the short sentence")
+        check(said not in first and said not in second,
+              "while a reply with no `asking` says nothing of anybody being asked")
+
         old = dict((k, v) for k, v in kept.items()
                    if k not in ("verdictKind", "verdictShort", "run", "changes"))
         revit.reply = old
