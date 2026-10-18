@@ -13,7 +13,7 @@
 > |---|---|---|---|
 > | §1 Dependency graph | [`heron_graph.py`](../brain/heron_graph.py) | `tools/check-gaps.py`, `tools/measure-graph.py` | not needed: it reads Heron's own files |
 > | §4 Emergency stop | the run clock, [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs), and the bridge's `stop`, [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) ([D-129](DECISIONS.md), [D-130](DECISIONS.md)) | every fragment run; `heron_bridge_client.py stop` | **yes**, 2026-10-18 on Revit 2024.3 and 2027.3 (§4) |
-> | §5 Health | [`heron_health.py`](../mcp/server/heron_health.py) | the `revit_health` and `heron_diagnose` tools | not recorded here |
+> | §5 Health | [`heron_health.py`](../mcp/server/heron_health.py) | the `revit_health` and `heron_diagnose` tools | **yes** for `revit_health`: it answered on Revit 2020, 2024, 2026 and 2027 on 2026-10-17 ([Group EQ](needs-checking/group-eq.md), EQ5 and EQ6); `heron_diagnose` not recorded |
 > | §6 Self-healing | [`heron_healing.py`](../brain/heron_healing.py) | its own command line only | — |
 > | §9 Configuration | [`heron_configuration.py`](../brain/heron_configuration.py) | its own command line only | — |
 > | §10 Migration | [`heron_migration.py`](../brain/heron_migration.py) | its own command line only | — |
