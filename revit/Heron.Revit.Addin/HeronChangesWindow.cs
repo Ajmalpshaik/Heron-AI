@@ -181,6 +181,13 @@ namespace Heron.Revit.Addin
         /// change is shown, and Revit asks Keep or Discard before anything is
         /// kept - unless the owner turns write.askBeforeKeeping off, which is
         /// the owner's to do and is said in D-126.
+        ///
+        /// AND SINCE D-138 THE MODELLER CAN ANSWER IT ONCE FOR A JOB: the box's
+        /// third link keeps that change and lets the same chat's next changes
+        /// to the same model be kept unseen, for ten quiet minutes. That is a
+        /// choice made in Revit, after seeing a change, exactly as the switch
+        /// is - so the line stays as it was seen in Revit (Z10), and D-138 says
+        /// what the job's later changes are not shown.
         /// </summary>
         private UIElement Promises()
         {

@@ -485,10 +485,18 @@ def revit_side():
                 ("Publish", "publish.enabled", "saving the family")]
     for label, key, needed in switches:
         on = CONFIG.truthy(values, key)
-        say(NOTE, "%-8s is %-3s - needed for %s" % (label, "ON" if on else "off",
-                                                     needed))
-    print("         These are your switches on the Heron ribbon tab. They start "
-          "off on a")
+        say(NOTE, "%-11s is %-3s - needed for %s" % (label, "ON" if on else "off",
+                                                      needed))
+    # ASK TO KEEP (D-138) starts ON, unlike the three above, and lets nothing
+    # through: it only says whether Revit asks Keep or Discard first.
+    asks = CONFIG.truthy(values, "write.askBeforeKeeping")
+    say(NOTE, "%-11s is %-3s - %s" % (
+        "Ask to Keep", "ON" if asks else "off",
+        "Revit asks Keep or Discard before a change is kept; the box can keep "
+        "the rest of a job" if asks else
+        "changes are kept without asking; Ctrl+Z still takes each one back"))
+    print("         These are your switches on the Heron ribbon tab. The first "
+          "three start off on a")
     print("         new PC; turn on what the job needs before you ask - a refusal "
           "costs a turn.")
 

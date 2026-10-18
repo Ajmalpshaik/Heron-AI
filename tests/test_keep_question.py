@@ -37,6 +37,15 @@ TWO HALVES, BECAUSE ONE OF THEM CANNOT BE RUN HERE
 Neither half proves Revit then does what it is told. That is the PC's, and
 NEEDS-CHECKING Group ET says what it owes.
 
+D-138 ADDS TWO THINGS, 2026-10-18, on the owner's "OK, OK, OK, OK": the switch
+on the ribbon (Ask to Keep, writing write.askBeforeKeeping), and one Keep per
+job - the box's third link, which lets the same chat's next changes to the same
+model be kept without the box until ten quiet minutes. The grant's RULE is
+HeronKeepGrant.cs, which names no Autodesk type and is run by the same host
+(sections 7 to 10 there). Its WIRING - given only by the modeller's click, never
+for a publish or a DRAFT's one run, ended by the switch, a closing model and
+Idling - is read here as text, sections 8 to 12. Group HG is what the PC owes.
+
 MEASURED AGAINST THE CODE AS IT STOOD: with the files from before D-126 every
 wiring section fails and the host does not build, and this suite exits 1 rather
 than raising.
@@ -69,6 +78,11 @@ EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
 DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
 BANNER = os.path.join(ADDIN, "HeronActivityBanner.cs")
 QUESTION = os.path.join(ADDIN, "HeronKeepQuestion.cs")
+GRANT = os.path.join(ADDIN, "HeronKeepGrant.cs")
+APPLICATION = os.path.join(ADDIN, "HeronApplication.cs")
+COMMANDS = os.path.join(ADDIN, "Commands.cs")
+SWITCH_WINDOW = os.path.join(ADDIN, "HeronSwitchWindow.cs")
+READY = os.path.join(ROOT, "tools", "heron-ready.py")
 COLLECTOR = os.path.join(ADDIN, "RevitChangedSet.cs")
 PERMISSIONS = os.path.join(ROOT, "platform", "Heron.Core", "HeronPermissions.cs")
 CONFIG_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronConfig.cs")
@@ -156,8 +170,9 @@ def wiring():
           "one box for both: a DRAFT's one run (D-119) and a keep from a chat (D-126)")
     check(run.count("AskTheModeller(") == 1,
           "and it is asked from one place only")
-    check("if (answered != null) apply = answered == Keep;" in run,
-          "the modeller's answer, when there was a box, is what sets apply")
+    check("if (answered != null) apply = answered == Keep || answered == RestOfJob;" in run,
+          "the modeller's answer, when there was a box, is what sets apply - Keep, or "
+          "D-138's third link, which keeps too")
     # ONE PLACE KEEPS, AFTER A FRESH LOOK AT THE DIALOG WATCH (Group EL).
     # Showing the change commits a transaction of its own, and a Revit dialog
     # met there must stop the job like one met in the fragment.
@@ -373,9 +388,175 @@ def wiring():
           "a box still open is RUNNING / WAIT, never sent again on its own")
 
 
+def switch():
+    """D-138's first half: the Ask to Keep button on the ribbon."""
+    print("\n8. the owner's switch is on the ribbon - Ask to Keep (D-138)")
+    permissions = code(PERMISSIONS)
+    setter = NOTE_SUITE.body_of(permissions, "public static bool SetAsksBeforeKeeping(bool asks)")
+    check("return SetSwitch(AskBeforeKeepingKey, asks);" in setter,
+          "HeronPermissions.SetAsksBeforeKeeping writes write.askBeforeKeeping through the "
+          "one SetSwitch, as SetAdminEnabled does")
+
+    application = code(APPLICATION)
+    raw_application = read(APPLICATION) or ""
+    check("typeof(AskToKeepToggleCommand).FullName" in application
+          and '"Ask to Keep"' in raw_application,
+          "a ribbon button labelled Ask to Keep runs AskToKeepToggleCommand")
+    check(before(application, "PublishButton = panel.AddItem(publish) as PushButton;",
+                 "AskToKeepButton = panel.AddItem(askToKeep) as PushButton;"),
+          "beside Changes, Admin and Publish - after Publish")
+    check("SetAskToKeepIcon(HeronPermissions.AsksBeforeKeeping());" in application,
+          "its picture starts from the setting itself, read fresh")
+    for icon in ("KeepAsking.png", "KeepNotAsking.png"):
+        check('"%s"' % icon in raw_application
+              and os.path.isfile(os.path.join(ADDIN, "Resources", icon)),
+              "the %s picture is named and is in Resources" % icon)
+    paint = NOTE_SUITE.body_of(application, "internal static void SetAskToKeepIcon(bool asks)")
+    check("HeronKeepGrant.Session.Active(" in paint and "PaintSwitch(AskToKeepButton" in paint,
+          "the picture shows the switch AND a job's grant while one is held")
+    check(re.search(r'"Ask to Keep off"', raw_application) is not None
+          and '"Ask to Keep ON"' in raw_application and '"Keep: rest of job"' in raw_application,
+          "in words too - on, off, and the rest of a job kept without asking")
+
+    commands = code(COMMANDS)
+    # ITS Execute, cut from the class name to its own Question(): the other
+    # toggles' Execute methods share that signature word for word.
+    start = commands.find("class AskToKeepToggleCommand")
+    end = commands.find("private static HeronSwitchQuestion Question()", start) if start >= 0 else -1
+    toggle = commands[start:end] if 0 <= start < end else ""
+    check(bool(toggle), "AskToKeepToggleCommand is there")
+    check(re.search(r"if\s*\(\s*asks\s*\)\s*\{[^}]*HeronSwitchWindow\.Ask\(", toggle) is not None,
+          "it asks through HeronSwitchWindow - and only when the question is ON, so only on "
+          "the way OFF; turning it on asks nothing")
+    check("if (!answer.HasValue) answer = AskPlainly(asked);" in toggle,
+          "a window that could not be drawn is asked again plainly, never taken as an answer")
+    check(before(toggle, "HeronKeepGrant.Session.End()", "HeronPermissions.SetAsksBeforeKeeping(!asks)"),
+          "flipping it ends a job's grant first - off and on again is how the modeller takes one back")
+    check("HeronApplication.SetAskToKeepIcon(now);" in toggle,
+          "the picture follows the setting written")
+    raw_commands = read(COMMANDS) or ""
+    check('"Ask to Keep switch set to "' in raw_commands
+          and '"Ask to Keep toggle: offered, declined. Still on."' in raw_commands,
+          "and the add-in log says so, like the other switches")
+    check('Decline = "Keep asking"' in raw_commands and 'TurnOn = "Stop asking"' in raw_commands,
+          "its window's two buttons say Stop asking and Keep asking")
+    check("_question.Decline ??" in code(SWITCH_WINDOW),
+          "and the window draws the quiet button from the question, Leave it off when unset")
+
+    ready = read(READY) or ""
+    check('"write.askBeforeKeeping"' in ready and '"Ask to Keep"' in ready,
+          "tools/heron-ready.py section 7 lists it beside Changes, Admin and Publish")
+
+
+def grant():
+    """D-138's second half: one Keep per job, wired."""
+    executor = code(EXECUTOR)
+    raw = read(EXECUTOR) or ""
+    run = NOTE_SUITE.body_of(executor, "public static string Run(UIApplication app, string request, bool writing")
+
+    print("\n9. one Keep per job (D-138): given only by the modeller's click")
+    rule_text = read(GRANT)
+    check(rule_text is not None and "Autodesk" not in NOTE_SUITE.code_only(rule_text),
+          "HeronKeepGrant.cs is there and names no Autodesk type, so the host runs its rule")
+    gives = []
+    for path in sorted(glob.glob(os.path.join(ROOT, "revit", "**", "*.cs"), recursive=True)):
+        if os.sep + "obj" + os.sep in path or os.sep + "bin" + os.sep in path:
+            continue
+        if path == GRANT:
+            continue
+        gives += [path for _ in re.finditer(r"HeronKeepGrant\.Session\.Give\(", code(path))]
+    check(gives == [EXECUTOR], "the grant is given from one file only - RevitFragment.cs")
+    give = NOTE_SUITE.body_of(executor, "private static void GiveTheGrant(")
+    check("HeronKeepGrant.Session.Give(" in give, "GiveTheGrant is the one place that gives it")
+    check(run.count("GiveTheGrant(") == 1
+          and "if (apply && answered == RestOfJob) GiveTheGrant(client, grantKey, name);" in run,
+          "and Run calls it only when the modeller pressed the third link and the change was kept")
+    check(before(run, "if (apply) keptNote = KeepAndWatch(group, target, watch);",
+                 "GiveTheGrant(client, grantKey, name)"),
+          "after the group was kept, never before")
+    check(re.search(r'Json\.Read\w+\(\s*request\s*,\s*"[^"]*(?:[Gg]rant|[Rr]est)[^"]*"', raw) is None,
+          "no request field named for a grant or the rest of a job is read (Golden Rule 19)")
+
+    print("\n10. a change the grant covers is kept with no box - never a publish, never a DRAFT")
+    check(re.search(r"keptUnderGrant\s*=\s*UnderTheGrant\(\s*client\s*,\s*grantKey\s*,\s*asking\s*,"
+                    r"\s*sendsOut\s*,", run) is not None,
+          "the grant is asked about with whether this is a DRAFT's one run and whether it is a publish")
+    under = NOTE_SUITE.body_of(executor, "private static string UnderTheGrant(")
+    check("Decide(client, grantKey, asking || sendsOut," in under,
+          "both are always asked - Decide is told so")
+    check("if (keptUnderGrant != null) askToKeep = false;" in run
+          and before(run, "if (keptUnderGrant != null) askToKeep = false;", "answered = AskTheModeller("),
+          "covered, the box is not put up - decided before the box, never after an answer")
+    check(re.search(r"AskTheModeller\([^;]*!asking\s*&&\s*!sendsOut\s*&&\s*HeronKeepGrant\.CanHold\(",
+                    run) is not None,
+          "the third link is offered only for a keep from a chat that is not a publish, and "
+          "only for a chat and model a grant can be held by")
+    ask = NOTE_SUITE.body_of(executor, "private static string AskTheModeller(")
+    check(re.search(r"if\s*\(\s*offerRest\s*\)\s*\{\s*box\.AddCommandLink\(TaskDialogCommandLinkId\.CommandLink3",
+                    ask) is not None,
+          "the box has the third link only when it is offered")
+    check("if (offerRest && result == TaskDialogResult.CommandLink3) return RestOfJob;" in ask
+          and ask.count("return RestOfJob") == 1,
+          "and answers RestOfJob for it and nothing else")
+    check(before(ask, "AddCommandLink(TaskDialogCommandLinkId.CommandLink3",
+                 "DefaultButton = TaskDialogResult.CommandLink2"),
+          "Discard is still the default, set after every link (row 5b-621)")
+    check("askedAgain" in ask, "a box up despite a grant says why")
+    if_ends = NOTE_SUITE.body_of(executor, "private static string UnderTheGrant(")
+    check("HeronKeepGrant.Ends(decided)" in if_ends and "RepaintAskToKeep()" in if_ends,
+          "a grant another chat or model ended is logged and taken off the ribbon at once")
+
+    print("\n11. the reply says it was kept without asking, under the grant given at HH:MM")
+    verdict = NOTE_SUITE.body_of(executor, "string WithVerdict(")
+    check("HeronKeepGrant.KeptSentence(keptUnderGrant)" in verdict
+          and verdict.count("HeronKeepGrant.KeptSentence(keptUnderGrant)") == 2,
+          "the verdict says so - whole and short, so every reply of the job carries it")
+    # RAW TEXT, the field names being strings - cut to the next summary, since
+    # a brace-balanced body stops at the "}" its own string literal holds.
+    raw_at = raw.find("private static string WithGrant(")
+    with_grant = raw[raw_at:raw.find("/// <summary>", raw_at)] if raw_at >= 0 else ""
+    check('Json.Bool("asked", false)' in with_grant and '"keptUnderGrant"' in with_grant
+          and '"grantedAt"' in with_grant,
+          "and the reply's fields: asked false, keptUnderGrant, grantedAt")
+    check("return keptUnderGrant != null ? WithGrant(verdict, keptUnderGrant) : verdict;" in run,
+          "on every change the grant covered")
+    answer = NOTE_SUITE.body_of(executor, "private static string WithAnswer(")
+    check("answered == Keep || answered == RestOfJob" in answer,
+          "the third link is reported as kept")
+    ended = NOTE_SUITE.body_of(read(DISPATCHER) or "", "private static string Ended(")
+    check('"keep_rest"' in ended and '"grantedAt"' in ended,
+          "the activity banner says a change was kept without asking, and when the job was allowed")
+
+    print("\n12. what ends it: the switch, a closing model, ten quiet minutes, Revit closing")
+    check(re.search(r"else\s+if\s*\(\s*apply\s*\)\s*\{\s*var\s+ended\s*=\s*HeronKeepGrant\.Session\.End\(\);",
+                    run) is not None
+          and before(run, "keptUnderGrant = UnderTheGrant(", "else if (apply)"),
+          "a keep with the question off - by the button or in heron.config - ends a grant "
+          "still held, so turning it on again never finds an old job's grant")
+    application = code(APPLICATION)
+    check("application.Idling += OnIdling;" in application
+          and "application.Idling -= OnIdling;" in application,
+          "Idling is watched for the grant's ten minutes, and let go at shutdown")
+    idling = NOTE_SUITE.body_of(application, "private static void OnIdling(")
+    check(idling.lstrip("{ \n").startswith("if (!_keepGrantPainted) return;"),
+          "with no grant shown, Idling costs one test of a bool")
+    check(before(idling, "HeronKeepGrant.Session.Active(", "HeronKeepGrant.Session.End()")
+          and "RepaintAskToKeep()" in idling,
+          "past ten minutes it ends the grant and the button stops saying it is held")
+    closing = NOTE_SUITE.body_of(application, "private static void OnDocumentClosing(")
+    check("HeronKeepGrant.Session.HeldFor(RevitOperations.DocumentKey(closing))" in closing
+          and "HeronKeepGrant.Session.End()" in closing,
+          "a closing model ends a grant held for it")
+    check("RevitFragment" not in closing and "RevitFragment" not in idling,
+          "without naming RevitFragment, which would load Roslyn outside its guard")
+    check("static readonly HeronKeepGrant Session" in code(GRANT)
+          and "heron.config" not in NOTE_SUITE.code_only(rule_text or ""),
+          "held in memory only, so it ends when Revit closes")
+
+
 def rule():
     """The half that runs: build the host and let it check the rule."""
-    print("\n8. the rule itself, built and run without Revit")
+    print("\n13. the rule itself, built and run without Revit")
     tfm = NOTE_SUITE._tfm()
     if tfm is None:
         print("  NOT RUN - no framework here that an installed SDK can build AND")
@@ -405,6 +586,8 @@ def rule():
 
 def main():
     wiring()
+    switch()
+    grant()
     host = rule()
     print()
     if FAILURES:

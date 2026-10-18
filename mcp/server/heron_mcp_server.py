@@ -33,7 +33,9 @@ re-checks the model before it writes. revit_change carries a fragment straight
 to Revit, and Revit shows what it did and asks the modeller Keep or Discard
 before anything is kept - D-126, which supersedes D-99's change kept with no
 preview, and Article 9's exception says so. The owner's switch for the
-question is write.askBeforeKeeping, read in the add-in. Around it stand the
+question is write.askBeforeKeeping, read in the add-in - the ribbon's Ask to
+Keep since D-138, whose box can also keep the rest of one job without asking,
+a grant only the modeller's click in Revit gives. Around it stand the
 owner's ribbon switch, one undo entry and the pin. Writing is switched off
 entirely until write.enabled is set - see
 HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
@@ -1747,6 +1749,11 @@ def revit_change(capability: str = "", values: str = "",
     #     write.askBeforeKeeping is on, and a Discard's own verdict says it is
     #     their answer, not a failure, to send again only if they ask - the
     #     reply below, and Article 9 in host.chat.
+    #   - D-138's once-a-job answer: the box's third link lets this chat's next
+    #     changes to the same model be kept without asking for ten quiet
+    #     minutes. The reply's verdict says "Kept WITHOUT ASKING ... under the
+    #     grant they gave in Revit at HH:MM" each time; nothing sent from here
+    #     can give or extend it.
     #   - Article 11's refusal (D-117) in full: a capability whose own file says
     #     DRAFT, or whose proof was taken before its code last changed, is
     #     refused before anything is sent, and the reply names it and its

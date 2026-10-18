@@ -455,6 +455,135 @@ namespace Heron.Revit.Addin
     }
 
     /// <summary>
+    /// Turns Revit's Keep or Discard question on or off - D-138, the Ask to
+    /// Keep button. It writes write.askBeforeKeeping, the switch D-126 read
+    /// and only heron.config could set.
+    ///
+    /// THE OTHER WAY ROUND FROM THE PADLOCKS. Changes, Admin and Publish are
+    /// safe OFF, so they ask on the way on. This one is safe ON - Revit asks
+    /// before a change is kept - so it asks on the way OFF, once, in the same
+    /// window, and never on the way on: making the safe direction slower is
+    /// how people learn to click through warnings. HeronSwitchToggle is left
+    /// as it is for the same reason AdminToggleCommand gives about
+    /// WriteToggleCommand - three proven-shaped buttons are not bent to serve
+    /// a fourth that points the other way.
+    ///
+    /// EITHER WAY A JOB'S GRANT ENDS HERE. Off makes it moot; turned on again,
+    /// the next change is asked - "switches the box off and on" is how the
+    /// owner takes a grant back.
+    ///
+    /// NO TRANSACTION and no element - it edits a file in the user's own data
+    /// folder, and the picture follows the setting written.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class AskToKeepToggleCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                var asks = HeronPermissions.AsksBeforeKeeping();
+
+                if (asks)
+                {
+                    var asked = Question();
+                    var answer = HeronSwitchWindow.Ask(asked, HeronApplication.Log);
+
+                    // NULL IS NOT NO - WriteToggleCommand says why.
+                    if (!answer.HasValue) answer = AskPlainly(asked);
+
+                    if (answer != true)
+                    {
+                        HeronApplication.Log("Ask to Keep toggle: offered, declined. Still on.");
+                        return Result.Cancelled;
+                    }
+                }
+
+                var ended = HeronKeepGrant.Session.End();
+                if (ended != null)
+                    HeronApplication.Log(HeronKeepGrant.EndedLine(HeronKeepGrant.EndedSwitch, ended));
+
+                var now = HeronPermissions.SetAsksBeforeKeeping(!asks);
+                HeronApplication.SetAskToKeepIcon(now);
+                HeronApplication.Log("Ask to Keep switch set to " + now + " from the ribbon.");
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                // The picture follows what the SETTING is, read back.
+                try { HeronApplication.SetAskToKeepIcon(HeronPermissions.AsksBeforeKeeping()); }
+                catch { /* the icon is the lesser problem; report the real one */ }
+
+                HeronApplication.Log("Ask to Keep toggle failed: " + ex);
+                message = "Could not change whether Revit asks Keep or Discard, so it is as it " +
+                          "was. The setting is write.askBeforeKeeping in " + HeronConfig.FilePath +
+                          " and can be changed there instead. Revit said: " + ex.Message;
+                return Result.Failed;
+            }
+        }
+
+        /// <summary>
+        /// What turning the question off is asked as. Every tick is true in the
+        /// code: each change is still its own named undo step (D-126's group),
+        /// a DRAFT's one run is asked whatever this says (D-119's "ask" is not
+        /// read through this switch), and turning it on is read fresh at the
+        /// next change.
+        /// </summary>
+        private static HeronSwitchQuestion Question()
+        {
+            return new HeronSwitchQuestion
+            {
+                Name = "Ask to Keep",
+                Headline = "Keep changes from a chat without asking?",
+                What = "Revit will stop showing you each change and asking Keep or Discard. A " +
+                       "change you ask for in a chat will be kept as soon as it is done.",
+                Promises = new[]
+                {
+                    "Ctrl+Z still takes each change to the model back as one step, named " +
+                    "\"Heron: ...\".",
+                    "A tool that has never been proved is still shown to you, and asked, " +
+                    "before it is kept.",
+                    "Turning it back on asks nothing, and counts from the next change.",
+                },
+                Caution = "You will not see a change before it is kept, and an export, a save " +
+                          "or a sync is done without asking - Ctrl+Z cannot take those back.",
+                Note = "To stop the box for one job only, leave this on and choose \"" +
+                       HeronKeepGrant.KeepRestLink + "\" in the box.",
+                TurnOn = "Stop asking",
+                Decline = "Keep asking",
+            };
+        }
+
+        /// <summary>
+        /// The same question with no window around it, for when the window
+        /// will not draw. TRUE to stop asking. ENTER LANDS ON "KEEP ASKING" -
+        /// the safe answer, as HeronSwitchToggle's fallback points at its own.
+        /// </summary>
+        private static bool AskPlainly(HeronSwitchQuestion asked)
+        {
+            var ask = new TaskDialog("Heron - " + asked.Name)
+            {
+                MainInstruction = asked.Headline,
+                MainContent = asked.What + "\n\n" + asked.Caution + "\n\n" +
+                              "Ctrl+Z still takes each change to the model back as one step. " +
+                              "This stays off until you turn it on again, including after Revit " +
+                              "restarts. The Ask to Keep button on the ribbon shows which state " +
+                              "you are in.",
+                CommonButtons = TaskDialogCommonButtons.None,
+                AllowCancellation = true
+            };
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                asked.TurnOn, "Changes from a chat are kept without the Keep or Discard box.");
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                asked.Decline, "Revit goes on asking. Nothing changes.");
+            ask.DefaultButton = TaskDialogResult.CommandLink2;
+
+            return ask.Show() == TaskDialogResult.CommandLink1;
+        }
+    }
+
+    /// <summary>
     /// Reports bridge state. Reads nothing from the model, opens no
     /// transaction, and needs no document - it answers on the start screen
     /// too, which is exactly where somebody whose ribbon looks wrong will go

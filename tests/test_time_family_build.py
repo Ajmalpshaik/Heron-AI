@@ -72,6 +72,7 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "time-family-build.py")
 KEEP_QUESTION = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepQuestion.cs")
+KEEP_GRANT = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronKeepGrant.cs")
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -921,6 +922,18 @@ def section_keep_box_words():
           "the tool's headline is the one HeronKeepQuestion.Headline shows a PROVEN run")
     check(link is not None and 'KeepLink = "%s"' % link.group(1) in added,
           "the tool's Keep link is HeronKeepQuestion.KeepLink")
+    # D-138'S THIRD LINK KEEPS TOO. Counted as a Discard, a job the modeller
+    # let run on would read as a job they turned down.
+    granted = ""
+    if os.path.isfile(KEEP_GRANT):
+        with open(KEEP_GRANT, encoding="utf-8") as fh:
+            granted = fh.read()
+    rest = re.search(r'^KEEP_REST_LINK = "([^"]*)"', tool, re.MULTILINE)
+    check(rest is not None and 'KeepRestLink = "%s"' % rest.group(1) in granted,
+          "the tool's third link is HeronKeepGrant.KeepRestLink (D-138)")
+    check(re.search(r"^KEEPS = \(KEEP_LINK, KEEP_REST_LINK\)$", tool, re.MULTILINE) is not None
+          and 'b["button"] not in KEEPS' in tool,
+          "and an answer of either link is counted as kept, never as a Discard")
     draft = re.search(r'^KEEP_HEADLINE_DRAFT = r"(.*)"$', tool, re.MULTILINE)
     check(draft is not None and r"has never been proved\. Keep what it did\?" in draft.group(1)
           and "' has never been proved. Keep what it did?\"" in added,

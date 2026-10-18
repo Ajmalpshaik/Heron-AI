@@ -14,9 +14,10 @@ using System.Windows.Shapes;
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// What one switch above Changes asks before it goes on - D-106. The
-    /// words and nothing else; HeronSwitchWindow decides how they are drawn,
-    /// and AdminToggleCommand and PublishToggleCommand decide what they say.
+    /// What one switch above Changes asks before it goes on - D-106 - or,
+    /// for Ask to Keep, before it goes off (D-138). The words and nothing
+    /// else; HeronSwitchWindow decides how they are drawn, and the toggle
+    /// commands decide what they say.
     /// </summary>
     internal sealed class HeronSwitchQuestion
     {
@@ -52,6 +53,13 @@ namespace Heron.Revit.Addin
 
         /// <summary>The amber button - "Turn Admin on".</summary>
         internal string TurnOn { get; set; }
+
+        /// <summary>
+        /// The quiet button, the safe answer. Null says "Leave it off", which
+        /// is what Admin and Publish want; Ask to Keep (D-138) asks on the way
+        /// OFF, and its safe answer is "Keep asking".
+        /// </summary>
+        internal string Decline { get; set; }
     }
 
     /// <summary>
@@ -68,7 +76,9 @@ namespace Heron.Revit.Addin
     ///     confirmation that leaning on Enter can clear is not one.
     ///   * Esc and the X both mean no, so every reflex that dismisses a
     ///     window lands on the safe answer.
-    ///   * It asks on the way on and never on the way off.
+    ///   * It asks on the way on and never on the way off - for a switch
+    ///     whose safe side is OFF. Ask to Keep's safe side is ON (D-138), so
+    ///     it asks on the way off, and its quiet button says so (Decline).
     ///
     /// ONE THING IS ADDED: a line saying what Ctrl+Z cannot take back. An
     /// export is a file already written and a sync has already reached
@@ -258,7 +268,7 @@ namespace Heron.Revit.Addin
 
         private UIElement Footer()
         {
-            var leave = HeronWindowStyle.GhostButton("Leave it off");
+            var leave = HeronWindowStyle.GhostButton(_question.Decline ?? "Leave it off");
             leave.Click += delegate { Decide(false); };
 
             var turnOn = HeronWindowStyle.PrimaryButton(
