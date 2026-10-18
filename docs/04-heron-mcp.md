@@ -115,7 +115,17 @@ superseding [D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-on
 *kept at once*). It is shown while the owner's *Ask to Keep* switch is on, and that switch is **off by
 default**. Off, `revit_change` keeps its change at once, as D-99 recorded
 ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
-A DRAFT's one run and a publish are always asked.
+A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is on, even under a job's
+*keep the rest* grant; while the switch is off it is kept at once like any other change.
+
+> **As built (2026-10-18), corrected:** this paragraph said *"A DRAFT's one run and a publish are always
+> asked"*. In [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) the box goes up only when
+> the run is a DRAFT's one run (`apply: ask`) or when `askToKeep` (`apply && AsksBeforeKeeping()`) is
+> true. A publish only stops the grant from covering it (`UnderTheGrant`, `HeronKeepGrant.AlwaysAsked`).
+> **Seen in Revit 2024.3 and 2027.3 on 2026-10-18**, on scratch models, with the switch then on by
+> default: Keep kept one undo entry, and Discard, Esc and the close button each kept nothing
+> ([NEEDS-CHECKING Group ET](needs-checking/group-et.md), rows ET2, ET3, ET5, ET11, ET13). The *Ask to
+> Keep* button and the grant have **not** run in Revit ([Group HG](needs-checking/group-hg.md)).
 
 ---
 
@@ -289,6 +299,99 @@ in the list above are still not built either.
 
 Four things, each derived from something that already owned the answer, so none of them is a second copy
 to drift. The tool list itself is `python mcp/server/heron_tools.py`, never a list typed here.
+
+### 8.0 The tools at a glance — as built (2026-10-18)
+
+The library of fragments is reached through **three doors**, each taking a capability or the modeller's
+own words, never a fragment's id or raw code. A fourth way in, `try-once`, is a command line and not a
+chat tool.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    U(["<b>Modeller</b><br/><i>select the ducts on level 1</i>"])
+    CC["<b>Claude Code</b><br/>picks the door"]
+    LIB["<b>Fragment library</b><br/>each card: code · risk · proof<br/><i>heron_lookup searches it</i>"]
+    RD["<b>revit_read</b><br/>nothing above ANALYZE<br/>Changes off is fine"]
+    SH["<b>revit_show</b><br/>nothing above EXECUTE<br/>selection · zoom · view"]
+    CH["<b>revit_change</b><br/>PROVEN only · D-117<br/>needs Changes"]
+    AU(["<b>Fragment author</b><br/>when the modeller asks"])
+    TO["<b>try-once</b> · command line<br/>a DRAFT's one run · D-119"]
+    AD["<b>Heron add-in</b><br/>the gate reads the switches"]
+    RV["<b>Revit</b><br/>the model"]
+
+    U ==>|plain language| CC
+    CC -.-|which capability?| LIB
+    CC -->|a question| RD
+    CC -->|show me| SH
+    CC -->|a change| CH
+    AU --> TO
+    RD -->|no transaction open| AD
+    SH -->|no transaction open| AD
+    CH ==>|one named TransactionGroup| AD
+    TO ==>|one named TransactionGroup · always asked| AD
+    AD ==> RV
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class U,AU user
+    class CC host
+    class LIB,RD,SH,CH,TO brain
+    class AD addin
+    class RV revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Modeller -- plain language --> Claude Code (picks the door; heron_lookup searches the fragment library)
+
+  a question  -> revit_read    nothing above ANALYZE, Changes off is fine  -> no transaction open
+  show me     -> revit_show    nothing above EXECUTE: selection, zoom,      -> no transaction open
+                               open a view
+  a change    -> revit_change  PROVEN only (D-117), needs Changes           -> one named TransactionGroup
+
+Fragment author, when the modeller asks (D-122)
+              -> try-once      command line, a DRAFT's one run (D-119)      -> one named TransactionGroup,
+                                                                               always asked Keep or Discard
+
+all four -> Heron add-in (the gate reads the switches) -> Revit, the model
+```
+
+</details>
+
+**The four ways in, side by side.** Read from `heron_tools.door_refusal`, `revit_change` in
+[`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), `cmd_try_once` in
+[`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) and `RevitFragment.Run`.
+
+| Way in | Runs a fragment declared | Transaction | Switch it needs | Proof it needs | A `DRAFT` |
+|---|---|---|---|---|---|
+| `revit_read` | `READ`, `ANALYZE` | none open; the add-in counts the model before and after ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) | none | none; the answer says how far it is proven | runs, and says DRAFT |
+| `revit_show` | anything up to `EXECUTE`: the selection, the camera, the active view | none open; counted the same way | none | none | runs, and says DRAFT ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) items 3 and 4) |
+| `revit_change` | `MODIFY`; `PUBLISH` and `ADMIN` each as an operation of its own ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)) | one named `TransactionGroup`, one undo entry | Changes; and Publish or Admin for those two levels | `PROVEN`, and its code unchanged since the proof (D-117, [D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)) | refused before anything is sent |
+| `try-once`, command line only | `MODIFY` only | one named `TransactionGroup` | Changes | must be `DRAFT`; once per version kept | its one run, always asked Keep or Discard, on a saved model in front ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so), D-121) |
+
+The read and show doors also refuse code that writes to disk, and code that opens a transaction of its
+own (§8.9).
+
+**The tools in groups.** The groups are a reading aid. Every tool's level, and the complete list, is
+`python mcp/server/heron_tools.py`; the table names the main tools of each group, not all of them.
+
+| Group | What it is for | Level, from `heron_tools.TOOLS` | What it needs | Main tools |
+|---|---|---|---|---|
+| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. `heron_tools.LIBRARY` is also served off Windows ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check` |
+| **Work it out** | HVAC and fire protection calculations | `READ` for `heron_hvac` and `heron_fire`, arithmetic on the values given; `ANALYZE` for the three that read the model first | nothing, and none of them changes the model. Writing a result back is the Companion page's Apply, at `MODIFY` (`heron_tools.COMPANION_ACTIONS`) | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
+| **Read the model** | answer a question about the model in front | `READ`, `ANALYZE` | a connected Revit; Changes may be off | `revit_read` (door); fixed readers such as `revit_levels`, `revit_views`, `revit_sheets`, `revit_rooms`, `revit_parameters`, `revit_worksets`; `revit_view_image` |
+| **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
+| **Change the model** | keep a change | `MODIFY`; `PUBLISH` and `ADMIN` through `revit_change` only | Changes; Publish or Admin as well for those levels | `revit_change` (door); `revit_preview_move` (`ANALYZE`) then `revit_apply_move` |
+| **Connect and check** | which Revit, which model, is Heron working | `READ` | nothing | `revit_health`, `revit_use_session`, `revit_use_this_model`, `heron_version`, `heron_diagnose`, `heron_companion` |
+
+`heron_tools.ALWAYS_LOADED` names the few a chat is given before it asks (§8.6); every other tool is one
+search away.
 
 ### 8.1 A door that only reads — `revit_read`
 
@@ -756,8 +859,17 @@ with Changes on, and the show door's refusal names `revit_isolate_temporary` for
 
 `tests/test_read_door.py` section 10 holds the show door over every fragment in the library,
 `tests/Heron.Kernel.TestHost` section 9 runs the gate over every switch combination, and
-`tests/test_mcp_serves.py` calls all three tools through a real SDK. **None of it has run in Revit** —
-[NEEDS-CHECKING Group ES](needs-checking/group-es.md).
+`tests/test_mcp_serves.py` calls all three tools through a real SDK. **None of it had run in Revit when this
+was written** — [NEEDS-CHECKING Group ES](needs-checking/group-es.md).
+
+> **As built (2026-10-18): first run in Revit.** Group ES ran on the owner's laptop, Revit 2024.3, on the
+> scratch model *Heron Safety 2024*. `revit_show` selected and zoomed to the ducts of one plan; it was not
+> refused for Changes, and the element count and the Undo list were unchanged (ES1). It refused a
+> `MODIFY` fragment before sending it (ES2 part a, ES11). It opened a view with Changes off (ES9). The
+> temporary isolate refused a bad request (ES4).
+> **Found:** every `revit_isolate_temporary` and `revit_reset_temporary` adds an entry to Revit's Undo
+> list, with Changes off (ES3). Whether Ctrl+Z ends the isolate was not answered. **Not run:** the link
+> rows ES5 to ES8 and ES16 (the model has no links), the rest of the group, and Revit 2020.
 
 ### 8.10 What a chat is not offered — built 2026-10-17
 
