@@ -82,6 +82,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 SLOW_SERVER = os.path.join(ROOT, "tests", "support", "slow_revit_server.py")
 
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
+
 # How long the stand-in Revit takes to answer: a minute and a half, which a
 # host told nothing would sit through in silence. Below the client's fragment
 # wait (heron_config.fragment_timeout, never under FRAGMENT_FLOOR_S), so the

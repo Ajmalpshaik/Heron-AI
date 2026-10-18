@@ -222,6 +222,25 @@ def _store_warm_allowed():
     return _brain()[0].rebuild_refusal() is None
 
 
+def carry_home():
+    """Carry Heron's data into its home, once on this PC (D-135). Never raises.
+
+    Called at server start-up, BEFORE warm_store() opens the store: the first
+    chat on a PC copies what the old places hold - a Store Claude's private
+    copy of %APPDATA%\\Heron first - into %USERPROFILE%\\.heron, and leaves a
+    note so no later chat does it again. A second chat starting at the same
+    moment waits for the first's copy. Looking a folder up - knowledge_dir(),
+    brain_audit_dir() - carries nothing, so a suite or a tool that only asks
+    never starts a carry; the doors that do are this, heron-ready and
+    `python brain/heron_paths.py --carry`.
+    """
+    try:
+        import heron_paths as PATHS
+        return PATHS.home()
+    except Exception:                                  # noqa: BLE001 - never fatal, D-135
+        return None
+
+
 def warm_store():
     """Prepare the knowledge store on a background thread, and return at once.
 
@@ -363,7 +382,7 @@ class _Open(object):
             if SCOPE.knowledge_dir() is None:
                 raise BrainUnavailable(
                     "Heron has nowhere to keep what it knows: there is no "
-                    "%APPDATA% on this machine and HERON_KNOWLEDGE is not set. "
+                    "Windows profile and no HERON_DATA on this machine, and HERON_KNOWLEDGE is not set. "
                     "Set HERON_KNOWLEDGE to a folder and ask again.")
             self.store = SCOPE.open_scope(SCOPE.GLOBAL)
             if self.store.count() == 0:

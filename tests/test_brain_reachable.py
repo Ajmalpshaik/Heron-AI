@@ -68,6 +68,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 FAILURES = []
 
@@ -837,6 +843,9 @@ def main():
         print("When it cannot read what it knows")
         saved = os.environ.pop("HERON_KNOWLEDGE", None)
         had_appdata = os.environ.pop("APPDATA", None)
+        # D-135: the home is HERON_DATA's or the Windows profile's now.
+        had_home = dict((key, os.environ.pop(key, None))
+                        for key in ("HERON_DATA", "USERPROFILE"))
         try:
             refused = None
             try:
@@ -853,6 +862,9 @@ def main():
                 os.environ["HERON_KNOWLEDGE"] = saved
             if had_appdata is not None:
                 os.environ["APPDATA"] = had_appdata
+            for key, value in had_home.items():
+                if value is not None:
+                    os.environ[key] = value
 
         print()
         if FAILURES:

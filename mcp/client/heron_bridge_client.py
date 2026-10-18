@@ -91,6 +91,35 @@ def local_app_data(environ=None, system=None):
     return posixpath.join(home, ".local", "share")
 
 
+def temp_folder(environ=None, system=None):
+    """
+    The temporary folder, as .NET's Path.GetTempPath names it - the other
+    folder HeronPaths.cs resolves that this file mirrors.
+
+    On Windows: TMP, then TEMP, then USERPROFILE, then the Windows folder -
+    GetTempPath's own order, which is not Python's `tempfile` (TMPDIR first,
+    then TEMP before TMP). Elsewhere: TMPDIR, else /tmp.
+
+    WHY HERON NEEDS IT AT ALL (D-135). A Microsoft Store Claude keeps a
+    private copy of %LOCALAPPDATA% for every process it starts, the MCP
+    server included, so a note a chat leaves under %LOCALAPPDATA%\\Heron is
+    one Revit - not such a process - never sees (row 5b-416). The temporary
+    folder is not copied: on the owner's laptop on 2026-10-17 a folder and a
+    file written there from inside the app were seen on the real disk from
+    outside it. HeronPaths.Companion is built on Path.GetTempPath() for the
+    same reason, and tests/test_data_home.py holds the two together.
+    """
+    env = os.environ if environ is None else environ
+    if (os.name if system is None else system) == "nt":
+        for name in ("TMP", "TEMP", "USERPROFILE"):
+            found = env.get(name, "")
+            if found.strip():
+                return found
+        return env.get("SystemRoot") or env.get("windir") or "C:\\Windows"
+    found = env.get("TMPDIR", "")
+    return found if found.strip() else "/tmp"
+
+
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery
 # file would follow the user to a PC where that process does not exist.
 DISCOVERY_DIR = os.path.join(local_app_data(), "Heron", "bridges")

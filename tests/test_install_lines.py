@@ -53,6 +53,13 @@ SERVER_DIR = os.path.join(ROOT, "mcp", "server")
 HELPER = os.path.join(BRAIN, "heron_install.py")
 LOCK = os.path.join(ROOT, "requirements-lock.txt")
 
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
+
 #: A pip line for a package the lock pins. Optional add-ons (model2vec and the
 #: like) are not in the lock and stay their own lines.
 LOCKED = re.compile(r"pip install[^\n]*?(\bpyyaml\b|\bmcp\b|\bcryptography\b|"

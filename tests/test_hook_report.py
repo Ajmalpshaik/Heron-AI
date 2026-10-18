@@ -43,6 +43,13 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "hook-report.py")
 
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except AttributeError:
@@ -92,7 +99,8 @@ def main():
 
 def run_all(home):
     env = dict(os.environ)
-    for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE"):
+    for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE",
+                 "HERON_DATA"):
         env.pop(name, None)
     # The per-user local folder, as .NET reads it: LOCALAPPDATA on Windows,
     # XDG_DATA_HOME elsewhere. Both, so this runs the same on either.
@@ -167,6 +175,8 @@ def run_all(home):
     inside = os.path.join(ROOT, "tests")
     bare = dict(env, LOCALAPPDATA=inside, XDG_DATA_HOME=inside)
     bare.pop("APPDATA", None)
+    # D-135: the knowledge folder is the Windows profile's now, so it goes too.
+    bare.pop("USERPROFILE", None)
     code, out = report([], bare)
     check(code == 0 and "No hook log on this machine" in out,
           "a machine with no usable log folder says why, and still exits 0")

@@ -191,6 +191,25 @@ namespace Heron.Kernel.TestHost
             Check(!HeronPaths.IsSafeToDelete(Path.Combine(derived, "..", "..")),
                   "and a path that climbs back out with .. is refused, "
                   + "because the comparison is made after it is resolved");
+
+            // D-135: the Companion's notes moved to the temporary folder, so a
+            // chat inside a Microsoft Store Claude and this add-in name one
+            // folder. Still DERIVED - a cleanup may take it - and the
+            // temporary folder itself, which holds other programs' files, is not.
+            var companion = Path.GetFullPath(HeronPaths.Companion);
+            var temp = Path.GetFullPath(Path.GetTempPath());
+            Check(string.Equals(companion,
+                                Path.GetFullPath(Path.Combine(temp, "Heron", "companion")),
+                                StringComparison.OrdinalIgnoreCase),
+                  "the Companion's folder is <temp>\\Heron\\companion (" + companion + ")");
+            Check(!companion.StartsWith(derived, StringComparison.OrdinalIgnoreCase),
+                  "and not under %LOCALAPPDATA%\\Heron, which a Store Claude keeps a copy of");
+            Check(HeronPaths.IsSafeToDelete(companion)
+                  && HeronPaths.IsSafeToDelete(Path.Combine(companion, "chat-1.json")),
+                  "it is DERIVED: safe to delete, and so is a note in it");
+            Check(!HeronPaths.IsSafeToDelete(temp)
+                  && !HeronPaths.IsSafeToDelete(Path.Combine(temp, "someone-elses.txt")),
+                  "the temporary folder itself, and another program's file in it, are refused");
         }
 
         // ------------------------------------------------------------------

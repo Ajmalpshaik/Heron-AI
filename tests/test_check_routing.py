@@ -101,6 +101,12 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 spec = importlib.util.spec_from_file_location(
     "heron_check_routing", os.path.join(ROOT, "tools", "check-routing.py"))
@@ -164,12 +170,24 @@ def _rows(home):
             os.environ["HERON_KNOWLEDGE"] = was
 
 
+def _home_beside(env):
+    """D-135: a planted %APPDATA% stood for the folder the shared store is in.
+    That folder is HERON_DATA's since, or the Windows profile's - so HERON_DATA
+    is planted beside it, and an %APPDATA% taken away takes the profile too,
+    or on Windows the owner's real profile would answer for it."""
+    if "APPDATA" not in env or "HERON_DATA" in env:
+        return env
+    if env["APPDATA"]:
+        return dict(env, HERON_DATA=os.path.join(env["APPDATA"], "Heron"))
+    return dict(env, HERON_DATA=None, USERPROFILE=None)
+
+
 class _planted_env(object):
     """ENV in os.environ for the length of a `with` - a variable mapped to
     None is unset - and everything put back as it was afterwards."""
 
     def __init__(self, env):
-        self.env = env
+        self.env = _home_beside(env)
         self.kept = {}
 
     def __enter__(self):
@@ -229,6 +247,7 @@ def _guarded_run(env, source=_UNSET, on_main=None, refusal=None):
                "rebuild_refusal": ((lambda root=None: refusal[0])
                                    if refusal is not None else None)}
     kept = dict((name, getattr(SCOPE, name, None)) for name in planted)
+    env = _home_beside(env)
     kept_env = dict((k, os.environ.get(k)) for k in env)
     was_index = SEARCH.index
     SEARCH.index = stop

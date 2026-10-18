@@ -98,7 +98,7 @@ def path_for(project_key, discipline="hvac"):
     base = scope.knowledge_dir()
     if base is None:
         raise ValueError(
-            "No %APPDATA% and no HERON_KNOWLEDGE, so there is nowhere to keep a "
+            "No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is nowhere to keep a "
             "project's answers. Set HERON_KNOWLEDGE to a folder.")
     return os.path.join(base, "projects", scope._safe_key(project_key) + SUFFIXES[discipline])
 

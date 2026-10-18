@@ -38,6 +38,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail - and so does the store it opens, which with no HERON_KNOWLEDGE is
+# the shared one at the default home (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant(data=True)
 
 import heron_health as HEALTH                                 # noqa: E402
 import heron_diagnose as DIAG                                 # noqa: E402
