@@ -141,14 +141,21 @@ def wiring():
     check(asked_words == ["apply"],
           "the only request word that asks is D-119's apply = \"ask\" - found %s" % asked_words)
     permissions = code(PERMISSIONS)
-    check(re.search(r'GetBool\(\s*AskBeforeKeepingKey\s*,\s*true\s*\)', permissions) is not None,
-          "the switch is read fresh, and a value nobody can read means ASK")
+    # OFF BY DEFAULT SINCE D-138 - the owner, 2026-10-18: "make the box off by
+    # default". A value nobody can read is the default on BOTH sides, so the
+    # chat never waits less than the box it may be waiting on.
+    check(re.search(r'GetBool\(\s*AskBeforeKeepingKey\s*,\s*false\s*\)', permissions) is not None,
+          "the switch is read fresh, and a value nobody can read is the default, OFF")
+    check(CFG.asks_before_keeping({"write.askBeforeKeeping": "maybe"}) is False
+          and CFG.asks_before_keeping({"write.askBeforeKeeping": "on"}) is True
+          and CFG.asks_before_keeping({}) is False,
+          "and the chat's side reads it the same way - unreadable or missing is off, on is on")
     check('"write.askBeforeKeeping"' in (read(PERMISSIONS) or ""),
           "under the key write.askBeforeKeeping")
     config_cs = read(CONFIG_CS) or ""
-    check(re.search(r'\{\s*"write\.askBeforeKeeping"\s*,\s*"true"\s*\}', config_cs) is not None
-          and CFG.DEFAULTS.get("write.askBeforeKeeping") == "true",
-          "on by default, on both sides of the bridge")
+    check(re.search(r'\{\s*"write\.askBeforeKeeping"\s*,\s*"false"\s*\}', config_cs) is not None
+          and CFG.DEFAULTS.get("write.askBeforeKeeping") == "false",
+          "OFF by default since D-138, on both sides of the bridge")
     for path in (SERVER, CLIENT):
         said = read(path) or ""
         check("askBeforeKeeping" not in said.replace("write.askBeforeKeeping", ""),
@@ -353,6 +360,8 @@ def wiring():
     for operation in (10, 60, 300):
         for ask_for in (1, 60, 300, 3600):
             values = dict(CFG.DEFAULTS)
+            # The question turned ON - off is the default since D-138.
+            values["write.askBeforeKeeping"] = "true"
             values["revit.operationTimeoutSeconds"] = str(operation)
             values["revit.askTimeoutSeconds"] = str(ask_for)
             longest = (CFG.busy_timeout(values) + CFG.operation_timeout(values)
@@ -364,12 +373,13 @@ def wiring():
     values = dict(CFG.DEFAULTS)
     check(CFG.fragment_timeout(values) == 180.0,
           "a read still waits exactly the 180 it always did")
+    check(CFG.fragment_timeout(values, keeping=True) == 180.0,
+          "and with the owner's question off - the default since D-138 - a keep does not "
+          "wait for one")
+    values["write.askBeforeKeeping"] = "true"
     check(CFG.fragment_timeout(values, keeping=True) == CFG.try_once_timeout(values),
           "and a keep the owner's switch asks about waits what D-119's try-once waits - "
           "the same box, the same wait")
-    values["write.askBeforeKeeping"] = "false"
-    check(CFG.fragment_timeout(values, keeping=True) == 180.0,
-          "and with the owner's question off, a keep does not wait for one")
     server = read(SERVER) or ""
     check("configuration.fragment_timeout(keeping=True)" in server,
           "revit_change waits as a run that keeps")
@@ -442,6 +452,19 @@ def switch():
           "its window's two buttons say Stop asking and Keep asking")
     check("_question.Decline ??" in code(SWITCH_WINDOW),
           "and the window draws the quiet button from the question, Leave it off when unset")
+
+    # OFF BY DEFAULT (D-138), SO NOTHING SEEN IN REVIT MAY STILL PROMISE THE BOX.
+    # Each of these three said so while it was on by default, and a promise
+    # put where the decision is made is a rail, not decoration.
+    for path, promise in (
+            (os.path.join(ADDIN, "HeronChangesWindow.cs"),
+             "You see each change in Revit first, and nothing is kept until you choose Keep."),
+            (COMMANDS, "It still previews first and still asks before keeping anything"),
+            (os.path.join(ADDIN, "HeronBridgeStatusWindow.cs"), "It previews first")):
+        said = read(path) or ""
+        check(bool(said) and promise not in said and "Ask to Keep" in said,
+              "%s no longer promises the box, and names Ask to Keep instead"
+              % os.path.basename(path))
 
     ready = read(READY) or ""
     check('"write.askBeforeKeeping"' in ready and '"Ask to Keep"' in ready,

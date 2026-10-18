@@ -15,6 +15,10 @@
 group back and puts the modeller's own selection back. The owner's switch is `write.askBeforeKeeping` in
 `heron.config`, on by default.
 
+> **Since [D-138](../decisions/D-138.md) (2026-10-18) the switch is OFF by default and is the *Ask to Keep*
+> button on the ribbon.** On an add-in built from that change, press Ask to Keep until it reads
+> `Ask to Keep ON` before any row below that expects the box; ET9's "off" is then the button's off.
+
 **What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027
 (`tools/check-compile.py`, 2026-10-17), and every Revit member it calls exists on all eight
 (`tools/check-api-surface.py`). `tests/test_keep_question.py` runs the Revit-free half - the words, the rule

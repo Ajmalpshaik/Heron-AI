@@ -34,8 +34,8 @@ to Revit, and Revit shows what it did and asks the modeller Keep or Discard
 before anything is kept - D-126, which supersedes D-99's change kept with no
 preview, and Article 9's exception says so. The owner's switch for the
 question is write.askBeforeKeeping, read in the add-in - the ribbon's Ask to
-Keep since D-138, whose box can also keep the rest of one job without asking,
-a grant only the modeller's click in Revit gives. Around it stand the
+Keep since D-138, OFF by default, whose box can also keep the rest of one job
+without asking, a grant only the modeller's click in Revit gives. Around it stand the
 owner's ribbon switch, one undo entry and the pin. Writing is switched off
 entirely until write.enabled is set - see
 HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
@@ -1718,7 +1718,7 @@ def revit_change(capability: str = "", values: str = "",
     as well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
-    try another capability to get round it. Revit asks Keep/Discard (D-126):
+    try another capability to get round it. Revit may ask Keep/Discard (D-126):
     Article 7's explicit yes comes BEFORE this call for destructive work, and
     Article 10 holds - nothing is saved, synced or exported unasked.
 
@@ -1896,10 +1896,11 @@ def revit_change(capability: str = "", values: str = "",
         # the recorded proofs was taken. This line is what lets a run outlive
         # itself, and it is why this tool is MODIFY in the registry.
         #
-        # ASKING IS NOT KEEPING (D-126). With the owner's switch on - the
-        # default - Revit shows the change and the MODELLER says Keep or
-        # Discard; this flag only makes the question possible. The switch is
-        # read inside the add-in and nothing sent from here can skip it.
+        # ASKING IS NOT KEEPING (D-126). With the owner's switch on - off by
+        # default since D-138 - Revit shows the change and the MODELLER says
+        # Keep or Discard; this flag only makes the question possible. The
+        # switch is read inside the add-in and nothing sent from here can skip
+        # it.
         "apply": "true",
     }
 
@@ -3941,7 +3942,7 @@ def _cannot_run():
         "above EXECUTE. Isolating in the active view is revit_isolate_temporary. "
         "A fragment that WRITES reaches Revit through revit_change, and Revit "
         "shows the modeller what it did and asks Keep or Discard before "
-        "anything is kept (D-126), only while the owner has "
+        "anything is kept while Ask to Keep is on (D-126), only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
         "HeronPermissions refuses it by name and nothing is sent. One declared "
         "ADMIN - a project or global parameter, a workset, a new family file - "

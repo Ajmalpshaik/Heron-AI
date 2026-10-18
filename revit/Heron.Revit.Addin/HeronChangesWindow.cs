@@ -182,17 +182,16 @@ namespace Heron.Revit.Addin
         /// kept - unless the owner turns write.askBeforeKeeping off, which is
         /// the owner's to do and is said in D-126.
         ///
-        /// AND SINCE D-138 THE MODELLER CAN ANSWER IT ONCE FOR A JOB: the box's
-        /// third link keeps that change and lets the same chat's next changes
-        /// to the same model be kept unseen, for ten quiet minutes. That is a
-        /// choice made in Revit, after seeing a change, exactly as the switch
-        /// is - so the line stays as it was seen in Revit (Z10), and D-138 says
-        /// what the job's later changes are not shown.
+        /// AND SINCE D-138 THE BOX IS OFF BY DEFAULT - the owner, 2026-10-18:
+        /// "make the box off by default" - so the first line said what is now
+        /// true only after Ask to Keep is turned on. It names that button
+        /// instead, and still promises nothing the code does not do: with the
+        /// button on, each change is shown and Keep or Discard decides.
         /// </summary>
         private UIElement Promises()
         {
             var list = new StackPanel();
-            list.Children.Add(Promise("You see each change in Revit first, and nothing is kept until you choose Keep."));
+            list.Children.Add(Promise("Turn on Ask to Keep to see each change in Revit first and choose Keep or Discard."));
             list.Children.Add(Promise("Every change is one Ctrl+Z."));
             list.Children.Add(Promise("It stays on until you turn it off, including after Revit restarts."));
 

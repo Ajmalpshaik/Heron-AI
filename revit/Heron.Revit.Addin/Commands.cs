@@ -220,6 +220,11 @@ namespace Heron.Revit.Addin
         /// read. It is reached only when the window will not draw, which a
         /// WPF window inside a host application has more ways to do than a
         /// TaskDialog has.
+        ///
+        /// ONE SENTENCE CHANGED, 2026-10-18: it said "It still previews first
+        /// and still asks before keeping anything", and since D-138 the Keep
+        /// or Discard box is off until Ask to Keep is turned on. A rail that
+        /// stops being true is changed, however proven the sentence was.
         /// </summary>
         private static bool AskPlainly()
         {
@@ -228,8 +233,8 @@ namespace Heron.Revit.Addin
                 MainInstruction = "Allow Heron to change models?",
                 MainContent =
                     "Heron will be able to move, edit and create elements when you ask it to. "
-                    + "It still previews first and still asks before keeping anything, and "
-                    + "every change is one Ctrl+Z.\n\n"
+                    + "Every change is one Ctrl+Z, and Ask to Keep on the ribbon shows each "
+                    + "change first for Keep or Discard when it is on.\n\n"
                     + "This stays on until you turn it off, including after Revit restarts. "
                     + "The ribbon padlock shows which state you are in.",
                 CommonButtons = TaskDialogCommonButtons.None,

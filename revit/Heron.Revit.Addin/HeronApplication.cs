@@ -551,8 +551,10 @@ namespace Heron.Revit.Addin
             //
             // THE OTHER WAY ROUND FROM THE PADLOCKS BESIDE IT. Their safe side
             // is OFF; this one's is ON - Revit asks. So it asks on the way OFF
-            // and never on the way on, and it starts ON. Off lets nothing
-            // through that Changes did not: it only stops the question.
+            // and never on the way on. It STARTS OFF all the same, the owner's
+            // second word the same day: "make the box off by default". Off
+            // lets nothing through that Changes did not: it only stops the
+            // question.
             //
             // AND THE BOX ITSELF CAN SKIP THE REST OF ONE JOB - its third
             // link, while this is on. The label says so while that grant holds.
@@ -568,7 +570,7 @@ namespace Heron.Revit.Addin
                 "Closed padlock: Revit shows each change and asks Keep or Discard. Open padlock: " +
                 "changes are kept without asking.\n\n" +
                 "Either way every change to the model is one Ctrl+Z, named \"Heron: ...\". " +
-                "Turning it off asks first; turning it on never does.\n\n" +
+                "It starts off. Turning it on never asks; turning it off asks first.\n\n" +
                 "\"Keep: rest of job\" means you chose \"" + HeronKeepGrant.KeepRestLink + "\" " +
                 "in the box: that chat's changes to that model are kept without asking until 10 " +
                 "minutes pass with none. An export, a save or a sync, and a tool that has never " +

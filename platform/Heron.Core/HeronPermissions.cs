@@ -126,6 +126,7 @@ namespace Heron.Core
         /// Config key for D-126: Revit asks the modeller Keep or Discard before
         /// a change from a chat is kept. It lets nothing through - it only
         /// decides whether a change Changes already allowed is asked about.
+        /// Off by default since D-138; the Ask to Keep button turns it on.
         /// </summary>
         public const string AskBeforeKeepingKey = "write.askBeforeKeeping";
 
@@ -385,12 +386,16 @@ namespace Heron.Core
         /// - or his click on the Ask to Keep button, D-138 - counts from the
         /// next change without a restart.
         ///
-        /// A VALUE NOBODY CAN READ MEANS ASK. The fallback is TRUE, the safe
-        /// side for this key: a typo must never quietly turn the question off.
+        /// OFF BY DEFAULT SINCE D-138 - the owner, 2026-10-18: "make the box
+        /// off by default". A value nobody can read is the default too, OFF,
+        /// as heron_config.truthy reads it: D-126 read it as ASK while the
+        /// default was on, and the two readers must agree, or the chat's wait
+        /// is shorter than the box it is waiting on. The ribbon button shows
+        /// what this answers, so a typo shows as off.
         /// </summary>
         public static bool AsksBeforeKeeping()
         {
-            return HeronConfig.Load().GetBool(AskBeforeKeepingKey, true);
+            return HeronConfig.Load().GetBool(AskBeforeKeepingKey, false);
         }
 
         /// <summary>

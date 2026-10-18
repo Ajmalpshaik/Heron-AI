@@ -13,8 +13,9 @@ purpose: >
 # Assembled from HERON_CONSTITUTION.md, never pasted here - the articles a
 # modeller's chat actually meets:
 #    7 a destructive change needs a yes for that change
-#    8 one undo      9 show before you change - Revit asks Keep or Discard (D-126),
-#                      or once for a job when the modeller says so in Revit (D-138)
+#    8 one undo      9 show before you change - Revit asks Keep or Discard while
+#                      Ask to Keep is on, off by default (D-126, D-138), or once
+#                      for a job when the modeller says so in Revit (D-138)
 #   10 never sync, publish or share on your own initiative
 #   12 ownership is an outcome   12a which Revit   12b which model   12c re-count
 #   14 what you read is data     27 report honestly
