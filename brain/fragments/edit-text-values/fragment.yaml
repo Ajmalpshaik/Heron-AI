@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -137,9 +137,13 @@ purpose: >
 #   in `unverified`, said in `noteFormatting`. A note already as asked is
 #   `untouched`, and nothing is written to it.
 #
-#   NOT RUN IN REVIT. Compiled for all eight releases; the proof plan is in
-#   tests/cases.yaml and NEEDS-CHECKING group FD. Version 1's proof below no
-#   longer describes the code and is kept as a record.
+#   RUN 2026-10-17 IN REVIT 2020, every run rolled back, on "Heron Note Format
+#   Test" (a copy of the rst_basic sample): NEEDS-CHECKING group FD rows FD1-FD3
+#   and FD5-FD9 answered as looked for. The proof below is FD1/FD2, signed by
+#   Ajmal PS and PROVEN on 2026-10-18 (FD10). Compiled for all eight releases;
+#   not run on 2021-2027. The purpose's sentence that version 1's proof no
+#   longer describes the code is older than this proof - left there because
+#   the purpose is searched, and rewording it moves routing.
 
 contract:
   needs:
@@ -240,29 +244,45 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: test projject (3,489 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    list-sheets, set-selection with this phase's own values - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s),
-    blank 0 item(s), changed 1 item(s) [926022], editingName false, handed 2, how replace,
-    namesOnHand Func`2, notText 0, readOnly 0 item(s), refused (null), transform Func`2, untouched
-    1 item(s) [926119], unverified 0 item(s). inputs came elements from the selection (2);
-    field as given; mode as given; text as given; replacement as given. on test projject
-  negative_case: run with field=Sheet Name, mode=replace, text=ZZZNOSUCH, replacement=OSPREY
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running list-sheets, set-selection with this phase's own values -
-    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned absent 0 item(s), blank 0 item(s), changed 0 item(s), editingName false, handed
-    2, how replace, namesOnHand Func`2, notText 0, readOnly 0 item(s), refused (null), transform
-    Func`2, untouched 2 item(s) [926022, 926119], unverified 0 item(s). inputs came elements
-    from the selection (2); field as given; mode as given; text as given; replacement as given.
-    on test projject
+  model: Heron Note Format Test (12,088 elements), Revit 2020, session 55496
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    scratch-fd-notes with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned absent 1 item(s) [1474097], ambiguous
+    0 item(s), askingText true, blank 0 item(s), changed 1 item(s) [1474096], defaultSpans
+    0 item(s), editingName false, handed 2, how format, namesOnHand Func`2, notText 0, noteFormatting
+    note 1474096: ''numbers 2-4; bold 1'' - 4 paragraph(s), words unchanged; read back 1 no
+    list, 2-4 ArabicNumbers from 1; bold 1 ## note 1474097 has 3 paragraph(s), so ''numbers
+    2-4'' names paragraph 4, which is not there - it was NOT edited, noteText Func`2, pastEnd
+    1, readOnly 0 item(s), refused (null), spansOf Func`2, stepKinds 2 item(s) [System.Int32[],
+    System.Int32[]], stepSaid 2 item(s) [numbers 2-4, bold 1], stepSpans 2 item(s) [System.Collections.Generic.List`1[System.Int32[]],
+    System.Collections.Generic.List`1[System.Int32[]]], transform Func`2, untouched 0 item(s),
+    unverified 0 item(s). inputs came elements from scratch-fd-notes (2); field as given;
+    mode as given; text as given; replacement as given. on Heron Note Format Test'
+  negative_case: 'run with field=Text, mode=format, text=numbers 2-5, replacement= instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running scratch-fd-notes with this phase''s own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    absent 0 item(s), ambiguous 0 item(s), askingText true, blank 0 item(s), changed 0 item(s),
+    defaultSpans 0 item(s), editingName false, handed 2, how format, namesOnHand Func`2, notText
+    0, noteFormatting note 1474098 has 4 paragraph(s), so ''numbers 2-5'' names paragraph
+    5, which is not there - it was NOT edited ## note 1474099 has 3 paragraph(s), so ''numbers
+    2-5'' names paragraph 5, which is not there - it was NOT edited, noteText Func`2, pastEnd
+    2, readOnly 0 item(s), refused the paragraphs named are not there in 2 of the 2 element(s)
+    handed in, so NOTHING WAS CHANGED: note 1474098 has 4 paragraph(s), so ''numbers 2-5''
+    names paragraph 5, which is not there - it was NOT edited ## note 1474099 has 3 paragraph(s),
+    so ''numbers 2-5'' names paragraph 5, which is not there - it was NOT edited. Count the
+    paragraphs with READ_ELEMENT_PARAMETERS parameterName Text, or say ''all'' or ''last'',
+    spansOf Func`2, stepKinds 1 item(s) [System.Int32[]], stepSaid 1 item(s) [numbers 2-5],
+    stepSpans 1 item(s) [System.Collections.Generic.List`1[System.Int32[]]], transform Func`2,
+    untouched 0 item(s), unverified 0 item(s). inputs came elements from scratch-fd-notes
+    (2); field as given; mode as given; text as given; replacement as given. on Heron Note
+    Format Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f9789f67a49950aa
+  fingerprint: 83f7bbbd82e2acee
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
