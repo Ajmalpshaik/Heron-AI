@@ -90,12 +90,12 @@ Keep box; B is a rolled-back run from the command line (`--write`, no `--apply`)
 
 | # | Release | What was run and what came back | State |
 |---|---|---|---|
-| **EO1** | 2024 | B after A (a kept duct, 3 elements): `rolledBack` and `rollbackReported` true, `rollbackCheck` `added 6`, `checked 6`, `standing 0`, `keptJob create-duct`, `keptChecked 3`, `keptLost 0`; *"none of the 6 elements this run added is still in the model"*; no *"Rolling back this run removed"* | **PASS** |
-| **EO2** | 2024 | He clicked Revit's Undo once on `Heron: create-duct`, then B: *"The last kept job ('create-duct') was undone in Revit before this run started, so this run did not remove what it made."*, `keptLost 0` | **PASS** |
-| **EO3** | 2024 | `added` 6 - the listener saw the inner commits. `eventNamed` 0 on every rollback this day | recorded: **0** |
-| **EO4** | 2024 | `delete-elements` (no apply) on A's duct, selected: 9 deleted (`alsoWent` 8), rolled back, `keptLost` 0, no loss sentence, 21,568 back and both ids present | **PASS** |
-| **EO5** | 2024 | A kept (duct 892313), he deleted it by hand - its system and helper went with it. B: *"What the last kept job ('create-duct') made was already gone when this run started - removed in Revit, not by this run."*; the next B said nothing. The one-of-several half could not be separated - the delete took all three | **PASS** (second half) |
-| **EO6** | - | No refused move arranged | **NOT RUN** |
-| **EO7** | 2027 | EO1: B after the kept level - silent, `keptJob create-level`, `keptChecked 1`, `keptLost 0`. EO2: his Undo, then B - *"was undone in Revit before this run started"*. 2020 not run | **PASS** on 2027 |
-| **EO8** | 2024 | **Not runnable as written:** after EO2's B, Revit's Redo was empty - a rolled-back Heron run empties the modeller's Redo list | answered: **a preview takes Redo away** |
-| **EO9** | 2024 | `revit_view_image` with A's duct: `capture_failed` - [5b-1090](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** |
+| EO1 | 2024 | B after A (a kept duct, 3 elements): `rolledBack` and `rollbackReported` true, `rollbackCheck` `added 6`, `checked 6`, `standing 0`, `keptJob create-duct`, `keptChecked 3`, `keptLost 0`; *"none of the 6 elements this run added is still in the model"*; no *"Rolling back this run removed"* | **PASS** |
+| EO2 | 2024 | He clicked Revit's Undo once on `Heron: create-duct`, then B: *"The last kept job ('create-duct') was undone in Revit before this run started, so this run did not remove what it made."*, `keptLost 0` | **PASS** |
+| EO3 | 2024 | `added` 6 - the listener saw the inner commits. `eventNamed` 0 on every rollback this day | recorded: **0** |
+| EO4 | 2024 | `delete-elements` (no apply) on A's duct, selected: 9 deleted (`alsoWent` 8), rolled back, `keptLost` 0, no loss sentence, 21,568 back and both ids present | **PASS** |
+| EO5 | 2024 | A kept (duct 892313), he deleted it by hand - its system and helper went with it. B: *"What the last kept job ('create-duct') made was already gone when this run started - removed in Revit, not by this run."*; the next B said nothing. The one-of-several half could not be separated - the delete took all three | **PASS** (second half) |
+| EO6 | - | No refused move arranged | **NOT RUN** |
+| EO7 | 2027 | EO1: B after the kept level - silent, `keptJob create-level`, `keptChecked 1`, `keptLost 0`. EO2: his Undo, then B - *"was undone in Revit before this run started"*. 2020 not run | **PASS** on 2027 |
+| EO8 | 2024 | **Not runnable as written:** after EO2's B, Revit's Redo was empty - a rolled-back Heron run empties the modeller's Redo list | answered: **a preview takes Redo away** |
+| EO9 | 2024 | `revit_view_image` with A's duct: `capture_failed` - [5b-1090](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** |

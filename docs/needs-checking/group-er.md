@@ -60,12 +60,12 @@ for the session and deleted by name at the end - none is committed.
 
 | # | Release | What was run and what came back | State |
 |---|---|---|---|
-| **ER1** | 2024 | `view` empty, *Level 1 HVAC Plan* in front: the picture came into the chat - ducts, grids and rooms seen - and the words named the view, FloorPlan and the model | **PASS** |
-| **ER2** | 2024 | `elements` = 891701 (a kept duct), 891698, and 386031, 394114, 395978 (original equipment): every one `capture_failed` *"The referenced object is not valid ... or its creation was undone"*. The ids exist. The reply reads the temporary view's name after the rollback undid it - [5b-1090](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** |
-| **ER3** | 2024 | No new 3D view (140 views, 11 3D, before and after), element count unchanged - but the closing words never came, ER2 failed first | **part** |
-| **ER4** | 2024 | `Levle 1 HVAC Plan`: *"There is no view called 'Levle 1 HVAC Plan'"*, nothing pictured. The ambiguous half: no two views in this model share a name | **PASS**; ambiguous half **NOT RUN** |
-| **ER5** | 2024 | `999999999`: refused naming the id. A duct id and `view` together: *"Give a view name OR element ids, not both"*. Nothing made | **PASS** |
-| **ER6** | 2027 | `view` empty: the Cover Sheet in front pictured. `elements` = 1365188, 1366142: the same `capture_failed` | view **PASS**, elements **FAIL** |
-| **ER7** | 2024 | `%LOCALAPPDATA%\Heron\captures` empty, 0 files | **PASS** |
-| **ER8** | 2024 | `width` 9000: a 2400 px picture and *"The width asked for was outside 320 to 2400 px, so 2400 was used."* | **PASS** |
-| **ER9** | - | The banner was not watched | **NOT RUN** |
+| ER1 | 2024 | `view` empty, *Level 1 HVAC Plan* in front: the picture came into the chat - ducts, grids and rooms seen - and the words named the view, FloorPlan and the model | **PASS** |
+| ER2 | 2024 | `elements` = 891701 (a kept duct), 891698, and 386031, 394114, 395978 (original equipment): every one `capture_failed` *"The referenced object is not valid ... or its creation was undone"*. The ids exist. The reply reads the temporary view's name after the rollback undid it - [5b-1090](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** |
+| ER3 | 2024 | No new 3D view (140 views, 11 3D, before and after), element count unchanged - but the closing words never came, ER2 failed first | **part** |
+| ER4 | 2024 | `Levle 1 HVAC Plan`: *"There is no view called 'Levle 1 HVAC Plan'"*, nothing pictured. The ambiguous half: no two views in this model share a name | **PASS**; ambiguous half **NOT RUN** |
+| ER5 | 2024 | `999999999`: refused naming the id. A duct id and `view` together: *"Give a view name OR element ids, not both"*. Nothing made | **PASS** |
+| ER6 | 2027 | `view` empty: the Cover Sheet in front pictured. `elements` = 1365188, 1366142: the same `capture_failed` | view **PASS**, elements **FAIL** |
+| ER7 | 2024 | `%LOCALAPPDATA%\Heron\captures` empty, 0 files | **PASS** |
+| ER8 | 2024 | `width` 9000: a 2400 px picture and *"The width asked for was outside 320 to 2400 px, so 2400 was used."* | **PASS** |
+| ER9 | - | The banner was not watched | **NOT RUN** |
