@@ -22,6 +22,15 @@ A skill is a **capability the user recognises**. A fragment is a **reusable impl
 
 Tracked as [Q-8](OPEN-QUESTIONS.md).
 
+> **As built (2026-10-18):** answered by
+> [D-29](DECISIONS.md#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer). The skill is
+> confirmed as proposed, and the fragment is a composable piece with a declared contract. A third kind,
+> the **recipe**, is named for a job that genuinely cannot be composed. Skills are
+> [`brain/skills/*.yaml`](../brain/skills/). They name **capabilities, never fragments**, so a fragment
+> can be replaced without editing a skill. The chat gets a skill's ordered steps from `heron_method`.
+> Fragments are reached by capability through `revit_read`, `revit_show` and `revit_change`
+> ([04 §3](04-heron-mcp.md#3-note-tool-granularity--the-central-mcp-design-decision)).
+
 ---
 
 ## 2. Skill metadata
@@ -44,6 +53,10 @@ Updated Date
 ```
 
 **[NOTE]** Add: **Example utterances** (what the user might actually say) and **Preconditions** (document open, elements selected, worksharing state). Utterances drive matching quality directly; preconditions let Heron fail early with a useful message instead of failing deep inside a transaction.
+
+> **As built (2026-10-18):** both additions were taken. Every skill file carries `utterances` and
+> `preconditions`, beside `needs`, the capabilities it uses. `python brain/heron_skill.py` validates the
+> skills and counts them.
 
 ---
 
@@ -81,6 +94,25 @@ fragments/select-elements-by-category/
   history.jsonl            <- usage, success, failure
 ```
 
+> **As built (2026-10-18):** one folder per fragment, as recommended, under
+> [`brain/fragments/`](../brain/fragments/). The layout differs in two ways:
+>
+> ```text
+> brain/fragments/<name>/
+>   fragment.yaml            <- identity, contract, risk, revit:, runtime:, utterances, proof
+>   impl/any/fragment.cs     <- one implementation for every release
+>   tests/cases.yaml
+> ```
+>
+> - **There are no per-runtime folders.** Where releases differ, the one file branches on the compile
+>   symbols (`REVIT2024_OR_GREATER` and the rest, [16](16-version-support-strategy.md)). Check with
+>   `ls brain/fragments/*/impl/ | sort | uniq -c`.
+> - **There is no `history.jsonl`.** What ran is in the audit trail and the run records
+>   ([`HeronRuns.cs`](../platform/Heron.Core/HeronRuns.cs)), and a fragment's proof is the `proof:` block
+>   of its own `fragment.yaml`.
+>
+> `python brain/heron_fragment.py` validates every card and counts them.
+
 ---
 
 ## 5. Fragment lifecycle
@@ -107,6 +139,22 @@ The `PROVEN → PRODUCTION` human gate is the fragment-level equivalent of the a
 
 Tracked as [Q-9](OPEN-QUESTIONS.md) for the value of N and who may approve.
 
+> **As built (2026-10-18): superseded by
+> [D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs), not
+> a count.** A fragment is promoted on **one recorded proof against a real model**. The proof has a
+> positive case, a negative case, and a second route to the answer where one exists, and the person who
+> ran it signs it with their name and the date. Its fingerprint makes it stale the moment the code
+> changes. The statuses in use are `DRAFT` and `PROVEN`. Count each with
+> `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`. No fragment is
+> `PRODUCTION`. At run time, `revit_change` keeps a change only from a fragment whose proof still stands
+> ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)). A
+> DRAFT may run once on the model in front, behind Revit's Keep or Discard box, and the modeller judges
+> that run
+> ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so),
+> [D-122](DECISIONS.md#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it)).
+> Unifying the status words is still only proposed
+> ([D-14](DECISIONS.md#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes)).
+
 ---
 
 ## 6. Fragment Split / Merge / Evolution
@@ -126,6 +174,13 @@ Tracked as [Q-9](OPEN-QUESTIONS.md) for the value of N and who may approve.
 Every code-bearing fragment records its Revit and .NET compatibility, **determined from the build environment, never guessed**.
 
 Compatibility is a **hard filter before ranking**, not a ranking signal. A fragment that does not support the running Revit version must be structurally unable to be selected. See [05 §8](05-heron-brain.md).
+
+> **As built (2026-10-18):** each card declares `revit:` and `runtime:`, and retrieval's version filter
+> leaves an incompatible fragment out rather than ranking it low
+> ([05 §4](05-heron-brain.md#4-note-retrieval-is-not-only-vector-search)).
+> `python tools/check-fragments-compile.py` compiles every fragment for every release, and
+> `tools/check-api-surface.py` checks the Revit members they call. A compile is not a proof. Which
+> releases a proof names is [NEEDS-CHECKING Group EQ](needs-checking/group-eq.md).
 
 ## 8. Regression testing (§25)
 
@@ -150,6 +205,13 @@ Generated code must know and follow: folder structure, naming conventions, metad
 
 **[NOTE]** Enforce this mechanically rather than by instruction. Before the Code Generation Agent runs, the Fragment Matcher must have searched and reported. If a proven fragment covers ≥80% of the request, generation is not permitted to start from scratch — it must start from that fragment. Otherwise the knowledge base fills with near-duplicates, and the Merge Agent spends its life cleaning up after the Generation Agent.
 
+> **As built (2026-10-18): enforced, without the percentage.** The Fragment Matcher answers `matched`,
+> `partial` or neither, never a score. The Fragment Creation Agent refuses to author when either list is
+> non-empty ([`heron_generate.py`](../brain/heron_generate.py),
+> [`heron_matcher.py`](../brain/heron_matcher.py)). [PROPOSALS F24](proposals/f24.md) says why `partial`
+> is stricter than *"≥80%"*. The host-side loop that searches first and then writes the fragment is the
+> [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) subagent.
+
 ---
 
 ## 10. **[NOTE]** The runtime execution question
@@ -168,3 +230,12 @@ This is unresolved in the spec and it is architecturally decisive: **when Heron 
 The user's existing pyRevit work is directly relevant here and may already answer half the question.
 
 Tracked as decision **D-04**, [Q-7](OPEN-QUESTIONS.md).
+
+> **As built (2026-10-18):** [D-04](DECISIONS.md#d-04--generated-code-execution-hybrid) settled *hybrid*,
+> and [D-28](DECISIONS.md#d-28--generated-code-is-c-compiled-at-run-time-in-process) named the runtime:
+> **Roslyn C# scripting, in process, through the bridge**, with no Python runtime and no HTTP server in
+> the add-in. Today every fragment, DRAFT or PROVEN, is compiled when it runs, inside Revit
+> ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)). The compile is cached by the
+> fragment's source, so a changed fragment compiles fresh. On Revit 2025 and later the compiler is loaded
+> into a load context of Heron's own ([revit/README](../revit/README.md)). The precompiled `PRODUCTION`
+> half of the hybrid is not built, because no fragment is `PRODUCTION`.

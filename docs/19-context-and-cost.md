@@ -101,6 +101,14 @@ design survives either choice.
 
 Tracked as [Q-30](OPEN-QUESTIONS.md).
 
+> **As built (2026-10-18): the tension is resolved.** Q-30 was closed by Part 4 §24's model abstraction
+> layer: Heron declares the intent, and the host resolves it
+> ([23 §8](23-heron-kernel.md#8-ai-model-abstraction-layer--resolves-an-open-tension)).
+> [`heron_router.py`](../brain/heron_router.py) chooses *who* chooses and never a model. Heron makes no
+> model call of its own, so routing, fallback and cost belong to the host
+> ([D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host)).
+> No provider adapter has been built ([37](37-the-provider-adapter.md)).
+
 **[NOTE]** Whatever is chosen, never hard-code model identifiers in agent definitions. Models change
 faster than architectures. Declare *"this needs strong reasoning"*, and resolve it in one place.
 
@@ -175,6 +183,23 @@ flowchart TD
 Steps 1 and 2 must be tried **before** any model is invoked, structurally — not as an optimisation
 added later. If step 4 is ever reached for *"select all ducts"* after the first time, something is broken.
 
+> **As built (2026-10-18): the order holds, and two steps run differently from the diagram.**
+> [`heron_search.py`](../brain/heron_search.py) tries the identity route first and the utterance cache
+> second.
+>
+> - **A cache hit is not executed.** It comes back as a candidate, never a decision, and a wording is
+>   cached only after its fragment has run and come back
+>   ([D-61](DECISIONS.md#d-61--only-a-run-that-came-back-may-be-cached-and-re-indexing-forgets-what-changed-underneath-it)).
+>   Replaying it unasked would let one accepted guess harden into a habit.
+> - **Step 3 makes no model call on Heron's side.** Keyword and meaning matches go back to the host as
+>   ranked candidates, each with what it needs typed, and the host confirms
+>   ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin),
+>   [D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host)).
+>
+> Step 2 runs in one tool call: the declared words of a PROVEN capability, with every value given
+> ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). How often a request was
+> answered with no model needed is measured by `tools/measure-routes.py`.
+
 ---
 
 ## 6. Caching
@@ -197,6 +222,14 @@ no cache.
 Invalidate on `SkillCreated`, `FragmentApproved` and project change. In real BIM work the same handful
 of phrases recur constantly, so hit rates should be high.
 
+> **As built (2026-10-18):** invalidation runs on content, not events. A cached wording carries its
+> fragment's fingerprint, which is the same hash D-30 uses to call a proof stale, and re-indexing drops a
+> row written against old bytes ([D-61](DECISIONS.md#d-61--only-a-run-that-came-back-may-be-cached-and-re-indexing-forgets-what-changed-underneath-it)).
+> A card's parse is kept until its bytes change
+> ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). The add-in's compile cache
+> is keyed by the fragment's source. The event bus exists as a module,
+> [`heron_events.py`](../brain/heron_events.py), and no cache listens to it.
+
 ---
 
 ## 7. Observability
@@ -215,3 +248,12 @@ success rate · failure rate · retry count · rollback count.
 **Agent Optimizer**. They should be written into the same audit log
 ([12 §5](12-security-and-permissions.md)) rather than a separate telemetry system — one append-only
 record, many readers.
+
+> **As built (2026-10-18):** the two additions were split by
+> [D-58](DECISIONS.md#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host).
+> Cost per request is the host's. *Model calls per request* is replaced by what Heron can count: how
+> often it answered with no model needed at all, through the identity and cache routes. Latency is
+> Heron's. The add-in writes one audit line per request, and the brain writes its own audit file
+> ([D-62](DECISIONS.md#d-62--the-brain-writes-its-own-audit-file-and-the-reader-that-already-merges-does-the-merging)).
+> [`tools/time-family-build.py`](../tools/time-family-build.py) reads a chat's transcript and the audit
+> trail and times a whole job ([04 §8.7](04-heron-mcp.md#87-a-new-pc-as-quick-as-the-old-one--built-2026-10-09)).

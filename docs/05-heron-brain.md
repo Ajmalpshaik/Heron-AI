@@ -53,6 +53,14 @@ CORE KNOWLEDGE
 
 This is **Golden Rule 5**. A polluted brain is unsearchable and untrustworthy, and in a consultancy setting mixing Project A's knowledge into Project B is a commercial and contractual problem, not just a technical one.
 
+> **As built (2026-10-18):** [`heron_scope.py`](../brain/heron_scope.py) holds the scopes of
+> [10 §1](10-memory-and-knowledge.md#1-memory-scopes) as `heron_scope.SCOPES`: global, company,
+> project, user, temporary and experimental. Each is one SQLite file, and `ATTACH` is refused at the
+> engine, so a query across two scopes cannot be written. There is no community store. Shared company knowledge is a git repository
+> when there is demand ([D-41](DECISIONS.md#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer)).
+> A project's store is keyed by the model's own `CreationGUID`, never guessed
+> ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about)).
+
 ---
 
 ## 3. RAG Department
@@ -93,6 +101,24 @@ BIM and Revit queries are full of **exact tokens** that embeddings handle badly:
 
 That last point matters most: the common case ("select all ducts", asked for the 400th time) should cost **one lookup**, not a retrieval pipeline.
 
+> **As built (2026-10-18):** all five stages exist.
+>
+> 1. The structured filter runs first in [`heron_retrieve.py`](../brain/heron_retrieve.py). A fragment
+>    for another Revit release is absent, not demoted. When the host calls the request a question, so is
+>    every capability that changes the model
+>    ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)).
+> 2. Keywords are FTS5, and nearness is a built-in lexical backend or a trained encoder when one is
+>    installed ([`heron_embed.py`](../brain/heron_embed.py)).
+> 3. The two are fused by reciprocal rank.
+> 4. The re-ranker is optional: [`heron_rerank.py`](../brain/heron_rerank.py), a cross-encoder. With
+>    nothing installed, fusion's order comes back unchanged and the answer says so.
+> 5. The short circuit is [`heron_search.py`](../brain/heron_search.py)'s identity route. Only a
+>    `PROVEN` fragment may run off it unasked, and through a door only when every value it needs is given
+>    ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)).
+>
+> [`retrieval-history.md`](../brain/retrieval-history.md) records what each stage was measured to do,
+> and at what library size.
+
 ## 5. **[NOTE]** Vector store choice
 
 Requirements: local-first, embeddable, no server to install, works offline, handles metadata filtering well, and survives being copied around with the workspace folder.
@@ -107,6 +133,12 @@ Requirements: local-first, embeddable, no server to install, works offline, hand
 **Recommendation: SQLite + `sqlite-vec` + FTS5.** One file per knowledge scope keeps scope separation physical rather than merely logical — which makes Golden Rule 5 impossible to violate by accident, and makes "archive this project" a file copy.
 
 Tracked as [Q-10](OPEN-QUESTIONS.md).
+
+> **As built (2026-10-18):** decided as
+> [D-23](DECISIONS.md#d-23--the-knowledge-store-is-sqlite-one-file-per-scope), one SQLite file per
+> scope, with FTS5 for keywords. `sqlite-vec` is used when it loads. Where a Python build cannot load
+> extensions, the same cosine is computed in Python over the same stored bytes. Either way the vectors
+> stay in the scope's own file ([`heron_embed.py`](../brain/heron_embed.py)).
 
 ## 6. **[NOTE]** Embedding model choice — the offline question
 
@@ -125,6 +157,14 @@ The last row is decisive for BIM consultancy work. Indexing a project's knowledg
 
 Tracked as [Q-11](OPEN-QUESTIONS.md) and the wider data-residency question [Q-12](OPEN-QUESTIONS.md).
 
+> **As built (2026-10-18):** decided as
+> [D-24](DECISIONS.md#d-24--embeddings-are-computed-locally-by-default), and the cloud opt-in in the
+> recommendation above was withdrawn the same day by
+> [D-26](DECISIONS.md#d-26--the-model-file-is-never-uploaded). Embeddings are computed on the machine,
+> with no opt-in and no setting. [`heron_embed.py`](../brain/heron_embed.py) uses a trained encoder when
+> one is installed, and the built-in lexical backend otherwise. Each answer says which one ran. What to
+> install is [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md).
+
 ---
 
 ## 7. Vector database maintenance
@@ -138,6 +178,14 @@ The user never manages the vector database manually.
 - **Content-hash based indexing.** Re-embed only when content actually changed, not when a file's mtime moved. Otherwise every git operation triggers a full re-index.
 - **The index is derived, never authoritative.** Fragments and skills live as files with metadata (git-tracked, human-readable, diffable). The vector DB is a rebuildable cache. If it is ever corrupt, deleting it must be a safe recovery action. Never store the only copy of knowledge inside the vector store.
 
+> **As built (2026-10-18):** both hold. Indexing is content-hashed, so an unchanged file costs nothing.
+> A lookup re-reads a card only when its bytes change, never on its mtime
+> ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). The stores are derived:
+> `python brain/heron_scope.py --rebuild` puts them back from disk
+> ([Golden Rule 11](14-golden-rules.md)). There is no background agent. A card changed on disk reaches
+> its row on the next lookup, and a store that has drifted from the cards is named in the
+> `heron_lookup` answer.
+
 ---
 
 ## 8. **[NOTE]** Knowledge validation is where trust is won or lost
@@ -148,3 +196,12 @@ Two failure modes to design against explicitly:
 
 1. **Confident wrong retrieval.** A fragment written for Revit 2021 gets applied in 2025 and silently misbehaves. Mitigation: version compatibility is a **hard filter before ranking**, never a soft signal.
 2. **Invented standards.** §47 already forbids this. Enforce it structurally: any claim about ISO 19650, QCS, Ashghal or a company standard must carry a citation to an indexed source document. **No source, no claim.** A standards answer with no citation is a bug, not a low-confidence answer.
+
+> **As built (2026-10-18):** the first is the version wall in §4. For the second,
+> [`heron_ground.py`](../brain/heron_ground.py) checks a proposed answer against the clauses it cites
+> and flags an added fact; the chat reaches it through `heron_check`.
+> [`heron_research.py`](../brain/heron_research.py) marks an outside answer with nothing cited
+> `UNCITED`. Even a well-formed citation stays `UNVERIFIED` until the document it cites is ingested.
+> Where two scopes give a different number for one question, `heron_standards` says so and settles
+> nothing ([`heron_conflict.py`](../brain/heron_conflict.py)). What the brain has been run against is
+> in [`brain/README.md`](../brain/README.md).

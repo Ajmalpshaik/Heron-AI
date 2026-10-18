@@ -18,6 +18,11 @@
 
 > These must never be mixed blindly. — **Golden Rule 5**
 
+> **As built (2026-10-18):** these are `heron_scope.SCOPES`
+> ([`heron_scope.py`](../brain/heron_scope.py)), one SQLite file each
+> ([D-23](DECISIONS.md#d-23--the-knowledge-store-is-sqlite-one-file-per-scope)). Every store is derived
+> and can be rebuilt from disk. `python brain/heron_scope.py` lists what exists and where.
+
 ## 2. Project context isolation
 
 ```mermaid
@@ -68,6 +73,17 @@ Enforce it physically, not by convention:
 3. **Promotion is always explicit and upward** — Project → Company → Community requires a human decision at each step. There is no automatic path.
 4. **Cross-project search requires an explicit, logged opt-in** ("search all my projects"), and the result must show which project each answer came from.
 
+> **As built (2026-10-18):** rules 1 and 2 are in code. A `Store` holds one scope, and SQLite's
+> `ATTACH` and `DETACH` are denied at the engine, so a query across two files cannot be written. The
+> project store is keyed by the model's own `Document.CreationGUID`, which the add-in sends. With no key,
+> the project scope refuses rather than guesses
+> ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about)).
+> A project's governing standards are asked once and kept for that project
+> ([D-111](DECISIONS.md#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project)).
+> Rule 3's ladder is a plan that moves nothing ([`heron_userskills.py`](../brain/heron_userskills.py)).
+> Rule 4's opt-in is not built: `heron_standards` asks each named scope on its own and labels every
+> answer, and nothing searches every project at once.
+
 ---
 
 ## 3. Personal learning (§34)
@@ -117,6 +133,14 @@ Design constraints:
 5. **Import is resumable.** A folder with thousands of files will fail partway through at some point.
 
 Tracked as [Q-16](OPEN-QUESTIONS.md) — which existing repositories are in scope for the first import.
+
+> **As built (2026-10-18):** the pipeline is
+> [`heron_pipeline.py`](../brain/heron_pipeline.py). It reads its step order from the specification,
+> never modifies the source folder, and maps each step to an agent.
+> [`heron_import.py`](../brain/heron_import.py) prepares the manifest for a person's review, and
+> everything enters at `DISCOVERED`. Both are DRAFT, and no MCP tool serves either. The study of the
+> existing libraries is [31](31-studying-the-existing-libraries.md): mechanisms are re-authored, never
+> imported ([D-25](DECISIONS.md#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported)).
 
 ---
 
@@ -251,6 +275,12 @@ permission, no code generation and no sandbox — and it makes Heron useful on a
 from the first week rather than after months of accumulation. Together with model comparison
 ([25 §6b](25-multi-session-and-binding.md)) it is probably the highest value-per-unit-of-risk feature
 in the whole platform.
+
+> **As built (2026-10-18):** the profiler is [`heron_exemplar.py`](../brain/heron_exemplar.py)
+> (HERON-STD-REF-010, DRAFT). It keeps shapes and counts, never a name, an id or a project, and
+> `kept_nothing` re-reads the finished profile against every name it was given. Neither export, the
+> Model Checker checkset nor IDS, is built, and no MCP tool serves the profiler. A profile carrying a
+> client's job number is [PROPOSALS F30](proposals/f30.md).
 
 ---
 
