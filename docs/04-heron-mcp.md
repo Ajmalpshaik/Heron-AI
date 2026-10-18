@@ -277,6 +277,46 @@ is that the host is told, while it blocks, that the wait goes on.
 - **A fault in a note never costs the answer.** The client drops the callback for the rest of that read.
 - **Nothing goes down the pipe.** The protocol is unchanged, and Revit is asked nothing more.
 
+The same, as one call, read from `_waiting` and `_progress_token` in `heron_mcp_server.py` and
+`Bridge._read_line` in `heron_bridge_client.py`:
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+sequenceDiagram
+    participant H as Claude Code
+    participant S as Heron MCP server
+    participant B as Bridge client
+    participant R as Heron add-in, in Revit
+    H->>S: revit_change (or another tool that sends a fragment), with a progressToken
+    Note over S: no progressToken - no callback, and the wait is silent as before
+    S->>B: Bridge.request(..., on_wait=_waiting(ctx))
+    B->>R: one request line down the pipe
+    loop every WAIT_NOTE_S, until the answer or the deadline
+        B-->>S: on_wait(seconds waited)
+        S-->>H: MCP progress notification, WAITING_ON_REVIT
+    end
+    R->>B: one answer line
+    B->>S: the answer
+    S->>H: the tool's result
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Claude Code -> Heron MCP server    a tool that sends a fragment, with a progressToken
+                                   (no token: no callback, and the wait is as silent as before)
+server -> bridge client            Bridge.request(..., on_wait=_waiting(ctx))
+bridge client -> add-in            one request line down the pipe - nothing more is ever sent
+  every WAIT_NOTE_S, until the answer or the deadline:
+    bridge client -> server        on_wait(seconds waited)
+    server -> Claude Code          an MCP progress notification, WAITING_ON_REVIT
+add-in -> bridge client            one answer line
+server -> Claude Code              the tool's result
+```
+
+</details>
+
 `tests/test_mcp_stdio.py` holds it over real stdio, on any system, against
 `tests/support/slow_revit_server.py` — the real server in front of a Revit that takes the test's `SLOW_S`
 seconds to answer:
@@ -383,7 +423,7 @@ own (§8.9).
 
 | Group | What it is for | Level, from `heron_tools.TOOLS` | What it needs | Main tools |
 |---|---|---|---|---|
-| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. `heron_tools.LIBRARY` is also served off Windows ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check` |
+| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check` |
 | **Work it out** | HVAC and fire protection calculations | `READ` for `heron_hvac` and `heron_fire`, arithmetic on the values given; `ANALYZE` for the three that read the model first | nothing, and none of them changes the model. Writing a result back is the Companion page's Apply, at `MODIFY` (`heron_tools.COMPANION_ACTIONS`) | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
 | **Read the model** | answer a question about the model in front | `READ`, `ANALYZE` | a connected Revit; Changes may be off | `revit_read` (door); fixed readers such as `revit_levels`, `revit_views`, `revit_sheets`, `revit_rooms`, `revit_parameters`, `revit_worksets`; `revit_view_image` |
 | **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
@@ -547,8 +587,8 @@ ordinary case.
   behind the encoder, and a lookup arriving meanwhile waits for it rather than doing it twice. **Only**
   for a private store, an install with no git, or the main checkout on branch `main`: a worktree's
   cards are unmerged work and the shared store is every chat's (rows 131, 136).
-- **A few tools are given to the chat before it asks** - the lookup, the doors and the first-time
-  checks; `heron_tools.ALWAYS_LOADED` is the list, never this sentence - served with Claude Code's documented
+- **A few tools are given to the chat before it asks** - the lookup, the read and change doors and the
+  first-time checks (the show door came later and is one search away, §8.9); `heron_tools.ALWAYS_LOADED` is the list, never this sentence - served with Claude Code's documented
   `_meta["anthropic/alwaysLoad"]`. Most Revit chats spent their first turn searching for a Heron tool
   (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat (measured since by a
   command, §8.8); every other tool is still one search away, and nothing about what a tool may do
@@ -649,7 +689,7 @@ its answer ([40 §4](40-heron-companion.md)). One case costs more, read from the
 build: a `heron_resolve`, `heron_method` or `heron_lookup` that arrives while the knowledge store is still
 being prepared waits for it inside the lock (`_PREPARING`, `mcp/server/heron_brain.py`), and every other
 tool call waits behind it. The lever Heron has is fewer calls, not parallel ones: `CREATE_FAMILY_FORMS`
-(DRAFT, [Q-62](OPEN-QUESTIONS.md)) builds many forms in one. Two small per-call costs the measurement found
+(DRAFT that day, [Q-62](OPEN-QUESTIONS.md); `PROVEN` since 2026-10-17, below) builds many forms in one. Two small per-call costs the measurement found
 are rows [5b-427 and 5b-428](fragment-issues/section-5b-rows-401-425.md); the sweep's shape note that #472
 left short is [5b-429](fragment-issues/section-5b-rows-401-425.md).
 
@@ -821,7 +861,8 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
   ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) - and what an `EXECUTE` fragment can change is
   the selection, the camera and the active view.
   Its ceiling is its own row, through the same `door_refusal`: `MODIFY` and above are refused before
-  anything is sent, and `revit_read` now sends an `EXECUTE` fragment here rather than to `revit_change`.
+  anything is sent. `revit_read` still refuses an `EXECUTE` fragment, and its refusal now sends the chat
+  here rather than to `revit_change`.
   Everything else is §8.1's: the pin, the proof line, the words path, `expect_from`.
 - **It is one search away, not given before the chat asks.** `heron_tools.ALWAYS_LOADED`'s six left less
   of §8.8's budget than a door's description takes when this was built - `python mcp/server/heron_tools.py
