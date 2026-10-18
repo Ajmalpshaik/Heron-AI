@@ -22,6 +22,7 @@ proves is the thing a screenshot would NOT show:
     a row's own text WRAPS rather than clipping in silence - AB1, row 5b-97
     a RELEASE with no build is greyed and the reason is PRINTED, not hovered
     Close Revit first is built BEFORE the Install button, not after a failure
+      and worked out again when a run starts and ends - row 5b-1068
     the waiting happens off the window's thread, so it cannot freeze
 
 WHAT IT CANNOT PROVE
@@ -261,6 +262,26 @@ def main():
     check("CloseRevitFirst" in window, "the line is in the window")
     check(window.index("screen.CloseRevitFirst") < window.index('Content = "Install"'),
           "and it is added to the page above the button, not after a failure")
+
+    print()
+    print("And it is WORKED OUT AGAIN when a run starts and ends - row 5b-1068")
+    # Built once when the window opened, it still said "Revit 2026 is open
+    # right now" after Revit had closed and the install ended READY. What it
+    # says is InstallerScreen's, tested in the engine's suite; this holds the
+    # wiring - the window can draw it again, and the run asks it to.
+    check(re.search(r"\.Text\s*=\s*_screen\.CloseRevitFirst", window_code) is not None,
+          "the window can draw the line again from the screen, after it was built")
+    check("RefreshCloseRevitFirst(revit.RunningRevits())" in entry_code,
+          "the run works it out again from the Revits open NOW, asked fresh")
+    worker = entry_code.find("new Thread(")
+    apply_at = entry_code.find("engine.Apply(")
+    report_at = entry_code.find("window.Report(report, python)")
+    rechecks = [m.start() for m in re.finditer(r"ShowWhatIsOpen\(", entry_code)]
+    check(any(worker < at < apply_at for at in rechecks) and worker != -1,
+          "when the run starts, on the worker thread - asking Windows is not "
+          "done on the window's")
+    check(any(apply_at < at < report_at for at in rechecks) and apply_at != -1,
+          "and again once the add-in half is done, before the report is shown")
 
     print()
     print("UNINSTALL IS THE SAME WINDOW, AND IT CONFIRMS FIRST - R-21, R-22")

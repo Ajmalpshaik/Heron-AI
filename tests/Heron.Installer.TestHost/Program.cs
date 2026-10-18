@@ -697,6 +697,47 @@ namespace Heron.Installer.TestHost
                   "a Revit whose release cannot be read still says a Revit is open");
 
             Console.WriteLine();
+            Console.WriteLine("And it is worked out again when it is shown, and says ARE for two - row 5b-1068");
+            // Seen on the owner's laptop on 2026-10-17 and 2026-10-18: the line
+            // was built once, when the window opened, and still said Revit 2026
+            // was open after Revit had closed and the install ended READY; and
+            // with two open it said "Revit 2026 and 2020 is open".
+            Check(Names(busy.CloseRevitFirst, "Revit 2024 is open right now"),
+                  "one Revit open still reads IS open: " + busy.CloseRevitFirst);
+            var twoOpen = InstallerScreen.Build(screenManifest, new[] { "2020", "2026" },
+                                                Open("2026", "2020"), null, null);
+            Check(Names(twoOpen.CloseRevitFirst, "Revit 2026 and 2020 are open right now"),
+                  "two Revits open read ARE open: " + twoOpen.CloseRevitFirst);
+            Check(!Names(twoOpen.CloseRevitFirst, " is open right now"),
+                  "and never IS open for two");
+
+            // By reflection for BindingNote's reason: on the code before the
+            // row the method does not exist, and the checks below fail as
+            // checks rather than as a build error.
+            var refresh = typeof(InstallerScreen).GetMethod("RefreshCloseRevitFirst");
+            Check(refresh != null,
+                  "the screen can work the line out again from the Revits open now");
+            Action<InstallerScreen, List<RunningRevit>> recheck = (s, open) =>
+            {
+                if (refresh != null) refresh.Invoke(s, new object[] { open });
+            };
+            var reopened = InstallerScreen.Build(screenManifest, new[] { "2024", "2026" },
+                                                 Open("2026"), null, null);
+            recheck(reopened, Open());
+            Check(!Names(reopened.CloseRevitFirst, "open right now"),
+                  "once Revit has closed it no longer says Revit is open: " + reopened.CloseRevitFirst);
+            Check(Names(reopened.CloseRevitFirst, "Close Revit before installing"),
+                  "and it still says to close Revit before installing");
+            recheck(reopened, Open("2024"));
+            Check(Names(reopened.CloseRevitFirst, "Revit 2024 is open right now"),
+                  "a Revit opened after the window was built is named when it is worked out again: "
+                  + reopened.CloseRevitFirst);
+            recheck(reopened, null);
+            Check(!Names(reopened.CloseRevitFirst, "open right now")
+                  && Names(reopened.CloseRevitFirst, "Close Revit before installing"),
+                  "and not knowing what is open says only to close Revit, as Build does");
+
+            Console.WriteLine();
             Console.WriteLine("The Addins folder is ASKED FOR, never built here");
             var asked = new FakeRevit(new[] { "2024" });
             Check(asked.AddinsFolder("2024") != null,
