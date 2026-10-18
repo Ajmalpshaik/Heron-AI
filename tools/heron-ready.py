@@ -38,7 +38,7 @@ it. Every PC that runs this starts from the same place.
 
 WHAT IT CHANGES, AND WHAT IT NEVER DOES
 ---------------------------------------
-It builds the knowledge store under %APPDATA%\\Heron, downloads the search
+It builds the knowledge store under Heron's home (D-135), downloads the search
 model once when `model2vec` is installed, and compiles Heron's Python. It
 INSTALLS NOTHING - pulling a runtime onto a machine unasked is what a careful
 user and a corporate laptop are both right to refuse (Q-39) - so a missing
@@ -321,10 +321,21 @@ def claude_app():
                  "Leave out any you do not want - only a DIFFERENT version is a",
                  "problem. sentence-transformers and torch are the re-ranker."])
         say(NOTE, "a Reset or uninstall of the Claude app deletes that copy",
-            ["The packages Claude installed, Heron's knowledge store, the "
-             "projects' memory",
-             "and the brain's audit go with it - docs/WHAT-TO-INSTALL.md "
-             "section 1b."])
+            ["The packages Claude installed go with it. Heron's knowledge store,",
+             "the projects' memory and the brain's audit no longer live there",
+             "(D-135): they are in %s - docs/WHAT-TO-INSTALL.md section 1b."
+             % (_heron_home() or "Heron's home folder")])
+
+
+def _heron_home():
+    """Where Heron's Python side keeps its data on this PC (D-135), or None.
+    Only a name for a NOTE: data_home() carries nothing."""
+    try:
+        sys.path.insert(0, os.path.join(ROOT, "brain"))
+        import heron_paths
+        return heron_paths.data_home()
+    except Exception:                               # noqa: BLE001 - a NOTE's wording only
+        return None
 
 
 def server_starts():
@@ -393,7 +404,7 @@ def knowledge_store(check_only):
         return
     where = SCOPE.knowledge_dir()
     if not where:
-        say(FIX, "there is nowhere to keep it - no %APPDATA% and no HERON_KNOWLEDGE")
+        say(FIX, "there is nowhere to keep it - no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE")
         return
     try:
         allowed = BRAIN._store_warm_allowed()
@@ -409,6 +420,13 @@ def knowledge_store(check_only):
     if check_only:
         say(NOTE, "kept in %s; --check does not build it" % where)
         return
+    # D-135: Heron's data into its home, once on this PC, before the store is
+    # built there - from outside Claude this also reaches the files a Store
+    # Claude's copy hides from the chats. Copied, never moved.
+    home = BRAIN.carry_home()
+    if home:
+        say(NOTE, "Heron keeps its data in %s" % home,
+            "What the old places held was copied there once; nothing was deleted.")
     started = time.time()
     try:
         with BRAIN._Open() as store:
