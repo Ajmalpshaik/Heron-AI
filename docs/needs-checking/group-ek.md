@@ -70,4 +70,4 @@ arranged on it.
 | EK7 | 2024 | `parameterFilter` *level, offset*: *"6 kept of 70"*, every kept line holds level or offset in its name or built-in name. `maxChars` 100: *"raised to the least, 5000"*, and on 249 ducts *"RECORD CUT AT THE 5000-CHARACTER BUDGET: 6 of 50 element(s) written whole; element id 419059 cut after 4 of its 7 lines; not written: ids ..."* | **PASS** |
 | EK8 | 2024 | *"worksets not shown - not a workshared model"*. The selected-and-typed half not arranged | **part** |
 | EK9 | 2027 | 37 mechanical equipment through the selection path, cut at 5000; typed `1365188, 1366299, 999999999, abc` → two described, both bad ones in `missing`. EK5 not arrangeable; 2020 not run | **PASS** (EK1-type, 2027) |
-| **EK5, EK6, EK10** | - | No link, no workshared copy | **NOT RUN** |
+| EK5, EK6, EK10 | - | No link, no workshared copy | **NOT RUN** |

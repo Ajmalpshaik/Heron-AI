@@ -86,7 +86,7 @@ Claude app's private copy of `heron.config`, which still said `true` throughout;
 | ES4 | 2024 | `ids` 392168 (Level 1) and 419031 (Level 2): *"Only 1 of the 2 are in this view at all"*. Both `ids` and `category`: *"two different requests ... NOTHING was isolated"*. The second reset: *"nothing to reset and nothing was done"*. The sheet half not run | **PASS** |
 | ES9 | 2024 | `revit_show OPEN_VIEW` *Level 2 HVAC Plan*: opened, Changes off. *Mechanical Plan* (a template): `opened false`, *"[view template, cannot be opened]"* | **PASS** |
 | ES11 | 2024 | `revit_show ISOLATE_ELEMENTS`: refused before sending, naming `revit_isolate_temporary` | **PASS** |
-| **ES5-ES8, ES10, ES12-ES16** | - | No links; the rest not arranged | **NOT RUN** |
+| ES5-ES8, ES10, ES12-ES16 | - | No links; the rest not arranged | **NOT RUN** |
 
 With the switches off, a `create-duct` preview from the command line came back `write_disabled` and
 `save-document` `publish_disabled` - the gates held where the server's own copy of the switches said otherwise.

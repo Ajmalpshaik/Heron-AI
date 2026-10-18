@@ -85,7 +85,7 @@ for the session and deleted by name at the end - none is committed.
 | ET4 | 2024 | He waited about 57 s (audit `ms` 56,626) before Keep: the KEPT verdict arrived, never *"still running"* | **part** - 90 s not reached; the `askTimeoutSeconds = 60` half NOT RUN |
 | ET5 | 2024 | *Heron Guard B 2024* in front, `CREATE_DUCT` in *Heron Safety 2024* by name: the box read *"This model is not the one in front, so nothing is selected or isolated on screen"* (his screenshot); Keep kept it in A (`wasActiveDocument` false); B 4,948 elements before and after; nothing selected in A | **PASS** |
 | ET6 | - | `CREATE_STAIRS` is still DRAFT | **NOT RUN** (waits on its proof) |
-| **ET7, ET8** | - | Not arranged; the banner was not watched | **NOT RUN** |
+| ET7, ET8 | - | Not arranged; the banner was not watched | **NOT RUN** |
 | ET9 | - | Needs `write.askBeforeKeeping` edited in the owner's own `heron.config` | **NOT RUN** |
 | ET10 | 2024 | `OPEN_VIEW` `Level 1 HVAC Plan` through `revit_change`: *"Revit reported nothing added, changed or deleted in the model, so the modeller was not asked"*; the plan opened; Undo list unchanged | **PASS** |
 | ET11 | 2027 | `CREATE_LEVEL` *ET Test* at 60000 mm, Keep: kept, Revit counted one level added. *ET Test 2* at 70000 mm, Discard: nothing kept. Undo list exactly `Heron: create-level` and EM6's `Heron: create-line-pattern` | **PASS** on 2027 |
