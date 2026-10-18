@@ -28,7 +28,8 @@ WHAT IT PROVES
      Restoring from a damaged copy is worse than not restoring.
   6. Restore takes a SAFETY COPY of what it is about to overwrite, because the
      thing it destroys is the only record of the machine a second ago.
-  7. Nothing touches the real %APPDATA% - every case runs in a temp folder.
+  7. Nothing touches the real %APPDATA% or the real home - every case runs in a
+     temp folder, and cases 12 on plant the home.
   8. A RESTORE IS A MERGE AND SAYS SO. A file in the data folder that the
      backup never held is LEFT WHERE IT IS - which is the safe direction for
      an append-only audit log, and the opposite of what "Restored 2 file(s)"
@@ -44,6 +45,23 @@ WHAT IT PROVES
  10. A DRILL WITH NOTHING TO DRILL IS NOT A FAILED DRILL. docs/21 s8 asks for
      a PERIODIC AUTOMATED drill, and on a machine where Heron has written
      nothing yet it exited 1 - the code a broken restore path uses.
+ 12. WITH NO HERON_DATA, ONE BACKUP HOLDS BOTH FOLDERS (row 5b-1069, D-135):
+     %APPDATA%\\Heron, the add-in's settings and trail, and the home that
+     `heron_paths.data_home()` names, where the knowledge folder, each
+     project's memory and the brain's audit went. Before this it held the
+     first alone.
+ 13. A RESTORE PUTS EACH FILE BACK INTO THE FOLDER IT CAME FROM - the
+     `source` its part of the manifest records - and nothing crosses over.
+ 14. THE DRILL PROVES THE ROUND TRIP FOR BOTH, and changes neither.
+ 15. THE DEFAULT BACKUP FOLDER IS IN THE HOME, not %APPDATA%\\Heron\\backup,
+     which inside a Microsoft Store Claude is the app's private copy that a
+     Reset deletes along with what it backs up. A backup already taken in the
+     old place is still listed.
+ 16. A folder that does not exist yet is left out and named, not an error.
+ 17. A RESTORE REFUSES A FOLDER IT CANNOT PUT BACK - a recorded source whose
+     parent this PC has not got - before it writes anything.
+ With HERON_DATA set, cases 1 to 11 are the behaviour they always were: that
+ folder alone, laid out flat. Case 12 checks %APPDATA% stays out of it.
 
 WHAT IT DOES NOT PROVE. That a real disaster is survivable. The default backup
 sits beside what it protects; it survives a deleted audit folder and an
@@ -69,6 +87,26 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+def quietly(call, *args, **kwargs):
+    """(what `call` returned, what it printed)."""
+    quiet, keep_out = io.StringIO(), sys.stdout
+    sys.stdout = quiet
+    try:
+        return call(*args, **kwargs), quiet.getvalue()
+    finally:
+        sys.stdout = keep_out
+
+
+def fingerprint(folder):
+    """Every file under `folder`, by its content."""
+    found = {}
+    for base, _d, files in os.walk(folder):
+        for name in files:
+            full = os.path.join(base, name)
+            found[os.path.relpath(full, folder)] = io.open(full, "rb").read()
+    return found
+
+
 def load():
     path = os.path.join(ROOT, "tools", "heron-backup.py")
     spec = importlib.util.spec_from_file_location("heron_backup_tool", path)
@@ -88,7 +126,13 @@ def put(root, relative, text):
 
 def main():
     work = tempfile.mkdtemp(prefix="heron-backup-test-")
-    kept = {k: os.environ.get(k) for k in ("HERON_DATA", "HERON_BACKUP")}
+    kept = {k: os.environ.get(k) for k in ("HERON_DATA", "HERON_BACKUP", "APPDATA")}
+    # The home is asked of heron_paths, which answers None off Windows with no
+    # HERON_DATA and the owner's real profile on Windows - so cases 12 on plant
+    # it, the way tests/test_data_home.py does, and put it back below.
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_paths as PATHS
+    real_home = PATHS.data_home
     try:
         data = os.path.join(work, "data")
         store = os.path.join(work, "copies")
@@ -291,7 +335,173 @@ def main():
         check("NOT RUN" in said,
               "saying NOT RUN in those words, and it said %r" % said[-90:])
 
+        print()
+        print("12. WITH NO HERON_DATA, ONE BACKUP HOLDS BOTH FOLDERS (row 5b-1069)")
+        print("    %APPDATA%\\Heron keeps the add-in's settings and trail; D-135")
+        print("    moved the knowledge folder, each project's memory and the")
+        print("    brain's audit into the home heron_paths.data_home() names.")
+        roaming = os.path.join(work, "roaming")
+        appdata = os.path.join(roaming, "Heron")
+        home = os.path.join(work, "profile", ".heron")
+        both = os.path.join(work, "copies-both")
+        os.environ["APPDATA"] = roaming
+        put(appdata, "config/heron.config", u"write.enabled = false\n")
+        put(appdata, "audit/audit-202610.jsonl", u'{"op":"ADD-IN TRAIL"}\n')
+        put(appdata, "knowledge/global.db", u"PRETEND SQLITE - the old store\n")
+        put(home, "knowledge/global.db", u"PRETEND SQLITE - the store\n")
+        put(home, "knowledge/projects/p1.hvac.json", u'{"ashrae": "62.1-2019"}\n')
+        put(home, "audit/audit-brain-202610.jsonl", u'{"op":"BRAIN LINE"}\n')
+
+        # WITH HERON_DATA SET IT IS THAT FOLDER ALONE, AS IT ALWAYS WAS - and
+        # a planted %APPDATA% stays out of it.
+        os.environ["HERON_BACKUP"] = both
+        alone = tool.take(label="heron-data-alone")
+        names = sorted(f["path"] for f in (alone or {}).get("files", []))
+        check(alone is not None and "config/heron.config" in names
+              and not any(n.startswith("appdata/") or n == "audit/audit-202610.jsonl"
+                          for n in names)
+              and "parts" not in alone,
+              "with HERON_DATA set, the backup is that folder alone, flat, and "
+              "%APPDATA% is not in it")
+
+        os.environ.pop("HERON_DATA", None)
+        PATHS.data_home = lambda environ=None, system=None: home
+        made2 = tool.take(label="both")
+        check(made2 is not None, "a backup is taken with no HERON_DATA")
+        made2 = made2 or {}
+        parts = [(p.get("name"), p.get("source")) for p in made2.get("parts", [])]
+        check(parts == [("appdata", appdata), ("home", home)],
+              "the manifest names both folders, each with its source - it "
+              "names %r" % (parts,))
+        names = sorted(f["path"] for f in made2.get("files", []))
+        check("appdata/config/heron.config" in names
+              and "appdata/audit/audit-202610.jsonl" in names,
+              "the add-in's settings and trail are in it")
+        check("home/knowledge/projects/p1.hvac.json" in names
+              and "home/audit/audit-brain-202610.jsonl" in names,
+              "and so are the project's memory and the brain's audit, from "
+              "the home - it holds %r" % (names,))
+        skipped = sorted(e["path"] for e in made2.get("excluded", []))
+        check(skipped == ["appdata/knowledge/global.db", "home/knowledge/global.db"],
+              "each folder's derived index is left out, with its reason - "
+              "left out %r" % (skipped,))
+        check(made2.get("at") and not tool.verify(made2["at"]),
+              "and the copy verifies")
+
+        print()
+        print("13. A RESTORE PUTS EACH FILE BACK INTO THE FOLDER IT CAME FROM")
+        put(appdata, "config/heron.config", u"write.enabled = true\n")
+        put(home, "audit/audit-brain-202610.jsonl", u'{"op":"LATER BRAIN WORK"}\n')
+        before = set(os.listdir(both))
+        (restored, problems), said = quietly(tool.restore, made2.get("at", work),
+                                             confirm=True)
+        check(not problems and len(restored) == 4,
+              "the backup restores, all 4 files - %r / %r" % (restored, problems))
+        config = io.open(os.path.join(appdata, "config", "heron.config"),
+                         encoding="utf-8").read()
+        brain = io.open(os.path.join(home, "audit", "audit-brain-202610.jsonl"),
+                        encoding="utf-8").read()
+        check("false" in config, "the add-in's setting is back in %APPDATA%\\Heron")
+        check("BRAIN LINE" in brain, "and the brain's audit is back in the home")
+        check(not os.path.exists(os.path.join(appdata, "audit", "audit-brain-202610.jsonl"))
+              and not os.path.exists(os.path.join(home, "config"))
+              and not os.path.exists(os.path.join(appdata, "home"))
+              and not os.path.exists(os.path.join(home, "appdata")),
+              "and nothing crossed over - no folder got the other's files, "
+              "nor a folder named for a part")
+        safety = [n for n in set(os.listdir(both)) - before
+                  if n.startswith("before-restore-")]
+        check(len(safety) == 1, "one safety copy was taken first - %r" % (safety,))
+        if safety:
+            rescued = fingerprint(os.path.join(both, safety[0]))
+            held = b"".join(rescued.values())
+            check(b"write.enabled = true" in held and b"LATER BRAIN WORK" in held,
+                  "holding what the restore replaced in BOTH folders")
+            sources = [p.get("source") for p in
+                       (tool.read_manifest(os.path.join(both, safety[0])) or {})
+                       .get("parts", [])]
+            check(sorted(sources) == sorted([appdata, home]),
+                  "and its manifest records each folder, so it restores the "
+                  "same way - it records %r" % (sources,))
+
+        print()
+        print("14. THE DRILL PROVES THE ROUND TRIP FOR BOTH, AND CHANGES NEITHER")
+        was = (fingerprint(appdata), fingerprint(home))
+        code, said = quietly(tool.drill)
+        check(code == 0, "the drill passes - it answered %r" % code)
+        check(appdata in said and home in said,
+              "it names both folders it backed up")
+        check("came back byte for byte" in said,
+              "and says the comparison it made - %r" % said[-160:])
+        check((fingerprint(appdata), fingerprint(home)) == was,
+              "and neither real folder changed")
+
+        print()
+        print("15. THE DEFAULT BACKUP FOLDER IS IN THE HOME, NOT %APPDATA%\\Heron")
+        print("    Inside a Store Claude %APPDATA%\\Heron\\backup is the app's")
+        print("    private copy, and a Reset deletes it with what it backs up.")
+        os.environ.pop("HERON_BACKUP", None)
+        check(tool.backup_root() == os.path.join(home, "backup"),
+              "backup_root() is <home>\\backup - it is %r" % tool.backup_root())
+        older, _said = quietly(tool.take, destination=os.path.join(appdata, "backup"),
+                               label="20260901-000000")
+        made3, _said = quietly(tool.take, label="20261018-000000")
+        check(made3 is not None and os.path.dirname((made3 or {}).get("at", ""))
+              == os.path.join(home, "backup"),
+              "a backup with no --to lands there")
+        own = [e["path"] for e in (made3 or {}).get("excluded", [])
+               if e["path"].startswith("home/backup/20261018-000000/")]
+        check(not own, "and does not list its own half-written copy as "
+              "skipped - it lists %r" % (own[:2],))
+        again, _said = quietly(tool.take, label="20261018-000001")
+        names = [f["path"] for f in (again or {}).get("files", [])]
+        check(again is not None and not any("/backup/" in n for n in names),
+              "and the next backup does not copy backups into itself")
+        listed = [name for name, _p, _m in tool.backups()]
+        check("20261018-000000" in listed and "20260901-000000" in listed,
+              "a backup taken in the old place is still listed beside the "
+              "new ones - %r" % (listed,))
+        check(listed and listed[0] == "20261018-000001",
+              "newest first - %r" % (listed[:1],))
+        os.environ["HERON_BACKUP"] = both
+
+        print()
+        print("16. A FOLDER THAT DOES NOT EXIST YET IS LEFT OUT AND NAMED")
+        nowhere = os.path.join(work, "profile-without-a-home", ".heron")
+        PATHS.data_home = lambda environ=None, system=None: nowhere
+        made4, _said = quietly(tool.take, label="no-home-yet")
+        parts = [p.get("name") for p in (made4 or {}).get("parts", [])]
+        absent = [p.get("source") for p in (made4 or {}).get("absent", [])]
+        check(parts == ["appdata"] and absent == [nowhere],
+              "the add-in's folder is backed up and the missing home is named "
+              "- parts %r, absent %r" % (parts, absent))
+        check(not os.path.exists(nowhere), "and no home was made for it")
+        PATHS.data_home = lambda environ=None, system=None: home
+
+        print()
+        print("17. A RESTORE REFUSES A FOLDER IT CANNOT PUT BACK, BEFORE WRITING")
+        moved = os.path.join(work, "no-such-profile", "someone", ".heron")
+        manifest_path = os.path.join(made2.get("at", work), tool.MANIFEST)
+        if os.path.isfile(manifest_path):
+            recorded = json.loads(io.open(manifest_path, encoding="utf-8").read())
+            for part in recorded.get("parts", []):
+                if part.get("name") == "home":
+                    part["source"] = moved
+            io.open(manifest_path, "w", encoding="utf-8").write(
+                json.dumps(recorded, indent=2, sort_keys=True))
+        put(appdata, "config/heron.config", u"write.enabled = UNTOUCHED\n")
+        (restored, problems), _said = quietly(tool.restore, made2.get("at", work),
+                                              confirm=True)
+        config = io.open(os.path.join(appdata, "config", "heron.config"),
+                         encoding="utf-8").read()
+        check(problems and not restored,
+              "the restore refuses - %r / %r" % (restored, problems[:1]))
+        check("UNTOUCHED" in config and not os.path.exists(
+                  os.path.join(work, "no-such-profile")),
+              "and wrote nothing, in either folder")
+
     finally:
+        PATHS.data_home = real_home
         for k, v in kept.items():
             if v is None:
                 os.environ.pop(k, None)
