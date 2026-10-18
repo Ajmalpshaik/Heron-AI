@@ -89,6 +89,7 @@ flowchart TD
     CC["<b>Claude Code</b> — the host<br/>works out what you meant"]
     MS["<b>Heron MCP server</b> — Python<br/>the tools · finds the capability"]
     BR["<b>Heron Brain</b> — Python<br/>fragments · skills · knowledge · calculations"]
+    SR["<b>Search</b> — finds the capability<br/>word match · built in, always on<br/><i>model2vec</i> — reads meaning · optional<br/><i>re-ranker</i> — a second read · optional"]
     AD["<b>Heron Revit add-in</b> — C#<br/>compiles and runs the fragment<br/>one named TransactionGroup"]
     RV["<b>Revit</b><br/>2020 → latest"]
     CP["<b>Heron Companion</b><br/>a page beside Revit<br/>live view · editable tables"]
@@ -97,6 +98,7 @@ flowchart TD
     U ==>|plain language| CC
     CC ==>|MCP| MS
     MS <==>|which fragment, which method| BR
+    BR -.- SR
     MS ==>|named pipe · this PC only| AD
     AD ==>|ExternalEvent · Revit's main thread| RV
     RV -.->|answer · one Undo entry per change| U
@@ -112,9 +114,11 @@ flowchart TD
     classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
     classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
     classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef search fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B,stroke-dasharray:4 3
     class U user
     class CC host
     class MS,BR brain
+    class SR search
     class AD addin
     class RV revit
     class CP,PL plat
@@ -123,6 +127,15 @@ flowchart TD
 **Solid arrows are the live request path.** Dotted is what comes back, the Companion page showing what
 Heron does, and Heron Platform holding the other parts up — it installs, updates and configures them
 rather than sitting in the call chain.
+
+**Search is how the brain finds the capability for your words.** The word match is built in and always
+runs. Two optional installs sharpen it: **model2vec** reads meaning, so *"stop the air going the wrong
+way"* can reach the flow-direction check without sharing a word with it, and the **re-ranker** gives the
+top picks a second, slower read. Without them Heron falls back to the word match, and every answer says
+which search ran. Measured on 2026-09-24, model2vec found more of the owner's questions; the re-ranker
+was worse at picking tools and is the largest download in Heron —
+[WHAT-TO-INSTALL §2](docs/WHAT-TO-INSTALL.md#2-optional--the-two-search-add-ons) has the figures and how
+to install or remove either.
 
 <details>
 <summary>Same thing as plain text</summary>
@@ -134,6 +147,8 @@ Claude Code           host: works out what the modeller meant (D-01)
      |  MCP
 Heron MCP server      Python: the tools, finds the capability  <->  Heron Brain: fragments, skills,
      |  named pipe, this PC only                                      knowledge, calculations
+     |                                                                Search: word match (built in),
+     |                                                                model2vec, re-ranker (optional)
 Heron Revit add-in    C#: compiles and runs the fragment, one named TransactionGroup
      |  ExternalEvent, Revit's main thread
 Revit                 2020 -> latest
@@ -147,7 +162,8 @@ Heron Platform        install, update, config, switches - under all of them
 ### One request, step by step
 
 1. You type *"set the Mark of these doors to D-01"*.
-2. Claude Code asks `heron_lookup` which capability serves it.
+2. Claude Code asks `heron_lookup` which capability serves it. Heron's search matches your words — by
+   meaning too, when model2vec is installed.
 3. It calls `revit_change` with your words. The server sends the job down the named pipe to the add-in.
 4. The add-in compiles the fragment and runs it on Revit's main thread, inside one named
    `TransactionGroup`.
