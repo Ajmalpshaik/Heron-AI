@@ -96,7 +96,63 @@ What this diagram is easy to misread:
 ## B. Folder map
 
 Dependency rules below are not prose — they are enforced by
-[`tools/check-structure.py`](../tools/check-structure.py), which fails the build if they are broken.
+[`tools/check-structure.py`](../tools/check-structure.py), which fails the build if they are broken. It
+reads its rules from one table in that file, `ALLOWED`, and checks C# project references and Python
+imports against it.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    TS["<b>tests/</b><br/>suites and test hosts"]
+    TL["<b>tools/</b><br/>every gate and report"]
+    DC["<b>docs/</b><br/>no code — checked by tools/"]
+
+    subgraph PARTS ["The four product parts"]
+        MC["<b>mcp/</b> — Python<br/>server · pipe client · Companion<br/>no BIM knowledge"]
+        RV["<b>revit/</b> — C#<br/>loads into Revit.exe<br/>the only home of the Revit API"]
+        BR["<b>brain/</b> — Python<br/>fragments · skills · retrieval<br/>runs on a PC with no Revit"]
+        PL["<b>platform/</b><br/>paths · config · audit · lease<br/>depends on nothing"]
+    end
+
+    TS -.->|"may reach all four"| PARTS
+    TL -.->|"reads brain/ and mcp/ — D-48"| PARTS
+    TL -.-> DC
+    MC ==> BR
+    MC ==> PL
+    BR ==> PL
+    RV ==> PL
+    MC x--x|"never imports — talks over a named pipe"| RV
+    RV x--x|"never"| BR
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class TS,TL,DC user
+    class MC,BR brain
+    class RV addin
+    class PL plat
+    style PARTS fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+```
+
+**A thick arrow is *may depend on*.** A crossed line is a dependency the checker refuses in both
+directions. `mcp/` and `revit/` still talk — over the named pipe while Revit runs, never by one importing
+the other — which is why the brain can be run and tested on a PC with no Revit at all.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+tests/     may reach all four parts
+tools/     its scripts read brain/ and mcp/ (D-48, printed as a note); it checks docs/, which holds no code
+
+mcp/       may depend on brain/ and platform/   never revit/  - it talks to Revit over a named pipe
+brain/     may depend on platform/              never revit/, mcp/ - it runs on a PC with no Revit
+revit/     may depend on platform/              never brain/, mcp/ - the only home of the Revit API
+platform/  depends on nothing
+```
+
+</details>
 
 | | May depend on | Never |
 |---|---|---|
@@ -105,9 +161,12 @@ Dependency rules below are not prose — they are enforced by
 | `brain/` | `platform` | `revit`, `mcp` |
 | `mcp/` | `platform`, `brain` | `revit` |
 | `tests/` | all four | — |
+| `tools/` | C#: nothing. Its Python reads `brain/` and `mcp/` and is exempt on purpose: [D-48](DECISIONS.md) wants a gate to read the library through the brain rather than parse it again. `check-structure.py` prints which scripts do, as a note | — |
 
 `Autodesk.Revit` types may appear **only inside `revit/`**. Anywhere else is a crossed boundary, and
-the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edit as it is proposed.
+the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edit as it is proposed;
+`check-structure.py` fails the build on any code file that reached disk another way. Both let `tools/`
+name it, because a checker has to be able to name what it checks.
 
 ### The four product parts
 
@@ -272,7 +331,10 @@ did. It is not a compile and not a passing test.
 **Declared support and tested releases are not the same list**, and there are several tested lists
 rather than one. The compile gate covers **2020–2027**, on every push. The **add-in has been deployed,
 loaded and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NEEDS-CHECKING.md),
-2026-09-19, on all three releases installed on the owner's PC. **The Keep or Discard box and the rails
+2026-09-19, on all three releases installed on the owner's PC. **On 2026-10-17 it loaded on the owner's
+laptop on 2020, 2024, 2026 and 2027**, and on 2026 no fragment could run
+([Group EQ](needs-checking/group-eq.md), [row 5b-575](fragment-issues/section-5b-rows-401-425.md)); the
+repair is in code and has not been run in Revit ([Group GW](needs-checking/group-gw.md)). **The Keep or Discard box and the rails
 around it were run on 2024 and 2027** on 2026-10-18 ([Group ET](needs-checking/group-et.md)). **Fragments
 have been proven on 2020 and 2024 only**: a proof is a recorded run against a named model, none names
 another release, and no fragment yet carries a `proof.releases` entry for one ([D-131](DECISIONS.md)) —

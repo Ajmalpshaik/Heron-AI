@@ -3,7 +3,9 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active — no stage started.** Opened 2026-09-10.
+> **Status:** **Active — stages have been built since;** which ones, with their evidence, is
+> [01 §6](01-requirements.md)'s state column and [brain/README](../../../../brain/README.md)'s module rows.
+> Not every stage is done. Opened 2026-09-10.
 > **Reads with:** [`00-structure.md`](00-structure.md) — what kind of RAG this is, and the order ·
 > [`01-requirements.md`](01-requirements.md) — every stage below closes numbered rows from its §6,
 > and a stage that closes no row should not be built.

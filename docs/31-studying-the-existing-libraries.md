@@ -20,6 +20,19 @@ and without one "study it" becomes "read it and copy it more slowly."
 > *"You can check and study everything, but don't copy-paste blindly. Check, study, and take what you
 > need... 1. Check and edit. 2. If you want to add, add. 3. If you want to split, split."*
 
+### At a glance — the study, pass by pass
+
+Every figure is this page's own record of a library on the owner's machine, which no command here can
+re-count; each pass is written up in §1.
+
+| Pass | What was read | What it found | Where it went in Heron |
+|---|---|---|---|
+| Sizing, 2026-08-28 | the library's 398 C# files, to size the job | nothing taken | §1's first table |
+| Full sweep, 2026-09-06 | the 330 files that were fragment work | 317 covered, 4 impossible, **9 missing** | **10 fragments** - one source was two jobs |
+| The covered side refuted, 2026-09-06 | the 321 covered and impossible claims | 5 refuted: **4 real gaps**, and one a fifth impossible | **4 fragments** |
+| Where it closed | all 330 | 312 covered + 5 impossible + **13 missing, all built** | the capabilities named in §1 - every one has a folder in [`brain/fragments/`](../brain/fragments/) |
+| What travels | the mechanism, the scar, the shape of a good proof | never the code, the words, the names, the proof or the authority | §2, and the method in §3 |
+
 ---
 
 ## 1. What is actually there
@@ -188,6 +201,8 @@ A cross-check on 2026-09-06 raised confidence without closing it:
 Fifteen of 317 is a sample, not a proof. **Closing this needs the covered claims put to a refuter the
 way the missing ones were**, and until that runs the honest statement is *nine were found and nine
 are built*, never *nine were all there were*.
+*(It ran the same day - the refutation pass above - and the count closed at 312 + 5 + 13 = 330, all
+13 built.)*
 
 **Why this needed doing at all.** [`HANDOVER.md`](HANDOVER.md) had recorded the library as
 **EXHAUSTED of fragment-shaped work**. That was an estimate standing in for a count: roughly 60 were

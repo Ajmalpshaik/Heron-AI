@@ -16,6 +16,123 @@ regardless of how much of it is built.
 
 ---
 
+## Where each step stands — at a glance
+
+Every colour is taken from this file's own text and the evidence it links. **Proven** is a recorded run
+against a named real model ([D-30](DECISIONS.md)); **measured** is a run on one release, with part of the
+step's *Prove it* still owed; **built** is code and tests that pass with no Revit — not a proof.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    subgraph P0["Phase 0 — read-only"]
+        direction LR
+        S1["<b>Step 1</b><br/>the pipe<br/>ping → pong"]
+        S2["<b>Step 2</b><br/>the thread hop<br/>a real element count"]
+        S3["<b>Step 3</b><br/>an MCP server<br/>revit_health"]
+        S4["<b>Step 4</b><br/>the first BIM answer<br/>select all ducts"]
+        S5["<b>Step 5</b><br/>more than one Revit<br/>the picker · fails closed"]
+        S1 --> S2 --> S3 --> S4 --> S5
+    end
+    G0{{"<b>Gate</b> · Phase 0 ends"}}
+    S6["<b>Step 6</b> · the first write, with the rails<br/>Revit 2024 · Group D<br/>a failure forced mid-move · not run"]
+    G1{{"<b>Gate</b> · Phase 1 ends unproven<br/>Phase 2 began anyway"}}
+
+    P0 ==> G0 ==> S6 ==> G1
+
+    subgraph KEY["Legend"]
+        direction LR
+        K1["proven"]
+        K2["measured on one release"]
+        K3["built · not proven"]
+        K4["batch marker · not a step"]
+    end
+
+    classDef proven fill:#DCFCE7,stroke:#16A34A,color:#14532D
+    classDef measured fill:#FEF9C3,stroke:#CA8A04,color:#713F12
+    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
+    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class S1,S2,S3,S4,S5,K1 proven
+    class S6,K2 measured
+    class K3 built
+    class K4 notbuilt
+    class G0,G1 user
+    style P0 fill:#FFFFFF,stroke:#CBD5E1
+    style KEY fill:#FFFFFF,stroke:#CBD5E1
+```
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    subgraph KS["Phase 2 — a knowledge store that can find things"]
+        direction LR
+        S7["<b>Step 7</b><br/>the fragment on disk"]
+        S8["<b>Step 8</b><br/>one store per scope"]
+        S9["<b>Step 9</b><br/>finding by exact words"]
+        S10["<b>Step 10</b><br/>finding by meaning"]
+        S11["<b>Step 11</b><br/>the two together<br/>hard Revit-version filter"]
+        S7 --> S8 --> S9 --> S10 --> S11
+    end
+    subgraph RC["Phase 2 — reaching it and composing it"]
+        direction LR
+        S12["<b>Step 12</b><br/>the Capability Registry"]
+        S13["<b>Step 13</b><br/>the dependency graph"]
+        S14["<b>Step 14</b><br/>ten real skills<br/>its proof not met · every skill DRAFT"]
+        S12 --> S13 --> S14
+    end
+    BM["<b>Steps 15, 16, 17 · and 18 in source headers</b><br/>when a fragment was written<br/>no capability · no Prove it"]
+
+    KS ==> RC
+    RC -.-> BM
+
+    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
+    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
+    class S7,S8,S9,S10,S11,S12,S13,S14 built
+    class BM notbuilt
+    style KS fill:#FFFFFF,stroke:#CBD5E1
+    style RC fill:#FFFFFF,stroke:#CBD5E1
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+PHASE 0 - read-only
+  Step 1   the pipe                 PROVEN    Revit 2020 and 2024
+  Step 2   the thread hop           PROVEN    Revit 2020 and 2024
+  Step 3   an MCP server            PROVEN    Revit 2020 and 2024
+  Step 4   select all ducts         PROVEN    Revit 2020 and 2024
+  Step 5   more than one Revit      PROVEN    Revit 2020 and 2024
+  -- Gate: Phase 0 ends --
+  Step 6   the first write + rails  MEASURED  Revit 2024, Group D (D1 to D6, 2026-10-17);
+                                              a failure forced mid-move (golden G-12) not run
+  -- Gate: Phase 1 ends unproven; Phase 2 began anyway (owner, 2026-08-28) --
+
+PHASE 2
+  Steps 7 to 11   a knowledge store that can find things      BUILT
+  Step 12         the Capability Registry                     BUILT
+  Step 13         the dependency graph                        BUILT
+  Step 14         ten real skills                             BUILT - its proof not met: every skill DRAFT
+
+  Steps 15, 16, 17 (fragments) and 18 (source headers)        BATCH MARKERS - not steps
+```
+
+</details>
+
+**Where each colour comes from.**
+
+| Steps | State | Evidence |
+|---|---|---|
+| 1 to 5 | **Proven** in Revit 2020 and 2024 | Golden cases `G-01` to `G-07` in [`tests/golden/cases.py`](../tests/golden/cases.py) (`G-04`, *Revit is busy*, on 2020 only) · the witnessed list in [HANDOVER §3](HANDOVER.md) · [the field notes](00e-field-notes-proven-bridge.md). **Those records read `STALE` today** — the code has moved under them since: `python tests/test_golden.py` says which, and a stale proof is owed a re-run, not withdrawn |
+| 6 | **Measured** on Revit 2024 | [Group D](needs-checking/group-d.md), `D1` to `D6`, 2026-10-17 — one Ctrl+Z, and +200.0000 mm on three ducts. A forced failure in the move itself, golden `G-12`, has not been run — the *Phase 1 ends here* gate below |
+| 7 to 14 | **Built** | The *Status, 2026-08-29* note under Step 14. `python tools/check-gaps.py` checks each has a module in `brain/` and a test. Step 14's own proof — ten skills, each proven — is **not met**: `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
+| 15, 16, 17, 18 | **Not steps** | [Steps 15, 16 and 17](#steps-15-16-and-17--recorded-2026-09-06-because-they-were-in-use-and-were-not-written-down) below: batch markers, and Step 18 is defined nowhere |
+
+No step in this file is unbuilt. What is left is proof.
+
+---
+
 **Which agents each step builds:** [08 — Agent Catalogue](08-agent-catalog.md), whose Step column says
 it per agent. Phase 0 and 1 need under a fifth of the catalogue, and the large majority are plain
 deterministic modules with no model call at all. How many are built now is
@@ -395,11 +512,11 @@ cheaper than discovering it in week two.
 
 ## Steps 15, 16 and 17 — recorded 2026-09-06, because they were in use and were not written down
 
-**These three steps were never planned here. They were found in the metadata, on 190 fragments.** This
+**These three steps were never planned here. They were found in the metadata, on 190 fragments on 2026-09-06.** This
 document stopped at Step 14 while `heron-step:` headers went on to 15, 16 and 17 — so every one of those
 fragments cited a step that this file, the file that defines what a step *is*, did not contain.
 
-| Step | Fragments | What it actually was |
+| Step | Fragments on 2026-09-06 — **stale; derive today's below** | What it actually was |
 |---|---|---|
 | 14 | 147 | The first library push, tagged with the step that was current when it began |
 | 15 | 14 | A small creators cluster — grids, levels, lines, HVAC zones |

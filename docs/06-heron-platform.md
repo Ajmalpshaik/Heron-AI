@@ -61,6 +61,82 @@ Tracked as [Q-13](OPEN-QUESTIONS.md).
 > AppData cannot reach it
 > ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)).
 
+### 2a. As built — the platform's parts, and where each writes on the PC (2026-10-18)
+
+How a Heron product reaches a PC, and which folder each part then writes. Folders are Windows'
+own names for them. `python brain/heron_paths.py --where` prints the Python side's home on a PC.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    REL["<b>A GitHub release</b>, made from a v tag<br/>release.yml: one zip per product per Revit release<br/>checksums.txt · not signed yet — D-91"]
+    MAN["<b>heron-products.json</b><br/>the product list, read as data — D-93"]
+    INS["<b>The installer</b><br/>HeronInstaller.exe · heron-install<br/>checks each download before use"]
+    ADD["<b>%APPDATA%\Autodesk\Revit\Addins\20xx\</b><br/>PRODUCT · per user, no admin — D-90"]
+    CORE["<b>Heron.Core</b>, inside the add-in<br/>HeronPaths · HeronConfig · HeronPermissions"]
+    PY["<b>Heron's Python side</b><br/>the chat's MCP server · heron_paths.py"]
+    DATA["<b>%APPDATA%\Heron</b><br/>DATA · heron.config switches, the audit trail"]
+    DER["<b>%LOCALAPPDATA%\Heron</b><br/>DERIVED · bridges, live, logs, runs, captures — D-17"]
+    TMP["<b>%TEMP%\Heron\companion</b><br/>DERIVED · the chat's note for the Companion button — D-136"]
+    HOME["<b>%USERPROFILE%\.heron</b><br/>DATA · knowledge store, project memory, brain audit — D-135"]
+
+    REL --> INS
+    MAN --> INS
+    INS -->|"copies the add-in"| ADD
+    INS -->|"Python half: pinned packages, the knowledge store"| PY
+    ADD -->|"Revit loads it"| CORE
+    CORE --> DATA
+    CORE --> DER
+    CORE -.->|"reads"| TMP
+    PY -->|"writes"| TMP
+    PY --> HOME
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class REL,MAN,INS plat
+    class CORE addin
+    class PY brain
+    class ADD,DATA,DER,TMP,HOME user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+A GitHub release, from a v tag      release.yml: one zip per product per Revit release,
+                                     checksums.txt, not signed yet                   (D-91)
+heron-products.json                  the product list, read as data                  (D-93)
+   |
+The installer                        HeronInstaller.exe / heron-install; checks each download
+   |
+   +-- copies the add-in to  %APPDATA%\Autodesk\Revit\Addins\20xx\   PRODUCT, per user (D-90)
+   |      Revit loads it -> Heron.Core inside the add-in (HeronPaths, HeronConfig, HeronPermissions)
+   |         writes  %APPDATA%\Heron          DATA: heron.config switches, the audit trail
+   |         writes  %LOCALAPPDATA%\Heron     DERIVED: bridges, live, logs, runs, captures (D-17)
+   |         reads   %TEMP%\Heron\companion   DERIVED: the chat's note for the Companion button
+   |
+   +-- Python half: pinned packages, the knowledge store
+          Heron's Python side (the chat's MCP server, heron_paths.py)
+             writes  %USERPROFILE%\.heron     DATA: knowledge store, project memory, brain audit (D-135)
+             writes  %TEMP%\Heron\companion   the note the add-in reads (D-135, D-136)
+```
+
+</details>
+
+| Folder | Class | Written by | Safe to delete? | Why it is there |
+|---|---|---|---|---|
+| `%APPDATA%\Autodesk\Revit\Addins\20xx\` | PRODUCT | the installer, or `tools/deploy-addin.ps1` | replaced on update | per user, no administrator rights ([D-90](DECISIONS.md#d-90--install-stays-per-user-and-never-asks-for-administrator-rights)) |
+| `%APPDATA%\Heron` | DATA | the add-in | **no** - `IsSafeToDelete` refuses it | the switches in `config\heron.config` and the audit trail, which is evidence ([Golden Rule 14](14-golden-rules.md)) |
+| `%LOCALAPPDATA%\Heron` | DERIVED | the add-in | yes | runtime state stays on the machine ([D-17](DECISIONS.md#d-17--runtime-state-is-machine-local-not-roaming)) |
+| `%TEMP%\Heron\companion` | DERIVED | the chat; the add-in only reads it | yes | a Store Claude's private copy of AppData does not reach it; from inside Revit it is found by stepping out of Revit's GUID-named temporary folder ([D-136](DECISIONS.md#d-136--the-companions-folder-is-the-users-temporary-folder-found-from-inside-revit-by-stepping-out-of-a-guid-named-one)) |
+| `%USERPROFILE%\.heron` | DATA | the Python side | **no** | out of a Store Claude's reach; `HERON_DATA` moves it ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)) |
+
+What has run on a real PC is not this diagram's to say: the installer's rows are NEEDS-CHECKING Groups
+[AB](needs-checking/group-ab.md) and [EP](needs-checking/group-ep.md), and the Companion folder's is
+[HF](needs-checking/group-hf.md).
+
 ---
 
 ## 3. Agent Registry
@@ -191,8 +267,13 @@ User says *"Install this capability."* The Package Manager resolves dependencies
 > **As built (2026-10-18):** Q-18 is answered by
 > [D-35](DECISIONS.md#d-35--a-shared-fragment-may-carry-code-and-an-unapproved-one-is-refused-not-warned-about).
 > A shared fragment may carry code, and one without an approval record is refused, not warned about.
-> Heron's own products come from a signed, versioned GitHub release
-> ([D-91](DECISIONS.md#d-91--product-files-come-from-a-signed-versioned-github-release)), and the
+> Heron's own products come from a versioned GitHub release
+> ([D-91](DECISIONS.md#d-91--product-files-come-from-a-signed-versioned-github-release)). D-91 asks for
+> a **signed** one, and nothing is signed yet: code signing is the installer plan's last stage.
+> [`release.yml`](../.github/workflows/release.yml) makes each release a draft, unsigned, with a
+> `checksums.txt` the installer checks every download against
+> ([`ReleaseAssets.cs`](../platform/Heron.Installer/ReleaseAssets.cs)), and the one published release,
+> v0.1.0, is unsigned ([07](07-installation-and-update.md)). The
 > product list is a manifest read as data,
 > [`platform/heron-products.json`](../platform/heron-products.json)
 > ([D-93](DECISIONS.md#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer)).

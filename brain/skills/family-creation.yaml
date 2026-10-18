@@ -452,7 +452,7 @@ preconditions:
   - every size, parameter name and type name has been given for THIS request - a picture or a sketch alone gives none of them
   - the family is not yet built - rebuilding one that already has labelled dimensions leaves the old labels behind to fight the new ones
   - this chat is on the family in front - a chat that worked on another model moves with revit_use_this_model first, because revit_read reads the model the chat is pinned to, not the one in front
-  - a step whose capability is DRAFT - the method's own list of uses says which - runs only here, on a new family or a scratch copy, never on a family a project already uses
+  - a step whose capability is DRAFT - the method's own list of uses says which - is refused by revit_change (D-117); it can only be tried once with the bridge client's try-once, on a family saved first with nothing unsaved, and stays only if the modeller presses Keep in Revit (D-119, D-121) - never on a family a project already uses
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 

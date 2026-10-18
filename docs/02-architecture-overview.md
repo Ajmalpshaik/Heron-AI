@@ -267,7 +267,7 @@ flowchart TD
     BG["<b>Heron.Bridge</b><br/>named pipe heron.version.pid, local only — D-02"]
     AD["<b>Heron add-in</b>, inside Revit.exe<br/>the gate: Changes · Admin · Publish switches on the ribbon<br/>one ExternalEvent, one queue — D-09"]
     RF["<b>The fragment's C#</b>, compiled and run in Revit — D-28<br/>a read or a show opens no transaction<br/>a change runs in one TransactionGroup, Heron: name"]
-    KQ["<b>Keep or Discard</b> box in Revit — D-126<br/>shown while Ask to Keep is on, off by default — D-138<br/>a DRAFT's one run and a publish are always asked"]
+    KQ["<b>Keep or Discard</b> box in Revit — D-126<br/>shown while Ask to Keep is on, off by default — D-138<br/>a DRAFT's one run is always asked<br/>a publish is asked whenever Ask to Keep is on, even under a job's grant"]
     MD(["<b>The model</b><br/>one undo entry per change"])
 
     MO --> CC
@@ -276,9 +276,9 @@ flowchart TD
     MS -->|"revit_read · revit_show · revit_change<br/>by capability, never by fragment id"| BG
     BG --> AD
     AD -->|"ExternalEvent"| RF
-    RF -->|"a change, while the box is on"| KQ
+    RF -->|"a change while Ask to Keep is on,<br/>or a DRAFT's one run"| KQ
     KQ -->|"Keep"| MD
-    RF -->|"a read, a show, or the box off"| MD
+    RF -->|"a read, a show, the box off,<br/>or the rest of a job the modeller let through"| MD
     MS -.->|"serves"| CP
     CP -.->|"Apply runs revit_change"| MS
 
@@ -319,10 +319,12 @@ The fragment's C#           compiled and run in Revit                           
    |                        a read or a show opens no transaction
    |                        a change runs in one TransactionGroup, "Heron: <name>"
    |
-   +-- a change, while Ask to Keep is on (off by default, D-138):
+   +-- a change while Ask to Keep is on (off by default, D-138), or a DRAFT's one run:
    |     Revit's Keep or Discard box (D-126) - only Keep keeps it
-   |     a DRAFT's one run and a publish are always asked
-   +-- a read, a show, or the box off: straight on
+   |     a DRAFT's one run is always asked; a publish is asked whenever
+   |     Ask to Keep is on, even under a job's grant
+   +-- a read, a show, the box off, or the rest of a job the modeller let
+   |     through with the box's third link (D-138): straight on
    |
 The model                   one undo entry per change
 ```

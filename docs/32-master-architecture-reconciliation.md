@@ -23,6 +23,17 @@ only question that decides what happens next:
 
 Every row below cites a file. Where a claim could not be checked, it says so rather than rounding up.
 
+### At a glance — the verdicts, gathered from §1, §2 and §4
+
+| Verdict | The incoming document's parts, by its own § | Where it is argued |
+|---|---|---|
+| **Already built here** | 6.1 retrieval · 6.5 skills · 6.8 review · 14 Revit validation gate · 15 task contract · 20 git discipline | §2 |
+| **Already built, and stricter** | 6.3 memory · 6.4 Revit knowledge · 6.9 council · 7 self-improvement · 9 evidence-based done · 19 content is data | §2 |
+| **Built, cut differently** | 6.6 planning - the planner is the host's · 6.7 roles - the registry, at finer grain | §2, §3.1 |
+| **Missing then, built since** | 6.1 the Context Manager · 8 a baseline for the brain · the §14 gate as a checklist · §10–11 the repository research | §4.1, §4.2, §4.3, §4.5 |
+| **Still partial** | 18 an evaluation suite - nothing measures retrieval precision or first-pass correctness | §2 |
+| **Rejected** | Heron as a developer-assist harness ([D-57](DECISIONS.md)) · 6.2 a code graph · 6.4 four more trust labels · a second planner · a role per §6.7 | §1, §5 |
+
 ---
 
 ## 1. The thing to get right before anything else — what the document thinks Heron is
@@ -88,7 +99,7 @@ python tools/agent-count.py
 | **6.8** Review Engine — requirement, API, version, transaction, performance, dead code | `tools/check-*.py` (`ls tools/*.py \| wc -l`), plus [`brain/heron_validate.py`](../brain/heron_validate.py) and [13 — Testing & Quality](13-testing-and-quality.md) | **Built** |
 | **6.9** Optional council, evidence over majority | Shadow Mode, [18](18-agent-operating-system.md) — and [D-39](DECISIONS.md) already says approval comes from an **analysed disagreement, not a count of agreements** | **Built, and stricter** |
 | **7** Safe self-improvement, with a human gate | [Golden Rule 13](14-golden-rules.md), Article IV of the [Constitution](../HERON_CONSTITUTION.md), and [`heron_validate.py`](../brain/heron_validate.py) whose whole first rule is *it never writes `heron-status`* | **Built, and stricter** |
-| **8** Speed strategy, latency per stage | **Half of it exists and the halves are not interchangeable.** [`brain/heron_gaps.py`](../brain/heron_gaps.py) reads the audit trail and reports median and worst milliseconds **per fragment and per operation** — the Revit side. **The brain times nothing**: `heron_search`, `heron_embed` and `heron_retrieve` contain no clock at all | **Partial — §4.2** |
+| **8** Speed strategy, latency per stage | **Half of it exists and the halves are not interchangeable.** [`brain/heron_gaps.py`](../brain/heron_gaps.py) reads the audit trail and reports median and worst milliseconds **per fragment and per operation** — the Revit side. **The brain times nothing**: `heron_search`, `heron_embed` and `heron_retrieve` contain no clock at all. *That was the audit's reading; [`tools/measure-brain.py`](../tools/measure-brain.py) times the brain's stages from outside them now - §4.2* | **Partial — §4.2**, since closed |
 | **9** Evidence-based done | [D-30](DECISIONS.md) — a proof needs a positive case, a negative case and a staleness fingerprint | **Built, and stricter** |
 | **14** Revit Validation Gate, 14 questions | [03 — Heron Revit](03-heron-revit.md), the [fragment-proving skill](../.claude/skills/fragment-proving/SKILL.md), [D-51](DECISIONS.md), [D-53](DECISIONS.md) | **Built — but see §4.3** |
 | **15** Task Execution Contract, phases A–G | [27 — Build Order](27-build-order.md) and this repository's working practice | **Built** |
@@ -111,7 +122,8 @@ A future session comparing the two documents will read these as gaps. They are n
 Incoming §6.6 wants a Planning Engine inside the system. [D-01](DECISIONS.md) put the orchestrator,
 intent classification, persona and summarisation **in Claude Code**, and
 [`tools/check-metadata.py`](../tools/check-metadata.py) prints those four agents every run as
-*provided by the host, so no file here implements them*. Heron owns the Workflow Engine — ordering,
+*provided by the host, so no file here implements them* - and, since [D-80](DECISIONS.md) on
+2026-09-17, the Development rows whose whole job is language as well. Heron owns the Workflow Engine — ordering,
 retries, checkpoints, resumption — which is the half that must survive a crashed session.
 
 Building a second planner inside Heron would duplicate the host and break [Golden Rule 2](14-golden-rules.md).

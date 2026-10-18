@@ -64,7 +64,7 @@ are tangled here and they should be untangled together rather than one at a time
   the owner's call: it is the fullest written statement of how Heron studies an outside project, and
   that part has outlived the plan around it.
 
-### 🟡 F5. Two suites exit 1 when a dependency is missing, and one of them is the only thing `check-gaps` calls unfinished
+### ✅ F5. Two suites exit 1 when a dependency is missing, and one of them is the only thing `check-gaps` calls unfinished
 
 [`tests/README.md`](../../tests/README.md) sets the rule: **0 is a pass, 1 is a failure, 3 means the suite
 could not run** and proves nothing either way. `test_mcp_serves.py` obeys it — no MCP SDK, exit 3, and
@@ -83,6 +83,15 @@ red for a reason that is not work.
 
 **Not fixed here.** Changing a suite's exit code changes what CI, `check-gaps` and the ship checklist
 all read, and that deserves its own change rather than being a side effect of one about something else.
+
+**CLOSED by that change, recorded 2026-10-18.** Commit `41354aff` (#171, 2026-09-17) made the suite
+sweep's three exit codes the rule - *"a suite exiting 3 is WAITING, not failing"* - and both suites named
+above now keep it: [`test_served_claims.py`](../../tests/test_served_claims.py) returns 3 when the MCP
+server will not import, and [`test_bridge_roundtrip.py`](../../tests/test_bridge_roundtrip.py) returns
+`COULD_NOT_RUN = 3` when its test host is missing. Measured on 2026-09-21 with the SDK made unimportable:
+both exit 3 and the evidence record's tests gate reads PASS - [`tools/README.md`](../../tools/README.md)'s
+`check-change.py` section and [row 5b-60](../fragment-issues/section-5b-rows-051-075.md). Nothing above was edited;
+[F8](#f8-f5s-closing-claim-is-now-false-and-the-reason-is-worth-more-than-the-fix) stays as written.
 
 ### 🟡 F6. `check-dependencies.py` is documented nowhere
 

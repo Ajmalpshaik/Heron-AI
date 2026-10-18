@@ -108,6 +108,13 @@ And both major families ship an **arbitrary code execution tool** — `send_code
 only. Shipping it open means any prompt injection through a family name or an imported document is a
 route to arbitrary code against a live client model ([Golden Rule 19](14-golden-rules.md)).
 
+> **As built (2026-10-18):** there is no Developer Persona - [D-27](DECISIONS.md#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape)
+> settled on 2026-08-28 that Heron has one voice and no personas - and Heron has no tool that runs code
+> it is handed. The nearest thing is `revit_change` running a library fragment declared `ADMIN`, which
+> works only while the owner's Admin switch is on
+> ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on));
+> [04 §3](04-heron-mcp.md) has the rest.
+
 The advice *"save periodically"* is the tell. It is a reasonable thing to say when there is no undo
 guarantee — and it puts the safety burden on the user, which is the opposite of
 [Golden Rule 1](14-golden-rules.md).

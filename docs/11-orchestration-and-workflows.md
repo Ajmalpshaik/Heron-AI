@@ -84,6 +84,54 @@ The pipeline should also be **resumable**. Failing at the Build stage after twel
 > A job of several steps with fragments that already exist, such as building a family, is a method the
 > chat reads from `heron_method` ([43](43-building-revit-families.md)).
 
+The new-tool path as it runs, beside the eighteen stages above. Nothing in it reaches production without
+a person, and the generated code meets a model once, behind the modeller's own Keep or Discard.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    ASK(["<b>The modeller</b><br/><i>make a tool for this</i>"])
+    SUB["<b>heron-fragment-author</b>, run by the host<br/>searches the library first"]
+    Q{{"Does a tool already do it, or nearly?"}}
+    REUSE["Name it, or widen it<br/>nothing new is written"]
+    DRAFT["<b>The new fragment, at DRAFT</b><br/>compiled for every release · routing checked<br/>a proof plan written · no tool here reaches Revit"]
+    ONCE["<b>One run, only when the modeller asks</b><br/>try-once, on the saved model in front<br/>Revit asks Keep or Discard — D-119, D-121"]
+    PROOF["<b>The proof</b><br/>the kept run is its positive case, a rolled-back run its negative<br/>a person signs it — D-30, D-120"]
+    PROVEN(["<b>PROVEN</b><br/>revit_change may keep its change — D-117"])
+
+    ASK --> SUB --> Q
+    Q -->|"yes"| REUSE
+    Q -->|"no"| DRAFT --> ONCE --> PROOF -->|"a person promotes it"| PROVEN
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class ASK,Q,PROOF user
+    class SUB host
+    class REUSE,DRAFT,PROVEN brain
+    class ONCE revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+The modeller: "make a tool for this"
+ -> heron-fragment-author, run by the host: searches the library first
+ -> Does a tool already do it, or nearly?
+      yes -> name it, or widen it; nothing new is written
+      no  -> the new fragment, at DRAFT: compiled for every release, routing checked,
+             a proof plan written; no tool here reaches Revit
+          -> one run, only when the modeller asks: try-once on the saved model in front,
+             Revit asks Keep or Discard (D-119, D-121)
+          -> the proof: the kept run is its positive case, a rolled-back run its negative;
+             a person signs it (D-30, D-120)
+          -> a person promotes it -> PROVEN: revit_change may keep its change (D-117)
+```
+
+</details>
+
 ---
 
 ## 4. Reference workflow — knowledge import

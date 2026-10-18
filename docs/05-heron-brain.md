@@ -51,6 +51,9 @@ CORE KNOWLEDGE
 
 </details>
 
+*The specification's picture, not the build: there is no community store, and core knowledge is the
+`global` store. The note at the end of this section lists the six stores that exist.*
+
 This is **Golden Rule 5**. A polluted brain is unsearchable and untrustworthy, and in a consultancy setting mixing Project A's knowledge into Project B is a commercial and contractual problem, not just a technical one.
 
 > **As built (2026-10-18):** [`heron_scope.py`](../brain/heron_scope.py) holds the scopes of
@@ -83,6 +86,30 @@ This is **Golden Rule 5**. A polluted brain is unsearchable and untrustworthy, a
 | Citation/Source Agent | Track provenance | T1 |
 | Knowledge Evolution Agent | Restructure knowledge when required | T3 |
 
+> **As built (2026-10-18):** these are modules, not running agents. Each module's header names the agent
+> it implements; `grep -l 'HERON-RAG' brain/*.py mcp/server/*.py tests/*.py` finds them, and
+> [28](28-agent-registry.md) is the register. Every one is `DRAFT`.
+
+| Agent | Where it lives, as built |
+|---|---|
+| RAG Librarian | [`heron_scope.py`](../brain/heron_scope.py) - one store per scope; `heron_retrieve.librarian` - asks each scope on its own; [`heron_earlier.py`](../brain/heron_earlier.py) |
+| Knowledge Discovery | [`heron_ingest.py`](../brain/heron_ingest.py) - a document into one scope |
+| Retriever | [`heron_search.py`](../brain/heron_search.py) - word match, and the identity and cache routes |
+| Fragment Matcher | [`heron_matcher.py`](../brain/heron_matcher.py) |
+| Skill Matcher | [`mcp/server/heron_brain.py`](../mcp/server/heron_brain.py) - the jobs a `heron_lookup` answer names, through `heron_skill.methods_for` |
+| Ranking | [`heron_retrieve.py`](../brain/heron_retrieve.py) - fusion; [`heron_rerank.py`](../brain/heron_rerank.py) - the optional re-ranker |
+| Context Builder | [`heron_context.py`](../brain/heron_context.py), with `heron_retrieve.py` |
+| Embedding, Vector Search | [`heron_embed.py`](../brain/heron_embed.py) |
+| Index Manager | `heron_search.py` |
+| Re-index, Duplicate Detection | No module's header names them; [`tests/test_maintenance.py`](../tests/test_maintenance.py) does. The re-ingest of a changed document and the report of a byte-identical clause are in `heron_ingest.py` (`refresh`, `duplicate_clauses`) |
+| Knowledge Validation | [`heron_knowledge.py`](../brain/heron_knowledge.py) |
+| Citation / Source | [`heron_ground.py`](../brain/heron_ground.py) |
+| Knowledge Evolution | [`heron_evolution.py`](../brain/heron_evolution.py) |
+
+[28](28-agent-registry.md) adds two the table above does not list: Knowledge Conflict,
+[`heron_conflict.py`](../brain/heron_conflict.py), and Research,
+[`heron_research.py`](../brain/heron_research.py).
+
 ---
 
 ## 4. **[NOTE]** Retrieval is not only vector search
@@ -101,23 +128,95 @@ BIM and Revit queries are full of **exact tokens** that embeddings handle badly:
 
 That last point matters most: the common case ("select all ducts", asked for the 400th time) should cost **one lookup**, not a retrieval pipeline.
 
-> **As built (2026-10-18):** all five stages exist.
->
-> 1. The structured filter runs first in [`heron_retrieve.py`](../brain/heron_retrieve.py). A fragment
->    for another Revit release is absent, not demoted. When the host calls the request a question, so is
->    every capability that changes the model
->    ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)).
-> 2. Keywords are FTS5, and nearness is a built-in lexical backend or a trained encoder when one is
->    installed ([`heron_embed.py`](../brain/heron_embed.py)).
-> 3. The two are fused by reciprocal rank.
-> 4. The re-ranker is optional: [`heron_rerank.py`](../brain/heron_rerank.py), a cross-encoder. With
->    nothing installed, fusion's order comes back unchanged and the answer says so.
-> 5. The short circuit is [`heron_search.py`](../brain/heron_search.py)'s identity route. Only a
->    `PROVEN` fragment may run off it unasked, and through a door only when every value it needs is given
->    ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)).
->
+> **As built (2026-10-18):** all five stages exist, in a different order from the list above: the
+> exact-match short circuit runs straight after the filter, before anything is searched. §4.1 draws the
+> order the code runs, and its table says where each stage lives.
 > [`retrieval-history.md`](../brain/retrieval-history.md) records what each stage was measured to do,
 > and at what library size.
+
+### 4.1 How Heron finds the right tool for your words
+
+As built (2026-10-18), read from `heron_retrieve.find()` and `heron_brain.lookup()`.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    W(["<b>Your words</b><br/><i>select all the ducts</i>"])
+    CC["<b>Claude Code</b> calls <b>heron_lookup</b><br/>with the Revit release, and <i>question</i><br/>when you only asked"]
+    F["<b>1 · Filter first</b><br/>another Revit release: left out<br/>a question: no change offered"]
+    X["<b>2 · Exact match?</b><br/>a card's own sentence,<br/>or words answered before"]
+    KW["<b>3a · Word match</b><br/>FTS5 · heron_search"]
+    MN["<b>3b · Meaning search</b><br/>heron_embed · lexical built in<br/>model2vec when installed"]
+    FU["<b>4 · Fusion</b><br/>reciprocal rank · heron_retrieve"]
+    RR["<b>5 · Re-ranker</b> · optional<br/>re-reads the top ~20 · heron_rerank"]
+    AN["<b>The answer</b><br/>the capability · how it matched<br/>which search ran · what was left out"]
+
+    W ==> CC ==> F ==> X
+    X ==>|found| AN
+    X ==>|not found| KW & MN
+    KW ==> FU
+    MN ==> FU
+    FU ==> RR ==> AN
+    FU -.->|no re-ranker installed| AN
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef search fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B,stroke-dasharray:4 3
+    class W user
+    class CC host
+    class F,X,KW,MN,FU,AN brain
+    class RR search
+```
+
+**Solid arrows are the path a lookup takes; the dotted arrow is the path with no re-ranker installed**,
+where fusion's order comes back unchanged and the answer says `re-rank: not used`. The dashed box is the
+optional install. `revit_read`, `revit_show` and `revit_change` given your words (`request`) run this
+same lookup before they run anything.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Your words            "select all the ducts"
+   |
+Claude Code           calls heron_lookup with the Revit release, and `question` when you only asked
+   |                  (revit_read / revit_show / revit_change given your words run the same lookup)
+1  Filter first       heron_retrieve.eligible
+   |                  another Revit release  -> left out, not ranked lower
+   |                  a question             -> nothing that changes the model is offered (D-128)
+2  Exact match?       heron_search: a card's own sentence (identity), or these words answered before (cache)
+   +-- found ------------------------------------------------------------> the answer
+   +-- not found
+        |
+   3a Word match                  3b Meaning search
+      FTS5, heron_search             heron_embed: lexical built in, model2vec when installed
+        |                              |
+        +--------------+---------------+
+                       |
+4  Fusion             reciprocal rank, heron_retrieve
+   |
+5  Re-ranker          optional - re-reads the top ~20, heron_rerank
+   |                  not installed -> fusion's order, unchanged, and the answer says so
+   |
+The answer            the capability, how it matched (identity / cache / hybrid / nothing),
+                      the fragment behind it, which search ran, and what step 1 left out
+```
+
+</details>
+
+| Step | What it does, as built | Code | Spec stage in §4 |
+|---|---|---|---|
+| **1 · Filter first** | A plain SQL `WHERE` over status, Revit release, domain and kind. A fragment for another release is **absent, not demoted**. When the host calls the request a question, every fragment above `question_ceiling()` - the level just below `revit_change`'s, read from the tool registry - is absent too ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)). The answer counts both | `heron_retrieve.eligible` | 1 |
+| **2 · Exact match** | `identity`: the words are a card's own declared sentence - one lookup, no search. Only a `PROVEN` fragment may run off it unasked, and through a door only when every value it needs is given ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). `cache`: these words were answered before - a candidate, never a decision. Step 1 applies to both | `heron_search.short_circuit`, `heron_search.recall` | 5 |
+| **3a · Word match** | FTS5 over the fragments step 1 kept, ranked by bm25 | `heron_search.keywords` | 2 |
+| **3b · Meaning search** | `lexical` is built in: character n-grams, measured as *not* meaning. `model` is model2vec when it is installed and its weights can be fetched; sentence-transformers is tried next. Which one ran is recorded on the answer | [`heron_embed.py`](../brain/heron_embed.py) | 2 |
+| **4 · Fusion** | Reciprocal rank fusion of the two lists (`RRF_K`). The meaning route's vote is weighted by which backend ran (`VECTOR_WEIGHT_BY_BACKEND`), and a status nudge smaller than one rank settles near-ties only | `heron_retrieve.retrieve` | 3, and 4's status signal |
+| **5 · Re-ranker** | A cross-encoder reads each (question, passage) pair of the top ~20 (`heron_rerank.SHORTLIST`) together. The passage is the card's identity, its first declared sentences, its capability and its domain ([D-134](DECISIONS.md#d-134--the-re-ranker-reads-a-cards-first-declared-sentences-beside-its-identity-carried-in-the-store)). With nothing installed, fusion's order comes back unchanged | [`heron_rerank.py`](../brain/heron_rerank.py) | 4 |
+| **The answer** | The capability, the route (`identity`, `cache`, `hybrid` or `nothing`), the fragment behind it as evidence, a `nearness` and a `re-rank` line saying which search ran, and how many fragments step 1 left out | `heron_brain.lookup`, the `heron_lookup` tool | - |
+
+What to install for 3b and 5, and what each was measured to do, is
+[WHAT-TO-INSTALL §2](WHAT-TO-INSTALL.md#2-optional--the-two-search-add-ons).
 
 ## 5. **[NOTE]** Vector store choice
 
@@ -182,9 +281,10 @@ The user never manages the vector database manually.
 > A lookup re-reads a card only when its bytes change, never on its mtime
 > ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). The stores are derived:
 > `python brain/heron_scope.py --rebuild` puts them back from disk
-> ([Golden Rule 11](14-golden-rules.md)). There is no background agent. A card changed on disk reaches
-> its row on the next lookup, and a store that has drifted from the cards is named in the
-> `heron_lookup` answer.
+> ([Golden Rule 11](14-golden-rules.md)). There is no background agent: the MCP server prepares the
+> store once on a background thread when it starts (`heron_brain.warm_store`), and after that a card
+> changed on disk reaches its row on the next lookup. A store that has drifted from the cards is named in
+> the `heron_lookup` answer.
 
 ---
 

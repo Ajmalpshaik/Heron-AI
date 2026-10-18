@@ -24,6 +24,46 @@
 > every run and sorts everything into *unfinished* and *waiting*; this sentence is typed. Where they
 > disagree, the tool is right. Then pick up from [**HANDOVER.md**](HANDOVER.md).
 
+## Which document do I read?
+
+Find yourself on the left; read the box on the right, top line first. The same routes, with what to read
+at each stop, are [PROJECT-MAP §E](PROJECT-MAP.md#e-routes-by-role).
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    OW(["<b>The owner</b>"]) --> OWD["FOR-THE-OWNER — what waits on you<br/>HANDOVER — the table at the top<br/><i>python tools/check-gaps.py</i>"]
+    MO(["<b>BIM modeller</b>"]) --> MOD["01 — Vision &amp; Principles<br/>root README — What keeps the model safe<br/>WHAT-TO-INSTALL"]
+    MG(["<b>BIM manager</b>"]) --> MGD["16 — Version Support<br/>12 — Security &amp; Permissions<br/>the Constitution"]
+    DV(["<b>Developer</b>"]) --> DVD["PROJECT-MAP §B and §C<br/>CONTRIBUTING<br/>the heron-ship skill, before a push"]
+    AI(["<b>AI agent</b>"]) --> AID["AGENTS.md — the only file written for you<br/>then PROJECT-MAP"]
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    class OW,MO,MG,DV,AI user
+    class OWD,MOD,MGD,DVD,AID host
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+The owner      FOR-THE-OWNER (what waits on you) -> HANDOVER, the table at the top
+               -> python tools/check-gaps.py
+BIM modeller   01 Vision & Principles -> root README, "What keeps the model safe" -> WHAT-TO-INSTALL
+BIM manager    16 Version Support -> 12 Security & Permissions -> the Constitution
+Developer      PROJECT-MAP sections B and C -> CONTRIBUTING -> the heron-ship skill before a push
+AI agent       AGENTS.md, the only file written for you -> then PROJECT-MAP
+```
+
+</details>
+
+The links: [FOR-THE-OWNER](FOR-THE-OWNER.md) · [HANDOVER](HANDOVER.md) · [01](01-vision-and-principles.md) ·
+[What keeps the model safe](../README.md#what-keeps-the-model-safe) · [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md) ·
+[16](16-version-support-strategy.md) · [12](12-security-and-permissions.md) ·
+[Constitution](../HERON_CONSTITUTION.md) · [PROJECT-MAP](PROJECT-MAP.md) · [CONTRIBUTING](../CONTRIBUTING.md) ·
+[heron-ship](../.claude/skills/heron-ship/SKILL.md) · [AGENTS.md](../AGENTS.md).
+
 ## Decided so far
 
 | | Decision |
@@ -88,6 +128,23 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 ---
 
 ## Core documents
+
+**Every numbered document, by what it is about.** The tables after this one list them again by number,
+with what each covers.
+
+| Theme | Documents | Read it when |
+|---|---|---|
+| **The specification** — the destination, never edited | [00](00-master-specification.md) Part 1 · [00b](00b-master-specification-agent-os.md) Part 2 · [00c](00c-master-handover-baseline.md) Part 3 · [00d](00d-additional-requirements.md) Part 4 · [00e](00e-field-notes-proven-bridge.md) field notes, observed rather than designed | you need the original requirement, word for word |
+| **What Heron is, and its rules** | [01](01-vision-and-principles.md) Vision · [14](14-golden-rules.md) Golden Rules · [Constitution](../HERON_CONSTITUTION.md) · [15](15-glossary.md) Glossary | first, and whenever a rule is in question |
+| **The product parts** | [02](02-architecture-overview.md) Architecture · [03](03-heron-revit.md) Revit add-in · [04](04-heron-mcp.md) MCP · [05](05-heron-brain.md) Brain · [06](06-heron-platform.md) Platform · [07](07-installation-and-update.md) Install and update · [25](25-multi-session-and-binding.md) Multi-session and binding | you change one part |
+| **Agents and the kernel** | [08](08-agent-catalog.md) Agent catalogue · [28](28-agent-registry.md) Agent registry · [11](11-orchestration-and-workflows.md) Orchestration · [18](18-agent-operating-system.md) Agent OS · [19](19-context-and-cost.md) Context and cost · [22](22-users-modes-and-extensibility.md) Users and modes · [23](23-heron-kernel.md) Kernel | you touch an agent, or how work is ordered |
+| **Knowledge and trust** | [09](09-skills-and-fragments.md) Skills and fragments · [10](10-memory-and-knowledge.md) Memory and knowledge · [20](20-knowledge-trust-and-conflict.md) Knowledge trust · [24](24-trust-model.md) Trust model · [36](36-remembering-between-steps.md) Remembering between steps | you touch the library or the stores |
+| **Safety and quality** | [12](12-security-and-permissions.md) Security and permissions · [13](13-testing-and-quality.md) Testing · [21](21-resilience-and-operations.md) Resilience · [16](16-version-support-strategy.md) Version support | before anything writes to a model, or ships |
+| **What a modeller gets** — built, not proven | [40](40-heron-companion.md) Companion · [41](41-hvac-design.md) HVAC · [42](42-fire-protection-design.md) Fire protection · [43](43-building-revit-families.md) Families · [44](44-building-loads-from-the-model.md) Building loads · [46](46-sprinkler-hydraulics-from-the-model.md) Sprinkler hydraulics · [47](47-sprinkler-layout-from-the-model.md) Sprinkler layout | you work on one of these features |
+| **How the work is done** | [27](27-build-order.md) Build order · [29](29-metadata-standard.md) Metadata · [30](30-compiling-away-from-windows.md) Compiling away from Windows · [38](38-the-cloud-environment.md) Cloud environment · [37](37-the-provider-adapter.md) Provider adapter · [17](17-open-source-and-distribution.md) Open source and distribution | you build, compile or release |
+| **Research** — studied, never imported | [26](26-prior-art-revit-mcp.md) Prior art · [31](31-studying-the-existing-libraries.md) Studying the libraries · [32](32-master-architecture-reconciliation.md) Master Architecture reconciled · [33](33-external-repository-research.md) External repositories · [34](34-patterns-adapted.md) Patterns adapted · [34](34-project-perfection-and-continuous-upgrade-plan.md) Upgrade plan, executed · [35](35-independent-study-notes-open-design-awesome-llm-apps-openhands.md) Study notes · [39](39-three-downloaded-skill-sets.md) Three skill sets · [45](45-five-more-downloaded-skill-files.md) Five more skill files | before proposing something another project does |
+
+### By number
 
 | # | Document | Covers |
 |---|---|---|

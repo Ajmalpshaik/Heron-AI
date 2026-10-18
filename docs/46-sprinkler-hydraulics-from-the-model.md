@@ -30,6 +30,79 @@ length and inside diameter, every fitting, every valve and every sprinkler with 
 you in the Companion in 3D, lets you confirm the K-factors and pick the remote area, solves it with its
 fire engine, and gives you a hydraulic calculation sheet as a PDF.
 
+## At a glance
+
+**From one sprinkler system in Revit to a hydraulic calculation sheet.** Every step reads; nothing is
+written back to the model in this phase.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    U(["<b>Modeller</b><br/><i>run the hydraulics on<br/>this sprinkler system</i>"])
+    SYS["<b>Revit fire protection system</b><br/>pipes · fittings · valves<br/>sprinklers and their K"]
+    RD["<b>REPORT_SPRINKLER_NETWORK</b><br/>a read · no transaction"]
+    NET["<b>heron_sprinkler_takeoff</b><br/>nodes · pipes · fittings<br/>the model's checks"]
+    RUN["<b>heron_sprinkler_run</b><br/>questions · remote area suggestion<br/>heron_fire hydraulic"]
+    WS["<b>heron_sprinkler_water</b><br/><b>heron_sprinkler_spacing</b><br/>fire water · spacing per Space"]
+    KP["<b>Companion · Sprinkler panel</b><br/>K · criteria · remote area ticks<br/>Calculate · The network is right · 3D"]
+    RP["<b>heron_sprinkler_report</b><br/>the sheet: HTML · CSV<br/>PDF by Edge or Chrome"]
+
+    U ==>|revit_sprinkler_hydraulics| RD
+    SYS ==> RD
+    RD ==>|networkJson| NET
+    NET ==> RUN
+    RUN <--> WS
+    RUN ==> KP
+    KP -->|Report| RP
+    KP -.-x|writes nothing back · phase 1| SYS
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class U user
+    class SYS revit
+    class RD addin
+    class NET,RUN,WS,RP brain
+    class KP plat
+```
+
+**Built, not proven - NEEDS REAL REVIT.** No row of [group CE](needs-checking/group-ce.md) has been run -
+read again 2026-10-18 - and no solve has been compared with a listed hydraulic program (CE7). It is a
+design aid: the fire consultant and the authority - QCDD on a Qatar project - approve the design.
+Checked against `revit_sprinkler_hydraulics` and the `_sprinkler_*` hooks in
+`mcp/server/heron_mcp_server.py`, `heron_brain.sprinkler_hydraulics` and `sprinkler_report`, and
+`SprinklerPanel` in `mcp/companion/heron_companion.py`.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+"run the hydraulics on this sprinkler system"  ->  revit_sprinkler_hydraulics
+   |
+Revit fire protection system  ->  REPORT_SPRINKLER_NETWORK (a read, no transaction)  ->  networkJson
+   |
+heron_sprinkler_takeoff    nodes, pipes, fittings, the model's checks
+heron_sprinkler_run        questions, the remote area suggestion, heron_fire's hydraulic
+   <->  heron_sprinkler_water, heron_sprinkler_spacing   fire water, spacing per Space
+   |
+Companion - Sprinkler panel   K-factors, criteria, remote area ticks, Calculate, The network is right, 3D
+   |-- Report  ->  heron_sprinkler_report: HTML, CSV, a PDF by Edge or Chrome
+   x   nothing is written back to Revit in phase 1
+```
+
+</details>
+
+**The panel's buttons** - from `SprinklerPanel` and its hooks. None of them touches the model:
+
+| Button | What it does |
+|---|---|
+| Calculate | solves the network the panel holds with the K-factors, criteria and ticks as given; while a value is missing it asks instead |
+| Suggest | ticks the heads hydraulically farthest from the source, as many as the design area holds - a suggestion; the ticks stay the modeller's |
+| The network is right | gate 1: records the modeller's check of the pipes, sizes and K-factors; until then the sheet is stamped *DRAFT - THE NETWORK WAS NOT CONFIRMED* |
+| Report | asks where, then writes the sheet - HTML, CSV, and a PDF when Edge or Chrome is found |
+
 ---
 
 ## 1. What exists, and what is missing

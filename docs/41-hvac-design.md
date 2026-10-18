@@ -11,9 +11,93 @@
 >
 > **As built (2026-10-18):** the engine has since met a Revit model through
 > [44](44-building-loads-from-the-model.md)'s building runner: on *Heron loads test*, Revit 2024,
-> 2026-10-06, Spaces calculated and written back ([Group CC](needs-checking/group-cc.md) CC11), and one
-> roof term matched a hand sum (CC19). That is a model meeting the engine, not a comparison with HAP or
-> TRACE, so the status above stands.
+> 2026-10-06, Spaces calculated and written back ([Group CC](needs-checking/group-cc.md) CC11 - its
+> Space half PASSED, its diffuser half FAILED as CC13 and is fixed but not run again), and one roof term
+> matched a hand sum (CC19). That is a model meeting the engine, not a comparison with HAP or TRACE, so
+> the status above stands. *Checked 2026-10-18:* writing those loads back from the Companion is refused
+> today, before anything is sent - [44](44-building-loads-from-the-model.md)'s status says why
+> ([D-117](decisions/D-117.md)); this engine is not touched by it.
+
+---
+
+## At a glance
+
+**What goes in, what the engine does with it, and what comes out.** `heron_hvac` is arithmetic over the
+values it is handed: it reads no model and changes nothing in one.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    U(["<b>Modeller</b><br/><i>how much air does<br/>this office need?</i>"])
+    IN["<b>Values the modeller gave</b><br/>JSON, units in the names<br/>flow_ls · area_m2 · people"]
+    PS["<b>The project's standards</b><br/>asked once, kept per project<br/>heron_designbasis · D-111"]
+    T["<b>heron_hvac</b> · MCP tool<br/>READ · no bridge operation"]
+    E["<b>brain/heron_hvac.py</b><br/>+ heron_psychro.py<br/>the calculations"]
+    A["<b>The answer</b><br/>the figure, its method<br/>and its references"]
+    Q["<b>A question</b><br/>a value is missing - a standard's<br/>figure offered, never filled in · D-33"]
+    N["<b>The capability named</b><br/>that would put it into Revit<br/>SET_MEP_SIZE · SET_AIR_TERMINAL_FLOW"]
+    BL["<b>Building loads</b> · docs/44<br/>runs the same engine<br/>for every Space"]
+
+    U ==> IN
+    IN ==> T
+    PS -.-> T
+    T ==> E
+    E ==> A
+    E -.-> Q
+    E ==> N
+    BL -.->|monthly_load · heating_load<br/>supply_airflow| E
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class U,IN,PS user
+    class T host
+    class E,BL brain
+    class A,Q,N plat
+```
+
+**A design aid - tested, not proven.** [`tests/test_hvac.py`](../tests/test_hvac.py) holds the arithmetic
+to published values, worked examples and hand sums; nothing has been compared with HAP or TRACE on a real
+project (§14). Running the capability it names is a separate `revit_change`, behind the Changes switch.
+Checked against `heron_hvac` and `heron_brain.hvac` / `_design` in `mcp/server/`, and the
+`@calculation` lines and `run` in `brain/heron_hvac.py`.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Values the modeller gave (JSON)  ---+
+The project's standards (D-111) ----+-->  heron_hvac (MCP tool, READ)  -->  brain/heron_hvac.py
+                                                                            + heron_psychro.py
+                                                                                 |
+              +------------------------------+-------------------------------+---+
+              |                              |                               |
+        the answer: figure,           a question: the value is        the capability that would
+        method, references            missing, a standard's figure    put it into Revit - named,
+                                      offered, never filled in        never run here
+
+Building loads (docs/44) runs the same engine - monthly_load, heating_load, supply_airflow - per Space
+```
+
+</details>
+
+**What it calculates, by the code's own groups.** `python brain/heron_hvac.py` lists every calculation
+and what each needs, derived by running each on nothing; this table is that list grouped, read from the
+`@calculation` lines on 2026-10-18.
+
+| Group | Calculations | What you get |
+|---|---|---|
+| Air | `psychrometrics`, `air_mixing`, `coil_load` | a moist-air state point; outdoor and return air mixed; a cooling coil's load |
+| Load | `solar`, `cooling_load`, `monthly_load`, `heating_load` | clear-sky sun on a surface; a room's cooling load, a peak estimate - and month by month with the peak month and hour; its heating load |
+| Airflow | `supply_airflow`, `air_changes` | supply air from a sensible load; air changes per hour |
+| Ventilation | `ventilation`, `exhaust` | ASHRAE 62.1 outdoor air, zone by zone; exhaust and pressure balance |
+| Duct | `duct_friction`, `duct_size`, `equivalent_diameter`, `duct_pressure` | friction loss; a size by equal friction, velocity or both; the equivalent round; the index run's pressure |
+| Fan | `fan_power` | fan power and specific fan power |
+| Diffuser | `diffuser_layout`, `diffuser_select`, `throw`, `terminal_flows`, `grille_velocity` | how many and where; a neck or catalogue row; jet throw; a room's flow split across its terminals; face velocity |
+| Water | `chw_flow`, `pipe_size` | chilled-water flow for a coil; a water pipe's size |
+| Equipment | `unit_select` | the first fan coil or split in the maker's catalogue that covers the load |
+| Units and reference | `convert`, `reference` | any HVAC unit to another; the standards' reference tables |
 
 ---
 

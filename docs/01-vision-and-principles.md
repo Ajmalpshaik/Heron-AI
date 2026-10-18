@@ -39,6 +39,11 @@ C#, .NET, the Revit API, MCP, GitHub, RAG, vector databases, embeddings, fragmen
 
 The **Communication Agent** detects intent, technical level and working role, then chooses the response style.
 
+**[NOTE]** Since [D-01](DECISIONS.md) that work is the host's, not a Heron agent's: Claude Code works out
+what was meant and chooses the wording, and Heron never classifies intent. `python tools/agent-count.py`
+lists the register rows for it — `HERON-ORC-INT-002` and `HERON-ORC-PER-003` among them — as provided by
+the host and never built here.
+
 Core rule: **show the user what they need, not everything the system is doing.**
 
 **[DECIDED 2026-08-28 — there are no personas. See [D-27](DECISIONS.md).]** ~~Recommendation: infer a default, show it as a small persistent indicator, and let the user pin it.~~
@@ -82,7 +87,10 @@ The permanent architecture rules live in their own document: [14 — Golden Rule
 
 The core architecture must not be permanently welded to Revit. Future platform adapters: AutoCAD, Navisworks, IFC, Rhino, Civil 3D, Blender.
 
-**[NOTE]** The practical way to honour this without paying for it up front: keep the *core* (orchestrator, brain, RAG, fragments, skills, memory, platform) free of any `Autodesk.Revit.*` reference, and put every Revit type behind the Heron Revit boundary. That single discipline costs almost nothing on day one and is what makes a second platform adapter possible later. It does **not** mean building abstractions for AutoCAD now.
+**[NOTE]** The practical way to honour this without paying for it up front: keep the *core* (orchestrator, brain, RAG, fragments, skills, memory, platform) free of any `Autodesk.Revit.*` reference, and put every Revit type behind the Heron Revit boundary. That single discipline costs almost nothing on day one and is what makes a second platform adapter possible later. It does **not** mean building abstractions for AutoCAD now. The discipline is held in code now, not
+only in this note: [`tools/check-structure.py`](../tools/check-structure.py) fails the build when a Revit
+type appears outside `revit/`, and the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook
+refuses such an edit as it is proposed ([PROJECT-MAP §B](PROJECT-MAP.md#b-folder-map)).
 
 ## 9. Honest framing of ambition
 

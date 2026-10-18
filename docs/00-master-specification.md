@@ -1,5 +1,11 @@
 # Heron AI — Master Platform Handover & Architecture Specification
 
+> **The original specification, kept as the owner wrote it on 2026-08-27. It says what Heron was asked
+> to be, not what is built.** What runs today is in
+> [02 §7a](02-architecture-overview.md#7a-as-built--the-parts-that-run-today), the [README](../README.md)
+> and the [project map](PROJECT-MAP.md). Where this file and [DECISIONS.md](DECISIONS.md) differ,
+> **DECISIONS.md wins** ([PROJECT-MAP §D](PROJECT-MAP.md#d-truth-hierarchy--which-source-wins)).
+
 > **Status:** Source-of-truth record, **part 1 of 4**, as provided by the owner on 2026-08-27.
 > Part 1 specifies **the platform and its organisation**.
 > Part 2 — [00b — Agent Operating System](00b-master-specification-agent-os.md) — specifies

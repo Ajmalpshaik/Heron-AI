@@ -3,7 +3,10 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active — the shape is decided, nothing is built.** Opened 2026-09-10.
+> **Status:** **Active — the shape is decided, and parts of it are built since:** Stages 1 and 2 in
+> `brain/heron_ingest.py`, Stage 6's `--refresh` in `brain/heron_embed.py`, Stage 7 in
+> `brain/heron_rerank.py` ([brain/README](../../../../brain/README.md)). Which requirements are done is
+> [01 §6](01-requirements.md)'s state column. Opened 2026-09-10.
 > **Owner:** Ajmal PS. **Decided by him, 2026-09-10:** all six structural questions are in scope.
 > **This note does not write a decision into [DECISIONS.md](../../../DECISIONS.md).** A work note does
 > not get to do that on its own. When this page is agreed, §1 becomes **a numbered decision there**

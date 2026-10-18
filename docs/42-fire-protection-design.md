@@ -20,7 +20,92 @@
 > [46](46-sprinkler-hydraulics-from-the-model.md)'s hydraulics (`hydraulic` on a network read from Revit)
 > and [47](47-sprinkler-layout-from-the-model.md)'s layout (`sprinkler_layout_room`, added here for a
 > room of any shape, with `measure_heads`). Both are built and NEEDS REAL REVIT: no row of their
-> NEEDS-CHECKING groups CE and CG has been run.
+> NEEDS-CHECKING groups [CE](needs-checking/group-ce.md) and [CG](needs-checking/group-cg.md) has been
+> run - checked again 2026-10-18, neither group records a run.
+
+---
+
+## At a glance
+
+**What goes in, what the engine does with it, and what comes out.** `heron_fire` is arithmetic over the
+values it is handed - it reads no model and changes nothing - and it never decides a hazard class.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    U(["<b>Modeller</b><br/><i>what pipe size for<br/>10 sprinklers, light hazard?</i>"])
+    IN["<b>Values the modeller gave</b><br/>hazard · material · sprinklers<br/>the class is the engineer's"]
+    PS["<b>The project's standards</b><br/>sprinkler_standard · fire_authority<br/>asked once, kept · D-111"]
+    T["<b>heron_fire</b> · MCP tool<br/>READ · no bridge operation"]
+    E["<b>brain/heron_fire.py</b><br/>the calculations · the tables · the solver<br/>heron_hvac's answer machinery"]
+    A["<b>The answer</b><br/>the figure, its method<br/>and its references"]
+    Q["<b>A question</b><br/>a value is missing - the standard's<br/>figure offered, never filled in · D-33"]
+    N["<b>The capability named</b><br/>that would put it into Revit<br/>PLACE_FAMILY_INSTANCES · SET_MEP_SIZE"]
+    FM["<b>From the model</b><br/>docs/46 hydraulics · docs/47 layout<br/>run the same engine"]
+
+    U ==> IN
+    IN ==> T
+    PS -.-> T
+    T ==> E
+    E ==> A
+    E -.-> Q
+    E ==> N
+    FM -.->|hydraulic · sprinkler_layout_room<br/>sprinkler_spacing · fire water| E
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class U,IN,PS user
+    class T host
+    class E,FM brain
+    class A,Q,N plat
+```
+
+**A design aid - tested, not proven.** [`tests/test_fire.py`](../tests/test_fire.py) derives Hazen-Williams
+from its general form, checks the network solver against an independent method and holds every table to
+its units; nothing has been compared with a listed hydraulic program on a real project (§14). The fire
+consultant and the authority - QCDD on a Qatar project - approve the design. A check that passes means the
+values checked were met, nothing more. Checked against `heron_fire` and `heron_brain.fire` / `_design` in
+`mcp/server/`, the `@calculation` lines and `GROUP_ORDER` in `brain/heron_fire.py`, and the
+`FIRE.run(...)` calls in `brain/heron_sprinkler_*.py`.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Values the modeller gave (JSON; the hazard class is the engineer's)  ---+
+The project's standards: sprinkler_standard, fire_authority (D-111) ---+-->  heron_fire (MCP tool, READ)
+                                                                                 |
+                                                       brain/heron_fire.py - calculations, tables, solver
+                                                       (heron_hvac.py's answer machinery, shared)
+                                                                                 |
+              +--------------------------------+-------------------------------+--+
+              |                                |                               |
+        the answer: figure,             a question: the value is        the capability that would
+        method, references              missing, the standard's         put it into Revit - named,
+                                        figure offered, never filled    never run here
+
+From the model: docs/46 (hydraulic, sprinkler_spacing, fire water) and docs/47 (sprinkler_layout_room)
+run the same engine
+```
+
+</details>
+
+**What it calculates, in the order a design runs** - the code's own `GROUP_ORDER`. `python brain/heron_fire.py`
+lists every calculation and what each needs, derived by running each on nothing; this table is that list
+grouped, read from the `@calculation` lines on 2026-10-18.
+
+| Group | Calculations | What you get |
+|---|---|---|
+| Hazard | `hazard_class` | what the standard's lists hold, and what each class asks for - never the class itself |
+| Design | `design_area`, `temperature_rating` | the design area's sprinklers and water; the temperature rating for a ceiling temperature |
+| Layout | `sprinkler_layout`, `sprinkler_layout_room`, `sprinkler_spacing`, `obstruction` | a rectangle's or any room's heads; the spacing of a drawn layout checked; the beam and three-times rules |
+| Pipe | `pipe_schedule` | the pipe schedule's size, above and below a ceiling too |
+| Hydraulics | `sprinkler_flow`, `friction_loss`, `equivalent_length`, `hydraulic` | one head's q = K√p; Hazen-Williams loss; fittings' equivalent lengths; a tree or looped grid solved |
+| Supply | `water_supply`, `combined_demand`, `water_storage`, `fire_pump`, `standpipe`, `hose_reels` | a flow test's curve against a demand; demands at one source; tank volume; pump rules; standpipe and hose reel demand |
+| Devices | `coverage_check`, `extinguishers`, `detector_layout` | coverage within a radius; the least extinguisher count; smoke or heat detectors' layout |
+| Units and reference | `convert`, `reference` | any unit to another; the standards' reference tables |
 
 ---
 

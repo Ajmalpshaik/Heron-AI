@@ -55,6 +55,74 @@ That matters more than a tidy sentence: **CI splits on the exit code**, so a sui
 wait for, so *could not run* there is a fault, not a skip. Read the output anyway — an exit code
 says *whether* something ran, never *why* it broke.
 
+## The four states, and where `check-gaps.py` puts each
+
+**Four states, never merged** ([AGENTS.md](../AGENTS.md)): PASS · FAIL · NOT RUN · NEEDS REAL REVIT. The
+first three are a suite's exit code; the fourth is something no suite can say, because nothing in this
+folder proves a model changed. Read from `check_tests()`, `check_fragments()`, `check_register()` and
+`main()` in [`tools/check-gaps.py`](../tools/check-gaps.py).
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    SU["<b>a suite</b><br/>tests/test_*.py"]
+    P(["<b>PASS</b> · exit 0"])
+    F(["<b>FAIL</b> · exit 1<br/>or any code but 0 and 3"])
+    H(["<b>HUNG</b><br/>past SUITE_TIMEOUT"])
+    N(["<b>NOT RUN</b> · exit 3<br/>could not run here"])
+    CK["one of the four gates fails<br/>a Step 7+ with no module or test<br/>a broken fragment library"]
+    RV["<b>NEEDS REAL REVIT</b><br/>an open NEEDS-CHECKING row<br/>a fragment below PROVEN"]
+    UN["<b>UNFINISHED</b><br/>could be done here, today<br/>check-gaps exits 1"]
+    WA["<b>WAITING</b><br/>needs a machine this is not<br/>does not touch the exit code"]
+    OK(["counted in neither"])
+
+    SU --> P & F & H & N
+    P --> OK
+    F ==> UN
+    H ==> UN
+    CK ==> UN
+    N -.-> WA
+    RV -.-> WA
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class SU,CK,OK user
+    class P brain
+    class F,H,UN revit
+    class N,WA plat
+    class RV addin
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+a suite (tests/test_*.py)
+  exit 0  PASS      -> counted in neither list
+  exit 1  FAIL      -> UNFINISHED   could be done here, today (any code but 0 and 3)
+  HUNG (past SUITE_TIMEOUT) -> UNFINISHED
+  exit 3  NOT RUN   -> WAITING      needs an optional dependency this machine has not got
+
+also UNFINISHED: one of the four gates fails, a Step 7+ with no module in brain/ or no test,
+                 a fragment library or capability registry that does not hold together
+also WAITING:    NEEDS REAL REVIT - an open NEEDS-CHECKING row, or a fragment below PROVEN;
+                 a row that names the owner, Windows, a network or a cloud session waits on that instead
+
+check-gaps.py exits 1 while UNFINISHED holds anything, 0 otherwise. WAITING never changes it.
+```
+
+</details>
+
+| State | How it shows | `check-gaps.py` files it under | A pass? |
+|---|---|---|---|
+| **PASS** | A suite exits 0 | Neither list — printed `ok` | Yes, for what the suite checks. Never a proof against a model |
+| **FAIL** | A suite exits 1 - or any code but 0 and 3 - or does not return in time (`HUNG`) | **UNFINISHED** | No — the change, not the machine |
+| **NOT RUN** | A suite exits 3, saying what it lacks | **WAITING** — *an optional dependency* | No. Proves nothing either way |
+| **NEEDS REAL REVIT** | No suite says it. An open row in [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md), or a fragment below `PROVEN` | **WAITING** — *a real Revit*, or whatever the row's own words name | No. Owed a recorded run on a named model ([D-30](../docs/DECISIONS.md)) |
+
 ## `check-gaps.py` runs every suite on disk
 
 It skips none: it runs every `tests/test_*.py` it finds, one after another. A suite that cannot run here

@@ -23,6 +23,72 @@
 > ([D-23](DECISIONS.md#d-23--the-knowledge-store-is-sqlite-one-file-per-scope)). Every store is derived
 > and can be rebuilt from disk. `python brain/heron_scope.py` lists what exists and where.
 
+### 1.1 Where each scope lives on the PC
+
+As built (2026-10-18). Every store is one SQLite file under `<home>\knowledge`, where `<home>` is
+`HERON_DATA` when it is set and otherwise, on Windows, `%USERPROFILE%\.heron`
+([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)).
+`HERON_KNOWLEDGE` moves the knowledge folder alone. Off Windows with neither set there is no home, and
+the stores refuse to open rather than guess a folder. `python brain/heron_paths.py --where` names the
+folders on this PC. A file exists only once something has opened its scope.
+
+| Scope | File, under `<home>\knowledge` | What goes in it today | Read by |
+|---|---|---|---|
+| **global** | `global.db` | The fragment library's search index, rebuilt from the cards in `brain/fragments/`; any document ingested with `--scope global` | `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, and the `revit_` doors when given words; `heron_standards` when asked for `global` |
+| **company** | `company.db` | Documents ingested with `python brain/heron_ingest.py <file> --scope company` | `heron_standards`, which asks it by default |
+| **project** | `projects\<model id>.db` - one per model, named by its `Document.CreationGUID` ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about)). Beside it, files and folders of the same name keep that model's answers and runs (`.hvac.json`, `.fire.json`, `.loads`, `.sprinkler`, `.sprinkler-layout`), and `labels.json` says which model is which | Documents ingested with `--scope project --project <key>`; the project's governing standards and design answers ([D-111](DECISIONS.md#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project)) | `heron_standards`, which asks it by default when a model is pinned; `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout`, `heron_earlier_answers` |
+| **user** | `user.db` | Only what `heron_ingest.py --scope user` puts there; no MCP tool writes it | `heron_standards` when asked for it |
+| **temporary** | `temporary.db` | Only what `heron_ingest.py --scope temporary` puts there; no MCP tool writes it | `heron_standards` when asked for it |
+| **experimental** | `experimental.db` | Only what `heron_ingest.py --scope experimental` puts there; no MCP tool writes it | `heron_standards` when asked for it |
+
+**A question reads one scope at a time.** `heron_scope.open_scope` takes one scope and there is no call
+that takes two; SQLite's `ATTACH` is refused at the engine. Where two scopes are wanted,
+`heron_standards` asks each on its own and labels every answer:
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    Q(["<b>A standards question</b><br/><i>how thick is the duct insulation?</i>"])
+    HS["<b>heron_standards</b><br/>asks each scope named,<br/>one at a time"]
+    CO[("<b>company.db</b>")]
+    PR[("<b>project store</b><br/>this model's file only")]
+    A1["Answer labelled<br/><b>company</b>"]
+    A2["Answer labelled<br/><b>project</b>"]
+    CF["<b>Numbers differ?</b><br/>said, never settled<br/>heron_conflict"]
+
+    Q ==> HS
+    HS ==> CO ==> A1
+    HS ==> PR ==> A2
+    A1 -.-> CF
+    A2 -.-> CF
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    class Q,A1,A2 user
+    class HS,CO,PR,CF brain
+```
+
+**Solid arrows are the question and its two separate answers; dotted is the conflict check**, which
+reads a number and a clause number from each answer, never a clause. No arrow joins the two stores.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+A standards question     "how thick is the duct insulation?"
+   |
+heron_standards          asks each scope named, one at a time
+   +-- company.db ----------------------> answer labelled "company"  ..
+   +-- project store (this model only) --> answer labelled "project"  ..
+                                                                       :
+                         heron_conflict: numbers differ? said, never settled
+                         (reads a number and a clause number from each, never a clause)
+
+No arrow joins two stores: open_scope takes one scope, and ATTACH is refused.
+```
+
+</details>
+
 ## 2. Project context isolation
 
 ```mermaid
@@ -62,6 +128,9 @@ Heron AI
 
 </details>
 
+*The specification's picture, not the build: skills and fragments are one library for every project.
+What a project keeps of its own is in the §1.1 table.*
+
 Project information must not contaminate another project.
 
 **[NOTE — this is a commercial requirement, not just a technical one]** In consultancy and contracting work, Project A and Project B frequently belong to **different clients**, often under NDA. Leakage between them is a contractual breach, not an inconvenience.
@@ -97,6 +166,12 @@ If a user repeatedly performs a workflow successfully — *"select all ducts and
 - **Learn the pattern, not the numbers.** The reusable thing is *select by category → move by vertical offset*, parameterised. Hard-coding "200 mm" produces a brittle, single-use pattern.
 - **Confirm before saving a pattern.** *"You've done this 5 times. Save it as a shortcut?"* Silent learning is unsettling; a one-line confirmation converts it into a feature the user feels ownership of.
 
+> **As built (2026-10-18):** nothing recognises a repeated workflow or offers to save one.
+> [`heron_userskills.py`](../brain/heron_userskills.py) plans raising a personal skill one step at a
+> time - user, then company, then global - refuses a raise its author approves, and moves nothing.
+> [`heron_memory.py`](../brain/heron_memory.py) decides what may be remembered and writes nothing: a
+> candidate carrying a credential is refused whole. Both are `DRAFT`, and no MCP tool reaches either.
+
 ---
 
 ## 4. Community knowledge (§35)
@@ -113,6 +188,13 @@ User Knowledge -> Candidate -> Review -> Validation -> Community Proposal
 > **Nothing derived from a client project may leave the machine without explicit, per-item human review of the actual content being sent.**
 
 A fragment carries usage history, failure history, and sometimes literal parameter names, family names or project identifiers. A "generic" duct-selection fragment can easily contain `PROJ-QA-2026-Ashghal-DuctType-A`. Automated sanitisation is not sufficient — a human must see the exact payload. This is `PUBLISH` level, always, no exceptions and no remembered consent.
+
+> **As built (2026-10-18):** there is no community store and no submission path. Two parts of one are
+> written: [`heron_contribution.py`](../brain/heron_contribution.py) prepares a submission only after a
+> review of each item that has seen its payload, and [`heron_pullrequest.py`](../brain/heron_pullrequest.py)
+> opens a pull request only on a confirmation naming the head it opens. Both are `DRAFT`, and no MCP tool
+> reaches either. Shared company knowledge is a git repository when there is demand
+> ([D-41](DECISIONS.md#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer)).
 
 ---
 
@@ -290,6 +372,13 @@ Naming must be predictable and searchable (§31), but identity is an **ID**, nev
 
 **[NOTE]** Order of operations: **identity first, auto-rename second.** An Auto Rename Agent let loose on a knowledge base that still identifies things by filename will silently destroy the reference graph. The Reference Update Agent exists for exactly this reason and must run in the same transaction as any rename.
 
+> **As built (2026-10-18):** a fragment's identity is the `id:` in its card, never its folder name
+> ([09 §4](09-skills-and-fragments.md#4-knowledge-identity-30)), and a project's store is named by the
+> model's own id, never its file name. [`heron_rename.py`](../brain/heron_rename.py) refuses to rename
+> before identity exists, and [`heron_references.py`](../brain/heron_references.py) lists the edits a
+> rename needs in five places - imports, references, metadata, registry and docs. Both return a plan and
+> write nothing; both are `DRAFT`, and no MCP tool reaches either.
+
 ---
 
 ## 7. **[NOTE]** What "memory" must not become
@@ -305,5 +394,12 @@ Three practical defences:
 | **Expiry** | Temporary memory has a TTL. Project memory is archived when the project closes. |
 | **Supersession** | New knowledge that contradicts old knowledge **replaces** it and records the replacement. It does not sit beside it. |
 | **Budget** | Each scope has a size budget. Approaching it triggers consolidation, not silent growth. |
+
+> **As built (2026-10-18):** two of the three are rules in [`heron_memory.py`](../brain/heron_memory.py),
+> which decides and writes nothing. **Expiry:** a temporary item that arrives without a time to live is
+> refused, and a project item is recorded as archiving when its project closes; no duration is chosen
+> there. **Supersession:** a new item that replaces an old one names what it replaces. **Budget** is not
+> built: no scope has a size budget. [`heron_budget.py`](../brain/heron_budget.py) is a different thing,
+> a token and cost budget.
 
 The measure of a good memory system is not how much it remembers. It is how reliably it returns the right thing — which usually means remembering **less**, and more deliberately.

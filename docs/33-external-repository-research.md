@@ -42,6 +42,32 @@ projects below are the second thing, and the useful part of them is the mechanis
 > [`open-questions/tier-3.md`](open-questions/tier-3.md). Where a section below calls one of them open,
 > it records the day it was written.
 
+## At a glance — what each repository gave Heron
+
+Read from this page's own matrix (§2), its ranking (§4), the answers in the note above and
+[34](34-patterns-adapted.md), which says what each idea became. **No code was taken from any of them**
+([D-25](DECISIONS.md)); *taken* below means an idea, re-authored.
+
+| Repository | Taken | Rejected | Where it went in Heron |
+|---|---|---|---|
+| [agentmemory](#55-rohitg00agentmemory) | confirmation: fuse the retrieval streams, never pick one | a third, graph stream - measured and lost | Q-52, [34 §2.13](34-patterns-adapted.md) |
+| [code-review-graph](#56-tirth8205code-review-graph) | a zero must say whether it means *none* or *could not see* | the source-code graph ([32 §5](32-master-architecture-reconciliation.md)) | evidence for [D-64](DECISIONS.md) and [D-59](DECISIONS.md) |
+| [headroom](#514-headroomlabs-aiheadroom) | compress what came back, never the request; a licence inventory | building any compressor yet | the rule in [`heron_context.py`](../brain/heron_context.py); [D-66](DECISIONS.md) |
+| [open-code-review](#513-alibabaopen-code-review-and-alibabaaacr-bench) | deterministic pipeline before the model - already held | its web and Java rulesets | already in [19 §5](19-context-and-cost.md) |
+| [aacr-bench](#513-alibabaopen-code-review-and-alibabaaacr-bench) | a benchmark's shape: positive and negative samples | its cases | not built - the cases must be Revit tasks only the owner can write |
+| [OpenViking](#54-volcengineopenviking) | tiered loading, from the README only | every line of code - AGPLv3 (§3) | abstract, overview and full depth - [34 §2.1](34-patterns-adapted.md) |
+| [llm-council](#512-karpathyllm-council) | anonymise **and** shuffle the answers being judged | the council - many model calls a question | not built, kept for a future Shadow Mode - [34 §2.14](34-patterns-adapted.md) |
+| [superpowers](#58-obrasuperpowers) | no claim of done without fresh evidence - already [D-30](DECISIONS.md) | its general software workflow | already held |
+| [gstack](#57-garrytangstack) | a hook that blocks the act, and three traps that defeat one | its 54 workflow skills | the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook - Q-49, [34 §2.9](34-patterns-adapted.md) |
+| [ECC](#51-affaan-mecc) | block the tool call; point at the thing instead of typing it | its scale of agents, skills and commands | `heron-guard`; Q-50 as [D-60](DECISIONS.md) |
+| [ruflo](#52-ruvnetruflo) | the question: guard what retrieval carries into context | swarm and consensus | Q-51 as [D-81](DECISIONS.md) - carried text is stamped, not scanned |
+| [claude-mem](#53-thedotmackclaude-mem) | nothing - selective memory is already held | capture everything and compress it | - |
+| [prime-agent](#511-primeintellect-aiprime-agent) | nothing - its stop rule is [D-01](DECISIONS.md) written as a type | a daemon for unattended running | - |
+| [scientific-agent-skills](#59-k-dense-aiscientific-agent-skills) | the licence warning, shown for real | - | Q-53 as [D-66](DECISIONS.md) - [`check-licence.py`](../tools/check-licence.py) |
+| [awesome-harness-engineering](#510-ai-boostawesome-harness-engineering) | a reading list | treating an index as a roadmap | - |
+| [gbrain](#516-garrytangbrain--the-seventeenth-and-the-only-one-that-measured-the-question-heron-is-asking) | a measured graph lift, as a question worth testing | the third stream, once Heron's own library was measured | [`measure-graph.py`](../tools/measure-graph.py), [34 §2.13](34-patterns-adapted.md) |
+| [*Claude CEO*](#515-claude-ceo--ceo-style-agent-1015--searched-properly-still-not-identified) | - | - | not identified, so nothing studied |
+
 ---
 
 ## 1. The most valuable finding is that six of them agree with Heron
