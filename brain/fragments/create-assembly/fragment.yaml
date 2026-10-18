@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-GRP-033
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -67,36 +67,6 @@ contract:
       type: string
     - name: findings
       type: IList<string>
-
-proof:
-  date: '2026-10-18'
-  by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    filter-elements-by-category with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyInOne
-    0 item(s), assembly (null), categoryId 1 item(s) [id -2008044], categoryName Pipes, findings
-    2 item(s) [The assembly was made, but Revit refused the name "Spool 01"..., Revit refused
-    the assembly: No valid type for the assembly i...], first Pipe, ids 1 item(s) [345455],
-    memberIds 1 item(s) [345455], refused Revit refused the assembly: No valid type for the
-    assembly instance.. NOTHING WAS MADE.. inputs came elements from filter-elements-by-category
-    (1); assemblyName as given; namingCategory as given. on Project2'
-  negative_case: 'run with assemblyName=Spool 02, categoryName=Text Notes, inViewOnly=FloorPlan:
-    Level 1, namingCategory=Pipes arranged with category=Rooms, levelId=Level 1 instead -
-    chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running filter-elements-by-category with this phase''s own values - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned alreadyInOne 0 item(s), assembly (null), categoryId 1 item(s) [id -2008044],
-    categoryName Pipes, findings 1 item(s) [Revit will not put these elements in one assembly
-    - a view-s...], first Room, ids 2 item(s) [345437, 345439], memberIds 0 item(s), refused
-    Revit will not put these elements in one assembly - a view-specific element, a host and
-    its hosted element split apart, or an element type Revit does not assemble. NOTHING WAS
-    MADE.. inputs came elements from filter-elements-by-category (2); assemblyName as given;
-    namingCategory as given. on Project2'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: d55da7bc00a0e725
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
