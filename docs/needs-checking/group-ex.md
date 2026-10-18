@@ -65,3 +65,38 @@ the release under test and restart Revit first. Read what the guard did from the
 | **EX10** | **A new document under a change.** A scratch MODIFY probe that calls `app.NewFamilyDocument` on the Generic Model template and then `SaveAs` to a scratch path | `run_guard` naming the new document and the Admin switch; the scratch path has NO file (its `SaveAs` was cancelled); the log's `Run guard closed` line names the new document. **The negative** is EX6's `create-family-document` under Admin |
 | **EX11** | *Watching, not a proof.* **The guard costs the modeller nothing between jobs.** With no chat connected, on a large real model's detached copy: time a Copy of a few thousand elements and a Ctrl+S, once with Heron's add-in loaded and once with it removed from the Addins folder | The same times within a second or so, and no `Run guard` line in the add-in log - every handler returns at once while no job is armed. `DocumentChanged` is now subscribed for the whole session, so this is the row that says whether that costs anything |
 | **EX12** | **Heron's own picture still works.** With the guard armed, `revit_view_image` (`capture_view`, ANALYZE) on *Heron Guard A*: once for a named view, once for two elements by id | A picture comes back both times, no `run_guard`, no `Run guard cancelled` line in the log - the export is inside `HeronExports()`. **And write down which events `ExportImage` raised**, if any `Run guard` line names one: that says whether a fragment's image export is caught by `FileExporting`, `ViewExporting` or neither (EX3's image row) |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+*Heron Safety 2024* was A, in front; *Heron Guard B 2024* was B, open behind it. The probes were MODIFY
+fragments run with `--write` and no `--apply`: since D-117 the command line refuses `--apply` for a DRAFT -
+*"zz-ej-runaway-probe is DRAFT ... Heron will not let it change a live model (Constitution Article 11). Nothing
+was sent to Revit."* - so a row's *"KEPT as an ordinary change"* cannot happen with a probe, and the negatives
+below are rolled-back runs. Every refusal below is read off the add-in log's `Run guard ...` lines and the
+audit line.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| **EX1** | 2024 | `save-document` on B, Publish on, `--apply`: `saved true`, B's file time 09:13:15 → 09:16:20, no `run_guard`, no `blocked`, nobody asked (no change counted in A). With Publish OFF (his ribbon, 06:37:03): `publish_disabled`, B's file time unchanged | **PASS** |
+| **EX2** | 2024 | Save probe: the save of B **was cancelled** - *"Run guard cancelled Save of 'Heron Guard B 2024'"*, B's file time unchanged, A rolled back - but the reply was `changed_other_model`, not `run_guard`: Revit committed *"Store dependencies"* in B before `DocumentSaving` ([5b-1092](../fragment-issues/section-5b-rows-401-425.md)). Export probe: `run_guard` *"Stopped before it happened: an export from 'Heron Safety 2024'"*, no DWG written, `blocked 1`. Negative (the line alone): ran, rolled back, no guard line, no `blocked` | **FAIL** (the save's code and words); export and negative **PASS** |
+| **EX3** | 2024 | Save: cancelled (EX2). Save As of B to a new path: cancelled, `run_guard`, no file. DWG export: cancelled. `ExportImage`: cancelled (the log names it *Export*). No *"could NOT cancel"* line. Sync and print not arranged; 2027 not run | **part** |
+| **EX4** | 2024 | `upgrade-family-files` (PUBLISH, PROVEN) on two scratch families: upgraded 2, failed 0, no `Run guard closed` line for them. The probe that opens *Heron Guard Probe.rfa* and returns: *"Run guard closed 'Heron Guard Probe' unsaved"*, audit `closed 1`, the file's time unchanged | **PASS** |
+| **EX5** | 2024 | READ probe, `EditFamily` then a throw: the family was closed (*"Run guard closed 'M_WSHP ... .rfa' unsaved"*), but the reply was `run_guard` *"It started a new document - '(unnamed)'"*, not `fragment_threw`. **No `Run guard saw ... open` line: Revit raised `DocumentCreated` for `EditFamily`** - [5b-1091](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** (the code it answers with) |
+| **EX6** | 2024 | `open-family-for-editing` (EXECUTE, PROVEN) on the M_WSHP family: `run_guard` - the new-document refusal and its `SaveAs` to the scratch folder cancelled, `blocked 2`; no family left open. And `REPORT_FAMILY_TABLES_IN_PROJECT` (READ, PROVEN) through the chat: refused, *"started a new document - '(unnamed)' x3"*. `create-family-document` not run | **FAIL** - a regression of two PROVEN fragments, 5b-1091 |
+| **EX7** | - | Needs `write.enabled` edited in the owner's `heron.config` while a job runs - this run does not touch that switch; and a DRAFT probe cannot be kept to reach the re-read | **NOT RUN** |
+| **EX8** | - | B has no drafting view arranged | **NOT RUN** |
+| **EX9** | 2024 | Probe committing a model line in B in B's own transaction: `changed_other_model` *"THAT CHANGE IS COMMITTED IN 'Heron Guard B 2024' AND HERON CANNOT UNDO IT"*, A rolled back; B's own Undo list shows *"zz probe line in B"* | **PASS** |
+| **EX10** | 2024 | `NewFamilyDocument` + `SaveAs`: `run_guard` naming *Family1* and the Admin switch, the `SaveAs` cancelled, no file, *"Run guard closed 'Family1' unsaved"*, audit `blocked 2`, `closed 1` | **PASS** |
+| **EX11** | - | Not timed | **NOT RUN** |
+| **EX12** | 2024 | `revit_view_image` of a named view with the guard armed: pictures, no `Run guard` line. The element half fails for its own reason ([5b-1090](../fragment-issues/section-5b-rows-401-425.md)) | **PASS** (named view) |

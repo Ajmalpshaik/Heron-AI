@@ -52,3 +52,35 @@ South elevation for ET1 to ET4.
 | **ET11** | ET1 and ET2 once on Revit 2024 and once on 2027 | The same answers - the question is in the add-in every release loads |
 | **ET12** | *Watching, not a proof.* On every row above that shows the question | It waits for a click. If it ever closes by itself, or the chat reports `dialog_refused` or a Discard nobody chose, the job's dialog watch (Group EL) is answering Heron's own question and `HeronDialogWatch.HeronAsks()` is not standing it down - write down the row and what the chat said |
 | **ET13** | **Run first, after the 5b-621 fix.** Close every Revit, deploy the add-in LOCALLY for each release, restart Revit 2024 and the Claude app. In a SCRATCH copy of `rme_basic_sample_project.rvt`, ask the chat for the same duct the crash met: `CREATE_DUCT`, `systemType=Supply Air`, `ductType=Rectangular Duct: Mitered Elbows / Tees`, `level=Level 1`, `points=0,-28000,3000; 8000,-28000,3000`. When the box appears, press **Enter** without clicking. Ask again and choose **Keep it**. Then ET1 on 2020 and 2027 | **The box appears** - no *"Corresponding button not found"* in the chat, and no `set_DefaultButton` in the day's add-in log. **Discard it** is the highlighted link, so Enter discards: the element count is as before, no new `Heron:` undo entry, the view is not left isolated, and the selection is the modeller's own. Keep: one duct, one `Heron: CREATE_DUCT` undo entry. If the box still does not appear, the chat must say nothing was kept, the view must not be left isolated and the selection must be put back - write down the log line that starts *"The Keep or Discard box could not be built or shown"* |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| **ET13** | 2024 | Run first. `revit_change` `CREATE_DUCT` with the row's values: **the box appeared** - no *"Corresponding button not found"*, no `set_DefaultButton` in the log. He clicked **Keep it**: 21,562 → 21,565 elements, the Undo list exactly one entry `Heron: create-duct`. The Enter half: at 05:59 he pressed Enter only and reported **Keep it** as the highlighted link - the run was KEPT (`modellerAnswer keep`). Re-checked at 06:47 with the model in front: his screenshot shows **Discard it** with the focus frame, he pressed Enter only, and the run was DISCARDED, nothing kept | **PASS on the re-check**; the 05:59 observation is kept beside it - if Keep is ever seen highlighted again, picture the box before answering |
+| **ET1** | 2024 | With `CREATE_DUCT`, not `CREATE_LEVEL`. The box read *"The added elements are selected and isolated in the active view"* (his screenshot); after Keep the duct and its system were selected (`READ_SELECTION` 891701, 891702); one undo entry. **The chat was never told it was asked:** the run record carries `asking` *"You were asked in Revit and pressed KEEP after seeing the result."*, the printed reply does not - [5b-1093](../fragment-issues/section-5b-rows-401-425.md). Ctrl+Z on it not run | **FAIL** (the chat's words); the box half held |
+| **ET2** | 2024 | Two of his ducts selected by Keep; `CREATE_DUCT` again, he clicked **Discard it**: *"The modeller chose Discard in Revit, so NOTHING WAS KEPT ... Their own selection was put back"*; 21,568 unchanged; `READ_SELECTION` the same two ids; no new undo entry | **PASS** |
+| **ET3** | 2024 | Esc, then the X: both recorded `modellerAnswer closed`, nothing kept, selection back, count and Undo list unchanged | **PASS** |
+| **ET4** | 2024 | He waited about 57 s (audit `ms` 56,626) before Keep: the KEPT verdict arrived, never *"still running"* | **part** - 90 s not reached; the `askTimeoutSeconds = 60` half NOT RUN |
+| **ET5** | 2024 | *Heron Guard B 2024* in front, `CREATE_DUCT` in *Heron Safety 2024* by name: the box read *"This model is not the one in front, so nothing is selected or isolated on screen"* (his screenshot); Keep kept it in A (`wasActiveDocument` false); B 4,948 elements before and after; nothing selected in A | **PASS** |
+| **ET6** | - | `CREATE_STAIRS` is still DRAFT | **NOT RUN** (waits on its proof) |
+| **ET7, ET8** | - | Not arranged; the banner was not watched | **NOT RUN** |
+| **ET9** | - | Needs `write.askBeforeKeeping` edited in the owner's own `heron.config` | **NOT RUN** |
+| **ET10** | 2024 | `OPEN_VIEW` `Level 1 HVAC Plan` through `revit_change`: *"Revit reported nothing added, changed or deleted in the model, so the modeller was not asked"*; the plan opened; Undo list unchanged | **PASS** |
+| **ET11** | 2027 | `CREATE_LEVEL` *ET Test* at 60000 mm, Keep: kept, Revit counted one level added. *ET Test 2* at 70000 mm, Discard: nothing kept. Undo list exactly `Heron: create-level` and EM6's `Heron: create-line-pattern` | **PASS** on 2027 |
+| **ET12** | 2024, 2027 | Every box waited for a click - none closed by itself, no `dialog_refused` on a Heron box. [EL3](group-el.md) shows the watch DOES answer an add-in's own TaskDialog, so `HeronAsks()` is what keeps it off this one | **PASS** (watching) |
+
+**Asked for by the owner while running ET:** when the box shows a change, zoom the view to it with a little
+margin. It does not zoom today - it only selects and isolates at the view's current zoom. Handed to a separate
+session on 2026-10-18; nothing here changes the box.

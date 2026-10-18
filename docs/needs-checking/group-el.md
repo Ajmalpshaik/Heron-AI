@@ -45,3 +45,29 @@ Revit 2024** as *Heron Later Release.rfa*. Changes ON for EL1, EL2 and EL4.
 | **EL5** | The negative. `LOAD_FAMILY` with a family saved in Revit 2020, and any read such as `revit_health` | Neither reply carries `dialogsAnswered` or `dialogs`, the family loads as before, and the audit lines have no `dialogs` number - a job no dialog interrupted reads exactly as it did. **The D-30 negative** |
 | **EL6** | The modeller's own dialogs are left alone. With no Heron job running, open any Revit dialog that asks something (Manage > Purge Unused, then Cancel) | It shows and waits for the modeller as always. Then, with that dialog still open, ask the chat for any read: the answer is `revit_busy` - the job never started, so nothing touched the open dialog |
 | **EL7** | EL1, EL5 and EL6 once on Revit 2024 and once on 2027 | The same answers - the watch is in the add-in every release loads |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+*Heron Later Release.rfa* is a copy of Revit 2027's `rac_basic_sample_family.rfa`; *Heron 2020 Family.rfa* a
+copy of Revit 2020's `basic_sample_family.rfa`. The loads were rolled-back runs (`--write`, no `--apply`).
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| **EL1** | 2024 | `load-family` *Heron Later Release.rfa*: answered in 7 s, `dialog_refused` quoting *"The file Heron Later Release.rfa was saved in a later version of Revit and cannot be retrieved in this version."*, rolled back, audit `dialogs 1`, one *"Revit dialog during a Heron job"* log line, and no dialog window left (only Revit's main window visible). **The dialog has no id** - the log reads `id ''` - so it cannot be the table's first row by id | **PASS** |
+| **EL2** | 2024 | `answer` Cancel - Revit took the override | **PASS** |
+| **EL3** | 2024 | READ probe whose body is `TaskDialog.Show("Heron EL3", "Close me if you can see me.")`: `dialog_refused` in under a second, task dialog, **no id**, answered Cancel. **An add-in's own TaskDialog DOES raise `DialogBoxShowing`** - so a Heron prompt inside a job must sit inside `HeronAsks()`, and the Keep box does (it always waited for a click) | answered: **it raises the event** |
+| **EL4** | - | Not arranged | **NOT RUN** |
+| **EL5** | 2024 | `load-family` *Heron 2020 Family.rfa*: loaded, three types, no `dialogs` or `dialogsAnswered` on the reply, no log line, no `dialogs` on the audit line | **PASS** |
+| **EL6** | 2024 | His Manage > Purge Unused left open, then a `count`: `revit_busy` after 10 s, *"A dialog may be open"*; his window still open and untouched until he cancelled it. **Seen beside it:** the activity banner read *"Heron AI is reading your model ... Counting what is in the model - 8.4 s"* while Revit never ran the count | **PASS** |
+| **EL7** | 2027 | EL5 on 2027: loaded, 35 elements added, no dialogs, rolled back. EL1 cannot exist on 2027 - no later release; EL6 not repeated | **PASS** (EL5) |

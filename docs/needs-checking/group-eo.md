@@ -71,3 +71,31 @@ three plan points in the units the card states. Read `verdict`, `rolledBack`, `r
 last kept job made"* exists for section 1c's kind of failure, and nobody knows how to cause one on purpose - the
 three on record came from a dialog-raising transfer, a cascading delete and a plain rename. The host proves what
 Heron says when one happens; only the next one, met in a real model, proves Revit can produce one for it to see.
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+With `CREATE_DUCT` in place of `CREATE_WALL` on 2024, and `CREATE_LEVEL` on 2027. A is a duct kept through the
+Keep box; B is a rolled-back run from the command line (`--write`, no `--apply`).
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| **EO1** | 2024 | B after A (a kept duct, 3 elements): `rolledBack` and `rollbackReported` true, `rollbackCheck` `added 6`, `checked 6`, `standing 0`, `keptJob create-duct`, `keptChecked 3`, `keptLost 0`; *"none of the 6 elements this run added is still in the model"*; no *"Rolling back this run removed"* | **PASS** |
+| **EO2** | 2024 | He clicked Revit's Undo once on `Heron: create-duct`, then B: *"The last kept job ('create-duct') was undone in Revit before this run started, so this run did not remove what it made."*, `keptLost 0` | **PASS** |
+| **EO3** | 2024 | `added` 6 - the listener saw the inner commits. `eventNamed` 0 on every rollback this day | recorded: **0** |
+| **EO4** | 2024 | `delete-elements` (no apply) on A's duct, selected: 9 deleted (`alsoWent` 8), rolled back, `keptLost` 0, no loss sentence, 21,568 back and both ids present | **PASS** |
+| **EO5** | 2024 | A kept (duct 892313), he deleted it by hand - its system and helper went with it. B: *"What the last kept job ('create-duct') made was already gone when this run started - removed in Revit, not by this run."*; the next B said nothing. The one-of-several half could not be separated - the delete took all three | **PASS** (second half) |
+| **EO6** | - | No refused move arranged | **NOT RUN** |
+| **EO7** | 2027 | EO1: B after the kept level - silent, `keptJob create-level`, `keptChecked 1`, `keptLost 0`. EO2: his Undo, then B - *"was undone in Revit before this run started"*. 2020 not run | **PASS** on 2027 |
+| **EO8** | 2024 | **Not runnable as written:** after EO2's B, Revit's Redo was empty - a rolled-back Heron run empties the modeller's Redo list | answered: **a preview takes Redo away** |
+| **EO9** | 2024 | `revit_view_image` with A's duct: `capture_failed` - [5b-1090](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** |

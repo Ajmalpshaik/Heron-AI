@@ -44,3 +44,28 @@ ceiling plan also called *Level 1*. Note the ducts' ids (Manage > IDs of Selecti
 | **ER7** | After ER1 to ER6, the folder `HeronPaths.Captures` names (Heron's `captures` folder under Derived) | Empty, or not there: every capture deleted its own folder. A folder left in it is a capture that did not finish, and is safe to delete |
 | **ER8** | `revit_view_image` with `width` = 9000 | The picture comes back 2400 px wide and the words say the width was clamped |
 | **ER9** | *Watching, not a proof.* The activity banner over Revit during ER2 | It shows the reading colour and *"Taking a picture of a view for the chat"*, never a change |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| **ER1** | 2024 | `view` empty, *Level 1 HVAC Plan* in front: the picture came into the chat - ducts, grids and rooms seen - and the words named the view, FloorPlan and the model | **PASS** |
+| **ER2** | 2024 | `elements` = 891701 (a kept duct), 891698, and 386031, 394114, 395978 (original equipment): every one `capture_failed` *"The referenced object is not valid ... or its creation was undone"*. The ids exist. The reply reads the temporary view's name after the rollback undid it - [5b-1090](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** |
+| **ER3** | 2024 | No new 3D view (140 views, 11 3D, before and after), element count unchanged - but the closing words never came, ER2 failed first | **part** |
+| **ER4** | 2024 | `Levle 1 HVAC Plan`: *"There is no view called 'Levle 1 HVAC Plan'"*, nothing pictured. The ambiguous half: no two views in this model share a name | **PASS**; ambiguous half **NOT RUN** |
+| **ER5** | 2024 | `999999999`: refused naming the id. A duct id and `view` together: *"Give a view name OR element ids, not both"*. Nothing made | **PASS** |
+| **ER6** | 2027 | `view` empty: the Cover Sheet in front pictured. `elements` = 1365188, 1366142: the same `capture_failed` | view **PASS**, elements **FAIL** |
+| **ER7** | 2024 | `%LOCALAPPDATA%\Heron\captures` empty, 0 files | **PASS** |
+| **ER8** | 2024 | `width` 9000: a 2400 px picture and *"The width asked for was outside 320 to 2400 px, so 2400 was used."* | **PASS** |
+| **ER9** | - | The banner was not watched | **NOT RUN** |

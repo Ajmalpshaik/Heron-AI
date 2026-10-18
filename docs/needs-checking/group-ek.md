@@ -44,3 +44,30 @@ linked file opened alone.
 | **EK8** | 10 ducts selected and two other ids typed; then EK1's ids on a model that is not workshared | only the two typed are described, a finding saying the 10 selected were not read; no workset line anywhere and *worksets not shown - not a workshared model* |
 | **EK9** | EK1 and EK5 once on **Revit 2020** and once on **2027** | the same answers. The members were read off the reference assemblies for every release and compiled, not run |
 | **EK10** | Second route: Manage > Select by ID with each typed id, and Properties' Workset, Level and Length for it; for a linked id, the linked file opened alone | the element Revit selects is the one the block describes, and the three values agree |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+*Heron Safety 2024* is not workshared and has no placed links, so EK5, EK6 and EK10's linked half could not be
+arranged on it.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| **EK1** | 2024 | Not run as written (50 mixed ids with every option on would put the whole record into the chat). Seen in EK3: every block carries a unique id, a level with its source, an owner view, a location and a box; the ducts' level reads *from LevelId*, not *RBS_START_LEVEL_PARAM* as the row expects | **part** - the row's level source to look at |
+| **EK2** | 2024 | The binding note *maxChars not given - "60000", the card's own default* seen on every run that left it out; the 60000 cut not run | **part** |
+| **EK3** | 2024 | Selection path: 255 ducts → *"FIRST 50 OF 255; the 205 after them are not recorded, the next being id 401615"*. Typed: 54 ids (3 equipment, a kept duct and its system, 49 ducts) → *"FIRST 50 OF 54 ... the next being id 401413"*, 54 typed, 54 found, `missing` empty; equipment with point, rotation and facing, the duct system *"level: none - LevelId and the five level parameters are all empty"* | **PASS** |
+| **EK4** | 2024 | `891701, 999999999, abc`: the duct described whole (70 parameters sorted, length 8000 mm), `missing` = *abc (not an id - digits only)*, *999999999*. Three unknown ids: no ELEMENT block, *"None of the 3 id(s) typed ..."* | **PASS** |
+| **EK7** | 2024 | `parameterFilter` *level, offset*: *"6 kept of 70"*, every kept line holds level or offset in its name or built-in name. `maxChars` 100: *"raised to the least, 5000"*, and on 249 ducts *"RECORD CUT AT THE 5000-CHARACTER BUDGET: 6 of 50 element(s) written whole; element id 419059 cut after 4 of its 7 lines; not written: ids ..."* | **PASS** |
+| **EK8** | 2024 | *"worksets not shown - not a workshared model"*. The selected-and-typed half not arranged | **part** |
+| **EK9** | 2027 | 37 mechanical equipment through the selection path, cut at 5000; typed `1365188, 1366299, 999999999, abc` → two described, both bad ones in `missing`. EK5 not arrangeable; 2020 not run | **PASS** (EK1-type, 2027) |
+| **EK5, EK6, EK10** | - | No link, no workshared copy | **NOT RUN** |
