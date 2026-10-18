@@ -53,3 +53,27 @@ Revit API call - a Regenerate, a LoadFamily, an export - is not interrupted by t
 because no check runs inside it; an expression-bodied lambda and a LINQ query carry no check; and nothing
 in the MCP server sends `stop` yet, so a chat cannot be stopped from the chat - only from a second terminal
 holding its client id. [D-129](../decisions/D-129.md) lists them.
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+The probes `zz-ej-runaway-probe` and `zz-ej-swallow-probe` were written as the group says, run with `--write`
+and **no** `--apply` - D-117 refuses `--apply` for a DRAFT before anything is sent - and deleted at the end.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| EZ1 | 2024 | Runaway: `ran_too_long` after 50 s, *"set inside the 60 seconds Heron waits"*, *"Revit confirmed the rollback"*; 21,568 elements before and after; no probe entry in the Undo list. Swallow: the same at 51 s | **PASS** |
+| EZ2 | 2024 | Revit came back by itself: the same process (63712), `ping` 1 ms, a `count` straight after. The banner was not watched | **PASS** |
+| EZ3 | 2024 | Positive: the runaway (client `ajmal-pc`) and, 6 s later, `stop` with the same id: *"Heron is stopped. Revit is running a job now ..."* at once; the runaway `stopped_mid_run` six seconds after it started, rollback confirmed. Then a `create-duct` preview: `stopped`, nothing sent; a `count` still answered. Negative: a stranger's id while the runaway ran - Revit 2024 refused, `in use by another chat`, and the runaway ran on to `ran_too_long`. **But `stop` takes no session, and went to every Revit:** Revit 2020 (another chat's, lease free) took the stranger's stop - *"Heron is stopped. Nothing was running."* - and stays stopped until restarted ([5b-1094](../fragment-issues/section-5b-rows-401-425.md)). The after-restart half not run | **PASS** on 2024; the finding is 5b-1094 |
+| EZ4 | 2027 | EZ1's runaway: `ran_too_long` at 50 s, rollback confirmed, same process, `ping` 0 ms, the model still saved. EZ3 not run on 2027 - a stop reaches every Revit. 2020 not run | **PASS** (EZ1) |
+| EZ5 | - | Both probes deleted; `tools/check-routing.py --targets` run with this change's gates | see the PR |

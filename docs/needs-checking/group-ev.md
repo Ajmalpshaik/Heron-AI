@@ -56,3 +56,26 @@ restarted for the server. Every row on a **scratch copy**, never a working model
 | **EV5** | Categories read before Assimilate. EV1's and EV4's replies | Real category names in `changed:` - `Text Notes`, `Stairs` - not every element under `(no category)`. **FAIL:** everything under `(no category)` with elements that plainly have one - `GetElement` or `Category` could not be read with the group still open, and the read has to move |
 | **EV6** | *A measurement, not a proof.* A family build of 20 forms or more in one chat, on Revit 2024 | The `revit_change` replies' characters against the 2026-10-09 build's (row 5b-407: 322,725 across 172 replies): count them from the chat's transcript as that row did, and note how many batches printed the KEPT paragraph whole. Write the number on row 5b-407 whatever it is |
 | **EV7** | The prune. Set `runs.retainDays = 1` in `%APPDATA%\Heron\config\heron.config`, leave a record older than a day in `%LOCALAPPDATA%\Heron\runs`, restart Revit | The old record is gone, today's are kept, and nothing under `%APPDATA%\Heron` was touched. Put the setting back |
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+| # | Release | What was run and what came back | State |
+|---|---|---|---|
+| EV1 | 2024 | With `CREATE_DUCT`, not `CREATE_TEXT_NOTE`, kept through the box: *"changed: 3 added ((no category) 1, Duct Systems 1, Ducts 1), 3 modified ((no category) 3)"* and a `record:` line; `heron_run_record` listed 891698, 891699, 891700 as `fragment added`; the audit line carried `elementsAdded 3`, `elementsModified 3`, `changeEvents 1`. Kept on 2027 too (`CREATE_LEVEL`, *"1 added (Levels 1)"*) | **PASS** |
+| EV3 | 2024 | Not on the job file; on every rolled-back preview this day the counts were what the job did - *"added 6"*, none listed deleted - and the model held none of it afterwards | **part** (seen, not the row's job) |
+| EV5 | 2024, 2027 | Real names: Ducts, Duct Systems, Levels, Text Notes; one element of each duct job under *(no category)* | **PASS** |
+| EV2, EV4, EV6, EV7 | - | Not arranged | **NOT RUN** |
+
+The batch rule seen on 2027: the second `CREATE_LEVEL` reply printed *"and 4 values unchanged from the last
+reply - every one is in the record."*

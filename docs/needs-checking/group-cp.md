@@ -22,3 +22,22 @@ before and after each run.
 
 The negative half of the lookup-table question - an ND that sits only in the first column - is **BV15**'s,
 in [Group BV](group-bv.md), and is not repeated here.
+
+### The 2026-10-18 run
+
+**On the owner's laptop, 2026-10-18.** Revit 2024.3 session 63712, and for the rows marked 2027 Revit 2027.3
+session 22024, both on add-in `0.1.0+48230c8c` - `main`, Debug, deployed 08:45 local by this run with
+`tools/deploy-addin.ps1` for 2024, 2026 and 2027. Revit 2020 session 55496 belonged to another chat and ran
+`ab77d5fb`; **nothing here ran on Revit 2020.** Models, all scratch copies in `%TEMP%\heron-work\safety-1018\models`:
+*Heron Safety 2024* (Autodesk's `rme_basic_sample_project.rvt`, via the move-rails chat's *Rails-X2*; 21,562
+elements at open), *Heron Guard B 2024* (a copy of *Rails-S*, the Dynamo sample) and *Heron Safety 2027* (Revit
+2027's `Snowdon Towers Sample HVAC.rvt`, links unresolved; 9,813 elements). Changes, Admin and Publish on except
+where a row says. **The owner pressed every Keep, Discard, Esc, X and Undo himself;** nothing answered a box for
+him. Undo lists were read with UI Automation, read-only. Throwaway probe fragments were made in `brain/fragments/`
+for the session and deleted by name at the end - none is committed.
+
+**CP1 not run.** Its first step sends a MODIFY fragment's source down `run_fragment_read` from a script, skipping
+the client's refusal on purpose; the same kind of step - a raw `run_fragment_show` for [ES2](group-es.md)(b) -
+was refused by the session's auto-mode safety check, so CP1 was not attempted. What was seen of the detector:
+every read and show this day said *"Heron counted N element(s) before this read and the same after it"* -
+the negative half, many times over - and no read that changes the model was arranged.
