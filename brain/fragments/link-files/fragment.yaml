@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -72,6 +72,32 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,940 elements), Revit 2020, session 16356
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyLinked 0 item(s), cadView
+    ViewPlan, files 1 item(s) [C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/fi...],
+    findings 2 item(s) [1 file(s) linked and read back; 0 already linked., HeronLinkSource.rvt:
+    linked, origin to origin, Loaded.], how origin, lines 1 item(s) [HeronLinkSource.rvt:
+    linked, origin to origin, Loaded.], linked 1, linkedIds 1 item(s) [345447], place ImportPlacement,
+    present HashSet`1, report HeronLinkSource.rvt: linked, origin to origin, Loaded., wantedView
+    . inputs came paths as given; placement as given; viewName as given. on Project1'
+  negative_case: 'run with paths=C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/no-such-folder/nothing.rvt,
+    placement=origin, viewName= instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned alreadyLinked 0 item(s), cadView ViewPlan, files 1 item(s) [C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/fi...],
+    findings 2 item(s) [0 file(s) linked and read back; 0 already linked., nothing.rvt: no
+    file at C:/Users/ajmal/AppData/Local/Temp/he...], how origin, lines 1 item(s) [nothing.rvt:
+    no file at C:/Users/ajmal/AppData/Local/Temp/he...], linked 0, linkedIds 0 item(s), place
+    ImportPlacement, present HashSet`1, report nothing.rvt: no file at C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/no-such-folder/nothing.rvt.,
+    wantedView . inputs came paths as given; placement as given; viewName as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5babb8faca36d12c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
