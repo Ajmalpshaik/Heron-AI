@@ -331,7 +331,7 @@ Group DA has run in Revit.
 
 ---
 
-### 🟡 Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? *(found 2026-10-10)*
+### ✅ Q-63 — On a PC whose Claude app is the Microsoft Store build, where should Heron's Python side run, and where should it keep what it writes? → **Install from outside the app; keep the data outside its copy ([D-135](../decisions/D-135.md))** *(found 2026-10-10, answered 2026-10-18)*
 
 **What was found**, on the owner's laptop on 2026-10-10, from his own Terminal panel beside Claude's tool
 shell. The Claude desktop app there is the Microsoft Store (MSIX) build, `AnthropicPBC.Claude_fnn82j28hfe8t`.
@@ -419,6 +419,22 @@ on this one kind of PC. **Nothing was moved on 2026-10-17.** The build is its ow
 folder that exists in BOTH places first, because the copy already holds `Heron\knowledge`, `Heron\audit`
 and `Heron\config`; and the Companion note moves on both sides, Python and add-in ([D-109](../decisions/D-109.md)).
 This question stays open until that task records its decision with what it measured.
+
+**2026-10-18 - answered: built as [D-135](../decisions/D-135.md), after measuring the case left open above.**
+On the laptop at 23:53 on 2026-10-17, a throw-away folder was made in the copy from Claude's shell and on the
+real disk from the owner's Terminal panel, then written from inside. **Where a folder exists in both places,
+everything new goes to the copy** - a new file, a new folder, an edit to a file both hold, and a
+write-then-rename, even over a file only the real disk held, which leaves a new copy hiding the real one;
+only an append to a file the real disk alone holds reached it. Where the folder exists only on the real disk,
+new files and new folders reach it ([row 5b-1066](../fragment-issues/section-5b-rows-401-425.md)). The profile
+and the temporary folder were written from inside and seen real from outside. So Heron's Python side now keeps
+its knowledge store, every project's memory and the brain's audit in `%USERPROFILE%\.heron` on Windows
+(`HERON_DATA` overrides), carrying what the copy and `%APPDATA%\Heron` hold into it the first time - copied,
+never moved - and the Companion's notes are in `%TEMP%\Heron\companion` on both sides. The add-in's settings and
+trail stay in `%APPDATA%\Heron`, where Revit writes the real disk. **Still open elsewhere:** which
+`heron.config` to believe is Q-70, below;
+which package versions such a PC should end with is [row 5b-1065](../fragment-issues/section-5b-rows-401-425.md).
+Nothing in the copy was removed - that is the owner's to decide.
 
 ---
 

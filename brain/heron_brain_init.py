@@ -232,7 +232,7 @@ def main(argv):
     answer = plan(wanted, existing=[], origin="user", approval=signed)
     if answer.get("refused"):
         # NOWHERE TO PUT IT is a real answer, not a broken demo: this
-        # container has no %APPDATA% and no HERON_KNOWLEDGE, which is
+        # container has no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, which is
         # exactly the machine heron_scope refuses to guess for.
         print("  %s" % answer["why"])
         print()

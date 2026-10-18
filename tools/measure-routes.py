@@ -301,8 +301,8 @@ def main(argv):
     if not live:
         print("  no brain_lookup entries in the audit trail yet, so there is")
         print("  no live route share to report. That is not zero traffic - it")
-        print("  is no trail: on a machine with no %APPDATA% and no")
-        print("  HERON_AUDIT there is nowhere to write one (D-62).")
+        print("  is no trail: on a machine with no HERON_DATA, no Windows profile")
+        print("  and no HERON_AUDIT there is nowhere to write one (D-62, D-135).")
     else:
         counted = {}
         for entry in live:

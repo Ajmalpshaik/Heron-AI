@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -211,6 +212,9 @@ namespace Heron.StackGuard.TestHost
                   + "checked nothing. Check the shapes Loops() reads.");
 
             RunClock();
+            Console.WriteLine();
+
+            References();
             Console.WriteLine();
 
             // The guard must actually be reached by the library as it stands.
@@ -420,12 +424,8 @@ namespace Heron.StackGuard.TestHost
         }
 
         /// <summary>
-        /// The compiler errors, as RevitFragment.Compile words them.
-        ///
-        /// WITH THIS HOST'S OWN ASSEMBLY REFERENCED, because a guarded script
-        /// names HeronRunClock and this host is where the linked copy lives -
-        /// the stand-in for the add-in's assembly, which a real script
-        /// references through its globals type.
+        /// The compiler errors, as RevitFragment.Compile words them, with the
+        /// add-in's own references - see Referencing.
         /// </summary>
         private static List<string> Errors(string code)
         {
@@ -435,11 +435,82 @@ namespace Heron.StackGuard.TestHost
                 .ToList();
         }
 
+        /// <summary>
+        /// THE ADD-IN'S OWN REFERENCE LIST, HeronFragmentReferences, made into
+        /// options by the add-in's own HeronScriptEngine.Options - not a list
+        /// kept here (FRAGMENT-ISSUES row 5b-1000). HeronRunClock is linked
+        /// into this host, so the list's run clock entry is this host's
+        /// assembly here and the add-in's in Revit. Left out: the Revit API,
+        /// there being none here, and the add-in's imports, which name Revit
+        /// namespaces - System stands in for them.
+        /// </summary>
         private static ScriptOptions Referencing()
         {
-            return ScriptOptions.Default
-                .AddReferences(typeof(HeronRunClock).Assembly)
-                .AddImports("System");
+            return Referencing(HeronFragmentReferences.With());
+        }
+
+        private static ScriptOptions Referencing(Assembly[] references)
+        {
+            return (ScriptOptions)HeronScriptEngine.Options(references, new[] { "System" });
+        }
+
+        // ------------------------------------------------------------------
+        // The add-in's own references (FRAGMENT-ISSUES row 5b-1000). A guarded
+        // script compiled the way RevitFragment compiles one - the add-in's
+        // list, HeronScriptEngine.Compile, a globals type in the same assembly
+        // as the run clock - must compile. Taken out of the list, the run
+        // clock's assembly must be missed with CS0400, which is what every
+        // fragment did in Revit: that half is this test seeing the defect.
+        // ------------------------------------------------------------------
+
+        private const string ReferenceProbe =
+            "int total = 0;\n" +
+            "for (int i = 0; i < 3; i++) total += i;\n" +
+            "System.Func<int, int> twice = x => { return x * 2; };\n";
+
+        private static void References()
+        {
+            Console.WriteLine("The add-in's own references, as RevitFragment.BuildOptions gives them");
+
+            var guarded = HeronStackGuard.Apply(ReferenceProbe);
+            Check(guarded.Contains(ClockStatement), "the guard put the clock into the reference probe");
+
+            var list = HeronFragmentReferences.With();
+            var clock = typeof(HeronRunClock).Assembly;
+            var withoutClock = list.Where(a => a != clock).ToArray();
+
+            var with = CompiledAsTheAddIn(guarded, list);
+            Check(with.Count == 0,
+                  "a guarded script compiles with the add-in's references - got "
+                  + string.Join(" | ", with));
+            Console.WriteLine("  " + Outcome(with) + "  a guarded script, with the add-in's list");
+
+            var without = CompiledAsTheAddIn(guarded, withoutClock);
+            Check(without.Any(e => e.Contains("error CS0400") && e.Contains("'Heron'")),
+                  "without the run clock's assembly the guarded script fails with CS0400 on "
+                  + "'Heron', as every fragment did in Revit - got " + Outcome(without));
+            Console.WriteLine("  " + Outcome(without) + "  the same, with the run clock's assembly "
+                              + "taken out - as in Revit before row 5b-1000");
+
+            var unguarded = CompiledAsTheAddIn(ReferenceProbe, withoutClock);
+            Check(unguarded.Count == 0,
+                  "and unguarded it compiles without it, so it is the clock's check that needs "
+                  + "the entry - got " + string.Join(" | ", unguarded));
+            Console.WriteLine("  " + Outcome(unguarded) + "  the same unguarded, without it");
+        }
+
+        private static List<string> CompiledAsTheAddIn(string code, Assembly[] references)
+        {
+            var errors = new List<string>();
+            HeronScriptEngine.Compile(code, Referencing(references), typeof(StandInGlobals), errors);
+            return errors;
+        }
+
+        private static string Outcome(List<string> errors)
+        {
+            if (errors.Count == 0) return "compiles";
+            var code = Regex.Match(errors[0], "CS[0-9]{4}");
+            return code.Success ? code.Value + "  " : "fails   ";
         }
 
         // ------------------------------------------------------------------
@@ -811,5 +882,17 @@ namespace Heron.StackGuard.TestHost
                 return lambda != null && lambda.Block != null;
             });
         }
+    }
+
+    /// <summary>
+    /// The stand-in for HeronFragmentGlobals in the reference probe: a globals
+    /// type in the SAME assembly as the run clock, as the real one is in the
+    /// add-in. So the CS0400 the probe meets without the list's entry is the
+    /// one Revit met, and shows the globals type does not make the run
+    /// clock's assembly visible. Public and top level for HeronRunClock's
+    /// reason: a script can reach nothing else.
+    /// </summary>
+    public sealed class StandInGlobals
+    {
     }
 }

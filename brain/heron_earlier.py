@@ -93,7 +93,7 @@ def _scope():
 def _projects():
     base = _scope().knowledge_dir()
     if base is None:
-        raise ValueError("No %APPDATA% and no HERON_KNOWLEDGE, so there is nowhere Heron "
+        raise ValueError("No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is nowhere Heron "
                          "keeps a project's answers. Set HERON_KNOWLEDGE to a folder.")
     return os.path.join(base, "projects")
 

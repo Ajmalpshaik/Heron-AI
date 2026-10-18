@@ -238,12 +238,16 @@ def main():
     print()
     print("7. Every failure the contract declares is named and reached")
     # NOWHERE_TO_PUT_IT - no knowledge directory at all.
+    # Since D-135 the folder is HERON_DATA's or the Windows profile's, not
+    # %APPDATA%'s - so all three go, or on Windows the profile would answer.
     keep = os.environ.pop("HERON_KNOWLEDGE")
-    appdata = os.environ.pop("APPDATA", None)
+    gone = dict((key, os.environ.pop(key, None))
+                for key in ("APPDATA", "HERON_DATA", "USERPROFILE"))
     answer = ask(["global"])
     os.environ["HERON_KNOWLEDGE"] = keep
-    if appdata is not None:
-        os.environ["APPDATA"] = appdata
+    for key, value in gone.items():
+        if value is not None:
+            os.environ[key] = value
     check(answer.get("refused") == "NOWHERE_TO_PUT_IT",
           "with nowhere to keep knowledge, it refuses rather than picking "
           "a folder")

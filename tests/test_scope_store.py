@@ -413,7 +413,7 @@ def refreshing(S, F):
     print()
     print("  ..and the SHARED store follows the main checkout's cards, never "
           "a worktree's (row 131)")
-    saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE")}
+    saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE", "HERON_DATA")}
     fake = tempfile.mkdtemp(prefix="heron-trees-")
     try:
         # A MAIN CHECKOUT AND ONE WORKTREE, laid out as git lays them out: the
@@ -458,6 +458,9 @@ def refreshing(S, F):
         # under %APPDATA%.
         os.environ.pop("HERON_KNOWLEDGE", None)
         os.environ["APPDATA"] = os.path.join(fake, "appdata")
+        # D-135: the shared store is HERON_DATA's (the Windows profile's
+        # on the owner's PC), so it is planted where this case expects it.
+        os.environ["HERON_DATA"] = os.path.join(fake, "appdata", "Heron")
         got = refreshes_from(worktree)
         check(got is not None and same(got[0], main_cards)
               and same(got[1], main_tree),
@@ -628,7 +631,7 @@ def following_main(S, F, refresh):
     print()
     print("  ..and the SHARED store gains a card the main checkout gains, and "
           "loses one it loses (row 5b-406)")
-    saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE")}
+    saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE", "HERON_DATA")}
     was_fragments_dir = F.FRAGMENTS_DIR
     fake = tempfile.mkdtemp(prefix="heron-follow-")
     try:
@@ -658,6 +661,9 @@ def following_main(S, F, refresh):
 
         os.environ.pop("HERON_KNOWLEDGE", None)
         os.environ["APPDATA"] = os.path.join(fake, "appdata")
+        # D-135: the shared store is HERON_DATA's (the Windows profile's
+        # on the owner's PC), so it is planted where this case expects it.
+        os.environ["HERON_DATA"] = os.path.join(fake, "appdata", "Heron")
         F.FRAGMENTS_DIR = wt_cards
         S.rebuild()
 

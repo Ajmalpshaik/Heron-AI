@@ -533,6 +533,39 @@ only ([D-117](decisions/D-117.md)) and the card stays DRAFT until its proof is s
 used and why the warm-up's switch was read from the Claude app's own copy of `heron.config`
 ([row 5b-1004](fragment-issues/section-5b-rows-401-425.md)).
 
+**MEASURED 2026-10-17, LATER THE SAME DAY - a family built by a chat with `CREATE_FAMILY_FORMS`, timed by
+`tools/time-family-build.py`.** Both cards were PROVEN by then ([pull request #624](https://github.com/Ajmalpshaik/Heron-AI/pull/624)).
+The laptop's Revit 2024.3 (release 2024.3.6, session 51856), on the add-in whose files are dated 16:33Z that
+day - the one DA2 and the warm-up ran on. The owner asked for *"Pump. Just pump. But. Little bit detailed."*
+The chat made the family file from `Metric Mechanical Equipment` (`CREATE_FAMILY_DOCUMENT`) and six materials
+in one call. It then built a fixed end-suction pump set in five `CREATE_FAMILY_FORMS` calls, one per group -
+base frame, pump body, nozzles, shaft and coupling, motor - and made three `COMBINE_FAMILY_FORMS` cuts: the
+anchor holes, the suction bore and the discharge bore. Then it looked, as the family method's step 13 says:
+`REPORT_FAMILY_FORMS` read 44 forms of 44 and 3 cuts, and `View 1` was pictured. No connectors:
+`ADD_FAMILY_CONNECTOR` is DRAFT. The tool read the chat's transcript and the add-in's `audit-202610.jsonl`,
+over the window from the owner's request to the picture (`--since 2026-10-17T17:53:25.525Z --until
+2026-10-17T18:01:24.569Z`):
+
+| | |
+|---|---|
+| request to finish | 479.0 s; waiting on the person 0 s |
+| the model's own turns | 357.0 s, 74.5%. Thinking 284.3 s and 24,103 tokens; the longest turn 135.4 s (12,653 thinking tokens), the one that worked out every part before the first group. `claude-opus-5-5`, effort *xhigh*, standard speed on all 28 requests |
+| tool calls | 122.1 s; 24 Heron calls, 11 of them `revit_change`, whose hand-back came to 28,698 characters |
+| Revit's own time | 101.6 s over 18 fragment runs, median 3,044 ms; the 9 first runs in the session 71.4 s |
+| Heron's time around Revit | a median 0.439 s a call (middle half 0.341 to 0.529 s; range 0.314 to 3.475 s, 20 calls) |
+| Heron's server alone | **NOT MEASURED** - the tool's own reason: the server keeps each call's seconds in memory only |
+| forms built, seconds a form | **NOT MEASURED** - the five replies print `formCount` 4, 10, 10, 6 and 14, and the tool reads none of them ([row 5b-1030](fragment-issues/section-5b-rows-401-425.md)) |
+
+**Most of Revit's own time here was the owner's.** Every kept write showed [D-126](DECISIONS.md)'s *"Keep
+what Heron just did?"* box, and the audit's `ms` runs round the whole job, box included. Revit's journal
+(`journal.0016.txt`) has ten boxes in the window, every one answered *"Keep it"*: 24.8 s and 24.0 s for the
+first two - the materials and the first group, the two runs the audit times at 26,570 and 26,140 ms - and 1.6
+to 6.4 s for the other eight, 80.9 s in all. The tool cannot see a box and counts it as Revit's
+([row 5b-1031](fragment-issues/section-5b-rows-401-425.md)). The 2026-10-09 and 2026-10-11 builds ran before
+D-126 had a box, so they compare with this one on the model's share and on Heron's time around Revit, not on
+Revit's own time. The transcript and the audit as read are kept at `%TEMP%\heron-work\pump-1017\` on the
+laptop, so the tool can be run on them again once row 5b-1030 is fixed.
+
 ### 8.8 What the tool list costs a chat — built 2026-10-17
 
 **What the owner asked:** cut what Heron's tool list costs in every chat. [D-03](DECISIONS.md) accepted

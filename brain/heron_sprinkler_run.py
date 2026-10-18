@@ -507,7 +507,7 @@ def _folder(project_key):
     scope = heron_designbasis._scope()
     base = scope.knowledge_dir()
     if base is None:
-        raise ValueError("No %APPDATA% and no HERON_KNOWLEDGE, so there is nowhere to keep "
+        raise ValueError("No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so there is nowhere to keep "
                          "a run. Set HERON_KNOWLEDGE to a folder.")
     if not project_key:
         raise ValueError("No project key, so there is no folder to keep the run in - ask "

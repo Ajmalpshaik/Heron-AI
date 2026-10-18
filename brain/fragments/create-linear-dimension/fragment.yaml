@@ -5,7 +5,23 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-101
-semantic-identity: "dimension between these grids, levels, planes, lines or wall faces, on this view"
+# "- FOR BUILDERS WORK TOO" ADDED 2026-10-17, row 5b-1032. The re-ranker reads
+# a card's identity and its first eight utterances (D-134), and this card's
+# builders work sentence - row 5b-650's, at the end of the list below - is
+# twelfth, so with the re-ranker installed, on the spelling backend or the
+# trained one, this card fell out of the five for "set up the builders work
+# layout" and "do the builders work for this layout", and heron_lookup named
+# no builders work method. Versions 3 and 4 were built for that job - builders
+# work openings dimensioned from the grid - so the identity names it, the way
+# REPORT_SPACE_ENVELOPE's names its load calculation.
+#
+# NOT BY MOVING THAT SENTENCE INTO THE FIRST EIGHT, measured: its words
+# "builders work layout" then took the question "which openings are in the
+# builders work layout" from SELECT_OPENINGS, a read, to this write on both
+# re-ranked backends. And NOT "layout" here: "- for a builders work layout
+# too" also sent "set up the electrical layout" to this card on the spelling
+# backend. This card dimensions; it lays nothing out.
+semantic-identity: "dimension between these grids, levels, planes, lines or wall faces, on this view - for builders work too"
 kind: action
 domain: revit.annotation
 capability: CREATE_LINEAR_DIMENSION

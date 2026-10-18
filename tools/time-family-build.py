@@ -13,11 +13,17 @@ Where a family build's minutes went, read from the chat and from Revit's trail.
     python tools/time-family-build.py CHAT.jsonl --audit AUDIT --json
     python tools/time-family-build.py CHAT.jsonl --since 2026-10-09T13:33:00Z \\
                                                  --until 2026-10-09T13:55:00Z
+    python tools/time-family-build.py CHAT.jsonl --audit AUDIT \\
+                       --journal journal.0016.txt --journal-utc-offset +03:00
     python tools/time-family-build.py --form-cards   # which capabilities build forms
 
 CHAT.jsonl is a Claude Code transcript - the chat's own file under
 ~/.claude/projects. AUDIT is the add-in's trail, `audit-YYYYMM.jsonl` under
 HeronPaths.Audit, or the folder holding it; --audit may be given more than once.
+JOURNAL is Revit's own journal.NNNN.txt for the session that ran the build -
+%LOCALAPPDATA%\\Autodesk\\Revit\\Autodesk Revit 20xx\\Journals - and --journal
+may be given more than once. Its stamps are the PC's local time with no zone,
+so --journal-utc-offset says how far that clock is from UTC.
 
 A REPORT, NOT A GATE. It exits 0 whatever it finds, and 2 only when a file it
 was named cannot be read.
@@ -44,7 +50,8 @@ inputs cannot show is printed NOT MEASURED, with why - never estimated:
     model's time, the tools' time and the person's time add up to request to
     finish exactly, with nothing counted twice. A permission prompt or a Revit
     dialog answered inside a call is in the tools' time: nothing in the
-    transcript separates it.
+    transcript separates it. The Keep box is in Revit's own time as well -
+    THE KEEP BOX below.
   * THINKING. Tokens from `usage.output_tokens_details.thinking_tokens`,
     seconds from a thinking line's `thinkingDurationMs`, effort from `effort` -
     a transcript that does not carry them (older Claude Code) leaves them NOT
@@ -57,7 +64,32 @@ inputs cannot show is printed NOT MEASURED, with why - never estimated:
     not joined. `ms` written as a string ("27", the shape before HeronAudit
     wrote numbers) is read too. A folder given as --audit is read for the
     add-in's `audit-YYYYMM.jsonl` only: `audit-brain-*.jsonl` is the brain's
-    own (brain/heron_audit.py), and its lookups are not Revit's time.
+    own (brain/heron_audit.py), and its lookups are not Revit's time. The
+    stopwatch runs round the WHOLE job, so since D-126 it holds the seconds
+    the modeller took to answer the Keep box: the figure is the add-in's,
+    not Revit's work alone (row 5b-1031).
+  * THE KEEP BOX (D-126), from Revit's journal - NOT MEASURED without
+    --journal. Revit writes `TaskDialog "Keep what Heron just did?"` when the
+    box is shown and `"TaskDialogResult" , "Keep what Heron just did?" , _`
+    when it is answered, with the button's text ("Keep it", "Discard it") as
+    the next quoted string. Each of those lines takes the time of the last
+    stamp at or before it - `'H 17-Oct-2026 20:56:46.362;` - so a box's
+    seconds are the journal's own, shown to answered. A box is counted in
+    the chat's minutes by its shown time, and inside a run when its answer
+    falls between the audit line's `at` less its `ms` and its `at` (the
+    add-in writes `at` once the job is over). A shown stamp earlier than
+    that start is cut to it, and the run says so: the box cannot have been
+    up before the job began. "Revit's own time less the boxes" is then each
+    joined run's `ms` less the seconds of the boxes inside it. Any answer
+    but "Keep it" is counted as a Discard, because D-126 makes Esc, the close
+    button and any result nobody expected a Discard; the answers are listed
+    as read. The stamps carry no zone and no journal read so far has been
+    seen to say its zone, so without --journal-utc-offset only the boxes in
+    the whole journal are counted and the rest is NOT MEASURED. A journal is
+    read as UTF-16 LE when it starts with that byte-order mark or its bytes
+    show it, and as latin-1 otherwise. A DRAFT's one run (D-119) asks the
+    same box in other words - "'<name>' has never been proved. Keep what it
+    did?" - and those are read too, though no journal read so far holds one.
   * HERON'S TIME AROUND REVIT. For each batch - the Heron calls of one model
     response, all of them Heron's - from its first call line to its last
     result, less the `ms` of the audit lines joined to it. That is Heron, the
@@ -65,6 +97,13 @@ inputs cannot show is printed NOT MEASURED, with why - never estimated:
     batch's share. Heron's SERVER alone is NOT MEASURED: it keeps each call's
     seconds in memory only (heron_companion.Activity, for the Companion page)
     and writes them nowhere.
+  * A REPLY'S TEXT. Claude Code stores a reply from Heron's server as the
+    JSON text {"result": "..."} - one string whose newlines are written as
+    backslash-n. A tool result whose text parses as an object holding a
+    string under "result" is read as that string; any other text as it is.
+    The revit_change hand-back is the characters of the text read that way,
+    so an escaped newline or quote counts once, not twice, and FORMS BUILT
+    below reads its formCount from the same text (row 5b-1030).
   * FORMS BUILT. A successful run of a card that provides `formId` built one;
     a card that provides `formCount` (CREATE_FAMILY_FORMS) built what its
     reply's `formCount` line says. Which cards those are is read from
@@ -102,6 +141,23 @@ ADDIN_AUDIT = re.compile(r"^audit-\d{6}\.jsonl$")
 #: How a revit_change reply prints a value: two spaces, the name, the value.
 FORM_COUNT = re.compile(r"^\s+formCount\s+(\d+)\s*$", re.MULTILINE)
 
+#: The Keep box's words, as HeronKeepQuestion holds them - its MainInstruction
+#: is what Revit's journal names the box by. The first is a PROVEN
+#: capability's; the second a DRAFT's one run (D-119), for any name.
+KEEP_HEADLINE = "Keep what Heron just did?"
+KEEP_HEADLINE_DRAFT = r"'[^\"]*' has never been proved\. Keep what it did\?"
+KEEP_LINK = "Keep it"
+_HEADLINES = r"(%s|%s)" % (re.escape(KEEP_HEADLINE), KEEP_HEADLINE_DRAFT)
+BOX_SHOWN = re.compile(r'\bTaskDialog\s+"%s"' % _HEADLINES)
+BOX_ANSWER = re.compile(r'"TaskDialogResult"\s*,\s*"%s"\s*,\s*(?:"([^"]*)")?' % _HEADLINES)
+_QUOTED = re.compile(r'"([^"]*)"')
+#: A journal's stamp, in the PC's local time: 'H 17-Oct-2026 20:56:46.362;
+JOURNAL_STAMP = re.compile(r"^\s*'[A-Z]\s+(\d{1,2})-([A-Za-z]{3})-(\d{4})\s+"
+                           r"(\d\d):(\d\d):(\d\d)(?:\.(\d+))?\s*;")
+_MONTHS = dict((name, i) for i, name in enumerate(
+    ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"), 1))
+_OFFSET = re.compile(r"^(?:Z|([+-])(\d\d):?(\d\d))$")
+
 _STAMP = re.compile(r"^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d):(\d\d)(?:[.,](\d+))?"
                     r"(Z|[+-]\d\d:?\d\d)?$")
 _EPOCH = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
@@ -129,6 +185,18 @@ def micros(text):
         sign = 1 if zone[0] == "+" else -1
         moment -= sign * datetime.timedelta(hours=int(zone[1:3]), minutes=int(zone[-2:]))
     return (moment - _EPOCH) // _MICRO
+
+
+def utc_offset(text):
+    """--journal-utc-offset as microseconds the local clock is ahead of UTC,
+    or None when it does not read as Z or +HH:MM."""
+    match = _OFFSET.match(str(text or "").strip())
+    if not match:
+        return None
+    if not match.group(1):
+        return 0
+    sign = 1 if match.group(1) == "+" else -1
+    return sign * (int(match.group(2)) * 3600 + int(match.group(3)) * 60) * 1000000
 
 
 def iso(us):
@@ -224,13 +292,26 @@ def read_transcript(path, since=None, until=None):
 
 
 def _text_of(block):
+    """A tool result's text as the tool wrote it. Claude Code stores a reply
+    from Heron's server as the JSON text {"result": "..."}, its newlines
+    written as backslash-n, so a text that parses as an object holding a
+    string under "result" is that string. Any other text is kept as it is
+    (row 5b-1030)."""
     content = block.get("content")
     if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return "".join(str(part.get("text") or "") for part in content
+        text = content
+    elif isinstance(content, list):
+        text = "".join(str(part.get("text") or "") for part in content
                        if isinstance(part, dict) and part.get("type") == "text")
-    return ""
+    else:
+        return ""
+    try:
+        reply = json.loads(text)
+    except ValueError:
+        return text
+    if isinstance(reply, dict) and isinstance(reply.get("result"), str):
+        return reply["result"]
+    return text
 
 
 class Chat(object):
@@ -361,6 +442,99 @@ def audit_sources(entries):
     return [source(path, lines) for path, lines in by_file.items()]
 
 
+# ------------------------------------------------------------------ journal
+
+def _journal_text(raw):
+    if raw.startswith(b"\xff\xfe"):
+        return raw[2:].decode("utf-16-le", "replace"), "UTF-16 LE"
+    odd = raw[1:4096:2]
+    if odd and odd.count(0) * 2 > len(odd):
+        return raw.decode("utf-16-le", "replace"), "UTF-16 LE, no byte-order mark"
+    return raw.decode("latin-1"), "latin-1"
+
+
+def _journal_micros(match):
+    """A journal stamp as microseconds of its own local clock."""
+    day, month, year, hour, minute, second = match.groups()[:6]
+    number = _MONTHS.get(month.lower())
+    if number is None:
+        return None
+    fraction = match.group(7) or ""
+    try:
+        moment = datetime.datetime(int(year), number, int(day), int(hour), int(minute),
+                                   int(second), int((fraction + "000000")[:6]),
+                                   tzinfo=datetime.timezone.utc)
+    except ValueError:
+        return None
+    return (moment - _EPOCH) // _MICRO
+
+
+def read_journal(path, offset):
+    """Every Keep box in one Revit journal: where it was shown and answered,
+    the stamp each of those lines takes, and the button. `offset` is
+    --journal-utc-offset in microseconds, or None - a box then has its
+    seconds and no place in UTC."""
+    with io.open(path, "rb") as fh:
+        text, encoding = _journal_text(fh.read())
+    lines = [line.rstrip("\r") for line in text.split("\n")]
+    if lines and not lines[-1]:
+        lines.pop()          # the newline that ends the last line starts none
+    boxes, stray, bad_stamps = [], [], []
+    stamp, box = None, None
+    for n, line in enumerate(lines, 1):
+        match = JOURNAL_STAMP.match(line)
+        if match:
+            local = _journal_micros(match)
+            if local is None:
+                bad_stamps.append(n)
+            else:
+                stamp = (local, n)
+        shown = BOX_SHOWN.search(line)
+        if shown:
+            if box:
+                boxes.append(box)
+            box = {"file": path, "headline": shown.group(1), "shown_line": n,
+                   "shown_stamp": stamp, "answer_line": None, "answer_stamp": None,
+                   "button": None, "button_line": None}
+            continue
+        answer = BOX_ANSWER.search(line)
+        if not answer:
+            continue
+        if not box or box["headline"] != answer.group(1):
+            stray.append(n)
+            continue
+        button, button_line = answer.group(2), n
+        if button is None:
+            following = next((k for k in range(n, len(lines)) if lines[k].strip()), None)
+            if following is not None:
+                quoted = _QUOTED.search(lines[following])
+                button, button_line = (quoted.group(1) if quoted else None), following + 1
+        box.update(answer_line=n, answer_stamp=stamp, button=button, button_line=button_line)
+        boxes.append(box)
+        box = None
+    if box:
+        boxes.append(box)
+    for box in boxes:
+        shown, answered = box["shown_stamp"], box["answer_stamp"]
+        box["lines"] = sorted(set(n for n in (shown and shown[1], box["shown_line"],
+                                               answered and answered[1], box["answer_line"],
+                                               box["button_line"]) if n))
+        box["seconds"] = (seconds(answered[0] - shown[0])
+                          if shown and answered and answered[0] >= shown[0] else None)
+        box["shown"] = shown[0] - offset if shown and offset is not None else None
+        box["answered"] = answered[0] - offset if answered and offset is not None else None
+    return boxes, {"file": path, "lines": len(lines), "encoding": encoding,
+                   "boxes": len(boxes), "answers_with_no_box": stray,
+                   "unreadable_stamps": bad_stamps}
+
+
+def box_sources(boxes):
+    by_file = collections.OrderedDict()
+    for box in boxes:
+        by_file.setdefault(box["file"], []).extend(box["lines"])
+    return [source(path, lines) for path, lines in by_file.items()]
+
+
 # -------------------------------------------------------------------- cards
 
 def form_cards(folder=FRAGMENTS):
@@ -390,7 +564,11 @@ def form_cards(folder=FRAGMENTS):
 
 # ------------------------------------------------------------------ measure
 
-def measure(chat, audit_paths, audit_entries, cards_error=None, cards=None):
+def measure(chat, audit_paths, audit_entries, cards_error=None, cards=None, journals=None,
+            runs=None):
+    """The quantities. `journals` is (heads, boxes, offset given) from
+    read_journal, or None when no --journal was given; `runs`, a list, is
+    filled with each joined run's own figures."""
     q = collections.OrderedDict()
     t = chat.path
     searched = source(t, chat.lines_searched, searched=True) if chat.timeline else None
@@ -532,7 +710,8 @@ def measure(chat, audit_paths, audit_entries, cards_error=None, cards=None):
         q["revit_change_handback_chars"] = measured(
             sum(len(c["text"] or "") for c in answered),
             [source(t, [c["result"].n for c in answered])] if answered else [searched],
-            "characters of every revit_change result", "characters")
+            "characters of every revit_change result, a {\"result\": ...} wrapper decoded",
+            "characters")
     else:
         for key in ("heron_calls", "revit_change_calls", "heron_batches",
                     "revit_change_handback_chars"):
@@ -572,6 +751,7 @@ def measure(chat, audit_paths, audit_entries, cards_error=None, cards=None):
     else:
         q["audit_lines_not_joined"] = not_measured(
             "no audit file was given" if not audit_paths else "no line in the window")
+    _keep_boxes(q, chat, joined, journals, runs if runs is not None else [])
     q["heron_server_s_per_call"] = not_measured(
         "Heron's MCP server keeps each call's seconds in memory only - "
         "heron_companion.Activity, for the Companion page - and writes them nowhere. "
@@ -658,6 +838,8 @@ def _revit(q, joined, files, entries):
             seen.add(key)
             first.add(id(entry))
     firsts = [e for e in runs if id(e) in first]
+    for entry in runs:
+        entry["first"] = id(entry) in first
     q["revit_first_runs"] = measured(
         len(firsts), audit_sources(firsts) or files,
         "joined runs that are their fragment's first in that Revit session, in the audit "
@@ -666,6 +848,131 @@ def _revit(q, joined, files, entries):
         q["revit_first_runs_s"] = measured(sum(e["ms"] for e in firsts) / 1000.0,
                                            audit_sources(firsts) or files,
                                            "the ms of those first runs", "s")
+
+
+KEEP_KEYS = ("keep_boxes_in_journal", "keep_boxes", "keep_boxes_s", "keep_boxes_discarded",
+             "keep_boxes_in_runs", "keep_boxes_in_runs_s", "keep_boxes_not_in_runs",
+             "revit_fragment_less_boxes_s", "revit_first_runs_less_boxes_s")
+
+
+def _box_names(boxes):
+    return ", ".join("%s line %d" % (os.path.basename(b["file"]), b["shown_line"]) for b in boxes)
+
+
+def _keep_boxes(q, chat, joined, journals, runs_out):
+    """The Keep box's seconds from Revit's journal, and Revit's own time
+    less them, run by run."""
+    if journals is None:
+        for key in KEEP_KEYS:
+            q[key] = not_measured("no journal was given (--journal), so the Keep box's seconds - "
+                                  "inside Revit's own time since D-126 - cannot be read")
+        return
+    heads, boxes, offset_given = journals
+    searched = [source(h["file"], [1, h["lines"]], searched=True) for h in heads]
+    q["keep_boxes_in_journal"] = measured(
+        len(boxes), box_sources(boxes) or searched,
+        "TaskDialog lines naming the Keep box, in the whole of every journal given")
+    why = None
+    if not offset_given:
+        why = ("the journal's stamps are the PC's local time with no zone - give "
+               "--journal-utc-offset, e.g. +03:00, to place them against the chat and the audit")
+    elif not chat.timeline:
+        why = "the transcript has no line in the window"
+    if why:
+        for key in KEEP_KEYS[1:]:
+            q[key] = not_measured(why)
+        return
+
+    low, high = chat.timeline[0].at, chat.timeline[-1].at
+    inside = [b for b in boxes if b["shown"] is not None and low <= b["shown"] <= high]
+    where = box_sources(inside) or searched
+    q["keep_boxes"] = measured(len(inside), where,
+                               "Keep boxes shown in the chat's minutes, by their TaskDialog "
+                               "line's stamp")
+    unanswered = [b for b in inside if b["seconds"] is None]
+    if unanswered:
+        q["keep_boxes_s"] = not_measured("the box shown on %s has no answer in the journal, or "
+                                         "no stamp in order before it" % _box_names(unanswered))
+    else:
+        q["keep_boxes_s"] = measured(sum(b["seconds"] for b in inside), where,
+                                     "each box's answer stamp less its shown stamp", "s")
+    answered = [b for b in inside if b["answer_line"]]
+    q["keep_boxes_discarded"] = measured(
+        sum(1 for b in answered if b["button"] != KEEP_LINK), box_sources(answered) or where,
+        "answers other than %r - Discard, Esc and the close button are all a Discard (D-126)"
+        % KEEP_LINK,
+        by_answer=dict(collections.Counter(b["button"] or "(no button read)" for b in answered)))
+
+    revit = q.get("revit_fragment_s") or {}
+    if revit.get("status") != MEASURED:
+        why = "Revit's own time is not measured: %s" % revit.get("why")
+    elif unanswered:
+        why = q["keep_boxes_s"]["why"]
+    if why:
+        for key in KEEP_KEYS[4:]:
+            q[key] = not_measured(why)
+        return
+
+    runs = sorted((e for e in joined if e["run"]), key=lambda e: e["at"])
+    held, outside = collections.defaultdict(list), []
+    for box in inside:
+        home = None
+        for entry in runs:
+            start = entry["at"] - int(round(entry["ms"] * 1000))
+            if start <= box["answered"] <= entry["at"]:
+                home = entry
+                break
+        if home is None:
+            outside.append(box)
+            continue
+        held[id(home)].append((box, box["answered"] - max(box["shown"], start),
+                               box["shown"] < start))
+    in_runs = [box for entry in runs for box, _, _ in held[id(entry)]]
+    homes = [entry for entry in runs if held[id(entry)]]
+    boxed = sum(us for entry in runs for _, us, _ in held[id(entry)])
+    cut = sum(1 for entry in runs for _, _, early in held[id(entry)] if early)
+    where = audit_sources(homes) + box_sources(in_runs) or where
+    q["keep_boxes_in_runs"] = measured(
+        len(in_runs), where,
+        "boxes answered inside a run joined to this chat's calls - from the audit line's at "
+        "less its ms to its at")
+    q["keep_boxes_in_runs_s"] = measured(
+        seconds(boxed), where,
+        "those boxes' seconds inside their run; a shown stamp before the run began is cut to "
+        "its start", "s", cut=cut)
+    q["keep_boxes_not_in_runs"] = measured(
+        len(outside), box_sources(outside) or box_sources(inside) or searched,
+        "boxes in the chat's minutes answered inside no run of this chat's - another chat's, "
+        "or a run nothing joined")
+    q["revit_fragment_less_boxes_s"] = measured(
+        revit["value"] - seconds(boxed),
+        (audit_sources(runs) + box_sources(in_runs)) or revit["from"],
+        "Revit's own time less the seconds of the boxes inside its runs", "s")
+    first = q.get("revit_first_runs_s") or {}
+    firsts = [entry for entry in runs if entry.get("first")]
+    if first.get("status") == MEASURED:
+        q["revit_first_runs_less_boxes_s"] = measured(
+            first["value"] - seconds(sum(us for entry in firsts for _, us, _ in held[id(entry)])),
+            (audit_sources(firsts) + box_sources([b for entry in firsts
+                                                  for b, _, _ in held[id(entry)]]))
+            or first["from"],
+            "the first runs' time less the seconds of the boxes inside them", "s")
+    else:
+        q["revit_first_runs_less_boxes_s"] = not_measured(
+            "the first runs' time is not measured: %s" % first.get("why"))
+
+    for entry in runs:
+        inner = held[id(entry)]
+        box_ms = sum(us for _, us, _ in inner) / 1000.0
+        runs_out.append({
+            "audit": "%s:%d" % (os.path.basename(entry["file"]), entry["n"]),
+            "at": iso(entry["at"]), "fragment": entry["fragment"], "ms": entry["ms"],
+            "first_in_session": bool(entry.get("first")),
+            "boxes": [{"journal": os.path.basename(box["file"]), "lines": box["lines"],
+                       "seconds_in_run": seconds(us), "journal_seconds": box["seconds"],
+                       "cut_to_run_start": early, "answer": box["button"]}
+                      for box, us, early in inner],
+            "box_ms": box_ms, "ms_less_boxes": entry["ms"] - box_ms})
 
 
 def _overhead(q, chat, files):
@@ -797,6 +1104,16 @@ ORDER = (
         ("revit_other_ops", "other operations"),
         ("revit_other_s", "  their time"),
         ("audit_lines_not_joined", "audit lines not this chat's"))),
+    ("THE KEEP BOX, FROM REVIT'S JOURNAL", (
+        ("keep_boxes_in_journal", "boxes in the whole journal"),
+        ("keep_boxes", "boxes in the chat's minutes"),
+        ("keep_boxes_s", "  shown to answered"),
+        ("keep_boxes_discarded", "  not kept"),
+        ("keep_boxes_in_runs", "boxes inside this chat's runs"),
+        ("keep_boxes_in_runs_s", "  their time in the runs"),
+        ("keep_boxes_not_in_runs", "boxes in no run of this chat's"),
+        ("revit_fragment_less_boxes_s", "Revit's own time less boxes"),
+        ("revit_first_runs_less_boxes_s", "  first runs less the boxes"))),
     ("HERON'S TIME AROUND REVIT", (
         ("heron_overhead_per_batch_median_s", "median a batch"),
         ("heron_overhead_per_call_median_s", "median a call"),
@@ -832,6 +1149,11 @@ def _value_text(key, entry):
             else "NOT MEASURED", entry.get("output_tokens")))
     if entry.get("by_tool"):
         extra.append(", ".join("%s %d" % kv for kv in sorted(entry["by_tool"].items())))
+    if entry.get("by_answer"):
+        extra.append("answered " + ", ".join('"%s" %d' % kv
+                                              for kv in sorted(entry["by_answer"].items())))
+    if entry.get("cut"):
+        extra.append("%d shown before its run began, cut to the start" % entry["cut"])
     return text + (" (%s)" % "; ".join(extra) if extra else "")
 
 
@@ -866,6 +1188,16 @@ def print_report(report):
         print("  not read    %s  (not the add-in's audit-YYYYMM.jsonl)" % skipped)
     if not report["audit"]:
         print("  audit       none given")
+    for journal in report.get("journal") or []:
+        print("  journal     %s  (%d lines, %s; %d Keep boxes%s%s)" % (
+            journal["file"], journal["lines"], journal["encoding"], journal["boxes"],
+            "; answers with no box shown: lines %s" % ", ".join(
+                str(n) for n in journal["answers_with_no_box"])
+            if journal["answers_with_no_box"] else "",
+            "; stamps not read: lines %s" % ", ".join(str(n) for n in journal["unreadable_stamps"])
+            if journal["unreadable_stamps"] else ""))
+    if report.get("journal_utc_offset"):
+        print("  its clock   UTC%s, as --journal-utc-offset says" % report["journal_utc_offset"])
     window = report["window"]
     if window.get("first"):
         print("  window      %s to %s" % (window["first"], window["last"]))
@@ -880,6 +1212,21 @@ def print_report(report):
                 print("  %-30s   from %s" % ("", _where(entry)))
             else:
                 print("  %-30s NOT MEASURED - %s" % (label, entry["why"]))
+    if report.get("runs"):
+        print()
+        print("RUNS JOINED TO THIS CHAT - Revit's own time less the Keep box, run by run")
+        for run in report["runs"]:
+            boxes = run["boxes"]
+            print("  %-24s %-28s %8.0f ms  %s  less the box %8.0f ms" % (
+                run["audit"], run["fragment"] or "?", run["ms"],
+                "box %6.3f s" % (run["box_ms"] / 1000.0) if boxes else "no box     ",
+                run["ms_less_boxes"]))
+            for box in boxes:
+                print("  %-24s   from %s line%s %s%s" % (
+                    "", box["journal"], "s" if len(box["lines"]) > 1 else "",
+                    ", ".join(str(n) for n in box["lines"]),
+                    "; shown before the run began, cut to its start"
+                    if box["cut_to_run_start"] else ""))
     if report["requests"]:
         print()
         print("REQUESTS - each prompt to the last line before the next")
@@ -917,6 +1264,12 @@ def main(argv=None):
                         help="the add-in's audit-YYYYMM.jsonl, or the folder holding it")
     parser.add_argument("--since", help="ISO time; lines before it are left out (UTC if no zone)")
     parser.add_argument("--until", help="ISO time; lines after it are left out (UTC if no zone)")
+    parser.add_argument("--journal", action="append", default=[],
+                        help="Revit's journal.NNNN.txt for the session that ran the build")
+    parser.add_argument("--journal-utc-offset",
+                        help="how far the journal's local clock is from UTC, e.g. +03:00 - "
+                             "its stamps carry no zone; one behind UTC is written "
+                             "--journal-utc-offset=-05:00")
     parser.add_argument("--server", default="heron", help="the MCP server's name (heron)")
     parser.add_argument("--form-cards", action="store_true",
                         help="list which capabilities build forms, from their cards")
@@ -947,12 +1300,21 @@ def main(argv=None):
     for given, got, name in ((args.since, since, "--since"), (args.until, until, "--until")):
         if given and got is None:
             parser.error("%s %r is not an ISO time" % (name, given))
+    offset = utc_offset(args.journal_utc_offset) if args.journal_utc_offset else None
+    if args.journal_utc_offset and offset is None:
+        parser.error("--journal-utc-offset %r is not Z or +HH:MM" % args.journal_utc_offset)
+    if args.journal_utc_offset and not args.journal:
+        parser.error("--journal-utc-offset says how to read a journal - name one with --journal")
     if not os.path.isfile(args.transcript):
         print("No transcript at %s - nothing was read." % args.transcript)
         return 2
     files, skipped, missing = audit_files(args.audit)
     if missing:
         print("No audit file or folder at %s - nothing was read." % ", ".join(missing))
+        return 2
+    gone = [path for path in args.journal if not os.path.isfile(path)]
+    if gone:
+        print("No journal at %s - nothing was read." % ", ".join(gone))
         return 2
 
     lines, head = read_transcript(args.transcript, since, until)
@@ -962,15 +1324,27 @@ def main(argv=None):
         got, trail = read_audit(path)
         entries.extend(got)
         trails.append(trail)
+    journals, heads = None, []
+    if args.journal:
+        boxes = []
+        for path in args.journal:
+            got, journal = read_journal(path, offset)
+            boxes.extend(got)
+            heads.append(journal)
+        journals = (heads, boxes, offset is not None)
+    runs = []
     report = {
         "transcript": head,
         "audit": trails,
         "audit_skipped": skipped,
+        "journal": heads,
+        "journal_utc_offset": args.journal_utc_offset,
         "window": {"since": args.since, "until": args.until,
                    "first": iso(chat.timeline[0].at) if chat.timeline else None,
                    "last": iso(chat.timeline[-1].at) if chat.timeline else None,
                    "out_of_order_lines": chat.backwards},
-        "quantities": measure(chat, files, entries, cards_error, cards),
+        "quantities": measure(chat, files, entries, cards_error, cards, journals, runs),
+        "runs": runs,
         "requests": requests_of(chat),
         "batches": batches_of(chat),
     }

@@ -43,8 +43,9 @@ rebuilt, and the SHARED store is never rebuilt from a worktree or from the
 main folder on a feature branch (rows 5b-229 and 5b-233). It stops each run
 at the first step after the guard, so it asks no question.
 
-Section 8, added 2026-10-17: the 120 plain questions frozen out of
-FRAGMENT-ISSUES rows 5b-477 and 5b-478 into tests/data/plain-questions.yaml.
+Section 8, added 2026-10-17: the plain questions frozen out of
+FRAGMENT-ISSUES rows 5b-477 and 5b-478 into tests/data/plain-questions.yaml,
+and row 5b-1005's four that joined them the same day.
 They are checked against the rows' own text, pinned, held to the library, and
 a drop is planted in their arithmetic - a question first answered by a read
 and then by a change has to be named as having fallen.
@@ -97,10 +98,17 @@ for _stream in (sys.stdout, sys.stderr):
 # recorded in the key's `corrections`, and this pin moves in the same change.
 QUESTIONS_PIN = "ba1e6f01ddecbc9d78d767cd116f1ae1a39d9826cd1818b6b168fd9493733bf6"
 
-# THE 120 PLAIN QUESTIONS, PINNED THE SAME WAY. They are a session's words,
-# frozen out of rows 5b-477 and 5b-478; section 8 also checks them against
-# the rows' own text, so this pin moves only with the register.
-PLAIN_PIN = "707ee54960688742d7104f035215c5f2f0a021ef0c927329f098a270a5abab49"
+# THE PLAIN QUESTIONS, PINNED THE SAME WAY. Frozen out of rows 5b-477 and
+# 5b-478 (a session's 120) and 5b-1005 (four, 2026-10-17); section 8 also
+# checks them against the rows' own text, so this pin moves only with the
+# register.
+PLAIN_PIN = "515b1f482d1b32ec84ee30bc29c9c3830d4472a657baf06153f12637a27c10ea"
+
+# Each source row, the words its frozen list opens with, and how many it
+# holds - in the yaml's order. A row joins the set here and in its register
+# text in the same change, or section 8 fails.
+PLAIN_SOURCES = ((477, "The 60, frozen:", 60), (478, "The 60, frozen:", 60),
+                 (1005, "The four, frozen:", 4))
 
 FAILURES = []
 
@@ -162,8 +170,21 @@ def _stop(*_args, **_kwargs):
     raise _Measured()
 
 
+def _home_beside(env):
+    """D-135: a planted %APPDATA% stood for the folder the shared store is in.
+    That folder is HERON_DATA's since, or the Windows profile's - so HERON_DATA
+    is planted beside it, and an %APPDATA% taken away takes the profile too,
+    or on Windows the owner's real profile would answer for it."""
+    if "APPDATA" not in env or "HERON_DATA" in env:
+        return env
+    if env["APPDATA"]:
+        return dict(env, HERON_DATA=os.path.join(env["APPDATA"], "Heron"))
+    return dict(env, HERON_DATA=None, USERPROFILE=None)
+
+
 def _set_env(values):
     """Set each variable in VALUES - None unsets it. Returns what was there."""
+    values = _home_beside(values)
     kept = dict((k, os.environ.get(k)) for k in values)
     for key, value in values.items():
         if value is None:
@@ -324,16 +345,16 @@ def store_guard(tool):
 
 
 def _frozen_from_rows():
-    """{477: [...], 478: [...]} - each row's "The 60, frozen:" list, split the
+    """{477: [...], 478: [...], 1005: [...]} - each row's frozen list, split the
     way the yaml was made from it, so the file is checked against the
     register's own words rather than against a second copy of them."""
     import re
     out = {}
     with io.open(PLAIN_ROWS, encoding="utf-8") as handle:
         lines = handle.read().splitlines()
-    for n in (477, 478):
+    for n, lead, _size in PLAIN_SOURCES:
         line = [x for x in lines if x.startswith("| **%d** |" % n)]
-        found = re.search(r"\*\*The 60, frozen:\*\* (.*?)\. \|",
+        found = re.search(r"\*\*%s\*\* (.*?)\. \|" % re.escape(lead),
                           line[0]) if line else None
         out[n] = ([q.strip().strip("*").strip()
                    for q in found.group(1).split(" · ")] if found else [])
@@ -350,18 +371,26 @@ def plain_questions(tool, capabilities):
     doc, rows, problems = load_plain(PLAIN_KEY)
     check(not problems, "the plain set is well formed%s"
           % ("" if not problems else ": " + "; ".join(problems[:3])))
-    check(len(rows) == 120 and [r["n"] for r in rows] == list(range(1, 121)),
-          "120 questions, numbered 1 to 120 in order")
+    total = sum(size for _row, _lead, size in PLAIN_SOURCES)
+    check(len(rows) == total
+          and [r["n"] for r in rows] == list(range(1, total + 1)),
+          "%d questions, numbered 1 to %d in order" % (total, total))
     blob = "\n".join(" ".join(r["question"].split()) for r in rows)
     check(hashlib.sha256(blob.encode("utf-8")).hexdigest() == PLAIN_PIN,
           "the questions are pinned - a reworded one fails here")
     frozen = _frozen_from_rows()
-    check([r["question"] for r in rows if r.get("row") == 477] == frozen[477]
-          and len(frozen[477]) == 60,
-          "n 1-60 are row 5b-477's sixty, word for word and in its order")
-    check([r["question"] for r in rows if r.get("row") == 478] == frozen[478]
-          and len(frozen[478]) == 60,
-          "n 61-120 are row 5b-478's sixty, word for word and in its order")
+    first = 1
+    for row, _lead, size in PLAIN_SOURCES:
+        check([r["question"] for r in rows if r.get("row") == row]
+              == frozen[row] and len(frozen[row]) == size
+              and [r["n"] for r in rows if r.get("row") == row]
+              == list(range(first, first + size)),
+              "n %d-%d are row 5b-%d's %d, word for word and in its order"
+              % (first, first + size - 1, row, size))
+        first += size
+    check(sorted((doc.get("source") or {}).get("rows") or [])
+          == sorted(row for row, _l, _s in PLAIN_SOURCES),
+          "the yaml's `source` names exactly those rows")
     missing = tool.unknown_plain(rows, capabilities)
     check(not missing, "every named read is a capability Heron has%s"
           % ("" if not missing else ": " + "; ".join(
@@ -395,8 +424,8 @@ def plain_questions(tool, capabilities):
     listed = io.StringIO()
     with contextlib.redirect_stdout(listed):
         code = tool.main(["--list-plain"])
-    check(code == 0 and len(listed.getvalue().strip().splitlines()) == 120,
-          "--list-plain prints the 120 and asks nothing")
+    check(code == 0 and len(listed.getvalue().strip().splitlines()) == total,
+          "--list-plain prints the %d and asks nothing" % total)
 
     fingerprint = tool.plain_fingerprint(rows)
     moved_read = [dict(r) for r in rows]
@@ -1361,8 +1390,11 @@ def main():
     print()
     print("6. It refuses rather than scoring nothing")
     quiet = io.StringIO()
+    # Since D-135 the folder is HERON_DATA's or the Windows profile's, so
+    # both go too - or on Windows the owner's profile answers for it.
     held = dict((k, os.environ.pop(k, None)) for k in ("HERON_KNOWLEDGE",
-                                                        "APPDATA"))
+                                                        "APPDATA", "HERON_DATA",
+                                                        "USERPROFILE"))
     try:
         with contextlib.redirect_stderr(quiet), contextlib.redirect_stdout(quiet):
             code = tool.main([])
@@ -1400,8 +1432,8 @@ def main():
 
     # ------------------------------------------------------------------
     print()
-    print("8. The plain questions - rows 5b-477 and 5b-478, frozen and scored "
-          "beside his")
+    print("8. The plain questions - rows 5b-477, 5b-478 and 5b-1005, frozen "
+          "and scored beside his")
     plain_questions(tool, capabilities)
 
     # ------------------------------------------------------------------
