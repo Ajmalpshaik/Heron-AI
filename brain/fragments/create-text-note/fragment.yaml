@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -127,24 +127,38 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,432 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned created 1 item(s) [id 925857],
-    refused (null), text HERON TEST. inputs came view as given; at as given; noteText as given;
-    textTypeId as given. on test projject
-  negative_case: run with view={3D}, at=1000,1000,0, noteText=HERON TEST, textTypeId=2.5mm
-    Arial instead - chosen because it should not contain what this fragment reports - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned created (null), refused a text note is 2D annotation and a 3D view has no plane
-    for it - put it on the plan or the section instead, text HERON TEST. inputs came view
-    as given; at as given; noteText as given; textTypeId as given. on test projject
+  model: Heron Safety 2024 (21,569 elements), Revit 2024, session 63712
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-18; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned built StringBuilder, created 1 item(s) [id 892294], firstNumbered
+    -1, given HERON EM1, listName Func`2, listProblem (null), listWords 1 item(s) [None],
+    lists 1 item(s) [None], noteFormatting note 892294: 1 paragraph(s); read back 1 no list,
+    paragraphs 1 item(s) [HERON EM1], refused (null), startNumber 1, text HERON EM1, unverified
+    (null), wantedLists 1 item(s) [None]. inputs came view as given; at as given; noteText
+    as given; textTypeId as given; listType not given - "None", the card''s own default (optional);
+    listStartNumber not given - "1", the card''s own default (optional). on Heron Safety 2024'
+  negative_case: "run with view=Level 1 HVAC Plan, at=0,-25000,0, textTypeId=2.5mm Arial,\
+    \ noteText=FIRST\\rSECOND, listType=Numbered instead - chosen because it should not contain\
+    \ what this fragment reports - run inside a transaction, and Revit reported the transaction\
+    \ group ROLLED BACK afterwards. returned built StringBuilder, created (null), firstNumbered\
+    \ -1, given FIRST\\rSECOND, listName Func`2, listProblem 'Numbered' is not a list Revit\
+    \ has, so NO NOTE WAS MADE. The list types are None, Bullet, ArabicNumbers, LowerCaseLetters\
+    \ and UpperCaseLetters (or no list, bullets, numbers, lowercase letters, uppercase letters)\
+    \ - one for every paragraph, or one per paragraph with commas between, listWords 1 item(s)\
+    \ [Numbered], lists 2 item(s) [None, None], noteFormatting (null), paragraphs 2 item(s)\
+    \ [FIRST, SECOND], refused 'Numbered' is not a list Revit has, so NO NOTE WAS MADE. The\
+    \ list types are None, Bullet, ArabicNumbers, LowerCaseLetters and UpperCaseLetters (or\
+    \ no list, bullets, numbers, lowercase letters, uppercase letters) - one for every paragraph,\
+    \ or one per paragraph with commas between, startNumber 1, text FIRST\rSECOND, unverified\
+    \ (null), wantedLists 0 item(s). inputs came view as given; at as given; noteText as given;\
+    \ textTypeId as given; listType as given; listStartNumber not given - \"1\", the card's\
+    \ own default (optional). on Heron Safety 2024"
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 1cd792dd22f565a4
-
+  fingerprint: 4038aa74518385c5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

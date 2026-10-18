@@ -32,9 +32,10 @@ the variables that hold code. This cuts the rest of what repeats:
 
 NOTHING HERE DECIDES WHAT HAPPENED TO THE MODEL. Every sentence about the
 outcome is the add-in's - the side that saw whether the group held - and this
-only chooses between two of them, or prints Revit's own counts. A reply from
-an add-in that predates the change report carries neither, and is printed
-exactly as before.
+only chooses between two of them, puts the add-in's own sentence that the
+modeller pressed KEEP in Revit in front of the one chosen (5b-1093), or prints
+Revit's own counts. A reply from an add-in that predates the change report
+carries neither, and is printed exactly as before.
 
 Pure: no Revit, no SDK, no network - tests/test_run_records.py runs all of it
 against records it writes for itself.
@@ -317,7 +318,9 @@ class Batch(object):
       THE KEPT PARAGRAPH, when the add-in wrote its one-sentence form itself
       (`verdictShort`). Only a KEPT change is ever shortened: a rollback, one
       Revit did not confirm, and any reply without the field print whole every
-      time, and the sentence carries the undo rule unshortened.
+      time, and the sentence carries the undo rule unshortened. A Keep the
+      modeller pressed in Revit says so on every reply, beside either form:
+      each is that reply's own answer, so it is never left to the first.
 
       A VALUE THE LAST REPLY OF THE SAME CAPABILITY ALREADY SHOWED, word for
       word - and only when this reply names a run record, which holds every
@@ -375,9 +378,28 @@ def verdict_line(reply, batch):
     if not verdict:
         return None
     brief = reply.get("verdictShort")
-    if reply.get("verdictKind") != "kept" or not brief:
+    if reply.get("verdictKind") != "kept":
         return str(verdict)
-    return str(verdict) if batch.whole_kept() else str(brief)
+    line = str(verdict) if not brief or batch.whole_kept() else str(brief)
+    return _with_asking(line, reply.get("asking"))
+
+
+def _with_asking(line, asking):
+    """
+    A KEPT verdict with the add-in's sentence saying the modeller was asked in
+    Revit and pressed KEEP, first - 5b-1093.
+
+    The add-in writes `asking` beside the verdict, not in it, and nothing read
+    it, so a Keep the modeller pressed read as if nobody had been asked. It is
+    on every asked Keep, the paragraph or the short sentence, because each is
+    the modeller's own answer; once, because a verdict that already says it is
+    left alone. A Discard is never given it: its own verdict says who chose.
+    No `asking` - an add-in from before D-126 - and the line is as it was.
+    """
+    said = str(asking or "").strip()
+    if not said or said in line:
+        return line
+    return said + " " + line
 
 
 def shown_values(reply, capability, batch):
