@@ -511,8 +511,8 @@ namespace Heron.Revit.Addin
                 Color.FromArgb(on ? (byte)0x22 : (byte)0x14, colour.R, colour.G, colour.B));
 
             _writeExplain.Text = on
-                ? "Heron may move, edit and create elements when you ask it to. It previews first, "
-                  + "and every change is one Ctrl+Z."
+                ? "Heron may move, edit and create elements when you ask it to. Every change is "
+                  + "one Ctrl+Z, and Ask to Keep on the ribbon shows each one first when it is on."
                 : "Heron can read this model and nothing else. The padlock on the ribbon changes it.";
 
             _writeCard.BorderBrush = new SolidColorBrush(

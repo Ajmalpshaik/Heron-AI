@@ -161,7 +161,8 @@ TOOLS = {
     # NO PREVIEW WAS A DECISION RATHER THAN A SILENCE - D-99, 2026-09-23 - and
     # D-126 supersedes it: Revit shows the change and asks the modeller Keep
     # or Discard before it is kept, inside the add-in, under the owner's
-    # write.askBeforeKeeping. Nothing in this row decides whether it asks.
+    # write.askBeforeKeeping - off by default since D-138. Nothing in this row
+    # decides whether it asks.
     #
     # ITS ROW IS ITS OWN LEVEL, AND ALSO_REACHES BELOW SAYS WHAT ELSE IT CAN
     # SEND (D-106): a PUBLISH or ADMIN fragment goes as its own operation.

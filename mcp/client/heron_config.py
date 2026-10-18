@@ -56,9 +56,10 @@ DEFAULTS = {
     "admin.enabled": "false",
     "publish.enabled": "false",
     # D-126: Revit asks the modeller Keep or Discard before a change is kept.
-    # On by default - off puts back D-99. Read by the add-in; this side reads
-    # it only to know how long a change it keeps may take to answer.
-    "write.askBeforeKeeping": "true",
+    # Off by default since D-138 (the owner, 2026-10-18); the ribbon's Ask to
+    # Keep turns it on. Read by the add-in; this side reads it only to know
+    # how long a change it keeps may take to answer.
+    "write.askBeforeKeeping": "false",
     "log.retainDays": "14",
     # How long each write's run record stays on disk (HeronRuns), pruned by
     # the add-in at start-up - DERIVED, like the log.

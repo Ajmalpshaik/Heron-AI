@@ -81,8 +81,10 @@ inputs cannot show is printed NOT MEASURED, with why - never estimated:
     that start is cut to it, and the run says so: the box cannot have been
     up before the job began. "Revit's own time less the boxes" is then each
     joined run's `ms` less the seconds of the boxes inside it. Any answer
-    but "Keep it" is counted as a Discard, because D-126 makes Esc, the close
-    button and any result nobody expected a Discard; the answers are listed
+    but "Keep it" - or D-138's third link, "Keep, and keep the rest of this
+    job without asking", which keeps too - is counted as a Discard, because
+    D-126 makes Esc, the close button and any result nobody expected a
+    Discard; the answers are listed
     as read. The stamps carry no zone and no journal read so far has been
     seen to say its zone, so without --journal-utc-offset only the boxes in
     the whole journal are counted and the rest is NOT MEASURED. A journal is
@@ -147,6 +149,10 @@ FORM_COUNT = re.compile(r"^\s+formCount\s+(\d+)\s*$", re.MULTILINE)
 KEEP_HEADLINE = "Keep what Heron just did?"
 KEEP_HEADLINE_DRAFT = r"'[^\"]*' has never been proved\. Keep what it did\?"
 KEEP_LINK = "Keep it"
+#: D-138's third link - it keeps too, and lets the rest of the job be kept
+#: without the box. HeronKeepGrant.KeepRestLink holds the same words.
+KEEP_REST_LINK = "Keep, and keep the rest of this job without asking"
+KEEPS = (KEEP_LINK, KEEP_REST_LINK)
 _HEADLINES = r"(%s|%s)" % (re.escape(KEEP_HEADLINE), KEEP_HEADLINE_DRAFT)
 BOX_SHOWN = re.compile(r'\bTaskDialog\s+"%s"' % _HEADLINES)
 BOX_ANSWER = re.compile(r'"TaskDialogResult"\s*,\s*"%s"\s*,\s*(?:"([^"]*)")?' % _HEADLINES)
@@ -898,9 +904,9 @@ def _keep_boxes(q, chat, joined, journals, runs_out):
                                      "each box's answer stamp less its shown stamp", "s")
     answered = [b for b in inside if b["answer_line"]]
     q["keep_boxes_discarded"] = measured(
-        sum(1 for b in answered if b["button"] != KEEP_LINK), box_sources(answered) or where,
-        "answers other than %r - Discard, Esc and the close button are all a Discard (D-126)"
-        % KEEP_LINK,
+        sum(1 for b in answered if b["button"] not in KEEPS), box_sources(answered) or where,
+        "answers other than %s - Discard, Esc and the close button are all a Discard (D-126)"
+        % " or ".join(repr(k) for k in KEEPS),
         by_answer=dict(collections.Counter(b["button"] or "(no button read)" for b in answered)))
 
     revit = q.get("revit_fragment_s") or {}

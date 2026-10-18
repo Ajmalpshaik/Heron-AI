@@ -191,6 +191,8 @@ namespace Heron.KeepQuestion.TestHost
                            - 1000 / feet) < 1e-9,
                   "a size that is not a size gives the minimum, never NaN or infinity");
 
+            Grant();
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {
@@ -200,6 +202,146 @@ namespace Heron.KeepQuestion.TestHost
             Console.WriteLine("PASSED - " + _checks + " checks. One box for both doors, the cap holds per");
             Console.WriteLine("set, and every sentence says what happened and what comes next.");
             return 0;
+        }
+
+        /// <summary>
+        /// D-138: one Keep per job - the owner's "OK, OK, OK, OK", 2026-10-18.
+        /// Every rule of the grant with the clock in the test's hand: who holds
+        /// it, on which model, for how long, what it never covers, and what
+        /// ends it. A fresh HeronKeepGrant each time, never Session.
+        /// </summary>
+        private static void Grant()
+        {
+            var t0 = new DateTime(2026, 10, 18, 9, 0, 0, DateTimeKind.Utc);
+            var local = new DateTime(2026, 10, 18, 12, 5, 0, DateTimeKind.Local);
+            const string chat = "a1b2c3d4e5f6";
+            const string model = "guid|C:\\Jobs\\Tower.rvt|Tower";
+            string at;
+
+            Console.WriteLine();
+            Console.WriteLine("7. one Keep per job (D-138): given only by the third link, and held by one chat on one model");
+            var none = new HeronKeepGrant();
+            Check(none.Decide(chat, model, false, t0, out at) == HeronKeepGrant.NoGrant && at == null,
+                  "with nothing granted, every change is asked, as D-126 always did");
+            Check(!none.Active(t0) && none.GrantedAt == null, "and nothing is shown as held");
+
+            var g = new HeronKeepGrant();
+            Check(!g.Give("", model, t0, local) && !g.Active(t0),
+                  "a request with no chat id is given nothing - the next chat could not be told apart");
+            Check(!g.Give(chat, "", t0, local) && !g.Active(t0),
+                  "nor a model with no key");
+            Check(!HeronKeepGrant.CanHold(null, model) && !HeronKeepGrant.CanHold(chat, null)
+                  && HeronKeepGrant.CanHold(chat, model),
+                  "so the third link is offered only when the chat and the model can be named");
+            Check(g.Give(chat, model, t0, local) && g.Active(t0), "given, it is held");
+            Check(g.GrantedAt == "12:05", "and the time it was given is the PC's own HH:MM - 12:05");
+
+            Check(g.Decide(chat, model, false, t0.AddMinutes(2), out at) == HeronKeepGrant.Covered
+                  && at == "12:05",
+                  "the same chat's next change to the same model is kept with no box, under the 12:05 grant");
+            Check(g.Decide(chat, model, false, t0.AddMinutes(11), out at) == HeronKeepGrant.Covered,
+                  "each change kept under it restarts the ten minutes - 9 after the last one, still covered");
+            Check(g.Decide(chat, model, false, t0.AddMinutes(21), out at) == HeronKeepGrant.Covered,
+                  "exactly ten minutes after the last change is still inside");
+
+            Console.WriteLine();
+            Console.WriteLine("8. still asked every time, grant or not: a publish and a DRAFT's one run");
+            Check(g.Decide(chat, model, true, t0.AddMinutes(22), out at) == HeronKeepGrant.AlwaysAsked,
+                  "a publish or a DRAFT's one run from the same chat is asked");
+            Check(g.Active(t0.AddMinutes(22)) && g.Decide(chat, model, false, t0.AddMinutes(23), out at)
+                      == HeronKeepGrant.Covered,
+                  "and the grant stands for the change after it");
+            var publish = HeronKeepGrant.WhyAskedAgain(HeronKeepGrant.AlwaysAsked, "12:05", true);
+            Check(publish.Contains("12:05") && publish.Contains("an export, a save or a sync is always asked"),
+                  "the box says why it is up for a publish, naming the grant's time");
+            Check(HeronKeepGrant.WhyAskedAgain(HeronKeepGrant.AlwaysAsked, "12:05", false)
+                      .Contains("a tool that has never been proved is always asked"),
+                  "and for a DRAFT's one run");
+            Check(HeronKeepGrant.WhyAskedAgain(HeronKeepGrant.NoGrant, null, false) == null
+                  && HeronKeepGrant.WhyAskedAgain(HeronKeepGrant.Covered, "12:05", false) == null,
+                  "with no grant in play the box says nothing about one");
+
+            Console.WriteLine();
+            Console.WriteLine("9. what ends it - and then the next change is asked");
+            var idle = new HeronKeepGrant();
+            idle.Give(chat, model, t0, local);
+            Check(idle.Active(t0.AddMinutes(10)) && !idle.Active(t0.AddMinutes(10).AddSeconds(1)),
+                  "ten minutes with no change and it is no longer shown as held");
+            Check(idle.Decide(chat, model, false, t0.AddMinutes(10).AddSeconds(1), out at)
+                      == HeronKeepGrant.EndedIdle && at == "12:05",
+                  "the next change after that ends it, naming the grant it ended");
+            Check(idle.Decide(chat, model, false, t0.AddMinutes(11), out at) == HeronKeepGrant.NoGrant,
+                  "and every change after is asked again");
+            Check(HeronKeepGrant.WhyAskedAgain(HeronKeepGrant.EndedIdle, "12:05", false)
+                      .Contains("10 minutes passed with no change"),
+                  "the box says it ended because ten minutes passed");
+
+            var other = new HeronKeepGrant();
+            other.Give(chat, model, t0, local);
+            Check(other.Decide("ffffffffffff", model, false, t0.AddMinutes(1), out at)
+                      == HeronKeepGrant.EndedOtherChat,
+                  "another chat is asked - and its asking ends the grant");
+            Check(other.Decide(chat, model, false, t0.AddMinutes(2), out at) == HeronKeepGrant.NoGrant,
+                  "so the first chat is asked again too");
+
+            var moved = new HeronKeepGrant();
+            moved.Give(chat, model, t0, local);
+            Check(moved.Decide(chat, "guid|C:\\Jobs\\Podium.rvt|Podium", false, t0.AddMinutes(1), out at)
+                      == HeronKeepGrant.EndedOtherModel,
+                  "the same chat on another model is asked, and that ends the grant");
+            Check(moved.Decide(chat, model, true, t0.AddMinutes(2), out at) == HeronKeepGrant.NoGrant,
+                  "and a publish after that is asked as it always was");
+
+            var back = new HeronKeepGrant();
+            back.Give(chat, model, t0, local);
+            Check(back.Decide(chat, model, false, t0.AddMinutes(-1), out at) == HeronKeepGrant.EndedIdle,
+                  "a PC clock put back ends it - a clock nobody can trust is answered by asking");
+
+            var off = new HeronKeepGrant();
+            off.Give(chat, model, t0, local);
+            Check(off.HeldFor(model) && !off.HeldFor("guid|C:\\Jobs\\Podium.rvt|Podium") && !off.HeldFor(null),
+                  "a closing model is matched by its own key, and only its own");
+            Check(off.End() == "12:05" && !off.Active(t0) && off.GrantedAt == null,
+                  "End - the switch turned off, its model closed - ends it and says which grant it was");
+            Check(off.End() == null, "and ending nothing says so, so nothing is logged twice");
+            Check(off.Decide(chat, model, false, t0.AddMinutes(1), out at) == HeronKeepGrant.NoGrant,
+                  "the change after is asked");
+            Check(HeronKeepGrant.Ends(HeronKeepGrant.EndedIdle) && HeronKeepGrant.Ends(HeronKeepGrant.EndedOtherChat)
+                  && HeronKeepGrant.Ends(HeronKeepGrant.EndedOtherModel)
+                  && !HeronKeepGrant.Ends(HeronKeepGrant.Covered) && !HeronKeepGrant.Ends(HeronKeepGrant.AlwaysAsked)
+                  && !HeronKeepGrant.Ends(HeronKeepGrant.NoGrant),
+                  "only the three ending answers count as ended");
+            foreach (var why in new[] { HeronKeepGrant.EndedIdle, HeronKeepGrant.EndedOtherChat,
+                                        HeronKeepGrant.EndedOtherModel, HeronKeepGrant.EndedSwitch,
+                                        HeronKeepGrant.EndedClosed })
+            {
+                Check(HeronKeepGrant.EndedLine(why, "12:05").Contains("12:05")
+                      && !HeronKeepGrant.Reason(why).Contains("no reason"),
+                      "the log says why '" + why + "' ended the 12:05 grant");
+            }
+
+            var again = new HeronKeepGrant();
+            again.Give(chat, model, t0, local);
+            again.Give("ffffffffffff", model, t0.AddMinutes(1), local.AddMinutes(1));
+            Check(again.Decide(chat, model, false, t0.AddMinutes(2), out at) == HeronKeepGrant.EndedOtherChat,
+                  "a grant given again replaces the one before - one grant per Revit, never two");
+
+            Console.WriteLine();
+            Console.WriteLine("10. the words: the third link, the reply, and the box's Keep still says its undo step");
+            Check(HeronKeepGrant.KeepRestLink == "Keep, and keep the rest of this job without asking",
+                  "the third link says what it does in the modeller's words");
+            var note = HeronKeepGrant.KeepRestNote("CREATE_EXTRUSION");
+            Check(note.Contains("\"Heron: CREATE_EXTRUSION\"") && note.Contains("10 minutes")
+                  && note.Contains("its own undo step")
+                  && note.Contains("An export, a save or a sync, and a tool that has never been proved, are still asked"),
+                  "its second line: this undo step, ten minutes, each its own undo step, and what is still asked");
+            var kept = HeronKeepGrant.KeptSentence("12:05");
+            Check(kept.Contains("WITHOUT ASKING") && kept.Contains("12:05")
+                  && kept.Contains(HeronKeepGrant.KeepRestLink),
+                  "a change kept under it says so in the reply - without asking, under the grant given at 12:05");
+            Check(HeronKeepGrant.ChoseKeepRest().Contains("KEEP THE REST OF THIS JOB WITHOUT ASKING"),
+                  "and the reply to the click itself says what was chosen");
+            Check(HeronKeepGrant.IdleLimit == TimeSpan.FromMinutes(10), "ten minutes, as asked");
         }
 
         private static string Short(string text)

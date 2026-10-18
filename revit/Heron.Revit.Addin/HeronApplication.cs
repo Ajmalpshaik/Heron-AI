@@ -69,6 +69,13 @@ namespace Heron.Revit.Addin
         internal const string PublishLockedIcon = "PublishLocked.png";
         internal const string PublishUnlockedIcon = "PublishUnlocked.png";
 
+        // The Ask to Keep switch (D-138): the same padlock family, with a
+        // question mark where the keyhole was. Blue and closed is the safe
+        // side - Revit asks before a change is kept - and red and open is
+        // kept without asking, whether by the switch or by one job's grant.
+        internal const string KeepAskingIcon = "KeepAsking.png";
+        internal const string KeepNotAskingIcon = "KeepNotAsking.png";
+
         // The Companion button (D-109): lit while the Companion is on.
         internal const string CompanionOnIcon = "CompanionOn.png";
         internal const string CompanionOffIcon = "CompanionOff.png";
@@ -100,6 +107,21 @@ namespace Heron.Revit.Addin
         internal static PushButton AdminButton { get; private set; }
 
         internal static PushButton PublishButton { get; private set; }
+
+        /// <summary>
+        /// The Ask to Keep button (D-138), captured for the same reason: its
+        /// picture is the switch - and, while a job's grant is held, says so.
+        /// </summary>
+        internal static PushButton AskToKeepButton { get; private set; }
+
+        // Whether the button was last painted showing a job's grant. Idling
+        // looks at the grant again only while this is true, so with no grant
+        // every Idling call costs one test of a bool.
+        private static bool _keepGrantPainted;
+
+        // How often Idling looks whether a painted grant has run out.
+        private static readonly TimeSpan GrantLookInterval = TimeSpan.FromSeconds(15);
+        private static readonly Stopwatch SinceGrantLook = Stopwatch.StartNew();
 
         internal static PushButton CompanionButton { get; private set; }
         internal static PushButton CompanionToggleButton { get; private set; }
@@ -202,6 +224,11 @@ namespace Heron.Revit.Addin
                 // activate a view before OnStartup returns.
                 application.ViewActivated += OnViewActivated;
                 application.ControlledApplication.DocumentClosing += OnDocumentClosing;
+
+                // A JOB'S KEEP-WITHOUT-ASKING GRANT RUNS OUT AFTER TEN QUIET
+                // MINUTES (D-138), and the ribbon must stop saying it is held
+                // when it has. Idling is Revit's own thread, as the ribbon needs.
+                application.Idling += OnIdling;
 
                 // THE RUN GUARD (Constitution Article 10): saves, syncs,
                 // exports and prints, new and opened documents, and changes
@@ -326,6 +353,7 @@ namespace Heron.Revit.Addin
                 // dispatcher has already been dropped.
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+                application.Idling -= OnIdling;
                 HeronRunGuard.Detach(application);
                 RevitFragment.StopListening(application.ControlledApplication);
                 HeronDialogWatch.Detach(application);
@@ -514,6 +542,45 @@ namespace Heron.Revit.Addin
             PublishButton = panel.AddItem(publish) as PushButton;
             SetPublishIcon(HeronPermissions.PublishEnabled());
 
+            // ASK TO KEEP, BESIDE THE THREE PADLOCKS - D-138, 2026-10-18.
+            //
+            // D-126's Keep or Discard question had a switch only in
+            // heron.config, write.askBeforeKeeping, and the owner asked for it
+            // on the ribbon "same like this admin on off": he runs jobs of six
+            // to ten changes and walks away, and the box stopped each one.
+            //
+            // THE OTHER WAY ROUND FROM THE PADLOCKS BESIDE IT. Their safe side
+            // is OFF; this one's is ON - Revit asks. So it asks on the way OFF
+            // and never on the way on. It STARTS OFF all the same, the owner's
+            // second word the same day: "make the box off by default". Off
+            // lets nothing through that Changes did not: it only stops the
+            // question.
+            //
+            // AND THE BOX ITSELF CAN SKIP THE REST OF ONE JOB - its third
+            // link, while this is on. The label says so while that grant holds.
+            var askToKeep = new PushButtonData(
+                "HeronAskToKeepToggle",
+                "Ask to Keep",
+                assemblyPath,
+                typeof(AskToKeepToggleCommand).FullName);
+            askToKeep.ToolTip =
+                "Whether Revit shows you each change from a chat and asks Keep or Discard " +
+                "before it is kept. Click to turn it on or off.";
+            askToKeep.LongDescription =
+                "Closed padlock: Revit shows each change and asks Keep or Discard. Open padlock: " +
+                "changes are kept without asking.\n\n" +
+                "Either way every change to the model is one Ctrl+Z, named \"Heron: ...\". " +
+                "It starts off. Turning it on never asks; turning it off asks first.\n\n" +
+                "\"Keep: rest of job\" means you chose \"" + HeronKeepGrant.KeepRestLink + "\" " +
+                "in the box: that chat's changes to that model are kept without asking until 10 " +
+                "minutes pass with none. An export, a save or a sync, and a tool that has never " +
+                "been proved, are still asked.\n\n" +
+                "This is the same setting as write.askBeforeKeeping in heron.config, and either " +
+                "way of changing it takes effect immediately.";
+
+            AskToKeepButton = panel.AddItem(askToKeep) as PushButton;
+            SetAskToKeepIcon(HeronPermissions.AsksBeforeKeeping());
+
             // THE COMPANION (D-108, D-109). The top opens the chat's page in
             // the browser; the arrow holds the switch. Its picture is the
             // switch's state. It shows and never changes the model, so neither
@@ -672,6 +739,65 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Puts the Ask to Keep button in step with write.askBeforeKeeping and
+        /// with a job's grant (D-138). Three states, read from what they ARE:
+        /// asking, kept without asking by the switch, and kept without asking
+        /// for the rest of one job - the open padlock, and the words say which.
+        /// </summary>
+        internal static void SetAskToKeepIcon(bool asks)
+        {
+            var job = asks && HeronKeepGrant.Session.Active(DateTime.UtcNow);
+            _keepGrantPainted = job;
+            PaintSwitch(AskToKeepButton, asks && !job, KeepAskingIcon, KeepNotAskingIcon,
+                        !asks ? "Ask to Keep off" : job ? "Keep: rest of job" : "Ask to Keep ON");
+        }
+
+        /// <summary>
+        /// The same, with the switch read fresh - for a job's grant given or
+        /// ended inside a run, where a picture that failed to change must
+        /// never become the run's failure.
+        /// </summary>
+        internal static void RepaintAskToKeep()
+        {
+            try
+            {
+                SetAskToKeepIcon(HeronPermissions.AsksBeforeKeeping());
+            }
+            catch (Exception ex)
+            {
+                Log("The Ask to Keep button could not be repainted: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Revit's own thread, whenever it is idle. Only while the button shows
+        /// a job's grant, and at most every GrantLookInterval: has the grant
+        /// gone ten minutes with no change? Then it ends here, and the button
+        /// stops saying it is held.
+        /// </summary>
+        private static void OnIdling(object sender, IdlingEventArgs e)
+        {
+            // Cheapest test first: with no grant painted, almost every Idling
+            // call ends on this line.
+            if (!_keepGrantPainted) return;
+            if (SinceGrantLook.Elapsed < GrantLookInterval) return;
+            SinceGrantLook.Restart();
+
+            try
+            {
+                if (HeronKeepGrant.Session.Active(DateTime.UtcNow)) return;
+                var ended = HeronKeepGrant.Session.End();
+                if (ended != null) Log(HeronKeepGrant.EndedLine(HeronKeepGrant.EndedIdle, ended));
+                RepaintAskToKeep();
+            }
+            catch (Exception ex)
+            {
+                // Idling is Revit's own thread: nothing may escape it.
+                Log("The keep-the-rest-of-this-job grant could not be checked: " + ex.Message);
+            }
+        }
+
+        /// <summary>
         /// One switch button's picture and words - SetWriteIcon's shape, for
         /// the two switches D-106 added. SetWriteIcon itself is left as it
         /// was: it has been seen in Revit, and these two have not.
@@ -735,6 +861,24 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static void OnDocumentClosing(object sender, DocumentClosingEventArgs e)
         {
+            // A JOB'S GRANT DOES NOT OUTLIVE ITS MODEL (D-138). The same model
+            // opened again is a new start, and its first change is asked.
+            try
+            {
+                var closing = e == null ? null : e.Document;
+                if (closing != null
+                    && HeronKeepGrant.Session.HeldFor(RevitOperations.DocumentKey(closing)))
+                {
+                    var ended = HeronKeepGrant.Session.End();
+                    if (ended != null) Log(HeronKeepGrant.EndedLine(HeronKeepGrant.EndedClosed, ended));
+                    RepaintAskToKeep();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Could not end the keep-the-rest-of-this-job grant: " + ex.Message);
+            }
+
             try
             {
                 var dispatcher = Dispatcher;

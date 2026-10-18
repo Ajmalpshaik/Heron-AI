@@ -126,6 +126,7 @@ namespace Heron.Core
         /// Config key for D-126: Revit asks the modeller Keep or Discard before
         /// a change from a chat is kept. It lets nothing through - it only
         /// decides whether a change Changes already allowed is asked about.
+        /// Off by default since D-138; the Ask to Keep button turns it on.
         /// </summary>
         public const string AskBeforeKeepingKey = "write.askBeforeKeeping";
 
@@ -382,14 +383,19 @@ namespace Heron.Core
         /// <summary>
         /// Whether Revit asks Keep or Discard before keeping a change - D-126.
         /// Read fresh, like every switch here, so the owner's edit to the file
-        /// counts from the next change without a restart.
+        /// - or his click on the Ask to Keep button, D-138 - counts from the
+        /// next change without a restart.
         ///
-        /// A VALUE NOBODY CAN READ MEANS ASK. The fallback is TRUE, the safe
-        /// side for this key: a typo must never quietly turn the question off.
+        /// OFF BY DEFAULT SINCE D-138 - the owner, 2026-10-18: "make the box
+        /// off by default". A value nobody can read is the default too, OFF,
+        /// as heron_config.truthy reads it: D-126 read it as ASK while the
+        /// default was on, and the two readers must agree, or the chat's wait
+        /// is shorter than the box it is waiting on. The ribbon button shows
+        /// what this answers, so a typo shows as off.
         /// </summary>
         public static bool AsksBeforeKeeping()
         {
-            return HeronConfig.Load().GetBool(AskBeforeKeepingKey, true);
+            return HeronConfig.Load().GetBool(AskBeforeKeepingKey, false);
         }
 
         /// <summary>
@@ -430,7 +436,22 @@ namespace Heron.Core
         }
 
         /// <summary>
-        /// The one place a switch is written. Three setters and one spelling
+        /// Turns Revit's Keep or Discard question on or off - D-138, the Ask
+        /// to Keep button. SetWriteEnabled's rules, for the same reasons: only
+        /// a person pressing that button reaches it, and nothing on the wire
+        /// may (Golden Rule 19, D-126 item 5).
+        ///
+        /// IT LETS NOTHING THROUGH. Off, a change Changes already allowed is
+        /// kept without the question - still one undo step - and on, it is
+        /// asked about again from the next change.
+        /// </summary>
+        public static bool SetAsksBeforeKeeping(bool asks)
+        {
+            return SetSwitch(AskBeforeKeepingKey, asks);
+        }
+
+        /// <summary>
+        /// The one place a switch is written. Every setter and one spelling
         /// of true and false, so the file cannot hold "True" from one button
         /// and "on" from another.
         /// </summary>
