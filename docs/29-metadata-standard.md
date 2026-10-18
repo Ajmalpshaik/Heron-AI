@@ -236,6 +236,13 @@ So the two agents do different things and the answer says which:
 The last one is the valuable one, and it runs in reverse: it audits **the registry against the code**,
 not just the code against the registry.
 
+> **As built (2026-10-18):** no longer a prototype - CI's gates job runs `python tools/check-metadata.py`
+> on every pull request ([`gates.yml`](../.github/workflows/gates.yml)). It does two things this table
+> does not list: it checks that the version Python reports and the one MSBuild stamps agree, and that a
+> sentence stating how many agents Phase 0 and Phase 1 need matches the registry rows carrying a step.
+> Agents the host provides are excused from the reverse audit by its `HOST_PROVIDED` list, which
+> `python tools/agent-count.py` reads too.
+
 ---
 
 ## 4. Deliberately small

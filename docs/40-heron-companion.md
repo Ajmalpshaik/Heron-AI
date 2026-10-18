@@ -1,9 +1,16 @@
 # 40 — Heron Companion: a window beside the chat that shows what Heron does and lets you edit a table
 
 > **Status now: BUILT, NOT PROVEN - Phases 1, 2 and 3 are in the code, allowed by [D-108](decisions/D-108.md)
-> and [D-109](decisions/D-109.md), and none has been run in Revit beyond NEEDS-CHECKING
-> [group BK](needs-checking/group-bk.md) row BK6. What was built, and how it differs from the design
+> and [D-109](decisions/D-109.md), with three panels added since: Loads (§21.5), Sprinkler Hydraulic
+> Calculation (§21.7) and Sprinkler Layout (§21.8). What was built, and how it differs from the design
 > below, is §21. The paragraph that follows is the status this document was written with.**
+>
+> **What has run in Revit**, all of it Revit 2024: NEEDS-CHECKING [group BK](needs-checking/group-bk.md)
+> row BK6 (BK1 and BK2's positive halves, on *Project1*) and row BK13 (BK10 and BK11 PASSED, on a test
+> copy of *heron ai bulding*); §21.4's two Load buttons on 2026-09-30, with one fault left open; and the
+> Loads panel in [Group CC](needs-checking/group-cc.md) on 2026-10-06. **Still NOT RUN:** BK7, BK8, BK9,
+> BK12, BK11's stale-row negative, both Sprinkler panels, and the Companion button on the code of
+> [D-136](decisions/D-136.md) - BK14, which FAILED on 2026-10-18 on D-135's code (§21.8).
 >
 > **Status when written: A DESIGN, NOT A DECISION. Nothing here is built.** Written 2026-09-29 as Phase 0 of the
 > owner's Companion request. No decision number has been spent on it — the decision it needs is drafted
@@ -942,3 +949,20 @@ Calculate, **The network is right** and Report - and a 3D view of the pipes and 
 hooks the MCP server sets; every number, colour, question and offer is made in `brain/`. **It writes
 nothing to Revit** - phase 1 has no Finalize, so it has no `COMPANION_ACTIONS` row. The card shares the
 Loads panel's styles.
+
+### 21.8 The Sprinkler Layout panel, and where the Companion button looks (2026-10-06 to 2026-10-18)
+
+> **As built (2026-10-18):**
+>
+> - **The Sprinkler Layout panel** ([docs/47](47-sprinkler-layout-from-the-model.md) §7, #418): the
+>   rooms, each room's plan, then Preview and Apply one level at a time. **Unlike §21.7's panel it
+>   writes** - its Apply is `companion_sprinkler_place`, a `COMPANION_ACTIONS` row at `MODIFY` in
+>   [`heron_tools.py`](../mcp/server/heron_tools.py), through `revit_change`'s own body. NOT RUN in Revit -
+>   [group CG](needs-checking/group-cg.md).
+> - **The chat's note the Companion button reads** moved from §21.3's `%LOCALAPPDATA%\Heron\companion`
+>   to the user's temporary folder, `%TEMP%\Heron\companion` ([D-135](decisions/D-135.md), #641), so a
+>   Microsoft Store Claude's private copy of AppData cannot hide it; and both halves now step out of
+>   Revit's own GUID-named temporary folder to find that one ([D-136](decisions/D-136.md), #657). The live
+>   file stays in `%LOCALAPPDATA%\Heron\live\` (§6.1). Pressed in Revit 2024 on 2026-10-18 on D-135's code:
+>   FAIL ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md)); D-136's fix is NOT RUN IN REVIT -
+>   [BK14](needs-checking/group-bk.md), [HF4](needs-checking/group-hf.md).

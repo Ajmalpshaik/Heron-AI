@@ -16,6 +16,14 @@ See docs/29-metadata-standard.md
 > sprinkler layout is life safety: the fire consultant approves it and the authority - QCDD on a Qatar
 > project - approves the design. **This feature writes to Revit**, so it waits on the Changes switch
 > (`write.enabled`, off by default) like every other write.
+>
+> **As built (2026-10-18): BUILT, NOT PROVEN.** Merged 2026-10-06 as #418 (commit `7acc5b6d`): the
+> `revit_sprinkler_layout` tool at `ANALYZE` (in `python mcp/server/heron_tools.py`'s list), the page's
+> Apply as `companion_sprinkler_place` at `MODIFY` (a `COMPANION_ACTIONS` row in
+> [`heron_tools.py`](../mcp/server/heron_tools.py)), `sprinkler_layout_room` in
+> [`heron_fire.py`](../brain/heron_fire.py), and `REPORT_SPRINKLER_LAYOUT_SPACES` (FRG-MEP-060), DRAFT,
+> compiled on 2020, 2024 and 2027. **NEEDS REAL REVIT:** no row of [group CG](needs-checking/group-cg.md)
+> has been run, so no head has been placed by this feature in a model.
 
 **In Revit words.** Today Heron can tell you how many sprinklers a *rectangular* room needs and give you
 the points, and you place them. This feature lets you select one or more Spaces or Rooms of **any
@@ -33,7 +41,7 @@ again from what is really there. **It does not draw pipes.**
 |---|---|
 | **A layout for a rectangle** | Built. `heron_fire`'s `sprinkler_layout` ([42 §5](42-fire-protection-design.md)) finds the fewest heads on a grid in a length x width room, each limit ASKED with the standard's figure offered (D-33) |
 | **A check of any shape** | Built. `sprinkler_spacing` measures S, L, area and wall distance of heads in any outline, as NFPA 13 does, and the farthest uncovered point. Phase 1b ([46 §13.2](46-sprinkler-hydraulics-from-the-model.md)) runs it per Space |
-| **Placing** | Built and PROVEN. `PLACE_FAMILY_INSTANCES` places one type at points on a level, one undo entry. It sets no height of its own: the height has to be in the points (its TRAP note, NEEDS-CHECKING AJ4) |
+| **Placing** | Built and PROVEN. `PLACE_FAMILY_INSTANCES` places one type at points on a level, one undo entry. It sets no height of its own: the height has to be in the points (its TRAP note, NEEDS-CHECKING AJ4). *As built (2026-10-18): it is at version 3 now, re-proved on Project1, Revit 2020, on 2026-10-17 - its card's `proof:` block; versions 2 and 3 changed how a height is read (rows 5b-334, 5b-590)* |
 | **A layout for any shape** | **Missing.** An L-shaped office gets nothing |
 | **The room, its ceiling and the types, read together** | **Missing.** `READ_ROOM_GEOMETRY` gives one room's outline by name; nothing gives the ceiling over it, the sprinklers already in it, or the sprinkler types loaded |
 | **A place to see it before it is placed** | **Missing** |

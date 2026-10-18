@@ -214,11 +214,17 @@ once per Revit version, leaving whichever it did last. Run the two in one sittin
 round-trip host is a `net48` `.exe` the runtime cannot start. It happened the first time they were run
 together; the test now names the exact command to fix it rather than reporting a missing file.
 
+> **As built (2026-10-18):** since 2026-09-21 each Revit release builds into its own folder,
+> `bin/x64/<Configuration>/<RevitVersion>/` ([`Directory.Build.props`](../Directory.Build.props)), so
+> releases no longer overwrite one another. The explicit `OutputPath` above is still needed: the host is
+> built with `-p:RevitVersion=2024` and a different `HeronTfm`, and without it the `Heron.Bridge` it
+> references would be built into the same `2024` folder as `check-compile.py`'s `net48` build of it.
+
 .NET implements `NamedPipeServerStream` on Unix as a socket in the temp directory, so the same compiled
 bridge speaks the same protocol; only the two lines that open the connection differ, and
 `test_bridge_roundtrip.py` carries that shim rather than a second copy of itself.
 
-All 32 of its checks pass here — the framing, the JSON parser, the token, the newest-connection-wins
+Its checks pass here — the framing, the JSON parser, the token, the newest-connection-wins
 handover, the toggle cycle, and **the whole lease**. What it does **not** cover is the Windows named
 pipe itself: its naming, its security descriptor, and the `CreateNewInstance` flag that
 [HANDOVER §4](HANDOVER.md) note 2 was written about. Revit runs on Windows, so `A4` in the register

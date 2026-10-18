@@ -9,6 +9,12 @@
 > **For the full list — every agent, what it does, its tier, risk level and build step — see
 > [28 — The Complete Agent Registry](28-agent-registry.md).** This document explains the *shape*;
 > that one is the reference table.
+>
+> **As built (2026-10-18):** the registry, not this catalogue, is what the code is counted against.
+> `python tools/agent-count.py` prints, per department and per tier, how many of its rows are built,
+> provided by the host ([D-01](DECISIONS.md), [D-80](DECISIONS.md)), deferred by a decision, or left - so
+> no such number is typed on this page. **"Built" there means a file claims the id and its tests pass**
+> ([37 §4](37-the-provider-adapter.md)); it is not a proof against a real Revit ([D-30](DECISIONS.md)).
 
 ---
 
@@ -33,7 +39,7 @@
 | Documentation | §63 | 8 |
 | **Total (before de-duplication)** | | **~157** |
 
-Several names appear in more than one department (Duplicate Detection, Migration, Validation, Agent Creator, Agent Trainer, Backup). After de-duplication the real count is roughly **150 distinct agents**.
+Several names appear in more than one department (Duplicate Detection, Migration, Validation, Agent Creator, Agent Trainer, Backup). The table counts the specification's own lists; the distinct agents, after de-duplication and with the rows added since, are the registry's - `python tools/agent-count.py`.
 
 ---
 
@@ -42,8 +48,9 @@ Several names appear in more than one department (Duplicate Detection, Migration
 > Added 2026-08-27. The catalogue answers *what exists*; this answers *what to build now*.
 > Build order: [27](27-build-order.md).
 
-**The whole of Phase 0 and Phase 1 needs 49 of the 250 agents** — under a fifth. The other 201 are not
-deferred out of caution; they have nothing to act on until the layers below them exist.
+**The whole of Phase 0 and Phase 1 needs a small part of the registry** — `python tools/agent-count.py`
+prints how many rows carry a build step, and how they stand. The rest are not deferred out of caution;
+they have nothing to act on until the layers below them exist.
 
 The table below names the principal agents per step. The authoritative per-agent assignment is the
 **Step** column in [28 — The Complete Agent Registry](28-agent-registry.md).
@@ -57,8 +64,8 @@ The table below names the principal agents per step. The authoritative per-agent
 | **5 — multi-Revit** | MCP Recovery, MCP Version, MCP Compatibility | all T1 |
 | **6 — first write** | **Transaction Safety**, Revit Context, Revit Warning, MCP Security, Failure Analysis | T1 + one T2 |
 
-**Roughly 20 agents, and 17 of them are T1** — plain deterministic modules with no model call at all.
-Only Intent, Persona and Failure Analysis reason.
+**Every agent in that table is T1 except three** — plain deterministic modules with no model call at
+all. Only Intent, Persona and Failure Analysis reason.
 
 ### Why the agents cannot be built first
 
@@ -66,8 +73,8 @@ Only Intent, Persona and Failure Analysis reason.
 definitions should indeed exist first — and they do. But **building** them first does not work, for
 three reasons the mapping above makes concrete:
 
-1. **Most agents are not a separate build.** Around 95 of the 150 are T1 services
-   ([02 §6](02-architecture-overview.md)) — they *are* the implementation of steps 1–6, not a layer
+1. **Most agents are not a separate build.** Most of them are T1 services
+   ([02 §6](02-architecture-overview.md); `python tools/agent-count.py` gives the split by tier) — they *are* the implementation of steps 1–6, not a layer
    added afterwards. Building the Revit Selection Agent **is** building step 4. There is no separate
    "agent work" to schedule.
 2. **An agent with nothing beneath it is a text file.** A Revit Selection Agent calls an MCP tool, which
@@ -76,8 +83,8 @@ three reasons the mapping above makes concrete:
 3. **Contracts written before first contact are wrong.** [The field notes](00e-field-notes-proven-bridge.md)
    are the proof: the connect-time snapshot, the stale document name, the active-document hazard — none
    were predictable from a specification. They were found by running the software. An agent contract
-   written before step 2 would encode the same wrong assumptions, and then 150 of them would need
-   revising instead of 4.
+   written before step 2 would encode the same wrong assumptions, and then every one of them would
+   need revising instead of the handful a step touches.
 
 This is also the explicit instruction closing [Part 4](00d-additional-requirements.md):
 
@@ -87,7 +94,7 @@ This is also the explicit instruction closing [Part 4](00d-additional-requiremen
 
 **What is right in the instinct:** agents should be **defined** and **assigned** before implementation,
 so work is scoped rather than improvised. That is exactly what this catalogue and the table above are
-for. The remaining ~130 arrive when the Capability Gap report ([06 §6](06-heron-platform.md)) shows real
+for. The rest arrive when the Capability Gap report ([06 §6](06-heron-platform.md)) shows real
 demand — built from usage, not from a list.
 
 ---
@@ -205,8 +212,8 @@ API Docs · Agent Docs · Skill Docs · Fragment Docs · Release Notes · Archit
 
 ## **[NOTE]** How to read this catalogue
 
-Roughly **95 of ~150 agents are T1** — ordinary deterministic modules. Many are a single class with a handful of methods.
+**Most agents are T1** — ordinary deterministic modules. Many are a single class with a handful of methods.
 
-The realistic count of things that are "AI agents" in the expensive sense is around **25 T2** and **12 T3**. That is a tractable number, and it is the number that determines running cost and latency.
+The things that are "AI agents" in the expensive sense are the **T2** and **T3** rows, a small minority: `python tools/agent-count.py` prints how many of each the registry holds. That is a tractable number, and it is the number that determines running cost and latency.
 
-Framing the catalogue this way turns an intimidating 150-agent architecture into: a normal application with about 95 services, 25 narrow model calls, and 12 genuine agentic workflows.
+Framing the catalogue this way turns an intimidating agent architecture into: a normal application of deterministic services, some narrow model calls, and fewer still genuine agentic workflows.

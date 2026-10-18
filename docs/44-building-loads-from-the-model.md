@@ -16,8 +16,20 @@ from the Revit model, calculate, show everything in the Companion, produce a PDF
 it will update everything in the Revit"*.
 
 **What this page is.** The study of that skill, the decision on how much of it Heron takes, and the plan,
-in phases, for the feature. **It is a design, not a build.** Nothing it names is built until the owner
-approves this page, and everything it builds starts DRAFT ([D-30](DECISIONS.md)).
+in phases, for the feature (§10) - with what was then built beside the plan (§11, §12). Everything it
+builds starts DRAFT ([D-30](DECISIONS.md)).
+
+> **As built (2026-10-18): BUILT, NOT PROVEN.** Phases 1 to 5 of §10 are in the code, and phase 6's 3D
+> view was brought forward (§12.1): merged 2026-10-04 as #409 (commit `4e744995`), then #412, #414, #424
+> and #433 - [`heron_takeoff.py`](../brain/heron_takeoff.py),
+> [`heron_building_loads.py`](../brain/heron_building_loads.py),
+> [`heron_loads_report.py`](../brain/heron_loads_report.py), the Companion's Loads panel, Finalize, and
+> the `revit_building_loads` tool (`python mcp/server/heron_tools.py` lists it, at `ANALYZE`). Phase 0's
+> decision was never filed: §9 holds the answers and no `D-` number was spent. A second method (§9
+> point 5) is not built. `REPORT_SPACE_ENVELOPE` is DRAFT. **The proof is partial:**
+> [Group CC](needs-checking/group-cc.md) ran on *Heron loads test*, Revit 2024, on 2026-10-06 - several
+> rows PASS; CC8 and CC13 FAILED, are fixed in code and are NOT RUN AGAIN; the rest are NOT RUN (§12.9).
+> Every load is a design aid until the engineer's comparison §10 names has been made.
 
 **In Revit words.** Today Heron can work out one room's cooling load if you type in its walls and windows.
 This feature lets Heron *read* every Space in the model - its floor, its outside walls and which way they
@@ -363,8 +375,9 @@ every report says it is a design aid.
 
 ## 11. What is built - 2026-10-04
 
-Built from [the plan](work-notes/plans/building-loads-2026-10-04.md) in one pull request, **not merged**,
-**nothing run in Revit**. Every part is DRAFT; the proof is [Group CC](needs-checking/group-cc.md), on a
+Built from [the plan](work-notes/plans/building-loads-2026-10-04.md) in one pull request (#409, merged
+2026-10-04), **nothing run in Revit** when it merged - §12.8 and §12.9 record the runs since. Every part
+is DRAFT; the proof is [Group CC](needs-checking/group-cc.md), on a
 model the owner names. Where the build had to depart from the plan, the plan says so in its own text.
 
 | Part | What it does | Its test | Status |

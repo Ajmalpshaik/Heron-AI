@@ -3,6 +3,16 @@
 > Derived from [Master Specification Part 2](00b-master-specification-agent-os.md)
 > §38–§45, §49–§58, §75–§79.
 > **[NOTE]** blocks are engineering commentary added during review.
+>
+> **As built (2026-10-18):** these sections have code now, each `DRAFT` and tested without Revit, none
+> proven - §1 [`heron_graph.py`](../brain/heron_graph.py), §4 the bridge's `stop`
+> ([D-129](DECISIONS.md), [D-130](DECISIONS.md)), §5 [`heron_health.py`](../mcp/server/heron_health.py)
+> and the `revit_health` tool, §6 [`heron_healing.py`](../brain/heron_healing.py), §9
+> [`heron_configuration.py`](../brain/heron_configuration.py), §10
+> [`heron_migration.py`](../brain/heron_migration.py), §12 [`heron_scheduler.py`](../brain/heron_scheduler.py),
+> and §13 [`heron_audit.py`](../brain/heron_audit.py) with the workflow engine in
+> [`heron_workflow.py`](../mcp/server/heron_workflow.py). Each file's header names the agent it
+> implements, where it implements one.
 
 ---
 
@@ -49,6 +59,11 @@ it has a clear job. Recommend building exactly this and not more.
 (`WITH RECURSIVE`), and it sits naturally beside the knowledge store recommended in
 [05 §5](05-heron-brain.md). A dedicated graph database is not warranted. Tracked as
 [Q-31](OPEN-QUESTIONS.md).
+
+> **As built (2026-10-18):** Q-31 is answered by [D-40](DECISIONS.md) - SQLite, as recommended, and an
+> edge is **derived** before it is stored (the Revit API members from the compiled assembly, through
+> `tools/check-api-surface.py`), never typed by hand. Built as
+> [`brain/heron_graph.py`](../brain/heron_graph.py) (`HERON-KRN-DEP-013`), DRAFT.
 
 ---
 

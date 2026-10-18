@@ -22,7 +22,7 @@ across is what 31 says travels: the mechanism and the scar.
 | What it produced | Where it lives now |
 |---|---|
 | **A gap Heron had already named, filled.** `CREATE_ROOF` makes a flat roof, and its own routing says a slope is *"a separate job nothing in the library covers yet"*. The notes carry the method: the two long eaves for a gable, every edge for a hip | [`SLOPE_ROOF_EDGES`](../brain/fragments/slope-roof-edges/fragment.yaml), DRAFT - §3 lesson 11 |
-| **A defect in Heron, exposed by one of their scars, and half fixed.** Twenty fragments find a parameter by a typed name the way Autodesk documents as *picking at random* when two parameters share the name. **The ten that change the model now refuse such a name and say so;** nine of them were PROVEN and are DRAFT again until re-proved. The ten that only read are recorded | [Row 5b-203](FRAGMENT-ISSUES.md#) |
+| **A defect in Heron, exposed by one of their scars, and half fixed.** Twenty fragments find a parameter by a typed name the way Autodesk documents as *picking at random* when two parameters share the name. **The ten that change the model now refuse such a name and say so;** nine of them were PROVEN and are DRAFT again until re-proved. The ten that only read are recorded. *As built (2026-10-18): some of the nine are PROVEN again - each card's `heron-status:` says which, [AP8](needs-checking/group-ap.md) the rest - and four of the readers were repaired in source on 2026-10-09, not proven; the row holds what is still open* | [Row 5b-203](FRAGMENT-ISSUES.md#) |
 | **A method, written down.** Levels, walls, slab, rooms, ceilings, roof, and the count that proves each, in the order they have to happen. Every step is a capability Heron already has | [`building-shell`](../brain/skills/building-shell.yaml), DRAFT |
 | **Things to measure** on a scratch model - the new fragment's proof, the same-name trap on a real curtain wall, and two of the notes' claims that Heron can settle by running a command | [Group AP](needs-checking/group-ap.md) |
 | **What the connector does that Heron does not** | §5 - left unbuilt on purpose |
@@ -67,11 +67,11 @@ code that writes by a name did not keep it.
 | 5 | Change the type once rather than every instance | **Held** | `DUPLICATE_TYPE`, then `WRITE_ELEMENT_PARAMETERS` on the new type - the routing in `write-element-parameters/fragment.yaml` |
 | 6 | **Two parameters can share a name on one element.** A curtain wall type shows *Interior Type* under Vertical Mullions and again under Horizontal Mullions, and setting it by name only ever reached one of them | **The rule was Heron's and the code broke it. The ten fragments that change the model now keep it** | [D-54](DECISIONS.md) §3 and `RevitParameters.cs` both state it; twenty fragments did not follow it - [row 5b-203](FRAGMENT-ISSUES.md#), with the ten that read still open |
 | 7 | Read back what was made; a call that returned is not a call that worked | **Held, stricter** | [D-30](DECISIONS.md); `snapped` in `WRITE_ELEMENT_PARAMETERS`; `measuredMm` in `CREATE_ROOF` |
-| 8 | The connector cannot build a family's geometry | **Heron is ahead** | [`family-creation`](../brain/skills/family-creation.yaml) and its nine fragments, DRAFT, [Group AN](needs-checking/group-an.md) |
+| 8 | The connector cannot build a family's geometry | **Heron is ahead** | [`family-creation`](../brain/skills/family-creation.yaml) and its fragments, DRAFT when this was written, [Group AN](needs-checking/group-an.md). *As built (2026-10-18): the skill is still DRAFT and many of its fragments are PROVEN - each card's `heron-status:` says which ([43](43-building-revit-families.md))* |
 | 9 | When a route cannot do the job, say so and give the shortest way by hand; do not keep retrying | **Held** | a fragment refuses in a sentence, and the chat tool prints a refusal as a refusal rather than as *"it ran"* - `heron_mcp_server.py`, where it says a refusal is the case the check exists for |
 | 10 | When a tool seems to be missing, report the connector's version first | **Held** | `heron_version`, `heron_compatibility` |
 | 11 | **A pitched roof: the two long eaves carry the slope for a gable, every edge for a hip, and the pitch is the modeller's** | **Missing - and Heron's own words said so** | `CREATE_ROOF`'s routing: *"slope this roof -> NOT HERE"*. Built as `SLOPE_ROOF_EDGES`, DRAFT. It carries one scar of its own, read off Autodesk's reference: the per-edge property named *SlopeAngle* is a rise over a run, not an angle |
-| 12 | Set a curtain wall's grid spacing and its mullions on the type | **Built 2026-09-25, DRAFT** - the owner's first pick from §5 | `SET_CURTAIN_WALL_GRID`, `SET_CURTAIN_WALL_MULLIONS` and the reader `REPORT_CURTAIN_WALL_TYPE`, each reaching the settings by Revit's own parameter ids, never by a name - by lesson 6 every one of those names repeats. The order is the [`curtain-wall`](../brain/skills/curtain-wall.yaml) skill; the proofs are [Group AR](needs-checking/group-ar.md) |
+| 12 | Set a curtain wall's grid spacing and its mullions on the type | **Built 2026-09-25, DRAFT** - the owner's first pick from §5 | `SET_CURTAIN_WALL_GRID`, `SET_CURTAIN_WALL_MULLIONS` and the reader `REPORT_CURTAIN_WALL_TYPE`, each reaching the settings by Revit's own parameter ids, never by a name - by lesson 6 every one of those names repeats. The order is the [`curtain-wall`](../brain/skills/curtain-wall.yaml) skill; the proofs are [Group AR](needs-checking/group-ar.md). *As built (2026-10-18): `SET_CURTAIN_WALL_GRID` is PROVEN at version 2 (Project2, Revit 2024, 2026-10-06 - its card's `proof:`); the mullions and the reader are still DRAFT* |
 | 13 | Streets and pavements as thin floors and kerbs as low walls, each set at a height where nothing floats | **Possible today, not written down** | `CREATE_FLOOR`, `CREATE_WALL`. The ground surface itself is §5 |
 | 14 | A tower lives or dies on its levels: make every level first, one floor per level, then count them | **Held, and now written down** | `CREATE_LEVELS`, `CREATE_FLOOR`, `COUNT_ELEMENTS` - the order in [`building-shell`](../brain/skills/building-shell.yaml) |
 
@@ -153,7 +153,7 @@ asked which, one at a time.
 | ~~Curtain wall grid lines and mullions~~ | **Built 2026-09-25, DRAFT** - the grid and the mullions of a curtain wall TYPE, and a reader of both (§3 lesson 12). Still not built: a fixed NUMBER of divisions, which is a per-wall count, and one grid line placed by hand |
 | A wall's profile - an arched head | |
 | A ground surface | Revit 2024 brought in the toposolid in place of the toposurface, so it is two routes across Heron's eight releases |
-| ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`, DRAFT** - recorded 2026-10-04 by [44](45-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built |
+| ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`, DRAFT** - recorded 2026-10-04 by [45](45-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built. *As built (2026-10-18): railings too - `CREATE_RAILING`, `EDIT_RAILING`, `SET_RAILING_TYPE`, DRAFT (#502)* |
 | Wall foundations, and reinforcement | Reinforcement needs its host to exist first |
 | Parts, and making an assembly | |
 | Point clouds | |
@@ -161,10 +161,20 @@ asked which, one at a time.
 | ~~Painting one face; the material of one layer of a wall~~ | **Both built, DRAFT.** Painting a face is `PAINT_FACES` (2026-10-13, #502). The material of a layer is `SET_COMPOUND_LAYER_WIDTH` **version 2** (2026-10-13, [5b-449](fragment-issues/section-5b-rows-401-425.md)) - a layer's width, material and function, widened rather than a card added; run on Revit 2020, not signed ([Group DU](needs-checking/group-du.md)). Until then it changed a layer's width and nothing else |
 | ~~A door or a window put into one particular wall~~ | **Built 2026-09-25 as `PLACE_HOSTED_FAMILY` version 2, DRAFT** (#334) - it finds the wall at each point. Not from these notes: [the house plan of 2026-09-22](fragment-issues/a-drawing-set-and-a-house-plan-2026-09-22.md) found it, and [`building-shell`](../brain/skills/building-shell.yaml) now has a door step |
 
+> **As built (2026-10-18):** a gap-filling pass on 2026-10-13 (#502, commit `5cf7a59e`, NEEDS-CHECKING
+> groups DN to DR) added DRAFT routes for more of the rows above, none of them run in Revit yet: **a ground
+> surface** on Revit 2024 and later only - `CREATE_TOPOSOLID`, `EDIT_TOPOSOLID`,
+> `ADD_TOPOSOLID_SUBDIVISION`, so the toposurface route for 2020 to 2023 is still not built; **railings**;
+> **parts and an assembly** - `CREATE_PARTS`, `DIVIDE_PARTS`, `MERGE_PARTS`, `OFFSET_PART_FACES`,
+> `SET_PARTS_EXCLUDED`, `CREATE_ASSEMBLY`; and **floors from a mass** - `CREATE_MASS_FLOORS`. Still with
+> no route: a wall's profile, wall foundations and reinforcement, point clouds, and walls made from a
+> mass. Each card's `revit:` and `heron-status:` lines are the current word.
+
 ---
 
 ## 6. What this is not
 
 **Not an import.** No file from the folder is in this repository, and none of its sentences. **Not a
 proof.** The fragment built from this, the skill written from it and the nine fragments the repair sent
-back to DRAFT all owe a run against a real model, and Group AP says exactly which.
+back to DRAFT all owed a run against a real model - some of the nine have had it since, and each card's
+`heron-status:` says which - and Group AP says exactly what is still owed.

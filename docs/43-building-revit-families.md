@@ -22,9 +22,19 @@ is the reasoning both stand on. **It is not authority** - where a card, a regist
 disagrees with a sentence here, the more specific source wins and the sentence is a defect
 ([PROJECT-MAP §D](PROJECT-MAP.md)).
 
-**Nothing here is proven.** Every tool and skill this page names is `DRAFT` until it has been run on a real
-family with a negative case ([D-30](DECISIONS.md)). The register rows that owe those runs are
+**What is proven is each card's to say, not this page's.** Every tool and skill this page names was
+built `DRAFT`, and stays so until it has been run on a real family with a negative case
+([D-30](DECISIONS.md)). The register rows that owe those runs are
 [NEEDS-CHECKING Group BV](needs-checking/group-bv.md).
+
+> **As built (2026-10-18):** many of the §11 tools are now `PROVEN` - proved in family documents in
+> Revit 2024 on 2026-10-03 (#395, commit `931777ea`), each proof in its
+> own card's `proof:` block - and others, `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`,
+> `SET_FAMILY_SETTINGS`, `SET_FAMILY_CONNECTOR_ROLES` and `ADD_FAMILY_CONNECTOR` among them, are still
+> `DRAFT`. **Every family skill is still `DRAFT`.** Read the state from the cards, never from here:
+> `grep -H '^heron-status:' brain/fragments/<folder>/fragment.yaml brain/skills/<skill>.yaml`. Since
+> 2026-10-09 (#451) a chat gets each skill's method through the `heron_method` tool - its jobs carry the
+> skills' names, `family-creation` to `lighting-fixture-family-creation`.
 
 | What it produced | Where it lives |
 |---|---|

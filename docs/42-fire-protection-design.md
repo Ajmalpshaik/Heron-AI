@@ -3,18 +3,24 @@
 > **Status: BUILT, NOT PROVEN.** Written 2026-10-02, on the owner's request, with the engine it
 > describes: [`brain/heron_fire.py`](../brain/heron_fire.py), served as the `heron_fire` MCP tool, owned
 > by `HERON-MEP-FPD-002` in the [agent registry](28-agent-registry.md), beside the HVAC engine of
-> [41](41-hvac-design.md) whose answer machinery it shares. **What is proven is arithmetic**:
+> [41](41-hvac-design.md) whose answer machinery it shares. **What is tested is arithmetic**:
 > [`tests/test_fire.py`](../tests/test_fire.py) derives Hazen-Williams from its general form, checks the
-> network solver against an independent method, and holds every table to its own units. **Nothing here
-> has been checked against a real project or a listed hydraulic program** - §14 says what that would
-> take. A design value is the fire consultant's, and the design is the authority's to approve - QCDD's
-> on a Qatar project.
+> network solver against an independent method, and holds every table to its own units - tested, not
+> proven (§14). **Nothing here has been checked against a real project or a listed hydraulic
+> program** - §14 says what that would take. A design value is the fire consultant's, and the design is
+> the authority's to approve - QCDD's on a Qatar project.
 >
 > **Round two, the same day**, on the owner's *"do the best research ... not only NFPA"*: a project
 > may now follow **BS EN 12845** or **FM Global** instead of NFPA 13 (§4a); NFPA 13's C values, K
 > list, temperature ratings, design area percentages and more of the beam rule are held; and
 > `temperature_rating`, `equivalent_length` and `hose_reels` are new, with **BS 5839-1**, **BS 5306**,
 > **BS 9990**, and what is known of **Qatar** and the **UAE** beside NFPA's figures (§9a, §11).
+>
+> **As built (2026-10-18):** two features now feed this engine from the model -
+> [46](46-sprinkler-hydraulics-from-the-model.md)'s hydraulics (`hydraulic` on a network read from Revit)
+> and [47](47-sprinkler-layout-from-the-model.md)'s layout (`sprinkler_layout_room`, added here for a
+> room of any shape, with `measure_heads`). Both are built and NEEDS REAL REVIT: no row of their
+> NEEDS-CHECKING groups CE and CG has been run.
 
 ---
 
