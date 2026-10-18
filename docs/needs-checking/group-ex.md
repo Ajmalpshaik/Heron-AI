@@ -23,7 +23,9 @@ decides, from the operation's registry risk and where the document came from:
 - **Publish** (`run_fragment_publish`) - nothing is cancelled; the guard stands aside.
 - **Admin** - may start a family or project file and save it; a save, sync, export or print of a model that
   was open when the job began is cancelled (`e.Cancellable` asked first).
-- **Everything else** - the same, and a new document (`DocumentCreated`) is refused.
+- **Everything else** - the same, and a new document (`DocumentCreated`) is refused - except, since
+  2026-10-18, a family `EditFamily` opened, which Revit reports the same way (the section on rows 5b-1091
+  and 5b-1092 below).
 - **A document the job opened** is its own at every level; **one it left open in the background** - not
   linked, no `GetOpenUIViews()`, not open at the start - is closed with `Close(false)` as the job ends.
 - **A committed change to another open model** cannot be cancelled: the job's group is rolled back, and the
@@ -100,3 +102,80 @@ audit line.
 | EX10 | 2024 | `NewFamilyDocument` + `SaveAs`: `run_guard` naming *Family1* and the Admin switch, the `SaveAs` cancelled, no file, *"Run guard closed 'Family1' unsaved"*, audit `blocked 2`, `closed 1` | **PASS** |
 | EX11 | - | Not timed | **NOT RUN** |
 | EX12 | 2024 | `revit_view_image` of a named view with the guard armed: pictures, no `Run guard` line. The element half fails for its own reason ([5b-1090](../fragment-issues/section-5b-rows-401-425.md)) | **PASS** (named view) |
+
+### 2026-10-18 - what the run guard does with EditFamily, and with Revit's own step in a save (rows 5b-1091 and 5b-1092)
+
+**Decided and changed in the add-in after the run above, in a cloud session: compiled for 2020 to 2027
+(`python tools/check-compile.py`), tested by [`tests/test_run_guard.py`](../../tests/test_run_guard.py) -
+the host's sections 10 and 11 and the wiring's EditFamily checks, 44 of which FAILED on the code as it
+stood and all pass now. Nothing here has run in Revit.**
+
+**1. How the guard tells a family the project already holds from a file the job starts.** The run gave
+the guard nothing to go on but a title: `EditFamily` raised `DocumentCreated` untitled (EX5, *"refused a
+new document, ''"*), `NewFamilyDocument` raised it named *Family1* (EX10). A title is not a rule. **The
+job's own code is.** The executor hands the guard the fragment's C# and every setup step's before any of
+it runs (`HeronRunGuard.Code`, decided in `HeronRunPolicy.Reads`), and a document Revit reports as
+created is **a family EditFamily opened** - origin `EditedByJob` - only when all three hold:
+
+- it is a family document (`IsFamilyDocument`, read when the event comes; unreadable counts as no);
+- the code calls `EditFamily`;
+- the code names **none** of the calls that can start a document: `NewFamilyDocument`,
+  `NewProjectDocument`, `NewProjectTemplateDocument`, `OpenIFCDocument` and `OpenBuildingComponentDocument`
+  (2020 to 2023) - every `Application` method in `RevitAPI.dll`, 2020 to 2027, that returns a `Document`
+  and is not `OpenDocumentFile`, read with `tools/api-surface --members` the same day. `OpenDocumentFile`
+  is left out on EX4's evidence: the family it opened was closed as the job's own, never refused as new.
+
+Anything else is a file the job started and is judged exactly as before. **EX10 is not weakened:** its
+probe names `NewFamilyDocument`, so its document stays refused below Admin and its Save As cancelled. The
+code is read as it is, comments and strings included, so a starter named anywhere holds the job to the
+strict rule - the reading errs towards refusing. A family EditFamily opened is never refused as new, a
+change inside it is not a change to another model, and as the job ends it is closed unsaved if no window
+shows it, as before.
+
+*Not chosen:* matching the document against the families of an open project - at `DocumentCreated` it has
+no title to match, matching later needs it still open, and `REPORT_FAMILY_TABLES_IN_PROJECT` closes each
+family itself; and *Family1*, `NewFamilyDocument`'s own title, is a name a project can hold. Watching the
+`EditFamily` call itself - the add-in cannot see a call a fragment makes, only the fragment's code.
+*The limit:* code that builds a call's name at run time and reaches it by reflection can hide a starter;
+no guard inside Revit's own process is a defence against that, as `HeronRunGuard.HeronExports` already
+says.
+
+**2. Whether a fragment may save a family EditFamily opened - `open-family-for-editing`'s Save As to its
+folder.** **Yes at EXECUTE and above, and no below.** A job that acts may write its own copy out:
+`open-family-for-editing` (EXECUTE, through `run_fragment_show`) saves it to the folder its request names
+and opens that file in a window, which is its whole design. A read - READ, ANALYZE (`run_fragment_read`)
+and SUGGEST - may look inside a family and never write one out: a read that saved the project's families
+to disk would be `export-families` (PUBLISH) under no switch at all. Publish stands aside as it always
+did, and a level nobody has added yet is held to the strict rule. **What this does not judge is where the
+file goes.** EXECUTE needs no switch, and the guard cannot tell a scratch folder from a shared one, so an
+EXECUTE job writes its copy into either as freely - Article 10's *"export to a shared location"* is not
+held there. **For the owner:** narrowing it to a temporary folder is one test of the Save As event's path
+in the policy, and it would refuse `open-family-for-editing` whenever its folder is anywhere else.
+
+**3. Revit's own step in a save the guard cancelled (5b-1092).** A commit in another open model is **the
+save's, not a change**, when every transaction it names is `Store dependencies` - the English name,
+matched exactly - it is in the model whose save, Save As or sync the guard cancelled, and nothing else was
+recorded between the two: just before the cancel, as EX2 saw, or just after it. The answer is then
+`run_guard`; `blocked` counts the save once; and the refusal still says it, because that model's undo list
+does hold the entry - *"Revit committed 'Store dependencies' in 'B' itself as a save of it began - Revit's
+own step, not a change this job made. It shows in that model's undo list."* The reply's `guardStopped`
+line carries `revitCommitted`. **Both tests, because either alone is wrong:** next to the save alone, EX9's
+committed line followed by a save that raised no step of Revit's - EX3's Save As raised none - would be
+called stopped before it happened; the name alone would hide such a step anywhere in the job. A job's own
+commit in B before its save is still `changed_other_model`, naming that commit only. *The limits:* a Revit
+in another language names the step otherwise, and its commit is then a change as before - the false
+alarm, never the silence; a fragment that names its own transaction `Store dependencies` and commits it
+in B straight beside a cancelled save is taken as the save's.
+
+**SCRATCH MODELS ONLY, as above, and Revit 2024 and then Revit 2020 for each row** - 2024 is where the
+faults were seen, and nothing in the run above ran on 2020. Rebuild and deploy the add-in from this
+change for both releases and restart Revit first. The probes are scratch fragments made on the test PC
+and never committed, as above.
+
+| # | Run | Look for |
+|---|---|---|
+| **EX13** | **EX2 again - the save probe** - on 2024, then on 2020: draw a model line in A and call `Save()` on the open B. **The negative**: EX9's probe line committed in B in B's own transaction, then `Save()` on B | `run_guard`, not `changed_other_model`: *"Stopped before it happened: a save of 'Heron Guard B ...'"* and *"Revit committed 'Store dependencies' in 'Heron Guard B ...' itself as a save of it began - Revit's own step"*; no *"CANNOT UNDO"*; the audit line `blocked 1`; B's file time unchanged; B's undo list holds *"Store dependencies"*. On 2020 write down whether Revit commits that step at all - if not, the plain `run_guard` of EX2 and no such sentence. **The negative**: `changed_other_model` naming *'zz probe line in B'* and not *Store dependencies*, and the save still stopped |
+| **EX14** | **EX5 again - a READ probe that calls `doc.EditFamily` on a loaded family and then throws** - on 2024, then on 2020 | `fragment_threw` with the probe's message, no `run_guard`; the log has *"Run guard took a new family document as one EditFamily opened during run_fragment_read"* and *"Run guard closed '<family>.rfa' unsaved"*; Switch Windows shows no family window; A untouched. **On 2020 write down which line comes**: the "took" line means Revit raised `DocumentCreated` there too; a *"Run guard saw ... open"* line means `DocumentOpened`, which this change does not touch |
+| **EX15** | **EX6 again** - on 2024, then on 2020: `open-family-for-editing` (EXECUTE, PROVEN) on the M_WSHP family with `saveFolder` a scratch folder; then, Admin on, `create-family-document` (ADMIN, PROVEN) with a new scratch path; then `open-family-for-editing` once more with that family ALREADY open in the Family Editor | `opened true`, `savedTo` the .rfa and the file is there, the family window in front and kept (no `Run guard closed` line for it), no `run_guard`, no `blocked` on the audit line - as its proof answered. `create-family-document`: the .rfa exists, no `run_guard`. Already open: write down what comes back - if `EditFamily` hands back the open document it was open at the start, so its Save As is cancelled and the answer is `run_guard`, which is the guard keeping the modeller's own family from being re-pointed |
+| **EX16** | **`REPORT_FAMILY_TABLES_IN_PROJECT` (READ, PROVEN) through the chat** - `revit_read`, `nameContains=M_WSHP` - on 2024, then on 2020. **The negative**: a scratch READ probe that calls `doc.EditFamily` on the same family and `SaveAs` to the scratch folder | The tables summary as the fragment's proof answered, no `run_guard`, no `guardRefusedDocuments` - not the *"started a new document - '(unnamed)'"* x3 of the run above; afterwards `REPORT_OPEN_DOCUMENTS` familyCount 0. **The negative**: `run_guard`, *"Stopped before it happened: a Save As of '<family>.rfa'"*, no file in the folder - a read never writes the project's family out |
+| **EX17** | **EX10 again - it must still be refused** - on 2024, then on 2020: `NewFamilyDocument` on the Generic Model template and `SaveAs` to a scratch path. Then once with the same probe calling `doc.EditFamily` on a loaded family first | `run_guard` naming *Family1* and the Admin switch, the Save As cancelled, no file, *"Run guard closed 'Family1' unsaved"*, as on 2026-10-18. The second: refused the same way, and the EditFamily family refused as a new document too - its code names a starter, so neither is taken as EditFamily's, and no "took" line appears in the log |

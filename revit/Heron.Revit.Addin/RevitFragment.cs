@@ -260,6 +260,23 @@ namespace Heron.Revit.Addin
             // document named by the caller need not be that one.
             HeronRunGuard.Target(target);
 
+            // AND THE JOB'S OWN CODE, every piece of it that will run - the
+            // fragment and each setup step - before any of it does. Revit
+            // 2024.3 raised DocumentCreated for EditFamily as it does for
+            // NewFamilyDocument, so the guard refused two PROVEN fragments'
+            // families as new files (FRAGMENT-ISSUES 5b-1091). What the code
+            // calls is what tells the two apart; see HeronRunPolicy.Reads.
+            HeronRunGuard.Code(source);
+            var stepsToRead = Json.ReadObjectArray(request, "setup");
+            if (stepsToRead != null)
+            {
+                foreach (var stepToRead in stepsToRead)
+                {
+                    string stepCode;
+                    if (stepToRead.TryGetValue("source", out stepCode)) HeronRunGuard.Code(stepCode);
+                }
+            }
+
             // WHICH MODEL THE CHAT THINKS IT IS IN, CHECKED BEFORE ANYTHING
             // RUNS. Golden Rule 20, enforced on the only side that can still
             // stop.
