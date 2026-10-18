@@ -35,6 +35,7 @@ namespace Heron.Installer.App
 
         private readonly Button _install;
         private readonly TextBlock _report;
+        private readonly TextBlock _closeRevitFirst;
 
         /// <summary>
         /// Raised when Install is pressed, with what to install, where, and
@@ -78,8 +79,10 @@ namespace Heron.Installer.App
             page.Children.Add(Heading("Heron's Python side"));
             page.Children.Add(Quiet(PythonSetup.WhatInstallAlsoDoes));
 
-            // BEFORE Install, never after it fails - Stage 4 item 6.
-            page.Children.Add(Notice(screen.CloseRevitFirst));
+            // BEFORE Install, never after it fails - Stage 4 item 6. Kept, so
+            // it can be drawn again once what is open has changed - 5b-1068.
+            _closeRevitFirst = Notice(screen.CloseRevitFirst);
+            page.Children.Add(_closeRevitFirst);
 
             if (screen.NothingFound != null)
                 page.Children.Add(Notice(screen.NothingFound));
@@ -131,6 +134,17 @@ namespace Heron.Installer.App
         public void Waiting(string why)
         {
             _report.Text = why;
+        }
+
+        /// <summary>
+        /// The line above the report, drawn again from the screen - row
+        /// 5b-1068. Drawn only once, it still said Revit 2026 was open after
+        /// Revit had closed and the install had finished. What it says is
+        /// InstallerScreen's; this only draws it.
+        /// </summary>
+        public void RedrawCloseRevitFirst()
+        {
+            _closeRevitFirst.Text = _screen.CloseRevitFirst ?? "";
         }
 
         /// <summary>

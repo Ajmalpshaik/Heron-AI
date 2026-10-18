@@ -196,6 +196,21 @@ namespace Heron.Installer
         public string CloseRevitFirst { get; private set; }
 
         /// <summary>
+        /// Work CloseRevitFirst out again from the Revits open now.
+        ///
+        /// WORKED OUT ONCE, IT WENT STALE - row 5b-1068. Build worked it out
+        /// when the window opened, and on 2026-10-17 it still said "Revit
+        /// 2026 is open right now" after Revit had closed and the install had
+        /// ended READY. The window's run calls this when it starts and when
+        /// it ends; what the line says is still decided here, and only here.
+        /// </summary>
+        /// <param name="openRevits">Which are open right now, or null.</param>
+        public void RefreshCloseRevitFirst(IEnumerable<RunningRevit> openRevits)
+        {
+            CloseRevitFirst = Warning(openRevits);
+        }
+
+        /// <summary>
         /// No Revit at all is a sentence, not an empty list. A window offering
         /// nothing, with no reason given, reads as broken software.
         /// </summary>
@@ -723,7 +738,11 @@ namespace Heron.Installer
                 if (!open.Contains(revit.Release)) open.Add(revit.Release);
             }
 
-            if (open.Count > 0) return "Revit " + Join(open) + " is open right now. " + always;
+            // ARE FOR TWO - row 5b-1068: "Revit 2026 and 2020 is open" was
+            // seen on the owner's laptop on 2026-10-18.
+            if (open.Count > 0)
+                return "Revit " + Join(open) + (open.Count == 1 ? " is" : " are") +
+                       " open right now. " + always;
             if (unknown) return "A Revit is open right now. " + always;
             return always;
         }
