@@ -51,6 +51,10 @@ namespace Heron.Revit.Addin
                 if (bridge.IsRunning)
                 {
                     bridge.Stop();
+                    // The person took this Revit back, as the lease's own
+                    // Clear says on stopping - so no chat holds any of its
+                    // models either (D-141).
+                    HeronModelHold.Session.Clear();
                     HeronApplication.SetBridgeIcon(false);
                     HeronApplication.Log("Disconnected from " + where + ".");
                     return;
@@ -585,6 +589,59 @@ namespace Heron.Revit.Addin
             ask.DefaultButton = TaskDialogResult.CommandLink2;
 
             return ask.Show() == TaskDialogResult.CommandLink1;
+        }
+    }
+
+    /// <summary>
+    /// Free this model - D-141. Frees the model IN FRONT from the chat that
+    /// holds it, whichever chat that is, so another chat can use it at once.
+    ///
+    /// The owner asked for it on 2026-10-18 beside his design: one model, one
+    /// chat at a time, and chat 2 never has to close chat 1. A hold also ends
+    /// when that chat says it is done, after bridge.modelHoldMinutes quiet
+    /// minutes, and when the model closes; this is the person at the machine
+    /// deciding sooner.
+    ///
+    /// IT CHANGES NO ELEMENT, so it opens no transaction and asks nothing
+    /// first: it frees a claim, and the chat that held it simply asks again -
+    /// it is never cut off mid-job, because a job holds Revit's thread and
+    /// this button runs on that same thread, between jobs. NO SUCCESS POPUP
+    /// (the ribbon skill): the add-in log says what was freed. Greyed on the
+    /// start screen by Revit's own rule for a command with no availability
+    /// class - with no model open there is nothing to free.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class FreeModelCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                var doc = RevitOperations.ActiveDocument(commandData == null ? null : commandData.Application);
+                if (doc == null)
+                {
+                    HeronApplication.Log(HeronModelHold.ButtonName + ": no model is open, so nothing was freed.");
+                    return Result.Cancelled;
+                }
+
+                var title = doc.Title;
+                var holder = HeronModelHold.Session.Free(
+                    RevitOperations.DocumentKey(doc), DateTime.UtcNow, RevitOperations.Quiet());
+                HeronApplication.Log(holder == null
+                    ? HeronModelHold.ButtonName + ": '" + title + "' was not held by any chat. Nothing changed."
+                    : HeronModelHold.ButtonName + ": '" + title + "' freed from chat "
+                      + HeronConversation.Short(holder) + ". Any chat can use it now.");
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log(HeronModelHold.ButtonName + " failed: " + ex);
+                message = "Could not free this model, so it is as it was. It frees itself after "
+                          + "a few quiet minutes, or when the chat using it says it is done. "
+                          + "Revit said: " + ex.Message;
+                return Result.Failed;
+            }
         }
     }
 

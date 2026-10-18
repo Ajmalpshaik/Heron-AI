@@ -214,10 +214,40 @@ import heron_config                            # noqa: E402
 # second person shares this Revit.
 CLIENT_ID = os.environ.get("HERON_CLIENT_ID") or uuid.uuid4().hex[:12]
 
-# The three keys the request envelope owns. An operation argument that reuses
-# one of them would overwrite it, and the failure that produces is remote and
-# misleading rather than local and obvious.
-RESERVED_KEYS = frozenset(("op", "token", "client"))
+# THIS CONVERSATION, AND ONLY IT - D-141. CLIENT_ID above names the PERSON
+# (`.mcp.json` sets "ajmal-pc" for every chat, for the D-22 lease), so it
+# cannot tell two of the owner's own chats apart, and the add-in keyed what
+# belongs to ONE chat on it: the carried chain, the D-138 Keep grant - and
+# nothing stopped two chats working on one model at once (audit, 2026-10-18).
+#
+# Made once per PROCESS. The MCP server is one process for one chat, so each
+# chat gets its own. A command line gets its own too, one per run, and hands
+# back the models it held when it ends (hand_back_models), so the next command
+# is not refused by the last. HERON_CONVERSATION_ID makes several processes one
+# conversation: tools/batch-prove.py sets it for its jobs, and a person sets it
+# for a series of commands where one consumes what another left
+# (`--expect-from`). NEVER SET IT in .mcp.json or .codex/config.toml - every
+# chat would be one conversation again; tests/test_model_hold.py fails if
+# either sets it.
+#
+# Random and meaningless, like CLIENT_ID: it names a conversation, never a
+# person, a machine or a model.
+CONVERSATION_ID = os.environ.get("HERON_CONVERSATION_ID") or uuid.uuid4().hex
+
+# THE REVITS THIS PROCESS SENT A MODEL REQUEST TO, by process id - so a
+# command line can hand back what it held when it ends (hand_back_models).
+# Filled by Bridge.request; read only when this file runs as a command.
+_ASKED = {}
+
+# Operations that touch no model, so they hold none and need no hand-back.
+_HOLDS_NOTHING = frozenset(("ping", "info", "release", "release_models", "stop"))
+
+# The keys the request envelope owns. An operation argument that reuses one of
+# them would overwrite it, and the failure that produces is remote and
+# misleading rather than local and obvious. `conversation` is one of them for
+# the reason `client` is: what the add-in holds for a chat - a model, the
+# carried chain, the Keep grant - is held by it, so no argument may set it.
+RESERVED_KEYS = frozenset(("op", "token", "client", "conversation"))
 
 # How long to wait for an answer once the bridge has accepted the connection.
 #
@@ -410,12 +440,13 @@ class Bridge(object):
         `on_wait` is _read_line's: called while the answer is awaited, so a
         caller can say the wait goes on. It changes nothing that is sent.
         """
-        body = {"op": op, "token": self.token, "client": CLIENT_ID}
+        body = {"op": op, "token": self.token, "client": CLIENT_ID,
+                "conversation": CONVERSATION_ID}
         if op_args:
             # Arguments sit alongside op and token, never nested one level down:
             # the bridge reads top-level keys only, deliberately.
             #
-            # THAT FLATNESS IS WHY THESE THREE ARE RESERVED. `op_args` used to be
+            # THAT FLATNESS IS WHY THESE KEYS ARE RESERVED. `op_args` used to be
             # merged straight over the envelope, so an argument called "token"
             # silently replaced the session token and the bridge refused the whole
             # request as unauthenticated - which is exactly what happened to
@@ -432,6 +463,8 @@ class Bridge(object):
                        "that key is" if len(clash) == 1 else "those keys are"))
             body.update(op_args)
         payload = (json.dumps(body) + "\n").encode("utf-8")
+        if op not in _HOLDS_NOTHING and self.pid is not None:
+            _ASKED[self.pid] = self
 
         for attempt in range(1, RETRY_ATTEMPTS + 1):
             if attempt > 1:
@@ -3551,5 +3584,36 @@ def main(argv):
     return 2
 
 
+def hand_back_models():
+    """
+    A command line is done: free the models it held, so the next command -
+    which is a conversation of its own (D-141) - is not refused for three
+    minutes by this one.
+
+    ONLY WHAT IT TOOK, the rule cmd_stop keeps for the lease. With
+    HERON_CONVERSATION_ID set the conversation is borrowed - batch-prove's,
+    which hands back at the end of the batch, or a person's series of
+    commands - and its holds are left for its owner. Best effort, like
+    Bridge.release: a hand-back that fails costs a wait, never the command's
+    answer. The add-in frees only this conversation's holds, so this cannot
+    free another chat's model.
+    """
+    if os.environ.get("HERON_CONVERSATION_ID"):
+        return
+    asked = list(_ASKED.values())
+    _ASKED.clear()
+    for bridge in asked:
+        try:
+            bridge.request("release_models", timeout=2.0, response_timeout=10.0)
+        except Exception:                              # noqa: BLE001 - see above
+            pass
+        finally:
+            bridge.close()
+
+
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    try:
+        _code = main(sys.argv)
+    finally:
+        hand_back_models()
+    sys.exit(_code)

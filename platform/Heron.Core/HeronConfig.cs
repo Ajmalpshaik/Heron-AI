@@ -56,6 +56,14 @@ namespace Heron.Core
                 // quiet does not mean the chat has gone (HeronLease).
                 { "bridge.leaseMinutes", "5" },
 
+                // ONE MODEL, ONE CHAT AT A TIME (D-141). A model a chat's
+                // request ran against is held for that chat until it says it
+                // is done, the model or Revit closes, Free this model is
+                // pressed - or this many minutes pass with no request from it.
+                // The owner's three, and it is what frees a chat closed or
+                // archived without a word. Read by HeronModelHold's callers.
+                { "bridge.modelHoldMinutes", "3" },
+
                 // Revit runs a queued request only when it is idle. These two
                 // must stay BELOW the client's own deadline, so the bridge is
                 // what answers "Revit is busy" - a client that gives up first

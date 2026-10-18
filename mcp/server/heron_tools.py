@@ -64,6 +64,11 @@ TOOLS = {
     "heron_version":            (READ,    None),
     "revit_use_session":        (READ,    "count_elements"),
     "revit_use_this_model":     (READ,    "count_elements"),
+
+    # D-141: the chat says it is done with a model, and the add-in frees this
+    # conversation's own hold on it - one model or all. READ: it hands back a
+    # claim and reads and changes nothing in any model, like `release`.
+    "revit_release":            (READ,    "release_models"),
     "revit_select_by_category": (EXECUTE, "select_by_category"),
 
     # Linked models (HERON-REVIT-LNK-015). READ: it lists what the model

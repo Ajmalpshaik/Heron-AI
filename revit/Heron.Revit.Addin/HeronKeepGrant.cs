@@ -24,10 +24,16 @@ namespace Heron.Revit.Addin
     /// ONLY THE MODELLER'S CLICK GIVES IT - Golden Rule 19 and D-126 item 5.
     /// Give is called from one place, RevitFragment.Run, after that link was
     /// pressed in Revit and the change it asked about was kept. No request
-    /// field reaches it. The chat's id it is held by is the bridge's envelope
-    /// (heron_bridge_client.RESERVED_KEYS - an operation's own arguments
-    /// cannot set it), and it only says WHO was given the grant, never that a
-    /// grant is wanted.
+    /// field reaches it. The chat it is held by is the request's CONVERSATION,
+    /// in the bridge's envelope (heron_bridge_client.RESERVED_KEYS - an
+    /// operation's own arguments cannot set it), and it only says WHO was
+    /// given the grant, never that a grant is wanted.
+    ///
+    /// THE CONVERSATION, NOT THE BRIDGE'S `client` - D-141. Until then the
+    /// grant was held by `client`, which every chat on the owner's PC sends
+    /// alike ("ajmal-pc", for the D-22 lease). So "another chat asks" below
+    /// could never happen, a grant one chat was given kept another chat's
+    /// changes, and the reply said "the same chat". HeronConversation.
     ///
     /// IT ENDS, AND ASKS AGAIN, WHEN:
     ///   * that chat has sent no change for IdleLimit - ten minutes;
@@ -104,10 +110,15 @@ namespace Heron.Revit.Addin
         /// tell "the same chat" from "another one", the next change could not
         /// be shown to be the job the modeller meant. The third link is not
         /// offered then.
+        ///
+        /// NOR FOR A CHAT OF ONE REQUEST - an older client that sent no
+        /// conversation (D-141). Its "next change" comes from a request that
+        /// cannot be told from any other chat's.
         /// </summary>
         public static bool CanHold(string client, string document)
         {
-            return !string.IsNullOrEmpty(client) && !string.IsNullOrEmpty(document);
+            return !string.IsNullOrEmpty(client) && !string.IsNullOrEmpty(document)
+                && !HeronConversation.IsOneRequest(client);
         }
 
         /// <summary>
@@ -115,7 +126,8 @@ namespace Heron.Revit.Addin
         /// was kept. Replaces any grant held before. False, and nothing held,
         /// when CanHold says no.
         /// </summary>
-        /// <param name="client">The chat's id, from the bridge's envelope.</param>
+        /// <param name="client">The chat - the request's conversation, from the
+        /// bridge's envelope (HeronConversation.ChatOf).</param>
         /// <param name="document">The model's key - RevitOperations.DocumentKey.</param>
         /// <param name="nowUtc">Now, for the idle clock.</param>
         /// <param name="nowLocal">Now on the PC's clock, for the HH:MM the

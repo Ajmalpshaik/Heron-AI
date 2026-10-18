@@ -59,6 +59,39 @@ namespace Heron.Revit.Addin
             var gate = Gate(op);
             if (gate != null) return gate;
 
+            // ================= THE MODEL HOLD - D-141 =================
+            // One model, one chat at a time. After the gate, so a request the
+            // switches refuse claims nothing; before routing, so a request
+            // from another chat for a held model is refused before anything
+            // reads or changes it. HeronModelHold says what frees one.
+            //
+            // HANDING BACK TOUCHES NO MODEL, so it is answered first and
+            // never claims the model it frees.
+            if (op == "release_models") return ReleaseModels(app, request);
+
+            string holdKey;
+            var held = HoldModel(app, request, out holdKey);
+            if (held != null) return held;
+
+            try
+            {
+                return Route(app, request, op);
+            }
+            finally
+            {
+                // The quiet time counts from the END of the request: a job
+                // that took four minutes was not four quiet ones.
+                HeronModelHold.Session.Touch(
+                    Json.ReadString(request, HeronConversation.EnvelopeField), holdKey, DateTime.UtcNow);
+            }
+        }
+
+        /// <summary>
+        /// Every operation behind the gate and the hold, by name. Its own
+        /// method so the hold can be renewed however the operation returns.
+        /// </summary>
+        private static string Route(UIApplication app, string request, string op)
+        {
             switch (op)
             {
                 case "count_elements":
@@ -704,6 +737,154 @@ namespace Heron.Revit.Addin
             try { title = doc.Title ?? ""; } catch (Exception) { title = ""; }
 
             return (guid ?? "") + "|" + path + "|" + title;
+        }
+
+        /// <summary>
+        /// The model a request will run against, for the hold - D-141. The
+        /// model the request names, chosen exactly as RevitFragment.Run
+        /// chooses it - the path alone when one is sent, else a title only one
+        /// open model has - and the model in front when it names none, which
+        /// is where every other operation runs. Links are never it.
+        ///
+        /// NULL when a named model is not open, or two share its title. The
+        /// operation then refuses on its own terms - no_such_document,
+        /// ambiguous_document - before anything runs, so nothing is held or
+        /// checked for a model nobody can reach.
+        /// </summary>
+        internal static Document HoldTarget(UIApplication app, string request)
+        {
+            if (app == null) return null;
+
+            var wantedPath = Json.ReadString(request, "documentPath");
+            var wanted = Json.ReadString(request, "document");
+            if (string.IsNullOrEmpty(wantedPath) && string.IsNullOrEmpty(wanted))
+                return ActiveDocument(app);
+
+            Document found = null;
+            var matches = 0;
+            foreach (Document candidate in app.Application.Documents)
+            {
+                if (candidate == null || candidate.IsLinked) continue;
+
+                if (!string.IsNullOrEmpty(wantedPath))
+                {
+                    var here = "";
+                    try { here = candidate.PathName ?? ""; } catch (Exception) { here = ""; }
+                    if (here.Length > 0
+                        && string.Equals(here, wantedPath, StringComparison.OrdinalIgnoreCase))
+                        return candidate;
+                    continue;
+                }
+
+                if (string.Equals(candidate.Title, wanted, StringComparison.OrdinalIgnoreCase))
+                {
+                    found = candidate;
+                    matches++;
+                }
+            }
+            return matches == 1 ? found : null;
+        }
+
+        /// <summary>
+        /// Claims the request's model for its chat, or the refusal to send
+        /// back instead of running - D-141. `key` is the model held, for the
+        /// renewal when the request ends; null when none was.
+        ///
+        /// NEVER REFUSES FOR WANT OF A MODEL. With none open, or one that
+        /// cannot be named, nothing is held and the operation says what is
+        /// missing - a hold is about two chats, not about a model being there.
+        /// </summary>
+        private static string HoldModel(UIApplication app, string request, out string key)
+        {
+            key = null;
+            Document doc;
+            try { doc = HoldTarget(app, request); } catch (Exception) { doc = null; }
+            if (doc == null) return null;
+
+            key = DocumentKey(doc);
+            var title = "";
+            try { title = doc.Title ?? ""; } catch (Exception) { title = ""; }
+
+            // A REQUEST THAT ONLY LOOKS - `revit_health`'s count, sent with
+            // "claim": "no" - is refused like any other while another chat
+            // holds the model, and claims nothing when it is free. It can
+            // only narrow: no value of it gets past another chat's hold.
+            var conversation = Json.ReadString(request, HeronConversation.EnvelopeField);
+            var looking = string.Equals(Json.ReadString(request, "claim"), "no", StringComparison.Ordinal);
+            var decided = looking
+                ? HeronModelHold.Session.Check(conversation, key, title, DateTime.UtcNow, Quiet())
+                : HeronModelHold.Session.Claim(conversation, key, title, DateTime.UtcNow, Quiet());
+            if (looking) key = null;
+            if (!decided.Granted)
+            {
+                key = null;
+                HeronApplication.Log("Model hold: '" + title + "' refused to chat "
+                    + HeronConversation.Short(conversation) + " - another chat holds it.");
+                return Json.Error("model_in_use", decided.Message);
+            }
+
+            if (decided.NewlyHeld)
+            {
+                HeronApplication.Log("Model hold: '" + title + "' is now held by chat "
+                    + HeronConversation.Short(conversation) + ".");
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// `release_models` - the chat says it is done, through revit_release.
+        /// Frees the named model's hold, or every model's when the request
+        /// names none - and only this chat's (HeronModelHold.Release). It
+        /// reads and changes no model, so it never claims one.
+        /// </summary>
+        private static string ReleaseModels(UIApplication app, string request)
+        {
+            var conversation = Json.ReadString(request, HeronConversation.EnvelopeField);
+            var named = !string.IsNullOrEmpty(Json.ReadString(request, "documentPath"))
+                     || !string.IsNullOrEmpty(Json.ReadString(request, "document"));
+
+            string model = null;
+            if (named)
+            {
+                Document doc;
+                try { doc = HoldTarget(app, request); } catch (Exception) { doc = null; }
+                if (doc == null)
+                {
+                    return Json.Ok(
+                        Json.Num("freed", 0),
+                        Json.Str("message", "That model is not open in this Revit, so this chat "
+                            + "holds nothing there. Nothing was changed."));
+                }
+                model = DocumentKey(doc);
+            }
+
+            var freed = HeronModelHold.Session.Release(conversation, model, DateTime.UtcNow, Quiet());
+            if (freed.Count > 0)
+            {
+                HeronApplication.Log("Model hold: chat " + HeronConversation.Short(conversation)
+                    + " said it is done with " + string.Join(", ", freed.ToArray()) + ".");
+            }
+
+            return Json.Ok(
+                Json.Num("freed", freed.Count),
+                Json.Str("models", string.Join(", ", freed.ToArray())),
+                Json.Str("message", freed.Count == 0
+                    ? "This chat held no model " + (named ? "there" : "in this Revit")
+                      + ", so there was nothing to free. Nothing was changed."
+                    : "Freed " + string.Join(", ", freed.ToArray()) + ". Another chat can use "
+                      + (freed.Count == 1 ? "it" : "them") + " now; this chat can come back "
+                      + "to " + (freed.Count == 1 ? "it" : "them") + " later. Nothing in the "
+                      + "model was changed."));
+        }
+
+        /// <summary>
+        /// bridge.modelHoldMinutes, read fresh each time as the lease reads its
+        /// own - a setting changed with Revit open counts from the next request.
+        /// </summary>
+        internal static TimeSpan Quiet()
+        {
+            return HeronModelHold.QuietFor(
+                HeronConfig.Load().GetInt(HeronModelHold.MinutesKey, HeronModelHold.DefaultMinutes));
         }
 
         /// <summary>

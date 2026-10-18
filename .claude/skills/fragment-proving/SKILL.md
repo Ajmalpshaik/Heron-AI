@@ -183,6 +183,16 @@ Three things the shape of the file is doing:
 a command that exits leaves one held for five minutes, so the second call is refused. `batch-prove`
 pins one id across the whole batch by itself; a hand-run `validate` or `prove` needs it set.
 
+**A model is held by one conversation at a time** ([D-141](../../../docs/DECISIONS.md)), and every
+command line is a conversation of its own - so is the chat you run it from. A command hands back what it
+held when it ends, and `batch-prove` at the end of its batch. **A chat that has just used the Heron tools
+on the model holds it for three quiet minutes**, and a command line run from that chat is refused
+*"Model 'X' is in use by another chat"* - nothing was sent. Call `revit_release` in the chat first, or
+press **Free this model** on the ribbon. For a series of hand-run commands where one consumes what
+another left (`--expect-from`), set **`HERON_CONVERSATION_ID`** to one value of your own for all of them:
+the carried chain belongs to a conversation, and a series with it set is not handed back at each exit -
+`revit_release` or the button frees it.
+
 ## Reading the report
 
 | Verdict | What it means | What to do |

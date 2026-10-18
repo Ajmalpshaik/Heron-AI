@@ -36,7 +36,7 @@ flowchart TD
     R["<b>Read the model</b><br/>revit_read · revit_levels<br/>READ · ANALYZE"]
     SH["<b>Show on screen</b><br/>revit_show · select · isolate<br/>EXECUTE"]
     C["<b>Change the model</b><br/>revit_change · revit_apply_move<br/>MODIFY and above · needs Changes"]
-    H["<b>Connect and check</b><br/>revit_health · revit_use_session<br/>READ"]
+    H["<b>Connect and check</b><br/>revit_health · revit_use_session · revit_release<br/>READ"]
     AD["<b>Heron add-in in Revit</b><br/>the gate reads the switches"]
 
     CC ==>|MCP · stdio| S
@@ -72,7 +72,8 @@ Claude Code (host) --MCP, stdio--> Heron MCP server (heron_mcp_server.py)
   Read the model      revit_read, revit_levels, ...        READ, ANALYZE
   Show on screen      revit_show, select, isolate          EXECUTE
   Change the model    revit_change, revit_apply_move       MODIFY and above; needs Changes on
-  Connect and check   revit_health, revit_use_session      READ
+  Connect and check   revit_health, revit_use_session,     READ; revit_release frees this chat's
+                      revit_release                        hold on a model (D-141)
 
 Everything that reaches Revit --named pipe, this PC only--> Heron add-in, whose gate reads the switches
 ```
