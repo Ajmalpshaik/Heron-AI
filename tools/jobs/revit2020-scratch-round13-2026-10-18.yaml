@@ -1,0 +1,37 @@
+# Batch 13, 2026-10-18 - Revit 2020 session 2648, scratch Project1 (never saved). Batch 12's
+# model plus, kept: M_Lighting and Appliance Panelboard - 208V MLO and M_Duplex Receptacle
+# loaded from the Revit 2020 US Metric library, and one 100 A panel placed at 9500,5500 on
+# Level 1. The inline fan at 9300,3000 carries a power connector. Every write ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: false
+  setup: [select-by-category-name, set-selection]
+  set: {categoryName: "Mechanical Equipment", inViewOnly: "Heron 3D"}
+  negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D"}
+jobs:
+  - fragment: place-family-on-face
+    setup: []
+    write: true
+    expect: created
+    set: {symbol: "M_Duplex Receptacle: Standard", pointsMm: "2000,500,300; 7000,500,300", ray: "south", view3D: "Heron 3D", facing: "", searchLinks: false}
+    negative-set: {symbol: "M_Duplex Receptacle: Standard", pointsMm: "2000,-20000,300", ray: "south", view3D: "Heron 3D", facing: "", searchLinks: false}
+  - fragment: create-electrical-circuit
+    write: true
+    set: {categoryName: "Mechanical Equipment", inViewOnly: "Heron 3D", systemType: "power", panel: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", systemType: "power", panel: ""}
+  - fragment: report-panel-circuits
+    setup: []
+    expect: schedule
+    set: {panelName: ""}
+    negative-set: {panelName: "NO-SUCH-PANEL"}
+  - fragment: create-panel-schedules
+    write: true
+    expect: created
+    set: {categoryName: "Electrical Equipment", inViewOnly: "Heron 3D", templateName: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D", templateName: ""}
+  - fragment: select-by-electrical-circuit
+    setup: []
+    expect: elements
+    set: {circuitKind: "none", circuitName: "", includeLinks: false}
+    negative-set: {circuitKind: "power", circuitName: "ZZZNOTHINGHERE", includeLinks: false}
