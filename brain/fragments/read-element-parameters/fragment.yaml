@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -79,8 +79,8 @@ purpose: >
 # none of the three says nothing about them. RUN 2026-10-17 IN REVIT 2020,
 # rolled back, on "Heron Note Format Test" (a copy of the rst_basic sample):
 # NEEDS-CHECKING group FD row FD3 answered as looked for - "lists: 1-3 Bullet
-# || bold 2; underline 3" - and is the proof draft; the signature is owed
-# (FD10). Compiled for all eight releases; GetBoldStatus, GetItalicStatus and
+# || bold 2; underline 3" - and is the proof below, signed by Ajmal PS and
+# PROVEN on 2026-10-18 (FD10). Compiled for all eight releases; GetBoldStatus, GetItalicStatus and
 # GetUnderlineStatus read the same in RevitAPI 2020 to 2027 (tools/api-surface,
 # one release at a time); not run on 2021-2027. Version 3's proof draft, made
 # earlier on 2026-10-17, no longer describes this code.
@@ -133,21 +133,30 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-08'
+  date: '2026-10-17'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
-  positive_case: run as it would normally be run. returned absent 0 item(s), askingForLevel
-    false, blank 0 item(s), readValue Func`2, resolvedFrom 307 entry(ies), values 307 entry(ies).
-    inputs came elements from the selection (307); parameterName as given. on Snowdon-scratch_ajmal.al
+  model: Heron Note Format Test (12,088 elements), Revit 2020, session 55496
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    scratch-fd-notes with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned absent 0 item(s), askingForLevel
+    false, askingText true, blank 0 item(s), noteWording note 1474100, 4 paragraph(s): GENERAL
+    NOTES\rALL DIMENSIONS ARE IN MM\rDO NOT SCALE FROM THIS DRAWING\rSEE DETAIL A || no list
+
+    note 1474101, 3 paragraph(s): FIRST POINT\rSECOND POINT\rTHIRD POINT || lists: 1-3 Bullet
+    || bold 2; underline 3, readValue Func`2, resolvedFrom 2 entry(ies), values 2 entry(ies).
+    inputs came elements from scratch-fd-notes (2); parameterName as given. on Heron Note
+    Format Test'
   negative_case: run with parameterName=ZZZNOTHINGHERE instead - chosen because it should
-    not contain what this fragment reports. returned absent 307 item(s) [1395899, 1395935,
-    1395946, ...], askingForLevel false, blank 0 item(s), readValue Func`2, resolvedFrom 0
-    entry(ies), values 0 entry(ies). inputs came elements from the selection (307); parameterName
-    as given. on Snowdon-scratch_ajmal.al
+    not contain what this fragment reports - the arrangement was re-made first by running
+    scratch-fd-notes with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned absent 2 item(s) [1474102, 1474103],
+    askingForLevel false, askingText false, blank 0 item(s), noteWording (null), readValue
+    Func`2, resolvedFrom 0 entry(ies), values 0 entry(ies). inputs came elements from scratch-fd-notes
+    (2); parameterName as given. on Heron Note Format Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 85a606210e00a7df
+  fingerprint: 9f2e553abbfabdd2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
