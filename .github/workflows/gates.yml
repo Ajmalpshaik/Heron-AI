@@ -147,7 +147,7 @@ jobs:
       # A credential in a tracked file is published to every clone the moment
       # it reaches main (D-07), and docs/12 s5a.4 had asked for this scan since
       # the start while nothing ran it. The owner made it a gate, not a report,
-      # on 2026-10-18 (D-139): a report is read after the merge. It reads the
+      # on 2026-10-18 (D-143): a report is read after the merge. It reads the
       # redactor's own shapes and the Secrets block of .gitignore, never a list
       # of its own, and it needs nothing but Python and git.
       - name: check-secrets

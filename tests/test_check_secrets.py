@@ -11,7 +11,7 @@ Does the secret gate see what it says it sees, and nothing it says it does not?
 
     python tests/test_check_secrets.py
 
-`tools/check-secrets.py` is a gate a pull request has to pass (D-139). It
+`tools/check-secrets.py` is a gate a pull request has to pass (D-143). It
 reads the CONTENTS of every tracked file against heron_secrets.PATTERNS and
 the NAMES of every tracked file against the Secrets block of .gitignore.
 

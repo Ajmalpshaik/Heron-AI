@@ -377,7 +377,7 @@ This is Article 17 of the [Constitution](../HERON_CONSTITUTION.md).
 > in this repository scanned for secrets. Searched 2026-10-18 (`grep -rln "CredentialManager\|ProtectedData\|DPAPI"`, the hooks in
 > `.claude/settings.json`, and `tools/`).
 >
-> **Item 4, the same day ([D-139](DECISIONS.md)):** [`tools/check-secrets.py`](../tools/check-secrets.py)
+> **Item 4, the same day ([D-143](DECISIONS.md)):** [`tools/check-secrets.py`](../tools/check-secrets.py)
 > is a gate CI runs on every pull request. It reads the redactor's own shapes and the Secrets block of
 > [`.gitignore`](../.gitignore), so the two layers cannot disagree about what a credential looks like. It
 > runs in CI rather than as a pre-commit hook, so it stops a merge, not a local commit, and it does not

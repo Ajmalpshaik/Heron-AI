@@ -15,7 +15,7 @@ Exits 0 when no tracked file carries one, 1 when one does, and 2 when it
 could not look: no git, not a checkout, no Secrets block in .gitignore, or a
 tracked file it could not read. A 2 is never a pass.
 
-WHY THIS EXISTS (D-139)
+WHY THIS EXISTS (D-143)
 ------------------------
 This repository is public (D-07), and Article 17 says a credential never goes
 into a source file or a commit. docs/12 s5a asked for two layers: a redactor on

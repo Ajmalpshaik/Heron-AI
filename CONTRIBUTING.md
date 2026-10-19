@@ -128,7 +128,7 @@ If you commit any of these by accident, **report it privately** via
    `check-licence`, `check-narrow-errors`, `check-secrets`, `check-products`, `check-decision-titles`,
    `check-routing` and `check-intrusion`, and a non-zero from any of them turns a pull request red.
    `check-secrets` is the one that answers the *credentials* row of the table above before a reviewer
-   has to ([D-139](docs/DECISIONS.md)). Some need something
+   has to ([D-143](docs/DECISIONS.md)). Some need something
    first: `check-decision-titles` needs the whole git history, and `check-routing` and
    `check-intrusion` need a knowledge store - an empty folder named by `HERON_KNOWLEDGE` will do. The
    [`heron-ship`](.claude/skills/heron-ship/SKILL.md) skill says what each one catches and how to run it.
@@ -218,7 +218,7 @@ counting this table:
 | `check-signatures` | A proof whose code moved under it | **PyYAML** — it reads every `fragment.yaml` (CI installs it first) |
 | `check-licence` | A licence header, and what may not be redistributed | No |
 | `check-narrow-errors` | An `sqlite3.OperationalError` handler that swallows a fault without narrowing first ([D-52](docs/DECISIONS.md)) | No |
-| `check-secrets` | A credential shape in a tracked file, or a tracked file whose name the Secrets block of `.gitignore` refuses ([D-139](docs/DECISIONS.md)) | **git** - it asks git which files are tracked |
+| `check-secrets` | A credential shape in a tracked file, or a tracked file whose name the Secrets block of `.gitignore` refuses ([D-143](docs/DECISIONS.md)) | **git** - it asks git which files are tracked |
 | `check-products` | In `platform/heron-products.json`: a duplicate `addInId`, a `partOf` typo, a stale Revit list | No |
 | `check-decision-titles` | A decision number that stopped meaning its decision | **The whole git history** — `git fetch --unshallow` in a shallow clone, or it exits 2 |
 | `check-routing` | A capability no longer reachable, and a routing row naming a capability no fragment declares | **A knowledge store** — an empty folder named by `HERON_KNOWLEDGE`, or it exits 2 — and PyYAML |

@@ -57,7 +57,7 @@ Concrete protections:
 > `.claude/settings.json`. [CONTRIBUTING.md](../CONTRIBUTING.md) names real model data and credentials as
 > reasons a change is rejected, which is a reviewer's check, not a scan.
 >
-> **3, the same day, half of it ([D-139](DECISIONS.md)):** the *secret* half is
+> **3, the same day, half of it ([D-143](DECISIONS.md)):** the *secret* half is
 > [`tools/check-secrets.py`](../tools/check-secrets.py), a gate on every pull request. **The PII half is
 > still not built** - nothing scans a tracked file for a person's name, address or e-mail.
 

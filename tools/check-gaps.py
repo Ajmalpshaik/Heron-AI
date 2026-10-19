@@ -268,7 +268,7 @@ def check_tools():
     # in CI are reports, and a report's finding is a question for a person."
     # gates.yml's job named "The gates that must pass" runs TWELVE commands
     # under bash -e - these four plus check-signatures, check-licence,
-    # check-narrow-errors, check-secrets (since 2026-10-18, D-139),
+    # check-narrow-errors, check-secrets (since 2026-10-18, D-143),
     # check-products, check-decision-titles, check-routing and
     # check-intrusion -
     # so a non-zero from any of them fails the pull request exactly as these

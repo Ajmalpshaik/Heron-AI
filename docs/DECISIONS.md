@@ -208,7 +208,7 @@ an edit.
 | [D-135](#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them) | Heron's Python side keeps its data in %USERPROFILE%\.heron, and the Companion's notes in the temporary folder, where a Store Claude's copy cannot reach them | ✅ Accepted · 2026-10-18 |
 | [D-136](#d-136--the-companions-folder-is-the-users-temporary-folder-found-from-inside-revit-by-stepping-out-of-a-guid-named-one) | The Companion's folder is the user's temporary folder, found from inside Revit by stepping out of a GUID-named one | ✅ Accepted · 2026-10-18 |
 | [D-138](#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) | The Keep or Discard question gets a switch on the ribbon, and its box can keep the rest of one job without asking | ✅ Accepted · 2026-10-18 |
-| [D-139](#d-139--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
+| [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
 
 ## Format
 
@@ -1203,10 +1203,10 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-138.md`](decisions/D-138.md)
 
-## D-139 — A credential in a tracked file fails the pull request
+## D-143 — A credential in a tracked file fails the pull request
 
 **Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** Ajmal PS, 2026-10-18, in conversation, asked *"When Heron's new secret scanner finds a password or API key in a change, what should happen?"* and choosing *"Block it"* over *"Warn only"*
 **Keeps:** [D-07](#d-07--free-open-source-on-public-github) - the repository stays public, which is the reason for this · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
 **Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), [`test_configuration.py`](../tests/test_configuration.py), [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
 
-**Full record:** [`decisions/D-139.md`](decisions/D-139.md)
+**Full record:** [`decisions/D-143.md`](decisions/D-143.md)

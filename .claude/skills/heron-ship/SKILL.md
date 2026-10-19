@@ -110,7 +110,7 @@ are four of the twelve. The other eight are:
 python tools/check-signatures.py       # a proof whose code moved under it
 python tools/check-licence.py          # a licence header, and what may not be redistributed
 python tools/check-narrow-errors.py    # an sqlite3.OperationalError handler that swallows without narrowing (D-52)
-python tools/check-secrets.py          # a credential shape in a tracked file, or a tracked file .gitignore's Secrets block refuses (D-139)
+python tools/check-secrets.py          # a credential shape in a tracked file, or a tracked file .gitignore's Secrets block refuses (D-143)
 python tools/check-products.py         # the manifest the installer reads, which nothing compiles
 python tools/check-decision-titles.py  # a decision number that stopped meaning its decision
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable, and every routing row names one

@@ -1452,7 +1452,7 @@ a check on the message and a `raise` — not any particular wording. Exits 1 on 
 python tools/check-secrets.py
 ```
 
-**Article 17 and [D-07](../docs/DECISIONS.md) in one gate ([D-139](../docs/DECISIONS.md)).** This
+**Article 17 and [D-07](../docs/DECISIONS.md) in one gate ([D-143](../docs/DECISIONS.md)).** This
 repository is public, so a key in a tracked file is published to every clone the moment it reaches
 `main`. [docs/12 §5a](../docs/12-security-and-permissions.md) asked for a scan as the second layer behind
 the redactor, and nothing ran one until 2026-10-18.

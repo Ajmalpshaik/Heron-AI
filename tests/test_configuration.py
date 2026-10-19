@@ -175,7 +175,7 @@ def main():
                         ("github_pat_" + "x" * 20, "a fine-grained token"),
                         ("xoxb-1-2-3", "a chat token"),
                         # From pieces, like the four above, so the tree
-                        # carries no literal of the shape (D-139).
+                        # carries no literal of the shape (D-143).
                         ("-----BEGIN RSA " + "PRIVATE KEY-----",
                          "a private key"),
                         ("AK" + "IA" + "IOSFODNN7EXAMPLE", "a cloud key id")):
