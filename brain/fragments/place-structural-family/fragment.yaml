@@ -146,7 +146,7 @@ contract:
 
 # VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group HM proves version 4 (D-30). The version 3 code it ran
+# NEEDS-CHECKING Group HO proves version 4 (D-30). The version 3 code it ran
 # is still the path every column and footing request takes.
 proof:
   date: '2026-10-18'

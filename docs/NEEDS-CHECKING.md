@@ -880,9 +880,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hl.md`](needs-checking/group-hl.md)
 
-## Group HM - PLACE_STRUCTURAL_FAMILY v4: a beam is refused, a placement with no geometry is a failure (2026-10-19)
+## Group HO - PLACE_STRUCTURAL_FAMILY v4: a beam is refused, a placement with no geometry is a failure (2026-10-19)
 
-**Its own file:** [`needs-checking/group-hm.md`](needs-checking/group-hm.md)
+**Its own file:** [`needs-checking/group-ho.md`](needs-checking/group-ho.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
