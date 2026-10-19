@@ -892,6 +892,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ho.md`](needs-checking/group-ho.md)
 
+## Group HS - CREATE_STAIRS v4: one riser more, Revit's words, side stringers, nothing left behind (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hs.md`](needs-checking/group-hs.md)
+
 ## Group HX - wall finishes by room: `CREATE_FROM_ROOM_BOUNDARIES` version 2 (2026-10-19)
 
 **Its own file:** [`needs-checking/group-hx.md`](needs-checking/group-hx.md)
