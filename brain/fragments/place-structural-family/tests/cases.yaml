@@ -3,6 +3,12 @@
 # back as before. A TOP IS PROVED BY READING IT, NEVER BY `tops`: select the
 # column and read Top Level and Top Offset in Properties, and look at it in a
 # section, where its top meets the level line.
+#
+# VERSION 4 (FRAGMENT-ISSUES 5b-1201) refuses a beam or a brace, and any
+# Structural Framing family, before anything is placed, naming
+# PLACE_LINE_BASED_FAMILY; and removes again, counted in `failed`, any
+# placement Revit leaves with no solid geometry. Every case written before it
+# must come back as before - a column, a footing, its top.
 
 positive:
   - given: >
@@ -31,6 +37,17 @@ positive:
       two columns placed as version 1 placed them, and a finding saying every
       top was left as Revit placed it. Read Top Level in Properties: that is
       the height version 1 left a column at
+
+  - given: >
+      VERSION 4, the geometry read-back on its own: a point-based family with
+      NO SOLID of its own - a Generic Model family holding only model lines -
+      at two points on Level 1, structuralType "non-structural". Count Generic
+      Models in the model first
+    expect: >
+      `placed` empty, `failed` 2, and one finding naming both points as left
+      with no solid geometry and removed again. The Generic Models count is
+      the same as before the run. A column of the first positive is NOT named
+      there - a real member keeps its solid
 
 negative:
   - given: >
@@ -74,10 +91,32 @@ negative:
       A silent fall back to NonStructural here would recreate the exact defect
       this fragment exists to fix
 
-  - given: a line-based beam family handed in with points
+  - given: >
+      VERSION 4, row 5b-1201's own case: a Structural Framing type ("M_Concrete-
+      Rectangular Beam : 400 x 800mm" on Revit 2020), structuralType "beam",
+      Level 1, points "23420,0,0; 23640.272,2142.771,4000;
+      23569.859,4319.298,8000". Count Structural Framing first
     expect: >
-      counted in `failed`. Revit refuses the point overload for a line-based
-      family, per point, and the run survives it
+      nothing placed, `placed` empty, `failed` 0, and one finding naming the
+      family as Structural Framing and saying to ask PLACE_LINE_BASED_FAMILY
+      with `curves`. The Structural Framing count is the same as before. Before
+      version 4 this answered placed 3, failed 0, and Revit then deleted the
+      geometry of two - "Line is too short", "Can't create sweep" - leaving
+      zero-length beams in the model. (This case replaces one that said Revit
+      refuses the point overload for a line-based family: on Revit 2020.2 it
+      did not)
+
+  - given: the same Structural Framing type and points with structuralType "column"
+    expect: >
+      refused the same way - a Structural Framing family is never placed at a
+      point, whatever it is asked as - and nothing placed
+
+  - given: >
+      a family that is neither a column, a framing nor a foundation family,
+      asked as "brace"
+    expect: >
+      refused, "A brace is placed along a line between its two ends", naming
+      PLACE_LINE_BASED_FAMILY, and nothing placed
 
 second_route:
   - >

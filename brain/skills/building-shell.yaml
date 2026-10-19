@@ -41,16 +41,26 @@ purpose: >
   2. CREATE_GRIDS (PROVEN) when the plan is set out on bays - the lines the
      walls are drawn to, so a wall position is read off the plan rather than
      worked out.
-  3. CREATE_WALL (PROVEN), one run of points per wall line, on its level, at
-     the height from that level to the one above.
+  3. CREATE_WALL (DRAFT, version 2 - version 1 was PROVEN, and until
+     NEEDS-CHECKING Group HM proves version 2 a kept change from it is
+     refused, D-117), one run of points per wall line, on its level, at the
+     height from that level to the one above. A CURVED wall line goes in the
+     same run: `arc MX,MY X,Y` makes the next wall an arc through MX,MY ending
+     at X,Y, and a round wall is two arcs - never a polygon of short walls,
+     which reads as flat facets close up. An ellipse is not an arc: four arcs
+     meeting tangent - a four-centred oval - come close to one, and their
+     points are the modeller's.
   4. SET_WALL_CONSTRAINTS (PROVEN) on those walls, tying each top to the level
      above, with allowUnconnectedToBecomeBound set - a wall drawn at a typed
      height does not follow when the level above is moved, and one tied to it
      does. Because step 3 drew it to that height, nothing moves when it is
      tied.
-  5. CREATE_FLOOR (PROVEN), one slab per floor, drawn to the OUTSIDE faces of
-     the outside walls - not to their centrelines, which leaves the slab half a
-     wall short all the way round. A terrace or a roof deck is a slab of its
+  5. CREATE_FLOOR (DRAFT, version 2 - as CREATE_WALL in step 3, until Group
+     HM), one slab per floor, drawn to the OUTSIDE faces of the outside walls -
+     not to their centrelines, which leaves the slab half a wall short all the
+     way round. A curved edge is written the same way, `arc MX,MY X,Y`; the
+     outside face of a curved wall is an arc on the same centre, half the
+     wall's thickness further out. A terrace or a roof deck is a slab of its
      own. Every slab a stair arrives at must be in before step 7, which cuts
      it.
      A TYPICAL STOREY IS DRAWN ONCE AND COPIED. When floors repeat - a tower,

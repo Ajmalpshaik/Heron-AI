@@ -20,6 +20,17 @@
 // NOTHING IS JOINED. Walls meeting at a corner are not joined to each other
 // here, and whether Revit joins them itself is not claimed. JOIN_GEOMETRY is
 // what makes two elements agree about which one cuts the other.
+//
+// VERSION 2: A WALL CAN FOLLOW AN ARC (5b-1216). `points` is the text as typed,
+// read here and no longer by the add-in: corners "X,Y,Z" with semicolons
+// between, as before, and an arc "arc MX,MY X,Y" - a point the wall passes
+// through, then where it ends - the writing CREATE_FAMILY_EXTRUSION's loops
+// already take. A full circle is two arcs. Text with no `arc` in it is read
+// exactly as the add-in's OnePoint and ManyPoints read it for version 1 - the
+// same three millimetre numbers, the same refusals in the same words, the same
+// 100 km bound, the same division by 304.8 - and built by the same lines, so a
+// version 1 call builds what it built before. A bad arc builds nothing at all:
+// the next wall would start where it ends.
 
 // MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
 // millimetres. The add-in converts an XYZ at the boundary and cannot convert a
@@ -38,16 +49,138 @@ var shortest = doc.Application.ShortCurveTolerance;
 // NOT level.Elevation - see the header.
 var z = level.ProjectElevation;
 
-if (height <= 0)
+// ---- the text --------------------------------------------------------------
+
+string problem = null;
+var invariant = System.Globalization.CultureInfo.InvariantCulture;
+
+// One point, as the add-in's OnePoint reads it. `flat` lets an arc's point be
+// written X,Y as well - the level gives the height either way.
+Func<string, bool, XYZ> pointOf = (text, flat) =>
+{
+    var parts = text.Split(',').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
+    if (parts.Count != 3 && !(flat && parts.Count == 2))
+    {
+        problem = "A point is three numbers in MILLIMETRES, separated by commas - "
+                + "\"0, 0, 0\" or \"5000, 3000, 2800\". \"" + text + "\" has "
+                + parts.Count + " number" + (parts.Count == 1 ? "" : "s") + " in it.";
+        return null;
+    }
+    var ordinates = new double[3];
+    for (var index = 0; index < parts.Count; index++)
+    {
+        double millimetres;
+        if (!double.TryParse(parts[index], System.Globalization.NumberStyles.Float, invariant, out millimetres))
+        {
+            problem = "\"" + parts[index] + "\" is not a number, and a point is three of them in millimetres. "
+                    + "Type digits only - 250 or 250.5, not 250mm.";
+            return null;
+        }
+        if (double.IsNaN(millimetres) || double.IsInfinity(millimetres))
+        {
+            problem = "\"" + parts[index] + "\" is not a real number, so Heron cannot place a point at it. A "
+                    + "value like that usually arrives from a calculation that did not work out. Type digits "
+                    + "only - 250 or 250.5.";
+            return null;
+        }
+        if (Math.Abs(millimetres) > 100.0 * 1000.0 * 1000.0)
+        {
+            problem = "\"" + parts[index] + "\" is further than 100 km from the origin, which is not a coordinate "
+                    + "in any building. Heron reads a point in MILLIMETRES - a number this size usually means it "
+                    + "was typed in another unit, or has a digit too many.";
+            return null;
+        }
+        ordinates[index] = millimetres / MillimetresPerFoot;
+    }
+    return new XYZ(ordinates[0], ordinates[1], ordinates[2]);
+};
+Func<string, int> numbers = text => text.Split(',').Count(p => p.Trim().Length > 0);
+
+// The run: corners[i] to corners[i + 1] is one wall, straight when through[i]
+// is null and an arc through it when it is not.
+var corners = new List<XYZ>();
+var through = new List<XYZ>();
+var arcs = 0;
+
+foreach (var piece in (points ?? "").Split(';'))
+{
+    var item = piece.Trim();
+    if (item.Length == 0) continue;
+
+    var words = System.Text.RegularExpressions.Regex.Replace(item, @"\s*,\s*", ",")
+        .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+    if (words.Length > 0 && words[0].ToLowerInvariant() == "arc")
+    {
+        arcs++;
+        if (corners.Count == 0)
+        {
+            problem = "A run starts at a point - \"" + item + "\" is an arc with nothing before it to start from.";
+            break;
+        }
+        if (words.Length != 3 || new[] { words[1], words[2] }.Any(w => numbers(w) != 2 && numbers(w) != 3))
+        {
+            problem = "\"" + item + "\" is not an arc written \"arc MX,MY X,Y\" - a point the wall passes "
+                    + "through, then where it ends, in millimetres.";
+            break;
+        }
+        var mid = pointOf(words[1], true);
+        var end = mid == null ? null : pointOf(words[2], true);
+        if (end == null) break;
+        through.Add(mid);
+        corners.Add(end);
+    }
+    else
+    {
+        var corner = pointOf(item, false);
+        if (corner == null) break;
+        if (corners.Count > 0) through.Add(null);
+        corners.Add(corner);
+    }
+}
+
+if (problem == null && corners.Count == 0)
+    problem = "No points were given. Separate them with semicolons and their three millimetre ordinates "
+            + "with commas - \"0,0,0; 5000,0,0; 5000,3000,0\".";
+
+// EVERY ARC IS CHECKED BEFORE ANY WALL IS BUILT. Three points in a line, or two
+// in one place, make no arc - Revit's own refusal names neither point.
+Func<double, string> mm = feet => Math.Round(feet * MillimetresPerFoot, 1).ToString(invariant);
+for (var i = 0; problem == null && i < through.Count; i++)
+{
+    if (through[i] == null) continue;
+    var a = corners[i];
+    var m = through[i];
+    var b = corners[i + 1];
+    var ux = m.X - a.X; var uy = m.Y - a.Y;
+    var vx = b.X - a.X; var vy = b.Y - a.Y;
+    var lu = Math.Sqrt(ux * ux + uy * uy);
+    var lv = Math.Sqrt(vx * vx + vy * vy);
+    var lw = Math.Sqrt(Math.Pow(b.X - m.X, 2) + Math.Pow(b.Y - m.Y, 2));
+    if (lu <= shortest || lv <= shortest || lw <= shortest || Math.Abs(ux * vy - uy * vx) < 1e-6 * lu * lv)
+        problem = "The arc from " + mm(a.X) + "," + mm(a.Y) + " through " + mm(m.X) + "," + mm(m.Y) + " to "
+                + mm(b.X) + "," + mm(b.Y) + " is not an arc - its three points are in a line, or two are in the "
+                + "same place.";
+}
+
+// ---- the walls ---------------------------------------------------------------
+
+if (problem != null)
+{
+    // The text, not the model, said no - so nothing at all is built.
+    refused++;
+    findings.Add(problem + " Nothing was built.");
+}
+else if (height <= 0)
 {
     findings.Add("A wall needs a height greater than zero");
 }
 else
 {
-    for (var i = 0; i + 1 < points.Count; i++)
+    var curved = 0;
+    for (var i = 0; i + 1 < corners.Count; i++)
     {
-        var a = points[i];
-        var b = points[i + 1];
+        var a = corners[i];
+        var b = corners[i + 1];
 
         if (a == null || b == null) { refused++; continue; }
 
@@ -64,9 +197,16 @@ else
 
         try
         {
-            var wall = Wall.Create(doc, Line.CreateBound(start, end), wallType.Id, level.Id,
-                                   height, 0.0, false, structural);
-            if (wall != null) created.Add(wall);
+            var m = through[i];
+            var wall = Wall.Create(doc,
+                                   m == null ? (Curve)Line.CreateBound(start, end)
+                                             : Arc.Create(start, end, new XYZ(m.X, m.Y, z)),
+                                   wallType.Id, level.Id, height, 0.0, false, structural);
+            if (wall != null)
+            {
+                created.Add(wall);
+                if (m != null) curved++;
+            }
             else refused++;
         }
         catch
@@ -80,4 +220,7 @@ else
         + "skipped as too short. NOTHING has been joined - two walls meeting at a corner are not joined "
         + "to each other by this",
         created.Count, level.Name, height * 304.8, refused, tooShort));
+    if (arcs > 0)
+        findings.Add(string.Format("{0} of them follow an arc, through the point given for it. A curved "
+            + "wall's Length in Properties is measured along its arc", curved));
 }
