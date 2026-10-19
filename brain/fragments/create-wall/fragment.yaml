@@ -1,27 +1,37 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-033
-semantic-identity: "build a straight wall between these two points"
+semantic-identity: "build a wall between these two points, straight or along an arc"
 kind: action
 domain: revit.elements
 capability: CREATE_WALL
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Creates straight walls between consecutive points on one level, at a given
-  height. The plain "put a wall here" - the thing rooms are bounded by and MEP
-  has to pass through.
+  Creates walls between consecutive points on one level, at a given height -
+  straight, or along an arc where one is written. The plain "put a wall here" -
+  the thing rooms are bounded by and MEP has to pass through.
 
   **Written as a run of points, like CREATE_DUCT and CREATE_PIPE.** Two points
   is the single-wall case. A room needs four walls and a corridor needs two, so
   making the run the general form saves the caller a loop and keeps the whole
   library one shape.
+
+  **AN ARC IS WRITTEN IN THE RUN (version 2, row 5b-1216).** `arc MX,MY X,Y`
+  after a point makes the next wall an arc: through MX,MY, ending at X,Y - the
+  writing CREATE_FAMILY_EXTRUSION's loops take, so one writing works for a
+  family and a project. A full circle is two arcs. Basic and curtain walls
+  alike; how a curtain wall's panels sit on the arc is Revit's, and is recorded
+  by the first run (NEEDS-CHECKING Group HM), not claimed here. A run with no
+  `arc` in it builds exactly what version 1 built. An arc whose three points
+  are in a line, or two in one place, refuses the whole run: nothing is built,
+  because the next wall would start where the bad one ends.
 
   **The base height is the level's PROJECT elevation.** Every XYZ the API takes
   is project-internal, while `Elevation` is measured from whatever the level
@@ -49,9 +59,15 @@ contract:
     - name: wallType
       type: WallType
       source: request
-    # Internal units. Plan points; the Z is taken from the level.
+    # Millimetres, as typed: corners "X,Y,Z" with semicolons between - the Z
+    # is taken from the level - and, between two corners, an arc "arc MX,MY
+    # X,Y": a point the wall passes through, then where it ends. A full circle
+    # is "R,0,0; arc 0,R -R,0; arc 0,-R R,0". TEXT SINCE VERSION 2, read in the
+    # fragment exactly as the add-in read an IList<XYZ> before - the same
+    # numbers, refusals, bound and division by 304.8 - so a run without an arc
+    # is unchanged (5b-1216).
     - name: points
-      type: IList<XYZ>
+      type: string
       source: request
     - name: height
       type: double
@@ -77,6 +93,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 1's PROOF, kept as the record. It describes the code before arcs
+# (row 5b-1216) and is STALE by D-30's fingerprint, so version 2 is DRAFT and a
+# change kept from it is refused (D-117) until NEEDS-CHECKING Group HM is run
+# and signed.
 proof:
   date: '2026-09-13'
   by: Ajmal PS
@@ -109,12 +129,20 @@ compatibility-note: >
   through 2027 - read off the reference assemblies at both ends rather than
   remembered, where the same eight-argument overload appears on both. Unlike
   the floor and the ceiling, the wall creation call did NOT move at 2022, so no
-  run-time lookup is needed here.
+  run-time lookup is needed here. `Arc.Create` taking two ends and a point on
+  the arc - what version 2 hands it for a curved wall - is present 2020 through
+  2027 too, read off the reference assemblies on 2026-10-19 with
+  tools/api-surface.
 
 # ROUTING - repeated in CREATE_FLOOR, JOIN_GEOMETRY and SPLIT_MEP_RUN.
 #
 #   "build a wall between these points" -> here
 #   "put a wall here"                   -> here
+#   "draw a curved wall through these
+#    points"                            -> here, with "arc MX,MY X,Y" in the
+#                                          points (version 2, 5b-1216). A
+#                                          wall drawn as many short straight
+#                                          ones reads as flat facets close up
 #   "make a floor slab over this area"  -> CREATE_FLOOR
 #   "join these walls together"         -> JOIN_GEOMETRY - nothing here joins
 #                                          anything
@@ -166,3 +194,4 @@ utterances:
   - make a wall
   - add a partition here
   - draw a curtain wall between these points
+  - draw an arc wall through these points

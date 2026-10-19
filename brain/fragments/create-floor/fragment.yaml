@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "make a floor slab over this area"
 kind: action
 domain: revit.elements
 capability: CREATE_FLOOR
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,6 +32,15 @@ purpose: >
   **The boundary closes itself** and must not cross itself. A self-crossing loop
   is refused by Revit, and that refusal is reported rather than swallowed.
 
+  **AN EDGE CAN BE AN ARC (version 2, row 5b-1216).** `arc MX,MY X,Y` after a
+  corner makes the next edge an arc: through MX,MY, ending at X,Y - the writing
+  CREATE_FAMILY_EXTRUSION's loops take, so one writing works for a family and a
+  project. A round slab is two arcs, the second ending where the first began; a
+  boundary with an arc in it may end on its first corner, because a round one
+  has to. A boundary with no `arc` in it makes exactly the floor version 1 made,
+  and a last corner repeating the first is still refused there. An arc whose
+  three points are in a line, or two in one place, makes nothing.
+
   **It makes one floor, not a storey.** Openings, shafts and penetrations are
   separate jobs; nothing here cuts a hole in anything.
 
@@ -47,8 +56,15 @@ contract:
     - name: floorType
       type: FloorType
       source: request
+    # Millimetres, as typed: corners "X,Y,Z" with semicolons between - the Z
+    # is taken from the level - and an arc "arc MX,MY X,Y" after a corner: a
+    # point the edge passes through, then where it ends. Closed back to the
+    # first corner. A round slab is "R,0,0; arc 0,R -R,0; arc 0,-R R,0". TEXT
+    # SINCE VERSION 2, read in the fragment exactly as the add-in read an
+    # IList<XYZ> before - the same numbers, refusals, bound and division by
+    # 304.8 - so a boundary without an arc is unchanged (5b-1216).
     - name: boundary
-      type: IList<XYZ>
+      type: string
       source: request
   provides:
     - name: created
@@ -57,6 +73,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 1's PROOF, kept as the record. It describes the code before arcs
+# (row 5b-1216) and is STALE by D-30's fingerprint, so version 2 is DRAFT and a
+# change kept from it is refused (D-117) until NEEDS-CHECKING Group HM is run
+# and signed.
 proof:
   date: '2026-09-10'
   by: Ajmal PS
@@ -88,7 +108,9 @@ compatibility-note: >
   2020 and is gone by 2024. Naming either in source breaks the other build, so
   both are looked up at run time and whichever this release has is used.
   `Level.ProjectElevation`, `CurveLoop.Create` and `Line.CreateBound` are
-  present throughout.
+  present throughout, and so is `Arc.Create` taking two ends and a point on the
+  arc - what version 2 hands both calls for a curved edge, read off the
+  reference assemblies on 2026-10-19 with tools/api-surface.
 
 # THE OLD CALL WANTS A CurveArray AND THE NEW ONE WANTS CurveLoops, so the
 # boundary is built into both shapes and the one the found method needs is
@@ -98,6 +120,12 @@ compatibility-note: >
 #
 #   "make a floor slab over this area" -> here
 #   "add a slab here"                  -> here
+#   "draw a slab with an arc edge"     -> here, with "arc MX,MY X,Y" edges in
+#                                         the boundary (version 2, 5b-1216).
+#                                         "make a round floor slab" does NOT
+#                                         reach here on the lexical backend:
+#                                         CREATE_EDGE_SWEEPS, measured
+#                                         2026-10-19 by check-routing
 #   "make a ceiling over this area"    -> CREATE_CEILING - the other flat thing,
 #                                         and the one MEP actually hides above
 #   "how much concrete is in this"     -> REPORT_MATERIAL_TAKEOFF
@@ -121,3 +149,4 @@ utterances:
   - create the floor
   - draw the slab for this area
   - model the floor
+  - draw a slab with an arc edge

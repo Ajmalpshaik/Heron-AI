@@ -880,6 +880,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hl.md`](needs-checking/group-hl.md)
 
+## Group HM - a wall and a slab edge along an arc: CREATE_WALL and CREATE_FLOOR version 2 (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hm.md`](needs-checking/group-hm.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
