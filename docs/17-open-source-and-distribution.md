@@ -49,6 +49,69 @@ Concrete protections:
 4. Test models are **synthetic**, never real client models ([13 §5](13-testing-and-quality.md)).
 5. Community contribution stays a per-item human review — Golden Rule 12, [10 §4](10-memory-and-knowledge.md).
 
+> **As built (2026-10-18):** 1 holds - the Python side keeps its data in `%USERPROFILE%\.heron`
+> ([D-135](DECISIONS.md)) and the add-in its own in `%APPDATA%\Heron` (`HeronPaths.Data`), never in the
+> checkout; 2 holds -
+> [`.gitignore`](../.gitignore) blocks the data class anyway. **3 is not built:** no secret or PII scan
+> was found in `tools/`, `.github/workflows/` or the hooks in `.claude/settings.json`.
+> [CONTRIBUTING.md](../CONTRIBUTING.md) names real model data and credentials as reasons a change is
+> rejected, which is a reviewer's check, not a scan.
+
+### 2a. As built — what is public, what stays on the PC, what never leaves (2026-10-18)
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    PC(["<b>The modeller's PC</b>"])
+    GH["<b>Public GitHub repository</b><br/>code, documents, fragments, skills<br/>synthetic test models — D-07"]
+    AI["<b>The AI in the chat</b><br/>what a tool answers:<br/>counts, names, parameter values — D-26"]
+    STAY["<b>Stays on the PC</b><br/>knowledge store, project memory,<br/>audit trails, switches — outside the checkout"]
+    NEVER["<b>Never leaves the PC</b><br/>the .rvt and .rfa files, templates,<br/>any Revit binary — D-26"]
+
+    PC -->|"only a pull request a person reviewed — Golden Rule 12"| GH
+    PC -->|"tool answers"| AI
+    PC --- STAY
+    PC --- NEVER
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class PC user
+    class GH plat
+    class AI host
+    class STAY brain
+    class NEVER revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+The modeller's PC
+  -> Public GitHub repository   code, documents, fragments, skills, synthetic test models (D-07)
+                                only through a pull request a person reviewed (Golden Rule 12)
+  -> The AI in the chat         what a tool answers: counts, names, parameter values (D-26)
+  Stays on the PC               knowledge store, project memory, audit trails, switches -
+                                outside the checkout
+  Never leaves the PC           the .rvt and .rfa files, templates, any Revit binary (D-26)
+```
+
+</details>
+
+| What | Where it lives | Can it leave the PC? | What holds the line |
+|---|---|---|---|
+| Heron's code, documents, fragments, skills, synthetic test models | the public repository | yes - it is public | [D-07](DECISIONS.md), Apache 2.0 ([D-08](DECISIONS.md)) |
+| The knowledge store, project memory, the brain's audit | `%USERPROFILE%\.heron` | no | outside the checkout ([D-135](DECISIONS.md)); `*.db` and `*.sqlite` are git-ignored |
+| The add-in's switches and audit trail | `%APPDATA%\Heron` | no | `HeronPaths.Data` ([06 §2a](06-heron-platform.md)) |
+| Source documents - PDFs, specifications, standards | wherever the modeller keeps them | may go to a cloud store under [D-82](DECISIONS.md); **no such path is built** - embeddings are computed on the PC ([`heron_embed.py`](../brain/heron_embed.py)) | `*.pdf`, `*.docx`, `*.xlsx` are git-ignored |
+| What a tool answers - counts, names, parameter values | the chat | yes, to the AI in the conversation | [D-26](DECISIONS.md): fine in the conversation |
+| The `.rvt` and `.rfa` files, templates, any Revit binary | the modeller's disk, open in Revit | **never** | [D-26](DECISIONS.md); D-82 keeps Revit model data out of any cloud store; `*.rvt`, `*.rfa`, `*.rte`, `*.rft` are git-ignored |
+
+The add-in reads the model in place and opens no socket ([03 §1a](03-heron-revit.md)). What is still
+missing is the scan this section's point 3 asks for.
+
 **A single accidental commit of a client model or a project knowledge base is not recoverable.**
 Git history persists, GitHub caches, forks propagate. This deserves more care than any other
 consequence of going open source.
@@ -58,6 +121,10 @@ consequence of going open source.
 ## 3. Licence — needs deciding
 
 Not yet chosen. See [Q-27](OPEN-QUESTIONS.md).
+
+> **As built (2026-10-18):** decided - **Apache 2.0**, as recommended below ([D-08](DECISIONS.md), Q-27
+> answered). [`LICENSE`](../LICENSE) and [`NOTICE`](../NOTICE) are in place, and
+> `python tools/check-licence.py` is one of the checks CI decides a pull request on.
 
 | Licence | Character | Fit |
 |---|---|---|
@@ -79,15 +146,15 @@ MIT is the reasonable alternative if maximum familiarity matters more than the d
 | File | Purpose | Status |
 |---|---|---|
 | `LICENSE` | The licence text | ✅ **Apache 2.0, in place** ([D-08](DECISIONS.md), `Q-27` answered) |
-| `README.md` | What it is, install, quick start | ✅ exists, needs an install section once there is something to install |
+| `README.md` | What it is, install, quick start | ✅ exists. *As built (2026-10-18): it still asks modellers not to install yet, and points a tester at [`WHAT-TO-INSTALL.md`](WHAT-TO-INSTALL.md)* |
 | `CONTRIBUTING.md` | How to propose fragments, skills, agents | ✅ exists |
 | `CODE_OF_CONDUCT.md` | Standard | ✅ exists |
 | `SECURITY.md` | How to report a vulnerability privately | ✅ exists — and it stays **important**, because this tool writes to project models |
-| `CHANGELOG.md` | Generated by the Change Log Agent (§63) | ⏳ **still pending** |
+| `CHANGELOG.md` | Generated by the Change Log Agent (§63) | ⏳ **still pending** - the Change Log Agent is deferred by [D-77](DECISIONS.md) |
 | `NOTICE` | Apache 2.0's attribution file | ✅ exists |
 | `.github/ISSUE_TEMPLATE/` | Bug / feature / fragment proposal | ✅ exists |
-| `.github/workflows/` | CI: build matrix, tests, release | ⏳ **still pending** — the gates in [`tools/`](../tools/README.md) are run by hand, see `Q-49` |
-| `DISCLAIMER` | Explicit "no warranty, verify your models" | ⏳ **important** |
+| `.github/workflows/` | CI: build matrix, tests, release | ✅ **exists** - [`gates.yml`](../.github/workflows/gates.yml) (the gates, every release compiled, the test sweep), `windows.yml`, `weekly.yml` and `release.yml`; `Q-49` is answered |
+| `DISCLAIMER` | Explicit "no warranty, verify your models" | ✅ [`DISCLAIMER.md`](../DISCLAIMER.md) exists |
 
 ---
 
@@ -134,7 +201,7 @@ Contributed fragments enter at `DISCOVERED` and walk the lifecycle like everythi
 
 | Channel | Timing | Notes |
 |---|---|---|
-| **GitHub releases** | Phase 0 onwards | Signed per-version add-in builds + MCP server |
+| **GitHub releases** | Phase 0 onwards | Signed per-version add-in builds + MCP server. *As built (2026-10-18): [`release.yml`](../.github/workflows/release.yml) builds the release assets, and an early v0.1.0 is published for testing only - **unsigned**, since code signing is the installer plan's last stage (that file's own header)* |
 | **Claude Code plugin** | Phase 0 onwards | The primary front end ([D-01](DECISIONS.md)) |
 | **Autodesk App Store** | Later, free | Their review constrains packaging and permissions — worth reading the requirements before the installer is finalised, not after |
 | **pip / npm** | If the brain ships separately | Depends on the Python packaging decision |

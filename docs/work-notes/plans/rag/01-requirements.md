@@ -3,7 +3,8 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active — nothing built from it yet.** Opened 2026-09-10.
+> **Status:** **Active — partly built.** §6's state column marks each row DONE, PART or not built, with
+> its evidence. Opened 2026-09-10.
 > **Owner:** Ajmal PS.
 > **Closure condition:** every row in §6 is either **DONE with evidence** or **withdrawn with a reason**.
 > **Where the durable part goes when this retires:** the requirements that survive belong in
@@ -388,7 +389,7 @@ up when a store is copied.
 |---|---|---|---|---|
 | **R-85** | Every document records **what it is licensed for** — owned outright, licensed per seat, public, or unknown | owner, [34 §2.12](../../../34-patterns-adapted.md) | **NONE** | `34 §2.12` is an open item called *"an inventory of what imported knowledge permits."* **This is that item arriving** |
 | **R-86** | A scope containing a **per-seat licensed** document **warns before the store is copied or shared** | R-85, [GR 12](../../../14-golden-rules.md) | **NONE** | *"copy `company.db` to the shared drive"* was suggested in conversation on 2026-09-10 as the way to share company knowledge. **That is also exactly how a bought standard reaches twenty people who did not buy it** |
-| **R-87** | **No knowledge store is ever committed to the repository or shipped with Heron** | [17](../../../17-open-source-and-distribution.md), R-85 | **HELD BY ACCIDENT** | the stores live in `%APPDATA%`, outside the repository, so this cannot happen today. **It is held by the file layout rather than by a rule**, and Heron goes public — so it is worth being a rule |
+| **R-87** | **No knowledge store is ever committed to the repository or shipped with Heron** | [17](../../../17-open-source-and-distribution.md), R-85 | **HELD BY ACCIDENT** | the stores live outside the repository - `%USERPROFILE%\.heron` since D-135, `%APPDATA%` before - so this cannot happen today. **It is held by the file layout rather than by a rule**, and Heron goes public — so it is worth being a rule |
 
 **And an ordering rule, from the owner's own argument:**
 

@@ -43,6 +43,69 @@ waiting on a person is not a build failure.
 The tool sorts by **what you must have in front of you**, because that is what decides whether a thing
 can be done this morning or not at all.
 
+**What is waiting on you, and where it comes from** — read from `BUCKETS`, `classify()` and the three
+readers in [`tools/owner-queue.py`](../tools/owner-queue.py). No counts here: the tool prints them.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    OQ["<b>OPEN-QUESTIONS</b><br/>questions with no answer"]
+    PR["<b>PROPOSALS</b><br/>proposals not marked done"]
+    NC["<b>NEEDS-CHECKING</b><br/>rows not struck through"]
+    TOOL["<b>python tools/owner-queue.py</b><br/>sorts each row by what it needs<br/>always exits 0"]
+    B1(["<b>A DECISION</b><br/>nothing but you"])
+    B2(["<b>ONE DOCUMENT</b><br/>a numbered spec"])
+    B3(["<b>REVIT OPEN</b><br/>Revit, usually a model"])
+    B4(["<b>THE PC</b><br/>Windows, no Revit"])
+    B5(["<b>A NETWORK</b><br/>reaches huggingface.co"])
+    B6(["<b>UNCLASSIFIED</b><br/>read the row"])
+
+    OQ ==> TOOL
+    PR ==> TOOL
+    NC ==> TOOL
+    W{"a NEEDS-CHECKING row —<br/>what do its words name?"}
+
+    TOOL -->|every question and proposal| B1
+    TOOL --> W
+    W -->|Revit| B3
+    W -->|on the PC · Windows| B4
+    W -->|huggingface| B5
+    W -->|a numbered document| B2
+    W -->|none of these| B6
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class OQ,PR,NC user
+    class TOOL,W brain
+    class B1,B2 host
+    class B3 revit
+    class B4 addin
+    class B5 plat
+    class B6 user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+OPEN-QUESTIONS  (questions with no answer)   --+
+PROPOSALS       (proposals not marked done)  --+--> python tools/owner-queue.py  (always exits 0)
+NEEDS-CHECKING  (rows not struck through)    --+
+                                                     |
+    every open question and proposal  ------------>  A DECISION     nothing but you
+    a NEEDS-CHECKING row, by its own words:          REVIT OPEN     mentions Revit (and not "no Revit")
+                                                     THE PC         "on the PC", Windows, setup.ps1
+                                                     A NETWORK      huggingface, sentence-transformers
+                                                     ONE DOCUMENT   a numbered document or a clause
+                                                     UNCLASSIFIED   none of those - read the row
+```
+
+</details>
+
 | Bucket | What it needs | What to do with it |
 |---|---|---|
 | **A DECISION** | Nothing but you | Answer it in the register it came from. An answer in chat is lost; an answer in the file is a decision |
@@ -61,8 +124,8 @@ can be done this morning or not at all.
 | | Safe on a live project? |
 |---|---|
 | Fragments that are **`PROVEN`** and **`READ`** | **Yes.** A `READ` fragment cannot modify a model — that is enforced, not promised |
-| Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only.** The rollback fix has never been seen in front of a model |
-| `delete-elements` | **No. Do not run it** until the owner says otherwise. It wiped a model twice on 2026-09-09 and the second hung Revit hard enough to need a forced close ([section 1c](fragment-issues/section-1c.md)). It has since been proved on a test model with the elements counted before and after ([row 55](fragment-issues/section-5-rows-051-075.md)), and its `heron-status` now reads `PROVEN` — whether that lifts this rule is the owner's call, because a delete can take far more than it was handed, and nothing asks before it runs ([row 5b-161](fragment-issues/section-5b-rows-151-175.md), open) |
+| Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only**, until the owner says otherwise. The rollback check built 2026-10-17 passed every rollback row run in Revit 2024 and 2027 on 2026-10-18, on scratch copies — EO1, EO2, EO4, EO5 and, on 2027, EO7; a refused move (EO6) was not arranged ([Group EO](needs-checking/group-eo.md)) — but a rollback that reported success and kept a rename anyway ([A16b](needs-checking/group-a.md)) has never been run again and is still open |
+| `delete-elements` | **No. Do not run it** until the owner says otherwise. It wiped a model twice on 2026-09-09 and the second hung Revit hard enough to need a forced close ([section 1c](fragment-issues/section-1c.md)). It has since been proved on a test model with the elements counted before and after ([row 55](fragment-issues/section-5-rows-051-075.md)), and its `heron-status` now reads `PROVEN` — whether that lifts this rule is the owner's call, because a delete can take far more than it was handed, and with *Ask to Keep* off — the default — nothing asks before it is kept ([row 5b-161](fragment-issues/section-5b-rows-151-175.md), open) |
 
 Derive the counts rather than reading them here:
 
@@ -76,6 +139,17 @@ done | sort | uniq -c | sort -rn
 **If a write ever looks wrong: close the model WITHOUT saving.** Three rollback failures are on record
 — the worst took a model from 9,628 elements to 3,966 — and in every one the file on disk was fine. The
 damage stays in the live session. That is the difference between a bug and a data-loss bug.
+
+**How a change from a chat is kept — your switches on the Heron ribbon.** Nothing changes the model
+unless **Changes** is on ([D-19](DECISIONS.md)); **Admin** and **Publish** guard their own kinds of job
+([D-106](DECISIONS.md)). **Ask to Keep** decides whether Revit shows you the change first
+([D-126](DECISIONS.md), [D-138](DECISIONS.md)): **off by default**, and then a change is kept at once as
+one named entry in Revit's undo list; **on**, Revit selects what changed and asks *Keep* or *Discard*,
+and nothing stays until you press Keep. The box's third link keeps the change and the rest of that chat's
+job on that model without asking, until ten quiet minutes pass. Even under that grant, a publish and a
+never-proved fragment's one run are asked. **Built for 2020 to 2027; the Ask to Keep switch itself has
+not been run in Revit yet** ([Group HG](needs-checking/group-hg.md)) — the Keep or Discard box it turns on was, in Revit 2024 and 2027 on
+2026-10-18 ([Group ET](needs-checking/group-et.md)).
 
 ---
 
@@ -105,6 +179,17 @@ clause number the plan has carried since the start.
 | [HANDOVER.md](HANDOVER.md) | Work note | Where the last session stopped | Stays — it is the cold start |
 | [handover-archive/](handover-archive/README.md) | Archive | Finished sittings, one file each | Kept, never read to work |
 | [work-notes/](work-notes/README.md) | Work notes | Plans somebody is executing | **Yes — that is the test** |
+
+**On your PC, Heron's own files are in these places** ([D-135](DECISIONS.md), [D-136](DECISIONS.md)):
+the add-in's settings (`heron.config`) and its audit trail in `%APPDATA%\Heron`; the brain's knowledge
+store, each project's memory and its audit in `%USERPROFILE%\.heron`, where a Reset of the Store Claude
+app cannot reach them; the Companion's notes in `%TEMP%\Heron\companion`; and what belongs to this PC
+alone - bridges, logs, run records and the install a rollback goes back to - in `%LOCALAPPDATA%\Heron`
+([D-17](DECISIONS.md), `HeronPaths.Derived`). This said *"three places"* until 2026-10-18 and left the
+last one out.
+`python brain/heron_paths.py --where` names the brain's home on the PC it runs on and the old places it
+was carried from, and
+[WHAT-TO-INSTALL §6](WHAT-TO-INSTALL.md#6-where-everything-lives-on-your-pc) has the rest.
 
 **The rule that matters: a question, a decision or an unproven claim must NEVER live only in
 `work-notes/`.** That folder's lifecycle ends in deletion. On 2026-09-12 a work note was found holding

@@ -1,9 +1,16 @@
 # 40 — Heron Companion: a window beside the chat that shows what Heron does and lets you edit a table
 
 > **Status now: BUILT, NOT PROVEN - Phases 1, 2 and 3 are in the code, allowed by [D-108](decisions/D-108.md)
-> and [D-109](decisions/D-109.md), and none has been run in Revit beyond NEEDS-CHECKING
-> [group BK](needs-checking/group-bk.md) row BK6. What was built, and how it differs from the design
+> and [D-109](decisions/D-109.md), with three panels added since: Loads (§21.5), Sprinkler Hydraulic
+> Calculation (§21.7) and Sprinkler Layout (§21.8). What was built, and how it differs from the design
 > below, is §21. The paragraph that follows is the status this document was written with.**
+>
+> **What has run in Revit**, all of it Revit 2024: NEEDS-CHECKING [group BK](needs-checking/group-bk.md)
+> row BK6 (BK1 and BK2's positive halves, on *Project1*) and row BK13 (BK10 and BK11 PASSED, on a test
+> copy of *heron ai bulding*); §21.4's two Load buttons on 2026-09-30, with one fault left open; and the
+> Loads panel in [Group CC](needs-checking/group-cc.md) on 2026-10-06. **Still NOT RUN:** BK7, BK8, BK9,
+> BK12, BK11's stale-row negative, both Sprinkler panels, and the Companion button on the code of
+> [D-136](decisions/D-136.md) - BK14, which FAILED on 2026-10-18 on D-135's code (§21.8).
 >
 > **Status when written: A DESIGN, NOT A DECISION. Nothing here is built.** Written 2026-09-29 as Phase 0 of the
 > owner's Companion request. No decision number has been spent on it — the decision it needs is drafted
@@ -15,6 +22,110 @@
 > **Since then - read §21 first.** Question 1 was answered yes on 2026-09-29 and filed as
 > [D-108](decisions/D-108.md). Every other question was answered the same day, and the owner narrowed
 > what the tables are for - §21.1. What was then built is §21.2 and §21.3.
+>
+> **Checked 2026-10-18 - two of the page's writes are refused today, before anything reaches Revit
+> (§21.9).** The Table's Apply and the Loads panel's Finalize write through `SET_PARAMETER_VALUES_BY_ID`,
+> which went to version 3 and back to DRAFT on 2026-10-17 (#583; its proof is owed in
+> [group FE](needs-checking/group-fe.md)), and Finalize's diffusers through `SET_AIR_TERMINAL_FLOW`, DRAFT;
+> `revit_change`, whose body every Apply uses, keeps a change only from a PROVEN fragment since
+> [D-117](decisions/D-117.md). The Sprinkler Layout's Apply (`PLACE_FAMILY_INSTANCES`, PROVEN) is not
+> affected. Nothing above about what HAS run changes: those runs were before 2026-10-17.
+
+---
+
+## At a glance
+
+**How the page works.** Each chat's MCP server serves the page on `127.0.0.1`, from `mcp/companion/`. The
+add-in writes a small live file - which Revit, which model, which view - and the page reads it, never the
+pipe. Anything the page changes in the model goes through `revit_change`'s own body. The **Companion**
+button on the ribbon serves nothing: it reads the note a chat left and opens that address
+([D-109](decisions/D-109.md)).
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    U(["<b>Modeller</b><br/>a browser on this PC"])
+    CC["<b>Claude Code</b><br/>one chat"]
+    MS["<b>Heron MCP server</b> · Python<br/>one per chat<br/>serves the page · mcp/companion/"]
+    BR["<b>Heron Brain</b><br/>every number, colour and question"]
+    CP["<b>Companion page</b><br/>127.0.0.1 · a port Windows picks<br/>panels and tables"]
+    NOTE[("<b>Note for the button</b><br/>%TEMP%\Heron\companion<br/>D-135, D-136")]
+    LIVE[("<b>Live file</b><br/>%LOCALAPPDATA%\Heron\live<br/>Revit · model · view")]
+    BTN["<b>Companion button</b><br/>Heron tab · D-109"]
+    AD["<b>Heron add-in</b> · C#<br/>the gate · HeronLiveState"]
+    RV["<b>Revit model</b>"]
+
+    CC ==>|MCP| MS
+    MS <-->|hooks| BR
+    U <==>|reads · edits · Apply| CP
+    CP ==>|"/api · cookie + header"| MS
+    MS ==>|"Apply · Finalize · Place<br/>revit_change's own body"| AD
+    AD ==>|one named undo entry| RV
+    AD -.->|writes when something changes| LIVE
+    LIVE -.->|read · never the pipe| MS
+    MS -.->|the keeper refreshes it| NOTE
+    NOTE -.->|read| BTN
+    BTN -.->|opens the address only| CP
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class U,NOTE,LIVE user
+    class CC host
+    class MS,BR brain
+    class AD,BTN addin
+    class RV revit
+    class CP plat
+```
+
+**Built, not proven.** Solid arrows carry a change; dotted ones only show or find something. Every write
+from the page meets what a chat's change meets: the Changes switch, the pinned model, one named undo
+entry, and Revit's Keep or Discard box while *Ask to Keep* is on ([D-126](decisions/D-126.md),
+[D-138](decisions/D-138.md)). What has run is in [group BK](needs-checking/group-bk.md) and the table below;
+the Companion button FAILED in Revit on D-135's code and D-136's fix is NOT RUN (BK14,
+[HF4](needs-checking/group-hf.md)). Checked against `mcp/companion/heron_companion.py` (`live_dir`,
+`companion_dir`, `keep`), `HeronCompanionCommands.cs` and `_apply_change`, `_apply_table`,
+`_loads_finalize` and `_sprinkler_layout_place` in `mcp/server/heron_mcp_server.py`.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Claude Code (one chat)
+   |  MCP
+Heron MCP server (Python, one per chat)  <-> Heron Brain: every number, colour, question
+   |  serves the page on 127.0.0.1, a port Windows picks  (mcp/companion/)
+   |  the keeper refreshes a note:  %TEMP%\Heron\companion  (D-135, D-136)
+   |
+Companion page (the modeller's browser)
+   |  /api, with the cookie and the custom header
+   |  Apply / Finalize / Place  ->  revit_change's own body  ->  Heron add-in (the gate)
+   |                                                             -> Revit model, one named undo entry
+   |
+Live file  %LOCALAPPDATA%\Heron\live   written by the add-in when the model or view changes;
+                                       read by the MCP server, never through the pipe
+Companion button (Heron tab, D-109)    reads the note, opens the address - serves nothing
+```
+
+</details>
+
+**The page's panels, and where each stands** - read on 2026-10-18 from `static/index.html`,
+`heron_tools.COMPANION_ACTIONS` and the NEEDS-CHECKING groups named:
+
+| Panel | Opened by | What it does | Changes the model? | Has it run in Revit? |
+|---|---|---|---|---|
+| **Revit** strip | always shown, from the live file | which Revit, model and view are in front | No - reads a file | BK1's positive half PASSED (BK6, *Project1*, Revit 2024, 2026-09-29); its negative is owed |
+| **HVAC Load Calculation** ([44](44-building-loads-from-the-model.md)) | `revit_building_loads` | each Space's cooling and heating load, the model's checks, a 3D view of the faces; Recalculate, The take-off is right, Report | **Finalize** - `companion_loads_finalize`, `MODIFY`. **Refused today** (§21.9) | PART - [group CC](needs-checking/group-cc.md), *Heron loads test*, Revit 2024, 2026-10-06; CC8, CC13, CC22 and CC24 FAILED - [44](44-building-loads-from-the-model.md)'s status says which are fixed |
+| **Sprinkler Hydraulic Calculation** ([46](46-sprinkler-hydraulics-from-the-model.md)) | `revit_sprinkler_hydraulics` | K-factors, fittings, criteria, remote area with Suggest; Calculate, The network is right, Report, 3D view | No - phase 1 has no Finalize | NOT RUN - [group CE](needs-checking/group-ce.md) |
+| **Sprinkler Layout** ([47](47-sprinkler-layout-from-the-model.md)) | `revit_sprinkler_layout` | each selected room's plan, heads OK or FAIL; Preview, then Apply one level at a time | **Apply** - `companion_sprinkler_place`, `MODIFY`, through `PLACE_FAMILY_INSTANCES` (PROVEN) | NOT RUN - [group CG](needs-checking/group-cg.md) |
+| **Table** (§8, §21.3) | `revit_edit_table` | elements and their parameters; edit the white cells, Apply | **Apply** - `companion_table_apply`, `MODIFY`. **Refused today** (§21.9) | BK11 PASSED on sheets (BK13, *heron ai bulding* test copy, Revit 2024, 2026-09-29), before version 3; its stale-row negative and BK12 are owed |
+| **Activity** - the corner button | every tool call this chat makes | time, tool, the answer's first line, how it ended | No - kept in memory | NOT RUN - BK9 |
+| **Changes you can adjust** - switched off 2026-10-04, kept (§21.6) | a settings change from the chat; Load filters, Load category colours | the values a change used, as a table; Apply again | **Apply again** - `companion_apply`, `MODIFY` | BK10 PASSED (BK13); the Load buttons ran 2026-09-30 with one filter fault open (§21.4) |
+| **Selected** - switched off 2026-10-04, kept (§21.6) | was always shown, from the live file | the selection by category | No | BK2's positive half PASSED (BK6) |
+| *The Companion button* - in Revit, not on the page | the ribbon | opens the address a chat left | No | BK14 and HF4 FAILED 2026-10-18 on D-135's code ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md)); D-136's fix and BK7 NOT RUN |
 
 ---
 
@@ -76,7 +187,7 @@ resolved here; each has a recommendation and a question in §18.
 | **C6** | *"Color" = per-element override in the active view, projection line + surface pattern colour* | The owner's own colour standard is **per duct system, by view filter**, on **projection AND cut** lines and surfaces (Supply Air blue 0,0,255 · Return Air magenta 255,0,255 · Exhaust Air saddle brown 139,69,19). The library routes *"these, now"* to per-element overrides and *"the colour standard for this project"* to view filters | the owner's system table (2026-09-27); `create-view-filter` and `create-view-filters-by-value` routing; `override-graphics-in-view` routing | **NEEDS_REVIEW.** V1 as requested (per element, active view) is a legitimate *"these, now"* tool and the library already has that meaning. But it is not how the owner's standard colours a system, and a table of per-element colours could drift from the standard. Recommend V1 colours **projection line, surface foreground and cut line + cut foreground together** (what `highlight-vs-rest` and `color-by-parameter` already do), and leave system colours to the filters. Question in §18 |
 | **C7** | Transaction named *"Heron Companion: Color 12 ducts"* | Every fragment write today is named `"Heron: " + <fragment folder name>` | `RevitFragment.cs` line 532 | **NEEDS_REVIEW.** Naming it differently needs a small add-in change (an optional label on the request). Without it the undo entry reads *"Heron: set-element-overrides-by-id"*. §10 and §18 |
 | **C8** | Put the UI server "somewhere" | `mcp/` is **"Transport only. No BIM logic"** | [mcp/README.md](../mcp/README.md) rule 1 | The Companion server holds **no BIM knowledge**: what a column means, and what "colour" means in Revit, lives in the two fragments. The server moves rows between the page and the pipe. That fits `mcp/` as a new sub-folder `mcp/companion/`, with a row in `mcp/README.md`. §4.4 |
-| **C9** | Table edits change the model | Article 9: a `MODIFY` from a non-`PRODUCTION` fragment needs *"a preview the user has accepted"*. D-99's exception covers **only `revit_change` from a chat** and says *"a new tool that changes a model needs a preview, or a decision of its own"* | [Constitution Art. 9](../HERON_CONSTITUTION.md), [D-99](decisions/D-99.md) | **The table IS the preview**: each row shows the element, its current value and its new value, the count of changed rows is on the Apply button, and pressing Apply is the acceptance — then 12c re-checks before anything is written. This keeps Article 9 rather than excepting it. The §19 decision records it |
+| **C9** | Table edits change the model | Article 9: a `MODIFY` from a non-`PRODUCTION` fragment needs *"a preview the user has accepted"*. D-99's exception covers **only `revit_change` from a chat** and says *"a new tool that changes a model needs a preview, or a decision of its own"* (as written then; D-99 is superseded by [D-126](decisions/D-126.md) and its switch by [D-138](decisions/D-138.md)) | [Constitution Art. 9](../HERON_CONSTITUTION.md), [D-99](decisions/D-99.md) | **The table IS the preview**: each row shows the element, its current value and its new value, the count of changed rows is on the Apply button, and pressing Apply is the acceptance — then 12c re-checks before anything is written. This keeps Article 9 rather than excepting it. The §19 decision records it |
 | **C10** | Claude opens a table of every duct | A fragment's reply is **cut to three items per list** and a dictionary to a count | `RevitFragment.cs` `Describe`, lines 4698–4759 | Not a rule conflict, a technical blocker. The table's read fragment returns its rows as **one JSON string** — the workaround `report-category-overrides` and `create-view-filters-by-rule` already use — so no add-in change is needed. If the central reply fix lands first, the table uses that instead. §8.2 |
 
 ---
@@ -118,7 +229,9 @@ The model
 levels ([D-106](decisions/D-106.md)); the operation's risk read **by name** from the registry — nothing
 on the wire says how dangerous a request is ([Golden Rule 19](14-golden-rules.md)); the pin
 (Article 12b); one named `TransactionGroup` rolled back on any failure (Article 8). `revit_change`
-has no preview by the owner's choice ([D-99](decisions/D-99.md)); `revit_apply_move` keeps its
+keeps a change at once while the ribbon's *Ask to Keep* is off, the default, and shows Revit's Keep or
+Discard box while it is on ([D-126](decisions/D-126.md), [D-138](decisions/D-138.md); D-99's "no
+preview" is superseded); `revit_apply_move` keeps its
 preview, one-use approval and re-count (`PendingApproval`, `heron_write.py`). Article 7's
 "explicit yes for bulk parameter writes" is carried only by the chat's instructions today —
 [FRAGMENT-ISSUES row 5b-161](FRAGMENT-ISSUES.md).
@@ -942,3 +1055,35 @@ Calculate, **The network is right** and Report - and a 3D view of the pipes and 
 hooks the MCP server sets; every number, colour, question and offer is made in `brain/`. **It writes
 nothing to Revit** - phase 1 has no Finalize, so it has no `COMPANION_ACTIONS` row. The card shares the
 Loads panel's styles.
+
+### 21.8 The Sprinkler Layout panel, and where the Companion button looks (2026-10-06 to 2026-10-18)
+
+> **As built (2026-10-18):**
+>
+> - **The Sprinkler Layout panel** ([docs/47](47-sprinkler-layout-from-the-model.md) §7, #418): the
+>   rooms, each room's plan, then Preview and Apply one level at a time. **Unlike §21.7's panel it
+>   writes** - its Apply is `companion_sprinkler_place`, a `COMPANION_ACTIONS` row at `MODIFY` in
+>   [`heron_tools.py`](../mcp/server/heron_tools.py), through `revit_change`'s own body. NOT RUN in Revit -
+>   [group CG](needs-checking/group-cg.md).
+> - **The chat's note the Companion button reads** moved from §21.3's `%LOCALAPPDATA%\Heron\companion`
+>   to the user's temporary folder, `%TEMP%\Heron\companion` ([D-135](decisions/D-135.md), #641), so a
+>   Microsoft Store Claude's private copy of AppData cannot hide it; and both halves now step out of
+>   Revit's own GUID-named temporary folder to find that one ([D-136](decisions/D-136.md), #657). The live
+>   file stays in `%LOCALAPPDATA%\Heron\live\` (§6.1). Pressed in Revit 2024 on 2026-10-18 on D-135's code:
+>   FAIL ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md)); D-136's fix is NOT RUN IN REVIT -
+>   [BK14](needs-checking/group-bk.md), [HF4](needs-checking/group-hf.md).
+
+### 21.9 What changed under the page on 2026-10-17 and 18, checked 2026-10-18
+
+Nothing in `mcp/companion/` changed; two decisions about every change from a chat reached the page,
+because each of its writes runs `revit_change`'s own body (`_apply_change`, `_apply_table`,
+`_loads_finalize`, `_sprinkler_layout_place` in `mcp/server/heron_mcp_server.py`).
+
+| Since | What it means on the page | Evidence |
+|---|---|---|
+| 2026-10-17, [D-117](decisions/D-117.md) (#547) | A change is kept only from a PROVEN fragment. **The Table's Apply and the Loads panel's Finalize are refused before anything is sent:** `SET_PARAMETER_VALUES_BY_ID` is version 3 and DRAFT since #583 the same day - its proof is owed in [group FE](needs-checking/group-fe.md) - and Finalize's diffusers go through `SET_AIR_TERMINAL_FLOW`, DRAFT with no proof. The Sprinkler Layout's Apply is not affected | `revit_change`, called with each in a cloud container on 2026-10-18, refused it: *"... is DRAFT - no recorded proof stands behind its code ... Nothing was sent to Revit."*; `PLACE_FAMILY_INSTANCES` reads PROVEN (version 3, proof dated 2026-10-17) |
+| 2026-10-18, [D-138](decisions/D-138.md) (#660) | With *Ask to Keep* on - off by default - Revit asks Keep or Discard for a write from the page as for one from the chat ([D-126](decisions/D-126.md)) | the [README](../mcp/companion/README.md)'s *Changes* row; compiled 2020-2027, **NOT RUN IN REVIT** |
+
+Neither is a new defect of the page: the refusal is Article 11 doing its job. The Table and Finalize work
+again when their fragments are PROVEN - [group FE](needs-checking/group-fe.md) for
+`SET_PARAMETER_VALUES_BY_ID`, [group AQ](needs-checking/group-aq.md) for `SET_AIR_TERMINAL_FLOW`.

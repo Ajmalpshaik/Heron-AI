@@ -5,8 +5,12 @@ people who actually do BIM work are worth more than contributions from people wh
 
 > **Current stage: built ahead of what is proven, though less far than it was.** Phase 0 — the whole
 > path from a sentence to a selection changing on screen — is proven in real Revit 2020 and 2024. The
-> add-in has since been deployed to Revit 2020, 2024 and 2027, and D-28's executor compiles a
-> fragment's C# inside Revit's own process, so fragments do now meet real models.
+> add-in has since loaded in Revit 2020, 2024, 2026 and 2027
+> ([Group EQ](docs/needs-checking/group-eq.md)), and D-28's executor compiles a fragment's C# inside
+> Revit's own process, so fragments do now meet real models — on every one of those but 2026, where no
+> fragment could run until a repair that has not yet been run in Revit
+> ([Group GW](docs/needs-checking/group-gw.md)). The [README's Status](README.md#status) says what else
+> has met a real Revit.
 >
 > **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are
 > `DRAFT`**, which is Heron's word for *not proven as it stands* - most of those have never met a
@@ -109,22 +113,112 @@ If you commit any of these by accident, **report it privately** via
    say which versions you tested and how.
 5. **Tests, written to fail before your fix.**
 6. **Run the checks.** These four need nothing but Python 3 — no Revit, no Windows, no .NET SDK —
-   and all four must exit 0:
+   and all four must exit 0, with `git diff --check` clean:
 
    ```
    python tools/check-structure.py    # parts in place, no layering violation
    python tools/check-docs.py         # every link and every stated count
    python tools/check-metadata.py     # headers, and the registry against the code
    python tools/check-package.py      # the manifest Revit reads before anything else
+   git diff --check                   # no whitespace errors
    ```
 
-   They are not all of CI's checks: the `gates` job in
-   [`.github/workflows/gates.yml`](.github/workflows/gates.yml) runs more, and any one of them turns a
-   pull request red. [AGENTS.md](AGENTS.md) names them.
+   They are not all of CI's checks. The `gates` job in
+   [`.github/workflows/gates.yml`](.github/workflows/gates.yml) also runs `check-signatures`,
+   `check-licence`, `check-narrow-errors`, `check-products`, `check-decision-titles`, `check-routing` and
+   `check-intrusion`, and a non-zero from any of them turns a pull request red. Some need something
+   first: `check-decision-titles` needs the whole git history, and `check-routing` and
+   `check-intrusion` need a knowledge store - an empty folder named by `HERON_KNOWLEDGE` will do. The
+   [`heron-ship`](.claude/skills/heron-ship/SKILL.md) skill says what each one catches and how to run it.
 
    `python tools/check-gaps.py` exits non-zero while real work is outstanding, which is its job — read
    it, but do not expect a 0. [tools/README.md](tools/README.md) explains the rest.
 7. **Be ready to discuss.** Review here is about design fit, not gatekeeping.
+
+### What happens to a pull request
+
+Every job is read from [`.github/workflows/gates.yml`](.github/workflows/gates.yml) and
+[`.github/workflows/windows.yml`](.github/workflows/windows.yml). **Red** means a non-zero exit turns
+the pull request red; the reports job never does.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    YOU(["<b>You</b>, on your branch"])
+    L4["<b>The four local gates</b><br/>check-docs · check-metadata<br/>check-structure · check-package<br/>+ git diff --check"]
+    PR["<b>Push, open the pull request</b>"]
+    G["<b>gates</b> — the gates that must pass<br/>the four + the rest of the table below<br/>red on any non-zero"]
+    C["<b>compile</b> — the C#, 2020 to 2027<br/>every project · every fragment · red on a skip too"]
+    T["<b>tests</b> — every suite<br/>FAIL or HUNG is red · NOT RUN kept apart"]
+    GEN["<b>generated</b><br/>the committed registry matches its generator"]
+    REP["<b>reports</b> — a finding is a question<br/>never red"]
+    WIN["<b>windows.yml</b> — only when installer files change<br/>the lock installs · the installer test host"]
+    REV["<b>Review</b> — design fit"]
+    M(["<b>Merge</b> to main"])
+
+    YOU ==> L4 ==> PR
+    PR ==> G & C & T & GEN
+    PR -.-> REP
+    PR -.-> WIN
+    G & C & T & GEN ==> REV
+    REP -.-> REV
+    WIN -.-> REV
+    REV ==> M
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class YOU,M user
+    class L4,PR host
+    class G,T,GEN brain
+    class C addin
+    class REP,WIN plat
+    class REV user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+You, on your branch
+  -> the four local gates: check-docs, check-metadata, check-structure, check-package, git diff --check
+  -> push, open the pull request
+  -> CI, gates.yml, side by side:
+       gates      the four + check-signatures, check-licence, check-narrow-errors, check-products,
+                  check-decision-titles, check-routing, check-intrusion   red on any non-zero
+       compile    every C# project and every fragment, Revit 2020 to 2027 red on a failure or a skip
+       tests      every suite                                           red on FAIL, HUNG, or an
+                                                                        unexpected NOT RUN
+       generated  docs/28-agent-registry.md matches its generator       red when stale
+       reports    check-reachable, check-revit-gate, agent-count,       never red
+                  check-declared-questions
+     windows.yml, only when the installer, the lock, heron-ready or the release builder change
+  -> review, for design fit
+  -> merge to main
+```
+
+</details>
+
+**The gates job, one row per command.** What each catches is the
+[`heron-ship`](.claude/skills/heron-ship/SKILL.md) skill's words. List them from the workflow rather than
+counting this table:
+`sed -n '/^  gates:/,/^  compile:/p' .github/workflows/gates.yml | grep -oE 'python tools/check-[a-z-]+\.py' | sort -u`
+
+| Gate | What it catches | Needs anything first? |
+|---|---|---|
+| `check-docs` | A broken link; a stated count that disagrees with the derived one; a file in `tools/` or a skill folder its README never names; a control character, double-encoded text or a merge-conflict marker | No |
+| `check-metadata` | A missing or malformed five-field header, and an agent id the registry does not know | No |
+| `check-structure` | A layering violation, and the Revit vendor namespace anywhere but `revit/` and `tools/` ([D-48](docs/DECISIONS.md)) — a comment counts | No |
+| `check-package` | `Heron.addin` naming an entry class or assembly that does not exist, or a `<ManifestSettings>` element, which crashes Revit 2025 and older | No |
+| `check-signatures` | A proof whose code moved under it | **PyYAML** — it reads every `fragment.yaml` (CI installs it first) |
+| `check-licence` | A licence header, and what may not be redistributed | No |
+| `check-narrow-errors` | A bare `except` — a swallowed cause | No |
+| `check-products` | In `platform/heron-products.json`: a duplicate `addInId`, a `partOf` typo, a stale Revit list | No |
+| `check-decision-titles` | A decision number that stopped meaning its decision | **The whole git history** — `git fetch --unshallow` in a shallow clone, or it exits 2 |
+| `check-routing` | A capability no longer reachable, and a routing row naming a capability no fragment declares | **A knowledge store** — an empty folder named by `HERON_KNOWLEDGE`, or it exits 2 — and PyYAML |
+| `check-intrusion` | One fragment crowding out another | **A knowledge store**, the same way, and PyYAML |
 
 ---
 

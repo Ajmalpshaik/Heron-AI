@@ -59,6 +59,12 @@ and a third row in every regression matrix. It does not change the strategy — 
 it — but it makes the case for that layer stronger, and it confirms this will keep happening roughly
 every two years.
 
+> **As built (2026-10-18):** confirmed - [`Directory.Build.props`](../Directory.Build.props) maps 2027 to
+> `net10.0-windows`, CI compiles 2027 on every push, and a real Revit 2027 loaded the add-in on
+> 2026-09-19 ([A12](needs-checking/group-a.md), [16 §1](16-version-support-strategy.md)). The build has
+> four target frameworks, not three: `net472` for 2020 as well as the three named above, and no adapter
+> layer as §4 of docs/16 drew it - [16 §4](16-version-support-strategy.md) says what stands instead.
+
 ---
 
 ## 4. **The two gaps every existing project shares**
@@ -101,6 +107,13 @@ And both major families ship an **arbitrary code execution tool** — `send_code
 **[NOTE]** This is exactly what [D-03](DECISIONS.md) said to put behind `ADMIN` in Developer Persona
 only. Shipping it open means any prompt injection through a family name or an imported document is a
 route to arbitrary code against a live client model ([Golden Rule 19](14-golden-rules.md)).
+
+> **As built (2026-10-18):** there is no Developer Persona - [D-27](DECISIONS.md#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape)
+> settled on 2026-08-28 that Heron has one voice and no personas - and Heron has no tool that runs code
+> it is handed. The nearest thing is `revit_change` running a library fragment declared `ADMIN`, which
+> works only while the owner's Admin switch is on
+> ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on));
+> [04 §3](04-heron-mcp.md) has the rest.
 
 The advice *"save periodically"* is the tell. It is a reasonable thing to say when there is no undo
 guarantee — and it puts the safety burden on the user, which is the opposite of
@@ -253,7 +266,8 @@ Model Checker (rule-based checksets).
 ## 8.4 What is left that no one else has
 
 1. **Proof discipline.** [D-30](DECISIONS.md): every fragment recorded against a **named model**, with a
-   **negative case** and a **staleness fingerprint** — 328 of 396 at this date. The surveyed projects
+   **negative case** and a **staleness fingerprint** — 328 of 396 on 2026-09-22; today's split is
+   `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`. The surveyed projects
    ship *runtime* safety (dry-run, transaction grouping). None ships *evidence that the operation was
    ever correct*, kept and re-derivable. A dry-run tells a user what is about to happen; a proof tells
    them it has been right before. Those are different products.

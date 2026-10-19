@@ -623,7 +623,9 @@ a compile.
 
 ## Stage 5 — Fetch from the GitHub release
 
-**Status: BUILT, NOT PROVEN — 2026-09-21. Nothing has been published and no release exists.**
+**Status: BUILT, NOT PROVEN — 2026-09-21.** Nothing had been published then. **Since:** v0.1.0 was
+published 2026-10-08 ([Group AC](../../../needs-checking/group-ac.md), `AC1`) and the installer has fetched
+from it (Group AC; [Group EP](../../../needs-checking/group-ep.md)); `AC2`-`AC5` are still owed.
 
 > **THE STAGE HAD NOTHING TO TALK TO, and that was the first thing to fix.** This repository had
 > **no releases at all** and nothing that could make one, so *"the installer reads the manifest from a
@@ -685,7 +687,7 @@ developer just compiled.
 | **PASS** | `tools/build-release-assets.py` ran for real: **24 assets, 54 MB, checksums over 25 files, exit 0**. Runtimes read out of the zipped bytes for six releases and all correct |
 | **PASS** | `tests/test_release_assets.py` — no product is named, the configuration cannot be got wrong, the project folder is derived the same way in all three places that ask, a `PLANNED` product with no source is skipped **out loud** and one past `PLANNED` **fails**, Autodesk's assemblies never travel, `checksums.txt` is written last |
 | **PASS** | The download path, **run against a live local server**: verified and unpacked; a changed file refused **with nothing written to disk**; a file missing from `checksums.txt` refused; a release with no checksums refused; 404, 403 and a dead host each producing their own sentence; a zip that would escape its folder refused whole |
-| **NOT RUN** | **The workflow.** It is YAML for GitHub's runner and this is not one. **Nothing has been published and no release exists** |
+| **NOT RUN** | **The workflow.** It is YAML for GitHub's runner and this is not one. **Nothing had been published then**; the workflow built and uploaded v0.1.0 on 2026-10-08 ([Group AC](../../../needs-checking/group-ac.md), `AC1`) |
 | **NEEDS REAL REVIT** | Every line under *Done when* above, and `AC1` to `AC5` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
 
 **The one thing this cannot close on its own** is [Q-PE-13](03-open-questions.md): the assets carry the
@@ -1078,7 +1080,7 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 2 | Second tab | **PROVEN** 2026-09-21, except `AA9` | Run on the owner's PC — Revit 2024.3 and 2020.2.9, two Heron tabs in one Revit, and `AA2` did not break. [Stage 2](#stage-2--prove-the-shape-with-a-second-tab) · [Group AA](../../../NEEDS-CHECKING.md) |
 | 3 | Installer core | **PROVEN** 2026-09-21 | Run on the owner's PC — the AI Bridge was installed into Revit 2024 and Revit loaded it, and the engine refused correctly while Revit was open. [Stage 3](#stage-3--the-installer-core-with-no-window-at-all) · [Group AB](../../../NEEDS-CHECKING.md) |
 | 4 | The window | **PROVEN** 2026-09-21 for `AB1`-`AB8`, except `AB6` | Run on the owner's PC. **One rule added after that run is NOT proven** — greyed release ticks, `AB9` and `AB10`. [Stage 4](#stage-4--the-window) · [Group AB](../../../NEEDS-CHECKING.md) |
-| 5 | GitHub download | **BUILT, NOT PROVEN** 2026-09-21 | The builder ran here — 24 assets, verified at the binary level. **No release exists and nothing has ever been fetched from GitHub.** [Stage 5](#stage-5--fetch-from-the-github-release) · `AC1`-`AC5` |
+| 5 | GitHub download | **BUILT, NOT PROVEN** 2026-09-21 | The builder ran here — 24 assets, verified at the binary level. **v0.1.0 was published 2026-10-08** ([`AC1`](../../../needs-checking/group-ac.md), done), and the installer has fetched from it: once 2026-10-08 (Group AC) and again on the owner's laptop 2026-10-17 ([Group EP](../../../needs-checking/group-ep.md)). `AC2`-`AC5` are still owed. [Stage 5](#stage-5--fetch-from-the-github-release) · `AC1`-`AC5` |
 | 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | **Both** routes have a door — `heron-install`, with `--source` and `--from`. [Q-PE-16](03-open-questions.md) and [Q-PE-12](03-open-questions.md) both answered, and the update check with them. **Nothing has been installed into a Revit.** [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
 | 7 | Uninstall / update / rollback | **BUILT, NOT PROVEN** 2026-09-22 | Item 5 is **NOT MET** and says why, [Q-PE-15](03-open-questions.md). **Nothing has been deleted from a real Addins folder.** [Stage 7](#stage-7--uninstall-update-and-a-rollback-that-has-been-tested) · `AD1`-`AD4` |
 | 8 | Sign and ship | NOT STARTED | — |

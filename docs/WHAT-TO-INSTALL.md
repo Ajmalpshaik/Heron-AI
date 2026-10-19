@@ -18,6 +18,80 @@
 > `.\tools\setup.ps1` builds and installs Heron with no installer at all —
 > [section 4](#4-only-to-build-heron-yourself).
 
+## At a glance
+
+A new PC, top to bottom. The two dotted green boxes are optional; everything else is needed.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    RV["<b>1 · Revit</b><br/>you have it already"]
+    CC["<b>2 · Claude Code</b><br/>where you type"]
+    PY["<b>3 · Python 3.11 to 3.14</b><br/>for your user · Heron never installs it"]
+    HI["<b>4 · HeronInstaller.exe</b> — close Revit first<br/>the add-in, for each Revit you tick<br/>+ Heron's Python packages <i>(next release)</i>"]
+    HR["<b>5 · python tools/heron-ready.py</b><br/>builds the knowledge store<br/>names anything missing"]
+    MC["<b>6 · Open the Heron folder in Claude Code</b><br/>/mcp says heron connected"]
+    SW["<b>7 · The Heron ribbon switches</b><br/>Changes · Admin · Publish · Ask to Keep<br/>all start off"]
+    M2["<i>model2vec</i><br/>reads meaning · optional"]
+    RR["<i>re-ranker</i><br/>a second read · optional"]
+
+    RV ==> CC ==> PY ==> HI ==> HR ==> MC ==> SW
+    PY -.->|pip --user| M2
+    PY -.->|pip --user| RR
+    M2 -.->|loaded once| HR
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef search fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B,stroke-dasharray:4 3
+    class RV revit
+    class CC,MC host
+    class PY,HR brain
+    class HI plat
+    class SW addin
+    class M2,RR search
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+1  Revit                          you have it already
+2  Claude Code                    where you type
+3  Python 3.11 to 3.14            for your user; Heron never installs Python itself
+4  HeronInstaller.exe             close Revit first; the add-in for each Revit ticked,
+                                  and Heron's Python packages (from the next release)
+5  python tools/heron-ready.py    builds the knowledge store, names anything missing
+6  Open the Heron folder in Claude Code; /mcp says heron connected
+7  Heron ribbon switches          Changes, Admin, Publish, Ask to Keep - all start off
+
+Optional, after 3:  model2vec (reads meaning; heron-ready loads it once)
+                    re-ranker  (a second read of the top picks)
+```
+
+</details>
+
+**Where the range 3.11 to 3.14 comes from:** `LOCK_OLDEST_MINOR` and `LOCK_NEWEST_MINOR` in
+[`tools/heron-ready.py`](../tools/heron-ready.py), and `OldestMinor` and `NewestMinor` in
+[`PythonSetup.cs`](../platform/Heron.Installer/PythonSetup.cs) — the installer refuses a Python outside
+it by name. **Box 4's Python half is not in v0.1.0**: on that release, PyYAML and `mcp` are the lock line
+in [section 1](#1-what-every-pc-needs), by hand.
+
+| Thing | Needed? | How to get it | How to check it |
+|---|---|---|---|
+| **Revit** | Yes | You have it | `heron-install --list` names the releases Heron finds |
+| **Claude Code** | Yes | From Anthropic — a program of its own, no Node | In the Heron folder, `/mcp` lists `heron` |
+| **Python 3.11 to 3.14** | Yes | `winget install Python.Python.3.12 --scope user` | `python --version` in a **new** terminal |
+| **Heron's add-in** | Yes | `HeronInstaller.exe`, at the top of `heron-project.zip`, Revit closed — the one way a modeller installs it ([D-96](DECISIONS.md)) | The Heron tab, the next time Revit opens |
+| **PyYAML and `mcp`** | Yes | The installer, from the next release. On v0.1.0, the lock line in [section 1](#1-what-every-pc-needs) | `python tools/check-dependencies.py` |
+| **The first-chat set-up** | Yes, once per PC | `python tools/heron-ready.py` | `python tools/heron-ready.py --check` ends `READY` |
+| **model2vec** | No | `pip install --user model2vec` | `python brain/heron_embed.py` says `Backend: model` |
+| **The re-ranker** | No — read [section 2](#2-optional--the-two-search-add-ons) first | `pip install --user sentence-transformers`, then `python brain/heron_rerank.py --fetch --yes` | `python brain/heron_rerank.py` |
+| **Git, the .NET 10 SDK** | Only to build Heron | [Section 4](#4-only-to-build-heron-yourself) | `git --version` · `dotnet --version` |
+
 ## The short answer
 
 | **Every PC needs** | **Optional** | **Only to build Heron yourself** |
@@ -56,9 +130,11 @@ installed.
 moment you want to ask Heron something from Claude.
 
 **From the next release, the installer does rows 4 and 5 and section 1a for you** - built 2026-10-17,
-**run once on the owner's laptop that evening, from a local build**: READY, its Python half about 70 s on a
-PC that had none of the packages ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)). When you install the
-AI Bridge connector, `HeronInstaller.exe` also installs Heron's Python packages at the pinned versions in
+**run on the owner's laptop that evening and again on 2026-10-18, each time from a local build**: READY,
+its Python half about 70 s on a PC that had none of the packages, and on 2026-10-18 a Python 3.10 and a
+3.15 refused by name with the command that fixes it ([NEEDS-CHECKING Group EP](needs-checking/group-ep.md)).
+When you install the AI Bridge connector, `HeronInstaller.exe` also installs Heron's Python packages at
+the pinned versions in
 [`requirements-lock.txt`](../requirements-lock.txt) - for your Windows user, no administrator rights,
 every file checked against its hash - then builds Heron's knowledge store and runs `heron-ready --check`,
 saying each step as it goes. It needs row 3 first: **it never installs Python itself**, and says so with
@@ -91,7 +167,9 @@ Then, the three things only you can do:
    again; it names what is missing.
 3. **Switch on what the job needs on the Heron ribbon, before you ask.** They start off on every new
    PC: **Changes** for any change, **Admin** for a new family file, **Publish** to save it. A refusal
-   costs a turn.
+   costs a turn. **Ask to Keep** starts off too: on, Revit shows each change and asks *Keep* or
+   *Discard* before it stays; off, a change is kept at once as one undo entry
+   ([D-138](decisions/D-138.md) - built, the switch not yet run in Revit: [Group HG](needs-checking/group-hg.md)).
 
 Claude Code's own memory of your old PC does not come across. It does not need to: Heron hands Claude
 a job's whole method — every step of building a family, in order — through its `heron_method` tool.
@@ -129,14 +207,20 @@ every package Claude had installed was in the copy and none was in the real fold
    chat on the new Heron **copies** what the old places held into it, and deletes nothing; the old copies stay
    until you choose to remove them ([row 5b-419](fragment-issues/section-5b-rows-401-425.md)).
    `python brain/heron_paths.py --where` names that folder and the old places; `--carry` copies again.
+   **That copy has run on the owner's laptop**, 2026-10-18, with nothing failed and the old copy unchanged
+   ([Group HF](needs-checking/group-hf.md), HF1 and HF2); removing the old copies has not been put to him
+   (HF6).
 4. **Load reports** saved with no folder chosen and the model never saved go under that knowledge folder,
    so they are on the real disk now and open from Explorer - not yet tried
-   ([row 5b-418](fragment-issues/section-5b-rows-401-425.md)).
+   ([row 5b-418](fragment-issues/section-5b-rows-401-425.md); HF3 made no loads report, the owner
+   postponing the loads re-run).
 5. **Revit's Companion button** reads each chat's note from `%TEMP%\Heron\companion`, which both sides see,
    once the add-in is rebuilt from the same change; an add-in installed before it still looks in the old
    folder and will not find the chat ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Revit runs with a
    temporary folder of its own inside that one, so the add-in steps out of it to find yours
-   ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md), [D-136](decisions/D-136.md)). Not yet tried in Revit.
+   ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md), [D-136](decisions/D-136.md)). **The first try
+   failed on exactly that** - Revit 2024, 2026-10-18 ([Group HF](needs-checking/group-hf.md), HF4) - and
+   D-136 is the fix; **the fix has not been tried in Revit.**
 
 **Installing is settled: from outside Claude, by the installer** — [Q-63](OPEN-QUESTIONS.md),
 2026-10-17. **Where Heron keeps what it writes is settled too:** outside the app's copy, where a Reset
@@ -260,10 +344,64 @@ note. Its docs do not say, and Heron sends nothing without one. EJ1 is the run t
 
 ## 6. Where everything lives on your PC
 
+**Who writes where.** Checked against [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) — the
+add-in's paths — and [`brain/heron_paths.py`](../brain/heron_paths.py), the Python side's home.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    IN["<b>HeronInstaller.exe</b>"]
+    AD["<b>Heron Revit add-in</b> — C#<br/>HeronPaths.cs"]
+    PS["<b>Heron's Python</b><br/>the chat's server and brain<br/>heron_paths.py"]
+    P1["<b>%APPDATA%\Autodesk\Revit\Addins\#lt;release#gt;\Heron</b><br/>the add-in itself · an update replaces it"]
+    D1["<b>%APPDATA%\Heron</b><br/>heron.config · the add-in's audit<br/>yours · an update never touches it"]
+    D2["<b>%USERPROFILE%\.heron</b><br/>knowledge store · project memory · brain audit<br/>yours · D-135"]
+    X1["<b>%LOCALAPPDATA%\Heron</b><br/>bridges · logs · run records · install backup<br/>this PC only · rebuildable"]
+    X2["<b>%TEMP%\Heron\companion</b><br/>the Companion's notes<br/>safe to delete · D-136"]
+
+    IN -->|copies the add-in| P1
+    IN -->|keeps the last install| X1
+    P1 -.->|Revit loads| AD
+    AD -->|writes| D1
+    AD -->|writes| X1
+    PS -->|writes| D2
+    PS -.->|reads the bridges| X1
+    PS -->|writes| X2
+    AD -.->|reads| X2
+
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class IN plat
+    class AD,P1 addin
+    class PS brain
+    class D1,D2,X1,X2 user
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+HeronInstaller.exe   copies the add-in   -> %APPDATA%\Autodesk\Revit\Addins\<release>\Heron
+                     keeps the last one  -> %LOCALAPPDATA%\Heron\install-backup
+Revit add-in (C#)    writes              -> %APPDATA%\Heron         heron.config, audit      yours
+                     writes              -> %LOCALAPPDATA%\Heron    bridges, logs, runs      rebuildable
+                     reads               <- %TEMP%\Heron\companion  the Companion's notes
+Heron's Python       writes              -> %USERPROFILE%\.heron    knowledge, memory, audit yours (D-135)
+                     reads the bridges   <- %LOCALAPPDATA%\Heron\bridges
+                     writes              -> %TEMP%\Heron\companion  safe to delete (D-136)
+```
+
+</details>
+
 | | Where |
 |---|---|
 | **The Revit add-in** | `%AppData%\Autodesk\Revit\Addins\<release>\Heron` — per-user, no administrator rights |
-| **Heron's settings and its knowledge store** | `%APPDATA%\Heron` — but with a Microsoft Store Claude, the knowledge store and each project's memory are in Claude's private copy ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
+| **The add-in's settings and its audit trail** | `%APPDATA%\Heron` — `heron.config` is in `config\`. With a Microsoft Store Claude the app also keeps a copy of its own ([Q-70](OPEN-QUESTIONS.md)) |
+| **Heron's knowledge store, each project's memory, the brain's audit** | `%USERPROFILE%\.heron` — `C:\Users\<you>\.heron`, outside any app's private copy ([D-135](decisions/D-135.md)); `HERON_DATA` moves it. `python brain/heron_paths.py --where` names it |
+| **The Companion's notes** | `%TEMP%\Heron\companion` — safe to delete ([D-136](decisions/D-136.md)) |
+| **Bridges, logs, run records, the install a rollback goes back to** | `%LOCALAPPDATA%\Heron` — machine-local, never roamed ([D-17](DECISIONS.md)) |
 | **Python packages** | Your own Python's user folder — and with a Microsoft Store Claude, a second copy of whatever Claude installed, which only Claude sees ([1b](#1b-if-your-claude-app-came-from-the-microsoft-store--install-from-your-own-terminal)) |
 | **The search add-ons' model files** | `C:\Users\<you>\.cache\huggingface` |
 | **The Heron folder** | The code and the tools. **None of the installs above** — so a Heron folder copied to another PC needs this page's list done again there |
@@ -273,10 +411,11 @@ After the first download, the search add-ons read their files from your own PC.
 
 ## 7. What is not decided yet
 
-- **Nothing installs Python or its packages for you.** The installer puts Heron into Revit and installs
-  no Python, and setup *tells* rather than installs — [Q-39](open-questions/answered.md)'s words:
-  pulling a runtime onto somebody's machine unasked is what a careful user and a corporate laptop are
-  both right to refuse. Whether a release should ever bundle Python is still open
+- **Nothing installs Python itself for you.** From the next release the installer installs Heron's
+  Python *packages* - asked, before Install is pressed, never unasked - and `tools/setup.ps1` still
+  *tells* rather than installs. Python itself stays yours to install: [Q-39](open-questions/answered.md)'s
+  words, pulling a runtime onto somebody's machine unasked is what a careful user and a corporate laptop
+  are both right to refuse. Whether a release should ever bundle Python is still open
   ([Q-38](open-questions/from-master-specification-part-2.md#q-38--what-is-the-exact-install-command-new)).
 - **Whether the re-ranker should read standards documents only**, and not tool cards, is a code change
   nobody has made.

@@ -20,11 +20,31 @@
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
 **Totals: 252 agents · 169 T1 · 63 T2 · 20 T3.**
-Roughly two thirds never call a model at all.
+Roughly two thirds never call a model at all. The totals, the department headings, the summary table
+and the tier figures in prose are rewritten from the rows by `python tools/recount-agent-registry.py`,
+never typed; `python tools/agent-count.py` fails when the line above disagrees with the rows, and is
+the only place that says how many are built.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
 > summed to 196 — a straight arithmetic error on my part, caught when adding the agents below.
 > The count is now computed from the rows rather than asserted.
+
+## At a glance — each department's state
+
+Read from `python tools/agent-count.py` on 2026-10-18. It sorts every row into one of four states:
+**BUILT** (a source file's `Heron-Agent` header claims the id), **HOST** (Claude Code does the work -
+[D-01](DECISIONS.md), [D-80](DECISIONS.md)), **DEFERRED** (a named decision says it cannot be built yet)
+and **LEFT** (none of those - the only state that is work). On that day it printed nothing LEFT in any
+department. **Built is not proven**: it says a file claims the id, not that the code has met a Revit
+([37 §4](37-the-provider-adapter.md), [D-30](DECISIONS.md)). Re-run the command rather than trust this
+table - it prints the numbers, which are not typed here.
+
+| Department | State | Rows not built in this repository, and why |
+|---|---|---|
+| Orchestration & Communication | built, except the host's rows | Orchestrator, Intent, Communication / Persona, User Result - the host's ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) |
+| Development | built, except the host's rows | Requirement, Planning, Architecture, Code Generation, Revit API Domain - the host's ([D-80](DECISIONS.md)) |
+| Documentation | built, except the rows a decision defers | Release Notes, Change Log - deferred by [D-77](DECISIONS.md) until it is revisited |
+| Revit Engineering · MEP Design Engineering · MCP / Bridge · Session & Bridge Management · Knowledge & RAG · Fragment Lifecycle · User & Personalization · Learning & Self-Growth · Skill Lifecycle · Import & Migration · Standards & BIM QA · Agent Lifecycle & HR · Kernel & Platform · Workspace & Folder Architecture · Naming & Taxonomy · GitHub · Installation & Update · Operations, Health & Resilience · Reporting & Output | every row built | - |
 
 ---
 
@@ -54,8 +74,8 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-CAT-009` | Revit Category Agent | Resolves a BIM word to a category — "ducts" → `OST_DuctCurves` | T1 | READ | 4 |
 | `HERON-REVIT-ELE-010` | Revit Element Agent | Element lookup, creation, deletion, geometry access | T1 | MODIFY | 4 |
 | `HERON-REVIT-PAR-011` | Revit Parameter Agent | Reads and writes instance, type and shared parameters | T1 | MODIFY | — |
-| `HERON-REVIT-FAM-012` | Revit Family Agent | Families, types, loading, placement. **Built 2026-09-17**, read-only — [`RevitFamilies.cs`](../revit/Heron.Revit.Addin/RevitFamilies.cs), `list_families`. **It will not load**: a family carries its own materials and loading one overwrites the project's, silently. Compiles 2020–2027; never run in Revit | T1 | MODIFY | — |
-| `HERON-REVIT-VIE-013` | Revit View Agent | Views, view templates, visibility. **Sheets belong to `SHT-029`** — both rows claimed them and the owner settled it on 2026-09-17. **Built 2026-09-17**, read-only — [`RevitViews.cs`](../revit/Heron.Revit.Addin/RevitViews.cs), `list_views`. Compiles 2020–2027; never run in Revit. **A picture of a view for the chat, 2026-10-17** — [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs), `capture_view`, ANALYZE, its TransactionGroup always rolled back ([D-123](DECISIONS.md), Accepted 2026-10-17). Compiles 2020–2027; never run in Revit | T1 | MODIFY | — |
+| `HERON-REVIT-FAM-012` | Revit Family Agent | Families, types, loading, placement. **Built 2026-09-17**, read-only — [`RevitFamilies.cs`](../revit/Heron.Revit.Addin/RevitFamilies.cs), `list_families`. **It will not load**: a family carries its own materials and loading one overwrites the project's, silently. Compiles 2020–2027; never run in Revit. **As built (2026-10-18): loading arrived as a fragment** - [`load-family`](../brain/fragments/load-family/fragment.yaml) (`LOAD_FAMILY`, MODIFY) carries this agent's id, refuses a same-named family unless a reload is asked for, and lists every material the load added or changed; its status is in its `fragment.yaml` | T1 | MODIFY | — |
+| `HERON-REVIT-VIE-013` | Revit View Agent | Views, view templates, visibility. **Sheets belong to `SHT-029`** — both rows claimed them and the owner settled it on 2026-09-17. **Built 2026-09-17**, read-only — [`RevitViews.cs`](../revit/Heron.Revit.Addin/RevitViews.cs), `list_views`. Compiles 2020–2027; never run in Revit. **A picture of a view for the chat, 2026-10-17** — [`RevitCapture.cs`](../revit/Heron.Revit.Addin/RevitCapture.cs), `capture_view`, ANALYZE, its TransactionGroup always rolled back ([D-123](DECISIONS.md), Accepted 2026-10-17). Compiles 2020–2027. **Run in Revit 2024 on 2026-10-18** ([Group EX](needs-checking/group-ex.md), EX12): a named view's picture PASSED; the element-id half failed ([row 5b-1090](FRAGMENT-ISSUES.md)), and its fix is compiled, not run in Revit | T1 | MODIFY | — |
 | `HERON-REVIT-WRK-014` | Revit Workset Agent | Worksets, element ownership, checkout state. Ownership failure is a normal outcome. **Built 2026-09-17**, read-only — [`RevitWorksets.cs`](../revit/Heron.Revit.Addin/RevitWorksets.cs), `list_worksets`. Ownership is sampled and the sample is stated. Compiles 2020–2027; never run in Revit | T1 | MODIFY | — |
 | `HERON-REVIT-LNK-015` | Revit Link Agent | Linked models — read only; never modifies a link's source | T1 | READ | — |
 | `HERON-REVIT-WRN-016` | Revit Warning Agent | Revit warnings and failure preprocessing; never silently swallows | T1 | READ | 6 |
@@ -65,7 +85,7 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-API-020` | Revit API Agent | Correct API, namespace, method, deprecations, transaction requirements for a novel operation | T2 | READ | — |
 | `HERON-REVIT-ACI-034` | **API Change Intelligence Agent** | Continuously tracks what changed between Revit versions — deprecated and renamed APIs, changed methods, parameters, units, namespaces, and silent behavioural changes. Feeds Fragment Evolution before a version breaks something ↗ | T2 | READ | — |
 | `HERON-REVIT-CMP-021` | Revit Compatibility Agent | Will this fragment run on this Revit version | T1 | READ | — |
-| `HERON-REVIT-UI-022` | Revit UI Agent | Task dialogs, progress banner, the picker. **The picker lives in the chat, not in Revit** - that is where the question is being asked, and a second one inside Revit would be a copy nobody uses. **The progress banner is built** ([D-50](DECISIONS.md), 2026-09-06) - it waited for Step 6 as this row said it would, and Step 6 made jobs slow enough. It says whether Heron is READING or CHANGING, which nothing in Revit said before. **Compiles on all eight releases, 0 warnings** (`B5`, 2026-09-07); **never yet seen on a screen** - `B6`-`B13` in [NEEDS-CHECKING](NEEDS-CHECKING.md) need Revit | T1 | READ | 5 |
+| `HERON-REVIT-UI-022` | Revit UI Agent | Task dialogs, progress banner, the picker. **The picker lives in the chat, not in Revit** - that is where the question is being asked, and a second one inside Revit would be a copy nobody uses. **The progress banner is built** ([D-50](DECISIONS.md), 2026-09-06) - it waited for Step 6 as this row said it would, and Step 6 made jobs slow enough. It says whether Heron is READING or CHANGING, which nothing in Revit said before. **Compiles on all eight releases, 0 warnings** (`B5`, 2026-09-07); **seen on a screen in Revit since 2026-09-07** - `B6`-`B11` and `B13` passed, and the 150% display half of `B12`/`B17` is still owed ([Group B](needs-checking/group-b.md)) | T1 | READ | 5 |
 | `HERON-REVIT-RIB-023` | Revit Ribbon Agent | Ribbon tab, panels, buttons. **No Emergency Stop button since 2026-09-06** ([D-46](DECISIONS.md)) | T1 | READ | 1 |
 | `HERON-REVIT-DEP-024` | Revit Deployment Agent | Builds and deploys the add-in per version | T1 | ADMIN | 1 |
 | `HERON-REVIT-UNI-035` | **Unit Conversion Agent** | Owns the boundary between Revit's internal **decimal feet** and everything a user says. Lengths, angles, areas, volumes. Converts once, at one place, and **states the unit in every result** ↗ | T1 | READ | 4 |
@@ -299,7 +319,7 @@ fragment-side one.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log. **Built 2026-09-07** - `brain/heron_gaps.py`, served as the `heron_gaps` MCP tool. It splits failures into DEFECTS and CORRECT REFUSALS, because the loudest error in the trail (`needs_unbound`, 38 of 176) is the executor behaving correctly, and counting it as a gap would commission a fragment that already exists. Its first run found 131 `compile_failed` on 2026-09-06 and none on 2026-09-07 | T1 | READ | — |
+| `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log. **Built 2026-09-07** - `brain/heron_gaps.py`, served as the `heron_gaps` MCP tool. It splits failures into DEFECTS and CORRECT REFUSALS, because the loudest error in the trail on 2026-09-07 (`needs_unbound`, 38 of 176) was the executor behaving correctly, and counting it as a gap would commission a fragment that already exists. Its first run found 131 `compile_failed` on 2026-09-06 and none on 2026-09-07 | T1 | READ | — |
 | `HERON-AHR-WFP-015` | **Workforce Planning Agent** | The agent that says **no**. Before anything is hired: does a capability already cover this, can an existing agent be extended, is this a fragment rather than an agent? **This is the guard against agent explosion** ↗ | T2 | SUGGEST | — |
 | `HERON-AHR-SBX-016` | **Agent Sandbox Agent** | **Watches** a newly built agent's first run — the Revit door and the production scopes shut, every attempt to open one written down, the run marked so it can never count as evidence. **Watched, not contained**: it holds a cooperating agent and does not contain a hostile one, which is what [D-84](DECISIONS.md) settled rather than built ↗ | T1 | READ | — |
 | `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 252 agents ↗ | T1 | READ | — |
@@ -511,11 +531,11 @@ keeps discovering it believed.
 | `HERON-DOC-AGT-002` | Agent Documentation Agent | Generated from the agent registry | T1 | — | — |
 | `HERON-DOC-SKL-003` | Skill Documentation Agent | Generated from skill metadata. **Built 2026-09-15** — `tools/generate-skill-catalog.py`, the parallel to the fragment catalogue one layer up. Every skill with the words somebody actually says to reach it, and an **effective status**: the lowest rung on [09](09-skills-and-fragments.md)'s ladder among the fragments serving it. A card can say anything; the chain underneath is the fact. Reachability is per Revit release, never overall | T1 | — | — |
 | `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata. **Built 2026-09-08** — `tools/generate-fragment-catalog.py`, the parallel to the agent map one layer up. Every fragment on one searchable page, including whether its declared negative case can actually be run. It reported 0 stranded cases on its first run against a library holding 18, which is why a generator acquired a test | T1 | — | — |
-| `HERON-DOC-REL-005` | Release Notes Agent | Release Notes Agent — structured notes per release. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)**: there are no releases, so it would be built against an imagined shape. **Unblocked by the first RELEASE tag** — that word is load-bearing, because on 2026-09-17 `git tag` returned two working-tree safety markers and the trigger as written had already fired on them | T2 | — | — |
-| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool already sweeps all 140 markdown files, recomputes every count claim against its derived source and resolves every internal link. **The guarding half only**: it checks the architecture docs are true, and writes none of them. Proved by planting a dead anchor in [`docs/06`](06-heron-platform.md) and requiring it to be caught | T2 | — | — |
+| `HERON-DOC-REL-005` | Release Notes Agent | Release Notes Agent — structured notes per release. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)**: there are no releases, so it would be built against an imagined shape. **Unblocked by the first RELEASE tag** — that word is load-bearing, because on 2026-09-17 `git tag` returned two working-tree safety markers and the trigger as written had already fired on them. **As built (2026-10-18): the first release tag exists** - [`v0.1.0`](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), published 2026-10-08, its notes written from the template in [`release.yml`](../.github/workflows/release.yml) - so the trigger above has fired; the row stays deferred until D-77 is revisited, which is the owner's | T2 | — | — |
+| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool sweeps every markdown file in the repository (its first section prints how many), recomputes every count claim against its derived source and resolves every internal link. **The guarding half only**: it checks the architecture docs are true, and writes none of them. Proved by planting a dead anchor in [`docs/06`](06-heron-platform.md) and requiring it to be caught | T2 | — | — |
 | `HERON-DOC-RDM-007` | README Agent | Keeps the README current. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool reads `README.md` by name in four sections and enforces its counts against their derived source; its own comments record three occasions when the README was wrong and this is why it is not now. **The guarding half only**: nothing writes the README. Proved by planting a false count in it and requiring the guard to fail | T2 | — | — |
 | `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗. **Since [D-77](DECISIONS.md) it also carries `ARC-006` and `RDM-007`.** A dead link had been FOUND and not failed on since 2026-08-31; wiring section 1 to the exit code that day turned up three, one of them a `D-30` anchor linked correctly ten times and wrongly once | T1 | READ | — |
-| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - 683 files carry `Heron-Since: 0.1.0` and there is **one version**, so a change log would be a single section listing all of them: true and useless. **A second problem outlives the first**: `Fixed` and `Improved` cannot be told apart from a diff, and the only mechanical route is a word list over commit subjects, which is the synonym table [D-34](DECISIONS.md) refuses. Whoever builds this after the first tag needs a commit convention or the host under [D-01](DECISIONS.md) | T1 | — | — |
+| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - that day 683 files carried `Heron-Since: 0.1.0` and there was **one version**, so a change log would be a single section listing all of them: true and useless. **A second problem outlives the first**: `Fixed` and `Improved` cannot be told apart from a diff, and the only mechanical route is a word list over commit subjects, which is the synonym table [D-34](DECISIONS.md) refuses. Whoever builds this after the first tag needs a commit convention or the host under [D-01](DECISIONS.md) | T1 | — | — |
 
 ---
 
@@ -547,16 +567,16 @@ keeps discovering it believed.
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
 | **Total** | **252** | **169** | **63** | **20** |
 
-> ### Nine of these need no building, and that is not the same as missing
+> ### Some of these need no building, and that is not the same as missing
 >
-> **The host provides nine of the 252**, and this table counts them like any other row because they
+> **The host provides the rows named below**, and this table counts them like any other row because they
 > are part of the architecture — something *does* orchestrate, classify intent and write the reply.
 > It is simply not a file in this repository.
 >
-> | department | of which the host's |
+> | department | the host's rows |
 > |---|---|
-> | Orchestration & Communication | **4 of 6** — Orchestrator, Intent, Persona, User Result |
-> | Development | **5 of 21** — Requirement, Planning, Architecture, Code Generation, Revit API Domain |
+> | Orchestration & Communication | Orchestrator, Intent, Persona, User Result |
+> | Development | Requirement, Planning, Architecture, Code Generation, Revit API Domain |
 >
 > Every one is language and judgement work that Claude Code is already doing by the time it reads the
 > request. Building them inside Heron would mean writing a worse copy of the thing that is already
@@ -565,7 +585,7 @@ keeps discovering it believed.
 > heron so this ai can do this work am i right"*. He was.
 >
 > **They stay in the register rather than being deleted**, and the reason is recorded rather than
-> assumed: `tools/agent-count.py` keeps HOST as a third state precisely because *"collapsing HOST into
+> assumed: `tools/agent-count.py` keeps HOST as a state of its own precisely because *"collapsing HOST into
 > LEFT produces a to-do list with four items on it that will never be done — which is how this
 > repository's own build-state page came to recommend building the Orchestrator."* Removing the rows
 > is the same failure one step further on: the next reader finds nothing that orchestrates and builds
@@ -573,7 +593,8 @@ keeps discovering it believed.
 > the two must agree.
 >
 > **Read the build state from `python tools/agent-count.py`**, never from this table. It reports BUILT,
-> HOST and LEFT in separate columns, and only LEFT is work.
+> HOST, DEFER and LEFT in separate columns - HOST is where the count of these rows is printed - and only
+> LEFT is work.
 
 
 **[NOTE]** The distribution is the point. **169 of 252 agents never call a model** — they are ordinary
@@ -650,7 +671,7 @@ no named validator is a defect in this registry, not an acceptable state.
 | A name | `Naming` | `Naming Validation` + `Reference Update` |
 | Knowledge structure | `Knowledge Evolution` | `Knowledge Validation` |
 | **A report** | `Report Composition` + `Report Rendering` | **`Report Validation`** *(is it right)* + `Report Redaction` *(may it leave)* |
-| **Documentation** | the 8 Documentation agents | **`Documentation Validation`** |
+| **Documentation** | the other Documentation agents | **`Documentation Validation`** |
 | **An inferred standard** | `Reference Model Profiler` | **`Profile Validation`** |
 | A workflow change | `Workflow Optimizer` | `Experiment` *(is the new shape actually better)* |
 | An experiment verdict | `Experiment` | **a human** — see below |
@@ -814,3 +835,9 @@ Agent Documentation Agent rather than hand-maintained — otherwise it drifts wi
 
 Entries marked **↗** have responsibilities written during review rather than quoted from a
 specification. They are proposals and should be confirmed as each agent is built.
+
+> **As built (2026-10-18):** the Agent Registry Agent is built - [`brain/heron_agents.py`](../brain/heron_agents.py)
+> carries `HERON-AHR-REG-008` and assembles each agent's record from where it is already written - but
+> this page is not generated from it: its rows are still written by hand. Its totals are recomputed from
+> those rows by `python tools/recount-agent-registry.py`, and `python tools/agent-count.py` reads it
+> against every source file's `Heron-Agent` header and exits 1 when the two disagree.

@@ -15,32 +15,39 @@ For *which document covers what*, use [README.md](README.md) — the documentati
 flowchart TD
     MO(["<b>The modeller</b><br/><i>select all ducts</i>"])
     CC["<b>Claude Code</b><br/>the host: conversation, intent, orchestration — D-01"]
-    MS["<b>mcp/server/</b><br/>tool surface — transport only, no BIM knowledge"]
+    MS["<b>mcp/server/</b><br/>the tools and their gates — transport only, no BIM knowledge"]
     BR["<b>brain/</b><br/>which capability is wanted, which fragment provides it"]
+    CL["<b>mcp/client/</b><br/>the pipe client — finds the Revit, never guesses"]
     BG["<b>revit/Heron.Bridge/</b><br/>the pipe server, with no Revit reference at all"]
-    AD["<b>revit/Heron.Revit.Addin/</b><br/>inside Revit.exe"]
+    AD["<b>revit/Heron.Revit.Addin/</b><br/>inside Revit.exe — compiles and runs the fragment"]
     MT["<b>Revit's main thread</b><br/>the only thread the Revit API may be touched from"]
-    MD(["<b>The model</b><br/>selection changes on screen · one audit line written"])
+    MD(["<b>The model</b><br/>a read changes nothing · a change is one named undo entry · one audit line"])
+    CP["<b>mcp/companion/</b><br/>a page beside Revit, this PC only"]
 
     MO --> CC
     CC -->|"MCP (stdio)"| MS
-    MS --> BR
-    BR -->|"back through mcp/client/<br/>named pipe — local only, never a socket"| BG
+    MS <-->|"server/heron_brain.py — the one seam"| BR
+    MS --> CL
+    CL -->|"named pipe — local only, never a socket"| BG
     BG --> AD
     AD -->|"ExternalEvent"| MT
     MT --> MD
+    MS -.-|"same process"| CP
+    AD -.->|"live file"| CP
 
     classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
     classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
     classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
     classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
     classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef side fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
     class MO user
     class CC host
-    class MS,BR brain
+    class MS,BR,CL brain
     class BG,AD addin
     class MT revit
     class MD user
+    class CP side
 ```
 
 <details>
@@ -51,36 +58,101 @@ The modeller                "select all ducts"
    │
 Claude Code                 the host: conversation, intent, orchestration   (D-01)
    │  MCP (stdio)
-mcp/server/                 tool surface — transport only, no BIM knowledge
-   │
-brain/                      which capability is wanted, which fragment provides it
-   │  back through mcp/client/
+mcp/server/                 the tools and their gates — transport only, no BIM knowledge
+   │  ⇅ server/heron_brain.py, the one seam     brain/   which capability, which fragment
+mcp/client/                 the pipe client — finds the Revit, never guesses
    │  named pipe (local only, never a socket)
 revit/Heron.Bridge/         the pipe server, with no Revit reference at all
    │
-revit/Heron.Revit.Addin/    inside Revit.exe
+revit/Heron.Revit.Addin/    inside Revit.exe — compiles and runs the fragment
    │  ExternalEvent
 Revit's main thread         the only thread the Revit API may be touched from
    │
-The model                   selection changes on screen · one audit line written
+The model                   a read changes nothing · a change is one named undo entry · one audit line
+
+mcp/companion/              a page beside Revit, in the server's own process; reads the add-in's live file
 ```
 
 </details>
 
-Two things this diagram is easy to misread:
+What this diagram is easy to misread:
 
 - **The host decides what the user meant, not Heron** ([D-01](DECISIONS.md)). Heron resolves a
   *capability*; it never classifies intent.
-- **Resolving is not running.** The brain answering *"`select-ducts` provides that"* has changed
-  nothing. Running a fragment that **writes** is a separate operation, and `write.enabled` defaults to
-  `false`.
+- **The host names a capability, never a fragment.** `revit_read`, `revit_show` and `revit_change` are
+  the three doors to the library: each takes a capability, the server picks the fragment, and each
+  refuses a fragment above its own ceiling ([04 §8](04-heron-mcp.md)).
+- **Resolving is not running.** The brain answering *"`FILTER_ELEMENTS_BY_CATEGORY`, provided by
+  `filter-elements-by-category`"* has changed nothing. A change goes through `revit_change` — or
+  `revit_apply_move`, which applies a preview the modeller has already seen — and only while
+  `write.enabled`, the ribbon's **Changes** switch, is on; it defaults to `false`. It runs inside one named
+  `TransactionGroup`, and while **Ask to Keep** is on Revit asks the modeller Keep or Discard before
+  anything is kept ([D-126](DECISIONS.md), [D-138](DECISIONS.md)).
+- **Off Windows the chain stops at `mcp/server/`.** No Revit can be there, so the server serves its
+  library tools alone and no `revit_` tool ([D-132](DECISIONS.md)).
 
 ---
 
 ## B. Folder map
 
 Dependency rules below are not prose — they are enforced by
-[`tools/check-structure.py`](../tools/check-structure.py), which fails the build if they are broken.
+[`tools/check-structure.py`](../tools/check-structure.py), which fails the build if they are broken. It
+reads its rules from one table in that file, `ALLOWED`, and checks C# project references and Python
+imports against it.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    TS["<b>tests/</b><br/>suites and test hosts"]
+    TL["<b>tools/</b><br/>every gate and report"]
+    DC["<b>docs/</b><br/>no code — checked by tools/"]
+
+    subgraph PARTS ["The four product parts"]
+        MC["<b>mcp/</b> — Python<br/>server · pipe client · Companion<br/>no BIM knowledge"]
+        RV["<b>revit/</b> — C#<br/>loads into Revit.exe<br/>the only home of the Revit API"]
+        BR["<b>brain/</b> — Python<br/>fragments · skills · retrieval<br/>runs on a PC with no Revit"]
+        PL["<b>platform/</b><br/>paths · config · audit · lease<br/>depends on nothing"]
+    end
+
+    TS -.->|"may reach all four"| PARTS
+    TL -.->|"reads brain/ and mcp/ — D-48"| PARTS
+    TL -.-> DC
+    MC ==> BR
+    MC ==> PL
+    BR ==> PL
+    RV ==> PL
+    MC x--x|"never imports — talks over a named pipe"| RV
+    RV x--x|"never"| BR
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class TS,TL,DC user
+    class MC,BR brain
+    class RV addin
+    class PL plat
+    style PARTS fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+```
+
+**A thick arrow is *may depend on*.** A crossed line is a dependency the checker refuses in both
+directions. `mcp/` and `revit/` still talk — over the named pipe while Revit runs, never by one importing
+the other — which is why the brain can be run and tested on a PC with no Revit at all.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+tests/     may reach all four parts
+tools/     its scripts read brain/ and mcp/ (D-48, printed as a note); it checks docs/, which holds no code
+
+mcp/       may depend on brain/ and platform/   never revit/  - it talks to Revit over a named pipe
+brain/     may depend on platform/              never revit/, mcp/ - it runs on a PC with no Revit
+revit/     may depend on platform/              never brain/, mcp/ - the only home of the Revit API
+platform/  depends on nothing
+```
+
+</details>
 
 | | May depend on | Never |
 |---|---|---|
@@ -89,30 +161,33 @@ Dependency rules below are not prose — they are enforced by
 | `brain/` | `platform` | `revit`, `mcp` |
 | `mcp/` | `platform`, `brain` | `revit` |
 | `tests/` | all four | — |
+| `tools/` | C#: nothing. Its Python reads `brain/` and `mcp/` and is exempt on purpose: [D-48](DECISIONS.md) wants a gate to read the library through the brain rather than parse it again. `check-structure.py` prints which scripts do, as a note | — |
 
 `Autodesk.Revit` types may appear **only inside `revit/`**. Anywhere else is a crossed boundary, and
-the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edit as it is proposed.
+the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edit as it is proposed;
+`check-structure.py` fails the build on any code file that reached disk another way. Both let `tools/`
+name it, because a checker has to be able to name what it checks.
 
 ### The four product parts
 
 | Folder | Owns | Must not own | Start at | Gate after changing it |
 |---|---|---|---|---|
-| [`platform/`](../platform/README.md) | Kernel plumbing — paths, config, identity, audit, lease, permissions, emergency stop, units | **Any BIM knowledge.** If a duct is named in here, the boundary is crossed | `Heron.Core/HeronPaths.cs` — the only thing that builds a Heron path | `check-structure.py` · `check-compile.py` |
-| [`revit/`](../revit/README.md) | Everything loaded into `Revit.exe` — ribbon, commands, the pipe server, the fragment executor | Network of any kind. Business decisions that could live outside Revit | `Heron.Revit.Addin/HeronApplication.cs` (add-in entry) · `Heron.Bridge/BridgeServer.cs` (the pipe) | `check-compile.py` · `check-api-surface.py` · **a real Revit** |
-| [`mcp/`](../mcp/README.md) | Transport between the host and Revit, and the single seam to the brain | BIM logic, knowledge, or any judgement about what the user meant | `server/heron_mcp_server.py` (the MCP entry) · `client/heron_bridge_client.py` (the pipe client) · `server/heron_brain.py` (the **only** door to `brain/`) | `test_mcp_serves.py` · `test_served_claims.py` · `test_loads_finalize.py` — all three need the MCP SDK |
-| [`brain/`](../brain/README.md) | Knowledge — fragments, skills, capabilities, retrieval, context, the graph | Anything that must import a Revit type. It has to stay runnable on a machine with no Revit | `heron_fragment.py` (what a fragment is) · `heron_retrieve.py` (the lookup) · `heron_capability.py` (ask for what you want done) | `heron_fragment.py` · `check-routing.py` · `check-fragments-compile.py` |
+| [`platform/`](../platform/README.md) | Kernel plumbing — paths, config, identity, audit, run records, lease, permissions, emergency stop, units — and the installer, its window and its command line | **Any BIM knowledge.** If a duct is named in here, the boundary is crossed | `Heron.Core/HeronPaths.cs` — the only thing that builds a Heron path | `check-structure.py` · `check-compile.py` |
+| [`revit/`](../revit/README.md) | Everything loaded into `Revit.exe` — ribbon and its switches, commands, the pipe server, the fragment executor, the Keep or Discard box, the run guard and run clock, the live file the Companion reads | Network of any kind. Business decisions that could live outside Revit | `Heron.Revit.Addin/HeronApplication.cs` (add-in entry) · `Heron.Bridge/BridgeServer.cs` (the pipe) | `check-compile.py` · `check-api-surface.py` · **a real Revit** |
+| [`mcp/`](../mcp/README.md) | Transport between the host and Revit, the single seam to the brain, and the Companion page | BIM logic, knowledge, or any judgement about what the user meant | `server/heron_mcp_server.py` (the MCP entry) · `server/heron_tools.py` (every tool and its risk) · `client/heron_bridge_client.py` (the pipe client) · `server/heron_brain.py` (the **only** seam to `brain/`) · `companion/heron_companion.py` (the page) | `test_mcp_serves.py` · `test_served_claims.py` · `test_loads_finalize.py` — all three need the MCP SDK |
+| [`brain/`](../brain/README.md) | Knowledge — fragments, skills, capabilities, retrieval, context, the graph, and the HVAC and fire-protection design engines | Anything that must import a Revit type. It has to stay runnable on a machine with no Revit | `heron_fragment.py` (what a fragment is) · `heron_retrieve.py` (the lookup) · `heron_capability.py` (ask for what you want done) | `heron_fragment.py` · `check-routing.py` · `check-fragments-compile.py` |
 
 ### The supporting folders
 
 | Folder | Owns | Start at |
 |---|---|---|
 | [`tools/`](../tools/README.md) | Every gate, report and generator — the scripts that keep the prose honest | [`tools/README.md`](../tools/README.md), one section per tool |
-| [`tests/`](../tests/README.md) | The suites, the golden library, the .NET test host | [`tests/README.md`](../tests/README.md) — **read the exit codes section first** |
+| [`tests/`](../tests/README.md) | The suites, the golden library, the held-out question sets, and the .NET test hosts that run Heron's own C# with no Revit | [`tests/README.md`](../tests/README.md) — **read the exit codes section first** |
 | `docs/` | Permanent specification, architecture, decisions and registers | [README.md](README.md) |
 | [`docs/work-notes/`](work-notes/README.md) | Temporary operational work — what is going on right now | [work-notes/README.md](work-notes/README.md) |
 | `.claude/` | House rules as skills, and the prototype agents that keep them. **The only tree of HOUSE RULES** — `brain/skills/` above is Heron's own skills, the jobs it does for a modeller, and the two share a word and nothing else. **`agents/heron-*.md` are not house rules**: they are Heron's own background agents, the *subagents* [D-01](DECISIONS.md) says Heron supplies, and they live here because this is the folder the host reads them from. The first is `heron-model-auditor`; `heron-fragment-author` writes a new fragment at DRAFT when nothing in the library does the job. A background agent carries a read-only tool list, and an agent that writes files carries no tool that reaches Revit - both held by `tests/test_agent_tools.py`. **`settings.json` wires the development hooks every session runs** - the boundary guard, the session-start line, the *has main moved?* note and the LOCAL-prompt-in-the-cloud note, each writing its decisions to a diary outside the repository. They are for developing Heron; a modeller never meets them | [`.claude/skills/README.md`](../.claude/skills/README.md) · [`heron-session`](../.claude/skills/heron-session/SKILL.md) |
-| `.codex/` | Some of the same agents for a second host, pointing at the same skills - compare `ls .claude/agents .codex/agents`, not every `.claude` agent has a `.codex` copy. **A `.codex` copy carries no tool list**, so there the read-only rule is an instruction in the agent's text, not a restriction | `.codex/config.toml` |
-| `.github/` | CI, plus the pull-request and issue templates, `CODEOWNERS` and `dependabot.yml`. [`workflows/gates.yml`](../.github/workflows/gates.yml) is the job whose gates decide a pull request - the four you run locally and the rest [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) names | [`workflows/gates.yml`](../.github/workflows/gates.yml) |
+| `.codex/` | The same agents for a second host, pointing at the same skills - compare `ls .claude/agents .codex/agents` before assuming a `.claude` agent has its `.codex` copy. **A `.codex` copy carries no tool list**, so there the read-only rule is an instruction in the agent's text, not a restriction | `.codex/config.toml` |
+| `.github/` | CI, plus the pull-request and issue templates, `CODEOWNERS` and `dependabot.yml`. [`workflows/gates.yml`](../.github/workflows/gates.yml) is the job whose gates decide a pull request - the four you run locally and the rest [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) names. Beside it: `windows.yml` (the installer's Windows half, on a Windows runner with no Revit, for a pull request that touches it), `weekly.yml` (did the outside world break the build while nobody pushed) and `release.yml` (builds a release's assets) | [`workflows/gates.yml`](../.github/workflows/gates.yml) |
 | `.mcp.json` | Not a folder: the file that registers Heron's MCP server with the host, with the `HERON_CLIENT_ID` that `.codex/config.toml` must match | `.mcp.json` |
 
 ---
@@ -125,6 +200,8 @@ the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edi
 | Add or change a **fragment** | [`brain/README.md`](../brain/README.md) → `heron_fragment.py` | [09 — Skills & Fragments](09-skills-and-fragments.md). A re-authored fragment arrives **unproven** whatever it was elsewhere ([D-44](DECISIONS.md)) |
 | **Prove** a fragment against a model | [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md) skill | [NEEDS-CHECKING.md](NEEDS-CHECKING.md). A proof needs a named model, a negative case and a fingerprint ([D-30](DECISIONS.md)) |
 | Add or change an **MCP tool** | [`mcp/README.md`](../mcp/README.md) → `server/heron_tools.py` | [04 — Heron MCP](04-heron-mcp.md). Transport only — no BIM logic |
+| Add or change a **job's method** — the steps of a job like building a family | [`brain/README.md`](../brain/README.md) → `skills/` | A skill names capabilities, never fragments, and `heron_method` hands it to the chat whole. `python brain/heron_skill.py` says whether every capability it needs is provided |
+| Change the **Companion page** | [`mcp/companion/README.md`](../mcp/companion/README.md) | [40 — Heron Companion](40-heron-companion.md). It never talks to an AI, never prints, and never asks Revit through the pipe |
 | Change **which Revit versions** are supported | [16 — Version Support](16-version-support-strategy.md) | `Directory.Build.props` maps release → runtime. `revit-version-support` skill has the API breaks |
 | Understand **why** a design is the way it is | [DECISIONS.md](DECISIONS.md) | Then the numbered document for that area |
 | Find out **what is not proven yet** | `python tools/check-gaps.py` | [NEEDS-CHECKING.md](NEEDS-CHECKING.md). Never read a count out of prose |
@@ -157,7 +234,7 @@ it implements**: `check-structure.py` exiting 0 says the layering holds, not tha
 
 ### What explains the intent
 
-Specifications and permanent architecture — `docs/00`–`00e`, `docs/01`–`34`. Historical specifications
+Specifications and permanent architecture — the numbered documents, `docs/00`–`00e` and `docs/01` onward; [README.md](README.md) says which of them are research or a design not yet built. Historical specifications
 keep their historical wording. Where one is superseded, point at the deciding decision rather than
 rewriting the history.
 
@@ -224,20 +301,19 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
 
 What matters to you: **read and write are different things, and what keeps you safe is the switch,
-not the library.** `write.enabled` defaults to **`false`** whatever the fragment says, and stays there
-until the write path has been through the register and the owner has decided — `D3`, the tape measure
-on the move, was taken on 2026-10-17 in Revit 2024 (+200.0000 mm, the pinned control unmoved), but the
-other rails and the decision itself ([D-19](DECISIONS.md)) are still open.
+not the library.** Heron reads the model and changes nothing until the ribbon's **Changes** switch is on
+— `write.enabled`, **`false`** by default whatever the fragment says ([D-19](DECISIONS.md)). With it on,
+a change from the chat runs only a `PROVEN` capability whose proof still stands ([D-117](DECISIONS.md)),
+inside one named `TransactionGroup` that is one entry in Revit's undo list; while **Ask to Keep** is on,
+Revit shows the change and asks **Keep or Discard** before it is kept ([D-126](DECISIONS.md),
+[D-138](DECISIONS.md)). `D3`, the tape measure on the move, was taken on 2026-10-17 in Revit 2024
+(+200.0000 mm, the pinned control unmoved); the other rails of [Group D](needs-checking/group-d.md) are
+still owed.
 
-**This paragraph said *"reading is proven far more widely — 106 `READ` fragments carry a proof against
-63 `MODIFY`"* until 2026-09-21, and it was true the day it was written.** The library moved to 145
-against 166 and the sentence stayed, so it had become the opposite of true — in the paragraph written
-for the person deciding whether to trust Heron near their model. It said *185 of 360* are `DRAFT` in
-the same breath. `tools/check-docs.py` can see the *carry a proof* wording now
-([row 5b-61](FRAGMENT-ISSUES.md)).
-
-A fragment marked `DRAFT` **has never met a model.** Derive every one of these rather than believing
-any number typed here:
+A fragment marked `DRAFT` **is not proven as it stands** — it is new, or its code changed under its
+proof — and `revit_change` refuses it. It may run once on the saved model in front, behind the same Keep
+or Discard box, when you ask ([D-119](DECISIONS.md), [D-121](DECISIONS.md)). Derive how many are which
+rather than believing any number typed here:
 
 ```bash
 grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
@@ -252,13 +328,17 @@ did. It is not a compile and not a passing test.
 [12 — Security & Permissions](12-security-and-permissions.md) for approval and data scope ·
 [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) for the binding rules.
 
-**Declared support and tested releases are not the same list**, and there are two tested lists rather
-than one. The compile gate covers **2020–2027**, on every push. The **add-in has been deployed, loaded
-and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NEEDS-CHECKING.md), 2026-09-19, on
-all three releases installed on the owner's PC. **Fragments have been proven on 2020 and 2024 only**:
-a proof is a recorded run against a named model, and none names 2027. This line said *"a real Revit has
-been used on 2020 and 2024"* until 2026-09-21, which was true of the second list and understated the
-first ([row 5b-62](FRAGMENT-ISSUES.md)).
+**Declared support and tested releases are not the same list**, and there are several tested lists
+rather than one. The compile gate covers **2020–2027**, on every push. The **add-in has been deployed,
+loaded and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NEEDS-CHECKING.md),
+2026-09-19, on all three releases installed on the owner's PC. **On 2026-10-17 it loaded on the owner's
+laptop on 2020, 2024, 2026 and 2027**, and on 2026 no fragment could run
+([Group EQ](needs-checking/group-eq.md), [row 5b-575](fragment-issues/section-5b-rows-401-425.md)); the
+repair is in code and has not been run in Revit ([Group GW](needs-checking/group-gw.md)). **The Keep or Discard box and the rails
+around it were run on 2024 and 2027** on 2026-10-18 ([Group ET](needs-checking/group-et.md)). **Fragments
+have been proven on 2020 and 2024 only**: a proof is a recorded run against a named model, none names
+another release, and no fragment yet carries a `proof.releases` entry for one ([D-131](DECISIONS.md)) —
+measured 2026-10-18 by reading every fragment's `proof:` block.
 
 ### Developer
 
@@ -279,15 +359,17 @@ changing → the [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill bef
 
 ## F. Words used here
 
-Full definitions: [15 — Glossary](15-glossary.md). The eight that cause the most confusion:
+Full definitions: [15 — Glossary](15-glossary.md). The ones that cause the most confusion:
 
 | Term | In one line |
 |---|---|
-| **Fragment** | One reusable unit of implementation — C# plus metadata. The thing that does the work |
-| **Capability** | *What you want done*, named without naming who does it. Skills ask for these, never for a fragment |
-| **Skill** | What a user can ask for in their own words. Names capabilities, never fragments |
+| **Fragment** | One reusable unit of implementation — C# plus its card, `fragment.yaml`, in `brain/fragments/<name>/`. The thing that does the work |
+| **Capability** | *What you want done*, named without naming who does it — `FILTER_ELEMENTS_BY_CATEGORY`. Skills and the chat ask for these, never for a fragment |
+| **Skill** | What a user can ask for in their own words, in `brain/skills/`. Names capabilities, never fragments; a job of several steps is a skill, and `heron_method` hands it over whole. Not the house rules in `.claude/skills/` |
+| **Door** | One of the three MCP tools a fragment is run through — `revit_read`, `revit_show`, `revit_change` — each with a ceiling on the risk it will run |
 | **Host** | The AI application providing the conversation — Claude Code ([D-01](DECISIONS.md)). Not part of Heron |
 | **MCP** | The tool interface between the host and Heron |
 | **Bridge** | The local named pipe carrying a request into Revit. Never a network socket |
 | **ExternalEvent** | The only safe way to reach the Revit API — it schedules work onto Revit's main thread |
 | **Proof** | A recorded run against a **named real model**, with a negative case and a staleness fingerprint. A compile is not a proof; a passing test is not a proof ([D-30](DECISIONS.md)) |
+| **Keep or Discard** | Revit's own question after a change from the chat, while **Ask to Keep** is on: nothing is kept until the modeller chooses Keep ([D-126](DECISIONS.md), [D-138](DECISIONS.md)) |

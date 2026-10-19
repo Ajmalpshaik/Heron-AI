@@ -9,9 +9,85 @@ See docs/29-metadata-standard.md
 
 # 36 — Remembering between steps, and the check that makes it safe
 
-**A DESIGN NOTE, NOT A DECISION.** Nothing here has been built, and no decision number has been
-spent on it. It exists so the plan can be read before any code is written. If it is accepted it
-becomes a `D-` entry in [DECISIONS.md](DECISIONS.md) and this file becomes its background.
+**A DESIGN NOTE, NOT A DECISION.** No decision number has been spent on it. It was written so the
+plan could be read before any code was. If it is accepted it becomes a `D-` entry in
+[DECISIONS.md](DECISIONS.md) and this file becomes its background.
+
+> **As built (2026-10-18): BUILT; RUN ON A REAL MODEL, NOT SIGNED.** §4's opt-in expectation was built
+> on 2026-09-16 and merged the next day (#165, commit `5669e7e5`) as the request's `expectChain`,
+> checked by the add-in's binder in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)
+> before anything binds, and as the
+> `expect_from` input of `revit_read`, `revit_show`, `revit_change`, `revit_edit_table`,
+> `revit_building_loads` and `revit_sprinkler_hydraulics`. A call that declares nothing still resets, as
+> §4 asks. Four refusals each have their own name - `chain_empty`, `chain_mismatch`,
+> `chain_inputs_differ`, `chain_contradiction` - held by
+> [`tests/test_chain_expectation.py`](../tests/test_chain_expectation.py). **§6's pair was run** on
+> `4355-BHVD-3D-50C10-BL001A`, Revit 2020, on 2026-09-16: the same carried values bound under a matching
+> declaration and were refused under a mismatched one, and `chain_mismatch` fired too -
+> [FRAGMENT-ISSUES row 115](fragment-issues/section-5-rows-101-125.md), *"proved on both legs, awaiting
+> signature"*. `chain_empty` and `chain_contradiction` are tested off Revit only.
+
+### At a glance — the check as built
+
+Read from [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), which sends either a reset
+or an expectation and never both, and the binder in
+[`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), which asks the questions below in this
+order before anything binds.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    CALL["<b>A call that runs a fragment</b><br/>revit_read · revit_change · revit_show<br/>revit_edit_table · and the others"]
+    Q0{{"Does it name what it expects<br/>with expect_from?"}}
+    RESET["<b>Reset</b> · the default, as before<br/>what the last fragment left is forgotten"]
+    Q1{{"Is anything carried<br/>for this chat on this model?"}}
+    Q2{{"Was it left by<br/>the fragment named?"}}
+    Q3{{"Did that fragment run<br/>with the inputs named?"}}
+    BIND["<b>Bound</b><br/>and the answer says where the values came from"]
+    NO["<b>Refused · nothing bound, nothing ran</b><br/>chain_empty · chain_mismatch · chain_inputs_differ<br/>chain_contradiction: a request that resets and expects"]
+
+    CALL --> Q0
+    Q0 -->|no| RESET
+    Q0 -->|yes| Q1
+    Q1 -->|yes| Q2
+    Q2 -->|yes| Q3
+    Q3 -->|yes| BIND
+    Q1 -.->|no| NO
+    Q2 -.->|no| NO
+    Q3 -.->|no| NO
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class CALL host
+    class Q0 brain
+    class RESET,Q1,Q2,Q3,BIND addin
+    class NO revit
+```
+
+**Green is the MCP side, which decides what to send; amber is the add-in inside Revit, which forgets,
+checks and binds.** The pair §6 asks for - the same carried
+values bound under a matching declaration and refused under a mismatched one - was run on a real model
+on 2026-09-16, as the note above says, and awaits a signature.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+A call that runs a fragment (revit_read, revit_change, revit_show, revit_edit_table, ...)
+  -> does it name what it expects with expect_from?
+       no  -> reset, the default as before: what the last fragment left is forgotten
+       yes -> is anything carried for this chat on this model?      no -> refused: chain_empty
+           -> was it left by the fragment named?                    no -> refused: chain_mismatch
+           -> did that fragment run with the inputs named?          no -> refused: chain_inputs_differ
+           -> bound, and the answer says where the values came from
+A request that both resets and expects is refused first: chain_contradiction.
+A refusal binds nothing and runs nothing.
+```
+
+</details>
 
 **The owner asked the question that produced it**, on 2026-09-16, in his own words: *an agent that
 cannot remember is crippled — so add a layer that confirms the remembered thing is the right thing,
@@ -37,7 +113,7 @@ The refusal, verbatim:
 
 **Both fragments work. Neither is at fault.** What is missing is the join. And the join is missing
 *on purpose*: `cmd_fragment` sends `chain: "reset"` on every call
-([`heron_bridge_client.py:1025`](../mcp/client/heron_bridge_client.py)), so the 120 elements are
+([`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), in `cmd_fragment`), so the 120 elements are
 forgotten before the next command starts.
 
 **THE RESET IS RIGHT, AND THIS NOTE DOES NOT PROPOSE REMOVING IT.** The hazard it prevents is named
@@ -57,7 +133,7 @@ be safe".**
 ## 2. Three quarters of the answer is already built
 
 This is the part that makes the proposal small. `Chain`
-([`RevitFragment.cs:1040`](../revit/Heron.Revit.Addin/RevitFragment.cs)) already records:
+(the `Chain` class in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)) already records:
 
 ```csharp
 public readonly Dictionary<string, object> Values;
@@ -109,7 +185,7 @@ expect-chain: elements from select-by-category-name
 
 and the executor's binding step — the one already written as
 *"1. THE CHAIN"* / *"2. THE SELECTION"* at
-[`RevitFragment.cs:1284`](../revit/Heron.Revit.Addin/RevitFragment.cs) — would gain a third
+`BindNeeds` in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) — would gain a third
 question between them: **does what is carried match what was declared?**
 
 - **Matches** → use it, and say so in the read-back exactly as now.

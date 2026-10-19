@@ -77,6 +77,10 @@ a live process id does not. Enforced by `HeronPaths` ([D-17](DECISIONS.md)).
    verify the PID is running *and* the pipe answers before listing a session as available — and remove
    the stale file when it does not.
 
+> **As built (2026-10-18):** off Windows there is nothing to discover. The bridge is a Windows named
+> pipe, so in a cloud session the Heron server serves its library tools alone and declares no `revit_`
+> tool at all ([D-132](DECISIONS.md)).
+
 ---
 
 ## 2a. The session list — static facts in the file, dynamic facts on demand
@@ -145,6 +149,18 @@ they are working on — while Heron binds to the PID underneath.
 - **List numbers are per-question, not identities.** They are never reused across prompts and never
   stored.
 
+> **As built (2026-10-18) — two of these requirements are not met.** The picker is
+> `SessionBinding.describe` in [`heron_session.py`](../mcp/server/heron_session.py). Each row is the
+> list number, the Revit release, `(session <pid>)` — the Revit **process id** — and the lease state from
+> `availability` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py): `(free)`,
+> `(in use by this chat)`, `(in use by another chat, ~N min left)` or `(availability unknown)`.
+> **It names no project**, and **it shows the process number** that the quotation above asks never to
+> show. `revit_health` names the model of the one Revit this chat is bound to, and no other. Choosing by
+> list number works: `revit_use_session` takes the number or the session id. This section and
+> [`mcp/README.md`](../mcp/README.md) rule 4 state the requirement. The code does not meet it yet, and
+> whether it should is the owner's to decide. Recorded here on 2026-10-18 and not yet a FRAGMENT-ISSUES
+> row.
+
 ---
 
 ## 3. Session binding — one chat, one Revit
@@ -195,7 +211,80 @@ Whichever way it refuses, the refusal must say **"nothing has been sent to Revit
 The user's first thought on any refusal is *did it half-do something?*, and answering that unasked is
 the difference between a safe stop and a frightening one.
 
-Settles part of [Q-11](OPEN-QUESTIONS.md); the mechanism is built in [Step 5](27-build-order.md).
+The mechanism is built in [Step 5](27-build-order.md), in
+[`heron_session.py`](../mcp/server/heron_session.py).
+
+### Which Revit — the whole rule as one picture, as built (2026-10-18)
+
+This is `SessionBinding.resolve` in [`heron_session.py`](../mcp/server/heron_session.py), asked before
+every call that reaches a Revit. It is [Article 12a](../HERON_CONSTITUTION.md) and
+[Golden Rule 20](14-golden-rules.md) in code.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    Q(["A Heron call<br/>that needs Revit"])
+    N0{"Any Revit<br/>connected?"}
+    NONE["Nothing sent<br/>press Heron on the ribbon"]
+    B{"This chat already<br/>bound to one?"}
+    LIVE{"Still<br/>connected?"}
+    CH{"You chose it,<br/>or it is the only one?"}
+    CH2{"Had you<br/>chosen it?"}
+    N{"How many<br/>connected?"}
+    USE["Use that Revit<br/>every call goes there"]
+    ASK["Nothing sent<br/>Heron lists them by number"]
+    STOP["Stop and say so<br/>never slide onto another"]
+
+    Q --> N0
+    N0 -->|none| NONE
+    N0 -->|yes| B
+    B -->|no| N
+    B -->|yes| LIVE
+    LIVE -->|yes| CH
+    CH -->|yes| USE
+    CH -->|"no: assumed, and<br/>another appeared"| ASK
+    LIVE -->|"no, it closed"| CH2
+    CH2 -->|yes| STOP
+    CH2 -->|"no, it was assumed"| N
+    N -->|"one · assumed"| USE
+    N -->|"more than one"| ASK
+    ASK -.->|"you choose · revit_use_session"| USE
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class Q,NONE,ASK,STOP user
+    class N0,B,LIVE,CH,CH2,N brain
+    class USE revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+A Heron call that needs Revit
+  Any Revit connected?           none -> nothing sent; press Heron > AI Bridge > Heron on the ribbon
+  This chat already bound?
+    no  -> how many connected?   one          -> use it (ASSUMED, not chosen)
+                                 more than one -> nothing sent; Heron lists them by number
+    yes -> still connected?
+             yes -> chosen by you, or the only one?  yes -> use it
+                                                     no  -> it was assumed and another Revit has
+                                                            appeared: nothing sent, Heron lists them
+             no  -> had you chosen it?               yes -> STOP and say so; never slide onto another
+                                                     no  -> it was assumed: count again, as above
+
+From the list you choose with revit_use_session (a list number or a session id). That is CHOSEN:
+it stays bound while other Revits come and go. Choosing also moves the model pin to that Revit's
+model in front, and drops anything pending from the old model.
+Every refusal says "Nothing has been sent to Revit" in as many words.
+```
+
+</details>
+
+Every case is run without Revit by `tests/test_session_binding.py`. The case *two connected, none chosen*
+was met on the owner's PC on 2026-09-19, with sessions 20472 and 36908 live
+([FRAGMENT-ISSUES row 130](fragment-issues/section-5-rows-126-150.md)).
 
 ### What the lease protects — **per process, not per document**
 
@@ -302,7 +391,8 @@ A lease removes that job from the user twice over — it prevents the collision,
 thing that makes `(free)` / `(in use)` truthful in the picker (§2a). Without a lease there is no
 honest availability column to show, and the user goes on being the lock.
 
-Tracked as [Q-36](OPEN-QUESTIONS.md).
+Tracked as [Q-36](OPEN-QUESTIONS.md), answered: option B, built in Step 6 as
+[`HeronLease`](../platform/Heron.Core/HeronLease.cs) ([D-22](DECISIONS.md)).
 
 ---
 
@@ -339,6 +429,88 @@ Every step was individually correct. Nobody made a mistake. The model was still 
    non-active document directly. What is never acceptable is *silently following* the user's clicking.
 6. **Reads may use the active document**, but the result must **state which document it read**.
    *"Found 126 ducts in Tower-A.rvt"* is safe; *"Found 126 ducts"* is not.
+
+> **As built (2026-10-18):** a write is **aimed** at the pinned model rather than guarded against the
+> one in front. `revit_change` sends the pinned model's path and title with every request; the add-in
+> matches the **path alone** when there is one, and the title only for a model never saved, refusing a
+> title two open models share (`ambiguous_document`) or a model no longer open (`no_such_document`)
+> before anything runs — [D-74](DECISIONS.md), still *Proposed*, and `RevitFragment.Run`. So rule 3's
+> *"never by window title"* is kept for a saved model and not for an unsaved one. The model's own id is
+> `Document.CreationGUID`, readable on Revit 2024 and later, and a project's kept answers are filed under
+> it ([D-113](DECISIONS.md), *Proposed*); the Project Information `UniqueId` is not identity, because a
+> new project inherits it from its template. [`DocumentPin`](../mcp/server/heron_write.py) holds all
+> three. **NEEDS REAL REVIT:** E16 to E18 in [Group E](needs-checking/group-e.md), which would show the
+> aiming in front of a model, have not been run.
+>
+> **Seen since, 2026-10-18:** row ET5 of [Group ET](needs-checking/group-et.md) on Revit 2024.3 had the
+> scratch model *Heron Guard B 2024* in front. It sent `CREATE_DUCT` through `revit_change` to *Heron
+> Safety 2024* by name. The duct was kept in *Heron Safety 2024*, and B's element count was the same
+> before and after. That is E16's shape on one release; E16 to E18 themselves are still not run. The
+> switched-model refusal and `use this model` were seen on Revit 2024 on 2026-09-17
+> ([Group B](needs-checking/group-b.md), row B14: PASS).
+
+### Which model — as built (2026-10-18)
+
+[`DocumentPin`](../mcp/server/heron_write.py) pins the first model a chat's answer names. After that,
+what happens depends on the tool. The three doors are **aimed** at the pinned model (`_aim_at_pin` in
+[`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), `RevitFragment.Run`). Every other `revit_`
+tool reads the model in front and is **checked** against the pin (`pinned.check`).
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    M(["A call reaches<br/>the bound Revit"])
+    P{"This chat has<br/>a pinned model?"}
+    FIRST["Runs in the model in front<br/>its answer pins it"]
+    W{"Which tool?"}
+    OPEN{"Pinned model<br/>still open?"}
+    NSD["Refused before it runs<br/>no_such_document"]
+    FRONT{"Model in front is<br/>the pinned one?"}
+    REF["Refused<br/>go back, or say use this model"]
+    UTM["revit_use_this_model<br/>re-pins to the model in front"]
+    RUN["Runs<br/>the answer names the model"]
+
+    M --> P
+    P -->|no| FIRST
+    P -->|yes| W
+    W -->|"revit_read · revit_show<br/>revit_change"| OPEN
+    OPEN -->|"yes · aimed at it,<br/>in front or not · D-74"| RUN
+    OPEN -->|no| NSD
+    W -->|"the other revit_ tools"| FRONT
+    FRONT -->|yes| RUN
+    FRONT -->|no| REF
+    REF -.->|you say so| UTM
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class M,NSD,REF user
+    class P,W,FRONT brain
+    class OPEN addin
+    class FIRST,RUN,UTM revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+A call reaches the bound Revit
+  No model pinned yet -> runs in the model in front; its answer pins it
+                         (DocumentPin: creationGuid, then path, then title)
+  A model pinned:
+    revit_read, revit_show, revit_change -> AIMED at the pinned model (D-74)
+        still open, in front or not -> runs there; the answer names it
+        no longer open             -> refused before it runs: no_such_document, naming what is open
+        two open with its title, never saved -> refused: ambiguous_document
+    every other revit_ tool -> reads the model in front, then checks it against the pin
+        the same model -> the answer, naming the model
+        another model  -> refused: "go back to X, or say 'use this model'"
+                          revit_use_this_model re-pins to the model in front and drops anything
+                          pending from the old one
+```
+
+</details>
 
 **[NOTE]** Rule 6 costs one clause in a sentence and eliminates a whole class of confusion. It is the
 same instinct as the Evidence System ([23 §6](23-heron-kernel.md)) — say what you acted on.
@@ -381,6 +553,15 @@ claims. The model can change between two steps for at least four reasons:
 [Golden Rule 17](14-golden-rules.md). A preview that is not re-validated at execution time is worse than
 no preview — it gives the user confidence in a number that is no longer true.
 
+> **As built (2026-10-18):** rule 3 is code for the move, the one change that has a preview to approve
+> (`revit_preview_move`, then `revit_apply_move`). In
+> [`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) the approval carries the preview's token.
+> A preview older than `PreviewLifetime` is refused `preview_expired`. Before moving, the add-in looks
+> for the previewed elements again: any gone or newly appeared is refused `model_moved_on`, *"The model
+> changed since that preview ... Nothing was changed."* `revit_change` has no preview to expire. The
+> modeller judges what they see in Revit's Keep or Discard box while *Ask to Keep* is on
+> ([12 §3a](12-security-and-permissions.md)).
+
 ---
 
 ## 6. Turn-taking and the freeze
@@ -405,6 +586,16 @@ Observed in practice:
 3. **"Revit is busy" is a first-class state**, not an error. It is what happens when the user is
    mid-command, and it should be reported as *"waiting for you to finish"* rather than as a failure.
    [04 §6](04-heron-mcp.md).
+
+> **As built (2026-10-18):** points 1 and 3 are built. Point 2 is not.
+>
+> | | As built | Where |
+> |---|---|---|
+> | The banner | shown over Revit while a job runs, on by default (`ui.activityBanner`) | [`HeronActivityBanner.cs`](../revit/Heron.Revit.Addin/HeronActivityBanner.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs) |
+> | Revit busy | Revit did not take the request within `revit.busyTimeoutSeconds`: `revit_busy`, *"Finish what is open in Revit and ask again"*, nothing sent | [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs) |
+> | Still working | taken but not finished within `revit.operationTimeoutSeconds`: `still_running`, *"do not repeat the request"* | `RevitDispatcher.cs` |
+> | A job that never ends | stopped by the run clock inside that wait and rolled back ([D-129](DECISIONS.md#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again)) | [21 §4](21-resilience-and-operations.md) |
+> | Chunk and yield | **not built.** A job holds Revit's thread until it ends; nothing splits it | — |
 
 ---
 
@@ -508,8 +699,11 @@ field, which is a year of pain Heron does not have to repeat.
 Carried forward:
 
 - Per-PID named pipes ✅ *(already [D-02](DECISIONS.md))*
-- Discovery via `%APPDATA%\...\bridges\<pid>.json` ✅ **new — closes a gap in D-02**
+- Discovery via one `<pid>.json` per bridge — in Heron `%LOCALAPPDATA%\Heron\bridges\<pid>.json` (§2) ✅
+  **new — closes a gap in D-02**
 - Two pipe server instances per bridge — one serving, one listening — so a new connection is instant ✅
+  *(more in Heron since 2026-10-13 — `PipeInstances` in [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)
+  — so a displaced pipe can finish writing an answer it owes, §3)*
 - Explicit user connect per Revit; an unconnected Revit is invisible ✅
 - One chat, one Revit; ask once; never guess; fail closed on disconnect ✅
 - Progress banner during execution ✅
@@ -525,6 +719,12 @@ Changed:
   demand. Fixes the whole class of staleness rather than one field
 - **The picker shows version, project and availability — never a process number** *(§2a)*
 - **`(free)` / `(in use)` shown in the picker** *(§2a, §3)* — stops the user having to act as the lock
+
+> **As built (2026-10-18):** each item under *Changed* is in code — the lease in
+> [`HeronLease.cs`](../platform/Heron.Core/HeronLease.cs), the pin in `DocumentPin`, the live list in
+> `SessionBinding.sessions`, the availability column in `availability` — with two exceptions. The picker
+> names no project and does show the process number (§2a). Preview re-validation covers the move, the
+> one change with a preview (§5).
 
 Explicitly **not** attempted:
 
