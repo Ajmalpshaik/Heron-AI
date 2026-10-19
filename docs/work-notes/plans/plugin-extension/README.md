@@ -8,7 +8,8 @@
 > carry its own copy, and that copy went stale — it still called Stages 2, 3 and 4 *"BUILT AND
 > UNPROVEN"* after the owner had run them on his PC, and still called Stages 5 to 9 *"NOT STARTED"*
 > after three of them were built. **A status written twice is a status wrong once.** What is still owed
-> on a Windows machine with Revit is in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), groups AA to AD.
+> on a Windows machine with Revit is in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), groups AA to AE
+> (this said AA to AD until 2026-10-18; Stage 6's rows are AE).
 > **Owner:** Ajmal PS.
 
 ---
@@ -26,6 +27,10 @@
 > not begin until AA1, AA2 and AA3 pass*; **the owner chose to build Stage 3 anyway.** That is recorded
 > rather than edited away, together with what it costs if `AA2` fails — the install engine survives,
 > the **shape** does not. [Group AA](../../../NEEDS-CHECKING.md) has both.
+>
+> **Since, the same day:** [§4](02-implementation.md#4-progress) records Stage 2 **PROVEN** on the owner's
+> PC on 2026-09-21 - two Heron tabs in one Revit, on Revit 2024.3 and 2020.2.9, with `AA2` not broken -
+> except `AA9`.
 
 Heron today is **one tab with three buttons**. This folder plans the step from that to **several Heron
 products**, each its own Revit tab, and **one installer window** that installs whichever ones the user

@@ -25,6 +25,11 @@ waiting on a person is not a build failure.
 
 **Each line is a summary. The register it names is the authority** — open the row before acting on it.
 
+**Two things it leaves out, and says so at its foot:** open defects in
+[FRAGMENT-ISSUES](FRAGMENT-ISSUES.md), which no bucket holds, and the plans in `docs/work-notes/plans/`,
+which are schedules. The same foot prints how many fragments are still `DRAFT` against how many are
+proved, counted from disk as it runs.
+
 ---
 
 ## 2. The buckets, and what each one means
@@ -41,7 +46,8 @@ waiting on a person is not a build failure.
 > ```
 
 The tool sorts by **what you must have in front of you**, because that is what decides whether a thing
-can be done this morning or not at all.
+can be done this morning or not at all. **A bucket with nothing in it is not printed**, so a run can show
+fewer headings than the table below — on 2026-10-18 *ONE DOCUMENT* printed nothing.
 
 **What is waiting on you, and where it comes from** — read from `BUCKETS`, `classify()` and the three
 readers in [`tools/owner-queue.py`](../tools/owner-queue.py). No counts here: the tool prints them.
@@ -97,10 +103,10 @@ PROPOSALS       (proposals not marked done)  --+--> python tools/owner-queue.py 
 NEEDS-CHECKING  (rows not struck through)    --+
                                                      |
     every open question and proposal  ------------>  A DECISION     nothing but you
-    a NEEDS-CHECKING row, by its own words:          REVIT OPEN     mentions Revit (and not "no Revit")
-                                                     THE PC         "on the PC", Windows, setup.ps1
-                                                     A NETWORK      huggingface, sentence-transformers
-                                                     ONE DOCUMENT   a numbered document or a clause
+    a NEEDS-CHECKING row, by its own words           REVIT OPEN     mentions Revit (and not "no Revit")
+    and its group's heading, tested in this order:   THE PC         "on the PC", "owner's PC", Windows, setup.ps1
+                                                     A NETWORK      huggingface, sentence-transformers, "reach a model"
+                                                     ONE DOCUMENT   "document" with "numbered" or "clause"
                                                      UNCLASSIFIED   none of those - read the row
 ```
 
@@ -108,7 +114,7 @@ NEEDS-CHECKING  (rows not struck through)    --+
 
 | Bucket | What it needs | What to do with it |
 |---|---|---|
-| **A DECISION** | Nothing but you | Answer it in the register it came from. An answer in chat is lost; an answer in the file is a decision |
+| **A DECISION** | Nothing but you | Every open question and every proposal not marked done — the questions [D-139](DECISIONS.md) put to you from the specification land here like any other. Answer it in the register it came from. An answer in chat is lost; an answer in the file is a decision |
 | **ONE DOCUMENT** | A numbered specification | **This unblocks more than anything else.** See [§4](#4-the-one-thing-that-unblocks-the-most) |
 | **REVIT OPEN** | Revit, and usually a model | Say *"Revit is open"* and **which model** — that decides what can be proved |
 | **THE PC** | Windows. No Revit | Runnable any time you are at the machine |
@@ -124,7 +130,7 @@ NEEDS-CHECKING  (rows not struck through)    --+
 | | Safe on a live project? |
 |---|---|
 | Fragments that are **`PROVEN`** and **`READ`** | **Yes.** A `READ` fragment cannot modify a model — that is enforced, not promised |
-| Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only**, until the owner says otherwise. The rollback check built 2026-10-17 passed every rollback row run in Revit 2024 and 2027 on 2026-10-18, on scratch copies — EO1, EO2, EO4, EO5 and, on 2027, EO7; a refused move (EO6) was not arranged ([Group EO](needs-checking/group-eo.md)) — but a rollback that reported success and kept a rename anyway ([A16b](needs-checking/group-a.md)) has never been run again and is still open |
+| Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only**, until the owner says otherwise. The rollback check built 2026-10-17 passed every rollback row run in Revit 2024 and 2027 on 2026-10-18, on scratch copies — EO1, EO2, EO4, EO5 (its second half; the first could not be arranged apart) and, on 2027, EO7; a refused move (EO6) was not arranged, and nothing ran on 2020 ([Group EO](needs-checking/group-eo.md)) — but a rollback that reported success and kept a rename anyway ([A16b](needs-checking/group-a.md)) has never been run again and is still open |
 | `delete-elements` | **No. Do not run it** until the owner says otherwise. It wiped a model twice on 2026-09-09 and the second hung Revit hard enough to need a forced close ([section 1c](fragment-issues/section-1c.md)). It has since been proved on a test model with the elements counted before and after ([row 55](fragment-issues/section-5-rows-051-075.md)), and its `heron-status` now reads `PROVEN` — whether that lifts this rule is the owner's call, because a delete can take far more than it was handed, and with *Ask to Keep* off — the default — nothing asks before it is kept ([row 5b-161](fragment-issues/section-5b-rows-151-175.md), open) |
 
 Derive the counts rather than reading them here:
@@ -162,6 +168,12 @@ testable.
 Every test document so far was written to be easy. This single item settles whether the chunker, the
 citation path and the refusal behaviour survive a genuine specification — and it replaces an invented
 clause number the plan has carried since the start.
+
+**No register row asks for it, so `owner-queue.py` does not show it:** read 2026-10-18, its
+*ONE DOCUMENT* bucket was empty, and the ask lives only in the plan
+[`work-notes/plans/next-steps-2026-09-12.md`](work-notes/plans/next-steps-2026-09-12.md) (A3, blocking
+its S-4 and W-7) — a work note, which §5 says is never the only home of an owner's item. Until a register
+carries it, this section is where it is said.
 
 ---
 

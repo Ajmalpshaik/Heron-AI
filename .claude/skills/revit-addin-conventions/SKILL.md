@@ -61,12 +61,20 @@ message = "Heron did not start. The log that says why is in " + HeronPaths.Logs 
 The three categories exist for a reason and must not blur:
 
 - **Product** — the running assemblies. Replaced wholesale on update.
-- **Data** — `%APPDATA%\Heron`. The user's own. Survives every update. Roams between machines.
+- **Data** — `%APPDATA%\Heron` (`HeronPaths.Data`): the add-in's own settings and audit trail. The
+  user's own. Survives every update. Roams between machines. **The Python side's data is elsewhere since
+  [D-135](../../../docs/DECISIONS.md)** - the knowledge store, every project's memory and the brain's
+  audit live in `%USERPROFILE%\.heron`, named by `brain/heron_paths.py`'s `data_home()`, because a
+  Microsoft Store Claude keeps a private copy of `%APPDATA%` that a Reset of that app deletes.
 - **Derived** — `%LOCALAPPDATA%\Heron`. Rebuildable cache and runtime state. Safe to delete at any
   moment, and deleting it must always be a valid recovery action. **Deliberately not roaming**: a
-  discovery file naming a process on another machine is meaningless here.
+  discovery file naming a process on another machine is meaningless here. What a chat writes **for the
+  add-in to read** - the Companion's notes - goes to `HeronPaths.SharedDerived`, `%TEMP%\Heron`, still
+  Derived, because that is the one folder the Store app does not copy (D-135,
+  [D-136](../../../docs/DECISIONS.md)).
 
-The audit log lives under **Data**, not Derived, because it is evidence and must survive a cache wipe.
+Both audit trails live under **Data**, not Derived, because they are evidence and must survive a cache
+wipe.
 
 ## The Revit API threading constraint
 
@@ -340,11 +348,14 @@ something for it to do.
 python tools/check-docs.py
 python tools/check-metadata.py
 python tools/check-structure.py
+python tools/check-package.py      # the manifest Revit reads - a fault here costs the whole add-in
 python tests/test_bridge_roundtrip.py
 ```
 
-Five seconds, and between them they have already caught a miscounted agent registry, three files with no
-metadata header, a path built in two places, and a file referencing `Autodesk.Revit` outside `revit/`.
+The four gates take seconds, and between them they have already caught a miscounted agent registry,
+three files with no metadata header, a path built in two places, and a file referencing `Autodesk.Revit`
+outside `revit/`. They are not all CI decides on - the [`heron-ship`](../heron-ship/SKILL.md) skill
+lists every gate the pull request has to pass.
 
 For anything touching the add-in, also build the full supported span — see the
 `revit-version-support` skill. Compiling for one release proves nothing about the others.

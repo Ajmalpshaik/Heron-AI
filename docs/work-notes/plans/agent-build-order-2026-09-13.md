@@ -8,6 +8,12 @@ easily"*.
 [NEEDS-CHECKING](../../NEEDS-CHECKING.md) or [OPEN-QUESTIONS](../../OPEN-QUESTIONS.md). It is a
 schedule, not a register.
 
+**Read 2026-10-18: every block is built.** `python tools/agent-count.py` reports nothing left to build;
+the two agents it does not build are deferred by [D-77](../../DECISIONS.md), and the ones the host
+provides are listed by the same tool ([D-01](../../DECISIONS.md), [D-80](../../DECISIONS.md)). So the building half of the closure condition is met.
+What the plan taught - build the seam before the agent - is kept in `tools/new-agent.py` and
+`brain/heron_contract.py`. Deleting this note is the owner's call.
+
 > Where this disagrees with [DECISIONS.md](../../DECISIONS.md), the
 > [Golden Rules](../../14-golden-rules.md) or the [Constitution](../../../HERON_CONSTITUTION.md),
 > **those win.** It continues [next-steps-2026-09-12](next-steps-2026-09-12.md) Track B item B4,

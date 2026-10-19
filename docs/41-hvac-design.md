@@ -127,6 +127,13 @@ calculation is run on nothing and reports what it asked for - so it cannot drift
 changes the model: an answer NAMES the fragment that would put it into Revit, and running that fragment
 is `revit_change`'s job, behind the Changes switch, exactly as before.
 
+> **Checked 2026-10-18:** since [D-117](decisions/D-117.md) `revit_change` keeps a change only from a
+> PROVEN fragment. Of the writers the table names, `SET_MEP_SIZE`, `CHANGE_ELEMENT_TYPE` and
+> `PLACE_FAMILY_INSTANCES` are PROVEN; **`SET_AIR_TERMINAL_FLOW` is DRAFT**, so a diffuser's flow is
+> refused there and can be kept only through one try-once on a saved model ([D-119](decisions/D-119.md),
+> [D-121](decisions/D-121.md)) until [group AQ](needs-checking/group-aq.md) proves it. Of the reads,
+> `REPORT_MEP_PRESSURE_DROP` is DRAFT. Each card's `heron-status:` line is the current word.
+
 ---
 
 ## 1. Where it sits
@@ -148,7 +155,7 @@ modeller ── Claude Code ── heron_hvac (MCP, READ, no bridge operation)
 | Risk | **READ.** Arithmetic over what it is handed - no model, no network. The one thing kept is a project's governing standards once the modeller has said them ([D-111](decisions/D-111.md)): one small file per project in Heron's own knowledge folder, never the model |
 | Agent | `HERON-MEP-HVD-001`, the first row of a new department, *MEP Design Engineering* - Revit Engineering acts ON a model, this works out what goes INTO one |
 | Audit | `design.hvac`, one line per call: the calculation and how it ended. **Never the inputs** - a people count or a client's design figure is project information, and the trail is never pruned |
-| Refusals | recorded with the codes [`heron_gaps.py`](../brain/heron_gaps.py) classifies: `needs_request_values` (asked), `unusable_request_values` (refused), `unknown_op` (no such calculation) - all three are correct refusals, not gaps |
+| Refusals | recorded with the codes [`heron_gaps.py`](../brain/heron_gaps.py) classifies: `needs_request_values` (asked), `unusable_request_values` (refused), `unknown_op` (no such calculation) - all three are correct refusals, not gaps. The audit line gets them from `run`'s own `status` - `missing`, `refused`, `unknown` - mapped in `mcp/server/heron_brain.py`; the agent's contract declares them in capitals, words `run` never returns ([row 5b-1130](fragment-issues/section-5b-rows-401-425.md), open) |
 
 ---
 
@@ -527,7 +534,8 @@ before it governs a project.** No standard's text is reproduced here; the figure
   carry the same arithmetic in C# - a second home for one fact - so it is a decision, not a gap.
 - **Skills.** A skill names capabilities, and this is an MCP tool, not a fragment capability - so
   `space-airflow`, `terminal-layout` and `duct-layout` do not yet name it. How a skill should reach a
-  brain-side calculation is the owner's question (§15).
+  brain-side calculation is the owner's question (§15). *As built (2026-10-18): settled for
+  `space-airflow` on 2026-10-04 - §15 item 4; `terminal-layout` and `duct-layout` still name neither.*
 - **A building runner now exists (2026-10-04).** [`heron_building_loads.py`](../brain/heron_building_loads.py)
   runs this engine's own `monthly_load`, `heating_load` and `supply_airflow` on every Space of a model's
   take-off and adds them up - the block load hour by hour beside the sum of peaks - with no physics of

@@ -138,7 +138,10 @@ calculation is run on nothing and reports what it asked for - so it cannot drift
 
 **Three things it will never do.** It never fills in a design value you did not give (§3). It never
 decides a hazard class. And it never changes the model: an answer NAMES the fragment that would put it
-into Revit, and running that fragment is `revit_change`'s job, behind the Changes switch.
+into Revit, and running that fragment is `revit_change`'s job, behind the Changes switch - and, since
+[D-117](decisions/D-117.md), only for a PROVEN fragment. *Checked 2026-10-18:* the writers the table
+names - `PLACE_FAMILY_INSTANCES`, `SET_MEP_SIZE`, `CHANGE_ELEMENT_TYPE` - are PROVEN; each card's
+`heron-status:` line is the current word.
 
 ---
 
@@ -161,7 +164,7 @@ modeller ── Claude Code ── heron_fire (MCP, READ, no bridge operation)
 | Risk | **READ.** Arithmetic over what it is handed - no model, no network. The one thing kept is a project's governing standards once the modeller has said them ([D-111](decisions/D-111.md)), in `projects/<key>.fire.json` beside the HVAC record, never in it |
 | Agent | `HERON-MEP-FPD-002`, the second row of *MEP Design Engineering* |
 | Audit | `design.fire`, one line per call: the calculation and how it ended. **Never the inputs** |
-| Refusals | the HVAC engine's codes, through the same seam: `needs_request_values`, `unusable_request_values`, `unknown_op` - all correct refusals, not gaps |
+| Refusals | the HVAC engine's codes, through the same seam: `needs_request_values`, `unusable_request_values`, `unknown_op` - all correct refusals, not gaps. As for HVAC, the agent's contract declares them in capitals, words `run` never returns ([row 5b-1130](fragment-issues/section-5b-rows-401-425.md), open) |
 
 ---
 
@@ -564,7 +567,10 @@ did not come back - what did was Singapore's and EN 12845's - and are not held. 
   total-pressure method with the source as the one boundary; a pump is checked on its own against the
   demand.
 - **Skills.** `sprinkler-layout` names capabilities, and this is an MCP tool - the same question F42
-  item 4 asks for HVAC.
+  item 4 asks for HVAC. *As built (2026-10-18): HVAC's answer for `space-airflow` - name the reading
+  capability in `needs` and the brain-side tool in the steps' words ([41 §15](41-hvac-design.md) item 4) -
+  has not been applied here: `sprinkler-layout` and `sprinkler-piping` name neither `heron_fire` nor
+  `revit_sprinkler_layout`.*
 
 ---
 

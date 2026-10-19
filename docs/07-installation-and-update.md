@@ -174,7 +174,7 @@ Two different things are being conflated, and separating them is
 |---|---|---|
 | **Heron's code** | the plugin location | Replaced wholesale on update. The user never edits it |
 | **Heron's brain** — skills, fragments, learned patterns, audit log | `%APPDATA%\Heron` for the add-in's settings and audit; `%USERPROFILE%\.heron` for the Python side's knowledge store, project memory and audit since [D-135](decisions/D-135.md) | **The user's.** Must survive every update, uninstall and folder deletion |
-| **Runtime state** — bridges, logs, caches | `%LOCALAPPDATA%\Heron` | Machine-local, rebuildable, safe to delete |
+| **Runtime state** — bridges, logs, caches | `%LOCALAPPDATA%\Heron`; the chat's notes for the Companion button in `%TEMP%\Heron\companion` ([D-136](decisions/D-136.md)) | Machine-local, rebuildable, safe to delete |
 | **The project folder** | wherever the user opens | **Project scope** — this project's standards, decisions and notes |
 
 If everything lived in the project folder, then deleting a finished project would destroy a year of
@@ -564,7 +564,8 @@ enough to click, and wired to something real.
 something could.**
 
 - `tools/heron-backup.py` protects `%APPDATA%\Heron` — the **data** class. It has never touched the
-  add-in.
+  add-in. *(Since [D-135](decisions/D-135.md) it also copies the Python side's `%USERPROFILE%\.heron`,
+  and keeps its backups there.)*
 - `tools/deploy-addin.ps1` overwrote the previous install with `Copy-Item -Force` and **kept nothing**.
 - `brain/heron_update.py` **refuses** any release whose `rollback_tested` is absent or thin, with
   `ROLLBACK_NOT_TESTED` and the words *"a claim, not a test"*.

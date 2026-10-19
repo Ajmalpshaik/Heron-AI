@@ -63,12 +63,14 @@ you cannot establish either gets left out or gets marked plainly as unverified.
 
 ## After writing
 
+Add a row to `.claude/skills/README.md` first - `check-docs` fails on a skill folder that page never
+names - then run it:
+
 ```bash
-python tools/check-docs.py      # the links into docs/ are checked here
+python tools/check-docs.py      # the links into docs/, and every skill folder named in the README
 ```
 
-Add a row to `.claude/skills/README.md`, then say in one line what the skill covers and what evidence
-each of its rules rests on.
+Then say in one line what the skill covers and what evidence each of its rules rests on.
 
 ## Never
 

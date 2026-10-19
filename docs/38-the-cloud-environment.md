@@ -117,12 +117,64 @@ in parallel. The rebuild and the restore are bounded with `timeout`. Every failu
 log rather than raised, and the script's last lines say what did not arrive - `dotnet ... NOT
 INSTALLED`, or `python packages MISSING:` and the names - because the exit code cannot say it.
 
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    S(["<b>tools/cloud-setup.sh</b><br/>as root, before Claude Code starts"])
+    APT["<b>apt</b> · heron-apt.log<br/>update, then install even if it failed<br/>dotnet-sdk-10.0 · python-is-python3"]
+    PIP["<b>pip</b> · heron-pip.log<br/>pyyaml · mcp · model2vec · sqlite-vec · pypdf<br/>plain, then --ignore-installed"]
+    SAY["<b>Say what arrived</b><br/>dotnet version or NOT INSTALLED<br/>python packages MISSING: and the names"]
+    KB["<b>The knowledge folder</b><br/>HERON_KNOWLEDGE, /opt/heron-kb"]
+    RB["<b>Store rebuild</b> · timeout 180 s<br/>heron_scope.py --rebuild<br/>heron-rebuild.log"]
+    NU["<b>NuGet restore</b> · timeout 120 s<br/>the add-in for Revit 2024<br/>heron-restore.log"]
+    END(["<b>ready</b> · exit 0, always"])
+
+    S --> APT
+    S --> PIP
+    APT --> SAY
+    PIP --> SAY
+    SAY --> KB
+    KB --> RB
+    KB --> NU
+    RB --> END
+    NU --> END
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class S,END user
+    class APT,PIP,NU plat
+    class SAY host
+    class KB,RB brain
+```
+
+**Two pairs run side by side**, each pair waited for together: apt with pip, then the rebuild with the
+restore. A step that fails leaves its log and the script carries on. Read from the script itself on
+2026-10-18.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+tools/cloud-setup.sh, as root, before Claude Code starts
+  together:  apt  (update, then install anyway)  dotnet-sdk-10.0, python-is-python3   -> heron-apt.log
+             pip  pyyaml mcp model2vec sqlite-vec pypdf (plain, then --ignore-installed) -> heron-pip.log
+  then:      say what arrived - the dotnet version or NOT INSTALLED; python packages MISSING: ...
+  then:      the knowledge folder, HERON_KNOWLEDGE (/opt/heron-kb)
+  together:  heron_scope.py --rebuild (timeout 180 s)   dotnet restore for Revit 2024 (timeout 120 s)
+  ready - exit 0, always
+```
+
+</details>
+
 **On 2026-09-22 it installed nothing, and exited 0.** The image carries two third-party PPAs that
 answered 403, so `apt-get update` failed while the Ubuntu archive's own lists came down fine - and the
 install was chained on with `&&`. pip stopped because it cannot uninstall a package Debian installed:
 `--upgrade` asked for a newer PyYAML than Debian's, and `mcp` needs a newer PyJWT. So the update's exit
 code no longer gates the install, and pip tries a plain install first, then `--ignore-installed`,
-which installs beside Debian's copies and never removes one. `mcp` stays unpinned
+which installs beside Debian's copies and never removes one, and last the same with
+`--break-system-packages`. `mcp` stays unpinned
 ([D-45](DECISIONS.md#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases)):
 both of its suites pass on SDK 2.2.0 as well as 1.x. [FRAGMENT-ISSUES row 5b-167](FRAGMENT-ISSUES.md)
 has the logs; [`tests/test_cloud_setup.py`](../tests/test_cloud_setup.py) runs the script against
@@ -236,7 +288,8 @@ Code launches.
 [30 §3](30-compiling-away-from-windows.md) ends on and it has not weakened: code that compiles on eight
 releases can still move a duct 200 feet instead of 200 millimetres. `D3` in
 [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — *move them, then measure one* — is what catches that, and no
-environment substitutes for it.
+environment substitutes for it. *(D3 passed on the owner's PC on 2026-10-17, +200.0000 mm on Revit 2024 -
+[Group D](needs-checking/group-d.md); a cloud session could not have run it.)*
 
 **So the work a cloud session hands back is always the same shape**: it builds, it is gated, it is
 tested, and the question left over is whether it does the right thing in a model. That question is

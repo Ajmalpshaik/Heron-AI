@@ -64,4 +64,10 @@ Unchanged. Neither part addresses:
 
 Proposed Golden Rules 16–19 remain necessary. Part 3 strengthens the case for them.
 
+**Closed since - recorded 2026-10-18; the line above is left as it was written.** Golden Rules 16 to 21
+were accepted on 2026-08-28 ([Q-19](../OPEN-QUESTIONS.md)). Threading is [D-09](../DECISIONS.md); undo and
+preview are Articles 8 and 9 ([D-43](../DECISIONS.md)); what leaves the machine is
+[D-26](../DECISIONS.md); how a Revit test runs is answered in part by [Q-14](../OPEN-QUESTIONS.md).
+[Part A's closing table](part-a.md) has each one.
+
 ---

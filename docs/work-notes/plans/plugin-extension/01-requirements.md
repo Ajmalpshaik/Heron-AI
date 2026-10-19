@@ -6,6 +6,9 @@
 > **Status:** **Active.** Nothing in section 5 is DONE yet. What exists is the product manifest
 > ([R-3](#5-the-requirements), [Stage 1](02-implementation.md)) and two unproven shape proofs
 > ([Stage 2](02-implementation.md)). Opened 2026-09-20. **Owner:** Ajmal PS.
+> **Read 2026-10-18: that line is dated.** §5's status column holds each row's priority (MUST, SHOULD),
+> not its progress. Progress is [02 §4](02-implementation.md#4-progress), which shows Stages 0 to 7 done or built
+> and Stages 2 to 4 proven on the owner's PC on 2026-09-21, each with the rows it still owes.
 > **Read [`00-structure.md`](00-structure.md) first.**
 
 ---

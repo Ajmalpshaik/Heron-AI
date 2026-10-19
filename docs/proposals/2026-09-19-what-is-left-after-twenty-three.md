@@ -21,6 +21,17 @@ groups need opposite things and were being carried in one list.
 | **Stairs and railings** | `Railing.Create` exists in three overloads and is the easiest of these. **Stairs are not**: `Stairs.Create` needs a `StairsEditScope`, which is a different shape from every fragment in the library and probably wants its own decision before anybody starts |
 | **Topography and rebar** | Whole domains with no fragment at all. Worth naming so the absence is deliberate rather than overlooked |
 
+**Built since, all but rebar - recorded 2026-10-18; the table above is left as it was written.** Each
+fragment's state today is `grep -h '^heron-status:' brain/fragments/<name>/fragment.yaml`.
+
+| Row | Fragments since |
+|---|---|
+| Colour fill scheme | `apply-color-fill-scheme` (`0b38b54a`, 2026-09-28) - it duplicates an existing scheme, as the row said it would have to - and `report-color-fill-scheme` |
+| Curtain grids and mullions | `set-curtain-wall-grid`, `set-curtain-wall-mullions` and `report-curtain-wall-type` (`b779513b`, 2026-09-26) |
+| Stairs and railings | `create-stairs` (`78fedc5a`, 2026-10-03), inside a `StairsEditScope`; `create-railing`, `edit-railing` and `set-railing-type` (`5cf7a59e`, 2026-10-13) |
+| Topography | `create-toposolid`, `edit-toposolid` and `add-toposolid-subdivision` (`5cf7a59e`, 2026-10-13) |
+| Rebar | **still no fragment** |
+
 ### ⛔ NOT buildable — the API has no route, on any release
 
 **These two are not backlog and must not be planned.** Both were checked against all eight reference

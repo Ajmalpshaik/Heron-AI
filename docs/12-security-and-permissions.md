@@ -49,8 +49,11 @@ Changes and left the element count and the Undo list as they were (ES1). A view 
 > [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs): **Changes** (`write.enabled`) for
 > `MODIFY` and above ([D-19](DECISIONS.md)), and **Admin** (`admin.enabled`) and **Publish**
 > (`publish.enabled`), each on top of Changes ([D-106](DECISIONS.md)). As built, `PUBLISH` is a Revit
-> export, print, save or sync, and `ADMIN` is project parameters, worksets, global parameters or a new
-> family file — not the git, release and package actions the table names. With Changes on, a change
+> export, print, save, sync or worksharing-ownership change, and `ADMIN` is a project-wide setting -
+> project, shared or global parameters, worksets, units, the project's location and coordinates - or a
+> new project or family file — not the git, release and package actions the table names. Which
+> fragments carry each: `grep -l '^risk: ADMIN' brain/fragments/*/fragment.yaml`, and the same for
+> `PUBLISH`. With Changes on, a change
 > asked for in a chat is kept at once as one undo entry unless **Ask to Keep** (`write.askBeforeKeeping`,
 > off by default) is on, when Revit shows it and asks Keep or Discard ([D-126](DECISIONS.md),
 > [D-138](DECISIONS.md)) — so `MODIFY`'s *preview + confirm* is the owner's switch, recorded as a break
@@ -72,7 +75,7 @@ flowchart TD
     E["<b>EXECUTE</b><br/>selection, zoom, open a view<br/><i>no switch</i>"]
     M["<b>MODIFY</b><br/>a change to the model"]
     P["<b>PUBLISH</b><br/>export, print, save, sync"]
-    AD["<b>ADMIN</b><br/>project parameters, worksets,<br/>a new family file"]
+    AD["<b>ADMIN</b><br/>project-wide settings, worksets,<br/>a new project or family file"]
 
     R --> A --> S --> E
     E ==>|"the boundary · Changes on"| M
@@ -98,8 +101,8 @@ EXECUTE   selection, zoom, open a view       no switch   <- HeronPermissions.Rea
 ======================= the boundary =======================
 MODIFY    a change to the model              Changes
 PUBLISH   export, print, save, sync          Changes AND Publish
-ADMIN     project parameters, worksets,      Changes AND Admin
-          a new family file
+ADMIN     project-wide settings, worksets,   Changes AND Admin
+          a new project or family file
 ```
 
 </details>
@@ -114,8 +117,8 @@ lists every tool with its level.
 | `SUGGEST` | proposing without applying | none | no tool declares it. A fragment declared `SUGGEST` is under `revit_show`'s ceiling and above `revit_read`'s |
 | `EXECUTE` | the selection, the camera, the active view | none: `ReadOnlyCeiling` | `revit_show`, `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
 | `MODIFY` | a change to the model | **Changes** | `revit_change`, `revit_apply_move`, and the Companion page's Apply |
-| `PUBLISH` | an export, a print, a save, a sync with central | **Changes and Publish** | `revit_change`, sent as `run_fragment_publish` |
-| `ADMIN` | a project or global parameter, a workset, a new family file | **Changes and Admin** | `revit_change`, sent as `run_fragment_admin` |
+| `PUBLISH` | an export, a print, a save, a sync with central, a change of worksharing ownership | **Changes and Publish** | `revit_change`, sent as `run_fragment_publish` |
+| `ADMIN` | a project, shared or global parameter, a workset, the project's units, location or coordinates, a new project or family file | **Changes and Admin** | `revit_change`, sent as `run_fragment_admin` |
 
 **The four switches.** Each is a button under *Heron > AI Bridge* on Revit's ribbon. The add-in reads
 them fresh on every call. Nothing in a request can set them ([Golden Rule 19](14-golden-rules.md)).
@@ -344,7 +347,9 @@ The audit log is what makes the "invisible background work" of §2.2 acceptable 
 > on purpose, because the trail must outlive an update and a reinstall. What is pruned is derived: the
 > verbose add-in log (`log.retainDays`) and each write's full detail in
 > [`HeronRuns.cs`](../platform/Heron.Core/HeronRuns.cs) (`runs.retainDays`). The brain writes its own
-> audit file beside it ([D-62](DECISIONS.md)).
+> audit file ([D-62](DECISIONS.md)), since [D-135](DECISIONS.md) under `%USERPROFILE%\.heron\audit`
+> rather than beside the add-in's in `%APPDATA%\Heron\audit`, and one reader, `heron_gaps.read`, reads
+> both.
 
 ---
 

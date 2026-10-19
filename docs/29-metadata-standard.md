@@ -247,7 +247,10 @@ not just the code against the registry.
 > does not list: it checks that the version Python reports and the one MSBuild stamps agree, and that a
 > sentence stating how many agents Phase 0 and Phase 1 need matches the registry rows carrying a step.
 > Agents the host provides are excused from the reverse audit by its `HOST_PROVIDED` list, which
-> `python tools/agent-count.py` reads too.
+> `python tools/agent-count.py` reads too. **The reverse audit is a report, not a failure:** it covers
+> the rows whose step is at or below the script's `CURRENT_STEP`, prints any with no implementing file
+> as the to-do list for that step, and exits 0 all the same. The first four rows of the table are what
+> fail the run; `python tools/agent-count.py` is what exits 1 when the registry and the code disagree.
 
 ---
 

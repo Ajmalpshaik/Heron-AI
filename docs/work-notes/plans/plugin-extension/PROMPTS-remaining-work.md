@@ -14,6 +14,13 @@
 >
 > **Run D on the owner's Windows PC when he has time.** Nothing else is waiting on it, and nothing
 > else should be built on top of it until it has been run.
+>
+> **Read 2026-10-18: PROMPT D has not been run** - `AE1` to `AE6` and `AF1` to `AF7` carry no result in
+> NEEDS-CHECKING. Two things around it have moved: v0.1.0 **was published** on 2026-10-08, unsigned, on
+> the owner's word, and `heron-install` **has installed into a real Revit** since - Revit 2027 with
+> `--from` on 2026-10-08 and from the published release on 2026-10-10
+> ([Group AC](../../../needs-checking/group-ac.md)), and on the owner's laptop on 2026-10-17
+> ([Group EP](../../../needs-checking/group-ep.md)). Those are not D's rows, and do not close them.
 
 Three prompts, each **self-contained** — paste one into a fresh session that knows nothing about this
 work. They are written to be handed out one at a time, not all at once: see **Order and collisions**
