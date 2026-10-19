@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -87,7 +87,28 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   Version 2's proof below no longer describes the code and is kept as a
 #   record; the card is DRAFT until the version 3 proof is signed (NEEDS-CHECKING
 #   Group FE).
-version: 3
+#
+# VERSION 4 (2026-10-19, FRAGMENT-ISSUES 5b-1221, D-145): an optional
+# `renameViews` answers the one question Revit asks when a LEVEL's name is
+# written - "Would you like to rename corresponding views?", dialog id
+# TaskDialog_Confirm_Level_Rename. Measured 2026-10-19 on Revit 2020, model
+# 'Kerala house design': rows "key=Name|in=Levels;Level 1|Name=Ground Floor"
+# were rolled back, because the add-in declines every dialog in a job
+# (HeronDialogWatch). Changing a level's Elevation the same way was kept.
+#
+#   yes - the level is renamed and Revit renames the plan and ceiling views
+#         that carry its name; no - the level alone. The add-in answers that
+#         ONE dialog id with that answer for this one job, from the need's
+#         `dialog:` line; every other dialog is still declined (D-145).
+#   left out ("none") - a level's name is refused before anything is written,
+#         naming renameViews: by id the whole run, by key that row. Every other
+#         parameter and element is version 3's run, statement for statement.
+#
+#   Version 3's proof below no longer describes the code and is kept as a
+#   record; the card is DRAFT until the version 4 proof is signed in Revit
+#   (NEEDS-CHECKING Group HP). Kept out of the purpose and the identity line
+#   for the reason version 3 gives: both are searched.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -157,6 +178,18 @@ contract:
       source: request
       optional: true
       absent: none
+    # VERSION 4 (5b-1221, D-145). Only for a LEVEL's name: yes renames the
+    # level and the plan and ceiling views that carry its name, no the level
+    # alone. `dialog:` names the one Revit dialog this answers, for this job
+    # only - HeronDialogRule.CallerAnswer holds which dialogs a caller may
+    # answer and with which words; anything else is refused before the run.
+    # Left out: "none", and a level's name is refused, naming this input.
+    - name: renameViews
+      type: string
+      source: request
+      optional: true
+      absent: none
+      dialog: TaskDialog_Confirm_Level_Rename
   provides:
     # Rows written AND read back.
     - name: written

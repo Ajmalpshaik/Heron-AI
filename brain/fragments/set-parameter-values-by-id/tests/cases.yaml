@@ -98,3 +98,23 @@ negative_keep_face:
       the version 2 answer unchanged - resultJson has no keepFace key, BOX-OUT
       shrinks about its LocationPoint (its outside face moves 77.75 mm in), no
       element is moved
+
+# Version 4 (5b-1221, D-145): renameViews answers Revit's level-rename
+# question, TaskDialog_Confirm_Level_Rename, for that one job. NEEDS-CHECKING
+# Group HP.
+positive_level_name:
+  - given: key=Name|in=Levels;Level 1|Name=Ground Floor, renameViews=yes
+    expect: >
+      written 1; the reply's dialogs list TaskDialog_Confirm_Level_Rename
+      answered Yes and the job is not refused; the Level 1 plan and ceiling
+      views read Ground Floor before the rollback
+  - given: the same rows, renameViews=no
+    expect: written 1; the dialog answered No; the views keep Level 1
+
+negative_level_name:
+  - given: the same rows, renameViews left out
+    expect: >
+      written 0; refused names that row and says to send renameViews=yes or
+      no; no dialog in the reply - Revit was never asked
+  - given: the same rows, renameViews=maybe
+    expect: refused before the run, bad_request_value, nothing ran

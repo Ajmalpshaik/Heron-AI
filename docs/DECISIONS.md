@@ -212,6 +212,7 @@ an edit.
 | [D-141](#d-141--one-model-is-used-by-one-chat-at-a-time-and-what-revit-keeps-for-a-chat-is-keyed-on-that-chat) | One model is used by one chat at a time, and what Revit keeps for a chat is keyed on that chat | ✅ Accepted · 2026-10-18 |
 | [D-142](#d-142--anything-a-kept-change-deletes-from-the-model-is-asked-in-revit-first-in-a-box-of-its-own-whatever-ask-to-keep-says-and-never-under-a-jobs-grant) | Anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant | ✅ Accepted · 2026-10-18 |
 | [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
+| [D-145](#d-145--a-card-may-let-its-caller-answer-one-named-revit-dialog-for-one-job-and-every-other-dialog-is-still-declined) | A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined | 🕐 Proposed - **owner has not read this back** |
 
 ## Format
 
@@ -1241,3 +1242,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), [`test_configuration.py`](../tests/test_configuration.py), [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
 
 **Full record:** [`decisions/D-143.md`](decisions/D-143.md)
+
+## D-145 — A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined
+
+**Status:** Proposed · **Date:** 2026-10-19 · the owner has not read this back; it is what the 2026-10-19 task asked for, written down so it can be accepted or overturned
+**Keeps:** Article 7 of the [Constitution](../HERON_CONSTITUTION.md) - Heron still answers no dialog for the owner; the caller does, in words they typed
+**Affects:** [`HeronDialogNote.cs`](../revit/Heron.Revit.Addin/HeronDialogNote.cs) (`HeronDialogRule.CallerAnswer`), [`HeronDialogWatch.cs`](../revit/Heron.Revit.Addin/HeronDialogWatch.cs) (`AnswerForJob`), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (a need's `dialog:`), [`set-parameter-values-by-id`](../brain/fragments/set-parameter-values-by-id/fragment.yaml) version 4, [`test_dialog_note.py`](../tests/test_dialog_note.py), [row 5b-1221](fragment-issues/section-5b-rows-401-425.md), [Group HP](needs-checking/group-hp.md)
+
+**Full record:** [`decisions/D-145.md`](decisions/D-145.md)

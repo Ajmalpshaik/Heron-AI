@@ -142,10 +142,53 @@ def subscribed():
     for path in FN.sources(os.path.join(ROOT, "revit")):
         for found in re.finditer(r"OverrideResult\s*\(([^)]*)\)", FN.code_only(FN.read(path) or "")):
             calls.append((os.path.basename(path), found.group(1).strip()))
-    check(len(calls) == 1 and calls[0] == ("HeronDialogWatch.cs", "code"),
-          "OverrideResult is called in one place, with a code the table chose: %s" % calls)
+    # TWO SINCE D-145: the table's code, and the caller's own answer for the
+    # one dialog its card names - still never a number typed at the call.
+    check(sorted(calls) == [("HeronDialogWatch.cs", "chosen"), ("HeronDialogWatch.cs", "code")],
+          "OverrideResult is called in two places, with a code the table or the caller chose: %s"
+          % calls)
     check(re.search(r"foreach\s*\(\s*var\s+code\s+in\s+row\.Codes\s*\)", handler) is not None,
-          "and that code is one of the row's, tried in order")
+          "and the table's code is one of the row's, tried in order")
+
+
+def caller_answers():
+    print("\n1b. a caller's answer to one dialog lives for one job (D-145)")
+    watch = code(WATCH)
+    arm = FN.body_of(watch, "void Arm(")
+    disarm = FN.body_of(watch, "HeronDialogNote Disarm(")
+    detach = FN.body_of(watch, "void Detach(")
+    for name, body in (("Arm", arm), ("Disarm", disarm), ("Detach", detach)):
+        check(re.search(r"_callerAnswers\s*=\s*null\s*;", body) is not None,
+              "%s clears every caller's answer, so none outlives its job" % name)
+    give = FN.body_of(watch, "bool AnswerForJob(")
+    check(re.search(r"if\s*\(\s*_armed\s*==\s*null", give) is not None,
+          "AnswerForJob keeps nothing while no job is armed")
+
+    handler = FN.body_of(watch, "void OnDialogBoxShowing(")
+    asked = handler.find("TryGetValue(id, out chosen)")
+    table = handler.find("HeronDialogRule.For(")
+    check(0 < asked < table,
+          "the handler looks for the caller's answer by the dialog's own id, before the table")
+    check(re.search(r"failsRun\s*=\s*false\s*;\s*if\s*\(\s*e\.OverrideResult\(\s*chosen\s*\)\s*\)"
+                    r"\s*answered\s*=\s*chosen\s*;", handler) is not None,
+          "and only a caller's answer Revit TOOK leaves the job running - one refused stays unanswered")
+
+    # The raw text with its // lines dropped: code_only empties string
+    # literals, and the need's key is one.
+    executor = "\n".join(line for line in (FN.read(EXECUTOR) or "").splitlines()
+                          if not line.lstrip().startswith("//"))
+    check('need.TryGetValue("dialog", out dialogId)' in executor
+          and "HeronDialogRule.CallerAnswer(dialogId, givenText, out dialogProblem)" in executor
+          and "HeronDialogWatch.AnswerForJob(dialogId, answer)" in executor,
+          "the executor reads a need's `dialog:`, asks the rule, and hands the answer to the watch")
+    ordered = [executor.find(part) for part in (
+        'need.TryGetValue("dialog", out dialogId)',
+        'return Json.Error("bad_request_value", name + ": " + dialogProblem)',
+        "HeronDialogWatch.AnswerForJob(dialogId, answer)")]
+    check(all(i > 0 for i in ordered) and ordered == sorted(ordered),
+          "a word the rule does not take refuses the run before any answer is given")
+    check(executor.count("HeronDialogWatch.AnswerForJob(") == 1,
+          "and that is the one place an answer is handed to the watch")
 
 
 def dispatcher():
@@ -318,6 +361,7 @@ def rule():
 
 def main():
     subscribed()
+    caller_answers()
     dispatcher()
     write_paths()
     own_prompts()
