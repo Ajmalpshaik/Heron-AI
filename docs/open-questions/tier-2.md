@@ -1220,7 +1220,7 @@ outside any git repository - there is no script to run.
 - **The three advice hooks** (`session_line.py`, `local_only.py`, `main_moved.py`) now say nothing and
   exit 0 there. Each is documented as *never a gate*, so silence is their right answer. Until 2026-10-19
   python exited 2 on the missing path, and 2 is *"block"* to the host: every prompt was refused.
-- **The guard** ([`heron_guard.py`](../../.claude/skills/heron-guard/bin/heron_guard.py)) is **left as it
+- **The guard** (`.claude/skills/heron-guard/bin/heron_guard.py`) is **left as it
   was**: python exits 2, and the host blocks the Write, Edit or MultiEdit. That is the guard's own trap 3 -
   *"a boundary that fails open is not a boundary"* - holding one level up, but it is also every edit in that
   session refused, with only python's *can't open file* to say why.
@@ -1253,7 +1253,7 @@ it, and falls back to the repository the hook runs in only when it does not. So 
 **second** Heron checkout - an older clone, or a worktree - that copy's script runs, not this one's.
 
 - **The guard works out its root from its own file**
-  ([`heron_guard.py`](../../.claude/skills/heron-guard/bin/heron_guard.py) `main()`), so it takes **the
+  (`.claude/skills/heron-guard/bin/heron_guard.py` `main()`), so it takes **the
   other checkout** as the repository. An edit to a file in the real one is *outside* that root, and the
   guard lets it through **unchecked** - silently, which is the failure trap 1 warns of.
 - **The advice hooks** run the other copy's code, which may be older. They only advise, so the cost is a
