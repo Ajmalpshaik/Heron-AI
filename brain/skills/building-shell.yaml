@@ -16,7 +16,7 @@ purpose: >
   Builds the shell of a building from a plan the modeller gives - its levels,
   its walls, a slab on each floor, a room in every space, its stairs and
   railings, its doors and windows, a ceiling in every room, a roof on top and,
-  when asked, its colours - and counts each part against the plan before the
+  when asked, its wall finishes and its colours - and counts each part against the plan before the
   next one goes on. The steps are listed in the order they have to happen, and
   the order is not a preference: each one hangs off the one before it.
 
@@ -146,10 +146,23 @@ purpose: >
      worked on a wall whose grid is on its type, with nothing unpinned, and
      the door took the whole panel's size - so the grid lines decide the
      door's width and height.
-  10. CREATE_FROM_ROOM_BOUNDARIES (PROVEN) for the ceilings, the shape of each
-      room, at the height the modeller gives. Rooms at different ceiling
-      heights - a corridor higher than the rooms off it - are separate calls,
-      one per height.
+  10. CREATE_FROM_ROOM_BOUNDARIES (DRAFT, version 2 - version 1 was PROVEN, and
+      until NEEDS-CHECKING Group HX proves version 2 a kept change from it is
+      refused, D-117) for the ceilings, the shape of each room, at the height
+      the modeller gives. Rooms at different ceiling heights - a corridor
+      higher than the rooms off it - are separate calls, one per height; or
+      one call per height with rooms= the numbers or names at that height.
+      WALL FINISHES, only when the modeller asks for them - plaster, tile,
+      cladding: the same capability with a WALL type, after the doors and
+      windows (step 9), because the finish leaves a gap at each door and is
+      built round each window it finds in the wall. heightAboveLevel is the
+      top of the finish above the room's floor, baseOffset where it starts
+      (100 for a skirting; left out, 0), joinToHost=true to join each finish to
+      its wall. Every finish is not room bounding, so the rooms' areas do not
+      change. Read finishSummary - one line per room - and skippedSummary:
+      a curtain wall, a separation line or a linked wall is not lined, and is
+      counted, never passed over. A second run lays a second finish over the
+      first: count the finish type's walls before running it again.
   11. CREATE_ROOF (DRAFT) on the top level, from the outline of the outside
       walls. It makes a FLAT roof, and it takes its level as an input, so which
       view is open does not decide where it goes.
@@ -242,6 +255,7 @@ needs:
   - LOAD_FAMILY
   - SELECT_IN_REGION
   - CHANGE_ELEMENT_TYPE
+  # The ceilings - and, with a wall type, the wall finishes - see step 10.
   - CREATE_FROM_ROOM_BOUNDARIES
   - CREATE_ROOF
   # Only for a pitched roof - see step 12.
@@ -300,6 +314,12 @@ note: >
   .rvt stayed from before the build for about 25 minutes while Heron said only
   "[unsaved changes]"; the file's time was read by hand. REPORT_OPEN_DOCUMENTS
   version 3 reads that time (row 5b-1218, NEEDS-CHECKING Group HN).
+
+  Step 10's wall finishes were added on 2026-10-19 from a comparison of jobs
+  Heron could not yet do, not from a building: CREATE_FROM_ROOM_BOUNDARIES
+  version 2 (row 5b-1255) has not run in Revit, and NEEDS-CHECKING Group HX is
+  its proof - a room with a door and a window lined, and a room bounded only
+  by curtain walls and separation lines left alone.
 
   Every step is one entry in Revit's undo list. DRAFT until the whole order has
   been run from an empty level on a scratch model, with the count at the end

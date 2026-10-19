@@ -14,6 +14,28 @@ positive:
     expect: >
       them at that height above the room's level
 
+  # VERSION 2 - wall finishes (row 5b-1255, NEEDS-CHECKING Group HX).
+  - given: >
+      a rectangular room with one door and one window in its walls, a basic
+      wall type 20 mm thick, heightAboveLevel 2400, baseOffset left out
+    expect: >
+      finish walls on all four inside faces, their outer faces on the walls'
+      faces, from the floor to 2400; a gap to the floor at the door with a
+      strip of finish above its head; finish below the window's sill and above
+      its head; corners meeting; every finish NOT room bounding, so the room's
+      area reads the same before and after; `finishSummary` naming the room
+      with 1 door and 1 window
+
+  - given: the same room with baseOffset 100 and joinToHost true
+    expect: >
+      every finish starting 100 mm above the floor, and joined to the wall
+      behind it - `notJoined` 0
+
+  - given: two rooms selected and rooms naming one of them by number
+    expect: >
+      finishes in that room only; the other counted in `skippedSummary` as
+      left out by rooms
+
 negative:
   - given: a room wrapping around a SHAFT
     expect: >
@@ -41,7 +63,38 @@ negative:
     expect: >
       `refused` saying so, rather than the fragment failing to compile there
 
+  # VERSION 2 - wall finishes.
+  - given: >
+      a room bounded on one side by a curtain wall and on another by a room
+      separation line, and a wall type
+    expect: >
+      no finish on either of those edges, each counted by its reason in
+      `skippedSummary` and in the room's line of `finishSummary` - lining glass
+      or a line on the floor is the failure
+
+  - given: a wall type with heightAboveLevel no higher than baseOffset
+    expect: >
+      `refused` saying the finish would have no height, and nothing built
+
+  - given: a curtain wall type as the finish
+    expect: >
+      `refused` saying a curtain wall type cannot line a room, and nothing built
+
+  - given: an unenclosed room and a wall type
+    expect: >
+      its id in `unenclosed`, no finish, and the count in `skippedSummary`
+
+  - given: rooms naming a number no room given has
+    expect: >
+      `refused` naming that word, and nothing built for it
+
 second_route:
   - >
     open a reflected ceiling plan and a section through the shaft. The section
     is where a slab over a shaft becomes obvious
+  - >
+    wall finishes: a floor plan at the finish's height, and an elevation of the
+    wall with the door and the window. The plan shows the finish on the face
+    and the corners meeting; the elevation shows the gap at the door and the
+    finish round the window. The room's Area in its properties is the same
+    before and after

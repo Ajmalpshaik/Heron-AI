@@ -1,22 +1,34 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-051
-semantic-identity: "put a ceiling in every room, the shape of the room"
+semantic-identity: "put a ceiling or a floor in every room, the shape of the room, or line its walls with a finish"
 kind: action
 domain: revit.elements
 capability: CREATE_FROM_ROOM_BOUNDARIES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 2 (2026-10-19, row 5b-1255). A WALL TYPE LINES THE ROOM'S WALLS.
+# Floors and ceilings by room were here and proven; wall finishes by room - a
+# thin wall of plaster, tile or cladding on the inside face of every wall that
+# bounds the room, to a height - were not anywhere in the library. The owner
+# chose to widen this card rather than add a second one (2026-10-19): the room
+# already knows its shape, and the type already decides what is built, so a
+# wall type is the whole of the new mode. Three inputs are added, every one
+# optional, so every version 1 call runs as it did: `baseOffset` (left out, 0),
+# `rooms` (left out, all) and `joinToHost` (left out, false). Floors and
+# ceilings are built by version 1's lines; the one change on their path is the
+# `rooms` filter, which with nothing given passes every room.
+
 purpose: >
   Builds a floor or a ceiling on each room, taking the shape from the room's
-  own boundary - including the holes. No typed coordinates: the room already
-  knows its shape.
+  own boundary - including the holes - or, given a wall type, lines the room's
+  walls with a finish. No typed coordinates: the room already knows its shape.
 
   **THE HOLES ARE THE REASON THIS EXISTS.** A room's boundary comes back as
   several loops: the first is the outside edge and every one after it is a
@@ -31,9 +43,35 @@ purpose: >
   silently skipped - a floor of thirty rooms that produced twenty-eight
   ceilings needs to say which two.
 
-  **THE TYPE DECIDES WHAT IS BUILT.** A floor type makes floors and a ceiling
-  type makes ceilings, so there is no mode to get wrong - and a type that is
-  neither is refused before anything is attempted.
+  **THE TYPE DECIDES WHAT IS BUILT.** A floor type makes floors, a ceiling
+  type makes ceilings and a wall type makes wall finishes, so there is no mode
+  to get wrong - and a type that is none of the three is refused before
+  anything is attempted.
+
+  **A WALL TYPE LINES THE ROOM'S WALLS (version 2).** Every edge of the room
+  that is a wall gets a thin wall of that type - plaster, tile, cladding - on
+  the wall's INSIDE face, from the room's floor plus `baseOffset` up to
+  `heightAboveLevel` above the room's floor (its level plus the room's own Base
+  Offset). Neighbouring finishes meet at the corners. Across every door,
+  window, wall opening and embedded curtain wall in the wall behind, the finish
+  is built only above and below it - a gap to the floor at a door with the
+  finish carried on above its head, the finish kept below a sill and above a
+  head - so a finish is several walls, never one with an opening cut in it.
+  Every finish is made NOT room bounding, so the room's area and every schedule
+  reading it are unchanged, with its exterior side, where the first layer of a
+  finish type sits, facing the room. `joinToHost` joins each one to the wall
+  behind it. Straight walls and arc walls alike.
+
+  **WHAT IS NOT LINED IS COUNTED AND NAMED, NEVER PASSED OVER.** A curtain
+  wall, a room or space separation line, a wall in a linked model (its doors
+  cannot be read from here), a column or anything else that is not a wall, and
+  an edge neither straight nor an arc are each skipped, counted by reason in
+  `skippedSummary` and in each room's line of `finishSummary`. A room with no
+  usable boundary is in `unenclosed`, as for floors and ceilings.
+
+  **A SECOND RUN LAYS A SECOND FINISH OVER THE FIRST.** Finishes are not room
+  bounding, so the room's boundary cannot show they are already there: count
+  the walls of the finish type in the room before running it again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -43,7 +81,9 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
-    # A FloorType or a CeilingType - which one decides what gets built.
+    # A FloorType, a CeilingType or - version 2 - a WallType: which one decides
+    # what gets built. A wall type lines the walls; a curtain wall type, or one
+    # with no thickness, is refused.
     - name: hostType
       type: HostObjAttributes
       source: request
@@ -64,18 +104,47 @@ contract:
     # Height Offset From Level, as 7.874 ft and 9.186 ft - 2400 mm and 2800
     # mm, within 1 mm.
     #
-    # THE fragment.cs HEADER IS LEFT WRONG ON PURPOSE. The proof fingerprint
-    # hashes every byte under impl/, comments included, so correcting it
-    # would stale this PROVEN proof; the correction goes in with the next
-    # re-proof (FRAGMENT-ISSUES row 5b-69). Until then the D-71 block in the
-    # code and this comment are the truth, and that header is not.
+    # THE fragment.cs HEADER WAS LEFT WRONG ON PURPOSE until version 2. The
+    # proof fingerprint hashes every byte under impl/, comments included, so
+    # correcting it alone would have staled the PROVEN proof (FRAGMENT-ISSUES
+    # row 5b-69). Version 2 changes the file anyway, so the header now says
+    # millimetres, and the correction is re-proved with the rest.
     #
     # Stated 2026-09-09: tools/check-revit-gate.py asked question 11 of the
     # fourteen against all 360 fragments and this was the only one that never
     # said what its number meant.
+    #
+    # VERSION 2, WALL FINISHES: the TOP of the finish, millimetres above the
+    # room's floor - its level plus the room's own Base Offset, 0 on most
+    # rooms. 2400 tiles a wall to 2400.
     - name: heightAboveLevel
       type: double
       source: request
+    # VERSION 2, wall finishes only. Where the finish STARTS, millimetres above
+    # the room's floor - 100 leaves room for a skirting. Left out, 0: from the
+    # floor. Floors and ceilings do not read it.
+    - name: baseOffset
+      type: double
+      source: request
+      optional: true
+      absent: 0
+    # VERSION 2, every type. Which of the rooms or spaces given to build on:
+    # their numbers or names, commas between - "101, 102, Corridor". A room is
+    # built on when its number, its name, or both together match a word,
+    # ignoring case. Left out, "all": every room given. A word that matches no
+    # room given is named in `refused`.
+    - name: rooms
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # VERSION 2, wall finishes only. True joins each finish to the wall behind
+    # it (Join Geometry); one Revit will not join is counted in `notJoined`.
+    # Left out, false: nothing is joined.
+    - name: joinToHost
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: created
       role: result
@@ -98,7 +167,45 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+    - name: finishWalls
+      # VERSION 2. Every finish wall built, in every room - what a wall type
+      # made. A wall with a door and a window in it is several finishes: the
+      # stretches between them, and above and below each.
+      role: result
+      type: IList<ElementId>
+    - name: finishSummary
+      # VERSION 2. One line per room, "  ||  " between them, because a list
+      # reaches the chat cut to three entries: the room's number and name, how
+      # many finish walls, the doors it left a gap at, the windows it was
+      # built round and the edges it did not line - "101 Office: 9 finish
+      # walls, a gap at 1 door or opening to the floor, built round 2 windows
+      # or openings, 1 edge not lined". Empty when no wall type was given.
+      role: result
+      type: string
+    - name: skippedEdges
+      # VERSION 2. How many room edges were NOT lined - a curtain wall, a
+      # separation line, a linked wall, a column, a curve that is not an arc.
+      # What it declined, never what it made (D-52).
+      role: accounting
+      type: int
+    - name: skippedSummary
+      # VERSION 2. Why, counted by reason - "a curtain wall: 2; a room
+      # separation line: 3; rooms with no usable boundary, nothing built: 1" -
+      # with the pieces too short to build, the pieces Revit would not build,
+      # the openings whose size could not be read, the finishes not joined and
+      # the rooms left out by `rooms`.
+      role: accounting
+      type: string
+    - name: notJoined
+      # VERSION 2. With joinToHost, how many finishes Revit would not join to
+      # the wall behind - one in another person's workset, say. 0 without it.
+      role: accounting
+      type: int
 
+# VERSION 1's PROOF, kept as the record. It describes floors and ceilings only,
+# before wall finishes (row 5b-1255), and is STALE by D-30's fingerprint, so
+# version 2 is DRAFT and a change kept from it is refused (D-117) - floors and
+# ceilings by room included - until NEEDS-CHECKING Group HX is run and signed.
 proof:
   date: '2026-09-13'
   by: Ajmal PS
@@ -135,12 +242,31 @@ compatibility-note: >
   what lets one file serve all eight releases. A release with no ceiling call
   says so instead of failing to build. The boundary loops themselves are
   unchanged 2020 to 2027.
+  Version 2's wall finishes call nothing that moved: Wall.Create with a type,
+  level, height and offset, Wall.Flip and Orientation, WallType.Kind and Width,
+  HostObject.FindInserts, Opening.BoundaryRect, BoundarySegment.ElementId and
+  LinkElementId, JoinGeometryUtils, Arc.Create through three points, Level.
+  ProjectElevation and SpatialElementBoundaryLocation.Finish are on every
+  release 2020 to 2027 - read off the reference assemblies with
+  tools/api-surface on 2026-10-19. Curve.Intersect is NOT used: deprecated at
+  2026 and gone at 2027, so where two finishes meet is worked out in the
+  fragment.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "put a ceiling in every room"        -> here, and the shafts stay open
 #   "make a slab under this block of     -> here
 #    rooms"
+#   "line the walls of every room with   -> here, version 2: a WALL type, the
+#    plaster up to 2400"                    height, and baseOffset for a
+#                                           skirting. One thin wall per stretch,
+#                                           on the inside face, gaps at doors
+#   "put a wall here", "build a wall     -> CREATE_WALL, which takes typed
+#    between these points"                  points and knows no room
+#   "paint the walls of this room"       -> PAINT_FACES - paint is a material on
+#                                           a face, not a wall of its own
+#   "change the finish layer of this     -> SET_COMPOUND_LAYER_WIDTH - a layer
+#    wall type"                             of the TYPE, every wall of it
 #   "make a floor from these points"     -> CREATE_FLOOR, which takes ONE typed
 #                                           loop and cuts no openings
 #   "make a ceiling from these points"   -> CREATE_CEILING, the same
@@ -154,3 +280,8 @@ utterances:
   - make a slab under these rooms
   - build the floor from the room shape
   - i need ceilings in all the rooms
+  # ADDED 2026-10-19, version 2 (row 5b-1255): wall finishes by room. Measured
+  # against main before they went in - see the row.
+  - line the walls of every room with plaster
+  - add a tile finish to the room walls up to 2400
+  - put wall finishes in these rooms
