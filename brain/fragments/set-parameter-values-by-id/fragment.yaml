@@ -88,7 +88,7 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   record; the card is DRAFT until the version 3 proof is signed (NEEDS-CHECKING
 #   Group FE).
 #
-# VERSION 4 (2026-10-19, FRAGMENT-ISSUES 5b-1242 and 5b-1243). Measured that
+# VERSION 4 (2026-10-19, FRAGMENT-ISSUES 5b-1259 and 5b-1260). Measured that
 # day on Revit 2020, the owner's Kerala house: two M_Round Column instances
 # (ids 346587, 346588, Material <By Category>) could not be given a material.
 # "key=Type Name|in=Columns;305mm Diameter|Material=..." answered "no element
@@ -96,7 +96,7 @@ capability: SET_PARAMETER_VALUES_BY_ID
 # never their types - and an id row or a key row naming a parameter that holds
 # another element was refused as "cannot be typed as text".
 #
-#   TYPES (5b-1243). `types=yes` on the key row looks among the TYPES in those
+#   TYPES (5b-1260). `types=yes` on the key row looks among the TYPES in those
 #   categories instead of the elements, so that row writes the column type's
 #   Material once. Folded into the text, as `in=` is: no new input, and left
 #   out it is no - version 3's search. A key that names no element but names a
@@ -104,7 +104,7 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   refused (a type is not placed anywhere); any word but yes or no for it
 #   refuses the run. An id row already reached a type by its UniqueId.
 #
-#   NAMES (5b-1242). A parameter holding another element takes a NAME, by id
+#   NAMES (5b-1259). A parameter holding another element takes a NAME, by id
 #   row or by key: a material or a level by its Name, a family type as
 #   "Family: Type", matched exactly, the kind narrowed by what it holds or its
 #   definition. None, or two, is refused with the reason - by id rows the whole
@@ -113,7 +113,7 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   readBack's raw for a reference is the id Revit prints.
 #
 #   Version 3's proof below no longer describes the code and is kept as a
-#   record; the card is DRAFT until NEEDS-CHECKING Group HT proves version 4.
+#   record; the card is DRAFT until NEEDS-CHECKING Group HZ proves version 4.
 version: 4
 source: OFFICIAL
 risk: MODIFY
@@ -223,9 +223,9 @@ contract:
       role: accounting
       type: IList<string>
 
-# VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1242,
-# 5b-1243), so its fingerprint no longer describes the code and the card is
-# DRAFT until NEEDS-CHECKING Group HT proves version 4 (D-30). A row that names
+# VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1259,
+# 5b-1260), so its fingerprint no longer describes the code and the card is
+# DRAFT until NEEDS-CHECKING Group HZ proves version 4 (D-30). A row that names
 # neither a type nor an element reference still takes the road this proof ran.
 proof:
   date: '2026-10-18'
@@ -278,7 +278,7 @@ compatibility-note: >
   SubTransaction - all present from 2020 to 2027 - and still never builds an
   ElementId from a number: a key is matched as the text a parameter shows.
 
-  Since row 5b-1242 an element reference takes a name. `Parameter.Set(ElementId)`,
+  Since row 5b-1259 an element reference takes a name. `Parameter.Set(ElementId)`,
   `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`
   and `WhereElementIsElementType` are unchanged 2020 to 2027. What a reference
   holding <By Category> may name is read by reflection, like the Yes/No:

@@ -59,7 +59,7 @@ purpose: >
   fragment that opened its own would add a second entry to the undo stack and
   break exactly the rule it looks like it is obeying.
 
-# VERSION 5 - FRAGMENT-ISSUES 5b-1242. Measured 2026-10-19 on Revit 2020: a
+# VERSION 5 - FRAGMENT-ISSUES 5b-1259. Measured 2026-10-19 on Revit 2020: a
 # mullion type's Material (twisting tower) and a column type's Material (the
 # owner's Kerala house, M_Round Column, <By Category>) could not be given a
 # material - a parameter holding another element was refused here, and
@@ -71,7 +71,7 @@ purpose: >
 # and a name matching none, or two, is refused with a finding that says which.
 # After the one regeneration the id Revit holds must be the id the name named,
 # or the element is in `snapped`. Every other storage type is version 4's road.
-# Version 4's proof below no longer describes the code: DRAFT until Group HT.
+# Version 4's proof below no longer describes the code: DRAFT until Group HZ.
 contract:
   needs:
     # Needed for the ONE regeneration that makes the snap visible. Without it
@@ -144,9 +144,9 @@ contract:
       role: accounting
       type: IList<string>
 
-# VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1242), so
+# VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1259), so
 # its fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group HT proves version 5 (D-30). Every value that is not an
+# NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
 # element reference still takes the road this proof ran.
 proof:
   date: '2026-10-18'
@@ -209,7 +209,7 @@ compatibility-note: >
   the thousands separator and the project's decimal-places setting into a check
   that needs none of them.
 
-  Since row 5b-1242 an element reference takes a name. `Parameter.Set(ElementId)`,
+  Since row 5b-1259 an element reference takes a name. `Parameter.Set(ElementId)`,
   `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`
   and `WhereElementIsElementType` are unchanged 2020 to 2027. What a reference
   holding <By Category> may name is read by reflection, like the Yes/No:

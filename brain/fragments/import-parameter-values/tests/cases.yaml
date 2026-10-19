@@ -161,7 +161,7 @@ second_route:
     the element whose cell was blank under "skip" must still carry its old
     text - a second route that does not share this fragment's read-back
 
-# Version 5 (5b-1242): an element reference takes a NAME. NEEDS-CHECKING Group HT.
+# Version 5 (5b-1259): an element reference takes a NAME. NEEDS-CHECKING Group HZ.
 positive_by_name:
   - given: >
       CSV "Id,Material" with one row per M_Round Column instance and the exact

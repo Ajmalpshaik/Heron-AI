@@ -156,7 +156,7 @@ Func<Parameter, bool> isYesNo = p =>
 };
 
 // ===========================================================================
-// AN ELEMENT REFERENCE TAKES A NAME (FRAGMENT-ISSUES 5b-1242).
+// AN ELEMENT REFERENCE TAKES A NAME (FRAGMENT-ISSUES 5b-1259).
 // ===========================================================================
 //
 // A parameter that holds another element - a Material, a Level, a type - was
