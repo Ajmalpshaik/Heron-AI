@@ -212,7 +212,7 @@ an edit.
 | [D-141](#d-141--one-model-is-used-by-one-chat-at-a-time-and-what-revit-keeps-for-a-chat-is-keyed-on-that-chat) | One model is used by one chat at a time, and what Revit keeps for a chat is keyed on that chat | ✅ Accepted · 2026-10-18 |
 | [D-142](#d-142--anything-a-kept-change-deletes-from-the-model-is-asked-in-revit-first-in-a-box-of-its-own-whatever-ask-to-keep-says-and-never-under-a-jobs-grant) | Anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant | ✅ Accepted · 2026-10-18 |
 | [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
-| [D-144](#d-144--a-superseded-decision-says-so-under-its-own-heading-where-its-citations-land) | A superseded decision says so under its own heading, where its citations land | ⏳ Proposed - built and checked in the change that wrote it, for the owner to accept or send back · 2026-10-19 |
+| [D-144](#d-144--a-superseded-decision-says-so-under-its-own-heading-where-its-citations-land) | A superseded decision says so under its own heading, where its citations land | ✅ Accepted · 2026-10-19 |
 
 ## Format
 
@@ -1251,7 +1251,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-144 — A superseded decision says so under its own heading, where its citations land
 
-**Status:** Proposed - built and checked in the change that wrote it, for the owner to accept or send back · **Date:** 2026-10-19 · **Source:** the third file-level reading of an external project, which the owner asked for on 2026-10-18 so that its useful ideas could be taken into Heron ([33 §5.1](33-external-repository-research.md#51-affaan-mecc))
+**Status:** Accepted · **Date:** 2026-10-19 · **Accepted:** Ajmal PS, 2026-10-19, in conversation: *"accept D-144, mark ready and merge"* · **Source:** the third file-level reading of an external project, which the owner asked for on 2026-10-18 so that its useful ideas could be taken into Heron ([33 §5.1](33-external-repository-research.md#51-affaan-mecc))
 **Keeps:** the log's own rule, in its preamble - append-only, a reversal is a new entry and the original stays · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
 **Affects:** [`check-supersessions.py`](../tools/check-supersessions.py), [`test_check_supersessions.py`](../tests/test_check_supersessions.py), [`check-docs.py`](../tools/check-docs.py) (§13), [`tools/README.md`](../tools/README.md), and six notes in this log, under D-24, D-37, D-99, D-101 and D-105
 
