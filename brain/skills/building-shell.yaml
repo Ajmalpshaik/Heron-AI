@@ -226,7 +226,10 @@ purpose: >
       one run on a saved model with nothing unsaved, behind Revit's Keep or
       Discard (D-117, D-119, D-121). NEVER PLACE_STRUCTURAL_FAMILY for a
       beam: it places at POINTS, and on 2026-10-19 the beams it made had no
-      length. Its fix is a change of its own.
+      length. Its version 4 (DRAFT, FRAGMENT-ISSUES 5b-1201, NEEDS-CHECKING
+      Group HO) refuses a beam, a brace or a Structural Framing family
+      before anything is placed and sends it here, and counts a placement
+      Revit leaves with no geometry as failed, not placed.
   15. COLOURS, only when the modeller asks for them. First CREATE_MATERIAL
       (PROVEN), one material per colour, named, with its colour and
       transparency. Then one of three routes.
