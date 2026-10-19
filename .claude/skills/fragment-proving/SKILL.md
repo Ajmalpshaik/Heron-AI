@@ -183,14 +183,26 @@ Three things the shape of the file is doing:
 a command that exits leaves one held for five minutes, so the second call is refused. `batch-prove`
 pins one id across the whole batch by itself; a hand-run `validate` or `prove` needs it set.
 
+**A model is held by one conversation at a time** ([D-141](../../../docs/DECISIONS.md)), and every
+command line is a conversation of its own - so is the chat you run it from. A command hands back what it
+held when it ends, and `batch-prove` at the end of its batch. **A chat that has just used the Heron tools
+on the model holds it for three quiet minutes**, and a command line run from that chat is refused
+*"Model 'X' is in use by another chat"* - nothing was sent. Call `revit_release` in the chat first, or
+press **Free this model** on the ribbon. For a series of hand-run commands where one consumes what
+another left (`--expect-from`), set **`HERON_CONVERSATION_ID`** to one value of your own for all of them:
+the carried chain belongs to a conversation, and a series with it set is not handed back at each exit -
+`revit_release` or the button frees it.
+
 ## Reading the report
 
 | Verdict | What it means | What to do |
 |---|---|---|
+| `WOULD RUN` | `--dry-run` only: the job is runnable as written | run it without `--dry-run` |
 | `PASS` | both halves held | read the draft, then accept it under your own name |
 | `ALREADY` | at PROVEN or PRODUCTION - with `--release`, already proved on THAT release | nothing. Remove it from the job file |
 | `NOT PROVEN` | `--release` only: not PROVEN yet, or its proof is stale | prove it first, without `--release` |
 | `WRONG RELEASE` | `--release` only: the record says it ran on another Revit | connect that release, or pin it with `--session`. The batch exits 1 |
+| `WILL NOT RUN IN A BATCH` | risk `PUBLISH` or `ADMIN` - no batch sends one ([D-106](../../../docs/DECISIONS.md)) | prove it by name with the `validate --allow-publish ... --write` command the report prints, the owner's switch on (above). Nothing was sent to Revit |
 | `POSITIVE EMPTY` | it ran and found nothing | **rule 2.** The arrangement is wrong, not the fragment |
 | `POSITIVE UNREADABLE` | nothing it returned is a quantity | read the fragment's own source. Its results may need a `role:`; a sentence result needs `type: string` and `role: result` |
 | `NEG NOT EMPTY` | the negative returned content | a **finding**. The fragment may be falling back to something it was not given |
@@ -200,7 +212,8 @@ pins one id across the whole batch by itself; a hand-run `validate` or `prove` n
 | `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written | fix the file. Nothing was sent to Revit |
 
 A failure is the tool's **output**, not an error — it exits 0 with fourteen failures and non-zero only
-when the batch itself could not run. Set the failures aside and pass the clean ones.
+when the batch itself could not run: a `NO FRAGMENT`, a `REFUSED`, a `WRONG RELEASE`, or the library
+changing under it. Set the failures aside and pass the clean ones.
 
 ## What the runner cannot judge, and where `expect:` comes in
 

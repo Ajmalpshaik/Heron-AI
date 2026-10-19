@@ -76,6 +76,11 @@ namespace Heron.Revit.Addin
         internal const string KeepAskingIcon = "KeepAsking.png";
         internal const string KeepNotAskingIcon = "KeepNotAsking.png";
 
+        // Free this model (D-141): one picture, because the button is an act
+        // and not a state - which chat holds a model changes with every
+        // request, and the log says what each press freed.
+        internal const string FreeModelIcon = "FreeModel.png";
+
         // The Companion button (D-109): lit while the Companion is on.
         internal const string CompanionOnIcon = "CompanionOn.png";
         internal const string CompanionOffIcon = "CompanionOff.png";
@@ -581,6 +586,37 @@ namespace Heron.Revit.Addin
             AskToKeepButton = panel.AddItem(askToKeep) as PushButton;
             SetAskToKeepIcon(HeronPermissions.AsksBeforeKeeping());
 
+            // FREE THIS MODEL - D-141, the owner's ask of 2026-10-18. One model
+            // is used by one chat at a time; this frees the model in front at
+            // once, whichever chat holds it, without closing that chat. It
+            // changes no element, so it asks nothing and announces nothing -
+            // the add-in log says what it freed. No availability class: Revit
+            // greys it on the start screen, where there is no model to free.
+            var freeModel = new PushButtonData(
+                "HeronFreeModel",
+                "Free this\nmodel",
+                assemblyPath,
+                typeof(FreeModelCommand).FullName);
+            freeModel.ToolTip =
+                "Free the model in front from the chat using it, so another chat can use it now.";
+            freeModel.LongDescription =
+                "A model is used by one chat at a time. Another chat asking for it is told it is " +
+                "in use, and nothing is sent to the model. It is freed when that chat says it is " +
+                "done, after a few quiet minutes (bridge.modelHoldMinutes, 3 by default), when " +
+                "the model closes - or at once with this button, whichever chat holds it.\n\n" +
+                "It changes nothing in the model, and the other chat is not closed: it can come " +
+                "back to the model later. Nothing pops up; the add-in log says what was freed.";
+
+            var freeButton = panel.AddItem(freeModel) as PushButton;
+            if (freeButton != null)
+            {
+                var freeLoader = new IconLoader(assemblyPath);
+                var freeLarge = freeLoader.LoadLarge(FreeModelIcon);
+                if (freeLarge != null) freeButton.LargeImage = freeLarge;
+                var freeSmall = freeLoader.LoadSmall(FreeModelIcon);
+                if (freeSmall != null) freeButton.Image = freeSmall;
+            }
+
             // THE COMPANION (D-108, D-109). The top opens the chat's page in
             // the browser; the arrow holds the switch. Its picture is the
             // switch's state. It shows and never changes the model, so neither
@@ -877,6 +913,25 @@ namespace Heron.Revit.Addin
             catch (Exception ex)
             {
                 Log("Could not end the keep-the-rest-of-this-job grant: " + ex.Message);
+            }
+
+            // NOR DOES A CHAT'S HOLD ON IT (D-141). The same model opened
+            // again is free, for whichever chat asks first.
+            try
+            {
+                var closing = e == null ? null : e.Document;
+                if (closing != null)
+                {
+                    var holder = HeronModelHold.Session.Free(
+                        RevitOperations.DocumentKey(closing), DateTime.UtcNow, RevitOperations.Quiet());
+                    if (holder != null)
+                        Log("Model hold: '" + closing.Title + "' closed, so chat "
+                            + HeronConversation.Short(holder) + " no longer holds it.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Could not free a closing model's hold: " + ex.Message);
             }
 
             try

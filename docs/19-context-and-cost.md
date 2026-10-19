@@ -40,9 +40,11 @@ another model doubles cost to solve a problem that structured filters solve for 
 **The budget below is built and enforced. The compression is not, and that is a decision.**
 [`brain/heron_context.py`](../brain/heron_context.py) implements this table as `BUDGET`, in **parts**
 rather than tokens — Heron has no tokeniser, and inventing a number would be worse than counting a real
-thing ([D-58](DECISIONS.md)). **No compressor exists**, and until [24 §7](24-trust-model.md)'s question
-about what Heron carries is settled, the safest compressor is none: the note at the end of this section
-names what a wrong one costs, and `OST_DuctCurves` is the token it would take first.
+thing ([D-58](DECISIONS.md)). **No compressor exists.** The question [24 §7](24-trust-model.md) held
+open about text Heron carries was answered on 2026-09-20 by
+[D-81](DECISIONS.md#d-81--carried-text-is-stamped-not-scanned) — stamped with its source, never scanned —
+and it asked for no compressor. The request itself always crosses byte for byte (`FULL_ONLY` in
+`heron_context.py`), because `OST_DuctCurves` is the token a wrong compressor would damage first.
 
 With 20,000 fragments, 5,000 skills and 500 agents, nothing can send everything.
 

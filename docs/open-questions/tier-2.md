@@ -293,9 +293,15 @@ it can see of one - a change to the snapshot code, agreed on its own and not mad
 **The owner decides**, after the comparison. Until it is made, the minutes on the two PCs can be neither
 blamed on Heron nor cleared of it.
 
+**2026-10-18 - the office PC is retired.** The owner, Ajmal PS: *"no office pc no more"*
+([NEEDS-CHECKING Group HF](../needs-checking/group-hf.md), HF5). The comparison above cannot be made as
+written. What this question still asks of the laptop alone - which model, effort level and fast-mode
+setting a modeller's chat should run - is the owner's to say; this note records the fact and answers
+nothing.
+
 ---
 
-### 🔵 Q-62 — Should one `revit_change` call build many family forms? *(found 2026-10-10)*
+### ✅ Q-62 — Should one `revit_change` call build many family forms? → **Yes: one undo per list, and cuts stay a separate call ([D-116](../decisions/D-116.md))** *(found 2026-10-10, answered 2026-10-17)*
 
 Today one call builds one form, or several loops that share one plane and one depth. The pump set timed
 in [FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) had 107 forms: they went in as
@@ -1169,6 +1175,38 @@ word away.
 
 **Ajmal PS decides.** Until he does, nothing changes: the fragment keeps selecting the whole model, and Part 4 §27
 keeps its words with a note.
+
+---
+
+### 🔵 Q-79 — DISCLAIMER says Heron *"reports compliance with a standard"*, and the chat is told never to call a model compliant. Should the DISCLAIMER say what the chat says? *(found 2026-10-18 in the second documentation pass)*
+
+**What was found.**
+
+- **[`DISCLAIMER.md`](../../DISCLAIMER.md), *On standards checking*:** *"Where Heron reports compliance with a standard -
+  ISO 19650, QCS, Ashghal requirements, a company standard - it reports against the source documents it has been
+  given, and cites them. **It does not certify compliance.**"*
+- **[`host.chat.yaml`](../../brain/instructions/host.chat.yaml)**, the instruction every chat reads: *"A check that
+  passes means the model meets the values that were checked, and that is what you say. Never call a model, a
+  system or a design compliant - whether it complies is the engineer's or the authority's decision."* It came in
+  with the earlier-brain plan's C2 (#307).
+- **[D-36](../decisions/D-36.md)** makes the DISCLAIMER load-bearing and says it *"must change with the code rather
+  than after it"*. No decision says which wording is Heron's.
+
+The two agree that Heron certifies nothing. They differ in one word: the DISCLAIMER says Heron *reports
+compliance*; the chat never says *compliant*.
+
+**The shapes the owner chooses between:**
+
+1. **The DISCLAIMER takes the chat's words - recommended.** *"Where Heron checks a model against a standard ... it
+   reports which checked values the model meets and which it does not, against the source documents it has been
+   given, and cites them. It does not certify compliance."* **Cost:** one paragraph of a legal page, which only the
+   owner changes.
+2. **Leave both.** **Cost:** the page a company reads before using Heron says a word the product is told never to say.
+
+**Why the first.** It is the stricter of the two, it is what the chat already does, and it is the wording an engineer
+or an authority expects from a tool: values met, not compliance granted.
+
+**Ajmal PS decides.** Until he does, nothing changes.
 
 ---
 

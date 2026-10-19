@@ -716,7 +716,11 @@ with the scripts they drive. **Not proven**: [row 5b-371](../../../FRAGMENT-ISSU
 
 ## Stage 6 — Routes 1 and 2, onto the same engine
 
-**Status: BUILT, NOT PROVEN — 2026-09-22. Both routes have a door, and both work offline.**
+**Status: BUILT, NOT PROVEN — 2026-09-22. Both routes have a door, and both work offline.** It had
+installed nothing into a Revit then. **Since:** `heron-install` has - into Revit 2027 with `--from` on
+2026-10-08 and from the published v0.1.0 on 2026-10-10 ([Group AC](../../../needs-checking/group-ac.md)),
+and on the owner's laptop on 2026-10-17 ([Group EP](../../../needs-checking/group-ep.md)). `AE1`-`AE6`
+are still owed as written.
 
 > **THE GATE FIRST, because it is the only part that is a security rule.** Item 3 says *"read
 > [Q-PE-10](03-open-questions.md) before building this one — whether route 1 may act on any
@@ -1081,7 +1085,7 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 3 | Installer core | **PROVEN** 2026-09-21 | Run on the owner's PC — the AI Bridge was installed into Revit 2024 and Revit loaded it, and the engine refused correctly while Revit was open. [Stage 3](#stage-3--the-installer-core-with-no-window-at-all) · [Group AB](../../../NEEDS-CHECKING.md) |
 | 4 | The window | **PROVEN** 2026-09-21 for `AB1`-`AB8`, except `AB6` | Run on the owner's PC. **One rule added after that run is NOT proven** — greyed release ticks, `AB9` and `AB10`. [Stage 4](#stage-4--the-window) · [Group AB](../../../NEEDS-CHECKING.md) |
 | 5 | GitHub download | **BUILT, NOT PROVEN** 2026-09-21 | The builder ran here — 24 assets, verified at the binary level. **v0.1.0 was published 2026-10-08** ([`AC1`](../../../needs-checking/group-ac.md), done), and the installer has fetched from it: once 2026-10-08 (Group AC) and again on the owner's laptop 2026-10-17 ([Group EP](../../../needs-checking/group-ep.md)). `AC2`-`AC5` are still owed. [Stage 5](#stage-5--fetch-from-the-github-release) · `AC1`-`AC5` |
-| 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | **Both** routes have a door — `heron-install`, with `--source` and `--from`. [Q-PE-16](03-open-questions.md) and [Q-PE-12](03-open-questions.md) both answered, and the update check with them. **Nothing has been installed into a Revit.** [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
+| 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | **Both** routes have a door — `heron-install`, with `--source` and `--from`. [Q-PE-16](03-open-questions.md) and [Q-PE-12](03-open-questions.md) both answered, and the update check with them. **Nothing had been installed into a Revit then.** Since: `heron-install --from` put the AI Bridge into Revit 2027 on 2026-10-08, *"1 installed, 0 failed"*, and Revit 2027 loaded that build; on 2026-10-10 it installed from the published release with no `--from` ([Group AC](../../../needs-checking/group-ac.md)); and plain `heron-install` passed on the owner's laptop on 2026-10-17 ([Group EP](../../../needs-checking/group-ep.md) EP3). `AE1`-`AE6` are still owed as written. [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
 | 7 | Uninstall / update / rollback | **BUILT, NOT PROVEN** 2026-09-22 | Item 5 is **NOT MET** and says why, [Q-PE-15](03-open-questions.md). **Nothing has been deleted from a real Addins folder.** [Stage 7](#stage-7--uninstall-update-and-a-rollback-that-has-been-tested) · `AD1`-`AD4` |
 | 8 | Sign and ship | NOT STARTED | — |
 | 9 | The Settings panel | NOT STARTED | — |

@@ -35,6 +35,10 @@ It runs the fragment once, for real, on the saved model in front; Revit redraws 
 modeller **Keep or Discard**, and nothing stays unless they press Keep. It refuses anything but a DRAFT at
 risk MODIFY, a version already kept, a model that is not in front and a model with unsaved changes
 ([D-121](../../docs/DECISIONS.md)) - say the refusal back in Revit words and stop; never work around one.
+One refusal has a remedy that is the chat's, not yours: *"Model 'X' is in use by another chat"* is
+usually the chat that called you, which used the Heron tools on that model in the last three minutes
+([D-141](../../docs/DECISIONS.md)) - `try-once` is a conversation of its own. Say so, and ask that the
+chat call `revit_release` or the modeller press **Free this model** on the ribbon; then run it once.
 **The modeller is the validator** (Article 19): report what Revit said and what they chose, and stop. You
 never run the negative case, never draft or sign the proof, and never raise the status - those belong to
 the proving session and a person's name ([D-120](../../docs/DECISIONS.md)).
@@ -107,23 +111,27 @@ DRAFT fragment rather than inventing one:
 ```bash
 python brain/heron_fragment.py                # the card and its cases are well formed
 python tools/check-fragments-compile.py       # every fragment, on every release, 2020 to the latest
-python tools/check-routing.py                 # the modeller's words reach this fragment, not another
+HERON_KNOWLEDGE="$(mktemp -d)" python tools/check-routing.py   # the modeller's words reach this fragment, not another
 python tools/check-declared-questions.py      # no question is answered by a write
 python tools/check-docs.py                    # the typed fragment counts it names, fix and re-run
 python tests/test_library_total.py
 ```
 
-Exit **3** from the compile means `dotnet` is missing: that is **NOT RUN**, never a pass - say so and
-stop short of calling it compiled. Every ladder-crossing `check-routing` reports is answered: which
-fragment wins that sentence, written in both cards. Fix what fails and run it again; never edit a check
+`check-routing` gets a scratch store of its own: run without one, it either refuses with exit **2** (a
+worktree, or a branch other than `main`) or rebuilds the one store every live Heron chat on this PC reads
+([`heron-ship`](../skills/heron-ship/SKILL.md) section 1). Exit **3** from the compile means `dotnet` is
+missing: that is **NOT RUN**, never a pass - say so and stop short of calling it compiled. Every
+ladder-crossing `check-routing` reports is answered: which fragment wins that sentence, written in both
+cards. Fix what fails and run it again; never edit a check
 or a test until it passes.
 
 **6. Write the proof plan.** A job file in `tools/jobs/`, shaped like
 [`tools/jobs/example.yaml`](../../tools/jobs/example.yaml), with its negative case, read back with
 `python tools/batch-prove.py tools/jobs/<file>.yaml --dry-run` - which runs nothing. Then a
-NEEDS-CHECKING group of its own under `docs/needs-checking/`, taking the next free letter at the moment
-you write, with its entry in [`docs/NEEDS-CHECKING.md`](../../docs/NEEDS-CHECKING.md), naming the test
-model to run it on. The proof is run by the owner, never by you.
+NEEDS-CHECKING group of its own under `docs/needs-checking/`, taking the group `python tools/next-id.py`
+prints as free at the moment you write - it reads main, every branch and every open pull request, which
+your own checkout cannot - with its entry in [`docs/NEEDS-CHECKING.md`](../../docs/NEEDS-CHECKING.md),
+naming the test model to run it on. The proof is run by the owner, never by you.
 
 **7. Offer the one run, and start it only on a yes.** A MODIFY tool can be tried once on the modeller's
 own model: they save it, bring a view that will show the change to the front, and choose Keep or Discard

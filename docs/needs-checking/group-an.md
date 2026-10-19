@@ -28,6 +28,15 @@ C7 and C9 on his word:
 (`tools/check-fragments-compile.py`, 2026-09-24) and route their own sentences. **None has met a
 model.** Every one is `DRAFT`, and each `tests/cases.yaml` names the negative case its proof owes.
 
+> **2026-10-18 - where these tools stand now, read off disk.** *None has met a model* and *every one is
+> `DRAFT`* above describe the day this group was written. Since 2026-10-03 every tool listed above has been
+> run in Revit 2024 and signed by Ajmal PS - the first with the family-editor proofs of PR #395, the rest
+> later; the `proof:` block in each card says on what and when. `add-family-connector` and `flex-family` are DRAFT again: the code moved under the
+> signature, and `python tools/check-signatures.py` lists both STALE. Today's status of any of them:
+> `grep '^heron-status:' brain/fragments/<name>/fragment.yaml`. **The rows below are not closed by those
+> proofs:** they build this group's own family in order, and none of them is recorded as run here, so every row
+> stays open.
+
 **The arrangement is one family, built by the rows in order**, so each row is the setup for the next:
 File, New, Family, the metric Generic Model template, left open in front - a new family nobody needs,
 saved nowhere until AN9 has passed.

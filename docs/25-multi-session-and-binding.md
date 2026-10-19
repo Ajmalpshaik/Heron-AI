@@ -158,8 +158,8 @@ they are working on — while Heron binds to the PID underneath.
 > show. `revit_health` names the model of the one Revit this chat is bound to, and no other. Choosing by
 > list number works: `revit_use_session` takes the number or the session id. This section and
 > [`mcp/README.md`](../mcp/README.md) rule 4 state the requirement. The code does not meet it yet, and
-> whether it should is the owner's to decide. Recorded here on 2026-10-18 and not yet a FRAGMENT-ISSUES
-> row.
+> whether it should is the owner's to decide. Recorded the same day as
+> [FRAGMENT-ISSUES row 5b-1132](fragment-issues/section-5b-rows-401-425.md).
 
 ---
 
@@ -175,6 +175,25 @@ Proven behaviour, adopted wholesale:
 | The bound Revit closes | **Stop and say so.** Never slide onto a different session |
 | Chat A → Revit 1, chat B → Revit 2 | Independent. No interference |
 | Chat A **and** chat B → the same Revit | **The second is refused**, and told why. Since Step 6 a lease decides this ([D-22](DECISIONS.md)) — the newer connection still takes the *pipe*, but not the right to use it. Before that they fought and the last speaker cut the other off mid-job |
+
+> **As built (2026-10-18) — one model, one chat at a time ([D-141](DECISIONS.md), the owner's design).**
+> The last row holds between two **people**, not between one person's chats. The lease is held by the
+> request's `client` id, and `.mcp.json` sends the same one from every chat on the PC (`ajmal-pc`), so
+> the owner's own chats never refused each other - and shared what the add-in kept for one chat. Since
+> D-141 every request also carries the chat's own `conversation` id, and the add-in **holds a model for
+> the chat whose request ran against it**:
+>
+> | Situation | Behaviour |
+> |---|---|
+> | Chat A and chat B, same Revit, **different models** | Both work. One chat may hold several models |
+> | Chat A and chat B, same Revit, **the same model** | **The second is refused** before anything runs: *"Model 'X' is in use by another chat ... Nothing was sent to the model."* `model_in_use`, never ran |
+> | Chat A goes quiet, says it is done, or the modeller presses **Free this model** | The model is free at once (done, the button) or after `bridge.modelHoldMinutes` quiet minutes, 3 by default. Chat B never has to close chat A, and chat A can come back later |
+> | The model closes, or Revit does | The hold is gone - it lives in memory only |
+>
+> The lease stays exactly as it is, per Revit and per person. The carried chain and the D-138 Keep grant
+> are now each chat's own. Revit's thread still runs one job at a time (§6). The rule is
+> `HeronModelHold`, claimed in `RevitOperations.Run` after the gate; not yet run in Revit -
+> [Group HK](needs-checking/group-hk.md).
 
 **[NOTE]** *"Nothing is sent to Revit at all until you say which one — the AI is not allowed to guess"*
 is the correct default and it should be a hard rule, not a preference. Guessing which project to modify
@@ -309,6 +328,11 @@ The conflict matrix, stated once:
 | Chat A → Revit 2024 · chat B → the **same** Revit 2024, **different models** | **Yes** | Same process, same pipe, same lease |
 | Chat A → one Revit holding two models, both handled by that one chat | **No** | One holder. But document pinning still applies — see §4 |
 
+> **As built (2026-10-18):** between two of the **same person's** chats this matrix is not what decides -
+> they send one `client` id and share the lease. Since [D-141](DECISIONS.md) the **model** decides: two
+> of their chats on different models of one Revit both work, and two on the same model are one at a
+> time (§3 above). Between two people the lease still refuses the second, as the matrix says.
+
 **[NOTE]** Two documents in one Revit are also **not parallel**. They share the single Revit thread
 (§6), so work on one freezes the other. Two models is not two workers. Real concurrency only exists
 across two Revit processes — which is the same conclusion as §6a reaches from the freeze side.
@@ -372,7 +396,8 @@ the lease, or an interrupted transaction could be stranded.
 > connection that is only waiting for its next request is still dropped at once. A displaced connection
 > whose request **Revit is still running** now keeps its pipe until the answer is written, then
 > closes, so the chat is told what happened. That is "holding both pipes open" for exactly as long as an
-> answer is owed, and no longer: the lease is untouched, and `MaxServerInstances` is 16 so that the
+> answer is owed, and no longer: the lease is untouched, and the pipe's instance limit is 16
+> (`PipeInstances` in [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)) so that the
 > finishing pipe, the newcomer and the next listener can exist together. Measured afterwards on the
 > same stand-in: every one of the 30 came back. **What is left:** a request that reaches an idle pipe in the instant
 > it is displaced is not run at all, and the client still says it cannot tell - safe, because nothing
@@ -620,7 +645,7 @@ success rate, and it would remain fragile across eight Revit versions ([D-05](DE
 | Make Revit responsive during work | **Keep jobs short** — most finish in one or two seconds |
 | Hide the freeze | **Show a banner.** A frozen app with no explanation reads as a crash; the same freeze with a banner reads as progress |
 | Interrupt the user mid-command | **Wait.** *"Waiting for you to finish"* is a normal state, not an error |
-| Fake concurrency inside one Revit | **Chunk and yield** so long jobs do not freeze it for minutes |
+| Fake concurrency inside one Revit | **Chunk and yield** so long jobs do not freeze it for minutes - *not built as of 2026-10-18: a job holds Revit's thread until it ends (§6)* |
 | Pretend side-by-side work is possible | **Tell the user to open a second Revit.** Real parallel work exists across two Revits, never inside one |
 
 That last row is the actual product answer, and it should be said plainly in the docs and in the UI
@@ -705,7 +730,8 @@ Carried forward:
   *(more in Heron since 2026-10-13 — `PipeInstances` in [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)
   — so a displaced pipe can finish writing an answer it owes, §3)*
 - Explicit user connect per Revit; an unconnected Revit is invisible ✅
-- One chat, one Revit; ask once; never guess; fail closed on disconnect ✅
+- One chat, one Revit; ask once; never guess; fail closed on disconnect ✅ *(and since
+  [D-141](DECISIONS.md), one model, one chat at a time - §3)*
 - Progress banner during execution ✅
 
 Changed:

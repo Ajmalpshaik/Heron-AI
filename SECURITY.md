@@ -55,8 +55,11 @@ them, that is a vulnerability worth reporting:
   default ([D-106](docs/DECISIONS.md)). With Changes on, a change asked for in a chat is kept at once,
   as one entry in Revit's undo list, unless the owner has turned **Ask to Keep** on, when Revit shows the
   change and asks Keep or Discard first ([D-126](docs/DECISIONS.md), [D-138](docs/DECISIONS.md) - off by
-  default); a fragment with no standing proof is refused there ([D-117](docs/DECISIONS.md)). Only a
-  person in Revit sets a switch or answers the box; nothing in a request can. *(The specification,
+  default). A fragment with no standing proof is refused before anything reaches Revit - by the bridge
+  client on the chat's side, because the add-in never sees a fragment's card
+  ([D-117](docs/DECISIONS.md), `unproven_refusal` in
+  [`heron_bridge_client.py`](mcp/client/heron_bridge_client.py)). Only a person in Revit sets a switch
+  or answers the box; nothing in a request can. *(The specification,
   [12](docs/12-security-and-permissions.md), names a `REQUIRES_CONFIRMATION` reply; no code returns
   that word.)*
 - **No text Heron reads may raise Heron's own permission level.** Content from documents, model text,

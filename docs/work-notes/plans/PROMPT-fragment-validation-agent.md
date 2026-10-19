@@ -17,6 +17,14 @@
 > the running half could not be, on a machine with no Windows and no Revit on it. The three open
 > questions at the foot of this file are answered, each by a measurement rather than a preference.
 >
+> **Since, read 2026-10-18: the running half has met real models.** The sweep of 2026-09-13 ran
+> `validate` on Revit 2024 ([`the-sweep-2026-09-13.md`](../the-sweep-2026-09-13.md)), and proofs drafted by
+> `tools/batch-prove.py` and signed with `python brain/heron_validate.py accept` have been recorded on
+> named models since - `tag-rooms` on 2026-10-03, for one ([Group AO](../../needs-checking/group-ao.md)
+> AO1). So the half this brief was kept for is no longer waiting. Whether it is retired is the owner's
+> call; what it built lives in the files named above, the
+> [`fragment-proving`](../../../.claude/skills/fragment-proving/SKILL.md) skill and [D-30](../../DECISIONS.md).
+>
 > **Two numbers in this brief were checked and one was wrong.** The reachable working set is **42
 > fragments**, not 333 — see [the plan](#what-it-actually-reaches). And *"every fragment run today is
 > in the audit log with its outcome"* is **not true**: the add-in records the operation, not which

@@ -20,8 +20,12 @@
 
 > **As built (2026-10-18):** these are `heron_scope.SCOPES`
 > ([`heron_scope.py`](../brain/heron_scope.py)), one SQLite file each
-> ([D-23](DECISIONS.md#d-23--the-knowledge-store-is-sqlite-one-file-per-scope)). Every store is derived
-> and can be rebuilt from disk. `python brain/heron_scope.py` lists what exists and where.
+> ([D-23](DECISIONS.md#d-23--the-knowledge-store-is-sqlite-one-file-per-scope)). Every `.db` is derived:
+> `python brain/heron_scope.py --rebuild` puts the fragment library back into `global`, and an ingested
+> document comes back from the list kept beside its store while its source file is still on disk
+> ([05 §7](05-heron-brain.md#7-vector-database-maintenance)). What is kept beside a project's store - its
+> answers and runs, §1.1 - is the modeller's own and is not rebuilt. `python brain/heron_scope.py` lists
+> what exists and where.
 
 ### 1.1 Where each scope lives on the PC
 
@@ -36,7 +40,7 @@ folders on this PC. A file exists only once something has opened its scope.
 |---|---|---|---|
 | **global** | `global.db` | The fragment library's search index, rebuilt from the cards in `brain/fragments/`; any document ingested with `--scope global` | `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, and the `revit_` doors when given words; `heron_standards` when asked for `global` |
 | **company** | `company.db` | Documents ingested with `python brain/heron_ingest.py <file> --scope company` | `heron_standards`, which asks it by default |
-| **project** | `projects\<model id>.db` - one per model, named by its `Document.CreationGUID` ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about)). Beside it, files and folders of the same name keep that model's answers and runs (`.hvac.json`, `.fire.json`, `.loads`, `.sprinkler`, `.sprinkler-layout`), and `labels.json` says which model is which | Documents ingested with `--scope project --project <key>`; the project's governing standards and design answers ([D-111](DECISIONS.md#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project)) | `heron_standards`, which asks it by default when a model is pinned; `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout`, `heron_earlier_answers` |
+| **project** | `projects\<model id>.db` - one per model, named by its `Document.CreationGUID` ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about), still Proposed). Beside it, files and folders of the same name keep that model's answers and runs (`.hvac.json`, `.fire.json`, `.loads`, `.sprinkler`, `.sprinkler-layout`), and `labels.json` says which model is which | Documents ingested with `--scope project --project <key>`; the project's governing standards and design answers ([D-111](DECISIONS.md#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project)) | `heron_standards`, which asks it by default when a model is pinned; `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout`, `heron_earlier_answers` |
 | **user** | `user.db` | Only what `heron_ingest.py --scope user` puts there; no MCP tool writes it | `heron_standards` when asked for it |
 | **temporary** | `temporary.db` | Only what `heron_ingest.py --scope temporary` puts there; no MCP tool writes it | `heron_standards` when asked for it |
 | **experimental** | `experimental.db` | Only what `heron_ingest.py --scope experimental` puts there; no MCP tool writes it | `heron_standards` when asked for it |
@@ -146,7 +150,8 @@ Enforce it physically, not by convention:
 > `ATTACH` and `DETACH` are denied at the engine, so a query across two files cannot be written. The
 > project store is keyed by the model's own `Document.CreationGUID`, which the add-in sends. With no key,
 > the project scope refuses rather than guesses
-> ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about)).
+> ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about),
+> still **Proposed**: the code does it, and the owner has not yet accepted the decision).
 > A project's governing standards are asked once and kept for that project
 > ([D-111](DECISIONS.md#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project)).
 > Rule 3's ladder is a plan that moves nothing ([`heron_userskills.py`](../brain/heron_userskills.py)).

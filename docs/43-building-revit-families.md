@@ -40,8 +40,10 @@ built `DRAFT`, and stays so until it has been run on a real family with a negati
 > called in a cloud container, it refused `SET_FAMILY_SETTINGS`, `LOCK_FORM_TO_PLANES` and `FLEX_FAMILY`
 > with *"... is DRAFT ... Nothing was sent to Revit"*, and let `ADD_FAMILY_PARAMETERS`, PROVEN, through
 > to its next check. A DRAFT step's change is kept only through `try-once`, once per version, behind
-> Revit's Keep or Discard box ([D-119](decisions/D-119.md)). `family-creation`'s precondition that a DRAFT
-> step *"runs only here, on a new family or a scratch copy"* was written before D-117.
+> Revit's Keep or Discard box ([D-119](decisions/D-119.md)). `family-creation`'s preconditions say so
+> themselves since #665 (2026-10-18): a DRAFT step *"is refused by revit_change (D-117); it can only be
+> tried once with the bridge client's try-once, on a family saved first with nothing unsaved"* - read
+> back through `heron_method family-creation` the same day.
 
 | What it produced | Where it lives |
 |---|---|

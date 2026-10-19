@@ -53,8 +53,9 @@ Measured against all eight reference assemblies on 2026-09-19, after
 `brain/fragments/create-linear-dimension/` failed to compile on the obvious-sounding name. The full
 table is in [`.claude/skills/revit-version-support/SKILL.md`](../.claude/skills/revit-version-support/SKILL.md).
 
-**This is why `create-radial-dimension` declares three releases rather than eight** — the narrowest
-`revit:` list in the library, and the compile gate enforces it.
+**This is why `create-radial-dimension` declares three releases rather than eight** — as narrow as any
+`revit:` list in the library (`attach-walls` claims the same three, 2025 to 2027), and the compile gate
+enforces it.
 
 ### Break 2 — .NET Framework → .NET 8 at Revit 2025
 
@@ -131,7 +132,8 @@ applied to the platform itself.
 
 > **As built (2026-10-18):** there are no `Heron.Revit.Abstractions`, `Heron.Revit.Adapters` or
 > `Heron.Revit.Core` projects. The C# is `revit/` (`Heron.Bridge`, `Heron.Doc`, `Heron.Revit.Addin`,
-> `Heron.Scripting`, `Heron.Tools`) and `platform/Heron.Core`; `Autodesk.Revit` may appear only inside
+> `Heron.Scripting`, `Heron.Tools`) and `platform/` (`Heron.Core`, and the installer's `Heron.Installer`,
+> `Heron.Installer.App` and `Heron.Installer.Cli`); `Autodesk.Revit` may appear only inside
 > `revit/` (`tools/check-structure.py`) and `Heron.Bridge` stays Revit-free (its own project file references
 > no Revit assembly). Outside the
 > fragments, `#if REVIT...` appears in a handful of add-in files (`grep -rl '#if REVIT' revit platform`),

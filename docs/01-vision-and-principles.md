@@ -70,7 +70,7 @@ If an important decision is required, Heron asks.
 
 ## 6. The Golden Rules
 
-The permanent architecture rules live in their own document: [14 — Golden Rules](14-golden-rules.md) — rules 1 to 15 from the specification, and 16 to 21 from engineering review, accepted by the owner on 2026-08-28 ([Q-19](OPEN-QUESTIONS.md)). Together with the [Constitution](../HERON_CONSTITUTION.md), they are the constitution of the platform. Anything in this repository that contradicts them is a bug in the design, not a feature.
+The permanent architecture rules live in their own document: [14 — Golden Rules](14-golden-rules.md) — rules 1 to 15 from the specification; 16 to 19 from engineering review and 20 and 21 from the [field notes](00e-field-notes-proven-bridge.md), 16 to 21 accepted by the owner on 2026-08-28 ([Q-19](OPEN-QUESTIONS.md)). Together with the [Constitution](../HERON_CONSTITUTION.md), they are the constitution of the platform. Anything in this repository that contradicts them is a bug in the design, not a feature.
 
 ## 7. Target experience
 

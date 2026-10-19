@@ -114,7 +114,7 @@ Claude Code is the *host*, the Kernel is Heron's *spine*.
 
 ---
 
-## 2. The four registries
+## 2. The five registries
 
 | Registry | Answers | Detail |
 |---|---|---|

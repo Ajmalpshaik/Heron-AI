@@ -36,6 +36,12 @@ principles. The shape is known to work on this hardware and this Revit range.
 already loaded. Every `.cs` file in `revit/` and `platform/` still needs an ahead-of-time build with the
 .NET SDK. Runtime compilation is not a way around Step 6 having never met a compiler.
 
+**Decided and built since - recorded 2026-10-18.** [D-28](../DECISIONS.md) (Accepted 2026-08-28) made
+generated code C#, compiled at run time inside Revit's process, completing [D-04](../DECISIONS.md)'s
+hybrid. A fragment's C# is compiled when it runs, through `HeronScriptHost` and
+`revit/Heron.Revit.Addin/HeronScriptEngine.cs`, the one file besides the stack guard that names a Roslyn type. **E2 is not built:** there is no scan of generated code before it
+reaches the compiler.
+
 ### E2 — Generated code needs a gate before it reaches the compiler
 
 The mechanism worth having: scan generated code **before** compiling it, and split the result three ways.

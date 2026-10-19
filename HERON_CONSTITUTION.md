@@ -252,8 +252,8 @@ and the compensating control. Articles are never weakened silently, and never by
 ([Q-35](docs/OPEN-QUESTIONS.md), [D-43](docs/DECISIONS.md)). Binding.*
 *Derived from **all 21 Golden Rules**, every one official since 2026-08-28
 ([Q-19](docs/OPEN-QUESTIONS.md)), plus Part 4 §5, §6, §29, §30, §46.*
-*Amended three times, by the route above: **Article 9** gained one recorded exception on 2026-09-23, the
-owner's choice when he was asked — [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - and **Article 11** one on
+*Amended by the route above, each time by a decision the owner accepted: **Article 9** gained one
+recorded exception on 2026-09-23, the owner's choice when he was asked — [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - and **Article 11** one on
 2026-10-17, accepted by the owner with D-120 to D-122 — [D-119](docs/DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so).
 The same day Article 9's exception was narrowed to the owner's switch for that same Keep or Discard
 prompt, now asked before any change from a chat is kept —

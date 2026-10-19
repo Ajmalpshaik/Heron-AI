@@ -19,8 +19,10 @@
 > Answer inline under each question. Once answered, the answer is promoted into [DECISIONS.md](DECISIONS.md).
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
+> · ✅ answered. Many answered questions keep their colour instead: the **Answer:** paragraph under a
+> question is what marks it answered, and `check-docs.py` counts it either way
 
-**Progress: 65 answered · 15 open · nothing blocking any phase**
+**Progress: 65 answered · 16 open · nothing blocking any phase**
 
 **The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
 raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in
@@ -43,7 +45,10 @@ Three of the four were settled by looking rather than deciding: at a system alre
 `Q-20` closed the same day and it reshaped the plan rather than confirming it: **v1 is read-only**
 ([D-32](DECISIONS.md)). Asked which job he wanted first, Ajmal chose *answering questions about the
 model*, and *reading first, writing soon after*. The write groups of the register now gate **v1.1**
-instead of standing between him and something usable.
+instead of standing between him and something usable. **Corrected 2026-10-18: this paragraph records
+D-32's first wording, which was reversed within the hour.** Asked again, Ajmal answered *"it must change
+things too"*, and D-32 as accepted reads **v1 must be able to change the model, and reading is what gets
+used first**; Q-20's own answer, in [Tier 3](open-questions/tier-3.md), says the same.
 
 **`Q-41` is the forty-second question, and the first one the OWNER asked** — raised and answered on
 2026-09-06, during the decision read-back rather than by any specification. He confirmed

@@ -44,7 +44,7 @@ number, the particular day. Keep what will be true next time.
 | A rule for work no skill covers yet | A new skill — hand it to `skill-author` |
 | A choice that was made, with reasoning | `docs/DECISIONS.md` — append-only, never edited in place |
 | Something still unresolved | `docs/OPEN-QUESTIONS.md` |
-| Behaviour observed in a real Revit | The field notes — observed beats designed, [D-15](../../docs/DECISIONS.md) |
+| Behaviour observed in a real Revit | The [NEEDS-CHECKING](../../docs/NEEDS-CHECKING.md) row it answers, dated, with the release - or, when a fragment failed in front of a model, a [FRAGMENT-ISSUES](../../docs/FRAGMENT-ISSUES.md) row the same day. Observed beats designed, [D-15](../../docs/DECISIONS.md); the field notes, `docs/00e`, are the owner's record of his earlier bridge and are not written to |
 
 **Prefer extending an existing skill.** A new skill for every finding fragments the guidance until none
 of it is found.

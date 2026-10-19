@@ -94,7 +94,9 @@ Work down this list; it is ordered by how often each is the real cause.
 4. **Built for the wrong framework family.** A `net48` assembly will not load in Revit 2025. See the
    `revit-version-support` skill.
 5. **Revit was open during deploy.** A loaded assembly cannot be replaced, so the copy half-succeeds and
-   looks like it worked. Both scripts refuse to run while Revit is running, for this reason.
+   looks like it worked. `tools/deploy-addin.ps1` and `tools/setup.ps1` both refuse while that
+   release's Revit is open, for this reason - one check, `tools/HeronRevit.ps1`'s, made per release; a
+   Revit whose release cannot be told blocks every one.
 
 ### When the button is greyed out
 
