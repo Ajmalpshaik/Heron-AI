@@ -52,6 +52,10 @@ import heron_building_loads as B                              # noqa: E402
 import heron_hvac as H                                        # noqa: E402
 import heron_psychro as PSY                                   # noqa: E402
 import heron_takeoff as T                                     # noqa: E402
+try:
+    import heron_loads_systems as S                           # noqa: E402
+except ImportError:          # the code before docs/44 s13 - each test then FAILS, never crashes
+    S = None
 from test_takeoff import ROOM, run_all                        # noqa: E402
 from test_building_loads import (PROJECT, OFFICE, bad_second_office,   # noqa: E402
                                  knowledge_folder, two_offices, _brain)
@@ -286,6 +290,20 @@ def test_the_inputs_are_kept_and_read_back_a_table_intact():
         assert abs(s2["coil"]["outdoor_air_ls"] - 15.0) < 1e-9     # the exhaust, read back
         assert abs(s2["coil"]["total_w"] - s["coil"]["total_w"]) < 1e-6
         assert "cooling coil" in again["said"] and H.NOT_HAP in again["said"]
+
+
+def test_a_table_is_kept_whole_and_labelled_once():
+    # FRAGMENT-ISSUES 5b-332 lost a table read as a labelled value; an exhaust table
+    # must be wrapped whole, and a value already labelled kept as it was.
+    assert S is not None, "brain/heron_loads_systems.py is there at all"
+    kept = S.labelled({"Z1": {"exhaust_ls": {"105": 60}, "ez": 1.0,
+                              "ventilation_system": {"value": "single-zone", "source": "model"},
+                              "supply_ls": None}})
+    assert kept["Z1"] == {"exhaust_ls": {"value": {"105": 60}, "source": "instruction"},
+                          "ez": {"value": 1.0, "source": "instruction"},
+                          "ventilation_system": {"value": "single-zone", "source": "model"}}
+    assert S.labelled(kept) == kept                                 # labelled once only
+    assert S.summary_lines(None) == []
 
 
 def test_every_page_says_what_it_is_not():
