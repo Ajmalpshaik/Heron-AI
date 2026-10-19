@@ -129,6 +129,7 @@ def main():
     # would ship every citation of it pointing at the wrong rule.
     check(GATES == ["check-docs", "check-metadata", "check-structure",
                     "check-signatures", "check-licence", "check-narrow-errors",
+                    "check-secrets",
                     "check-package", "check-products", "check-decision-titles",
                     "check-routing", "check-intrusion",
                     "check-compile", "check-fragments-compile"],

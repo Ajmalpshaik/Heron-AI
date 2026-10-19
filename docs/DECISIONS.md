@@ -211,6 +211,7 @@ an edit.
 | [D-139](#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) | The four parts of the specification are corrected in place where a fact is wrong or an accepted decision settled it, and the original words stay beside the correction | ✅ Accepted · 2026-10-18 |
 | [D-141](#d-141--one-model-is-used-by-one-chat-at-a-time-and-what-revit-keeps-for-a-chat-is-keyed-on-that-chat) | One model is used by one chat at a time, and what Revit keeps for a chat is keyed on that chat | ✅ Accepted · 2026-10-18 |
 | [D-142](#d-142--anything-a-kept-change-deletes-from-the-model-is-asked-in-revit-first-in-a-box-of-its-own-whatever-ask-to-keep-says-and-never-under-a-jobs-grant) | Anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant | ✅ Accepted · 2026-10-18 |
+| [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
 
 ## Format
 
@@ -1232,3 +1233,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitFragmentDelete.cs`](../revit/Heron.Revit.Addin/RevitFragmentDelete.cs), [`HeronDeleteQuestion.cs`](../revit/Heron.Revit.Addin/HeronDeleteQuestion.cs), [`RevitChangedSet.cs`](../revit/Heron.Revit.Addin/RevitChangedSet.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_run_records.py`](../mcp/server/heron_run_records.py), [`heron_failure.py`](../mcp/server/heron_failure.py), [Constitution Enforcement](../HERON_CONSTITUTION.md), [`tests/test_delete_box.py`](../tests/test_delete_box.py), [`tests/test_keep_question.py`](../tests/test_keep_question.py), [`tests/Heron.KeepQuestion.TestHost`](../tests/Heron.KeepQuestion.TestHost/Program.cs)
 
 **Full record:** [`decisions/D-142.md`](decisions/D-142.md)
+
+## D-143 — A credential in a tracked file fails the pull request
+
+**Status:** Accepted · **Date:** 2026-10-18 · **Accepted:** Ajmal PS, 2026-10-18, in conversation, asked *"When Heron's new secret scanner finds a password or API key in a change, what should happen?"* and choosing *"Block it"* over *"Warn only"*
+**Keeps:** [D-07](#d-07--free-open-source-on-public-github) - the repository stays public, which is the reason for this · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
+**Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), [`test_configuration.py`](../tests/test_configuration.py), [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
+
+**Full record:** [`decisions/D-143.md`](decisions/D-143.md)

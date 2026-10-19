@@ -781,6 +781,11 @@ API keys, GitHub tokens and credentials must never be stored inside fragments ·
 > does not pass through the redactor, and **nothing scans a commit for a secret**: there is no pre-commit
 > hook and no tool in `tools/` that does ([12 §5a](12-security-and-permissions.md), searched 2026-10-18).
 > Heron's served path makes no model call of its own ([D-58](DECISIONS.md)), so it holds no provider key.
+>
+> **The scan, the same day ([D-143](DECISIONS.md)):** [`tools/check-secrets.py`](../tools/check-secrets.py)
+> is a gate on every pull request - a credential shape in a tracked file, or a tracked file whose name the
+> Secrets block of `.gitignore` refuses, turns it red. It runs in CI, not as a pre-commit hook, and it does
+> not read git history.
 
 ## 31. Offline / Degraded Mode
 

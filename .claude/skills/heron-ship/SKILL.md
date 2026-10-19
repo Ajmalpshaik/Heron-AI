@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the eleven CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, and how to resolve a merge conflict in the NEEDS-CHECKING group index or at the end of the 5b rows.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, and how to resolve a merge conflict in the NEEDS-CHECKING group index or at the end of the 5b rows.
 allowed-tools:
   - Bash
   - Read
@@ -101,16 +101,17 @@ machine can run Heron at all. Run it after a fresh clone, after touching `requir
 missing **optional** package exits 0 on purpose: silent degradation is the designed behaviour, and a
 checker that failed on one would be arguing with the requirement that allows it.
 
-### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. ELEVEN DO.
+### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. TWELVE DO.
 
-`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **eleven**
+`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **twelve**
 commands under `bash -e` — so a non-zero exit from **any** of them turns the PR red. The four above
-are four of the eleven. The other seven are:
+are four of the twelve. The other eight are:
 
 ```bash
 python tools/check-signatures.py       # a signature left unused - signed, still DRAFT (a stale proof is only reported)
 python tools/check-licence.py          # a licence header, and what may not be redistributed
-python tools/check-narrow-errors.py    # a bare except is a swallowed cause
+python tools/check-narrow-errors.py    # an sqlite3.OperationalError handler that swallows without narrowing (D-52)
+python tools/check-secrets.py          # a credential shape in a tracked file, or a tracked file .gitignore's Secrets block refuses (D-143)
 python tools/check-products.py         # the manifest the installer reads, which nothing compiles
 python tools/check-decision-titles.py  # a decision number that stopped meaning its decision
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable, and every routing row names one
