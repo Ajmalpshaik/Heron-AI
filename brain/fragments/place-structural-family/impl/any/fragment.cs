@@ -33,8 +33,24 @@
 //      carries, as an elevation in millimetres, beside what was asked in
 //      `tops`, with the top of its own geometry as a second reading. More
 //      than 1 mm out, or a different level, is named in `topWrong`.
+//
+// VERSION 4: A BEAM OR A BRACE NEEDS A LINE, AND A POINT CANNOT GIVE ONE
+// (FRAGMENT-ISSUES 5b-1201). On 2026-10-19, Revit 2020.2, a 400 x 800 concrete
+// beam asked as "beam" at three points answered placed 3, failed 0; Revit then
+// deleted the geometry of two ("Line is too short", "Can't create sweep") and
+// the broken beams stayed in the model as a success. So:
+//   1. "beam" or "brace", or any Structural Framing family whatever was
+//      asked, is REFUSED BEFORE ANYTHING IS PLACED, naming
+//      PLACE_LINE_BASED_FAMILY and its `curves` form. A column or foundation
+//      family asked as a beam keeps version 3's sentence - ask for it as its
+//      own kind - because that is what the modeller most likely meant.
+//   2. EVERY PLACEMENT IS LOOKED AT AFTER ONE REGENERATE. An instance that is
+//      gone, or holds no solid with volume, is what Revit leaves when it
+//      deletes the geometry: it is removed again inside the same undo,
+//      counted in `failed`, and named - never left in `placed`.
 
 var placed = new List<ElementId>();
+var placedLabels = new List<string>();
 var failed = 0;
 var tops = new List<string>();
 var topWrong = new List<string>();
@@ -125,21 +141,26 @@ else if (topName.Length > 0)
 // Revit takes StructuralType.Beam for a column family and places it: on
 // 2026-09-19 a 305x305x97UC went in as a beam on Project1, and this code
 // passes the type straight through, so the cause was Revit accepting it. A
-// family in one of the three structural categories is refused when the type
-// asked does not fit it; any other family, or one asked as non-structural, is
-// left to Revit as before.
-string kindRefusal = null;
-if (understood && symbol != null && symbol.Category != null
-    && wanted != StructuralType.NonStructural)
+// column or foundation family is refused when the type asked does not fit
+// it; any other family, or one asked as non-structural, is left to Revit as
+// before. A Structural Framing family never reaches this test since version
+// 4 - it is refused below whatever was asked.
+var isColumn = false;
+var isFraming = false;
+var isFoundation = false;
+if (symbol != null && symbol.Category != null)
 {
     var category = symbol.Category.Id;
-    var isColumn = category.Equals(new ElementId(BuiltInCategory.OST_StructuralColumns));
-    var isFraming = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFraming));
-    var isFoundation = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFoundation));
-    var fits = isColumn ? "column" : isFraming ? "beam or brace" : isFoundation ? "footing" : null;
-    var fitsWanted = fits == null
-        || (isColumn && wanted == StructuralType.Column)
-        || (isFraming && (wanted == StructuralType.Beam || wanted == StructuralType.Brace))
+    isColumn = category.Equals(new ElementId(BuiltInCategory.OST_StructuralColumns));
+    isFraming = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFraming));
+    isFoundation = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFoundation));
+}
+
+string kindRefusal = null;
+if (understood && (isColumn || isFoundation) && wanted != StructuralType.NonStructural)
+{
+    var fits = isColumn ? "column" : "footing";
+    var fitsWanted = (isColumn && wanted == StructuralType.Column)
         || (isFoundation && wanted == StructuralType.Footing);
     if (!fitsWanted)
         kindRefusal = string.Format("'{0}: {1}' is a {2} family and was asked to go in as '{3}', "
@@ -147,11 +168,38 @@ if (understood && symbol != null && symbol.Category != null
             symbol.FamilyName, symbol.Name, symbol.Category.Name, structuralType, fits);
 }
 
+// VERSION 4: A BEAM OR A BRACE IS PLACED ALONG A LINE, NEVER AT A POINT
+// (5b-1201). Asked as one, or a Structural Framing family asked as anything,
+// is refused here before anything is placed. A column or foundation family
+// asked as a beam is left to the kind test above, which says to ask for it
+// as its own kind.
+string lineRefusal = null;
+var lineTool = "Ask PLACE_LINE_BASED_FAMILY instead, with `curves` as start;end pairs "
+    + "in millimetres and a pipe between lines - \"0,0,0; 5000,0,0 | 5000,0,0; 5000,3000,4000\". "
+    + "Nothing was placed";
+if (understood && !isColumn && !isFoundation)
+{
+    if (isFraming)
+        lineRefusal = string.Format("'{0}: {1}' is a Structural Framing family, which is placed "
+            + "along a line between its two ends, and a point gives it no line - Revit would place "
+            + "it with no length and then delete its geometry. {2}",
+            symbol.FamilyName, symbol.Name, lineTool);
+    else if (wanted == StructuralType.Beam || wanted == StructuralType.Brace)
+        lineRefusal = string.Format("A {0} is placed along a line between its two ends, and a "
+            + "point gives it no line - Revit would place it with no length and then delete its "
+            + "geometry. {1}", asked, lineTool);
+}
+
 if (!understood)
 {
     findings.Add(string.Format(
-        "'{0}' is not a structural type Revit knows. Say column, footing, beam, "
-        + "brace or non-structural", structuralType ?? "(nothing)"));
+        "'{0}' is not a structural type Revit knows. Say column, footing or "
+        + "non-structural - a beam or a brace goes along a line, which is "
+        + "PLACE_LINE_BASED_FAMILY", structuralType ?? "(nothing)"));
+}
+else if (lineRefusal != null)
+{
+    findings.Add(lineRefusal);
 }
 else if (topRefusal != null)
 {
@@ -198,6 +246,7 @@ else
         if (topLevel == null)
         {
             placed.Add(made.Id);
+            placedLabels.Add(label);
             continue;
         }
 
@@ -247,6 +296,7 @@ else
         }
 
         placed.Add(made.Id);
+        placedLabels.Add(label);
 
         // READ BACK - the level and offset it now carries, and its geometry.
         var askedMm = (topLevel.ProjectElevation + offsetFeet) * 304.8;
@@ -280,9 +330,78 @@ else
                 label, askedMm, topLevel.Name, reads, refusedWith));
     }
 
+    // VERSION 4: WHAT REVIT LEFT WITH NO GEOMETRY IS A FAILURE (5b-1201). One
+    // regenerate, then every instance kept so far is looked at: gone, or
+    // holding no solid with volume at Fine detail, is what Revit leaves after
+    // "Line is too short" or "Can't create sweep". It is removed again in the
+    // same undo, counted in `failed`, and its `tops` lines go with it - never
+    // left in the model as a success.
+    var lost = new List<string>();
+    if (placed.Count > 0)
+    {
+        doc.Regenerate();
+        var options = new Options();
+        options.DetailLevel = ViewDetailLevel.Fine;
+        for (var k = placed.Count - 1; k >= 0; k--)
+        {
+            var instance = doc.GetElement(placed[k]);
+            var hasSolid = false;
+            if (instance != null && instance.IsValidObject)
+            {
+                try
+                {
+                    var geometry = instance.get_Geometry(options);
+                    if (geometry != null)
+                    {
+                        foreach (var item in geometry)
+                        {
+                            var solid = item as Solid;
+                            if (solid != null && solid.Volume > 0) { hasSolid = true; break; }
+                            var nested = item as GeometryInstance;
+                            if (nested == null) continue;
+                            foreach (var inner in nested.GetInstanceGeometry())
+                            {
+                                var innerSolid = inner as Solid;
+                                if (innerSolid != null && innerSolid.Volume > 0) { hasSolid = true; break; }
+                            }
+                            if (hasSolid) break;
+                        }
+                    }
+                }
+                catch { hasSolid = false; }
+            }
+            if (hasSolid) continue;
+
+            var gone = placedLabels[k];
+            // ONE THAT CANNOT BE REMOVED UNDOES THE WHOLE RUN. Swallowed, it
+            // would stay in the model while the answer said it was removed.
+            if (instance != null && instance.IsValidObject)
+            {
+                try { doc.Delete(placed[k]); }
+                catch (Exception refusal)
+                {
+                    throw new InvalidOperationException("Revit left " + gone + " with no solid "
+                        + "geometry and would not let it be removed again (" + refusal.Message
+                        + "), so the whole run is undone. Nothing was placed", refusal);
+                }
+            }
+            tops.RemoveAll(line => line.StartsWith(gone + " - ", StringComparison.Ordinal));
+            topWrong.RemoveAll(line => line.StartsWith(gone + " - ", StringComparison.Ordinal));
+            lost.Insert(0, gone);
+            placed.RemoveAt(k);
+            placedLabels.RemoveAt(k);
+            failed++;
+        }
+    }
+
     findings.Add(string.Format(
         "{0} placed as {1} on '{2}', {3} point(s) could not take one",
         placed.Count, wanted, level == null ? "(no level)" : level.Name, failed));
+
+    if (lost.Count > 0)
+        findings.Add(string.Format(
+            "{0} Revit left with no solid geometry after placing, so each was removed again and "
+            + "counted as failed, never placed: {1}", lost.Count, string.Join("; ", lost)));
 
     if (topLevel != null)
         findings.Add(string.Format(
