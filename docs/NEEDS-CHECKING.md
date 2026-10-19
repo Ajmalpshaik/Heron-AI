@@ -896,6 +896,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hs.md`](needs-checking/group-hs.md)
 
+## Group HT - FLIP_ELEMENTS v2: a flipped door's From and To Room follow its swing (2026-10-19)
+
+**Its own file:** [`needs-checking/group-ht.md`](needs-checking/group-ht.md)
+
 ## Group HX - wall finishes by room: `CREATE_FROM_ROOM_BOUNDARIES` version 2 (2026-10-19)
 
 **Its own file:** [`needs-checking/group-hx.md`](needs-checking/group-hx.md)

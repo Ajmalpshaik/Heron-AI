@@ -9,6 +9,21 @@ positive:
   - given: air terminals with a facing control, flipFacing true
     expect: they point the other way, and their host relationship is unchanged
 
+  - given: >
+      version 2 - a door with a room on both sides, flipFacing true (Group HT1)
+    expect: >
+      it swings into the other room, and get_ToRoom read back afterwards names
+      the room it now swings into. Its line in `roomsSwapped` names the From ->
+      To before and after. The door schedule's From Room and To Room agree, and
+      REPORT_DOOR_ROOM_LINKS finds no disagreement for it
+
+  - given: >
+      version 2 - doors already flipped whose To Room still names the room they
+      used to swing into, fromToRoomOnly true (Group HT3)
+    expect: >
+      flipped = 0 and no door moves on the plan; each door's line in
+      `roomsSwapped`, and REPORT_DOOR_ROOM_LINKS finds no disagreement after
+
 negative:
   - given: a family instance whose author gave it NO flip control
     expect: >
@@ -25,6 +40,18 @@ negative:
     expect: >
       flipped = 0 and everything in `cannotFlip` - asking for no flip at all
       changes nothing, and must not report success
+
+  - given: >
+      version 2 - a door with no room on either side, flipFacing true (Group HT2)
+    expect: >
+      it flips (flipped = 1), nothing is swapped - `roomsSwapped` empty - and its
+      line in `roomsLeft` says no room on either side, so nothing was swapped
+
+  - given: >
+      version 2 - a window flipped on its facing
+    expect: >
+      it flips, its From and To Room are not touched, and `roomsLeft` names it as
+      a window
 
 second_route:
   - the element's own flip arrows in Revit, clicked once by hand on one instance
