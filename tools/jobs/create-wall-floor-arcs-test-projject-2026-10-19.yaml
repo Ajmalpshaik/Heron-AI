@@ -1,0 +1,66 @@
+# CREATE_WALL and CREATE_FLOOR version 2 - an arc in the points and in the
+# boundary (row 5b-1216, NEEDS-CHECKING Group HM). Written 2026-10-19 in a
+# cloud session with no Revit; NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-wall-floor-arcs-test-projject-2026-10-19.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-wall-floor-arcs-test-projject-2026-10-19.yaml
+#
+# Both were PROVEN at version 1. Version 2 reads the points as text in the
+# fragment instead of the add-in, so the old proofs are stale and both are
+# DRAFT until this file - or the hand runs in Group HM - is run and signed.
+# Every write below is wrapped in a TransactionGroup and rolled back (D-55):
+# nothing is kept, which is why a DRAFT may run here at all (D-117 item 3).
+#
+# THE POSITIVE IS MEASURED, NOT COUNTED. A half circle of radius 5000 mm is
+# 15708 mm long along its arc and 10000 mm across its chord; a round slab of
+# radius 5000 mm is 78.54 m2, and the 20-sided polygon the twisting tower of
+# 2026-10-19 had to use is 77.25 m2. `created` coming back is not the proof -
+# the Length and Area Revit shows are (Group HM).
+#
+# THE NEGATIVE IS A BAD ARC, the case version 2 adds: three points in a line.
+# It must be refused by the fragment, by name, before Revit is asked to make
+# anything - `created` empty and the arc named in `findings`.
+#
+# UNITS: millimetres throughout (D-71). The 60 m offset keeps the arc clear of
+# anything already in the model, the same place the curtain-wall jobs use.
+
+model: test projject, Revit 2024 - a TEST COPY
+
+defaults:
+  in: test projject
+  write: true
+  setup: []
+
+jobs:
+  # A HALF CIRCLE OF STOREFRONT - a curtain wall type with a vertical grid of
+  # its own, so the panels have somewhere to break along the arc. Curtain Wall 1
+  # has no grid, and what Revit draws for it on an arc is recorded by hand in
+  # HM3, not judged here.
+  - fragment: create-wall
+    set:
+      level:      "Level 1"
+      wallType:   "Curtain Wall: Storefront"
+      points:     "0,60000,0; arc 5000,65000 10000,60000"
+      height:     3000
+      structural: false
+    negative-set:
+      level:      "Level 1"
+      wallType:   "Curtain Wall: Storefront"
+      points:     "0,60000,0; arc 5000,60000 10000,60000"
+      height:     3000
+      structural: false
+    expect: created
+
+  # A ROUND SLAB OF RADIUS 5000 mm - two arcs, the second ending where the first
+  # began. On 2024 this goes through Floor.Create and a CurveLoop; run it on a
+  # 2020 or 2021 copy as well (HM5) for NewFloor and a CurveArray.
+  - fragment: create-floor
+    set:
+      level:     "Level 1"
+      floorType: "Generic 300mm"
+      boundary:  "5000,60000,0; arc 0,65000 -5000,60000; arc 0,55000 5000,60000"
+    negative-set:
+      level:     "Level 1"
+      floorType: "Generic 300mm"
+      boundary:  "5000,60000,0; arc 0,60000 -5000,60000; arc 0,55000 5000,60000"
+    expect: created
