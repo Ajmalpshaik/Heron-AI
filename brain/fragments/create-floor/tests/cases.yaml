@@ -4,6 +4,22 @@ positive:
       a floor at that level - checked in a SECTION against the level, not read
       off the report. Its area should match the boundary handed in
 
+  - given: >
+      "5000,0,0; arc 0,5000 -5000,0; arc 0,-5000 5000,0" on Level 1 - a round
+      slab of radius 5000 mm (version 2, 5b-1216)
+    expect: >
+      one floor whose Area in Properties reads 78.54 m2 (pi x 25), not the
+      area of any polygon inside the circle, and the findings saying 2 of its 2
+      edges are arcs. Seen in plan as a true circle
+
+  - given: '"0,0,0; 10000,0,0; arc 15000,5000 10000,10000; 0,10000,0" - a 10 m square with one side bowed out 5 m'
+    expect: one floor of area 139.27 m2 (100 plus a half circle of radius 5 m, 39.27)
+
+  - given: the version 1 rectangle again, no arc in it
+    expect: >
+      exactly the floor version 1 made, and the same findings sentence word for
+      word
+
   - given: the same request on Revit 2020
     expect: >
       the same floor, made through the older call, and the report saying which
@@ -24,6 +40,11 @@ negative:
   - given: two boundary points at the same coordinates
     expect: named as a repeated point, nothing created
 
+  - given: '"0,0,0; 6000,0,0; arc 6000,0 6000,4000; 0,4000,0" - an arc through its own start'
+    expect: >
+      nothing created, and the findings name the arc from 6000,0 through 6000,0
+      to 6000,4000 as not an arc - before Revit is asked for anything
+
   - given: the floor created, then asked to take a duct penetration
     expect: >
       NOTHING here does that. This makes a slab; cutting an opening through it is
@@ -32,3 +53,4 @@ negative:
 
 second_route:
   - Revit's own Architecture then Floor on the same boundary, and the two compared in a section
+  - For the round slab, Revit's own Floor with a Circle boundary of the same radius, and the two Areas compared
