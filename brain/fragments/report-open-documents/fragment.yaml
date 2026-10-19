@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-026
-semantic-identity: "which projects and families are open in this Revit, each with its file or none yet, and how to tell two models of the same name apart"
+semantic-identity: "which projects and families are open in this Revit, each with its file or none yet and when that file was last saved, and how to tell two models of the same name apart"
 kind: action
 domain: revit.document
 capability: REPORT_OPEN_DOCUMENTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -24,6 +24,19 @@ risk: READ
 # a document that already has a file, and never the one in front. So each
 # family is named, and one with no file is said out loud, with Ctrl+S as the
 # only way to keep it. The projects' lists and `count` are version 1's.
+#
+# VERSION 3 (2026-10-19, row 5b-1216). "[unsaved changes]" said something was
+# not saved, never how much. On 2026-10-19 a 40-floor tower was built through
+# Heron on Revit 2020; Ctrl+S was pressed twice, the keys went to the Claude
+# window, and the .rvt on disk stayed at 10:42 while 124 changes went in after
+# 10:45 - for about 25 minutes, found only by reading the file's modified time
+# by hand. So every project and family with a file now has the time its file
+# was last written, and how long ago, in `fileTimes`; and one with unsaved
+# changes whose file is more than 15 minutes old is a finding with that time -
+# "the file on disk is from 10:42 - everything since is not saved" - and
+# `staleFileCount` counts them. This is the check a save is verified with:
+# read after Ctrl+S, the time is now and [unsaved changes] is gone. Every
+# output version 2 had is unchanged.
 
 purpose: >
   Lists the projects open in this Revit session, and the families open in the
@@ -48,6 +61,14 @@ purpose: >
   **AN UNSAVED PROJECT HAS NO PATH, AND THAT IS NOT AN ERROR.** A new model that
   has never been saved reports an empty `PathName`, said out loud rather than
   left blank: such a project can only ever be matched by title.
+
+  **A SAVE IS CHECKED ON DISK, NOT TRUSTED.** Each document with a file has
+  the time its file was last written, and how long ago, in `fileTimes`. One
+  with unsaved changes and a file more than fifteen minutes old is said out
+  loud with that time - *the file on disk is from 10:42 - everything since is
+  not saved* - because Ctrl+S pressed while another window is in front saves
+  nothing, and "[unsaved changes]" alone cannot tell five minutes of work from
+  a whole tower. Read again after a save, the time is now.
 
   Reads only. Opens no transaction and needs none.
 
@@ -88,6 +109,21 @@ contract:
       # Version 2. How many families are open in the Family Editor.
       role: result
       type: int
+    - name: fileTimes
+      # Version 3. Every project and family that has a file, on ONE line with
+      # "  ||  " between them, for familyList's reason: its title, when its
+      # file on disk was last written and how long ago - "file written 10:42,
+      # 37 min ago" - and [unsaved changes]. A path that is no file on this PC
+      # (a cloud model, a file moved since it was opened) says so. A document
+      # never saved has no file and is not here: the findings name it.
+      role: result
+      type: string
+    - name: staleFileCount
+      # Version 3. How many open documents have unsaved changes AND a file on
+      # disk more than 15 minutes old - each named in a finding with its
+      # file's time. 0 after a save that reached the disk.
+      role: result
+      type: int
     - name: findings
       type: IList<string>
 
@@ -105,6 +141,9 @@ compatibility-note: >
   Version 2 adds `Document.OwnerFamily`, `Family.FamilyCategory` and
   `Document.Equals`, which LOAD_FAMILY already uses to compare an open document
   with `doc` - the same 2020 to 2027, compiled against all eight on 2026-10-16.
+  Version 3 adds no Revit call: the file's time is `System.IO.File.Exists` and
+  `File.GetLastWriteTime` on `PathName`, the same on all four runtimes. The
+  time is the PC's local time, compared with the PC's own clock.
 
 # ROUTING - cross-referenced in SWITCH_ACTIVE_PROJECT and LIST_LINKED_MODELS.
 #
@@ -119,6 +158,9 @@ compatibility-note: >
 #                                         what this returns
 #   "which families are open"          -> here (version 2)
 #   "what family windows are open"     -> here (version 2)
+#   "when was the model last saved"    -> here (version 3) - the file's time on
+#                                         disk. "did my save work" too: read
+#                                         after Ctrl+S, the time is now
 #   "save the family and close it"     -> SAVE_DOCUMENT, which saves only a
 #                                         document that has a file, and never
 #                                         the one in front
@@ -143,3 +185,8 @@ utterances:
   - which families are open
   - what family windows are open
   - has the family been saved
+  # ADDED 2026-10-19, version 3 (row 5b-1216): when the file on disk was last
+  # written. Measured against main before they went in - see the row.
+  - when was the model last saved
+  - is my model saved
+  - did my save work
