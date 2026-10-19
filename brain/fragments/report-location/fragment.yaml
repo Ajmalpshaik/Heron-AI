@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -149,37 +149,43 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-09'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 17356
-  positive_case: 'run as it would normally be run. returned MillimetresPerFoot 304.8, findings
-    2 item(s) [17 element(s): 17 at a point, 0 running between two, 0 repor..., These are
-    measured from the project''s internal origin, which...], locations 17 item(s) [id 1410865:
-    AT (-2572, -5232, -1054) mm, id 1410870: AT (-2540, 7807, 2464) mm, id 1410963: AT (-24459,
-    4810, 5740) mm, ...], withoutLocation 0. inputs came elements from the selection (17).
-    on Snowdon-scratch_ajmal.al'
+  model: Project1 (3,067 elements), Revit 2020, session 2648
+  positive_case: 'run with categoryName=Walls - the first of 3 tracked inputs - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values. returned MillimetresPerFoot 304.8, RevitOriginLimitFeet 105600, Tolerance
+    0.00164041994750656, asMm Func`2, asShared Func`2, farthest 38.2608392050217, farthestWhat
+    id 345433, findings 4 item(s) [6 element(s): 0 at a point, 6 running between two, 0 reporte...,
+    An element that RUNS has no single position. Both ends are g..., These are measured from
+    the project''s INTERNAL origin (the d..., ...], locations 6 item(s) [id 345432: RUNS from
+    (0, 0, 0) mm to (10000, 0, 0) mm, id 345433: RUNS from (10000, 0, 0) mm to (10000, 6000,
+    0) mm, id 345434: RUNS from (10000, 6000, 0) mm to (0, 6000, 0) mm, ...], measure Action`2,
+    projectBase BasePoint, sharedCoordinates false, sharedPart Func`2, sharedWhyNot , site
+    SITE  ||  project location ''Internal'' (the active one)  ||  place name ''Boston, MA''  ||  latitude
+    42.358662° N, longitude 71.056740° W  ||  time zone UTC-05:00, daylight saving not used  ||  weather
+    station ''53159_2004'', site elevation 4.877 m  ||  true north 0° - project north is true
+    north (Revit''s stored angle 0 degrees)  ||  project base point (0, 0, 0) mm from the
+    internal origin (0.0 m away), shared E 0, N 0, elev 0 mm  ||  survey point (0, 0, 0) mm
+    from the internal origin (0.0 m away), shared E 0, N 0, elev 0 mm, survey BasePoint, toShared
+    Transform, trueNorthDegrees 0, wantShared false, withoutLocation 0. inputs came elements
+    from the selection (6); sharedCoordinates as given. on Project1'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-location\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 5 different inputs:\n\n      22 ducts in M1 -> locations 22 item(s) [id 1447716:\
-    \ RUNS from (-26985, 11001, 4953) mm to (-26528, 1..., id 1447725: RUNS from (-26223,\
-    \ 10696, 4953) mm to (-26223, 7..., id 1447768: RUNS from (-26985, 11509, 4953) mm to\
-    \ (-18146, 1..., ...]\n      air terminals in M1 -> locations 10 item(s) [id 1449300:\
-    \ AT (-25791, 11408, 4953) mm, id 1449341: AT (-23927, 11408, 4953) mm, id 1449397: AT\
-    \ (-21419, 11408, 4953) mm, ...]\n      mechanical equipment in L3 -> locations 10 item(s)\
-    \ [id 1366299: AT (-3099, 7338, 8886) mm, id 1367115: AT (-11414, -1751, 8836) mm, id\
-    \ 1367128: AT (-671, -7003, 9246) mm, ...]\n      duct tags in M1 -> locations 9 item(s)\
-    \ [id 1491217: no position and no bounding box, id 1491220: no position and no bounding\
-    \ box, id 1491225: no position and no bounding box, ...]\n      spaces in L3 -> locations\
-    \ 17 item(s) [id 1410865: AT (-2572, -5232, -1054) mm, id 1410870: AT (-2540, 7807, 2464)\
-    \ mm, id 1410963: AT (-24459, 4810, 5740) mm, ...]\n\n    Different inputs, exact matches\
-    \ every time. A fragment falling back to the active view, the whole model, or a previous\
-    \ run could not do that."
+    \ across 3 different inputs:\n\n      categoryName=Walls -> locations 6 item(s) [id 345432:\
+    \ RUNS from (0, 0, 0) mm to (10000, 0, 0) mm, id 345433: RUNS from (10000, 0, 0) mm to\
+    \ (10000, 6000, 0) mm, id 345434: RUNS from (10000, 6000, 0) mm to (0, 6000, 0) mm, ...]\n\
+    \      categoryName=Floors -> locations 1 item(s) [id 345449: no position of its own -\
+    \ the CENTRE OF ITS BOUNDI...]\n      categoryName=Rooms -> locations 2 item(s) [id 345437:\
+    \ AT (2500, 3000, 0) mm, id 345439: AT (7500, 3000, 0) mm]\n\n    Different inputs, exact\
+    \ matches every time. A fragment falling back to the active view, the whole model, or\
+    \ a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 7cbbd28812f7b1e7
+  fingerprint: b0cec95b3cc00b8b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

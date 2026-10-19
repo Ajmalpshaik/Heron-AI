@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -61,6 +61,34 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,147 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyScheduled
+    0 item(s), created 1 item(s) [PanelScheduleView], findings 2 item(s) [1 panel schedule
+    view(s) made, 0 panel(s) already had one, 0..., Made '100 A' for '100 A' (id 354141),
+    on Revit's default tem...], go true, refused 0 item(s), template (null), wantedTemplate
+    . inputs came elements from the selection (1); templateName as given. on Project1
+  negative_case: run with categoryName=Walls, inViewOnly=Heron 3D, templateName= instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned alreadyScheduled 0 item(s), created 0 item(s), findings 7 item(s)
+    [0 panel schedule view(s) made, 0 panel(s) already had one, 6..., 'Generic - 200mm' (id
+    345432) is not electrical equipment, s..., 'Generic - 200mm' (id 345433) is not electrical
+    equipment, s..., ...], go true, refused 6 item(s) ['Generic - 200mm' (id 345432) is not
+    electrical equipment, s..., 'Generic - 200mm' (id 345433) is not electrical equipment,
+    s..., 'Generic - 200mm' (id 345434) is not electrical equipment, s..., ...], template
+    (null), wantedTemplate . inputs came elements from the selection (6); templateName as
+    given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0af8d3532c46c449
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

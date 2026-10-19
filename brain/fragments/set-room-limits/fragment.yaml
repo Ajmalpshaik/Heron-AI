@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,6 +89,33 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, alreadyRight 0 item(s), changed 2, findings 1 item(s) [2 set to stop at 'Level
+    2' -300 mm, a top at 3700 mm. 0 were...], limitOffset -0.984251968503937, notSpatial 0
+    item(s), pending 2 item(s) [Room 1, Room 2], refused 0 item(s), roomsCategory 1 item(s)
+    [id -2000160], spacesCategory 1 item(s) [id -2003600], topBelowFloor 0 item(s). inputs
+    came elements from the selection (2); upperLevel as given; limitOffset as given. on Project2
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, limitOffset=-300,
+    upperLevel=Level 2 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-by-category-name, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, alreadyRight 0 item(s),
+    changed 0, findings 1 item(s) [0 set to stop at ''Level 2'' -300 mm, a top at 3700 mm.
+    0 were...], limitOffset -0.984251968503937, notSpatial 5 item(s) [345432, 345433, 345434,
+    ...], pending 0 item(s), refused 0 item(s), roomsCategory 1 item(s) [id -2000160], spacesCategory
+    1 item(s) [id -2003600], topBelowFloor 0 item(s). inputs came elements from the selection
+    (5); upperLevel as given; limitOffset as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c1b11dfad7bcd9bd
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

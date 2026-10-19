@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -48,6 +48,33 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase's own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyParts 0,
+    candidates 5 item(s) [345432, 345433, 345434, ...], findings 1 item(s) [5 part(s) made
+    from 5 element(s), read back; 0 already had p...], lines 0 item(s), madeFrom 5, partIds
+    5 item(s) [345652, 345653, 345654, ...], report . inputs came elements from filter-elements-by-category
+    (5). on Project2
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1 arranged
+    with category=Rooms, levelId=Level 1 instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running filter-elements-by-category
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyParts 0, candidates 2 item(s) [345437, 345439],
+    findings 3 item(s) [0 part(s) made from 0 element(s), read back; 0 already had p..., 345437:
+    Revit will not make parts of it., 345439: Revit will not make parts of it.], lines 2 item(s)
+    [345437: Revit will not make parts of it., 345439: Revit will not make parts of it.],
+    madeFrom 0, partIds 0 item(s), report 345437: Revit will not make parts of it. | 345439:
+    Revit will not make parts of it.. inputs came elements from filter-elements-by-category
+    (2). on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4e71d52417d10159
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

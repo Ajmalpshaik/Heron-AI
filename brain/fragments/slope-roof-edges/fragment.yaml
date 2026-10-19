@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -132,6 +132,44 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,067 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, SteepestPitchDegrees 80, differs 0 item(s), findings 1 item(s) [Roof 345861 ''Generic
+    - 400mm'' is a hip at 30.00 degrees, rea...], measuredMm Roof 345861 ''Generic - 400mm'':
+    its highest point is now 2194 mm above its lowest, where it was 400 mm before - top at
+    6194 mm, bottom at 4000 mm, level ''Level 2'' sits at 4000 mm, pitchDegrees 30, readBack
+    Roof 345861 ''Generic - 400mm'': edge 1, 6000 mm, eave: Defines Slope on at 30.00 degrees
+    (Revit holds a rise of 0.5774 per 1 of run), was off; edge 2, 10000 mm, eave: Defines
+    Slope on at 30.00 degrees (Revit holds a rise of 0.5774 per 1 of run), was off; edge 3,
+    6000 mm, eave: Defines Slope on at 30.00 degrees (Revit holds a rise of 0.5774 per 1 of
+    run), was off; edge 4, 10000 mm, eave: Defines Slope on at 30.00 degrees (Revit holds
+    a rise of 0.5774 per 1 of run), was off, refused , risePerRun 0.577350269189626, shape
+    hip, sloped 4, upright 0. inputs came elements from the selection (1); roofShape as given;
+    pitchDegrees as given. on Project1'
+  negative_case: run with categoryName=Walls, inViewOnly=Heron 3D, pitchDegrees=30, roofShape=hip
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned MillimetresPerFoot 304.8, SteepestPitchDegrees 80, differs 0
+    item(s), findings 1 item(s) [Nothing was changed - see refused for why], measuredMm ,
+    pitchDegrees 30, readBack , refused Walls 345432 'Generic - 200mm' is not a roof. Nothing
+    on it was changed | Walls 345433 'Generic - 200mm' is not a roof. Nothing on it was changed
+    | Walls 345434 'Generic - 200mm' is not a roof. Nothing on it was changed | Walls 345435
+    'Generic - 200mm' is not a roof. Nothing on it was changed | Walls 345436 'Generic - 200mm'
+    is not a roof. Nothing on it was changed | Walls 345557 'Generic - 200mm' is not a roof.
+    Nothing on it was changed, risePerRun 0.577350269189626, shape hip, sloped 0, upright
+    0. inputs came elements from the selection (6); roofShape as given; pitchDegrees as given.
+    on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a304d479e038bf2c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

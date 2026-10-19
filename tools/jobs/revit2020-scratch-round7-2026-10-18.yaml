@@ -1,0 +1,265 @@
+# Batch 7, 2026-10-18 - Revit 2020 (restarted, session 2648), scratch Project1 + Family1, both
+# never saved. Project1 rebuilt this session with PROVEN creators, kept: the batch 1 building
+# (5 walls, 2 rooms, 2 spaces, floor, 2 ducts, pipe, 2 desks, grids A/B/1, Level 3, sheets A101
+# with the Level 1 plan and A102 empty, a text note, 2 room tags, a dimension, "Heron Wall
+# Schedule" with Type/Length/Area, "Heron 3D", "Section 1"), plus a door in the partition at
+# 5000,3000 with its door tag, two windows in the south wall, a wall 0.17 degrees off axis at
+# y=8000 and an L of two unjoined supply ducts at 1000..3000,3500..5500, z 2700.
+# Every write ROLLED BACK.
+model: "Project1 + Family1 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project1"
+  write: false
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: "Walls"
+    inViewOnly: "FloorPlan: Level 1"
+  negative-set:
+    categoryName: "Text Notes"
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: select-by-phase
+    setup: []
+    expect: elements
+    set: {createdPhaseName: "New Construction", demolishedPhaseName: "", categories: "Walls"}
+    negative-set: {createdPhaseName: "Existing", demolishedPhaseName: "", categories: "Walls"}
+
+  - fragment: select-unenclosed-rooms
+    setup: [place-room-at-point]
+    write: true
+    expect: elements
+    set: {level: "Level 1", points: "30000,30000,0", asSpace: false, includeRooms: true, includeSpaces: false, includeAreas: false}
+    negative-set: {level: "Level 1", points: "30000,30000,0", asSpace: false, includeRooms: false, includeSpaces: true, includeAreas: false}
+
+  - fragment: list-sheet-sets
+    setup: [find-sheets, manage-sheet-sets]
+    write: true
+    expect: setCount
+    set: {numberOrNameContains: "A10", setName: "Heron Set", mode: "create", newName: ""}
+    negative-in: "Family1"
+    negative-set: {numberOrNameContains: "A10", setName: "Heron Set", mode: "create", newName: ""}
+
+  - fragment: read-element-table
+    expect: rowCount
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterNames: "Length, Area", maxRows: 50}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterNames: "Length, Area", maxRows: 0}
+
+  - fragment: report-location
+    expect: locations
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", sharedCoordinates: false}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", sharedCoordinates: false}
+
+  - fragment: filter-elements-by-type
+    expect: elements
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    set: {exemplar: "selected", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {exemplar: "selected", inViewOnly: "FloorPlan: Level 2"}
+
+  - fragment: find-system-islands
+    expect: islandSizes
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D"}
+    negative-set: {categoryName: "Walls", inViewOnly: "Heron 3D"}
+
+  - fragment: select-openings
+    write: true
+    expect: elements
+    setup: [select-by-category-name, set-selection, create-opening]
+    set: {categoryName: "Floors", inViewOnly: "FloorPlan: Level 1", host: "selected", boundary: "1000,3500,0; 2000,3500,0; 2000,4500,0; 1000,4500,0", perpendicularFace: false}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", host: "selected", boundary: "1000,3500,0; 2000,3500,0; 2000,4500,0; 1000,4500,0", perpendicularFace: false}
+
+  - fragment: list-materials
+    setup: []
+    expect: materialCount
+    set: {withAssets: false}
+    negative-in: "Family1"
+    negative-set: {withAssets: false}
+
+  - fragment: apply-color-fill-scheme
+    setup: []
+    write: true
+    expect: schemeApplied
+    set: {view: "FloorPlan: Level 1", category: "Rooms", parameterName: "Name", colours: "", schemeToUse: "", legend: "", clearScheme: false}
+    negative-set: {view: "FloorPlan: Level 1", category: "Doors", parameterName: "Name", colours: "", schemeToUse: "", legend: "", clearScheme: false}
+
+  - fragment: report-color-fill-scheme
+    setup: [apply-color-fill-scheme]
+    write: true
+    expect: schemes
+    set: {view: "FloorPlan: Level 1", category: "Rooms", parameterName: "Name", colours: "", schemeToUse: "", legend: "", clearScheme: false, views: "FloorPlan: Level 1"}
+    negative-set: {view: "FloorPlan: Level 1", category: "Rooms", parameterName: "Name", colours: "", schemeToUse: "", legend: "", clearScheme: false, views: "FloorPlan: Level 2"}
+
+  - fragment: create-linear-dimension
+    setup: []
+    write: true
+    expect: created
+    set: {view: "FloorPlan: Level 1", between: "grid A | grid B", lineFrom: "-3000,3000,0", lineTo: "13000,3000,0"}
+    negative-set: {view: "FloorPlan: Level 1", between: "grid A | grid Nope", lineFrom: "-3000,3000,0", lineTo: "13000,3000,0"}
+
+  - fragment: create-stairs
+    setup: []
+    write: true
+    expect: created
+    set: {baseLevel: "Level 1", topLevel: "Level 2", stairType: "Monolithic Stair", shape: "u", runWidth: 1500, area: "20000,0,0; 27000,7000,0", entrySide: "north", firstRunSide: "east", startOffset: 1500, cutOpening: false}
+    negative-set: {baseLevel: "Level 1", topLevel: "Level 2", stairType: "Spiral Feature Stair", shape: "u", runWidth: 1500, area: "20000,0,0; 27000,7000,0", entrySide: "north", firstRunSide: "east", startOffset: 1500, cutOpening: false}
+
+  - fragment: place-view-on-sheet
+    setup: []
+    write: true
+    expect: placed
+    set: {sheetId: "A102", views: "FloorPlan: Level 2", at: "400,300,0"}
+    negative-set: {sheetId: "A102", views: "FloorPlan: Level 1", at: "400,300,0"}
+
+  - fragment: set-view-filter-categories
+    setup: [create-view-filter]
+    write: true
+    expect: changed
+    set: {view: "FloorPlan: Level 1", filterName: "Heron Filter", categoryIds: "Walls", parameterName: "Comments", matchValue: "HERON", moreRules: "", combine: "", colour: "255,0,0", filterNames: "Heron Filter", categories: "Walls, Floors", newName: ""}
+    negative-set: {view: "FloorPlan: Level 1", filterName: "Heron Filter", categoryIds: "Walls", parameterName: "Comments", matchValue: "HERON", moreRules: "", combine: "", colour: "255,0,0", filterNames: "Heron Filter", categories: "Walls", newName: ""}
+
+  - fragment: audit-view-filters
+    setup: [create-view-filter]
+    write: true
+    expect: filterList
+    set: {view: "FloorPlan: Level 1", filterName: "Heron Filter", categoryIds: "Walls", parameterName: "Comments", matchValue: "HERON", moreRules: "", combine: "", colour: "255,0,0", everyFilter: true}
+    negative-set: {view: "FloorPlan: Level 1", filterName: "Heron Filter", categoryIds: "Walls", parameterName: "Comments", matchValue: "HERON", moreRules: "", combine: "", colour: "255,0,0", everyFilter: false}
+
+  - fragment: offset-tags-from-host
+    write: true
+    expect: moved
+    set: {categoryName: "Door Tags", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", tagCategories: "Door Tags", offsetRightMm: 500, offsetUpMm: 0, addLeader: "keep"}
+    negative-set: {categoryName: "Door Tags", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", tagCategories: "Room Tags", offsetRightMm: 500, offsetUpMm: 0, addLeader: "keep"}
+
+  - fragment: select-by-host
+    expect: elements
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "4900,2500,-100", maxMm: "5100,3500,100", exact: false, categories: "Walls"}
+    negative-setup-set: {minMm: "9900,2500,-100", maxMm: "10100,3500,100", exact: false, categories: "Walls"}
+    set: {host: "selected", categories: "Doors"}
+    negative-set: {host: "selected", categories: "Doors"}
+
+  - fragment: select-touching
+    expect: elements
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    set: {target: "selected", categories: "Windows"}
+    negative-set: {target: "selected", categories: "Furniture"}
+
+  - fragment: straighten-off-axis-lines
+    write: true
+    expect: straightenedIds
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "-100,7800,-100", maxMm: "5100,8200,100", exact: false, categories: "Walls"}
+    negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+    set: {snapDegrees: 0, maxOffDegrees: 1}
+    negative-set: {snapDegrees: 0, maxOffDegrees: 1}
+
+  - fragment: fit-mep-joints
+    write: true
+    setup: [select-in-region, set-selection]
+    setup-set: {minMm: "900,3300,2400", maxMm: "3200,5600,3000", exact: false, categories: "Ducts"}
+    negative-setup-set: {minMm: "900,800,2400", maxMm: "9100,1200,3000", exact: false, categories: "Ducts"}
+    set: {toleranceMm: 10}
+    negative-set: {toleranceMm: 10}
+
+  - fragment: place-wall-sweeps
+    write: true
+    expect: sweepIds
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", sweepTypeName: "Cornice", side: "exterior", heightMm: 2500, reveal: false}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", sweepTypeName: "Cornice", side: "exterior", heightMm: 2500, reveal: false}
+
+  - fragment: create-edge-sweeps
+    write: true
+    expect: sweepIds
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: "Floors", levelId: "Level 1"}
+    negative-setup-set: {category: "Walls", levelId: "Level 1"}
+    set: {kind: "slab edge", typeName: "Slab Edge"}
+    negative-set: {kind: "slab edge", typeName: "Slab Edge"}
+
+  - fragment: create-flex-pipe
+    setup: []
+    write: true
+    expect: created
+    set: {systemType: "Domestic Cold Water", flexPipeType: "Flex - Round", level: "Level 1", points: "20000,0,3000; 20000,0,2400", maxLengthMm: 1200}
+    negative-set: {systemType: "Domestic Cold Water", flexPipeType: "Flex - Round", level: "Level 1", points: "20000,0,3000; 20000,0,2400", maxLengthMm: 100}
+
+  - fragment: set-railing-type
+    setup: []
+    write: true
+    expect: railingType
+    set: {railingTypeName: "1100mm", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: "both"}
+    negative-set: {railingTypeName: "No Such Railing", duplicateAs: "", topRailTypeName: "", topRailHeightMm: 1100, handrailTypeName: "", handrailHeightMm: 0, handrailSide: "both"}
+
+  - fragment: set-schedule-field-totals
+    write: true
+    expect: totalled
+    keep-chain: true
+    setup: [find-schedules]
+    setup-set: {nameContains: "Heron Wall Schedule"}
+    negative-setup-set: {nameContains: "Heron Wall Schedule"}
+    set: {fieldNames: "Length"}
+    negative-set: {fieldNames: "Type"}
+
+  - fragment: place-detail-components
+    setup: []
+    write: true
+    expect: placed
+    set: {view: "FloorPlan: Level 1", symbol: "UB-Universal Beam-Section: UB305x165x40", points: "1000,7000,0", rotationDegrees: 0}
+    negative-set: {view: "Heron 3D", symbol: "UB-Universal Beam-Section: UB305x165x40", points: "1000,7000,0", rotationDegrees: 0}
+
+  - fragment: check-category-mismatch
+    setup: []
+    expect: elements
+    set: {nameKeywords: "Desk", expectedCategory: "Doors"}
+    negative-set: {nameKeywords: "ZZZNOTHINGHERE", expectedCategory: "Doors"}
+
+  - fragment: check-family-standards
+    setup: []
+    expect: offStandard
+    set: {namePattern: "ZZZ*", requiredParameters: "HERON NOT A PARAMETER", mustHaveConnectors: true}
+    negative-set: {namePattern: "", requiredParameters: "", mustHaveConnectors: false}
+
+  - fragment: place-rooms
+    setup: [create-wall]
+    write: true
+    expect: created
+    set: {level: "Level 2", wallType: "Generic - 200mm", points: "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0", height: 3000, structural: false, levelId: "Level 2", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: Level 2"}
+    negative-set: {level: "Level 2", wallType: "Generic - 200mm", points: "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0", height: 3000, structural: false, levelId: "Level 1", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: Level 1"}
+
+  - fragment: dimension-wall-openings
+    write: true
+    expect: created
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", offsetMm: 500, withOverall: false, side: ""}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", offsetMm: 500, withOverall: false, side: ""}
+
+  - fragment: dimension-grids-and-levels
+    write: true
+    expect: created
+    keep-chain: true
+    setup: [select-by-categories]
+    setup-set: {categories: "Grids", inViewOnly: "FloorPlan: Level 1"}
+    negative-setup-set: {categories: "Text Notes", inViewOnly: "FloorPlan: Level 1"}
+    set: {view: "FloorPlan: Level 1", offsetMm: 1000}
+    negative-set: {view: "FloorPlan: Level 1", offsetMm: 1000}
+
+  - fragment: create-beam-system
+    setup: []
+    write: true
+    expect: beamSystem
+    set: {boundaryMm: "0,0; 10000,0; 10000,6000; 0,6000", level: "Level 2", beamType: "UB-Universal Beams: UB305x165x40", spacingMm: 1500, directionEdge: 0}
+    negative-set: {boundaryMm: "0,0; 10000,0", level: "Level 2", beamType: "UB-Universal Beams: UB305x165x40", spacingMm: 1500, directionEdge: 0}
+
+  - fragment: create-duct-runs
+    setup: []
+    write: true
+    expect: runsDrawn
+    set: {systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "Level 1", runs: "400x200: 1000,3000,2700; 4000,3000,2700 | 300x300: 6000,3000,2700; 9000,3000,2700"}
+    negative-set: {systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "Level 1", runs: ""}

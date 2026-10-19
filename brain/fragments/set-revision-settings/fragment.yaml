@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,27 @@ contract:
       # this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat , changed numbering
+    Per Project -> Per Sheet; arc length 20 mm -> 12.5 mm, findings Read back: numbering Per
+    Sheet, arc length 12.5 mm on paper (0.04101 ft), refused . inputs came numbering as given;
+    arcLengthMm as given. on Project2'
+  negative_case: 'run with arcLengthMm=12.5, categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1, numbering=ZZZ no such numbering instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThat , changed , findings Read back: numbering
+    Per Project, arc length 20 mm on paper (0.065617 ft), refused numbering takes ''per project''
+    or ''per sheet'', not ''ZZZ no such numbering''. Nothing was changed.. inputs came numbering
+    as given; arcLengthMm as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 785608cc1ba45c43
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,0 +1,14 @@
+# Batch 15, 2026-10-18 - Revit 2020 session 2648, scratch Project1 (never saved). Batch 14's
+# model plus, kept: two M_Duplex Receptacle sockets on the south wall's inside face at x=2000 and
+# x=7000, 300 mm up (PLACE_FAMILY_ON_FACE), on one power circuit that Revit would not assign to
+# the 100 A panel DB-1 (the template has no distribution system). ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: [select-by-category-name, set-selection]
+jobs:
+  - fragment: create-wires
+    expect: wireIds
+    set: {categoryName: "Electrical Fixtures", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", pointsMm: "", wireType: "", wiringStyle: "arc", snapMm: 300}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", pointsMm: "", wireType: "", wiringStyle: "arc", snapMm: 300}

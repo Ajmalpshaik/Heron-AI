@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -83,6 +83,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,147 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned circuitNumber
+    <unnamed>, created ElectricalSystem, findings 2 item(s) [Created a power circuit numbered
+    <unnamed> with 1 device(s) ..., NO PANEL WAS GIVEN, so the circuit is unassigned. That
+    is a ...], ids 1 item(s) [352029], kind ElectricalSystemType, known true, memberIds 1
+    item(s) [352029], panelName , refused (null), wanted power. inputs came elements from
+    the selection (1); systemType as given; panel as given. on Project1
+  negative_case: "run with categoryName=Walls, inViewOnly=Heron 3D, panel=, systemType=power\
+    \ instead - chosen because it should not contain what this fragment reports - the arrangement\
+    \ was re-made first by running select-by-category-name, set-selection with this phase's\
+    \ own values - run inside a transaction, and Revit reported the transaction group ROLLED\
+    \ BACK afterwards. returned circuitNumber , created (null), findings 1 item(s) [Revit\
+    \ refused to create the circuit: There should be at leas...], ids 6 item(s) [345432, 345433,\
+    \ 345434, ...], kind ElectricalSystemType, known true, memberIds 0 item(s), panelName\
+    \ , refused Revit refused to create the circuit: There should be at least one component\
+    \ that can create the specified circuit type\r\nParameter name: electComponents. NOTHING\
+    \ WAS CREATED. Devices already on a circuit, and devices whose connectors do not suit\
+    \ the system type, are the usual reasons., wanted power. inputs came elements from the\
+    \ selection (6); systemType as given; panel as given. on Project1"
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 40f47d37e8dd6cbf
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

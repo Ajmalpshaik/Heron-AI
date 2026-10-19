@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -96,23 +96,27 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-19'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,529 elements), Revit 2024, session 20472
+  model: Project2 (3,027 elements), Revit 2020, session 13520
   positive_case: run as it would normally be run. returned bounded true, collector FilteredElementCollector,
-    elements 15 item(s) [2.5mm Arial, 2.5mm Arial, 2.5mm Arial, ...], examined 15, findings
-    1 item(s) [15 of 15 element(s) examined have no level, within 1 categor...]. inputs came
-    categories as given (1). on Project1 work_ajmal.al
-  negative_case: run with categories=Ducts, categoryName=Text Notes, inViewOnly=Legend 1 instead
-    - chosen because it should not contain what this fragment reports. returned bounded true,
-    collector FilteredElementCollector, elements 0 item(s), examined 18, findings 1 item(s)
-    [0 of 18 element(s) examined have no level, within 1 category...]. inputs came categories
-    as given (1). on Project1 work_ajmal.al
+    elements 1 item(s) [3.5mm Arial], examined 1, findings 1 item(s) [1 of 1 element(s) examined
+    have no level, within 1 category/...], includeLinks false, linkBlocked , linkDocs 0 item(s),
+    linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only
+    - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0. inputs came categories
+    as given (1); includeLinks not given - false (optional). on Project2
+  negative_case: 'run with categories=Walls, categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports. returned
+    bounded true, collector FilteredElementCollector, elements 0 item(s), examined 5, findings
+    1 item(s) [0 of 5 element(s) examined have no level, within 1 category/...], includeLinks
+    false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s),
+    linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0. inputs came categories as given (1); includeLinks not given - false
+    (optional). on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 5f249f4f1f7cbc85
-
+  fingerprint: 7ff85364e3d005d1
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

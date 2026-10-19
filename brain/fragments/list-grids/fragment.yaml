@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LVL-027
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -102,18 +102,32 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: >
-    Snowdon Towers Sample HVAC.rvt (9,628 elements) and Project1 (3,410 elements, unsaved default template), both open at once in Revit 2024.3
-  positive_case: >
-    Snowdon Towers: 15 grids, each reported with its direction - '1 - runs north-south'. Countable against the plan.
-  negative_case: >
-    Project1: 0 grids, and notLinear 0. An empty model returns an empty list rather than inventing one, and it does NOT return Snowdon's 15 - both documents were open at the same time.
-  second_route: >
-    Revit's own Project Browser and any plan view show the 15 grid bubbles; the count is checkable by eye.
-  fingerprint: "2f076288055d1e1a"
-
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project2, Family1 - active was Project2,
+    Revit 2020, session 13520'
+  positive_case: 'run as it would normally be run. returned elements 3 item(s) [1, A, B],
+    findings 5 item(s) [1  - runs east-west, A  - runs north-south, B  - runs north-south,
+    ...], grids 3 item(s) [1, A, B], includeLinks false, intersections , letters 3 entry(ies),
+    linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
+    0, notLinear 0 item(s), numbers 3 entry(ies), spacings grids running north-south: B >
+    A 14000 mm, withIntersections true. inputs came includeLinks not given - false (optional);
+    withIntersections as given. on Project2'
+  negative_case: 'run against ''Family1'' with categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1, withIntersections=True instead - chosen because it should not contain what this
+    fragment reports. returned elements 0 item(s), findings 2 item(s) [0 spacing(s) between
+    neighbouring parallel grids, square to ..., 0 grid intersection(s) within the grids''
+    drawn extents, in m...], grids 0 item(s), includeLinks false, intersections , letters
+    0 entry(ies), linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0
+    item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched
+    0, nestedLinks 0, notLinear 0 item(s), numbers 0 entry(ies), spacings , withIntersections
+    true. inputs came includeLinks not given - false (optional); withIntersections as given.
+    on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7d2ab856ef5a43e3
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

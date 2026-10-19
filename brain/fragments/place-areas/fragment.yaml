@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,37 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    create-area-plan, create-area-boundary-lines with this phase's own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmPerFoot 304.8, areaIds 1 item(s) [345953], culture CultureInfo, findings 1 item(s) [1
+    area(s) placed in "Heron Area Plan" with a size read back;...], lines 0 item(s), nameList
+    1 item(s) [Office], numberList 1 item(s) [A1], numberStyle NumberStyles, placed 1, plan
+    ViewPlan, points 1 item(s) [(8.202099738, 9.842519685)], refusal (null), report , unenclosed
+    0 item(s). inputs came areaPlanName as given; pointsMm as given; names as given; numbers
+    as given. on Project2
+  negative_case: 'run with areaPlanName=No Such Plan, areaSchemeName=Gross Building, categoryName=Text
+    Notes, inViewOnly=FloorPlan: Level 1, level=Level 1, loopsMm=, names=Office, numbers=A1,
+    pointsMm=2500,3000, traceWalls=outside, viewName=Heron Area Plan instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running create-area-plan, create-area-boundary-lines with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MmPerFoot 304.8, areaIds 0 item(s), culture CultureInfo, findings 1 item(s) [No
+    area plan is named "No Such Plan". NOTHING WAS PLACED.], lines 1 item(s) [No area plan
+    is named "No Such Plan". NOTHING WAS PLACED.], nameList 1 item(s) [Office], numberList
+    1 item(s) [A1], numberStyle NumberStyles, placed 0, plan (null), points 1 item(s) [(8.202099738,
+    9.842519685)], refusal No area plan is named "No Such Plan". NOTHING WAS PLACED., report
+    No area plan is named "No Such Plan". NOTHING WAS PLACED., unenclosed 0 item(s). inputs
+    came areaPlanName as given; pointsMm as given; names as given; numbers as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 79e5d0c95731ef53
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

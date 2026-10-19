@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -168,6 +168,78 @@ contract:
       # why - said every time.
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, Family1 - active was Project1,
+    Revit 2020, session 30308'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned addedTo 1 entry(ies), allDates
+    1 item(s) [18-OCT-2026], alreadyOn 1 entry(ies), asked Func`2, bySheetNumber Comparison`1,
+    createdDates 1 item(s) [18-OCT-2026], dateRevisions 18-OCT-2026 -> Seq. 2 - IFI - Issued
+    for Information, dated ''18-OCT-2026'', CREATED: added to 1 sheet(s) (A101), dates 1 item(s)
+    [18-OCT-2026], datesFound 1, datesIn Func`2, dayNumber Func`2, descriptionText IFI - Issued
+    for Information, formatTrouble 0 item(s), issueIt false, issueWord , leftOut 0 item(s),
+    monthWords 12 item(s) [january, february, march, ...], months 12 entry(ies), nameBefore
+    1 entry(ies), nameOf Func`2, names 12 item(s) [jan, feb, mar, ...], noneLabels 0 item(s),
+    notRead  Not read: 0 text note(s) typed inside views - a note in a plan placed on a sheet
+    belongs to that plan; title block labels and parameters such as Sheet Issue Date, which
+    are not text notes; and a date with a NUMERIC month such as 09-09-2026, refused because
+    03-04-2026 is 3 April in one country and 4 March in another., notesInViewsNotRead 0, notesOnSheets
+    1, notesUnreadable 0, nothingChanged  Nothing was created and no sheet was changed., numberTypeProperty
+    RuntimePropertyInfo, numberingName , numberingValue (null), onlyText , onlyWanted 0 item(s),
+    pattern DD-MMM-YYYY, problems 0 item(s), quoted Func`2, refused , revisionClass RuntimeType,
+    revisionIdsBefore 1 item(s) [49030], revisionOf 1 entry(ies), revisionsAddedToSheets 1,
+    revisionsCreated 1, revisionsRemaining 2, revisionsReused 0, revitSaid Func`2, sequenceClass
+    (null), sequenceIdProperty (null), sheetsById 1 entry(ies), sheetsChanged 1, sheetsHoldingADate
+    HashSet`1, sheetsOfDate 1 entry(ies), sheetsRead 1, sheetsWithNoDate , spell Func`5, summary
+    1 revision(s) created and 0 reused for 1 date(s) typed on 1 of 1 sheet(s); 1 revision(s)
+    added across 1 sheet(s), each added to what the sheet already listed - nothing was taken
+    off a sheet. Each date''s revision and its sheets are in dateRevisions. Nothing was issued
+    - EDIT_REVISION issues them when the set goes out. The project had 1 revision(s) and has
+    2 now. Not read: 0 text note(s) typed inside views - a note in a plan placed on a sheet
+    belongs to that plan; title block labels and parameters such as Sheet Issue Date, which
+    are not text notes; and a date with a NUMERIC month such as 09-09-2026, refused because
+    03-04-2026 is 3 April in one country and 4 March in another., wantedNumbering , withNone
+    0 item(s), written 1 entry(ies). inputs came description as given; dateFormat as given;
+    onlyDates as given; issuedBy as given; issuedTo as given; numbering as given; issueState
+    as given. on Project1'
+  negative_case: 'run against ''Family1'' with categoryName=Walls, dateFormat=, description=IFI
+    - Issued for Information, inViewOnly=FloorPlan: Level 1, issueState=, issuedBy=, issuedTo=,
+    numbering=, onlyDates= instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned addedTo 0 entry(ies), allDates 0 item(s), alreadyOn 0 entry(ies),
+    asked Func`2, bySheetNumber Comparison`1, createdDates 0 item(s), dateRevisions , dates
+    0 item(s), datesFound 0, datesIn Func`2, dayNumber Func`2, descriptionText IFI - Issued
+    for Information, formatTrouble 0 item(s), issueIt false, issueWord , leftOut 0 item(s),
+    monthWords 12 item(s) [january, february, march, ...], months 12 entry(ies), nameBefore
+    0 entry(ies), nameOf Func`2, names 12 item(s) [jan, feb, mar, ...], noneLabels 0 item(s),
+    notRead  Not read: 0 text note(s) typed inside views - a note in a plan placed on a sheet
+    belongs to that plan; title block labels and parameters such as Sheet Issue Date, which
+    are not text notes; and a date with a NUMERIC month such as 09-09-2026, refused because
+    03-04-2026 is 3 April in one country and 4 March in another., notesInViewsNotRead 0, notesOnSheets
+    0, notesUnreadable 0, nothingChanged  Nothing was created and no sheet was changed., numberTypeProperty
+    RuntimePropertyInfo, numberingName , numberingValue (null), onlyText , onlyWanted 0 item(s),
+    pattern DD-MMM-YYYY, problems 0 item(s), quoted Func`2, refused This model has no sheets,
+    so there is no date on a sheet to make a revision from. Nothing was created and no sheet
+    was changed., revisionClass RuntimeType, revisionIdsBefore 0 item(s), revisionOf 0 entry(ies),
+    revisionsAddedToSheets 0, revisionsCreated 0, revisionsRemaining 0, revisionsReused 0,
+    revitSaid Func`2, sequenceClass (null), sequenceIdProperty (null), sheetsById 0 entry(ies),
+    sheetsChanged 0, sheetsHoldingADate HashSet`1, sheetsOfDate 0 entry(ies), sheetsRead 0,
+    sheetsWithNoDate , spell Func`5, summary This model has no sheets, so there is no date
+    on a sheet to make a revision from. Nothing was created and no sheet was changed. 0 distinct
+    date(s) on 0 of 0 sheet(s), from 0 text note(s) typed on sheets. Not read: 0 text note(s)
+    typed inside views - a note in a plan placed on a sheet belongs to that plan; title block
+    labels and parameters such as Sheet Issue Date, which are not text notes; and a date with
+    a NUMERIC month such as 09-09-2026, refused because 03-04-2026 is 3 April in one country
+    and 4 March in another., wantedNumbering , withNone 0 item(s), written 0 entry(ies). inputs
+    came description as given; dateFormat as given; onlyDates as given; issuedBy as given;
+    issuedTo as given; numbering as given; issueState as given. on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: eafefbca070e7048
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

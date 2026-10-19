@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -168,6 +168,53 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned across1 86.1220472440945, across2
+    68.0774278215223, acrossHigh 88.5826771653543, acrossLow 65.6167979002625, alongLength
+    22.9658792650919, at Func`4, chosenType StairsType, created 1 item(s) [id 345610], cutOpening
+    false, discipline Action`1, findings 2 item(s) [U-shaped stair of type 'Monolithic Stair'
+    from 'Level 1' to ..., Revit added 2 railings of type '1100mm' with the stair], first
+    12, form u, height 13.1233595800525, highName east, invariant CultureInfo, landingCount
+    1, lowName west, mm Func`2, northSouth true, offset 4.92125984251969, openings 0 item(s),
+    railingNote Revit added 2 railings of type '1100mm' with the stair, railings 2 item(s)
+    [345620, 345624], refused (null), riser 0.57058085130663, riserHeightMm 173.9, risers
+    23, runCount 2, runSide east, runWidth 1500, second 11, side north, startOffset 1500,
+    tolerance 0.0164041994750656, total 23, tread 0.918635170603675, typeNames 6 item(s) [190mm
+    max riser 250mm going, Industrial and Assembly, Part M (Disabled), ...], volumeOf Func`2,
+    width 4.92125984251969, xMax 88.5826771653543, xMin 65.6167979002625, yMax 22.9658792650919,
+    yMin 0. inputs came editScopeFailures - Heron's failure discipline, for the fragment's
+    own edit mode; baseLevel as given; topLevel as given; stairType as given; shape as given;
+    runWidth as given; area as given (2); entrySide as given; firstRunSide as given; startOffset
+    as given; cutOpening as given. on Project1
+  negative_case: 'run with area=20000,0,0; 27000,7000,0, baseLevel=Level 1, categoryName=Text
+    Notes, cutOpening=False, entrySide=north, firstRunSide=east, inViewOnly=FloorPlan: Level
+    1, runWidth=1500, shape=u, stairType=Spiral Feature Stair, startOffset=1500, topLevel=Level
+    2 instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    across1 0, across2 0, acrossHigh 0, acrossLow 0, alongLength 0, at Func`4, chosenType
+    (null), created (null), cutOpening false, discipline Action`1, findings 1 item(s) [Nothing
+    was made. There is no stair type called ''Spiral Feat...], first 0, form u, height 0,
+    highName east, invariant CultureInfo, landingCount 0, lowName west, mm Func`2, northSouth
+    true, offset 4.92125984251969, openings 0 item(s), railingNote (null), railings 0 item(s),
+    refused There is no stair type called ''Spiral Feature Stair'' in this model. The ones
+    loaded are: 190mm max riser 250mm going, Industrial and Assembly, Part M (Disabled), Private,
+    Monolithic Stair, Precast Stair, riser 0, riserHeightMm 0, risers 0, runCount 0, runSide
+    east, runWidth 1500, second 0, side north, startOffset 1500, tolerance 0.0164041994750656,
+    total 0, tread 0, typeNames 6 item(s) [190mm max riser 250mm going, Industrial and Assembly,
+    Part M (Disabled), ...], volumeOf Func`2, width 4.92125984251969, xMax 0, xMin 0, yMax
+    0, yMin 0. inputs came editScopeFailures - Heron''s failure discipline, for the fragment''s
+    own edit mode; baseLevel as given; topLevel as given; stairType as given; shape as given;
+    runWidth as given; area as given (2); entrySide as given; firstRunSide as given; startOffset
+    as given; cutOpening as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c6434c23887dab33
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

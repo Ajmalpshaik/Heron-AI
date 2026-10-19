@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -135,6 +135,51 @@ contract:
       # next to how much was looked at.
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, Family1 - active was Project1,
+    Revit 2020, session 30308'
+  positive_case: 'run as it would normally be run. returned bySheetNumber Comparison`1, dateList
+    18-OCT-2026 - 1 note(s) on 1 sheet(s): A101, dates 1 item(s) [18-OCT-2026], datesIn Func`2,
+    dayNumber Func`2, months 12 entry(ies), names 12 item(s) [jan, feb, mar, ...], noneLabels
+    0 item(s), notRead  Not read: 0 text note(s) typed inside views (plans, sections, legends,
+    drafting views) - a note in a view placed on a sheet belongs to that view; title block
+    labels and parameters such as Sheet Issue Date, which are not text notes (READ_ELEMENT_PARAMETERS
+    reads those); and a date with a NUMERIC month such as 09-09-2026, refused because 03-04-2026
+    is 3 April in one country and 4 March in another., notesInViewsNotRead 0, notesOfDate
+    1 entry(ies), notesOnSheets 1, notesUnreadable 0, rows 1 item(s) [18-OCT-2026 - 1 note(s)
+    on 1 sheet(s): A101], sheetsById 1 entry(ies), sheetsHoldingADate HashSet`1, sheetsOfDate
+    1 entry(ies), sheetsRead 1, sheetsWithDateCount 1, sheetsWithNoDate , summary 1 distinct
+    date(s) on 1 of 1 sheet(s), from 1 text note(s) typed on sheets. Each date is listed once,
+    oldest first, with the sheets it is on (dateList). Not read: 0 text note(s) typed inside
+    views (plans, sections, legends, drafting views) - a note in a view placed on a sheet
+    belongs to that view; title block labels and parameters such as Sheet Issue Date, which
+    are not text notes (READ_ELEMENT_PARAMETERS reads those); and a date with a NUMERIC month
+    such as 09-09-2026, refused because 03-04-2026 is 3 April in one country and 4 March in
+    another., uniqueDateCount 1, withNone 0 item(s). on Project1'
+  negative_case: 'run against ''Family1'' with categoryName=Walls, inViewOnly=FloorPlan: Level
+    1 instead - chosen because it should not contain what this fragment reports. returned
+    bySheetNumber Comparison`1, dateList , dates 0 item(s), datesIn Func`2, dayNumber Func`2,
+    months 12 entry(ies), names 12 item(s) [jan, feb, mar, ...], noneLabels 0 item(s), notRead  Not
+    read: 0 text note(s) typed inside views (plans, sections, legends, drafting views) - a
+    note in a view placed on a sheet belongs to that view; title block labels and parameters
+    such as Sheet Issue Date, which are not text notes (READ_ELEMENT_PARAMETERS reads those);
+    and a date with a NUMERIC month such as 09-09-2026, refused because 03-04-2026 is 3 April
+    in one country and 4 March in another., notesInViewsNotRead 0, notesOfDate 0 entry(ies),
+    notesOnSheets 0, notesUnreadable 0, rows 0 item(s), sheetsById 0 entry(ies), sheetsHoldingADate
+    HashSet`1, sheetsOfDate 0 entry(ies), sheetsRead 0, sheetsWithDateCount 0, sheetsWithNoDate
+    , summary This model has no sheets, so there is no text on a sheet to read. Not read:
+    0 text note(s) typed inside views (plans, sections, legends, drafting views) - a note
+    in a view placed on a sheet belongs to that view; title block labels and parameters such
+    as Sheet Issue Date, which are not text notes (READ_ELEMENT_PARAMETERS reads those); and
+    a date with a NUMERIC month such as 09-09-2026, refused because 03-04-2026 is 3 April
+    in one country and 4 March in another., uniqueDateCount 0, withNone 0 item(s). on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ce12dd670276a90c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

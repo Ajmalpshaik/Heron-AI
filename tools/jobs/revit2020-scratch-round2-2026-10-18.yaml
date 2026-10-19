@@ -1,0 +1,206 @@
+# Batch 2, 2026-10-18 - MODIFY fragments on Revit 2020, scratch Project2 (never saved), every run
+# ROLLED BACK. Same built content as batch 1 (5 walls, 2 rooms, 2 spaces, floor, 2 ducts, pipe,
+# 2 desks, grids A/B/1, sheets A101 with the Level 1 plan and A102 empty, a text note, 2 room tags,
+# a dimension, "Heron Wall Schedule", Level 3 at 8000).
+model: "Project2 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project2"
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: "Walls"
+    inViewOnly: "FloorPlan: Level 1"
+  negative-set:
+    categoryName: "Text Notes"
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: add-datum-leaders
+    expect: addedOn
+    keep-chain: true
+    setup: [select-by-categories]
+    setup-set: {categories: "Grids", inViewOnly: "FloorPlan: Level 1"}
+    negative-setup-set: {categories: "Text Notes", inViewOnly: "FloorPlan: Level 1"}
+    set: {view: "FloorPlan: Level 1", ends: "bubble"}
+    negative-set: {view: "FloorPlan: Level 1", ends: "bubble"}
+
+  - fragment: center-room-tags
+    expect: centred
+    set: {categoryName: "Room Tags", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1"}
+
+  - fragment: color-by-parameter
+    expect: coloured
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", view: "Heron 3D", parameterName: "System Type", colourBand: "vivid"}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", view: "Heron 3D", parameterName: "ZZZNOTHINGHERE", colourBand: "vivid"}
+
+  - fragment: copy-elements
+    expect: copies
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", offset: "1000,0,0", toLevels: "", turnDegrees: "", turnCentreMm: "", toWorkset: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", offset: "0,0,0", toLevels: "", turnDegrees: "", turnCentreMm: "", toWorkset: ""}
+
+  - fragment: copy-parameter-value
+    expect: copied
+    setup: [select-by-category-name, set-selection, write-element-parameters]
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: "HERON-TEST-VALUE", fromName: "Comments", toName: "Mark"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: "HERON-TEST-VALUE", fromName: "HERON_NO_SUCH_PARAMETER", toName: "Mark"}
+
+  - fragment: edit-parameter-text
+    expect: edited
+    setup: [select-by-category-name, set-selection, write-element-parameters]
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: "TEST", find: "", replaceWith: "", prefix: "HERON-", suffix: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: "", find: "", replaceWith: "", prefix: "HERON-", suffix: ""}
+
+  - fragment: remove-parameter-value
+    expect: cleared
+    setup: [select-by-category-name, set-selection, write-element-parameters]
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: "HERON-TEST-VALUE"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: ""}
+
+  - fragment: renumber-sequential
+    expect: renumbered
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Mark", prefix: "HZ", startAt: 1, existingValues: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "ZZZNOTHINGHERE", prefix: "HZ", startAt: 1, existingValues: ""}
+
+  - fragment: manage-sheet-sets
+    expect: memberCount
+    setup: [find-sheets]
+    keep-chain: true
+    setup-set: {numberOrNameContains: "A10"}
+    negative-setup-set: {numberOrNameContains: "ZZZ"}
+    set: {setName: "HERON SET Z1", mode: "add", newName: ""}
+    negative-set: {setName: "HERON SET Z1", mode: "add", newName: ""}
+
+  - fragment: move-annotation
+    set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", target: "1000,0,0", arrange: ""}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", target: "1000,0,0", arrange: ""}
+
+  - fragment: override-graphics-in-view
+    expect: overridden
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", overrides: "halftone=true; transparency=50"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", view: "Heron Wall Schedule", overrides: "halftone=true; transparency=50"}
+
+  - fragment: set-mep-justification
+    expect: set
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", horizontalOffsetMm: 50, verticalOffsetMm: 50}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", horizontalOffsetMm: 0, verticalOffsetMm: 0}
+
+  - fragment: set-mep-system-type
+    expect: changedIds
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", systemType: "Exhaust Air"}
+    negative-set: {categoryName: "Pipes", inViewOnly: "Heron 3D", systemType: "Exhaust Air"}
+
+  - fragment: create-revision
+    setup: []
+    expect: created
+    set: {description: "HERON PROOF revision", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: ""}
+    negative-set: {description: "", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: ""}
+
+  - fragment: create-sheet-list
+    setup: []
+    expect: fieldsAdded
+    set: {listKind: "views", scheduleName: "HERON VIEW LIST PROOF", fieldNames: "View Name, Sheet Number, Sheet Name, Title on Sheet", sortByField: "Sheet Number"}
+    negative-set: {listKind: "views", scheduleName: "HERON VIEW LIST PROOF B", fieldNames: "Flow", sortByField: "Flow"}
+
+  - fragment: create-roof
+    setup: []
+    expect: created
+    set: {level: "Level 2", roofType: "Generic - 400mm", boundary: "0,0,0; 10000,0,0; 10000,6000,0; 0,6000,0"}
+    negative-set: {level: "Level 2", roofType: "Generic - 400mm", boundary: "0,0,0; 10000,0,0"}
+
+  - fragment: create-radial-grids
+    setup: []
+    expect: gridIds
+    set: {centreMm: "30000,0", radiiMm: "6000, 12000", spokeAnglesDegrees: "0, 30, 60, 90", startDegrees: 0, endDegrees: 90}
+    negative-set: {centreMm: "30000,0", radiiMm: "", spokeAnglesDegrees: "0, 90", startDegrees: 0, endDegrees: 90}
+
+  - fragment: create-fill-pattern
+    setup: []
+    expect: pattern
+    set: {patternName: "Heron Tile 600", target: "model", angleDegrees: 0, spacingMm: 600, crossSpacingMm: 600, replaceExisting: false}
+    negative-set: {patternName: "Heron Tile Bad", target: "model", angleDegrees: 0, spacingMm: 0, crossSpacingMm: 600, replaceExisting: false}
+
+  - fragment: create-line-pattern
+    setup: []
+    expect: pattern
+    set: {patternName: "Heron Centre", segmentsMm: "dash 12, space 3, dot, space 3", replaceExisting: false}
+    negative-set: {patternName: "Heron Centre Bad", segmentsMm: "space 3, dash 12", replaceExisting: false}
+
+  - fragment: create-area-plan
+    setup: []
+    expect: created
+    set: {level: "Level 1", areaSchemeName: "Gross Building", viewName: ""}
+    negative-set: {level: "Level 1", areaSchemeName: "No Such Scheme", viewName: ""}
+
+  - fragment: create-wall-elevation
+    expect: created
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", planView: "FloorPlan: Level 1", wall: "selected", side: "exterior", offsetMm: 3000, scale: 100}
+    negative-set: {categoryName: "Pipes", inViewOnly: "Heron 3D", planView: "FloorPlan: Level 1", wall: "selected", side: "exterior", offsetMm: 3000, scale: 100}
+
+  - fragment: set-view-camera
+    setup: []
+    expect: camera
+    set: {viewName: "Heron Camera", eyeMm: "5000,-10000,1600", targetMm: "5000,3000,1600", createIfMissing: true, perspective: false}
+    negative-set: {viewName: "No Such View", eyeMm: "5000,-10000,1600", targetMm: "5000,3000,1600", createIfMissing: false, perspective: false}
+
+  - fragment: dimension-element-faces
+    expect: created
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: "Walls", levelId: "Level 1"}
+    negative-setup-set: {category: "Walls", levelId: "Level 1"}
+    set: {view: "FloorPlan: Level 1", direction: "across", offsetMm: 0}
+    negative-set: {view: "Heron 3D", direction: "across", offsetMm: 0}
+
+  - fragment: create-parts
+    expect: partIds
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: "Walls", levelId: "Level 1"}
+    negative-setup-set: {category: "Rooms", levelId: "Level 1"}
+
+  - fragment: create-assembly
+    expect: memberIds
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: "Pipes", levelId: "Level 1"}
+    negative-setup-set: {category: "Rooms", levelId: "Level 1"}
+    set: {assemblyName: "Spool 01", namingCategory: "Pipes"}
+    negative-set: {assemblyName: "Spool 02", namingCategory: "Pipes"}
+
+  - fragment: place-structural-family
+    setup: []
+    expect: placed
+    set: {symbol: "UC305x305x97", level: "Level 1", points: "2000,3000,0; 8000,3000,0", structuralType: "Column", topLevelName: "Level 2", topOffset: "-150"}
+    negative-set: {symbol: "UC305x305x97", level: "Level 1", points: "2000,3000,0; 8000,3000,0", structuralType: "Column", topLevelName: "Level 1", topOffset: "0"}
+
+  - fragment: set-compound-layer-width
+    setup: []
+    expect: applied
+    set: {hostType: "Generic - 200mm", layerIndex: 0, widthMm: 250, material: "", layerFunction: "", checkOnly: false}
+    negative-set: {hostType: "Generic - 200mm", layerIndex: 99, widthMm: 250, material: "", layerFunction: "", checkOnly: false}
+
+  - fragment: place-hosted-family
+    setup: []
+    expect: placed
+    set: {symbol: "M_Fixed: 0915 x 1220mm", level: "Level 1", points: "1500,0,0; 7500,0,0", toRoomAt: "1500,1000,0; 7500,1000,0", hingeAt: "1800,0,0; 7800,0,0", sillHeight: "900", rotation: ""}
+    negative-set: {symbol: "M_Fixed: 0915 x 1220mm", level: "Level 1", points: "1500,-20000,0; 7500,-20000,0", toRoomAt: "1500,-19000,0; 7500,-19000,0", hingeAt: "1800,-20000,0; 7800,-20000,0", sillHeight: "900", rotation: ""}
+
+  - fragment: center-viewports-on-sheets
+    expect: centred
+    keep-chain: true
+    setup: [find-sheets]
+    setup-set: {numberOrNameContains: "A101"}
+    negative-setup-set: {numberOrNameContains: "A102"}
+
+  - fragment: set-schedule-field-totals
+    expect: totalled
+    keep-chain: true
+    setup: [find-schedules]
+    setup-set: {nameContains: "Heron Wall Schedule"}
+    negative-setup-set: {nameContains: "Heron Wall Schedule"}
+    set: {fieldNames: "Length"}
+    negative-set: {fieldNames: "Type"}

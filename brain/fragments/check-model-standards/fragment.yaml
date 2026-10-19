@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -131,6 +131,48 @@ contract:
     - name: offenders
       role: result
       type: IList<ElementId>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run. returned failures 3, findings 29 item(s)
+    [3 failure(s) across 7 section(s) checked, 1 section(s) NOT C..., , VIEWS, ...], isPlaceholder
+    Func`2, knownKeys 7 item(s) [view, sheet, level, ...], levelIds 3 item(s) [311, 694, 345523],
+    levelNames 3 item(s) [Level 1, Level 2, Level 3], looksSuspect Func`2, matches Func`3,
+    maxRows 50, notAsked Action`2, offenders 3 item(s) [176919, 176920, 176921], patternFor
+    Func`2, placeholders 0 item(s), placeholdersGiven false, roomIds 2 item(s) [345437, 345439],
+    roomNames 2 item(s) [Room, Room], rules 7 entry(ies), section Action`4, sectionsChecked
+    7, sectionsNotChecked 1, sheetIds 2 item(s) [345467, 345482], sheetNumbers 2 item(s) [A101,
+    A102], skipViewTemplates true, systemCategories 2 item(s) [-2008015, -2008043], systemIds
+    3 item(s) [345449, 345453, 345457], systemNames 3 item(s) [Mechanical Supply Air 1, Mechanical
+    Return Air 1, Domestic Cold Water 1], totalNotRead 0, typeCategoryIds 1 item(s) [-2008000],
+    unknownKeys 0 item(s), valuePatterns 0 entry(ies), viewIds 16 item(s) [312, 316, 695,
+    ...], viewNames 16 item(s) [Level 1, Level 1, Level 2, ...]. inputs came namePatterns
+    as given (7); requiredOn as given (1); requiredParameters as given (1); suspectNames as
+    given (1); skipViewTemplates as given; maxRows as given. on Project2
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, maxRows=50,
+    namePatterns=view=*; sheet=*; level=*; workset=*; system=*; room=*; type=*, requiredOn=Ducts,
+    requiredParameters=Family and Type, skipViewTemplates=True, suspectNames=zz-no-such-name
+    instead - chosen because it should not contain what this fragment reports. returned failures
+    0, findings 26 item(s) [0 failure(s) across 7 section(s) checked, 1 section(s) NOT C...,
+    , VIEWS, ...], isPlaceholder Func`2, knownKeys 7 item(s) [view, sheet, level, ...], levelIds
+    3 item(s) [311, 694, 345523], levelNames 3 item(s) [Level 1, Level 2, Level 3], looksSuspect
+    Func`2, matches Func`3, maxRows 50, notAsked Action`2, offenders 0 item(s), patternFor
+    Func`2, placeholders 0 item(s), placeholdersGiven false, roomIds 2 item(s) [345437, 345439],
+    roomNames 2 item(s) [Room, Room], rules 7 entry(ies), section Action`4, sectionsChecked
+    7, sectionsNotChecked 1, sheetIds 2 item(s) [345467, 345482], sheetNumbers 2 item(s) [A101,
+    A102], skipViewTemplates true, systemCategories 2 item(s) [-2008015, -2008043], systemIds
+    3 item(s) [345449, 345453, 345457], systemNames 3 item(s) [Mechanical Supply Air 1, Mechanical
+    Return Air 1, Domestic Cold Water 1], totalNotRead 0, typeCategoryIds 1 item(s) [-2008000],
+    unknownKeys 0 item(s), valuePatterns 0 entry(ies), viewIds 16 item(s) [312, 316, 695,
+    ...], viewNames 16 item(s) [Level 1, Level 1, Level 2, ...]. inputs came namePatterns
+    as given (7); requiredOn as given (1); requiredParameters as given (1); suspectNames as
+    given (1); skipViewTemplates as given; maxRows as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c654925a85a5726f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

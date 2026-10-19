@@ -1,0 +1,48 @@
+# Batch 16, 2026-10-18 - Revit 2020 session 16356 (restarted), scratch Project1 (new, never
+# saved) holding one kept Supply Air duct at y=2000, 1000..9000 mm, z 2700, and "Heron 3D".
+# The link source is HeronLinkSource.rvt - the owner's Save As of the batch 15 test building -
+# and HeronPlan.dwg his DWG export of its Level 1 plan, both in heron-work\elion-proofs\files.
+# Every run ROLLED BACK; the link-tool proofs link the file inside their own rolled-back group.
+model: "Project1 (scratch, never saved) + HeronLinkSource.rvt, Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: [link-files]
+  set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: ""}
+  negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: ""}
+jobs:
+  - fragment: link-files
+    setup: []
+    expect: linkedIds
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: ""}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/no-such-folder/nothing.rvt", placement: "origin", viewName: ""}
+  - fragment: import-cad
+    setup: []
+    expect: importIds
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronPlan.dwg", viewName: "Level 1", placement: "origin", thisViewOnly: true}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronPlan.dwg", viewName: "No Such View", placement: "origin", thisViewOnly: true}
+  - fragment: set-link-path-type
+    expect: changed
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "HeronLinkSource.rvt", pathType: "absolute"}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "No Such Link", pathType: "absolute"}
+  - fragment: set-link-room-bounding
+    expect: changed
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "HeronLinkSource.rvt", roomBounding: true}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "HeronLinkSource.rvt", roomBounding: false}
+  - fragment: sync-spaces-with-linked-rooms
+    setup: [link-files, set-link-room-bounding]
+    expect: created
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "HeronLinkSource.rvt", roomBounding: true, phaseName: "", updateNames: false}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "No Such Link", roomBounding: true, phaseName: "", updateNames: false}
+  - fragment: check-link-coordinates
+    expect: coordinates
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", toleranceMm: 0}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/no-such-folder/nothing.rvt", placement: "origin", viewName: "", toleranceMm: 0}
+  - fragment: copy-from-link
+    expect: created
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkInstance: "HeronLinkSource.rvt", linkedElementIds: "345432"}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkInstance: "HeronLinkSource.rvt", linkedElementIds: "99999999"}
+  - fragment: zoom-to-linked-elements
+    expect: shown
+    set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "HeronLinkSource.rvt", categories: "Walls", alsoSelect: false}
+    negative-set: {paths: "C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt", placement: "origin", viewName: "", linkName: "HeronLinkSource.rvt", categories: "Sprinklers", alsoSelect: false}

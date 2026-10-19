@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -101,30 +101,33 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-17'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, EQ-2020 rme_advanced_sample_project
-    - active was Project1, Revit 2020, session 51568'
-  positive_case: 'run as it would normally be run. returned empties 0 item(s), emptySets ,
-    findings 1 item(s) [2 View/Sheet Sets saved in Project1: 0 of sheets only, 2 of ...],
-    mixed 0, nameOf Func`2, rows 2 item(s) [HERON PROOF SET - 0 sheets, 4 views - views: North
-    - Mech (E..., Set 1 - 0 sheets, 4 views - views: North - Mech (Elevation);...], setCount
-    2, sets 2 item(s) [HERON PROOF SET, Set 1], sheetSets HERON PROOF SET - 0 sheets, 4 views
-    - views: North - Mech (Elevation); North - Plumbing (Elevation); South - Mech (Elevation);
-    South - Plumbing (Elevation) || Set 1 - 0 sheets, 4 views - views: North - Mech (Elevation);
-    North - Plumbing (Elevation); South - Mech (Elevation); South - Plumbing (Elevation),
-    sheetsOnly 0, typeWords Func`2, unread 0 item(s), viewsOnly 2. on Project1'
-  negative_case: run against 'EQ-2020 rme_advanced_sample_project' instead - chosen because
-    it should not contain what this fragment reports. returned empties 0 item(s), emptySets
-    , findings 1 item(s) [No View/Sheet Set is saved in EQ-2020 rme_advanced_sample_pr...],
-    mixed 0, nameOf Func`2, rows 0 item(s), setCount 0, sets 0 item(s), sheetSets , sheetsOnly
-    0, typeWords Func`2, unread 0 item(s), viewsOnly 0. on EQ-2020 rme_advanced_sample_project
-  second_route: 'By eye, the same day: Ajmal PS opened File - Print - Print... - Selected
-    views/sheets - Select... in Project1 and read the Name list - exactly two sets, HERON
-    PROOF SET and Set 1, the two this fragment named. On the negative document a read before
-    the run (heron_bridge_client fragment list-sheet-sets) said the same: no set saved.'
-  fingerprint: ead2d4ff5f4b7360
-
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, Family1 - active was Project1,
+    Revit 2020, session 2648'
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-sheets, manage-sheet-sets with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned compared 1 item(s)
+    [(0, Heron Set, System.Collections.Generic.HashSet`1[Autodesk...], empties 0 item(s),
+    emptySets , findings 1 item(s) [1 View/Sheet Set saved in Project1: 1 of sheets only,
+    0 of v...], groups 1 item(s) [System.Collections.Generic.List`1[System.Tuple`4[System.Int3...],
+    mixed 0, nameOf Func`2, rows 1 item(s) [Heron Set - 2 sheets, 0 views - sheets: A101 -
+    Heron Test Sh...], sameRows 0 item(s), sameSets , setCount 1, sets 1 item(s) [ViewSheetSet],
+    sheetSets Heron Set - 2 sheets, 0 views - sheets: A101 - Heron Test Sheet; A102 - Heron
+    Empty Sheet, sheetsOnly 1, typeWords Func`2, unread 0 item(s), viewsOnly 0. on Project1'
+  negative_case: 'run against ''Family1'' with categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1, mode=create, newName=, numberOrNameContains=A10, setName=Heron Set instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running find-sheets, manage-sheet-sets with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned compared 0 item(s), empties 0 item(s), emptySets , findings 1 item(s) [No View/Sheet
+    Set is saved in Family1. The print and export ...], groups 0 item(s), mixed 0, nameOf
+    Func`2, rows 0 item(s), sameRows 0 item(s), sameSets , setCount 0, sets 0 item(s), sheetSets
+    , sheetsOnly 0, typeWords Func`2, unread 0 item(s), viewsOnly 0. on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1ee1bd70dd5c54f3
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -129,33 +129,39 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,533 elements), Revit 2024, session 40932
+  model: Project1 (3,126 elements), Revit 2020, session 2648
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     select-by-category-name, set-selection with this phase''s own values. returned MillimetresPerFoot
-    304.8, backClearance 32.8083989501312, blocked 3 item(s) [926501, 926502, 926503], findings
-    5 item(s) [3 unit(s) checked against 3533 host-model element(s). 3 bloc..., CHECK THE
-    REPORTED FACING DIRECTION on one unit before trust..., 03 (id 926501, faces (0, 1, 0)):
-    12 thing(s) inside the acce..., ...], frontClearance 32.8083989501312, hostCandidates
-    3533, sideClearance 32.8083989501312, topClearance 32.8083989501312, unreadable 0. inputs
-    came equipment from the selection (3); frontClearance as given; sideClearance as given;
-    backClearance as given; topClearance as given. on test projject'
-  negative_case: 'run with categoryName=Mechanical Equipment, inViewOnly={3D}, frontClearance=1,
-    sideClearance=1, backClearance=1, topClearance=1 instead - chosen because it should not
-    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase''s own values. returned MillimetresPerFoot 304.8, backClearance
-    0.00328083989501312, blocked 0 item(s), findings 5 item(s) [3 unit(s) checked against
-    3533 host-model element(s). 0 bloc..., CHECK THE REPORTED FACING DIRECTION on one unit
-    before trust..., 03 (id 926501, faces (0, 1, 0)): access zone CLEAR, ...], frontClearance
-    0.00328083989501312, hostCandidates 3533, sideClearance 0.00328083989501312, topClearance
-    0.00328083989501312, unreadable 0. inputs came equipment from the selection (3); frontClearance
-    as given; sideClearance as given; backClearance as given; topClearance as given. on test
-    projject'
+    304.8, backClearance 3.28083989501312, blocked 1 item(s) [352029], describeLinked Func`3,
+    findings 3 item(s) [1 unit(s) checked against 3126 host-model element(s). 1 bloc..., CHECK
+    THE REPORTED FACING DIRECTION on one unit before trust..., 179 LPS (id 352029, faces (0,
+    1, 0)): 2 thing(s) inside the ...], fireRatingOf Func`2, frontClearance 3.28083989501312,
+    hostCandidates 3126, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, nestedLinks 0, notObstructions 3 item(s) [-2000160, -2003600,
+    -2003200], sideClearance 3.28083989501312, topClearance 3.28083989501312, unreadable 0.
+    inputs came equipment from the selection (1); frontClearance as given; sideClearance as
+    given; backClearance as given; topClearance as given; includeLinks as given. on Project1'
+  negative_case: 'run with backClearance=1, categoryName=Mechanical Equipment, frontClearance=1,
+    inViewOnly=Heron 3D, includeLinks=False, sideClearance=1, topClearance=1 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running select-by-category-name, set-selection with this phase''s own values.
+    returned MillimetresPerFoot 304.8, backClearance 0.00328083989501312, blocked 0 item(s),
+    describeLinked Func`3, findings 3 item(s) [1 unit(s) checked against 3126 host-model element(s).
+    0 bloc..., CHECK THE REPORTED FACING DIRECTION on one unit before trust..., 179 LPS (id
+    352029, faces (0, 1, 0)): access zone CLEAR], fireRatingOf Func`2, frontClearance 0.00328083989501312,
+    hostCandidates 3126, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
+    linkedTotal 0, linksSearched 0, nestedLinks 0, notObstructions 3 item(s) [-2000160, -2003600,
+    -2003200], sideClearance 0.00328083989501312, topClearance 0.00328083989501312, unreadable
+    0. inputs came equipment from the selection (1); frontClearance as given; sideClearance
+    as given; backClearance as given; topClearance as given; includeLinks as given. on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ac43a39f1fe69ac8
+  fingerprint: 9e5f22e093675762
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

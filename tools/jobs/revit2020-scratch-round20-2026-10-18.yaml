@@ -1,0 +1,27 @@
+# Batch 20, 2026-10-18 - batch 19's model with Room Bounding ON on both link types (kept); zoom names the owner's instance. ROLLED BACK.
+model: Project1 (scratch) + HeronLinkSource.rvt linked by hand, Revit 2020
+defaults:
+  in: Project1
+  write: true
+  setup: []
+jobs:
+- fragment: sync-spaces-with-linked-rooms
+  expect: created
+  set:
+    linkName: HeronLinkSource.rvt
+    phaseName: ''
+    updateNames: false
+  negative-set:
+    linkName: No Such Link
+    phaseName: ''
+    updateNames: false
+- fragment: zoom-to-linked-elements
+  expect: shown
+  set:
+    linkName: 'HeronLinkSource.rvt : 2 : location <Not Shared>'
+    categories: Walls
+    alsoSelect: false
+  negative-set:
+    linkName: 'HeronLinkSource.rvt : 2 : location <Not Shared>'
+    categories: Sprinklers
+    alsoSelect: false

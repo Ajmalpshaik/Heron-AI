@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -54,6 +54,30 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,940 elements), Revit 2020, session 16356
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    link-files with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat 0, changed 1, findings
+    3 item(s) [1 link type(s) set Room Bounding ON, 0 already were, 0 left ..., HeronLinkSource.rvt:
+    Room Bounding is now ON, read back., Rooms and spaces that were unbounded may now bound:
+    PLACE_RO...], name HeronLinkSource.rvt, refused 0 item(s), roomBounding true, types 1
+    item(s) [RevitLinkType]. inputs came linkName as given; roomBounding as given. on Project1'
+  negative_case: run with linkName=HeronLinkSource.rvt, paths=C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/HeronLinkSource.rvt,
+    placement=origin, roomBounding=False, viewName= instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running link-files
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThat 1, changed 0, findings 1 item(s) [0
+    link type(s) set Room Bounding OFF, 1 already were, 0 left...], name HeronLinkSource.rvt,
+    refused 0 item(s), roomBounding false, types 1 item(s) [RevitLinkType]. inputs came linkName
+    as given; roomBounding as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 96d7e1d8c6940e20
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

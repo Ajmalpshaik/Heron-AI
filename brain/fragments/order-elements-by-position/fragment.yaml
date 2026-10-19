@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -61,6 +61,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned MmPerFoot
+    304.8, band 3.28083989501312, elements 5 item(s) [Generic - 200mm, Generic - 200mm, Generic
+    - 200mm, ...], findings 1 item(s) [5 element(s) put in order (reading) and handed on in
+    it.], how reading, noPlace 0 item(s), ordered 5 item(s) [Generic - 200mm, Generic - 200mm,
+    Generic - 200mm, ...], path (null), placedAt 5 item(s) [(Autodesk.Revit.DB.Wall, (16.404199475,
+    0.000000000, 0.00000..., (Autodesk.Revit.DB.Wall, (32.808398950, 9.842519685, 0.00000...,
+    (Autodesk.Revit.DB.Wall, (16.404199475, 19.685039370, 0.0000..., ...], refusal (null),
+    rowMm 1000, sequence 345434, 345435, 345436, 345433, 345432. inputs came elements from
+    the selection (5); order as given; rowMm as given. on Project2
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, order=sideways,
+    rowMm=1000 instead - chosen because it should not contain what this fragment reports -
+    the arrangement was re-made first by running select-by-category-name, set-selection with
+    this phase''s own values. returned MmPerFoot 304.8, band 3.28083989501312, elements 0
+    item(s), findings 1 item(s) ["sideways" is not an order this knows - left to right, right...],
+    how sideways, noPlace 0 item(s), ordered 0 item(s), path (null), placedAt 0 item(s), refusal
+    "sideways" is not an order this knows - left to right, right to left, top to bottom, bottom
+    to top, reading, columns, clockwise, anticlockwise, along <id> or level., rowMm 1000,
+    sequence . inputs came elements from the selection (5); order as given; rowMm as given.
+    on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a3be10c3e15f3469
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

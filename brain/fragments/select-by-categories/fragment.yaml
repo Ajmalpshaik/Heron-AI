@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CAT-009
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,21 +99,26 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-08'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned elements 307 item(s) [Tees, Tees,
-    Tees, ...], found 307, perCategory 1 entry(ies), wanted 1 item(s) [OST_DuctCurves]. inputs
-    came categories as given (1); inViewOnly as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with categories=Ducts, inViewOnly=How to use this project 1 instead -
-    chosen because it should not contain what this fragment reports. returned elements 0 item(s),
-    found 0, perCategory 1 entry(ies), wanted 1 item(s) [OST_DuctCurves]. inputs came categories
-    as given (1); inViewOnly as given. on Snowdon-scratch_ajmal.al
+  model: Project2 (3,027 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run. returned elements 5 item(s) [Generic - 200mm,
+    Generic - 200mm, Generic - 200mm, ...], found 5, includeLinks false, linkBlocked , linkDocs
+    0 item(s), linkPlacements 0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
+    0, perCategory 1 entry(ies), wanted 1 item(s) [OST_Walls]. inputs came categories as given
+    (1); inViewOnly as given; includeLinks not given - false (optional). on Project2
+  negative_case: 'run with categories=Doors, categoryName=Text Notes, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports. returned
+    elements 0 item(s), found 0, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
+    model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0, perCategory
+    1 entry(ies), wanted 1 item(s) [OST_Doors]. inputs came categories as given (1); inViewOnly
+    as given; includeLinks not given - false (optional). on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 79105382d7806412
-
+  fingerprint: c1e0394d09a2f537
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

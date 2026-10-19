@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -103,6 +103,41 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,716 elements), Revit 2020, session 30308
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned LitresPerCubicFoot
+    28.316846592, Tolerance 1E-06, alreadyThatFlow 0 item(s), badRows 0, builtInDisagrees
+    0 item(s), changed 2, connectorFlow 1 item(s) [id -1013405], fileRead true, findings 1
+    item(s) [2 air terminal flow(s) set and read back through the connect...], matched HashSet`1,
+    noFlowParameter 0 item(s), notATerminal 0 item(s), pendingBefore 2 item(s) [8.29894667954982,
+    8.29894667954982], pendingElements 2 item(s) [600 x 600 Face 300 x 300 Connection, 600
+    x 600 Face 300 x 300 Connection], pendingParameters 2 item(s) [Autodesk.Revit.DB.Parameter,
+    Autodesk.Revit.DB.Parameter], pendingWanted 2 item(s) [5.29720000822329, 5.29720000822329],
+    putBack 0, refused 0 item(s), rowsUnmatched 0, terminalsCategory 1 item(s) [id -2008013],
+    wanted 2 entry(ies). inputs came elements from the selection (2); csvPath as given. on
+    Project2
+  negative_case: run with csvPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/flow-negative.csv
+    arranged with categories=Air Terminals, exact=False, maxMm=8500,2000,2900, minMm=2500,1000,2500
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned LitresPerCubicFoot 28.316846592, Tolerance 1E-06, alreadyThatFlow 0 item(s),
+    badRows 0, builtInDisagrees 0 item(s), changed 0, connectorFlow 1 item(s) [id -1013405],
+    fileRead true, findings 1 item(s) [0 air terminal flow(s) set and read back through the
+    connect...], matched HashSet`1, noFlowParameter 0 item(s), notATerminal 0 item(s), pendingBefore
+    0 item(s), pendingElements 0 item(s), pendingParameters 0 item(s), pendingWanted 0 item(s),
+    putBack 0, refused 0 item(s), rowsUnmatched 2, terminalsCategory 1 item(s) [id -2008013],
+    wanted 2 entry(ies). inputs came elements from the selection (2); csvPath as given. on
+    Project2
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f386a34d118eccaf
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

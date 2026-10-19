@@ -1,0 +1,39 @@
+# Batch 19, 2026-10-18 - Revit 2020 session 30308, fresh scratch Project1 (never saved): a kept
+# Supply Air duct at y=2000, 1000..9000 mm, z 2700; "Heron 3D"; HeronLinkSource.rvt linked TWICE -
+# instance 1 by LINK_FILES (no document - row 5b-1124) and instance 2 by the owner through
+# Insert > Link Revit, origin to origin, which reads its document (6 walls). Room Bounding ON on
+# the shared type. Every write ROLLED BACK.
+model: "Project1 (scratch) + HeronLinkSource.rvt linked by hand, Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: []
+jobs:
+  - fragment: set-link-path-type
+    expect: changed
+    set: {linkName: "HeronLinkSource.rvt", pathType: "absolute"}
+    negative-set: {linkName: "No Such Link", pathType: "absolute"}
+  - fragment: sync-spaces-with-linked-rooms
+    expect: created
+    set: {linkName: "HeronLinkSource.rvt", phaseName: "", updateNames: false}
+    negative-set: {linkName: "No Such Link", phaseName: "", updateNames: false}
+  - fragment: check-link-coordinates
+    write: false
+    expect: coordinates
+    set: {toleranceMm: 0}
+    negative-in: "Family1"
+    negative-set: {toleranceMm: 0}
+  - fragment: copy-from-link
+    expect: created
+    set: {linkInstance: "HeronLinkSource.rvt : 2 : location <Not Shared>", linkedElementIds: "345432"}
+    negative-set: {linkInstance: "HeronLinkSource.rvt : 2 : location <Not Shared>", linkedElementIds: "99999999"}
+  - fragment: zoom-to-linked-elements
+    expect: shown
+    set: {linkName: "HeronLinkSource.rvt", categories: "Walls", alsoSelect: false}
+    negative-set: {linkName: "HeronLinkSource.rvt", categories: "Sprinklers", alsoSelect: false}
+  - fragment: find-clashes
+    write: false
+    expect: clashes
+    setup: [select-by-category-name, set-selection]
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", against: "", includeLinks: true, categories: "Walls", includeHost: false, compareParameter: "none"}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", against: "", includeLinks: true, categories: "Furniture", includeHost: false, compareParameter: "none"}

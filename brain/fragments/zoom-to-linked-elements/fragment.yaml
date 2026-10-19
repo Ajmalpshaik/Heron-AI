@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,6 +91,37 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,954 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allNames 2 item(s) [HeronLinkSource.rvt
+    : 1 : location <Not Shared>, HeronLinkSource.rvt : 2 : location <Not Shared>], alsoSelect
+    false, doc Document, everyLink HeronLinkSource.rvt : 1 : location <Not Shared>, HeronLinkSource.rvt
+    : 2 : location <Not Shared>, findings 2 item(s) [Zoomed "Level 1" to 6 element(s) inside
+    linked model ''HeronL..., THESE BELONG TO THE LINKED DOCUMENT. Nothing in it or in thi...],
+    link RevitLinkInstance, linked Document, matches 1 item(s) [HeronLinkSource.rvt : 2 :
+    location <Not Shared>], screen UIView, selected 0, shown 6, skipped 0, view ViewPlan,
+    viewAfter Level 1, wanted HeronLinkSource.rvt : 2 : location <Not Shared>. inputs came
+    linkName as given; categories as given (1); alsoSelect as given. on Project1'
+  negative_case: 'run with alsoSelect=False, categories=Sprinklers, linkName=HeronLinkSource.rvt
+    : 2 : location <Not Shared> instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned allNames 2 item(s) [HeronLinkSource.rvt : 1 : location <Not Shared>,
+    HeronLinkSource.rvt : 2 : location <Not Shared>], alsoSelect false, doc Document, everyLink
+    HeronLinkSource.rvt : 1 : location <Not Shared>, HeronLinkSource.rvt : 2 : location <Not
+    Shared>, findings 2 item(s) [''HeronLinkSource.rvt : 2 : location <Not Shared>'' has nothin...,
+    THESE BELONG TO THE LINKED DOCUMENT. Nothing in it or in thi...], link RevitLinkInstance,
+    linked Document, matches 1 item(s) [HeronLinkSource.rvt : 2 : location <Not Shared>],
+    screen UIView, selected 0, shown 0, skipped 0, view ViewPlan, viewAfter , wanted HeronLinkSource.rvt
+    : 2 : location <Not Shared>. inputs came linkName as given; categories as given (1); alsoSelect
+    as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3c931d8d4e21e706
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
