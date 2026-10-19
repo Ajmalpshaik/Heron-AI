@@ -121,7 +121,7 @@ same suite fails on `DEBUG` or a framework symbol, which the fragment gate defin
 Also removed or deprecated at 2027: AXM import, several `Mechanical.Zone` members, legacy rebar
 creation methods, and several `EnergyDataSettings` properties.
 
-**Rebar, read off the shipped assemblies on 2026-10-19** ([row 5b-1243](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
+**Rebar, read off the shipped assemblies on 2026-10-19** ([row 5b-1258](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
 `Rebar.CreateFromCurves` (and `CreateFromCurvesAndShape`) taking two `RebarHookType`s and two
 `RebarHookOrientation`s is obsolete at **2026** and gone at **2027**, with the enum - 2026 on take a
 `BarTerminationsData` and a `RebarTerminationOrientation`. `RebarBarType.BarDiameter` is 2020-2022;

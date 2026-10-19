@@ -1,11 +1,11 @@
-# NEEDS-CHECKING Group HT - the thirteen rebar fragments, DRAFT since 2026-10-19.
+# NEEDS-CHECKING Group HY - the thirteen rebar fragments, DRAFT since 2026-10-19.
 #
-#     python tools/batch-prove.py tools/jobs/rebar-ht-2026-10-19.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/rebar-ht-2026-10-19.yaml
+#     python tools/batch-prove.py tools/jobs/rebar-hy-2026-10-19.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/rebar-hy-2026-10-19.yaml
 #
-# THE MODEL is the scratch project docs/needs-checking/group-ht.md describes - a
+# THE MODEL is the scratch project docs/needs-checking/group-hy.md describes - a
 # new project from Revit's metric STRUCTURAL template, saved to
-# %TEMP%\heron-work\rebar-ht, with columns, a beam, a pad footing, a slab, a wall
+# %TEMP%\heron-work\rebar-hy, with columns, a beam, a pad footing, a slab, a wall
 # and a steel column drawn on Level 1. Never a working model. The values below
 # are this proof's own, chosen for that model - never a design value Heron
 # offers anybody (D-33).
@@ -13,7 +13,7 @@
 # THE NEGATIVE IS A DIFFERENT SELECTION OR A VALUE THAT MUST BE REFUSED, never a
 # cleared selection: a steel column is not a rebar host, a footing is not a
 # column, and a bar type named T16 does not exist. The run-twice negatives
-# (a host already holding rebar is skipped) are HT6 to HT12's own and are run
+# (a host already holding rebar is skipped) are HY6 to HY12's own and are run
 # by hand, because the second run needs the first one KEPT.
 #
 # The bar types named here ("16mm" and the like) are DIAMETERS - each card reads
@@ -21,7 +21,7 @@
 # nominal diameter. Check with LIST_REBAR_TYPES first and change them if the
 # template carries two of a size.
 
-model: rebar-ht scratch project (metric structural template), Revit 2020
+model: rebar-hy scratch project (metric structural template), Revit 2020
 
 defaults:
   write: true
@@ -41,7 +41,7 @@ jobs:
     setup: []
     expect: barTypes
     note: >
-      The positive is this model; the negative is HT1's second project, from an
+      The positive is this model; the negative is HY1's second project, from an
       ARCHITECTURAL template, where every count must come back 0. The runner
       cannot switch documents in one job, so the negative leg is run by hand.
 
@@ -52,8 +52,8 @@ jobs:
       inViewOnly: "FloorPlan: Level 1"
     expect: rebarSets
     note: >
-      Run after HT6 is KEPT, so the columns hold rebar. The negative is the
-      walls before HT10 - valid hosts holding nothing - so rebarSets must be 0.
+      Run after HY6 is KEPT, so the columns hold rebar. The negative is the
+      walls before HY10 - valid hosts holding nothing - so rebarSets must be 0.
 
   - fragment: place-column-rebar
     set:
@@ -139,14 +139,14 @@ jobs:
     set:
       categoryName: Structural Framing
       inViewOnly: "FloorPlan: Level 2"
-      coverOther: "HT cover 45"
+      coverOther: "HY cover 45"
     negative-set:
       categoryName: Structural Framing
       inViewOnly: "FloorPlan: Level 2"
       coverOther: "33"
     expect: changedIds
     note: >
-      Needs HT3's cover type kept first. The negative asks a distance no cover
+      Needs HY3's cover type kept first. The negative asks a distance no cover
       type gives, which must be refused naming the loaded ones.
 
   - fragment: set-rebar-view-state
@@ -162,19 +162,19 @@ jobs:
       unobscured: "yes"
     expect: changed
     note: >
-      Needs HT6 kept, so the columns hold rebar. The walls hold none before
-      HT10, so nothing changes.
+      Needs HY6 kept, so the columns hold rebar. The walls hold none before
+      HY10, so nothing changes.
 
   - fragment: create-rebar-bar-type
     setup: []
     set:
-      typeName: "HT 16"
+      typeName: "HY 16"
       diameter: "16"
       standardBendDiameter: "64"
       hookBendDiameter: "64"
       stirrupBendDiameter: "32"
     negative-set:
-      typeName: "HT 25"
+      typeName: "HY 25"
       diameter: "25"
       standardBendDiameter: "100"
       hookBendDiameter: "100"
@@ -184,22 +184,22 @@ jobs:
   - fragment: create-rebar-cover-type
     setup: []
     set:
-      coverName: "HT cover 45"
+      coverName: "HY cover 45"
       distance: "45"
     negative-set:
-      coverName: "HT cover x"
+      coverName: "HY cover x"
       distance: "forty"
     expect: created
 
   - fragment: create-rebar-hook-type
     setup: []
     set:
-      hookName: "HT tie 135"
+      hookName: "HY tie 135"
       angle: "135"
       extension: "10"
       hookStyle: "stirrup/tie"
     negative-set:
-      hookName: "HT hook 200"
+      hookName: "HY hook 200"
       angle: "200"
       extension: "12"
       hookStyle: standard

@@ -154,7 +154,7 @@ asked which, one at a time.
 | A wall's profile - an arched head | |
 | A ground surface | Revit 2024 brought in the toposolid in place of the toposurface, so it is two routes across Heron's eight releases |
 | ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`, DRAFT** - recorded 2026-10-04 by [45](45-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built. *As built (2026-10-18): railings too - `CREATE_RAILING`, `EDIT_RAILING`, `SET_RAILING_TYPE`, DRAFT (#502)* |
-| Wall foundations, and ~~reinforcement~~ | **Reinforcement built 2026-10-19, DRAFT** - thirteen fragments, from `LIST_REBAR_TYPES` to `PLACE_COLUMN_REBAR` and `PLACE_AREA_REINFORCEMENT`, and the method [`reinforce-concrete`](../brain/skills/reinforce-concrete.yaml); not run in Revit ([Group HT](needs-checking/group-ht.md), [row 5b-1242](fragment-issues/section-5b-rows-401-425.md)). Wall (strip) foundations still have no tool |
+| Wall foundations, and ~~reinforcement~~ | **Reinforcement built 2026-10-19, DRAFT** - thirteen fragments, from `LIST_REBAR_TYPES` to `PLACE_COLUMN_REBAR` and `PLACE_AREA_REINFORCEMENT`, and the method [`reinforce-concrete`](../brain/skills/reinforce-concrete.yaml); not run in Revit ([Group HY](needs-checking/group-hy.md), [row 5b-1257](fragment-issues/section-5b-rows-401-425.md)). Wall (strip) foundations still have no tool |
 | Parts, and making an assembly | |
 | Point clouds | |
 | Masses, and the floors and walls made from one | |
@@ -171,7 +171,7 @@ asked which, one at a time.
 > mass. Each card's `revit:` and `heron-status:` lines are the current word.
 
 > **As built (2026-10-19):** reinforcement has a route now - the thirteen DRAFT rebar fragments of
-> [row 5b-1242](fragment-issues/section-5b-rows-401-425.md), owed [Group HT](needs-checking/group-ht.md). Still with no route: a
+> [row 5b-1257](fragment-issues/section-5b-rows-401-425.md), owed [Group HY](needs-checking/group-hy.md). Still with no route: a
 > wall's profile, wall foundations, point clouds, and walls made from a mass.
 
 ---

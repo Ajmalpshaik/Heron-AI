@@ -23,7 +23,7 @@ purpose: >
   or a steel grade (D-34).
 
   Every placing step below was DRAFT on 2026-10-19 - built and compiled for
-  Revit 2020 to 2027, not yet run in Revit (NEEDS-CHECKING Group HT). Until
+  Revit 2020 to 2027, not yet run in Revit (NEEDS-CHECKING Group HY). Until
   the owner proves them, revit_change refuses to keep their changes (D-117);
   each may be run once through try-once, behind Revit's Keep or Discard box
   (D-119). The list of capabilities after this method is read from the
@@ -142,4 +142,4 @@ note: >
   Every step is one entry in Revit's undo list. DRAFT until the whole order
   has been run on a scratch model with structural content - a column, a beam,
   a pad footing, a slab and a wall reinforced, and every one read back
-  (NEEDS-CHECKING Group HT).
+  (NEEDS-CHECKING Group HY).
