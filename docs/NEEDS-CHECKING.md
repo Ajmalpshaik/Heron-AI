@@ -839,6 +839,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hg.md`](needs-checking/group-hg.md)
 
+## Group HK - one model, one chat at a time, and Free this model: D-141 (2026-10-18)
+
+**Its own file:** [`needs-checking/group-hk.md`](needs-checking/group-hk.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

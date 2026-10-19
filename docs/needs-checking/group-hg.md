@@ -38,3 +38,8 @@ ON, a saved test model, and one chat running a family-sized job of PROVEN `revit
 | **HG8** | *Ctrl+Z.* After HG3's four kept changes, press Ctrl+Z four times, looking at the undo list before each | Four separate entries, each `Heron: <name>`; each Ctrl+Z takes back exactly one change, newest first - never two at once, never the whole job |
 | **HG9** | *The model closes.* With a grant held, close that model and open it again, then ask one change | The log says the grant ended because its model closed; the button reads `Ask to Keep ON`; the change puts **the box up** |
 | **HG10** | *The window fails to draw.* Not arranged on purpose - noted if it happens on any press | The plain Revit question appears instead, Enter landing on **Keep asking**; the add-in log names why the window did not open |
+
+**Since [D-141](../decisions/D-141.md), 2026-10-18:** the grant is held by the chat's own `conversation`, not
+by `HERON_CLIENT_ID`, and a model is held by one chat at a time. HG5 runs as written, but chat B waits up to
+three minutes unless chat A frees the model. HG7's `HERON_CLIENT_ID` no longer makes a command line *"the
+same chat"* - [Group HK](group-hk.md) says what that leaves.

@@ -146,8 +146,15 @@ found from evidence. It is a report: exit 0 whatever it finds.
 
 ## On Windows
 
-The commands in `settings.json` are `python "$CLAUDE_PROJECT_DIR/..."`, which Git Bash expands the way
-bash does on Linux — Claude Code runs hooks through Git Bash on Windows when it is installed. Each hook
+The commands in `settings.json` run `python` on the script under `$CLAUDE_PROJECT_DIR`, which Git Bash
+expands the way bash does on Linux — Claude Code runs hooks through Git Bash on Windows when it is
+installed. **When the script is not there, the command takes the folder from
+`git rev-parse --show-toplevel` instead** — the repository the hook runs in. On 2026-10-18 a session
+started with no folder and then moved into Heron kept that first, empty folder in `$CLAUDE_PROJECT_DIR`
+while the host ran Heron's hooks: python could not open the script, exited 2, and 2 is "block" to the
+host, so every prompt in that session was refused. Piped by hand through Git Bash on Windows the same
+day, with an empty folder in that variable, all four commands exit 0;
+[`tests/test_heron_session.py`](../../../tests/test_heron_session.py) runs them that way under bash. Each hook
 prints JSON with every non-ASCII character escaped, because a redirected Windows console encodes in the
 ANSI code page and dies on a character it has no byte for ([`heron-ship`](../heron-ship/SKILL.md) §2).
 **Proved on Linux only so far** — the first real Windows session start, showing the line, is the proof

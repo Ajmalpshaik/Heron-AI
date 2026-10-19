@@ -43,7 +43,8 @@ WHAT THIS PROVES
      session start, the main-moved hook for the right tools, with the
      matcher anchored so update_pull_request_branch is not mistaken for
      update_pull_request, and the local-only note on every prompt - and the
-     exact commands it gives run under bash.
+     exact commands it gives run under bash, and still find their scripts
+     when $CLAUDE_PROJECT_DIR names another folder.
   6. THE LOCAL-ONLY NOTE warns when a prompt is marked LOCAL and the session
      is in a cloud container - by the documented CLAUDE_CODE_REMOTE, by the
      two variables seen in one on 2026-10-17, or, failing both, by not being
@@ -802,6 +803,35 @@ def run_all(home):
     else:
         print("  note  the prompt hook's command was not run: no bash here, "
               "or Windows - a real session on the PC proves that half")
+
+    # A session started with no folder and then moved into Heron keeps the
+    # first folder in $CLAUDE_PROJECT_DIR, while the host runs Heron's hooks
+    # from Heron. python could not open the script there, exited 2, and 2 is
+    # "block" - every prompt in that session was refused (2026-10-18). So each
+    # command falls back to the repository the hook runs in.
+    every = [one for event in ("SessionStart", "UserPromptSubmit", "PreToolUse")
+             for _m, one in commands(event)]
+    if os.name != "nt" and shutil.which("bash") and every:
+        for one in every:
+            wired = one.get("command", "")
+            got = subprocess.run(["bash", "-c", wired],
+                                 input=json.dumps({
+                                     "session_id": "s-5w", "cwd": ROOT,
+                                     "source": "startup", "prompt": "hello",
+                                     "tool_name": "Bash",
+                                     "tool_input": {"command": "ls"}}),
+                                 capture_output=True, text=True,
+                                 encoding="utf-8", cwd=ROOT,
+                                 env=dict(env, CLAUDE_PROJECT_DIR=plain),
+                                 timeout=120)
+            check(got.returncode == 0 and "can't open file" not in got.stderr,
+                  "with $CLAUDE_PROJECT_DIR naming another folder, the command "
+                  "still finds its script and exits 0: %s"
+                  % wired.rsplit("/", 1)[-1].rstrip('"'))
+    else:
+        print("  note  the commands were not run with another folder in "
+              "$CLAUDE_PROJECT_DIR: no bash here, or Windows - a real session "
+              "on the PC proves that half")
 
     print()
     print("6. The local-only note - a LOCAL prompt in a cloud container, and only then")

@@ -35,6 +35,10 @@
          model, for how long - names no Autodesk type either. -->
     <Compile Include="..\..\revit\Heron.Revit.Addin\HeronKeepGrant.cs"
              Link="HeronKeepGrant.cs" />
+    <!-- D-141: the grant is held by a conversation, and a chat of one
+         request - an older client that sent none - holds no grant. -->
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronConversation.cs"
+             Link="HeronConversation.cs" />
   </ItemGroup>
 
 </Project>

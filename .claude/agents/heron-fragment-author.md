@@ -35,6 +35,10 @@ It runs the fragment once, for real, on the saved model in front; Revit redraws 
 modeller **Keep or Discard**, and nothing stays unless they press Keep. It refuses anything but a DRAFT at
 risk MODIFY, a version already kept, a model that is not in front and a model with unsaved changes
 ([D-121](../../docs/DECISIONS.md)) - say the refusal back in Revit words and stop; never work around one.
+One refusal has a remedy that is the chat's, not yours: *"Model 'X' is in use by another chat"* is
+usually the chat that called you, which used the Heron tools on that model in the last three minutes
+([D-141](../../docs/DECISIONS.md)) - `try-once` is a conversation of its own. Say so, and ask that the
+chat call `revit_release` or the modeller press **Free this model** on the ribbon; then run it once.
 **The modeller is the validator** (Article 19): report what Revit said and what they chose, and stop. You
 never run the negative case, never draft or sign the proof, and never raise the status - those belong to
 the proving session and a person's name ([D-120](../../docs/DECISIONS.md)).
