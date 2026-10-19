@@ -49,6 +49,17 @@ purpose: >
      say in one line what is at stake and go on. Twice in two days a whole
      build was lost this way - a house with 9 sheets and a 32-floor tower,
      2026-10-13 and 14.
+     A SAVE IS CHECKED, NEVER TRUSTED - here and at every milestone: after
+     the typical storey is copied (step 5), after the doors and windows
+     (step 9), and at the end. Ask the modeller to CLICK INSIDE THE REVIT
+     WINDOW FIRST, then press Ctrl+S - the keys go to whichever window is in
+     front, often the chat - and then read REPORT_OPEN_DOCUMENTS (DRAFT,
+     version 3 on 2026-10-19) again: `fileTimes` must give the model's file
+     a time of now with no [unsaved changes], and `staleFileCount` 0. A
+     finding "the file on disk is from 10:42 - everything since is not
+     saved" means the save did not reach the disk: say so and ask again.
+     On 2026-10-19 a 40-floor tower's .rvt stayed at 10:42 for 25 minutes
+     while 124 changes went in, Ctrl+S pressed twice into the chat.
   1. CREATE_LEVELS (PROVEN) first, every level the building will have. A wall,
      a slab and a roof each belong to a level, and a level added afterwards
      leaves what was already built on the wrong one. Count them before going
@@ -404,9 +415,15 @@ note: >
   asked of PLACE_STRUCTURAL_FAMILY came out with no length, which is why
   step 14 names the line-based placement and not that one.
 
+  Step 0's save check was learned on a 40-floor tower built on Revit 2020 on
+  2026-10-19: Ctrl+S was pressed twice and the keys went to the chat, so the
+  .rvt stayed from before the build for about 25 minutes while Heron said only
+  "[unsaved changes]"; the file's time was read by hand. REPORT_OPEN_DOCUMENTS
+  version 3 reads that time (row 5b-1218, NEEDS-CHECKING Group HN).
+
   Every step is one entry in Revit's undo list. DRAFT until the whole order has
   been run from an empty level on a scratch model, with the count at the end
   compared against the plan. NEEDS-CHECKING Group AP covers the levels, walls,
   slabs, rooms, ceilings and roof, and Group AO the doors; no group yet covers
-  the stairs, the railings, the curtain-wall door or the colours, nor anything
-  the 2026-10-19 tower added.
+  the stairs, the railings, the curtain-wall door or the colours, nor what
+  the 2026-10-19 tower added but its save check, which is Group HN.
