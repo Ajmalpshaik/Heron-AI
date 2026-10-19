@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,6 +9,29 @@ semantic-identity: "make a stair between these two levels in this stair hall"
 kind: action
 domain: revit.elements
 capability: CREATE_STAIRS
+# Version 4 (2026-10-19, FRAGMENT-ISSUES 5b-1239, 5b-1240, 5b-1241, 5b-446):
+# every U stair in the Kerala house model (Revit 2020, Level 1 0 to Level 2
+# 3200) was refused. Four changes, same inputs:
+#   - ONE RISER MORE, ONCE. Revit made no 'Monolithic Stair' run whose riser was
+#     177.8 mm (3200 / 18): "Can't make stairs", whatever the tread, split or
+#     landing, while 17, 19-22 risers and four other types at 18 were made -
+#     measured rolled back on a copy. A stair Revit will not make is tried once
+#     more with one riser more (every riser lower), and the answer says so.
+#     On a U of an odd count the first run takes the smaller half when only
+#     that fits along the hall.
+#   - REVIT'S WORDS. A runs transaction Revit rolls back is refused quoting
+#     what Revit posted, read from the add-in's failure discipline (its
+#     ToString, row 5b-1240); an older add-in gives none, and none is quoted.
+#   - SIDE STRINGERS (5b-446). The first layout is a trial: what the plan
+#     extent overhangs each side of the hall is measured, rolled back, and the
+#     runs laid out that far in - '190mm max riser 250mm going' 50 mm each side.
+#   - A REFUSED RUN LEAVES NOTHING. Anything new in the model after a refusal
+#     is deleted again. The "2 (no category) kept" of 2026-10-19 were the
+#     add-in's miscount, not elements (5b-1241, fixed in RevitChangedSet).
+# Run rolled back only, Revit 2020, a copy of 'Kerala house design', 2026-10-19
+# (Group HS); never kept. DRAFT until HS is run and signed: version 3's proof
+# below is kept as a record and is stale.
+#
 # Version 3 (2026-10-13, FRAGMENT-ISSUES 5b-455): the answer names the railings
 # Revit adds with the stair - `railings`, their ids from
 # Stairs.GetAssociatedRailings read AFTER the edit scope's Commit (Revit adds
@@ -22,7 +45,7 @@ capability: CREATE_STAIRS
 # its path did not already give it. Version 1 always set it, and Revit 2020
 # refused that on every stair whose base level is not at 0 - see the
 # compatibility-note. Same inputs, same results; a stair from Level 2 now runs.
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 

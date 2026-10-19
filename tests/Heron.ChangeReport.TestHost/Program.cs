@@ -67,6 +67,7 @@ namespace Heron.ChangeReport.TestHost
             FirstIds();
             Written();
             Witnessed();
+            Vanished();
 
             Console.WriteLine();
             Console.WriteLine(_checks + " check(s), " + Failures.Count + " failed.");
@@ -146,6 +147,37 @@ namespace Heron.ChangeReport.TestHost
                   + "FRAGMENT's modification or deletion - exactly what happened");
             Check(split.Added == 3 && split.Modified == 1 && split.Deleted == 1 && split.Total == 5,
                   "the whole job's counts are the two parts added together");
+        }
+
+        // ------------------------------------------------------------------
+        private static void Vanished()
+        {
+            Console.WriteLine();
+            Console.WriteLine("9. an element the model no longer holds, with no commit saying so (5b-1241)");
+            var report = new HeronChangeReport(Label);
+            // A stair edit scope: Start adds the stair and a type, Cancel takes
+            // both back with no committed transaction - no Deleted ever comes.
+            report.Committed(Names("Heron: create stairs"), Ids("345908", "345909"), None, None);
+            report.Committed(Names(Label), Ids("20"), Ids("30", "31"), None);
+            report.Vanished("345908");
+            report.Vanished("345909");
+            report.Vanished("31");
+            report.Vanished("99");
+            var described = report.Describe(id => "Stairs");
+            Check(described.Fragment.Added == 1 && described.Fragment.Modified == 1,
+                  "added and gone is NOTHING, as added-then-deleted is - 1 added, 1 modified left, found "
+                  + described.Fragment.Added + " added, " + described.Fragment.Modified + " modified");
+            Check(described.Fragment.Deleted == 1,
+                  "modified and gone is DELETED - 1, found " + described.Fragment.Deleted);
+            Check(described.Total == 3,
+                  "and an id the run never named changes nothing - 3 in all, found " + described.Total);
+
+            var late = new HeronChangeReport(Label);
+            late.Committed(Names(Label), Ids("1"), None, None);
+            late.Describe(id => "Walls");
+            late.Vanished("1");
+            Check(late.Describe(id => "Walls").Fragment.Added == 1,
+                  "once described the report is sealed, and a later Vanished changes nothing");
         }
 
         // ------------------------------------------------------------------
