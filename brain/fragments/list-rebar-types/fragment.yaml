@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-110
+semantic-identity: "list the rebar bar types, hooks, covers and shapes this model has"
+kind: action
+domain: revit.elements
+capability: LIST_REBAR_TYPES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# THE FIRST STEP OF EVERY REBAR JOB (brain/skills/reinforce-concrete.yaml). A
+# structural spec says "T16" or "H12" or "16M"; whether the model has a bar
+# type of that name, or of that diameter, is a question only the model can
+# answer - so this read answers it before anything is placed. Every placing
+# tool takes a bar type by its EXACT name, or a diameter in millimetres
+# (D-71), and refuses anything else with the list this read gives. A word like
+# "T16" is never turned into a diameter by Heron: it is the modeller's word,
+# looked up here or asked (D-33, D-34).
+#
+# WHAT IT READS, every release 2020-2027:
+#   Rebar Bar Types   name, nominal diameter, model diameter (2022 and later
+#                     carry two; 2020 and 2021 one - read by #if, never a
+#                     parameter name), and the three bend diameters
+#   Rebar Hook Types  name, angle, extension (a multiple of the bar diameter)
+#                     and whether it is for standard bars or stirrups/ties
+#   Rebar Cover Types name and distance
+#   Rebar Shapes      how many, by style, and their names
+#   Area / Path Reinforcement Types, Fabric Sheet Types, Fabric Area Types
+#   the model's own setting "rebar shape defines hooks"
+#
+# Millimetres, rounded to 0.1 mm. Angles in degrees.
+#
+# READ ONLY. Opens no transaction and needs none.
+purpose: >
+  Lists the rebar bar types loaded in the model with their diameters and bend
+  diameters, the hook types, the cover types with their distances, the rebar
+  shapes, and the area, path and fabric reinforcement types - what a bar size,
+  hook or cover from a structural spec can be matched to.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: barTypes
+      # Rebar Bar Types found. Something the read FOUND.
+      role: result
+      type: int
+    - name: hookTypes
+      role: result
+      type: int
+    - name: coverTypes
+      role: result
+      type: int
+    - name: shapes
+      role: result
+      type: int
+    - name: systemTypes
+      # Area, path and fabric reinforcement types, and fabric sheet types.
+      role: result
+      type: int
+    - name: listing
+      # EVERY TYPE READ, in words, one section per kind. A STRING, because a
+      # reply cuts a list to three items and this is the answer. Accounting:
+      # it is what the counts above count.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation, one #if. Read off the shipped assemblies 2020 to 2027 on
+  2026-10-19 with tools/api-surface: RebarBarType.BarDiameter exists 2020-2022
+  (obsolete at 2022) and BarNominalDiameter / BarModelDiameter from 2022, so
+  2020 and 2021 read BarDiameter and 2022 on read the two. StandardBendDiameter,
+  StandardHookBendDiameter, StirrupTieBendDiameter, RebarHookType.HookAngle,
+  StraightLineMultiplier and Style, RebarCoverType.CoverDistance,
+  RebarShape.RebarStyle, ReinforcementSettings.RebarShapeDefinesHooks and the
+  Area/Path/Fabric type classes are present on all eight.
+  ReinforcementSettings.GetReinforcementSettings renamed its parameter at 2022
+  and kept its signature.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "what bar types are loaded"                 -> here
+#   "do we have a T16 bar type"                 -> here
+#   "what rebar is in these columns"            -> REPORT_HOST_REBAR
+#   "make a 16 mm bar type"                     -> CREATE_REBAR_BAR_TYPE
+#   "put 4 T16 and T8 links at 150 in these columns" -> PLACE_COLUMN_REBAR
+utterances:
+  - what rebar bar types are loaded
+  - list the rebar types in this model
+  - which bar sizes do we have
+  - do we have a T16 bar type
+  - what hook types and cover types are there
+  - show me the rebar shapes loaded

@@ -1,0 +1,137 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-117
+semantic-identity: "put top and bottom bars and stirrups in these concrete beams"
+kind: action
+domain: revit.elements
+capability: PLACE_BEAM_REBAR
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# "3 T20 BOTTOM, 2 T16 TOP, T10 STIRRUPS AT 200, 30 COVER" IS THE SENTENCE.
+# Every value is the modeller's, from his spec, and none is defaulted (D-33):
+#   bottomBars   "<count> x <bar type>" - "3 x 20mm" - or "none"
+#   topBars      the same, or "none"
+#   sideBars     side face (skin) bars, "<count per face> x <bar type>",
+#                spaced evenly between the top and bottom bars - or left out:
+#                none
+#   stirrups     "<bar type> @ <spacing in mm>" - "10mm @ 200" - or "none"
+#   stirrupHook  a Rebar Hook Type by its exact name for both ends of every
+#                stirrup, or "none" - asked, never chosen
+#   barHook      a hook for both ends of the top and bottom bars, turned into
+#                the beam - or left out: straight bars
+#   cover        millimetres to the stirrups on every face, ends included -
+#                or left out: the beam's own Rebar Cover parameters
+#
+# A BAR TYPE IS ITS EXACT NAME OR A DIAMETER IN MILLIMETRES (D-71); "T20" is a
+# bar type only if one is named "T20" (D-34). See PLACE_COLUMN_REBAR, which
+# reads them the same way.
+#
+# WHERE THE BARS GO, from the beam's own solid read along its line: the
+# length is the concrete that is there after the joins at its ends, less the
+# end cover. Each layer is one rebar set across the width (Fixed Number); the
+# stirrups one set along the length at the spacing asked as a MAXIMUM, first
+# and last included, closed, hooked at a top corner, the hooks into the core
+# by Revit's own Left/Right rule.
+#
+# NOT HERE: a curved beam, a vertical one, a rotated cross-section, a section
+# that is not a plain rectangle (a T or L beam), extra bars over the supports
+# and curtailment - each skipped and named, or not offered. A beam already
+# holding rebar is skipped, so a second run does not double it.
+#
+# ONE BEAM IS ALL OR NOTHING, and READ BACK after a regenerate: each set's
+# host and quantity against what was asked.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places bottom bars, top bars, side face bars and stirrups in straight
+  concrete beams from the bar counts, bar types, stirrup spacing, hooks and
+  cover the modeller gives.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: bottomBars
+      type: string
+      source: request
+    - name: topBars
+      type: string
+      source: request
+    - name: sideBars
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: stirrups
+      type: string
+      source: request
+    - name: stirrupHook
+      type: string
+      source: request
+    - name: barHook
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: cover
+      type: string
+      source: request
+      optional: true
+      absent: host
+  provides:
+    - name: placed
+      role: result
+      type: IList<ElementId>
+    - name: beamsReinforced
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      role: accounting
+      type: IList<string>
+    - name: readBackWrong
+      role: accounting
+      type: IList<string>
+    - name: report
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The same two routes as PLACE_COLUMN_REBAR, read off the shipped assemblies
+  2020 to 2027 on 2026-10-19: Rebar.CreateFromCurves with hook types and
+  RebarHookOrientation for 2020-2025, the BarTerminationsData form for 2026
+  on (the old form is obsolete at 2026 and gone at 2027). BarDiameter on
+  2020-2021, BarModelDiameter from 2022. STRUCTURAL_BEND_DIR_ANGLE,
+  LocationCurve, SetLayoutAsFixedNumber, SetLayoutAsMaximumSpacing and
+  RebarHostData are one signature on all eight.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "put bars and stirrups in these beams"      -> here
+#   "3 T20 bottom, 2 T16 top, links at 200"     -> here
+#   "put 4 T16 and T8 links at 150 in these columns" -> PLACE_COLUMN_REBAR
+#   "bottom mesh in these pad footings"         -> PLACE_FOOTING_REBAR
+utterances:
+  - put 3 T20 bottom bars and 2 T16 top bars with T10 stirrups at 200 in these beams
+  - reinforce these beams
+  - add stirrups and main bars to the selected beams
+  - place beam rebar with 30 cover

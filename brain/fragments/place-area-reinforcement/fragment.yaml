@@ -1,0 +1,133 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-119
+semantic-identity: "reinforce these slabs or walls with bars both ways, top and bottom"
+kind: action
+domain: revit.elements
+capability: PLACE_AREA_REINFORCEMENT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# "T12 AT 200 BOTH WAYS TOP AND BOTTOM" IS THE SENTENCE FOR A SLAB, A RAFT OR
+# A WALL. Revit's area reinforcement covers the whole host to its own boundary,
+# inside its own rebar cover, in up to four layers. Every layer is the
+# modeller's, from his spec, and each must be said - "none" for one that is not
+# wanted - because leaving a top mesh out is a design decision (D-33):
+#   topMajor, topMinor        "<bar type> @ <spacing in mm>" or "none"
+#   bottomMajor, bottomMinor  the same
+#   majorDirection            a slab: x, y, or an angle in degrees from the
+#                             model's x axis; a wall: horizontal or vertical
+#   hook                      a hook for the bar ends at the boundary, or left
+#                             out: none
+#   areaReinforcementType     the type by name, or left out: the only one
+#                             loaded (Revit's default is made if there is none,
+#                             and said; two or more are named and asked)
+# ON A WALL "TOP" IS THE EXTERIOR FACE AND "BOTTOM" THE INTERIOR FACE, which
+# is how Revit names the layers there (Exterior Major Direction is
+# REBAR_SYSTEM_ACTIVE_FRONT_DIR_1, read off RevitAPI.xml 2026-10-19). The
+# answer prints each layer with Revit's own label so it is never in doubt.
+#
+# A BAR TYPE IS ITS EXACT NAME OR A DIAMETER IN MILLIMETRES (D-71).
+#
+# SKIPPED AND NAMED: anything but a floor or a wall; a non-structural or
+# non-concrete host; a host already holding area reinforcement (a second run
+# would double it); a curved wall asked for a horizontal major direction.
+#
+# EACH HOST IS ALL OR NOTHING - a layer Revit refuses removes that host's area
+# reinforcement again - and READ BACK after a regenerate: each layer on or
+# off, its bar type, spacing and number of lines.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places area reinforcement over whole concrete slabs, foundation slabs and
+  walls - top and bottom (exterior and interior) layers, major and minor
+  directions - from the bar types, spacings and direction the modeller gives.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: majorDirection
+      type: string
+      source: request
+    - name: topMajor
+      type: string
+      source: request
+    - name: topMinor
+      type: string
+      source: request
+    - name: bottomMajor
+      type: string
+      source: request
+    - name: bottomMinor
+      type: string
+      source: request
+    - name: hook
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: areaReinforcementType
+      type: string
+      source: request
+      optional: true
+      absent: only
+  provides:
+    - name: placed
+      # Area reinforcement elements made and read back.
+      role: result
+      type: IList<ElementId>
+    - name: hostsReinforced
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      role: accounting
+      type: IList<string>
+    - name: readBackWrong
+      role: accounting
+      type: IList<string>
+    - name: report
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  AreaReinforcement.Create(Document, Element, XYZ, ElementId, ElementId,
+  ElementId) - the host-boundary form - GetRebarInSystemIds,
+  AreaReinforcementType.CreateDefaultAreaReinforcementType and every
+  REBAR_SYSTEM_* parameter used here, the _GENERIC ones included, are one
+  signature and one value on every release 2020-2027 (read off the shipped
+  assemblies 2026-10-19). BarDiameter on 2020-2021, BarNominalDiameter from
+  2022, for matching a diameter.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "T12 at 200 both ways in this slab"         -> here
+#   "reinforce the raft top and bottom"         -> here
+#   "T10 at 150 both faces of these walls"      -> here
+#   "lay a mesh sheet in this slab"             -> PLACE_FABRIC_REINFORCEMENT
+#   "bars along this slab edge"                 -> PLACE_PATH_REINFORCEMENT
+#   "bottom mesh in these pad footings"         -> PLACE_FOOTING_REBAR
+utterances:
+  - put T12 at 200 both ways top and bottom in this slab
+  - reinforce these walls with T10 at 150 each face
+  - add area reinforcement to the raft
+  - place slab rebar bottom both ways

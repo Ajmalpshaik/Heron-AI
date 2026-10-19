@@ -1,0 +1,145 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: reinforce-concrete
+name: Reinforce concrete columns, beams, footings, slabs and walls
+domain: revit.elements
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Puts real Revit rebar into concrete members from the values in a structural
+  spec - "4 T16 main bars and T8 links at 150 in these columns, 40 cover" -
+  and reads every bar back off the model. Every value is the modeller's: a bar
+  size, a cover, a spacing, a hook or a layout the spec does not give is ASKED,
+  one question at a time, never chosen (D-33). A word from a drawing - "T16",
+  "H12", "B1", "links" - is matched to what the model has in step 1, and asked
+  about when nothing matches; Heron never decides that a letter means a size
+  or a steel grade (D-34).
+
+  Every placing step below was DRAFT on 2026-10-19 - built and compiled for
+  Revit 2020 to 2027, not yet run in Revit (NEEDS-CHECKING Group HT). Until
+  the owner proves them, revit_change refuses to keep their changes (D-117);
+  each may be run once through try-once, behind Revit's Keep or Discard box
+  (D-119). The list of capabilities after this method is read from the
+  library every time it is served: where the two differ, the list is right.
+
+  0. SAVE THE MODEL FIRST - the rebar for a building is hundreds of sets.
+     REPORT_OPEN_DOCUMENTS says whether it has a file and when it was last
+     written; ask the modeller to click inside the Revit window, then Ctrl+S.
+  1. LIST_REBAR_TYPES - the bar types with their nominal diameters, hooks,
+     cover types and rebar shapes the model has. Every spec word is matched
+     against this list: a bar type by its exact name ("T16" only when a type
+     is named T16), or a diameter in millimetres (16) matched to the ONE type
+     of that diameter. No rebar shapes at all - an architectural template -
+     stops the job: Revit builds a bar's shape from the shapes already there,
+     so the structural shapes must be loaded first, by the modeller.
+  2. WHAT IS MISSING IS MADE FROM THE SPEC'S OWN VALUES, each asked:
+     CREATE_REBAR_BAR_TYPE (name, diameter and the three bend diameters),
+     CREATE_REBAR_COVER_TYPE (name and distance), CREATE_REBAR_HOOK_TYPE
+     (name, angle, extension as a multiple of the bar, standard or
+     stirrup/tie). The name follows the modeller's own naming rules.
+  3. THE HOSTS: the modeller's selection, or SELECT_BY_CATEGORY_NAME in a view
+     he names - Structural Columns, Structural Framing, Structural
+     Foundations, Floors or Walls. Count them and say the number before step 5.
+  4. SET_REBAR_COVER on the hosts, when the spec's cover is not what the host
+     holds - REPORT_HOST_REBAR reads it. Setting the host keeps its schedule,
+     its tags and every later bar agreeing with the spec; a placing tool's own
+     `cover` places the bars there but leaves the host's parameter as it was.
+  5. PLACE, by kind of member - each skips, and names, a host it cannot take
+     and a host that already holds rebar, so a second run never doubles bars:
+       columns   PLACE_COLUMN_REBAR - main bars "<count> x <bar type>", the
+                 layout for a rectangle with more than 4 bars ("3x3" - bars on
+                 each face along the width x along the depth), ties
+                 "<bar type> @ <spacing>" and the tie hook, asked
+       beams     PLACE_BEAM_REBAR - bottom, top and side face bars, stirrups
+                 at a spacing, the stirrup hook asked, hooks on the main bars
+                 if the spec has them
+       footings  PLACE_FOOTING_REBAR - pad footings and pile caps: bottom
+                 and top layers along the length and the width, and WHICH
+                 LAYER SITS OUTERMOST, asked
+       slabs, rafts and walls  PLACE_AREA_REINFORCEMENT - four layers, top /
+                 bottom (on a wall: exterior / interior) each major and minor,
+                 "none" said for any layer not wanted, and the major direction
+       a strip of bars along an edge or a line  PLACE_PATH_REINFORCEMENT
+       welded mesh  PLACE_FABRIC_REINFORCEMENT - the fabric sheet type by
+                 its exact name
+  6. REPORT_HOST_REBAR on the same hosts - THE PROOF, never skipped. Each set's
+     bar type, count, spacing and hooks, and each host's cover, read off the
+     model, against the spec. "Placed 6" from step 5 is not the proof; the bars
+     in the host are (D-30). A count that differs is said, with both numbers.
+  7. When the modeller wants to see them: SET_REBAR_VIEW_STATE - unobscured in
+     a view, and solid in a 3D view on Revit 2020 to 2023 (later releases draw
+     rebar solid at Fine detail). SET_CATEGORY_VISIBILITY turns the Structural
+     Rebar category on or off in a view.
+
+  NOT YET: a slanted column, a curved or rotated beam, a T or L section, a
+  wall (strip) foundation, bars over supports and curtailment, couplers and
+  laps along a bar, spirals, bending schedules (Revit's own rebar schedule
+  gives them), and taking existing rebar out (a delete, asked in Revit,
+  D-142).
+
+# The words the modeller says when he wants rebar.
+utterances:
+  - put 4 T16 main bars and T8 links at 150 in these columns, 40 cover
+  - reinforce these beams
+  - reinforce a column
+  - reinforce a beam
+  - reinforce a footing
+  - reinforce this slab top and bottom
+  - add rebar from the structural drawings
+  - detail the reinforcement in these concrete members
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  - REPORT_OPEN_DOCUMENTS
+  # Read first - it decides step 2.
+  - LIST_REBAR_TYPES
+  - CREATE_REBAR_BAR_TYPE
+  - CREATE_REBAR_COVER_TYPE
+  - CREATE_REBAR_HOOK_TYPE
+  - SELECT_BY_CATEGORY_NAME
+  - SET_REBAR_COVER
+  - PLACE_COLUMN_REBAR
+  - PLACE_BEAM_REBAR
+  - PLACE_FOOTING_REBAR
+  - PLACE_AREA_REINFORCEMENT
+  - PLACE_PATH_REINFORCEMENT
+  - PLACE_FABRIC_REINFORCEMENT
+  # The proof, on the hosts themselves. Never skipped.
+  - REPORT_HOST_REBAR
+  - SET_REBAR_VIEW_STATE
+  - SET_CATEGORY_VISIBILITY
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, and it is the model the modeller means
+  - the members are concrete and structural - Revit hosts rebar in nothing else
+  - the model has rebar shapes loaded (a structural template has them)
+  - every bar size, spacing, cover, hook and layout comes from the modeller or his spec, in millimetres, and none is assumed (D-33, D-71)
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WHY THE TYPES ARE READ FIRST. A structural spec names bars its own way -
+  T16, H16, 16M, #5, Y16 - and a Revit model names its bar types its own way.
+  The two meet only where a person says they do. Step 1 shows what the model
+  has; the modeller says which type each spec word means, or gives the
+  diameter; the placing tools take exactly that and refuse anything else with
+  the list. That refusal is the design, not a gap.
+
+  WHY THE HOST'S COVER IS SET BEFORE THE BARS. The placing tools read each
+  host's own Rebar Cover parameters when no cover is given, so the bars land
+  where the host says, and a schedule or a tag reading the host's cover agrees
+  with the drawing.
+
+  Every step is one entry in Revit's undo list. DRAFT until the whole order
+  has been run on a scratch model with structural content - a column, a beam,
+  a pad footing, a slab and a wall reinforced, and every one read back
+  (NEEDS-CHECKING Group HT).

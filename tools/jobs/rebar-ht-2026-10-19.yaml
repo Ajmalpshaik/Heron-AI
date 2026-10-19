@@ -1,0 +1,206 @@
+# NEEDS-CHECKING Group HT - the thirteen rebar fragments, DRAFT since 2026-10-19.
+#
+#     python tools/batch-prove.py tools/jobs/rebar-ht-2026-10-19.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/rebar-ht-2026-10-19.yaml
+#
+# THE MODEL is the scratch project docs/needs-checking/group-ht.md describes - a
+# new project from Revit's metric STRUCTURAL template, saved to
+# %TEMP%\heron-work\rebar-ht, with columns, a beam, a pad footing, a slab, a wall
+# and a steel column drawn on Level 1. Never a working model. The values below
+# are this proof's own, chosen for that model - never a design value Heron
+# offers anybody (D-33).
+#
+# THE NEGATIVE IS A DIFFERENT SELECTION OR A VALUE THAT MUST BE REFUSED, never a
+# cleared selection: a steel column is not a rebar host, a footing is not a
+# column, and a bar type named T16 does not exist. The run-twice negatives
+# (a host already holding rebar is skipped) are HT6 to HT12's own and are run
+# by hand, because the second run needs the first one KEPT.
+#
+# The bar types named here ("16mm" and the like) are DIAMETERS - each card reads
+# a number as millimetres (D-71) and needs exactly ONE loaded bar type of that
+# nominal diameter. Check with LIST_REBAR_TYPES first and change them if the
+# template carries two of a size.
+
+model: rebar-ht scratch project (metric structural template), Revit 2020
+
+defaults:
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Structural Columns
+    inViewOnly: "FloorPlan: Level 1"
+  negative-set:
+    categoryName: Structural Columns
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: list-rebar-types
+    write: false                       # risk READ
+    setup: []
+    expect: barTypes
+    note: >
+      The positive is this model; the negative is HT1's second project, from an
+      ARCHITECTURAL template, where every count must come back 0. The runner
+      cannot switch documents in one job, so the negative leg is run by hand.
+
+  - fragment: report-host-rebar
+    write: false                       # risk READ
+    negative-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+    expect: rebarSets
+    note: >
+      Run after HT6 is KEPT, so the columns hold rebar. The negative is the
+      walls before HT10 - valid hosts holding nothing - so rebarSets must be 0.
+
+  - fragment: place-column-rebar
+    set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+      mainBars: "4 x 16mm"
+      ties: "8mm @ 150"
+      tieHook: "Stirrup/Tie - 135 deg."
+      cover: "40"
+    negative-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+      mainBars: "4 x T16"
+      ties: "8mm @ 150"
+      tieHook: "Stirrup/Tie - 135 deg."
+      cover: "40"
+    expect: placed
+    note: >
+      The negative names a bar type no type carries - it must be refused, never
+      read as 16 mm. Change tieHook to the stirrup/tie hook LIST_REBAR_TYPES
+      names in this template if the name differs.
+
+  - fragment: place-beam-rebar
+    set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 2"
+      bottomBars: "3 x 16mm"
+      topBars: "2 x 12mm"
+      stirrups: "8mm @ 200"
+      stirrupHook: "Stirrup/Tie - 135 deg."
+      cover: "30"
+    negative-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+      bottomBars: "3 x 16mm"
+      topBars: "2 x 12mm"
+      stirrups: "8mm @ 200"
+      stirrupHook: "Stirrup/Tie - 135 deg."
+      cover: "30"
+    expect: placed
+
+  - fragment: place-footing-rebar
+    set:
+      categoryName: Structural Foundations
+      inViewOnly: "FloorPlan: Level 1"
+      bottomLength: "16mm @ 150"
+      bottomWidth: "16mm @ 150"
+      topLength: none
+      topWidth: none
+      outerLayer: length
+      cover: "75"
+    negative-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+      bottomLength: "16mm @ 150"
+      bottomWidth: "16mm @ 150"
+      topLength: none
+      topWidth: none
+      outerLayer: length
+      cover: "75"
+    expect: placed
+
+  - fragment: place-area-reinforcement
+    set:
+      categoryName: Floors
+      inViewOnly: "FloorPlan: Level 1"
+      majorDirection: x
+      topMajor: none
+      topMinor: none
+      bottomMajor: "12mm @ 200"
+      bottomMinor: "12mm @ 200"
+    negative-set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+      majorDirection: x
+      topMajor: none
+      topMinor: none
+      bottomMajor: "12mm @ 200"
+      bottomMinor: "12mm @ 200"
+    expect: placed
+
+  - fragment: set-rebar-cover
+    set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 2"
+      coverOther: "HT cover 45"
+    negative-set:
+      categoryName: Structural Framing
+      inViewOnly: "FloorPlan: Level 2"
+      coverOther: "33"
+    expect: changedIds
+    note: >
+      Needs HT3's cover type kept first. The negative asks a distance no cover
+      type gives, which must be refused naming the loaded ones.
+
+  - fragment: set-rebar-view-state
+    set:
+      categoryName: Structural Columns
+      inViewOnly: "FloorPlan: Level 1"
+      view: "3D View: {3D}"
+      unobscured: "yes"
+    negative-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+      view: "3D View: {3D}"
+      unobscured: "yes"
+    expect: changed
+    note: >
+      Needs HT6 kept, so the columns hold rebar. The walls hold none before
+      HT10, so nothing changes.
+
+  - fragment: create-rebar-bar-type
+    setup: []
+    set:
+      typeName: "HT 16"
+      diameter: "16"
+      standardBendDiameter: "64"
+      hookBendDiameter: "64"
+      stirrupBendDiameter: "32"
+    negative-set:
+      typeName: "HT 25"
+      diameter: "25"
+      standardBendDiameter: "100"
+      hookBendDiameter: "100"
+      stirrupBendDiameter: "20"
+    expect: created
+
+  - fragment: create-rebar-cover-type
+    setup: []
+    set:
+      coverName: "HT cover 45"
+      distance: "45"
+    negative-set:
+      coverName: "HT cover x"
+      distance: "forty"
+    expect: created
+
+  - fragment: create-rebar-hook-type
+    setup: []
+    set:
+      hookName: "HT tie 135"
+      angle: "135"
+      extension: "10"
+      hookStyle: "stirrup/tie"
+    negative-set:
+      hookName: "HT hook 200"
+      angle: "200"
+      extension: "12"
+      hookStyle: standard
+    expect: created

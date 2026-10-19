@@ -1,0 +1,127 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-120
+semantic-identity: "lay bars across a path on this slab or wall"
+kind: action
+domain: revit.elements
+capability: PLACE_PATH_REINFORCEMENT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# "U-BARS ALONG THE SLAB EDGE, T12 AT 200, 1200 LONG, TOP" IS THE SENTENCE.
+# Revit's path reinforcement lays bars ACROSS a path drawn on one slab or
+# wall, each bar the same length, at one spacing - an edge strip, extra top
+# steel over a beam, bars along the top of a wall. Every value is the
+# modeller's (D-33, D-71):
+#   elements               exactly ONE slab or wall - the host of the path
+#   path                   lines in millimetres, one run end to end:
+#                          "x,y,z; x,y,z | x,y,z; x,y,z"
+#   bars                   "<bar type> @ <spacing in mm>" - "12mm @ 200"
+#   barLength              millimetres, each bar
+#   face                   a slab's top or bottom, a wall's exterior or interior
+#   flip                   which side of the path the bars run to - left out:
+#                          Revit's own side; the answer and the view show it
+#   hook                   a hook at both ends of every bar, or left out: none
+#   pathReinforcementType  by name, or left out: the only one loaded (Revit's
+#                          default is made if there is none, and said)
+# Alternating bars are switched off: one length, one spacing.
+#
+# THE FACE is a number Revit does not document, so each value is tried and
+# the one Revit DISPLAYS as the face asked is kept - read back, never assumed.
+#
+# REFUSED BEFORE ANYTHING IS PLACED: more or fewer than one host, a host that
+# is not a structural concrete slab or wall, a path that is not one run, a
+# bar type, hook or type that is not in the model. A path Revit refuses is
+# removed again inside the same undo, with Revit's reason.
+#
+# READ BACK after a regenerate: bar type, spacing, length, face and the number
+# of bars Revit laid.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places path reinforcement on one concrete slab or wall - bars of one length
+  laid across a path the modeller draws, at the spacing and on the face he
+  gives.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: path
+      type: IList<Curve>
+      source: request
+    - name: bars
+      type: string
+      source: request
+    - name: barLength
+      type: string
+      source: request
+    - name: face
+      type: string
+      source: request
+    - name: flip
+      type: bool
+      source: request
+      optional: true
+    - name: hook
+      type: string
+      source: request
+      optional: true
+      absent: none
+    - name: pathReinforcementType
+      type: string
+      source: request
+      optional: true
+      absent: only
+  provides:
+    - name: placed
+      role: result
+      type: IList<ElementId>
+    - name: barsInPath
+      # The number of bars Revit laid, read off the path.
+      role: result
+      type: int
+    - name: readBackWrong
+      role: accounting
+      type: IList<string>
+    - name: report
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  PathReinforcement.Create(Document, Element, IList<Curve>, bool, ElementId,
+  ElementId, ElementId, ElementId), PathReinforcementType.
+  CreateDefaultPathReinforcementType and the PATH_REIN_* parameters used here
+  are one signature and one value on every release 2020-2027 (read off the
+  shipped assemblies 2026-10-19). BarDiameter on 2020-2021,
+  BarNominalDiameter from 2022, for matching a diameter.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "bars along this slab edge"                 -> here
+#   "extra top bars over this beam line"        -> here
+#   "T12 at 200 both ways in this slab"         -> PLACE_AREA_REINFORCEMENT
+utterances:
+  - lay T12 at 200 bars 1200 long along this slab edge, top face
+  - add path reinforcement along this line
+  - put edge bars along the top of this wall
+  - extra top bars over this beam line

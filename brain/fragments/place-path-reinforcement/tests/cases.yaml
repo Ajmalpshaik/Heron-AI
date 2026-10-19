@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one structural concrete floor, a 4000 mm path along one of its edges inside the slab, bars 12mm @ 200, barLength 1200, face top
+    expect: >
+      placed 1, barsInPath the number 200 mm gives along 4000 mm, `report`
+      naming the 12 mm type at 200 mm, 1200 mm long, face Top; the bars visible
+      across the edge in a plan
+
+negative:
+  - given: the same floor and a second floor selected together
+    expect: >
+      placed 0, refused - a path goes on ONE slab or wall
+  - given: an architectural (non-structural) floor, the same values
+    expect: >
+      placed 0, refused as not a rebar host
+  - given: the floor, a path of two lines that do not meet
+    expect: >
+      placed 0, refused - a path is one run, end to end
+
+second_route:
+  - select the path reinforcement and read Bar Spacing, Primary Bar - Type, Primary Bar - Length and Face in Properties
+  - one Ctrl+Z takes it back (Golden Rule 16)

@@ -1,0 +1,163 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-116
+semantic-identity: "put main bars and ties in these concrete columns"
+kind: action
+domain: revit.elements
+capability: PLACE_COLUMN_REBAR
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# "4 T16 MAIN BARS AND T8 LINKS AT 150, 40 COVER" IS THE SENTENCE. Every value
+# in it is the modeller's, from his structural spec, and none is defaulted
+# (D-33):
+#   mainBars    "<count> x <bar type>" - "4 x 16mm", "8 x T16" - or "none"
+#   barsPerFace a rectangular column's layout: "corners" (4 bars, the default
+#               when left out, because 4 bars can sit nowhere else) or
+#               "<w>x<d>" - bars on each face along the width x along the
+#               depth, corners counted on both: "3x3" is 8 bars. Any count
+#               other than 4 on a rectangle without it is REFUSED, not spread
+#               by a rule Heron chose. A round column spaces its bars evenly
+#   ties        "<bar type> @ <spacing in mm>" - "8mm @ 150" - or "none"
+#   tieHook     a Rebar Hook Type by its exact name for both ends of every
+#               tie, or "none". Asked, never chosen: 135-degree seismic hooks
+#               and 90-degree hooks are different designs
+#   cover       millimetres to the TIES on every face, sides, top and bottom
+#               - or left out: the column's own Rebar Cover parameters
+#   extendTop   millimetres the main bars run past the column's top - a lap
+#               into the column above - or left out (none): 0
+#
+# A BAR TYPE IS ITS EXACT NAME OR A DIAMETER IN MILLIMETRES (D-71). "T16" is a
+# bar type only if one is named "T16": Heron never decides that a letter means
+# a steel grade or a size (D-34). A diameter is matched to the ONE bar type of
+# that nominal diameter; two are named and the modeller picks; none is
+# refused, naming the loaded types and CREATE_REBAR_BAR_TYPE.
+#
+# WHERE THE BARS GO, from the column's own solid read in its own axes: the
+# ties' centre line at cover + half a tie from every face, the main bars' at
+# cover + a tie + half a main bar, both from the bottom cover to the top
+# cover. Main bars are one rebar set per face (Fixed Number), so a schedule
+# counts them as Revit would; a round column's are single bars round the
+# circle. Ties are one set at the spacing asked as a MAXIMUM (Revit's Maximum
+# Spacing layout), first and last tie included. Hooks point into the core:
+# computed from Revit's own rule for Left and Right (CreateFromCurves'
+# remarks), never assumed.
+#
+# REFUSED BEFORE ANYTHING IS PLACED: a bar type, hook or cover that is not in
+# the model; a standard hook asked for ties; no rebar shapes loaded (Revit
+# builds a bar's shape from the shapes already there). SKIPPED AND NAMED, the
+# rest still placed: an element that is not a structural column, not a rebar
+# host (steel, or not structural), slanted, not a plain rectangle or circle in
+# section, already holding rebar (run again, it would double), or one where
+# the cover leaves no room - bars closer than their own diameter, or no
+# length left.
+#
+# ONE COLUMN IS ALL OR NOTHING: a bar Revit refuses removes every bar this
+# run made in that column, inside the same undo, and names Revit's reason.
+#
+# READ BACK after a regenerate: each set's host, quantity and spacing, against
+# what was asked, in `report`; a mismatch is named in `readBackWrong`.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Places longitudinal main bars and ties in concrete structural columns -
+  rectangular or round - from the bar count, bar type, tie spacing, tie hook
+  and cover the modeller gives.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: mainBars
+      type: string
+      source: request
+    - name: barsPerFace
+      type: string
+      source: request
+      optional: true
+      absent: corners
+    - name: ties
+      type: string
+      source: request
+    - name: tieHook
+      type: string
+      source: request
+    - name: cover
+      type: string
+      source: request
+      optional: true
+      absent: host
+    - name: extendTop
+      type: string
+      source: request
+      optional: true
+      absent: none
+  provides:
+    - name: placed
+      # Rebar sets made and read back in their column.
+      role: result
+      type: IList<ElementId>
+    - name: columnsReinforced
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      # Columns handed in that took no bar, each with its reason (D-52).
+      role: accounting
+      type: IList<string>
+    - name: readBackWrong
+      # Sets whose quantity, spacing or host reads back other than asked.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # Column by column: section, covers used, each set as read back.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was placed at all, in plain words. Empty when it ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  TWO ROUTES, ONE #if, read off the shipped assemblies 2020 to 2027 on
+  2026-10-19 with tools/api-surface. Rebar.CreateFromCurves with two
+  RebarHookTypes and two RebarHookOrientations exists 2020-2026, is OBSOLETE at
+  2026 and GONE at 2027; RebarHookOrientation itself is gone at 2027. So 2020
+  to 2025 call that form, and 2026 on call the form taking a
+  BarTerminationsData (HookTypeIdAtStart/End, TerminationOrientationAtStart/
+  End, a RebarTerminationOrientation - 2026 on only). The bar diameter is
+  BarDiameter on 2020-2021 and BarModelDiameter from 2022. Everything else is
+  one signature on all eight: RebarShapeDrivenAccessor.SetLayoutAsFixedNumber
+  and SetLayoutAsMaximumSpacing, Rebar.Quantity / MaxSpacing / GetHostId,
+  RebarHostData, Arc.Create, Line.CreateBound, CylindricalFace.Axis /
+  get_Radius, Curve.ComputeDerivatives, and the CLEAR_COVER_* parameters.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "put 4 T16 and T8 links at 150 in these columns" -> here
+#   "reinforce these columns"                   -> here
+#   "put bars and stirrups in these beams"      -> PLACE_BEAM_REBAR
+#   "bottom mesh in these pad footings"         -> PLACE_FOOTING_REBAR
+#   "T12 at 200 both ways in this slab"         -> PLACE_AREA_REINFORCEMENT
+#   "what rebar is in these columns"            -> REPORT_HOST_REBAR
+utterances:
+  - put 4 T16 main bars and T8 links at 150 in these columns, 40 cover
+  - reinforce these columns with 8 bars and ties
+  - add vertical bars and ties to the selected columns
+  - place column rebar in these concrete columns
+  - put main bars and links in the round columns
