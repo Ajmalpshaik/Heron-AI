@@ -107,7 +107,8 @@ WHAT IT PROVES, when an SDK is installed
      in the model changed only from the add-in's count (row 5b-350) - with
      no count, or a lost answer, it says that was not measured; a
      capability that works inside a link goes the same way with no question
-     first (D-124);
+     first (D-124), and says how far it is proven as its own card reads - a
+     card that is not proven saying its answer is a claim;
      revit_isolate_temporary and revit_reset_temporary
      send their fixed operations with the pin, and an add-in refusal
      reaches the chat in its own words.
@@ -842,8 +843,33 @@ async def exercise_show(module):
               "ZOOM_TO_LINKED_ELEMENTS goes at once, as run_fragment_show, with no "
               "question first - selecting or zooming inside a link is not "
               "touching it (D-124)")
+
+        # HOW FAR IT IS PROVEN IS THE CARD'S, READ AS THE CARD READS TODAY.
+        # This said "DRAFT" outright until #662 proved the card, and then
+        # failed on every machine with the SDK - a claim the card no longer
+        # made. The DRAFT wording is still checked, on a stubbed status below.
+        folder, _ = module._fragment_for("ZOOM_TO_LINKED_ELEMENTS")
+        real_status = module.brain.proof_status
+        proof = real_status(folder) if folder else None
+        if proof and proof["status"] in ("PROVEN", "PRODUCTION"):
+            expect = ("CODE HAS CHANGED SINCE" if proof["stale"]
+                      else "has not changed since")
+            check(proof["status"] in said and expect in said
+                  and "claim" not in said,
+                  "and says how far it is proven, from its own card (%s)"
+                  % proof["status"])
+        else:
+            check("DRAFT" in said and "claim" in said,
+                  "and says it is a DRAFT - a claim, not a proof")
+
+        module.brain.proof_status = lambda name: dict(real_status(name) or {},
+                                                      status="DRAFT")
+        try:
+            said = await call("revit_show", linked)
+        finally:
+            module.brain.proof_status = real_status
         check("DRAFT" in said and "claim" in said,
-              "and says it is a DRAFT - a claim, not a proof")
+              "a show whose card is DRAFT says so - a claim, not a proof")
 
         print()
         revit.asked[:] = []
