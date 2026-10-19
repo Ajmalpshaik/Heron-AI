@@ -28,7 +28,12 @@ purpose: >
      modeller says every wall of the type should change, this step is skipped
      - and the answer from step 4 says how many walls that was.
   3. CREATE_WALL with the curtain wall type, along the modeller's points and at
-     his height, when the wall is not drawn yet.
+     his height, when the wall is not drawn yet. A CURVED curtain wall is one
+     wall on an arc: `arc MX,MY X,Y` in the points - a point it passes through,
+     then where it ends - and a round one is two arcs. Never a run of short
+     straight walls, which reads as flat facets close up. CREATE_WALL is DRAFT
+     at version 2, and until NEEDS-CHECKING Group HM proves it a change kept
+     from it is refused (D-117); how the panels sit on an arc is recorded there.
   4. SET_CURTAIN_WALL_GRID on the type - the vertical grid, the horizontal
      grid or both: a layout (none, fixed distance, maximum or minimum spacing)
      and a spacing in millimetres. A direction nobody mentioned is left alone.
