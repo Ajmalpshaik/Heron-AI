@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `app` and `doc` are in scope; leaves `documents`,
-// `paths`, `titles`, `activeTitle`, `count`, `familyList`, `familyCount` and
-// `findings` behind.
+// `paths`, `titles`, `activeTitle`, `count`, `familyList`, `familyCount`,
+// `fileTimes`, `staleFileCount` and `findings` behind.
 //
 // NO TRANSACTION, and it needs none. Nothing changes.
 //
@@ -23,6 +23,16 @@
 //
 // THE FAMILIES ARE ONE LINE, NOT A LIST. A list reaches the reply cut to three
 // entries of sixty characters, and a family's path alone is longer than that.
+//
+// WHEN THE FILE ON DISK WAS LAST WRITTEN (version 3, row 5b-1218). "[unsaved
+// changes]" says something is not saved, never how much. On 2026-10-19 a
+// 40-floor tower's .rvt stayed at 10:42 while 124 changes went in after 10:45:
+// Ctrl+S was pressed twice, and the keys went to another window. Only the
+// file's own time on disk showed it. So every project and family with a file
+// is given that time and its age in `fileTimes`, one line for the reason
+// `familyList` is, and one with unsaved changes whose file is older than
+// STALE_MINUTES is said out loud - the check a save is verified with, rather
+// than trusting that a key was pressed.
 
 var documents = new List<string>();
 var paths = new List<string>();
@@ -32,6 +42,8 @@ var activeTitle = "";
 var count = 0;
 var familyList = "";
 var familyCount = 0;
+var fileTimes = "";
+var staleFileCount = 0;
 
 if (doc != null && doc.IsValidObject) activeTitle = doc.Title;
 
@@ -39,6 +51,46 @@ var links = 0;
 var familyRows = new List<string>();
 var familiesNeverSaved = new List<string>();
 var projectsNeverSaved = 0;
+var fileRows = new List<string>();
+var staleRows = new List<string>();
+
+// Unsaved work this old, against a file this old, is said out loud. Fifteen
+// minutes: long enough that a save made a moment before the question is not
+// called stale, short enough that the tower's 25 minutes would have been.
+const int STALE_MINUTES = 15;
+var now = DateTime.Now;
+
+// The time the file was last written, or none: a cloud model's PathName is not
+// a file on this PC, and a file moved or deleted since it was opened has no
+// time to read. File.GetLastWriteTime answers 1601 for a missing file, so the
+// file is asked for first.
+Func<string, DateTime?> writtenAt = delegate (string p)
+{
+    if (string.IsNullOrEmpty(p)) return null;
+    try
+    {
+        if (!System.IO.File.Exists(p)) return null;
+        return System.IO.File.GetLastWriteTime(p);
+    }
+    catch (Exception) { return null; }
+};
+
+// The clock time alone when it is today, the date as well when it is not.
+Func<DateTime, string> clock = delegate (DateTime t)
+{
+    return t.ToString(t.Date == now.Date ? "HH:mm" : "yyyy-MM-dd HH:mm",
+        System.Globalization.CultureInfo.InvariantCulture);
+};
+
+Func<DateTime, string> age = delegate (DateTime t)
+{
+    var span = now - t;
+    if (span.TotalMinutes < -1) return "a time ahead of this PC's clock";
+    if (span.TotalMinutes < 1) return "under a minute ago";
+    if (span.TotalMinutes < 60) return (int)span.TotalMinutes + " min ago";
+    if (span.TotalHours < 48) return (int)span.TotalHours + " h " + span.Minutes + " min ago";
+    return (int)span.TotalDays + " days ago";
+};
 
 // DocumentSet is not generic, so the loop variable carries its type.
 foreach (Document candidate in app.Documents)
@@ -50,6 +102,25 @@ foreach (Document candidate in app.Documents)
     var path = candidate.PathName ?? "";
     // Document.Equals, as LOAD_FAMILY compares an open document with doc.
     var isActive = doc != null && candidate.Equals(doc);
+
+    // Version 3: when its file was last written, projects and families alike.
+    // A document never saved has no file, and the NEVER SAVED findings below
+    // already speak for it.
+    if (!string.IsNullOrEmpty(path))
+    {
+        var written = writtenAt(path);
+        fileRows.Add(title + "  -  "
+            + (written.HasValue
+                ? "file written " + clock(written.Value) + ", " + age(written.Value)
+                : "no file on this PC to read the time of - a cloud model, or a file moved since it was opened")
+            + (candidate.IsModified ? "  [unsaved changes]" : ""));
+
+        if (candidate.IsModified && written.HasValue && (now - written.Value).TotalMinutes >= STALE_MINUTES)
+        {
+            staleRows.Add("\"" + title + "\": the file on disk is from " + clock(written.Value)
+                + " (" + age(written.Value) + ") - everything since is not saved");
+        }
+    }
 
     if (candidate.IsFamilyDocument)
     {
@@ -86,6 +157,8 @@ foreach (Document candidate in app.Documents)
 
 familyCount = familyRows.Count;
 familyList = string.Join("  ||  ", familyRows.ToArray());
+fileTimes = string.Join("  ||  ", fileRows.ToArray());
+staleFileCount = staleRows.Count;
 
 // The whole reason this fragment reports paths. Said once, with the titles that
 // collide, rather than left for somebody to notice in the list.
@@ -119,6 +192,17 @@ if (familyCount > 0)
 {
     findings.Add(familyCount + " family document(s) open in the Family Editor, each in familyList "
         + "with its category and its file - a family is not a project to switch to.");
+}
+
+// WORK NOT YET ON DISK (version 3). A file older than the unsaved changes in
+// it is the tower of 2026-10-19: the keys went to another window, and only the
+// file's time showed it. Said with the time, and with where to click first.
+if (staleFileCount > 0)
+{
+    findings.Add(staleFileCount + " open document(s) have unsaved changes and a file on disk more than "
+        + STALE_MINUTES + " minutes old - " + string.Join("; ", staleRows.ToArray())
+        + ". Ctrl+S saves it: click inside the Revit window first, because the keys go to whichever "
+        + "window is in front, then read this again - the file's time should be now.");
 }
 
 // LOST WORK. A window with no file behind it is gone when it closes, and Heron
