@@ -154,7 +154,17 @@ started with no folder and then moved into Heron kept that first, empty folder i
 while the host ran Heron's hooks: python could not open the script, exited 2, and 2 is "block" to the
 host, so every prompt in that session was refused. Piped by hand through Git Bash on Windows the same
 day, with an empty folder in that variable, all four commands exit 0;
-[`tests/test_heron_session.py`](../../../tests/test_heron_session.py) runs them that way under bash. Each hook
+[`tests/test_heron_session.py`](../../../tests/test_heron_session.py) runs them that way under bash, and
+asks the guard and the prompt hook found that way something only the real script answers.
+
+**When neither place has the script** - another folder in that variable **and** no git repository around
+the hook - the three hooks in this skill **say nothing and exit 0** (since 2026-10-19): each command
+checks the path before it runs `python`, because advice is never a gate. Until then that case still
+exited 2 and blocked. **The guard is left failing closed there** - no script, so the edit is refused -
+and whether it should is [Q-80](../../../docs/open-questions/tier-2.md). A variable that names **another
+Heron checkout** runs that checkout's scripts, and its guard checks the wrong repository:
+[Q-81](../../../docs/open-questions/tier-2.md). The suite pins all three. **Proved under Linux bash only**:
+the Git Bash run of the new commands, with a backslash path holding a space, is owed. Each hook
 prints JSON with every non-ASCII character escaped, because a redirected Windows console encodes in the
 ANSI code page and dies on a character it has no byte for ([`heron-ship`](../heron-ship/SKILL.md) §2).
 **Proved on Linux only so far** — the first real Windows session start, showing the line, is the proof

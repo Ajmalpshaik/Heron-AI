@@ -1171,3 +1171,71 @@ word away.
 keeps its words with a note.
 
 ---
+
+### 🔵 Q-80 — When the boundary guard's script cannot be found at all, should the edit be refused, or let through unchecked? *(found 2026-10-19 hardening the hook commands after PR #675)*
+
+**What was found.** Every hook in [`.claude/settings.json`](../../.claude/settings.json) looks for its script
+under `$CLAUDE_PROJECT_DIR` and, failing that, in the repository the hook runs in (`git rev-parse
+--show-toplevel`). **When neither has it** - that variable names another folder **and** the hook runs
+outside any git repository - there is no script to run.
+
+- **The three advice hooks** (`session_line.py`, `local_only.py`, `main_moved.py`) now say nothing and
+  exit 0 there. Each is documented as *never a gate*, so silence is their right answer. Until 2026-10-19
+  python exited 2 on the missing path, and 2 is *"block"* to the host: every prompt was refused.
+- **The guard** ([`heron_guard.py`](../../.claude/skills/heron-guard/bin/heron_guard.py)) is **left as it
+  was**: python exits 2, and the host blocks the Write, Edit or MultiEdit. That is the guard's own trap 3 -
+  *"a boundary that fails open is not a boundary"* - holding one level up, but it is also every edit in that
+  session refused, with only python's *can't open file* to say why.
+- [`tests/test_heron_session.py`](../../tests/test_heron_session.py) §5 pins both: the advice hooks silent,
+  the guard not exiting 0.
+
+**The shapes the owner chooses between:**
+
+1. **Keep refusing - recommended.** The guard is deny-tier and fails closed everywhere else, so with no
+   script it refuses. A session in that state is already broken (no folder, no repository), and
+   `HERON_GUARD=off` cannot help because the script is what reads it. **Cost:** none in code; a line in
+   the [`heron-session`](../../.claude/skills/heron-session/SKILL.md) skill saying what the refusal means.
+2. **Refuse, but say why.** The command prints a deny of its own (*"the boundary guard's script was not
+   found - open the session in the Heron folder"*) instead of python's error. **Cost:** a longer command in
+   `settings.json`, held by the same suite.
+3. **Let it through.** The command exits 0 like the advice hooks. **Cost:** an edit that puts the Revit
+   vendor namespace outside `revit/` goes unchecked until `check-structure.py` runs.
+
+**Why the first.** It is what the guard already promises, the state it fires in is rare and broken anyway,
+and `check-structure.py` is not a reason to open the earlier gate.
+
+**Ajmal PS decides.** Until he does, nothing changes: the guard command is as PR #675 left it.
+
+---
+
+### 🔵 Q-81 — When `$CLAUDE_PROJECT_DIR` names ANOTHER Heron checkout, its copy of the guard checks the wrong repository. Is that accepted? *(found 2026-10-19 hardening the hook commands after PR #675)*
+
+**What was found.** A hook command runs the script under `$CLAUDE_PROJECT_DIR` whenever that folder has
+it, and falls back to the repository the hook runs in only when it does not. So if the variable names a
+**second** Heron checkout - an older clone, or a worktree - that copy's script runs, not this one's.
+
+- **The guard works out its root from its own file**
+  ([`heron_guard.py`](../../.claude/skills/heron-guard/bin/heron_guard.py) `main()`), so it takes **the
+  other checkout** as the repository. An edit to a file in the real one is *outside* that root, and the
+  guard lets it through **unchecked** - silently, which is the failure trap 1 warns of.
+- **The advice hooks** run the other copy's code, which may be older. They only advise, so the cost is a
+  stale or missing line.
+- **Pre-existing**, not caused by PR #675 or by the 2026-10-19 change: the commands preferred
+  `$CLAUDE_PROJECT_DIR` before either. Recorded, not fixed, because the fix changes which folder every hook
+  trusts.
+
+**The shapes the owner chooses between:**
+
+1. **Prefer the repository the hook runs in - recommended.** Each command asks `git rev-parse
+   --show-toplevel` first and falls back to `$CLAUDE_PROJECT_DIR` only outside a repository. **Cost:** four
+   commands and the §5 checks in `tests/test_heron_session.py`; a session whose working folder is not Heron
+   but whose variable is would then fall back as today.
+2. **Leave it, and say so.** A line in the [`heron-guard`](../../.claude/skills/heron-guard/SKILL.md) skill
+   that two checkouts on one PC can check each other's edits. **Cost:** none in code; the hole stays.
+
+**Why the first.** The guard exists to check the file being edited, and the repository the hook runs in is
+the one that file is in; the variable is the host's guess.
+
+**Ajmal PS decides.** Until he does, nothing changes.
+
+---
