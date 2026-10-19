@@ -34,6 +34,22 @@ positive:
     expect: >
       that family marked [ACTIVE] in familyList, and no project marked active
 
+  - given: >
+      version 3 - a saved project, then changed (a wall drawn) more than 15
+      minutes after its last save, and not saved again
+    expect: >
+      fileTimes names the project with its file's last-written time and age -
+      "file written HH:mm, N min ago" - and [unsaved changes]; staleFileCount
+      1, and a finding naming the project with that time - "the file on disk
+      is from HH:mm - everything since is not saved" - and telling the modeller
+      to click inside the Revit window before Ctrl+S. The time matches the
+      file's Date modified in Windows Explorer to the minute
+
+  - given: version 3 - a saved family open in the Family Editor, the same
+    expect: >
+      the family in fileTimes with its .rfa's time, staleFileCount 1, and the
+      finding naming the family - families are checked exactly as projects
+
 negative:
   - given: a session with two links loaded inside one project
     expect: >
@@ -52,6 +68,27 @@ negative:
     expect: >
       familyCount 0 and familyList empty - not a family invented from the
       project, and no NEVER SAVED finding for a family that is not there
+
+  - given: >
+      version 3 - the same project as the positive case, saved with Ctrl+S
+      after a click inside the Revit window, then read at once
+    expect: >
+      fileTimes gives that project's file a time of now - "under a minute ago"
+      - with no [unsaved changes]; staleFileCount 0 and no "not saved" finding.
+      THE NEGATIVE THAT MATTERS: a save that reached the disk is never called
+      stale
+
+  - given: >
+      version 3 - a project with unsaved changes made less than 15 minutes
+      after its last save
+    expect: >
+      its time and [unsaved changes] in fileTimes, staleFileCount 0, and no
+      "not saved" finding - recent unsaved work is not called stale
+
+  - given: version 3 - a project never saved
+    expect: >
+      not in fileTimes - it has no file - and named by the NEVER BEEN SAVED
+      finding exactly as version 2 names it; staleFileCount does not count it
 
   - given: a session with no project open at all
     expect: >
@@ -73,6 +110,11 @@ second_route:
   - >
     For a family listed NEVER SAVED: Ctrl+S in that window opens Save As rather
     than saving in place, which is Revit saying the same thing
+
+  - >
+    Version 3: Windows Explorer's Date modified column on the .rvt or .rfa
+    named in fileTimes. The two times agree to the minute; a fileTimes time
+    that does not move after a save is the save not reaching the disk
 
   - >
     The Manage Links dialog, for the linked models this fragment only counts.
