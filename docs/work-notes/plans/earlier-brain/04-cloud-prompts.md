@@ -2,6 +2,8 @@
 
 > **Type:** Operational work note. **Not specification.** Part of [the earlier-brain plan](README.md).
 > **Status:** Ready 2026-09-23. **Owner:** Ajmal PS.
+> **Read 2026-10-18: used, except C8's.** Every other package these prompts start has merged, is done, or
+> was dropped on the owner's word ([02 §0](02-work-packages.md)); C8's prompt is the only one not yet run.
 
 ---
 

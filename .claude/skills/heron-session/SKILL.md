@@ -18,7 +18,7 @@ trap [`heron-guard`](../heron-guard/SKILL.md) fell into, and the reason it moved
 | `bin/local_only.py` | before every prompt | only for a prompt **marked LOCAL** in a **cloud container**: *"This prompt is marked LOCAL (it needs Revit on the owner's PC) and this is a cloud container with no Revit. Say so in one line and stop. Tell the owner to start it on the Revit PC."* | **No** |
 | `bin/hook_log.py` | after every decision any Heron hook makes | nothing — it writes one line to a log outside the repository | **No** |
 
-**Why these two.** On 2026-09-22 a whole pull request duplicated one that had merged an hour earlier.
+**Why the first two.** On 2026-09-22 a whole pull request duplicated one that had merged an hour earlier.
 Neither was wrong on its own; the second session never learned main had moved. The start of a session
 and the moment before a merge are the two places that knowledge is cheapest and still changes something.
 

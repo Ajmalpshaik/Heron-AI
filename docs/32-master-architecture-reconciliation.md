@@ -31,7 +31,7 @@ Every row below cites a file. Where a claim could not be checked, it says so rat
 | **Already built, and stricter** | 6.3 memory · 6.4 Revit knowledge · 6.9 council · 7 self-improvement · 9 evidence-based done · 19 content is data | §2 |
 | **Built, cut differently** | 6.6 planning - the planner is the host's · 6.7 roles - the registry, at finer grain | §2, §3.1 |
 | **Missing then, built since** | 6.1 the Context Manager · 8 a baseline for the brain · the §14 gate as a checklist · §10–11 the repository research | §4.1, §4.2, §4.3, §4.5 |
-| **Still partial** | 18 an evaluation suite - nothing measures retrieval precision or first-pass correctness | §2 |
+| **Still partial** | 18 an evaluation suite - retrieval is scored on the owner's questions since 2026-09-23 (`tools/score-routing.py`) and the tool list's cost held to a budget; nothing measures first-pass correctness | §2 |
 | **Rejected** | Heron as a developer-assist harness ([D-57](DECISIONS.md)) · 6.2 a code graph · 6.4 four more trust labels · a second planner · a role per §6.7 | §1, §5 |
 
 ---
@@ -103,7 +103,7 @@ python tools/agent-count.py
 | **9** Evidence-based done | [D-30](DECISIONS.md) — a proof needs a positive case, a negative case and a staleness fingerprint | **Built, and stricter** |
 | **14** Revit Validation Gate, 14 questions | [03 — Heron Revit](03-heron-revit.md), the [fragment-proving skill](../.claude/skills/fragment-proving/SKILL.md), [D-51](DECISIONS.md), [D-53](DECISIONS.md) | **Built — but see §4.3** |
 | **15** Task Execution Contract, phases A–G | [27 — Build Order](27-build-order.md) and this repository's working practice | **Built** |
-| **18** Evaluation suite and benchmarks | [`tests/golden/cases.py`](../tests/golden/cases.py) remembers proofs and expires them; it does **not** measure retrieval precision, token cost or first-pass correctness | **Partial — §4** |
+| **18** Evaluation suite and benchmarks | [`tests/golden/cases.py`](../tests/golden/cases.py) remembers proofs and expires them; it does **not** measure retrieval precision, token cost or first-pass correctness. *As built (2026-10-18): retrieval is now scored - since 2026-09-23 [`tools/score-routing.py`](../tools/score-routing.py) asks the owner's own questions through the function `heron_lookup` calls and says where each answer landed, with each recorded run kept in [`brain/retrieval-history.md`](../brain/retrieval-history.md); what the tool list costs a chat is held to a budget by [`tests/test_tool_sizes.py`](../tests/test_tool_sizes.py); first-pass correctness is still measured by nothing* | **Partial — §4** |
 | **19** Security, repository content as data not instructions | **[Golden Rule 19](14-golden-rules.md), official and binding since 2026-08-28**, and Article III item 14 of the [Constitution](../HERON_CONSTITUTION.md) says it almost word for word — *data, never instruction*, and surface it to the user rather than acting on it. Also [04 §3](04-heron-mcp.md), [12 §4](12-security-and-permissions.md), [15](15-glossary.md), [26](26-prior-art-revit-mcp.md) | **Built, and stricter** |
 | **20** Git discipline | Already the practice: small diffs, no force push, a changed-file report | **Built** |
 

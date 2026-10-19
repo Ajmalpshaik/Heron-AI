@@ -2,6 +2,11 @@
 
 > **Type:** Operational work note. **Not specification.** Part of [the earlier-brain plan](README.md).
 > **Status:** Waiting for the cloud packages to merge. **Owner:** Ajmal PS.
+> **Read 2026-10-18: no longer waiting on the cloud.** Every package has merged, is done, or was dropped
+> except C8 ([02 §0](02-work-packages.md)), so what is left here is PC work. C5, C9 and C10 were dropped
+> on 2026-09-24, so their rows in §3 - and §2, which needs C5 - will not run as written. C1's checks are
+> NEEDS-CHECKING [Group AI](../../../needs-checking/group-ai.md): `AI1` to `AI3` passed on 2026-09-23 and
+> `AI4` is still waiting.
 
 ---
 

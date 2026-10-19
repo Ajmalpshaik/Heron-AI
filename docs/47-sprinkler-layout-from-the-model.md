@@ -325,3 +325,10 @@ its review log says what each of the 19 findings changed.
 (FRAGMENT-ISSUES 5b-340). Two defects the review found in what was already there are recorded, not
 fixed: the network read puts heads in Spaces by Revit's volume test (5b-338), and `sprinkler_spacing`
 passes a head standing on a wall (5b-339).
+
+> **As built (2026-10-18), from the rows' own status:** both were fixed on 2026-10-08 in the project
+> review. [5b-339](fragment-issues/section-5b-rows-326-350.md) - `measure_heads`, the one measure
+> `sprinkler_spacing` and `sprinkler_layout_room` share, fails a head within a millimetre of a wall. 5b-338
+> - `REPORT_SPRINKLER_NETWORK` asks again one foot above the head's level when no Space is at the head -
+> is fixed in source at DRAFT and stays open until [CE8](needs-checking/group-ce.md) runs it. 5b-340 is
+> still waiting on a run.

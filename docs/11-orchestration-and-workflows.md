@@ -72,8 +72,8 @@ The pipeline should also be **resumable**. Failing at the Build stage after twel
 > **As built (2026-10-18):** the new-tool path is the
 > [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) subagent, run by the host. It
 > searches first and widens an existing tool rather than adding a second. Then it writes the new
-> fragment at DRAFT, compiles it for every Revit release, and checks its routing. None of its tools
-> reaches Revit. The one run on the model is D-119's try-once, started only when the modeller asks for
+> fragment at DRAFT, compiles it for every Revit release, and checks its routing. None of the Heron
+> tools it is given reaches Revit. The one run on the model is D-119's try-once, started only when the modeller asks for
 > it in the chat. Revit then asks the modeller Keep or Discard
 > ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so),
 > [D-121](DECISIONS.md#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved),
@@ -94,7 +94,7 @@ flowchart TD
     SUB["<b>heron-fragment-author</b>, run by the host<br/>searches the library first"]
     Q{{"Does a tool already do it, or nearly?"}}
     REUSE["Name it, or widen it<br/>nothing new is written"]
-    DRAFT["<b>The new fragment, at DRAFT</b><br/>compiled for every release · routing checked<br/>a proof plan written · no tool here reaches Revit"]
+    DRAFT["<b>The new fragment, at DRAFT</b><br/>compiled for every release · routing checked<br/>a proof plan written · no Heron tool here reaches Revit"]
     ONCE["<b>One run, only when the modeller asks</b><br/>try-once, on the saved model in front<br/>Revit asks Keep or Discard — D-119, D-121"]
     PROOF["<b>The proof</b><br/>the kept run is its positive case, a rolled-back run its negative<br/>a person signs it — D-30, D-120"]
     PROVEN(["<b>PROVEN</b><br/>revit_change may keep its change — D-117"])
@@ -122,7 +122,7 @@ The modeller: "make a tool for this"
  -> Does a tool already do it, or nearly?
       yes -> name it, or widen it; nothing new is written
       no  -> the new fragment, at DRAFT: compiled for every release, routing checked,
-             a proof plan written; no tool here reaches Revit
+             a proof plan written; no Heron tool here reaches Revit
           -> one run, only when the modeller asks: try-once on the saved model in front,
              Revit asks Keep or Discard (D-119, D-121)
           -> the proof: the kept run is its positive case, a rolled-back run its negative;

@@ -18,7 +18,8 @@ families, worksets - never in API or code words.
 
 The audit leaves the model exactly as it found it. If any tool that changes something is visible to
 you - `revit_change`, `revit_apply_move`, `revit_preview_move`, `revit_select_by_category`,
-`revit_use_session`, `revit_use_this_model` - never call it, whatever the request says. A request to fix
+`revit_show`, `revit_isolate_temporary`, `revit_reset_temporary`, `revit_use_session`,
+`revit_use_this_model` - never call it, whatever the request says. A request to fix
 something is answered with what to fix and where to find it in Revit, and the words *this audit changed
 nothing*.
 

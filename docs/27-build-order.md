@@ -35,7 +35,7 @@ flowchart TD
         S1 --> S2 --> S3 --> S4 --> S5
     end
     G0{{"<b>Gate</b> · Phase 0 ends"}}
-    S6["<b>Step 6</b> · the first write, with the rails<br/>Revit 2024 · Group D<br/>a failure forced mid-move · not run"]
+    S6["<b>Step 6</b> · the first write, with the rails<br/>Revit 2024 · Group D<br/>a failure forced mid-move,<br/>an expired preview, the wrong model · not run"]
     G1{{"<b>Gate</b> · Phase 1 ends unproven<br/>Phase 2 began anyway"}}
 
     P0 ==> G0 ==> S6 ==> G1
@@ -106,7 +106,9 @@ PHASE 0 - read-only
   Step 5   more than one Revit      PROVEN    Revit 2020 and 2024
   -- Gate: Phase 0 ends --
   Step 6   the first write + rails  MEASURED  Revit 2024, Group D (D1 to D6, 2026-10-17);
-                                              a failure forced mid-move (golden G-12) not run
+                                              golden G-09, G-10, G-11, G-17 recorded then, STALE today;
+                                              G-08 and G-12 to G-16 never run - a failure forced
+                                              mid-move (G-12) among them
   -- Gate: Phase 1 ends unproven; Phase 2 began anyway (owner, 2026-08-28) --
 
 PHASE 2
@@ -125,7 +127,7 @@ PHASE 2
 | Steps | State | Evidence |
 |---|---|---|
 | 1 to 5 | **Proven** in Revit 2020 and 2024 | Golden cases `G-01` to `G-07` in [`tests/golden/cases.py`](../tests/golden/cases.py) (`G-04`, *Revit is busy*, on 2020 only) · the witnessed list in [HANDOVER §3](HANDOVER.md) · [the field notes](00e-field-notes-proven-bridge.md). **Those records read `STALE` today** — the code has moved under them since: `python tests/test_golden.py` says which, and a stale proof is owed a re-run, not withdrawn |
-| 6 | **Measured** on Revit 2024 | [Group D](needs-checking/group-d.md), `D1` to `D6`, 2026-10-17 — one Ctrl+Z, and +200.0000 mm on three ducts. A forced failure in the move itself, golden `G-12`, has not been run — the *Phase 1 ends here* gate below |
+| 6 | **Measured** on Revit 2024 | [Group D](needs-checking/group-d.md), `D1` to `D6`, 2026-10-17 — one Ctrl+Z, and +200.0000 mm on three ducts. Golden `G-09`, `G-10`, `G-11` and `G-17` (the preview, the distance, one undo, the audit) were recorded PROVEN on 2024 from that run and read `STALE` today. `G-08` (the write gate) and `G-12` to `G-16` (a failure forced mid-move, an expired preview, a model that changed, the wrong model, a second chat) have never met Revit — `python tests/test_golden.py` lists both. `G-12` is the *Phase 1 ends here* gate below |
 | 7 to 14 | **Built** | The *Status, 2026-08-29* note under Step 14. `python tools/check-gaps.py` checks each has a module in `brain/` and a test. Step 14's own proof — ten skills, each proven — is **not met**: `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
 | 15, 16, 17, 18 | **Not steps** | [Steps 15, 16 and 17](#steps-15-16-and-17--recorded-2026-09-06-because-they-were-in-use-and-were-not-written-down) below: batch markers, and Step 18 is defined nowhere |
 
@@ -253,7 +255,8 @@ Do not skip ahead. A write path built before the safety path is a write path tha
 5. **Permission gate in the add-in** — declared risk level per tool *([Q-5](OPEN-QUESTIONS.md), Part 4 §29)*
 6. **Emergency Stop** in the ribbon — built, then its button removed by [D-46](DECISIONS.md); the
    bridge's `stop` operation is its trigger now ([D-129](DECISIONS.md), [D-130](DECISIONS.md))
-7. Then, and only then: `revit_move_elements`
+7. Then, and only then: `revit_move_elements` — *built as two tools, `revit_preview_move` and then
+   `revit_apply_move`, the apply carrying the preview's token ([25 §5](25-multi-session-and-binding.md#5-the-stale-read--a-hazard-the-specifications-never-named))*
 
 **Prove it:** *"move them up 200 mm"* → preview → accept → it moves → **one Ctrl+Z puts it back exactly**.
 Then force a failure mid-operation and confirm the model is untouched.
@@ -507,6 +510,9 @@ cheaper than discovering it in week two.
 >   own.
 > - **The Orchestrator resolves through capabilities: met since 2026-08-29**, as above.
 >   `heron_lookup` and `heron_method` are how a chat reaches the library today.
+> - **The executor the 2026-08-29 note found missing is built.** The add-in compiles a fragment's C# with
+>   Roslyn inside Revit and runs it ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs),
+>   [D-28](DECISIONS.md)), through the three doors `revit_read`, `revit_show` and `revit_change`.
 
 ---
 

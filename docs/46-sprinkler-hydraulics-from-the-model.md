@@ -283,6 +283,11 @@ that printer - one home). Written by the brain from its own numbers; nothing is 
 | **Standpipes, hose reels, pumps from the model** | The same reader serves them; their panels are phase 4 |
 | **A comparison against a listed hydraulic program** | The proof (§11). Needs the owner's model and a calculation from one |
 
+*Checked 2026-10-18:* phase 2 is still not built. Were it built today, its value write would be refused
+before anything was sent: `SET_PARAMETER_VALUES_BY_ID` is DRAFT at version 3 and `revit_change` keeps
+a change only from a PROVEN fragment ([D-117](decisions/D-117.md); the Loads panel's Finalize meets the
+same, [row 5b-1129](fragment-issues/section-5b-rows-401-425.md)). `SET_MEP_SIZE` is PROVEN.
+
 ---
 
 ## 10. Decisions taken here, each the owner's to overturn

@@ -124,7 +124,7 @@ flowchart TD
     MS["<b>Heron MCP server</b> — Python<br/>the tools · finds the capability"]
     BR["<b>Heron Brain</b> — Python<br/>fragments · skills · knowledge · calculations"]
     SR["<b>Search</b> — finds the capability<br/>word match · built in, always on<br/><i>model2vec</i> — reads meaning · optional<br/><i>re-ranker</i> — a second read · optional"]
-    AD["<b>Heron Revit add-in</b> — C#<br/>compiles and runs the fragment<br/>one named TransactionGroup"]
+    AD["<b>Heron Revit add-in</b> — C#<br/>compiles and runs the fragment<br/>a change: one named TransactionGroup"]
     RV["<b>Revit</b><br/>2020 → latest"]
     CP["<b>Heron Companion</b><br/>a page beside Revit<br/>live view · editable tables"]
     PL["<b>Heron Platform</b><br/>install · update · config · switches"]
@@ -183,7 +183,7 @@ Heron MCP server      Python: the tools, finds the capability  <->  Heron Brain:
      |  named pipe, this PC only                                      knowledge, calculations
      |                                                                Search: word match (built in),
      |                                                                model2vec, re-ranker (optional)
-Heron Revit add-in    C#: compiles and runs the fragment, one named TransactionGroup
+Heron Revit add-in    C#: compiles and runs the fragment; a change runs in one named TransactionGroup
      |  ExternalEvent, Revit's main thread
 Revit                 2020 -> latest
 
@@ -217,14 +217,14 @@ tool ([D-132](docs/DECISIONS.md)). Everything that needs a model runs on the mod
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     A(["You ask for a change in the chat"])
-    P{{"Is the tool PROVEN,<br/>and its proof still current?"}}
+    P{{"Is the fragment PROVEN,<br/>and its proof still current?"}}
     S{{"Ribbon switches on?<br/>Changes · and Admin or Publish<br/>if the job needs one"}}
     K{{"Ask to Keep on?"}}
     B{{"Revit asks<br/><b>Keep</b> or <b>Discard</b>"}}
     KEEP(["Kept — one Undo entry<br/>named Heron: …"])
     NO["Refused, and it says why<br/>the model is not touched"]
     BACK["Rolled back<br/>the model is as it was"]
-    T["A new DRAFT tool<br/>one try, on a saved model — D-119<br/>the switches still apply"]
+    T["A DRAFT fragment<br/>one try-once, on the saved model in front<br/>D-119, D-121 · never through revit_change<br/>the switches still apply"]
 
     A --> P
     P -->|no| NO
@@ -254,7 +254,7 @@ flowchart TD
 
 ```text
 You ask for a change in the chat
-  -> is the tool PROVEN, its proof still current?   no  -> refused, says why, model not touched (D-117)
+  -> is the fragment PROVEN, its proof current?     no  -> refused, says why, model not touched (D-117)
   -> are the ribbon switches on? Changes, and Admin
      or Publish if the job needs one                off -> refused, says why, model not touched
   -> Ask to Keep on?                                off (the default) -> kept at once
@@ -262,8 +262,8 @@ You ask for a change in the chat
        Keep -> kept          Discard, Esc or close -> rolled back, the model is as it was
 Kept = one Undo entry named "Heron: ..."
 
-A new DRAFT tool: one try, on a saved model (D-119); the switches still apply,
-and Revit always asks Keep or Discard.
+A DRAFT fragment: one try-once, on the saved model in front (D-119, D-121) - never
+through revit_change; the switches still apply, and Revit always asks Keep or Discard.
 ```
 
 </details>
@@ -295,7 +295,7 @@ and [NEEDS-CHECKING.md](docs/NEEDS-CHECKING.md) holds everything still owed a re
 | **Keep or Discard, and the safety rails** | ⚠️ **Run in Revit 2024 and 2027 on 2026-10-18** on the owner's laptop — Keep, Discard, Esc and Undo pressed by hand. Faults found were logged, not hidden | [Group ET](docs/needs-checking/group-et.md) · [FRAGMENT-ISSUES](docs/FRAGMENT-ISSUES.md) rows 5b-1090 to 5b-1095 |
 | **The fragment library** | Mostly `PROVEN`, the rest `DRAFT` — count with the `grep` above. A `DRAFT` is *not proven as it stands*: new, or sent back when its code changed | [D-30](docs/DECISIONS.md) · [FRAGMENT-ISSUES](docs/FRAGMENT-ISSUES.md) |
 | **A fragment cannot end Revit** | ✅ **Proved in front of Revit on 2026-09-16.** A runaway recursion comes back as a finding, with Revit still running. `python tests/test_stack_guard.py` prints how many fragments carry the guard | [J9](docs/needs-checking/group-j.md) |
-| **Reading a model beyond counting it** | Four of five ran against real models on 2026-09-19 — `revit_phases`, `revit_systems`, `revit_parameters`, `revit_groups`; `revit_links` never has. **Those records are stale now**: the tools' code has changed since they were signed — `python tools/prove-agent.py check` | [`brain/agent-proofs/`](brain/agent-proofs/README.md) |
+| **Reading a model beyond counting it** | Four of five ran against real models and were signed between 2026-09-19 and 2026-09-22 — `revit_phases`, `revit_systems`, `revit_parameters`, `revit_groups`; `revit_links` never has. **Every signed agent record is stale now**: the code has changed since it was signed — `python tools/prove-agent.py check` | [`brain/agent-proofs/`](brain/agent-proofs/README.md) |
 | **Phase 2 — the brain** (Steps 7–14) | Built in full, mostly unproven: the fragment store, one knowledge store per scope, word and meaning search behind a hard Revit-version filter, the capability registry, the dependency graph | [27 — Build order](docs/27-build-order.md) |
 | **Skills** | Every one `DRAFT` — `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` | [`brain/README.md`](brain/README.md) |
 | **Companion, HVAC, fire, building loads, sprinkler layout and hydraulics, family building** | Built, **not proven** — each page's status line says exactly how far | [40](docs/40-heron-companion.md) · [41](docs/41-hvac-design.md) · [42](docs/42-fire-protection-design.md) · [43](docs/43-building-revit-families.md) · [44](docs/44-building-loads-from-the-model.md) · [46](docs/46-sprinkler-hydraulics-from-the-model.md) · [47](docs/47-sprinkler-layout-from-the-model.md) |
@@ -317,9 +317,9 @@ every typed copy has gone stale.
 | **Transport** | Named pipes — the add-in is the server, local-only by construction ([D-02](docs/DECISIONS.md)) |
 | **Revit threading** | One `ExternalEvent`, one request queue, one handler ([D-09](docs/DECISIONS.md)) |
 | **MCP tools** | Narrow tools, each with its own declared risk level ([D-03](docs/DECISIONS.md)). Fragments are reached by **capability** through them, never by id |
-| **Generated code** | Hybrid ([D-04](docs/DECISIONS.md)) — C# compiled at run time inside Revit's process while a fragment is unproven, compiled into an assembly for production ([D-28](docs/DECISIONS.md)) |
+| **Generated code** | Hybrid ([D-04](docs/DECISIONS.md)) — C# compiled at run time inside Revit's process, compiled into an assembly for `PRODUCTION` ([D-28](docs/DECISIONS.md)). No fragment is `PRODUCTION` yet, so today every one, `PROVEN` included, is compiled at run time |
 | **Licence** | Apache 2.0 ([D-08](docs/DECISIONS.md)) |
-| **Distribution** | Free and **open source** on public GitHub; Autodesk App Store later, also free ([D-07](docs/DECISIONS.md)) |
+| **Distribution** | Free and **open source** on public GitHub ([D-07](docs/DECISIONS.md)). An Autodesk App Store listing is kept possible, and nothing is built for it ([D-38](docs/DECISIONS.md)) |
 | **Building on** | The owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
 ---
@@ -363,7 +363,7 @@ Full index: **[docs/README.md](docs/README.md)**
 2. One agent should have one primary responsibility.
 3. Reuse proven knowledge before creating new knowledge.
 4. Never break a working Revit version unnecessarily.
-5. Personal knowledge must remain separate from company knowledge.
+5. Knowledge from one scope must remain separate from another — personal, company, and project.
 6. Experimental knowledge must remain separate from production knowledge.
 7. One agent creates; another agent validates.
 8. Background work must not interfere with user work.
@@ -373,7 +373,7 @@ Full index: **[docs/README.md](docs/README.md)**
 12. No automatic external publishing of private knowledge.
 13. No uncontrolled self-modification of production architecture.
 14. Every important autonomous operation must be auditable.
-15. The platform must be modular enough that agents, skills and fragments can be replaced without redesigning the system.
+15. The platform must be modular enough that individual agents, skills and fragments can be replaced without redesigning the entire system.
 16. One user action, one undo — per document.
 17. No autonomous write to a live model without a preview or a proven fragment.
 18. Generated code never touches a live model on its first run.

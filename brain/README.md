@@ -26,6 +26,57 @@ first ([D-126](../docs/DECISIONS.md), [D-138](../docs/DECISIONS.md)). `revit_cha
 `PROVEN` fragment whose proof still stands ([D-117](../docs/DECISIONS.md)); a `DRAFT` may run once,
 through the bridge client's `try-once`, behind the same box ([D-119](../docs/DECISIONS.md)).
 
+**The three doors, drawn** - read from `revit_read`, `revit_show` and `revit_change` in
+[`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) and from `write_operation`, `unproven_refusal`
+and `cmd_try_once` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py):
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    CH(["<b>The chat</b><br/>names a capability"])
+    RD["<b>revit_read</b><br/>nothing above ANALYZE"]
+    SH["<b>revit_show</b><br/>nothing above EXECUTE"]
+    CG["<b>revit_change</b><br/>PROVEN, proof still stands<br/>D-117"]
+    TO["<b>try-once</b><br/>bridge client command line<br/>a DRAFT's one run · D-119"]
+    OR["run_fragment_read<br/>no transaction"]
+    OS["run_fragment_show<br/>no transaction"]
+    OW["run_fragment_write<br/>MODIFY · Changes on · D-19"]
+    OP["run_fragment_publish<br/>run_fragment_admin<br/>a switch each · D-106"]
+    RF["<b>RevitFragment.cs</b><br/>compiled in Revit · D-28"]
+
+    CH --> RD --> OR --> RF
+    CH --> SH --> OS --> RF
+    CH --> CG --> OW --> RF
+    CG --> OP --> RF
+    TO -->|"apply: ask"| OW
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef draft fill:#F1F5F9,stroke:#94A3B8,stroke-width:1.5px,color:#334155,stroke-dasharray:4 3
+    class CH user
+    class RD,SH,CG brain
+    class TO draft
+    class OR,OS,OW,OP,RF addin
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+the chat names a capability
+  revit_read    nothing above ANALYZE                 -> run_fragment_read    no transaction
+  revit_show    nothing above EXECUTE                 -> run_fragment_show    no transaction
+  revit_change  PROVEN, proof still stands (D-117)    -> run_fragment_write   MODIFY, Changes on (D-19)
+                a PUBLISH or ADMIN card               -> run_fragment_publish / run_fragment_admin,
+                                                         a switch each (D-106)
+  try-once      the bridge client's command line,     -> run_fragment_write with "apply": "ask"
+                a DRAFT's one run (D-119)
+every operation -> RevitFragment.cs, compiled inside Revit (D-28)
+```
+
+</details>
+
 | | |
 |---|---|
 | Language | Python |
