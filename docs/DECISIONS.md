@@ -212,6 +212,7 @@ an edit.
 | [D-141](#d-141--one-model-is-used-by-one-chat-at-a-time-and-what-revit-keeps-for-a-chat-is-keyed-on-that-chat) | One model is used by one chat at a time, and what Revit keeps for a chat is keyed on that chat | ✅ Accepted · 2026-10-18 |
 | [D-142](#d-142--anything-a-kept-change-deletes-from-the-model-is-asked-in-revit-first-in-a-box-of-its-own-whatever-ask-to-keep-says-and-never-under-a-jobs-grant) | Anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant | ✅ Accepted · 2026-10-18 |
 | [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
+| [D-144](#d-144--a-superseded-decision-says-so-under-its-own-heading-where-its-citations-land) | A superseded decision says so under its own heading, where its citations land | ✅ Accepted · 2026-10-19 |
 
 ## Format
 
@@ -409,6 +410,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-11](OPEN-QUESTIONS.md)
 **Amended the same day by [D-26](#d-26--the-model-file-is-never-uploaded):** the cloud opt-in below is
+**Superseded in part by:** [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope), accepted 2026-09-20 - its framing, *cloud opt-in per scope*: the line is drawn by content type instead, documents may go and model data never leaves the PC
 
 **Full record:** [`decisions/D-24.md`](decisions/D-24.md)
 
@@ -487,6 +489,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-37 — The name is Heron AI, and no trademark check has been done
 
 **Status:** Accepted · **Date:** 2026-08-28 · **Answers:** [Q-24](OPEN-QUESTIONS.md)
+**Superseded in part by:** [D-85](#d-85--the-tab-says-heron-the-panel-says-ai-bridge-and-the-product-is-still-heron-ai), accepted 2026-09-20 - one sentence: the name no longer *"stays in the ribbon tab"*, which reads **Heron**, with the panel **AI Bridge**; the product is still Heron AI
 
 **Full record:** [`decisions/D-37.md`](decisions/D-37.md)
 
@@ -879,6 +882,8 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-09-23 · **Source:** Ajmal PS, 2026-09-23, asked as decision D1 of the earlier-brain plan
 **Amends:** [Constitution Article 9](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 17](14-golden-rules.md) · **Keeps:** [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
 **Superseded by:** [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), accepted by the owner 2026-10-17 - Revit asks the modeller Keep or Discard before a change from a chat is kept, and D-99's behaviour remains only as the owner's switch for that question
+**Superseded in part by:** [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on), accepted 2026-09-28 - the row *"Publish and Admin refused"* in its table, which reads *refused unless the owner's switch for that level is on*
+**Superseded in part by:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands), accepted 2026-10-17 - the row *"a warning line when the fragment is not `PROVEN`"*: that change is refused instead, before anything is sent
 
 **Full record:** [`decisions/D-99.md`](decisions/D-99.md)
 
@@ -893,6 +898,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Proposed · **Date:** 2026-08-31 · **Touches:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs), the risk ladder in the Constitution, [`tools/check-routing.py`](../tools/check-routing.py)
 **Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `5c84302`. This decision was D-47 from 2026-08-31 until the merge `1f884ae` (2026-09-02) left it out of the log, and commit `ec17e79` (2026-09-06) gave the number to a different decision. A citation of D-47 written before `ec17e79` means this decision.
+**Superseded in part by:** [D-128](#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model), accepted 2026-10-17 - item 2, *"Resolution, proposed and not built"*; item 1, the reporting, stands unchanged
 
 **Full record:** [`decisions/D-101.md`](decisions/D-101.md)
 
@@ -926,6 +932,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-09-27 · **Source:** Ajmal PS, 2026-09-27, in conversation, when NEEDS-CHECKING row AS4 failed on his PC
 **Supersedes:** [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) in full · **Restores:** the one sentence of [D-01](#d-01--execution-host-claude-code-plugin) that D-104 superseded - *"nothing is being built for it"* · **Keeps:** [D-01](#d-01--execution-host-claude-code-plugin), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
 **Affects:** removed - `mcp/server/heron_talk.py`, `mcp/heron-talk.cmd`, `HeronTalk.cs`, `HeronTalkMailbox.cs`, `HeronTalkWindow.cs`, `Resources/Talk.png`, `tests/Heron.Talk.TestHost/`, `tests/test_talk.py`, `tests/test_talk_contract.py`, `tests/test_talk_served.py`; put back as they were before #338 - [`.mcp.json`](../.mcp.json), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_dotnet.py`](../brain/heron_dotnet.py), [`gates.yml`](../.github/workflows/gates.yml)
+**Superseded in part by:** [D-108](#d-108--the-modeller-can-see-and-edit-herons-work-in-a-local-companion-page-and-the-chat-stays-the-only-place-to-talk-to-heron), accepted 2026-09-29 - point 2 only as far as *"works with Heron in the chat only"*: the modeller can see and edit Heron's work in a local Companion page, and the chat stays the only place to **talk** to Heron
 
 **Full record:** [`decisions/D-105.md`](decisions/D-105.md)
 
@@ -1241,3 +1248,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`check-secrets.py`](../tools/check-secrets.py), [`test_check_secrets.py`](../tests/test_check_secrets.py), [`heron_secrets.py`](../brain/heron_secrets.py) (`PATTERNS` gains `private key`, and `FAKE_PRIVATE_KEY`), [`test_secrets.py`](../tests/test_secrets.py), [`test_configuration.py`](../tests/test_configuration.py), [`gates.yml`](../.github/workflows/gates.yml), [`test_tag.py`](../tests/test_tag.py), [`AGENTS.md`](../AGENTS.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`heron-ship`](../.claude/skills/heron-ship/SKILL.md), [`tools/README.md`](../tools/README.md), [`check-gaps.py`](../tools/check-gaps.py), [12 §5a](12-security-and-permissions.md), [17](17-open-source-and-distribution.md)
 
 **Full record:** [`decisions/D-143.md`](decisions/D-143.md)
+
+## D-144 — A superseded decision says so under its own heading, where its citations land
+
+**Status:** Accepted · **Date:** 2026-10-19 · **Accepted:** Ajmal PS, 2026-10-19, in conversation: *"accept D-144, mark ready and merge"* · **Source:** the third file-level reading of an external project, which the owner asked for on 2026-10-18 so that its useful ideas could be taken into Heron ([33 §5.1](33-external-repository-research.md#51-affaan-mecc))
+**Keeps:** the log's own rule, in its preamble - append-only, a reversal is a new entry and the original stays · [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - the idea was studied in another project and re-authored here, nothing imported
+**Affects:** [`check-supersessions.py`](../tools/check-supersessions.py), [`test_check_supersessions.py`](../tests/test_check_supersessions.py), [`check-docs.py`](../tools/check-docs.py) (§13), [`tools/README.md`](../tools/README.md), and six notes in this log, under D-24, D-37, D-99, D-101 and D-105
+
+**Full record:** [`decisions/D-144.md`](decisions/D-144.md)
