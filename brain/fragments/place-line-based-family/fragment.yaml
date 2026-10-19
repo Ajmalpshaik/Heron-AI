@@ -76,6 +76,10 @@ compatibility-note: >
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_STRUCTURAL_FAMILY.
 #
 #   "put a beam along here"        -> here
+#   "place a beam between two points" -> here. PLACE_STRUCTURAL_FAMILY refuses
+#                                     a beam or a brace since its version 4 and
+#                                     names this one: at a point it left
+#                                     zero-length beams (FRAGMENT-ISSUES 5b-1201)
 #   "add the bracing"              -> here, structuralType Brace
 #   "place these diffusers"        -> PLACE_FAMILY_INSTANCES - POINT based
 #   "put a column at each of these"-> PLACE_STRUCTURAL_FAMILY - point, but
@@ -88,3 +92,5 @@ utterances:
   - add the bracing
   - place a line based family
   - put a beam from here to here
+  - place a beam between two points
+  - place a sloped beam from one point to another

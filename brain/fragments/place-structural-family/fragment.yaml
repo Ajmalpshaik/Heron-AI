@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put a structural column or a footing at each of these points
 kind: action
 domain: revit.elements
 capability: PLACE_STRUCTURAL_FAMILY
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -18,12 +18,18 @@ purpose: >
   column, a footing - with the structural type the caller asked for, and a
   column's top at the level and offset asked for.
 
+  **VERSION 4: A MEMBER DRIVEN BY TWO ENDS IS NOT PLACED AT A POINT.** Asked
+  as a beam or a brace, or handed a Structural Framing family, it is refused
+  before anything is placed and sent to PLACE_LINE_BASED_FAMILY. A placement
+  Revit leaves with no solid geometry is removed again and counted as failed,
+  never as placed.
+
   **VERSION 3: A STRUCTURAL FAMILY GOES IN ONLY AS ITS OWN KIND.** A family in
-  Structural Columns is placed only as a column, one in Structural Framing only
-  as a beam or a brace, one in Structural Foundations only as a footing -
-  anything else is refused, naming what to ask for, and nothing is placed.
-  Revit itself takes a column family asked as a beam and places it (row 128);
-  a family in any other category is left to Revit, as before.
+  Structural Columns is placed only as a column, one in Structural
+  Foundations only as a footing - anything else is refused, naming what to
+  ask for, and nothing is placed. Revit itself takes a column family asked as
+  a beam and places it (row 128); a family in any other category is left to
+  Revit, as before.
 
   **VERSION 2 GIVES A COLUMN ITS TOP.** Version 1 placed a column on its base
   level and said nothing about where it stopped. `topLevelName` and
@@ -60,6 +66,25 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
+# VERSION 4 - FRAGMENT-ISSUES 5b-1201. Seen 2026-10-19 on Revit 2020.2: the
+# symbol "M_Concrete-Rectangular Beam : 400 x 800mm" (Structural Framing),
+# structuralType Beam, Level 1, three points answered placed 3, failed 0.
+# Revit then deleted the geometry of two ("Line is too short", "Can't create
+# sweep"), and the zero-length beams stayed in the model as a success. A beam
+# or a brace is driven by the line between its two ends; a point cannot give
+# one. So "beam" or "brace" asked of a family that is not a column or a
+# foundation, and a Structural Framing family asked as anything, is refused
+# before anything is placed, with a sentence naming PLACE_LINE_BASED_FAMILY
+# and its `curves` form ("0,0,0; 5000,0,0 | ..." in millimetres). A column or
+# foundation family asked as a beam keeps version 3's sentence - ask for it
+# as its own kind. And after one regenerate every placement is looked at: an
+# instance that is gone, or holds no solid with volume at Fine detail, is
+# removed again inside the same undo, counted in `failed` and named in
+# `findings`; one Revit will not let go of undoes the whole run, so the answer
+# never says "removed" of something still in the model. A family with no
+# solid of its own is counted the same way: it
+# is not a structural member. The words above are kept short on purpose - a
+# purpose's words move routing and a comment's do not.
 contract:
   needs:
     - name: doc
@@ -96,6 +121,8 @@ contract:
       type: IList<ElementId>
     - name: failed
       # Points nothing could be placed at. Never an instance it placed (D-52).
+      # VERSION 4: an instance Revit left with no solid geometry counts here,
+      # removed again, never in `placed`.
       role: accounting
       type: int
     - name: tops
@@ -117,6 +144,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group HO proves version 4 (D-30). The version 3 code it ran
+# is still the path every column and footing request takes.
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -166,6 +197,11 @@ compatibility-note: >
   origin a bounding box is read in. The offset arrives in millimetres and
   becomes feet by / 304.8 (D-20).
 
+  Version 4, compiled 2020 to 2027 on 2026-10-19: `Options.DetailLevel`,
+  `ViewDetailLevel.Fine`, `Element.get_Geometry(Options)`,
+  `GeometryInstance.GetInstanceGeometry()`, `Solid.Volume`,
+  `Element.IsValidObject` and `Document.Delete(ElementId)`.
+
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_LINE_BASED_FAMILY.
 #
 #   "put a column at each grid intersection" -> here
@@ -173,6 +209,9 @@ compatibility-note: >
 #   "place these sprinkler heads"            -> PLACE_FAMILY_INSTANCES, which is
 #                                               NonStructural and correct for it
 #   "put a beam along this line"             -> PLACE_LINE_BASED_FAMILY
+#   "place a beam between two points"        -> PLACE_LINE_BASED_FAMILY - this
+#                                               one refuses a beam or a brace
+#                                               since version 4 (5b-1201)
 
 
 # ROUTING (2026-10-12, the gap fill)
