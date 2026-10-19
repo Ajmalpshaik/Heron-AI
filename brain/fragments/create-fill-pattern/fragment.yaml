@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -79,6 +79,33 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, angleDegrees 0,
+    crossSpacingMm 600, fillTarget FillPatternTarget, findings 1 item(s) [Made model fill
+    pattern "Heron Tile 600": 0 degrees, 600 mm ...], kind model, madeNew true, name Heron
+    Tile 600, pattern FillPatternElement, readBack 0 degrees, 600 mm apart; 90 degrees, 600
+    mm apart, refused (null), replaceExisting false, spacingMm 600. inputs came patternName
+    as given; target as given; angleDegrees as given; spacingMm as given; crossSpacingMm as
+    given; replaceExisting as given. on Project2'
+  negative_case: 'run with angleDegrees=0, categoryName=Text Notes, crossSpacingMm=600, inViewOnly=FloorPlan:
+    Level 1, patternName=Heron Tile Bad, replaceExisting=False, spacingMm=0, target=model
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmPerFoot 304.8, angleDegrees 0, crossSpacingMm 600, fillTarget FillPatternTarget, findings
+    1 item(s) [The spacing must be more than 0 mm, so NOTHING WAS MADE.], kind model, madeNew
+    false, name Heron Tile Bad, pattern (null), readBack , refused The spacing must be more
+    than 0 mm, so NOTHING WAS MADE., replaceExisting false, spacingMm 0. inputs came patternName
+    as given; target as given; angleDegrees as given; spacingMm as given; crossSpacingMm as
+    given; replaceExisting as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 10655fc94a170c29
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

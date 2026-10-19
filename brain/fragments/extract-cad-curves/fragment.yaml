@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-IMP-019
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -90,6 +90,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,997 elements), Revit 2020, session 16356
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned asDetailLines
+    true, byLayer 11 entry(ies), cap 500, coordinates , created 32 item(s) [345653, 345654,
+    345655, ...], curvedSkipped 0, findings 3 item(s) [1 CAD import(s) read. Layers and curve
+    segments: ''A-DOOR-IDE..., 32 detail line(s) created from 32 matched segment(s), These
+    landed on a default line style, not on anything matchi...], importsRead 1, layerCounts
+    11 entry(ies), listOnly false, maxCurves 500, wantedLayers 1 item(s) [A-WALL]. inputs
+    came imports from the selection (1); layerNames as given (1); asDetailLines as given;
+    view as given; maxCurves as given; listOnly as given. on Project1'
+  negative_case: 'run with asDetailLines=True, categoryName=Ducts, inViewOnly=Heron 3D, layerNames=A-WALL,
+    listOnly=False, maxCurves=500, view=FloorPlan: Level 1 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned asDetailLines
+    true, byLayer 0 entry(ies), cap 500, coordinates , created 0 item(s), curvedSkipped 0,
+    findings 1 item(s) [None of what was handed in is an imported or linked CAD file...],
+    importsRead 0, layerCounts 0 entry(ies), listOnly false, maxCurves 500, wantedLayers 1
+    item(s) [A-WALL]. inputs came imports from the selection (1); layerNames as given (1);
+    asDetailLines as given; view as given; maxCurves as given; listOnly as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5add408e6c26e391
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

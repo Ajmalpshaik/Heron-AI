@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -166,32 +166,51 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-11'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  model: Project1 (3,081 elements), Revit 2020, session 30308
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned byId 5 entry(ies),
-    findings 2 item(s) [5 value(s) written across 5 matched row(s). Every value writ..., Skipped:
-    0 because the parameter is not there, 0 because it ...], includeTypeParameters false,
-    quotingIsBroken false, rowsMatched 5, rowsUnmatched 0, splitRecords Func`2, splitRow Func`2,
-    valuesRejected 0, valuesWritten 5. inputs came elements from the selection (5); csvPath
-    as given; includeTypeParameters as given. on Project1 work_ajmal.al'
-  negative_case: 'run with categoryName=Ducts, csvPath=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/b7dd5897-0db3-4fc5-b8aa-33f89dd8c419/scratchpad/exports/params-nomatch.csv,
-    inViewOnly=1 - Mech, includeTypeParameters=False instead - chosen because it should not
-    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
-    set-selection with this phase''s own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned byId 5 entry(ies), findings 7 item(s)
-    [0 value(s) written across 0 matched row(s), 5 row(s) matched...,   row 2: ''1'' is not
-    one of the elements handed in,   row 3: ''2'' is not one of the elements handed in, ...],
-    includeTypeParameters false, quotingIsBroken false, rowsMatched 0, rowsUnmatched 5, splitRecords
-    Func`2, splitRow Func`2, valuesRejected 0, valuesWritten 0. inputs came elements from
-    the selection (5); csvPath as given; includeTypeParameters as given. on Project1 work_ajmal.al'
+    and Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
+    0, blankMode skip, blankWord skip, byId 5 entry(ies), cellsCleared 0, changedOnRegeneration
+    0, findings 3 item(s) [5 value(s) written across 5 matched row(s). Every value writ...,
+    Skipped: 0 because the parameter is not there, 0 because the..., 0 blank cell(s) skipped
+    - those elements keep the value they...], includeTypeParameters false, isYesNo Func`2,
+    pending 5 item(s) [(Autodesk.Revit.DB.Wall, Comments, 2, HERON CSV 1, , HERON C..., (Autodesk.Revit.DB.Wall,
+    Comments, 3, HERON CSV 2, , HERON C..., (Autodesk.Revit.DB.Wall, Comments, 4, HERON CSV
+    3, , HERON C..., ...], pendingAt 5 entry(ies), quotingIsBroken false, readBack 0 item(s),
+    readOf Func`3, rowFindings , rowsMatched 5, rowsUnmatched 0, splitRecords Func`2, splitRow
+    Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true, on, ...], untickedWords 4 item(s)
+    [no, false, off, ...], valuesRejected 0, valuesWritten 5, yesNoProperty (null), yesNoRoute
+    ParameterType, yesNoSpec (null), yesNoSpecs (null). inputs came elements from the selection
+    (5); csvPath as given; includeTypeParameters as given; blankCells as given. on Project1'
+  negative_case: 'run with blankCells=skip, categoryName=Walls, csvPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/elion-proofs/files/params-negative.csv,
+    inViewOnly=FloorPlan: Level 1, includeTypeParameters=False instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned blankCellsSkipped
+    0, blankMode skip, blankWord skip, byId 5 entry(ies), cellsCleared 0, changedOnRegeneration
+    0, findings 8 item(s) [0 value(s) written across 5 matched row(s). Every value writ...,   row
+    2: no parameter called ''ZZZNOTHINGHERE'' on id 345492 -...,   row 3: no parameter called
+    ''ZZZNOTHINGHERE'' on id 345493 -..., ...], includeTypeParameters false, isYesNo Func`2,
+    pending 0 item(s), pendingAt 0 entry(ies), quotingIsBroken false, readBack 0 item(s),
+    readOf Func`3, rowFindings row 2: no parameter called ''ZZZNOTHINGHERE'' on id 345492
+    - fix the header, or the category has not got that parameter at all | row 3: no parameter
+    called ''ZZZNOTHINGHERE'' on id 345493 - fix the header, or the category has not got that
+    parameter at all | row 4: no parameter called ''ZZZNOTHINGHERE'' on id 345494 - fix the
+    header, or the category has not got that parameter at all | row 5: no parameter called
+    ''ZZZNOTHINGHERE'' on id 345495 - fix the header, or the category has not got that parameter
+    at all | row 6: no parameter called ''ZZZNOTHINGHERE'' on id 345496 - fix the header,
+    or the category has not got that parameter at all, rowsMatched 5, rowsUnmatched 0, splitRecords
+    Func`2, splitRow Func`2, tickOf Func`2, tickedWords 4 item(s) [yes, true, on, ...], untickedWords
+    4 item(s) [no, false, off, ...], valuesRejected 0, valuesWritten 0, yesNoProperty (null),
+    yesNoRoute ParameterType, yesNoSpec (null), yesNoSpecs (null). inputs came elements from
+    the selection (5); csvPath as given; includeTypeParameters as given; blankCells as given.
+    on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cb8381c0c15c1e0a
-
+  fingerprint: 54d4e6bf68d40f09
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

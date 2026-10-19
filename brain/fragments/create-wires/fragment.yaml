@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -87,6 +87,48 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,151 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    devices 2 item(s) [Standard, Standard], draw Action`4, electrical Func`2, findings 3 item(s)
+    [1 wire(s) drawn in "Level 1", 0 end(s) left on no device., Order walked nearest-first
+    from the first device: 354207 > 3..., 354207 to 354210: wire 354212, 2 of 2 ends on a
+    device.], lines 2 item(s) [Order walked nearest-first from the first device: 354207 >
+    3..., 354207 to 354210: wire 354212, 2 of 2 ends on a device.], looseEnds 0, made 1, noConnector
+    0 item(s), planDistance Func`3, pointProblem (null), pointText , points (null), refusal
+    (null), report Order walked nearest-first from the first device: 354207 > 354210 | 354207
+    to 354210: wire 354212, 2 of 2 ends on a device., shape WiringType, snap 0.984251968503937,
+    snapMm 300, style arc, typeElement WireType, wantedType , wireIds 1 item(s) [354212].
+    inputs came elements from the selection (2); view as given; pointsMm as given; wireType
+    as given; wiringStyle as given; snapMm as given. on Project1'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, pointsMm=, snapMm=300,
+    view=FloorPlan: Level 1, wireType=, wiringStyle=arc instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    devices 0 item(s), draw Action`4, electrical Func`2, findings 3 item(s) [0 wire(s) drawn
+    in "Level 1", 0 end(s) left on no device., With no points, wires are drawn from device
+    to device, and f..., No electrical connector, so left out: 345432, 345433, 345434...],
+    lines 2 item(s) [With no points, wires are drawn from device to device, and f..., No electrical
+    connector, so left out: 345432, 345433, 345434...], looseEnds 0, made 0, noConnector 6
+    item(s) [345432, 345433, 345434, ...], planDistance Func`3, pointProblem (null), pointText
+    , points (null), refusal With no points, wires are drawn from device to device, and fewer
+    than two devices with an electrical connector were handed in - so NO WIRE WAS DRAWN.,
+    report With no points, wires are drawn from device to device, and fewer than two devices
+    with an electrical connector were handed in - so NO WIRE WAS DRAWN. | No electrical connector,
+    so left out: 345432, 345433, 345434, 345435, 345436, 345557, shape WiringType, snap 0.984251968503937,
+    snapMm 300, style arc, typeElement WireType, wantedType , wireIds 0 item(s). inputs came
+    elements from the selection (6); view as given; pointsMm as given; wireType as given;
+    wiringStyle as given; snapMm as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e70eb61029f72d8c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

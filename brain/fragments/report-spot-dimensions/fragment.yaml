@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,6 +91,32 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,027 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run. returned constraintsCategory 1 item(s)
+    [id -2000262], constraintsLeftOut 0, describe Func`2, dimensionCount 1, dimensionLines
+    1 item(s) [Level 1 | Dimensions (Linear) | Diagonal - 2.5mm Arial | rea...], dimensionRows
+    1 item(s) [(Level 1, Level 1 | Dimensions (Linear) | Diagonal - 2.5mm A...], dimensions
+    Level 1 | Dimensions (Linear) | Diagonal - 2.5mm Arial | reads 6000 | between Walls 345432
+    / Walls 345434 | dimension 345539, findings 1 item(s) [0 spot dimension(s) in "Level 1",
+    1 other dimension(s), 0 me...], inScope Func`1, lines 0 item(s), onNothing 0 item(s),
+    rows 0 item(s), shownText Func`5, spotCount 0, spots , view ViewPlan, viewProblem (null),
+    wantedView FloorPlan: Level 1. inputs came viewName as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, viewName=FloorPlan:
+    Level 2 instead - chosen because it should not contain what this fragment reports. returned
+    constraintsCategory 1 item(s) [id -2000262], constraintsLeftOut 0, describe Func`2, dimensionCount
+    0, dimensionLines 0 item(s), dimensionRows 0 item(s), dimensions , findings 1 item(s)
+    [0 spot dimension(s) in "Level 2", 0 other dimension(s), 0 me...], inScope Func`1, lines
+    0 item(s), onNothing 0 item(s), rows 0 item(s), shownText Func`5, spotCount 0, spots ,
+    view ViewPlan, viewProblem (null), wantedView FloorPlan: Level 2. inputs came viewName
+    as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d8a788029e0b295e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

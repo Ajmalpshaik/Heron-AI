@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,28 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (2,960 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned acquired true, after E/W -5000
+    mm, N/S 0 mm, elevation 0 mm, angle to True North 0 degrees, before E/W 0 mm, N/S 0 mm,
+    elevation 0 mm, angle to True North 0 degrees, findings 3 item(s) [Acquired shared coordinates
+    from ''HeronLinkSource.rvt : 2 : ..., This model''s internal origin, in shared coordinates
+    - before..., NO ELEMENT MOVED. Every shared coordinate, spot coordinate a...], origin
+    Func`1, refused 0 item(s). inputs came linkInstance as given. on Project1'
+  negative_case: 'run with linkInstance=HeronLinkSource.rvt : 1 : location <Not Shared> instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned acquired false,
+    after , before , findings 1 item(s) [''HeronLinkSource.rvt : 1 : location <Not Shared>''
+    is not loa...], origin Func`1, refused 1 item(s) [''HeronLinkSource.rvt : 1 : location
+    <Not Shared>'' is not loa...]. inputs came linkInstance as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 72d0e08226c642cf
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

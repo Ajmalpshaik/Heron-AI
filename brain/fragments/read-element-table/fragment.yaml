@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,37 @@ contract:
     - name: findings
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,067 elements), Revit 2020, session 2648
+  positive_case: 'run with maxRows=1 - the first of 3 tracked inputs - the arrangement was
+    re-made first by running select-by-category-name, set-selection with this phase''s own
+    values. returned backslash \, cap 1, columnList 2 item(s) ["Length", "Area"], esc Func`2,
+    findings 1 item(s) [Only the first 1 elements are in the table; 5 more were left...],
+    groupLocked Func`3, isMark Func`2, maxRows 1, names 2 item(s) [Length, Area], quote ",
+    readValue Func`2, rowCount 1, rows 1 item(s) [{"id": "345432", "uniqueId": "69a466b6-3244-45f2-bf6b-ccb3b0...],
+    storedValue Func`2, tableJson {"format": 1, "columns": ["Length", "Area"], "rows": [{"id":
+    "345432", "uniqueId": "69a466b6-3244-45f2-bf6b-ccb3b0733dc9-00054558", "category": "Walls",
+    "family": null, "type": "Generic - 200mm", "cells": {"Length": {"value": "10000", "raw":
+    "32.808398950131235", "noCopy": false, "editable": false, "why": "read-only - Revit sets
+    it"}, "Area": {"value": "28 m²", "raw": "305.34415235497153", "noCopy": false, "editable":
+    false, "why": "read-only - Revit sets it"}}}], "truncated": 5}, theOne Func`3, truncated
+    5. inputs came elements from the selection (6); parameterNames as given; maxRows as given.
+    on Project1'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). read-element-table\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      maxRows=1 -> rowCount 1\n      maxRows=3 -> rowCount\
+    \ 3\n      maxRows=6 -> rowCount 6\n\n    Different inputs, exact matches every time.\
+    \ A fragment falling back to the active view, the whole model, or a previous run could\
+    \ not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 011218548b5d5720
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

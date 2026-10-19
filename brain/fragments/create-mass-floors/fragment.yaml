@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -55,6 +55,33 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,081 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned added 2, alreadyThere
+    0, findings 2 item(s) [2 mass floor(s) added and read back; 0 already there., mass 346940:
+    floors at Level 1, Level 2.], levels 2 item(s) [Level 1, Level 2], lines 1 item(s) [mass
+    346940: floors at Level 1, Level 2.], massCategory 1 item(s) [id -2003400], report mass
+    346940: floors at Level 1, Level 2., wanted HashSet`1. inputs came elements from the selection
+    (1); levelNames as given. on Project1'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, levelNames=Level
+    1, Level 2 arranged with categories=Walls, exact=False, maxMm=3000,300,100, minMm=2000,-300,-100
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned added 0, alreadyThere 0, findings 2 item(s) [0 mass floor(s) added and read back;
+    0 already there., 345492: not a mass.], levels 2 item(s) [Level 1, Level 2], lines 1 item(s)
+    [345492: not a mass.], massCategory 1 item(s) [id -2003400], report 345492: not a mass.,
+    wanted HashSet`1. inputs came elements from the selection (1); levelNames as given. on
+    Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 17f643c5d3822792
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

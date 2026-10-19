@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SEL-008
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,27 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,027 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run. returned MmPerFoot 304.8, elements 1 item(s)
+    [Diagonal - 2.5mm Arial], findings 1 item(s) [1 linear dimension(s) measure at most 20000
+    mm in "Level 1";...], high 65.6167979002625, low -Infinity, matched 1, maxMm 20000, minMm
+    0, notLinear 0, outside 0, view ViewPlan, viewProblem (null), wantedView FloorPlan: Level
+    1. inputs came viewName as given; minMm as given; maxMm as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, maxMm=60000,
+    minMm=50000, viewName=FloorPlan: Level 1 instead - chosen because it should not contain
+    what this fragment reports. returned MmPerFoot 304.8, elements 0 item(s), findings 1 item(s)
+    [0 linear dimension(s) measure between 50000 and 60000 mm in ...], high 196.850393700787,
+    low 164.041994750656, matched 0, maxMm 60000, minMm 50000, notLinear 0, outside 1, view
+    ViewPlan, viewProblem (null), wantedView FloorPlan: Level 1. inputs came viewName as given;
+    minMm as given; maxMm as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 58733b5430abd228
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

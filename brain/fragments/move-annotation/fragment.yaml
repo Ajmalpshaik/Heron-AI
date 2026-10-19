@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,31 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned arranging false,
+    byHead 0, byLocation 2, findings 1 item(s) [2 moved - 0 by its tag head, 2 by its location
+    point - and 0...], how , known 9 item(s) [align left, align right, align top, ...], moved
+    2 item(s) [345537, 345538], notMovable 0 item(s), placeOf Func`2, putAt Action`2. inputs
+    came elements from the selection (2); target as given; arrange as given. on Project2
+  negative_case: 'run with arrange=, categoryName=Walls, inViewOnly=FloorPlan: Level 1, target=1000,0,0
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned arranging false, byHead 0, byLocation 0, findings 1 item(s)
+    [0 moved - 0 by its tag head, 0 by its location point - and 5...], how , known 9 item(s)
+    [align left, align right, align top, ...], moved 0 item(s), notMovable 5 item(s) [345432,
+    345433, 345434, ...], placeOf Func`2, putAt Action`2. inputs came elements from the selection
+    (5); target as given; arrange as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4fe6364c7c5bed53
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,27 @@ contract:
       # looked, never a spacing it found (D-52).
       role: accounting
       type: bool
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,101 elements), Revit 2020, session 30308
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values. returned anchor XYZ, anchorIsGuessed
+    true, found true, largest 32.8083989501312, smallest 0.0492125984251968, spacingX 1.96850393700787,
+    spacingY 1.96850393700787, surfacePattern FillPattern. inputs came ceiling as given. on
+    Project1
+  negative_case: 'run with categoryName=Walls, ceiling=selected, inViewOnly=FloorPlan: Level
+    1 arranged with categories=Walls, exact=False, maxMm=3000,300,100, minMm=2000,-300,-100
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase''s own values.
+    returned anchor XYZ, anchorIsGuessed true, found false, largest 32.8083989501312, smallest
+    0.0492125984251968, spacingX 0, spacingY 0, surfacePattern (null). inputs came ceiling
+    as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cf8afe67243215f7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

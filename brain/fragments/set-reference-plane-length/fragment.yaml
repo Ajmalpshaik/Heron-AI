@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -53,6 +53,32 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Family1, Revit 2020, session 2648 - the count is NOT recorded because 3,126 elements
+    was measured on Project1, the document in front, and this ran against another one (row
+    15)
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-categories with this phase's own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, alreadyThat
+    0, changed 2, findings 1 item(s) [2 reference plane(s) set to 5000 mm about their middles
+    and ...], lengthMm 5000, lines 0 item(s), report , target 16.4041994750656. inputs came
+    elements from select-by-categories (2); lengthMm as given. on Family1
+  negative_case: 'run with lengthMm=0 arranged with categories=Reference Planes, inViewOnly=FloorPlan:
+    Ref. Level instead - chosen because it should not contain what this fragment reports -
+    the arrangement was re-made first by running select-by-categories with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MmPerFoot 304.8, alreadyThat 0, changed 0, findings 1 item(s) [A
+    length must be more than 0 mm. NOTHING WAS CHANGED.], lengthMm 0, lines 1 item(s) [A length
+    must be more than 0 mm. NOTHING WAS CHANGED.], report A length must be more than 0 mm.
+    NOTHING WAS CHANGED., target 0. inputs came elements from select-by-categories (2); lengthMm
+    as given. on Family1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2f32eb7ea12e0f37
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

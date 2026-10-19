@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PHS-032
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -107,23 +107,29 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-08'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned elements 1053 item(s) [Tees, Tees,
-    Tees, ...], findings 1 item(s) [1053 element(s) created in 'New Construction'. 0 more
-    carry ...], wantCreated New Construction, wantDemolished , withoutPhasing 0. inputs came
-    createdPhaseName as given; demolishedPhaseName as given; categories as given (1). on Snowdon-scratch_ajmal.al
-  negative_case: 'run with createdPhaseName=ZZZNOTHINGHERE, demolishedPhaseName=, categories=Ducts
-    instead - chosen because it should not contain what this fragment reports. returned elements
-    0 item(s), findings 1 item(s) [No phase is called ''ZZZNOTHINGHERE''. This model has:
-    New Con...], wantCreated ZZZNOTHINGHERE, wantDemolished , withoutPhasing 0. inputs came
-    createdPhaseName as given; demolishedPhaseName as given; categories as given (1). on Snowdon-scratch_ajmal.al'
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run. returned elements 6 item(s) [Generic - 200mm,
+    Generic - 200mm, Generic - 200mm, ...], findings 1 item(s) [6 element(s) created in 'New
+    Construction'. 0 more carry no ...], includeLinks false, linkBlocked , linkDocs 0 item(s),
+    linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only
+    - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0, wantCreated New Construction,
+    wantDemolished , withoutPhasing 0. inputs came createdPhaseName as given; demolishedPhaseName
+    as given; categories as given (1); includeLinks not given - false (optional). on Project1
+  negative_case: 'run with categories=Walls, categoryName=Text Notes, createdPhaseName=Existing,
+    demolishedPhaseName=, inViewOnly=FloorPlan: Level 1 instead - chosen because it should
+    not contain what this fragment reports. returned elements 0 item(s), findings 1 item(s)
+    [0 element(s) created in ''Existing''. 0 more carry no phasing ...], includeLinks false,
+    linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
+    0, wantCreated Existing, wantDemolished , withoutPhasing 0. inputs came createdPhaseName
+    as given; demolishedPhaseName as given; categories as given (1); includeLinks not given
+    - false (optional). on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: baa499edae34ff77
-
+  fingerprint: 3be3f228f8a81b38
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

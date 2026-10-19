@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -109,6 +109,38 @@ contract:
       # read the same.
       role: accounting
       type: int
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    create-area-plan, create-area-boundary-lines, place-areas with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned areas 1 item(s) [[Project2, Autodesk.Revit.DB.Area]], findings 7 item(s) [1 placed
+    area(s) reported; 0 unplaced, 0 unbounded, Read THIS MODEL ONLY. Areas in a linked model
+    were not count..., SCHEME 'Gross Building' - 1 area element(s):, ...], includeLinks false,
+    linksSearched 0, listEachArea true, placedCount 1, schemeTotalsM2 1 item(s) [Gross Building
+    = 27.84 m2], sources 1 item(s) [[Project2, Autodesk.Revit.DB.Document]], unbounded 0 item(s),
+    unplaced 0 item(s). inputs came schemeNameContains as given; listEachArea as given; includeLinks
+    not given - false (optional). on Project2
+  negative_case: 'run with areaPlanName=Heron Area Plan, areaSchemeName=Gross Building, categoryName=Text
+    Notes, inViewOnly=FloorPlan: Level 1, level=Level 1, listEachArea=True, loopsMm=, names=Office,
+    numbers=A1, pointsMm=2500,3000, schemeNameContains=ZZZ NO SUCH SCHEME, traceWalls=outside,
+    viewName=Heron Area Plan instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running create-area-plan, create-area-boundary-lines,
+    place-areas with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned areas 1 item(s) [[Project2, Autodesk.Revit.DB.Area]],
+    findings 4 item(s) [0 placed area(s) reported; 0 unplaced, 0 unbounded, Read THIS MODEL
+    ONLY. Areas in a linked model were not count..., 1 Area element(s) in the model, but none
+    in a scheme whose n..., ...], includeLinks false, linksSearched 0, listEachArea true,
+    placedCount 0, schemeTotalsM2 0 item(s), sources 1 item(s) [[Project2, Autodesk.Revit.DB.Document]],
+    unbounded 0 item(s), unplaced 0 item(s). inputs came schemeNameContains as given; listEachArea
+    as given; includeLinks not given - false (optional). on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 40ebdf9d010f4bad
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,26 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned hidden 5, markers 6 item(s) [North,
+    East, West, ...], onSheet 11 entry(ies), onSheetsOnly true, placedViewIds HashSet`1, refused
+    , shown 0, unmatched 1 item(s) [345524]. inputs came view as given; onSheetsOnly as given.
+    on Project2
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, onSheetsOnly=False,
+    view=FloorPlan: Level 1 instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned hidden 0, markers 6 item(s) [North, East, West, ...], onSheet 11
+    entry(ies), onSheetsOnly false, placedViewIds HashSet`1, refused , shown 0, unmatched
+    0 item(s). inputs came view as given; onSheetsOnly as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 728ce78049b403ce
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

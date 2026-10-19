@@ -1,0 +1,21 @@
+# Batch 9, 2026-10-18 - Revit 2020 session 2648, scratch Project1 (never saved), same model as
+# batch 8 (parts made from the off-axis wall at y=8000, kept). Every write ROLLED BACK.
+model: "Project1 (scratch, never saved), Revit 2020"
+defaults:
+  in: "Project1"
+  write: true
+  setup: [select-in-region, set-selection]
+  setup-set: {minMm: "-100,7800,-100", maxMm: "5100,8200,3100", exact: false, categories: "Parts"}
+  negative-setup-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls"}
+jobs:
+  - fragment: set-railing-type
+    setup: []
+    expect: railingType
+    set: {railingTypeName: "1100mm", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    negative-set: {railingTypeName: "No Such Railing", duplicateAs: "", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+  - fragment: set-parts-excluded
+    set: {include: false}
+    negative-set: {include: false}
+  - fragment: offset-part-faces
+    set: {faces: "top", offsetMm: 100}
+    negative-set: {faces: "top", offsetMm: 100}

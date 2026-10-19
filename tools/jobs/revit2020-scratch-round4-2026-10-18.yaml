@@ -1,0 +1,131 @@
+# Batch 4, 2026-10-18 - Revit 2020, scratch Project2 (never saved). Reruns of batch 2's
+# arrangement faults plus new MODIFY and READ fragments. Every MODIFY run ROLLED BACK.
+# Since batch 2 the model also has "Section: Section 1" through the south wall.
+model: "Project2 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project2"
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: "Walls"
+    inViewOnly: "FloorPlan: Level 1"
+  negative-set:
+    categoryName: "Text Notes"
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: copy-elements
+    expect: copies
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", offset: "1000,0,0", toLevels: "", turnDegrees: "", turnCentreMm: "", toWorkset: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", offset: "0,0,0", toLevels: "Level 99", turnDegrees: "", turnCentreMm: "", toWorkset: ""}
+
+  - fragment: edit-parameter-text
+    expect: edited
+    setup: [select-by-category-name, set-selection, write-element-parameters]
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: "TEST", find: "", replaceWith: "", prefix: "HERON-", suffix: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "ZZZNOTHINGHERE", value: "TEST", find: "", replaceWith: "", prefix: "HERON-", suffix: ""}
+
+  - fragment: remove-parameter-value
+    expect: cleared
+    setup: [select-by-category-name, set-selection, write-element-parameters]
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments", value: "HERON-TEST-VALUE"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "ZZZNOTHINGHERE", value: "HERON-TEST-VALUE"}
+
+  - fragment: manage-sheet-sets
+    expect: memberCount
+    setup: [find-sheets]
+    keep-chain: true
+    setup-set: {numberOrNameContains: "A10"}
+    negative-setup-set: {numberOrNameContains: "ZZZ"}
+    set: {setName: "HERON SET Z1", mode: "create", newName: ""}
+    negative-set: {setName: "HERON SET Z1", mode: "create", newName: ""}
+
+  - fragment: move-annotation
+    expect: moved
+    set: {categoryName: "Room Tags", inViewOnly: "FloorPlan: Level 1", target: "1000,0,0", arrange: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", target: "1000,0,0", arrange: ""}
+
+  - fragment: create-wall-elevation
+    expect: created
+    setup: [select-in-region, set-selection]
+    set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls", planView: "FloorPlan: Level 1", wall: "selected", side: "exterior", offsetMm: 3000, scale: 100}
+    negative-set: {minMm: "2000,1300,2200", maxMm: "3000,1700,2600", exact: false, categories: "Pipes", planView: "FloorPlan: Level 1", wall: "selected", side: "exterior", offsetMm: 3000, scale: 100}
+
+  - fragment: create-opening
+    expect: created
+    set: {categoryName: "Floors", inViewOnly: "FloorPlan: Level 1", host: "selected", boundary: "1000,3500,0; 2000,3500,0; 2000,4500,0; 1000,4500,0", perpendicularFace: false}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", host: "selected", boundary: "1000,3500,0; 2000,3500,0; 2000,4500,0; 1000,4500,0", perpendicularFace: false}
+
+  - fragment: set-room-limits
+    set: {categoryName: "Rooms", inViewOnly: "FloorPlan: Level 1", upperLevel: "Level 2", limitOffset: -300}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", upperLevel: "Level 2", limitOffset: -300}
+
+  - fragment: place-rooms
+    setup: [create-wall]
+    expect: created
+    set: {level: "Level 2", wallType: "Generic - 200mm", points: "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0", height: 3000, structural: false, levelId: "Level 2", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: Level 2"}
+    negative-set: {level: "Level 2", wallType: "Generic - 200mm", points: "0,0,0; 6000,0,0; 6000,4000,0; 0,4000,0; 0,0,0", height: 3000, structural: false, levelId: "Level 3", placeKind: "rooms", phaseId: "New Construction", planViewId: "FloorPlan: Level 2"}
+
+  - fragment: edit-slab-shape
+    expect: editedIds
+    keep-chain: true
+    setup: [filter-elements-by-category]
+    setup-set: {category: "Floors", levelId: "Level 1"}
+    negative-setup-set: {category: "Walls", levelId: "Level 1"}
+    set: {mode: "points", shapeMm: "3000,2000,-25"}
+    negative-set: {mode: "points", shapeMm: "3000,2000,-25"}
+
+  - fragment: move-view-cut-plane
+    setup: []
+    expect: newOrigin
+    set: {viewName: "Section: Section 1", offsetMm: 500, throughMm: ""}
+    negative-set: {viewName: "Elevation: North", offsetMm: 500, throughMm: ""}
+
+  - fragment: set-section-mark-visibility
+    setup: []
+    expect: hidden
+    set: {view: "FloorPlan: Level 1", onSheetsOnly: true}
+    negative-set: {view: "FloorPlan: Level 1", onSheetsOnly: false}
+
+  - fragment: dimension-grids-and-levels
+    expect: created
+    setup: [select-in-region, set-selection]
+    set: {minMm: "-2500,6000,-100000", maxMm: "12500,7500,100000", exact: false, categories: "Grids", view: "FloorPlan: Level 1", offsetMm: 1000}
+    negative-set: {minMm: "-2500,6000,-100000", maxMm: "12500,7500,100000", exact: false, categories: "Text Notes", view: "FloorPlan: Level 1", offsetMm: 1000}
+
+  - fragment: dimension-wall-openings
+    expect: created
+    setup: [select-by-category-name, set-selection, place-hosted-family]
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", offsetMm: 500, withOverall: false, side: "", symbol: "M_Fixed: 0915 x 1220mm", level: "Level 1", points: "1500,0,0; 7500,0,0", toRoomAt: "1500,1000,0; 7500,1000,0", hingeAt: "1800,0,0; 7800,0,0", sillHeight: "900", rotation: ""}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", offsetMm: 500, withOverall: false, side: "", symbol: "M_Fixed: 0915 x 1220mm", level: "Level 1", points: "1500,-20000,0; 7500,-20000,0", toRoomAt: "1500,-19000,0; 7500,-19000,0", hingeAt: "1800,-20000,0; 7800,-20000,0", sillHeight: "900", rotation: ""}
+
+  - fragment: assign-location-data
+    set: {categoryName: "Furniture", inViewOnly: "FloorPlan: Level 1", roomParameter: "Comments", levelParameter: "Mark", useSpaces: false}
+    negative-set: {categoryName: "Furniture", inViewOnly: "FloorPlan: Level 1", roomParameter: "ZZZNOTHINGHERE", levelParameter: "ZZZNOTHINGHERE", useSpaces: false}
+
+  - fragment: create-beam-system
+    setup: []
+    expect: beamSystem
+    set: {boundaryMm: "0,0; 10000,0; 10000,6000; 0,6000", level: "Level 2", beamType: "UB305x165x40", spacingMm: 1500, directionEdge: 0}
+    negative-set: {boundaryMm: "0,0; 10000,0", level: "Level 2", beamType: "UB305x165x40", spacingMm: 1500, directionEdge: 0}
+
+  - fragment: create-duct-runs
+    setup: []
+    expect: runsDrawn
+    set: {systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "Level 1", runs: "400x200: 1000,3000,2700; 4000,3000,2700 | d250: 6000,3000,2700; 9000,3000,2700"}
+    negative-set: {systemType: "Supply Air", ductType: "Rectangular Duct: Default", level: "Level 1", runs: "400x200: 1000,3000,2700; 4000,3000,2700 | d250: 6000;3000,2700; 9000,3000,2700"}
+
+  - fragment: paint-faces
+    expect: elementsTouched
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", material: "Glass", faces: "exterior", remove: false}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", material: "Glass", faces: "exterior", remove: false}
+
+  - fragment: report-curtain-wall-type
+    setup: []
+    write: false
+    expect: gridsLaidOut
+    set: {curtainWallType: "Storefront"}
+    negative-set: {curtainWallType: "Generic - 200mm"}

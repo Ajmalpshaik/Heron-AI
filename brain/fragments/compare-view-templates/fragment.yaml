@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,26 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,081 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run. returned a ViewPlan, b ViewPlan, differ
+    Action`3, differenceCount 1, differences Category Topography: hidden | shown, findings
+    1 item(s) [1 difference(s) between "Architectural Plan" (left) and "Sit...], lines 1 item(s)
+    [Category Topography: hidden | shown], look Func`2, refused (null), shown Func`3, template
+    Func`2. inputs came templateA as given; templateB as given. on Project1'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: Level 1, templateA=Architectural
+    Plan, templateB=Architectural Plan instead - chosen because it should not contain what
+    this fragment reports. returned a ViewPlan, b ViewPlan, differ Action`3, differenceCount
+    0, differences , findings 1 item(s) [Both names are the same template.], lines 0 item(s),
+    look Func`2, refused Both names are the same template., shown Func`3, template Func`2.
+    inputs came templateA as given; templateB as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3613afd14b51d69e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

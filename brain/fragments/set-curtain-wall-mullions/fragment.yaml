@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -129,6 +129,52 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,081 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 0, applied 1, askedId
+    6 item(s) [8490, (null), (null), ...], askedName 6 item(s) [''Rectangular Mullion: 30mm
+    Square'', (null), (null), ...], differs 0 item(s), findings 2 item(s) [''Curtain Wall:
+    Storefront'' is used by no wall in this model,..., Read back from Revit: vertical interior
+    ''Rectangular Mullion...], fullName Func`2, label Curtain Wall: Storefront, measured No
+    wall of this type is placed in the model, so nothing was measured. The next wall drawn
+    with it shows these mullions, nameOf Func`2, plain Func`2, positionIds 6 item(s) [AUTO_MULLION_INTERIOR_VERT,
+    AUTO_MULLION_BORDER1_VERT, AUTO_MULLION_BORDER2_VERT, ...], positionParameter 6 item(s)
+    [Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter, Autodesk.Revit.DB.Parameter,
+    ...], positionWords 6 item(s) [vertical interior, vertical border 1, vertical border 2,
+    ...], readBack vertical interior: ''Rectangular Mullion: 30mm Square'', was ''Rectangular
+    Mullion: 50 x 150mm'' - asked for ''Rectangular Mullion: 30mm Square'' | vertical border
+    1: ''Rectangular Mullion: 50 x 150mm'' - not asked, left as it was | vertical border 2:
+    ''Rectangular Mullion: 50 x 150mm'' - not asked, left as it was | horizontal interior:
+    ''Rectangular Mullion: 50 x 150mm'' - not asked, left as it was | horizontal border 1:
+    ''Rectangular Mullion: 50 x 150mm'' - not asked, left as it was | horizontal border 2:
+    ''Rectangular Mullion: 50 x 150mm'' - not asked, left as it was, refused , wallsOfType
+    0. inputs came curtainWallType as given; mullions as given (1). on Project1'
+  negative_case: 'run with categoryName=Walls, curtainWallType=Curtain Wall: Storefront, inViewOnly=FloorPlan:
+    Level 1, mullions=vertical interior=Rectangular Mullion: ZZZ No Such Size instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 0,
+    applied 0, askedId 6 item(s) [(null), (null), (null), ...], askedName 6 item(s) [(null),
+    (null), (null), ...], differs 0 item(s), findings 1 item(s) [No mullion type called ''Rectangular
+    Mullion: ZZZ No Such Siz...], fullName Func`2, label Curtain Wall: Storefront, measured
+    , nameOf Func`2, plain Func`2, positionIds 6 item(s) [AUTO_MULLION_INTERIOR_VERT, AUTO_MULLION_BORDER1_VERT,
+    AUTO_MULLION_BORDER2_VERT, ...], positionParameter 6 item(s) [(null), (null), (null),
+    ...], positionWords 6 item(s) [vertical interior, vertical border 1, vertical border 2,
+    ...], readBack , refused No mullion type called ''Rectangular Mullion: ZZZ No Such Size''
+    in this model - capitals count. The mullion types it has are: Circular Mullion: 25mm Radius,
+    Circular Mullion: 50mm Radius, L Corner Mullion: L Mullion 1, Quad Corner Mullion: Quad
+    Mullion 1, Rectangular Mullion: 30mm Square, Rectangular Mullion: 50 x 150mm, Trapezoid
+    Corner Mullion: Trapezoid Mullion 1, V Corner Mullion: V Mullion 1. A mullion family that
+    is not in the model has to be loaded first - Insert > Load Family; Heron does not load
+    families. Nothing was changed, wallsOfType 0. inputs came curtainWallType as given; mullions
+    as given (1). on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7462e63781fa909c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

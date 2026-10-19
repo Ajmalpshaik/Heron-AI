@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -72,6 +72,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,081 elements), Revit 2020, session 30308
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    culture CultureInfo, edited 2, editedIds 2 item(s) [346854, 346858], findings 3 item(s)
+    [2 railing(s) edited and read back., railing 346854: flipped; path 9880 mm now., railing
+    346858: flipped; path 15880 mm now.], flip true, freeIt false, hostText , lines 2 item(s)
+    [railing 346854: flipped; path 9880 mm now., railing 346858: flipped; path 15880 mm now.],
+    newHost (null), newType (null), nothingAsked false, numberStyle NumberStyles, path 0 item(s),
+    refusal (null), report railing 346854: flipped; path 9880 mm now. | railing 346858: flipped;
+    path 15880 mm now., reset false, wantedType . inputs came elements from the selection
+    (2); pathMm as given; host as given; railingTypeName as given; flip as given; reset as
+    given. on Project1'
+  negative_case: 'run with categoryName=Walls, flip=True, host=, inViewOnly=FloorPlan: Level
+    1, pathMm=, railingTypeName=, reset=False instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, culture CultureInfo,
+    edited 0, editedIds 0 item(s), findings 6 item(s) [0 railing(s) edited and read back.,
+    345492: not a railing., 345493: not a railing., ...], flip true, freeIt false, hostText
+    , lines 5 item(s) [345492: not a railing., 345493: not a railing., 345494: not a railing.,
+    ...], newHost (null), newType (null), nothingAsked false, numberStyle NumberStyles, path
+    0 item(s), refusal (null), report 345492: not a railing. | 345493: not a railing. | 345494:
+    not a railing. | 345495: not a railing. | 345496: not a railing., reset false, wantedType
+    . inputs came elements from the selection (5); pathMm as given; host as given; railingTypeName
+    as given; flip as given; reset as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b06a8073957ad194
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

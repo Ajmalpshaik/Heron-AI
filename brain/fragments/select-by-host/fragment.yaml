@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -75,6 +75,26 @@ contract:
       type: IList<Element>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values. returned elements 1 item(s)
+    [0915 x 2134mm], findings 1 item(s) [1 element(s) are hosted on ''Generic - 200mm'' (id
+    345436): 1 ...]. inputs came host as given; categories as given (1). on Project1'
+  negative_case: 'run with categories=Doors, categoryName=Text Notes, host=selected, inViewOnly=FloorPlan:
+    Level 1 arranged with categories=Walls, exact=False, maxMm=10100,3500,100, minMm=9900,2500,-100
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase''s own values.
+    returned elements 0 item(s), findings 2 item(s) [0 element(s) are hosted on ''Generic
+    - 200mm'' (id 345433): 0 ..., Nothing is HOSTED on it. If the question was about fittings
+    ...]. inputs came host as given; categories as given (1). on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 619b7f1930768c4b
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

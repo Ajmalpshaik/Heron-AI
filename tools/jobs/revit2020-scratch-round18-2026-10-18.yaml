@@ -1,0 +1,29 @@
+# Batch 18b, 2026-10-18 - batch 17's model. Negative hands in the host duct, not an import. ROLLED BACK.
+model: Project1 (scratch) + linked HeronLinkSource.rvt + imported HeronPlan.dwg, Revit
+  2020
+defaults:
+  in: Project1
+  write: true
+  setup: []
+jobs:
+- fragment: extract-cad-curves
+  expect: created
+  setup:
+  - select-by-category-name
+  - set-selection
+  set:
+    categoryName: HeronPlan
+    inViewOnly: 'FloorPlan: Level 1'
+    layerNames: A-WALL
+    asDetailLines: true
+    view: 'FloorPlan: Level 1'
+    maxCurves: 500
+    listOnly: false
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: Heron 3D
+    layerNames: A-WALL
+    asDetailLines: true
+    view: 'FloorPlan: Level 1'
+    maxCurves: 500
+    listOnly: false

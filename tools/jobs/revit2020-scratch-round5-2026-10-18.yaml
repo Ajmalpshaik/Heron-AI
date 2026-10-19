@@ -1,0 +1,151 @@
+# Batch 5, 2026-10-18 - Revit 2020, scratch Project2 + Family1 (never saved). Fragments whose
+# arrangement is made by MODIFY setup steps inside the same rolled-back group: revisions, area
+# plans, groups, a mirrored desk, room elevations. Every run with write: true is ROLLED BACK.
+model: "Project2 + Family1 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project2"
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: "Walls"
+    inViewOnly: "FloorPlan: Level 1"
+  negative-set:
+    categoryName: "Text Notes"
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: report-mirrored-instances
+    expect: mirrored
+    setup: [select-by-category-name, set-selection, mirror-elements]
+    set: {categoryName: "Furniture", inViewOnly: "FloorPlan: Level 1", planeFrom: "5000,0,0", planeTo: "5000,6000,0", asCopy: false, categories: "Furniture"}
+    negative-set: {categoryName: "Furniture", inViewOnly: "FloorPlan: Level 1", planeFrom: "5000,0,0", planeTo: "5000,6000,0", asCopy: false, categories: "Walls"}
+
+  - fragment: select-by-host
+    expect: elements
+    setup: [select-in-region, set-selection, place-hosted-family]
+    set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Windows", host: "selected", symbol: "M_Fixed: 0915 x 1220mm", level: "Level 1", points: "1500,0,0; 7500,0,0", toRoomAt: "1500,1000,0; 7500,1000,0", hingeAt: "1800,0,0; 7800,0,0", sillHeight: "900", rotation: ""}
+    negative-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Windows", host: "selected", symbol: "M_Fixed: 0915 x 1220mm", level: "Level 1", points: "1500,6000,0; 7500,6000,0", toRoomAt: "1500,5000,0; 7500,5000,0", hingeAt: "1800,6000,0; 7800,6000,0", sillHeight: "900", rotation: ""}
+
+  - fragment: select-touching
+    write: false
+    expect: elements
+    setup: [select-in-region, set-selection]
+    set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Walls", target: "selected"}
+    negative-set: {minMm: "2000,-300,-100", maxMm: "3000,300,100", exact: false, categories: "Furniture", target: "selected"}
+
+  - fragment: propose-mep-openings
+    write: false
+    expect: proposals
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", hosts: "Walls", allowanceMm: 50}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", hosts: "Roofs", allowanceMm: 50}
+
+  - fragment: probe-around-elements
+    write: false
+    expect: hits
+    set: {categoryName: "Ducts", inViewOnly: "Heron 3D", view3d: "Heron 3D", directions: "0,-1,0", maxDistance: 3000}
+    negative-set: {categoryName: "Ducts", inViewOnly: "Heron 3D", view3d: "Heron 3D", directions: "0,-1,0", maxDistance: 1}
+
+  - fragment: check-category-mismatch
+    setup: []
+    write: false
+    expect: elements
+    set: {nameKeywords: "Default", expectedCategory: "Ducts"}
+    negative-set: {nameKeywords: "ZZZNOTHINGHERE", expectedCategory: "Ducts"}
+
+  - fragment: order-elements-by-position
+    write: false
+    expect: sequence
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", order: "reading", rowMm: 1000}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", order: "sideways", rowMm: 1000}
+
+  - fragment: check-model-standards
+    setup: []
+    write: false
+    expect: offenders
+    set: {namePatterns: "view=*; sheet=*; level=*; workset=*; system=*; room=*; type=*: TRG*", requiredOn: "Ducts", requiredParameters: "Family and Type", suspectNames: "zz-no-such-name", skipViewTemplates: true, maxRows: 50}
+    negative-set: {namePatterns: "view=*; sheet=*; level=*; workset=*; system=*; room=*; type=*", requiredOn: "Ducts", requiredParameters: "Family and Type", suspectNames: "zz-no-such-name", skipViewTemplates: true, maxRows: 50}
+
+  - fragment: report-space-envelope
+    setup: []
+    write: false
+    expect: spaces
+    set: {includeLinks: false}
+    negative-in: "Family1"
+    negative-set: {includeLinks: false}
+
+  - fragment: list-categories
+    in: "Family1"
+    setup: [create-line-style]
+    expect: familySubcategories
+    set: {styleName: "Heron Test Style", colour: "0,0,255", weight: 1, patternName: "Solid", updateExisting: true, familyCategory: true, everySubcategory: false, categories: ""}
+    negative-set: {styleName: "Heron Test Style", colour: "0,0,255", weight: 1, patternName: "ZZZ No Such Pattern", updateExisting: true, familyCategory: true, everySubcategory: false, categories: ""}
+
+  - fragment: group-elements
+    expect: grouped
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", name: "Heron Proof Group"}
+    negative-set: {categoryName: "Grids", inViewOnly: "FloorPlan: Level 1", name: "Heron Proof Group"}
+
+  - fragment: place-model-groups
+    expect: placed
+    setup: [select-by-category-name, set-selection, group-elements]
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", name: "Heron Proof Group", groupTypeName: "Heron Proof Group", level: "Level 1", points: "30000,0,0"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", name: "Heron Proof Group", groupTypeName: "Heron No Such Group", level: "Level 1", points: "30000,0,0"}
+
+  - fragment: delete-revision
+    expect: deleted
+    keep-chain: true
+    setup: [select-by-parameter-value, create-revision]
+    set: {parameterName: "Revision Description", matchText: "Revision 1", matchMode: "equals", includeTypeParameters: false, categories: "Revisions", description: "HERON PROOF second", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: "", confirm: "Seq. 1 - Revision 1"}
+    negative-set: {parameterName: "Revision Description", matchText: "Revision 1", matchMode: "equals", includeTypeParameters: false, categories: "Revisions", description: "HERON PROOF second", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: "", confirm: "Seq. 9 - Not This One"}
+
+  - fragment: merge-revision
+    expect: merged
+    keep-chain: true
+    setup: [select-by-parameter-value, create-revision]
+    set: {parameterName: "Revision Description", matchText: "Revision 1", matchMode: "equals", includeTypeParameters: false, categories: "Revisions", description: "HERON PROOF second", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: "", direction: "down", confirm: "Seq. 1 - Revision 1"}
+    negative-set: {parameterName: "Revision Description", matchText: "Revision 1", matchMode: "equals", includeTypeParameters: false, categories: "Revisions", description: "HERON PROOF second", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: "", direction: "down", confirm: "Seq. 9 - Not This One"}
+
+  - fragment: reorder-revision
+    expect: moved
+    keep-chain: true
+    setup: [select-by-parameter-value, create-revision]
+    set: {parameterName: "Revision Description", matchText: "Revision 1", matchMode: "equals", includeTypeParameters: false, categories: "Revisions", description: "HERON PROOF second", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: "", direction: "down"}
+    negative-set: {parameterName: "Revision Description", matchText: "Revision 1", matchMode: "equals", includeTypeParameters: false, categories: "Revisions", description: "HERON PROOF second", revisionDate: "18-10-2026", issuedBy: "Heron", issuedTo: "Ajmal PS", show: "tag", numbering: "Numeric", issueState: "", direction: "up"}
+
+  - fragment: create-area-boundary-lines
+    setup: [create-area-plan]
+    expect: lineIds
+    set: {level: "Level 1", areaSchemeName: "Gross Building", viewName: "Heron Area Plan", areaPlanName: "Heron Area Plan", traceWalls: "outside", loopsMm: ""}
+    negative-set: {level: "Level 1", areaSchemeName: "Gross Building", viewName: "Heron Area Plan", areaPlanName: "Heron Area Plan", traceWalls: "", loopsMm: ""}
+
+  - fragment: place-areas
+    setup: [create-area-plan, create-area-boundary-lines]
+    expect: areaIds
+    set: {level: "Level 1", areaSchemeName: "Gross Building", viewName: "Heron Area Plan", areaPlanName: "Heron Area Plan", traceWalls: "outside", loopsMm: "", pointsMm: "2500,3000", names: "Office", numbers: "A1"}
+    negative-set: {level: "Level 1", areaSchemeName: "Gross Building", viewName: "Heron Area Plan", areaPlanName: "No Such Plan", traceWalls: "outside", loopsMm: "", pointsMm: "2500,3000", names: "Office", numbers: "A1"}
+
+  - fragment: report-areas
+    setup: [create-area-plan, create-area-boundary-lines, place-areas]
+    expect: schemeTotalsM2
+    set: {level: "Level 1", areaSchemeName: "Gross Building", viewName: "Heron Area Plan", areaPlanName: "Heron Area Plan", traceWalls: "outside", loopsMm: "", pointsMm: "2500,3000", names: "Office", numbers: "A1", schemeNameContains: "Gross", listEachArea: true}
+    negative-set: {level: "Level 1", areaSchemeName: "Gross Building", viewName: "Heron Area Plan", areaPlanName: "Heron Area Plan", traceWalls: "outside", loopsMm: "", pointsMm: "2500,3000", names: "Office", numbers: "A1", schemeNameContains: "ZZZ NO SUCH SCHEME", listEachArea: true}
+
+  - fragment: refit-room-elevations
+    setup: [create-room-elevations]
+    expect: refittedViews
+    set: {planView: "FloorPlan: Level 1", origin: "2500,3000,0", slotCount: 4, scale: 50, roomNumbers: "1", marginMm: 300}
+    negative-set: {planView: "FloorPlan: Level 1", origin: "2500,3000,0", slotCount: 4, scale: 50, roomNumbers: "999", marginMm: 300}
+
+  - fragment: offset-tags-from-host
+    expect: moved
+    set: {categoryName: "Room Tags", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", tagCategories: "Room Tags", offsetRightMm: 500, offsetUpMm: 0, addLeader: "keep"}
+    negative-set: {categoryName: "Room Tags", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1", tagCategories: "Door Tags", offsetRightMm: 500, offsetUpMm: 0, addLeader: "keep"}
+
+  - fragment: set-revision-settings
+    setup: []
+    expect: changed
+    set: {numbering: "per sheet", arcLengthMm: "12.5"}
+    negative-set: {numbering: "ZZZ no such numbering", arcLengthMm: "12.5"}

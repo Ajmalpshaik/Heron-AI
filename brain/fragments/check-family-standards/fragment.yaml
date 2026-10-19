@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -143,30 +143,69 @@ contract:
       # the keynote table, not checked), each naming up to the first ten family
       # types, and the classification file read. In a family document: the
       # classification lines of familyReport, and the file read.
-      role: result
+      # ACCOUNTING, not a result: it is written whatever the patterns asked -
+      # a run that finds nothing off standard still counts blank OmniClass
+      # Numbers here (measured 2026-10-18 on Revit 2020: offStandard 0 and this
+      # line filled). offStandard and warned decide (D-51).
+      role: accounting
       type: string
       
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: test projject (3,501 elements), Revit 2024, session 40932
-  positive_case: 'run as it would normally be run. returned countByType 1 entry(ies), findings
-    185 item(s) [184 family type(s) off standard, 0 not checked for connector..., M_Section
-    Head - Filled : M_Section Head - Filled  (0 placed..., M_Callout Head : Metric Callout  (0
-    placed)  - name does not..., ...], mustHaveConnectors false, notChecked 0, offStandard
-    184, sampleByType 1 entry(ies), systemFamilies 0. inputs came namePattern as given; requiredParameters
-    as given (0); mustHaveConnectors as given. on test projject'
-  negative_case: run with namePattern=, requiredParameters=, mustHaveConnectors=false instead
-    - chosen because it should not contain what this fragment reports. returned countByType
-    1 entry(ies), findings 1 item(s) [0 family type(s) off standard, 0 not checked for connectors....],
-    mustHaveConnectors false, notChecked 0, offStandard 0, sampleByType 1 entry(ies), systemFamilies
-    0. inputs came namePattern as given; requiredParameters as given (0); mustHaveConnectors
-    as given. on test projject
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: 'run as it would normally be run. returned classificationReport OmniClass
+    Number: 43 blank (Rectangular Mullion : 50 x 150mm, Circular Mullion : 50mm Radius, Rectangular
+    Mullion : 30mm Square, Circular Mullion : 25mm Radius, UC-Universal Columns-Column : UC305x305x97,
+    System Panel : Glazed, Empty System Panel : Empty, M_Rectangular Handrail : 50 x 50mm,
+    M_Circular Handrail : 30mm, M_Circular Handrail : 40mm, and 33 more) - counted, not off
+    standard: no code is required unless requiredParameters names it; 0 not in the classification
+    file; 0 filed under another category; 0 filed under no category; 0 not checked; 101 not
+    judged - an annotation, or a category the classification file gives no code. Assembly
+    Code: 0 not in the Assembly Code table; 0 an entry for another category; 0 not checked.
+    Keynote: 0 not in the keynote table, a warning only; 0 not checked. Classification file:
+    C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2020\OmniClassTaxonomy.txt.,
+    clsAssembly BuiltInParameter, clsAssemblyLabel Assembly Code, clsAssemblyOther Func`3,
+    clsAssemblyTable 795 entry(ies), clsCode BuiltInParameter, clsCodeLabel OmniClass Number,
+    clsFiledUnder Func`3, clsFiledWords Func`2, clsFirstTen Func`2, clsKeynoteKeys HashSet`1,
+    clsKeynoteLabel Keynote, clsLabelFor Func`3, clsLoad Action, clsNewNames false, clsPath
+    C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2020\OmniClassTaxonomy.txt,
+    clsProblem (null), clsRows 2645 item(s) [(23.10.00.00, Site Products, , ), (23.10.05.00,
+    Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing Ground Anchors, , ), ...],
+    clsSample false, clsTidy Func`2, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit...], familyReport , findings 376 item(s) [189 family type(s) off standard, 185 not
+    checked for connect..., M_Section Head - Filled : M_Section Head - Filled  - NOT CHE...,
+    M_Section Head - Filled : M_Section Head - Filled  (0 placed..., ...], mustHaveConnectors
+    true, notChecked 185, offStandard 189, warned 0. inputs came namePattern as given; requiredParameters
+    as given (1); mustHaveConnectors as given. on Project1'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, mustHaveConnectors=False,
+    namePattern=, requiredParameters= instead - chosen because it should not contain what
+    this fragment reports. returned classificationReport OmniClass Number: 43 blank (Rectangular
+    Mullion : 50 x 150mm, Circular Mullion : 50mm Radius, Rectangular Mullion : 30mm Square,
+    Circular Mullion : 25mm Radius, UC-Universal Columns-Column : UC305x305x97, System Panel
+    : Glazed, Empty System Panel : Empty, M_Rectangular Handrail : 50 x 50mm, M_Circular Handrail
+    : 30mm, M_Circular Handrail : 40mm, and 33 more) - counted, not off standard: no code
+    is required unless requiredParameters names it; 0 not in the classification file; 0 filed
+    under another category; 0 filed under no category; 0 not checked; 101 not judged - an
+    annotation, or a category the classification file gives no code. Assembly Code: 0 not
+    in the Assembly Code table; 0 an entry for another category; 0 not checked. Keynote: 0
+    not in the keynote table, a warning only; 0 not checked. Classification file: C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2020\OmniClassTaxonomy.txt., clsAssembly BuiltInParameter, clsAssemblyLabel Assembly
+    Code, clsAssemblyOther Func`3, clsAssemblyTable 795 entry(ies), clsCode BuiltInParameter,
+    clsCodeLabel OmniClass Number, clsFiledUnder Func`3, clsFiledWords Func`2, clsFirstTen
+    Func`2, clsKeynoteKeys HashSet`1, clsKeynoteLabel Keynote, clsLabelFor Func`3, clsLoad
+    Action, clsNewNames false, clsPath C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2020\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
+    Site Products, , ), (23.10.05.00, Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing
+    Ground Anchors, , ), ...], clsSample false, clsTidy Func`2, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit...], familyReport , findings 2 item(s) [0 family type(s) off standard, 0 not checked
+    for connectors...., OmniClass Number: 43 blank (Rectangular Mullion : 50 x 150mm...],
+    mustHaveConnectors false, notChecked 0, offStandard 0, warned 0. inputs came namePattern
+    as given; requiredParameters as given (0); mustHaveConnectors as given. on Project1'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 5ae709e8b93bb5d6
-
+  fingerprint: 4c36974d12fb85eb
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

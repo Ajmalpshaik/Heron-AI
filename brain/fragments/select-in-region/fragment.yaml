@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -124,25 +124,31 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 47740
+  model: Project2 (3,027 elements), Revit 2020, session 13520
   positive_case: run as it would normally be run. returned MillimetresPerFoot 304.8, elements
-    1053 item(s) [Tees, Tees, Tees, ...], exact false, findings 2 item(s) [1053 element(s)
-    in a 200000 x 200000 x 70000 mm volume, by t..., A bounding box is axis-aligned, so a
-    sloped or rotated eleme...], withoutGeometry 0. inputs came minMm as given; maxMm as given;
-    exact as given; categories as given (1). on Snowdon-scratch_ajmal.al
-  negative_case: run with categories=Ducts, exact=false, maxMm=50100000, 50100000, 100000,
-    minMm=50000000, 50000000, 0 instead - chosen because it should not contain what this fragment
-    reports. returned MillimetresPerFoot 304.8, elements 0 item(s), exact false, findings
-    2 item(s) [0 element(s) in a 100000 x 100000 x 100000 mm volume, by the..., A bounding
-    box is axis-aligned, so a sloped or rotated eleme...], withoutGeometry 0. inputs came
-    minMm as given; maxMm as given; exact as given; categories as given (1). on Snowdon-scratch_ajmal.al
+    5 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], exact false, findings
+    2 item(s) [5 element(s) touching a 11000 x 7000 x 4000 mm volume, by th..., A bounding
+    box is axis-aligned, so a sloped or rotated eleme...], includeLinks false, linkBlocked
+    , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes 0 item(s), linkedMatches 1 item(s)
+    [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks 0, withoutGeometry
+    0. inputs came minMm as given; maxMm as given; exact as given; categories as given (1);
+    includeLinks not given - false (optional). on Project2
+  negative_case: 'run with categories=Walls, categoryName=Text Notes, exact=False, inViewOnly=FloorPlan:
+    Level 1, maxMm=900100,900100,900100, minMm=900000,900000,900000 instead - chosen because
+    it should not contain what this fragment reports. returned MillimetresPerFoot 304.8, elements
+    0 item(s), exact false, findings 2 item(s) [0 element(s) touching a 100 x 100 x 100 mm
+    volume, by the fa..., A bounding box is axis-aligned, so a sloped or rotated eleme...],
+    includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkTypes
+    0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal 0,
+    linksSearched 0, nestedLinks 0, withoutGeometry 0. inputs came minMm as given; maxMm as
+    given; exact as given; categories as given (1); includeLinks not given - false (optional).
+    on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: d1bd8e89d6255cad
-
+  fingerprint: 719bcb361e5624a5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

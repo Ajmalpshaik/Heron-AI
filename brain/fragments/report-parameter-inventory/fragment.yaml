@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -233,32 +233,41 @@ contract:
 # signed. The proof below is version 1's, kept as it was signed: the code has
 # changed since, so it reads STALE until version 3 is signed (D-30).
 proof:
-  date: '2026-09-08'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
-  positive_case: 'run as it would normally be run. returned elementsRead 10, findings 74 item(s)
-    [71 parameter(s): 32 on the instance, 39 on the type. Read fr..., INSTANCE parameters,
-    from ''Heat Recovery Unit (HRU)'' (id 136...,   Critical Path                            Integer   built-i...,
-    ...], includeTypeParameters true, instanceCount 32, kindOf Func`2, parameterNames 71 item(s)
-    [Critical Path, Image, Category, ...], readOne Action`2, sampleOnly false, seen HashSet`1,
-    typeCount 39, valueOf Func`2. inputs came elements from the selection (10); sampleOnly
-    as given; includeTypeParameters as given. on Snowdon-scratch_ajmal.al'
+  model: Project1 (3,067 elements), Revit 2020, session 2648
+  positive_case: 'run with categoryName=Walls - the first of 3 tracked inputs - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase''s
+    own values. returned builtInOf Func`2, elementsRead 1, findings 34 item(s) [32 parameter(s):
+    32 on the instance, 0 on the type. Read fro..., INSTANCE parameters, from ''Generic -
+    200mm'' (id 345432):,   Family                                   ElementId built-i...,
+    ...], fullRecord false, guidOf Func`2, handedIn 6, identityOf Func`2, idsTyped false,
+    includeTags false, includeTypeParameters false, instanceCount 32, invariant CultureInfo,
+    inventoryOf Action`2, kindOf Func`2, leastBudget 5000, linkAsked false, linkProblem (null),
+    linkWord host, maxChars 4000, missing 0 item(s), missingWhere named no element in ''Project1'',
+    mm 304.8, nameOf Func`2, pairsOf Func`3, parameterNames 32 item(s) [Family, Unconnected
+    Height, Phase Created, ...], parametersOf Func`2, placements 0, rawOf Func`2, readIn Document,
+    record , recordCap 50, sameNameTwice 0 item(s), sameWord Func`3, sampleOnly true, seen
+    HashSet`1, source 6 element(s) handed in - the selection or the step before, tagsFound
+    0, targets 6 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm, ...], throughLink
+    (null), titleOf Func`2, typeCount 0, typeLabelOf Func`2, typed 0 item(s), typedOnce HashSet`1,
+    typedText none, typedTwice 0, valueOf Func`3. inputs came elements from the selection
+    (6); sampleOnly as given; includeTypeParameters as given; fullRecord as given; includeTags
+    as given; elementIds not given - "none", the card''s own default (optional); linkName
+    not given - "host", the card''s own default (optional); maxChars as given; parameterFilter
+    not given - "all", the card''s own default (optional). on Project1'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-parameter-inventory\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 5 different inputs:\n\n      22 ducts in M1 -> parameterNames 93 item(s) [Critical\
-    \ Path, Image, System\n      the duct tags in M1 -> parameterNames 22 item(s) [Category,\
-    \ Design Option, Ang\n      the air terminals in M1 -> parameterNames 86 item(s) [Image,\
-    \ System Abbreviation, \n      the mechanical equipment in L3 -> parameterNames 71 item(s)\
-    \ [Critical Path, Image, Catego\n      the ducts in L3 -> parameterNames 93 item(s) [Critical\
-    \ Path, Image, System\n\n    Different inputs, exact matches every time. A fragment falling\
-    \ back to the active view, the whole model, or a previous run could not do that."
+    \ across 3 different inputs:\n\n      categoryName=Walls -> instanceCount 32\n      categoryName=Floors\
+    \ -> instanceCount 28\n      categoryName=Rooms -> instanceCount 51\n\n    Different inputs,\
+    \ exact matches every time. A fragment falling back to the active view, the whole model,\
+    \ or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 405912eb30113453
-
+  fingerprint: 8101596d6dcb7d5b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

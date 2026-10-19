@@ -1,0 +1,194 @@
+# Batch 1, 2026-10-18 - read-only fragments on Revit 2020, scratch Project2 (never saved)
+# built this session: 5 walls (Generic - 200mm, Level 1, 10000 x 6000 with a partition at x=5000),
+# 2 rooms + 2 spaces, 1 floor, 2 ducts (Supply Air rect, Return Air round, z 2700), 1 pipe (DCW,
+# z 2400), 2 M_Desk, grids A, B, 1, sheets A101 (Level 1 plan on it) and A102 (empty), 1 text
+# note, 2 room tags, 1 dimension, a wall schedule, a drafting view, Level 3, a callout, a detail line.
+# Negative-in Family1 = the never-saved Generic Models family open beside it.
+model: "Project2 (scratch, never saved), Revit 2020"
+
+defaults:
+  in: "Project2"
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: "Walls"
+    inViewOnly: "FloorPlan: Level 1"
+  negative-set:
+    categoryName: "Text Notes"
+    inViewOnly: "FloorPlan: Level 1"
+
+jobs:
+  - fragment: select-by-category-name
+    setup: []
+    expect: elements
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {categoryName: "Doors", inViewOnly: "FloorPlan: Level 1"}
+
+  - fragment: select-by-categories
+    setup: []
+    expect: elements
+    set: {categories: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {categories: "Doors", inViewOnly: "FloorPlan: Level 1"}
+
+  - fragment: select-by-level
+    setup: []
+    expect: elements
+    set: {levelId: "Level 1", categories: "Walls"}
+    negative-set: {levelId: "Level 2", categories: "Walls"}
+
+  - fragment: select-by-family
+    setup: []
+    expect: elements
+    set: {familyName: "M_Desk", exactMatch: true, categories: "Furniture"}
+    negative-set: {familyName: "ZZZNOTHINGHERE", exactMatch: true, categories: "Furniture"}
+
+  - fragment: select-in-region
+    setup: []
+    expect: elements
+    set: {minMm: "-500,-500,-500", maxMm: "10500,6500,3500", exact: false, categories: "Walls"}
+    negative-set: {minMm: "900000,900000,900000", maxMm: "900100,900100,900100", exact: false, categories: "Walls"}
+
+  - fragment: select-by-mep-system
+    setup: []
+    expect: elements
+    set: {matchOn: "type", systemText: "Supply Air"}
+    negative-set: {matchOn: "type", systemText: "ZZZNOTHINGHERE"}
+
+  - fragment: select-by-connection-status
+    setup: []
+    expect: elements
+    set: {categories: "Ducts", wantOpenEnds: true}
+    negative-set: {categories: "Walls", wantOpenEnds: true}
+
+  - fragment: select-by-insulation
+    setup: []
+    expect: elements
+    set: {categories: "Ducts", wantInsulated: false, countLiningAsInsulated: false}
+    negative-set: {categories: "Ducts", wantInsulated: true, countLiningAsInsulated: false}
+
+  - fragment: select-without-level
+    setup: []
+    expect: elements
+    set: {categories: "Text Notes"}
+    negative-set: {categories: "Walls"}
+
+  - fragment: list-grids
+    setup: []
+    expect: elements
+    set: {withIntersections: true}
+    negative-in: "Family1"
+    negative-set: {withIntersections: true}
+
+  - fragment: find-sheets-by-revision-or-number
+    setup: []
+    expect: elements
+    set: {sheetNumbers: "A101"}
+    negative-set: {sheetNumbers: "Z999"}
+
+  - fragment: list-views-on-sheet
+    setup: []
+    expect: viewCount
+    set: {sheetNumber: "A101", viewName: ""}
+    negative-set: {sheetNumber: "A102", viewName: ""}
+
+  - fragment: report-spot-dimensions
+    setup: []
+    expect: dimensions
+    set: {viewName: "FloorPlan: Level 1"}
+    negative-set: {viewName: "FloorPlan: Level 2"}
+
+  - fragment: select-dimensions-by-value
+    setup: []
+    expect: elements
+    set: {viewName: "FloorPlan: Level 1", minMm: 0, maxMm: 20000}
+    negative-set: {viewName: "FloorPlan: Level 1", minMm: 50000, maxMm: 60000}
+
+  - fragment: report-element-geometry
+    expect: solidCount
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", detail: "summary"}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", detail: "summary"}
+
+  - fragment: report-connectors
+    set: {categoryName: "Ducts", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1"}
+
+  - fragment: find-dead-ends
+    set: {categoryName: "Ducts", inViewOnly: "FloorPlan: Level 1", stubLength: 3048}
+    negative-set: {categoryName: "Text Notes", inViewOnly: "FloorPlan: Level 1", stubLength: 3048}
+
+  - fragment: find-clashes
+    expect: clashes
+    set: {categoryName: "Ducts", inViewOnly: "FloorPlan: Level 1", against: "Walls"}
+    negative-set: {categoryName: "Ducts", inViewOnly: "FloorPlan: Level 1", against: "Levels"}
+
+  - fragment: count-by-spatial-container
+    set: {categoryName: "Furniture", inViewOnly: "FloorPlan: Level 1", containerKind: "room"}
+    negative-set: {categoryName: "Furniture", inViewOnly: "FloorPlan: Level 1", containerKind: "ZZZNOTHINGHERE"}
+
+  - fragment: read-element-level
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {categoryName: "Grids", inViewOnly: "FloorPlan: Level 1"}
+
+  - fragment: filter-elements-by-id
+    expect: elements
+    set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", elementIds: "selected"}
+    negative-set: {categoryName: "Walls", inViewOnly: "FloorPlan: Level 1", elementIds: ""}
+
+  - fragment: report-view-cut-planes
+    setup: []
+    expect: cutPlanes
+    set: {viewName: "FloorPlan: Level 1"}
+    negative-set: {viewName: "FloorPlan: No Such Plan"}
+
+  - fragment: report-view-settings
+    setup: []
+    expect: viewSettings
+    set: {views: "FloorPlan: Level 1"}
+    negative-set: {views: "Heron Test Sheet"}
+
+  - fragment: read-view-scale
+    setup: []
+    expect: viewScales
+    set: {views: "FloorPlan: Level 1"}
+    negative-set: {views: "Heron Wall Schedule"}
+
+  - fragment: report-project-information
+    setup: []
+    expect: projectInfo
+    set: {}
+    negative-in: "Family1"
+    negative-set: {}
+
+  - fragment: report-viewport-types
+    setup: []
+    expect: viewportTypes
+    set: {}
+    negative-in: "Family1"
+    negative-set: {}
+
+  - fragment: report-browser-organization
+    setup: []
+    expect: organization
+    set: {}
+    negative-in: "Family1"
+    negative-set: {}
+
+  - fragment: report-material-textures
+    setup: []
+    expect: missing
+    set: {onlyMissing: true}
+    negative-in: "Family1"
+    negative-set: {onlyMissing: true}
+
+  - fragment: find-library-families
+    setup: []
+    expect: files
+    set: {search: "desk", folder: ""}
+    negative-set: {search: "zzqx nothing", folder: ""}
+
+  - fragment: report-category-overrides
+    setup: []
+    expect: modelCategoryList
+    set: {view: "FloorPlan: Level 1", allCategories: "true"}
+    negative-set: {view: "FloorPlan: Level 1", allCategories: "false"}

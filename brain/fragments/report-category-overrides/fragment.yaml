@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -122,34 +122,30 @@ contract:
 # changed and the fingerprint below no longer matches it. NEEDS-CHECKING Group
 # ED is the run that replaces it.
 proof:
-  date: '2026-09-22'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Project4 (3,276 elements), Revit 2024, session 37184
+  model: Project2 (3,035 elements), Revit 2020, session 13520
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     set-category-solid-fill with this phase''s own values - run inside a transaction, and
-    Revit reported the transaction group ROLLED BACK afterwards. returned findings 2 item(s)
-    [1 of 6 category(ies) present in ''Level 1'' carry an override...., Walls: line RGB(0,255,0),
-    cut line RGB(0,255,0), surface RGB...], overriddenCategories 1 item(s) [-2000011], overrideList
-    Walls: line RGB(0,255,0), cut line RGB(0,255,0), surface RGB(255,0,0), surface pattern
-    <Solid fill>, cut RGB(255,0,0), cut pattern <Solid fill>. inputs came view as given. on
-    Project4'
-  negative_case: 'run with view=FloorPlan: Level 1, categories=Ducts, overrides=projection-line-colour=0,255,0;
-    cut-line-colour=0,255,0; surface-colour=255,0,0; cut-colour=255,0,0 instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running set-category-solid-fill with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned findings 2 item(s)
-    [0 of 6 category(ies) present in ''Level 1'' carry an override...., nothing is overridden
-    at CATEGORY level here. If something s...], overriddenCategories 0 item(s), overrideList
-    . inputs came view as given. on Project4'
-  second_route: 'NOT ESTABLISHED, and this run could not have had one. A second route exists
-    - Visibility/Graphics on the view, Model Categories tab, where Walls would read Solid
-    fill on the Projection/Surface AND the Cut pattern - but both legs stamped their fill
-    inside the proof''s own transaction group and rolled it back, so by the time a person
-    could open the dialog there was nothing on it to see. Rolled back on purpose: Project4
-    ''Level 1'' is the owner''s working plan. The read-back straight afterwards found 0 category
-    overrides on that view and the model unchanged at 3,276 elements. The by-hand read needs
-    a view where a fill can be KEPT, and is still owed'
-  fingerprint: 140301fac35c76c9
+    Revit reported the transaction group ROLLED BACK afterwards. returned allCategories false,
+    annotationCategoryList , elementOverrideList , findings 2 item(s) [1 of 13 category(ies)
+    present in ''Level 1'' carry an override..., Walls: surface pattern <Solid fill>, cut
+    pattern <Solid fill...], modelCategoryList , overriddenCategories 1 item(s) [-2000011],
+    overrideList Walls: surface pattern <Solid fill>, cut pattern <Solid fill>, halftone,
+    subCategoryList . inputs came view as given; allCategories as given. on Project2'
+  negative_case: 'run with allCategories=false, categories=Doors, categoryName=Walls, inViewOnly=Heron
+    3D, overrides=halftone=true, view=FloorPlan: Level 1 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    set-category-solid-fill with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned allCategories false,
+    annotationCategoryList , elementOverrideList , findings 2 item(s) [0 of 13 category(ies)
+    present in ''Level 1'' carry an override..., nothing is overridden at CATEGORY level here.
+    If something s...], modelCategoryList , overriddenCategories 0 item(s), overrideList ,
+    subCategoryList . inputs came view as given; allCategories as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3d532c9be04fbfa5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

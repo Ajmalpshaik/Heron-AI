@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -223,6 +223,33 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project2 (3,027 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run. returned everySheet false, everyView true,
+    findings 3 item(s) [Sheet A101 - Heron Test Sheet: 1 view and 0 schedules., No box runs
+    past its title block and no two boxes overlap., The title blocks carry 1 revision schedule,
+    which belong to ...], notChecked , offTitleBlock , offTitleBlockCount 0, overlapCount
+    0, overlaps , revisionSchedules 1, scheduleCount 0, schedulesOnSheet , sheetProblem ,
+    sheetRead A101 - Heron Test Sheet, sheetsRead 1, viewCount 1, viewProblem , viewsOnSheet
+    1  Level 1  (Floor Plan, 1 : 100)  viewport type ''Title w Line''  box (158, 31) to (687,
+    561) mm  centre (422, 296) mm, wantedNumber A101, wantedView . inputs came sheetNumber
+    as given; viewName as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, sheetNumber=A102,
+    viewName= instead - chosen because it should not contain what this fragment reports. returned
+    everySheet false, everyView true, findings 4 item(s) [Sheet A102 - Heron Empty Sheet:
+    0 views and 0 schedules., Nothing is placed on it - no view, no legend and no schedule...,
+    No box runs past its title block and no two boxes overlap., ...], notChecked , offTitleBlock
+    , offTitleBlockCount 0, overlapCount 0, overlaps , revisionSchedules 1, scheduleCount
+    0, schedulesOnSheet , sheetProblem , sheetRead A102 - Heron Empty Sheet, sheetsRead 1,
+    viewCount 0, viewProblem , viewsOnSheet , wantedNumber A102, wantedView . inputs came
+    sheetNumber as given; viewName as given. on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 97b3c4976fd92dc3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

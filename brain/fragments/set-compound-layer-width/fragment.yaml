@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -129,27 +129,44 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-19'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,529 elements), Revit 2024, session 20472
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, applied
-    true, findings 1 item(s) [Layer 0 of 'Generic - 200mm' changed from 200.0 mm to 250.0
-    ...], layerIndex 0, refused (null), wasMm 200, widthMm 250. inputs came hostType as given;
-    layerIndex as given; widthMm as given. on Project1 work_ajmal.al
-  negative_case: run with categoryName=Text Notes, hostType=Generic - 200mm, inViewOnly=Legend
-    1, layerIndex=99, widthMm=250 instead - chosen because it should not contain what this
-    fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, applied false, findings 1 item(s)
-    [Layer 99 does not exist - 'Generic - 200mm' has 1 layer(s), ...], layerIndex 99, refused
-    Layer 99 does not exist - 'Generic - 200mm' has 1 layer(s), numbered 0 to 0. REPORT_COMPOUND_STRUCTURE
-    is what turns a layer's name into its number, wasMm 0, widthMm 250. inputs came hostType
-    as given; layerIndex as given; widthMm as given. on Project1 work_ajmal.al
+  model: Project2 (3,035 elements), Revit 2020, session 13520
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned FunctionWords Structure, Substrate,
+    Thermal/Air Layer (or Insulation), Finish 1, Finish 2, Membrane Layer, Structural Deck,
+    MillimetresPerFoot 304.8, anythingAsked true, applied true, buildUp ''Basic Wall: Generic
+    - 200mm'', 1 layer(s) from the outside face, 250 mm in all: [0] Structure, 250 mm, <By
+    Category> (core) <-- this layer, byFunction false, changeMaterial false, checkOnly false,
+    complaints Func`2, differences (null), errorWords 10 entry(ies), findings 1 item(s) [Layer
+    0 of ''Basic Wall: Generic - 200mm'' was [0] Structure, ...], functionAsked , functionNamed
+    Func`2, functionShown Func`2, functionWanted (null), label ''Basic Wall: Generic - 200mm'',
+    layerIndex 0, layerLine Func`3, lettersApart Func`3, matches false, materialAsked , materialShown
+    Func`2, materialWanted (null), refused (null), structure CompoundStructure, target 0,
+    wasLayer [0] Structure, 200 mm, <By Category>, wasMm 200, wholeBuildUp Func`3, widthChange
+    true, widthMm 250, wordsOf Func`2. inputs came hostType as given; layerIndex as given;
+    widthMm as given; material as given; layerFunction as given; checkOnly as given. on Project2'
+  negative_case: 'run with categoryName=Text Notes, checkOnly=False, hostType=Generic - 200mm,
+    inViewOnly=FloorPlan: Level 1, layerFunction=, layerIndex=99, material=, widthMm=250 instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned FunctionWords
+    Structure, Substrate, Thermal/Air Layer (or Insulation), Finish 1, Finish 2, Membrane
+    Layer, Structural Deck, MillimetresPerFoot 304.8, anythingAsked true, applied false, buildUp
+    (null), byFunction false, changeMaterial false, checkOnly false, complaints Func`2, differences
+    (null), errorWords 10 entry(ies), findings 1 item(s) [Layer 99 does not exist - ''Basic
+    Wall: Generic - 200mm'' has ...], functionAsked , functionNamed Func`2, functionShown
+    Func`2, functionWanted (null), label ''Basic Wall: Generic - 200mm'', layerIndex 99, layerLine
+    Func`3, lettersApart Func`3, matches false, materialAsked , materialShown Func`2, materialWanted
+    (null), refused Layer 99 does not exist - ''Basic Wall: Generic - 200mm'' has 1 layer(s),
+    numbered 0 (the outside face) to 0, and -1 finds one by its function. REPORT_COMPOUND_STRUCTURE
+    counts from 1, so its 1 is 0 here. It has: [0] Structure, 200 mm, <By Category>, structure
+    CompoundStructure, target -1, wasLayer (null), wasMm 0, wholeBuildUp Func`3, widthChange
+    true, widthMm 250, wordsOf Func`2. inputs came hostType as given; layerIndex as given;
+    widthMm as given; material as given; layerFunction as given; checkOnly as given. on Project2'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f3a13f688c10de41
-
+  fingerprint: b5eacdcd6e0fa9fb
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

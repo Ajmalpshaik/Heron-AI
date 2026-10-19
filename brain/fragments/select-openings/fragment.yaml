@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -102,6 +102,37 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Project1 (3,047 elements), Revit 2020, session 2648
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection, create-opening with this phase's own values -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned byKind 6 entry(ies), collector FilteredElementCollector, elements 1 item(s) [Opening],
+    found 1, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s),
+    linkThroughView (null), linkTypes 0 item(s), linkedElementsOf Func`2, linkedMatches 1
+    item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
+    0, openingCategories 5 item(s) [OST_ShaftOpening, OST_FloorOpening, OST_SWallRectOpening,
+    ...], unreadPlacements 0. inputs came inViewOnly as given; includeLinks not given - false
+    (optional). on Project1
+  negative_case: 'run with boundary=1000,3500,0; 2000,3500,0; 2000,4500,0; 1000,4500,0, categoryName=Text
+    Notes, host=selected, inViewOnly=FloorPlan: Level 1, perpendicularFace=False instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-category-name, set-selection, create-opening with this
+    phase''s own values - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned byKind 5 entry(ies), collector FilteredElementCollector,
+    elements 0 item(s), found 0, includeLinks false, linkBlocked , linkDocs 0 item(s), linkPlacements
+    0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedElementsOf Func`2, linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, nestedLinks
+    0, openingCategories 5 item(s) [OST_ShaftOpening, OST_FloorOpening, OST_SWallRectOpening,
+    ...], unreadPlacements 0. inputs came inViewOnly as given; includeLinks not given - false
+    (optional). on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d779a84f48f23cd8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

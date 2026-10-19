@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,31 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, Family1 - active was Project1,
+    Revit 2020, session 30308'
+  positive_case: 'run as it would normally be run. returned MmPerFoot 304.8, agreeing 0, coordinates
+    HeronLinkSource.rvt : 1 : location <Not Shared>: not loaded - not checked.
+
+    HeronLinkSource.rvt : 2 : location <Not Shared>: DISAGREES - at its origin E/W 5000, N/S
+    0, elevation 0 mm; 30 m east E/W 5000, N/S 0, elevation 0 mm., findings 1 item(s) [0 link(s)
+    agree with this model''s shared coordinates; 1 do n...], here ProjectLocation, lines 2
+    item(s) [HeronLinkSource.rvt : 1 : location <Not Shared>: not loaded ..., HeronLinkSource.rvt
+    : 2 : location <Not Shared>: DISAGREES -...], mismatched 1 item(s) [HeronLinkSource.rvt
+    : 2 : location <Not Shared>], tolerance 0.00328083989501312, toleranceMm 0. inputs came
+    toleranceMm as given. on Project1'
+  negative_case: run against 'Family1' with toleranceMm=0 instead - chosen because it should
+    not contain what this fragment reports. returned MmPerFoot 304.8, agreeing 0, coordinates
+    , findings 1 item(s) [The model has no Revit links.], here (null), lines 0 item(s), mismatched
+    0 item(s), tolerance 0.00328083989501312, toleranceMm 0. inputs came toleranceMm as given.
+    on Family1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 114f813233b5d769
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
