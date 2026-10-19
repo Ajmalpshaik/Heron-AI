@@ -888,9 +888,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ho.md`](needs-checking/group-ho.md)
 
-## Group HP - a material, a level or a family type by name, and a type by key: the three parameter writers (2026-10-19)
+## Group HT - a material, a level or a family type by name, and a type by key: the three parameter writers (2026-10-19)
 
-**Its own file:** [`needs-checking/group-hp.md`](needs-checking/group-hp.md)
+**Its own file:** [`needs-checking/group-ht.md`](needs-checking/group-ht.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

@@ -114,7 +114,7 @@ second_route:
     the elements - ticked or unticked as asked - or a schedule with the
     parameter as a column
 
-# Version 5 (5b-1221): an element reference takes a NAME. NEEDS-CHECKING Group HP.
+# Version 5 (5b-1242): an element reference takes a NAME. NEEDS-CHECKING Group HT.
 positive_by_name:
   - given: >
       a column type (M_Round Column : 305mm Diameter, Material <By Category>),

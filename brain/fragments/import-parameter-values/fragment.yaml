@@ -102,7 +102,7 @@ purpose: >
 
   **Version 5 takes a material, a level or a family type by name.**
 
-# VERSION 5 - FRAGMENT-ISSUES 5b-1221. Measured 2026-10-19 on Revit 2020, the
+# VERSION 5 - FRAGMENT-ISSUES 5b-1242. Measured 2026-10-19 on Revit 2020, the
 # owner's Kerala house: "Id,Material" with 346587,TRG_Material_Teak_Wood and
 # includeTypeParameters true reached the M_Round Column type's Material and
 # answered "Revit would not take 'TRG_Material_Teak_Wood' for 'Material'" -
@@ -113,7 +113,7 @@ purpose: >
 # two, is refused for that cell with the reason, counted with the values Revit
 # would not take. The read-back compares the id Revit holds with the id the
 # name named - never the name Revit prints for it. Version 4's proof below no
-# longer describes the code: DRAFT until NEEDS-CHECKING Group HP.
+# longer describes the code: DRAFT until NEEDS-CHECKING Group HT.
 contract:
   needs:
     - name: doc
@@ -180,9 +180,9 @@ contract:
       role: accounting
       type: string
 
-# VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1221), so
+# VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1242), so
 # its fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group HP proves version 5 (D-30). Every value that is not an
+# NEEDS-CHECKING Group HT proves version 5 (D-30). Every value that is not an
 # element reference still takes the road this proof ran.
 proof:
   date: '2026-10-18'
@@ -269,7 +269,7 @@ compatibility-note: >
   **`System.IO` is written out in full**, as the fragment wrapper does not
   import it.
 
-  Since row 5b-1221 an element reference takes a name. `Parameter.Set(ElementId)`,
+  Since row 5b-1242 an element reference takes a name. `Parameter.Set(ElementId)`,
   `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`
   and `WhereElementIsElementType` are unchanged 2020 to 2027. What a reference
   holding <By Category> may name is read by reflection, like the Yes/No:

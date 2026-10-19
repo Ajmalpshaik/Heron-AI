@@ -19,11 +19,11 @@
 //   per room (FRAGMENT-ISSUES 5b-459). A key that names no element, or more
 //   than one, refuses THAT ROW by name and never guesses.
 //
-//   VERSION 4 (5b-1222): `types=yes` on the first row looks among the TYPES
+//   VERSION 4 (5b-1243): `types=yes` on the first row looks among the TYPES
 //   in those categories, not the elements placed from them - a column type's
 //   Material is one row, `key=Type Name|in=Columns|types=yes`. Left out it is
 //   no, and the search is version 3's. And a parameter holding another
-//   element takes a NAME, by either shape (5b-1221) - see "an element
+//   element takes a NAME, by either shape (5b-1242) - see "an element
 //   reference takes a name".
 //
 // BY ID: TWO PASSES, AND THE FIRST WRITES NOTHING. Every row is checked
@@ -129,7 +129,7 @@ Func<Parameter, bool> isYesNo = p =>
 };
 
 // ===========================================================================
-// AN ELEMENT REFERENCE TAKES A NAME (FRAGMENT-ISSUES 5b-1221).
+// AN ELEMENT REFERENCE TAKES A NAME (FRAGMENT-ISSUES 5b-1242).
 // ===========================================================================
 //
 // A parameter that holds another element - a Material, a Level, a type - was
