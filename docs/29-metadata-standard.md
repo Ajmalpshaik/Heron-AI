@@ -29,13 +29,19 @@ That is the difference between a registry that **describes** the system and one 
 
 Every Heron artefact carries these. Names are fixed; the comment syntax follows the file's language.
 
-| Field | Meaning | Example |
-|---|---|---|
-| `Heron-Agent` | Which registry agent(s) this implements. Comma-separated | `HERON-MCP-SRV-001, HERON-MCP-CON-002` |
-| `Heron-Step` | Build step that introduced it ([27](27-build-order.md)) | `1` |
-| `Heron-Status` | Lifecycle stage ([24](24-trust-model.md)) | `DRAFT` |
-| `Heron-Since` | Version it first appeared in | `0.1.0` |
-| `Heron-Layer` | `bridge` · `revit` · `brain` · `platform` · `test` · `tool` | `bridge` |
+| Field | Meaning | Allowed values — what [`check-metadata.py`](../tools/check-metadata.py) accepts | Example |
+|---|---|---|---|
+| `Heron-Agent` | Which registry agent(s) this implements. Comma-separated | `none`, or ids that are each a row in [28](28-agent-registry.md). An id the registry does not carry fails | `HERON-MCP-SRV-001, HERON-MCP-CON-002` |
+| `Heron-Step` | Build step that introduced it ([27](27-build-order.md)) | **any value** — only its presence is checked | `1` |
+| `Heron-Status` | Lifecycle stage ([24](24-trust-model.md)) | `DISCOVERED` · `DRAFT` · `TESTING` · `VALIDATED` · `SHADOW` · `PROVEN` · `PRODUCTION` · `DEPRECATED` · `ARCHIVED` (upper or lower case) | `DRAFT` |
+| `Heron-Since` | Version it first appeared in | **any value** — only its presence is checked | `0.1.0` |
+| `Heron-Layer` | Which layer the file belongs to | `bridge` · `revit` · `brain` · `platform` · `test` · `tool` (upper or lower case) | `bridge` |
+
+**Where the checker looks, read from the script:** a `.cs`, `.py` or `.ps1` file under `revit/`, `mcp/`,
+`brain/`, `platform/`, `tests/` or `tools/`, skipping `__pycache__`, `bin`, `obj`, `.vs` and everything
+under `brain/fragments/`. A field counts only on a `//` or `#` comment line in the file's first 41 lines.
+A missing field fails the file; the lists above are the script's own `STATUSES` and `LAYERS`, so if this
+table and the script ever disagree, the script is what runs.
 
 `Heron-Agent` may be `none` for scaffolding that implements no agent — a build file, a test harness.
 It may **not** be omitted; an absent field is a gap, `none` is a decision.
@@ -235,6 +241,13 @@ So the two agents do different things and the answer says which:
 
 The last one is the valuable one, and it runs in reverse: it audits **the registry against the code**,
 not just the code against the registry.
+
+> **As built (2026-10-18):** no longer a prototype - CI's gates job runs `python tools/check-metadata.py`
+> on every pull request ([`gates.yml`](../.github/workflows/gates.yml)). It does two things this table
+> does not list: it checks that the version Python reports and the one MSBuild stamps agree, and that a
+> sentence stating how many agents Phase 0 and Phase 1 need matches the registry rows carrying a step.
+> Agents the host provides are excused from the reverse audit by its `HOST_PROVIDED` list, which
+> `python tools/agent-count.py` reads too.
 
 ---
 

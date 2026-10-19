@@ -22,9 +22,26 @@ is the reasoning both stand on. **It is not authority** - where a card, a regist
 disagrees with a sentence here, the more specific source wins and the sentence is a defect
 ([PROJECT-MAP §D](PROJECT-MAP.md)).
 
-**Nothing here is proven.** Every tool and skill this page names is `DRAFT` until it has been run on a real
-family with a negative case ([D-30](DECISIONS.md)). The register rows that owe those runs are
+**What is proven is each card's to say, not this page's.** Every tool and skill this page names was
+built `DRAFT`, and stays so until it has been run on a real family with a negative case
+([D-30](DECISIONS.md)). The register rows that owe those runs are
 [NEEDS-CHECKING Group BV](needs-checking/group-bv.md).
+
+> **As built (2026-10-18):** many of the §11 tools are now `PROVEN` - proved in family documents in
+> Revit 2024 on 2026-10-03 (#395, commit `931777ea`), each proof in its
+> own card's `proof:` block - and others, `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`,
+> `SET_FAMILY_SETTINGS`, `SET_FAMILY_CONNECTOR_ROLES` and `ADD_FAMILY_CONNECTOR` among them, are still
+> `DRAFT`. **Every family skill is still `DRAFT`.** Read the state from the cards, never from here:
+> `grep -H '^heron-status:' brain/fragments/<folder>/fragment.yaml brain/skills/<skill>.yaml`. Since
+> 2026-10-09 (#451) a chat gets each skill's method through the `heron_method` tool - its jobs carry the
+> skills' names, `family-creation` to `lighting-fixture-family-creation`.
+> **Checked 2026-10-18 - a DRAFT step is refused, not run.** Since [D-117](decisions/D-117.md)
+> (2026-10-17) `revit_change` keeps a change only from a PROVEN fragment, family documents included:
+> called in a cloud container, it refused `SET_FAMILY_SETTINGS`, `LOCK_FORM_TO_PLANES` and `FLEX_FAMILY`
+> with *"... is DRAFT ... Nothing was sent to Revit"*, and let `ADD_FAMILY_PARAMETERS`, PROVEN, through
+> to its next check. A DRAFT step's change is kept only through `try-once`, once per version, behind
+> Revit's Keep or Discard box ([D-119](decisions/D-119.md)). `family-creation`'s precondition that a DRAFT
+> step *"runs only here, on a new family or a scratch copy"* was written before D-117.
 
 | What it produced | Where it lives |
 |---|---|
@@ -33,6 +50,90 @@ family with a negative case ([D-30](DECISIONS.md)). The register rows that owe t
 | **Seven new skills**, one per kind, and `family-creation` widened | §11 |
 | **What to measure in Revit** | [Group BV](needs-checking/group-bv.md) |
 | **What disagrees, and a possible defect found on the way** | [FRAGMENT-ISSUES rows 5b-280 to 5b-282](FRAGMENT-ISSUES.md) |
+
+## At a glance
+
+**The method, in the order `heron_method family-creation` serves it.** The order is not a preference:
+two steps taken the other way round break a family in a way that looks fine until somebody resizes it.
+The numbers are the method's own step numbers.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    S0(["<b>0 · The modeller opens the template</b> - Heron never chooses it<br/>REPORT_FAMILY_TEMPLATE reads the kind and the units"])
+    S1["<b>1 · Category and settings</b><br/>SET_FAMILY_CATEGORY · SET_FAMILY_SETTINGS"]
+    S2["<b>2-4 · Parameters, the first type, formulas</b><br/>ADD_FAMILY_PARAMETERS · SET_FAMILY_TYPE_VALUES · SET_FAMILY_FORMULA"]
+    S5["<b>5-6 · The skeleton</b><br/>CREATE_REFERENCE_PLANES · SET_FAMILY_PLANE_REFERENCE · LABEL_FAMILY_DIMENSION"]
+    S7["<b>7 · The forms, one group of parts at a time</b><br/>CREATE_FAMILY_FORMS · EXTRUDE_BETWEEN_PLANES · revolve · blend · sweep"]
+    S8["<b>8-9 · Lock the faces, label round sizes</b><br/>LOCK_FORM_TO_PLANES · LINK_FAMILY_FORM_PARAMETER · LABEL_FAMILY_RADIUS"]
+    S10["<b>10 · Voids, joins, arrays</b><br/>COMBINE_FAMILY_FORMS · ARRAY_FAMILY_FORMS"]
+    S11["<b>11 · Connectors and nested parts</b><br/>ADD_FAMILY_CONNECTOR · SET_FAMILY_CONNECTOR_ROLES · LOAD_FAMILY · PLACE_NESTED_FAMILY"]
+    S12["<b>12 · Materials, subcategories, visibility</b><br/>SET_FAMILY_FORM_MATERIAL · SET_FAMILY_FORM_SUBCATEGORY · SET_FAMILY_FORM_VISIBILITY"]
+    S13["<b>13 · Read it back, then look at it</b><br/>REPORT_FAMILY_FORMS · revit_view_image"]
+    S14["<b>14-15 · Flex it, then a type catalog</b><br/>FLEX_FAMILY · REPORT_FAMILY_TYPE_CATALOG"]
+    SV(["<b>The modeller saves it</b> · Ctrl+S"])
+
+    S0 ==> S1 ==> S2 ==> S5 ==> S7 ==> S8 ==> S10 ==> S11 ==> S12 ==> S13 ==> S14 ==> SV
+    S1 -.->|a fixed-size family| S7
+    S7 -.->|fixed-size| S10
+    S13 -.->|a fixed-size family: nothing to flex| SV
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    class S0,SV user
+    class S1,S2,S5,S7,S8,S10,S11,S12,S13,S14 addin
+```
+
+**A method served as DRAFT; each step's own status is the card's.** `heron_method family-creation` prints
+every capability with its risk and status - read the state there, never from this page. A DRAFT step that
+changes the family is refused by `revit_change` today (the status above). A **fixed-size** family takes
+steps 0, 1, 7, 10, 11, 12 and 13 only - the dotted arrows. What the newer tools still owe is in
+[Group BV](needs-checking/group-bv.md). Checked against `brain/skills/family-creation.yaml`, the
+`heron_method` tool in `mcp/server/heron_mcp_server.py`, and its answer on 2026-10-18.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+ 0     the modeller opens the template (Heron never chooses it); REPORT_FAMILY_TEMPLATE reads kind and units
+ 1     category and settings          SET_FAMILY_CATEGORY, SET_FAMILY_SETTINGS
+ 2-4   parameters, first type, formulas  ADD_FAMILY_PARAMETERS, SET_FAMILY_TYPE_VALUES, SET_FAMILY_FORMULA
+ 5-6   the skeleton                   CREATE_REFERENCE_PLANES, SET_FAMILY_PLANE_REFERENCE, LABEL_FAMILY_DIMENSION
+ 7     the forms, group by group      CREATE_FAMILY_FORMS, EXTRUDE_BETWEEN_PLANES, revolve, blend, sweep
+ 8-9   lock faces, label round sizes  LOCK_FORM_TO_PLANES, LINK_FAMILY_FORM_PARAMETER, LABEL_FAMILY_RADIUS
+ 10    voids, joins, arrays           COMBINE_FAMILY_FORMS, ARRAY_FAMILY_FORMS
+ 11    connectors, nested parts       ADD_FAMILY_CONNECTOR, SET_FAMILY_CONNECTOR_ROLES, LOAD_FAMILY,
+                                      PLACE_NESTED_FAMILY
+ 12    materials and visibility       SET_FAMILY_FORM_MATERIAL, SET_FAMILY_FORM_SUBCATEGORY,
+                                      SET_FAMILY_FORM_VISIBILITY
+ 13    read back, then look           REPORT_FAMILY_FORMS, revit_view_image
+ 14-15 flex, then a type catalog      FLEX_FAMILY, REPORT_FAMILY_TYPE_CATALOG
+ then  the modeller saves it (Ctrl+S)
+
+A fixed-size family: steps 0, 1, 7, 10, 11, 12 and 13 only.
+```
+
+</details>
+
+**Which job for which kind of family.** The template decides the kind (§1); the job's name is what
+`heron_method` takes, and each one keeps `family-creation`'s steps in their order and adds what its kind
+needs. Read from each skill's `purpose` in [`brain/skills/`](../brain/skills/) on 2026-10-18; §1 has
+how Revit reports each kind, and §11 the tools each one uses.
+
+| Kind | The template the modeller opens | `heron_method` job | What its method adds |
+|---|---|---|---|
+| Level- or work-plane-based - equipment, a valve, a box | a Generic Model, or the category's own | `family-creation` | the base method above |
+| Wall-, ceiling-, floor-, roof- or face-based | the host's own template; face-based for a host in a linked model | `hosted-family-creation` | reads the host first; an opening in the host, `CREATE_FAMILY_HOST_OPENING` |
+| Line-based - a lintel, a cable ladder run | a line-based template | `line-based-family-creation` | the Length from the two clicks; the template's planes never moved |
+| Adaptive component | Generic Model Adaptive | `adaptive-family-creation` | numbered points, `PLACE_ADAPTIVE_POINTS`, `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` |
+| Pattern-based curtain panel | a pattern-based template | `pattern-based-family-creation` | points and lines, not planes; the tile pattern of the surface it fills |
+| Profile | a Profile template | `profile-family-creation` | 2D lines in its one view; used in a sweep with `SET_FAMILY_SWEEP_PROFILE` |
+| Detail item, line-based detail, annotation symbol | a Detail Item or Generic Annotation template | `detail-family-creation` | 2D lines and filled regions in one view |
+| Duct or pipe fitting | a Generic Model set to Pipe or Duct Fittings | `mep-fitting-family-creation` | its Part Type, connectors and sizes that routing preferences can use |
+| Door, window | the Door or Window template | `door-window-family-creation` | the host wall with its opening already cut; the template's planes never moved |
+| Structural framing, structural column | the framing or column template | `structural-family-creation` | Member Left and Right planes; Material for Model Behavior, Section Shape |
+| Lighting fixture | the Lighting Fixture template | `lighting-fixture-family-creation` | its light source, `SET_FAMILY_LIGHT_SOURCE`, and a power connector |
+| Swapping in-place families for a loadable one | - | `replace-in-place-family` | the swap, whatever the hosting, carrying the data across |
 
 ---
 

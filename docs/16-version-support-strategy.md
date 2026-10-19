@@ -21,7 +21,7 @@ Eight versions today, growing by one every year:
 | 2024 | .NET Framework 4.8 | **64-bit** | `ElementId.IntegerValue` → `ElementId.Value` |
 | 2025 | **.NET 8** | 64-bit | **Runtime break** |
 | 2026 | .NET 8 | 64-bit | |
-| 2027 | **.NET 10** | 64-bit | **Third runtime.** **Confirmed** — `brain/heron_dotnet.py` pins `2027: 10`, `Directory.Build.props` maps it, CI compiles 2027 with the .NET 10 SDK on every push, and a real Revit 2027 loaded the add-in on 2026-09-19 ([`A12`](NEEDS-CHECKING.md)). This cell said *"Reported by a shipping project ([26 sec.3](26-prior-art-revit-mcp.md)); confirm against the SDK"* until 2026-09-21 — an open action that had closed twice over ([row 5b-62](FRAGMENT-ISSUES.md)) |
+| 2027 | **.NET 10** | 64-bit | **Third runtime.** **Confirmed** — `brain/heron_dotnet.py` pins `2027: 10`, `Directory.Build.props` maps it, CI compiles 2027 with the .NET 10 SDK on every pull request and every push to `main`, and a real Revit 2027 loaded the add-in on 2026-09-19 ([`A12`](NEEDS-CHECKING.md)). This cell said *"Reported by a shipping project ([26 sec.3](26-prior-art-revit-mcp.md)); confirm against the SDK"* until 2026-09-21 — an open action that had closed twice over ([row 5b-62](FRAGMENT-ISSUES.md)) |
 
 *Runtime versions must be verified against the installed SDKs before being locked in — see spec §24.*
 
@@ -81,6 +81,16 @@ REVIT2024_OR_GREATER     <- 64-bit ElementId
 REVIT2025_OR_GREATER     <- .NET 8
 ```
 
+> **As built (2026-10-18):** one property chooses the release - `dotnet build -p:RevitVersion=2024` - and
+> [`Directory.Build.props`](../Directory.Build.props) maps it to **four** target frameworks, not three:
+> `net472` for 2020, `net48` for 2021 to 2024, `net8.0-windows` for 2025 and 2026, `net10.0-windows` for
+> 2027; a release it does not list is an error, never a guess. Each release builds into its own folder,
+> `bin\x64\<Configuration>\<RevitVersion>\`, so one build per release rather than two outputs. The symbols
+> are `REVIT<year>` plus a cumulative `REVIT<year>_OR_GREATER` from 2024 up - `REVIT2026_OR_GREATER` and
+> `REVIT2027_OR_GREATER` as well as the two above. `python tools/check-compile.py` builds every release,
+> and CI's job *"The C# compiles, 2020 to 2027"* runs it on every pull request and every push to `main` - a
+> compile, not a proof.
+
 ### Why not separate branches per version
 
 Branch-per-version is the intuitive answer and it is a trap. A fix made in one branch has to be
@@ -119,6 +129,14 @@ Rules:
 This is the same "adapter required?" logic the spec already describes for fragments (§11, §68),
 applied to the platform itself.
 
+> **As built (2026-10-18):** there are no `Heron.Revit.Abstractions`, `Heron.Revit.Adapters` or
+> `Heron.Revit.Core` projects. The C# is `revit/` (`Heron.Bridge`, `Heron.Doc`, `Heron.Revit.Addin`,
+> `Heron.Scripting`, `Heron.Tools`) and `platform/Heron.Core`; `Autodesk.Revit` may appear only inside
+> `revit/` (`tools/check-structure.py`) and `Heron.Bridge` stays Revit-free (its own project file references
+> no Revit assembly). Outside the
+> fragments, `#if REVIT...` appears in a handful of add-in files (`grep -rl '#if REVIT' revit platform`),
+> rule 1's intent kept by keeping that list short rather than by an adapter project.
+
 ---
 
 ## 5. Fragments follow the same shape
@@ -135,6 +153,12 @@ Most fragments will have **one** implementation that works everywhere, because t
 against the Heron abstractions rather than raw Revit types. Only fragments that genuinely need a
 version-specific API get a second implementation — which is precisely the decision tree in spec §68.
 
+> **As built (2026-10-18):** every fragment has one implementation, `impl/any/fragment.cs`
+> (`ls -d brain/fragments/*/impl/*/`), and declares an explicit `revit:` list, never a range. A version
+> difference is an `#if REVIT...` branch inside it: the add-in compiles fragments with Roslyn inside Revit
+> and hands it the add-in's own release symbols (`HeronFragmentSymbols.cs`, row 5b-181).
+> `python tools/check-fragments-compile.py` compiles each one against every release it claims, in CI.
+
 ---
 
 ## 6. Build and deployment matrix
@@ -149,6 +173,37 @@ Each Revit version needs its own `.addin` manifest and its own assembly set:
 | `%AppData%\Autodesk\Revit\Addins\2026\Heron\` | net8 |
 
 The installer detects which Revit versions are present and deploys only those.
+
+> **As built (2026-10-18):** every release, 2020 to 2027, installs per user at
+> `%APPDATA%\Autodesk\Revit\Addins\<version>\` with its own build - `net472` for 2020 (not `net48` as the
+> table above has it), `net48` for 2021 to 2024, `net8.0-windows` for 2025 and 2026, `net10.0-windows` for
+> 2027 - and `tools/deploy-addin.ps1` refuses a build whose runtime does not match the release. Revit
+> 2027's move of the *all-user* folder to `Program Files` does not touch a per-user install
+> ([`revit-version-support`](../.claude/skills/revit-version-support/SKILL.md)). A real Revit has loaded the
+> add-in on 2020, 2024, 2026 and 2027 ([A12](needs-checking/group-a.md),
+> [Group EQ](needs-checking/group-eq.md)); on 2026 no fragment could run until a repair that has not yet
+> been run in Revit ([Group GW](needs-checking/group-gw.md)).
+
+### As built — release by release, built and seen (2026-10-18)
+
+The runtime and the folder come from [`Directory.Build.props`](../Directory.Build.props) (`HeronTfm`,
+`OutputPath`). The last two columns are a real Revit's, and a compile counts in neither.
+
+| Revit | .NET | Build folder | The add-in loaded in a real Revit | A signed proof names it |
+|---|---|---|---|---|
+| 2020 | `net472` | `bin\x64\<Configuration>\2020\` | **yes** - [A12](needs-checking/group-a.md) 2026-09-19, [EQ6](needs-checking/group-eq.md) 2026-10-17 | yes |
+| 2021 | `net48` | `bin\x64\<Configuration>\2021\` | NOT RUN - EQ1: no PC reached has it | no |
+| 2022 | `net48` | `bin\x64\<Configuration>\2022\` | NOT RUN - EQ2 | no |
+| 2023 | `net48` | `bin\x64\<Configuration>\2023\` | NOT RUN - EQ3 | no |
+| 2024 | `net48` | `bin\x64\<Configuration>\2024\` | **yes** - A12, EQ6, and the safety groups run on 2026-10-18 ([Group ET](needs-checking/group-et.md)) | yes |
+| 2025 | `net8.0-windows` | `bin\x64\<Configuration>\2025\` | NOT RUN - EQ4: no PC reached has it | no |
+| 2026 | `net8.0-windows` | `bin\x64\<Configuration>\2026\` | **loads, and no fragment ran** - EQ5, [row 5b-575](fragment-issues/section-5b-rows-401-425.md); the repair is [Group GW](needs-checking/group-gw.md), not yet run on 2026 | no |
+| 2027 | `net10.0-windows` | `bin\x64\<Configuration>\2027\` | **yes** - A12, EQ6, and fragments ran in the safety groups of 2026-10-18 (Group ET) | no |
+
+*A signed proof names it* is derived, never typed: the two commands at the top of
+[Group EQ](needs-checking/group-eq.md) list the release each PROVEN fragment's own proof names, and a proof
+on a further release is an entry of `proof.releases` ([D-131](DECISIONS.md)), which `proven_releases` in
+[`heron_matrix.py`](../brain/heron_matrix.py) reads beside it. Run them again before trusting this column.
 
 **Per-user location, no admin rights** — see [07 §5](07-installation-and-update.md).
 
@@ -174,6 +229,12 @@ Eight versions × every fragment is a large matrix. It is also the only thing th
 
 Testing two versions on every commit catches the runtime break immediately, which is where almost all
 breakage will occur. The full sweep runs when it matters.
+
+> **As built (2026-10-18):** the full matrix **compiles** on every pull request and every push to `main` -
+> the add-in for all eight releases and each fragment for every release it claims. What runs in Revit is
+> per fragment and per release, and the table in §6 says how far each release has got: a
+> fragment's proof names the release it ran on, and a proof on another release is an entry of
+> `proof.releases` ([D-131](DECISIONS.md)). No release runs Heron's tests inside Revit automatically.
 
 See [13 §3](13-testing-and-quality.md) for how Revit tests actually execute.
 

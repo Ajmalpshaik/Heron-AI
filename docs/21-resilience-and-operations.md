@@ -3,6 +3,23 @@
 > Derived from [Master Specification Part 2](00b-master-specification-agent-os.md)
 > §38–§45, §49–§58, §75–§79.
 > **[NOTE]** blocks are engineering commentary added during review.
+>
+> **As built (2026-10-18):** these sections have code now. Every file below is `DRAFT` and tested without
+> Revit. Each file's header names the agent it implements, where it implements one. The *Reached by*
+> column is what imports or runs the file, found with `grep` on 2026-10-18; a file reached only by its
+> own command line is not called by anything else in Heron.
+>
+> | § | Built in | Reached by | Met a real Revit |
+> |---|---|---|---|
+> | §1 Dependency graph | [`heron_graph.py`](../brain/heron_graph.py) | `tools/check-gaps.py`, `tools/measure-graph.py` | not needed: it reads Heron's own files |
+> | §4 Emergency stop | the run clock, [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs), and the bridge's `stop`, [`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs) ([D-129](DECISIONS.md), [D-130](DECISIONS.md)) | every fragment run; `heron_bridge_client.py stop` | **yes**, 2026-10-18 on Revit 2024.3 and 2027.3 (§4) |
+> | §5 Health | [`heron_health.py`](../mcp/server/heron_health.py) | the `revit_health` and `heron_diagnose` tools | not recorded here |
+> | §6 Self-healing | [`heron_healing.py`](../brain/heron_healing.py) | its own command line only | — |
+> | §9 Configuration | [`heron_configuration.py`](../brain/heron_configuration.py) | its own command line only | — |
+> | §10 Migration | [`heron_migration.py`](../brain/heron_migration.py) | its own command line only | — |
+> | §12 Background workers | [`heron_scheduler.py`](../brain/heron_scheduler.py) | its own command line only | — |
+> | §13 Audit | [`heron_audit.py`](../brain/heron_audit.py) for the brain; the add-in's [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs) | `heron_brain.py`, `heron_ingest.py`; every add-in request | the add-in's audit file was read on the owner's laptop for the timings in [04 §8.7](04-heron-mcp.md) |
+> | §13 Workflow engine | [`heron_workflow.py`](../mcp/server/heron_workflow.py) | **nothing but `tests/test_workflow.py`**: the server does not import it | — |
 
 ---
 
@@ -50,6 +67,11 @@ it has a clear job. Recommend building exactly this and not more.
 [05 §5](05-heron-brain.md). A dedicated graph database is not warranted. Tracked as
 [Q-31](OPEN-QUESTIONS.md).
 
+> **As built (2026-10-18):** Q-31 is answered by [D-40](DECISIONS.md) - SQLite, as recommended, and an
+> edge is **derived** before it is stored (the Revit API members from the compiled assembly, through
+> `tools/check-api-surface.py`), never typed by hand. Built as
+> [`brain/heron_graph.py`](../brain/heron_graph.py) (`HERON-KRN-DEP-013`), DRAFT.
+
 ---
 
 ## 2. Safety architecture — autonomy proportional to risk
@@ -67,6 +89,13 @@ One adjustment: **`MODIFY` on a live project model belongs in High, not Medium.*
 generation" and "fragment updates" in Medium, which is right — those touch Heron's own artefacts. But
 moving 247 ducts in a client's model is a different category of act, and belongs behind a preview and a
 confirmation ([Golden Rule 17](14-golden-rules.md)).
+
+> **As built (2026-10-18):** `MODIFY` and above need the owner's Changes switch, and `PUBLISH` and `ADMIN`
+> need a switch of their own as well. The confirmation is Revit's Keep or Discard box, shown only while
+> the owner's *Ask to Keep* switch is on, and that switch is off by default
+> ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
+> So with Changes on and *Ask to Keep* off, a change is kept without a preview. [Golden Rule 17](14-golden-rules.md)
+> records that break. The whole decision is drawn in [12 §3a](12-security-and-permissions.md).
 
 ---
 
@@ -122,6 +151,112 @@ restart clears it - *"after a restart"* no longer holds, and the rest of the req
 while Revit is busy - a pipe operation rather than the file named above - and a fragment already
 running is stopped at its next check and its `TransactionGroup` rolled back. A single long Revit API
 call still cannot be interrupted.
+
+### 4a. How a stuck run is stopped — as built (2026-10-18)
+
+This section adds a picture and a table beside the requirements above. It does not change them. Checked
+against [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs),
+[`HeronStop.cs`](../platform/Heron.Core/HeronStop.cs), `AnswerStop` and `Dispatch` in
+[`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), `Gate` in
+[`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), `cmd_stop` in
+[`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), and the failure table in
+[`heron_failure.py`](../mcp/server/heron_failure.py).
+
+**What there is, against requirement 1.** There is no Emergency Stop button on the ribbon
+([D-46](DECISIONS.md)), no file-based kill switch, and no MCP tool. The one way to set the stop is
+`python mcp/client/heron_bridge_client.py stop`. It must be run with the client id of the chat that holds
+that Revit (`HERON_CLIENT_ID`), and it needs `--session <pid>` when more than one Revit is connected. Two
+things stop a stuck fragment, and both act at the fragment's next check. That check is a call
+`HeronStackGuard` puts at the top of every loop and every method in fragment code.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    CMD(["<b>stop</b> · heron_bridge_client.py<br/>--session N when two are connected"])
+    FLAG["<b>Heron is stopped</b><br/>answered at once, before the queue"]
+    F(["A fragment runs<br/>on Revit's own thread"])
+    CK{"Next loop or call:<br/>the run clock checks"}
+    RB["Job stopped<br/>a change is rolled back whole"]
+    T1["<b>ran_too_long</b><br/>fix the fragment first"]
+    T2["<b>stopped_mid_run</b><br/>Heron stays stopped<br/>until Revit restarts · D-130"]
+    LONG["One long Revit command<br/>no check inside it"]
+    SR["<b>still_running</b><br/>do not repeat the request"]
+
+    CMD ==> FLAG
+    FLAG -.->|seen at the next check| CK
+    F --> CK
+    CK -->|"its time is up · D-129"| RB
+    CK -->|"a stop arrived · D-129"| RB
+    RB -->|out of time| T1
+    RB -->|stopped| T2
+    F -->|"inside Regenerate, LoadFamily, an export"| LONG
+    LONG -->|"after operationTimeoutSeconds"| SR
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class CMD,T1,T2,SR user
+    class FLAG,CK,RB addin
+    class F,LONG revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+A fragment runs on Revit's own thread. At every loop and every call it asks the run clock (D-129).
+
+  its time is up  -> the whole job is rolled back -> ran_too_long
+                     (the limit is revit.operationTimeoutSeconds, 60 s by default in HeronConfig.cs,
+                      less a margin from HeronRunClock.BudgetFor, so this answer arrives first)
+  a stop arrived  -> the whole job is rolled back -> stopped_mid_run
+                     Heron then stays stopped until Revit is restarted (D-130)
+
+The stop: python mcp/client/heron_bridge_client.py stop [--session N]
+  answered on a bridge thread before the queue, so it reaches a Revit whose thread is held
+  only the chat that holds that Revit can stop it (its HERON_CLIENT_ID); another is refused
+  with two Revits connected and no --session, nothing is sent and both are listed
+
+What no check can reach: one long Revit command (Regenerate, LoadFamily, an export).
+  It finishes first. After revit.operationTimeoutSeconds the chat is told still_running.
+
+A read opens no transaction, so there is nothing to roll back: the answer says Heron counted the model
+before and after it, and nothing was changed.
+The trip is sticky: a fragment that catches the stop and returns is rolled back all the same.
+The Keep or Discard box is shown after the fragment has returned, outside the clock, so a
+modeller taking their time never trips it.
+```
+
+</details>
+
+**What the modeller is told.** The sentences are the add-in's own (`HeronRunClock.Why`, `ClockStopped`,
+`AnswerStop`, `HeronStop.Message`, `RevitDispatcher`). `heron_failure.py` sorts each answer under
+*Model* and *Next step*.
+
+| When | Answer | They read | The model | Next step |
+|---|---|---|---|---|
+| A fragment runs out of time | `ran_too_long` | *"'name' ran out of time and was stopped after N seconds - its limit, set inside the M seconds Heron waits for Revit ... A loop that never ends is the usual cause"* | a change: rolled back, and the answer says whether Revit confirmed it. A read: counted, nothing changed | fix the fragment before sending it again |
+| `stop` is run while a job runs | the stop's own answer | *"Heron is stopped. Revit is running a job now: a fragment stops at its next pass through a loop or a call and is rolled back ..."* | not touched by the stop itself | — |
+| The stopped job | `stopped_mid_run` | *"'name' was stopped part way through, because Heron was told to stop while it ran."* and *"Heron stays stopped until Revit is restarted: reading the model still works ..."* | rolled back | do not send it again |
+| Any change while stopped | `stopped` | *"Heron is stopped. Nothing was sent to Revit. Ctrl+Z in Revit undoes anything that already happened."* | nothing sent | restart Revit to work again |
+| One long Revit command | `still_running` | *"Revit started the request but has not finished within N seconds. It is still working; do not repeat the request."* | still being worked on | wait |
+
+While Heron is stopped, reads, the selection and zoom still work: the gate refuses only `MODIFY` and
+above.
+
+**Seen in Revit on 2026-10-18** ([NEEDS-CHECKING Group EZ](needs-checking/group-ez.md), the owner's
+laptop, scratch models, with throwaway probe fragments deleted afterwards). On Revit 2024.3 a runaway
+fragment was answered `ran_too_long` after 50 s with the rollback confirmed and the element count
+unchanged, and so was one that caught the stop (EZ1). Revit came back by itself in the same process
+(EZ2). A `stop` from a second pipe answered at once, and the runaway was `stopped_mid_run` six seconds
+after it started. A change was then refused `stopped` while a read still answered. A stranger's client id
+was refused (EZ3). On Revit 2027.3 the runaway came back `ran_too_long` at 50 s (EZ4, its first half).
+**Found and since fixed:** that run's `stop` went to every connected Revit and stopped another chat's
+Revit 2020. Since then the client sends it to one Revit and needs `--session` when there are two
+([row 5b-1094](fragment-issues/section-5b-rows-401-425.md)). That fix is held by `tests/test_bridge_stop.py`
+and has **not** run in Revit (EZ6). **Not run:** the after-restart half of EZ3, and anything on Revit 2020.
+Whether an idle Revit should take a stop from any client id is
+[Q-71](open-questions/tier-2.md).
 
 **[NOTE]** Worth pairing with the **panic button** proposed in [PROPOSALS B3](PROPOSALS.md) —
 *"undo everything Heron did today"*. Emergency Stop halts what is running; the panic button reverses

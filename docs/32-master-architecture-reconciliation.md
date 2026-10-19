@@ -23,6 +23,17 @@ only question that decides what happens next:
 
 Every row below cites a file. Where a claim could not be checked, it says so rather than rounding up.
 
+### At a glance — the verdicts, gathered from §1, §2 and §4
+
+| Verdict | The incoming document's parts, by its own § | Where it is argued |
+|---|---|---|
+| **Already built here** | 6.1 retrieval · 6.5 skills · 6.8 review · 14 Revit validation gate · 15 task contract · 20 git discipline | §2 |
+| **Already built, and stricter** | 6.3 memory · 6.4 Revit knowledge · 6.9 council · 7 self-improvement · 9 evidence-based done · 19 content is data | §2 |
+| **Built, cut differently** | 6.6 planning - the planner is the host's · 6.7 roles - the registry, at finer grain | §2, §3.1 |
+| **Missing then, built since** | 6.1 the Context Manager · 8 a baseline for the brain · the §14 gate as a checklist · §10–11 the repository research | §4.1, §4.2, §4.3, §4.5 |
+| **Still partial** | 18 an evaluation suite - nothing measures retrieval precision or first-pass correctness | §2 |
+| **Rejected** | Heron as a developer-assist harness ([D-57](DECISIONS.md)) · 6.2 a code graph · 6.4 four more trust labels · a second planner · a role per §6.7 | §1, §5 |
+
 ---
 
 ## 1. The thing to get right before anything else — what the document thinks Heron is
@@ -77,18 +88,18 @@ python tools/agent-count.py
 | Incoming § | What it asks for | Heron already has | Verdict |
 |---|---|---|---|
 | **6.1** Context Engine | task-aware retrieval, ranking, dedup, version awareness, traceability | [`brain/heron_retrieve.py`](../brain/heron_retrieve.py) — structured filter first, then keywords + vectors over the survivors, fused by reciprocal rank, and it reports what was excluded and why | **Built** |
-| **6.1** …token budgeting, compression | [`brain/heron_context.py`](../brain/heron_context.py) — **built the same day this row was written**, and served as the `heron_context` MCP tool | **At audit time this read:** *"[19](19-context-and-cost.md) specifies seven pieces and there is no Context Manager, no budget, no compression, no model router, no fallback and no token or cost accounting. `grep -rl "heron_context"` over the whole repository returns nothing."* **That grep now returns eight files.** Three of the seven pieces are now real — the Context Manager, its per-path parts budget, and the traceability [19 §1](19-context-and-cost.md) asks for. **Four remain absent on purpose:** compression ([§4.1](#41--the-context-manager--specified-then-built-the-same-day)), and the router, fallback and cost accounting, which [D-58](DECISIONS.md) placed in the **host** | **GAP, CLOSED IN PART** — see [§4.1](#41--the-context-manager--specified-then-built-the-same-day) |
+| **6.1** …token budgeting, compression | [`brain/heron_context.py`](../brain/heron_context.py) — **built the same day this row was written**, and served as the `heron_context` MCP tool | **At audit time this read:** *"[19](19-context-and-cost.md) specifies seven pieces and there is no Context Manager, no budget, no compression, no model router, no fallback and no token or cost accounting. `grep -rl "heron_context"` over the whole repository returns nothing."* **That grep returns files across the brain, the server and the tests now** — run it for the number. Three of the seven pieces are now real — the Context Manager, its per-path parts budget, and the traceability [19 §1](19-context-and-cost.md) asks for. **Four remain absent on purpose:** compression ([§4.1](#41--the-context-manager--specified-then-built-the-same-day)), and the router, fallback and cost accounting, which [D-58](DECISIONS.md) placed in the **host** | **GAP, CLOSED IN PART** — see [§4.1](#41--the-context-manager--specified-then-built-the-same-day) |
 | **6.2** Repository code graph (project→file→class→method→calls) | Roslyn-grade code intelligence over the Heron source | [`brain/heron_graph.py`](../brain/heron_graph.py) is a **fragment and capability** graph, not a source-code graph. Different object entirely | **Rejected for now — §5** |
 | **6.3** Memory Engine, categories, no full-history storage | [`brain/heron_scope.py`](../brain/heron_scope.py) — one store per scope as one file each, [Golden Rule 5](14-golden-rules.md) made physical; a cross-scope query is impossible to *write*, not merely absent. [10](10-memory-and-knowledge.md), [20](20-knowledge-trust-and-conflict.md) | **Built, and stricter** |
 | **6.4** Revit Knowledge Engine, version awareness | the fragment library (derive it: `ls brain/fragments \| wc -l`; this cell said **360** until 2026-09-21), [`brain/heron_matrix.py`](../brain/heron_matrix.py) (`CLAIMED` / `COMPILES` / … never merged), [16 — Version Support](16-version-support-strategy.md), the compile gate over 2020–2027 | **Built, and stricter** |
 | **6.4** Verified / Project-proven / Version-sensitive / Unverified | [24 — The Unified Trust Model](24-trust-model.md) — two orthogonal axes, which exist **because six competing vocabularies had to be resolved into them** | **Rejected — §5** |
-| **6.5** Skill System — trigger, context, steps, constraints, validation | [`brain/heron_skill.py`](../brain/heron_skill.py) and [`brain/skills/`](../brain/skills/) — 10 skills, each naming **capabilities, never fragments**. [09](09-skills-and-fragments.md) | **Built** |
+| **6.5** Skill System — trigger, context, steps, constraints, validation | [`brain/heron_skill.py`](../brain/heron_skill.py) and [`brain/skills/`](../brain/skills/) — skills (`ls brain/skills \| wc -l`), each naming **capabilities, never fragments**. [09](09-skills-and-fragments.md) | **Built** |
 | **6.6** Planning Engine, lightweight for small tasks | [`mcp/server/heron_workflow.py`](../mcp/server/heron_workflow.py) — Workflow Engine and checkpoints. The *planner* itself is the host's by [D-01](DECISIONS.md) | **Built, split differently — §3** |
-| **6.7** Eight specialist roles | [28 — The Complete Agent Registry](28-agent-registry.md), 250 agents by department. `python tools/agent-count.py` says how many have code | **Built, at far finer grain** |
+| **6.7** Eight specialist roles | [28 — The Complete Agent Registry](28-agent-registry.md), every agent by department. `python tools/agent-count.py` says how many have code | **Built, at far finer grain** |
 | **6.8** Review Engine — requirement, API, version, transaction, performance, dead code | `tools/check-*.py` (`ls tools/*.py \| wc -l`), plus [`brain/heron_validate.py`](../brain/heron_validate.py) and [13 — Testing & Quality](13-testing-and-quality.md) | **Built** |
 | **6.9** Optional council, evidence over majority | Shadow Mode, [18](18-agent-operating-system.md) — and [D-39](DECISIONS.md) already says approval comes from an **analysed disagreement, not a count of agreements** | **Built, and stricter** |
 | **7** Safe self-improvement, with a human gate | [Golden Rule 13](14-golden-rules.md), Article IV of the [Constitution](../HERON_CONSTITUTION.md), and [`heron_validate.py`](../brain/heron_validate.py) whose whole first rule is *it never writes `heron-status`* | **Built, and stricter** |
-| **8** Speed strategy, latency per stage | **Half of it exists and the halves are not interchangeable.** [`brain/heron_gaps.py`](../brain/heron_gaps.py) reads the audit trail and reports median and worst milliseconds **per fragment and per operation** — the Revit side. **The brain times nothing**: `heron_search`, `heron_embed` and `heron_retrieve` contain no clock at all | **Partial — §4.2** |
+| **8** Speed strategy, latency per stage | **Half of it exists and the halves are not interchangeable.** [`brain/heron_gaps.py`](../brain/heron_gaps.py) reads the audit trail and reports median and worst milliseconds **per fragment and per operation** — the Revit side. **The brain times nothing**: `heron_search`, `heron_embed` and `heron_retrieve` contain no clock at all. *That was the audit's reading; [`tools/measure-brain.py`](../tools/measure-brain.py) times the brain's stages from outside them now - §4.2* | **Partial — §4.2**, since closed |
 | **9** Evidence-based done | [D-30](DECISIONS.md) — a proof needs a positive case, a negative case and a staleness fingerprint | **Built, and stricter** |
 | **14** Revit Validation Gate, 14 questions | [03 — Heron Revit](03-heron-revit.md), the [fragment-proving skill](../.claude/skills/fragment-proving/SKILL.md), [D-51](DECISIONS.md), [D-53](DECISIONS.md) | **Built — but see §4.3** |
 | **15** Task Execution Contract, phases A–G | [27 — Build Order](27-build-order.md) and this repository's working practice | **Built** |
@@ -111,7 +122,8 @@ A future session comparing the two documents will read these as gaps. They are n
 Incoming §6.6 wants a Planning Engine inside the system. [D-01](DECISIONS.md) put the orchestrator,
 intent classification, persona and summarisation **in Claude Code**, and
 [`tools/check-metadata.py`](../tools/check-metadata.py) prints those four agents every run as
-*provided by the host, so no file here implements them*. Heron owns the Workflow Engine — ordering,
+*provided by the host, so no file here implements them* - and, since [D-80](DECISIONS.md) on
+2026-09-17, the Development rows whose whole job is language as well. Heron owns the Workflow Engine — ordering,
 retries, checkpoints, resumption — which is the half that must survive a crashed session.
 
 Building a second planner inside Heron would duplicate the host and break [Golden Rule 2](14-golden-rules.md).
@@ -131,7 +143,7 @@ treating it as a weight is a natural-looking regression:
 Incoming §7 permits an agent to *store validated fixes*. Here, evidence is gathered by an agent and
 **signed by a person** — drafts go to [`brain/proof-drafts/`](../brain/proof-drafts/), never into
 `brain/fragments/`. [D-30](DECISIONS.md) exists because an unproven claim quietly ages into a believed
-one, and an agent able to stamp 218 fragments is the fastest machine ever built for doing that.
+one, and an agent able to stamp every fragment in the library is the fastest machine ever built for doing that.
 
 ---
 
@@ -315,7 +327,8 @@ best case by construction. A request phrased in somebody else's words costs what
 **The registry row wants correcting**, and the tool declares `Heron-Agent: none` rather than claiming
 `HERON-OPS-OBS-011` while three quarters of that agent's declared job stays impossible. A row asking
 for the impossible is worse than a row asking for nothing, and quietly claiming it would have made
-`check-metadata.py` report the Observability Agent BUILT.
+`check-metadata.py` report the Observability Agent BUILT. *(The row was corrected on 2026-09-09 —
+`HERON-OPS-OBS-011` in [28](28-agent-registry.md), by [D-58](DECISIONS.md).)*
 
 **The value is not hypothetical.** Closing register row `A7` made `heron_capabilities` never reply, and
 a real Claude Code tool call sat on it for **thirty minutes** — found with `faulthandler`, not by
@@ -445,7 +458,7 @@ the incoming document and re-propose every one of them.
 | **A Roslyn code graph over the Heron source** (§6.2, §12) | It serves the developer-assist product Heron is not (§1). Its cost is a compiler-platform dependency in a project whose [D-42](DECISIONS.md) install story is *per-user, no administrator rights* — and [`tools/check-structure.py`](../tools/check-structure.py) already enforces the layering a graph would be built to police. **Re-open only if a concrete Heron requirement needs it**, which is the incoming document's own §11 test |
 | **The four API-verification labels** — Verified / Project-proven / Version-sensitive / Unverified (§6.4) | [24](24-trust-model.md) exists **because six competing status vocabularies had to be collapsed into two axes**. Adding a seventh vocabulary would undo the single largest piece of clean-up in this specification. The information those four labels carry is already expressible: lifecycle × source, plus the matrix's `CLAIMED`/`COMPILES` split |
 | **A second Planning Engine inside Heron** (§6.6) | [D-01](DECISIONS.md) — see §3.1 |
-| **Adding a specialist role per §6.7's list of eight** | [28](28-agent-registry.md) already defines 250 agents by department; the eight are a coarser cut of the same thing. Adding them would create a second registry — and [Golden Rule 2](14-golden-rules.md), *one agent one responsibility*, is what the registry exists to hold |
+| **Adding a specialist role per §6.7's list of eight** | [28](28-agent-registry.md) already defines every agent by department; the eight are a coarser cut of the same thing. Adding them would create a second registry — and [Golden Rule 2](14-golden-rules.md), *one agent one responsibility*, is what the registry exists to hold |
 | **Treating §1's improvement list as Heron's success measure** | Development speed and code review quality are how this repository is *worked on*. Heron's success measure is [01](01-vision-and-principles.md)'s: a modeller gets the right BIM outcome, safely, without knowing any of this exists |
 
 ---
@@ -484,6 +497,12 @@ machine, and none of it can be done from here.
    [`Q-44`](OPEN-QUESTIONS.md) (the brain records none of its own answers),
    [`Q-45`](OPEN-QUESTIONS.md) (the model router may be wholly the host's), and
    [`Q-47`](OPEN-QUESTIONS.md) (two capability-gap paths, one dead).
+
+   > **As built (2026-10-18):** items 2 and 3 are done. The owner answered all six on 2026-09-09:
+   > Q-48 as [D-59](DECISIONS.md), Q-43 as [D-61](DECISIONS.md), Q-44 as [D-62](DECISIONS.md), Q-47
+   > as [D-63](DECISIONS.md), Q-46 as [D-64](DECISIONS.md) and Q-45 as [D-65](DECISIONS.md) — each
+   > answer is in [`open-questions/tier-3.md`](open-questions/tier-3.md).
+
 4. **Re-run the measurements on the owner's PC.** Every figure in §4.1 and §4.2 is a Linux container on
    the `lexical` backend, and neither is the machine Heron runs on. `measure-brain.py` and
    `measure-routes.py` take seconds and the numbers will be different.

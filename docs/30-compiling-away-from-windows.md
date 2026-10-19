@@ -23,6 +23,65 @@ It takes about five minutes to fix, on any Linux container.
 python tools/check-compile.py
 ```
 
+## At a glance — what builds where, and what each can prove
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    SRC["<b>Heron's C#</b><br/>add-in · bridge · core<br/>and every fragment"]
+    CC["<b>A cloud container</b> · Linux<br/>dotnet-sdk-10.0 from apt<br/>check-compile.py · check-api-surface.py<br/>the bridge round trip, pipe as a socket"]
+    CI["<b>CI on GitHub</b><br/>gates.yml · ubuntu, .NET 10: every release,<br/>and a SKIPPED one fails the job<br/>windows.yml · the installer, no Revit"]
+    PC["<b>The owner's Windows PC</b><br/>with Revit installed"]
+    P1{{"Proves the API surface agrees:<br/>it compiles on 2020 through 2027"}}
+    P2{{"Proves behaviour: a recorded run<br/>on a named real model · D-30"}}
+    NO["Cannot reach from a container:<br/>the Windows named pipe · A4<br/>what the code does in Revit · D3"]
+
+    SRC --> PC
+    SRC --> CI
+    SRC --> CC
+    PC --> P2
+    CI --> P1
+    CC --> P1
+    CC -.-> NO
+    P1 -.->|"a compile is not a proof"| P2
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class SRC addin
+    class CC plat
+    class CI host
+    class PC,P2 revit
+    class P1 brain
+    class NO user
+```
+
+**Only the red half proves anything about a model.** The container and CI answer one question - does
+every type and member the code names exist in each release - and §3 says why that is the whole of what
+a green compile means. Which CI job runs what is in [`gates.yml`](../.github/workflows/gates.yml) and
+[`windows.yml`](../.github/workflows/windows.yml).
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Heron's C# (add-in, bridge, core, every fragment) builds in three places:
+  a cloud container - Linux, dotnet-sdk-10.0 from apt:
+      check-compile.py, check-api-surface.py, the bridge round trip with the pipe as a socket
+  CI on GitHub - gates.yml on ubuntu with .NET 10 compiles every release (a SKIPPED one fails);
+      windows.yml builds the installer on Windows, with no Revit
+  the owner's Windows PC, with Revit installed
+Container and CI prove: the API surface agrees - "it compiles on 2020 through 2027".
+The Windows PC proves behaviour: a recorded run on a named real model (D-30).
+A compile is not a proof.
+A container cannot reach the Windows named pipe (A4) or what the code does in Revit (D3).
+```
+
+</details>
+
 ---
 
 ## 1. Why it works
@@ -71,6 +130,12 @@ the WindowsDesktop MSBuild targets, and its `dotnet-sdk-10.0` package ships them
 | **Revit 2025–2027** | **Fully compiled too, since 2026-08-28.** `net8.0-windows` and `net10.0-windows`, every project, with the .NET 10 SDK and `-p:EnableWindowsTargeting=true`. This row said *cannot be built off Windows* until it was tried — §2a |
 | **The Windows named pipe** | Still cannot be reached here. `A4` in the register, and no compiler speaks to it |
 | **Behaviour, of any kind** | Still cannot be reached here, on any release. `D3` |
+
+> **As built (2026-10-18):** both rows above have since been met where they can be - on the owner's PC,
+> never in a container. `A4` passed on 2026-09-06 against a real Windows named pipe
+> ([Group A](needs-checking/group-a.md)); `D3` passed on 2026-10-17, a move measured at +200 mm on
+> Revit 2024 ([Group D](needs-checking/group-d.md)), and that group names what it still does not prove.
+> Neither changes this table: a Linux container reaches neither.
 
 `check-compile.py` reports a release it cannot build as **SKIPPED**, never as passed, and its summary
 says in words that a skip is not a pass. That distinction is the whole point of the script: the failure
@@ -214,15 +279,22 @@ once per Revit version, leaving whichever it did last. Run the two in one sittin
 round-trip host is a `net48` `.exe` the runtime cannot start. It happened the first time they were run
 together; the test now names the exact command to fix it rather than reporting a missing file.
 
+> **As built (2026-10-18):** since 2026-09-21 each Revit release builds into its own folder,
+> `bin/x64/<Configuration>/<RevitVersion>/` ([`Directory.Build.props`](../Directory.Build.props)), so
+> releases no longer overwrite one another. The explicit `OutputPath` above is still needed: the host is
+> built with `-p:RevitVersion=2024` and a different `HeronTfm`, and without it the `Heron.Bridge` it
+> references would be built into the same `2024` folder as `check-compile.py`'s `net48` build of it.
+
 .NET implements `NamedPipeServerStream` on Unix as a socket in the temp directory, so the same compiled
 bridge speaks the same protocol; only the two lines that open the connection differ, and
 `test_bridge_roundtrip.py` carries that shim rather than a second copy of itself.
 
-All 32 of its checks pass here — the framing, the JSON parser, the token, the newest-connection-wins
+Its checks pass here — the framing, the JSON parser, the token, the newest-connection-wins
 handover, the toggle cycle, and **the whole lease**. What it does **not** cover is the Windows named
 pipe itself: its naming, its security descriptor, and the `CreateNewInstance` flag that
 [HANDOVER §4](HANDOVER.md) note 2 was written about. Revit runs on Windows, so `A4` in the register
-still means the Windows run — this is a strong signal ahead of it, not a replacement for it.
+still means the Windows run — this is a strong signal ahead of it, not a replacement for it. *(That
+Windows run passed on 2026-09-06 - [Group A](needs-checking/group-a.md).)*
 
 **It found a real defect the first time it ran**, in the test rather than in the bridge: the lease
 section asserted that nothing held the lease, at a point where an earlier unknown-op probe had already

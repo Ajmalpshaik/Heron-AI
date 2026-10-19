@@ -24,6 +24,17 @@ the whole brain works outside — right?* Yes. Measured, at Step 1:
 **Under 40 KB inside Revit.** No RAG, no vector store, no fragments, no skills, no model calls, no
 knowledge of what a duct is.
 
+> **As built (2026-10-18):** the table above is the Step 1 measurement, and the add-in has grown since.
+> **It now compiles and runs fragments.** The library stays outside, in `brain/fragments/`. When a
+> fragment runs, its C# crosses the pipe, and the add-in compiles it in Revit's process with Roslyn
+> ([D-28](DECISIONS.md#d-28--generated-code-is-c-compiled-at-run-time-in-process),
+> [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)). On Revit 2025 and later the
+> compiler ships beside the add-in as `Heron.Scripting` ([revit/README](../revit/README.md)). The
+> add-in also holds the ribbon switches, the Keep or Discard box, the run clock, the run guard and the
+> dialog watch. Take its size from a build, never from this table. **What still holds:** no RAG, no
+> vector store, no skills, no model calls, and no knowledge of what a duct is beyond the fragment it is
+> handed.
+
 ### Why it must stay this small
 
 Three reasons, and each is a real constraint rather than a preference:
@@ -48,6 +59,8 @@ opens a **local named pipe** and waits.
 Verified rather than asserted: there is no `HttpClient`, `WebRequest`, `Socket`, `TcpClient` or any
 `System.Net` type anywhere in `Heron.Revit.Addin` or `Heron.Bridge`. A named pipe has **no network
 surface at all** ([D-02](DECISIONS.md)) — that was the reason for choosing it over localhost HTTP.
+Check it again with
+`grep -rn 'HttpClient\|WebRequest\|TcpClient\|System\.Net\.' revit --include=*.cs | grep -v /obj/`.
 
 ```text
 CLOUD                  the model provider  -  only if configured that way
@@ -55,11 +68,18 @@ CLOUD                  the model provider  -  only if configured that way
 CLAUDE CODE            host, on the user's PC
    |  MCP (stdio, local)
 HERON MCP SERVER       Python, on the user's PC  <- THE BRAIN LIVES HERE
+   |                   also serves the Companion page, 127.0.0.1 only (D-108)
    |  named pipe (local only, no network)
-HERON ADD-IN           C#, inside Revit.exe      <- ~40 KB, no network
+HERON ADD-IN           C#, inside Revit.exe      <- no network; compiles the fragment it is sent
    |  ExternalEvent
 REVIT
 ```
+
+**The Companion does not change this** ([D-108](DECISIONS.md#d-108--the-modeller-can-see-and-edit-herons-work-in-a-local-companion-page-and-the-chat-stays-the-only-place-to-talk-to-heron)).
+Its web server runs in the chat's MCP process, on `127.0.0.1`. The add-in only writes a small state
+file for it. The ribbon's Companion button hands the page's address to Windows, as a link in a dialog
+does, and opens no socket itself
+([`HeronCompanionCommands.cs`](../revit/Heron.Revit.Addin/HeronCompanionCommands.cs)).
 
 **What this buys, and it is worth more than it looks:**
 
@@ -76,6 +96,8 @@ REVIT
 RAG, vector store, fragments, skills, memory, learning, the capability registry, the orchestrator,
 standards, reporting — **all of it runs outside Revit**, in Python, where it can be changed without a
 Revit restart, written once instead of per version, and crash without taking anyone's model with it.
+The fragment *library* is outside too. Only the one fragment being run is compiled inside Revit, and a
+changed fragment needs no Revit restart.
 
 ---
 
@@ -122,6 +144,12 @@ The **Revit Plugin Health Agent** verifies:
 
 **[NOTE]** Health must be a **single structured object** with one overall verdict plus per-check detail, not a wall of text. It is consumed by the installer, by the self-healing system, by the user-facing "is Heron working?" answer, and by the failure analyser. One shape, four consumers.
 
+> **As built (2026-10-18):** [`heron_health.assess()`](../mcp/server/heron_health.py) gives one state for
+> each part and one overall: HEALTHY, WARNING, DEGRADED or FAILED. No Revit connected is a WARNING, not
+> a failure. The chat reaches it through `revit_health`, and `heron_diagnose` asks every layer in turn
+> for *"diagnose Heron"*. A bridge on another protocol version is refused with *"Restart that Revit to
+> finish updating"* ([04 §5](04-heron-mcp.md#5-note-version-compatibility-triangle)).
+
 ---
 
 ## 4. **[NOTE — CRITICAL]** The Revit API threading constraint
@@ -144,7 +172,7 @@ Every single Revit operation must be **marshalled back onto the Revit main threa
 flowchart TD
     EP["External process<br/><i>the MCP server</i>"]
     LI["Heron Add-in listener<br/><i>background thread inside Revit.exe</i>"]
-    EV["ExternalEvent.Raise()"]
+    EV["ExternalEvent.Raise()<br/><i>one event, one queue — RevitDispatcher.cs</i>"]
     HA["IExternalEventHandler.Execute(UIApplication)<br/><i>do the real Revit work here</i>"]
     RS(["result → back through IPC → MCP → AI"])
 
@@ -175,7 +203,7 @@ Heron Add-in listener (background thread inside Revit.exe)
         |
         |  enqueue request
         v
-ExternalEvent.Raise()
+ExternalEvent.Raise()       one event, one queue - RevitDispatcher.cs
         |
         |  Revit calls back on the main thread, in API context
         v
@@ -198,6 +226,30 @@ result -> back through IPC -> MCP -> AI
 
 **[NOTE]** An alternative to `ExternalEvent` is the `Idling` event, which lets Heron poll a queue. It is more forgiving about API context but fires constantly and is easy to abuse into a performance problem. Recommendation: `ExternalEvent` as the primary mechanism, `Idling` only for lightweight liveness/heartbeat. Tracked as [Q-4](OPEN-QUESTIONS.md).
 
+> **As built (2026-10-18):** Q-4 is answered: `ExternalEvent`, one queue, one handler
+> ([D-09](DECISIONS.md#d-09--revit-thread-marshalling-externalevent),
+> [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs)). `Idling` does two light jobs.
+> Once a second it writes which model and view are in front, for the Companion
+> ([D-108](DECISIONS.md#d-108--the-modeller-can-see-and-edit-herons-work-in-a-local-companion-page-and-the-chat-stays-the-only-place-to-talk-to-heron)
+> point 4). It has read no selection since 2026-10-04, when the owner took the Selected card off the
+> page (`WatchSelection` is false in
+> [`HeronLiveState.cs`](../revit/Heron.Revit.Addin/HeronLiveState.cs),
+> [40 §21.6](40-heron-companion.md#216-the-page-after-the-owners-first-test-2026-10-04)). It also keeps
+> the Ask to Keep button's label current
+> ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)
+> item 8).
+>
+> - **Rule 3 is built.** The dispatcher keeps two waits apart. *Never picked up* means Revit is busy
+>   (`revit.busyTimeoutSeconds`). *Started but not finished* means the work is slow
+>   (`revit.operationTimeoutSeconds`). While a tool waits, the server tells the host that the wait goes
+>   on ([04 §7.1](04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)).
+>   A fragment that never ends is stopped by the run clock it carries
+>   ([D-129](DECISIONS.md#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again)).
+> - **Rule 4 has one deliberate exception.** Revit's Keep or Discard box
+>   ([D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept))
+>   is shown inside the handler, with the transaction group still open, so the handler waits for the
+>   modeller. The bridge gives such a job `revit.askTimeoutSeconds` on top of its operation timeout.
+
 ---
 
 ## 5. **[NOTE — CRITICAL]** Transport between the MCP server and the add-in
@@ -216,6 +268,16 @@ The spec assumes the bridge works but never defines it. Options:
 **Multi-instance problem:** a user can have Revit 2023 and Revit 2025 open at the same time, or two documents in one Revit. The pipe name must therefore encode the Revit version and process ID (`heron.{version}.{pid}`), and Heron must handle "which Revit do you mean?" as a first-class case — either by asking, or by binding to the session that has focus.
 
 Tracked as decision **D-02**, [Q-2](OPEN-QUESTIONS.md).
+
+> **As built (2026-10-18):** [D-02](DECISIONS.md#d-02--mcp--add-in-transport-named-pipes) accepted named
+> pipes, and they were built as recommended. The add-in is the pipe server
+> ([`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)), limited to the current user. The pipe is
+> named `heron.{version}.{pid}` ([`BridgeIdentity.cs`](../revit/Heron.Bridge/BridgeIdentity.cs)). On
+> *"which Revit?"*, the build asks and never guesses by focus: with more than one Revit connected,
+> nothing is sent until the modeller chooses
+> ([Constitution Article 12a](../HERON_CONSTITUTION.md), [25](25-multi-session-and-binding.md)). A
+> second chat is refused rather than allowed to take over
+> ([D-22](DECISIONS.md#d-22--a-second-chat-is-refused-not-allowed-to-take-over)).
 
 ---
 
@@ -245,6 +307,16 @@ Rules:
 3. `TransactionGroup.Assimilate()` on success; `RollBack()` on any failure.
 4. Never leave a transaction open across an `ExternalEvent` boundary.
 5. Failure handling (`IFailuresPreprocessor`) is explicit — silently swallowing Revit warnings is how models get quietly corrupted.
+
+> **As built (2026-10-18):** the proposed rule is now
+> [Golden Rule 16](14-golden-rules.md#16-one-user-action-one-undo--per-document) and
+> [Constitution Article 8](../HERON_CONSTITUTION.md). `run_fragment_write` opens one `TransactionGroup`
+> named `Heron: <name>` and assimilates it only when the change is kept
+> ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)). A fragment that must work in one
+> of Revit's edit modes opens its own transactions inside that group
+> ([D-112](DECISIONS.md#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group)).
+> Before the group is kept, Revit may ask the modeller Keep or Discard (§10). A change kept without the
+> box, under D-138's grant, is still its own group and its own undo entry.
 
 ---
 
@@ -294,6 +366,15 @@ first commit. The vertical slice is built and proven on **one** version with the
 already in place, then the second runtime is added, then the rest fan out. See
 [16 §8](16-version-support-strategy.md).
 
+> **As built (2026-10-18):** the hypothesis table is confirmed in [16 §1](16-version-support-strategy.md),
+> and Revit 2027 runs on .NET 10. The source tree is one, as settled, but it is built **once per
+> release** rather than through a `<TargetFrameworks>` list: `dotnet build -p:RevitVersion=20xx`, with
+> [`Directory.Build.props`](../Directory.Build.props) mapping each release to its runtime (`HeronTfm`)
+> and its compile symbols. CI's job *"The C# compiles, 2020 to 2027"*
+> ([`gates.yml`](../.github/workflows/gates.yml)) runs `tools/check-compile.py` on every pull request
+> and every push to `main`. A compile is not a proof, though. Which releases a real Revit has loaded
+> the add-in on, and proved fragments on, is [NEEDS-CHECKING Group EQ](needs-checking/group-eq.md).
+
 ---
 
 ## 9. **[NOTE]** Worksharing / central models
@@ -306,6 +387,17 @@ Real projects are worksharing-enabled. Heron will hit:
 - **workset visibility** hiding elements Heron expects to find
 
 The Revit Workset Agent must handle ownership as a normal, expected outcome — not an error. And Heron must **never** trigger a Sync With Central on its own initiative. That is a `PUBLISH`-level action at minimum.
+
+> **As built (2026-10-18):** both halves are now Constitution Articles: 10 (never sync, publish or share
+> on Heron's own initiative) and 12 (ownership is a normal outcome). Article 10 has code behind it.
+> While a job runs, the run guard cancels a save, sync, export or print that the job's operation does
+> not allow ([`HeronRunGuard.cs`](../revit/Heron.Revit.Addin/HeronRunGuard.cs),
+> [`HeronRunPolicy.cs`](../revit/Heron.Revit.Addin/HeronRunPolicy.cs)). A publish runs only while the
+> owner's Publish switch is on
+> ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on),
+> [D-107](DECISIONS.md#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export)).
+> What the run guard has done in a real Revit is
+> [NEEDS-CHECKING Group EX](needs-checking/group-ex.md).
 
 ---
 
@@ -330,6 +422,26 @@ This is cheap to build, catches the majority of "the AI did something unexpected
 The [trust model](24-trust-model.md) makes it mechanical rather than discretionary: a level-3
 (`SHADOW`/`PROVEN`) fragment may only `MODIFY` **with a preview the user accepts**; unattended `MODIFY`
 requires level 4 (`PRODUCTION`).
+
+> **As built (2026-10-18): the preview is the run itself, shown in Revit before it is kept.** A
+> fragment's preview is its own run, rolled back
+> ([D-55](DECISIONS.md#d-55--a-fragments-preview-is-the-run-itself-rolled-back)). For a change asked for
+> in a chat, Revit runs it inside the open group. It selects and isolates what changed, and asks the
+> modeller **Keep** or **Discard**. Only Keep keeps it
+> ([D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept),
+> which superseded D-99's *kept at once*). Whether the box is shown is the owner's *Ask to Keep* switch
+> on the ribbon, **off by default**. Off, a change is kept at once as one undo entry, as D-99 recorded.
+> On, one click can keep the rest of a job without asking
+> ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
+> A DRAFT's one run is always asked. A publish is asked whenever Ask to Keep is on, even under a job's
+> grant, and with the switch off it is kept at once like any other change (`askToKeep` and
+> `UnderTheGrant` in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)). The move tools keep their own preview
+> (`revit_preview_move`, then `revit_apply_move`). No fragment is `PRODUCTION`, and
+> `revit_change` keeps a change only from a fragment whose proof still stands
+> ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)).
+> **Evidence:** the box was run on the owner's laptop in Revit 2024 and 2027 on 2026-10-18
+> ([NEEDS-CHECKING Group ET](needs-checking/group-et.md), *"The 2026-10-18 run"*). The Ask to Keep
+> switch itself has not run in Revit ([Group HG](needs-checking/group-hg.md)).
 
 ---
 
@@ -360,6 +472,14 @@ The add-in is deployed as a `.addin` manifest plus assemblies, per Revit version
 ```
 
 **[NOTE]** Prefer the **per-user** location — it needs no administrator rights, which matters when the target user is a BIM modeller on a locked-down corporate machine. Requiring admin at install time will stop adoption dead in a large contractor's IT environment.
+
+> **As built (2026-10-18):** decided as
+> [D-90](DECISIONS.md#d-90--install-stays-per-user-and-never-asks-for-administrator-rights): install
+> stays per-user and never asks for administrator rights. The installer is in
+> [`platform/`](../platform/README.md), and [07](07-installation-and-update.md) owns the detail. From
+> Revit 2027 the all-users folder above moves to `C:\Program Files\Autodesk\Revit\Addins\<version>\`.
+> The per-user folder Heron uses does not move
+> ([`revit-version-support`](../.claude/skills/revit-version-support/SKILL.md)).
 
 **[NOTE]** Assemblies loaded into Revit cannot be unloaded. Updating Heron's add-in requires a **Revit restart**. The update system (§10) must know this and say so plainly rather than appearing to have updated something that has not changed in memory.
 

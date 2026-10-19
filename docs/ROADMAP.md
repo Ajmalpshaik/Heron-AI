@@ -7,10 +7,107 @@
 > [D-10](DECISIONS.md)), and Phase 0 is complete. What remains open, and whether any of it gates a
 > phase, is in [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) — derive it there rather than reading a count here.
 >
-> **Where each phase stands is not kept on this page.** The step-by-step state — Phase 0 complete,
-> Step 6 run once and still owed `D3`, Phase 2 built and barely proven — is the Status table in the
-> root [README](../README.md#status), and what is genuinely unfinished is `python tools/check-gaps.py`.
-> This page is the route, not the progress.
+> **Where each phase stands is kept by the Status table in the root [README](../README.md#status), not by
+> this page**, and what is genuinely unfinished is `python tools/check-gaps.py`. The step-by-step state —
+> Phase 0 proven, Step 6's move measured in Revit 2024 with a failure forced mid-move still owed, Phase 2
+> built with the fragment library mostly `PROVEN` and every skill still `DRAFT` — is read from there.
+> This page is the route, not the progress: the one picture of progress on it,
+> [the phases at a glance](#the-phases-at-a-glance), is a reading dated 2026-10-18 with each box's
+> evidence named, and where it disagrees with the Status table or the tool, they win.
+>
+> **The build did not keep to this order, and that is recorded rather than smoothed over.** Pieces of
+> later phases were built while Phase 1 was still being proved: Phase 6's installer (in the
+> [v0.1.0 release](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), 2026-10-08, and run on
+> the owner's laptop on 2026-10-17 — [Group EP](needs-checking/group-ep.md)), Phase 5's
+> run-time compile of a fragment's C# inside Revit ([D-28](DECISIONS.md)), Phase 4's Capability Gap report
+> (`python brain/heron_gaps.py`), and the whole agent register, which `python tools/agent-count.py`
+> reconciles against the code. **Built is not proven** — each of them is held to [D-30](DECISIONS.md) like
+> everything else, and what has met a real Revit is in [NEEDS-CHECKING](NEEDS-CHECKING.md).
+
+---
+
+## The phases at a glance
+
+Read on 2026-10-18 from the Status table, the registers and the code. The colour is how far the phase has
+got, not how much of it there is.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    subgraph A ["Phases 0 to 1"]
+        direction TB
+        P0["<b>Phase 0</b> — Prove the bridge<br/>proven in Revit 2020 and 2024"]
+        P05["<b>Phase 0.5</b> — The second runtime<br/>loads on 2020, 2024, 2026, 2027<br/>no fragment runs on 2026 yet"]
+        P1["<b>Phase 1</b> — Modify, safely<br/>the move measured in 2024<br/>Keep or Discard run in 2024 and 2027<br/>a failure mid-move not yet forced"]
+        P0 --> P05 --> P1
+    end
+    subgraph B ["Phases 2 to 4"]
+        direction TB
+        P2["<b>Phase 2</b> — Fragments, capabilities, knowledge<br/>built · most fragments PROVEN<br/>every skill DRAFT"]
+        P3["<b>Phase 3</b> — The BIM surface<br/>its agents built, not proven"]
+        P4["<b>Phase 4</b> — Learning and trust<br/>built early, not proven<br/>the Capability Gap report among it"]
+        P2 --> P3 --> P4
+    end
+    subgraph C ["Phases 5 to 7"]
+        direction TB
+        P5["<b>Phase 5</b> — Code generation<br/>the run-time compile built early<br/>no fragment at PRODUCTION"]
+        P6["<b>Phase 6</b> — Platform<br/>installer v0.1.0, unsigned<br/>run on the owner's laptop"]
+        P7["<b>Phase 7</b> — Scale<br/>parts built early: the company<br/>standard, the agent creator"]
+        DF["<b>Not in the plan yet</b><br/>marketplace · other platforms<br/>multi-user server"]
+        P5 --> P6 --> P7 -.-> DF
+    end
+    A --> B --> C
+
+    classDef proven fill:#DCFCE7,stroke:#16A34A,color:#14532D
+    classDef measured fill:#FEF9C3,stroke:#CA8A04,color:#713F12
+    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
+    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
+    class P0 proven
+    class P05,P1,P6 measured
+    class P2,P3,P4,P5,P7 built
+    class DF notbuilt
+    style A fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+    style B fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+    style C fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+```
+
+**Green — proven:** a recorded run on a named real model, with a negative case ([D-30](DECISIONS.md)).
+**Yellow — measured:** part of it has run on a real Revit or the owner's PC, and the rest is owed or
+failed. **Blue — built:** the code exists and is tested, and the phase's goal has not been run in Revit.
+**Grey, dashed — not built.**
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+PROVEN    Phase 0    Prove the bridge            proven in Revit 2020 and 2024
+MEASURED  Phase 0.5  The second runtime          loads on 2020, 2024, 2026, 2027; no fragment runs on 2026 yet
+MEASURED  Phase 1    Modify, safely              the move measured in 2024; Keep or Discard run in 2024 and
+                                                 2027; a failure forced mid-move not yet run
+BUILT     Phase 2    Fragments, capabilities,    built; most fragments PROVEN; every skill DRAFT
+                     knowledge
+BUILT     Phase 3    The BIM surface             its agents built, not proven
+BUILT     Phase 4    Learning and trust          built early, not proven; the Capability Gap report among it
+BUILT     Phase 5    Code generation             the run-time compile built early; no fragment at PRODUCTION
+MEASURED  Phase 6    Platform                    installer v0.1.0, unsigned, run on the owner's laptop
+BUILT     Phase 7    Scale                       parts built early: the company standard, the agent creator
+NOT BUILT            Not in the plan yet         marketplace, other platforms, multi-user server
+```
+
+</details>
+
+| Phase | Where it stands, 2026-10-18 | Evidence |
+|---|---|---|
+| 0 — Prove the bridge | **Proven** in Revit 2020 and 2024 | [HANDOVER §3](HANDOVER.md#3-what-has-been-witnessed-at-a-real-revit) · [00e](00e-field-notes-proven-bridge.md) |
+| 0.5 — The second runtime | **Measured.** Loads on 2020, 2024, 2026 and 2027; on 2026 no fragment could run, and the repair has not been run in Revit | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-401-425.md) · [Group GW](needs-checking/group-gw.md) |
+| 1 — Modify, safely | **Measured.** The move on Revit 2024 (`D1` to `D6`); the Keep or Discard box and the rails on 2024 and 2027, faults logged as rows 5b-1090 to 5b-1095; a failure forced mid-move (`G-12`) not run | [Group D](needs-checking/group-d.md) · [Group ET](needs-checking/group-et.md) · [27 — the Phase 1 gate](27-build-order.md) |
+| 2 — Fragments, capabilities, knowledge | **Built.** The fragment library mostly `PROVEN`, every skill `DRAFT` | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` and the same over `brain/skills/*.yaml` |
+| 3 — The BIM surface | **Built**, not proven | `python tools/agent-count.py` |
+| 4 — Learning and trust | **Built early**, not proven | `python brain/heron_gaps.py` · `python tools/agent-count.py` |
+| 5 — Code generation | **Built early:** the run-time compile; no fragment has reached `PRODUCTION` | [D-28](DECISIONS.md) · the `grep` above |
+| 6 — Platform | **Measured.** v0.1.0 published 2026-10-08, unsigned, for testing; the installer run on the owner's laptop on 2026-10-17 and 18 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
+| 7 — Scale | **Built in part:** the company standard (`brain/heron_company.py`) and the agent creator (`brain/heron_creator.py`) | `python tools/agent-count.py` |
+| Not in the plan yet | **Not built** | [the table below](#what-is-deliberately-not-in-the-plan-yet) |
 
 ---
 
@@ -117,7 +214,7 @@ flowchart TD
 
 | Item | Why it cannot wait |
 |---|---|
-| **Multi-targeting** `net48` + `net8.0-windows` (+ `net10.0-windows` for 2027) | Retrofitting means restructuring every project file |
+| **Multi-targeting** `net48` + `net8.0-windows` (+ `net10.0-windows` for 2027, and `net472` for 2020 — the map is `Directory.Build.props`) | Retrofitting means restructuring every project file |
 | **Adapter boundary** — core never references `Autodesk.Revit.*` | Retrofitting means touching every call site |
 | **`UniqueId` for all element identity** | Retrofitting means finding every place an `ElementId` leaked |
 | **Per-PID pipe naming + discovery file** | A fixed name is single-instance forever; this is the one bug the field notes already caught |
@@ -146,7 +243,10 @@ happened.
 
 **Phase 0.5 — add the second runtime.** One `net48` version and one `net8` version, both working.
 This is where the .NET break stops being theoretical, and it is much cheaper to face here than after
-six phases of code assume one runtime.
+six phases of code assume one runtime. **Half met:** on the owner's laptop on 2026-10-17 Heron loaded on
+Revit 2020, 2024, 2026 and 2027 — `net472`, `net48`, `net8.0` and `net10.0` — but on 2026 no fragment
+could run ([row 5b-575](fragment-issues/section-5b-rows-401-425.md)); the repair is in code and has not
+been run in Revit ([Group EQ](needs-checking/group-eq.md), [Group GW](needs-checking/group-gw.md)).
 
 ---
 
@@ -163,7 +263,11 @@ six phases of code assume one runtime.
 - **Revit Context Agent** — document, version, view, selection, links, worksets, phase *(Part 4 §13)*
 - **Workflow Engine** with retries, timeouts, rollback and **checkpoints** *([23 §3–4](23-heron-kernel.md))*
 - **Evidence System** — every important decision states its reasons *([23 §6](23-heron-kernel.md))*
-- ~~**Emergency Stop** in the Revit ribbon~~ — built in Step 6, **button removed 2026-09-06** ([D-46](DECISIONS.md)). `HeronStop` and both gates remain; they have no trigger until the file-based kill switch of [21 §4](21-resilience-and-operations.md) is built
+- ~~**Emergency Stop** in the Revit ribbon~~ — built in Step 6, **button removed 2026-09-06** ([D-46](DECISIONS.md)).
+  `HeronStop` has a trigger again: the bridge's `stop` operation ([D-129](DECISIONS.md)),
+  `python mcp/client/heron_bridge_client.py stop --session <pid>`, which lasts until Revit restarts
+  ([D-130](DECISIONS.md)). Run once in Revit 2024 on 2026-10-18 on a scratch copy — a running job stopped and
+  rolled back, and a stranger's stop refused ([Group EZ](needs-checking/group-ez.md), EZ3)
   *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
 - **Golden Test Library** started — it only has value if it grows from day one *(Part 4 §28)*
@@ -235,7 +339,7 @@ knowledge — build it here, not later, because retrofitting it means rewriting 
 - **Capability Gap report** — *"here are the ten things people asked for that I could not do"*
 - Personal pattern learning, with confirmation before saving
 
-**[Note]** The Capability Gap report should arrive **much earlier than this phase** if it can — it is a read-only report over the audit log and it tells you what to build next from real usage. Build it as soon as the audit log exists.
+**[Note]** The Capability Gap report should arrive **much earlier than this phase** if it can — it is a read-only report over the audit log and it tells you what to build next from real usage. Build it as soon as the audit log exists. **It did arrive early:** `python brain/heron_gaps.py`.
 
 ---
 
@@ -281,7 +385,7 @@ knowledge — build it here, not later, because retrofitting it means rewriting 
 | Autonomous agent creation | the human-approval boundary is proven in practice |
 | Non-Revit platforms (AutoCAD, IFC, Rhino) | Revit works properly |
 | Multi-user server infrastructure | there is more than one user |
-| The full 150-agent catalogue | real usage says which ones are actually needed |
+| The full 150-agent catalogue | real usage says which ones are actually needed — **overtaken:** the register in [28](28-agent-registry.md) was built out anyway, and `python tools/agent-count.py` says how much of it is code, host-provided or deferred. Built, not used or proven |
 
 The catalogue in [08](08-agent-catalog.md) is the destination, reached by building what usage demands —
 not by working down a list.

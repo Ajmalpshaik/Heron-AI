@@ -11,8 +11,15 @@
 > **Read [32 — the Master Architecture document, reconciled](docs/32-master-architecture-reconciliation.md)
 > before building anything from this file.** The audit this document demands of itself — its §3, §17
 > Phase 1 and §21 — has been done, and it found that **nine of the platform modules in §6 already exist
-> here, four of them stricter than this document asks for.** §32 §5 lists what is rejected and why, so
-> the same proposals are not made again.
+> here, four of them stricter than this document asks for.**
+> [32 §5](docs/32-master-architecture-reconciliation.md#5-rejected-and-why--the-part-of-this-file-that-saves-the-most-time)
+> lists what is rejected and why, so the same proposals are not made again.
+>
+> **What Heron is today, as built,** is not in this file. The parts that run and how a change reaches
+> the model are in [02 §7a](docs/02-architecture-overview.md#7a-as-built--the-parts-that-run-today), and
+> the same request folder by folder is in [PROJECT-MAP §A](docs/PROJECT-MAP.md#a-how-a-request-travels).
+> What still needs a real Revit, and what each run there showed, is in
+> [NEEDS-CHECKING](docs/NEEDS-CHECKING.md).
 >
 > **One correction matters more than the rest.** The header below states this document's purpose as
 > *"AI engineering system for the existing Heron/Revit development codebase"* — a harness for

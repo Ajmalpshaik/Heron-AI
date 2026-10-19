@@ -33,6 +33,22 @@ See docs/29-metadata-standard.md
 > this one, and the exact files and licences read are recorded in
 > [34 §2.15–2.19](34-patterns-adapted.md).
 
+### At a glance — what the plan asked for, and what exists now
+
+Read from the note above and the records it names. Each tool is in [`tools/README.md`](../tools/README.md)
+or beside the server; run it rather than trust this table.
+
+| The plan asked for | What exists now | Its record |
+|---|---|---|
+| Did scope grow beyond the task? (§5 Phase F, §9) | [`check-change.py`](../tools/check-change.py) - the diff judged against a one-line intent, an area and a risk | [D-68](DECISIONS.md), [34 §2.15–2.16](34-patterns-adapted.md) |
+| Baseline, one change, keep or revert (§5 Phase B, §8, §12 Stage 1) | [`change-evidence.py`](../tools/change-evidence.py) - before and after, ruled KEEP, REVERT or NO CHANGE MEASURED | [D-68](DECISIONS.md) |
+| Architecture-boundary checks (§9) | [`check-structure.py`](../tools/check-structure.py) - the layering table now read for Python as well as C# | [D-69](DECISIONS.md) |
+| Packaging and install checks (§2.3, §9) | [`check-package.py`](../tools/check-package.py) - the manifest Revit reads first; it says on every run what it cannot answer | [34 §2.17](34-patterns-adapted.md) |
+| Runtime and capability information, not guessed (§2.3) | [`heron_runtime.py`](../mcp/server/heron_runtime.py) - what Heron can do right now, and why not | [04 §6b](04-heron-mcp.md) |
+| Mock mode, never a faked Revit proof (§2.3) | a rule, not code: the offline-versus-real-Revit line | [13 §3a](13-testing-and-quality.md), [34 §2.18](34-patterns-adapted.md) |
+| Licence and provenance checks (§9) | [`check-licence.py`](../tools/check-licence.py) - it predates this plan | [D-66](DECISIONS.md) |
+| What was left open | - | [PROPOSALS Part F](PROPOSALS.md) |
+
 ---
 
 ## 1. Goal

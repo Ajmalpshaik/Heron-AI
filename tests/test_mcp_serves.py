@@ -1310,6 +1310,26 @@ async def exercise_change_report(module):
         check(said not in first and said not in second,
               "while a reply with no `asking` says nothing of anybody being asked")
 
+        # A MODEL NEVER SAVED (documentPath null) gets the warning as the
+        # reply's FIRST line on a kept change; a saved one, a rollback and an
+        # add-in that sends no path never do.
+        warning = "NEVER SAVED: 'Panel' has no file on disk."
+        check(not any(warning in said for said in (first, second, rolled)),
+              "a saved model, or a rollback, is never told it was never saved")
+        revit.reply = dict(kept, documentPath=None)
+        module._BATCH = runs.Batch()
+        unsaved = [await call("revit_change", asked) for _ in range(2)]
+        check(all(said.startswith(warning) and "Ctrl+S" in said for said in unsaved),
+              "a kept change to a model never saved opens with the warning, every "
+              "reply of the batch - found %r" % [s.split("\n", 1)[0] for s in unsaved])
+        revit.reply = dict(kept, documentPath=None, verdict="NOTHING WAS KEPT.",
+                           verdictKind="rolledBack", verdictShort=None)
+        check(warning not in await call("revit_change", asked),
+              "a rollback in a model never saved says nothing of saving")
+        revit.reply = dict((k, v) for k, v in kept.items() if k != "documentPath")
+        check(warning not in await call("revit_change", asked),
+              "and an add-in that sends no documentPath is not guessed at")
+
         old = dict((k, v) for k, v in kept.items()
                    if k not in ("verdictKind", "verdictShort", "run", "changes"))
         revit.reply = old

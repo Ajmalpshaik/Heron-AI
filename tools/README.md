@@ -24,9 +24,121 @@ They exist because this repository already got its own numbers wrong twice — t
 asserted **166 agents while its own departments summed to 196**, and a build-step figure said 20 where
 the rows said 42. Both were caught by adding up columns by hand, which is not a process.
 
-These are the working prototype of the **Documentation Validation Agent**
-(`HERON-DOC-VAL-009`) and the **Agent Documentation Agent** (`HERON-DOC-AGT-002`) — see
-[docs/28](../docs/28-agent-registry.md). When those agents exist, this is roughly what they do.
+Two of these ARE agents of [docs/28](../docs/28-agent-registry.md) now, not prototypes of them:
+`check-docs.py` is the **Documentation Validation Agent** (`HERON-DOC-VAL-009`), and the registry
+tools - `recount-agent-registry.py`, `agent-count.py`, `generate-agent-map.py` - are the **Agent
+Documentation Agent** (`HERON-DOC-AGT-002`). Each file's `Heron-Agent:` header says so, and
+`python tools/agent-count.py` counts both built. This paragraph called them prototypes *"until those
+agents exist"* until 2026-10-18.
+
+## At a glance
+
+Every file in this folder, once, by what it is for. The sections below say why each exists and what it
+cannot see; this is where to start. **A gate exits non-zero on a finding; a report exits 0 whatever it
+finds**, and a finding there is a question for a person. When a row and a tool's own header disagree,
+the header wins - and this table is the one to correct.
+
+**Gates CI runs** - [`gates.yml`](../.github/workflows/gates.yml)'s *gates*, *compile* and *generated*
+jobs. The first four are the ones [AGENTS.md](../AGENTS.md) has you run before every push; a red one
+of the others turns a pull request red just the same ([heron-ship](../.claude/skills/heron-ship/SKILL.md)).
+
+| Tool | What it is for | When you run it |
+|---|---|---|
+| [`check-docs.py`](check-docs.py) | links, ids defined once, every derivable count, every tool, skill and NEEDS-CHECKING group named, text hygiene | before every push |
+| [`check-metadata.py`](check-metadata.py) | the five-field header on every source file, audited against the agent registry both ways | before every push |
+| [`check-structure.py`](check-structure.py) | each file in its part, the layering, `Autodesk.Revit` only inside `revit/` | before every push |
+| [`check-package.py`](check-package.py) | `Heron.addin` and the deploy would install: entry class, assembly, manifest shape | before every push |
+| [`check-signatures.py`](check-signatures.py) | a fragment the owner signed, still sitting at DRAFT | CI; `check-docs.py` §9 asks it too |
+| [`check-licence.py`](check-licence.py) | the licence on every fragment and skill Heron ships | CI; before bringing knowledge in from outside |
+| [`check-narrow-errors.py`](check-narrow-errors.py) | a broken database reported as an empty one | CI; after touching a `sqlite3` error handler |
+| [`check-products.py`](check-products.py) | the product manifest: a duplicate `addInId`, a `partOf` typo, a release the repository does not build | CI; after editing `platform/heron-products.json` |
+| [`check-decision-titles.py`](check-decision-titles.py) | a decision number keeps the title it was first written with | CI, on the whole history; before merging a new `D-nnn` |
+| [`check-routing.py`](check-routing.py) | every fragment still wins its own sentences; a routing row naming no capability fails | CI; after any change to a card's words |
+| [`check-intrusion.py`](check-intrusion.py) | who turns up in shortlists they have no claim on - exits 0 on a finding | CI, beside `check-routing.py` |
+| [`check-compile.py`](check-compile.py) | every C# project against every Revit release | CI; after any C# change |
+| [`check-fragments-compile.py`](check-fragments-compile.py) | every fragment's C# against every release it claims, its contract included | CI; after any fragment change |
+| [`recount-agent-registry.py`](recount-agent-registry.py) | rewrites docs/28's counts from its rows - CI fails on a stale one | after adding, removing or re-tiering an agent |
+| [`generate-fragment-catalog.py`](generate-fragment-catalog.py) | the fragment library on one searchable page | CI runs it; whenever you want to read the library |
+| [`generate-agent-map.py`](generate-agent-map.py) | every agent on one filterable page | CI runs it; whenever you want the map |
+
+**Reports** - read them; none of these stops a build.
+
+| Tool | What it is for | When you run it |
+|---|---|---|
+| [`check-gaps.py`](check-gaps.py) | everything UNFINISHED here against what is only WAITING; the exit code follows UNFINISHED alone | before saying anything is done - read the buckets, not the code |
+| [`owner-queue.py`](owner-queue.py) | what waits on the owner, grouped by what he needs in front of him | before asking the owner anything |
+| [`balance-of-work.py`](balance-of-work.py) | what is left, from the tools that each know part of it; `--write` regenerates the note | when planning the next piece of work |
+| [`check-reachable.py`](check-reachable.py) | code built, tested, and called by nothing but a test | CI's *reports* job; after adding a module |
+| [`check-revit-gate.py`](check-revit-gate.py) | the fourteen Revit questions, per fragment | CI's *reports* job; before arranging a proof |
+| [`check-declared-questions.py`](check-declared-questions.py) | a fragment or skill that writes, declaring a question | CI's *reports* job; after adding utterances |
+| [`check-risk-crossings.py`](check-risk-crossings.py) | a written-down list of ordinary questions, and any that lands on a write - needs the store | after a card's words change |
+| [`check-skill-routing.py`](check-skill-routing.py) | whether a skill's own words reach the capabilities it declares - needs the store | after changing a skill |
+| [`module-reach.py`](module-reach.py) | who imports each `brain/` module, and which a conversation can reach | when wiring a module in |
+| [`hook-report.py`](hook-report.py) | how often each hook decided something, and what it said | when a hook seems silent or noisy |
+| [`generate-skill-catalog.py`](generate-skill-catalog.py) | every skill on one page, its chain and its words | when reading the skill library |
+| [`generate-api-docs.py`](generate-api-docs.py) | every MCP tool from its own signature, and a parameter nothing explains | after changing an MCP tool |
+| [`generate-contract-reference.py`](generate-contract-reference.py) | every agent contract beside the files claiming it, and a promise the code does not keep | after changing a contract |
+
+**Proving** - the half that needs a real Revit, and the paperwork around it ([D-30](../docs/DECISIONS.md)).
+
+| Tool | What it is for | When you run it |
+|---|---|---|
+| [`batch-prove.py`](batch-prove.py) | many fragments against a real model in one pass; never accepts, never promotes | on the PC, Revit open; `--dry-run` first |
+| [`generate-jobs.py`](generate-jobs.py) | the derivable half of a job file - names, risk, setup chain | before writing a job file |
+| [`jobs/`](jobs/example.yaml) | the job files of past proving rounds, and `example.yaml` to start from | when writing the next one |
+| [`prove-skill.py`](prove-skill.py) | is a skill proved: its words, its chain, and the Revit half written out as a job file | before proving a skill |
+| [`prove-agent.py`](prove-agent.py) | the proof path for an add-in agent, signed by a person | on the PC, Revit open |
+| [`prove-tracking.py`](prove-tracking.py) | [D-53](../docs/DECISIONS.md) tracking: a declared result following one input across several values | on the PC, Revit open; `--dry-run` first |
+| [`resign-machine-proofs.py`](resign-machine-proofs.py) | a machine's name in a proof replaced by a person's | when the owner signs |
+
+**Install and setup**
+
+| Tool | What it is for | When you run it |
+|---|---|---|
+| [`setup.ps1`](setup.ps1) | builds and installs Heron per user for every Revit on this PC | on Windows, from a checkout, Revit closed |
+| [`deploy-addin.ps1`](deploy-addin.ps1) | one built add-in into the user's add-ins folder; `-Remove`, `-Rollback` | when `setup.ps1` is more than you need; Revit closed |
+| [`HeronRevit.ps1`](HeronRevit.ps1) | which Revits are installed, which are open, where each one's add-ins go | never by hand - the install scripts dot-source it |
+| [`heron-ready.py`](heron-ready.py) | a PC made ready before its first chat: Python, packages, the store, the search model | once per PC, and after an update |
+| [`check-dependencies.py`](check-dependencies.py) | which packages are present and what each buys; exit 1 only for a required one | when Heron seems weaker than it should be |
+| [`lock-python.py`](lock-python.py) | `requirements-lock.txt` regenerated, and its advisories audited | when a pinned version must move; CI's weekly run audits it |
+| [`cloud-setup.sh`](cloud-setup.sh) | pasted into a Claude Code cloud environment's setup box | when setting up a cloud environment |
+| [`build-release-assets.py`](build-release-assets.py) | every product for every release, laid out as a release's assets | the Release workflow runs it; by hand to check a build |
+| [`heron-backup.py`](heron-backup.py) | the user's own data backed up, drilled and restored | before anything risky on a PC; `drill` to prove the restore |
+
+**Measuring** - a number to compare, never a pass.
+
+| Tool | What it is for | When you run it |
+|---|---|---|
+| [`check-change.py`](check-change.py) | does the diff do only what its stated intent said | before claiming a change |
+| [`change-evidence.py`](change-evidence.py) | before and after captured the same way, ruled KEEP, REVERT or NO CHANGE MEASURED | around a change |
+| [`score-routing.py`](score-routing.py) | the owner's own questions and the plain ones against confirmed answers; `--sentences` for main against a branch | after a card's words change |
+| [`measure-brain.py`](measure-brain.py) | how long the brain takes, stage by stage | before and after a retrieval change |
+| [`measure-routes.py`](measure-routes.py) | how often Heron answers with no model at all | after a retrieval change |
+| [`measure-graph.py`](measure-graph.py) | whether the graph helps retrieval ([Q-52](../docs/OPEN-QUESTIONS.md)) | if the graph changes |
+| [`time-family-build.py`](time-family-build.py) | where a family build's minutes went, from the transcript, the audit and Revit's journal | after a timed build |
+| [`check-api-surface.py`](check-api-surface.py) | each Revit member the compiled add-in calls, against every release's assemblies | after changing a Revit API call |
+| [`api-surface/`](api-surface/Program.cs) | the .NET reader behind the line above, and `--members` for one type on every release | when a call's signature matters |
+| [`api-changes.py`](api-changes.py) | what each Revit release stopped shipping, into `api-surface/changes.json` | when a new Revit release appears |
+
+**Registers** - the tools that read, split, number and tidy the registers.
+
+| Tool | What it is for | When you run it |
+|---|---|---|
+| [`next-id.py`](next-id.py) | the free group, 5b row, `Q-nn` and `D-nnn` on main, every branch, open pull request and worktree | before taking any id, and again before merging |
+| [`renumber.py`](renumber.py) | renames an id this branch took that somebody else took first | when `next-id.py` says HELD TWICE or TAKEN ON MAIN |
+| [`open-defects.py`](open-defects.py) | the ids of the FRAGMENT-ISSUES rows still open | before picking up a defect |
+| [`review-ledger.py`](review-ledger.py) | which files have been read word by word, and which marks went stale | during a reading sweep |
+| [`register-text.py`](register-text.py) | FRAGMENT-ISSUES, PROPOSALS or OPEN-QUESTIONS read as one text | to search a whole register |
+| [`needs-checking-register.py`](needs-checking-register.py) | NEEDS-CHECKING read as one text | to search the whole register |
+| [`split-register.py`](split-register.py) | FRAGMENT-ISSUES, PROPOSALS and OPEN-QUESTIONS one file per section | after a section is written on the page |
+| [`split-needs-checking.py`](split-needs-checking.py) | one file per NEEDS-CHECKING group | after a group is written in full on the index |
+| [`split-decisions.py`](split-decisions.py) | one file per decision | after writing a decision into DECISIONS.md |
+| [`generate-decision-summary.py`](generate-decision-summary.py) | the status table at the top of DECISIONS.md | after writing a decision - `check-docs.py` §8 fails on a stale table |
+| [`archive-fragment-issues.py`](archive-fragment-issues.py) | finished defect rows moved out of the live register | whenever rows close |
+| [`archive-needs-checking.py`](archive-needs-checking.py) | struck checks moved out of NEEDS-CHECKING | whenever checks are struck |
+| [`archive-handover.py`](archive-handover.py) | session notes moved out of HANDOVER.md, one file per sitting | whenever notes collect there |
+| [`agent-count.py`](agent-count.py) | each department built, host-provided, deferred and left; fails when the registry does not reconcile | before choosing an agent to build; CI's *reports* job prints it |
+| [`new-agent.py`](new-agent.py) | the contract, module and failing test of the next agent, from its registry row | when building an agent |
 
 ---
 
@@ -45,7 +157,9 @@ Verifies that:
 - **no rule, decision or question number is defined TWICE** — added 2026-09-09, and it **fails the run**
 - **every file in `tools/` and every skill folder in `.claude/skills/` is named in its README** — one
   direction only, read from the disk so a new tool is caught before it is committed — section 10, added
-  2026-09-23, **fails the run**
+  2026-09-23, **fails the run**. The same section fails on a `docs/needs-checking/group-*.md` that
+  [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) never names - a group a merge dropped from the index
+  ([heron-ship §6a](../.claude/skills/heron-ship/SKILL.md))
 - **text hygiene over every file git tracks**: no control character other than tab, CR and LF, no
   double-encoded text, no merge-conflict marker — section 11, added 2026-09-23, **fails the run**, except
   a hit inside a PROVEN fragment's `impl/`, which is reported as **waiting** because fixing it makes the
@@ -126,7 +240,7 @@ Run it after adding, removing or re-tiering any agent.
 
 ---
 
-## `agent-count.py` — how much of the 250 exists
+## `agent-count.py` — how much of the registry exists
 
 ```bash
 python tools/agent-count.py
@@ -144,11 +258,16 @@ built yet, and names itself). Collapsing HOST into LEFT produces a to-do list
 with four items that will never be done, and on 2026-09-07 it did exactly that — a build-state summary
 read *"Phase 0/1 is four agents short"* and recommended building the **Orchestrator**, which
 [docs/02 §7](../docs/02-architecture-overview.md) settles as the host's. Phase 0/1's agent list is
-complete: **45 built, 4 host-provided, 0 outstanding.**
+complete - every agent built or the host's, **none outstanding**; the tool's `PHASE 0/1` line prints
+the figures, and this line typed them until 2026-10-18.
 
 **DEFERRED was the same mistake one step along, and it was live until 2026-09-21.** `HERON-DOC-REL-005`
-needs releases to write notes about and there are none; `HERON-DOC-CHG-008` needs two versions to write a
-change log between and 683 files say `Heron-Since: 0.1.0`. [D-77](../docs/DECISIONS.md) settled both on
+needed releases to write notes about and there were none; `HERON-DOC-CHG-008` needed two versions to write
+a change log between, and 683 files said `Heron-Since: 0.1.0`. **That has half moved:** D-77 says both are
+*"unblocked by the first tag"*, and `v0.1.0` was tagged and published on 2026-10-08
+([Group AC](../docs/needs-checking/group-ac.md), AC1). The tool still prints both DEFERRED, because their
+registry rows still name D-77 - and, as its own output says, the decision is what has to change first,
+which is the owner's call. [D-77](../docs/DECISIONS.md) settled both on
 2026-09-16 and this tool went on printing **2 left** — so [the balance-of-work page](../docs/work-notes/BALANCE-OF-WORK.md),
 which is what a person reads to know what remains, carried two items nobody could do. A number that
 cannot reach zero stops being read. The state is **derived from the registry row** — the word `DEFERRED`
@@ -385,8 +504,8 @@ python tools/score-routing.py --list     # the answer key; asks nothing
 python tools/score-routing.py --list-plain   # the plain questions; asks nothing
 ```
 
-The two tools above ask sentences written **for** the library. This one asks the 79 questions the
-owner really typed on real work, kept in
+The two tools above ask sentences written **for** the library. This one asks the questions the
+owner really typed on real work - `--list` prints every one - kept in
 [`tests/data/owner-questions.yaml`](../tests/data/owner-questions.yaml). Each question carries the
 capability, skill or tool that should answer it, chosen from the capability list before the search had
 seen the question, and confirmed by him. It asks each one through `heron_brain.lookup`, the function
@@ -420,7 +539,7 @@ row names the read that answers one, where that read came back is scored too. It
 rows or neither.
 **Nothing it reports is answered by rewording a question, changing an answer to match the search, or
 adding or weakening an utterance** — [row 113](../docs/FRAGMENT-ISSUES.md)'s forbidden move. It keeps its
-79 lookups out of the owner's audit trail by pointing `HERON_AUDIT` at a throwaway folder for the run.
+lookups out of the owner's audit trail by pointing `HERON_AUDIT` at a throwaway folder for the run.
 [`tests/test_score_routing.py`](../tests/test_score_routing.py) plants a drop, in the arithmetic and in a
 private store through the real search, and proves both are caught.
 
@@ -563,8 +682,8 @@ python tools/heron-backup.py list | verify
 python tools/heron-backup.py restore <name> --confirm
 ```
 
-`%APPDATA%\Heron` holds four files and **a grep for `backup` across every `.py`, `.cs` and `.ps1` in
-this repository returned nothing.** The audit trail is Heron's only record of what it has ever done,
+When this was written on 2026-09-08, `%APPDATA%\Heron` held four files and **a grep for `backup` across
+every `.py`, `.cs` and `.ps1` in this repository returned nothing.** The audit trail is Heron's only record of what it has ever done,
 [`HeronAudit`](../platform/Heron.Core/HeronAudit.cs) never prunes it, and it is not in git — so losing
 it loses the whole history with no way back. The config holds `write.enabled`, which
 [docs/12 §9](../docs/12-security-and-permissions.md) calls a security boundary.
@@ -720,8 +839,8 @@ The working prototype of `HERON-DOC-API-001`.
 ## `api-changes.py` — what each Revit release stopped shipping
 
 ```bash
-python tools/api-changes.py                 all eight, in order
-python tools/api-changes.py 2025 2026       just that transition
+python tools/api-changes.py                 # all eight, in order
+python tools/api-changes.py 2025 2026       # just that transition
 ```
 
 Produces `tools/api-surface/changes.json`, which
@@ -814,13 +933,14 @@ version that is not semver — is **asked of**
 [`heron_contract.validate`](../brain/heron_contract.py) rather than judged again here.
 
 A tool-layer agent and a C# one carry no contract, and that is the established shape of this repository
-rather than a gap — 86 of them appear as **built without a contract**, not as unfinished. An agent
+rather than a gap — they appear as **built without a contract**, not as unfinished, and the tool's own
+summary line counts them by layer (86 when this was written on 2026-09-15). An agent
 claimed by *nothing but its own suite* is shown too, flagged: `HERON-RAG-RIX-011` and
 `HERON-RAG-DUP-012` are built and proved, and no file that implements them says so.
 
 **Its count must equal [`agent-count.py`](agent-count.py)'s, and the suite checks that every run**, because
 two bugs in reading a header got past everything else. A header line may claim **several** agents, comma
-separated — 31 files do — and reading one whole turned the list into a single agent that exists nowhere
+separated — 31 files did on 2026-09-15 — and reading one whole turned the list into a single agent that exists nowhere
 while every real one in it looked unclaimed. And a **C# header starts with `//`, not `#`**: the first
 expression required a `#`, so it matched no `.cs` file at all and the whole `revit/` layer was invisible,
 26 agents of it. Neither raised an error. The page simply described a smaller repository than the one it
@@ -1121,7 +1241,7 @@ that matters. The report says which of the two cases it is looking at.
 |---|---|
 | **It does not claim `HERON-OPS-OBS-011`** | The registry defines the Observability Agent as *"latency, token usage, model calls per request, cost per request"*. [D-01](../docs/DECISIONS.md) put every model call in the host and `heron_embed` runs a local model — no tokens, no account, no cost ([D-24](../docs/DECISIONS.md), [D-26](../docs/DECISIONS.md)). Three of those four fields are things Heron cannot see from here, so the header says `Heron-Agent: none` rather than letting `check-metadata.py` report the agent BUILT with three quarters of its job impossible. **The registry row wants correcting**, and that is the owner's call |
 | **It is not a gate and exits 0** | A timing is not a pass or a fail, and there is no agreed budget to breach — [docs/19 §2](../docs/19-context-and-cost.md) proposes one and nothing implements it. A threshold taken from the first run would make whatever machine ran it the standard |
-| **It will not report over the wrong library** | Same rule as `check-routing.py` and for the reason that tool learned the hard way: one store at `%APPDATA%\Heron\knowledge` serves every checkout on the machine, so a **count** can match while the store holds another session's fragments. It compares the **ids** |
+| **It will not report over the wrong library** | Same rule as `check-routing.py` and for the reason that tool learned the hard way: one store serves every checkout on the machine - `heron_scope.knowledge_dir()`, `%USERPROFILE%\.heron\knowledge` on Windows since [D-135](../docs/decisions/D-135.md), `%APPDATA%\Heron\knowledge` before it - so a **count** can match while the store holds another session's fragments. It compares the **ids** |
 
 **The first run already found something worth saying out loud.** `find()` came back in about a
 millisecond and `retrieve()` took seven — because the questions are the fragments' **own declared
@@ -1412,14 +1532,17 @@ python tools/measure-graph.py --sweep   # six, which is the point
 ```
 
 **The answer key is the library itself.** Every fragment declares a `semantic-identity` — one sentence
-that should return it. 360 questions whose right answer is known because **nobody wrote it to make
-retrieval look good**: it has been the matching text since Step 7.
+that should return it. One question per fragment - 360 on the first run, 2026-09-09 - whose right answer
+is known because **nobody wrote it to make retrieval look good**: it has been the matching text since
+Step 7.
 
 **It is also easy**, so three degraded shapes are measured beside the exact one — the first word
 dropped, only words of four or more characters, the first half of the sentence. **Those are where a
 graph could earn its place**, because they are the cases where the right answer is not already first.
 
 ### What it found
+
+> **The first run's figures, 2026-09-09** - history, not today's state. Run the tool for today's.
 
 | shape | P@1 today | with the graph | |
 |---|---|---|---|
@@ -1909,8 +2032,8 @@ different and larger thing.
 skill declares a risk and a list of utterances just as a fragment does. That is exactly where
 [row 137](../docs/FRAGMENT-ISSUES.md) said the blind spot was: a crossing compares a sentence's
 reach against the **skill's own** declared risk, so a question inside a MODIFY skill never
-registers as one. This asks nothing about reach. **Five today**, and **some of them are probably
-right** — *"how many sprinklers do I need"* may genuinely belong to a layout skill, because
+registers as one. This asks nothing about reach. **The tool prints how many** - five on 2026-10-18 -
+and **some of them are probably right** — *"how many sprinklers do I need"* may genuinely belong to a layout skill, because
 answering it IS the layout. The tool says so in its own output rather than asking for a deletion.
 
 **It concludes, so it has a test** ([`tests/test_declared_questions.py`](../tests/test_declared_questions.py)),
@@ -1946,7 +2069,7 @@ a row whose Status still reads OPEN after a LATER row closed it. Four were that 
 (rows 37, 44, 96, 97) and no pattern finds them - the closure is written in a different row, in prose.
 **This narrows the pile you have to read. It does not replace reading it.**
 
-**And it now asks about a row that argues with itself** - a Status that begins with *open* and carries a **dated** `FIXED` or `CLOSED` claim further down the same cell. Row 127 was that shape for an evening: the fix was appended under the sentence saying OPEN rather than replacing it, so the row was fixed while every count and every list went on calling it open. The test is deliberately narrow - a dated claim in capitals, inside one sentence, not the word *fixed* in passing - because eleven open rows mention something else being fixed or closed and **every one of them is genuinely open**. It asks; it never re-counts, because which sentence is the state is a reader's judgement and a tool that guessed would start closing rows. [`tests/test_open_defects.py`](../tests/test_open_defects.py) pins both halves.
+**And it now asks about a row that argues with itself** - a Status that begins with *open* and carries a **dated** `FIXED` or `CLOSED` claim further down the same cell. Row 127 was that shape for an evening: the fix was appended under the sentence saying OPEN rather than replacing it, so the row was fixed while every count and every list went on calling it open. The test is deliberately narrow - a dated claim in capitals, inside one sentence, not the word *fixed* in passing - because eleven open rows mentioned something else being fixed or closed when it was written, 2026-09-20, and **every one of them was genuinely open**. It asks; it never re-counts, because which sentence is the state is a reader's judgement and a tool that guessed would start closing rows. [`tests/test_open_defects.py`](../tests/test_open_defects.py) pins both halves.
 
 ---
 
@@ -2343,9 +2466,10 @@ python tools/new-agent.py HERON-OPS-QUE-002 --part mcp --step 16
 Writes three files and nothing else: the contract in `brain/agents/<ID>.yaml`, the module with its
 five-field metadata header already correct, and the test - **which fails until it is written.**
 
-146 agents can be built on a machine with no Revit
-([`agent-build-order-2026-09-13`](../docs/work-notes/plans/agent-build-order-2026-09-13.md)). By hand
-that is 146 chances to mistype a layer or invent a field.
+When it was written, 146 agents could be built on a machine with no Revit
+([`agent-build-order-2026-09-13`](../docs/work-notes/plans/agent-build-order-2026-09-13.md)) - by hand,
+146 chances to mistype a layer or invent a field. How many are left now is
+`python tools/agent-count.py`'s LEFT column.
 
 ## `resign-machine-proofs.py` - replace a MACHINE's name in a proof with a person's
 

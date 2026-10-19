@@ -18,6 +18,70 @@
 | 7 | Full workflow testing | Needs real Revit |
 | 8 | User acceptance testing | Human |
 
+### 1a. As built — where each level runs today, and what it can say (2026-10-18)
+
+The table above is the specification's. This is what runs. No mocked Revit exists, on purpose (§3a).
+
+| Level | What runs | Where | Can say |
+|---|---|---|---|
+| 1 Agent unit | every `tests/test_*.py` suite, no Revit | cloud CI on every pull request and push to `main` - the job *"Every suite, and NOT RUN kept apart from FAILED"* in [`gates.yml`](../.github/workflows/gates.yml), and the same every Monday against that day's dependencies ([`weekly.yml`](../.github/workflows/weekly.yml)); locally `python tools/check-gaps.py` | PASS · FAIL · NOT RUN |
+| 2 Fragment | each fragment's C# compiled for every release it claims (`tools/check-fragments-compile.py`), and its own declared words still reaching it (`tools/check-routing.py`, `tools/check-intrusion.py`); what it does to a model is a signed proof (`tools/batch-prove.py`, [D-30](DECISIONS.md)) | cloud CI for the compile and the routing; the owner's PC for the proof | PASS · FAIL · NEEDS REAL REVIT |
+| 3 Skill | `tests/test_skills.py`: each skill well formed and naming capabilities that have a provider - not that it works | cloud CI | PASS · FAIL |
+| 4 MCP | the real server against a stand-in Revit (`test_mcp_serves.py`, `test_mcp_stdio.py`), the pipe round trip (`test_bridge_roundtrip.py`) | **NOT RUN in cloud CI**: the MCP SDK and the .NET test host are left out there on purpose; `test_mcp_serves.py` runs on a Windows runner when the installer's files change ([`windows.yml`](../.github/workflows/windows.yml)), and on the owner's PC | PASS · FAIL · NOT RUN |
+| 5 Revit integration | the [NEEDS-CHECKING](NEEDS-CHECKING.md) rows, through the bridge | the owner's PC, with Revit | NEEDS REAL REVIT until a dated run says PASS or FAIL |
+| 6 Version regression | the add-in compiled for every release (`tools/check-compile.py`, CI's *"The C# compiles, 2020 to 2027"*); loading on each release is [Group EQ](needs-checking/group-eq.md) | cloud CI for the compile; a real Revit of each release for the rest | a compile PASS or FAIL; NEEDS REAL REVIT |
+| 7 Full workflow | whole jobs from a chat, such as a family build timed by `tools/time-family-build.py` | the owner's PC | NEEDS REAL REVIT |
+| 8 User acceptance | the owner, in his own work | the owner's PC | what he saw, recorded in a NEEDS-CHECKING row |
+
+How a result is filed, whatever level it came from:
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    Q1{{"Does the answer depend on what Autodesk's code does?"}}
+    NR["<b>NEEDS REAL REVIT</b><br/>a named model, a negative case, a person's signature — D-30"]
+    Q2{{"Could the check run on this machine?"}}
+    NOT["<b>NOT RUN</b> — exit 3<br/>say why; it proves nothing either way"]
+    Q3{{"Did every check pass?"}}
+    PASS(["<b>PASS</b> — exit 0"])
+    FAIL(["<b>FAIL</b> — exit 1<br/>a claim about the code: never edit the test until it passes"])
+
+    Q1 -->|"yes"| NR
+    Q1 -->|"no"| Q2
+    Q2 -->|"no — a dependency is missing"| NOT
+    Q2 -->|"yes"| Q3
+    Q3 -->|"yes"| PASS
+    Q3 -->|"no"| FAIL
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    class Q1,Q2,Q3 user
+    class NR revit
+    class NOT addin
+    class PASS brain
+    class FAIL revit
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+Does the answer depend on what Autodesk's code does?
+  yes -> NEEDS REAL REVIT   a named model, a negative case, a person's signature (D-30)
+  no  -> Could the check run on this machine?
+           no, a dependency is missing -> NOT RUN (exit 3): say why; it proves nothing
+           yes -> Did every check pass?
+                    yes -> PASS (exit 0)
+                    no  -> FAIL (exit 1): a claim about the code - never edit the test until it passes
+```
+
+</details>
+
+The four are never merged. On the Windows runner a NOT RUN fails the job, because that runner exists to
+be the machine those suites wait for ([`tests/README.md`](../tests/README.md)).
+
 ## 2. QA principle (§40)
 
 > **One agent creates. Another agent validates. No agent approves itself.**
@@ -73,6 +137,12 @@ Two things determine whether it works:
 2. **Every fixed bug adds a case.** That is the discipline that makes the library grow from real
    failures rather than from imagination, and it is the same signal the Capability Gap report uses.
 
+> **As built (2026-10-18):** the library is [`tests/golden/cases.py`](../tests/golden/cases.py), audited
+> by [`tests/test_golden.py`](../tests/test_golden.py) without Revit - it checks the cases are coherent,
+> recomputes each proof's fingerprint and reports the STALE ones, and says what is proven. It does not
+> run a case: a case is proven only by a person watching Revit. Fragments carry their own proof in their
+> card's `proof:` block ([D-30](DECISIONS.md)) instead of a golden file.
+
 ---
 
 ## 3. **[NOTE — the hardest engineering problem in the project]** Testing against Revit
@@ -101,6 +171,14 @@ Levels 5–7 require a running Revit with a document open. That is genuinely dif
 - Evaluate **Design Automation for Revit** for level 6 before building a machine room.
 
 Tracked as [Q-14](OPEN-QUESTIONS.md).
+
+> **As built (2026-10-18):** Q-14 is answered - a written register, not an automated runner:
+> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) holds every unproven claim in dependency order with what PASS
+> looks like ([answer](open-questions/answered.md)). In practice levels 5 to 7 run through the bridge from
+> the owner's PC: [`tools/batch-prove.py`](../tools/batch-prove.py) runs fragments against the open model
+> and writes a proof draft a person signs ([D-30](DECISIONS.md)). No self-hosted runner with Revit and no
+> Design Automation run exists; CI compiles every release ([`.github/workflows/gates.yml`](../.github/workflows/gates.yml))
+> and runs no Revit.
 
 ---
 

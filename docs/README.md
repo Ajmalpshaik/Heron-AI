@@ -1,15 +1,22 @@
 # Heron AI — Documentation Index
 
-> **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024. **Step 6 (the
-> first write) has run once**: three ducts moved 200 mm in Revit 2024 on 2026-09-07
+> **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024
+> ([00e](00e-field-notes-proven-bridge.md), [HANDOVER §3](HANDOVER.md)). **Step 6 (the first write) is
+> measured on one release**: three ducts moved 200 mm in Revit 2024 on 2026-09-07
 > ([B8](NEEDS-CHECKING.md)), and **on 2026-10-17 a tape measure was put on it** — three ducts +200.0000 mm
 > each, a pinned one beside them unmoved, one undo (`D1` to `D6`, [Group D](needs-checking/group-d.md)),
-> Revit 2024 and free ducts only. **Phase 2
-> (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
-> until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
-> **Every skill is `DRAFT`; most fragments are `PROVEN`, and no count is typed
-> here** — this line said *every fragment is `DRAFT`* long after that stopped being true, and
-> *twenty-four skills* after a twenty-fifth was added, so derive both:
+> Revit 2024 and free ducts only.
+> **A change asked for in a chat runs inside one named `TransactionGroup`**, and while the ribbon's
+> **Ask to Keep** is on, Revit asks the modeller **Keep or Discard** before it is kept
+> ([D-126](DECISIONS.md), [D-138](DECISIONS.md)). Ask to Keep is off by default, and then the change is
+> kept at once, still as one undo entry. That box and the rails beside it — try-once, the run guard,
+> dialogs, the rollback check, the run clock — were run by hand in Revit 2024 and 2027 on 2026-10-18,
+> PASS, FAIL and NOT RUN kept apart row by row in [Group ET](needs-checking/group-et.md) and groups EM,
+> EX, EL, EO, EZ, ER, EK, ES, EV, EJ and CP. The faults found are rows 5b-1090 to 5b-1095 of
+> [FRAGMENT-ISSUES](FRAGMENT-ISSUES.md); the fixes merged since for 5b-1090 to 5b-1094 have not been run
+> in Revit.
+> **Phase 2 (Steps 7 to 14) is built.** **Every skill is `DRAFT`; most fragments are `PROVEN`, and no
+> count is typed here** — derive both:
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` and
 > `grep -h '^heron-status:' brain/skills/*.yaml | sort | uniq -c`.
 >
@@ -17,20 +24,63 @@
 > every run and sorts everything into *unfinished* and *waiting*; this sentence is typed. Where they
 > disagree, the tool is right. Then pick up from [**HANDOVER.md**](HANDOVER.md).
 
+## Which document do I read?
+
+Find yourself on the left; read the box on the right, top line first. The same routes, with what to read
+at each stop, are [PROJECT-MAP §E](PROJECT-MAP.md#e-routes-by-role).
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    OW(["<b>The owner</b>"]) --> OWD["FOR-THE-OWNER — what waits on you<br/>HANDOVER — the table at the top<br/><i>python tools/check-gaps.py</i>"]
+    MO(["<b>BIM modeller</b>"]) --> MOD["01 — Vision &amp; Principles<br/>root README — What keeps the model safe<br/>WHAT-TO-INSTALL"]
+    MG(["<b>BIM manager</b>"]) --> MGD["16 — Version Support<br/>12 — Security &amp; Permissions<br/>the Constitution"]
+    DV(["<b>Developer</b>"]) --> DVD["PROJECT-MAP §B and §C<br/>CONTRIBUTING<br/>the heron-ship skill, before a push"]
+    AI(["<b>AI agent</b>"]) --> AID["AGENTS.md — the only file written for you<br/>then PROJECT-MAP"]
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
+    class OW,MO,MG,DV,AI user
+    class OWD,MOD,MGD,DVD,AID host
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+The owner      FOR-THE-OWNER (what waits on you) -> HANDOVER, the table at the top
+               -> python tools/check-gaps.py
+BIM modeller   01 Vision & Principles -> root README, "What keeps the model safe" -> WHAT-TO-INSTALL
+BIM manager    16 Version Support -> 12 Security & Permissions -> the Constitution
+Developer      PROJECT-MAP sections B and C -> CONTRIBUTING -> the heron-ship skill before a push
+AI agent       AGENTS.md, the only file written for you -> then PROJECT-MAP
+```
+
+</details>
+
+The links: [FOR-THE-OWNER](FOR-THE-OWNER.md) · [HANDOVER](HANDOVER.md) · [01](01-vision-and-principles.md) ·
+[What keeps the model safe](../README.md#what-keeps-the-model-safe) · [WHAT-TO-INSTALL](WHAT-TO-INSTALL.md) ·
+[16](16-version-support-strategy.md) · [12](12-security-and-permissions.md) ·
+[Constitution](../HERON_CONSTITUTION.md) · [PROJECT-MAP](PROJECT-MAP.md) · [CONTRIBUTING](../CONTRIBUTING.md) ·
+[heron-ship](../.claude/skills/heron-ship/SKILL.md) · [AGENTS.md](../AGENTS.md).
+
 ## Decided so far
 
 | | Decision |
 |---|---|
-| **Host** | Claude Code plugin — skills, subagents, MCP server, Revit add-in *(D-01)* |
-| **Revit support** | 2020 → latest, and every future release *(D-05)* |
-| **Languages** | C# for everything touching Revit · Python for the brain *(D-06)* |
-| **Transport** | Named pipes — add-in is the server, local-only by construction *(D-02)* |
-| **Revit threading** | One `ExternalEvent`, one request queue, one handler *(D-09)* |
-| **MCP tools** | Thick and specific, one per fragment, each with its own risk level *(D-03)* |
-| **Generated code** | Hybrid — scripting sandbox while testing, compiled C# for production *(D-04)* |
-| **Licence** | Apache 2.0 *(D-08)* |
-| **Distribution** | Free and open source on public GitHub; app store later, also free *(D-07)* |
-| **Repo visibility** | Private until Phase 0 code exists; licence and safety files already done *(D-10)* |
+| **Host** | Claude Code plugin — skills, subagents, MCP server, Revit add-in *([D-01](DECISIONS.md))*. The host decides what the user meant; Heron never classifies intent |
+| **Revit support** | 2020 → latest, and every future release *([D-05](DECISIONS.md))* |
+| **Languages** | C# for everything touching Revit · Python for the brain and the MCP side *([D-06](DECISIONS.md))* |
+| **Transport** | Named pipes — add-in is the server, local-only by construction *([D-02](DECISIONS.md))* |
+| **Revit threading** | One `ExternalEvent`, one request queue, one handler *([D-09](DECISIONS.md))* |
+| **MCP tools** | Narrow tools, each with its own declared risk level *([D-03](DECISIONS.md))*. A fragment is reached by **capability** through three doors — `revit_read`, `revit_show` and `revit_change` — never by its id ([04 §8](04-heron-mcp.md)). The list, with what each tool may do: `python mcp/server/heron_tools.py` |
+| **Off Windows** | No Revit can be there, so the server serves its library tools alone and no `revit_` tool *([D-132](DECISIONS.md))* |
+| **Generated code** | Hybrid — C# compiled at run time inside Revit's process, and into an assembly only at `PRODUCTION`, which no fragment has reached *([D-04](DECISIONS.md), [D-28](DECISIONS.md))* |
+| **Changing the model** | Off until the ribbon's **Changes** switch is on *([D-19](DECISIONS.md))*. One request is one named `TransactionGroup` and one undo entry (Golden Rule 16); while **Ask to Keep** is on, Revit asks Keep or Discard first *([D-126](DECISIONS.md), [D-138](DECISIONS.md))*. **Admin** and **Publish** each have a switch of their own *([D-106](DECISIONS.md))* |
+| **Proof** | One recorded run against a named real model, with a negative case and a staleness fingerprint. A compile or a passing test is not one *([D-30](DECISIONS.md))* |
+| **Licence** | Apache 2.0 *([D-08](DECISIONS.md))* |
+| **Distribution** | Free and open source on public GitHub; app store later, also free *([D-07](DECISIONS.md))* |
+| **Repo visibility** | Private until the licence and safety files existed and Phase 0 worked *([D-10](DECISIONS.md))*. Both are met, and the [root README](../README.md) says the repository is public so the work is open, not yet to be installed |
 | **Building on** | the owner's earlier brain and Revit-connector work, upgraded to this architecture |
 
 > **If you are the owner, start at [FOR-THE-OWNER.md](FOR-THE-OWNER.md).** One page for
@@ -38,48 +88,21 @@
 > `python tools/owner-queue.py` derives one at the moment you ask. Three typed lists were found
 > stale on 2026-09-12, which is why.
 
-**Nothing gates any phase.** How many are answered and open is derived on [OPEN-QUESTIONS](OPEN-QUESTIONS.md) and checked by `tools/check-docs.py`, never typed here. The newest open one is [Q-60](OPEN-QUESTIONS.md), raised 2026-10-06 with [D-113](decisions/D-113.md): whether Heron may write a one-time id into a Revit 2020 to 2023 model so its answers can be kept. Before it, [Q-58](OPEN-QUESTIONS.md), raised 2026-09-21 while building the installer: `HeronPaths` is the only thing allowed to build a Heron path, and the PowerShell script that installs Heron cannot call it. The last was [Q-59](OPEN-QUESTIONS.md), asked with [D-106](DECISIONS.md) and closed the same day, 2026-09-28, as [D-107](DECISIONS.md) (both are `PUBLISH`) — two exports declared `MODIFY`, so the new Publish switch did not guard them. Should they be `PUBLISH`?
-**The last four were answered on 2026-09-20** — [D-81](DECISIONS.md) to [D-84](DECISIONS.md) — asked back to the owner one at a time, in plain words with a worked example each. Two of the four, `Q-54` and `Q-55`, moved in on 2026-09-12 from a RAG work note that was retired — they had been owed for days while this line said one was open, which is why a question belongs in this register and nowhere else. `Q-43` to `Q-48` were all opened on
-2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
-than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
-level ([33 §5](33-external-repository-research.md)):
-
-| | |
-|---|---|
-| `Q-43` | [`measure-routes.py`](../tools/measure-routes.py) parsed the tree for real calls to `heron_search.remember()` and found one, in a **test**. The utterance cache [19 §5](19-context-and-cost.md) makes step 1 of the pipeline is **never written in production** |
-| `Q-44` | the audit trail is written by the add-in, so a request answered entirely by the brain leaves **no record at all** — and [19 §7](19-context-and-cost.md) asks for one file, which would mean two processes appending to it |
-| `Q-45` | [D-58](DECISIONS.md) established that Heron makes no model calls, so [19 §3–§4](19-context-and-cost.md)'s router and fallback may belong wholly to the host — except the *mark the result degraded* clause, which is trust and therefore Heron's |
-| `Q-46` | [`check-revit-gate.py`](../tools/check-revit-gate.py) found **59 fragments** that go looking, can drop a candidate on the way, and name nothing they refused or skipped, against [D-52](DECISIONS.md). It was 143 until the rule was derived from the library's own practice — writers name refusals 172/202, readers 45/158 |
-| `Q-47` | [`check-reachable.py`](../tools/check-reachable.py) found `heron_capability.want()` called from two tests and no production code — so the `capabilities_wanted` table is always empty and **two gap paths exist of which only the derived one can fire** |
-| `Q-48` | ✅ [`check-revit-gate.py`](../tools/check-revit-gate.py) found **62 reading fragments** that collect from the host document and say nothing about links. In federated MEP work that is a **confident smaller number**. Closed by the owner: reading spans links **only when the modeller asks**, and the answer reports how many links it read ([D-59](DECISIONS.md)) |
-| `Q-49` | ✅ Heron had **no hooks of any kind** — every `check-*.py` gate ran only when a person typed it, and this repository had already paid for that once ([32 §4](32-master-architecture-reconciliation.md)). Closed by the owner 2026-09-09: *"yes add the hooks"*. Since 2026-09-23 they are wired from [`.claude/settings.json`](../.claude/settings.json), so every session runs them — [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) and [`heron-session`](../.claude/skills/heron-session/SKILL.md) |
-| `Q-50` | ✅ the preview **told** the modeller what would change; everything needed to **show** it — `preview.Ids`, `preview.Skipped`, [`set-selection`](../brain/fragments/set-selection/) — was already in memory when the question was asked. Closed by the owner: it selects **both** sets, capped at 500 ([D-60](DECISIONS.md)) |
-| `Q-51` | 🟠 Rule 19 stops text **authorising**; nothing yet governs text **travelling**. Every part Heron assembles comes from a source Heron wrote — until the RAG index exists, which is the same event that makes retrieval useful |
-| `Q-52` | 🟡 `agentmemory` fuses three retrieval streams at the same `RRF_K = 60` Heron chose independently; Heron fuses two. [`heron_graph.py`](../brain/heron_graph.py) is the third — but it is a **composition** graph, not an entity graph, so the obvious repair is probably wrong |
-| `Q-53` | ✅ a skill library whose README says *"MIT, use freely"* ships four skills marked **all rights reserved** — and its own scanner never looks at a licence. Heron plans community packages and **no Heron tool mentions a licence** |
-
-`Q-41` before them was both asked and answered by the owner on 2026-09-06, during the decision read-back
-rather than by a specification.
-
-**Phase 1, assessed 2026-08-28** (it had not been, and the count above had quietly stopped covering the
-work in progress). Three questions touched Step 6 at the time, and one of them mattered:
-
-| | |
-|---|---|
-| **Q-36** — lease or takeover | **Answered.** Built as `HeronLease` in Step 6 ([D-22](DECISIONS.md)) |
-| **Q-19** — accept Golden Rules 16–21? | **Answered 2026-08-28 — accepted.** They are the rules Step 6 was built to obey (16, 17, 20, 21), and they are now binding rather than proposed |
-| **Q-14** — how is testing against real Revit done? | **Answered 2026-08-28** — [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), **52 items in dependency order as it stood that day** — it has grown since, and `python tools/check-gaps.py` is what knows the current figure — with what needs Revit separated from what does not. `A1`–`A3` passed the same day: the compile gate turned out not to need Windows ([30](30-compiling-away-from-windows.md)) |
-
-**Nothing now blocks Phase 1 except Revit itself.**
+**Nothing gates any phase.** How many questions are answered and open is derived on
+[OPEN-QUESTIONS](OPEN-QUESTIONS.md) and checked by `tools/check-docs.py`; which of them wait on the owner
+is `python tools/owner-queue.py`. Neither is typed here. Every question, answered or not, keeps its
+answer in that register — [`open-questions/answered.md`](open-questions/answered.md) and the tier files
+beside it.
 
 **Specification is complete in four parts.** Part 1 is the platform and its organisation; Part 2 is the
 Agent Operating System; Part 3 is the consolidated baseline, **authoritative on the Golden Rules**
 (ten became fifteen, [D-12](DECISIONS.md)); Part 4 adds the **Kernel**, the **Workflow Engine**, the
 **Constitution** and 30 mandatory components ([D-13](DECISIONS.md)).
 
-**Two items need confirmation before building:** the [unified trust model](24-trust-model.md) —
-six competing status vocabularies resolved into two axes ([Q-34](OPEN-QUESTIONS.md)) — and the
-[Constitution](../HERON_CONSTITUTION.md) ([Q-35](OPEN-QUESTIONS.md)).
+**The [Constitution](../HERON_CONSTITUTION.md) is binding** — all 30 Articles, accepted 2026-08-28
+([D-43](DECISIONS.md)). **One item is agreed in direction and not signed off:** the
+[unified trust model](24-trust-model.md) — six competing status vocabularies resolved into two axes
+([Q-34](OPEN-QUESTIONS.md), [D-14](DECISIONS.md) still proposed).
 
 Review of all four parts: [PROPOSALS](PROPOSALS.md).
 
@@ -98,12 +121,30 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | Know what still needs deciding | [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) |
 | Know what gets built first | [ROADMAP.md](ROADMAP.md) |
 | **Actually start building** | [**27 — Build Order**](27-build-order.md) |
-| Know the non-negotiables | [14 — Golden Rules](14-golden-rules.md) |
+| Know the non-negotiables | [14 — Golden Rules](14-golden-rules.md) and the [Constitution](../HERON_CONSTITUTION.md) |
+| Open a pull request | [CONTRIBUTING.md](../CONTRIBUTING.md) — the process, the code style and what gets a change rejected outright |
 | Know **what to install** for Heron — Python first — and what is optional | [WHAT-TO-INSTALL.md](WHAT-TO-INSTALL.md) |
 
 ---
 
 ## Core documents
+
+**Every numbered document, by what it is about.** The tables after this one list them again by number,
+with what each covers.
+
+| Theme | Documents | Read it when |
+|---|---|---|
+| **The specification** — the destination, never edited | [00](00-master-specification.md) Part 1 · [00b](00b-master-specification-agent-os.md) Part 2 · [00c](00c-master-handover-baseline.md) Part 3 · [00d](00d-additional-requirements.md) Part 4 · [00e](00e-field-notes-proven-bridge.md) field notes, observed rather than designed | you need the original requirement, word for word |
+| **What Heron is, and its rules** | [01](01-vision-and-principles.md) Vision · [14](14-golden-rules.md) Golden Rules · [Constitution](../HERON_CONSTITUTION.md) · [15](15-glossary.md) Glossary | first, and whenever a rule is in question |
+| **The product parts** | [02](02-architecture-overview.md) Architecture · [03](03-heron-revit.md) Revit add-in · [04](04-heron-mcp.md) MCP · [05](05-heron-brain.md) Brain · [06](06-heron-platform.md) Platform · [07](07-installation-and-update.md) Install and update · [25](25-multi-session-and-binding.md) Multi-session and binding | you change one part |
+| **Agents and the kernel** | [08](08-agent-catalog.md) Agent catalogue · [28](28-agent-registry.md) Agent registry · [11](11-orchestration-and-workflows.md) Orchestration · [18](18-agent-operating-system.md) Agent OS · [19](19-context-and-cost.md) Context and cost · [22](22-users-modes-and-extensibility.md) Users and modes · [23](23-heron-kernel.md) Kernel | you touch an agent, or how work is ordered |
+| **Knowledge and trust** | [09](09-skills-and-fragments.md) Skills and fragments · [10](10-memory-and-knowledge.md) Memory and knowledge · [20](20-knowledge-trust-and-conflict.md) Knowledge trust · [24](24-trust-model.md) Trust model · [36](36-remembering-between-steps.md) Remembering between steps | you touch the library or the stores |
+| **Safety and quality** | [12](12-security-and-permissions.md) Security and permissions · [13](13-testing-and-quality.md) Testing · [21](21-resilience-and-operations.md) Resilience · [16](16-version-support-strategy.md) Version support | before anything writes to a model, or ships |
+| **What a modeller gets** — built, not proven | [40](40-heron-companion.md) Companion · [41](41-hvac-design.md) HVAC · [42](42-fire-protection-design.md) Fire protection · [43](43-building-revit-families.md) Families · [44](44-building-loads-from-the-model.md) Building loads · [46](46-sprinkler-hydraulics-from-the-model.md) Sprinkler hydraulics · [47](47-sprinkler-layout-from-the-model.md) Sprinkler layout | you work on one of these features |
+| **How the work is done** | [27](27-build-order.md) Build order · [29](29-metadata-standard.md) Metadata · [30](30-compiling-away-from-windows.md) Compiling away from Windows · [38](38-the-cloud-environment.md) Cloud environment · [37](37-the-provider-adapter.md) Provider adapter · [17](17-open-source-and-distribution.md) Open source and distribution | you build, compile or release |
+| **Research** — studied, never imported | [26](26-prior-art-revit-mcp.md) Prior art · [31](31-studying-the-existing-libraries.md) Studying the libraries · [32](32-master-architecture-reconciliation.md) Master Architecture reconciled · [33](33-external-repository-research.md) External repositories · [34](34-patterns-adapted.md) Patterns adapted · [34](34-project-perfection-and-continuous-upgrade-plan.md) Upgrade plan, executed · [35](35-independent-study-notes-open-design-awesome-llm-apps-openhands.md) Study notes · [39](39-three-downloaded-skill-sets.md) Three skill sets · [45](45-five-more-downloaded-skill-files.md) Five more skill files | before proposing something another project does |
+
+### By number
 
 | # | Document | Covers |
 |---|---|---|
@@ -119,13 +160,13 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 05 | [Heron Brain](05-heron-brain.md) | RAG, retrieval strategy, vector store, embeddings |
 | 06 | [Heron Platform](06-heron-platform.md) | Workspace, registry, agent lifecycle, packages, GitHub |
 | 07 | [Installation & Update](07-installation-and-update.md) | Install flow, build strategy, updates, self-healing |
-| 08 | [Agent Catalogue](08-agent-catalog.md) | All ~150 agents by department, with tiers |
+| 08 | [Agent Catalogue](08-agent-catalog.md) | The original catalogue of agents by department, with tiers. [28](28-agent-registry.md) is the complete registry |
 | 09 | [Skills & Fragments](09-skills-and-fragments.md) | The knowledge units, lifecycle, gates, code execution |
 | 10 | [Memory & Knowledge](10-memory-and-knowledge.md) | Scopes, isolation, import, community |
 | 11 | [Orchestration & Workflows](11-orchestration-and-workflows.md) | Reference workflows, failure handling, performance |
 | 12 | [Security & Permissions](12-security-and-permissions.md) | Permission levels, gate location, confidentiality, audit |
 | 13 | [Testing & Quality](13-testing-and-quality.md) | Eight test levels, testing against real Revit, regression |
-| 14 | [Golden Rules](14-golden-rules.md) | The constitution — **21 official rules**, 16–21 accepted 2026-08-28 |
+| 14 | [Golden Rules](14-golden-rules.md) | The non-negotiables — **21 official rules**, 16–21 accepted 2026-08-28. The runtime-enforceable subset is the [Constitution](../HERON_CONSTITUTION.md) |
 | 15 | [Glossary](15-glossary.md) | Terms, Revit concepts, status vocabularies |
 | 16 | [Version Support Strategy](16-version-support-strategy.md) | **Revit 2020 → latest** — the two API breaks, multi-targeting, adapters, test matrix |
 | 17 | [Open Source & Distribution](17-open-source-and-distribution.md) | Licence, public/private separation, contribution, disclaimer, channels |
@@ -160,7 +201,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 |---|---|---|
 | 26 | [Prior Art: Existing Revit MCP Servers](26-prior-art-revit-mcp.md) | What already exists, what it confirms, **the two gaps every project shares**, pyRevit Routes |
 | 27 | [**Build Order**](27-build-order.md) | **Start here to build.** Six numbered steps, each independently provable |
-| 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **All 252 agents** — ID, what each one does, tier, risk level, build step |
+| 28 | [**The Complete Agent Registry**](28-agent-registry.md) | **Every agent** — ID, what each one does, tier, risk level, build step. How many, and how many are built: `python tools/agent-count.py` |
 | 29 | [Metadata Standard](29-metadata-standard.md) | The five fields every artefact carries — and how they tie the code back to the registry |
 | 30 | [Compiling Away From Windows](30-compiling-away-from-windows.md) | **The compile gate runs anywhere.** All eight releases, 2020–2027, from NuGet on Linux; what a pass proves; the 2020-only defect it caught on its first run; and why three releases were skipped for a reason that was about the SDK package, not the operating system |
 | 31 | [Studying The Existing Libraries](31-studying-the-existing-libraries.md) | **How a fragment is studied and re-authored, never imported.** What travels (the mechanism, the scar) and what cannot (the code, the words, the proof); the owner's three rules — check and edit, add, split; and why 221 verified fragments arrive here as 221 unproven ones |
@@ -173,14 +214,14 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 37 | [The Provider Adapter](37-the-provider-adapter.md) | **A scope, not an implementation.** Three agents decide which model to use, whether it is reachable and what it cost; all three are built, all three are tested, and **not one of them has ever met a provider** |
 | 38 | [**The Cloud Environment**](38-the-cloud-environment.md) | **Where Heron work runs when it is not on the owner's PC.** The four fields to set; why **Custom** network access rather than Trusted, which does not carry `huggingface.co` and so silently costs retrieval its meaning; what a cloud session runs that CI does not — every suite in `tests/`, against the three CI leaves unrun — and the three things the setup script deliberately refuses to do |
 | 39 | [Three Downloaded Skill Sets, Studied](39-three-downloaded-skill-sets.md) | **Another product's Revit connector notes, an office master prompt and a studio toolkit index, read lesson by lesson against Heron's code.** Nothing copied. What came out: a roof slope Heron had named as missing in its own words, a step-by-step building-shell skill, a defect their same-name scar exposed in Heron's parameter fragments, and a list of what their connector does that Heron does not - left unbuilt on purpose. **Its best lesson is a scar whose cause was never isolated:** the same roof error Heron had already traced to a different one |
-| 40 | [Heron Companion](40-heron-companion.md) | **Built, not proven in Revit - allowed by D-108 and D-109.** A local page beside Revit that shows the live selection and every Heron call the chat makes, and gives editable tables - a settings change's values, or elements and their parameters - that the modeller applies there with no message to the chat. Where it lives and why (inside each chat's MCP process, with Revit's state read from a file, never the pipe); the ten places the request and Heron's rules disagreed and how each was settled; and in §21 what was built |
+| 40 | [Heron Companion](40-heron-companion.md) | **Built, not proven in Revit - allowed by D-108 and D-109.** A local page beside Revit that shows the live selection and every Heron call the chat makes, and gives editable tables - a settings change's values, or elements and their parameters - that the modeller applies there with no message to the chat; the load and sprinkler panels of [44](44-building-loads-from-the-model.md), [46](46-sprinkler-hydraulics-from-the-model.md) and [47](47-sprinkler-layout-from-the-model.md) live on it too. Where it lives and why (inside each chat's MCP process, with Revit's state read from a file, never the pipe); the ten places the request and Heron's rules disagreed and how each was settled; and in §21 what was built |
 | 41 | [**HVAC Design**](41-hvac-design.md) | **Built, not proven against a project.** What Heron now works out before a duct is drawn - loads, supply air, ASHRAE 62.1 outdoor air, psychrometrics, duct friction and sizing, fan power, diffusers, chilled water - read from HAP, ASHRAE, SMACNA and the rest and re-authored as the `heron_hvac` tool. Why every design value is ASKED for and a standard's figure only OFFERED (D-33); why a load here is a peak estimate and not HAP; how far each reference table was checked; what is known about Qatar; seven conflicts recorded, not resolved; and what is not built |
 | 42 | [**Fire Protection Design**](42-fire-protection-design.md) | **Built, not proven against a project.** What Heron now works out before a sprinkler is placed - hazard classes looked up and never decided, sprinkler spacing, counts and a drawn layout checked as NFPA 13 measures it, the design area, pipe schedules including sprinklers above and below a ceiling, the obstruction rules, a hydraulic solve of a tree or a grid, the water supply, storage, pumps, standpipes, extinguishers and detectors - as the `heron_fire` tool. Why a criterion is ASKED and a table asked about is answered; why a figure nobody could check is not held at all; what is known about Qatar; ten conflicts, six of them the owner's own file against NFPA; and what is not built |
 | 43 | [Building Revit Families](43-building-revit-families.md) | **Every kind of family, and what makes one parametric** - which template makes which kind and why nothing changes it later, the planes-labels-locks method, parameters, formulas, lookup tables and type catalogs, hosted, line-based, pattern-based, adaptive, profile, detail and annotation families, MEP fittings, and exactly where Revit's API stops: no label on any release, no reference line's planes. Each fact marked API, SOURCED or UNSURE; researched 2026-10-01 with the Autodesk hosts out of the cloud session's reach |
 | 44 | [Building Loads from the Model](44-building-loads-from-the-model.md) | **Every Space's heating and cooling load from the Revit model in one run** - the study of a published residential load skill (39 tests pass, 8 defects found, not copied and why), what it has that Heron lacks, the Space take-off reader, the building runner over `heron_hvac`, block load, the two gates, the Companion Loads panel, the load calculation sheet, owner questions and build phases. **Written as a design; §11 onward records what was built from it from 2026-10-04** (`brain/heron_takeoff.py`, `heron_building_loads.py`, `heron_loads_report.py`, the `revit_building_loads` tool). Built, not proven - its read, `report-space-envelope`, is `DRAFT` |
+| 45 | [Five More Downloaded Skill Files, Studied](45-five-more-downloaded-skill-files.md) | **The same folder as [39](39-three-downloaded-skill-sets.md), shared again with five new files - a Revit scripting toolkit, a data-exchange and validation toolkit, an IFC toolkit, a computational-design toolkit and a larger copy of the connector notes - read line by line against Heron's code.** Nothing copied. Most of what is Revit, Heron already does. What came out: **three defects in Heron's own fragments** found by checking their lessons against the code, seven DRAFT fragments widened and one added, a pre-IFC-export recipe, and a list of what is worth building but touches a PROVEN fragment, left for the owner |
 | 46 | [Sprinkler Hydraulics from the Model](46-sprinkler-hydraulics-from-the-model.md) | **One sprinkler system's hydraulic calculation from the Revit model, in the Companion.** A new read, `REPORT_SPRINKLER_NETWORK`, gives every pipe, fitting, valve and head and how they connect; the brain joins it into the fire engine's network, asks only what the model cannot say - the standard, the criteria, each sprinkler type's K, the fittings' equivalent lengths - suggests the remote area, solves it with the existing `hydraulic`, and writes the calculation sheet. The plan, its independent review (20 findings, all taken) and what phase 1 built. Writes nothing to Revit. Built, not proven |
 | 47 | [Sprinkler Layout from the Model](47-sprinkler-layout-from-the-model.md) | **Sprinklers laid out in the rooms the modeller selects, of any shape, previewed in the Companion and placed level by level.** A new read, `REPORT_SPRINKLER_LAYOUT_SPACES`, gives each room's outline, holes, level, ceilings and the heads already there; the fire engine's new `sprinkler_layout_room` lays it out on the fewest heads that pass the same measure `sprinkler_spacing` uses; Apply places one level through the proven `PLACE_FAMILY_INSTANCES` and reads the heads back. The plan and its independent review (19 findings, all taken). Writes to Revit only on Apply, with the Changes switch on. Built, not proven |
-| 45 | [Five More Downloaded Skill Files, Studied](45-five-more-downloaded-skill-files.md) | **The same folder as [39](39-three-downloaded-skill-sets.md), shared again with five new files - a Revit scripting toolkit, a data-exchange and validation toolkit, an IFC toolkit, a computational-design toolkit and a larger copy of the connector notes - read line by line against Heron's code.** Nothing copied. Most of what is Revit, Heron already does. What came out: **three defects in Heron's own fragments** found by checking their lessons against the code, seven DRAFT fragments widened and one added, a pre-IFC-export recipe, and a list of what is worth building but touches a PROVEN fragment, left for the owner |
 
 ## Working documents
 
@@ -211,7 +252,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | [`fragment-issues-archive/`](fragment-issues-archive/README.md) | Finished FRAGMENT-ISSUES rows, written by `tools/archive-fragment-issues.py`. Not a live obligation |
 | [`needs-checking-archive/`](needs-checking-archive/README.md) | Finished NEEDS-CHECKING rows, written by `tools/archive-needs-checking.py`. Not a live obligation |
 | [`handover-archive/`](handover-archive/README.md) | One note per finished session, moved out of [HANDOVER.md](HANDOVER.md). Narrative, never a register |
-| `proof/` | Screenshots that NEEDS-CHECKING rows cite as evidence (groups AA and AB) |
+| `proof/` | Screenshots that NEEDS-CHECKING rows cite as evidence. Which groups cite them: `grep -l 'proof/' docs/needs-checking/*.md` |
 | [`work-notes/`](work-notes/README.md) | Temporary operational work - see the row above |
 
 ---

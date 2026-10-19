@@ -2,11 +2,79 @@
 
 > **Status:** a scope, not an implementation. Written 2026-09-17 after the last of the five blocking
 > decisions closed and the register stopped being the bottleneck.
+>
+> **As built (2026-10-18): BUILT, NOT RUN AGAINST A PROVIDER.** The first adapter §3 asks for was built
+> the same day (#168, commit `c4aed3b1`): [`brain/heron_provider.py`](../brain/heron_provider.py) - one
+> `LOCAL` adapter for Ollama at `127.0.0.1:11434` (`HERON_OLLAMA_URL` moves it), standard library only,
+> with `probe`, `call`, `usage_tokens` and `register`. Its `call` takes a model and a prompt, not §2.4's
+> intent-shaped signature. [`tests/test_provider.py`](../tests/test_provider.py) runs it over real
+> sockets - a refused connection with nothing listening, a 401, a late answer - and its first run found
+> the kind of shape mismatch §6 predicted, in `counts_as_evidence()` rather than `record()`: it read keys
+> the adapter's result did not carry (NEEDS-CHECKING [K3](needs-checking/group-k.md)). **K3 is still NOT RUN:** it needs Ollama installed
+> with one model pulled. Nothing in `brain/` or `mcp/server/` imports the adapter yet, so no answer Heron
+> serves goes through it.
+
+### At a glance — the adapter as built, and what nothing uses yet
+
+Read from [`heron_provider.py`](../brain/heron_provider.py) on 2026-10-18: it registers with the router,
+hands `judge()` the keys it reads, and adds up only the token counts a provider reported. A search for
+`heron_provider` finds it imported by its own test and nothing else.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart LR
+    T["<b>tests/test_provider.py</b><br/>real sockets: nothing listening,<br/>a 401, a late answer"]
+    P["<b>The provider adapter</b><br/>brain/heron_provider.py · LOCAL only<br/>probe · call · usage_tokens · register"]
+    O["<b>Ollama on this PC</b><br/>127.0.0.1:11434<br/>HERON_OLLAMA_URL moves it"]
+    R["<b>Model Router</b> · KRN-MDL-010<br/>heron_router.py"]
+    A["<b>Availability</b> · KRN-MAV-017<br/>heron_availability.py · judge()"]
+    L["<b>Budget ledger</b><br/>heron_budget.py · record()"]
+    S{{"<b>Nothing Heron serves imports it yet</b><br/>no file in brain/ or mcp/server/<br/>so no answer goes through it"}}
+    K3["<b>K3 · NOT RUN</b><br/>needs Ollama with one model pulled"]
+
+    T --> P
+    P -->|"call"| O
+    P -->|"register as LOCAL"| R
+    P -->|"probe: the keys judge reads"| A
+    P -.->|"usage_tokens: only what was reported"| L
+    S -.- P
+    O -.- K3
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class P,R,A,L brain
+    class T plat
+    class O,K3 user
+    class S revit
+```
+
+**The dotted arrow to the ledger is a shape, not a wire**: `usage_tokens` returns a total that
+`record()` could take, and nothing calls `record()` with it yet. **Built is not run**: no provider has
+answered it on the owner's PC, which is what K3 asks for.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+tests/test_provider.py (real sockets: nothing listening, a 401, a late answer)
+  -> the provider adapter, brain/heron_provider.py, LOCAL only: probe, call, usage_tokens, register
+       call                 -> Ollama on this PC, 127.0.0.1:11434 (HERON_OLLAMA_URL moves it)
+       register as LOCAL    -> Model Router, heron_router.py (KRN-MDL-010)
+       probe                -> Availability, heron_availability.py judge() (KRN-MAV-017)
+       usage_tokens         -> a total the budget ledger's record() could take - not wired
+Nothing Heron serves imports it yet: no file in brain/ or mcp/server/, so no answer goes through it.
+K3 is NOT RUN: it needs Ollama with one model pulled.
+```
+
+</details>
 
 Three agents in this system decide **which** model to use, **whether it is reachable** and **what it
 cost**. All three are built, all three are tested, and **not one of them has ever met a provider.**
 
-There is no adapter to call.
+There is no adapter to call. *(So it stood on 2026-09-17, when §1 to §6 were written - the greps in §1
+included. The note at the top says what was built that day.)*
 
 ---
 
@@ -120,7 +188,7 @@ model barely exercises** — a real `401` is the thing K3 explicitly asks for.
 | | |
 |---|---|
 | **K3** in NEEDS-CHECKING | the row that names this as its precondition |
-| **5 Development agents** | `DEV-REQ-001`, `DEV-PLN-002`, `DEV-ARC-003`, `DEV-GEN-004`, `DEV-RAP-007` — all T2 or T3, so all of them need a model call and none can run |
+| **These Development agents** | `DEV-REQ-001`, `DEV-PLN-002`, `DEV-ARC-003`, `DEV-GEN-004`, `DEV-RAP-007` — all T2 or T3, so all of them need a model call and none can run. *As built (2026-10-18): the registry now records all five as **provided by the host** ([D-80](DECISIONS.md)) - Claude Code does that language work - so they wait on no adapter; `python tools/agent-count.py` counts them in its HOST column* |
 | **every other T2/T3 in the register** | they are counted as built because a file claims them; what they have never done is make a call |
 
 That last row is the uncomfortable one and it should be said plainly: **"built" in this register means a
@@ -132,8 +200,8 @@ everything except the part that needs a model.
 ## 5. What this scope does NOT include
 
 **No agent row.** The only `adapter` rows in [docs/28](28-agent-registry.md) are the deferred CAD ones —
-AutoCAD, Navisworks, IFC, Rhino. This is **infrastructure under three existing agents**, not a
-twenty-sixth Revit Engineering row, and giving it an id would be inventing a row nobody wrote.
+AutoCAD, Navisworks, IFC, Rhino. This is **infrastructure under three existing agents**, not one
+more Revit Engineering row, and giving it an id would be inventing a row nobody wrote.
 
 **No model choice for the product.** Which local model, and whether Heron ships one, is a product
 decision and the owner's.

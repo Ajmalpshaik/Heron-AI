@@ -27,12 +27,16 @@ transfers; the shape almost never does.
 
 | | |
 |---|---|
-| **Patterns extracted** | **20**, from **20** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron has open. §2.15 to §2.19 came from a second round on 2026-09-11, against three repositories named by the improvement-gate plans |
+| **Patterns extracted** | **20**, from **20** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron had open. §2.15 to §2.19 came from a second round on 2026-09-11, against three repositories named by the improvement-gate plans |
 | **Adopted and built** | **6** — tiered depth, the cut marker, **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)), and the three the improvement gate is made of ([§2.15](#215-built---compare-the-finished-diff-against-what-the-change-said-it-was-for), [§2.16](#216-built---a-file-no-rule-recognises-widens-the-checks-rather-than-passing-quietly), [§2.17](#217-built---check-the-thing-that-gets-delivered-not-the-tree-it-was-built-from)). All tested |
 | **Adopted as a rule rather than as code** | **1** — [§2.18](#218-adopted-as-a-rule---mock-only-the-thing-you-genuinely-cannot-have) |
 | **Already held** | **7** — Heron had them, and in five cases more strictly |
-| **Blocked on an owner decision** | **2** — `Q-50`, `Q-51`, `Q-53`. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
+| **Blocked on an owner decision** | **3** — `Q-50`, `Q-51`, `Q-53`, one each for §2.10 to §2.12. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
 | **Rejected with a reason** | **3** — one of them **measured and rejected**, not argued ([§2.13](#213--measured-and-rejected--a-third-retrieval-stream-tried-at-six-settings)) |
+
+> **As built (2026-10-18):** nothing in the *Blocked on an owner decision* row is blocked any more — the
+> owner answered Q-50 as [D-60](DECISIONS.md) and Q-53 as [D-66](DECISIONS.md) on 2026-09-09, and Q-51
+> as [D-81](DECISIONS.md) on 2026-09-20. §2.10 to §2.12 below each say what became of theirs.
 
 **The two built together cut a generation packet from 5,737 characters to 372 — and the request crosses
 byte for byte at every depth**, which is the half that makes the other half safe.
@@ -95,7 +99,7 @@ because *complete, tested, and unreachable from a conversation is not what "buil
 
 **And the same pattern is what [Q-46](OPEN-QUESTIONS.md) needs**, which is the owner's to answer: the
 cheapest version of that question is not 59 fragment edits but **one rule that fires only on the empty
-case, capped, applied once.**
+case, capped, applied once.** *(He answered it that way the same day, as [D-64](DECISIONS.md).)*
 
 ### 2.3 ✅ ALREADY HELD, and made stricter by this work — compress what came back, never what was asked
 
@@ -224,6 +228,10 @@ told, not shown.** ECC's `plan-canvas` opens the plan in a browser so the human 
 **Heron's canvas is the model itself**, and `preview.Ids`, `preview.Skipped` and `set-selection` are all
 already in memory when it asks.
 
+> **As built (2026-10-18):** answered on 2026-09-09 as [D-60](DECISIONS.md) — a preview selects what it
+> would change and what it would skip, up to a cap — and that highlight is drawn by Revit's Keep or
+> Discard box in [`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs).
+
 ### 2.11 ⏸ OWNER'S CALL — guard the path from retrieval into context
 
 **From** [`ruflo`](https://github.com/ruvnet/ruflo)'s `agentdb-retrieval-guard.ts` —
@@ -235,6 +243,10 @@ a permission level — but **Heron is the carrier**, and every source it carries
 the RAG index exists is the day that stops being true, and [`heron_context.py`](../brain/heron_context.py)
 says so in its own part list: `STANDARD = "standard"  # the clauses cited - source does not exist yet`.
 
+> **As built (2026-10-18):** answered on 2026-09-20 as [D-81](DECISIONS.md) — carried text is
+> **stamped, not scanned**: every part carrying text Heron did not write names its `source`, Heron
+> attributes rather than asserts, and no chunk scanner is built.
+
 ### 2.12 ⏸ OWNER'S CALL — an inventory of what imported knowledge permits
 
 **From** [`scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) as the
@@ -244,6 +256,10 @@ and its own scanner checks security and never looks at a licence. The other **ge
 licence inventory as a build artifact**. Heron's dependency inventory would be nearly empty; **the
 inventory Heron needs is of its imported knowledge**, which [24 §7](24-trust-model.md) now records as
 semi-trusted.
+
+> **As built (2026-10-18):** answered on 2026-09-09 as [D-66](DECISIONS.md) — a gate that reads the
+> files, not the landing page: [`tools/check-licence.py`](../tools/check-licence.py), one of the checks
+> CI's gates job runs on every pull request ([`gates.yml`](../.github/workflows/gates.yml)).
 
 ### 2.13 ❌ MEASURED AND REJECTED — a third retrieval stream, tried at six settings
 

@@ -396,7 +396,7 @@ the Revit plugin, not the brain?"*
 **All ten stages install `products`**, and a product is a Revit add-in: a folder, an `.addin`, an
 assembly. The **brain** is none of those. The 395 fragments live in `brain/fragments/`, the MCP server
 is `mcp/server/heron_mcp_server.py`, and [`docs/07`](../../../07-installation-and-update.md) puts the
-knowledge store in `%APPDATA%\Heron` as **the user's own data that must survive every update**.
+knowledge store in `%APPDATA%\Heron` (`%USERPROFILE%\.heron` since [D-135](../../../DECISIONS.md)) as **the user's own data that must survive every update**.
 
 **The consequence is not cosmetic.** `heron-bridge` is the only `SHIPPED` product, and it is one end of
 a named pipe — the other end is that Python server. So a modeller who installs the AI Bridge and

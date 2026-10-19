@@ -16,9 +16,127 @@ regardless of how much of it is built.
 
 ---
 
-**Which agents each step builds:** [08 — Agent Catalogue](08-agent-catalog.md).
-All of Phase 0 and 1 needs **45 of the 250 agents** — under a fifth. Steps 1-6 build 10, 3, 7, 7, 6 and 9
-respectively, and the large majority are plain deterministic modules with no model call at all.
+## Where each step stands — at a glance
+
+Every colour is taken from this file's own text and the evidence it links. **Proven** is a recorded run
+against a named real model ([D-30](DECISIONS.md)); **measured** is a run on one release, with part of the
+step's *Prove it* still owed; **built** is code and tests that pass with no Revit — not a proof.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    subgraph P0["Phase 0 — read-only"]
+        direction LR
+        S1["<b>Step 1</b><br/>the pipe<br/>ping → pong"]
+        S2["<b>Step 2</b><br/>the thread hop<br/>a real element count"]
+        S3["<b>Step 3</b><br/>an MCP server<br/>revit_health"]
+        S4["<b>Step 4</b><br/>the first BIM answer<br/>select all ducts"]
+        S5["<b>Step 5</b><br/>more than one Revit<br/>the picker · fails closed"]
+        S1 --> S2 --> S3 --> S4 --> S5
+    end
+    G0{{"<b>Gate</b> · Phase 0 ends"}}
+    S6["<b>Step 6</b> · the first write, with the rails<br/>Revit 2024 · Group D<br/>a failure forced mid-move · not run"]
+    G1{{"<b>Gate</b> · Phase 1 ends unproven<br/>Phase 2 began anyway"}}
+
+    P0 ==> G0 ==> S6 ==> G1
+
+    subgraph KEY["Legend"]
+        direction LR
+        K1["proven"]
+        K2["measured on one release"]
+        K3["built · not proven"]
+        K4["batch marker · not a step"]
+    end
+
+    classDef proven fill:#DCFCE7,stroke:#16A34A,color:#14532D
+    classDef measured fill:#FEF9C3,stroke:#CA8A04,color:#713F12
+    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
+    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    class S1,S2,S3,S4,S5,K1 proven
+    class S6,K2 measured
+    class K3 built
+    class K4 notbuilt
+    class G0,G1 user
+    style P0 fill:#FFFFFF,stroke:#CBD5E1
+    style KEY fill:#FFFFFF,stroke:#CBD5E1
+```
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    subgraph KS["Phase 2 — a knowledge store that can find things"]
+        direction LR
+        S7["<b>Step 7</b><br/>the fragment on disk"]
+        S8["<b>Step 8</b><br/>one store per scope"]
+        S9["<b>Step 9</b><br/>finding by exact words"]
+        S10["<b>Step 10</b><br/>finding by meaning"]
+        S11["<b>Step 11</b><br/>the two together<br/>hard Revit-version filter"]
+        S7 --> S8 --> S9 --> S10 --> S11
+    end
+    subgraph RC["Phase 2 — reaching it and composing it"]
+        direction LR
+        S12["<b>Step 12</b><br/>the Capability Registry"]
+        S13["<b>Step 13</b><br/>the dependency graph"]
+        S14["<b>Step 14</b><br/>ten real skills<br/>its proof not met · every skill DRAFT"]
+        S12 --> S13 --> S14
+    end
+    BM["<b>Steps 15, 16, 17 · and 18 in source headers</b><br/>when a fragment was written<br/>no capability · no Prove it"]
+
+    KS ==> RC
+    RC -.-> BM
+
+    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
+    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
+    class S7,S8,S9,S10,S11,S12,S13,S14 built
+    class BM notbuilt
+    style KS fill:#FFFFFF,stroke:#CBD5E1
+    style RC fill:#FFFFFF,stroke:#CBD5E1
+```
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+PHASE 0 - read-only
+  Step 1   the pipe                 PROVEN    Revit 2020 and 2024
+  Step 2   the thread hop           PROVEN    Revit 2020 and 2024
+  Step 3   an MCP server            PROVEN    Revit 2020 and 2024
+  Step 4   select all ducts         PROVEN    Revit 2020 and 2024
+  Step 5   more than one Revit      PROVEN    Revit 2020 and 2024
+  -- Gate: Phase 0 ends --
+  Step 6   the first write + rails  MEASURED  Revit 2024, Group D (D1 to D6, 2026-10-17);
+                                              a failure forced mid-move (golden G-12) not run
+  -- Gate: Phase 1 ends unproven; Phase 2 began anyway (owner, 2026-08-28) --
+
+PHASE 2
+  Steps 7 to 11   a knowledge store that can find things      BUILT
+  Step 12         the Capability Registry                     BUILT
+  Step 13         the dependency graph                        BUILT
+  Step 14         ten real skills                             BUILT - its proof not met: every skill DRAFT
+
+  Steps 15, 16, 17 (fragments) and 18 (source headers)        BATCH MARKERS - not steps
+```
+
+</details>
+
+**Where each colour comes from.**
+
+| Steps | State | Evidence |
+|---|---|---|
+| 1 to 5 | **Proven** in Revit 2020 and 2024 | Golden cases `G-01` to `G-07` in [`tests/golden/cases.py`](../tests/golden/cases.py) (`G-04`, *Revit is busy*, on 2020 only) · the witnessed list in [HANDOVER §3](HANDOVER.md) · [the field notes](00e-field-notes-proven-bridge.md). **Those records read `STALE` today** — the code has moved under them since: `python tests/test_golden.py` says which, and a stale proof is owed a re-run, not withdrawn |
+| 6 | **Measured** on Revit 2024 | [Group D](needs-checking/group-d.md), `D1` to `D6`, 2026-10-17 — one Ctrl+Z, and +200.0000 mm on three ducts. A forced failure in the move itself, golden `G-12`, has not been run — the *Phase 1 ends here* gate below |
+| 7 to 14 | **Built** | The *Status, 2026-08-29* note under Step 14. `python tools/check-gaps.py` checks each has a module in `brain/` and a test. Step 14's own proof — ten skills, each proven — is **not met**: `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
+| 15, 16, 17, 18 | **Not steps** | [Steps 15, 16 and 17](#steps-15-16-and-17--recorded-2026-09-06-because-they-were-in-use-and-were-not-written-down) below: batch markers, and Step 18 is defined nowhere |
+
+No step in this file is unbuilt. What is left is proof.
+
+---
+
+**Which agents each step builds:** [08 — Agent Catalogue](08-agent-catalog.md), whose Step column says
+it per agent. Phase 0 and 1 need under a fifth of the catalogue, and the large majority are plain
+deterministic modules with no model call at all. How many are built now is
+`python tools/agent-count.py`, never a number typed here.
 
 ---
 
@@ -133,7 +251,8 @@ Do not skip ahead. A write path built before the safety path is a write path tha
 3. **Re-count immediately before executing** the accepted preview *([Golden Rule 21](14-golden-rules.md))*
 4. **Document pinning** by identity *([Golden Rule 20](14-golden-rules.md))*
 5. **Permission gate in the add-in** — declared risk level per tool *([Q-5](OPEN-QUESTIONS.md), Part 4 §29)*
-6. **Emergency Stop** in the ribbon
+6. **Emergency Stop** in the ribbon — built, then its button removed by [D-46](DECISIONS.md); the
+   bridge's `stop` operation is its trigger now ([D-129](DECISIONS.md), [D-130](DECISIONS.md))
 7. Then, and only then: `revit_move_elements`
 
 **Prove it:** *"move them up 200 mm"* → preview → accept → it moves → **one Ctrl+Z puts it back exactly**.
@@ -147,12 +266,16 @@ that already assumes it can just write.
 
 ## ⛔ Gate — Phase 1 ends here, and it ends UNPROVEN
 
-Step 6 is written, compiles on all eight Revit releases, and **has run once**: three ducts moved up
-200 mm in Revit 2024 on 2026-09-07, with the banner going amber for about 300 ms
-([B8](NEEDS-CHECKING.md)). Phase 1's own definition of done — *one Ctrl+Z puts it back, a failure
-leaves the model untouched* — was **half** witnessed on 2026-10-17: one Ctrl+Z put a measured move back
-in Revit 2024, and a tape measure read **+200.0000 mm** on three ducts with a pinned one beside them
-unmoved (`D1` to `D6`). *A failure leaves the model untouched* still has not been forced.
+Step 6 is written, compiles on all eight Revit releases, and **has run in one release, Revit 2024**:
+three ducts moved up 200 mm on 2026-09-07, with the banner going amber for about 300 ms
+([B8](NEEDS-CHECKING.md)), and nobody measured it. Phase 1's own definition of done — *one Ctrl+Z puts
+it back, a failure leaves the model untouched* — was **half** witnessed on 2026-10-17: one Ctrl+Z put a
+measured move back in Revit 2024, and a tape measure read **+200.0000 mm** on three ducts with a pinned
+one beside them unmoved ([Group D](needs-checking/group-d.md), `D1` to `D6`). *A failure leaves the
+model untouched* has been seen for a **fragment run**, not for the move: on 2026-10-18 a runaway fragment
+stopped by its run clock rolled back with the element count unchanged and nothing in the Undo list, in
+Revit 2024 and 2027 on scratch copies ([Group EZ](needs-checking/group-ez.md), EZ1 and EZ4). A failure
+forced in the middle of the move itself (golden `G-12`) has not been run.
 [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is that debt, in full. This paragraph said
 *"has never loaded into Revit"* until 2026-09-21 ([row 5b-54](FRAGMENT-ISSUES.md)).
 
@@ -374,15 +497,26 @@ cheaper than discovering it in week two.
 > followed** — the clause above is the part no step was ever assigned, which is why no step reported it
 > missing.
 
+> **Where the three clauses stand now — derive the numbers, they move with every proving session.**
+>
+> - **A capability re-authored from an existing library carries its own proof: met.** Most fragments are
+>   `PROVEN`, each on a recorded run against a named model with a negative case, signed by the owner
+>   ([D-30](DECISIONS.md)) — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
+> - **Ten real skills work: not met.** Every skill is still `DRAFT` —
+>   `grep -h '^heron-status:' brain/skills/*.yaml | sort | uniq -c` — so none has a recorded proof of its
+>   own.
+> - **The Orchestrator resolves through capabilities: met since 2026-08-29**, as above.
+>   `heron_lookup` and `heron_method` are how a chat reaches the library today.
+
 ---
 
 ## Steps 15, 16 and 17 — recorded 2026-09-06, because they were in use and were not written down
 
-**These three steps were never planned here. They were found in the metadata, on 190 fragments.** This
+**These three steps were never planned here. They were found in the metadata, on 190 fragments on 2026-09-06.** This
 document stopped at Step 14 while `heron-step:` headers went on to 15, 16 and 17 — so every one of those
 fragments cited a step that this file, the file that defines what a step *is*, did not contain.
 
-| Step | Fragments | What it actually was |
+| Step | Fragments on 2026-09-06 — **stale; derive today's below** | What it actually was |
 |---|---|---|
 | 14 | 147 | The first library push, tagged with the step that was current when it began |
 | 15 | 14 | A small creators cluster — grids, levels, lines, HVAC zones |
@@ -413,6 +547,19 @@ exists"*, and only this table tells them apart.
 ([29](29-metadata-standard.md)) requires the header, but nothing was checking that its value pointed at a
 step that exists — which is how three of them came to.
 
+**It has happened again, in source headers rather than fragments: `Heron-Step: 18`.** It first appeared
+on 2026-09-12 in [docs/34](34-project-perfection-and-continuous-upgrade-plan.md), and since then heads
+tools, tests and documents written after that day; no section of this file defines it. Count where it is
+used with:
+
+```bash
+grep -rhE '^(# |// |<!-- )?Heron-Step:' --include=*.py --include=*.cs --include=*.ps1 --include=*.md . \
+  | grep -oE '[0-9]+' | sort -n | uniq -c
+```
+
+Read it as a batch marker of the 15–17 kind until whoever owns this build order says what Step 18 is.
+Still nothing checks that a header's step is one this file defines.
+
 ---
 
 ## Honest scale — Phase 2
@@ -440,10 +587,11 @@ being a tool bridge and starts being a platform, and it is also where it starts 
 [the existing Revit MCP servers](26-prior-art-revit-mcp.md) do not.
 
 This section used to read *"Steps 7+ follow ROADMAP Phase 2"* and end with **"but none of it matters
-until Step 6 works."** The second half was overtaken by events rather than proved wrong: Step 6 still
-does not *work* in the sense that sentence meant, and Phase 2 began anyway because the owner has no
-Revit for a week and there is a phase's worth of work that does not need one. The debt did not go away —
-it moved to [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) and stayed there.
+until Step 6 works."** The second half was overtaken by events rather than proved wrong: Step 6 did not
+*work* in the sense that sentence meant, and Phase 2 began anyway because the owner had no Revit for a
+week and there was a phase's worth of work that did not need one. The debt did not go away — it moved to
+[`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), and the move was first measured working seven weeks later, in
+Revit 2024 on 2026-10-17 ([Group D](needs-checking/group-d.md)).
 
 ---
 

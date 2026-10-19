@@ -157,7 +157,8 @@ not by anything else. That is the API's limit, not a choice. `DiameterDimension.
 release; the `isDiameter` flag is the only route to a diameter dimension in a project.
 
 `brain/fragments/create-radial-dimension/` therefore declares `revit: ["2025", "2026", "2027"]`, and
-`tools/check-fragments-compile.py` enforces it — 394 fragments claim 2024, 395 claim 2025.
+`tools/check-fragments-compile.py` enforces it. How many fragments claim a release is
+`grep -h '^revit:' brain/fragments/*/fragment.yaml | grep -c '"2024"'` - never a typed number.
 
 ## Phase creation — there is no such thing, on any release
 

@@ -10,6 +10,23 @@
 > Terminology has been carried over to Heron. Engineering analysis is in
 > [25 — Multi-Session & Document Binding](25-multi-session-and-binding.md).
 
+### What the note says was seen, and when
+
+*Added 2026-10-18 as a key to the note; the owner's text below it is unchanged.* Every row was seen in
+the owner's **earlier** bridge, not in Heron's code, so none is a proof in [D-30](DECISIONS.md)'s sense - a
+named model, a negative case, a fingerprint. [D-15](DECISIONS.md) adopted them as authoritative on how a
+bridge behaves.
+
+| Seen in the earlier bridge | When the note dates it | Revit release the note names | Carried into Heron as |
+|---|---|---|---|
+| A second Revit refused to start while every Revit shared one line; one line per process fixed it | the fix: 2026-08-20 (*"Before 2026-08-20..."*) | not named | a pipe per process - [D-02](DECISIONS.md), [25 §1](25-multi-session-and-binding.md#1-what-the-working-bridge-already-proves) |
+| Two Revits of different releases open together, one chat each | 2026-08-20, the date the note gives for all of it | 2020 and 2025 | one chat, one Revit - [Golden Rule 20](14-golden-rules.md), [25 §3](25-multi-session-and-binding.md#3-session-binding--one-chat-one-revit) |
+| Two chats on one Revit: the last to speak takes it over | 2026-08-20 | not named | refused instead - [D-22](DECISIONS.md) |
+| The list of Revits keeps the file name from when Connect was clicked | *"Proven live 2026-08-20"*; the addendum: *"This actually happened on 20 Aug"* | not named | the list built when it is asked for - [D-16](DECISIONS.md), [25 §2a](25-multi-session-and-binding.md#2a-the-session-list--static-facts-in-the-file-dynamic-facts-on-demand) |
+| Revit is frozen while the AI's script runs, and a modeller mid-command is waited for | 2026-08-20 | not named | the freeze is out of scope - [D-16](DECISIONS.md), [25 §6a](25-multi-session-and-binding.md#6a-the-freeze-is-out-of-scope--settled) |
+| One Revit with several projects open: a command lands on the window in front | 2026-08-20 | not named | a write is pinned to its model - [25 §4](25-multi-session-and-binding.md#4-document-binding--the-most-dangerous-finding) |
+| Three or four Revits at once is comfortable on a 64 GB PC | no date beyond the note's | not named | [25 §7](25-multi-session-and-binding.md#7-practical-capacity) |
+
 ---
 
 ## The short answer

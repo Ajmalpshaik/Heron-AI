@@ -16,6 +16,16 @@ See docs/29-metadata-standard.md
 > sprinkler layout is life safety: the fire consultant approves it and the authority - QCDD on a Qatar
 > project - approves the design. **This feature writes to Revit**, so it waits on the Changes switch
 > (`write.enabled`, off by default) like every other write.
+>
+> **As built (2026-10-18): BUILT, NOT PROVEN.** Merged 2026-10-06 as #418 (commit `7acc5b6d`): the
+> `revit_sprinkler_layout` tool at `ANALYZE` (in `python mcp/server/heron_tools.py`'s list), the page's
+> Apply as `companion_sprinkler_place` at `MODIFY` (a `COMPANION_ACTIONS` row in
+> [`heron_tools.py`](../mcp/server/heron_tools.py)), `sprinkler_layout_room` in
+> [`heron_fire.py`](../brain/heron_fire.py), and `REPORT_SPRINKLER_LAYOUT_SPACES` (FRG-MEP-060), DRAFT,
+> compiled on 2020, 2024 and 2027. **NEEDS REAL REVIT:** no row of [group CG](needs-checking/group-cg.md)
+> has been run, so no head has been placed by this feature in a model - read again 2026-10-18. Apply is
+> NOT refused by [D-117](decisions/D-117.md): `PLACE_FAMILY_INSTANCES` is PROVEN (version 3, proof dated
+> 2026-10-17); with *Ask to Keep* on ([D-138](decisions/D-138.md)) Revit asks Keep or Discard for it.
 
 **In Revit words.** Today Heron can tell you how many sprinklers a *rectangular* room needs and give you
 the points, and you place them. This feature lets you select one or more Spaces or Rooms of **any
@@ -25,6 +35,81 @@ the sprinkler type picked from the ones loaded in your project. You change what 
 **Apply**, and Heron places the heads in Revit, reads them back from the model, and checks the spacing
 again from what is really there. **It does not draw pipes.**
 
+## At a glance
+
+**From the rooms the modeller selects to sprinkler heads placed in Revit.** Reading and Preview change
+nothing; only Apply writes, one level per press.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    U(["<b>Modeller</b> selects Spaces or Rooms<br/><i>place sprinklers in these rooms</i>"])
+    RM["<b>The selected rooms</b><br/>outline · level · ceilings<br/>heads already there · types loaded"]
+    RD["<b>REPORT_SPRINKLER_LAYOUT_SPACES</b><br/>a read · no transaction"]
+    LY["<b>heron_sprinkler_layout</b><br/>asks what is missing<br/>heron_fire sprinkler_layout_room per room"]
+    PV["<b>Companion · Sprinkler Layout</b><br/>Preview: each room's plan<br/>heads OK or FAIL"]
+    AP["<b>Apply · one level</b><br/>companion_sprinkler_place · MODIFY<br/>rooms read again by UniqueId"]
+    PF["<b>PLACE_FAMILY_INSTANCES</b><br/>revit_change's own body<br/>one undo entry"]
+    HD["<b>Heads placed in Revit</b><br/>read back · spacing checked<br/>from the model"]
+
+    U ==>|revit_sprinkler_layout| RD
+    RM ==> RD
+    RD ==>|layoutJson| LY
+    LY ==> PV
+    PV ==>|Changes on| AP
+    AP ==> PF
+    PF ==> HD
+    HD -.->|read back| PV
+
+    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    class U user
+    class RM,HD revit
+    class RD,PF addin
+    class LY brain
+    class PV,AP plat
+```
+
+**Built, not proven - NEEDS REAL REVIT.** No row of [group CG](needs-checking/group-cg.md) has been run, so
+no head has been placed by this feature in a model; where Revit puts a head sent at a height is CG6's to
+settle ([row 5b-340](fragment-issues/section-5b-rows-326-350.md)). It draws no pipes. A layout that passes means the
+spacing values checked were met - the fire consultant and the authority approve the layout. Checked
+against `revit_sprinkler_layout`, `_sprinkler_layout_preview` and `_sprinkler_layout_place` in
+`mcp/server/heron_mcp_server.py`, `heron_brain.sprinkler_layout`, `LayoutPanel` in
+`mcp/companion/heron_companion.py` and `COMPANION_ACTIONS` in `mcp/server/heron_tools.py`.
+
+<details>
+<summary>Same thing as plain text</summary>
+
+```text
+the modeller selects Spaces or Rooms: "place sprinklers in these rooms"  ->  revit_sprinkler_layout
+   |
+the selected rooms  ->  REPORT_SPRINKLER_LAYOUT_SPACES (a read, no transaction)  ->  layoutJson
+   |
+heron_sprinkler_layout     asks what is missing; heron_fire's sprinkler_layout_room per room
+   |
+Companion - Sprinkler Layout   Preview: each room's plan, every head OK or FAIL
+   |  Apply, one level per press, Changes on   (companion_sprinkler_place, MODIFY)
+   |  the rooms read again by UniqueId - refused if one moved since Preview
+PLACE_FAMILY_INSTANCES through revit_change's own body - one undo entry
+   |
+heads placed in Revit  ->  read back, spacing checked again from the model, shown on the panel
+```
+
+</details>
+
+**Each step, and whether it touches the model** - from `LayoutPanel` and `_sprinkler_layout_place`:
+
+| Step | What happens | Touches the model? |
+|---|---|---|
+| Read | the selected rooms, their ceilings, the heads already in them, the sprinkler types loaded | No - a read |
+| Preview | each room laid out in the brain and drawn as a plan; a failing room, a room with heads, a room bounded by separation lines is shown and not placed | No |
+| Apply | one level: the pin checked, the rooms read again by UniqueId, then `PLACE_FAMILY_INSTANCES` with the type, the level and the points; a second press of the same level places nothing | **Yes** - one undo entry, Changes on |
+| Read back | the rooms read again; each head beside where it was sent, and the spacing of every head really in the room | No - a read |
+
 ---
 
 ## 1. What exists, and what is missing
@@ -33,7 +118,7 @@ again from what is really there. **It does not draw pipes.**
 |---|---|
 | **A layout for a rectangle** | Built. `heron_fire`'s `sprinkler_layout` ([42 §5](42-fire-protection-design.md)) finds the fewest heads on a grid in a length x width room, each limit ASKED with the standard's figure offered (D-33) |
 | **A check of any shape** | Built. `sprinkler_spacing` measures S, L, area and wall distance of heads in any outline, as NFPA 13 does, and the farthest uncovered point. Phase 1b ([46 §13.2](46-sprinkler-hydraulics-from-the-model.md)) runs it per Space |
-| **Placing** | Built and PROVEN. `PLACE_FAMILY_INSTANCES` places one type at points on a level, one undo entry. It sets no height of its own: the height has to be in the points (its TRAP note, NEEDS-CHECKING AJ4) |
+| **Placing** | Built and PROVEN. `PLACE_FAMILY_INSTANCES` places one type at points on a level, one undo entry. It sets no height of its own: the height has to be in the points (its TRAP note, NEEDS-CHECKING AJ4). *As built (2026-10-18): it is at version 3 now, re-proved on Project1, Revit 2020, on 2026-10-17 - its card's `proof:` block; versions 2 and 3 changed how a height is read (rows 5b-334, 5b-590)* |
 | **A layout for any shape** | **Missing.** An L-shaped office gets nothing |
 | **The room, its ceiling and the types, read together** | **Missing.** `READ_ROOM_GEOMETRY` gives one room's outline by name; nothing gives the ceiling over it, the sprinklers already in it, or the sprinkler types loaded |
 | **A place to see it before it is placed** | **Missing** |

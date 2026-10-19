@@ -88,6 +88,26 @@ Intent -> Domain -> Knowledge Scope
 
 **Conflict Detection as a pipeline stage is new in Part 2 and is a genuine improvement** — see §4 below.
 
+> **As built (2026-10-18):** the adopted order is the order of
+> [`heron_retrieve.py`](../brain/heron_retrieve.py) up to rank fusion. The metadata and version filter
+> runs first, and an excluded fragment is reported with its reason. Then come keywords (FTS5) and
+> nearness, then reciprocal rank fusion, then an optional re-rank. The later stages are separate tools,
+> not one pipeline:
+>
+> - **Trust** is the fragment's own status. Only a `PROVEN` fragment may run off an exact match
+>   unasked, and `revit_change` keeps a change only from one whose proof still stands
+>   ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)).
+> - **Conflict detection** runs across scopes in `heron_standards`
+>   ([`heron_conflict.py`](../brain/heron_conflict.py)). It surfaces a disagreement and settles nothing.
+> - **Knowledge validation** is `heron_check` against the cited clauses
+>   ([`heron_ground.py`](../brain/heron_ground.py)).
+> - **Context assembly** is `heron_context` ([`heron_context.py`](../brain/heron_context.py),
+>   [19 §1](19-context-and-cost.md#1-context-manager)).
+>
+> Document clauses come back in their own labelled answer, never fused with fragments and never behind
+> the version filter ([`brain/README.md`](../brain/README.md)). The lookup order as it runs, with the
+> identity and cache routes ahead of the search, is drawn in [19 §5](19-context-and-cost.md#5-cost-optimization).
+
 ---
 
 ## 2. Knowledge Hierarchy
@@ -112,6 +132,12 @@ overrides company knowledge, the answer should say so — *"using this project's
 differs from the company default"*. A silent override is how a modeller ends up confidently applying the
 wrong standard, having never been told a choice was made.
 
+> **As built (2026-10-18):** the hierarchy is named and **not applied**. `heron_standards` returns each
+> scope's answer under its own label, and [`heron_conflict.py`](../brain/heron_conflict.py) has no
+> winner and no resolve, which `tests/test_conflict.py` holds. The agent written to say *"this
+> project's rule outranks the company default"* out loud is
+> [`heron_project.py`](../brain/heron_project.py). It is DRAFT, and no tool serves it.
+
 ---
 
 ## 3. Knowledge Trust levels
@@ -130,6 +156,16 @@ Trust must be a **hard filter before ranking, not a ranking signal**, for two sp
   structurally unselectable, not merely ranked lower.
 - **`EXPERIMENTAL` / `UNVERIFIED`** — never reachable for a `MODIFY` operation on a live model.
   That is [Golden Rule 17](14-golden-rules.md).
+
+> **As built (2026-10-18):** a fragment carries one status field, `heron-status`, and only `DRAFT` and
+> `PROVEN` are in use ([09 §5](09-skills-and-fragments.md#5-fragment-lifecycle)). Unifying the status
+> words is still proposed, not decided
+> ([D-14](DECISIONS.md#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes)). Both hard filters
+> are built. A fragment for another release is absent from retrieval. A `DRAFT` cannot keep a change
+> through `revit_change`
+> ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)); its one
+> exception is a single run on the model in front, behind Revit's Keep or Discard box
+> ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)).
 
 ---
 
@@ -217,6 +253,12 @@ mirror of the platform-level adapter layer, and it is what makes
 It also means **capability, not implementation, is what the Capability Registry exposes** — the
 Orchestrator asks for `ADD_DUCT_END_CAP` and never learns that three implementations exist.
 
+> **As built (2026-10-18):** one fragment, one implementation file, `impl/any/fragment.cs`. Where
+> releases differ, it branches inside on the compile symbols rather than in separate implementation
+> folders ([09 §4](09-skills-and-fragments.md#4-knowledge-identity-30)). The capability is what callers
+> name. [`heron_capability.py`](../brain/heron_capability.py) derives the registry from the cards, and
+> the three doors take a capability, never a fragment id.
+
 ---
 
 ## 7. Fragment Evolution Engine
@@ -274,6 +316,12 @@ procedure is actually structured. Two guards:
 - **Risk level propagates upward.** A composite skill inherits the highest risk level of its parts. A
   "reporting" skill that contains one `MODIFY` sub-skill is a `MODIFY` skill, and must be gated as one.
 
+> **As built (2026-10-18):** no skill in [`brain/skills/`](../brain/skills/) names another skill yet.
+> Each one's `needs` lists capabilities only, so composition in the library is one level deep. Both
+> guards are written for when one does: [`heron_composition.py`](../brain/heron_composition.py) (DRAFT)
+> names a cycle, and refuses a declared risk lower than what the skill composes. The gate in the add-in
+> reads the risk of each operation it is sent, never a skill's.
+
 ---
 
 ## 9. Quality scores
@@ -311,6 +359,11 @@ not recoverable once gone.
 "Unused" also needs care as a criterion. A fragment used once a year — during a specific project phase,
 or for an annual submission — is not dead. Suggested rule: a fragment is a GC candidate only if unused
 **and** superseded **and** not referenced by any skill.
+
+> **As built (2026-10-18):** the library is files in git ([23 §7](23-heron-kernel.md#7-immutable-provenance)),
+> so nothing is lost when a card is retired. The Cleanup agent,
+> [`heron_cleanup.py`](../brain/heron_cleanup.py) (DRAFT), archives and never deletes. It calls
+> nothing *unused* without evidence, and its suite asserts that the module holds no delete call.
 
 ---
 

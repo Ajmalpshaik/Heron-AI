@@ -194,6 +194,12 @@ Every one below was DRAFT before it was touched, so **no proven fragment lost it
 | `CHECK_MODEL_STANDARDS` | 2 | Checks a parameter's **value** against a pattern, counts placeholder values the modeller names (TBD, XXX) as blank, and checks **type names** and **room names** against patterns - *every TRG type*, for instance |
 | **New:** a report of **mirrored and flipped** instances | 1 | Lists the doors, fixtures and equipment that are mirrored, kept apart from the ones only flipped, by category and type - a mirrored door schedules the wrong hand |
 
+> **As built (2026-10-18):** several of these cards have moved on since - `IMPORT_PARAMETER_VALUES`,
+> `PLACE_HOSTED_FAMILY`, `PLACE_STRUCTURAL_FAMILY` and `REPORT_LOCATION` are at later versions than this
+> table gives. The table is what this study built; each card's own `version:` and `heron-status:` lines
+> are the current word. Every card in it is still DRAFT, and no row of [Group CD](needs-checking/group-cd.md)
+> has been run.
+
 And the recipe [`ifc-export-readiness`](../brain/skills/ifc-export-readiness.yaml): storeys, elements on no
 level, duplicates, duplicate IFC identities, elements with no IFC class or set not to export, required
 values, MEP pieces off their system - each a capability Heron already has, in order, and **a parameter the
@@ -236,7 +242,7 @@ needs measuring first. Each waits for the owner, one at a time ([31 §5](31-stud
 | **Room proportion and minimum size**, against the modeller's values | Widens `MEASURE_ROOM_DIMENSIONS`, PROVEN |
 | **Panel sizes on a curtain wall**, grouped within the modeller's tolerance | Widens `REPORT_CURTAIN_ELEMENTS`, PROVEN |
 | **A build that can be run twice** - a wall already there is not drawn again | Widens `CREATE_WALL`, PROVEN, then the floor, ceiling and roof creators |
-| **Copy to another level** that lands *on* that level, not on the old one with a large offset | `COPY_ELEMENTS` is PROVEN; until then the route is `COPY_ELEMENTS` then `SET_ELEMENT_LEVEL` |
+| **Copy to another level** that lands *on* that level, not on the old one with a large offset | `COPY_ELEMENTS` is PROVEN; until then the route is `COPY_ELEMENTS` then `SET_ELEMENT_LEVEL`. *As built (2026-10-18): built - `COPY_ELEMENTS` version 2 copies onto a list of levels, each copy on its own level (#526, row 5b-460, Group DX), signed PROVEN on 2026-10-14; version 3 (#593, worksets) is DRAFT, not yet run in Revit* |
 | **Which face of a wall is its outside**, and a point that says so | Widens `CREATE_WALL`, PROVEN |
 | **Glazing per wall and per room, and each facade's bearing from true north** | A new fragment; it needs `REPORT_LOCATION` version 3 proved first |
 | **A report of the project's parameter bindings** | A new read; nothing asks for it yet |
