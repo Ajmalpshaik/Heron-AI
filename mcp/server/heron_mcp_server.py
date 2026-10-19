@@ -677,8 +677,12 @@ def revit_health() -> str:
             # that is the right trade - "in use by another chat" is the more
             # useful fact anyway, and reading another chat's model through a
             # health check was never the point.
+            # AND THE SAME FOR A MODEL (D-141): the count is sent "claim": "no",
+            # so asking whether Heron works never takes the model in front
+            # from another chat - which still refuses it, and that is said.
             if b.pid == binding.pid:
-                detail = _describe(b, b.request("count_elements"))[1:]
+                detail = _describe(b, b.request("count_elements",
+                                                op_args={"claim": "no"}))[1:]
             else:
                 detail = "  Revit %s, session %s - %s" % (
                     b.revit_version, b.pid, bridge.availability(b))
@@ -1033,6 +1037,10 @@ def revit_use_session(session: str) -> str:
         if was and now and was != now:
             approval.clear()
             document += " - moved from %s" % was
+    elif reply and reply.get("error") == "model_in_use":
+        # D-141: the Revit is chosen; the model in front is another chat's
+        # until it frees. Said, so "the open model" is not read as this one's.
+        document = "the open model, which is not this chat's yet. %s" % reply.get("message")
     chosen.close()
 
     # THE CHOICE IS THE WORK, so it ended ok whether or not the count above
@@ -3881,6 +3889,57 @@ def revit_use_this_model() -> str:
 
     return ("This chat is now working on %s. Anything pending from the previous model "
             "has been dropped." % title)
+
+
+@server.tool()
+def revit_release(model: str = "all") -> str:
+    """
+    Say this chat is DONE with a model, so another chat can use it now.
+
+    A model is used by one chat at a time: while this chat works on it,
+    another chat asking for it is told it is in use, and nothing is sent to
+    the model. It frees itself after a few quiet minutes; this frees it at
+    once, and this chat can come back to it later. Use when the user says they
+    are done or finished, or wants another chat to work on the model - "I'm
+    done here", "free the model", "let the other chat have it".
+
+    model: "all" (the default) frees every model this chat holds in its
+    Revit; "this" frees only the model this chat is working on. It never frees
+    another chat's model - the Free this model button on the Heron ribbon
+    does that. Changes nothing in any model.
+    """
+    # D-141. The add-in frees only the asking conversation's holds, so nothing
+    # sent from here can free another chat's model - and nothing here says
+    # which conversation is asking: the bridge client's envelope does.
+    which = (model or "all").strip().lower()
+    if which not in ("all", "this"):
+        return _ended("refused", 'model takes "all" or "this". Nothing was sent to Revit.')
+
+    args = {}
+    if which == "this":
+        if not pinned.title:
+            return _ended("refused", "This chat is not working on a model yet, so it holds "
+                                     "none. Nothing was sent to Revit.")
+        args["document"] = pinned.title
+        if pinned.document_path:
+            args["documentPath"] = pinned.document_path
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    reply = session.request("release_models", op_args=args or None)
+    session.close()
+    _ended_by_reply("revit_release", reply)
+
+    if reply is None:
+        return ("Revit %s (session %s) did not answer, so nothing was freed now. The model "
+                "frees itself after a few quiet minutes." % (session.revit_version, session.pid))
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+    return "%s (Revit %s, session %s)" % (reply.get("message") or "Done.",
+                                          session.revit_version, session.pid)
 
 
 # ---------------------------------------------------------------------------

@@ -1409,7 +1409,10 @@ async def exercise_single_purpose(module, server, newest):
              ("revit_parameters", {"category": "ducts"}), ("revit_groups", {}),
              ("revit_view_image", {}),
              ("revit_isolate_temporary", {"category": "ducts"}),
-             ("revit_reset_temporary", {}))
+             ("revit_reset_temporary", {}),
+             # D-141. One request and no pin: handing a model back reads and
+             # changes none, so neither the model's name nor the pin is its.
+             ("revit_release", {}))
     with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
                  encoding="utf-8") as fh:
         shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', fh.read()))
@@ -1514,7 +1517,8 @@ async def exercise_single_purpose(module, server, newest):
             revit.reply = good.get(tool, plain)
             said, got = await told(tool, arguments)
             fine.append((tool, got, got == ["ok"]
-                         and "Pump Failed Retrofit" in (said.splitlines() or [""])[0]))
+                         and (tool == "revit_release"
+                              or "Pump Failed Retrofit" in (said.splitlines() or [""])[0])))
 
             # THE PIN'S REFUSAL, with the chat pinned to a model whose name
             # the guess has no word in, so the label is the tool's alone.
@@ -1527,6 +1531,10 @@ async def exercise_single_purpose(module, server, newest):
                 # MOVING THE PIN IS THIS TOOL'S WORK, so another model is ok.
                 pinned_out.append((tool, got, got == ["ok"] and said.startswith(
                     "This chat is now working on Project2")))
+            elif tool == "revit_release":
+                # HANDING BACK READS NO MODEL (D-141), so the one in front is
+                # not checked against the pin, and the hand-back is ok.
+                pinned_out.append((tool, got, got == ["ok"]))
             else:
                 pinned_out.append((tool, got, got == ["refused"] and said.startswith(
                     "This chat has been working on Project1, but Project2")))
@@ -1537,7 +1545,8 @@ async def exercise_single_purpose(module, server, newest):
         check(not wrong(fine), "a good reply is 'ok' on all %d, though the model's name says "
               "'Failed': not so for %s" % (len(fine), wrong(fine)))
         check(not wrong(pinned_out), "another model, refused by the pin, is 'refused' on all "
-              "%d (and revit_use_this_model, whose work is to move the pin, 'ok'): not so "
+              "%d (and revit_use_this_model, whose work is to move the pin, and "
+              "revit_release, which reads no model, 'ok'): not so "
               "for %s" % (len(pinned_out), wrong(pinned_out)))
 
         # A SELECTION ALREADY MADE in the other model is not a refusal. The

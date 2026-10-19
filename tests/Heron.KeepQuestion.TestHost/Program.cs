@@ -234,6 +234,16 @@ namespace Heron.KeepQuestion.TestHost
             Check(!HeronKeepGrant.CanHold(null, model) && !HeronKeepGrant.CanHold(chat, null)
                   && HeronKeepGrant.CanHold(chat, model),
                   "so the third link is offered only when the chat and the model can be named");
+
+            // D-141: an older client sends no conversation, and its request
+            // is a chat of one request - nothing to hold a grant for.
+            var oneRequest = HeronConversation.ChatOf(null);
+            Check(!HeronKeepGrant.CanHold(oneRequest, model)
+                  && !HeronKeepGrant.CanHold(HeronConversation.ChatOf(""), model),
+                  "a request with no conversation is a chat of one request, and the third link "
+                  + "is not offered to it (D-141)");
+            Check(!g.Give(oneRequest, model, t0, local) && !g.Active(t0),
+                  "and it is given nothing even if asked");
             Check(g.Give(chat, model, t0, local) && g.Active(t0), "given, it is held");
             Check(g.GrantedAt == "12:05", "and the time it was given is the PC's own HH:MM - 12:05");
 

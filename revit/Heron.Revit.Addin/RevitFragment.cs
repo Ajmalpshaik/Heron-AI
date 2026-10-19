@@ -117,6 +117,11 @@ namespace Heron.Revit.Addin
             // refusal or a read must not leave it the list a previous job made.
             Elements = null;
 
+            // NOR WHAT A REQUEST WITH NO CONVERSATION CARRIED (D-141). Jobs
+            // run one at a time on this thread, so any such chain is a
+            // finished request's, and its chat ended with it.
+            ForgetOneRequestChains();
+
             // A USING DECLARATION, so the clock ends with the method however it
             // returns, and this body stays where every reader of it - the
             // suites that read it as text included - expects to find it.
@@ -498,11 +503,19 @@ namespace Heron.Revit.Addin
                 }
             }
 
-            // WHICH CHAT IS ASKING. The bridge puts this on every request and
-            // HeronLease already reads it the same way; the chain has to know
-            // it too, because what one fragment leaves for the next is that
-            // CHAT'S working state and nobody else's.
-            var client = Json.ReadString(request, "client");
+            // WHICH CHAT IS ASKING. The chain has to know, because what one
+            // fragment leaves for the next is that CHAT'S working state and
+            // nobody else's - and so does the D-138 Keep grant below.
+            //
+            // THE CONVERSATION, NOT `client` - D-141. `client` names the
+            // person: `.mcp.json` sends one value from every chat for the
+            // D-22 lease, so keyed on it two chats shared one chain, a "reset"
+            // from one wiped the other's, and a grant one chat was given kept
+            // the other's changes. An older client sends no conversation: its
+            // request is then a chat of one request (HeronConversation.ChatOf)
+            // - what it carries ends with it, and it can hold no grant.
+            var client = HeronConversation.ChatOf(
+                Json.ReadString(request, HeronConversation.EnvelopeField));
 
             // A CHAIN IS OPENED DELIBERATELY, NOT INHERITED. What the previous
             // fragment left would otherwise outlive the batch that produced
@@ -3227,6 +3240,11 @@ namespace Heron.Revit.Addin
         /// are told the elements came "from the previous fragment", and the
         /// only wrong thing is WHOSE.
         ///
+        /// AND IT HAPPENED, BECAUSE THE KEY WAS THE PERSON. The chains were
+        /// keyed on the bridge's `client`, and `.mcp.json` sends one value from
+        /// every chat - so the owner's own chats shared one clipboard. Since
+        /// D-141 the key is the request's conversation (HeronConversation).
+        ///
         /// KEYED BY DOCUMENT TOO, AND DROPPED WHEN IT CHANGES. Elements belong
         /// to the document they were read from. Handing a list from one model
         /// to a fragment running against another is not a slightly wrong
@@ -3449,7 +3467,10 @@ namespace Heron.Revit.Addin
         /// no honest answer to "whose were they" - and falling back to a
         /// shared bucket is exactly the bug this type exists to remove. Such a
         /// caller still runs fragments; it just cannot chain them, and the
-        /// refusal it gets names what was missing like any other.
+        /// refusal it gets names what was missing like any other. Since D-141
+        /// Run never passes an empty one: a request with no conversation gets
+        /// a chat of its own for that one request (HeronConversation.ChatOf),
+        /// so its setup steps still feed its fragment and nothing outlives it.
         /// </summary>
         /// <summary>
         /// Why the carried values are NOT the ones the caller asked for, or
@@ -3594,6 +3615,26 @@ namespace Heron.Revit.Addin
         {
             if (string.IsNullOrEmpty(client)) return;
             Chains.Remove(client);
+        }
+
+        /// <summary>
+        /// Drops every chain kept for a request that named no conversation -
+        /// HeronConversation.ChatOf's one-request chats (D-141). Called as each
+        /// run begins, so one lives exactly as long as its request, and a run
+        /// of older clients' requests can never crowd a chat's own chain out
+        /// past MaxChains.
+        /// </summary>
+        private static void ForgetOneRequestChains()
+        {
+            List<string> ended = null;
+            foreach (var key in Chains.Keys)
+            {
+                if (!HeronConversation.IsOneRequest(key)) continue;
+                if (ended == null) ended = new List<string>();
+                ended.Add(key);
+            }
+            if (ended == null) return;
+            foreach (var key in ended) Chains.Remove(key);
         }
 
         /// <summary>

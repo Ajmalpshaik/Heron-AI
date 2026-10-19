@@ -150,6 +150,10 @@ PROJECTS = [
     # tests/test_keep_question.py builds and runs it.
     "tests/Heron.KeepQuestion.TestHost/Heron.KeepQuestion.TestHost.csproj",
     "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
+    # One model, one chat at a time (D-141) - who may claim a model, who is
+    # refused, and what frees it - linked by source like the Keep question.
+    # tests/test_model_hold.py builds and runs it.
+    "tests/Heron.ModelHold.TestHost/Heron.ModelHold.TestHost.csproj",
     # Whether a rollback took the last kept job's work, and whether it held -
     # linked by source like the failure note; tests/test_rollback_witness.py
     # builds and runs it.

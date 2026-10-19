@@ -879,6 +879,9 @@ namespace Heron.Revit.Addin
                 case "reset_temporary":
                     return "Resetting the temporary hide/isolate";
 
+                case "release_models":
+                    return "Handing a model back to the other chats";
+
                 // THE BANNER MUST NOT SAY THE SAME THING FOR BOTH. Its colour
                 // already differs - amber, from the tool registry - but the
                 // words are what somebody actually reads, and "Running a job"
@@ -984,6 +987,7 @@ namespace Heron.Revit.Addin
                 case "admin_disabled":  return "Admin is off - nothing was sent";
                 case "publish_disabled": return "Publish is off - nothing was sent";
                 case "session_in_use":  return "Another chat is using this Revit";
+                case "model_in_use":    return "Another chat is using this model - nothing was sent";
                 case "unknown_op":      return "Heron does not know that job";
                 case "not_implemented": return "Heron has no handler for that yet";
                 case "no_source":       return "No job was sent";

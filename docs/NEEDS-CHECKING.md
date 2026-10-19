@@ -839,6 +839,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hg.md`](needs-checking/group-hg.md)
 
+## Group HK - one model, one chat at a time, and Free this model: D-141 (2026-10-18)
+
+**Its own file:** [`needs-checking/group-hk.md`](needs-checking/group-hk.md)
+
 ## Group HL - anything a kept change deletes is asked in Revit first: D-142 (2026-10-18)
 
 **Its own file:** [`needs-checking/group-hl.md`](needs-checking/group-hl.md)

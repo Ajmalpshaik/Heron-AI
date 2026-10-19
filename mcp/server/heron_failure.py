@@ -108,6 +108,16 @@ _KNOWN = {
     "session_in_use":    (NEVER_RAN, FIX_FIRST,
                           "another chat holds the lease on that Revit, so Heron refused rather "
                           "than taking it over mid-job"),
+    # D-141. Refused by the add-in BEFORE the operation is routed, so nothing
+    # read or changed the model - NEVER_RAN like session_in_use and
+    # revit_busy, never the fail-closed unknown, which would send the
+    # modeller to check a model nothing touched. Safe to ask again once that
+    # chat is done, so FIX_FIRST rather than RETRY: asking at once is refused
+    # the same way.
+    "model_in_use":      (NEVER_RAN, FIX_FIRST,
+                          "another chat is using that model, so Heron refused before anything "
+                          "ran - it is free when that chat says it is done, after a few quiet "
+                          "minutes, or with Free this model on the Heron ribbon"),
     "unknown_op":        (NEVER_RAN, STOP,
                           "this Revit's add-in does not know that operation - the two halves "
                           "are different versions"),
