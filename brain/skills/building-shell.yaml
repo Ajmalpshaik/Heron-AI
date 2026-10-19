@@ -143,21 +143,22 @@ purpose: >
      SET_PARAMETER_VALUES_BY_ID (PROVEN) call keyed on Number -
      key=Number|in=Rooms|Level=<level>;1|Name=Lift Lobby;2|Name=... - never a
      find and a write per room.
-  7. CREATE_STAIRS (PROVEN), after the rooms, one call per flight from a level
-     to the level above: straight, or a U with a landing across the far end,
+  7. CREATE_STAIRS (DRAFT, version 4 - version 3 was PROVEN, and until
+     NEEDS-CHECKING Group HS is run and signed a kept change from it is
+     refused, D-117), after the rooms, one call per flight from a level to
+     the level above: straight, or a U with a landing across the far end,
      inside a rectangle that is the CLEAR inside of the stair hall - its wall
      faces, not its centrelines - in the stair type the modeller names. Give
      cutOpening=true, so the slab of the level above is cut over the stair in
      the same undo entry; the stair is taken away again if the cut removed
-     nothing. Two things are still open. A stair type with side stringers is
-     refused: "Private" reached 50 mm past the hall on both sides and the
-     stair's own check refused it, while "Monolithic Stair" in the same hall
-     was made (FRAGMENT-ISSUES 5b-446, OPEN) - name a type without stringers,
-     or give a rectangle inset by the stringers. And a stair whose base level
-     is not at 0 was refused by version 1; version 2 (5b-445) makes it. The
-     card is PROVEN at version 3, signed on 2026-10-18 on Revit 2020, but
-     that proof ran from Level 1, so a base above 0 is still NEEDS-CHECKING
-     BX6.
+     nothing. Version 4 lays a type with side stringers inside the hall: a
+     rolled-back trial measures how far the stringers overhang each side and
+     the runs go that far in - '190mm max riser 250mm going' 50 mm each side
+     (FRAGMENT-ISSUES 5b-446). A stair Revit will not make at the type's
+     riser count is tried once more with one riser more, and the answer says
+     so (5b-1239). A stair whose base level is not at 0 was refused by
+     version 1; version 2 (5b-445) makes it, and no proof yet covers a base
+     above 0 (NEEDS-CHECKING BX6).
   8. CREATE_RAILING (DRAFT) along each terrace and roof-deck edge, and round
      each stair opening, as pathMm on the level it stands on, in the railing
      type the modeller names. COUNT THE RAILINGS FIRST. A stair made by
