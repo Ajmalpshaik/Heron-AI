@@ -60,6 +60,14 @@ WHAT IT PROVES
      without one. Every Revit tool an answer names is a capability in the
      fragment library.
 
+  9. A LOAD ANSWER CARRIES ITS NUMBERS, for the building runner (docs/44 s5).
+
+  10. AN AIR SYSTEM'S COIL COMES OUT AS WORKED BY HAND (docs/44 s13). Outdoor
+     46 / 29 C and return air mixed by mass, the supply humidity a room's
+     latent load needs, the coil's total, sensible and latent load, its
+     apparatus dew point and bypass factor - each against a hand calculation
+     written out in the section, and a process no coil gives refused.
+
 WHAT IT DOES NOT PROVE
   That any answer is right for a building. A design value is the engineer's;
   this proves the arithmetic agrees with its sources, not that the inputs
@@ -849,6 +857,101 @@ def numbers_for_the_runner():
     print()
 
 
+def air_system_coil():
+    print("10. an air system's coil, worked by hand (docs/44 s13)")
+    # THE HAND CALCULATION, at sea level (101.325 kPa), with ASHRAE Fundamentals
+    # Ch. 1's equations written out again - none of it read from heron_psychro:
+    #   room 24 C, 50 % RH: pws 2.9852 kPa, W = 0.621945 x 1.4926 / 99.832 = 9.2985 g/kg
+    #   outdoor 46 C DB / 29 C WB, eq. 33: W = 18.3507 g/kg, h = 93.741 kJ/kg
+    #   1000 L/s of supply at 13 C carrying the room's W: v 0.822749, m = 1.215437 kg/s
+    #   200 L/s of outdoor air at its own v 0.93078: 0.214871 kg/s; the return is the
+    #     rest, 1.000566 kg/s, which is 854.8606 L/s at the room's v 0.854377
+    #   mixed by mass: W 10.8988 g/kg, h 55.934 kJ/kg, t = (h - 2501 W) / (1.006 +
+    #     1.86 W) = 27.9418 C
+    #   2000 W of room latent: Ws = 9.2985 - 2000 / (1.215437 x (2501 + 1.86 x 24) x
+    #     1000) = 8.6521 g/kg leaving the coil at 13 C
+    #   coil: total m (h_in - h_out) = 25 533.4 W; sensible m (1.006 + 1.86 W_in)
+    #     (27.9418 - 13) = 18 637.9 W; latent 6 895.5 W; SHR 0.7299; condensate
+    #     m (W_in - W_out) 3600 = 9.8305 kg/h
+    #   apparatus dew point: where W_sat(t) meets the straight line through the two
+    #     states, found by stepping down 0.001 K - 11.4615 C; bypass factor
+    #     (13 - 11.4615) / (27.9418 - 11.4615) = 0.0934
+    p = PSY.STANDARD_PRESSURE_KPA
+    adp_of = getattr(PSY, "apparatus_dew_point", None)
+    check(adp_of is not None, "heron_psychro works out a coil's apparatus dew point at all")
+    if adp_of is not None:
+        adp = adp_of(27.9418, 0.0108988, 13.0, 0.0086521, p)
+        check(adp is not None and abs(adp - 11.4615) < 0.005,
+              "the apparatus dew point is the hand's 11.4615 C - got %s" % adp)
+        check(adp_of(30.0, 0.020, 25.0, 0.005, p) is None,
+              "a condition line too steep to meet the saturation curve has none - no coil "
+              "gives that process")
+    needed = getattr(H, "supply_humidity_needed", None)
+    check(needed is not None, "the engine says what humidity supply air must arrive with")
+    wr = PSY.humidity_ratio_from_rh(24.0, 50.0, p)
+    m = 1.0 / PSY.specific_volume(13.0, wr, p)
+    check(near(m, 1.215437, 1e-5), "1000 L/s at 13 C carrying the room's W is 1.215437 kg/s "
+                                   "- got %s" % m)
+    if needed is not None:
+        check(abs(needed(wr, 24.0, 2000.0, m) * 1000 - 8.6521) < 0.0005,
+              "2000 W of room latent leaves the coil at 8.6521 g/kg")
+    mixing = {"outdoor_flow_ls": 200, "outdoor_dry_bulb_c": 46, "outdoor_wet_bulb_c": 29,
+              "return_flow_ls": 854.8606, "return_dry_bulb_c": 24, "return_rh_pct": 50,
+              "altitude_m": 0}
+    mixed = (H.run("air_mixing", mixing).get("data") or {}).get("mixed") or {}
+    check(abs(mixed.get("t_c", 0) - 27.9418) < 0.002
+          and abs(mixed.get("w", 0) * 1000 - 10.8988) < 0.001,
+          "air_mixing carries the mixed state: 27.9418 C, 10.8988 g/kg - got %s C, %s g/kg"
+          % (mixed.get("t_c"), mixed.get("w", 0) * 1000))
+    coil = H.run("coil_load", dict(mixing, leaving_dry_bulb_c=13,
+                                   leaving_humidity_ratio_g_kg=8.6521))
+    c = coil.get("data") or {}
+    check(coil["status"] == "ok" and near(c.get("total_w"), 25533.4, 1e-3)
+          and near(c.get("sensible_w"), 18637.9, 1e-3) and near(c.get("latent_w"), 6895.5, 3e-3),
+          "coil_load: 25 533 W total, 18 638 W sensible, 6 896 W latent, as by hand - got %s"
+          % ({k: c.get(k) for k in ("total_w", "sensible_w", "latent_w")},))
+    check(near(c.get("shr"), 0.7299, 1e-3) and near(c.get("condensate_kg_h"), 9.8305, 2e-3),
+          "its sensible heat ratio 0.730 and condensate 9.83 kg/h")
+    check(c.get("adp_c") is not None and abs(c["adp_c"] - 11.4615) < 0.01
+          and c.get("bypass_factor") is not None and abs(c["bypass_factor"] - 0.0934) < 0.001,
+          "its apparatus dew point 11.46 C and bypass factor 0.093 - got %s, %s"
+          % (c.get("adp_c"), c.get("bypass_factor")))
+    check(result(coil, "Apparatus dew point") is not None
+          and result(coil, "Bypass factor") is not None,
+          "and the answer says both")
+    dry = H.run("coil_load", {"flow_ls": 1000, "flow_measured_at": "entering",
+                              "entering_dry_bulb_c": 30, "entering_humidity_ratio_g_kg": 8,
+                              "leaving_dry_bulb_c": 20, "leaving_humidity_ratio_g_kg": 8,
+                              "altitude_m": 0})
+    check(dry["status"] == "ok" and (dry.get("data") or {}).get("adp_c") is None
+          and "dry coil" in (result(dry, "Apparatus dew point") or ""),
+          "a coil that removes no moisture is a dry coil, with no apparatus dew point")
+    steep = H.run("coil_load", {"flow_ls": 1000, "flow_measured_at": "entering",
+                                "entering_dry_bulb_c": 30, "entering_humidity_ratio_g_kg": 20,
+                                "leaving_dry_bulb_c": 25, "leaving_humidity_ratio_g_kg": 5,
+                                "altitude_m": 0})
+    check(any(level == "FAIL" and "never meets" in text for level, text in steep["checks"]),
+          "a process no coil gives FAILS, and says why")
+    vent = H.run("ventilation", {"system": "single-zone", "zones": [
+        {"name": "office", "area_m2": 100, "people": 10, "rp_ls_per_person": 2.5,
+         "ra_ls_per_m2": 0.3, "ez": 1.0}]})
+    vd = vent.get("data") or {}
+    check(abs(vd.get("vot_ls", 0) - 55.0) < 1e-9 and len(vd.get("zones") or []) == 1
+          and abs(vd["zones"][0]["vbz"] - 55.0) < 1e-9,
+          "ventilation carries Vot and each zone's Vbz - 10 x 2.5 + 100 x 0.3 = 55 L/s")
+    fan = H.run("fan_power", {"flow_ls": 1000, "total_pressure_pa": 500,
+                              "fan_efficiency_pct": 65, "motor_efficiency_pct": 90,
+                              "drive_efficiency_pct": 100})
+    fd = fan.get("data") or {}
+    check(near(fd.get("shaft_w"), 500 / 0.65, 1e-9) and near(fd.get("electric_w"),
+                                                              500 / 0.65 / 0.9, 1e-9),
+          "fan_power carries its shaft power 769 W and input 855 W - 1 m3/s x 500 Pa / 0.65 / 0.9")
+    state = (H.run("psychrometrics", {"dry_bulb_c": 24, "rh_pct": 50, "altitude_m": 0})
+             .get("data") or {}).get("state") or {}
+    check(abs(state.get("w", 0) - wr) < 1e-12, "psychrometrics carries its state point")
+    print()
+
+
 def main():
     physics()
     worked_examples()
@@ -859,6 +962,7 @@ def main():
     owners_answers()
     month_by_month()
     numbers_for_the_runner()
+    air_system_coil()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
