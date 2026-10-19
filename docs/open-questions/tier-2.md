@@ -835,3 +835,339 @@ sends `stop` today - a grep of `mcp/server/` finds no request that sends it.
 holds takes a stop from any client id. The client sends it to one Revit only.
 
 ---
+
+### 🔵 Q-72 — Part 4 §44 names three approval modes - Automatic, Ask and Require Approval. Which Heron operations sit in each, and what does "Ask" do that "Require Approval" does not? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found.** On 2026-10-18 every section of the four parts of the specification was checked against
+what is built. [D-139](../decisions/D-139.md) item 4 says a choice the owner has not made is not corrected
+in the parts: it is put to him as a question. This is one of them.
+
+[Part 4 §44](../00d-additional-requirements.md) gives Heron three modes - **Automatic** for a safe
+operation, **Ask** for an important one, **Require Approval** for a high-risk one - and stops there. It does
+not say which operations are *important* and which are *high-risk*, or what *Ask* does that *Require
+Approval* does not. It is one more way the parts describe how much a change needs before it happens:
+
+| Where | What it says |
+|---|---|
+| [Part 1 §54](../00-master-specification.md) | Risk levels from `READ` to `ADMIN` - built, as `HeronRisk` in [`HeronPermissions.cs`](../../platform/Heron.Core/HeronPermissions.cs) |
+| Part 1 §53 | A list of high-risk operations - deleting elements and purge among them - that *"should require appropriate permission levels"* |
+| [Part 4 §47](../00d-additional-requirements.md) and [D-14](../decisions/D-14.md) | Knowledge levels: Level 3 may change the model with an accepted preview, Level 4 unattended. D-14 is still Proposed |
+| Part 4 §44 | Automatic, Ask, Require Approval |
+
+**What is built**, as the dated note under §44 reads it - a reading, not a decision:
+
+- **Automatic** is `READ`, `ANALYZE` and `EXECUTE` - reading, selecting, the camera, opening a view - which
+  need no switch.
+- **Ask** is Revit's Keep or Discard box, which asks only while *Ask to Keep* is on. It is off by default
+  ([D-138](../decisions/D-138.md)).
+- **Require Approval** is a switch on the ribbon: Changes for `MODIFY`, and Publish or Admin on top of it
+  ([D-19](../decisions/D-19.md), [D-106](../decisions/D-106.md)). These are standing switches the owner
+  turns on once, not a yes for each operation.
+
+**Not this question.** The status words - `DRAFT`, `PROVEN`, `PRODUCTION` and the other ladders, and
+whether `PROVEN` comes before `PRODUCTION` - are [Q-34](from-master-specification-part-2.md) and D-14,
+which close when the owner has seen them on a screen ([NEEDS-CHECKING R1b](../needs-checking/group-r.md)).
+Whether a delete, a purge or another [Article 7](../../HERON_CONSTITUTION.md) operation must stop and ask
+each time is [FRAGMENT-ISSUES row 5b-161](../fragment-issues/section-5b-rows-151-175.md), which waits on the
+owner too.
+
+**The shapes the owner chooses between:**
+
+1. **The reading above becomes the meaning - recommended.** A decision says Part 4 §44's three modes are the
+   risk levels and the switches as built, and §44 is corrected under D-139 to say so. **Cost:** a decision
+   and a correction; no code. **Leaves:** *Ask* happens only when the owner has turned Ask to Keep on, and
+   Article 7's yes for one operation is still 5b-161's question.
+2. **Require Approval is a yes for each high-risk operation, not a standing switch.** Every change at that
+   level stops and asks in Revit, whatever the switches say. **Cost:** a question in the add-in before the
+   change, rebuilt for 2020 to 2027 and run in Revit; and it goes the other way from the owner's choice on
+   2026-10-18 not to be asked for every change of a job (D-138).
+3. **Leave the three words as intent, with no meaning given.** **Cost:** nothing. **Leaves:** a reader of
+   §44 cannot tell what Heron does, and the next person to build an approval step chooses for him.
+
+**Why the first.** It gives the part's words the meaning the owner has already chosen piece by piece - the
+switches and their defaults, the box and its default - and changes nothing that runs.
+
+**Ajmal PS decides.** Until he does, nothing changes: §44 keeps its words, and the note under it says the
+choice is open.
+
+---
+
+### 🟡 Q-73 — Constitution Article 13 says one confirmation never covers a later action, and D-138's Keep box can keep the rest of a job after one click. Should Article 13 name that as its exception? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 names this
+as a choice left open.
+
+[Article 13](../../HERON_CONSTITUTION.md), *Do not bypass security*, binding since
+[D-43](../decisions/D-43.md):
+
+> Request operations through the permission layer. Never call around it, never cache a permission
+> decision, never treat one confirmation as covering a later action.
+
+[D-138](../decisions/D-138.md), accepted 2026-10-18, gives the Keep or Discard box a third link, *"Keep, and
+keep the rest of this job without asking"*. One click keeps that change and lets the same chat's next
+changes to the same model be kept without the box, until ten minutes pass with none, another chat or model
+asks, the switch is turned off, or the model or Revit closes. The grant is held in memory by
+[`HeronKeepGrant.cs`](../../revit/Heron.Revit.Addin/HeronKeepGrant.cs).
+
+**Where the two differ, exactly:**
+
+| Article 13's words | Beside D-138 |
+|---|---|
+| *"never treat one confirmation as covering a later action"* | **Differs.** One click on the third link covers that chat's later changes to that model. That is the grant's whole purpose |
+| *"never cache a permission decision"* | **Differs, if the Keep answer counts as a permission decision.** The grant is the modeller's answer, held in memory and read at each later change. The switches are not cached: the add-in loads `heron.config` again on every call above the read-only level ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs), `HeronConfig.Load()`), and the grant lets nothing through that Changes, Publish or Admin refuses (D-138, *What this does NOT change*) |
+| *"Request operations through the permission layer. Never call around it"* | **Agrees.** Every change kept under the grant still goes through the gate |
+
+**What was amended and what was not.** D-138 changed [Article 9](../../HERON_CONSTITUTION.md) - its text now
+describes the grant as the second half of its one exception - and names Articles 7 and 10 as standing. It
+does not name Article 13, and Article 13's text is unchanged. The Constitution's own *Amendment* section
+says an Article is changed by a decision and is *"never weakened silently"*.
+[Golden Rule 9](../14-golden-rules.md), which Article 13 comes from, asks for high-risk actions to be gated
+in code at the boundary, and the grant is: it lives in the add-in, and only a click in Revit gives it.
+
+Not engaged: [Article 15](../../HERON_CONSTITUTION.md)'s *"Consent is never remembered between actions"* is
+about sending knowledge out - community submissions, pushes, pull requests and releases - not about
+changes to a model.
+
+**The shapes the owner chooses between:**
+
+1. **Article 13 names the grant as its one recorded exception - recommended.** A decision adds one sentence,
+   as Articles 9 and 11 gained theirs: one confirmation covers no later action, except the Keep or Discard
+   box's third link (D-138) - one chat, one model, until ten quiet minutes; never a switch, never a
+   publish, never a DRAFT's one run, and never Article 7's yes. **Cost:** a decision and one sentence in the
+   Constitution; no code.
+2. **A reading, not an exception.** A decision says Article 13 is about the permission layer's switches,
+   and the Keep box is Article 9's preview, so the grant does not touch Article 13. **Cost:** a decision
+   only. **Leaves:** Article 13's words still read wider than that, and someone reading it alone still sees
+   the grant breaking it.
+3. **Article 13 stands as written, and the third link goes.** **Cost:** a C# change, rebuilt for 2020 to
+   2027; and while Ask to Keep is on, every change of a job asks again - the *"OK, OK, OK, OK"* the owner
+   asked to be rid of.
+
+**Why the first.** The owner chose the grant (D-138), the Constitution says an Article changes by decision
+and in its own words, and Article 9 already names the grant - so naming it in Article 13 costs one sentence
+and makes the two Articles agree.
+
+**Not checked:** whether any other accepted decision lets one answer cover later actions. This question
+looked at D-138 only.
+
+**Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: the grant works as D-138 says,
+and Article 13's words stand beside it unreconciled.
+
+---
+
+### 🔵 Q-74 — Which knowledge scopes does Heron have - is COMMUNITY one, is TEMPORARY one, and is CORE the same as GLOBAL? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 names this
+as a choice left open. A *scope* is one of the separate stores Heron keeps knowledge in, so that one
+project's knowledge never leaks into another's ([Golden Rule 5](../14-golden-rules.md),
+[Article 16](../../HERON_CONSTITUTION.md)). The parts name different lists:
+
+| Where | Scopes named |
+|---|---|
+| [Part 1 §6](../00-master-specification.md) | personal memory, project memory, company knowledge, community knowledge |
+| Part 1 §15 | CORE, COMPANY, PROJECT, USER, COMMUNITY, TEMPORARY, EXPERIMENTAL |
+| Part 1 §33 | Global, Company, Project, User, Temporary, Experimental |
+| [Part 3 §24](../00c-master-handover-baseline.md) | GLOBAL, COMPANY, PROJECT, USER, COMMUNITY, EXPERIMENTAL, TEMPORARY |
+| Part 3 §45 | Global, Company, Project, User, Temporary, Experimental |
+| Part 3 §79, the organisation chart | Global, Company, Project, User, Experimental |
+| The code: `SCOPES` in [`heron_scope.py`](../../brain/heron_scope.py) | global, company, project, user, temporary, experimental |
+
+**What is decided already, and what is not.** [D-23](../decisions/D-23.md) keeps one SQLite file per scope
+and does not name them. [D-41](../decisions/D-41.md) says Heron is single-user now and company knowledge is
+a git repository, so there is no community store. [D-14](../decisions/D-14.md), still Proposed, puts
+COMMUNITY on its *Source* axis - where a thing came from - not on a list of where it is kept. Nothing picks
+one list. That the code holds one does not make the pick (D-139 item 4).
+
+**The shapes the owner chooses between:**
+
+1. **The code's list, and COMMUNITY is a source, not a scope - recommended.** A decision names global,
+   company, project, user, temporary and experimental; Part 1 §15's CORE is global; knowledge from the
+   community, when there is any, goes into the store where it is used and carries COMMUNITY as where it came
+   from. **Cost:** a decision and corrections under D-139; no code. **Leaves:** the *source* half rests on
+   D-14, which is still Proposed.
+2. **COMMUNITY is a scope of its own.** **Cost:** another store in `heron_scope.py`, rules for what may read
+   it, and tests - for knowledge that D-41 says has nowhere to come from yet.
+3. **TEMPORARY is not a scope** - Part 1 §6 and Part 3 §79 have none: a task's short-term context is kept
+   with the task, not in a store. **Cost:** a change to `heron_scope.py` and its tests.
+
+**Why the first.** It is what runs, it matches both memory tables (Part 1 §33 and Part 3 §45) word for word,
+and it keeps *where it came from* off the list of *where it is kept* - the same split D-14 makes for status
+words - so community knowledge never becomes a store anyone can open sideways.
+
+**Ajmal PS decides.** Until he does, nothing changes: the code keeps its list, and the parts keep theirs
+with a note.
+
+---
+
+### 🔵 Q-75 — Which ladder of background priorities is Heron's? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 names this
+as a choice left open. A priority says which background job waits for which - learning, indexing,
+cleaning up - while the modeller's own request always goes first. The parts give four ladders:
+
+| Where | Ladder |
+|---|---|
+| [Part 1 §49](../00-master-specification.md) | P0 User task · P1 Required validation · P2 Required maintenance · P3 Knowledge improvement · P4 Optimization · P5 Cleanup |
+| [Part 2 §50](../00b-master-specification-agent-os.md) | P0 User interaction · P1 Required execution · P2 Required validation · P3 Maintenance · P4 Learning · P5 Optimization · P6 Cleanup |
+| [Part 3 §52](../00c-master-handover-baseline.md) | P0 User Task · P1 Required Validation · P2 System Health · P3 Knowledge Maintenance · P4 Learning · P5 Optimization · P6 Cleanup |
+| [Part 4 §22](../00d-additional-requirements.md) | Priority 1 User request · 2 Required validation · 3 System maintenance · 4 RAG indexing · 5 Learning |
+| The code: `PRIORITIES` in [`heron_queue.py`](../../brain/heron_queue.py) | Part 2's, from [21 §12](../21-resilience-and-operations.md) |
+
+**What all four agree on:** the user's work comes first, and background work waits for it.
+[`heron_scheduler.py`](../../brain/heron_scheduler.py) holds that as *nothing from P2 to P6 runs during a
+user task*. **Where they differ:** whether *required execution* is a level of its own, where validation
+sits, whether *system health* and *RAG indexing* are named, and how many levels there are. No decision picks
+one; 21 §12 follows Part 2, and the code follows 21 §12. Neither module is reached by any tool the server
+serves (the note under Part 4 §22), so the choice changes nothing that runs today.
+
+**The shapes the owner chooses between:**
+
+1. **Part 2's ladder, as the code has it - recommended.** A decision names it, and the other three parts are
+   corrected to it under D-139: Part 4's *RAG indexing* is maintenance (P3), and Part 3's *System Health*
+   is maintenance too. **Cost:** a decision and corrections; no code.
+2. **Part 4's five.** **Cost:** `heron_queue.py`, `heron_scheduler.py`, their tests and 21 §12 changed, for
+   a ladder with no place for required execution or cleanup.
+3. **Leave the four as intent** until something serves the queue. **Cost:** nothing now; whoever wires it
+   up picks for him.
+
+**Why the first.** Every level in the other three has a place in it, it is the one the design document and
+the code already use, and the one rule all four share holds in it unchanged.
+
+**Ajmal PS decides.** Until he does, nothing changes: the code keeps Part 2's ladder, and the parts keep
+theirs with a note.
+
+---
+
+### 🔵 Q-76 — Should the specification have one picture of how Heron is organised, and is a name listed in two departments one agent or two? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found**, checking the specification for [D-139](../decisions/D-139.md). Three things about how
+the parts are put together, none of them a fact that can be corrected without the owner choosing:
+
+1. **Four pictures of the whole.** [Part 1 §73](../00-master-specification.md) puts a CEO / Orchestrator
+   over Engineering, Knowledge and Platform, then Communication. [Part 3 §79](../00c-master-handover-baseline.md)
+   is a flat list of departments under an Executive / Orchestrator. [Part 4 §45](../00d-additional-requirements.md)
+   puts a CEO and an Orchestrator over HR, Operations and Knowledge, and Part 4 §48 puts a Kernel over
+   Orchestration, Knowledge and Platform, then validation, the tools, the add-in and Revit. **As built:** no
+   CEO and no orchestrator inside Heron - the host does that ([D-01](../decisions/D-01.md),
+   [D-80](../decisions/D-80.md)); Heron's four parts, `revit/`, `mcp/`, `brain/` and `platform/`
+   ([README](../../README.md)); and the departments of [the agent register](../28-agent-registry.md),
+   printed by `python tools/agent-count.py`.
+2. **One name in two departments.** Part 1 lists a *Release Agent* in §36, the GitHub Department, and again
+   in §41, Development Agents. The register carries both: `HERON-GIT-REL-007`, *"Tags and publishes
+   releases"*, claimed by `brain/heron_tag.py`, and `HERON-DEV-REL-018`, *"Packages and releases"*, claimed
+   by `tools/check-package.py`. It also carries two *Duplicate Detection Agents*, `HERON-RAG-DUP-012` in
+   Knowledge & RAG and `HERON-IMP-DUP-007` in Import & Migration. Every name that repeats:
+   ``grep -oE '^\| `HERON-[A-Z0-9-]+` \| [^|]+' docs/28-agent-registry.md | cut -d'|' -f3 | sed 's/\*//g;s/^ *//;s/ *$//' | sort | uniq -d``.
+3. **A mandatory list with no sections behind much of it.** Part 4's list under *Strongest
+   recommendations - treated as mandatory* names components Part 4 gives no section of its own - among them
+   the Agent Registry, Agent Factory / HR, RAG Librarian, the fragment and skill registries, Separated
+   Memory, Vector DB management, the Audit Trail, the Automatic Update Manager, the GitHub Agent and the
+   Agent Performance System. Most are described in Parts 1 to 3 instead. The dated table under the list maps
+   each one to its module.
+
+**The shapes the owner chooses between:**
+
+1. **The as-built picture is the one, and the parts' charts stay as intent - recommended.** A decision says
+   Heron is organised as its four parts and the register's departments; the four charts stay, each with its
+   note, because D-01 already gave their top to the host. A name in two departments stays two rows only
+   where the jobs differ, and then each gets a name of its own in the register - *Release Packaging Agent*
+   and *Release Publishing Agent*, say. The mandatory list is read as a checklist across all four parts,
+   mapped by the table under it, and no new sections are written. **Cost:** a decision, renamed rows in the
+   register, and notes under D-139.
+2. **One of the four charts is chosen, and the other three are corrected to it.** **Cost:** whichever is
+   chosen still puts a CEO or an orchestrator inside Heron, which D-01 gives to the host, so it needs
+   correcting too.
+3. **Leave it.** **Cost:** nothing. **Leaves:** a reader meets four pictures, and two agents with one name.
+
+**Why the first.** The charts are what the owner asked for at four moments, and D-139 itself refused to
+rewrite the parts because the intent would be lost; the register already holds the departments that run, so
+one decision makes the picture single without touching his words.
+
+**Ajmal PS decides.** Until he does, nothing changes: the charts keep their notes, and both rows of each
+repeated name stay in the register.
+
+---
+
+### 🟡 Q-77 — D-91 says Heron's release is signed, and v0.1.0 went out unsigned. Should a decision say releases are unsigned until signing is built, and what makes signing due? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found**, checking the specification for [D-139](../decisions/D-139.md), whose context cites
+[D-91](../decisions/D-91.md) as the rule a modeller's PC installs from.
+
+- **D-91**, Accepted, is titled *"Product files come from a signed, versioned GitHub release"*, and decides
+  *"Files come from a signed GitHub release, named by version."*
+- **[`release.yml`](../../.github/workflows/release.yml)** builds the release and creates it with
+  `gh release create --draft`. Its header says *"NOTHING HERE IS SIGNED. Stage 8 is code signing, it is
+  deliberately last"*, and the notes it writes on every release say ***"Not signed."***
+- **The one published release, v0.1.0**, was published by the owner on 2026-10-08, knowing it was
+  unsigned: *"Publish v0.1.0 now"*. [NEEDS-CHECKING Group AC](../needs-checking/group-ac.md) records it as
+  *"the owner's exception, made knowingly"*, and that two written rules still say signed:
+  [07 §1a](../07-installation-and-update.md), and [`heron_tag.py`](../../brain/heron_tag.py), which refuses an
+  unsigned release. `release.yml` does not run `heron_tag.py`, so that refusal has never met a real release.
+- **What is checked instead:** the installer verifies every download against the release's `checksums.txt`
+  before anything reaches Revit's Addins folder
+  ([`ReleaseAssets.cs`](../../platform/Heron.Installer/ReleaseAssets.cs)) - D-91's own *"verified before it
+  is used"*.
+
+**Where the choice is written today:** that signing waits until Heron is finished, *"on the owner's word"*
+([07 §3](../07-installation-and-update.md)), and is parked at his request in the plugin-extension work
+note's Stage 8 - a folder deleted at the end of its life. No decision records it, and D-91 is unamended.
+Related, not the same: signing the deploy *script* was considered and refused for a certificate's yearly
+cost ([Group AA](../needs-checking/group-aa.md), AA9). That was the script, not the release.
+
+**The shapes the owner chooses between:**
+
+1. **A decision amends D-91 - recommended.** Releases are versioned and checksummed now, and signed at
+   Stage 8; every unsigned release says so in its notes, as `release.yml`'s already do; and `heron_tag.py`'s
+   refusal stays as the bar Stage 8 must meet. The decision names what makes signing due - for example,
+   before Heron is offered to anyone outside the owner's office, or before the README's *please do not
+   install this yet* is taken out. **Cost:** a decision; no code.
+2. **Sign now.** **Cost:** a code-signing certificate - a yearly cost and a renewal, Group AA's reason -
+   and a signing step in `release.yml` whose key lives in the credential store
+   ([Article 17](../../HERON_CONSTITUTION.md)).
+3. **No more published releases until one is signed.** **Cost:** a new teammate installs from a clone and a
+   build instead of the installer's download.
+
+**Why the first.** It says in a decision what the owner has already chosen twice - to publish v0.1.0, and to
+leave signing last - keeps *signed* as the target rather than dropping it, and moves the only record of the
+choice out of a work note that will be deleted.
+
+**Ajmal PS decides.** Until he does, nothing changes: `release.yml` still makes an unsigned draft, and only
+the owner publishes it.
+
+---
+
+### 🔵 Q-78 — When a modeller says *"select all ducts"*, does Heron select every duct in the model, or only the ducts visible in the open view? *(found 2026-10-18 checking the specification for D-139)*
+
+**What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 leaves a choice
+no accepted decision has made as written.
+
+- **[Part 4 §27](../00d-additional-requirements.md)** expects *"all visible ducts"* to be selected.
+- **What runs:** the PROVEN fragment [`filter-elements-by-category`](../../brain/fragments/filter-elements-by-category/fragment.yaml)
+  takes every element of the category in the model, optionally on one level - not only what the open view shows.
+  [27 Step 4](../27-build-order.md) proved it that way, and its answer names the count and the model:
+  *"Selected 126 ducts in Tower-A.rvt"*.
+- **What is decided already:** [D-59](../decisions/D-59.md) settles reading into linked models, not views.
+  [Golden Rule 20](../14-golden-rules.md) settles which model, not which part of it. Nothing settles *view or
+  model*. That the code picked one does not make the pick (D-139 item 4).
+
+**The shapes the owner chooses between:**
+
+1. **The whole model by default, the open view when the modeller says so - recommended.** *"Select all ducts"*
+   selects every duct in the bound model, as Revit's *Select All Instances > In Entire Project* does, and the
+   answer says how many and that some may be outside the open view; *"in this view"* or *"visible"* narrows it
+   to the view. **Cost:** a decision, and a correction to Part 4 §27 under D-139; the view half needs a check
+   that a view-scoped selection capability exists before it is promised.
+2. **The open view by default**, as Part 4 §27 says and as *Select All Instances > Visible in View* does.
+   **Cost:** the PROVEN fragment's behaviour changes, so it needs a new proof; and a modeller in a plan with
+   ducts hidden would see a smaller count than the model holds.
+3. **Ask every time.** **Cost:** a question on the commonest request, which [D-33](../decisions/D-33.md) keeps for
+   inputs Heron cannot know.
+
+**Why the first.** It is what was proved on two releases, the answer already says how many and in which model so
+nothing is hidden, and it matches what a modeller gets from Revit's own *In Entire Project*; the view stays one
+word away.
+
+**Ajmal PS decides.** Until he does, nothing changes: the fragment keeps selecting the whole model, and Part 4 §27
+keeps its words with a note.
+
+---
