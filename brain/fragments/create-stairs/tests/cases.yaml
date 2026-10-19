@@ -40,6 +40,26 @@ positive:
       hosted by the stair in Properties. A straight stair also names 2, one
       each side
 
+  - given: >
+      VERSION 4, THE KERALA HOUSE (5b-1239). A saved copy of 'Kerala house design'
+      on Revit 2020: Level 1 at 0, Level 2 at 3200, the stair hall's clear inside
+      X 11057.5..15887.5, Y 6057.5..9887.5 mm, 'Monolithic Stair', shape u, run
+      width 1100, entry south, first run west, start offset 300, cutOpening true
+    expect: >
+      made, not refused: 19 risers of 168.4 mm (9 + 10 by run), one landing, the
+      plan extent inside the hall, an opening in the Level 2 slab, and a finding
+      "Revit would not make 18 risers of 177.8 mm with 'Monolithic Stair' ... so
+      the stair was made with 19". Version 3 answered "Nothing was made. Revit
+      would not keep the stair's runs". Rolled back 2026-10-19 exactly so
+
+  - given: >
+      SIDE STRINGERS (5b-446), version 4: the same hall and values with stairType
+      '190mm max riser 250mm going'
+    expect: >
+      made: 17 risers of 188.2 mm (9 + 8), the runs 50 mm in from each side so
+      the stringers stay inside the hall, its plan extent X 11057.5..15887.5 -
+      the hall's faces. Version 3 refused it as "runs outside the hall"
+
 negative:
   - given: the same values with stairType=Spiral Feature Stair, a name Project2 does not have
     expect: refused by name with the six loaded stair types listed, nothing made
@@ -62,6 +82,19 @@ negative:
       refused by name as above, nothing made, `railings` empty and no finding
       that begins "Revit added" - the railing count Revit gives a stair is never
       reported for a stair that was not made
+
+  - given: the Kerala values above with run width 2500
+    expect: >
+      refused before the model is touched - two runs side by side need 5000 mm
+      across and the hall is 4830 mm - nothing made, and `leftBehind` 0
+
+  - given: >
+      A REFUSED RUN LEAVES NOTHING (5b-1241): any refusal that reached Revit, then
+      the run's record (heron_run_record)
+    expect: >
+      the record counts no element added - version 3's refusals of 2026-10-19
+      were recorded "KEPT, 2 added ((no category) 2)" for two elements that the
+      model did not hold
 
 second_route:
   - >

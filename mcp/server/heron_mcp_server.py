@@ -3622,7 +3622,9 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
 
     `inputs` is a JSON object of what the modeller has answered so far -
     {"project": {...}, "profiles": {"Office": {...}}, "overrides":
-    {"<space id>": {...}}} - kept with the project, so nothing is asked twice.
+    {"<space id>": {...}}, "systems": {"<zone or unit>": {...}}} - kept with
+    the project, so nothing is asked twice. An air system's coil is sized once
+    its own inputs are given.
     `expect_from` is passed to that read, as revit_read takes it. Set
     `include_links` when the modeller says the walls are in a linked model
     (D-59); left false, linked faces read "unknown".
