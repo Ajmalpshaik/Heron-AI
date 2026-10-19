@@ -150,6 +150,10 @@ compatibility-note: >
 #   "place the rooms"                      -> PLACE_ROOMS. One reads, one makes
 #   "how big is this room"                 -> MEASURE_ROOM_DIMENSIONS
 #   "what is in this room"                 -> FILTER_ELEMENTS_IN_ROOM
+#   "fix the from and to room on these
+#    doors"                                -> FLIP_ELEMENTS with fromToRoomOnly.
+#                                             It CHANGES the model; this names
+#                                             which doors need it
 #   "write it into the door parameters"    -> NOT here. This reports; it does not
 #                                             write. WRITE_ELEMENT_PARAMETERS
 #                                             takes the answer, and keeping the
