@@ -106,6 +106,12 @@ REPORT_CONNECTORS where this card took it - and `check-intrusion` moved one sent
 version note in the card's `purpose` had cost two sentences their top-3 place by nearness and moved "export the
 quantities out" from one export tool to another, so the note in the card is one line and the detail is here.
 
+> **2026-10-18 - where the card stands now, read off disk.** Version 2 is PROVEN: signed by Ajmal PS on
+> 2026-10-03 with the family-editor proofs of PR #395, on a scratch family with Project1 as the negative - the
+> `proof:` block in [its card](../../brain/fragments/link-family-parameter/fragment.yaml), fingerprint
+> `98be486c00c237c2`. So *DRAFT until BD6* above describes 2026-09-29. That run was not BD6's: neither BD5's
+> measurement nor BD6's refusals (a) to (c) on the fan coil family is recorded as run, so both rows stay open.
+
 | # | Check | Expected |
 |---|---|---|
 | ~~**BD1**~~ | **By hand, the second route.** In the Family Editor, select the supply duct connector, press the button at the end of Flow's row in Properties, and read which parameter the Associate Family Parameter dialog has selected; then the return connector | **DONE 2026-09-29, by the owner's own hand-setting rather than a second look.** He re-linked both connectors with that dialog on 2026-09-28, before the tool existed - supply to `Actual_Supply_Air_Flow`, return to `Actual_Return_Air_Flow` - and confirmed it in the chat on 2026-09-29; the tool read exactly those two before any proof ran and after every proof. Written into the proof's `second_route`, which also says what it cannot see: a rolled-back change leaves nothing in the dialog to look at. Codex's second review asked for this route before PROVEN |

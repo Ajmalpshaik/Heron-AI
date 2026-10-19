@@ -143,6 +143,14 @@ Proposed Golden Rules 16 and 19 also remain unstated in any document — the **o
 **no permission escalation from untrusted text**. §12 and §29 build the machinery for both; neither
 states the rule.
 
+**Closed since - recorded 2026-10-18; the table and paragraph above are left as they were written.**
+A1 is [D-09](../DECISIONS.md); A9 is [D-26](../DECISIONS.md), which answers Q-12; A11 is answered in part
+by [Q-14](../OPEN-QUESTIONS.md). Golden Rules 16 to 21 - so 16 and 19 here, and P24's 21 and P25's 20
+above - were accepted on 2026-08-28 ([Q-19](../OPEN-QUESTIONS.md)), and Articles 8 and 14 of the
+Constitution state 16 and 19 ([D-43](../DECISIONS.md)). **Still open:** the unified trust model this
+section calls *the problem Part 4 created* - [Q-34](../OPEN-QUESTIONS.md) agreed the direction and
+deferred the confirmation to the PC, so [D-14](../DECISIONS.md) is still Proposed.
+
 ### ✅ And one strong validation
 
 Part 4 closes with:

@@ -16,7 +16,7 @@ flowchart TD
     C["<b>Capability</b><br/>what is to be done"]
     F["<b>Fragment</b><br/>the C# that does it, and its card"]
     PR["<b>Proof</b><br/>a named real model · a negative case<br/>a fingerprint · a person signs"]
-    SW{{"<b>A change?</b><br/>only while the Changes switch is on,<br/>and Admin or Publish if it needs one"}}
+    SW{{"<b>A change?</b><br/>only from a PROVEN fragment — D-117<br/>only while the Changes switch is on,<br/>and Admin or Publish if it needs one"}}
     A(["<b>The answer</b><br/>the model untouched"])
     K{{"<b>Ask to Keep</b> on?<br/>then Revit asks Keep or Discard<br/>Discard rolls it all back"}}
     U(["<b>One named undo entry</b><br/>Heron: …"])
@@ -57,7 +57,8 @@ Capability -> provided by a Fragment: the C# that does it, and its card
 Proof (named real model, negative case, fingerprint, signed by a person) -> the fragment is PROVEN,
   until its code changes
 A change? no, a read -> the answer, the model untouched
-          yes        -> only while the Changes switch is on (and Admin or Publish if it needs one)
+          yes        -> only from a PROVEN fragment (D-117; a DRAFT gets one asked try-once, D-119)
+                     -> only while the Changes switch is on (and Admin or Publish if it needs one)
                      -> Ask to Keep on: Revit asks Keep or Discard; Discard rolls it all back
                      -> Keep, or Ask to Keep off -> one named undo entry, "Heron: ..."
 ```
@@ -78,8 +79,8 @@ A change? no, a read -> the answer, the model untouched
 | **Capability** | *What you want done*, named without naming who does it — `FILTER_ELEMENTS_BY_CATEGORY`. Each fragment's card declares the one it provides. Skills and the chat ask for capabilities and never for a fragment, so a provider can be added, split or retired without changing a caller (`brain/heron_capability.py`). [18 §2](18-agent-operating-system.md) |
 | **Method** | A job's whole method: what must be true first, the steps in order, and each capability it uses with its risk. It is a skill, handed over by `heron_method` with every capability resolved against the Revit in front. |
 | **Tier** | Whether an agent is **T1** (deterministic service, no model call), **T2** (one scoped LLM call) or **T3** (full agentic loop). [02 §6](02-architecture-overview.md) |
-| **Scope** | Which knowledge partition something belongs to: Core, Company, Project, User, Community, Temporary, Experimental. [10](10-memory-and-knowledge.md) |
-| **Persona** | The user's working role — BIM Modeler or Developer — which determines how much technical detail is shown. [01 §4](01-vision-and-principles.md) |
+| **Scope** | Which knowledge partition something belongs to: Global (the specification's *Core*), Company, Project, User, Temporary, Experimental — `heron_scope.SCOPES` in [`heron_scope.py`](../brain/heron_scope.py), one SQLite file each ([D-23](DECISIONS.md)). *Community* is a **source** in the proposed trust model ([24](24-trust-model.md)), not a scope. [10 §1](10-memory-and-knowledge.md) |
+| **Persona** | **Not a setting in Heron.** The specification had one — BIM Modeler or Developer, choosing how much technical detail is shown ([01 §4](01-vision-and-principles.md)) — and [D-27](DECISIONS.md) removed it: Heron has one voice, plain BIM language, and what varies is the **shape** of the answer, read from the shape of the request (a count gets a number, a breakdown a table). Nothing detects who is talking. The one place wording may change is Developer **Mode**, which is granted, never inferred ([22 §2–§3](22-users-modes-and-extensibility.md)) |
 | **Knowledge Identity** | The stable ID of a knowledge object, independent of its filename. [09 §4](09-skills-and-fragments.md) |
 | **Lifecycle** | The state progression of a fragment, skill or agent, from proposal through production to archive. See *Status vocabularies* below. |
 | **Golden Rule** | A permanent architectural constraint. [14](14-golden-rules.md) |
@@ -143,8 +144,8 @@ A change? no, a read -> the answer, the model untouched
 | **Host** | The AI application providing the conversation — Claude Code. It decides what the user meant; Heron never classifies intent. Not part of Heron. [D-01](DECISIONS.md) |
 | **MCP** | Model Context Protocol — the interface through which the AI layer calls Heron's tools. `python mcp/server/heron_tools.py` lists every tool and what it may do to the model. [04](04-heron-mcp.md) |
 | **RAG** | Retrieval-Augmented Generation — retrieving relevant knowledge before reasoning over it. [05](05-heron-brain.md) |
-| **Embedding** | A vector representation of text, used for semantic similarity search. |
-| **Hybrid search** | Combining keyword (BM25/FTS) and vector search, then fusing the rankings. The recommended retrieval strategy. [05 §4](05-heron-brain.md) |
+| **Embedding** | A vector representation of text, used for semantic similarity search. Heron computes them on the PC, never in a cloud ([D-24](DECISIONS.md)): a built-in character-pattern backend that needs nothing installed, and a trained model2vec model, which understands meaning, when it is installed ([`heron_embed.py`](../brain/heron_embed.py)). |
+| **Hybrid search** | Combining keyword and vector search, then fusing the rankings. What [`heron_retrieve.py`](../brain/heron_retrieve.py) does: a hard filter first (scope, Revit release), then word match (SQLite FTS5) and meaning, fused by reciprocal rank, and an optional re-ranker re-reads the top of the list when it is installed ([D-134](DECISIONS.md)). [05 §4](05-heron-brain.md) |
 | **Golden file test** | A test that compares output against a recorded expected result. How "never break a working version" is enforced. [13 §4](13-testing-and-quality.md) |
 | **Sandbox** | In the specification, an isolated environment — a detached model copy — where unproven code runs before it is allowed near a live project. **Heron has none by that name today.** The runner that watches a new agent's first run was renamed *watched, not contained*, because it isolates nothing ([D-84](DECISIONS.md)); and a `DRAFT` fragment's first run is its one *try-once* on the saved model in front, behind Keep or Discard ([D-119](DECISIONS.md), [D-121](DECISIONS.md)). |
 | **Prompt injection** | Instructions hidden in content the system reads (a family name, an imported document) attempting to make the model act on them. Countered by Golden Rule 19. |
@@ -156,14 +157,14 @@ A change? no, a read -> the answer, the model untouched
 |---|---|
 | **Heron Kernel** | The spine every module talks through instead of depending on each other. Holds the registries, permissions, event bus, state and logging. **Plumbing, never intelligence** — no BIM knowledge lives in it. [23 §1](23-heron-kernel.md) |
 | **Capability Registry** | *"What can Heron currently do?"* The Orchestrator matches **capabilities**, never agent names — which is what makes agents replaceable. [18 §2](18-agent-operating-system.md) |
-| **Workflow Engine** | Owns ordering, retries, timeouts, rollback and checkpoints. The Orchestrator decides *what*; this ensures it *happens correctly*. [23 §3](23-heron-kernel.md) |
+| **Workflow Engine** | Owns ordering, retries, timeouts, rollback and checkpoints. The Orchestrator decides *what*; this ensures it *happens correctly*. The Orchestrator is the host ([D-01](DECISIONS.md)); the engine is [`heron_workflow.py`](../mcp/server/heron_workflow.py), DRAFT, and no tool the server serves calls it yet. [23 §3](23-heron-kernel.md) |
 | **Checkpoint** | Persisted stage output letting a failed multi-stage workflow resume from the failed step rather than restarting. [23 §4](23-heron-kernel.md) |
 | **Evidence** | The stated reasons behind a decision — which fragment, which versions, what success history. For a `MODIFY`, **no evidence means refused, not downgraded**. [23 §6](23-heron-kernel.md) |
 | **Confidence** | An agent's self-reported certainty (`HIGH`/`MEDIUM`/`LOW`/`UNKNOWN`). **Never a substitute for validation.** [23 §5](23-heron-kernel.md) |
 | **Model Router** | Chooses the model class for a task. Heron declares *intent*; the host resolves it. [23 §8](23-heron-kernel.md) |
 | **Prompt/Instruction Registry** | One versioned, testable home for all system and agent instructions — never scattered through code. [23 §9](23-heron-kernel.md) |
 | **Dependency graph** | Skills → fragments → API → runtime → packages. Makes the blast radius of a change computable instead of requiring a full test sweep. [21 §1](21-resilience-and-operations.md) |
-| **Shadow Mode** | A new agent or fragment runs on real requests with its **output discarded**, so evidence accrues without risk. [18 §4](18-agent-operating-system.md) |
+| **Shadow Mode** | A new agent or fragment runs on real requests with its **output discarded**, so evidence accrues without risk. Leaving it takes an analysed **disagreement** and a person's signature, never a count of agreements ([D-39](DECISIONS.md)). [`heron_shadow.py`](../brain/heron_shadow.py) keeps that disagreement log; it is DRAFT and runs neither side itself. [18 §4](18-agent-operating-system.md) |
 | **Emergency Stop** | Halts Heron in one Revit: changes are refused, reads go on, and a fragment running at that moment is stopped at its next check and rolled back. **There is no ribbon button** ([D-46](DECISIONS.md)), and no MCP tool sends it; the bridge's `stop` operation sets it — today `python mcp/client/heron_bridge_client.py stop`, with `--session` naming the Revit when more than one is connected — and it lasts until Revit restarts ([D-129](DECISIONS.md), [D-130](DECISIONS.md)). Whether a Revit no chat holds should take a stop from anyone is still open ([Q-71](OPEN-QUESTIONS.md)). [21 §4](21-resilience-and-operations.md) |
 | **Safe Mode** | Disables recently installed components and returns to last-known-good. [21](21-resilience-and-operations.md) |
 | **Workflow ID** | The correlation key tying one user sentence to every agent, retrieval, model call and element touched. [21 §13](21-resilience-and-operations.md) |
@@ -191,8 +192,9 @@ A change? no, a read -> the answer, the model untouched
 
 ## Status vocabularies
 
-> **Superseded by the [unified trust model](24-trust-model.md) ([D-14](DECISIONS.md), proposed).**
-> Six competing vocabularies across the four specifications were collapsed into two orthogonal axes.
+> **The [unified trust model](24-trust-model.md) proposes to replace these ([D-14](DECISIONS.md), still
+> Proposed, so nothing below is superseded yet).** It collapses six competing vocabularies across the
+> four specifications into two orthogonal axes.
 
 **Lifecycle** — one vocabulary for fragments, skills, capabilities **and** agents:
 
@@ -223,4 +225,4 @@ records ([D-138](DECISIONS.md)). No fragment has reached `PRODUCTION`.
 
 **Permission levels:** `READ` · `ANALYZE` · `SUGGEST` · `EXECUTE` · `MODIFY` · `PUBLISH` · `ADMIN`
 
-**Scheduler priorities:** `P0` user task · `P1` required validation · `P2` system health · `P3` knowledge maintenance · `P4` learning · `P5` optimization · `P6` cleanup
+**Scheduler priorities:** `P0` user interaction · `P1` required execution · `P2` required validation · `P3` maintenance · `P4` learning · `P5` optimization · `P6` cleanup — the ladder of [21 §12](21-resilience-and-operations.md#12-background-workers-and-priority) and `PRIORITIES` in [`heron_queue.py`](../brain/heron_queue.py). `P2` to `P6` never run during a user task. The queue and the scheduler are DRAFT and the server calls neither

@@ -218,7 +218,7 @@ browser-automation skills, deploys, ship, retro, office hours, a CEO-mode plan r
 to a BIM modeller, and `ETHOS.md` measures its own value in *"10,000+ usable lines of code per day"*,
 which is the developer-harness frame [D-57](DECISIONS.md) rejected outright.
 
-### 2.10 ⏸ OWNER'S CALL — fact-forcing beats confirming, and pointing beats typing
+### 2.10 ✅ ANSWERED AS D-60 — fact-forcing beats confirming, and pointing beats typing
 
 **From** ECC's `gateguard-fact-force.js` — [Q-50](OPEN-QUESTIONS.md). *"Instead of asking 'are you sure?'
 (which LLMs always answer 'yes'), this hook demands concrete facts. **The act of investigation creates
@@ -232,7 +232,7 @@ already in memory when it asks.
 > would change and what it would skip, up to a cap — and that highlight is drawn by Revit's Keep or
 > Discard box in [`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs).
 
-### 2.11 ⏸ OWNER'S CALL — guard the path from retrieval into context
+### 2.11 ✅ ANSWERED AS D-81 — guard the path from retrieval into context
 
 **From** [`ruflo`](https://github.com/ruvnet/ruflo)'s `agentdb-retrieval-guard.ts` —
 [Q-51](OPEN-QUESTIONS.md), and **the most valuable single item the whole programme produced**, because it
@@ -247,7 +247,7 @@ says so in its own part list: `STANDARD = "standard"  # the clauses cited - sour
 > **stamped, not scanned**: every part carrying text Heron did not write names its `source`, Heron
 > attributes rather than asserts, and no chunk scanner is built.
 
-### 2.12 ⏸ OWNER'S CALL — an inventory of what imported knowledge permits
+### 2.12 ✅ ANSWERED AS D-66 — an inventory of what imported knowledge permits
 
 **From** [`scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) as the
 failure and [Headroom](https://github.com/headroomlabs-ai/headroom) as the fix —

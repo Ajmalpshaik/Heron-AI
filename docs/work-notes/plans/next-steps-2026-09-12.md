@@ -8,6 +8,14 @@ being *used* on one side while it is still being *built* on the other.
 [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md). It is a schedule, not a register — nothing here is the
 permanent home of anything.
 
+**Read 2026-10-18 against the registers: mostly spent.** Done - **B4** (`python tools/agent-count.py`
+reports nothing left to build), **A4**'s pull request #122 (merged, `96b36fc1`), and **Q-E** in the
+owner's table below (answered as [Q-55](../../OPEN-QUESTIONS.md) on 2026-09-20). Still open, and each
+already has a register home - **B2** is [PROPOSALS F7](../../proposals/part-f.md), **C4** is F4, **A2**'s
+rollback is [NEEDS-CHECKING](../../NEEDS-CHECKING.md) **A16** and **A16b**, and **B1**'s counter
+([D-70](../../DECISIONS.md)) has no module yet and is R-16 and R-25 in
+[`rag/01-requirements.md`](rag/01-requirements.md) §6. **A1** and **B3** are the ongoing work, not steps.
+
 > Where this disagrees with [DECISIONS.md](../../DECISIONS.md), the
 > [Golden Rules](../../14-golden-rules.md) or the [Constitution](../../../HERON_CONSTITUTION.md),
 > **those win.** For the long-term phases read [ROADMAP.md](../../ROADMAP.md); this covers the next

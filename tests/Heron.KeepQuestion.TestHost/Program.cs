@@ -192,6 +192,7 @@ namespace Heron.KeepQuestion.TestHost
                   "a size that is not a size gives the minimum, never NaN or infinity");
 
             Grant();
+            DeleteBox();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -352,6 +353,133 @@ namespace Heron.KeepQuestion.TestHost
             Check(HeronKeepGrant.ChoseKeepRest().Contains("KEEP THE REST OF THIS JOB WITHOUT ASKING"),
                   "and the reply to the click itself says what was chosen");
             Check(HeronKeepGrant.IdleLimit == TimeSpan.FromMinutes(10), "ten minutes, as asked");
+        }
+
+        /// <summary>
+        /// D-142: the delete box - the owner's "this many elements are going to
+        /// be deleted - can we delete or not?", 2026-10-18. Its words, the
+        /// grouping by category with what goes along, and the same-set rule a
+        /// second run is kept by. Which dialog result deletes is
+        /// RevitFragmentDelete's, read as text by tests/test_delete_box.py.
+        /// </summary>
+        private static void DeleteBox()
+        {
+            Console.WriteLine();
+            Console.WriteLine("11. the delete box: its title, its two answers, and the model named");
+            Check(HeronDeleteQuestion.Title(7) == "Delete 7 elements?",
+                  "the title is the owner's own words - Delete 7 elements?");
+            Check(HeronDeleteQuestion.Title(1) == "Delete 1 element?"
+                  && HeronDeleteQuestion.Title(1200) == "Delete 1,200 elements?",
+                  "one element, and a thousand-separated count");
+            Check(HeronDeleteQuestion.Headline(7, "Tower-A") == "Delete 7 elements from Tower-A?",
+                  "the large line names the model");
+            Check(HeronDeleteQuestion.DeleteLink == "Delete" && HeronDeleteQuestion.DontDeleteLink == "Don't delete",
+                  "the two answers are Delete and Don't delete - and no third");
+            Check(HeronDeleteQuestion.DeleteNote("delete-elements").Contains("\"Heron: delete-elements\"")
+                  && HeronDeleteQuestion.DeleteNote("delete-elements").Contains("nothing is deleted"),
+                  "Delete names its undo step, and that a different second run deletes nothing");
+            Check(HeronDeleteQuestion.DontDeleteNote.Contains("Nothing is deleted"),
+                  "Don't delete says nothing is deleted");
+
+            Console.WriteLine();
+            Console.WriteLine("12. grouped by category, with what goes along with them");
+            var wall = new List<HeronDeleteQuestion.Going>
+            {
+                new HeronDeleteQuestion.Going("101", "Walls", null),
+                new HeronDeleteQuestion.Going("102", "Walls", null),
+                new HeronDeleteQuestion.Going("201", "Doors", "Walls"),
+                new HeronDeleteQuestion.Going("202", "Doors", "Walls"),
+                new HeronDeleteQuestion.Going("203", "Doors", "Walls"),
+                new HeronDeleteQuestion.Going("301", null, "Walls"),
+                new HeronDeleteQuestion.Going("401", "Doors", null),
+            };
+            var lines = HeronDeleteQuestion.Lines(wall);
+            Check(lines.Count == 4, "four lines: walls, the door asked for, doors with the walls, Revit's own");
+            Check(lines.Count > 1 && lines[0].Trim() == "Walls  2" && lines[1].Trim() == "Doors  1",
+                  "what goes in its own right comes first, the largest first");
+            Check(lines.Exists(l => l.Trim() == "Doors  3  (goes with the Walls)"),
+                  "doors Revit removes with their wall say so - (goes with the Walls)");
+            Check(lines.Exists(l => l.Trim() == "(no category)  1  (goes with the Walls)"),
+                  "an element with no category is listed and counted, never dropped");
+
+            var many = new List<HeronDeleteQuestion.Going>();
+            for (var i = 0; i < 20; i++)
+                many.Add(new HeronDeleteQuestion.Going(i.ToString(), "Category " + i, null));
+            var capped = HeronDeleteQuestion.Lines(many);
+            Check(capped.Count == HeronDeleteQuestion.LinesShown + 1
+                  && capped[capped.Count - 1].Contains("and 8 elements more, in 8 other groups"),
+                  "above twelve groups the rest are counted in one line, never dropped");
+
+            var content = HeronDeleteQuestion.Content("delete these", "delete-elements", "Tower-A", wall,
+                true, 0, 4, HeronDeleteQuestion.OnScreen(7, 6, true, true, true), "14:32");
+            Check(content.Contains("The chat asked: \"delete these\", in Tower-A."),
+                  "the box quotes the chat's words and names the model");
+            Check(content.Contains("Revit counts 7 elements that would go"),
+                  "and says the whole count, what goes along included");
+            Check(content.Contains("also adds 0 elements and changes 4 elements"),
+                  "and what else the same change does");
+            Check(content.Contains("Don't delete, Esc or closing this window deletes nothing")
+                  && content.Contains("Answer by 14:32: after that nothing is deleted, whatever you press"),
+                  "and that every way out but Delete, and a late Delete, deletes nothing");
+            var noWords = HeronDeleteQuestion.Content(null, "delete-elements", "Tower-A", wall, false, 0, 0,
+                "", null);
+            Check(noWords.Contains("The chat asked for 'delete-elements'") && !noWords.Contains("Answer by")
+                  && noWords.Contains("was not worked out"),
+                  "no words names the capability; no deadline says none; goes-with not read says so");
+
+            Console.WriteLine();
+            Console.WriteLine("13. on screen, said - and their selection comes back whatever they choose");
+            Check(HeronDeleteQuestion.OnScreen(7, 6, true, true, true).Contains("The 6 elements that can be shown are selected")
+                  && HeronDeleteQuestion.OnScreen(7, 6, true, true, true).Contains("The other 1 are"),
+                  "six of seven shown, and the seventh said");
+            Check(HeronDeleteQuestion.OnScreen(7, 7, true, true, false).StartsWith("They are selected")
+                  && HeronDeleteQuestion.OnScreen(7, 7, true, true, false).Contains("come back whatever you choose"),
+                  "all shown, and the selection and view come back");
+            Check(HeronDeleteQuestion.OnScreen(7, 7, false, false, false).Contains("not the one in front"),
+                  "a model not in front selects nothing, and says so");
+            Check(HeronDeleteQuestion.OnScreen(900, 900, true, false, false).Contains("too many to select (more than 500)"),
+                  "above D-60's 500 nothing is selected, and it says why");
+            Check(HeronDeleteQuestion.OnScreen(3, 0, true, false, false).Contains("None of them can be shown"),
+                  "a filter or a type cannot be shown, and it says so");
+            Check(HeronDeleteQuestion.Ids(wall).StartsWith("Element ids: 101, 102, 201"),
+                  "the ids are in the box's more half");
+
+            Console.WriteLine();
+            Console.WriteLine("14. the same-set rule: the second run is kept only if it deletes what was shown");
+            Check(HeronDeleteQuestion.Differs(new[] { "1", "2", "3" }, new[] { "3", "2", "1" }) == null,
+                  "the same ids in another order are the same set");
+            var fewer = HeronDeleteQuestion.Differs(new[] { "1", "2", "3" }, new[] { "1", "2" });
+            Check(fewer != null && fewer.Missing == 1 && fewer.Extra == 0,
+                  "one shown and not deleted the second time differs");
+            var more = HeronDeleteQuestion.Differs(new[] { "1", "2" }, new[] { "1", "2", "9" });
+            Check(more != null && more.Extra == 1 && more.Now == 3,
+                  "one deleted the second time and never shown differs");
+            Check(HeronDeleteQuestion.Differs(new[] { "1" }, new string[0]) != null,
+                  "a second run that deletes nothing differs from one that deleted");
+            Check(HeronDeleteQuestion.SetChanged("delete-elements", more, "R.").Contains("NOTHING WAS DELETED"),
+                  "and the refusal says nothing was deleted");
+
+            Console.WriteLine();
+            Console.WriteLine("15. no answer in time deletes nothing, and the chat is told what was chosen");
+            Check(!HeronDeleteQuestion.Late(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(240)),
+                  "a Delete in ten seconds of four minutes is in time");
+            Check(HeronDeleteQuestion.Late(TimeSpan.FromSeconds(240), TimeSpan.FromSeconds(240)),
+                  "a Delete at the very moment the time is up is late - the safe side");
+            Check(!HeronDeleteQuestion.Late(TimeSpan.FromHours(1), null),
+                  "with no deadline known, a Delete is never called late");
+            var yes = HeronDeleteQuestion.Asking(7, 6, HeronDeleteQuestion.Deleted);
+            Check(yes.Contains("whether to delete 7 elements") && yes.Contains("6 of them selected on screen")
+                  && yes.EndsWith("pressed DELETE."),
+                  "the reply says the modeller was asked, how many were shown, and Delete");
+            Check(HeronDeleteQuestion.Asking(7, 0, HeronDeleteQuestion.DontDelete).Contains("pressed DON'T DELETE")
+                  && HeronDeleteQuestion.Asking(7, 0, HeronDeleteQuestion.Closed).Contains("closed the box, which deletes nothing")
+                  && HeronDeleteQuestion.Asking(7, 0, HeronDeleteQuestion.TooLate).Contains("which deletes nothing"),
+                  "and Don't delete, a closed box and a late Delete each in their own words");
+            var no = HeronDeleteQuestion.Declined(HeronDeleteQuestion.Asking(7, 6, HeronDeleteQuestion.DontDelete),
+                                                  "delete-elements", "Revit confirmed the rollback.", true);
+            Check(no.Contains("NOTHING WAS DELETED") && no.Contains("send it again only if they ask")
+                  && no.Contains("Their own selection was put back"),
+                  "a no says nothing was deleted, never to retry, and that their selection is back");
         }
 
         private static string Short(string text)

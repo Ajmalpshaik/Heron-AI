@@ -48,6 +48,14 @@ the review documents; none are in either specification:
 
 **Golden Rules 16–19 remain necessary.** Part 2 strengthens the case for them rather than replacing them.
 
+**Closed since - recorded 2026-10-18; the table above is left as it was written.** A1 by
+[D-09](../DECISIONS.md). A6 and A7 by Golden Rules 16 and 17, accepted with 18 to 21 on 2026-08-28
+([Q-19](../OPEN-QUESTIONS.md)), and by Articles 8 and 9 of the Constitution ([D-43](../DECISIONS.md)) - the
+preview half now works as [D-126](../DECISIONS.md) and [D-138](../DECISIONS.md) describe. A9 by
+[D-26](../DECISIONS.md), which answers Q-12. A11 in part: [Q-14](../OPEN-QUESTIONS.md) is answered with a
+written register, and automated testing against a real Revit is still not. Each is in
+[Part A's closing table](part-a.md).
+
 ### ⚠️ New tensions Part 2 creates
 
 | # | Tension | Resolution |

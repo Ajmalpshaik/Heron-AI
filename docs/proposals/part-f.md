@@ -454,7 +454,7 @@ python tests/test_placement.py     # 3. A name is refused, never cleaned up - an
 
 ---
 
-### 🟡 F15. The Naming Agent's own name has no stated shape, and two documents disagree about its parts
+### ✅ F15. The Naming Agent's own name has no stated shape, and two documents disagree about its parts
 
 **Found by:** building `HERON-NAM-VAL-002`, the Naming Validation Agent, 2026-09-15.
 **Status:** open. The validator refuses that one kind of name rather than guessing it.
@@ -515,6 +515,10 @@ Taxonomy is 7 of 7.**
 finished name cannot be split back into six parts — `check()` says it checked the SHAPE, in the answer,
 and never claims to have checked the parts.
 
+*Marked ✅ on 2026-10-18: [D-79](../DECISIONS.md), Accepted 2026-09-16, closes it in its own first line, and
+`brain/heron_naming.py` and `tests/test_naming.py` are the build. Until this marker changed,
+`tools/owner-queue.py` still listed F15 as waiting on the owner.*
+
 ---
 
 ### 🟠 F16. The register asks for a synonym table and D-34 forbids one
@@ -557,7 +561,7 @@ decision, so the next person to build from that row alone will build a synonym t
 
 ---
 
-### 🟡 F17. Three agents own metadata validity, in two departments
+### ✅ F17. Three agents own metadata validity, in two departments
 
 **Found by:** the same build, while checking whether `HERON-NAM-MET-006` already existed.
 **Status:** open. **`MET-006` was deliberately not built** — see below.
@@ -588,6 +592,10 @@ unbuilt third row needed deciding.
 `tests/test_metadata_guard.py` plants one error for each word of the folded row — a missing field, an
 invalid layer, a claim on an id that does not exist — and requires all three to be caught. **Naming &
 Taxonomy is 6 of 7**, and the seventh is `NAM-GEN-001`, blocked on **F15** above.
+
+*Marked ✅ on 2026-10-18: [D-78](../DECISIONS.md), Accepted 2026-09-16, settles it, and
+`tests/test_metadata_guard.py` is the evidence above. F15 was settled the same day by D-79, which built
+`NAM-GEN-001`. Until this marker changed, `tools/owner-queue.py` still listed F17 as waiting on the owner.*
 
 ---
 
@@ -870,5 +878,14 @@ yes or a no rather than a writing job:
 
 A **no** is a real answer too, and it is recorded rather than argued with: it would mean the word stays
 and D-84's consequence line is the sentence to correct instead.
+
+**Read 2026-10-18 - still open, and two things around it have moved.** The README's *Decided* row no
+longer says *scripting sandbox*: it was rewritten on 2026-10-18 (#663) and now reads *C# compiled at run
+time inside Revit's process*. Article 11 and Golden Rule 18 are unchanged - and
+[D-119](../DECISIONS.md), Accepted 2026-10-17, gave Article 11 a recorded exception whose own sentence
+uses the word again: *"that prompt and that one group are its sandbox"*. So the yes-or-no above now
+covers two binding places and that amendment. **This id is used twice:** [`f23.md`](f23.md) is also F23,
+on the Documentation agents, written 2026-09-16 and settled by D-77 - so a reference to F23 has to say
+which one it means.
 
 ---

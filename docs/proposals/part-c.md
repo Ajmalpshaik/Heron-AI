@@ -17,4 +17,15 @@
 | **C5** | **Relationship to the existing AJ-Tools / PyRevit-Tools / AEB-Tools repos** | Is Heron a rewrite, a wrapper, or their new home? This decides whether the knowledge import system is a v1 feature or a later one. |
 | **C6** | **Autodesk App Store distribution** | If it is ever a goal, their review requirements constrain packaging and permissions — cheaper to know now than to retrofit. |
 
+**Answered since - recorded 2026-10-18; the table above is left as it was written.**
+
+| | Answered by |
+|---|---|
+| **C1** | [D-07](../DECISIONS.md) and [D-08](../DECISIONS.md) - free and open source, on public GitHub, under Apache 2.0 |
+| **C2** | [D-07](../DECISIONS.md), which also answers Q-22 - installable by anyone |
+| **C3** | [D-37](../DECISIONS.md) - the name is Heron AI, and it says plainly that no trademark check has been done |
+| **C4** | [D-36](../DECISIONS.md) - no warranty; the licence is the legal instrument and `DISCLAIMER.md` the plain one |
+| **C5** | [Q-23](../OPEN-QUESTIONS.md) - upgrade and absorb - and [D-25](../DECISIONS.md): the existing libraries are studied and re-authored, never imported |
+| **C6** | [D-38](../DECISIONS.md) - a GitHub download now; an App Store listing kept possible, and nothing built for it |
+
 ---

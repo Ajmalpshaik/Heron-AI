@@ -298,9 +298,16 @@ def executor():
 
     keep = code.find("KeepAndWatch(group")
     check(keep > 0, "the write path still keeps its group, through KeepAndWatch")
-    before = code[max(0, keep - 2500):keep]
+    # FROM THE GROUP'S START TO ITS KEEP, NOT A FIXED 2500 CHARACTERS BEFORE IT.
+    # The window held with 14 characters to spare on main at 4192360 (2486),
+    # and D-142's delete gate - which must sit between the two - outgrew it.
+    # The stretch the group is open in is what the rule is about: the record
+    # read inside it, before the keep. Moving the read after the keep, or out
+    # of the group, still fails here.
+    started = code.rfind("group.Start()", 0, keep)
+    before = code[started:keep] if started >= 0 else ""
     check("HeronRunGuard.Policy" in before,
-          "the guard's record is read before the group is kept")
+          "the guard's record is read before the group is kept, with the group open")
     recheck = before.rfind("WhyNotKept(")
     check(recheck >= 0 and before.rfind("AskTheModeller(") < recheck,
           "the switches are asked again right before the group is kept - AFTER the "

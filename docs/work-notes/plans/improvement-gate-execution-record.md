@@ -409,4 +409,5 @@ change rewrote that checklist and a list claiming to be complete must be.
 | **Owed** | An independent run by somebody who did not build it — [Golden Rule 7](../../14-golden-rules.md) |
 | **Owed, and needs a machine** | `A12` and `A13` in [NEEDS-CHECKING](../../NEEDS-CHECKING.md): whether the add-in loads, and whether an upgrade and a rollback work |
 | **Open, with owners** | [PROPOSALS Part F](../../PROPOSALS.md) — F1 to F5 |
+| **Read 2026-10-18** | `A12` and `A13` are **DONE** - both passed on the owner's PC on 2026-09-19 and are struck in [Group A](../../needs-checking/group-a.md). Of F1 to F5, [F3](../../proposals/part-f.md) closed 2026-09-12 and F5 was recorded closed on 2026-10-18; **F1, F2 and F4 are still open**. The independent run is still the note owner's to judge: [AGENTS.md](../../../AGENTS.md) now asks every session to run `tools/check-change.py`, and later pull requests changed it (#596, #618) |
 | **Retires when** | somebody who did not write it has used the gate on a real task, and F1 has an answer. Its durable half is already moved, so what is left in this note is the audit, the pilot record and §5's admission |

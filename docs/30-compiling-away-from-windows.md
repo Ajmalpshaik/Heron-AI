@@ -28,9 +28,9 @@ python tools/check-compile.py
 ```mermaid
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
-    SRC["<b>Heron's C#</b><br/>add-in · bridge · core<br/>and every fragment"]
-    CC["<b>A cloud container</b> · Linux<br/>dotnet-sdk-10.0 from apt<br/>check-compile.py · check-api-surface.py<br/>the bridge round trip, pipe as a socket"]
-    CI["<b>CI on GitHub</b><br/>gates.yml · ubuntu, .NET 10: every release,<br/>and a SKIPPED one fails the job<br/>windows.yml · the installer, no Revit"]
+    SRC["<b>Heron's C#</b><br/>add-in · bridge · core · installer<br/>and every fragment"]
+    CC["<b>A cloud container</b> · Linux<br/>dotnet-sdk-10.0 from apt<br/>check-compile.py · check-fragments-compile.py<br/>check-api-surface.py<br/>the bridge round trip, pipe as a socket"]
+    CI["<b>CI on GitHub</b><br/>gates.yml · ubuntu, .NET 10: every project<br/>and every fragment, every release -<br/>a SKIPPED one fails the job<br/>windows.yml · the installer, no Revit"]
     PC["<b>The owner's Windows PC</b><br/>with Revit installed"]
     P1{{"Proves the API surface agrees:<br/>it compiles on 2020 through 2027"}}
     P2{{"Proves behaviour: a recorded run<br/>on a named real model · D-30"}}
@@ -62,17 +62,22 @@ flowchart LR
 **Only the red half proves anything about a model.** The container and CI answer one question - does
 every type and member the code names exist in each release - and §3 says why that is the whole of what
 a green compile means. Which CI job runs what is in [`gates.yml`](../.github/workflows/gates.yml) and
-[`windows.yml`](../.github/workflows/windows.yml).
+[`windows.yml`](../.github/workflows/windows.yml). The projects are the list in
+[`brain/heron_dotnet.py`](../brain/heron_dotnet.py) (`PROJECTS`), which `check-compile.py` imports; a
+`.csproj` on disk that neither `PROJECTS` nor `NOT_SHIPPED` names fails the gate before anything is built. A
+fragment's C# is not one of them: [`check-fragments-compile.py`](../tools/check-fragments-compile.py)
+builds each fragment against every release its card claims, in the same CI job.
 
 <details>
 <summary>Same thing as plain text</summary>
 
 ```text
-Heron's C# (add-in, bridge, core, every fragment) builds in three places:
+Heron's C# (add-in, bridge, core, installer, every fragment) builds in three places:
   a cloud container - Linux, dotnet-sdk-10.0 from apt:
-      check-compile.py, check-api-surface.py, the bridge round trip with the pipe as a socket
-  CI on GitHub - gates.yml on ubuntu with .NET 10 compiles every release (a SKIPPED one fails);
-      windows.yml builds the installer on Windows, with no Revit
+      check-compile.py, check-fragments-compile.py, check-api-surface.py,
+      the bridge round trip with the pipe as a socket
+  CI on GitHub - gates.yml on ubuntu with .NET 10 compiles every project and every fragment
+      on every release (a SKIPPED one fails); windows.yml builds the installer on Windows, no Revit
   the owner's Windows PC, with Revit installed
 Container and CI prove: the API surface agrees - "it compiles on 2020 through 2027".
 The Windows PC proves behaviour: a recorded run on a named real model (D-30).
@@ -165,7 +170,9 @@ pointed the same way, so neither corrected the other.
 
 **The script now probes for the targets rather than for an operating system** — it looks for
 `Sdks/Microsoft.NET.Sdk.WindowsDesktop` under each installed SDK — and when they are missing it names
-the package to install rather than printing a bare `SKIPPED`. *"Am I on Windows"* was answering a
+the package to install rather than printing a bare `SKIPPED`. *(The probe has since moved to
+`windows_desktop_toolchain` in [`brain/heron_dotnet.py`](../brain/heron_dotnet.py), which the script
+imports, so the read-only answer and the build cannot disagree.)* *"Am I on Windows"* was answering a
 different question than the one being asked, and answering it confidently is what left a third of the
 supported range with nothing compiling it.
 

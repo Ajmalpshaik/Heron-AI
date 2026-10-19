@@ -19,14 +19,15 @@ that day**:
 > **If you are the owner and you want only what is waiting on YOU, read
 > [`FOR-THE-OWNER.md`](FOR-THE-OWNER.md) and run `python tools/owner-queue.py`.** The page is the
 > structure; the tool is the list, derived from the registers at the moment you ask so that it cannot
-> go stale. It also says what is **safe to use today** — **a proven `READ` fragment cannot modify a
+> go stale. The page also says what is **safe to use today** — **a proven `READ` fragment cannot modify a
 > model**, so those are safe on a live project now. How many there are is derived, not typed: the
 > `PROVEN READ` line of the loop in [`FOR-THE-OWNER.md` §3](FOR-THE-OWNER.md#3-what-you-can-safely-use-today).
 >
 > **For the next stretch as an ordered plan**, open
 > [`work-notes/plans/next-steps-2026-09-12.md`](work-notes/plans/next-steps-2026-09-12.md) — the track
 > you can run on your own machine and the track that continues here without Revit. It is a schedule and
-> it will be deleted when it is spent; **this file stays the authority.**
+> it will be deleted when it is spent — read on 2026-10-18 it is mostly spent, and its own opening says
+> which items are left and which register now holds each; **this file stays the authority.**
 
 - **"Revit is open"** — and say WHICH model, because that now decides what can be proved. Until
   2026-09-06 this line said Revit was "the one thing months of work here have been waiting on", and
@@ -99,30 +100,33 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**State at a glance — 2026-10-18.** Read from the root README's [Status](../README.md#status) and the
-[newest sitting](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md).
-Every row names where its evidence is; where a register row says otherwise, the row wins, and what is
-unfinished is `python tools/check-gaps.py`, never this table.
+**State at a glance — 2026-10-18, late evening.** Read from the root README's [Status](../README.md#status),
+the [newest sitting](handover-archive/2026-10-18-the-safety-rails-met-revit-and-heron-s-data-left-the-store.md)
+and `git log --oneline -15 origin/main`. Every row names where its evidence is; where a register row says
+otherwise, the row wins, and what is unfinished is `python tools/check-gaps.py`, never this table.
 
 | Area | State | Evidence |
 |---|---|---|
 | Phase 0 — the bridge, Steps 1 to 5 | **Proven** in Revit 2020 and 2024 | [§3 below](#3-what-has-been-witnessed-at-a-real-revit) · [00e](00e-field-notes-proven-bridge.md) |
 | Step 6 — the move | **Measured on Revit 2024 only:** +200.0000 mm on three ducts, a pinned one beside them unmoved, one undo. A failure forced mid-move (`G-12`) not run | [Group D](needs-checking/group-d.md) |
 | Keep or Discard, and the rails beside it — try-once, run guard, dialogs, rollback check, run clock, `stop` | **Run in Revit 2024 and 2027** on 2026-10-18, PASS, FAIL and NOT RUN kept apart row by row; the faults are rows 5b-1090 to 5b-1095. Nothing of it on 2020 | [Group ET](needs-checking/group-et.md) and groups EM, EX, EL, EO, EZ, ER, EK, ES, EV, EJ, CP · [section 5b](fragment-issues/section-5b-rows-401-425.md) |
-| The fixes since | **Built, not run in Revit:** rows 5b-1090 to 5b-1094 and 5b-1100. Row 5b-1095 — answers lost when many connect at once — recorded, not fixed | [section 5b](fragment-issues/section-5b-rows-401-425.md) |
-| The Ask to Keep switch | **Built, not run in Revit** — compiled for 2020 to 2027, off by default | [D-138](DECISIONS.md) |
+| The fixes since | **Built, not run in Revit:** rows 5b-1090 to 5b-1094 and 5b-1100, and 5b-1137 ([#666](https://github.com/Ajmalpshaik/Heron-AI/pull/666)) — a change kept in a model never saved now says so on its answer's first line, in the MCP server only. Row 5b-1095 — answers lost when many connect at once — recorded, not fixed | [section 5b](fragment-issues/section-5b-rows-401-425.md) |
+| The Ask to Keep switch | **Built, not run in Revit** — compiled for 2020 to 2027, off by default | [D-138](DECISIONS.md) · [Group HG](needs-checking/group-hg.md) |
+| The documentation, 2026-10-18 | **Docs only, merged:** [#663](https://github.com/Ajmalpshaik/Heron-AI/pull/663), [#664](https://github.com/Ajmalpshaik/Heron-AI/pull/664) and [#665](https://github.com/Ajmalpshaik/Heron-AI/pull/665) brought the README and the docs, with their diagrams, to the day; [#667](https://github.com/Ajmalpshaik/Heron-AI/pull/667) recorded the eight defects that pass found as rows 5b-1129 to 5b-1136, not repaired; [#668](https://github.com/Ajmalpshaik/Heron-AI/pull/668) put a dated *As built* note under every section of the specification, 00 to 00d, that no longer holds. **Open when this was written:** [#669](https://github.com/Ajmalpshaik/Heron-AI/pull/669) — [D-139](DECISIONS.md) corrects the specification's mistakes in place, the original words struck through beside them, and Q-72 to Q-78 put the policy choices no decision settles to the owner | [section 5b](fragment-issues/section-5b-rows-401-425.md) · [OPEN-QUESTIONS](OPEN-QUESTIONS.md) · `python tools/owner-queue.py` |
 | Revit releases | **Loads on 2020, 2024, 2026 and 2027** (2026-10-17). On 2026 no fragment could run; the repair has not been run in Revit | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-401-425.md) · [Group GW](needs-checking/group-gw.md) |
 | The fragment library | Mostly **PROVEN**, the rest **DRAFT** — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` | [D-30](DECISIONS.md) · [FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) |
 | Skills | Every one **DRAFT** — `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` | [`brain/README.md`](../brain/README.md) |
-| The installer | v0.1.0 **published** 2026-10-08, unsigned, for testing; **run** on the owner's laptop on 2026-10-17 and 18 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
+| The installer | v0.1.0 **published** 2026-10-08, unsigned, for testing — [D-91](DECISIONS.md) says a release is signed, and whether a decision should say otherwise until signing is built is [Q-77](open-questions/tier-2.md), open; **run** on the owner's laptop on 2026-10-17 and 18, the installer built locally from `main` each time — EP1 fetched the add-in from v0.1.0 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
 | Heron's data home, and the Companion button | D-135's carry **PASS**; the Companion button **FAIL** — Revit runs with a temporary folder of its own. The fix is built, not run in Revit | [Group HF](needs-checking/group-hf.md) · [row 5b-1100](fragment-issues/section-5b-rows-401-425.md) · [D-136](DECISIONS.md) |
 | Companion, HVAC, fire, loads, sprinklers, families | **Built, not proven** — each page's status line says how far | [40](40-heron-companion.md) to [47](47-sprinkler-layout-from-the-model.md) |
 | The owner's PCs | The office PC is **retired**; the laptop is the only one, and its Claude is the Microsoft Store build | [Group HF](needs-checking/group-hf.md) |
 | Unfinished, and waiting on the owner | Derived, never typed | `python tools/check-gaps.py` · `python tools/owner-queue.py` |
 
-**Next, on the laptop with Revit open:** HF4 again (the Companion button) and the Ask to Keep switch;
-then `G-12`, and [A16b](needs-checking/group-a.md) — the rollback that reported success and kept a
-rename — which nothing since has re-run.
+**Next, on the laptop with Revit open:** HF4 again (the Companion button) and the Ask to Keep switch
+([Group HG](needs-checking/group-hg.md)); then `G-12`, and [A16b](needs-checking/group-a.md) — the
+rollback that reported success and kept a rename — which nothing since has re-run. **Next, without
+Revit:** the owner's answers to the open questions, Q-72 to Q-78 among them — the `A DECISION` bucket of
+`python tools/owner-queue.py`.
 
 > **The dated notes in this block stop at 2026-09-27.** Everything since — the HVAC loads and
 > sprinkler work, the family-editing fragments, the project-location setters, and the safety rails
@@ -575,16 +579,19 @@ that carried meaning.
 [docs/30](30-compiling-away-from-windows.md)):
 
 ```bash
-python tools/check-compile.py                  # Revit 2020-2027, all four projects, 0 warnings
+python tools/check-compile.py                  # Revit 2020-2027, every C# project (PROJECTS in brain/heron_dotnet.py)
 
-dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net8.0 \
-    -p:OutputPath=bin/x64/Debug-net8.0/
+dotnet build tests/Heron.Bridge.TestHost -p:RevitVersion=2024 -p:HeronTfm=net10.0 \
+    -p:OutputPath=bin/x64/Debug-net10.0/
 python tests/test_bridge_roundtrip.py          # the whole lease, end to end
 ```
 
 The first needs the .NET SDK, which Linux distributions package — Microsoft's CDN is often blocked from a
 container and that is the wall earlier sessions hit. The second runs because `Heron.Bridge` has no Revit
-reference, so it compiles for `net8.0` and .NET implements named pipes on Unix as a socket.
+reference, so it compiles for a plain .NET runtime and .NET implements named pipes on Unix as a socket.
+**The `net10.0` above is for a machine whose newest .NET runtime is 10:** the suite builds against the
+newest runtime the machine has (`_posix_tfm` in `tests/test_bridge_roundtrip.py`) and prints the exact
+line when the host is missing, so run what it prints. This block said `net8.0` until 2026-10-18.
 
 > **Both extra arguments above were added on 2026-08-30, after following this section verbatim failed
 > twice.** Neither failure was a defect, and neither announced itself as an environment problem:
@@ -599,7 +606,9 @@ reference, so it compiles for `net8.0` and .NET implements named pipes on Unix a
 >   the test reported as *"host never reported a pipe name"*, the symptom of every possible cause. Fix
 >   with `apt-get install -y dotnet-runtime-8.0`, or `DOTNET_ROLL_FORWARD=Major`. **The test now names
 >   this case itself** rather than blaming the transport. Also worth knowing: the first
->   `apt-get install` 404s on a stale index — run `apt-get update` first.
+>   `apt-get install` 404s on a stale index — run `apt-get update` first. *Since 2026-09-02 the suite
+>   builds against the newest runtime the machine has, so this second trap no longer applies — see
+>   the paragraph above this note.*
 
 **What that still does not cover is the Windows named pipe itself** — its naming, its security
 descriptor, and the `CreateNewInstance` flag in note 2 of [§4](#4-the-things-that-will-bite-you). `A4`
@@ -682,8 +691,10 @@ powershell -ExecutionPolicy Bypass -File tools\setup.ps1
 ```
 
 It checks Python first, detects installed Revit versions, refuses only the ones that are **open**, and
-deploys per-user with no administrator rights. Then start Revit → **Heron AI** tab → **Heron** (click to
-connect, again to disconnect), and:
+deploys per-user with no administrator rights. **It is the route from a `git clone` only.** A Heron that
+was downloaded — a release, or a zip from a browser — is installed with `HeronInstaller.exe` and nothing
+else ([D-96](DECISIONS.md)): PowerShell's usual `RemoteSigned` setting refuses a downloaded script that is not signed, before Revit is involved.
+Then start Revit → **Heron AI** tab → **Heron** (click to connect, again to disconnect), and:
 
 ```bash
 python mcp/client/heron_bridge_client.py ping
@@ -795,8 +806,10 @@ layout that Revit refuses part of should place the rest or roll back entirely. [
 **Two things were answered by NOT answering them**, and both are publication tasks rather than gaps:
 [Q-38](OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in
 [D-38](DECISIONS.md). Both need **current documentation read at the time**, and writing either from
-memory is the failure this repository has already had twice. `tools\setup.ps1` is the proven route
-meanwhile.
+memory is the failure this repository has already had twice. Meanwhile a downloaded Heron is installed
+with `HeronInstaller.exe`, at the top of the v0.1.0 release's `heron-project.zip` since 2026-10-08
+([D-96](DECISIONS.md), [Group AC](needs-checking/group-ac.md)); `tools\setup.ps1` stays the route from a
+`git clone`.
 
 ---
 
@@ -810,13 +823,14 @@ meanwhile.
 **Step 6 is built. Phase 2 is built. Do not build either again.** All seven items the build order asks
 of Step 6 are in the repository, and so is everything an audit turned up afterwards: the lease, the
 Failure Analysis Agent, the tool registry, the configuration and health agents. Steps 7 to 14 are all on
-disk with a test each. 59 agent ids are claimed by code and every one exists in the registry.
+disk with a test each. How many agent ids the code claims, and whether every one is in the registry, is
+`python tools/agent-count.py` — this line said *"59"* from Phase 2 until 2026-10-18.
 
-**`python tools/check-gaps.py` is what says this, rather than this paragraph.** Run it first. It now
-reports **nothing** unfinished — the brain was reachable from nothing on the morning of 2026-08-29 and
-was wired up the same day — and everything else it lists is **waiting on a machine or on a
-conversation** —
-which is not the same as being finished, and the tool is careful to say so in its own closing line:
+**`python tools/check-gaps.py` is what says this, rather than this paragraph.** Run it first and read
+its two buckets: **UNFINISHED** is work that could be done where you are; **WAITING** is waiting on a
+machine, a dependency or a conversation — the brain, unreachable from anything on the morning of
+2026-08-29, was wired up the same day and is checked there since. Waiting is not the same as being
+finished, and the tool is careful to say so in its own closing line:
 *"waiting is not failing — but a waiting item is still UNPROVEN, and no number of days spent waiting
 makes `D3` any more true."*
 
@@ -839,7 +853,7 @@ consequence became visible, which is exactly what a read-back is for.
 [docs/30](30-compiling-away-from-windows.md) for how, in one command:
 
 ```bash
-python tools/check-compile.py     # 2020-2027, all four projects, no Windows and no Revit needed
+python tools/check-compile.py     # 2020-2027, every C# project, no Windows and no Revit needed
 ```
 
 **It found the thing it was built to find, on its first run.** `RevitWrite.DocumentKey()` used
@@ -894,13 +908,16 @@ this section named as mattering most:
 
 ### Record what you prove, as you prove it
 
-`tests/golden/cases.py` is the permanent record — 17 cases, each with what to do and what PASS looks
+`tests/golden/cases.py` is the permanent record — each case with what to do and what PASS looks
 like. When you prove one, set its `status` to `PROVEN`, the date, the Revit versions, and stamp its
 `fingerprint` (run `python tests/test_golden.py --stamp` to see the value; it prints and writes nothing,
 because a fingerprint is a claim that a person watched it work).
 
-That is what makes the next regression findable. All seven Phase 0 proofs currently read **STALE** —
-proven against a build that no longer exists — and that is the library doing its job, not a fault.
+That is what makes the next regression findable. `python tests/test_golden.py` prints how many cases
+there are, how many are recorded as proven, how many of those read **STALE** — proven against a build
+that no longer exists — and how many have never met Revit. Run on 2026-10-18 it said every recorded proof
+was STALE; that is the library doing its job, not a fault. This paragraph said *"17 cases"* and *"all
+seven Phase 0 proofs"* until that day.
 
 ### Three things that are not in the register
 
@@ -1240,26 +1257,27 @@ not 379.
 - **A scanner that scans itself finds itself.** `check-gaps.py` reported its own regex as two undeclared
   agents on its first run. Funny once; worth remembering as the general shape — a tool that reads the
   repository is part of the repository.
-- Commits are authored **Ajmal PS**. The repo is **private**.
+- Commits are authored **Ajmal PS**. The repo is **public** — so the work is open, not yet to be
+  installed, as the root [README](../README.md) says at its top. This line said *private* until
+  2026-10-18, while [§1](#1-where-the-project-stands) said public.
 
 ---
 
-*Phase 0 is finished and proven. Step 6 and the whole of Phase 2 are finished and proven of nothing —
-built carefully, obeying rules that are now binding, tested where testing was possible, and compiled on
-every release from 2020 to 2027. **Every fragment and all ten skills** sit at `DRAFT`, which is not a shortcut
-but [D-30](DECISIONS.md) being obeyed: promotion needs one proof containing a negative case, and a
-negative case needs a model. `python tools/check-gaps.py` is now the file that answers "what is left",
-because it is computed from disk and this one is not — and where they disagree, believe the tool. It
-currently says **nothing** here is unfinished and **55 are waiting: 49 on a Revit — `A9`, the uncompiled
-batch, among them — plus the unproven fragments as one further item, 3 on Windows, 1 on a network that
-can reach the weights host, and 1 on the owner.** Re-derive that from the tool rather than editing the
-digits — a total that disagrees with its own breakdown is the cheapest drift there is to catch, and it
-has survived here before.
+*Phase 0 is finished and proven. Step 6's move was measured in Revit 2024 on 2026-10-17 — `D1` to `D6`,
++200.0000 mm and one undo — and the Keep or Discard box and the rails beside it were run in 2024 and 2027
+on 2026-10-18. Phase 2 is built: most fragments are `PROVEN` and every skill is `DRAFT`, which is
+[D-30](DECISIONS.md) being obeyed — promotion needs one proof containing a negative case, and a negative
+case needs a model. Derive both splits with the `grep` in [§1](#1-where-the-project-stands).
+`python tools/check-gaps.py` is the file that answers "what is left", because it is computed from disk and
+this one is not — and where they disagree, believe the tool. **This paragraph used to type the tool's
+answer** — *"55 are waiting: 49 on a Revit"*, and *"every fragment and all ten skills sit at `DRAFT`"* —
+in Phase 2, and both were long stale by 2026-10-18. Read the tool's buckets instead of any digits here.
 Almost nothing in this repository is waiting on another session; it is waiting on a machine — and **four
 times now**, something believed to be waiting on a machine was waiting on somebody trying it. The
 newest was `A8`, filed under *needs Windows* when what it needed was `pip install mcp` — and trying it
-found that Heron's MCP server would not have started at all on a machine installing today. `D3` is
-still the line that matters most: move the ducts 200 mm, then measure one.*
+found that Heron's MCP server would not have started at all on a machine installing today. `D3` was the
+line that mattered most, and a tape measure has answered it once; the move has still met no release but
+2024, no duct joined to a fitting, and no failure forced mid-move (`G-12`).*
 
 ---
 

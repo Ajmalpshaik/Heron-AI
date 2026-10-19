@@ -216,6 +216,12 @@ _KNOWN = {
     "awaiting_modeller": (RUNNING, WAIT,
                           "Revit is still waiting for the modeller to choose Keep or "
                           "Discard - whatever they press stands"),
+    # D-142: the delete box is still open, and it decides nothing any more -
+    # a Delete pressed after Heron stopped waiting deletes nothing.
+    "awaiting_delete_answer": (RUNNING, WAIT,
+                          "Revit is still showing the modeller the box asking whether to "
+                          "delete these, and Heron stopped waiting - nothing is deleted now, "
+                          "whatever they press"),
     "move_failed":       (ROLLED_BACK, FIX_FIRST,
                           "it ran, failed, and was rolled back completely"),
     "operation_failed":  (ROLLED_BACK, FIX_FIRST,
@@ -281,6 +287,29 @@ _KNOWN = {
     "ask_needs_saved_model": (REFUSED, FIX_FIRST,
                           "the model has never been saved or has unsaved changes, and a "
                           "never-proved tool runs only on a saved model - nothing ran"),
+
+    # --- D-142: the delete box, asked for any kept change that deletes. The
+    # first run is rolled back before the box goes up, so each of these knows
+    # what happened to the model - save the last, which is why it is UNKNOWN.
+    "delete_declined":   (ROLLED_BACK, STOP,
+                          "the modeller was asked in Revit whether to delete these and said "
+                          "no, or closed the box - nothing was deleted, and it is their "
+                          "answer, never a fault to retry"),
+    "delete_too_late":   (ROLLED_BACK, STOP,
+                          "the delete box was answered after Heron had stopped waiting, or "
+                          "could not be shown in time - nothing was deleted"),
+    "delete_set_changed": (ROLLED_BACK, START_OVER,
+                          "the second run would have deleted a different set than the one "
+                          "the modeller was shown - nothing was deleted"),
+    "delete_not_measured": (ROLLED_BACK, STOP,
+                          "it deleted something Revit's own report did not reach Heron for, "
+                          "so it could not be shown first - nothing was kept"),
+    "delete_in_publish": (ROLLED_BACK, STOP,
+                          "an export, save or sync that also deletes elements cannot be shown "
+                          "first without sending it out twice - nothing was kept in the model"),
+    "delete_not_shown":  (UNKNOWN, LOOK_AT_THE_MODEL,
+                          "the run that counted what it deletes could not be confirmed rolled "
+                          "back, so the model may still be without those elements"),
 
     # --- the chain: what an earlier fragment left, or did not ---------------
     "chain_empty":       (REFUSED, FIX_FIRST,

@@ -1,5 +1,6 @@
 <!--
-Thank you for looking at Heron. The README asks for exactly this.
+Thank you for looking at Heron. CONTRIBUTING.md has the process, and the
+four checks below are the ones it asks for.
 
 Fill in what applies and delete what does not. A one-line fix does not need
 a long description - but it does need the last section.
@@ -26,7 +27,9 @@ more than a tick nobody verified.
 - [ ] `python tools/check-docs.py`
 - [ ] `python tools/check-metadata.py`
 - [ ] `python tools/check-structure.py`
-- [ ] The test suites — `for t in tests/test_*.py; do python "$t"; done`
+- [ ] `python tools/check-package.py`
+- [ ] `git diff --check`
+- [ ] The test suites — `python tools/check-gaps.py` runs every one, and keeps a suite that could not run (exit 3) apart from one that failed
 - [ ] Ran against a real Revit model (say which release, and which model)
 - [ ] Not checked — and here is why:
 

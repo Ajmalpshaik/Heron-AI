@@ -81,8 +81,10 @@ modified — whether undo restored it correctly. That last one matters more than
 ### Documentation
 
 Corrections and clarifications are always welcome. Note that
-[docs/00-master-specification.md](docs/00-master-specification.md) is a **historical record** and is not
-edited to "fix" it — changes to intent are recorded as decisions instead.
+[docs/00-master-specification.md](docs/00-master-specification.md) and the other three parts of the
+specification are a **historical record**. Since [D-139](docs/DECISIONS.md) a word in them is corrected
+in place only when it is wrong as a fact or an accepted decision already settled it, with the original
+words kept beside the correction; a change to intent is still recorded as a decision first.
 
 ---
 
@@ -213,16 +215,16 @@ counting this table:
 |---|---|---|
 | `check-docs` | A broken link; a stated count that disagrees with the derived one; a file in `tools/` or a skill folder its README never names; a control character, double-encoded text or a merge-conflict marker | No |
 | `check-metadata` | A missing or malformed five-field header, and an agent id the registry does not know | No |
-| `check-structure` | A layering violation, and the Revit vendor namespace anywhere but `revit/` and `tools/` ([D-48](docs/DECISIONS.md)) — a comment counts | No |
+| `check-structure` | A layering violation, and the Revit vendor namespace anywhere but `revit/` and `tools/` — a comment counts. `tools/` is exempt because a script talks about the code rather than being it ([D-69](docs/DECISIONS.md)) | No |
 | `check-package` | `Heron.addin` naming an entry class or assembly that does not exist, or a `<ManifestSettings>` element, which crashes Revit 2025 and older | No |
-| `check-signatures` | A proof whose code moved under it | **PyYAML** — it reads every `fragment.yaml` (CI installs it first) |
+| `check-signatures` | A fragment somebody signed that still sits at `DRAFT` — a signature going unused. A proof whose code moved under it is reported and does not fail | **PyYAML** — it reads every `fragment.yaml` (CI installs it first) |
 | `check-licence` | A licence header, and what may not be redistributed | No |
 | `check-narrow-errors` | An `sqlite3.OperationalError` handler that swallows a fault without narrowing first ([D-52](docs/DECISIONS.md)) | No |
 | `check-secrets` | A credential shape in a tracked file, or a tracked file whose name the Secrets block of `.gitignore` refuses ([D-143](docs/DECISIONS.md)) | **git** - it asks git which files are tracked |
 | `check-products` | In `platform/heron-products.json`: a duplicate `addInId`, a `partOf` typo, a stale Revit list | No |
 | `check-decision-titles` | A decision number that stopped meaning its decision | **The whole git history** — `git fetch --unshallow` in a shallow clone, or it exits 2 |
-| `check-routing` | A capability no longer reachable, and a routing row naming a capability no fragment declares | **A knowledge store** — an empty folder named by `HERON_KNOWLEDGE`, or it exits 2 — and PyYAML |
-| `check-intrusion` | One fragment crowding out another | **A knowledge store**, the same way, and PyYAML |
+| `check-routing` | A routing row naming a capability no fragment declares — exit 1. A fragment outranked for its own words is reported and exits 0 | **A knowledge store** — an empty folder named by `HERON_KNOWLEDGE`, or it exits 2 — and PyYAML. `--targets` gives the failing half alone, with no store |
+| `check-intrusion` | One fragment crowding out another — reported, exit 0; it turns red only when it cannot run | **A knowledge store**, the same way, and PyYAML |
 
 ---
 

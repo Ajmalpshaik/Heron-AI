@@ -314,7 +314,8 @@ Rules:
 > named `Heron: <name>` and assimilates it only when the change is kept
 > ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)). A fragment that must work in one
 > of Revit's edit modes opens its own transactions inside that group
-> ([D-112](DECISIONS.md#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group)).
+> ([D-112](DECISIONS.md#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group),
+> still **Proposed**: the code does it, and the owner has not yet accepted the decision).
 > Before the group is kept, Revit may ask the modeller Keep or Discard (§10). A change kept without the
 > box, under D-138's grant, is still its own group and its own undo entry.
 

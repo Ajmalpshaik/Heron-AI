@@ -40,7 +40,8 @@ builds starts DRAFT ([D-30](DECISIONS.md)).
 > ([group AQ](needs-checking/group-aq.md)), and `revit_change` - whose body Finalize runs - keeps a change
 > only from a PROVEN fragment since [D-117](decisions/D-117.md). Called in a cloud container, it refused
 > both before anything was sent. Reading, calculating, the take-off check and the report are untouched
-> ([40 §21.9](40-heron-companion.md)).
+> ([40 §21.9](40-heron-companion.md)). Recorded as
+> [row 5b-1129](fragment-issues/section-5b-rows-401-425.md), open; the repair is the two proofs.
 
 **In Revit words.** Today Heron can work out one room's cooling load if you type in its walls and windows.
 This feature lets Heron *read* every Space in the model - its floor, its outside walls and which way they
@@ -63,7 +64,7 @@ flowchart TD
     LP["<b>Companion · Loads panel</b><br/>Recalculate · 3D view<br/>The take-off is right"]
     RP["<b>heron_loads_report</b><br/>the sheet: HTML · CSV<br/>PDF by Edge or Chrome"]
     FN["<b>Finalize</b> · MODIFY<br/>reads the model again<br/>refuses if it moved"]
-    RC["<b>revit_change's own body</b><br/>SET_PARAMETER_VALUES_BY_ID<br/>SET_AIR_TERMINAL_FLOW"]
+    RC["<b>revit_change's own body</b><br/>SET_PARAMETER_VALUES_BY_ID<br/>SET_AIR_TERMINAL_FLOW<br/><i>both DRAFT - refused today · D-117</i>"]
 
     U ==>|revit_building_loads| RD
     SP ==> RD
@@ -110,6 +111,7 @@ Companion - Loads panel  Recalculate, 3D view, The take-off is right
    |-- Report    ->  heron_loads_report: HTML, CSV, a PDF by Edge or Chrome
    |-- Finalize  (MODIFY, Changes on)  reads the model again, refuses if it moved
                      ->  revit_change's own body: SET_PARAMETER_VALUES_BY_ID, then SET_AIR_TERMINAL_FLOW
+                         (both DRAFT, so refused today - D-117)
                      ->  the Spaces' loads and airflow, the diffusers' flows - back in Revit
 ```
 
@@ -251,11 +253,15 @@ it (§7).
    ▼  5 REVIEW  in the Companion "Loads" panel
  inputs editable, results beside them; Recalculate; what-if
    │
-   ▼  6 REPORT  PDF + take-off CSV, written to the project folder
+   ▼  6 REPORT  PDF + take-off CSV, written to the folder he picks
    │
-   ▼  7 FINALIZE  (his click - gate 2; MODIFY, one undo entry)
+   ▼  7 FINALIZE  (his click - gate 2; MODIFY)
  Spaces get their loads and airflows; diffusers get their share of the flow
 ```
+
+*As built (2026-10-18):* step 6 asks where (§12.7) rather than writing beside the model; step 7 is one
+or two undo entries, not one ([row 5b-314](fragment-issues/section-5b-rows-301-325.md), open), and is
+refused today (the status at the top).
 
 ---
 
@@ -695,7 +701,10 @@ counted whole, as Revit gives its size, and one larger than its face still refus
 
 **Left as they are:** 5b-331 (air films, people rounded to whole persons) is the owner's decision;
 5b-334 (`PLACE_FAMILY_INSTANCES`) and the `levelOf` half of 5b-335 (`FILTER_ELEMENTS_BY_CATEGORY`) are
-another task's - Finalize no longer depends on either. **Known limits, recorded in row 5b-330:** a panel
+another task's - Finalize no longer depends on either. *As built (2026-10-18), from the rows' own status:
+both were fixed and signed PROVEN on 2026-10-06 - `PLACE_FAMILY_INSTANCES` version 2 and
+`FILTER_ELEMENTS_BY_CATEGORY` version 3 (#429); 5b-335's Finalize half is not yet run in Revit, and
+5b-331 is still the owner's.* **Known limits, recorded in row 5b-330:** a panel
 whose middle lies on no Space's face is counted on none; a solid (spandrel) curtain panel is read as a
 curtain panel, so as glass (read in the code, not run on a model).
 

@@ -25,7 +25,7 @@ KEPT in the scratch family: `A, D` deleted, and REPORT_FAMILY_PARAMETERS read ba
 
 | # | Check | Expected |
 |---|---|---|
-| **BY1** | The owner signs the recorded run - `python brain/heron_validate.py accept delete-family-parameters --by "Ajmal PS"` in this worktree | The proof block written; the card promoted to PROVEN - **DONE 2026-10-04**, signed by Ajmal PS, fingerprint `6228dbeedea3a82a` |
+| ~~**BY1**~~ | The owner signs the recorded run - `python brain/heron_validate.py accept delete-family-parameters --by "Ajmal PS"` in this worktree | The proof block written; the card promoted to PROVEN - **DONE 2026-10-04**, signed by Ajmal PS, fingerprint `6228dbeedea3a82a` - **Struck 2026-10-18:** done 2026-10-04, as it says. Version 2 was signed over it on 2026-10-07 ([Group CQ](group-cq.md), CQ6). |
 | **BY2** | The second route: the same family by hand, Family Types, the same parameter, Delete Parameter | Revit's dialog agrees with what this deleted or refused |
 | **BY3** | A parameter linked to a form field (Extrusion End, Visible or Material), to a nested family's parameter, and to a connector's size | Each refused naming the link - only the formula and label refusals have been seen in Revit |
 | **BY4** | The same on Revit 2020 | Same answers - every call it makes reads the same 2020 to 2027, but no older Revit has run it |

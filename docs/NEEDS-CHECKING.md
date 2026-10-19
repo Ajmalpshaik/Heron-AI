@@ -7,7 +7,7 @@
 > | **Authority** | A row here **outranks any claim that something works**. Green is not proven — [D-30](DECISIONS.md) |
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
 > | **Adding to it** | A row names the **command**, the **machine it needs**, and what **pass looks like** — including what a FAIL would prove, which is worth the same. **Its ID is bold, and used once in the register** — this page and every group's file — look for the letters in every form, bold, backticks and plain, before a new group takes them: `python tools/needs-checking-register.py | grep` searches all of it. **A results table names the row's ID in plain text, and a row that passed is struck at both ends** — the three readers of the register count by the bold ID, so anything else is a check the owner's queue cannot see, sees twice, or shows him again after it passed. FRAGMENT-ISSUES row 5b-156 |
-> | **Its numbers** | **Do not read the stated totals as today's.** Derive the Group A ids: `grep -oE '\*\*A[0-9]+\*\*|~~\*\*A[0-9]+\*\*~~' docs/needs-checking/group-a.md | grep -oE 'A[0-9]+' | sort -uV` |
+> | **Its numbers** | **Do not read the stated totals as today's.** Derive the Group A ids: `grep -oE '\*\*A[0-9]+[a-z]?\*\*|~~\*\*A[0-9]+[a-z]?\*\*~~' docs/needs-checking/group-a.md | grep -oE 'A[0-9]+[a-z]?' | sort -uV` - until 2026-10-18 it read `A[0-9]+`, which cannot see `A16b`: the `R1b` lesson below, again |
 > | **Where each group lives** | Since 2026-09-23 **each group is its own file**, `needs-checking/group-x.md` — [Group A's](needs-checking/group-a.md), for one — and this page keeps the rules and, where each group was, its heading and a line naming its file. **A new row goes in its group's file.** A new group is written here in full, as always, and `python tools/split-needs-checking.py --write` moves it into its own file - write its links relative to `docs/`, and after the split put back any other group file it rewrote, which it can ([row 5b-363](fragment-issues/section-5b-rows-351-375.md)). Every tool reads this page and its groups as ONE text, exactly as it read the single file: `python tools/needs-checking-register.py` prints it |
 > | **Done checks** | A row whose ID is struck through at both ends keeps its line in the register — the struck ID, a title, the opening of its result — and its full text moves to [`needs-checking-archive/`](needs-checking-archive/README.md). **Nothing is deleted, and a struck row that says something is still owed stays in full.** `python tools/archive-needs-checking.py` says what would move |
 
@@ -53,8 +53,11 @@ and read rather than the total trusted. **Do not read those three numbers as tod
 Group A ids instead, which is the half that keeps moving:
 
 ```bash
-grep -oE '\*\*A[0-9]+\*\*|~~\*\*A[0-9]+\*\*~~' docs/needs-checking/group-a.md | grep -oE 'A[0-9]+' | sort -uV
+grep -oE '\*\*A[0-9]+[a-z]?\*\*|~~\*\*A[0-9]+[a-z]?\*\*~~' docs/needs-checking/group-a.md | grep -oE 'A[0-9]+[a-z]?' | sort -uV
 ```
+
+*2026-10-18: the pattern above read `A[0-9]+` until today and printed no `A16b` - the row ID with a letter on
+the end, which is the `R1b` drift recorded further down this page. `[a-z]?` is what lets it see one.*
 
 **This sentence said "Two rows have been added since that recount: `A10` and `A11`" until 2026-09-12,
 and by then it was SIX** — `A12` and `A13` (the deploy and the upgrade), `A14` (the Windows suite
@@ -133,6 +136,32 @@ this section were visible in the list and invisible in the number.
 copy, because two lists of the same thing drift and this repository has been bitten by that more than
 once.
 
+**The register at a glance** - one text in many files, and the life of one row. Every tool reads this page
+and its group files back as one text; a row's bold ID is what each of them counts.
+
+```mermaid
+flowchart LR
+  IDX["NEEDS-CHECKING.md<br/>the rules, one heading per group"] --> RD["tools/needs-checking-register.py<br/>reads them back as one text"]
+  GRP["needs-checking/group-x.md<br/>each group's rows"] --> RD
+  RD --> OQ["owner-queue.py<br/>what waits on the owner"]
+  RD --> CG["check-gaps.py<br/>WAITING bucket"]
+  RD --> BW["balance-of-work.py"]
+  RD --> CD["check-docs.py"]
+  RD --> AR["archive-needs-checking.py"]
+```
+
+```mermaid
+flowchart LR
+  W["Row written<br/>bold ID - open"] --> R{"Run on the machine<br/>the row names"}
+  R -- PASS --> S["ID struck at both ends<br/>dated, evidence named"]
+  R -- "FAIL or part" --> O["Result written in the row<br/>ID stays open"]
+  O --> R
+  W -- "retired or superseded" --> C["ID struck as CLOSED<br/>not passed"]
+  S --> A["archive-needs-checking.py<br/>moves the full text to the archive"]
+  C --> A
+  A -. "says something is still owed" .-> K["kept here in full"]
+```
+
 **Unproven FRAGMENTS are the one thing that does not get rows here** — for that same reason, not as an
 exception to it. Every fragment carries its own `heron-status` and its own proof, and
 `python brain/heron_fragment.py` lists them with what each still owes. Copying that list into this file
@@ -155,6 +184,10 @@ letter order; `check-docs` fails on a group file the index no longer names. The 
 
 **Delete an item only when it has passed** — not when it has been read, and not when the code looks
 right. Add an item every time something is built away from Revit.
+
+> **2026-10-18: read *delete* as *strike*.** This line is older than the register's own rules at the top
+> of this page: an item that passed is struck at both ends and keeps its line, its full text moves to
+> [`needs-checking-archive/`](needs-checking-archive/README.md), and **nothing is deleted**.
 
 > **A failure here is expected and is not bad news.** Code that no compiler has read almost never
 > builds first go. Each item names one thing to look at so a failure is a five-minute fix rather than
@@ -842,6 +875,10 @@ Step 6 is finished, and not before. At that point:
 ## Group HK - one model, one chat at a time, and Free this model: D-141 (2026-10-18)
 
 **Its own file:** [`needs-checking/group-hk.md`](needs-checking/group-hk.md)
+
+## Group HL - anything a kept change deletes is asked in Revit first: D-142 (2026-10-18)
+
+**Its own file:** [`needs-checking/group-hl.md`](needs-checking/group-hl.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

@@ -16,13 +16,14 @@ than the change.**
 
 Adapted from `garrytan/gstack`'s `ship` ([33 §5.7](../../../docs/33-external-repository-research.md)),
 which does the same job for a web product: merge the base branch, run the tests, review the diff, bump
-the version. **Heron's version is different because Heron's failures are different** — six of its checks
-need a compiler or a knowledge store this container has not got, and four of its suites cannot run here
-at all. Confusing any of those for a regression is the mistake this file prevents.
+the version. **Heron's version is different because Heron's failures are different** — some of its
+checks need a compiler, a knowledge store or the whole git history that a container may not have (§5),
+and some of its suites cannot run without an optional install (§2). Confusing any of those for a
+regression is the mistake this file prevents.
 
-Every number here was **measured on 2026-09-12**, not estimated. The previous set was measured on
-2026-09-09 and four of them had gone stale by the time anyone read them again — which is why the counts
-below are commands wherever a command can produce them.
+Every number here was **measured, not estimated**, and says the day it was measured. The set measured on
+2026-09-09 had four gone stale by the time anyone read them again — which is why the counts below are
+commands wherever a command can produce them.
 
 **And it happened a third time, to this file, while that sentence was sitting in it.** On 2026-09-17
 two of the counts below still read **163 suites** against a real 199, and one said **three** suites
@@ -107,7 +108,7 @@ commands under `bash -e` — so a non-zero exit from **any** of them turns the P
 are four of the twelve. The other eight are:
 
 ```bash
-python tools/check-signatures.py       # a proof whose code moved under it
+python tools/check-signatures.py       # a signature left unused - signed, still DRAFT (a stale proof is only reported)
 python tools/check-licence.py          # a licence header, and what may not be redistributed
 python tools/check-narrow-errors.py    # an sqlite3.OperationalError handler that swallows without narrowing (D-52)
 python tools/check-secrets.py          # a credential shape in a tracked file, or a tracked file .gitignore's Secrets block refuses (D-143)
@@ -170,20 +171,31 @@ Derive the number — `ls tests/test_*.py | wc -l`. Do not read a pass total her
 that the failures **do not share a reason**, because a lump total is how a real regression hides.
 
 **Some cannot run in full without an optional dependency, and they prove nothing either way.**
-**TWO INSTALLS COVER ALL OF THEM**, and that is the part worth remembering rather than the list:
+**TWO INSTALLS COVER ALL BUT ONE OF THEM**, and that is the part worth remembering rather than the list:
 
 | needs | |
 |---|---|
 | the **MCP SDK** | `pip install --user mcp` |
-| a **.NET SDK** | `apt-get update && apt-get install -y dotnet-sdk-10.0` |
+| a **.NET SDK** | `apt-get update && apt-get install -y dotnet-sdk-10.0` - then `test_bridge_roundtrip.py` wants one build of its test host, and its own message prints the command |
+
+**The one is `test_routing_phrases.py`, and it waits here on purpose.** It asks its sentences of the
+trained embedding the owner's PC ranks with (model2vec), and exits 3 anywhere else - CI lists it as not
+runnable for that reason. Leave it to that PC, or to a venv of its own (§3a): model2vec in the system
+Python would put every other suite on a backend CI does not use. Measured 2026-10-18 in a container with
+both installs above: this one and `test_bridge_roundtrip.py`, its host not yet built, were the only
+suites waiting.
 
 **Derive which ones, rather than reading a list here** — the same rule as the suite total four lines
 up, and for the same reason it is written twice:
 
 ```bash
-grep -l 'COULD_NOT_RUN\|exit(3)' tests/test_*.py    # the suites that CAN say "could not run"
 for t in tests/test_*.py; do python "$t" >/dev/null 2>&1; [ $? -eq 3 ] && echo "waiting $t"; done
+python brain/heron_unit_test.py     # the sweep CI runs: every suite WAITING here, and why
 ```
+
+No search of the suites' text answers this - they say *"could not run"* through `COULD_NOT_RUN`,
+`SKIPPED`, `NO_SDK` and a bare `return 3`, so a grep for any one spelling misses most of them. The run
+is the answer.
 
 **They exit 3, not 1**, so `check-gaps.py` reports them as waiting rather than failing.
 
@@ -209,8 +221,9 @@ said the old name until 2026-09-21.)
 
 **Install them rather than excusing them.** On 2026-09-15 a session treated all three as unavoidable
 on Linux for weeks. They are not: the commands above take a few minutes on a fresh container and
-**every suite then passes**. None of them ever needed Windows or Revit. If a run reports only the four
-in that table, the honest next step is to install and re-run, not to write "the known three".
+**every suite but `test_routing_phrases.py` then passes**. None of them ever needed Windows or Revit. If
+a run reports suites waiting on those two installs, the honest next step is to install and re-run, not
+to write "the known three".
 
 > **This paragraph said "all 163 suites then pass" until 2026-09-17, when there were 199.** Measured
 > 2026-09-12 and left to rot for five days while thirty-six suites were added. The rule it broke is
@@ -224,15 +237,15 @@ Two wrinkles worth not re-discovering:
 
 * `pip install --user mcp` alone leaves the SDK importable but **panicking** on some images —
   `pyo3_runtime.PanicException` out of the distro's `cryptography`. `pip install --user --upgrade
-  cryptography` fixes it.
+  cryptography cffi` fixes it (§4).
 * The .NET SDK is an apt package (`dotnet-sdk-8.0`), but 2025–2027 need the **WindowsDesktop targets**
   that only `dotnet-sdk-10.0` carries — `tools/check-compile.py` says so itself when it skips them, and
   a skip is not a pass. Run `apt-get update` first; a stale index 404s on the .deb.
 
 **This is about your machine, not about CI.** `.github/workflows/gates.yml` leaves both out on
 purpose — they drag in native dependencies that break for reasons unrelated to this repository — and
-its `fixed` check **fails the build if a listed suite passes there**. So install locally, run every
-suite, and leave that list alone unless the runner itself changes.
+its tests job **fails the build if a suite on its not-runnable list runs there after all**. So install
+locally, run every suite, and leave that list alone unless the runner itself changes.
 
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository
@@ -242,8 +255,9 @@ and the two were removed from it in the same change.
 **On Windows the list was WRONG until 2026-09-12, and silently.** `test_context.py` also failed there,
 on one check, because it compared a source path against a hardcoded `/` while the value arrives
 spelled `brain\fragments\...`. Nothing named it, so the machine showed three failures where this file
-promised two. Fixed at the comparison — but **fixed on Linux, where the defect cannot appear**, so if
-you are on Windows this is the first run that proves it: [NEEDS-CHECKING](../../../docs/NEEDS-CHECKING.md) **A14**.
+promised two. Fixed at the comparison — **on Linux, where the defect cannot appear** — and proved on the
+owner's Windows PC on 2026-09-22, when every suite on disk exited 0 with its output redirected:
+[NEEDS-CHECKING](../../../docs/NEEDS-CHECKING.md) **A14**, done.
 
 **A failure that is NOT one of the waiting ones is probably yours — check this section first, then say
 so either way.** A suite that exits **3** is waiting on a dependency; one that exits **1** is a
@@ -379,17 +393,20 @@ python tools/hook-report.py        # how often each hook in .claude/settings.jso
 
 **The hooks are not on this page's list of things to run, because nobody runs them** — since
 2026-09-23 [`.claude/settings.json`](../../settings.json) runs [`heron-guard`](../heron-guard/SKILL.md)
-before every edit and [`heron-session`](../heron-session/SKILL.md) at every session start and before a
-merge or a "ready". If the session-start line says the branch is behind `origin/main`, bring main in
-before anything on this page: a gate run on a stale base answers a question nobody asked.
+before every edit and [`heron-session`](../heron-session/SKILL.md) at every session start, before every
+prompt, and before a merge or a "ready". If the session-start line says the branch is behind
+`origin/main`, bring main in before anything on this page: a gate run on a stale base answers a question nobody asked.
 `hook-report.py` is how you find out whether they are firing at all.
 
-`check-revit-gate`'s two standing hits are **linked documents** and **rollback / refusal reporting** —
-[`Q-46`](../../../docs/OPEN-QUESTIONS.md) and [`Q-48`](../../../docs/OPEN-QUESTIONS.md), open and
-waiting on the owner. **They are not new and they are not yours.** **Read the tool's own two numbers
-rather than one written here**: it said 62 and 59 until 2026-09-21, when they were 67 and 64, because
-the figures move with every fragment added. Derive `check-reachable`'s count the same way, for the
-same reason.
+`check-revit-gate`'s two large standing hits are **linked documents** (its question 8) and **rollback /
+refusal reporting** (question 14) — [`Q-48`](../../../docs/OPEN-QUESTIONS.md) and
+[`Q-46`](../../../docs/OPEN-QUESTIONS.md), both answered 2026-09-09: a reader looks inside links when the
+modeller asks for it, and naming what was turned down is a rule fired only on an empty answer. The tool
+calls each count *a spread*, not a defect list. Question 7 names a short list of fragments handed a view
+that still collect from the whole model - each a question for a person. **None of them is new and none
+is yours.** **Read the tool's own numbers rather than ones written here**: it said 62 and 59 until
+2026-09-21, when they were 67 and 64, because the figures move with every fragment added. Derive
+`check-reachable`'s count the same way, for the same reason.
 
 ## 3a. Routing evidence for a card's words - main against the branch
 
@@ -399,9 +416,11 @@ say every capability is still reachable; **what moved, sentence by sentence, is
 5b-481, 5b-485 and 5b-510 each built it by hand in a scratch folder; do not build it again.
 
 ```bash
-git worktree add --detach ../main-wt origin/main
-python tools/score-routing.py --sentences s.yaml --tree ../main-wt --backend all --shortlists --out main.json
-python tools/score-routing.py --sentences s.yaml --backend all --compare main.json
+WORK="$(mktemp -d)"     # rough work goes outside Heron's folder, never beside it (AGENTS.md); s.yaml goes here
+git worktree add --detach "$WORK/main-wt" origin/main
+python tools/score-routing.py --sentences "$WORK/s.yaml" --tree "$WORK/main-wt" --backend all --shortlists --out "$WORK/main.json"
+python tools/score-routing.py --sentences "$WORK/s.yaml" --backend all --compare "$WORK/main.json"
+git worktree remove "$WORK/main-wt"
 ```
 
 - **Freeze the sentences before you edit the card**, each with `want <CAPABILITY>`, `not-a-write` or
@@ -418,7 +437,7 @@ python tools/score-routing.py --sentences s.yaml --backend all --compare main.js
   later. The tool now refuses to write, or to compare against, a run whose answers ran on another backend.
 - **Every `bad` line is a finding to report**, and it exits 0 (D-100). Never reword a sentence to buy it
   back.
-- **Trying wordings for an identity?** `--identities ids.txt --card NAME --from main.json` re-scores
+- **Trying wordings for an identity?** `--identities "$WORK/ids.txt" --card NAME --from "$WORK/main.json"` re-scores
   them offline on the recorded shortlists, one line per wording. It is a screen: build the winner in full,
   on both trees, before you claim it.
 
@@ -464,8 +483,9 @@ Not failures. They need a tool, and the error says which.
 
 | | needs | error you will see |
 |---|---|---|
-| `check-routing.py`, `check-intrusion.py` | a knowledge store | `No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE` |
-| `check-compile.py`, `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | `FileNotFoundError: 'dotnet'` |
+| `check-routing.py`, `check-intrusion.py` | a knowledge store | `COULD NOT RUN: no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE`, exit 2 - or, from a worktree or a branch, `NOT RUN: the knowledge store at ... is the SHARED one` (§1) |
+| `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | ``NOT RUN - there is no `dotnet` on PATH``, exit 3 |
+| `check-compile.py` | **`dotnet`** | `FAIL  no .NET SDK on this machine (... 'dotnet')`, **exit 1** - the one of the three that still reads like a failure; it is not your change |
 | `check-decision-titles.py` | the **whole git history** | `NOT RUN - this clone's history is cut short (shallow)` |
 | `batch-prove.py` | **a real Revit**, and the owner | — |
 

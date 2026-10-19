@@ -205,7 +205,7 @@ Contributed fragments enter at `DISCOVERED` and walk the lifecycle like everythi
 
 | Channel | Timing | Notes |
 |---|---|---|
-| **GitHub releases** | Phase 0 onwards | Signed per-version add-in builds + MCP server. *As built (2026-10-18): [`release.yml`](../.github/workflows/release.yml) builds the release assets, and an early v0.1.0 is published for testing only - **unsigned**, since code signing is the installer plan's last stage (that file's own header)* |
+| **GitHub releases** | Phase 0 onwards | Signed per-version add-in builds + MCP server. *As built (2026-10-18): [`release.yml`](../.github/workflows/release.yml) builds the release assets, and an early v0.1.0 was published on 2026-10-08 for testing only - **unsigned**, since code signing is the installer plan's last stage (that file's own header). [D-91](DECISIONS.md) says product files come from a **signed** release; whether a decision should say releases stay unsigned until signing is built is open, [Q-77](open-questions/tier-2.md)* |
 | **Claude Code plugin** | Phase 0 onwards | The primary front end ([D-01](DECISIONS.md)) |
 | **Autodesk App Store** | Later, free | Their review constrains packaging and permissions — worth reading the requirements before the installer is finalised, not after |
 | **pip / npm** | If the brain ships separately | Depends on the Python packaging decision |
