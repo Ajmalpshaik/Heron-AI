@@ -141,6 +141,125 @@ Func<Parameter, bool> isYesNo = p =>
     }
 };
 
+// ===========================================================================
+// AN ELEMENT REFERENCE TAKES A NAME (FRAGMENT-ISSUES 5b-1221).
+// ===========================================================================
+//
+// A parameter that holds another element - a Material, a Level, a type - was
+// refused or handed to SetValueString, which takes no name: on Revit 2020 a
+// column type's Material was refused 'TRG_Material_Teak_Wood' that way, and a
+// mullion type's Material before it. So a NAME is now looked up, exactly:
+// a material and a level by Name, a family type as "Family: Type", the way
+// Properties shows it. Matching none, or two, is refused by name - never
+// guessed (D-33) - and the id Revit holds afterwards is read back.
+//
+// WHAT THE NAME MAY BE is narrowed first, so a name cannot land on the wrong
+// kind of element: by what the parameter holds now (a type: types of that
+// category only), else by its definition - Material, or on 2020 and 2021 a
+// FamilyType - read by reflection like the Yes/No above, since
+// `ParameterType` is gone from 2023 and `SpecTypeId.Reference` begins at
+// 2022. A parameter holding <By Category> and saying nothing more is matched
+// against all three kinds, and a name two of them share is refused.
+// Anything else it holds - a phase, a view - is refused by name.
+//
+// No ElementId is built from a number: the id comes from the element found.
+var materialSpecProperty = (typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".SpecTypeId+Reference")
+    ?? typeof(object)).GetProperty("Material",
+    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+var materialSpec = materialSpecProperty == null ? null : materialSpecProperty.GetValue(null, null);
+
+// kind, category (types only), name, id - every material, level and type in
+// this document, read once, the first time a name is asked for.
+List<Tuple<string, ElementId, string, ElementId>> namedElements = null;
+
+// The id a name resolves to, or null and the reason in words.
+Func<Parameter, string, Tuple<ElementId, string>> referenceByName = (p, text) =>
+{
+    var said = (text ?? "").Trim();
+    var kind = "any";
+    ElementId categoryId = null;
+    try
+    {
+        var heldId = p.AsElementId();
+        var held = heldId == null || heldId == ElementId.InvalidElementId ? null : doc.GetElement(heldId);
+        if (held is Material) kind = "material";
+        else if (held is Level) kind = "level";
+        else if (held is ElementType)
+        {
+            kind = "type";
+            if (held.Category != null) categoryId = held.Category.Id;
+        }
+        else if (held != null)
+        {
+            return Tuple.Create((ElementId)null, "it holds a " + held.GetType().Name + " ('" + held.Name
+                + "'), and only a material, a level or a family type can be named");
+        }
+        else if (p.Definition != null)
+        {
+            var definition = p.Definition;
+            var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+            if (getDataType != null && materialSpec != null)
+            {
+                var spec = getDataType.Invoke(definition, null);
+                var nameEquals = spec == null ? null
+                    : spec.GetType().GetMethod("NameEquals", new[] { materialSpec.GetType() });
+                if (spec != null && (nameEquals != null
+                        ? (bool)nameEquals.Invoke(spec, new[] { materialSpec })
+                        : spec.Equals(materialSpec)))
+                    kind = "material";
+            }
+            else
+            {
+                var parameterType = definition.GetType().GetProperty("ParameterType");
+                var dataKind = parameterType == null ? null : parameterType.GetValue(definition, null);
+                var word = dataKind == null ? "" : dataKind.ToString();
+                if (word == "Material") kind = "material";
+                else if (word == "FamilyType") kind = "type";
+            }
+        }
+    }
+    catch (Exception)
+    {
+        kind = "any";
+        categoryId = null;
+    }
+
+    var what = kind == "material" ? "material" : kind == "level" ? "level"
+        : kind == "type" ? "family type" + (categoryId == null ? "" : " of that category")
+        : "material, level or family type";
+    if (said.Length == 0) return Tuple.Create((ElementId)null, "a blank names no " + what);
+
+    if (namedElements == null)
+    {
+        namedElements = new List<Tuple<string, ElementId, string, ElementId>>();
+        foreach (var m in new FilteredElementCollector(doc).OfClass(typeof(Material)))
+            namedElements.Add(Tuple.Create("material", (ElementId)null, m.Name, m.Id));
+        foreach (var l in new FilteredElementCollector(doc).OfClass(typeof(Level)))
+            namedElements.Add(Tuple.Create("level", (ElementId)null, l.Name, l.Id));
+        foreach (var e in new FilteredElementCollector(doc).WhereElementIsElementType())
+        {
+            var t = e as ElementType;
+            if (t == null || string.IsNullOrEmpty(t.FamilyName)) continue;
+            namedElements.Add(Tuple.Create("type", t.Category == null ? null : t.Category.Id,
+                t.FamilyName + ": " + t.Name, t.Id));
+        }
+    }
+
+    var hits = namedElements.Where(n => (kind == "any" || n.Item1 == kind)
+        && (categoryId == null || categoryId.Equals(n.Item2))
+        && n.Item3 == said).ToList();
+    if (hits.Count == 1) return Tuple.Create(hits[0].Item4, (string)null);
+    if (hits.Count == 0)
+    {
+        return Tuple.Create((ElementId)null, "no " + what + " in this model is called '" + said + "'"
+            + (kind == "type" || kind == "any" ? " - a family type is named 'Family: Type', as Properties shows it" : "")
+            + ". Names are matched exactly");
+    }
+    return Tuple.Create((ElementId)null, hits.Count + " elements in this model are called '" + said + "' ("
+        + string.Join(", ", hits.Take(3).Select(n => n.Item1 + " " + n.Item4).ToArray())
+        + ") - which one is meant would be a guess");
+};
+
 // What a cell means for a tick box: 1, 0, or null for "not a Yes/No word".
 var tickedWords = new[] { "yes", "true", "on", "1" };
 var untickedWords = new[] { "no", "false", "off", "0" };
@@ -183,6 +302,10 @@ Func<Parameter, bool, string> readOf = (p, tickBox) =>
 // same element replaces the earlier one - the model holds the later value.
 var pending = new List<Tuple<Element, string, int, string, int?, string>>();
 var pendingAt = new Dictionary<string, int>();
+
+// Version 5: the id an element reference was set to, by the same key. Its
+// read-back is that id, not the name Revit prints for it.
+var referenceAt = new Dictionary<string, ElementId>();
 
 // THE READ-BACK'S OWN LINES, kept apart from the write-phase lines and listed
 // first: they are what this version exists to show, and a file of many
@@ -455,6 +578,7 @@ else
                     }
 
                     var accepted = false;
+                    ElementId reference = null;
                     try
                     {
                         if (yesNo)
@@ -470,11 +594,29 @@ else
                             var whole = 0;
                             accepted = int.TryParse(wanted, out whole) && parameter.Set(whole);
                         }
+                        else if (parameter.StorageType == StorageType.ElementId)
+                        {
+                            // Version 5: a material, a level or 'Family: Type' by name,
+                            // matched exactly - none or two is refused with the reason.
+                            var named = referenceByName(parameter, wanted);
+                            if (named.Item1 == null)
+                            {
+                                refusedValue++;
+                                if (problems.Count < 25)
+                                {
+                                    problems.Add("row " + (r + 1) + ": '" + wanted + "' for '" + parameterName
+                                        + "' on id " + element.Id + " - " + named.Item2 + ". Left as it was");
+                                }
+                                continue;
+                            }
+                            reference = named.Item1;
+                            accepted = parameter.Set(reference);
+                        }
                         else
                         {
-                            // Doubles and ElementId-backed parameters both go through Revit's own
-                            // parsing in the project's display units. No units API is named, and a
-                            // cell that read "450" on the way out means the same on the way back.
+                            // Doubles go through Revit's own parsing in the project's display
+                            // units. No units API is named, and a cell that read "450" on the
+                            // way out means the same on the way back.
                             accepted = parameter.SetValueString(wanted);
                         }
                     }
@@ -500,6 +642,8 @@ else
                     // write. What it reads now is kept only to say whether the
                     // regeneration changed it.
                     var key = target.Id + "|" + parameterName;
+                    if (reference != null) referenceAt[key] = reference;
+                    else referenceAt.Remove(key);
                     var entry = Tuple.Create(target, parameterName, r + 1, wanted, tick, readOf(parameter, yesNo));
                     int earlier;
                     if (pendingAt.TryGetValue(key, out earlier))
@@ -585,9 +729,18 @@ else
                 {
                     try { tickNow = again.AsInteger(); } catch (Exception) { tickNow = null; }
                 }
+                ElementId referenceAsked;
+                var isReference = referenceAt.TryGetValue(written.Item1.Id + "|" + written.Item2, out referenceAsked);
+                ElementId referenceNow = null;
+                if (isReference)
+                {
+                    try { referenceNow = again.AsElementId(); } catch (Exception) { referenceNow = null; }
+                }
                 var same = tickBox
                     ? tickNow == written.Item5
-                    : landed.Trim() == written.Item4.Trim();
+                    : isReference
+                        ? referenceAsked.Equals(referenceNow)
+                        : landed.Trim() == written.Item4.Trim();
                 if (same) continue;
 
                 valuesRejected++;

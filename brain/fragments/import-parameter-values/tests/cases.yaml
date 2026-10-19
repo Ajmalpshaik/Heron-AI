@@ -160,3 +160,19 @@ second_route:
     the import. The Yes/No column must read back the words that went in, and
     the element whose cell was blank under "skip" must still carry its old
     text - a second route that does not share this fragment's read-back
+
+# Version 5 (5b-1221): an element reference takes a NAME. NEEDS-CHECKING Group HP.
+positive_by_name:
+  - given: >
+      CSV "Id,Material" with one row per M_Round Column instance and the exact
+      name of a material, includeTypeParameters true, blankCells skip
+    expect: >
+      the type's Material written once (both rows name the same type), the
+      read-back comparing the id Revit holds with the id the name named,
+      valuesRejected 0
+negative_by_name:
+  - given: the same file with "No Such Material" in the Material column
+    expect: >
+      valuesWritten 0, refused counted, and the row's line saying "no material
+      in this model is called 'No Such Material'". Never "Revit would not take"
+      with no reason, which is what version 4 answered

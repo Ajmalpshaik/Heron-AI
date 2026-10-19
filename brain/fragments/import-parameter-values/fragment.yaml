@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put the values from this table back onto the elements they c
 kind: action
 domain: revit.parameters
 capability: IMPORT_PARAMETER_VALUES
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -100,6 +100,20 @@ purpose: >
   is not yet measured: what the early read said never reached the chat.**
   DRAFT until NEEDS-CHECKING CD13 has run on a scratch model.
 
+  **Version 5 takes a material, a level or a family type by name.**
+
+# VERSION 5 - FRAGMENT-ISSUES 5b-1221. Measured 2026-10-19 on Revit 2020, the
+# owner's Kerala house: "Id,Material" with 346587,TRG_Material_Teak_Wood and
+# includeTypeParameters true reached the M_Round Column type's Material and
+# answered "Revit would not take 'TRG_Material_Teak_Wood' for 'Material'" -
+# an element reference was handed to SetValueString, which takes no name. Now
+# a cell for a parameter holding another element is a NAME: a material or a
+# level by its Name, a family type as "Family: Type", matched exactly, the
+# kind narrowed first by what the parameter holds or its definition. None, or
+# two, is refused for that cell with the reason, counted with the values Revit
+# would not take. The read-back compares the id Revit holds with the id the
+# name named - never the name Revit prints for it. Version 4's proof below no
+# longer describes the code: DRAFT until NEEDS-CHECKING Group HP.
 contract:
   needs:
     - name: doc
@@ -135,7 +149,8 @@ contract:
       role: accounting
       type: int
     - name: valuesRejected
-      # Values Revit accepted and then read back different. EVERY VALUE
+      # Values Revit accepted and then read back different - for an element
+      # reference, a different id from the one its name named. EVERY VALUE
       # WRITTEN IS RE-READ, and these are the ones that did not take (D-52).
       role: accounting
       type: int
@@ -165,6 +180,10 @@ contract:
       role: accounting
       type: string
 
+# VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1221), so
+# its fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group HP proves version 5 (D-30). Every value that is not an
+# element reference still takes the road this proof ran.
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -249,6 +268,14 @@ compatibility-note: >
 
   **`System.IO` is written out in full**, as the fragment wrapper does not
   import it.
+
+  Since row 5b-1221 an element reference takes a name. `Parameter.Set(ElementId)`,
+  `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`
+  and `WhereElementIsElementType` are unchanged 2020 to 2027. What a reference
+  holding <By Category> may name is read by reflection, like the Yes/No:
+  `SpecTypeId.Reference.Material` from 2022 (read in the 2023 reference
+  assembly), `ParameterType.Material` and `ParameterType.FamilyType` on 2020
+  and 2021 (read in the 2020 one). No `ElementId` is built from a number.
 
 # ROUTING - the same rows are in the fragments named here.
 #

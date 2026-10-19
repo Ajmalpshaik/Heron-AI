@@ -113,3 +113,24 @@ second_route:
     for a Yes/No write, the box itself in Revit's properties palette on three of
     the elements - ticked or unticked as asked - or a schedule with the
     parameter as a column
+
+# Version 5 (5b-1221): an element reference takes a NAME. NEEDS-CHECKING Group HP.
+positive_by_name:
+  - given: >
+      a column type (M_Round Column : 305mm Diameter, Material <By Category>),
+      parameterName Material, value the exact name of a material in the model
+    expect: >
+      written 1, refused empty; Properties of the type shows that material, and
+      the id Revit holds is the one the name named (read back after the
+      regeneration, never assumed)
+  - given: two walls, parameterName Base Constraint, value "Level 2"
+    expect: written 2 and both walls on Level 2
+
+negative_by_name:
+  - given: the same type, Material, value "No Such Material"
+    expect: >
+      written 0, the type in `refused`, and one finding naming the value, the
+      parameter and "no material in this model is called" - the type keeps
+      <By Category>
+  - given: a name that is both a material's and a level's, on a parameter holding <By Category> whose kind Revit does not say
+    expect: refused, the finding saying two elements are called that - never a guess
