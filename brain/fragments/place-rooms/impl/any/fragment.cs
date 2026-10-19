@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `levelId`, `placeKind`, `phaseId` and
-// `planViewId` are in scope; leaves `created`, `refused` and `unbounded`
-// behind.
+// `planViewId` are in scope; leaves `created`, `refused`, `unbounded` and
+// `untagged` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -34,6 +34,7 @@
 var created = new List<ElementId>();
 var unbounded = new List<ElementId>();
 string refused = null;
+string untagged = null;
 
 var kind = (placeKind ?? "").Trim().ToLowerInvariant();
 
@@ -82,7 +83,48 @@ else
         }
         else
         {
-            placed = doc.Create.NewSpaces2(level, phase, view);
+            // NO SPACE TAGS FAMILY, NO NewSpaces2. It tags every space it makes
+            // in the view, and with no Space Tags type loaded it THROWS ("No
+            // Space Tags family is loaded in the project") instead of placing
+            // them untagged - and an MEP model started from an architectural
+            // template has none. MEASURED 2026-10-19 on Project4, Revit 2020:
+            // both legs of the first proof threw before anything was placed.
+            //
+            // So with none loaded, each enclosed area of the level's plan
+            // topology gets its own NewSpace, which makes no tag, and an area a
+            // space already sits in is passed over - as NewSpaces2 does. The
+            // point is tested a foot above the level because a space starts AT
+            // its level and the level plane itself is its boundary.
+            var spaceTag = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_MEPSpaceTags)
+                .WhereElementIsElementType()
+                .FirstElement();
+
+            if (spaceTag != null)
+            {
+                placed = doc.Create.NewSpaces2(level, phase, view);
+            }
+            else
+            {
+                var one = new List<ElementId>();
+
+                foreach (PlanCircuit circuit in doc.get_PlanTopology(level, phase).Circuits)
+                {
+                    var inside = circuit.GetPointInside();
+                    var probe = new XYZ(inside.U, inside.V, level.ProjectElevation + 1.0);
+
+                    if (doc.GetSpaceAtPoint(probe, phase) != null) continue;
+
+                    var space = doc.Create.NewSpace(level, phase, inside);
+                    if (space != null) one.Add(space.Id);
+                }
+
+                placed = one;
+                if (one.Count > 0)
+                    untagged = "no Space Tags family is loaded in this project, so the spaces "
+                             + "were placed without tags. Load one (Insert > Load Family > "
+                             + "Annotations) and TAG_ROOMS tags them";
+            }
         }
     }
     else
