@@ -25,7 +25,7 @@ risk: READ
 # family is named, and one with no file is said out loud, with Ctrl+S as the
 # only way to keep it. The projects' lists and `count` are version 1's.
 #
-# VERSION 3 (2026-10-19, row 5b-1216). "[unsaved changes]" said something was
+# VERSION 3 (2026-10-19, row 5b-1218). "[unsaved changes]" said something was
 # not saved, never how much. On 2026-10-19 a 40-floor tower was built through
 # Heron on Revit 2020; Ctrl+S was pressed twice, the keys went to the Claude
 # window, and the .rvt on disk stayed at 10:42 while 124 changes went in after
@@ -185,7 +185,7 @@ utterances:
   - which families are open
   - what family windows are open
   - has the family been saved
-  # ADDED 2026-10-19, version 3 (row 5b-1216): when the file on disk was last
+  # ADDED 2026-10-19, version 3 (row 5b-1218): when the file on disk was last
   # written. Measured against main before they went in - see the row.
   - when was the model last saved
   - is my model saved
