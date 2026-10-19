@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 16
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -65,6 +65,36 @@ contract:
       # made - they sit in the schedule looking like real rooms.
       role: result
       type: IList<ElementId>
+    - name: untagged
+      # Says the spaces were placed WITHOUT tags because no Space Tags family
+      # is loaded - how they were placed, never a thing found (D-52). Empty
+      # for rooms, and for spaces when a Space Tags type exists.
+      role: accounting
+      type: string
+
+proof:
+  date: '2026-10-19'
+  by: Ajmal PS
+  model: Project4 (2,985 elements), Revit 2020, session 8960
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 3 item(s) [346440, 346441,
+    346442], kind space, level Level, phase Phase, refused (null), unbounded 0 item(s), untagged
+    no Space Tags family is loaded in this project, so the spaces were placed without tags.
+    Load one (Insert > Load Family > Annotations) and TAG_ROOMS tags them, wantRooms false,
+    wantSpaces true. inputs came levelId as given; placeKind as given; phaseId as given; planViewId
+    as given. on Project4
+  negative_case: 'run with levelId=Level 2, placeKind=space, phaseId=New Construction, planViewId=FloorPlan:
+    Level 2 instead - chosen because it should not contain what this fragment reports - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned created 0 item(s), kind space, level Level, phase Phase, refused nothing was
+    placed - there is no enclosed area on this level. Rooms and spaces need bounding elements,
+    and walls that do not meet enclose nothing, unbounded 0 item(s), untagged (null), wantRooms
+    false, wantSpaces true. inputs came levelId as given; placeKind as given; phaseId as given;
+    planViewId as given. on Project4'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7e094a13c1257ec4
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -83,6 +113,15 @@ compatibility-note: >
   it is a real asymmetry between the two elements, and it is the modelling fact
   worth taking away: a space belongs to a phase and is placed from a view; a
   room can be placed without either being named.
+
+  **NewSpaces2 tags every space it makes, and THROWS when no Space Tags family
+  is loaded** - "No Space Tags family is loaded in the project", measured
+  2026-10-19 on Project4 in Revit 2020, a model with rooms and no MEP content.
+  With no Space Tags type loaded, each enclosed area of the level's
+  `PlanTopology` gets its own `NewSpace(Level, Phase, UV)`, which makes no tag,
+  and `untagged` says so. `NewSpace`, `PlanTopology(Level, Phase)` and
+  `GetSpaceAtPoint(XYZ, Phase)` were read off `RevitAPI.xml` for all eight
+  releases.
 
   `Room` lives in `Autodesk.Revit.DB.Architecture` and `Space` in
   `Autodesk.Revit.DB.Mechanical`, both of which the wrapper already carries. No
