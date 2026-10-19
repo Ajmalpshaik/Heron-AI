@@ -29,6 +29,8 @@ any library (D-25), and each function names its source in its docstring:
                         chart
   dew point             the saturation equations above solved backwards - the
                         exact answer the Peppers correlation approximates
+  apparatus dew point   a coil's straight condition line carried on to the
+                        saturation curve, solved - the textbook definition
   air viscosity         Sutherland's law, the textbook three-constant form
   water                 Kell (1975) density and Laliberte (2007) viscosity,
                         both checked against IAPWS; cp from IAPWS-95 values
@@ -382,6 +384,47 @@ def mix(mass_1, state_1, mass_2, state_2, p_kpa):
     h = (mass_1 * state_1["h_kj_kg"] + mass_2 * state_2["h_kj_kg"]) / total
     t = (h - HFG_0C * w) / (CP_DRY_AIR + CP_VAPOUR * w)
     return state(t, p_kpa, w=w)
+
+
+def apparatus_dew_point(t_in, w_in, t_out, w_out, p_kpa):
+    """
+    The apparatus dew point of a cooling and dehumidifying coil, C - where the
+    straight condition line through the air entering it (t_in, w_in) and
+    leaving it (t_out, w_out), drawn on the dry bulb / humidity ratio plane and
+    carried on past the leaving state, first meets the saturation curve. Its
+    bypass factor is then (t_out - adp) / (t_in - adp). None when the line
+    never meets the curve: no coil gives that process.
+
+    The textbook definition of a coil's straight-line process, solved here
+    rather than read off a chart: a walk down from the leaving dry bulb in
+    0.05 K steps finds the first crossing, and a bisection pins it. A dry coil
+    - no moisture removed - has no apparatus dew point and is refused.
+    """
+    if not t_out < t_in:
+        raise PsychroRangeError("the air leaving a cooling coil at %.4g C must be cooler "
+                                "than the %.4g C entering it" % (t_out, t_in))
+    if not w_out < w_in:
+        raise PsychroRangeError("a coil that removes no moisture is a dry coil - it has no "
+                                "apparatus dew point")
+    slope = (w_in - w_out) / (t_in - t_out)
+
+    def gap(t):
+        return saturation_humidity_ratio(t, p_kpa) - (w_out + slope * (t - t_out))
+
+    if gap(t_out) < -1e-12:
+        raise PsychroRangeError("the leaving air, W %.6g at %.4g C, is above saturation"
+                                % (w_out, t_out))
+    if gap(t_out) <= 1e-12:
+        return t_out
+    # Below this the line's humidity ratio is negative, and no air is there.
+    floor = max(t_out - w_out / slope, SATURATION_RANGE_C[0])
+    high = t_out
+    while high - 0.05 > floor:
+        low = high - 0.05
+        if gap(low) <= 0:
+            return _bisect(gap, low, high)
+        high = low
+    return None
 
 
 # ---------------------------------------------------------------------------

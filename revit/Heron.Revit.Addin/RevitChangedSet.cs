@@ -123,6 +123,21 @@ namespace Heron.Revit.Addin
         /// </summary>
         public HeronChangeReport.Described Describe()
         {
+            // GONE WITHOUT A WORD - row 5b-1241. An edit scope cancelled (a
+            // refused stair) takes back what its Start made with no committed
+            // transaction, so no event names it deleted. Whatever the model no
+            // longer holds is told to the report, and taken off the lists the
+            // Keep box selects from, BEFORE the report is sealed.
+            foreach (var pair in _ids)
+            {
+                bool gone;
+                try { gone = _document.GetElement(pair.Value) == null; }
+                catch (Exception) { gone = false; }
+                if (!gone) continue;
+                _report.Vanished(pair.Key);
+                if (!_added.Remove(pair.Value) && _changed.Remove(pair.Value))
+                    _deleted.Add(pair.Value);
+            }
             End();
             return _report.Describe(CategoryOf);
         }
