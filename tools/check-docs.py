@@ -1285,4 +1285,26 @@ else:
     out("  %d link(s) name one 5b row and point at a rows file: each reaches the file that holds it\n"
         % _row_named)
 
+# ---------- 13. a superseded decision says so where its citations land ----------
+#
+# Riding in for the reason 8 and 9 do: this gate runs on a laptop before a push
+# and inside "The gates that must pass" in CI, so a check run from here needs no
+# step of its own (D-144). Every [D-NN](DECISIONS.md#...) lands on the OLD
+# decision's heading in the index, and on 2026-10-19 six of the ten supersessions
+# a decision in force declared were written only at the new end - a reader sent
+# to D-105 read "the chat only" with no word of D-108's Companion page.
+out("\n=== 13. A SUPERSEDED DECISION SAYS SO WHERE ITS CITATIONS LAND ===\n")
+_sup = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    'check-supersessions.py')
+if not os.path.exists(_sup):
+    out("  check-supersessions.py is gone - nothing to check\n")
+else:
+    import subprocess
+    _r = subprocess.run([sys.executable, _sup],
+                        capture_output=True, text=True, encoding='utf-8')
+    for _line in (_r.stdout or '').rstrip('\n').split('\n'):
+        out("  %s\n" % _line)
+    if _r.returncode != 0:
+        failed = True
+
 sys.exit(1 if failed else 0)

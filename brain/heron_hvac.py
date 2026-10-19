@@ -1556,6 +1556,7 @@ def calc_psychrometrics(a):
     if s is None:
         return
     _state_result(a, s)
+    a.data["state"] = s
     a.result("Specific volume", "%s m3/kg dry air" % _f(s["v_m3_kg"], 4))
     a.result("Density", "%s kg/m3 moist air" % _f(s["density_kg_m3"], 4))
     a.result("Vapour pressure", "%s kPa (saturation %s kPa)" % (_f(s["pw_kpa"], 4),
@@ -1587,6 +1588,8 @@ def calc_air_mixing(a):
         a.refuse(str(why))
         return
     qm = (mo + mr) * sm["v_m3_kg"] * 1000.0
+    a.data = {"mixed": sm, "outdoor": so, "return": sr, "mass_kg_s": mo + mr,
+              "outdoor_mass_kg_s": mo, "mixed_ls": qm}
     _state_result(a, sm, "Mixed ")
     a.result("Mixed airflow", flow_text(qm) + " at the mixed condition")
     a.result("Outdoor air share", "%s %% by mass, %s %% by volume"
@@ -1645,9 +1648,18 @@ def calc_coil_load(a):
         _state_result(a, se, "Entering ")
     _state_result(a, sl, "Leaving ")
     total = m * (se["h_kj_kg"] - sl["h_kj_kg"]) * 1000.0
-    sensible = m * (1.006 + 1.86 * se["w"]) * (se["t_c"] - sl["t_c"]) * 1000.0
+    sensible = moist_air_sensible_w(m, se["w"], se["t_c"] - sl["t_c"])
     latent = total - sensible
     condensate = m * (se["w"] - sl["w"]) * 3600.0
+    adp = bypass = None
+    wet = sl["w"] < se["w"] and sl["t_c"] < se["t_c"]
+    if wet:
+        adp = PSY.apparatus_dew_point(se["t_c"], se["w"], sl["t_c"], sl["w"], p)
+        if adp is not None:
+            bypass = (sl["t_c"] - adp) / (se["t_c"] - adp)
+    a.data = {"mass_kg_s": m, "total_w": total, "sensible_w": sensible, "latent_w": latent,
+              "shr": sensible / total if total > 0 else None, "condensate_kg_h": condensate,
+              "entering": se, "leaving": sl, "adp_c": adp, "bypass_factor": bypass}
     a.result("Dry-air mass flow", "%s kg/s" % _f(m, 4))
     a.result("Airflow", "%s entering, %s leaving"
              % (flow_text(m * se["v_m3_kg"] * 1000.0), _f(m * sl["v_m3_kg"] * 1000.0, 1) + " L/s"))
@@ -1657,6 +1669,15 @@ def calc_coil_load(a):
     if total > 0:
         a.result("Sensible heat ratio", _f(sensible / total, 3))
     a.result("Condensate", "%s kg/h  (about %s L/h)" % (_f(condensate, 2), _f(condensate, 1)))
+    if adp is not None:
+        a.result("Apparatus dew point", "%s - where the coil's condition line meets saturation"
+                 % temp_text(adp))
+        a.result("Bypass factor", "%s  (contact factor %s)" % (_f(bypass, 3), _f(1 - bypass, 3)))
+    elif wet:
+        a.check("FAIL", "the coil's condition line never meets the saturation curve - no "
+                        "coil gives this process; lower the leaving temperature, or reheat")
+    elif sl["t_c"] < se["t_c"]:
+        a.result("Apparatus dew point", "- a dry coil, no moisture removed")
     if total <= 0:
         a.check("WARN", "the leaving air holds MORE energy than the entering air - "
                         "this is heating, not cooling; check the two states")
@@ -1665,6 +1686,10 @@ def calc_coil_load(a):
                         "coil cannot add moisture")
     a.uses("total = m (h_in - h_out); sensible = m (1.006 + 1.86 W_in)(t_in - t_out); "
            "latent = the remainder, m (W_in - W_out)(2501 + 1.86 t_out)")
+    if wet:
+        a.uses("apparatus dew point: the straight condition line through the entering and "
+               "leaving air on the dry bulb - humidity ratio plane, carried on to the "
+               "saturation curve; bypass factor = (t_out - t_ADP) / (t_in - t_ADP)")
     a.cite(SRC_PSYCHRO, SRC_LOADS)
     a.check("OK", "next: chw_flow with this load for the chilled-water flow")
 
@@ -1943,6 +1968,26 @@ def air_heat(standard, flow_ls, to, tr, wo, wr, p):
     qs = m * (1.006 + 1.86 * w_v) * (to - tr) * 1000.0
     ql = m * (wo - wr) * (2501.0 + 1.86 * tr) * 1000.0 if None not in (wo, wr) else 0.0
     return qs, ql
+
+
+def moist_air_sensible_w(mass_kg_s, w, dt_k):
+    """
+    W of sensible heat that `mass_kg_s` of dry air carrying `w` kg/kg of
+    moisture takes up or gives over `dt_k` K - cp = 1.006 + 1.86 W, ASHRAE
+    Fundamentals Ch. 1. The one place it is written for a coil and an air
+    system (docs/44 s13).
+    """
+    return mass_kg_s * (1.006 + 1.86 * w) * dt_k * 1000.0
+
+
+def supply_humidity_needed(room_w, room_t, latent_w, mass_kg_s):
+    """
+    The humidity ratio, kg/kg, that supply air of `mass_kg_s` kg/s of dry air
+    must arrive with to take up `latent_w` W in a room held at `room_w` and
+    `room_t` C: Ws = Wroom - ql / (m hfg), hfg = 2501 + 1.86 t. Zero or less
+    means no supply humidity can.
+    """
+    return room_w - latent_w / 1000.0 / (mass_kg_s * (2501.0 + 1.86 * room_t))
 
 
 def _check_qcs(a, qcs):
@@ -2228,7 +2273,7 @@ def _supply_from_load(a, out, sensible, latent, supply_t, area, height):
                "at the supply temperature")
         ws_needed = None
         if out.sr is not None and latent > 0:
-            ws_needed = out.sr["w"] - latent / 1000.0 / (m * (2501.0 + 1.86 * out.tr))
+            ws_needed = supply_humidity_needed(out.sr["w"], out.tr, latent, m)
     a.data["supply_ls"] = q
     a.result("Supply airflow", flow_text(q) + " at %s C supply, dT %s K"
              % (_f(supply_t, 1), _f(dt, 1)))
@@ -2870,6 +2915,10 @@ def calc_ventilation(a):
             row += [_f(z["vpz"], 1), _f(z["zpz"], 3), _f(z["evz"], 3)]
         table.append(row)
     a.table("Zones", columns, table)
+    a.data = {"vot_ls": vot, "zones": out,
+              "d": d if system == "multiple-zone" else None,
+              "ev": ev if system == "multiple-zone" else None,
+              "vou_ls": vou if system == "multiple-zone" else None}
     a.result("Outdoor air intake Vot", flow_text(vot))
     total_area = sum(z["az"] for z in out)
     if sum_pz > 0:
@@ -3297,6 +3346,7 @@ def calc_fan_power(a):
     shaft = air_w / (nf / 100.0)
     electric = shaft / (nm / 100.0 * nd / 100.0)
     sfp = electric / q
+    a.data = {"air_w": air_w, "shaft_w": shaft, "electric_w": electric, "sfp_w_per_ls": sfp}
     a.result("Air power", "%s W" % _f(air_w, 0))
     a.result("Shaft power", "%s W  (%s kW, %s hp)" % (_f(shaft, 0), _f(shaft / 1000.0, 2),
                                                      _f(shaft / 745.69987158227022, 2)))

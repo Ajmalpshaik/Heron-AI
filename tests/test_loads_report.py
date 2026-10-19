@@ -136,13 +136,70 @@ def test_write_leaves_three_files_and_says_where():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_a_page_for_each_air_system_every_value_with_its_source():
+    # docs/44 s13: the unit serving each group of Spaces, on a page of its own.
+    t = T.read(ROOM)
+    project = dict(PROJECT, coil_outdoor_dry_bulb_c=46, coil_outdoor_wet_bulb_c=29)
+    r = B.run(t, project, {"Office": OFFICE},
+              systems={"Z1": {"ventilation_system": "single-zone", "ez": 1.0}})
+    page = R.html(r, takeoff=t)
+    assert page.count("<section class='system'>") == 1
+    assert "Air system: Z1" in page and "page-break-before: always" in page
+    for words in ("What this unit must deliver", "The air through its cooling coil",
+                  "Outdoor air, Space by Space", "What this page does not include",
+                  "Apparatus dew point", "Bypass factor", "Sensible heat ratio",
+                  "Mixed outdoor and return air"):
+        assert words in page, words
+    c = r["air_systems"]["systems"][0]["coil"]
+    assert "%.2f" % (c["total_w"] / 1000.0) in page and "%.1f" % c["supply_ls"] in page
+    section = page[page.index("<section class='system'>"):]
+    assert "NOT AN HOURLY SIMULATION" in section                        # on its own page
+    assert "instruction - project coil_outdoor_dry_bulb_c" in section
+
+
+def test_an_air_system_not_sized_says_why_and_what_is_asked():
+    page = R.html(built())
+    assert "Air system: Z1" in page and "NOT SIZED" in page
+    assert "coil_outdoor_dry_bulb_c" in page and "never filled in" in page
+
+
+def test_a_run_from_before_air_systems_says_so():
+    r = built()
+    del r["air_systems"]
+    assert "worked out before Heron sized air systems" in R.html(r)
+
+
+def test_systems_and_ventilation_csv_carry_every_value_and_its_source():
+    t = T.read(ROOM)
+    project = dict(PROJECT, coil_outdoor_dry_bulb_c=46, coil_outdoor_wet_bulb_c=29)
+    r = B.run(t, project, {"Office": OFFICE},
+              systems={"Z1": {"ventilation_system": "single-zone", "ez": 1.0}})
+    import csv
+    rows = list(csv.reader(R.systems_csv(r).splitlines()))
+    assert rows[0] == ["system", "item", "value", "unit", "source"]
+    assert all(len(x) == 5 for x in rows)
+    assert all(x[4] for x in rows[2:]), [x for x in rows[2:] if not x[4]]
+    assert any(x[1] == "Bypass factor" for x in rows)
+    vent = list(csv.reader(R.ventilation_csv(r).splitlines()))
+    assert len(vent) == 2 and vent[1][1] == "1 Office 01" and vent[1][-2] == "62.1"
+    tmp = tempfile.mkdtemp(prefix="heron-report-")
+    try:
+        got = R.write(os.path.join(tmp, "run"), t, r, search=[os.path.join(tmp, "none.exe")])
+        for key in ("systems_csv", "ventilation_csv"):
+            assert os.path.isfile(got[key]), key
+        assert "four CSV files" in got["said"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_imports_only_the_standard_library():
     import ast
     allowed = set(getattr(sys, "stdlib_module_names", ())) | {
         "__future__", "heron_hvac", "heron_takeoff", "heron_building_loads",
-        "heron_loads_view",
+        "heron_loads_view", "heron_loads_systems",
         "heron_designbasis", "heron_psychro"}
-    for module in ("heron_loads_report", "heron_building_loads", "heron_loads_view"):
+    for module in ("heron_loads_report", "heron_building_loads", "heron_loads_view",
+                   "heron_loads_systems"):
         tree = ast.parse(open(os.path.join(ROOT, "brain", module + ".py")).read())
         names = set()
         for node in ast.walk(tree):

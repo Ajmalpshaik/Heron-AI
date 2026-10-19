@@ -1679,7 +1679,9 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
     Every Space's load from REPORT_SPACE_ENVELOPE's take-off - docs/44 s5.
 
     `inputs` is a dict or a JSON object string: {"project": {...}, "profiles":
-    {...}, "overrides": {...}} - what the modeller has answered so far. With a
+    {...}, "overrides": {...}, "systems": {...}} - what the modeller has
+    answered so far; "systems" are the air systems' own inputs (docs/44 s13),
+    each named for its Revit zone or listing its Spaces. With a
     `project` key, the last run kept for that project fills in what this call
     did not say (its answers are not asked twice), its HVAC standards are read
     as hvac() reads them, and a finished run is kept beside them.
@@ -1735,6 +1737,12 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
     overrides = dict(before.get("overrides") or {})
     for key, values in (given.get("overrides") or {}).items():
         overrides[str(key)] = _merged(overrides.get(str(key)), values)
+    # The air systems' inputs merge per system and per key, as a profile's do
+    # (docs/44 s13): the Companion's Recalculate sends none, so they come from
+    # the run kept for the project.
+    systems = dict(before.get("systems") or {})
+    for key, values in (given.get("systems") or {}).items():
+        systems[str(key)] = _merged(systems.get(str(key)), values)
     # A value given as nothing CLEARS what was kept: a project or type value
     # is then asked again, and a Space's own value gives way to its type's
     # (the second review, N2 - a blanked field on the page came back).
@@ -1742,6 +1750,8 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
     profiles = dict((k, _kept_values(v)) for k, v in profiles.items())
     overrides = dict((k, _kept_values(v)) for k, v in overrides.items())
     overrides = dict((k, v) for k, v in overrides.items() if v)
+    systems = dict((k, _kept_values(v)) for k, v in systems.items())
+    systems = dict((k, v) for k, v in systems.items() if v)
 
     asked = LOADS.needs(takeoff, project_inputs, profiles)
     result = saved = None
@@ -1749,7 +1759,8 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
         said = LOADS.questions_text(asked)
         status = "missing"
     else:
-        result = LOADS.run(takeoff, project_inputs, profiles, overrides, recorded)
+        result = LOADS.run(takeoff, project_inputs, profiles, overrides, recorded,
+                           systems=systems)
         result["include_links"] = bool(getattr(takeoff, "include_links", False))
         # GATE 1 HOLDS FOR THE GEOMETRY, NOT FOR THE INPUTS: a take-off the
         # modeller confirmed stays confirmed through a Recalculate of the same
@@ -1797,7 +1808,7 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
                              "qa_fail": sum(1 for f in qa if f["level"] == "FAIL")})
     return {"asked": asked, "qa": qa, "result": result, "takeoff": takeoff, "saved": saved,
             "said": said, "inputs": {"project": project_inputs, "profiles": profiles,
-                                     "overrides": overrides},
+                                     "overrides": overrides, "systems": systems},
             # What the Companion's 3D view draws - the same faces, worked out in
             # brain/ (docs/44 s12). Drawn before anything is calculated too, so
             # the geometry can be checked while the questions are answered.
