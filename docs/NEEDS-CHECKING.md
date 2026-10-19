@@ -880,6 +880,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hl.md`](needs-checking/group-hl.md)
 
+## Group HM - a wall and a slab edge along an arc: CREATE_WALL and CREATE_FLOOR version 2 (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hm.md`](needs-checking/group-hm.md)
+
 ## Group HN - when the file on disk was last saved: `REPORT_OPEN_DOCUMENTS` version 3 (2026-10-19)
 
 **Its own file:** [`needs-checking/group-hn.md`](needs-checking/group-hn.md)
