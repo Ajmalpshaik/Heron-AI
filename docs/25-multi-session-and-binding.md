@@ -176,6 +176,25 @@ Proven behaviour, adopted wholesale:
 | Chat A → Revit 1, chat B → Revit 2 | Independent. No interference |
 | Chat A **and** chat B → the same Revit | **The second is refused**, and told why. Since Step 6 a lease decides this ([D-22](DECISIONS.md)) — the newer connection still takes the *pipe*, but not the right to use it. Before that they fought and the last speaker cut the other off mid-job |
 
+> **As built (2026-10-18) — one model, one chat at a time ([D-141](DECISIONS.md), the owner's design).**
+> The last row holds between two **people**, not between one person's chats. The lease is held by the
+> request's `client` id, and `.mcp.json` sends the same one from every chat on the PC (`ajmal-pc`), so
+> the owner's own chats never refused each other - and shared what the add-in kept for one chat. Since
+> D-141 every request also carries the chat's own `conversation` id, and the add-in **holds a model for
+> the chat whose request ran against it**:
+>
+> | Situation | Behaviour |
+> |---|---|
+> | Chat A and chat B, same Revit, **different models** | Both work. One chat may hold several models |
+> | Chat A and chat B, same Revit, **the same model** | **The second is refused** before anything runs: *"Model 'X' is in use by another chat ... Nothing was sent to the model."* `model_in_use`, never ran |
+> | Chat A goes quiet, says it is done, or the modeller presses **Free this model** | The model is free at once (done, the button) or after `bridge.modelHoldMinutes` quiet minutes, 3 by default. Chat B never has to close chat A, and chat A can come back later |
+> | The model closes, or Revit does | The hold is gone - it lives in memory only |
+>
+> The lease stays exactly as it is, per Revit and per person. The carried chain and the D-138 Keep grant
+> are now each chat's own. Revit's thread still runs one job at a time (§6). The rule is
+> `HeronModelHold`, claimed in `RevitOperations.Run` after the gate; not yet run in Revit -
+> [Group HK](needs-checking/group-hk.md).
+
 **[NOTE]** *"Nothing is sent to Revit at all until you say which one — the AI is not allowed to guess"*
 is the correct default and it should be a hard rule, not a preference. Guessing which project to modify
 is the single worst thing this platform could do. It belongs in the
@@ -308,6 +327,11 @@ The conflict matrix, stated once:
 | Chat A → Revit 2020, no other chat | **No** | One holder |
 | Chat A → Revit 2024 · chat B → the **same** Revit 2024, **different models** | **Yes** | Same process, same pipe, same lease |
 | Chat A → one Revit holding two models, both handled by that one chat | **No** | One holder. But document pinning still applies — see §4 |
+
+> **As built (2026-10-18):** between two of the **same person's** chats this matrix is not what decides -
+> they send one `client` id and share the lease. Since [D-141](DECISIONS.md) the **model** decides: two
+> of their chats on different models of one Revit both work, and two on the same model are one at a
+> time (§3 above). Between two people the lease still refuses the second, as the matrix says.
 
 **[NOTE]** Two documents in one Revit are also **not parallel**. They share the single Revit thread
 (§6), so work on one freezes the other. Two models is not two workers. Real concurrency only exists
@@ -705,7 +729,8 @@ Carried forward:
   *(more in Heron since 2026-10-13 — `PipeInstances` in [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)
   — so a displaced pipe can finish writing an answer it owes, §3)*
 - Explicit user connect per Revit; an unconnected Revit is invisible ✅
-- One chat, one Revit; ask once; never guess; fail closed on disconnect ✅
+- One chat, one Revit; ask once; never guess; fail closed on disconnect ✅ *(and since
+  [D-141](DECISIONS.md), one model, one chat at a time - §3)*
 - Progress banner during execution ✅
 
 Changed:

@@ -151,6 +151,14 @@ namespace Heron.Core
                 // never use this to free somebody else's Revit.
                 { "release",            HeronRisk.Read },
 
+                // GIVING A MODEL BACK - D-141. Read, for the same reason: it
+                // frees this chat's own hold on a model, or on all of them, and
+                // reads and changes nothing in any model. Only the chat that
+                // holds a model can free it this way; the ribbon's Free this
+                // model is the person at the machine, and is not on the wire.
+                // Behind the gate and the queue like any other operation.
+                { "release_models",     HeronRisk.Read },
+
                 // STOPPING - D-129. Read, because it changes no model: it sets
                 // HeronStop, which the gate reads before anything that CHANGES
                 // the model, and which the run clock reads inside a fragment

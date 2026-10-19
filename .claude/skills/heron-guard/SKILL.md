@@ -27,8 +27,10 @@ Proven 2026-09-22 by hand: the script refused a forbidden edit piped into it, an
 through the editor in a normal session went straight through.
 
 So [`.claude/settings.json`](../../settings.json) wires it now, for `Write|Edit|MultiEdit`, as
-`python "$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py"` — every session, whether
-or not anybody reads this page. **The frontmatter declares nothing, on purpose:** the host keeps a
+`python` on `.claude/skills/heron-guard/bin/heron_guard.py` under `$CLAUDE_PROJECT_DIR` — or, when the
+script is not there, under the repository the hook runs in
+([`heron-session`](../heron-session/SKILL.md) says why) — every session, whether or not anybody reads
+this page. **The frontmatter declares nothing, on purpose:** the host keeps a
 skill's copy of a hook separate from the settings' copy, so declaring it in both would run it twice.
 [`tests/test_heron_guard.py`](../../../tests/test_heron_guard.py) holds both halves, and runs the exact
 command `settings.json` gives.
