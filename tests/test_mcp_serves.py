@@ -107,8 +107,7 @@ WHAT IT PROVES, when an SDK is installed
      in the model changed only from the add-in's count (row 5b-350) - with
      no count, or a lost answer, it says that was not measured; a
      capability that works inside a link goes the same way with no question
-     first (D-124), and says how far it is proven as its own card reads - a
-     card that is not proven saying its answer is a claim;
+     first (D-124);
      revit_isolate_temporary and revit_reset_temporary
      send their fixed operations with the pin, and an add-in refusal
      reaches the chat in its own words.
@@ -610,8 +609,8 @@ PICTURE_REPLY = {"ok": True, "mode": "view", "view": "Level 1", "viewType": "Flo
                  "projectKey": "key-1", "png": PNG_1PX}
 
 
-def first_with(risk, status):
-    """The capability of the first fragment declaring both, or None."""
+def cards():
+    """Each fragment's folder name with its capability, risk and heron-status."""
     folder = os.path.join(ROOT, "brain", "fragments")
     for name in sorted(os.listdir(folder)):
         card = os.path.join(folder, name, "fragment.yaml")
@@ -623,9 +622,27 @@ def first_with(risk, status):
                 for key in ("capability", "risk", "heron-status"):
                     if line.startswith(key + ":"):
                         seen[key] = line.split(":", 1)[1].strip().strip("\"'")
+        yield name, seen
+
+
+def first_with(risk, status):
+    """The capability of the first fragment declaring both, or None."""
+    for name, seen in cards():
         if seen.get("risk") == risk and seen.get("heron-status") == status:
             return seen.get("capability"), name
     return None, None
+
+
+def status_of(capability):
+    """The heron-status a capability's own card declares, or None.
+
+    A check that types a status goes red the day a proof changes it, on a
+    file nobody touched - so the card is asked instead (row 5b-1219).
+    """
+    for _name, seen in cards():
+        if seen.get("capability") == capability:
+            return seen.get("heron-status")
+    return None
 
 
 async def ask(server, arguments):
@@ -843,33 +860,33 @@ async def exercise_show(module):
               "ZOOM_TO_LINKED_ELEMENTS goes at once, as run_fragment_show, with no "
               "question first - selecting or zooming inside a link is not "
               "touching it (D-124)")
-
-        # HOW FAR IT IS PROVEN IS THE CARD'S, READ AS THE CARD READS TODAY.
-        # This said "DRAFT" outright until #662 proved the card, and then
-        # failed on every machine with the SDK - a claim the card no longer
-        # made. The DRAFT wording is still checked, on a stubbed status below.
-        folder, _ = module._fragment_for("ZOOM_TO_LINKED_ELEMENTS")
-        real_status = module.brain.proof_status
-        proof = real_status(folder) if folder else None
-        if proof and proof["status"] in ("PROVEN", "PRODUCTION"):
-            expect = ("CODE HAS CHANGED SINCE" if proof["stale"]
-                      else "has not changed since")
-            check(proof["status"] in said and expect in said
-                  and "claim" not in said,
-                  "and says how far it is proven, from its own card (%s)"
-                  % proof["status"])
+        # HOW FAR IT IS PROVEN IS ITS CARD'S TO SAY, NOT THIS FILE'S. This
+        # check said "a DRAFT - a claim" of ZOOM_TO_LINKED_ELEMENTS until
+        # 2026-10-19, and went red on every machine with the SDK once #662
+        # proved that card - while CI, which has no SDK, never ran it
+        # (row 5b-1219). So the answer must say what the card says.
+        linked_status = status_of("ZOOM_TO_LINKED_ELEMENTS")
+        if linked_status in ("PROVEN", "PRODUCTION"):
+            check("ZOOM_TO_LINKED_ELEMENTS' is %s" % linked_status in said
+                  and "Treat this answer as a claim" not in said,
+                  "and says it is %s, as its card does - not a claim"
+                  % linked_status)
         else:
             check("DRAFT" in said and "claim" in said,
-                  "and says it is a DRAFT - a claim, not a proof")
+                  "and says it is a DRAFT (its card: %s) - a claim, not a proof"
+                  % linked_status)
 
-        module.brain.proof_status = lambda name: dict(real_status(name) or {},
-                                                      status="DRAFT")
+        # AND A SHOW WHOSE CARD IS A DRAFT STILL SAYS SO, whatever the library
+        # holds today: the same show, with its proof read as DRAFT.
+        real_status = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(real_status(folder) or {},
+                                                        status="DRAFT")
         try:
             said = await call("revit_show", linked)
         finally:
             module.brain.proof_status = real_status
-        check("DRAFT" in said and "claim" in said,
-              "a show whose card is DRAFT says so - a claim, not a proof")
+        check("DRAFT" in said and "Treat this answer as a claim" in said,
+              "a show whose card is a DRAFT says it is a claim, not a proof")
 
         print()
         revit.asked[:] = []
