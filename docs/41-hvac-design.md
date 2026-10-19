@@ -348,7 +348,10 @@ page was read directly.
 
 `psychrometrics` gives a whole state point; `air_mixing` mixes outdoor and return air **by dry-air
 mass**, not volume; `coil_load` gives total, sensible and latent coil load, the sensible heat ratio and
-the condensate, from the air entering and leaving - entering either given or mixed.
+the condensate, from the air entering and leaving - entering either given or mixed. *Since 2026-10-19
+it also gives the coil's apparatus dew point - where the straight condition line through the two states
+meets the saturation curve, solved in `heron_psychro.apparatus_dew_point` - and its bypass factor, and
+FAILS a process no coil gives ([44 §13](44-building-loads-from-the-model.md)).*
 
 ---
 
@@ -523,7 +526,10 @@ before it governs a project.** No standard's text is reproduced here; the figure
 - **Refrigerant piping** for a split or a VRF system - line sizes, lengths and lift are the maker's to
   state.
 - **A dehumidification design case** run alongside the peak dry bulb. The engine warns when the outdoor
-  air is drier than the room; the site's dehumidification condition is the project's to give.
+  air is drier than the room; the site's dehumidification condition is the project's to give. *As built
+  (2026-10-19): the air-system step sizes each coil at an outdoor dry bulb and wet bulb the modeller
+  gives for it ([44 §13](44-building-loads-from-the-model.md)); the room loads still run on the peak dry
+  bulb.*
 - **Static regain and the T-method** for duct sizing.
 - **A fitting-loss library** - the coefficients are the ASHRAE Duct Fitting Database's, and copyright.
 - **Acoustics** - an NC from a duct system, breakout, attenuators. Product NC is read from a catalogue
@@ -541,6 +547,11 @@ before it governs a project.** No standard's text is reproduced here; the figure
   take-off and adds them up - the block load hour by hour beside the sum of peaks - with no physics of
   its own ([44 §11](44-building-loads-from-the-model.md)). Each load answer now carries its numbers in
   `data` for it. The engine itself is unchanged in method.
+- **An air-system step now exists (2026-10-19).** [`heron_loads_systems.py`](../brain/heron_loads_systems.py)
+  groups a run's Spaces into air systems and sizes each unit's coil, supply and outdoor air through
+  `psychrometrics`, `air_mixing`, `ventilation`, `fan_power` and `coil_load` - each of which now carries
+  its numbers in `data` - with no physics of its own ([44 §13](44-building-loads-from-the-model.md)).
+  Built, not run in Revit.
 
 ---
 
