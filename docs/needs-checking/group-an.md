@@ -104,3 +104,10 @@ unless it says KEPT.
 | **AN16** | the family after AN12 to AN15 | `REPORT_FAMILY_CONNECTORS`: no connector; `REPORT_FAMILY_FORMS`: the same one combination, and AN14's ring joined to nothing. Look: rollback has failed on this PC before (BD1) |
 | **AN17** | the signature | `python brain/heron_validate.py accept add-family-connector --by "Ajmal PS"` on the AN12/AN13 record, on the owner's word only |
 | **AN18** | AN12 and AN13 on **Revit 2020** (where row 5b-410 was seen) and on **2024** | The same answers. Every member version 3 adds reads the same 2020 to 2027 (RevitAPI.xml, 2026-10-11) and compiles on all eight releases; not run on any |
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `flex-family` - positive Family4, trials *Duct Width=900; Duct Height=450 | Duct Width=400; Duct Height=200*: `allHeld` true, both trials read back (974 mm overall at 900), `restored` true; negative *No Such Size=500*: nothing tried, refused by name.
+- `add-family-connector` - positive Family4 on *Duct Front*: Supply Air rectangular 150 x 300 mm, sized by Frame Length and Duct Height; negative on *Center (Front/Back)*: no solid face, nothing made.

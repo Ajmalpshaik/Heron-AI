@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -76,8 +76,13 @@ contract:
       source: request
   provides:
     - name: settingReport
-      # Every setting that changed, before and after, on ONE line.
-      role: result
+      # Every setting that changed, before and after, on ONE line. ACCOUNTING,
+      # not a result: it is written on every run - "Every setting named already
+      # read as asked." when nothing changed - so it can never come back empty,
+      # and `changed` beside it is the count that says whether anything did
+      # (D-51). Declared a result, it failed the 2026-10-18 proof's negative
+      # case on a run that changed nothing.
+      role: accounting
       type: string
     - name: changed
       role: result
@@ -97,37 +102,45 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: Family4 (2,157 elements), Revit 2020, session 64176
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned alreadySet 0, changed 2, family
-    Family, findings 3 item(s) [2 setting(s) changed and 0 already as asked, on the family
-    "..., A Work Plane-Based family is placed on a plane or face and m..., Shared decides
-    whether a copy nested in another family shows...], listOf Func`3, named 4 entry(ies),
-    namedTypes 4 entry(ies), notAFamily false, plans 2 item(s) [((workplanebased, Work Plane-Based,
-    FAMILY_WORK_PLANE_BASED)..., ((shared, Shared, FAMILY_SHARED), 1)], problems 0 item(s),
-    refused (null), sectionShapeProperty RuntimePropertyInfo, settingReport Work Plane-Based
-    No -> Yes; Shared No -> Yes, squash Func`2, stored Func`2, switches 13 item(s) [(workplanebased,
+    the transaction group ROLLED BACK afterwards. returned alreadySet 0, changed 1, clsAsked
+    false, clsChosen (null), clsClear false, clsCode BuiltInParameter, clsCodeLabel OmniClass
+    Number, clsCodeRow (null), clsFiledUnder Func`3, clsFiledWords Func`2, clsKeys 5 item(s)
+    [omniclassnumber, omniclass, classificationnumber, ...], clsLabelFor Func`3, clsList Func`2,
+    clsLoad Action, clsNewNames false, clsPath (null), clsProblem (null), clsRows 0 item(s),
+    clsSaidCode , clsSample false, clsShown Func`2, clsTidy Func`2, clsTitle BuiltInParameter,
+    clsTitleLabel OmniClass Title, clsTried 0 item(s), family Family, findings 2 item(s) [1
+    setting(s) changed and 0 already as asked, on the family "..., A Work Plane-Based family
+    is placed on a plane or face and m...], listOf Func`3, named 4 entry(ies), namedTypes
+    4 entry(ies), notAFamily false, plans 1 item(s) [((workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED)...],
+    problems 0 item(s), refused (null), sectionShapeProperty RuntimePropertyInfo, settingReport
+    Work Plane-Based No -> Yes, squash Func`2, stored Func`2, switches 13 item(s) [(workplanebased,
     Work Plane-Based, FAMILY_WORK_PLANE_BASED), (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL),
     (shared, Shared, FAMILY_SHARED), ...], wordsFor Func`3, yesNo Func`2. inputs came settings
-    as given (2). on Family1
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned alreadySet 0, changed 0, family (null), findings 1 item(s)
-    [The document in front, "Project1", is a project, not a famil...], listOf Func`3, named
-    4 entry(ies), namedTypes 4 entry(ies), notAFamily true, plans 0 item(s), problems 0 item(s),
-    refused The document in front, "Project1", is a project, not a family open in the Family
-    Editor. A family's own settings are set inside it - open it for editing first (OPEN_FAMILY_FOR_EDITING).
-    Nothing was changed., sectionShapeProperty RuntimePropertyInfo, settingReport , squash
+    as given (1). on Family4
+  negative_case: run with settings=Work Plane-Based=no instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadySet 1, changed 0, clsAsked
+    false, clsChosen (null), clsClear false, clsCode BuiltInParameter, clsCodeLabel OmniClass
+    Number, clsCodeRow (null), clsFiledUnder Func`3, clsFiledWords Func`2, clsKeys 5 item(s)
+    [omniclassnumber, omniclass, classificationnumber, ...], clsLabelFor Func`3, clsList Func`2,
+    clsLoad Action, clsNewNames false, clsPath (null), clsProblem (null), clsRows 0 item(s),
+    clsSaidCode , clsSample false, clsShown Func`2, clsTidy Func`2, clsTitle BuiltInParameter,
+    clsTitleLabel OmniClass Title, clsTried 0 item(s), family Family, findings 1 item(s) [0
+    setting(s) changed and 1 already as asked, on the family "...], listOf Func`3, named 4
+    entry(ies), namedTypes 4 entry(ies), notAFamily false, plans 1 item(s) [((workplanebased,
+    Work Plane-Based, FAMILY_WORK_PLANE_BASED)...], problems 0 item(s), refused (null), sectionShapeProperty
+    RuntimePropertyInfo, settingReport Every setting named already read as asked., squash
     Func`2, stored Func`2, switches 13 item(s) [(workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED),
     (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL), (shared, Shared, FAMILY_SHARED),
-    ...], wordsFor Func`3, yesNo Func`2. inputs came settings as given (2). on Project1
+    ...], wordsFor Func`3, yesNo Func`2. inputs came settings as given (1). on Family4
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a5169244ceba81e9
+  fingerprint: d7d8f859c5e036a2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

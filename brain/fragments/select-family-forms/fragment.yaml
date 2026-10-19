@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,47 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family4, Project1 - active was Family4,
+    Revit 2020, session 64176'
+  positive_case: run as it would normally be run. returned elements 36 item(s) [Extrusion,
+    Extrusion, Extrusion, ...], findings 1 item(s) [36 form(s) picked of 36 in the family,
+    matching "solid". SET...], formList solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000ab9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000ac9  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000ad9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000ae9  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000af9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b09  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b19  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b29  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b39  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b49  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b59  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b69  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b79  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b89  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000b99  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000ba9  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000bb9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000bc9  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000bd9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000be9  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000cb9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000cc9  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000cd9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000ce9  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000cf9  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d09  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d19  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d29  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d39  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d49  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d59  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d69  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d79  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d89  ||  solid extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000d99  ||  solid
+    extrusion d5850e96-87ea-4a15-a325-61d133f41731-00000da9, ids 0 item(s), kindOf Func`2,
+    known 10 item(s) [all, solid, void, ...], notAFamily false, parts 1 item(s) [solid], picked
+    36 item(s) [Extrusion, Extrusion, Extrusion, ...], refused (null), scanned 36, squash
+    Func`2, words 1 item(s) [solid]. inputs came forms as given. on Family4
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports. returned elements 0 item(s), findings 1 item(s) [The document is
+    a project, not a family open in the Family E...], formList , ids 0 item(s), kindOf Func`2,
+    known 10 item(s) [all, solid, void, ...], notAFamily true, parts 1 item(s) [solid], picked
+    0 item(s), refused The document is a project, not a family open in the Family Editor.
+    Forms live inside a family - open it, or name it with --in., scanned 0, squash Func`2,
+    words 1 item(s) [solid]. inputs came forms as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7a661d39878bef87
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

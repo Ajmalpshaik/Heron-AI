@@ -59,3 +59,9 @@ was about projects.
 **Not in this group, because not built:** materials (set in Properties, or LINK_FAMILY_PARAMETER for every
 form of one kind), reference lines and angles, nested families, and the order a family is built in from a
 picture - that is the third change.
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `lock-form-to-planes` - positive Family4, a kept 20 mm test cube at X 0..20, Y 0..20: 2 faces locked to the Center planes; negative *Frame End Left, Flange Top*: no face lies on them, 0 locked.

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -48,6 +48,24 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-18'
+  by: Ajmal PS
+  model: Family4 (2,168 elements), Revit 2020, session 64176
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned findings 1 item(s) [The preview
+    picture will be taken from "View 1" (read back) ...], previewView View 1, refused (null),
+    view View3D. inputs came viewName as given. on Family4
+  negative_case: run with viewName=No Such View instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned findings 1 item(s) [No view is named "No Such View"
+    in this family. NOTHING WAS ...], previewView , refused No view is named "No Such View"
+    in this family. NOTHING WAS CHANGED., view (null). inputs came viewName as given. on Family4
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 22b5b39e57bd72b5
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
