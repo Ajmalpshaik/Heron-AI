@@ -88,6 +88,13 @@ purpose: >
      the family in front as NEVER SAVED and the build is large, ask the
      modeller once to save it (Ctrl+S) before the first write - Heron cannot
      save the family in front itself, and closed with no file it is lost.
+     A SAVE IS CHECKED, NEVER TRUSTED: ask the modeller to CLICK INSIDE THE
+     REVIT WINDOW FIRST - the keys go to whichever window is in front, often
+     the chat - then read REPORT_OPEN_DOCUMENTS (version 3) again: `fileTimes`
+     must give the family's .rfa a time of now with no [unsaved changes],
+     and `staleFileCount` 0. "The file on disk is from ... - everything
+     since is not saved" means the save did not reach the disk; say so and
+     ask again. The same check closes the build, after the modeller saves.
      Then read the
      thing before anything is built - from the picture, the
      sketch or the words. Say back, in one list: what it is and the category
@@ -344,7 +351,9 @@ purpose: >
   host. A big build in a family that has never been saved is saved FIRST,
   as step 0 asks, never only at the end: closed with no file, it is lost
   with every form in it, and Heron cannot save it for the modeller until
-  OPEN-QUESTIONS Q-69 is answered.
+  OPEN-QUESTIONS Q-69 is answered. Every save the modeller makes is checked
+  as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
+  `staleFileCount` - never taken from "I pressed Ctrl+S".
 
   NOT YET: reference lines and angles - a part that swings or tilts about a
   pivot. A reference line can be made through the API, and an angle labelled,
@@ -503,5 +512,9 @@ note: >
   its file or NEVER SAVED - the chat could not tell the modeller whether the
   60 inch family had been saved, and step 11 b's lost-answer check could not
   see a family window - so step 0 asks once for Ctrl+S on a large build in a
-  family with no file (rows 5b-435 and 5b-487). Every step is DRAFT until it
+  family with no file (rows 5b-435 and 5b-487). Widened on 2026-10-19 after
+  a 40-floor tower on Revit 2020 sat unsaved on disk for 25 minutes while
+  Ctrl+S, pressed twice, went to the chat: REPORT_OPEN_DOCUMENTS version 3
+  gives each file's last-written time, so step 0 checks a save on disk
+  rather than trusting it (row 5b-1218). Every step is DRAFT until it
   has been run on a real family with a negative case (D-30).
