@@ -45,6 +45,9 @@ DEFAULTS = {
     "bridge.autoConnect": "false",
     "bridge.idleReleaseMinutes": "3",
     "bridge.leaseMinutes": "5",
+    # D-141: a model is held by one chat until it says it is done, or this
+    # many minutes pass with no request from it. Read by the add-in.
+    "bridge.modelHoldMinutes": "3",
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
     # The extra wait for a job that has put a Keep or Discard box up: a DRAFT's

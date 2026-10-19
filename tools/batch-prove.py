@@ -846,6 +846,36 @@ def report(results, dry_run, release=None):
           "it is still owed.")
 
 
+def free_models(conversation, session=None):
+    """Hand back the models this batch held, so the next chat need not wait.
+
+    D-141: a model is held by one conversation at a time and freed after three
+    quiet minutes. A batch has finished, so it says so at once. Best effort, as
+    `Bridge.release` is: a hand-back that fails costs a wait, never the batch.
+    Only this batch's conversation can be freed this way - the add-in frees the
+    sender's own holds and nobody else's.
+    """
+    if conversation != BRIDGE.CONVERSATION_ID:
+        # An inherited HERON_CONVERSATION_ID is somebody else's conversation;
+        # its holds are its own to give back.
+        return
+    try:
+        live = BRIDGE.discover()[0]
+    except Exception:                                     # noqa: BLE001 - see above
+        return
+    for bridge in live:
+        if session and str(bridge.pid) != str(session):
+            continue
+        try:
+            reply = bridge.request("release_models", timeout=2.0, response_timeout=20.0)
+        except Exception:                                 # noqa: BLE001 - see above
+            reply = None
+        finally:
+            bridge.close()
+        if reply and reply.get("message"):
+            print("models:    %s" % reply["message"])
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Prove many fragments in one pass. It never signs one.")
@@ -900,6 +930,14 @@ def main(argv=None):
     env = dict(os.environ)
     env.setdefault("HERON_CLIENT_ID", args.client_id)
 
+    # AND ONE CONVERSATION FOR THE WHOLE BATCH - D-141. Each job is its own
+    # process, and each process makes a conversation of its own, so without
+    # this the second job would find the model held by the first and be
+    # refused for three minutes. This process's own id, so the hand-back at
+    # the end frees exactly what the jobs held. A chat's own server never
+    # exports its id, so a batch is never mistaken for the chat that ran it.
+    env.setdefault("HERON_CONVERSATION_ID", BRIDGE.CONVERSATION_ID)
+
     print("job file:  %s" % args.jobs)
     print("jobs:      %d" % len(jobs))
     print("client id: %s" % env["HERON_CLIENT_ID"])
@@ -943,6 +981,9 @@ def main(argv=None):
 
         results.append({"fragment": name, "verdict": verdict, "why": why,
                         "note": job.get("note")})
+
+    if not args.dry_run:
+        free_models(env["HERON_CONVERSATION_ID"], args.session)
 
     # NOTHING HERE WRITES heron-status, SO NOTHING SHOULD HAVE. Checked rather
     # than promised - the same way heron_validate.accept reads the file back.
