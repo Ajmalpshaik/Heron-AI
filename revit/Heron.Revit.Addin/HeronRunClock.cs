@@ -158,6 +158,22 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// The same job runs its fragment a second time - D-142: the modeller
+        /// pressed Delete in the delete box, and the change is run again to be
+        /// kept. Its budget starts again from now, the same budget, for this job
+        /// only. Safe because the dispatcher keeps a whole operation timeout of
+        /// waiting after the last moment a Delete is taken (RevitDispatcher
+        /// .AnswerBy), so this answer still arrives first. A trip already made
+        /// is not undone: the caller never runs it again after one.
+        /// </summary>
+        internal static void Again()
+        {
+            if (Tripped) return;
+            Interlocked.Exchange(ref _deadline,
+                Stopwatch.GetTimestamp() + ToTimestamp(TimeSpan.FromTicks(Interlocked.Read(ref _budget))));
+        }
+
+        /// <summary>
         /// Fragment code is about to run: checks count from now until this is
         /// disposed. RunScript opens one around the script.
         /// </summary>

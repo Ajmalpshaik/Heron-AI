@@ -52,10 +52,14 @@ Concrete protections:
 > **As built (2026-10-18):** 1 holds - the Python side keeps its data in `%USERPROFILE%\.heron`
 > ([D-135](DECISIONS.md)) and the add-in its own in `%APPDATA%\Heron` (`HeronPaths.Data`), never in the
 > checkout; 2 holds -
-> [`.gitignore`](../.gitignore) blocks the data class anyway. **3 is not built:** no secret or PII scan
-> was found in `tools/`, `.github/workflows/` or the hooks in `.claude/settings.json`.
-> [CONTRIBUTING.md](../CONTRIBUTING.md) names real model data and credentials as reasons a change is
-> rejected, which is a reviewer's check, not a scan.
+> [`.gitignore`](../.gitignore) blocks the data class anyway. **3 was not built** when this note was
+> written: no secret or PII scan was found in `tools/`, `.github/workflows/` or the hooks in
+> `.claude/settings.json`. [CONTRIBUTING.md](../CONTRIBUTING.md) names real model data and credentials as
+> reasons a change is rejected, which is a reviewer's check, not a scan.
+>
+> **3, the same day, half of it ([D-143](DECISIONS.md)):** the *secret* half is
+> [`tools/check-secrets.py`](../tools/check-secrets.py), a gate on every pull request. **The PII half is
+> still not built** - nothing scans a tracked file for a person's name, address or e-mail.
 
 ### 2a. As built — what is public, what stays on the PC, what never leaves (2026-10-18)
 
@@ -201,7 +205,7 @@ Contributed fragments enter at `DISCOVERED` and walk the lifecycle like everythi
 
 | Channel | Timing | Notes |
 |---|---|---|
-| **GitHub releases** | Phase 0 onwards | Signed per-version add-in builds + MCP server. *As built (2026-10-18): [`release.yml`](../.github/workflows/release.yml) builds the release assets, and an early v0.1.0 is published for testing only - **unsigned**, since code signing is the installer plan's last stage (that file's own header)* |
+| **GitHub releases** | Phase 0 onwards | Signed per-version add-in builds + MCP server. *As built (2026-10-18): [`release.yml`](../.github/workflows/release.yml) builds the release assets, and an early v0.1.0 was published on 2026-10-08 for testing only - **unsigned**, since code signing is the installer plan's last stage (that file's own header). [D-91](DECISIONS.md) says product files come from a **signed** release; whether a decision should say releases stay unsigned until signing is built is open, [Q-77](open-questions/tier-2.md)* |
 | **Claude Code plugin** | Phase 0 onwards | The primary front end ([D-01](DECISIONS.md)) |
 | **Autodesk App Store** | Later, free | Their review constrains packaging and permissions — worth reading the requirements before the installer is finalised, not after |
 | **pip / npm** | If the brain ships separately | Depends on the Python packaging decision |

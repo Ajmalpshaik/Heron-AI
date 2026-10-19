@@ -28,8 +28,11 @@
 > and never learns that any of this exists. Where this document's framing and the specification
 > disagree, the specification wins.
 >
-> **The text below is unedited on purpose**, the same way the Master Specification is never edited to
-> fix it. The disagreements are the useful part, and an edited brief stops showing what was proposed.
+> **The text below is unedited on purpose.** The disagreements are the useful part, and an edited brief
+> stops showing what was proposed. *(This line also said the Master Specification is never edited to fix
+> it. Since [D-139](docs/DECISIONS.md), 2026-10-18, the specification's four parts are corrected in place
+> where a fact is wrong or an accepted decision settled it, the original words kept beside each
+> correction. D-139 reaches those four parts only, and this brief is not one of them.)*
 
 
 **Project:** Heron AI  

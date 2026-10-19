@@ -237,6 +237,10 @@ NOT_A_ROLLBACK = [
     (r"^return\s+Exported\(",
      "RevitCapture.Exported rolls the group back in its own finally, through the "
      "helper - section 2 checks that finally"),
+    (r"^return\s+deleteRefused\s*;$",
+     "D-142: DeleteGate, in RevitFragmentDelete.cs, rolled the group back through the "
+     "helper before every refusal it answers - tests/test_delete_box.py section 6 "
+     "checks each one"),
 ]
 LEFT_OPEN = "IsModifiable"   # a transaction the fragment left open: Heron cannot roll it back at all
 

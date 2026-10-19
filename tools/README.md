@@ -51,6 +51,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`check-signatures.py`](check-signatures.py) | a fragment the owner signed, still sitting at DRAFT | CI; `check-docs.py` §9 asks it too |
 | [`check-licence.py`](check-licence.py) | the licence on every fragment and skill Heron ships | CI; before bringing knowledge in from outside |
 | [`check-narrow-errors.py`](check-narrow-errors.py) | a broken database reported as an empty one | CI; after touching a `sqlite3` error handler |
+| [`check-secrets.py`](check-secrets.py) | a credential in a tracked file, or a tracked file named like one | CI; before pushing anything that holds a key, a token or a config |
 | [`check-products.py`](check-products.py) | the product manifest: a duplicate `addInId`, a `partOf` typo, a release the repository does not build | CI; after editing `platform/heron-products.json` |
 | [`check-decision-titles.py`](check-decision-titles.py) | a decision number keeps the title it was first written with | CI, on the whole history; before merging a new `D-nnn` |
 | [`check-routing.py`](check-routing.py) | every fragment still wins its own sentences; a routing row naming no capability fails | CI; after any change to a card's words |
@@ -277,7 +278,7 @@ and a decision id in the same sentence — and a row that says DEFERRED without 
 `HOST_PROVIDED` is **imported from `check-metadata.py`**, not repeated here. Two copies of that list is
 the drift this folder exists to prevent.
 
-**It fails when the register does not reconcile**, and all five gates were verified by breaking the
+**It fails when the register does not reconcile**, and every gate below was verified by breaking the
 inputs on purpose before the tool was believed:
 
 | Gate | Fires when |
@@ -1445,6 +1446,37 @@ a check on the message and a `raise` — not any particular wording. Exits 1 on 
 
 ---
 
+## `check-secrets.py` — a credential in a file this repository publishes
+
+```bash
+python tools/check-secrets.py
+```
+
+**Article 17 and [D-07](../docs/DECISIONS.md) in one gate ([D-143](../docs/DECISIONS.md)).** This
+repository is public, so a key in a tracked file is published to every clone the moment it reaches
+`main`. [docs/12 §5a](../docs/12-security-and-permissions.md) asked for a scan as the second layer behind
+the redactor, and nothing ran one until 2026-10-18.
+
+It asks two questions, each of the one place that already owns the answer:
+
+- **the contents** of every tracked file, against `heron_secrets.PATTERNS` - the shapes the redactor
+  already takes out of a log, so a shape added there is caught here with no edit;
+- **the names** of every tracked file, against the **Secrets** block of [`.gitignore`](../.gitignore),
+  matched by git itself and **ignoring case on every system** - a Windows checkout ignores case and the
+  Linux runner does not, so without that a tracked `.ENV` failed locally and passed CI. `.gitignore`
+  stops a new file; it does nothing about one added with `git add -f` or tracked before its line was
+  written.
+
+It **never prints a value** - a finding is a file, a line, a column and a shape, and a file *name* goes
+through the redactor first. It reads only tracked files, never history; a symbolic link is scanned as
+the target text git publishes, never followed; a file with a UTF-16 mark - what PowerShell 5 writes with
+`>` - is read as text; a file that is not text is counted, not read. **There is no allow-list:** a test
+that needs a fake builds it from pieces, the way `heron_secrets.FAKE_FORGE_TOKEN` does. Exits 1 on a
+finding and 2 when it could not look - no git, not a checkout, no entries in the Secrets block, or a
+tracked file it could not open.
+
+---
+
 ## `check-reachable.py` — built, tested, and called by nothing but a test
 
 ```bash
@@ -1806,10 +1838,10 @@ It checks that the plain command `python` is a real Python and not the Microsoft
 (Claude Code starts Heron with `python`), that PyYAML and the MCP package import, and that the server
 loads; then it **builds the knowledge store** (only where a chat's own start-up would -
 `heron_brain._store_warm_allowed`), **downloads the search model once** if `model2vec` is installed,
-and compiles Heron's Python. It reads the Revit add-in folders and the Changes / Admin / Publish
-switches and changes neither. **It installs nothing**, for [Q-39](../docs/open-questions/answered.md)'s
-reason: a missing package is named with its command. Exits 1 while anything **required** is missing.
-Held by `tests/test_heron_ready.py`.
+and compiles Heron's Python. It reads the Revit add-in folders and the Changes, Admin, Publish and Ask to
+Keep switches, and changes none of them. **It installs nothing**, for
+[Q-39](../docs/open-questions/answered.md)'s reason: a missing package is named with its command. Exits 1
+while anything **required** is missing. Held by `tests/test_heron_ready.py`.
 
 **Section 2a appears only when the Claude app is the Microsoft Store (MSIX) build** - a
 `%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_*` folder. Windows then keeps everything Claude's children
@@ -2549,21 +2581,24 @@ hand-back's characters both come from it ([row 5b-1030](../docs/fragment-issues/
 server alone is always NOT MEASURED:** it keeps each call's seconds in memory only
 (`heron_companion.Activity`).
 
-**Since [D-126](../docs/DECISIONS.md), Revit's own time holds the modeller's Keep box.** The audit's `ms`
-runs round the whole job, and the *"Keep what Heron just did?"* box is answered inside it
+**Since [D-126](../docs/DECISIONS.md), Revit's own time holds the modeller's Keep box** - since
+[D-138](../docs/DECISIONS.md) only while *Ask to Keep* is on, which is off by default, and always for a
+DRAFT's one run. The audit's `ms` runs round the whole job, and the *"Keep what Heron just did?"* box -
+or a DRAFT's `'<fragment>' has never been proved. Keep what it did?` - is answered inside it
 ([row 5b-1031](../docs/FRAGMENT-ISSUES.md)). `--journal` (repeatable) reads the box from Revit's own
 `journal.NNNN.txt`, UTF-16 LE or latin-1: the `TaskDialog "Keep what Heron just did?"` line it is shown
 on, the `"TaskDialogResult"` line it is answered on and the button text after it, each line at the last
 stamp at or before it. It reports the boxes in the whole journal, the boxes in the chat's minutes and
-their seconds shown to answered, how many were not kept (any answer but *Keep it* - D-126 makes Esc and
-the close button a Discard too), the boxes answered inside this chat's runs - between an audit line's
+their seconds shown to answered, how many were not kept (any answer but *Keep it*, or D-138's *Keep,
+and keep the rest of this job without asking*, which keeps too - D-126 makes Esc and the close button a
+Discard), the boxes answered inside this chat's runs - between an audit line's
 `at` less its `ms` and its `at` - and **Revit's own time less the boxes**: in all, for the first runs, and
 run by run, each run with its audit line and its box's journal lines. A shown stamp earlier than its run
 began is cut to the run's start, and the run says so. The stamps are the PC's local time with no zone,
 so `--journal-utc-offset +03:00` says how far that clock is from UTC (one behind it is written
 `--journal-utc-offset=-05:00`); without it only the whole journal's boxes are counted and the rest is NOT
-MEASURED, and without `--journal` all of it is. A build timed before D-126 had no box, so its Revit time
-compares with *less the boxes*, not with the figure the box is inside.
+MEASURED, and without `--journal` all of it is. A build timed before D-126, or with Ask to Keep off, had
+no box, so its Revit time compares with *less the boxes*, not with the figure the box is inside.
 
 **A report, not a gate: it exits 0 whatever it finds**, and 2 only when a file it was named is not there.
 [`tests/test_time_family_build.py`](../tests/test_time_family_build.py) holds it to synthetic transcripts

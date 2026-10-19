@@ -26,8 +26,8 @@
 with the reason. Opened 2026-09-08 at the owner's request: *"we will sit for this specially, that
 issued one we can do together."*
 
-**What this is NOT.** It is not the list of unproven fragments — that is 301 and most of them have
-simply not been tried yet. Everything here has been RUN. A fragment earns a row by failing, refusing,
+**What this is NOT.** It is not the list of unproven fragments — that was 301 on 2026-09-08, when
+this was written, the `grep` below derives today's, and most of them have simply not been tried yet. Everything here has been RUN. A fragment earns a row by failing, refusing,
 or passing in a way that proves nothing.
 
 **How to use it.** Read `Status` first. `NEEDS THE OWNER` means the model has to be arranged by hand
@@ -199,3 +199,24 @@ recipe is [`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md).
 which moves a finished row of section 5 or 5b to [`fragment-issues-archive/`](fragment-issues-archive/README.md)
 and leaves its line in its rows file with a link to it. The archive is never written by hand, and a new row
 never goes there: it goes in this register, the same day.
+
+**A row of section 5 or 5b, from the day it is seen to the archive** - read from the rules above and from
+the two tools that act on them. `open-defects.py` reads only the first word of a row's state, so a row that
+is finished says so there.
+
+```mermaid
+%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
+flowchart TD
+    SEEN["<b>A defect seen</b><br/>proving a fragment - section 5<br/>reading a file - section 5b"]
+    ROW["<b>A row, the same day</b><br/>at the end of its section's last rows file"]
+    SPLIT["<b>python tools/split-register.py fragment-issues --write</b><br/>moves it to the file of 25 its number belongs to"]
+    STATE{"What does its state<br/>begin with?"}
+    OPEN(["<b>OPEN</b><br/>python tools/open-defects.py lists it by id"])
+    DONE["<b>A closing word</b> - FIXED, CLOSED, ANSWERED ...<br/>and nothing in the state still owed"]
+    ARCH["<b>python tools/archive-fragment-issues.py --write</b><br/>moves its full text to fragment-issues-archive/"]
+    LINE(["its number, its title and the opening of its state<br/>stay in its rows file, with a link to the archive"])
+
+    SEEN --> ROW --> SPLIT --> STATE
+    STATE -- OPEN --> OPEN
+    STATE -- a closing word --> DONE --> ARCH --> LINE
+```

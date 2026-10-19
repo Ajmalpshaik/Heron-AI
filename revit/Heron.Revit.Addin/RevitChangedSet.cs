@@ -56,7 +56,7 @@ namespace Heron.Revit.Addin
         private readonly Document _document;
         private readonly HashSet<ElementId> _added = new HashSet<ElementId>();
         private readonly HashSet<ElementId> _changed = new HashSet<ElementId>();
-        private int _deleted;
+        private readonly HashSet<ElementId> _deleted = new HashSet<ElementId>();
         private bool _listening;
 
         private readonly HeronChangeReport _report;
@@ -83,10 +83,17 @@ namespace Heron.Revit.Addin
         public ICollection<ElementId> Changed { get { return _changed; } }
 
         /// <summary>
-        /// Deleted, and not added by this same run. Only a count: a deleted
-        /// element cannot be selected or shown.
+        /// Deleted, and not added by this same run. Only a count here: a
+        /// deleted element cannot be selected or shown while the group holds it.
         /// </summary>
-        public int Deleted { get { return _deleted; } }
+        public int Deleted { get { return _deleted.Count; } }
+
+        /// <summary>
+        /// The same elements, by id - D-142's delete box rolls the run back,
+        /// finds each of them in the model again and shows them, and keeps the
+        /// second run only if it deletes exactly these.
+        /// </summary>
+        public ICollection<ElementId> DeletedIds { get { return _deleted; } }
 
         public void Begin()
         {
@@ -160,7 +167,7 @@ namespace Heron.Revit.Addin
                 {
                     if (_added.Remove(id)) continue;
                     _changed.Remove(id);
-                    _deleted++;
+                    _deleted.Add(id);
                 }
 
                 _report.Committed(args.GetTransactionNames(), Keep(added), Keep(modified),

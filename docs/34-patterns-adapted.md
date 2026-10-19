@@ -27,8 +27,8 @@ transfers; the shape almost never does.
 
 | | |
 |---|---|
-| **Patterns extracted** | **20**, from **20** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron had open. §2.15 to §2.19 came from a second round on 2026-09-11, against three repositories named by the improvement-gate plans |
-| **Adopted and built** | **6** — tiered depth, the cut marker, **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)), and the three the improvement gate is made of ([§2.15](#215-built---compare-the-finished-diff-against-what-the-change-said-it-was-for), [§2.16](#216-built---a-file-no-rule-recognises-widens-the-checks-rather-than-passing-quietly), [§2.17](#217-built---check-the-thing-that-gets-delivered-not-the-tree-it-was-built-from)). All tested |
+| **Patterns extracted** | **21**, from **20** repositories — `gbrain` was added by the owner on 2026-09-09 and is the only one that **measured** a question Heron had open. §2.15 to §2.19 came from a second round on 2026-09-11, against three repositories named by the improvement-gate plans, and §2.20 from a second reading of ECC on 2026-10-18 |
+| **Adopted and built** | **7** — tiered depth, the cut marker, **the boundary hook** ([§2.9](#29--built--enforce-at-the-moment-of-the-act-not-afterwards)), the three the improvement gate is made of ([§2.15](#215-built---compare-the-finished-diff-against-what-the-change-said-it-was-for), [§2.16](#216-built---a-file-no-rule-recognises-widens-the-checks-rather-than-passing-quietly), [§2.17](#217-built---check-the-thing-that-gets-delivered-not-the-tree-it-was-built-from)), and the secret gate ([§2.20](#220-built---scan-what-is-about-to-be-published-against-the-lists-that-already-exist)). All tested |
 | **Adopted as a rule rather than as code** | **1** — [§2.18](#218-adopted-as-a-rule---mock-only-the-thing-you-genuinely-cannot-have) |
 | **Already held** | **7** — Heron had them, and in five cases more strictly |
 | **Blocked on an owner decision** | **3** — `Q-50`, `Q-51`, `Q-53`, one each for §2.10 to §2.12. `Q-49` was answered and built; `Q-52` was answered by **measuring it** |
@@ -218,7 +218,7 @@ browser-automation skills, deploys, ship, retro, office hours, a CEO-mode plan r
 to a BIM modeller, and `ETHOS.md` measures its own value in *"10,000+ usable lines of code per day"*,
 which is the developer-harness frame [D-57](DECISIONS.md) rejected outright.
 
-### 2.10 ⏸ OWNER'S CALL — fact-forcing beats confirming, and pointing beats typing
+### 2.10 ✅ ANSWERED AS D-60 — fact-forcing beats confirming, and pointing beats typing
 
 **From** ECC's `gateguard-fact-force.js` — [Q-50](OPEN-QUESTIONS.md). *"Instead of asking 'are you sure?'
 (which LLMs always answer 'yes'), this hook demands concrete facts. **The act of investigation creates
@@ -232,7 +232,7 @@ already in memory when it asks.
 > would change and what it would skip, up to a cap — and that highlight is drawn by Revit's Keep or
 > Discard box in [`HeronKeepQuestion.cs`](../revit/Heron.Revit.Addin/HeronKeepQuestion.cs).
 
-### 2.11 ⏸ OWNER'S CALL — guard the path from retrieval into context
+### 2.11 ✅ ANSWERED AS D-81 — guard the path from retrieval into context
 
 **From** [`ruflo`](https://github.com/ruvnet/ruflo)'s `agentdb-retrieval-guard.ts` —
 [Q-51](OPEN-QUESTIONS.md), and **the most valuable single item the whole programme produced**, because it
@@ -247,7 +247,7 @@ says so in its own part list: `STANDARD = "standard"  # the clauses cited - sour
 > **stamped, not scanned**: every part carrying text Heron did not write names its `source`, Heron
 > attributes rather than asserts, and no chunk scanner is built.
 
-### 2.12 ⏸ OWNER'S CALL — an inventory of what imported knowledge permits
+### 2.12 ✅ ANSWERED AS D-66 — an inventory of what imported knowledge permits
 
 **From** [`scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) as the
 failure and [Headroom](https://github.com/headroomlabs-ai/headroom) as the fix —
@@ -386,6 +386,19 @@ would produce green suites and no knowledge whatever, which is why nothing here 
 | **Why it works** | Severity says what must happen; the snippet lets a reader settle it in one look instead of trusting the tool |
 | **What Heron already had** | Both halves, more strictly. `check-revit-gate.py` has four verdicts about **evidence** rather than severity, and `check-routing.py` exits 0 on purpose because *"a tool that failed a build over two fragments both answering to 'grey the background' would teach people to weaken their own utterances to buy a green tick"* |
 | **What was added** | The same habit in the new gates: every signal in `check-change.py` names the paths that raised it, and every packaging problem names the file and what Revit would do about it |
+
+---
+
+### 2.20 BUILT - scan what is about to be published, against the lists that already exist
+
+| | |
+|---|---|
+| **Where from** | [`affaan-m/ECC`](https://github.com/affaan-m/ECC), MIT, read a second time on 2026-10-18 at `76aaa77d` - its open-source sanitizer agent ([33 §5.1](33-external-repository-research.md#51-affaan-mecc), second pass) |
+| **Their mechanism** | Before a project is released, a read-only pass that trusts nothing the author did greps every text file for credential shapes, personal data and home-directory paths, fails on files whose names say they hold secrets, reads the git history, and lists the files it could not read as text for a person to open. One critical finding fails the release, and no value is printed whole |
+| **Why it works** | It runs at the one moment that cannot be undone, by something other than the author, and it says what it did **not** read rather than letting a clean result imply it read everything |
+| **What Heron already had** | Every input, and no scan. The shapes, in `heron_secrets.PATTERNS`, used only on the way **out** - logs, errors, evidence. The file names, in the Secrets block of [`.gitignore`](../.gitignore), which stops only a **new** file. A refusal for a credential in a commit **message**, in `heron_commit.stage()`, which never reads the files. And [12 §5a](12-security-and-permissions.md) asking for the scan as item 4, recording it as not built |
+| **What Heron built instead** | [`tools/check-secrets.py`](../tools/check-secrets.py), a **gate** ([D-143](DECISIONS.md)). It owns **no list**: the shapes are `PATTERNS`, the names are `.gitignore`'s, matched by git itself. Tracked files only, because only they are published; no value printed; files that are not text counted, and the count printed; exit 2 rather than a guess when the Secrets block is missing. **No allow-list** - a fake in a test is built from pieces, which Heron already did. `PATTERNS` gained the private key that neither layer recognised |
+| **Not taken** | The history audit - a public repository's history is already public, so the answer to a key found there is rotation, not a gate. The personal-data and home-path greps - paths are the path manager's, and personal data is 17's other half, still not built. The release-time placement - Heron's gates run on every pull request, which is earlier |
 
 ---
 

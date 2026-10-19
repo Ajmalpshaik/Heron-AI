@@ -195,6 +195,31 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Revit's own thread, from inside a running job: the job is about to
+        /// ask the modeller whether to delete what it would delete - D-142.
+        /// The same longer wait as AwaitingModeller, and the caller is told,
+        /// if it stops waiting first, that nothing is deleted.
+        /// </summary>
+        internal static void AwaitingDeleteAnswer()
+        {
+            var job = _running;
+            if (job != null) job.MarkAskedToDelete();
+            AwaitingModeller();
+        }
+
+        /// <summary>
+        /// How long the modeller still has to press Delete for it to be kept,
+        /// read when the delete box goes up - D-142. Null when no job is
+        /// running on this thread, so no deadline is known; zero or less once
+        /// the caller has stopped waiting or the time is up.
+        /// </summary>
+        internal static TimeSpan? TimeToAnswer()
+        {
+            var job = _running;
+            return job == null ? (TimeSpan?)null : job.TimeToAnswer();
+        }
+
+        /// <summary>
         /// Must be called from Revit's own thread, during OnStartup. Creating
         /// an ExternalEvent from a background thread is not valid.
         /// </summary>
@@ -296,6 +321,14 @@ namespace Heron.Revit.Addin
 
             var job = new RevitJob(request, HeronIdentity.NewWorkflowId());
 
+            // D-142: THE LAST MOMENT A "DELETE" CAN STILL BE KEPT - the ask
+            // timeout from now. This caller waits at least the operation
+            // timeout on top of it once a box is up, so a Delete pressed by then
+            // leaves the second run a whole operation timeout to finish in and
+            // its answer reaches the chat. Counted from here, before Revit takes
+            // the job, so it can only ever be early, never late.
+            job.AnswerBy(Stopwatch.GetTimestamp() + (long)(_askTimeout.TotalSeconds * Stopwatch.Frequency));
+
             // THE BANNER GOES UP HERE, BEFORE Raise, AND THAT ORDER IS THE
             // WHOLE TRICK. Revit draws on the same thread it works on, so the
             // instant Execute starts nothing can be painted - a banner posted
@@ -377,6 +410,20 @@ namespace Heron.Revit.Addin
             // box can go up at any moment of it.
             var finished = job.WaitForFinish(_operationTimeout)
                 || (job.AskedModeller && job.WaitForFinish(_askTimeout));
+
+            // D-142: from here no Delete in the box is kept - see AnswerBy.
+            if (!finished) job.CallerGone();
+
+            if (!finished && job.AskedToDelete)
+            {
+                // THE DELETE BOX IS STILL OPEN, and it decides nothing any
+                // more: whatever the modeller presses there, nothing is deleted.
+                RecordRefusal(job.WorkflowId, request, "awaiting_delete_answer");
+                return Json.Error("awaiting_delete_answer",
+                    "Revit is still showing you the box asking whether to delete these elements, " +
+                    "and Heron has stopped waiting for the answer. NOTHING IS DELETED now, whatever " +
+                    "you press there. Close the box, and ask again if you still want them deleted.");
+            }
 
             if (!finished && job.AskedModeller)
             {
@@ -1005,6 +1052,9 @@ namespace Heron.Revit.Addin
             private int _state = Queued;
             private int _bannerEnded;
             private int _askedModeller;
+            private int _askedToDelete;
+            private int _callerGone;
+            private long _answerBy;
 
             public RevitJob(string request, string workflowId)
             {
@@ -1073,6 +1123,33 @@ namespace Heron.Revit.Addin
             public void MarkAskedModeller() { Interlocked.Exchange(ref _askedModeller, 1); }
 
             public bool AskedModeller { get { return Volatile.Read(ref _askedModeller) == 1; } }
+
+            /// <summary>D-142: the box up is the delete box, not Keep or Discard.</summary>
+            public void MarkAskedToDelete() { Interlocked.Exchange(ref _askedToDelete, 1); }
+
+            public bool AskedToDelete { get { return Volatile.Read(ref _askedToDelete) == 1; } }
+
+            /// <summary>
+            /// The Stopwatch moment after which a Delete is not kept - set once,
+            /// on the listener thread, before Revit can take the job.
+            /// </summary>
+            public void AnswerBy(long timestamp) { Interlocked.Exchange(ref _answerBy, timestamp); }
+
+            /// <summary>The caller has stopped waiting - set on the listener thread as it returns.</summary>
+            public void CallerGone() { Interlocked.Exchange(ref _callerGone, 1); }
+
+            /// <summary>
+            /// Time left to answer: zero once the caller has gone, null when no
+            /// moment was set.
+            /// </summary>
+            public TimeSpan? TimeToAnswer()
+            {
+                if (Volatile.Read(ref _callerGone) == 1) return TimeSpan.Zero;
+                var by = Interlocked.Read(ref _answerBy);
+                if (by == 0) return null;
+                var left = by - Stopwatch.GetTimestamp();
+                return TimeSpan.FromSeconds((double)left / Stopwatch.Frequency);
+            }
 
             public bool WaitForStart(TimeSpan timeout) { return _started.Wait(timeout); }
             public bool WaitForFinish(TimeSpan timeout) { return _finished.Wait(timeout); }

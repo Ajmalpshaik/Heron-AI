@@ -1,7 +1,9 @@
 # Project review and fix plan - 2026-10-08
 
 **Status: ACTIVE.** Written 2026-10-08 at the owner's request: check the whole project, plan the
-fixes, then fix what can be fixed without Revit, continuously.
+fixes, then fix what can be fixed without Revit, continuously. **Read 2026-10-18:** §5 shows waves 1 and
+2 done and waves 3 to 6 owing mostly a run on the owner's PC or a model, which each row's own register
+state already carries - whether that counts as *moved* for the closure condition is the owner's call.
 
 **Closure condition:** deleted when every row in the waves below is either fixed (its register row
 says so, with the commit) or has moved to the register that owns it. It is a schedule, not a

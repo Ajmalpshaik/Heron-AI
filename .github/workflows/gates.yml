@@ -89,7 +89,8 @@ jobs:
       # and in a shallow clone it exits 2 rather than pass on history it
       # cannot see. Nothing else in this job reads history: measured
       # 2026-09-23, the other ten print the same bytes and exit the same
-      # on a full clone as on a shallow one of the same commit.
+      # on a full clone as on a shallow one of the same commit. check-secrets,
+      # added 2026-10-18, reads the index and the files and never history.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -142,6 +143,15 @@ jobs:
 
       - name: check-narrow-errors
         run: python tools/check-narrow-errors.py
+
+      # A credential in a tracked file is published to every clone the moment
+      # it reaches main (D-07), and docs/12 s5a.4 had asked for this scan since
+      # the start while nothing ran it. The owner made it a gate, not a report,
+      # on 2026-10-18 (D-143): a report is read after the merge. It reads the
+      # redactor's own shapes and the Secrets block of .gitignore, never a list
+      # of its own, and it needs nothing but Python and git.
+      - name: check-secrets
+        run: python tools/check-secrets.py
 
       # The delivery questions. It reads Heron.addin, which nothing else here
       # does - and a manifest fault costs a modeller their whole add-in while

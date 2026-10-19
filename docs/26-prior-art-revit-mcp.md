@@ -160,13 +160,21 @@ transport would be a regression against Heron's most field-proven advantage.
 discovered? If yes, it becomes a viable transport too. If no, it remains a scripting option only.
 Tracked as [Q-37](OPEN-QUESTIONS.md).
 
+> **Decided since (2026-08-28):** neither half of the recommendation above was taken.
+> [D-28](DECISIONS.md#d-28--generated-code-is-c-compiled-at-run-time-in-process) answered
+> [Q-7a](open-questions/tier-1.md): generated code is **C#, compiled at run time with Roslyn, inside
+> Revit**, not pyRevit - one language, one compile gate, and no HTTP server beside an add-in that has no
+> network code. That closed [Q-37](open-questions/from-master-specification-part-2.md) as not applicable:
+> Heron does not use pyRevit Routes, as transport or for scripting. The transport is
+> [D-02](DECISIONS.md)'s per-process named pipe.
+
 ---
 
 ## 6. Smaller practical findings
 
 | Finding | Consequence |
 |---|---|
-| Tools take **millimetres**, converting to Revit's internal **feet** | Heron must fix a unit convention at the tool boundary and state it. Silent unit mismatch is a classic source of wrong-by-1000 errors |
+| Tools take **millimetres**, converting to Revit's internal **feet** | Heron must fix a unit convention at the tool boundary and state it. Silent unit mismatch is a classic source of wrong-by-1000 errors. *Settled since: every length a caller types is millimetres, and the fragment converts it ([D-71](DECISIONS.md#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it)); a point crosses as three millimetre numbers ([D-67](DECISIONS.md#d-67--a-point-crosses-as-three-millimetre-numbers))* |
 | `Demolinator` **requires an active document** | Matches [25 §4](25-multi-session-and-binding.md) — but Heron pins the document rather than depending on which is active |
 | Tool counts of 30 / 48 / 138 | Confirms the context-cost concern in [04 §3](04-heron-mcp.md). At 138 tools, schemas on every request are a real cost — capability discovery is needed, not optional |
 | Several are **forks of one original** | The ecosystem is narrow. Genuine architectural diversity is limited to WebSocket-vs-pyRevit-HTTP |
@@ -265,14 +273,18 @@ Model Checker (rule-based checksets).
 
 ## 8.4 What is left that no one else has
 
-1. **Proof discipline.** [D-30](DECISIONS.md): every fragment recorded against a **named model**, with a
-   **negative case** and a **staleness fingerprint** — 328 of 396 on 2026-09-22; today's split is
+1. **Proof discipline.** [D-30](DECISIONS.md): every `PROVEN` fragment recorded against a **named model**,
+   with a **negative case** and a **staleness fingerprint** — 328 of 396 on 2026-09-22; today's split is
    `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`. The surveyed projects
    ship *runtime* safety (dry-run, transaction grouping). None ships *evidence that the operation was
    ever correct*, kept and re-derivable. A dry-run tells a user what is about to happen; a proof tells
    them it has been right before. Those are different products.
 2. **Revit 2020–2027 with a write path.** Autodesk: 2027. KenLP: 2025+. AB.RevitMcp: 2020–2026, no 2027.
    Heron spans all eight releases. This window closes as firms upgrade — a head start, not a moat.
+   *As built (2026-10-18): Heron **compiles** for all eight; a real Revit has loaded it on 2020, 2024,
+   2026 and 2027, 2021 to 2023 and 2025 are NOT RUN for want of a PC that has them, and on 2026 no
+   fragment ran until a repair not yet run there - [16 §6](16-version-support-strategy.md#6-build-and-deployment-matrix)
+   has the table and its evidence. "Spans" is a claim per release, not one word for all eight.*
 3. **Two Revits of the same version** ([25](25-multi-session-and-binding.md)).
 
 ## 8.5 Revised recommendation

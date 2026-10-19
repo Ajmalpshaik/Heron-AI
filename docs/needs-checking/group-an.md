@@ -28,6 +28,15 @@ C7 and C9 on his word:
 (`tools/check-fragments-compile.py`, 2026-09-24) and route their own sentences. **None has met a
 model.** Every one is `DRAFT`, and each `tests/cases.yaml` names the negative case its proof owes.
 
+> **2026-10-18 - where these tools stand now, read off disk.** *None has met a model* and *every one is
+> `DRAFT`* above describe the day this group was written. Since 2026-10-03 every tool listed above has been
+> run in Revit 2024 and signed by Ajmal PS - the first with the family-editor proofs of PR #395, the rest
+> later; the `proof:` block in each card says on what and when. `add-family-connector` and `flex-family` are DRAFT again: the code moved under the
+> signature, and `python tools/check-signatures.py` lists both STALE. Today's status of any of them:
+> `grep '^heron-status:' brain/fragments/<name>/fragment.yaml`. **The rows below are not closed by those
+> proofs:** they build this group's own family in order, and none of them is recorded as run here, so every row
+> stays open.
+
 **The arrangement is one family, built by the rows in order**, so each row is the setup for the next:
 File, New, Family, the metric Generic Model template, left open in front - a new family nobody needs,
 saved nowhere until AN9 has passed.
@@ -95,3 +104,10 @@ unless it says KEPT.
 | **AN16** | the family after AN12 to AN15 | `REPORT_FAMILY_CONNECTORS`: no connector; `REPORT_FAMILY_FORMS`: the same one combination, and AN14's ring joined to nothing. Look: rollback has failed on this PC before (BD1) |
 | **AN17** | the signature | `python brain/heron_validate.py accept add-family-connector --by "Ajmal PS"` on the AN12/AN13 record, on the owner's word only |
 | **AN18** | AN12 and AN13 on **Revit 2020** (where row 5b-410 was seen) and on **2024** | The same answers. Every member version 3 adds reads the same 2020 to 2027 (RevitAPI.xml, 2026-10-11) and compiles on all eight releases; not run on any |
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `flex-family` - positive Family4, trials *Duct Width=900; Duct Height=450 | Duct Width=400; Duct Height=200*: `allHeld` true, both trials read back (974 mm overall at 900), `restored` true; negative *No Such Size=500*: nothing tried, refused by name.
+- `add-family-connector` - positive Family4 on *Duct Front*: Supply Air rectangular 150 x 300 mm, sized by Frame Length and Duct Height; negative on *Center (Front/Back)*: no solid face, nothing made.

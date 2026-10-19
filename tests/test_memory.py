@@ -143,7 +143,8 @@ def main():
                   "provider key": "sk-" + "A1b2C3d4E5f6G7h8",
                   "aws access key": SECRETS.FAKE_CLOUD_KEY,
                   "slack token": "xoxb-" + "1234567890AB",
-                  "bearer token": "bearer " + "A1b2C3d4E5f6G7h8I9j0K1"}[shape]
+                  "bearer token": "bearer " + "A1b2C3d4E5f6G7h8I9j0K1",
+                  "private key": SECRETS.FAKE_PRIVATE_KEY}[shape]
         answer = ask([one(about="k", what="value " + sample)])
         check(answer["refused_names"][0]["refused"] == "NEVER_STORED",
               "a %s is caught" % shape)

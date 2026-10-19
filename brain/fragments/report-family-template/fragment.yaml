@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -107,38 +107,87 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-18'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family6, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family4, Project1 - active was Family4,
+    Revit 2020, session 64176'
   positive_case: 'run as it would normally be run. returned axisLetters 3 item(s) [X, Y, Z],
-    axisOf Func`2, countOf Func`2, familyKind a detail item - 2D, placed in a view, findings
-    2 item(s) ["" is a detail item - 2D, placed in a view. Category Detail ..., The family
-    has no type yet. A formula, and any value, needs ...], invariant CultureInfo, lineList
-    , mm Func`2, notAFamily false, planeList Center (Left/Right): faces X, at X 0 mm, Is Reference
-    Center (Left/Right), defines origin, pinned  ||  Center (Front/Back): faces Y, at Y 0
-    mm, Is Reference Center (Front/Back), defines origin, pinned  ||  (unnamed da0cea1e-82fa-11d3-a7db-00105aa73639-0000002f):
-    faces Z, at Z 0 mm, Is Reference Not a Reference, defines origin, pointList , shown Func`2,
-    stored Func`2, templateReport Family "" | category Detail Items | kind: a detail item
-    - 2D, placed in a view | placement ViewBased | host elements in the template: none | settings:
-    Host (blank), Work Plane-Based No, Always Vertical No, Cut with Voids When Loaded No,
-    Shared No, Room Calculation Point No, Maintain Annotation Orientation No, Rotate with
-    component No, Keep text readable No, Part Type Undefined, Profile Usage <Generic>, Material
-    for Model Behavior Other, Section Shape Not Defined | built-in parameters: Type Image
-    [type], Keynote [type], Model [type], Manufacturer [type], Type Comments [type], URL [type],
-    Description [type], Assembly Code [type], Cost [type], Section Name Key [type], Type IFC
-    Predefined Type [type], Export Type to IFC As [type] | own parameters: 0 | reference planes:
-    3 | reference lines: 0 | adaptive points: 0 | types: 0, none current | views: Ref. Level
-    (FloorPlan). on Family6'
+    axisOf Func`2, classificationCodes 23.60.70.11 Fireproofing for Services || 23.60.70.11.11
+    Fire Dampers || 23.60.70.14.11 Smoke Dampers || 23.75.50.17.11 Air Filters || 23.75.50.17.11.11
+    Air Filter Components || 23.75.50.17.11.11.11 Air Filter Media || 23.75.50.17.11.14 High-Efficiency
+    Air Filters || 23.75.50.17.11.17 ULPA Filters || 23.75.50.17.11.21 HEPA Filters || 23.75.70.11.14.11
+    Air Ducts || 23.75.70.11.14.14 Dampers for Air Ductwork || 23.75.70.11.14.17 Fire Shutters
+    for Air Ductwork || 23.75.70.11.14.21 Guide Vanes || 23.75.70.11.14.27 Sound Attenuators
+    || 23.75.70.14 Air Ductwork || 23.75.70.14.11 Access Fittings for Air Ductwork || 23.75.70.14.14
+    Couplings for Air Ductwork || 23.75.70.14.17 Hangers and Supports, Mechanical Fasteners
+    for Air Ductwork || 23.75.70.14.21 Fibrous Glass Ducts || 23.75.70.14.24 Flexible Ducts
+    || 23.75.70.14.27 Glass-Fiber-Reinforced Plastic Ducts || 23.75.70.14.31 Metal Ducts ||
+    23.75.70.14.34 Air Duct Accessories  (23 code(s) the classification file gives Duct Accessories,
+    read from C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2020\OmniClassTaxonomy.txt),
+    clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsFiledUnder Func`3, clsLabelFor
+    Func`3, clsLoad Action, clsNewNames false, clsPath C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit 2020\OmniClassTaxonomy.txt, clsProblem (null), clsRows 2645 item(s) [(23.10.00.00,
+    Site Products, , ), (23.10.05.00, Ground Anchorages, , ), (23.10.05.10, Retaining/Stabilizing
+    Ground Anchors, , ), ...], clsSample false, clsTidy Func`2, clsTitle BuiltInParameter,
+    clsTitleLabel OmniClass Title, clsTried 1 item(s) [C:\Users\ajmal\AppData\Roaming\Autodesk\Revit\Autodesk
+    Revit...], countOf Func`2, familyKind level-based - not hosted, placed on a level, findings
+    2 item(s) ["" is level-based - not hosted, placed on a level. Category ..., OmniClass
+    Number reads (blank). The codes the classification...], invariant CultureInfo, lineList
+    , mm Func`2, notAFamily false, planeList Frame End Left: faces X, at X -75 mm, Is Reference
+    Left  ||  Flange Face Left: faces X, at X -71 mm, Is Reference Weak Reference  ||  Corner
+    Plate Left: faces X, at X -68 mm, Is Reference Weak Reference  ||  Flange Leg Left: faces
+    X, at X -45 mm, Is Reference Weak Reference  ||  Center (Left/Right): faces X, at X 0
+    mm, Is Reference Center (Left/Right), defines origin, pinned  ||  Flange Leg Right: faces
+    X, at X 45 mm, Is Reference Weak Reference  ||  Corner Plate Right: faces X, at X 68 mm,
+    Is Reference Weak Reference  ||  Flange Face Right: faces X, at X 71 mm, Is Reference
+    Weak Reference  ||  Frame End Right: faces X, at X 75 mm, Is Reference Right  ||  Flange
+    Front: faces Y, at Y -337 mm, Is Reference Front  ||  Leg Front: faces Y, at Y -306 mm,
+    Is Reference Weak Reference  ||  Casing Front: faces Y, at Y -302 mm, Is Reference Weak
+    Reference  ||  Duct Front: faces Y, at Y -300 mm, Is Reference Strong Reference  ||  Corner
+    Front End: faces Y, at Y -277 mm, Is Reference Weak Reference  ||  Center (Front/Back):
+    faces Y, at Y 0 mm, Is Reference Center (Front/Back), defines origin, pinned  ||  Corner
+    Back End: faces Y, at Y 277 mm, Is Reference Weak Reference  ||  Duct Back: faces Y, at
+    Y 300 mm, Is Reference Strong Reference  ||  Casing Back: faces Y, at Y 302 mm, Is Reference
+    Weak Reference  ||  Leg Back: faces Y, at Y 306 mm, Is Reference Weak Reference  ||  Flange
+    Back: faces Y, at Y 337 mm, Is Reference Back  ||  Flange Bottom: faces Z, at Z -187 mm,
+    Is Reference Bottom  ||  Leg Bottom: faces Z, at Z -156 mm, Is Reference Weak Reference  ||  Casing
+    Bottom: faces Z, at Z -152 mm, Is Reference Weak Reference  ||  Duct Bottom: faces Z,
+    at Z -150 mm, Is Reference Strong Reference  ||  Corner Bottom End: faces Z, at Z -127
+    mm, Is Reference Weak Reference  ||  (unnamed da0cea1e-82fa-11d3-a7db-00105aa73639-0000002f):
+    faces Z, at Z 0 mm, Is Reference Not a Reference, defines origin  ||  Duct Centre: faces
+    Z, at Z 0 mm, Is Reference Not a Reference  ||  Corner Top End: faces Z, at Z 127 mm,
+    Is Reference Weak Reference  ||  Duct Top: faces Z, at Z 150 mm, Is Reference Strong Reference  ||  Casing
+    Top: faces Z, at Z 152 mm, Is Reference Weak Reference  ||  Leg Top: faces Z, at Z 156
+    mm, Is Reference Weak Reference  ||  Flange Top: faces Z, at Z 187 mm, Is Reference Top,
+    pointList , shown Func`2, stored Func`2, templateReport Family "" | category Duct Accessories
+    | kind: level-based - not hosted, placed on a level | units: Length = Millimeters (no
+    symbol), rounding 1 - metric | placement OneLevelBased | host elements in the template:
+    none | settings: Host (blank), Work Plane-Based No, Always Vertical Yes, Cut with Voids
+    When Loaded No, Shared No, Room Calculation Point No, Maintain Annotation Orientation
+    No, Rotate with component No, Keep text readable No, Part Type Attaches To, Profile Usage
+    <Generic>, Material for Model Behavior Other, OmniClass Number (blank), OmniClass Title
+    (blank) | built-in parameters: Default Elevation [type] = 0.0, Use Annotation Scale [type],
+    Type Image [type], Keynote [type], Model [type] = Rectangular Damper Frame, Manufacturer
+    [type] = Heron AI, Type Comments [type] = 2 mm galvanised sheet, 35 mm flanges, 3 mm corner
+    plates. Duct size is set on each instance, URL [type], Description [type] = Rectangular
+    damper frame, galvanised steel casing with flanged ends and corner plates. Nested component
+    for duct dampers, Assembly Code [type] = D3040100, Cost [type] | own parameters: 22 |
+    reference planes: 32 | reference lines: 0 | adaptive points: 0 | types: 1, current "TRG_Standard_35
+    mm Flange" | views: Ref. Level (FloorPlan), Ref. Level (CeilingPlan), Back (Elevation),
+    Front (Elevation), Left (Elevation), Right (Elevation), View 1 (ThreeD). on Family4'
   negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports. returned axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, countOf
-    Func`2, familyKind , findings 1 item(s) [The document in front, "Project1", is a project,
-    not a famil...], invariant CultureInfo, lineList , mm Func`2, notAFamily true, planeList
-    , pointList , shown Func`2, stored Func`2, templateReport . on Project1
+    this fragment reports. returned axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, classificationCodes
+    , clsCode BuiltInParameter, clsCodeLabel OmniClass Number, clsFiledUnder Func`3, clsLabelFor
+    Func`3, clsLoad Action, clsNewNames false, clsPath (null), clsProblem (null), clsRows
+    0 item(s), clsSample false, clsTidy Func`2, clsTitle BuiltInParameter, clsTitleLabel OmniClass
+    Title, clsTried 0 item(s), countOf Func`2, familyKind , findings 1 item(s) [The document
+    in front, "Project1", is a project, not a famil...], invariant CultureInfo, lineList ,
+    mm Func`2, notAFamily true, planeList , pointList , shown Func`2, stored Func`2, templateReport
+    . on Project1
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: e0d021fd47f791ec
+  fingerprint: bbdfbd0b3c28abdd
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

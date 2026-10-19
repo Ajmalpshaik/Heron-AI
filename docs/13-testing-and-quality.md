@@ -27,7 +27,7 @@ The table above is the specification's. This is what runs. No mocked Revit exist
 | 1 Agent unit | every `tests/test_*.py` suite, no Revit | cloud CI on every pull request and push to `main` - the job *"Every suite, and NOT RUN kept apart from FAILED"* in [`gates.yml`](../.github/workflows/gates.yml), and the same every Monday against that day's dependencies ([`weekly.yml`](../.github/workflows/weekly.yml)); locally `python tools/check-gaps.py` | PASS · FAIL · NOT RUN |
 | 2 Fragment | each fragment's C# compiled for every release it claims (`tools/check-fragments-compile.py`), and its own declared words still reaching it (`tools/check-routing.py`, `tools/check-intrusion.py`); what it does to a model is a signed proof (`tools/batch-prove.py`, [D-30](DECISIONS.md)) | cloud CI for the compile and the routing; the owner's PC for the proof | PASS · FAIL · NEEDS REAL REVIT |
 | 3 Skill | `tests/test_skills.py`: each skill well formed and naming capabilities that have a provider - not that it works | cloud CI | PASS · FAIL |
-| 4 MCP | the real server against a stand-in Revit (`test_mcp_serves.py`, `test_mcp_stdio.py`), the pipe round trip (`test_bridge_roundtrip.py`) | **NOT RUN in cloud CI**: the MCP SDK and the .NET test host are left out there on purpose; `test_mcp_serves.py` runs on a Windows runner when the installer's files change ([`windows.yml`](../.github/workflows/windows.yml)), and on the owner's PC | PASS · FAIL · NOT RUN |
+| 4 MCP | the real server against a stand-in Revit (`test_mcp_serves.py`, `test_mcp_stdio.py`), the pipe round trip (`test_bridge_roundtrip.py`) | **NOT RUN in cloud CI**: the MCP SDK and the .NET test host are left out there on purpose; `test_mcp_serves.py` runs on a Windows runner when a pull request touches the installer, the Python lock, `tools/heron-ready.py` or the release builder ([`windows.yml`](../.github/workflows/windows.yml)), and on the owner's PC | PASS · FAIL · NOT RUN |
 | 5 Revit integration | the [NEEDS-CHECKING](NEEDS-CHECKING.md) rows, through the bridge | the owner's PC, with Revit | NEEDS REAL REVIT until a dated run says PASS or FAIL |
 | 6 Version regression | the add-in compiled for every release (`tools/check-compile.py`, CI's *"The C# compiles, 2020 to 2027"*); loading on each release is [Group EQ](needs-checking/group-eq.md) | cloud CI for the compile; a real Revit of each release for the rest | a compile PASS or FAIL; NEEDS REAL REVIT |
 | 7 Full workflow | whole jobs from a chat, such as a family build timed by `tools/time-family-build.py` | the owner's PC | NEEDS REAL REVIT |
@@ -44,7 +44,9 @@ flowchart TD
     NOT["<b>NOT RUN</b> — exit 3<br/>say why; it proves nothing either way"]
     Q3{{"Did every check pass?"}}
     PASS(["<b>PASS</b> — exit 0"])
-    FAIL(["<b>FAIL</b> — exit 1<br/>a claim about the code: never edit the test until it passes"])
+    FAIL(["<b>FAIL</b> — exit 1, any code but 0 and 3, or HUNG<br/>a claim about the code: never edit the test until it passes"])
+    WA["<b>check-gaps.py: WAITING</b><br/>never changes its exit code"]
+    UN["<b>check-gaps.py: UNFINISHED</b><br/>it exits 1 while this holds anything"]
 
     Q1 -->|"yes"| NR
     Q1 -->|"no"| Q2
@@ -52,12 +54,15 @@ flowchart TD
     Q2 -->|"yes"| Q3
     Q3 -->|"yes"| PASS
     Q3 -->|"no"| FAIL
+    NR -.-> WA
+    NOT -.-> WA
+    FAIL -.-> UN
 
     classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
     classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
     classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
     classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
-    class Q1,Q2,Q3 user
+    class Q1,Q2,Q3,WA,UN user
     class NR revit
     class NOT addin
     class PASS brain
@@ -74,13 +79,21 @@ Does the answer depend on what Autodesk's code does?
            no, a dependency is missing -> NOT RUN (exit 3): say why; it proves nothing
            yes -> Did every check pass?
                     yes -> PASS (exit 0)
-                    no  -> FAIL (exit 1): a claim about the code - never edit the test until it passes
+                    no  -> FAIL (exit 1, any code but 0 and 3, or HUNG past the suite's time limit):
+                           a claim about the code - never edit the test until it passes
+
+python tools/check-gaps.py files them:
+  FAIL                       -> UNFINISHED   it exits 1 while this holds anything, 0 otherwise
+  NOT RUN, NEEDS REAL REVIT  -> WAITING      never changes its exit code
+  PASS                       -> neither list
 ```
 
 </details>
 
-The four are never merged. On the Windows runner a NOT RUN fails the job, because that runner exists to
-be the machine those suites wait for ([`tests/README.md`](../tests/README.md)).
+The four are never merged. **Dotted arrows are where [`tools/check-gaps.py`](../tools/check-gaps.py) files
+each result**: its exit code follows UNFINISHED alone, so read its buckets rather than its code. On the
+Windows runner a NOT RUN fails the job, because that runner exists to be the machine those suites wait
+for ([`tests/README.md`](../tests/README.md)).
 
 ## 2. QA principle (§40)
 

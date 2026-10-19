@@ -141,6 +141,15 @@ This needs defining, because "observe without modifying" means different things 
 
 Tracked as [Q-29](OPEN-QUESTIONS.md).
 
+> **Decided 2026-08-28 — [D-39](DECISIONS.md#d-39--shadow-mode-is-approved-on-an-analysed-disagreement-not-a-count-of-agreements),
+> answering Q-29.** The table above stands. *"After N shadow runs"* does not: leaving shadow takes an
+> analysed **disagreement** — what differed, which was right, and why — plus a person's signature, never
+> a count of runs, and an agent that never disagrees is a finding, not a pass.
+> **As built (2026-10-18):** [`heron_shadow.py`](../brain/heron_shadow.py) keeps that disagreement log and
+> computes no agreement rate. It starts no process and runs neither side, and it refuses to authorise a
+> shadow run whose constraints nothing enforces: there is no sandbox to run one in
+> ([D-84](DECISIONS.md#d-84--the-sandbox-is-renamed-not-rebuilt)).
+
 ---
 
 ## 5. Agent Trust Score
@@ -166,6 +175,12 @@ Trust Score: Unproven   -> newly created
 **[NOTE]** Trust score should **order providers in the Capability Registry**. When two agents provide
 `SELECT_DUCTS`, the higher-trust one runs and the other becomes the fallback. That makes trust
 operational rather than decorative.
+
+> **As built (2026-10-18): there is no trust percentage.** [D-39](DECISIONS.md#d-39--shadow-mode-is-approved-on-an-analysed-disagreement-not-a-count-of-agreements)
+> refused one — *"a percentage score would invite a threshold"* — and a fragment is promoted on one
+> recorded proof, not on a count of runs ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
+> The Agent Evaluator, [`heron_evaluator.py`](../brain/heron_evaluator.py) (DRAFT), scores runs against the
+> agent's own contract in `brain/agents/<id>.yaml`, and never counts a correct refusal as a failure.
 
 ---
 
@@ -263,6 +278,13 @@ Two constraints:
 1. **Events are notifications, not commands.** An event handler may schedule work; it may not perform
    a `MODIFY` or `PUBLISH` action directly. Otherwise the permission model has a side door.
 2. **Event handlers must be idempotent.** `FragmentUpdated` will fire twice at some point.
+
+> **As built (2026-10-18):** [`heron_events.py`](../brain/heron_events.py) (DRAFT) holds rule 1 more
+> tightly than it is written: a handler declares its risk, and one above `ANALYZE` is refused when it
+> subscribes, so `SUGGEST` and `EXECUTE` are kept out as well as `MODIFY` and `PUBLISH`. Handlers run in
+> subscription order, a failing one does not stop the rest, and an event that comes back round to itself
+> is stopped. No cache and no tool the server serves listens to the bus yet
+> ([19 §6](19-context-and-cost.md#6-caching)).
 
 ---
 

@@ -4,6 +4,11 @@
 > Where a sentence here disagrees with the [Constitution](../../../HERON_CONSTITUTION.md), the
 > [Golden Rules](../../14-golden-rules.md) or [DECISIONS.md](../../DECISIONS.md), **those win.**
 > **Status:** **Read and sorted. Three rows folded into the plan; one large decision left to the owner.**
+> **Read 2026-10-18: that decision is answered.** S-4 was answered on 2026-09-11 in
+> [`00-structure.md` §8](../plans/rag/00-structure.md) - write the parser, run it on one real QCS section,
+> and take Docling only if that cannot cope - as §3.4 below already says. Nothing on this page waits on
+> the owner now; it retires once its rows are recorded in [`docs/34`](../../34-patterns-adapted.md), which
+> does not carry them yet.
 > **Asked for by:** Ajmal PS, 2026-09-10 — *"go to GitHub and find the best repos, and research on the
 > internet too, not only GitHub — what is it we are going to do. Research and update."*
 > **The rule this obeys:** [**D-25**](../../DECISIONS.md) — **studied and re-authored, never imported.**
@@ -231,6 +236,7 @@ retrieval quietly gets slow.
 [`00-structure.md` §3.8](../plans/rag/00-structure.md) and the build detail in Stage 1.
 
 **Left to the owner:** **S-4**, the Docling question. Nothing else on this page blocks anything.
+*(Answered 2026-09-11 in [`00-structure.md` §8](../plans/rag/00-structure.md) - noted 2026-10-18.)*
 
 **Not taken:** LightRAG's graph, RAGFlow's stack, and the LLM-judge evaluation frameworks — §4, each
 with a reason rather than a preference.

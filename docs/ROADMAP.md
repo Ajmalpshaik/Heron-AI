@@ -105,7 +105,7 @@ NOT BUILT            Not in the plan yet         marketplace, other platforms, m
 | 3 — The BIM surface | **Built**, not proven | `python tools/agent-count.py` |
 | 4 — Learning and trust | **Built early**, not proven | `python brain/heron_gaps.py` · `python tools/agent-count.py` |
 | 5 — Code generation | **Built early:** the run-time compile; no fragment has reached `PRODUCTION` | [D-28](DECISIONS.md) · the `grep` above |
-| 6 — Platform | **Measured.** v0.1.0 published 2026-10-08, unsigned, for testing; the installer run on the owner's laptop on 2026-10-17 and 18 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
+| 6 — Platform | **Measured.** v0.1.0 published 2026-10-08, unsigned, for testing — [D-91](DECISIONS.md) says a release is signed, and [Q-77](open-questions/tier-2.md) asks whether a decision should say otherwise until signing is built; the installer, built locally from `main`, run on the owner's laptop on 2026-10-17 and 18 — EP1 fetched the add-in from v0.1.0 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
 | 7 — Scale | **Built in part:** the company standard (`brain/heron_company.py`) and the agent creator (`brain/heron_creator.py`) | `python tools/agent-count.py` |
 | Not in the plan yet | **Not built** | [the table below](#what-is-deliberately-not-in-the-plan-yet) |
 
@@ -147,11 +147,15 @@ Those eight named components map onto the phases below:
 
 **Goal:** one sentence typed by a human changes the selection in a running Revit.
 
+The path that goal runs, with who does each step as built: the host reads the intent, never Heron
+([D-01](DECISIONS.md)), and the lookup that was hard-coded in Phase 0 is the brain's capability lookup
+since Phase 2.
+
 ```mermaid
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
-    A(["<i>Select all ducts.</i>"]) --> B["intent"] --> C["skill lookup"]
-    C --> D["MCP tool call"] --> E["named pipe"] --> F["add-in listener"]
+    A(["<i>Select all ducts.</i>"]) --> B["intent<br/><i>the host, Claude Code — D-01</i>"] --> C["skill lookup<br/><i>hard-coded in Phase 0 · capabilities since Phase 2</i>"]
+    C --> D["MCP tool call"] --> E["named pipe"] --> F["add-in listener<br/><i>the bridge's pipe server</i>"]
     F --> G["ExternalEvent"] --> H["Revit main thread"]
     H --> I["FilteredElementCollector (OST_DuctCurves)"] --> J["selection set"]
     J --> K["result"] --> L(["audit log entry"])
@@ -174,11 +178,11 @@ flowchart TD
 
 ```text
 "Select all ducts."
-  -> intent
-  -> skill lookup
+  -> intent                     the host, Claude Code (D-01)
+  -> skill lookup               hard-coded in Phase 0; capabilities since Phase 2
   -> MCP tool call
   -> named pipe
-  -> add-in listener
+  -> add-in listener            the bridge's pipe server
   -> ExternalEvent
   -> Revit main thread
   -> FilteredElementCollector (OST_DuctCurves)
@@ -202,7 +206,9 @@ flowchart TD
 - **One** Revit version
 - **One transport**, with per-PID naming and a discovery file *(Q-2)*
 - **One `ExternalEvent`**, one request queue, one handler *([D-09](DECISIONS.md))*
-- Three MCP tools: `revit_health`, `revit_select_by_category`, `revit_get_selection`
+- Three MCP tools: `revit_health`, `revit_select_by_category`, `revit_get_selection` — the first two
+  are served today; `revit_get_selection` was never built as a tool, and the selection is read through
+  `revit_read` as the `READ_SELECTION` capability. The list: `python mcp/server/heron_tools.py`
 - **Pick a Revit if several are running** — a simple numbered list, no availability column yet
 - **Every result names the document it acted on** — *"Found 126 ducts in Tower-A.rvt"*. Cheap, and it
   builds the habit Golden Rule 20 later enforces
@@ -266,8 +272,12 @@ been run in Revit ([Group EQ](needs-checking/group-eq.md), [Group GW](needs-chec
 - ~~**Emergency Stop** in the Revit ribbon~~ — built in Step 6, **button removed 2026-09-06** ([D-46](DECISIONS.md)).
   `HeronStop` has a trigger again: the bridge's `stop` operation ([D-129](DECISIONS.md)),
   `python mcp/client/heron_bridge_client.py stop --session <pid>`, which lasts until Revit restarts
-  ([D-130](DECISIONS.md)). Run once in Revit 2024 on 2026-10-18 on a scratch copy — a running job stopped and
-  rolled back, and a stranger's stop refused ([Group EZ](needs-checking/group-ez.md), EZ3)
+  ([D-130](DECISIONS.md)). Run once in Revit 2024 on 2026-10-18 on a scratch copy, before `--session`
+  existed — a running job stopped and rolled back, and a stranger's stop refused by that Revit; but the
+  stop went to every connected Revit, and a Revit 2020 whose lease nobody held took the stranger's
+  ([Group EZ](needs-checking/group-ez.md), EZ3; [row 5b-1094](fragment-issues/section-5b-rows-401-425.md)).
+  `--session` is the fix for the first half, not yet run with two Revits (EZ6); whether a free Revit
+  should take any client's stop is [Q-71](open-questions/tier-2.md)
   *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
 - **Golden Test Library** started — it only has value if it grows from day one *(Part 4 §28)*

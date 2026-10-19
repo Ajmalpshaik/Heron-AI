@@ -37,6 +37,17 @@ model.** Every one is `DRAFT`. The proof plan is
 [`tools/jobs/family-kinds-2026-10-02.yaml`](../../tools/jobs/family-kinds-2026-10-02.yaml), with BV19 and BV20 in [`tools/jobs/family-beam-2026-10-02.yaml`](../../tools/jobs/family-beam-2026-10-02.yaml) and BV21 to BV23 in [`tools/jobs/family-recheck-2026-10-02.yaml`](../../tools/jobs/family-recheck-2026-10-02.yaml); its arrangements
 are new families from the metric templates the owner's Revit ships, saved once and left open in front.
 
+> **2026-10-18 - where these tools stand now, read off disk.** *None has met a model* and *Every one is
+> `DRAFT`* above describe 2026-10-02. On 2026-10-03 every tool listed above except
+> `add-family-type-parameter` was run in Revit 2024 - each once, in a new family from Revit's own template,
+> with Project1 as the negative, both legs rolled back - and signed by Ajmal PS (PR #395; the `proof:` block in
+> each card). `add-family-type-parameter` was not proved ([row 5b-302](../fragment-issues/section-5b-rows-301-325.md)).
+> Since then the code of `report-family-template`, `set-family-settings` and `set-family-connector-roles` moved
+> under their signatures, so they are DRAFT again - `python tools/check-signatures.py` lists them STALE.
+> Today's status of any of them: `grep '^heron-status:' brain/fragments/<name>/fragment.yaml`. **The rows
+> below are not closed by those proofs:** each asks for more than the one case a proof ran - several families,
+> a look on screen, a release, a *record which* - and none of that is recorded as run, so every row stays open.
+
 | # | Check | Expected |
 |---|---|---|
 | **BV1** | `report-family-template` in a new family from each of: Generic Model, Generic Model wall based, ceiling based, floor based, roof based, face based, line based, Generic Model Adaptive, Curtain Panel Pattern Based, Generic Model Pattern Based, Curtain Wall Panel, Detail Item, Profile, Generic Annotation, Structural Framing - Beams and Braces | Each kind named as the card says - the Curtain Wall Panel as the classic panel, NOT pattern-based - and **record**: the words Revit shows for Host in each; whether `IsCurtainPanelFamily` reads true for the classic Curtain Wall Panel, and for the Generic Model Pattern Based family as well as the Curtain Panel Pattern Based one - the card reads it as pattern-based only if it does; the framing family's Material for Model Behavior and Section Shape; whether the face-based one reads `WorkPlaneBased` with the Work Plane-Based switch off - the card's rule for calling it face-based; the line-based template's Length and the planes it is measured between; the pattern-based template's points 1 to 4 and its reference lines with their ids. **Negative:** in a project, refused as not a family with nothing else returned - the empty answer the batch runner's judge needs; and the plain Generic Model reads level-based, no host, no points |
@@ -62,3 +73,10 @@ are new families from the metric templates the owner's Revit ships, saved once a
 | **BV22** | `create-conceptual-form` revolving: in the same Mass family a closed profile drawn beside a vertical reference line, axis the line, angle empty; then `90` | A full turn and then a quarter turn about the line, their volumes read back - **record whether Revit returned one form or several** (its remark allows several), and that the extent reported takes in every one of them. **Negative:** an arc as the axis, refused as not a straight line |
 | **BV23** | `set-family-settings` in a new Structural Framing - Beams and Braces family: `Material for Model Behavior=Precast Concrete; Section Shape=Rectangle Parameterized`; then the family loaded and one beam placed between two columns | Both read back and seen in Family Category and Parameters; the placed beam **shows the behaviour Autodesk's help gives Precast Concrete** - auto-join with shape handles - record it. **Negative:** `Material for Model Behavior=Granite` refused naming Revit's list |
 | **BV16** | BV1 to BV13 and BV17 to BV23 on **Revit 2020** | The same answers where the call exists; the filled region in a 3D family and the masking region REFUSED by name; the Family Type parameter and the type catalog on their older calls |
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `report-family-template` - positive Family4: `familyKind` level-based, every plane listed; negative Project1: `notAFamily` true, every result empty.
+- `set-family-connector-roles` - positive Family4 on a connector made by the run's own `add-family-connector` setup step: flow Out and a description, `changed` 2; negative on *Center (Front/Back)*: no connector, nothing changed.

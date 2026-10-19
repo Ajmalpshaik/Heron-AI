@@ -50,7 +50,9 @@ rules for whoever works on Heron, but Heron's own agents for a modeller - the fi
 working; `heron-fragment-author` writes a new Heron tool at DRAFT when nothing in the library does the
 job, and runs it only once, behind Revit's Keep or Discard box, when the modeller asks (D-119). They sit here only because this is where the host reads agents from.
 [PROJECT-MAP](../../docs/PROJECT-MAP.md) says where they fit; `tests/test_agent_tools.py` holds what
-they may call.
+they may call. **Every agent file here has a copy for a second host in `.codex/agents/`**, and
+`tests/test_host_agents.py` fails until name, description and body agree - an edit to one is made to
+both, by hand, because nothing generates either.
 
 Finding and selecting a skill is **retrieval** - the read half, and part of RAG. Creating, updating and
 recording one is the **knowledge lifecycle** - the write half, and not RAG. The vector index belongs to

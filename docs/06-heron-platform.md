@@ -78,11 +78,12 @@ flowchart TD
     DATA["<b>%APPDATA%\Heron</b><br/>DATA · heron.config switches, the audit trail"]
     DER["<b>%LOCALAPPDATA%\Heron</b><br/>DERIVED · bridges, live, logs, runs, captures — D-17"]
     TMP["<b>%TEMP%\Heron\companion</b><br/>DERIVED · the chat's note for the Companion button — D-136"]
-    HOME["<b>%USERPROFILE%\.heron</b><br/>DATA · knowledge store, project memory, brain audit — D-135"]
+    HOME["<b>%USERPROFILE%\.heron</b><br/>DATA · knowledge store, project memory, brain audit, backups — D-135"]
 
     REL --> INS
     MAN --> INS
     INS -->|"copies the add-in"| ADD
+    INS -.->|"keeps the install it replaced, install-backup"| DER
     INS -->|"Python half: pinned packages, the knowledge store"| PY
     ADD -->|"Revit loads it"| CORE
     CORE --> DATA
@@ -112,6 +113,7 @@ heron-products.json                  the product list, read as data             
 The installer                        HeronInstaller.exe / heron-install; checks each download
    |
    +-- copies the add-in to  %APPDATA%\Autodesk\Revit\Addins\20xx\   PRODUCT, per user (D-90)
+   |      and keeps the install it replaced in %LOCALAPPDATA%\Heron\install-backup
    |      Revit loads it -> Heron.Core inside the add-in (HeronPaths, HeronConfig, HeronPermissions)
    |         writes  %APPDATA%\Heron          DATA: heron.config switches, the audit trail
    |         writes  %LOCALAPPDATA%\Heron     DERIVED: bridges, live, logs, runs, captures (D-17)
@@ -119,7 +121,8 @@ The installer                        HeronInstaller.exe / heron-install; checks 
    |
    +-- Python half: pinned packages, the knowledge store
           Heron's Python side (the chat's MCP server, heron_paths.py)
-             writes  %USERPROFILE%\.heron     DATA: knowledge store, project memory, brain audit (D-135)
+             writes  %USERPROFILE%\.heron     DATA: knowledge store, project memory, brain audit,
+                                              and tools/heron-backup.py's backups (D-135)
              writes  %TEMP%\Heron\companion   the note the add-in reads (D-135, D-136)
 ```
 
@@ -129,9 +132,9 @@ The installer                        HeronInstaller.exe / heron-install; checks 
 |---|---|---|---|---|
 | `%APPDATA%\Autodesk\Revit\Addins\20xx\` | PRODUCT | the installer, or `tools/deploy-addin.ps1` | replaced on update | per user, no administrator rights ([D-90](DECISIONS.md#d-90--install-stays-per-user-and-never-asks-for-administrator-rights)) |
 | `%APPDATA%\Heron` | DATA | the add-in | **no** - `IsSafeToDelete` refuses it | the switches in `config\heron.config` and the audit trail, which is evidence ([Golden Rule 14](14-golden-rules.md)) |
-| `%LOCALAPPDATA%\Heron` | DERIVED | the add-in | yes | runtime state stays on the machine ([D-17](DECISIONS.md#d-17--runtime-state-is-machine-local-not-roaming)) |
+| `%LOCALAPPDATA%\Heron` | DERIVED | the add-in; and `tools/deploy-addin.ps1`, which the installer runs, keeps the install it replaced in `install-backup\` | yes | runtime state stays on the machine ([D-17](DECISIONS.md#d-17--runtime-state-is-machine-local-not-roaming)) |
 | `%TEMP%\Heron\companion` | DERIVED | the chat; the add-in only reads it | yes | a Store Claude's private copy of AppData does not reach it; from inside Revit it is found by stepping out of Revit's GUID-named temporary folder ([D-136](DECISIONS.md#d-136--the-companions-folder-is-the-users-temporary-folder-found-from-inside-revit-by-stepping-out-of-a-guid-named-one)) |
-| `%USERPROFILE%\.heron` | DATA | the Python side | **no** | out of a Store Claude's reach; `HERON_DATA` moves it ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)) |
+| `%USERPROFILE%\.heron` | DATA | the Python side, and `tools/heron-backup.py`'s backups | **no** | out of a Store Claude's reach; `HERON_DATA` moves it ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)) |
 
 What has run on a real PC is not this diagram's to say: the installer's rows are NEEDS-CHECKING Groups
 [AB](needs-checking/group-ab.md) and [EP](needs-checking/group-ep.md), and the Companion folder's is

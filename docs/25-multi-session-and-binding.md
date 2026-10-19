@@ -158,8 +158,8 @@ they are working on — while Heron binds to the PID underneath.
 > show. `revit_health` names the model of the one Revit this chat is bound to, and no other. Choosing by
 > list number works: `revit_use_session` takes the number or the session id. This section and
 > [`mcp/README.md`](../mcp/README.md) rule 4 state the requirement. The code does not meet it yet, and
-> whether it should is the owner's to decide. Recorded here on 2026-10-18 and not yet a FRAGMENT-ISSUES
-> row.
+> whether it should is the owner's to decide. Recorded the same day as
+> [FRAGMENT-ISSUES row 5b-1132](fragment-issues/section-5b-rows-401-425.md).
 
 ---
 
@@ -396,7 +396,8 @@ the lease, or an interrupted transaction could be stranded.
 > connection that is only waiting for its next request is still dropped at once. A displaced connection
 > whose request **Revit is still running** now keeps its pipe until the answer is written, then
 > closes, so the chat is told what happened. That is "holding both pipes open" for exactly as long as an
-> answer is owed, and no longer: the lease is untouched, and `MaxServerInstances` is 16 so that the
+> answer is owed, and no longer: the lease is untouched, and the pipe's instance limit is 16
+> (`PipeInstances` in [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)) so that the
 > finishing pipe, the newcomer and the next listener can exist together. Measured afterwards on the
 > same stand-in: every one of the 30 came back. **What is left:** a request that reaches an idle pipe in the instant
 > it is displaced is not run at all, and the client still says it cannot tell - safe, because nothing
@@ -644,7 +645,7 @@ success rate, and it would remain fragile across eight Revit versions ([D-05](DE
 | Make Revit responsive during work | **Keep jobs short** — most finish in one or two seconds |
 | Hide the freeze | **Show a banner.** A frozen app with no explanation reads as a crash; the same freeze with a banner reads as progress |
 | Interrupt the user mid-command | **Wait.** *"Waiting for you to finish"* is a normal state, not an error |
-| Fake concurrency inside one Revit | **Chunk and yield** so long jobs do not freeze it for minutes |
+| Fake concurrency inside one Revit | **Chunk and yield** so long jobs do not freeze it for minutes - *not built as of 2026-10-18: a job holds Revit's thread until it ends (§6)* |
 | Pretend side-by-side work is possible | **Tell the user to open a second Revit.** Real parallel work exists across two Revits, never inside one |
 
 That last row is the actual product answer, and it should be said plainly in the docs and in the UI

@@ -27,6 +27,15 @@ have the same signature from 2020 to 2027. **None has met a model.** Every one i
 [`tools/jobs/family-forms-2026-10-01.yaml`](../../tools/jobs/family-forms-2026-10-01.yaml), and its dry run
 says all five would run as written.
 
+> **2026-10-18 - where these tools stand now, read off disk.** *None has met a model* and *every one is
+> `DRAFT`* above describe the day this group was written. Since 2026-10-03 every tool listed above has been
+> run in Revit 2024 and signed by Ajmal PS - the first with the family-editor proofs of PR #395, the rest
+> later; the `proof:` block in each card says on what and when. `create-family-extrusion` is DRAFT again: the code moved under the
+> signature, and `python tools/check-signatures.py` lists it STALE. Today's status of any of them:
+> `grep '^heron-status:' brain/fragments/<name>/fragment.yaml`. **The rows below are not closed by those
+> proofs:** each asks for its own shapes, volumes and a look on screen, and none of that is recorded as run here,
+> so every row stays open.
+
 **One shape language for all five.** A profile is loops with `|` between - `circle CX,CY R`,
 `rect X1,Y1 X2,Y2`, `polygon CX,CY R N`, or corners `X,Y; X,Y; arc MX,MY X,Y` - in millimetres, in the
 work plane's own two model coordinates: X,Y on a level or a horizontal plane, X,Z on a plane facing front or
@@ -50,3 +59,9 @@ Test` and left open in front - a family nobody needs. The job file rolls every w
 **Not in this group, because not built here:** locking a form's faces to planes, labelling a round size, and
 cutting a solid with a void - the steps that make these forms parametric and make a void cut. Each form
 tool's findings say so in its own words.
+
+## Proven 2026-10-18 (Revit 2020, session 64176, the owner's scratch families Family3 and Family4)
+
+Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
+
+- `create-family-extrusion` - positive Family4 *rect 0,0 50,50* Z 500 to 520: built; negative Z 500 to 500.5: refused, 0.5 mm is shorter than Revit's shortest line.

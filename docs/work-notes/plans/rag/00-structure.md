@@ -16,8 +16,8 @@
 > **Read this first.** [`01-requirements.md`](01-requirements.md) says *what*,
 > [`02-implementation.md`](02-implementation.md) says *how*, and the working note that carried the
 > live log was **retired 2026-09-12** - its durable half is in the registers, and git history holds
-> the rest. What it used to say
-> says *where it stands*. **Structure decides all three**, so it sits ahead of them.
+> the rest; where the work stands is [01 §6](01-requirements.md)'s state column. **Structure decides
+> both**, so it sits ahead of them.
 
 ---
 
@@ -626,11 +626,14 @@ back **marked as quoted content with its source** — and the guard reports it r
 
 ## 4. The shape, when all six are in
 
+*The build tags in both pictures were read against [01 §6](01-requirements.md)'s state column on
+2026-10-18; "NEW" was the 2026-09-10 tag, and only the edges route still has nothing built.*
+
 ```mermaid
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     S(["a sentence a modeller actually said"])
-    LB["<b>[3.4] the LIBRARIAN picks the scope</b><br/>one scope. Two scopes means TWO queries,<br/>never one merged one<br/><i>HERON-RAG-LIB-001 · NEW</i>"]
+    LB["<b>[3.4] the LIBRARIAN picks the scope</b><br/>one scope. Two scopes means TWO queries,<br/>never one merged one<br/><i>HERON-RAG-LIB-001 · built 2026-09-11, R-38</i>"]
     SF["<b>the STRUCTURED FILTER, as a plain SQL WHERE</b><br/>scope · Revit version · status · domain<br/>a WALL, never a soft signal<br/><i>already built</i>"]
 
     RT["<b>[3.2] THREE ROUTES over the survivors</b>"]
@@ -639,7 +642,7 @@ flowchart TD
     E["<b>edges</b> — the graph, finds what never says the word<br/>over DOCUMENTS only. The same route over the fragment<br/>graph was measured at six settings and lost every one<br/><i>NEW, CONDITIONAL</i>"]
 
     FU["<b>FUSION by reciprocal rank</b><br/>the third route gets NO WEIGHT until it is measured<br/><i>already built</i>"]
-    RR["<b>[3.5] the RE-RANKER re-reads the top 20</b><br/>absent = slower to be right, never broken<br/><i>NEW, and OPTIONAL</i>"]
+    RR["<b>[3.5] the RE-RANKER re-reads the top 20</b><br/>absent = slower to be right, never broken<br/><i>OPTIONAL · the seam is built, heron_rerank.py, R-41 PART</i>"]
     CK["<b>[3.3] the CHUNK, with its PARENT available</b><br/><i>decided in the chunker</i>"]
     CP["<b>[3.6] the CONTEXT PACKET</b> — heron_context.py<br/>the parts, at a depth, each saying what it lost<br/>+ the CITATION, which opens · + the CONFIDENCE, and what was tied<br/>+ the CHUNK each claim came from<br/>+ what is MISSING — or a refusal by name"]
     HO["<b>the HOST writes the answer the user reads</b><br/><i>D-01 · NEVER the brain</i>"]
@@ -679,7 +682,7 @@ flowchart TD
                     a sentence a modeller actually said
                                    |
                                    v
-  [3.4]  the LIBRARIAN picks the scope                        HERON-RAG-LIB-001   NEW
+  [3.4]  the LIBRARIAN picks the scope                        HERON-RAG-LIB-001   built, R-38
          one scope. Two scopes means TWO queries, never one merged one
                                    |
                                    v
@@ -699,16 +702,16 @@ flowchart TD
          the third route gets NO WEIGHT until it is measured
                                    |
                                    v
-  [3.5]  the RE-RANKER re-reads the top 20                    NEW, and OPTIONAL
+  [3.5]  the RE-RANKER re-reads the top 20                    OPTIONAL, seam built, R-41 PART
          absent = slower to be right, never broken
                                    |
                                    v
   [3.3]  the CHUNK, with its PARENT available                 decided in the chunker
   [3.6]  the CONTEXT PACKET                                   heron_context.py
              the parts, at a depth, each saying what it lost
-             + the CITATION, which opens                                  NEW
-             + the CONFIDENCE, and what was tied                          NEW  [3.1]
-             + the CHUNK each claim came from                             NEW  [3.7c]
+             + the CITATION, which opens                                  built, R-22
+             + the CONFIDENCE, and what was tied                          built [3.1], R-34 R-35
+             + the CHUNK each claim came from                             built [3.7c], R-63
              + what is MISSING - or a refusal by name
                                    |
                                    v

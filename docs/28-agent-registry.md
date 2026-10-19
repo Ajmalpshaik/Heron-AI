@@ -54,7 +54,7 @@ table - it prints the numbers, which are not typed here.
 |---|---|---|---|---|---|
 | `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | — | 3 |
 | `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
-| `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
+| `HERON-ORC-PER-003` | Communication / Persona Agent | ~~Detects role and technical level;~~ chooses wording. BIM language out, not API calls. **Nothing detects role or technical level:** [D-27](DECISIONS.md) settled one voice, plain BIM language, with the answer's *shape* read from the request's shape, and the one place wording may change is Developer Mode, which is granted ([22 §2–§3](22-users-modes-and-extensibility.md)); the struck clause is [PROPOSALS F19](PROPOSALS.md). **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries. **T1, not T2** — Heron's failures are its own bounded set of codes, so the classification is a table, and the one answer that must never be wrong is one a model should not be asked for ([D-21](DECISIONS.md)) | T1 | READ | 6 |
 | `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
@@ -139,7 +139,7 @@ weighed and set aside, on the record, in [42 §2](42-fire-protection-design.md).
 | `HERON-MCP-CMP-008` | MCP Compatibility Agent | Server / add-in / Revit version triangle; refuses cleanly on mismatch | T1 | — | 5 |
 | `HERON-MCP-REC-009` | MCP Recovery Agent | Reconnect with backoff. Distinguishes transport faults from real failures | T1 | — | 5 |
 | `HERON-MCP-LOG-010` | MCP Logging Agent | Structured request/response logging into the audit log | T1 | — | 4 |
-| `HERON-MCP-DIS-012` | **MCP Discovery Agent** | Finds **other** MCP servers installed on the machine, reads their tools, versions and capabilities, and registers them with the Tool Registry. Distinct from Bridge Discovery, which finds Revit sessions ↗ | T1 | READ | — |
+| `HERON-MCP-DIS-012` | **MCP Discovery Agent** | Finds **other** MCP servers installed on the machine, reads their tools, versions and capabilities, and registers them with the Tool Registry. Distinct from Bridge Discovery, which finds Revit sessions ↗. **As built (2026-10-18):** [`heron_discovery.py`](../mcp/server/heron_discovery.py) presents what it finds for a person to read, at `UNKNOWN` trust, and never writes into the Tool Registry - a foreign manifest adding to Heron's risk table is what [Golden Rule 19](14-golden-rules.md) forbids ([PROPOSALS F18](PROPOSALS.md)) | T1 | READ | — |
 | `HERON-MCP-SEC-011` | MCP Security Agent | **Enforces the permission gate in the add-in.** Returns `REQUIRES_CONFIRMATION` rather than executing | T1 | ADMIN | **6** |
 
 ## 4. Session & Bridge Management — 5 *(field-derived)*
@@ -194,9 +194,14 @@ weighed and set aside, on the record, in [42 §2](42-fire-protection-design.md).
 ([10](10-memory-and-knowledge.md)) but no agent owned the user's own. Persona chose *wording*; nothing
 held the durable facts it was choosing from.
 
+> **[D-27](DECISIONS.md), 2026-08-28:** there is no persona, so nothing reads these facts to choose how
+> to speak. What survives is the harder half: a fact is **declared** by the person it is about, never
+> inferred, and a mode is **granted** ([22 §3](22-users-modes-and-extensibility.md)) - which is what
+> [`heron_profile.py`](../brain/heron_profile.py) holds ([PROPOSALS F19](PROPOSALS.md)).
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-USR-PRO-001` | **User Profile Agent** | Holds the durable facts: role, discipline, experience level, language, working style, technical depth. **State, not behaviour** — Persona reads this to choose how to speak ↗ | T1 | READ | — |
+| `HERON-USR-PRO-001` | **User Profile Agent** | Holds the durable facts: role, discipline, experience level, language, working style, technical depth. **State, not behaviour** ~~— Persona reads this to choose how to speak~~ ↗. **Since [D-27](DECISIONS.md) nothing reads it to choose wording** - each fact is one the person declared, never inferred, and a mode carries who granted it ([`heron_profile.py`](../brain/heron_profile.py), [PROPOSALS F19](PROPOSALS.md)) | T1 | READ | — |
 | `HERON-USR-MEM-002` | **User Memory Agent** | Decides what is worth remembering, what expires, what must **never** be stored, and when an old preference is superseded. The judgement is the job ↗ | T2 | MODIFY | — |
 | `HERON-USR-SKL-003` | **User Skill Manager** | Keeps this user's own learned skills separate from shared ones, and manages promotion upward. Personal stays personal until explicitly raised ↗ | T1 | MODIFY | — |
 
@@ -461,7 +466,7 @@ this system.
 | `HERON-NAM-VAL-002` | Naming Validation Agent | Checks a name against the convention | T1 | READ | — |
 | `HERON-NAM-REN-003` | Auto Rename Agent | Renames — **only after identity exists**, never before | T1 | MODIFY | — |
 | `HERON-NAM-TAX-004` | Taxonomy Agent | Maintains the classification scheme | T2 | — | — |
-| `HERON-NAM-KEY-005` | Keyword Agent | Search terms and synonyms — "duct", "ductwork", "supply air" | T1 | — | — |
+| `HERON-NAM-KEY-005` | Keyword Agent | Search terms and synonyms — "duct", "ductwork", "supply air". **As built (2026-10-18):** no synonym table - [D-34](DECISIONS.md) forbids one. [`heron_keywords.py`](../brain/heron_keywords.py) keeps words a **person** recorded as knowledge, looked up and correctable, never inferred ([PROPOSALS F16](PROPOSALS.md)) | T1 | — | — |
 | `HERON-NAM-MET-006` | Metadata Agent | Metadata completeness and schema validity. **FOLDED 2026-09-16 into [`tools/check-metadata.py`](../tools/check-metadata.py) by [D-78](DECISIONS.md)** - both of the row's words are that tool's already: completeness is the five headers every artefact must declare, schema validity is the layer and the agent id being real ones. A third agent would be a third place for one rule, which is what every other finding in [F17](PROPOSALS.md)'s file is about. **The guarding half only** - nothing generates metadata | T1 | — | — |
 | `HERON-NAM-REF-007` | Reference Update Agent | After any rename or move: imports, references, metadata, registry, docs. **No broken references** | T1 | MODIFY | — |
 
@@ -493,7 +498,7 @@ this system.
 | `HERON-INS-BRN-007` | Brain Initialization Agent | Initialises knowledge stores | T1 | ADMIN | — |
 | `HERON-INS-RAG-008` | RAG Initialization Agent | Creates vector store, indexes, embedding config | T1 | ADMIN | — |
 | `HERON-INS-HLT-009` | Health Check Agent | Verifies the install end to end | T1 | READ | — |
-| `HERON-INS-PKG-012` | **Package Manager Agent** | Optional Heron capabilities — skill packs, Revit tool packs, additional providers. Resolves dependencies, checks compatibility, installs, registers, and can uninstall cleanly. Named in Part 4's mandatory list and previously unowned ↗ | T1 | ADMIN | — |
+| `HERON-INS-PKG-012` | **Package Manager Agent** | Optional Heron capabilities — skill packs, Revit tool packs, additional providers. Resolves dependencies, checks compatibility, installs, registers, and can uninstall cleanly. Named in ~~Part 4's mandatory list~~ **Part 1** - its platform list ([§7](00-master-specification.md)) and its Package System (§61) - and in Part 3's platform components ([00c §4](00c-master-handover-baseline.md)), and previously unowned ↗. Part 4's mandatory list does not name it | T1 | ADMIN | — |
 | `HERON-INS-SUP-013` | **Supply Chain Security Agent** | Anything arriving from outside: verify source, package identity and version, scan dependencies, check hashes and signatures, detect modification. **The highest-severity surface in the platform** once packages can install themselves ↗ | T2 | ADMIN | — |
 | `HERON-INS-EXT-011` | **External Tool Manager** | Optional tooling — AI CLIs, development utilities, additional MCP servers. Detect, check compatibility, **ask permission**, install, configure, verify, register. Never silent ↗ | T1 | ADMIN | — |
 | `HERON-INS-ONB-010` | First-Run Onboarding Agent | Guides the user once, then gets out of the way | T2 | READ | — |
@@ -509,7 +514,7 @@ this system.
 | `HERON-OPS-DIA-005` | Self-Diagnostics Agent | *"Diagnose Heron"* — one clean report. **Built 2026-09-07** — `mcp/server/heron_diagnose.py`, served as `heron_diagnose`. It COMPOSES rather than reimplements: `heron_health` for the live picture, the brain seam for the knowledge layer, the Compatibility Matrix for releases, the Capability Gap report for history. Its contract is that it never raises — the first test written against it broke every probe in turn and got an exception each time, so the guard moved to the one place every probe passes through | T1 | READ | — |
 | `HERON-OPS-HEA-006` | Self-Healing Agent | Repairs **derived** state freely; proposes everything else | T1 | MODIFY | — |
 | `HERON-OPS-STP-007` | **Emergency Stop Agent** | Global halt. Sticky until Revit restarts. The ribbon button was removed on 2026-09-06 ([D-46](DECISIONS.md)); **since 2026-10-17 its trigger is the bridge's `stop` operation**, which also stops a fragment already running, rolled back, through the run clock ([D-129](DECISIONS.md)). Nothing over the bridge resumes it ↗ | T1 | READ | **6** |
-| `HERON-OPS-SHD-012` | **Shadow Execution Agent** | The harness, not the teacher. Runs a candidate **in parallel** with the production one, captures both results, and guarantees the candidate can modify nothing. Works for fragments and workflows, not only agents ↗ | T1 | READ | — |
+| `HERON-OPS-SHD-012` | **Shadow Execution Agent** | The harness, not the teacher. Runs a candidate **in parallel** with the production one, captures both results, and guarantees the candidate can modify nothing. Works for fragments and workflows, not only agents ↗. **As built (2026-10-18):** [`heron_shadow.py`](../brain/heron_shadow.py) gives no such guarantee, because nothing in Heron contains a running agent ([D-84](DECISIONS.md)): it starts no process, runs neither side, refuses a shadow run whose constraints nothing enforces, and keeps a disagreement log rather than an agreement rate ([D-39](DECISIONS.md)) | T1 | READ | — |
 | `HERON-OPS-SAF-008` | Safe Mode Agent | Disables recent components, returns to last-known-good | T1 | ADMIN | — |
 | `HERON-OPS-FLG-009` | Feature Flag Agent | Flags for staged rollout and shadow running | T1 | ADMIN | — |
 | `HERON-OPS-UPD-010` | Update Agent | Detects, downloads, migrates, validates, **rolls back** | T1 | ADMIN | — |
@@ -627,7 +632,7 @@ a gap; an agent with no requirement is bloat.
 | Unit convention, feet vs millimetres | [04 §6a](04-heron-mcp.md) | nobody | `Unit Conversion Agent` |
 | *"Undo everything Heron did today"* | [PROPOSALS B3](PROPOSALS.md) | nobody — Transaction Safety owns one operation, not a session | `Session Rollback Agent` |
 | No text Heron reads may raise its permission | [Golden Rule 19](14-golden-rules.md) | the rule existed; nothing detected an attempt | `Content Trust Agent` |
-| Package manager | [Part 4](00d-additional-requirements.md) mandatory list | nobody | `Package Manager Agent` |
+| Package manager | [Part 1 §7 and §61](00-master-specification.md) - this cell said Part 4's mandatory list until 2026-10-18, and that list does not name it | nobody | `Package Manager Agent` |
 | Supply-chain security | [Part 4 §43](00d-additional-requirements.md) | nobody | `Supply Chain Security Agent` |
 
 **Deliberately still unowned**, and correctly so:
@@ -796,10 +801,10 @@ is a separate agent with its own gate rather than a step inside rendering.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth for this reader — a modeller wants the 47 failures, a BIM manager wants the trend. Judgement, so a model call ↗ | T2 | READ | — |
+| `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth for this reader — a modeller wants the 47 failures, a BIM manager wants the trend. Judgement, so a model call ↗. **As built (2026-10-18):** [`heron_compose.py`](../brain/heron_compose.py) follows [D-27](DECISIONS.md) instead - the shape of the answer comes from the shape of the **request** (a count, a breakdown, a narrowed set, a finished job, a comparison), not from the reader, and it calls no model ([PROPOSALS F19](PROPOSALS.md)). The tier in this row is the register's, and changing it is the owner's | T2 | READ | — |
 | `HERON-RPT-RND-002` | **Report Rendering Agent** | Deterministic templates → page, PDF, schedule, CSV, image. **No model call** — data in, document out, same input same output ↗ | T1 | READ | — |
 | `HERON-RPT-VAL-004` | **Report Validation Agent** | Does the report say what the data says. Counts match the query, nothing dropped silently, every figure traceable to its source. A report claiming 47 failures when there are 52 is worse than no report ↗ | T2 | READ | — |
-| `HERON-RPT-RED-003` | **Report Redaction & Release Agent** | The gate before a report can be shared or leave the machine. Strips project identifiers, enforces scope, blocks confidential-project egress. **A report is an egress surface** ↗ | T1 | PUBLISH | — |
+| `HERON-RPT-RED-003` | **Report Redaction & Release Agent** | The gate before a report can be shared or leave the machine. ~~Strips project identifiers,~~ enforces scope, blocks confidential-project egress. **A report is an egress surface** ↗. **As built (2026-10-18):** it strips nothing - [D-26](DECISIONS.md) puts project names among what is fine in the conversation - and **refuses** instead: a Revit file attached, a credential in the text, more than one project, or a project that has not said it may leave ([`heron_release.py`](../brain/heron_release.py), [PROPOSALS F20](PROPOSALS.md)) | T1 | PUBLISH | — |
 
 **Why three and not one** — the [split test](#when-to-split-an-agent-and-when-not-to), applied:
 

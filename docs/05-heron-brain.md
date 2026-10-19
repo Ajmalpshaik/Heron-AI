@@ -52,17 +52,21 @@ CORE KNOWLEDGE
 </details>
 
 *The specification's picture, not the build: there is no community store, and core knowledge is the
-`global` store. The note at the end of this section lists the six stores that exist.*
+`global` store. The note at the end of this section lists the stores that exist.*
 
 This is **Golden Rule 5**. A polluted brain is unsearchable and untrustworthy, and in a consultancy setting mixing Project A's knowledge into Project B is a commercial and contractual problem, not just a technical one.
 
 > **As built (2026-10-18):** [`heron_scope.py`](../brain/heron_scope.py) holds the scopes of
 > [10 §1](10-memory-and-knowledge.md#1-memory-scopes) as `heron_scope.SCOPES`: global, company,
-> project, user, temporary and experimental. Each is one SQLite file, and `ATTACH` is refused at the
-> engine, so a query across two scopes cannot be written. There is no community store. Shared company knowledge is a git repository
-> when there is demand ([D-41](DECISIONS.md#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer)).
+> project, user, temporary and experimental. Each is one SQLite file under `%USERPROFILE%\.heron\knowledge`
+> on Windows ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them);
+> [10 §1.1](10-memory-and-knowledge.md#11-where-each-scope-lives-on-the-pc) has each file), and `ATTACH`
+> is refused at the engine, so a query across two scopes cannot be written. There is no community store.
+> Shared company knowledge is a git repository when there is demand
+> ([D-41](DECISIONS.md#d-41--single-user-now-company-knowledge-is-a-git-repo-and-the-admin-is-the-reviewer)).
 > A project's store is keyed by the model's own `CreationGUID`, never guessed
-> ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about)).
+> ([D-113](DECISIONS.md#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about),
+> still **Proposed**: the code does it, and the owner has not yet accepted the decision).
 
 ---
 
@@ -279,9 +283,11 @@ The user never manages the vector database manually.
 
 > **As built (2026-10-18):** both hold. Indexing is content-hashed, so an unchanged file costs nothing.
 > A lookup re-reads a card only when its bytes change, never on its mtime
-> ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). The stores are derived:
-> `python brain/heron_scope.py --rebuild` puts them back from disk
-> ([Golden Rule 11](14-golden-rules.md)). There is no background agent: the MCP server prepares the
+> ([04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30)). The stores are derived
+> ([Golden Rule 11](14-golden-rules.md)), each from its own source: `python brain/heron_scope.py --rebuild`
+> puts the fragment library back into the `global` store from the cards, and a scope's ingested
+> documents come back from the list kept beside its file (`heron_ingest.restore`, run by the MCP server
+> the first time it opens that store after it starts) while the source files are still on disk. There is no background agent: the MCP server prepares the
 > store once on a background thread when it starts (`heron_brain.warm_store`), and after that a card
 > changed on disk reaches its row on the next lookup. A store that has drifted from the cards is named in
 > the `heron_lookup` answer.
