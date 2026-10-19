@@ -1921,6 +1921,13 @@ def revit_change(capability: str = "", values: str = "",
     if supplied:
         args["values"] = supplied
 
+    # THE CHAT'S OWN WORDS, quoted by Revit's delete box (D-142) when the change
+    # would delete anything - "The chat asked: ...". Shown, never obeyed: the
+    # add-in decides nothing by them, and without them the box names the
+    # capability instead.
+    if (request or "").strip():
+        args["chatWords"] = request.strip()
+
     # idempotent=False for the reason revit_apply_move sets it: if the answer
     # is lost after the request left this machine, whether Revit ran it cannot
     # be known from here, and asking again would do it a second time.

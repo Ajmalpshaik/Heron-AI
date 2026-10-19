@@ -876,6 +876,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hk.md`](needs-checking/group-hk.md)
 
+## Group HL - anything a kept change deletes is asked in Revit first: D-142 (2026-10-18)
+
+**Its own file:** [`needs-checking/group-hl.md`](needs-checking/group-hl.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
