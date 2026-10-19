@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/session_line.py\"",
+            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/session_line.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-session/bin/session_line.py\"",
             "timeout": 15
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/local_only.py\"",
+            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/local_only.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-session/bin/local_only.py\"",
             "timeout": 10
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py\"",
+            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-guard/bin/heron_guard.py\"",
             "timeout": 30,
             "statusMessage": "Checking the adapter boundary..."
           }
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/main_moved.py\"",
+            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/main_moved.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-session/bin/main_moved.py\"",
             "timeout": 60
           }
         ]
