@@ -65,6 +65,12 @@ contract:
       # made - they sit in the schedule looking like real rooms.
       role: result
       type: IList<ElementId>
+    - name: untagged
+      # Says the spaces were placed WITHOUT tags because no Space Tags family
+      # is loaded - how they were placed, never a thing found (D-52). Empty
+      # for rooms, and for spaces when a Space Tags type exists.
+      role: accounting
+      type: string
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -83,6 +89,15 @@ compatibility-note: >
   it is a real asymmetry between the two elements, and it is the modelling fact
   worth taking away: a space belongs to a phase and is placed from a view; a
   room can be placed without either being named.
+
+  **NewSpaces2 tags every space it makes, and THROWS when no Space Tags family
+  is loaded** - "No Space Tags family is loaded in the project", measured
+  2026-10-19 on Project4 in Revit 2020, a model with rooms and no MEP content.
+  With no Space Tags type loaded, each enclosed area of the level's
+  `PlanTopology` gets its own `NewSpace(Level, Phase, UV)`, which makes no tag,
+  and `untagged` says so. `NewSpace`, `PlanTopology(Level, Phase)` and
+  `GetSpaceAtPoint(XYZ, Phase)` were read off `RevitAPI.xml` for all eight
+  releases.
 
   `Room` lives in `Autodesk.Revit.DB.Architecture` and `Space` in
   `Autodesk.Revit.DB.Mechanical`, both of which the wrapper already carries. No
