@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "write one parameter value onto these elements"
 kind: action
 domain: revit.parameters
 capability: WRITE_ELEMENT_PARAMETERS
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -52,11 +52,26 @@ purpose: >
   changes nothing and says so. Text, numbers and element references go exactly
   the way they went in version 3; `alreadyThat` is filled for a tick box only.
 
+  **Version 5 takes a material, a level or a family type by name.**
+
   ASSUMES AN OPEN TRANSACTION and does not open one. Golden Rule 16 puts the
   TransactionGroup at the OPERATION, so that one user action is one undo; a
   fragment that opened its own would add a second entry to the undo stack and
   break exactly the rule it looks like it is obeying.
 
+# VERSION 5 - FRAGMENT-ISSUES 5b-1259. Measured 2026-10-19 on Revit 2020: a
+# mullion type's Material (twisting tower) and a column type's Material (the
+# owner's Kerala house, M_Round Column, <By Category>) could not be given a
+# material - a parameter holding another element was refused here, and
+# IMPORT_PARAMETER_VALUES handed the name to SetValueString, which takes none.
+# Now the value is a NAME: a material or a level by its Name, a family type as
+# "Family: Type", matched exactly. What it may name is narrowed first - by what
+# the parameter holds now (a type: that category's types only), else by its
+# definition (Material; FamilyType on 2020 and 2021), else all three kinds -
+# and a name matching none, or two, is refused with a finding that says which.
+# After the one regeneration the id Revit holds must be the id the name named,
+# or the element is in `snapped`. Every other storage type is version 4's road.
+# Version 4's proof below no longer describes the code: DRAFT until Group HZ.
 contract:
   needs:
     # Needed for the ONE regeneration that makes the snap visible. Without it
@@ -121,12 +136,18 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: findings
-      # Why a value was turned down, in words - today only a value that is not
-      # a Yes/No word on a Yes/No parameter, naming it and the words that are.
+      # Why a value was turned down, in words - a value that is not a Yes/No
+      # word on a Yes/No parameter, naming it and the words that are; and
+      # since version 5 a name that names no material, level or family type,
+      # or names two, with the reason.
       # A sentence about a refusal, never a thing found (D-52).
       role: accounting
       type: IList<string>
 
+# VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1259), so
+# its fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
+# element reference still takes the road this proof ran.
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -188,6 +209,14 @@ compatibility-note: >
   the thousands separator and the project's decimal-places setting into a check
   that needs none of them.
 
+  Since row 5b-1259 an element reference takes a name. `Parameter.Set(ElementId)`,
+  `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`
+  and `WhereElementIsElementType` are unchanged 2020 to 2027. What a reference
+  holding <By Category> may name is read by reflection, like the Yes/No:
+  `SpecTypeId.Reference.Material` from 2022 (read in the 2023 reference
+  assembly), `ParameterType.Material` and `ParameterType.FamilyType` on 2020
+  and 2021 (read in the 2020 one). No `ElementId` is built from a number.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "fill in the mark"               -> here - the parameter already exists
@@ -219,9 +248,10 @@ compatibility-note: >
 #                                           (5b-203); that one reaches each by
 #                                           Revit's own parameter id
 #   "change the mullion type on the      -> SET_CURTAIN_WALL_MULLIONS. The same
-#    curtain wall"                          shared names, and each holds a
-#                                           mullion TYPE - an element reference,
-#                                           which this one refuses as well
+#    curtain wall"                          shared names, which this one
+#                                           refuses as ambiguous - even though
+#                                           an element reference takes a name
+#                                           since version 5
 
 utterances:
   - set the comments on these
