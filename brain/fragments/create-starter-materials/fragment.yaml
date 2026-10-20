@@ -39,8 +39,9 @@ risk: MODIFY
 # "Wood Oak=<a name LIST_MATERIALS lists with withLibraryAppearances>". What
 # Revit's appearance library holds depends on the PC's install; a name it
 # has not got refuses the call before anything is made. VERSION 2 (row
-# 5b-1272): a library look is matched on SET_MATERIAL_APPEARANCE's rule - the
-# browser's name where Revit gives it, and Revit's code ("Prism-256") always.
+# 5b-1272): a library look is matched on SET_MATERIAL_APPEARANCE's rule - a
+# Prism asset's description, most often the browser's name but not always,
+# and Revit's code ("Prism-256"), which always matches.
 # Version 1 read the UIName as the browser's name; on Revit 2020 it is the code.
 #
 # A NAME ALREADY IN USE IS LEFT AS IT IS AND REPORTED - never duplicated and

@@ -126,16 +126,16 @@ was: every rolled-back run first, then the save, then the kept run.
 
 | # | Look at | Answer |
 |---|---|---|
-| **EYE1** | Asset Browser: do `Copper - Polished`, `Glass - Clear`, `Concrete - Cast in Place`, `Aluminum - Brushed` and `Wood - Cherry` appear by those names? (IA1) | owed |
-| **EYE2** | Material Browser, `IA Probe Steel`, Identity tab: is there a **Keywords** box at all on Revit 2020? (IA2) | owed |
-| **EYE5** | `IA Probe Wood`, Appearance tab: Glossiness **40**? Reflectivity Direct **10**? The image: 1200 x 600 mm, rotation 90, offset 100 / 50 in the texture editor? (IA5) | owed |
+| **EYE1** | Asset Browser: do `Copper - Polished`, `Glass - Clear`, `Concrete - Cast in Place`, `Aluminum - Brushed` and `Wood - Cherry` appear by those names? (IA1) | **Half.** Seen by the owner 2026-10-20: `Copper - Polished` is there by that name (Metal: Copper). Prism-152, listed as `Glass - clear`, shows as **`Glass (Clear)`** (Transparent, Glass: Smooth). Revit's description is therefore not always the browser's name: a look typed as the browser shows it may be refused, while its code always matches. Row 5b-1272 records it. The other three names were not looked at |
+| **EYE2** | Material Browser, `IA Probe Steel`, Identity tab: is there a **Keywords** box at all on Revit 2020? (IA2) | **Yes.** Seen by the owner 2026-10-20: Descriptive Information has Description, Class `Metal`, Comments and **Keywords** (empty). Product Information has Manufacturer `IA Maker` and Model `M-1`. Keynote is `05 12 00` and Mark `IA-1` - IA2's kept values, read by eye. Keywords is a box the browser shows and no parameter reaches. The tool's refusal says to set it there, which is right |
+| **EYE5** | `IA Probe Wood`, Appearance tab: Glossiness **40**? Reflectivity Direct **10**? The image: 1200 x 600 mm, rotation 90, offset 100 / 50 in the texture editor? (IA5) | **Glossiness 40 and Reflectivity Direct 10: YES** - seen by the owner 2026-10-20, Generic, with image `ceramic_wood_color.jpg`, Image Fade 100, Highlights Non-Metallic and Oblique 0. **The 0-100 scale the card stores as 0-1 is the browser's.** The texture editor - size, rotation, offset - was not opened: **still owed** |
 
 **For the owner's signature** - one draft each, with a kept run as its positive wherever the tool changes the
 model:
 
 | Tool | Positive | Negative | Draft fingerprint |
 |---|---|---|---|
-| `list-materials` v4 | IA1, three probes with every tab and the library | `ZZZ*`, `materialCount` 0 | `83f80ac2b4c15190` |
+| `list-materials` v4 | IA1, three probes with every tab and the library | `ZZZ*`, `materialCount` 0 | `ea0007418a1a97d7` |
 | `set-material-properties` | IA2, kept | `IA Probe Stel`, refused | `f5d8cadb4637b26c` |
 | `set-material-appearance` v2 | IA5, kept | a missing image, refused | `affdd751d0750c40` |
 | `create-starter-materials` v2 | IA8, kept | `granite`, refused | `37f530e6fab754bf` |
@@ -146,3 +146,5 @@ Each draft's gap is *"no second route was run"* - for `set-material-appearance` 
 owner's decision, and the note goes with the signature. A repeat whose report reads back *"already ..."* is
 not empty by the draft's measure: the count is 0, but the sentence is not. So each recorded negative is a
 refusal, and each repeat is recorded above.
+
+**Overlap with older tools, checked 2026-10-20 at the owner's question.** Nineteen cards touch a material. None does what any of the five does, but two share a field. `SET_MATERIAL_PROPERTIES` sets `Shading Colour=` on many materials, and the PROVEN `SET_MATERIAL_COLOUR` sets one material's - the card sends one material's colour to the older tool. `SET_ELEMENT_MATERIAL` writes a material parameter, and `WRITE_ELEMENT_PARAMETERS` version 5 (DRAFT, row 5b-1259) writes one too when it is named on the element given - a type's Material when the type is given. What the newer tool adds is finding the parameter: on the element, its type or its duct system type, the layered walls and a door's two parameters named rather than guessed. Whether the two should become one is the owner's question, not decided here.

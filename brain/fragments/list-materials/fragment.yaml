@@ -102,8 +102,9 @@ risk: READ
 # 2020. Version 3 listed the library by each asset's UIName and called it the
 # asset browser's name; measured, the UIName of every library asset there is
 # Revit's code ("ACADGen-001", "Prism-256") and Title is empty. The list now
-# gives the browser's name where Revit gives it - Title, else a Prism asset's
-# description - with the code in [ ], and the code alone for an older asset,
+# gives Title, else a Prism asset's description - most often the browser's
+# name, not always: Prism-152's "Glass - clear" shows as "Glass (Clear)" -
+# with the code in [ ], and the code alone for an older asset,
 # whose description is a sentence its kind shares ("Generic material." on 557
 # assets). Assets Revit marks Hidden are left out and counted. Only
 # withLibraryAppearances' answer changed.
@@ -152,8 +153,8 @@ contract:
       source: request
       optional: true
     # Version 3. Every appearance asset of Revit's appearance library on this
-    # PC, in libraryAppearances - by the asset browser's name where Revit gives
-    # it, and by Revit's code (version 4).
+    # PC, in libraryAppearances - by Revit's description where it names the
+    # look, most often the asset browser's name, and by Revit's code (version 4).
     - name: withLibraryAppearances
       type: bool
       source: request

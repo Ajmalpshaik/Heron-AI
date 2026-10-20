@@ -37,8 +37,13 @@ risk: MODIFY
 # library asset on its UIName, then its Title. Measured on Revit 2020: a
 # library asset's Title is empty and its UIName is Revit's code - "Prism-256",
 # "Plastic-024" - so the browser's name ("Steel - Satin") matched nothing and
-# only the code worked. Now: Title; else a Prism asset's description, which is
-# the browser's name in another case ("Steel - satin"); else the code. An older
+# only the code worked. Now: Title; else a Prism asset's description, most
+# often the browser's name in another case ("Copper - polished" for "Copper -
+# Polished") but not always - Prism-152's "Glass - clear" shows as "Glass
+# (Clear)", and that browser name is not matched (row 5b-1272); else the
+# code, which always matches. The comment in the source says "is that name"
+# - written before the Glass case was seen; corrected in its next version,
+# because any change to the source stales the kept run (IA5). An older
 # asset's browser name is not readable on Revit 2020 (its description is a
 # sentence its kind shares, "Metal."), so it is named by its code.
 #

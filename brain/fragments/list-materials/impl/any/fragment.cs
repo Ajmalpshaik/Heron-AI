@@ -234,14 +234,16 @@ var findings = new List<string>();
     // install, so it is read, never assumed. One line, sorted, each with its
     // kind.
     //
-    // BY THE ASSET BROWSER'S NAME WHERE REVIT GIVES IT, AND BY ITS CODE
-    // ALWAYS (version 4, row 5b-1272). Version 3 listed the UIName, measured
+    // BY REVIT'S DESCRIPTION WHERE IT NAMES THE LOOK, AND BY ITS CODE ALWAYS
+    // (version 4, row 5b-1272). Version 3 listed the UIName, measured
     // 2026-10-20 on Revit 2020 (Group IA, IA1) to be Revit's code for every
     // library asset - "ACADGen-001", "Prism-256" - while Title is empty there.
-    // A Prism asset's description is the browser's name in another case
-    // ("Steel - satin" for "Steel - Satin"); an older asset's is a sentence its
-    // kind shares ("Generic material." on 557), so it is listed by its code
-    // alone and the finding says how many. Assets Revit marks Hidden (1,162 of
+    // A Prism asset's description is OFTEN the Asset Browser's name in another
+    // case - "Copper - polished" shows as "Copper - Polished" - and NOT ALWAYS:
+    // Prism-152's "Glass - clear" shows as "Glass (Clear)" (seen by the owner
+    // the same day). An older asset's description is a sentence its kind
+    // shares ("Generic material." on 557), so it is listed by its code alone
+    // and the finding says how many. Assets Revit marks Hidden (1,162 of
     // 3,088 there) are left out, counted - the tools still take one by code.
     if (withLibraryAppearances)
     {
@@ -264,8 +266,9 @@ var findings = new List<string>();
         }
         shown.Sort(StringComparer.OrdinalIgnoreCase);
         libraryAppearances = string.Join("  ||  ", shown);
-        findings.Add(string.Format("{0} appearance asset(s) in Revit's appearance library on this PC - {1} by the Asset Browser's name "
-            + "with Revit's code in [ ], {2} by Revit's code alone, because this Revit gives no other name for them; {3} Revit marks hidden "
-            + "are left out. Either name or code is taken by SET_MATERIAL_APPEARANCE", shown.Count, byName, byCode, hiddenCount));
+        findings.Add(string.Format("{0} appearance asset(s) in Revit's appearance library on this PC - {1} by Revit's description of the look, "
+            + "most often the name the Asset Browser shows but not always, with Revit's code in [ ]; {2} by Revit's code alone, because this "
+            + "Revit gives no other name for them; {3} Revit marks hidden are left out. SET_MATERIAL_APPEARANCE takes the description or the "
+            + "code - the code is the sure one", shown.Count, byName, byCode, hiddenCount));
     }
 }
