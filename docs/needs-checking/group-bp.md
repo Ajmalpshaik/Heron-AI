@@ -35,3 +35,10 @@ gave them. **Neither tool has met a model**, and both are `DRAFT`. The proof pla
 | **BP4** | Group BM's arrangement: planes `Body Top=Top`, then `Body Top=Strong Reference` | Body Top reads Top, then Strong Reference, in Properties; every other plane as it was. **Write down the numbers each answer reports** - the question this row exists for is whether Revit stores `FamilyInstanceReferenceType`'s numbers or others, and the answer says which it used. **Negative:** `Body Top=Left` - refused, Left goes on a plane facing left or right |
 | **BP5** | A plane `Box Left` facing left-right at -300, made with CREATE_REFERENCE_PLANES: planes `Box Left=Strong Reference, origin` | Box Left Strong and Defines Origin Yes; `Center (Left/Right)` reported giving up the origin and reading No in Properties. Loaded into a test project, the family places by Box Left. **Negative:** `Box Left=Center (Left/Right)` while the template's centre plane holds it - refused naming that plane, nothing changed |
 | **BP6** | BP1 to BP5 on **Revit 2020** | The same answers - the kind check's reflection takes the other branch there |
+
+**Re-proof of version 2, 2026-10-20 (Revit 2020, the owner's laptop).** BP1's two legs ran again on the
+owner's own family `TRG_Duct Accessory_Electric Duct Heater` (2,032 elements), both rolled back -
+[`tools/jobs/link-family-form-parameter-2026-10-20.yaml`](../../tools/jobs/link-family-form-parameter-2026-10-20.yaml):
+a clearance box's Visible linked to the instance Yes/No `Show Clearance Zones` (`changed` 1), and the
+same box given `Heater Width L`, a length, refused naming both kinds (`changed` 0). Signed Ajmal PS,
+PROVEN. **Still not run in Revit:** version 2's nested-part link, BP2 and BP3; this run is BP1 of BP6 (Revit 2020).
