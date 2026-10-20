@@ -85,6 +85,8 @@ compatibility-note: >
 #                                                   phase
 #   "set the render quality to best"             -> SET_RENDER_SETTINGS
 #   "which renderings are saved"                 -> READ_RENDERED_IMAGES
+#   "what would the exterior day preset do"      -> REPORT_VISUAL_PRESET, a view
+#                                                   against a visual preset
 
 utterances:
   - how is this 3D view set up for rendering
