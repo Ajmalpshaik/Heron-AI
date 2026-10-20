@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -206,6 +206,897 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,780 elements), Revit 2020, session 29012
+  positive_case: 'run as it would normally be run. returned findings 3 item(s) [3 material(s)
+    match ''IA Probe*'' in this project - ''Materials..., Listed used or not - unused ones:
+    FIND_UNUSED_MATERIALS, 1926 appearance asset(s) in Revit''s appearance library on th...],
+    libraryAppearances 10x10cm measured Tile - black background [Prism-245] (PrismOpaqueSchema)  ||  10x10cm
+    measured Tile [Prism-206] (PrismOpaqueSchema)  ||  12x12in measured Tile - black background
+    [Prism-244] (PrismOpaqueSchema)  ||  12x12in measured Tile [Prism-205] (PrismOpaqueSchema)  ||  ABS
+    - white glossy [Prism-374] (PrismOpaqueSchema)  ||  ACADGen-001 (Generic)  ||  ACADGen-002
+    (Generic)  ||  ACADGen-003-1-2 (Generic)  ||  ACADGen-004 (Generic)  ||  ACADGen-005-1-2
+    (Generic)  ||  ACADGen-006 (Generic)  ||  ACADGen-007-1-2 (Generic)  ||  ACADGen-008 (Generic)  ||  ACADGen-009
+    (Generic)  ||  ACADGen-010 (Generic)  ||  ACADGen-011 (Generic)  ||  ACADGen-012-1-2 (Generic)  ||  ACADGen-013-1-2
+    (Generic)  ||  ACADGen-014 (Generic)  ||  ACADGen-015-1-2 (Generic)  ||  ACADGen-016-1-2
+    (Generic)  ||  ACADGen-017 (Generic)  ||  ACADGen-018-1-2 (Generic)  ||  ACADGen-019-1-2
+    (Generic)  ||  ACADGen-020 (Generic)  ||  ACADGen-021 (Generic)  ||  ACADGen-022-1-2 (Generic)  ||  ACADGen-023
+    (Generic)  ||  ACADGen-024 (Generic)  ||  ACADGen-025 (Generic)  ||  ACADGen-026 (Generic)  ||  ACADGen-027
+    (Generic)  ||  ACADGen-028 (Generic)  ||  ACADGen-029 (Generic)  ||  ACADGen-030 (Generic)  ||  ACADGen-031
+    (Generic)  ||  ACADGen-032 (Generic)  ||  ACADGen-033 (Generic)  ||  ACADGen-034 (Generic)  ||  ACADGen-035
+    (Generic)  ||  ACADGen-036 (Generic)  ||  ACADGen-037 (Generic)  ||  ACADGen-038 (Generic)  ||  ACADGen-039
+    (Generic)  ||  ACADGen-040 (Generic)  ||  ACADGen-041 (Generic)  ||  ACADGen-042 (Generic)  ||  ACADGen-043
+    (Generic)  ||  ACADGen-044 (Generic)  ||  ACADGen-045 (Generic)  ||  ACADGen-046 (Generic)  ||  ACADGen-047
+    (Generic)  ||  ACADGen-048 (Generic)  ||  ACADGen-049 (Generic)  ||  ACADGen-050 (Generic)  ||  ACADGen-051
+    (Generic)  ||  ACADGen-052 (Generic)  ||  ACADGen-053 (Generic)  ||  ACADGen-054 (Generic)  ||  ACADGen-055
+    (Generic)  ||  ACADGen-056 (Generic)  ||  ACADGen-057 (Generic)  ||  ACADGen-058 (Generic)  ||  ACADGen-059
+    (Generic)  ||  ACADGen-060 (Generic)  ||  ACADGen-061 (Generic)  ||  ACADGen-062 (Generic)  ||  ACADGen-063
+    (Generic)  ||  ACADGen-064 (Generic)  ||  ACADGen-065 (Generic)  ||  ACADGen-066 (Generic)  ||  ACADGen-067
+    (Generic)  ||  ACADGen-068 (Generic)  ||  ACADGen-069-1-2 (Generic)  ||  ACADGen-070-1-2
+    (Generic)  ||  ACADGen-071-1-2 (Generic)  ||  ACADGen-072-1-2 (Generic)  ||  ACADGen-073-1-2
+    (Generic)  ||  ACADGen-074 (Generic)  ||  ACADGen-075 (Generic)  ||  ACADGen-076 (Generic)  ||  ACADGen-077
+    (Generic)  ||  ACADGen-078-1-2 (Generic)  ||  ACADGen-079 (Generic)  ||  ACADGen-080 (Generic)  ||  ACADGen-081
+    (Generic)  ||  ACADGen-082 (Generic)  ||  ACADGen-083 (Generic)  ||  ACADGen-084 (Generic)  ||  ACADGen-085-1-2
+    (Generic)  ||  ACADGen-086-1-2 (Generic)  ||  ACADGen-087-1-2 (Generic)  ||  ACADGen-088-1-2
+    (Generic)  ||  ACADGen-089 (Generic)  ||  ACADGen-090-1-2 (Generic)  ||  ACADGen-091-1-2
+    (Generic)  ||  ACADGen-092-1-2 (Generic)  ||  ACADGen-093 (Generic)  ||  ACADGen-094-1-2
+    (Generic)  ||  ACADGen-095 (Generic)  ||  ACADGen-096 (Generic)  ||  ACADGen-097-1-2 (Generic)  ||  ACADGen-098-1-2
+    (Generic)  ||  ACADGen-099 (Generic)  ||  ACADGen-100 (Generic)  ||  ACADGen-101 (Generic)  ||  ACADGen-102
+    (Generic)  ||  ACADGen-103 (Generic)  ||  ACADGen-104 (Generic)  ||  ACADGen-105 (Generic)  ||  ACADGen-106
+    (Generic)  ||  ACADGen-107 (Generic)  ||  ACADGen-108-1-2 (Generic)  ||  ACADGen-109 (Generic)  ||  ACADGen-110
+    (Generic)  ||  ACADGen-111-1-2 (Generic)  ||  ACADGen-112 (Generic)  ||  ACADGen-113 (Generic)  ||  ACADGen-114
+    (Generic)  ||  ACADGen-115 (Generic)  ||  ACADGen-116 (Generic)  ||  ACADGen-117 (Generic)  ||  ACADGen-118
+    (Generic)  ||  ACADGen-119 (Generic)  ||  ACADGen-120-1-2 (Generic)  ||  ACADGen-121 (Generic)  ||  ACADGen-122
+    (Generic)  ||  ACADGen-123 (Generic)  ||  ACADGen-124 (Generic)  ||  ACADGen-125 (Generic)  ||  ACADGen-126-1-2
+    (Generic)  ||  ACADGen-127-1-2 (Generic)  ||  ACADGen-128 (Generic)  ||  ACADGen-129 (Generic)  ||  ACADGen-130
+    (Generic)  ||  ACADGen-131 (Generic)  ||  ACADGen-132 (Generic)  ||  ACADGen-133 (Generic)  ||  ACADGen-134
+    (Generic)  ||  ACADGen-135 (Generic)  ||  ACADGen-136 (Generic)  ||  ACADGen-137 (Generic)  ||  ACADGen-138
+    (Generic)  ||  ACADGen-139 (Generic)  ||  ACADGen-140 (Generic)  ||  ACADGen-141 (Generic)  ||  ACADGen-142
+    (Generic)  ||  ACADGen-143-1-2 (Generic)  ||  ACADGen-144 (Generic)  ||  ACADGen-145 (Generic)  ||  ACADGen-146-1-2
+    (Generic)  ||  ACADGen-147 (Generic)  ||  ACADGen-148 (Generic)  ||  ACADGen-149 (Generic)  ||  ACADGen-150-1-2
+    (Generic)  ||  ACADGen-151-1-2 (Generic)  ||  ACADGen-152-1-2 (Generic)  ||  ACADGen-153-1-2
+    (Generic)  ||  ACADGen-154-1-2 (Generic)  ||  ACADGen-155-1-2 (Generic)  ||  ACADGen-156-1-2
+    (Generic)  ||  ACADGen-157-1-2 (Generic)  ||  ACADGen-158 (Generic)  ||  ACADGen-159-1-2
+    (Generic)  ||  ACADGen-160 (Generic)  ||  ACADGen-161 (Generic)  ||  ACADGen-162 (Generic)  ||  ACADGen-163
+    (Generic)  ||  ACADGen-164 (Generic)  ||  ACADGen-165 (Generic)  ||  ACADGen-166 (Generic)  ||  ACADGen-167
+    (Generic)  ||  ACADGen-168 (Generic)  ||  ACADGen-169 (Generic)  ||  ACADGen-170 (Generic)  ||  ACADGen-171
+    (Generic)  ||  ACADGen-172 (Generic)  ||  ACADGen-173 (Generic)  ||  ACADGen-174 (Generic)  ||  ACADGen-175
+    (Generic)  ||  ACADGen-176 (Generic)  ||  ACADGen-177 (Generic)  ||  ACADGen-178 (Generic)  ||  ACADGen-179
+    (Generic)  ||  ACADGen-180 (Generic)  ||  ACADGen-181 (Generic)  ||  ACADGen-182 (Generic)  ||  ACADGen-183
+    (Generic)  ||  ACADGen-184 (Generic)  ||  ACADGen-185 (Generic)  ||  ACADGen-186 (Generic)  ||  ACADGen-187
+    (Generic)  ||  ACADGen-188 (Generic)  ||  ACADGen-189 (Generic)  ||  ACADGen-190 (Generic)  ||  ACADGen-191-1-2
+    (Generic)  ||  ACADGen-192 (Generic)  ||  ACADGen-193 (Generic)  ||  ACADGen-194 (Generic)  ||  ACADGen-195
+    (Generic)  ||  ACADGen-196 (Generic)  ||  ACADGen-197 (Generic)  ||  ACADGen-198 (Generic)  ||  ACADGen-199
+    (Generic)  ||  ACADGen-200 (Generic)  ||  ACADGen-201 (Generic)  ||  ACADGen-202 (Generic)  ||  ACADGen-203
+    (Generic)  ||  ACADGen-204 (Generic)  ||  ACADGen-205 (Generic)  ||  ACADGen-206 (Generic)  ||  ACADGen-207
+    (Generic)  ||  ACADGen-208-1-2 (Generic)  ||  ACADGen-209 (Generic)  ||  ACADGen-210 (Generic)  ||  ACADGen-211-1-2
+    (Generic)  ||  ACADGen-212 (Generic)  ||  ACADGen-213 (Generic)  ||  ACADGen-214 (Generic)  ||  ACADGen-215-1-2
+    (Generic)  ||  ACADGen-216-1-2 (Generic)  ||  ACADGen-217 (Generic)  ||  ACADGen-218 (Generic)  ||  ACADGen-219
+    (Generic)  ||  ACADGen-220 (Generic)  ||  ACADGen-221 (Generic)  ||  ACADGen-222 (Generic)  ||  ACADGen-223
+    (Generic)  ||  ACADGen-224 (Generic)  ||  ACADGen-225 (Generic)  ||  ACADGen-226 (Generic)  ||  ACADGen-227-1-2
+    (Generic)  ||  ACADGen-228 (Generic)  ||  ACADGen-229-1-2 (Generic)  ||  ACADGen-230 (Generic)  ||  ACADGen-231
+    (Generic)  ||  ACADGen-232 (Generic)  ||  ACADGen-233 (Generic)  ||  ACADGen-234 (Generic)  ||  ACADGen-235
+    (Generic)  ||  ACADGen-236 (Generic)  ||  ACADGen-237 (Generic)  ||  ACADGen-238 (Generic)  ||  ACADGen-239
+    (Generic)  ||  ACADGen-240 (Generic)  ||  ACADGen-241 (Generic)  ||  ACADGen-242 (Generic)  ||  ACADGen-243
+    (Generic)  ||  ACADGen-244 (Generic)  ||  ACADGen-245 (Generic)  ||  ACADGen-246 (Generic)  ||  ACADGen-247
+    (Generic)  ||  ACADGen-248 (Generic)  ||  ACADGen-249 (Generic)  ||  ACADGen-250 (Generic)  ||  ACADGen-251-1-2
+    (Generic)  ||  ACADGen-252-1-2 (Generic)  ||  ACADGen-253 (Generic)  ||  ACADGen-254 (Generic)  ||  ACADGen-255
+    (Generic)  ||  ACADGen-256 (Generic)  ||  ACADGen-257 (Generic)  ||  ACADGen-258 (Generic)  ||  ACADGen-259
+    (Generic)  ||  ACADGen-260 (Generic)  ||  ACADGen-261 (Generic)  ||  ACADGen-262 (Generic)  ||  ACADGen-263
+    (Generic)  ||  ACADGen-264 (Generic)  ||  ACADGen-265 (Generic)  ||  ACADGen-266 (Generic)  ||  ACADGen-267
+    (Generic)  ||  ACADGen-268 (Generic)  ||  ACADGen-269 (Generic)  ||  ACADGen-270 (Generic)  ||  ACADGen-271
+    (Generic)  ||  ACADGen-272 (Generic)  ||  ACADGen-273 (Generic)  ||  ACADGen-274-1-2 (Generic)  ||  ACADGen-275
+    (Generic)  ||  ACADGen-276 (Generic)  ||  ACADGen-277 (Generic)  ||  ACADGen-278 (Generic)  ||  ACADGen-279
+    (Generic)  ||  ACADGen-280 (Generic)  ||  ACADGen-281 (Generic)  ||  ACADGen-282 (Generic)  ||  ACADGen-283-1-2
+    (Generic)  ||  ACADGen-284 (Generic)  ||  ACADGen-285 (Generic)  ||  ACADGen-286 (Generic)  ||  ACADGen-287
+    (Generic)  ||  ACADGen-288 (Generic)  ||  ACADGen-289 (Generic)  ||  ACADGen-290 (Generic)  ||  ACADGen-291
+    (Generic)  ||  ACADGen-292 (Generic)  ||  ACADGen-293 (Generic)  ||  ACADGen-294 (Generic)  ||  ACADGen-295
+    (Generic)  ||  ACADGen-296 (Generic)  ||  ACADGen-297 (Generic)  ||  ACADGen-298 (Generic)  ||  ACADGen-299
+    (Generic)  ||  ACADGen-300-1-2 (Generic)  ||  ACADGen-301-1-2 (Generic)  ||  ACADGen-302
+    (Generic)  ||  ACADGen-303 (Generic)  ||  ACADGen-304 (Generic)  ||  ACADGen-305 (Generic)  ||  ACADGen-306
+    (Generic)  ||  ACADGen-307 (Generic)  ||  ACADGen-308 (Generic)  ||  ACADGen-309 (Generic)  ||  ACADGen-310
+    (Generic)  ||  ACADGen-311 (Generic)  ||  ACADGen-312 (Generic)  ||  ACADGen-313 (Generic)  ||  ACADGen-314
+    (Generic)  ||  ACADGen-315 (Generic)  ||  ACADGen-316 (Generic)  ||  ACADGen-317 (Generic)  ||  ACADGen-318-1-2
+    (Generic)  ||  ACADGen-319 (Generic)  ||  ACADGen-320 (Generic)  ||  ACADGen-321-1-2 (Generic)  ||  ACADGen-322
+    (Generic)  ||  ACADGen-323 (Generic)  ||  ACADGen-324 (Generic)  ||  ACADGen-325 (Generic)  ||  ACADGen-326-1-2
+    (Generic)  ||  ACADGen-327 (Generic)  ||  ACADGen-328 (Generic)  ||  ACADGen-329-1-2 (Generic)  ||  ACADGen-330
+    (Generic)  ||  ACADGen-331 (Generic)  ||  ACADGen-332-1-2 (Generic)  ||  ACADGen-333 (Generic)  ||  ACADGen-334
+    (Generic)  ||  ACADGen-335 (Generic)  ||  ACADGen-336 (Generic)  ||  ACADGen-337 (Generic)  ||  ACADGen-338
+    (Generic)  ||  ACADGen-339-1-2 (Generic)  ||  ACADGen-340 (Generic)  ||  ACADGen-341 (Generic)  ||  ACADGen-342
+    (Generic)  ||  ACADGen-343 (Generic)  ||  ACADGen-344 (Generic)  ||  ACADGen-345-1-2 (Generic)  ||  ACADGen-346
+    (Generic)  ||  ACADGen-347 (Generic)  ||  ACADGen-348 (Generic)  ||  ACADGen-349 (Generic)  ||  ACADGen-350
+    (Generic)  ||  ACADGen-351 (Generic)  ||  ACADGen-352-1-2 (Generic)  ||  ACADGen-353-1-2
+    (Generic)  ||  ACADGen-354 (Generic)  ||  ACADGen-355-1-2 (Generic)  ||  ACADGen-356-1-2
+    (Generic)  ||  ACADGen-357 (Generic)  ||  ACADGen-358-1-2 (Generic)  ||  ACADGen-359 (Generic)  ||  ACADGen-360
+    (Generic)  ||  ACADGen-361 (Generic)  ||  ACADGen-362 (Generic)  ||  ACADGen-363 (Generic)  ||  ACADGen-364
+    (Generic)  ||  ACADGen-365 (Generic)  ||  ACADGen-366 (Generic)  ||  ACADGen-367 (Generic)  ||  ACADGen-368
+    (Generic)  ||  ACADGen-369 (Generic)  ||  ACADGen-370 (Generic)  ||  ACADGen-371-1-2 (Generic)  ||  ACADGen-372
+    (Generic)  ||  ACADGen-373 (Generic)  ||  ACADGen-374 (Generic)  ||  ACADGen-375 (Generic)  ||  ACADGen-376-1-2
+    (Generic)  ||  ACADGen-377 (Generic)  ||  ACADGen-378 (Generic)  ||  ACADGen-379 (Generic)  ||  ACADGen-380
+    (Generic)  ||  ACADGen-381 (Generic)  ||  ACADGen-382 (Generic)  ||  ACADGen-383 (Generic)  ||  ACADGen-384
+    (Generic)  ||  ACADGen-385 (Generic)  ||  ACADGen-386 (Generic)  ||  ACADGen-387 (Generic)  ||  ACADGen-388
+    (Generic)  ||  ACADGen-389 (Generic)  ||  ACADGen-390 (Generic)  ||  ACADGen-391 (Generic)  ||  ACADGen-392
+    (Generic)  ||  ACADGen-393 (Generic)  ||  ACADGen-394 (Generic)  ||  ACADGen-395 (Generic)  ||  ACADGen-396
+    (Generic)  ||  ACADGen-397 (Generic)  ||  ACADGen-398 (Generic)  ||  ACADGen-399 (Generic)  ||  ACADGen-400
+    (Generic)  ||  ACADGen-401 (Generic)  ||  ACADGen-402 (Generic)  ||  ACADGen-403 (Generic)  ||  ACADGen-404
+    (Generic)  ||  ACADGen-405 (Generic)  ||  ACADGen-406 (Generic)  ||  ACADGen-407 (Generic)  ||  ACADGen-408
+    (Generic)  ||  ACADGen-409 (Generic)  ||  ACADGen-410 (Generic)  ||  ACADGen-411 (Generic)  ||  ACADGen-412
+    (Generic)  ||  ACADGen-413 (Generic)  ||  ACADGen-414 (Generic)  ||  ACADGen-415 (Generic)  ||  ACADGen-416
+    (Generic)  ||  ACADGen-417 (Generic)  ||  ACADGen-418 (Generic)  ||  ACADGen-419 (Generic)  ||  ACADGen-420
+    (Generic)  ||  ACADGen-421 (Generic)  ||  ACADGen-422 (Generic)  ||  ACADGen-423 (Generic)  ||  ACADGen-424
+    (Generic)  ||  ACADGen-425 (Generic)  ||  Acetal resin - white satin [Prism-376] (PrismOpaqueSchema)  ||  Air
+    [Prism-379] (PrismTransparentSchema)  ||  Aluminum - Bead Blasted [Prism-624] (PrismMetalSchema)  ||  Aluminum
+    - brushed radial [Prism-018] (PrismMetalSchema)  ||  Aluminum - brushed [Prism-017] (PrismMetalSchema)  ||  Aluminum
+    - cast [Prism-218] (PrismMetalSchema)  ||  Aluminum - circular alternated horizontal mesh
+    3.5x19mm - beveled [Prism-019] (PrismMetalSchema)  ||  Aluminum - circular alternated
+    mesh 5mm holes - beveled [Prism-021] (PrismMetalSchema)  ||  Aluminum - circular alternated
+    small mesh 3.5mm holes- beveled [Prism-022] (PrismMetalSchema)  ||  Aluminum - circular
+    horizontal mesh 3.5x19mm - beveled [Prism-020] (PrismMetalSchema)  ||  Aluminum - diamond
+    plate 1 [Prism-023] (PrismMetalSchema)  ||  Aluminum - diamond plate 2 [Prism-024] (PrismMetalSchema)  ||  Aluminum
+    - diamond plate 3 [Prism-025] (PrismMetalSchema)  ||  Aluminum - expanded mesh thick [Prism-219]
+    (PrismMetalSchema)  ||  Aluminum - expanded mesh thin [Prism-220] (PrismMetalSchema)  ||  Aluminum
+    - hexagonal mesh [Prism-336] (PrismMetalSchema)  ||  Aluminum - knurled [Prism-026] (PrismMetalSchema)  ||  Aluminum
+    - polished [Prism-027] (PrismMetalSchema)  ||  Aluminum - satin [Prism-028] (PrismMetalSchema)  ||  Aluminum
+    mirror [Prism-125] (PrismMetalSchema)  ||  Anodized - blue glossy [Prism-029] (PrismMetalSchema)  ||  Anodized
+    - blue rough [Prism-030] (PrismMetalSchema)  ||  Anodized - grey glossy [Prism-031] (PrismMetalSchema)  ||  Anodized
+    - grey rough [Prism-032] (PrismMetalSchema)  ||  Anodized - red glossy [Prism-033] (PrismMetalSchema)  ||  Anodized
+    - red rough [Prism-034] (PrismMetalSchema)  ||  Asphalt - Dark grey [Prism-851] (PrismOpaqueSchema)  ||  Asphalt
+    - Light Grey [Prism-852] (PrismOpaqueSchema)  ||  Asphalt Shingles - Architectural Grade
+    - Black [Prism-1173] (PrismOpaqueSchema)  ||  Asphalt Shingles - Architectural Grade -
+    Brown [Prism-1174] (PrismOpaqueSchema)  ||  Asphalt Shingles - Architectural Grade - Grey
+    [Prism-1175] (PrismOpaqueSchema)  ||  Asphalt Shingles - Architectural Grade - Light Brown
+    [Prism-1176] (PrismOpaqueSchema)  ||  Asphalt Shingles - Architectural Grade - Light Grey
+    [Prism-1177] (PrismOpaqueSchema)  ||  Asphalt Shingles - Standard - Black [Prism-1129]
+    (PrismOpaqueSchema)  ||  Asphalt Shingles - Standard - Dark Brown [Prism-1130] (PrismOpaqueSchema)  ||  Asphalt
+    Shingles - Standard - Green [Prism-1131] (PrismOpaqueSchema)  ||  Asphalt Shingles - Standard
+    - Grey [Prism-1132] (PrismOpaqueSchema)  ||  Asphalt Shingles - Standard - Light Brown
+    [Prism-1134] (PrismOpaqueSchema)  ||  Asphalt Shingles - Standard - Light Grey [Prism-1133]
+    (PrismOpaqueSchema)  ||  Asphalt Shingles - Standard - Medium Brown [Prism-1135] (PrismOpaqueSchema)  ||  Asphalt
+    surface [Prism-173] (PrismOpaqueSchema)  ||  Bamboo Flooring - 5" wide [Prism-2036] (PrismOpaqueSchema)  ||  Base
+    Material - Layered [Prism-1172] (PrismLayeredSchema)  ||  Base Material - Metal [Prism-1171]
+    (PrismMetalSchema)  ||  Base Material - Opaque [Prism-1169] (PrismOpaqueSchema)  ||  Base
+    Material - Transparent [Prism-1170] (PrismTransparentSchema)  ||  Birch - Glossy finish
+    [Prism-839] (PrismOpaqueSchema)  ||  Birch - Satin finish [Prism-838] (PrismOpaqueSchema)  ||  Birch
+    - Unfinished [Prism-837] (PrismOpaqueSchema)  ||  Black Oxide [Prism-626] (PrismMetalSchema)  ||  Blue
+    glazing - Insulating [Prism-2009] (PrismGlazingSchema)  ||  Blue glazing - Single pane
+    [Prism-2003] (PrismGlazingSchema)  ||  Blue Green glazing - Insulating [Prism-2010] (PrismGlazingSchema)  ||  Blue
+    Green glazing - Single pane [Prism-2004] (PrismGlazingSchema)  ||  Board and Batten [Prism-1150]
+    (PrismOpaqueSchema)  ||  Brass - circular alternated mesh 5mm holes- beveled [Prism-037]
+    (PrismMetalSchema)  ||  Brass - circular alternated small mesh 3.5mm holes- beveled [Prism-038]
+    (PrismMetalSchema)  ||  Brass - circular horizontal alternated mesh 3.5x19mm - beveled
+    [Prism-035] (PrismMetalSchema)  ||  Brass - circular horizontal mesh 3.5x19mm - beveled
+    [Prism-036] (PrismMetalSchema)  ||  Brass - hexagonal mesh [Prism-335] (PrismMetalSchema)  ||  Brass
+    - knurled [Prism-039] (PrismMetalSchema)  ||  Brass - matte [Prism-040] (PrismMetalSchema)  ||  Brass
+    - mesh expanded - thin [Prism-041] (PrismMetalSchema)  ||  Brass - old look [Prism-334]
+    (PrismMetalSchema)  ||  Brass - old matte look [Prism-352] (PrismMetalSchema)  ||  Brass
+    - polished [Prism-042] (PrismMetalSchema)  ||  Brass - wire mesh [Prism-043] (PrismMetalSchema)  ||  Brick
+    - Brown, running, brown [Prism-183] (PrismOpaqueSchema)  ||  Brick - Brown, running, cream
+    [Prism-184] (PrismOpaqueSchema)  ||  Brick - Brown, running, dark [Prism-826] (PrismOpaqueSchema)  ||  Brick
+    - Brown, running, grey [Prism-182] (PrismOpaqueSchema)  ||  Brick - Brown, running, light
+    [Prism-827] (PrismOpaqueSchema)  ||  Brick - Brown, running, medium [Prism-143] (PrismOpaqueSchema)  ||  Brick
+    - Brown, running, red [Prism-181] (PrismOpaqueSchema)  ||  Brick - Brown, Soldier, brown
+    [Prism-188] (PrismOpaqueSchema)  ||  Brick - Brown, Soldier, cream [Prism-189] (PrismOpaqueSchema)  ||  Brick
+    - Brown, Soldier, dark [Prism-844] (PrismOpaqueSchema)  ||  Brick - Brown, Soldier, grey
+    [Prism-187] (PrismOpaqueSchema)  ||  Brick - Brown, Soldier, light [Prism-845] (PrismOpaqueSchema)  ||  Brick
+    - Brown, Soldier, medium [Prism-185] (PrismOpaqueSchema)  ||  Brick - Brown, Soldier,
+    red [Prism-186] (PrismOpaqueSchema)  ||  Brick - Rustic [Prism-259] (PrismOpaqueSchema)  ||  Bronze
+    - patina [Prism-045] (PrismMetalSchema)  ||  Bronze - polished [Prism-044] (PrismMetalSchema)  ||  Bronze
+    glazing - Insulating [Prism-2011] (PrismGlazingSchema)  ||  Bronze glazing - Single pane
+    [Prism-2005] (PrismGlazingSchema)  ||  Carbon fiber 2/2 twill [Prism-002] (PrismLayeredSchema)  ||  Carbon
+    fiber plain weave [Prism-001] (PrismLayeredSchema)  ||  Carpet - Berber carpet, grey,
+    irregular stripes [Prism-819] (PrismOpaqueSchema)  ||  Carpet - Berber carpet, grey, pattern01
+    [Prism-818] (PrismOpaqueSchema)  ||  Carpet - Berber carpet, light grey [Prism-821] (PrismOpaqueSchema)  ||  Carpet
+    - Berber carpet, medium grey [Prism-820] (PrismOpaqueSchema)  ||  Carpet - Berber carpet,
+    mixed colors [Prism-822] (PrismOpaqueSchema)  ||  Carpet - Berber carpet, tan, irregular
+    stripes [Prism-816] (PrismOpaqueSchema)  ||  Carpet - Berber carpet, tan, pattern01 [Prism-817]
+    (PrismOpaqueSchema)  ||  Carpet - Loops, tan [Prism-824] (PrismOpaqueSchema)  ||  Carpet
+    - Loops, white [Prism-823] (PrismOpaqueSchema)  ||  Carpet - Rug, tan, pattern01 [Prism-825]
+    (PrismOpaqueSchema)  ||  Carpet - Striped Dark - Aligned [Prism-2045] (PrismOpaqueSchema)  ||  Carpet
+    - Striped Dark - Stacked [Prism-2048] (PrismOpaqueSchema)  ||  Carpet - Striped Light
+    - Aligned [Prism-2047] (PrismOpaqueSchema)  ||  Carpet - Striped Light - Stacked [Prism-2050]
+    (PrismOpaqueSchema)  ||  Carpet - Striped Medium - Aligned [Prism-2046] (PrismOpaqueSchema)  ||  Carpet
+    - Striped Medium - Stacked [Prism-2049] (PrismOpaqueSchema)  ||  Carpet - Striped, grey
+    shades [Prism-1151] (PrismOpaqueSchema)  ||  Carpet Strips - Dark-Light [Prism-2051] (PrismOpaqueSchema)  ||  Carpet
+    Strips - Dark-Medium [Prism-2053] (PrismOpaqueSchema)  ||  Carpet Strips - Medium-Light
+    [Prism-2052] (PrismOpaqueSchema)  ||  Ceiling Beadboard [Prism-801] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x2'' - Pattern01 [Prism-800] (PrismOpaqueSchema)  ||  Ceiling tile - 2''x2''
+    - Perforated metal, tapered, white [Prism-810] (PrismOpaqueSchema)  ||  Ceiling tile -
+    2''x2'' - Random dots pattern, narrow gap, black [Prism-806] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x2'' - Random dots pattern, narrow gap, tapered edges, black [Prism-808] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x2'' - Random dots pattern, narrow gap, tapered edges, white [Prism-809] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x2'' - Random dots pattern, narrow gap, white [Prism-807] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x2'' - Random dots pattern, suspension tees, tapered edges, black [Prism-804]
+    (PrismOpaqueSchema)  ||  Ceiling tile - 2''x2'' - Random dots pattern, suspension tees,
+    tapered edges, white [Prism-805] (PrismOpaqueSchema)  ||  Ceiling tile - 2''x2'' - Rough,
+    narrow gap, black [Prism-802] (PrismOpaqueSchema)  ||  Ceiling tile - 2''x2'' - Rough,
+    narrow gap, white [Prism-803] (PrismOpaqueSchema)  ||  Ceiling tile - 2''x4'' - Random
+    dots pattern, narrow gap, black [Prism-863] (PrismOpaqueSchema)  ||  Ceiling tile - 2''x4''
+    - Random dots pattern, narrow gap, tapered edges, black [Prism-865] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x4'' - Random dots pattern, narrow gap, tapered edges, white [Prism-866] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x4'' - Random dots pattern, narrow gap, white [Prism-864] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 2''x4'' - Random dots pattern, suspension tees, tapered edges, black [Prism-848]
+    (PrismOpaqueSchema)  ||  Ceiling tile - 2''x4'' - Random dots pattern, suspension tees,
+    tapered edges, white [Prism-849] (PrismOpaqueSchema)  ||  Ceiling tile - 600x1200mm -
+    Random dots pattern, narrow gap, black [Prism-877] (PrismOpaqueSchema)  ||  Ceiling tile
+    - 600x1200mm - Random dots pattern, narrow gap, tapered edges, black [Prism-879] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 600x1200mm - Random dots pattern, narrow gap, tapered edges, white [Prism-880]
+    (PrismOpaqueSchema)  ||  Ceiling tile - 600x1200mm - Random dots pattern, narrow gap,
+    white [Prism-878] (PrismOpaqueSchema)  ||  Ceiling tile - 600x1200mm - Random dots pattern,
+    suspension tees, tapered edges, black [Prism-892] (PrismOpaqueSchema)  ||  Ceiling tile
+    - 600x1200mm - Random dots pattern, suspension tees, tapered edges, white [Prism-893]
+    (PrismOpaqueSchema)  ||  Ceiling tile - 600x600mm - Pattern01 [Prism-867] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 600x600mm - Perforated metal, tapered, white [Prism-876] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 600x600mm - Random dots pattern, narrow gap, black [Prism-872] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 600x600mm - Random dots pattern, narrow gap, tapered edges, black [Prism-874] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 600x600mm - Random dots pattern, narrow gap, tapered edges, white [Prism-875] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 600x600mm - Random dots pattern, narrow gap, white [Prism-873] (PrismOpaqueSchema)  ||  Ceiling
+    tile - 600x600mm - Random dots pattern, suspension tees, tapered edges, black [Prism-870]
+    (PrismOpaqueSchema)  ||  Ceiling tile - 600x600mm - Random dots pattern, suspension tees,
+    tapered edges, white [Prism-871] (PrismOpaqueSchema)  ||  Ceiling tile - 600x600mm - Rough,
+    narrow gap, black [Prism-868] (PrismOpaqueSchema)  ||  Ceiling tile - 600x600mm - Rough,
+    narrow gap, white [Prism-869] (PrismOpaqueSchema)  ||  Ceramic (CeramicSchema)  ||  Ceramic
+    - Faux Travertine [Prism-1180] (PrismOpaqueSchema)  ||  Ceramic - Glossy - Beige [Prism-1113]
+    (PrismOpaqueSchema)  ||  Ceramic - Glossy - Beige [TilePat-0004_base_materials_23] (PrismOpaqueSchema)  ||  Ceramic
+    - Glossy - Beige [TilePat-0031_base_materials_65] (PrismOpaqueSchema)  ||  Ceramic - Glossy
+    - Dark Green [Prism-1112] (PrismOpaqueSchema)  ||  Ceramic - Glossy - Dark Green [TilePat-0004_base_materials_22]
+    (PrismOpaqueSchema)  ||  Ceramic - Glossy - Dark Green [TilePat-0031_base_materials_64]
+    (PrismOpaqueSchema)  ||  Ceramic tile - 6x3in - glossy white - running [Prism-203] (PrismOpaqueSchema)  ||  Ceramic
+    tile - Faux brown stone [Prism-881] (PrismOpaqueSchema)  ||  Ceramic tile - Faux brown
+    stone [TilePat-0027_base_materials_4] (PrismOpaqueSchema)  ||  Ceramic tile - Faux sand
+    pattern [Prism-1105] (PrismOpaqueSchema)  ||  Ceramic tile - Faux sand pattern [TilePat-0026_base_materials_4]
+    (PrismOpaqueSchema)  ||  Ceramic tile - Grey stone [Prism-1168] (PrismOpaqueSchema)  ||  Ceramic
+    Tile - Wood Pattern [Prism-212] (PrismOpaqueSchema)  ||  Ceramic-001 (CeramicSchema)  ||  Ceramic-002
+    (CeramicSchema)  ||  Ceramic-003 (CeramicSchema)  ||  Ceramic-004 (CeramicSchema)  ||  Ceramic-005
+    (CeramicSchema)  ||  Ceramic-006 (CeramicSchema)  ||  Ceramic-007 (CeramicSchema)  ||  Ceramic-008
+    (CeramicSchema)  ||  Ceramic-009 (CeramicSchema)  ||  Ceramic-010 (CeramicSchema)  ||  Ceramic-011
+    (CeramicSchema)  ||  Ceramic-012 (CeramicSchema)  ||  Ceramic-013 (CeramicSchema)  ||  Ceramic-014
+    (CeramicSchema)  ||  Ceramic-015 (CeramicSchema)  ||  Ceramic-016 (CeramicSchema)  ||  Ceramic-017
+    (CeramicSchema)  ||  Ceramic-018 (CeramicSchema)  ||  Ceramic-019 (CeramicSchema)  ||  Ceramic-020
+    (CeramicSchema)  ||  Ceramic-021 (CeramicSchema)  ||  Ceramic-022 (CeramicSchema)  ||  Ceramic-023
+    (CeramicSchema)  ||  Ceramic-024 (CeramicSchema)  ||  Ceramic-025 (CeramicSchema)  ||  Ceramic-026
+    (CeramicSchema)  ||  Ceramic-027 (CeramicSchema)  ||  Ceramic-028 (CeramicSchema)  ||  Ceramic-029
+    (CeramicSchema)  ||  Ceramic-030 (CeramicSchema)  ||  Ceramic-031 (CeramicSchema)  ||  Ceramic-032
+    (CeramicSchema)  ||  Ceramic-033 (CeramicSchema)  ||  Ceramic-034 (CeramicSchema)  ||  Ceramic-035
+    (CeramicSchema)  ||  Ceramic-036 (CeramicSchema)  ||  Ceramic-037 (CeramicSchema)  ||  Ceramic-038
+    (CeramicSchema)  ||  Ceramic-039 (CeramicSchema)  ||  Ceramic-040 (CeramicSchema)  ||  Ceramic-041
+    (CeramicSchema)  ||  Ceramic-042 (CeramicSchema)  ||  Ceramic-043 (CeramicSchema)  ||  Cherry
+    Flooring - 5" wide [Prism-2031] (PrismOpaqueSchema)  ||  Chrome - black mirror [Prism-046]
+    (PrismMetalSchema)  ||  Chrome - mirror [Prism-047] (PrismMetalSchema)  ||  Clapboards
+    - Smooth - 4" [Prism-1149] (PrismOpaqueSchema)  ||  Clapboards - Smooth - 6" [Prism-192]
+    (PrismOpaqueSchema)  ||  Clapboards - Smooth - 8" [Prism-193] (PrismOpaqueSchema)  ||  Clapboards
+    - Wood - 4" [Prism-194] (PrismOpaqueSchema)  ||  Clapboards - Wood - 6" [Prism-195] (PrismOpaqueSchema)  ||  Clapboards
+    - Wood - 8" [Prism-196] (PrismOpaqueSchema)  ||  Clear - Safety pattern - Circles [Prism-2018]
+    (PrismGlazingSchema)  ||  Clear - Safety pattern - Curves [Prism-2022] (PrismGlazingSchema)  ||  Clear
+    - Safety pattern - Dots 2 Levels [Prism-2019] (PrismGlazingSchema)  ||  Clear - Safety
+    pattern - Rectangles [Prism-2017] (PrismGlazingSchema)  ||  Clear - Safety pattern - Squares
+    2 Levels [Prism-2020] (PrismGlazingSchema)  ||  Clear - Safety pattern - Stripes [Prism-2021]
+    (PrismGlazingSchema)  ||  Clear glazing - Frosted [Prism-2016] (PrismGlazingSchema)  ||  Clear
+    glazing - Insulating - Low E [Prism-2012] (PrismGlazingSchema)  ||  Clear glazing - Insulating
+    [Prism-2006] (PrismGlazingSchema)  ||  Clear glazing - Lightly frosted [Prism-2015] (PrismGlazingSchema)  ||  Clear
+    glazing - Single pane [Prism-2000] (PrismGlazingSchema)  ||  Clear glazing - Single pane
+    [Prism-2023] (PrismGlazingSchema)  ||  CMU - Ribbed - Grey [Prism-1102] (PrismOpaqueSchema)  ||  CMU
+    - Ribbed - Grey [TilePat-0001_base_materials_4] (PrismOpaqueSchema)  ||  CMU - Ribbed
+    - Red [Prism-1104] (PrismOpaqueSchema)  ||  CMU - Ribbed - Red [TilePat-0003_base_materials_4]
+    (PrismOpaqueSchema)  ||  CMU - Ribbed - Stacked - Grey [Prism-1117] (PrismOpaqueSchema)  ||  CMU
+    - Ribbed - Stacked - Red [Prism-1119] (PrismOpaqueSchema)  ||  CMU - Ribbed - Stacked
+    - Tan [Prism-1118] (PrismOpaqueSchema)  ||  CMU - Ribbed - Tan [Prism-1103] (PrismOpaqueSchema)  ||  CMU
+    - Ribbed - Tan [TilePat-0002_base_materials_4] (PrismOpaqueSchema)  ||  CMU - Running
+    Bond - Light Grey [Prism-1120] (PrismOpaqueSchema)  ||  CMU - Running Bond - Tan [Prism-1121]
+    (PrismOpaqueSchema)  ||  CMU - Split Face - Running Bond - Light Grey [Prism-1124] (PrismOpaqueSchema)  ||  CMU
+    - Split Face - Running Bond - Red [Prism-1126] (PrismOpaqueSchema)  ||  CMU - Split Face
+    - Running Bond - Tan [Prism-1125] (PrismOpaqueSchema)  ||  CMU - Stacked Bond - Light
+    Grey [Prism-1122] (PrismOpaqueSchema)  ||  CMU - Stacked Bond - Tan [Prism-1123] (PrismOpaqueSchema)  ||  CMU
+    Brick - Grey [Prism-894] (PrismOpaqueSchema)  ||  CMU Brick - Grey [TilePat-0019_base_materials_4]
+    (PrismOpaqueSchema)  ||  CMU Brick - Grey [TilePat-0021_base_materials_4] (PrismOpaqueSchema)  ||  CMU
+    Brick - Tan [Prism-895] (PrismOpaqueSchema)  ||  CMU Brick - Tan [TilePat-0020_base_materials_4]
+    (PrismOpaqueSchema)  ||  CMU Brick - Tan [TilePat-0022_base_materials_4] (PrismOpaqueSchema)  ||  CMU
+    Split Face Brick - Grey [Prism-896] (PrismOpaqueSchema)  ||  CMU Split Face Brick - Grey
+    [TilePat-0023_base_materials_4] (PrismOpaqueSchema)  ||  CMU Split Face Brick - Red [Prism-898]
+    (PrismOpaqueSchema)  ||  CMU Split Face Brick - Red [TilePat-0025_base_materials_4] (PrismOpaqueSchema)  ||  CMU
+    Split Face Brick - Tan [Prism-897] (PrismOpaqueSchema)  ||  CMU Split Face Brick - Tan
+    [TilePat-0024_base_materials_4] (PrismOpaqueSchema)  ||  Concrete (ConcreteSchema)  ||  Concrete
+    - Cast in Place - Board Formed [Prism-1128] (PrismOpaqueSchema)  ||  Concrete - Cast in
+    Place - Formwork Holes [Prism-1101] (PrismOpaqueSchema)  ||  Concrete - Cast in Place
+    [Prism-1100] (PrismOpaqueSchema)  ||  Concrete - Polished - Stained Brown [Prism-190]
+    (PrismOpaqueSchema)  ||  Concrete - Polished - Weathered - Stained Brown [Prism-191] (PrismOpaqueSchema)  ||  Concrete
+    - Polished - Weathered [Prism-1153] (PrismOpaqueSchema)  ||  Concrete - Polished [Prism-1152]
+    (PrismOpaqueSchema)  ||  Concrete - Precast Rough [Prism-1127] (PrismOpaqueSchema)  ||  Concrete
+    - Precast Smooth - Light Grey - Wall height [Prism-846] (PrismOpaqueSchema)  ||  Concrete
+    - Precast Smooth - Light Grey [Prism-847] (PrismOpaqueSchema)  ||  Concrete - Terrazzo
+    - Polished [Prism-239] (PrismOpaqueSchema)  ||  Concrete surface [Prism-174] (PrismOpaqueSchema)  ||  Concrete
+    Tile [Prism-175] (PrismOpaqueSchema)  ||  Concrete walkway [Prism-857] (PrismOpaqueSchema)  ||  Concrete-001
+    (ConcreteSchema)  ||  Concrete-002 (ConcreteSchema)  ||  Concrete-003 (ConcreteSchema)  ||  Concrete-004
+    (ConcreteSchema)  ||  Concrete-005 (ConcreteSchema)  ||  Concrete-006 (ConcreteSchema)  ||  Concrete-007
+    (ConcreteSchema)  ||  Concrete-008 (ConcreteSchema)  ||  Concrete-009 (ConcreteSchema)  ||  Concrete-010
+    (ConcreteSchema)  ||  Concrete-011 (ConcreteSchema)  ||  Concrete-012 (ConcreteSchema)  ||  Concrete-013
+    (ConcreteSchema)  ||  Concrete-014 (ConcreteSchema)  ||  Concrete-015 (ConcreteSchema)  ||  Concrete-016
+    (ConcreteSchema)  ||  Concrete-017 (ConcreteSchema)  ||  Concrete-018 (ConcreteSchema)  ||  Concrete-019
+    (ConcreteSchema)  ||  Concrete-020 (ConcreteSchema)  ||  Concrete-021 (ConcreteSchema)  ||  Concrete-022
+    (ConcreteSchema)  ||  Concrete-023 (ConcreteSchema)  ||  Concrete-024 (ConcreteSchema)  ||  Concrete-025
+    (ConcreteSchema)  ||  Concrete-026 (ConcreteSchema)  ||  Concrete-027 (ConcreteSchema)  ||  Concrete-028
+    (ConcreteSchema)  ||  Concrete-029 (ConcreteSchema)  ||  Copper - brushed radial stacked
+    [Prism-048] (PrismMetalSchema)  ||  Copper - Heavy Patina [Prism-142] (PrismOpaqueSchema)  ||  Copper
+    - patina [Prism-049] (PrismMetalSchema)  ||  Copper - polished [Prism-050] (PrismMetalSchema)  ||  Copper
+    - Raw [Prism-137] (PrismMetalSchema)  ||  Copper - wire mesh [Prism-051] (PrismMetalSchema)  ||  Corrugated
+    - Box Rib [Prism-1148] (PrismOpaqueSchema)  ||  Corrugated [Prism-1147] (PrismOpaqueSchema)  ||  Douglas
+    Fir - Light Oil Flooring - 150mm wide [Prism-2061] (PrismOpaqueSchema)  ||  Douglas Fir
+    - Natural Flooring - 150mm wide [Prism-2059] (PrismOpaqueSchema)  ||  Douglas Fir - White
+    Oil Flooring - 150mm wide [Prism-2060] (PrismOpaqueSchema)  ||  Fabric-001 (Generic)  ||  Fabric-002
+    (Generic)  ||  Fabric-003 (Generic)  ||  Fabric-004 (Generic)  ||  Fabric-005 (Generic)  ||  Fabric-006
+    (Generic)  ||  Fabric-007 (Generic)  ||  Fabric-008 (Generic)  ||  Fabric-009 (Generic)  ||  Fabric-010
+    (Generic)  ||  Fabric-011 (Generic)  ||  Fabric-012 (Generic)  ||  Fabric-013 (Generic)  ||  Fabric-014
+    (Generic)  ||  Fabric-015 (Generic)  ||  Fabric-016 (Generic)  ||  Fabric-017 (Generic)  ||  Fabric-018
+    (Generic)  ||  Fabric-019 (Generic)  ||  Fabric-020 (Generic)  ||  Fabric-021 (Generic)  ||  Fabric-022
+    (Generic)  ||  Fabric-023 (Generic)  ||  Fabric-024 (Generic)  ||  Fabric-025 (Generic)  ||  Faux
+    Mahogany Flooring - 5" wide [Prism-2038] (PrismOpaqueSchema)  ||  Field Stone Wall [Prism-1165]
+    (PrismOpaqueSchema)  ||  Flooring - Oak - Espresso stain [Prism-843] (PrismOpaqueSchema)  ||  Gemstone
+    - Crystal [Prism-357] (PrismTransparentSchema)  ||  Gemstone - Diamond [Prism-353] (PrismTransparentSchema)  ||  Gemstone
+    - Emerald [Prism-354] (PrismTransparentSchema)  ||  Gemstone - Ruby [Prism-355] (PrismTransparentSchema)  ||  Gemstone
+    - Sapphire [Prism-356] (PrismTransparentSchema)  ||  Generic (Generic)  ||  Generic fabric
+    black [Prism-235] (PrismOpaqueSchema)  ||  Generic fabric blue [Prism-215] (PrismOpaqueSchema)  ||  Generic
+    fabric denim [Prism-217] (PrismOpaqueSchema)  ||  Generic fabric green [Prism-233] (PrismOpaqueSchema)  ||  Generic
+    fabric grey [Prism-213] (PrismOpaqueSchema)  ||  Generic fabric light brown [Prism-202]
+    (PrismOpaqueSchema)  ||  Generic fabric red [Prism-214] (PrismOpaqueSchema)  ||  Generic
+    fabric white [Prism-234] (PrismOpaqueSchema)  ||  Generic fabric yellow [Prism-216] (PrismOpaqueSchema)  ||  Generic-001
+    (Generic)  ||  Generic-002 (Generic)  ||  Generic-003 (Generic)  ||  Generic-004 (Generic)  ||  Generic-005
+    (Generic)  ||  Generic-006 (Generic)  ||  Generic-007 (Generic)  ||  Generic-008 (Generic)  ||  Generic-009
+    (Generic)  ||  Generic-010 (Generic)  ||  Generic-011 (Generic)  ||  Generic-012 (Generic)  ||  Generic-013
+    (Generic)  ||  Generic-014 (Generic)  ||  Generic-015 (Generic)  ||  Generic-016 (Generic)  ||  Generic-017
+    (Generic)  ||  Generic-018 (Generic)  ||  Generic-019 (Generic)  ||  Generic-020 (Generic)  ||  Generic-021
+    (Generic)  ||  Generic-022 (Generic)  ||  Generic-023 (Generic)  ||  Generic-024 (Generic)  ||  Generic-025
+    (Generic)  ||  Generic-026 (Generic)  ||  Generic-027 (Generic)  ||  Generic-028 (Generic)  ||  Generic-029
+    (Generic)  ||  Generic-030 (Generic)  ||  Generic-031 (Generic)  ||  Generic-032 (Generic)  ||  Generic-033
+    (Generic)  ||  Generic-034 (Generic)  ||  Generic-035 (Generic)  ||  Generic-036 (Generic)  ||  Generic-037
+    (Generic)  ||  Generic-038 (Generic)  ||  Generic-039 (Generic)  ||  Generic-040 (Generic)  ||  Generic-041
+    (Generic)  ||  Generic-042 (Generic)  ||  Generic-043 (Generic)  ||  Generic-044 (Generic)  ||  Generic-045
+    (Generic)  ||  Generic-046 (Generic)  ||  Generic-047 (Generic)  ||  Generic-048 (Generic)  ||  Generic-049
+    (Generic)  ||  Generic-050 (Generic)  ||  Generic-051 (Generic)  ||  Generic-052 (Generic)  ||  Generic-053
+    (Generic)  ||  Generic-054 (Generic)  ||  Generic-055 (Generic)  ||  Generic-056 (Generic)  ||  Generic-057
+    (Generic)  ||  Generic-058 (Generic)  ||  Generic-059 (Generic)  ||  Generic-060 (Generic)  ||  Generic-061
+    (Generic)  ||  Generic-062 (Generic)  ||  Generic-063 (Generic)  ||  Generic-064 (Generic)  ||  Glass
+    - blue [Prism-150] (PrismTransparentSchema)  ||  Glass - bronze [Prism-151] (PrismTransparentSchema)  ||  Glass
+    - clear [Prism-152] (PrismTransparentSchema)  ||  Glass - frosted light [Prism-208] (PrismTransparentSchema)  ||  Glass
+    - frosted medium [Prism-207] (PrismTransparentSchema)  ||  Glass - frosted [Prism-153]
+    (PrismTransparentSchema)  ||  Glass - green [Prism-154] (PrismTransparentSchema)  ||  Glass
+    - grey [Prism-155] (PrismTransparentSchema)  ||  Glass - red [Prism-156] (PrismTransparentSchema)  ||  Glass
+    - textured bubbles [Prism-158] (PrismTransparentSchema)  ||  Glass - textured clouds [Prism-159]
+    (PrismTransparentSchema)  ||  Glass - textured lines [Prism-160] (PrismTransparentSchema)  ||  Glass
+    - textured mosaic [Prism-161] (PrismTransparentSchema)  ||  Glass - textured random [Prism-162]
+    (PrismTransparentSchema)  ||  Glass - windshield [Prism-157] (PrismTransparentSchema)  ||  Glass
+    Heavy Color [Prism-165] (PrismTransparentSchema)  ||  Glass Heavy Color [Prism-168] (PrismTransparentSchema)  ||  Glass
+    Light Color [Prism-163] (PrismTransparentSchema)  ||  Glass Light Color [Prism-166] (PrismTransparentSchema)  ||  Glass
+    Medium Color [Prism-164] (PrismTransparentSchema)  ||  Glass Medium Color [Prism-167]
+    (PrismTransparentSchema)  ||  Glass-001 (SolidGlassSchema)  ||  Glass-002 (SolidGlassSchema)  ||  Glass-003
+    (SolidGlassSchema)  ||  Glass-004 (SolidGlassSchema)  ||  Glass-005 (SolidGlassSchema)  ||  Glass-006
+    (SolidGlassSchema)  ||  Glass-007 (SolidGlassSchema)  ||  Glass-008 (SolidGlassSchema)  ||  Glass-009
+    (SolidGlassSchema)  ||  Glass-010 (SolidGlassSchema)  ||  Glass-011 (SolidGlassSchema)  ||  Glass-012
+    (SolidGlassSchema)  ||  Glass-013 (SolidGlassSchema)  ||  Glass-014 (SolidGlassSchema)  ||  Glass-015
+    (SolidGlassSchema)  ||  Glass-016 (SolidGlassSchema)  ||  Glass-017 (SolidGlassSchema)  ||  Glass-018
+    (SolidGlassSchema)  ||  Glass-019 (SolidGlassSchema)  ||  Glass-020 (SolidGlassSchema)  ||  Glass-021
+    (SolidGlassSchema)  ||  Glass-022 (SolidGlassSchema)  ||  Glass-023 (SolidGlassSchema)  ||  Glazing
+    (GlazingSchema)  ||  Glazing-001 (GlazingSchema)  ||  Glazing-002 (GlazingSchema)  ||  Glazing-003
+    (GlazingSchema)  ||  Glazing-004 (GlazingSchema)  ||  Glazing-005 (GlazingSchema)  ||  Glazing-006
+    (GlazingSchema)  ||  Glazing-007 (GlazingSchema)  ||  Glazing-008 (GlazingSchema)  ||  Glazing-009
+    (GlazingSchema)  ||  Glazing-010 (GlazingSchema)  ||  Glazing-011 (GlazingSchema)  ||  Glazing-012
+    (GlazingSchema)  ||  Glazing-013 (GlazingSchema)  ||  Glazing-014 (GlazingSchema)  ||  Glazing-015
+    (GlazingSchema)  ||  Glazing-016 (GlazingSchema)  ||  Glazing-017 (GlazingSchema)  ||  Glazing-018
+    (GlazingSchema)  ||  Glazing-019 (GlazingSchema)  ||  Glossy surface with light bump [Prism-179]
+    (PrismOpaqueSchema)  ||  Glossy surface [Prism-255] (PrismOpaqueSchema)  ||  Gold - polished
+    [Prism-052] (PrismMetalSchema)  ||  Granite - Black and White [Prism-178] (PrismLayeredSchema)  ||  Granite
+    - Black [Prism-136] (PrismOpaqueSchema)  ||  Granite - Blue Pearl [Prism-135] (PrismLayeredSchema)  ||  Granite
+    - Red [Prism-134] (PrismLayeredSchema)  ||  Granite surface [Prism-176] (PrismOpaqueSchema)  ||  Grass
+    - Field - Large patch [Prism-1115] (PrismOpaqueSchema)  ||  Grass - Generic - Medium patch
+    [Prism-840] (PrismOpaqueSchema)  ||  Grass - High Quality - Medium patch [Prism-1116]
+    (PrismOpaqueSchema)  ||  Green glazing - Insulating [Prism-2007] (PrismGlazingSchema)  ||  Green
+    glazing - Single pane [Prism-2001] (PrismGlazingSchema)  ||  Grey glazing - High Reflectivity
+    [Prism-2013] (PrismGlazingSchema)  ||  Grey glazing - Insulating - High reflectivity -
+    Inner coating [Prism-2014] (PrismGlazingSchema)  ||  Grey glazing - Insulating [Prism-2008]
+    (PrismGlazingSchema)  ||  Grey glazing - Single pane [Prism-2002] (PrismGlazingSchema)  ||  Hardwood
+    (HardwoodSchema)  ||  Hickory - Grey Flooring - 5" wide [Prism-2037] (PrismOpaqueSchema)  ||  InvCer-001
+    (CeramicSchema)  ||  InvGen-001-1-2 (Generic)  ||  InvGen-002 (Generic)  ||  InvGen-003
+    (Generic)  ||  InvGen-004 (Generic)  ||  InvGen-005-1-2 (Generic)  ||  InvGen-006 (Generic)  ||  InvGen-007
+    (Generic)  ||  InvGen-008 (Generic)  ||  InvGen-009 (Generic)  ||  InvGen-010 (Generic)  ||  InvGen-011
+    (Generic)  ||  InvGen-012 (Generic)  ||  InvGen-013 (Generic)  ||  InvGen-014 (Generic)  ||  InvGen-015-1-2
+    (Generic)  ||  InvGen-016 (Generic)  ||  InvGen-017 (Generic)  ||  InvGen-018 (Generic)  ||  InvGen-019-1-2
+    (Generic)  ||  InvGen-020-1-2 (Generic)  ||  InvGen-021 (Generic)  ||  InvGen-022 (Generic)  ||  InvGen-023-1-2
+    (Generic)  ||  InvGen-024 (Generic)  ||  InvGen-025 (Generic)  ||  InvGen-027 (Generic)  ||  InvGen-028
+    (Generic)  ||  InvGen-029-1-2 (Generic)  ||  InvGen-031-1-2 (Generic)  ||  InvGen-032-1-2
+    (Generic)  ||  InvGen-033 (Generic)  ||  InvGen-034 (Generic)  ||  InvGen-035 (Generic)  ||  InvGen-036
+    (Generic)  ||  InvGen-037 (Generic)  ||  InvGen-038-1-2 (Generic)  ||  InvGen-039-1-2
+    (Generic)  ||  InvGen-040-1-2 (Generic)  ||  InvGen-042 (Generic)  ||  InvGen-043-1-2
+    (Generic)  ||  InvGen-044 (Generic)  ||  InvGen-045 (Generic)  ||  InvGen-046 (Generic)  ||  InvGen-048
+    (Generic)  ||  InvGen-049 (Generic)  ||  InvGen-050 (Generic)  ||  InvGen-051 (Generic)  ||  InvGen-052
+    (Generic)  ||  InvGen-053 (Generic)  ||  InvGen-054 (Generic)  ||  InvGen-055 (Generic)  ||  InvGen-056
+    (Generic)  ||  InvGen-057 (Generic)  ||  InvGen-058 (Generic)  ||  InvGen-059 (Generic)  ||  InvGen-060
+    (Generic)  ||  InvGen-061 (Generic)  ||  InvGen-062-1-2 (Generic)  ||  InvGen-063-1-2
+    (Generic)  ||  InvGen-064-1-2 (Generic)  ||  InvGen-065 (Generic)  ||  InvGen-066 (Generic)  ||  InvGen-067
+    (Generic)  ||  InvGen-068 (Generic)  ||  InvGen-069 (Generic)  ||  InvGen-070 (Generic)  ||  InvGen-071
+    (Generic)  ||  InvHW-001 (HardwoodSchema)  ||  InvMet-004-1-2 (MetalSchema)  ||  InvMet-005
+    (MetalSchema)  ||  InvMet-006-1-2 (MetalSchema)  ||  InvMet-007 (MetalSchema)  ||  InvMet-008
+    (MetalSchema)  ||  Iron - cast [Prism-231] (PrismMetalSchema)  ||  Iron - polished [Prism-230]
+    (PrismMetalSchema)  ||  Jade - green [Prism-395] (PrismOpaqueSchema)  ||  Jade - white
+    and green [Prism-396] (PrismOpaqueSchema)  ||  Jade - white [Prism-350] (PrismOpaqueSchema)  ||  Lead
+    - rough [Prism-243] (PrismMetalSchema)  ||  Lead - satin [Prism-242] (PrismMetalSchema)  ||  Leather
+    - black [Prism-087] (PrismOpaqueSchema)  ||  Leather - brown [Prism-088] (PrismOpaqueSchema)  ||  Leather
+    - matte black [Prism-370] (PrismOpaqueSchema)  ||  Leather - matte blue [Prism-373] (PrismOpaqueSchema)  ||  Leather
+    - matte dark grey [Prism-372] (PrismOpaqueSchema)  ||  Leather - matte green [Prism-366]
+    (PrismOpaqueSchema)  ||  Leather - matte red [Prism-367] (PrismOpaqueSchema)  ||  Leather
+    - matte tan [Prism-369] (PrismOpaqueSchema)  ||  Leather - matte white [Prism-371] (PrismOpaqueSchema)  ||  Leather
+    - matte yellow [Prism-368] (PrismOpaqueSchema)  ||  Leather - perforated black [Prism-362]
+    (PrismOpaqueSchema)  ||  Leather - perforated blue [Prism-365] (PrismOpaqueSchema)  ||  Leather
+    - perforated dark grey [Prism-364] (PrismOpaqueSchema)  ||  Leather - perforated green
+    [Prism-358] (PrismOpaqueSchema)  ||  Leather - perforated red [Prism-359] (PrismOpaqueSchema)  ||  Leather
+    - perforated tan [Prism-361] (PrismOpaqueSchema)  ||  Leather - perforated white [Prism-363]
+    (PrismOpaqueSchema)  ||  Leather - perforated yellow [Prism-360] (PrismOpaqueSchema)  ||  Manufactured
+    bamboo flooring semigloss [Prism-1114] (PrismOpaqueSchema)  ||  Manufactured bamboo flooring
+    semigloss [TilePat-0032_base_materials_20] (PrismOpaqueSchema)  ||  Manufactured mahogany
+    flooring semigloss [Prism-862] (PrismOpaqueSchema)  ||  Manufactured mahogany flooring
+    semigloss [TilePat-0030_base_materials_20] (PrismOpaqueSchema)  ||  Maple - Glossy finish
+    [Prism-861] (PrismOpaqueSchema)  ||  Maple - Satin finish [Prism-860] (PrismOpaqueSchema)  ||  Maple
+    - Unfinished [Prism-859] (PrismOpaqueSchema)  ||  Maple Flooring - 5" wide [Prism-2035]
+    (PrismOpaqueSchema)  ||  Maple Hand Scraped Flooring - 5" wide [Prism-2042] (PrismOpaqueSchema)  ||  Marble
+    - White - Striped [Prism-1155] (PrismOpaqueSchema)  ||  Marble - white translucent [Prism-397]
+    (PrismOpaqueSchema)  ||  Marble - White [Prism-1154] (PrismOpaqueSchema)  ||  Marble -
+    white [Prism-344] (PrismOpaqueSchema)  ||  Marble - White/Green [Prism-1111] (PrismOpaqueSchema)  ||  Marble
+    - White/Green [TilePat-0004_base_materials_21] (PrismOpaqueSchema)  ||  Marble - White/Green
+    [TilePat-0031_base_materials_63] (PrismOpaqueSchema)  ||  Masonry-001 (MasonryCMUSchema)  ||  Masonry-002
+    (MasonryCMUSchema)  ||  Masonry-003 (MasonryCMUSchema)  ||  Masonry-004 (MasonryCMUSchema)  ||  Masonry-005
+    (MasonryCMUSchema)  ||  Masonry-006 (MasonryCMUSchema)  ||  Masonry-007 (MasonryCMUSchema)  ||  Masonry-008
+    (MasonryCMUSchema)  ||  Masonry-009 (MasonryCMUSchema)  ||  Masonry-010 (MasonryCMUSchema)  ||  Masonry-011
+    (MasonryCMUSchema)  ||  Masonry-012 (MasonryCMUSchema)  ||  Masonry-013 (MasonryCMUSchema)  ||  Masonry-014
+    (MasonryCMUSchema)  ||  Masonry-015 (MasonryCMUSchema)  ||  Masonry-016 (MasonryCMUSchema)  ||  Masonry-017
+    (MasonryCMUSchema)  ||  Masonry-018 (MasonryCMUSchema)  ||  Masonry-019 (MasonryCMUSchema)  ||  Masonry-020
+    (MasonryCMUSchema)  ||  Masonry-021 (MasonryCMUSchema)  ||  Masonry-022 (MasonryCMUSchema)  ||  Masonry-023
+    (MasonryCMUSchema)  ||  Masonry-024 (MasonryCMUSchema)  ||  Masonry-025 (MasonryCMUSchema)  ||  Masonry-026
+    (MasonryCMUSchema)  ||  Masonry-027 (MasonryCMUSchema)  ||  Masonry-028 (MasonryCMUSchema)  ||  Masonry-029
+    (MasonryCMUSchema)  ||  Masonry-030 (MasonryCMUSchema)  ||  Masonry-031 (MasonryCMUSchema)  ||  Masonry-032
+    (MasonryCMUSchema)  ||  Masonry-033 (MasonryCMUSchema)  ||  Masonry-034 (MasonryCMUSchema)  ||  Masonry-035
+    (MasonryCMUSchema)  ||  Masonry-036 (MasonryCMUSchema)  ||  Masonry-037 (MasonryCMUSchema)  ||  Masonry-038
+    (MasonryCMUSchema)  ||  Masonry-039 (MasonryCMUSchema)  ||  Masonry-040 (MasonryCMUSchema)  ||  Masonry-041
+    (MasonryCMUSchema)  ||  Masonry-042 (MasonryCMUSchema)  ||  Masonry-043 (MasonryCMUSchema)  ||  Masonry-044
+    (MasonryCMUSchema)  ||  Masonry-045 (MasonryCMUSchema)  ||  Masonry-046 (MasonryCMUSchema)  ||  Masonry-047
+    (MasonryCMUSchema)  ||  Masonry-048 (MasonryCMUSchema)  ||  Masonry-049 (MasonryCMUSchema)  ||  Masonry-050
+    (MasonryCMUSchema)  ||  Masonry-051 (MasonryCMUSchema)  ||  MasonryCMU (MasonryCMUSchema)  ||  Matte
+    surface [Prism-180] (PrismOpaqueSchema)  ||  Metal (MetalSchema)  ||  Metal Panels - Beige
+    [Prism-1156] (PrismOpaqueSchema)  ||  Metal Panels - Blue [Prism-1157] (PrismOpaqueSchema)  ||  Metal
+    Panels - Brown [Prism-1158] (PrismOpaqueSchema)  ||  Metal Panels - Dark Grey [Prism-1159]
+    (PrismOpaqueSchema)  ||  Metal Panels - Light Grey [Prism-1160] (PrismOpaqueSchema)  ||  Metal
+    Panels - Red [Prism-1161] (PrismOpaqueSchema)  ||  Metal Panels - White [Prism-1162] (PrismOpaqueSchema)  ||  Metal-001
+    (MetalSchema)  ||  Metal-002 (MetalSchema)  ||  Metal-003 (MetalSchema)  ||  Metal-004
+    (MetalSchema)  ||  Metal-005-1-2 (MetalSchema)  ||  Metal-006 (MetalSchema)  ||  Metal-007-1-2
+    (MetalSchema)  ||  Metal-008 (MetalSchema)  ||  Metal-009 (MetalSchema)  ||  Metal-010
+    (MetalSchema)  ||  Metal-011 (MetalSchema)  ||  Metal-012 (MetalSchema)  ||  Metal-013
+    (MetalSchema)  ||  Metal-014 (MetalSchema)  ||  Metal-015 (MetalSchema)  ||  Metal-016
+    (MetalSchema)  ||  Metal-017 (MetalSchema)  ||  Metal-018-1-2 (MetalSchema)  ||  Metal-019
+    (MetalSchema)  ||  Metal-020 (MetalSchema)  ||  Metal-021 (MetalSchema)  ||  Metal-022
+    (MetalSchema)  ||  Metal-023-1-2 (MetalSchema)  ||  Metal-024 (MetalSchema)  ||  Metal-025
+    (MetalSchema)  ||  Metal-026 (MetalSchema)  ||  Metal-027 (MetalSchema)  ||  Metal-028-1-2
+    (MetalSchema)  ||  Metal-029-1-2 (MetalSchema)  ||  Metal-030 (MetalSchema)  ||  Metal-031-1-2
+    (MetalSchema)  ||  Metal-032 (MetalSchema)  ||  Metal-033-1-2 (MetalSchema)  ||  Metal-034
+    (MetalSchema)  ||  Metal-035 (MetalSchema)  ||  Metal-036 (MetalSchema)  ||  Metal-037
+    (MetalSchema)  ||  Metal-038 (MetalSchema)  ||  Metal-039 (MetalSchema)  ||  Metal-040
+    (MetalSchema)  ||  Metal-041 (MetalSchema)  ||  Metal-042 (MetalSchema)  ||  Metal-043
+    (MetalSchema)  ||  Metal-044 (MetalSchema)  ||  Metal-045 (MetalSchema)  ||  Metal-046-1-2
+    (MetalSchema)  ||  Metal-047 (MetalSchema)  ||  Metal-048 (MetalSchema)  ||  Metal-049-1-2
+    (MetalSchema)  ||  Metal-050 (MetalSchema)  ||  Metal-051 (MetalSchema)  ||  Metal-052
+    (MetalSchema)  ||  Metal-053-1-2 (MetalSchema)  ||  Metal-054-1-2 (MetalSchema)  ||  Metal-055-1-2
+    (MetalSchema)  ||  Metal-056 (MetalSchema)  ||  Metal-057 (MetalSchema)  ||  Metal-058
+    (MetalSchema)  ||  Metal-059 (MetalSchema)  ||  Metal-060 (MetalSchema)  ||  Metal-061
+    (MetalSchema)  ||  Metal-062-1-2 (MetalSchema)  ||  Metal-063-1-2 (MetalSchema)  ||  Metal-065-1-2
+    (MetalSchema)  ||  Metallic paint - black with flakes [Prism-010] (PrismLayeredSchema)  ||  Metallic
+    paint - black [Prism-003] (PrismLayeredSchema)  ||  Metallic paint - blue with flakes
+    [Prism-011] (PrismLayeredSchema)  ||  Metallic paint - blue [Prism-004] (PrismLayeredSchema)  ||  Metallic
+    paint - dark grey with flakes [Prism-016] (PrismLayeredSchema)  ||  Metallic paint - dark
+    grey [Prism-009] (PrismLayeredSchema)  ||  Metallic paint - green with flakes [Prism-012]
+    (PrismLayeredSchema)  ||  Metallic paint - green [Prism-005] (PrismLayeredSchema)  ||  Metallic
+    paint - red with flakes [Prism-013] (PrismLayeredSchema)  ||  Metallic paint - red [Prism-006]
+    (PrismLayeredSchema)  ||  Metallic paint - silver with flakes [Prism-014] (PrismLayeredSchema)  ||  Metallic
+    paint - silver [Prism-007] (PrismLayeredSchema)  ||  Metallic paint - yellow with flakes
+    [Prism-015] (PrismLayeredSchema)  ||  Metallic paint - yellow [Prism-008] (PrismLayeredSchema)  ||  MetallicPaint
+    (MetallicPaintSchema)  ||  MetalPaint-001 (MetallicPaintSchema)  ||  MetalPaint-002 (MetallicPaintSchema)  ||  MetalPaint-003
+    (MetallicPaintSchema)  ||  MetalPaint-004 (MetallicPaintSchema)  ||  MetalPaint-005 (MetallicPaintSchema)  ||  MetalPaint-006
+    (MetallicPaintSchema)  ||  MetalPaint-007 (MetallicPaintSchema)  ||  MetalPaint-008 (MetallicPaintSchema)  ||  MetalPaint-009
+    (MetallicPaintSchema)  ||  MetalPaint-010 (MetallicPaintSchema)  ||  MetalPaint-011 (MetallicPaintSchema)  ||  MetalPaint-012
+    (MetallicPaintSchema)  ||  MetalPaint-013 (MetallicPaintSchema)  ||  MetalPaint-014 (MetallicPaintSchema)  ||  MetalPaint-015
+    (MetallicPaintSchema)  ||  MetalPaint-016 (MetallicPaintSchema)  ||  MetalPaint-017 (MetallicPaintSchema)  ||  MetalPaint-018
+    (MetallicPaintSchema)  ||  MetalPaint-019 (MetallicPaintSchema)  ||  MetalPaint-020 (MetallicPaintSchema)  ||  MetalPaint-021
+    (MetallicPaintSchema)  ||  MetalPaint-022 (MetallicPaintSchema)  ||  MetalPaint-023 (MetallicPaintSchema)  ||  MetalPaint-024
+    (MetallicPaintSchema)  ||  MetalPaint-025 (MetallicPaintSchema)  ||  MetalPaint-026 (MetallicPaintSchema)  ||  MetalPaint-027
+    (MetallicPaintSchema)  ||  MetalPaint-028 (MetallicPaintSchema)  ||  MetalPaint-029 (MetallicPaintSchema)  ||  MetalPaint-030
+    (MetallicPaintSchema)  ||  MetalPaint-031 (MetallicPaintSchema)  ||  MetalPaint-032 (MetallicPaintSchema)  ||  Mirror
+    (MirrorSchema)  ||  Mirror-001 (MirrorSchema)  ||  Mirror-002 (MirrorSchema)  ||  Mirror-003
+    (MirrorSchema)  ||  Mirror-004 (MirrorSchema)  ||  Mirror-005 (MirrorSchema)  ||  Mirror-006
+    (MirrorSchema)  ||  Mirror-007 (MirrorSchema)  ||  Mirror-008 (MirrorSchema)  ||  Mulch
+    - Black [Prism-856] (PrismOpaqueSchema)  ||  Mulch - Brown [Prism-855] (PrismOpaqueSchema)  ||  Mulch
+    - Mix brown and soil [Prism-853] (PrismOpaqueSchema)  ||  Mulch - Red [Prism-854] (PrismOpaqueSchema)  ||  Nickel
+    - polished [Prism-053] (PrismMetalSchema)  ||  Nickel - satin [Prism-054] (PrismMetalSchema)  ||  Nylon
+    6-6 - white glossy [Prism-375] (PrismOpaqueSchema)  ||  Oak - Reclaimed - Rustic Flooring
+    - 5" wide [Prism-2041] (PrismOpaqueSchema)  ||  Oak Distressed Flooring - 5" wide [Prism-2040]
+    (PrismOpaqueSchema)  ||  Paek - beige rough [Prism-377] (PrismOpaqueSchema)  ||  Paint
+    - enamel black glossy [Prism-089] (PrismOpaqueSchema)  ||  Paint - enamel blue glossy
+    [Prism-090] (PrismOpaqueSchema)  ||  Paint - enamel dark grey glossy [Prism-204] (PrismOpaqueSchema)  ||  Paint
+    - enamel green glossy [Prism-091] (PrismOpaqueSchema)  ||  Paint - enamel grey glossy
+    [Prism-092] (PrismOpaqueSchema)  ||  Paint - enamel red glossy [Prism-093] (PrismOpaqueSchema)  ||  Paint
+    - enamel white glossy [Prism-094] (PrismOpaqueSchema)  ||  Paint - enamel yellow glossy
+    [Prism-095] (PrismOpaqueSchema)  ||  Paint - Powder coat black rough [Prism-104] (PrismOpaqueSchema)  ||  Paint
+    - Powder coat black [Prism-096] (PrismOpaqueSchema)  ||  Paint - Powder coat blue rough
+    [Prism-105] (PrismOpaqueSchema)  ||  Paint - Powder coat blue [Prism-097] (PrismOpaqueSchema)  ||  Paint
+    - Powder coat dark grey rough [Prism-108] (PrismOpaqueSchema)  ||  Paint - Powder coat
+    dark grey [Prism-100] (PrismOpaqueSchema)  ||  Paint - Powder coat green rough [Prism-106]
+    (PrismOpaqueSchema)  ||  Paint - Powder coat green [Prism-098] (PrismOpaqueSchema)  ||  Paint
+    - Powder coat grey rough [Prism-107] (PrismOpaqueSchema)  ||  Paint - Powder coat grey
+    [Prism-099] (PrismOpaqueSchema)  ||  Paint - Powder coat red rough [Prism-109] (PrismOpaqueSchema)  ||  Paint
+    - Powder coat red [Prism-101] (PrismOpaqueSchema)  ||  Paint - Powder coat white rough
+    [Prism-110] (PrismOpaqueSchema)  ||  Paint - Powder coat white [Prism-102] (PrismOpaqueSchema)  ||  Paint
+    - Powder coat yellow rough [Prism-111] (PrismOpaqueSchema)  ||  Paint - Powder coat yellow
+    [Prism-103] (PrismOpaqueSchema)  ||  Paint-001 (WallPaintSchema)  ||  Paint-002 (WallPaintSchema)  ||  Paint-003
+    (WallPaintSchema)  ||  Paint-004 (WallPaintSchema)  ||  Paint-005 (WallPaintSchema)  ||  Paint-006
+    (WallPaintSchema)  ||  Paint-007 (WallPaintSchema)  ||  Paint-008 (WallPaintSchema)  ||  Paint-009
+    (WallPaintSchema)  ||  Paint-010 (WallPaintSchema)  ||  Paint-011 (WallPaintSchema)  ||  Paint-012
+    (WallPaintSchema)  ||  Paint-013 (WallPaintSchema)  ||  Paint-014 (WallPaintSchema)  ||  Paint-015
+    (WallPaintSchema)  ||  Paint-016 (WallPaintSchema)  ||  Paint-017 (WallPaintSchema)  ||  Paint-018
+    (WallPaintSchema)  ||  Paint-019 (WallPaintSchema)  ||  Paint-020 (WallPaintSchema)  ||  Paint-021
+    (WallPaintSchema)  ||  Paint-022 (WallPaintSchema)  ||  Paint-023 (WallPaintSchema)  ||  Paint-024
+    (WallPaintSchema)  ||  Paint-025 (WallPaintSchema)  ||  Paint-026 (WallPaintSchema)  ||  Paint-027
+    (WallPaintSchema)  ||  Paint-028 (WallPaintSchema)  ||  Paint-029 (WallPaintSchema)  ||  Paint-030
+    (WallPaintSchema)  ||  Paint-031 (WallPaintSchema)  ||  Paint-032 (WallPaintSchema)  ||  Paint-033
+    (WallPaintSchema)  ||  Paint-034 (WallPaintSchema)  ||  Paint-035 (WallPaintSchema)  ||  Paint-036
+    (WallPaintSchema)  ||  Paint-037 (WallPaintSchema)  ||  Paint-038 (WallPaintSchema)  ||  Paint-039
+    (WallPaintSchema)  ||  Paint-040 (WallPaintSchema)  ||  Paint-041 (WallPaintSchema)  ||  Paint-042
+    (WallPaintSchema)  ||  Paint-043 (WallPaintSchema)  ||  Paint-044 (WallPaintSchema)  ||  Paint-045
+    (WallPaintSchema)  ||  Paint-046 (WallPaintSchema)  ||  Paint-047 (WallPaintSchema)  ||  Paint-048
+    (WallPaintSchema)  ||  Paint-049 (WallPaintSchema)  ||  Paint-050 (WallPaintSchema)  ||  Paint-051
+    (WallPaintSchema)  ||  Paint-052 (WallPaintSchema)  ||  Paint-053 (WallPaintSchema)  ||  Paint-054
+    (WallPaintSchema)  ||  Paint-055 (WallPaintSchema)  ||  Paint-056 (WallPaintSchema)  ||  Paint-057
+    (WallPaintSchema)  ||  Paint-058 (WallPaintSchema)  ||  Paint-059 (WallPaintSchema)  ||  Paint-060
+    (WallPaintSchema)  ||  Paint-061 (WallPaintSchema)  ||  Paint-062 (WallPaintSchema)  ||  Paint-063
+    (WallPaintSchema)  ||  Paint-064 (WallPaintSchema)  ||  Paint-065 (WallPaintSchema)  ||  Paint-066
+    (WallPaintSchema)  ||  Paint-067 (WallPaintSchema)  ||  Paint-068 (WallPaintSchema)  ||  Paint-069
+    (WallPaintSchema)  ||  Paint-070 (WallPaintSchema)  ||  Paint-071 (WallPaintSchema)  ||  Paint-072
+    (WallPaintSchema)  ||  Paint-073 (WallPaintSchema)  ||  Paint-074 (WallPaintSchema)  ||  Paint-075
+    (WallPaintSchema)  ||  Paint-076 (WallPaintSchema)  ||  Paint-077 (WallPaintSchema)  ||  Paint-078
+    (WallPaintSchema)  ||  Paint-079 (WallPaintSchema)  ||  Paint-080 (WallPaintSchema)  ||  Paint-081
+    (WallPaintSchema)  ||  Palladium - polished [Prism-240] (PrismMetalSchema)  ||  Palladium
+    - satin [Prism-241] (PrismMetalSchema)  ||  Paper - white [Prism-319] (PrismOpaqueSchema)  ||  Phenolic
+    - amber [Prism-378] (PrismTransparentSchema)  ||  Pine Flooring - 5" wide [Prism-2043]
+    (PrismOpaqueSchema)  ||  Plastic - acrylic clear [Prism-169] (PrismTransparentSchema)  ||  Plastic
+    - acrylic red [Prism-170] (PrismTransparentSchema)  ||  Plastic - black glossy [Prism-112]
+    (PrismOpaqueSchema)  ||  Plastic - black matte [Prism-113] (PrismOpaqueSchema)  ||  Plastic
+    - black matte [TilePat-0029_grout_material] (PrismOpaqueSchema)  ||  Plastic - black matte
+    [TilePat-0030_grout_material] (PrismOpaqueSchema)  ||  Plastic - black matte [TilePat-0032_grout_material]
+    (PrismOpaqueSchema)  ||  Plastic - blue glossy [Prism-114] (PrismOpaqueSchema)  ||  Plastic
+    - blue matte [Prism-115] (PrismOpaqueSchema)  ||  Plastic - blue translucent glossy [Prism-386]
+    (PrismOpaqueSchema)  ||  Plastic - blue translucent matte [Prism-380] (PrismOpaqueSchema)  ||  Plastic
+    - gray matte [Prism-116] (PrismOpaqueSchema)  ||  Plastic - gray translucent glossy [Prism-387]
+    (PrismOpaqueSchema)  ||  Plastic - gray translucent matte [Prism-381] (PrismOpaqueSchema)  ||  Plastic
+    - green glossy [Prism-117] (PrismOpaqueSchema)  ||  Plastic - green matte [Prism-118]
+    (PrismOpaqueSchema)  ||  Plastic - green translucent glossy [Prism-388] (PrismOpaqueSchema)  ||  Plastic
+    - green translucent matte [Prism-382] (PrismOpaqueSchema)  ||  Plastic - grey glossy [Prism-119]
+    (PrismOpaqueSchema)  ||  Plastic - red glossy [Prism-120] (PrismOpaqueSchema)  ||  Plastic
+    - red matte [Prism-121] (PrismOpaqueSchema)  ||  Plastic - red translucent glossy [Prism-389]
+    (PrismOpaqueSchema)  ||  Plastic - red translucent matte [Prism-383] (PrismOpaqueSchema)  ||  Plastic
+    - texture 1 [Prism-122] (PrismOpaqueSchema)  ||  Plastic - texture 2 [Prism-123] (PrismOpaqueSchema)  ||  Plastic
+    - texture 3 [Prism-252] (PrismOpaqueSchema)  ||  Plastic - texture 4 [Prism-253] (PrismOpaqueSchema)  ||  Plastic
+    - white glossy [Prism-126] (PrismOpaqueSchema)  ||  Plastic - white matte [Prism-127]
+    (PrismOpaqueSchema)  ||  Plastic - white translucent glossy [Prism-390] (PrismOpaqueSchema)  ||  Plastic
+    - white translucent matte [Prism-384] (PrismOpaqueSchema)  ||  Plastic - yellow glossy
+    [Prism-128] (PrismOpaqueSchema)  ||  Plastic - yellow matte [Prism-129] (PrismOpaqueSchema)  ||  Plastic
+    - yellow translucent glossy [Prism-391] (PrismOpaqueSchema)  ||  Plastic - yellow translucent
+    matte [Prism-385] (PrismOpaqueSchema)  ||  Plastic Laminate - Black [Prism-835] (PrismOpaqueSchema)  ||  Plastic
+    Laminate - White [Prism-836] (PrismOpaqueSchema)  ||  Plastic-001 (PlasticVinylSchema)  ||  Plastic-002
+    (PlasticVinylSchema)  ||  Plastic-003-1-2 (PlasticVinylSchema)  ||  Plastic-004 (PlasticVinylSchema)  ||  Plastic-005
+    (PlasticVinylSchema)  ||  Plastic-006 (PlasticVinylSchema)  ||  Plastic-007 (PlasticVinylSchema)  ||  Plastic-008
+    (PlasticVinylSchema)  ||  Plastic-009-1-2 (PlasticVinylSchema)  ||  Plastic-010 (PlasticVinylSchema)  ||  Plastic-011
+    (PlasticVinylSchema)  ||  Plastic-012 (PlasticVinylSchema)  ||  Plastic-013 (PlasticVinylSchema)  ||  Plastic-014
+    (PlasticVinylSchema)  ||  Plastic-015-1-2 (PlasticVinylSchema)  ||  Plastic-016 (PlasticVinylSchema)  ||  Plastic-017
+    (PlasticVinylSchema)  ||  Plastic-018-1-2 (PlasticVinylSchema)  ||  Plastic-019 (PlasticVinylSchema)  ||  Plastic-020
+    (PlasticVinylSchema)  ||  Plastic-021 (PlasticVinylSchema)  ||  Plastic-022 (PlasticVinylSchema)  ||  Plastic-023
+    (PlasticVinylSchema)  ||  Plastic-024 (PlasticVinylSchema)  ||  Plastic-025 (PlasticVinylSchema)  ||  Plastic-026
+    (PlasticVinylSchema)  ||  Plastic-027 (PlasticVinylSchema)  ||  Plastic-028 (PlasticVinylSchema)  ||  Plastic-029
+    (PlasticVinylSchema)  ||  Plastic-030 (PlasticVinylSchema)  ||  Plastic-031 (PlasticVinylSchema)  ||  Plastic-032
+    (PlasticVinylSchema)  ||  Plastic-033 (PlasticVinylSchema)  ||  Plastic-034 (PlasticVinylSchema)  ||  Plastic-035
+    (PlasticVinylSchema)  ||  Plastic-036 (PlasticVinylSchema)  ||  Plastic-037 (PlasticVinylSchema)  ||  Plastic-038
+    (PlasticVinylSchema)  ||  Plastic-039 (PlasticVinylSchema)  ||  Plastic-040 (PlasticVinylSchema)  ||  Plastic-041
+    (PlasticVinylSchema)  ||  Plastic-042 (PlasticVinylSchema)  ||  Plastic-043 (PlasticVinylSchema)  ||  Plastic-044
+    (PlasticVinylSchema)  ||  Plastic-045 (PlasticVinylSchema)  ||  Plastic-046 (PlasticVinylSchema)  ||  Plastic-047
+    (PlasticVinylSchema)  ||  Plastic-048-1-2 (PlasticVinylSchema)  ||  Plastic-049 (PlasticVinylSchema)  ||  Plastic-050
+    (PlasticVinylSchema)  ||  Plastic-051 (PlasticVinylSchema)  ||  Plastic-052 (PlasticVinylSchema)  ||  Plastic-053
+    (PlasticVinylSchema)  ||  Plastic-054 (PlasticVinylSchema)  ||  Plastic-055 (PlasticVinylSchema)  ||  Plastic-056
+    (PlasticVinylSchema)  ||  Plastic-057 (PlasticVinylSchema)  ||  Plastic-058 (PlasticVinylSchema)  ||  Plastic-059
+    (PlasticVinylSchema)  ||  Plastic-060 (PlasticVinylSchema)  ||  Plastic-061 (PlasticVinylSchema)  ||  Plastic-062
+    (PlasticVinylSchema)  ||  Plastic-063 (PlasticVinylSchema)  ||  PlasticVinyl (PlasticVinylSchema)  ||  Platinum
+    - polished [Prism-055] (PrismMetalSchema)  ||  Plywood - Maple veneer - Satin varnish
+    [Prism-832] (PrismOpaqueSchema)  ||  Plywood - Maple veneer - Unfinished [Prism-831] (PrismOpaqueSchema)  ||  Plywood
+    side - 5-ply [Prism-833] (PrismOpaqueSchema)  ||  Plywood side - 7-ply [Prism-834] (PrismOpaqueSchema)  ||  Polycarbonate
+    - bronze [Prism-171] (PrismTransparentSchema)  ||  Polycarbonate - clear [Prism-172] (PrismTransparentSchema)  ||  Polystyrene
+    - white [Prism-318] (PrismOpaqueSchema)  ||  Polyurethane - grey [Prism-321] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-398] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-399]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-400] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-401] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-402]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-403] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-404] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-405]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-406] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-407] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-408]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-409] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-410] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-411]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-412] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-413] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-414]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-415] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-416] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-417]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-418] (PrismOpaqueSchema)  ||  Prism
+    opaque material. [Prism-419] (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-421]
+    (PrismOpaqueSchema)  ||  Prism opaque material. [Prism-422] (PrismOpaqueSchema)  ||  Quartz
+    - Candy [Prism-1181] (PrismOpaqueSchema)  ||  Quartz - Muddy Sand [Prism-1184] (PrismOpaqueSchema)  ||  Quartz
+    - Rust Brown [Prism-1183] (PrismOpaqueSchema)  ||  Quartz - Snow [Prism-1188] (PrismOpaqueSchema)  ||  Quartz
+    - White [Prism-841] (PrismOpaqueSchema)  ||  Red Oak - Oiled Flooring - 5" wide [Prism-2034]
+    (PrismOpaqueSchema)  ||  Red Oak - Stained Brown Flooring - 5" wide [Prism-2033] (PrismOpaqueSchema)  ||  Red
+    Oak Flooring - 5" wide [Prism-2032] (PrismOpaqueSchema)  ||  Rough Granite Wall [Prism-1166]
+    (PrismOpaqueSchema)  ||  Rubber Membrane [Prism-1137] (PrismOpaqueSchema)  ||  Rubber
+    [Prism-130] (PrismOpaqueSchema)  ||  Rubber [Prism-131] (PrismOpaqueSchema)  ||  Rubber
+    [Prism-132] (PrismOpaqueSchema)  ||  Rubber [Prism-133] (PrismOpaqueSchema)  ||  Sand
+    surface - beach [Prism-201] (PrismOpaqueSchema)  ||  Sand surface - smooth [Prism-200]
+    (PrismOpaqueSchema)  ||  Sand surface [Prism-177] (PrismOpaqueSchema)  ||  Silicone -
+    white matte [Prism-320] (PrismOpaqueSchema)  ||  Silver - polished [Prism-056] (PrismMetalSchema)  ||  Silver
+    - satin [Prism-057] (PrismMetalSchema)  ||  Simple brick material - Brown [Prism-890]
+    (PrismOpaqueSchema)  ||  Simple brick material - Brown [TilePat-0009_base_materials_4]
+    (PrismOpaqueSchema)  ||  Simple brick material - Brown [TilePat-0016_base_materials_4]
+    (PrismOpaqueSchema)  ||  Simple brick material - Cream [Prism-891] (PrismOpaqueSchema)  ||  Simple
+    brick material - Cream [TilePat-0011_base_materials_4] (PrismOpaqueSchema)  ||  Simple
+    brick material - Cream [TilePat-0018_base_materials_4] (PrismOpaqueSchema)  ||  Simple
+    brick material - Dark Blend [Prism-887] (PrismOpaqueSchema)  ||  Simple brick material
+    - Dark Blend [TilePat-0005_base_materials_4] (PrismOpaqueSchema)  ||  Simple brick material
+    - Dark Blend [TilePat-0012_base_materials_4] (PrismOpaqueSchema)  ||  Simple brick material
+    - Grey [Prism-889] (PrismOpaqueSchema)  ||  Simple brick material - Grey [TilePat-0010_base_materials_4]
+    (PrismOpaqueSchema)  ||  Simple brick material - Grey [TilePat-0017_base_materials_4]
+    (PrismOpaqueSchema)  ||  Simple brick material - Light Blend [Prism-885] (PrismOpaqueSchema)  ||  Simple
+    brick material - Light Blend [TilePat-0007_base_materials_4] (PrismOpaqueSchema)  ||  Simple
+    brick material - Light Blend [TilePat-0014_base_materials_4] (PrismOpaqueSchema)  ||  Simple
+    brick material - Medium Blend [Prism-886] (PrismOpaqueSchema)  ||  Simple brick material
+    - Medium Blend [TilePat-0006_base_materials_4] (PrismOpaqueSchema)  ||  Simple brick material
+    - Medium Blend [TilePat-0013_base_materials_4] (PrismOpaqueSchema)  ||  Simple brick material
+    - Red [Prism-888] (PrismOpaqueSchema)  ||  Simple brick material - Red [TilePat-0008_base_materials_4]
+    (PrismOpaqueSchema)  ||  Simple brick material - Red [TilePat-0015_base_materials_4] (PrismOpaqueSchema)  ||  Simple
+    grout material - Dark [Prism-884] (PrismOpaqueSchema)  ||  Simple grout material - Light
+    [Prism-882] (PrismOpaqueSchema)  ||  Simple grout material - Light [TilePat-0004_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Light [TilePat-0005_grout_material] (PrismOpaqueSchema)  ||  Simple
+    grout material - Light [TilePat-0006_grout_material] (PrismOpaqueSchema)  ||  Simple grout
+    material - Light [TilePat-0007_grout_material] (PrismOpaqueSchema)  ||  Simple grout material
+    - Light [TilePat-0008_grout_material] (PrismOpaqueSchema)  ||  Simple grout material -
+    Light [TilePat-0009_grout_material] (PrismOpaqueSchema)  ||  Simple grout material - Light
+    [TilePat-0010_grout_material] (PrismOpaqueSchema)  ||  Simple grout material - Light [TilePat-0011_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Light [TilePat-0012_grout_material] (PrismOpaqueSchema)  ||  Simple
+    grout material - Light [TilePat-0013_grout_material] (PrismOpaqueSchema)  ||  Simple grout
+    material - Light [TilePat-0014_grout_material] (PrismOpaqueSchema)  ||  Simple grout material
+    - Light [TilePat-0015_grout_material] (PrismOpaqueSchema)  ||  Simple grout material -
+    Light [TilePat-0016_grout_material] (PrismOpaqueSchema)  ||  Simple grout material - Light
+    [TilePat-0017_grout_material] (PrismOpaqueSchema)  ||  Simple grout material - Light [TilePat-0018_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Light [TilePat-0021_grout_material] (PrismOpaqueSchema)  ||  Simple
+    grout material - Light [TilePat-0023_grout_material] (PrismOpaqueSchema)  ||  Simple grout
+    material - Light [TilePat-0028_grout_material] (PrismOpaqueSchema)  ||  Simple grout material
+    - Light [TilePat-0031_grout_material] (PrismOpaqueSchema)  ||  Simple grout material -
+    Medium [Prism-883] (PrismOpaqueSchema)  ||  Simple grout material - Medium [TilePat-0001_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Medium [TilePat-0019_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Medium [TilePat-0026_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Medium [TilePat-0027_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Red [Prism-1107] (PrismOpaqueSchema)  ||  Simple
+    grout material - Red [TilePat-0003_grout_material] (PrismOpaqueSchema)  ||  Simple grout
+    material - Red [TilePat-0025_grout_material] (PrismOpaqueSchema)  ||  Simple grout material
+    - Tan [Prism-1108] (PrismOpaqueSchema)  ||  Simple grout material - Tan [TilePat-0002_grout_material]
+    (PrismOpaqueSchema)  ||  Simple grout material - Tan [TilePat-0020_grout_material] (PrismOpaqueSchema)  ||  Simple
+    grout material - Tan [TilePat-0022_grout_material] (PrismOpaqueSchema)  ||  Simple grout
+    material - Tan [TilePat-0024_grout_material] (PrismOpaqueSchema)  ||  Six-way cane pattern
+    [Prism-850] (PrismOpaqueSchema)  ||  Slate - Black [Prism-1136] (PrismOpaqueSchema)  ||  Slate
+    - Cut - Black [Prism-238] (PrismOpaqueSchema)  ||  Slate - Flooring - Dark Grey [Prism-1106]
+    (PrismOpaqueSchema)  ||  Slate - Flooring - Dark Grey [TilePat-0028_base_materials_4]
+    (PrismOpaqueSchema)  ||  Slate Shingles - Dark Green [Prism-2055] (PrismOpaqueSchema)  ||  Slate
+    Shingles - Dark Grey [Prism-2057] (PrismOpaqueSchema)  ||  Slate Shingles - Grey [Prism-2056]
+    (PrismOpaqueSchema)  ||  Slate Shingles - Light Green [Prism-2054] (PrismOpaqueSchema)  ||  Slate
+    Shingles - Red [Prism-2058] (PrismOpaqueSchema)  ||  Solid - Blue Pond [Prism-1182] (PrismOpaqueSchema)  ||  Solid
+    - Desert Sand [Prism-1185] (PrismOpaqueSchema)  ||  Solid - Grey Stone [Prism-1186] (PrismOpaqueSchema)  ||  Solid
+    - Silver Light [Prism-1187] (PrismOpaqueSchema)  ||  SolidGlass (SolidGlassSchema)  ||  Spanish
+    Tile - Blend [Prism-1179] (PrismOpaqueSchema)  ||  Spanish Tile - Red [Prism-1178] (PrismOpaqueSchema)  ||  Stainless
+    steel - brushed long [Prism-058] (PrismMetalSchema)  ||  Stainless steel - brushed radial
+    stacked [Prism-060] (PrismMetalSchema)  ||  Stainless steel - brushed radial [Prism-059]
+    (PrismMetalSchema)  ||  Stainless steel - brushed short [Prism-061] (PrismMetalSchema)  ||  Stainless
+    steel - cast [Prism-232] (PrismMetalSchema)  ||  Stainless steel - circular alternated
+    mesh 5mm holes- beveled [Prism-064] (PrismMetalSchema)  ||  Stainless steel - circular
+    alternated small mesh 3.5mm holes- beveled [Prism-065] (PrismMetalSchema)  ||  Stainless
+    steel - circular horizontal alternated mesh 3.5x19mm - beveled [Prism-062] (PrismMetalSchema)  ||  Stainless
+    steel - circular horizontal mesh 3.5x19mm - beveled [Prism-063] (PrismMetalSchema)  ||  Stainless
+    steel - diamond plate 1 [Prism-066] (PrismMetalSchema)  ||  Stainless steel - diamond
+    plate 2 [Prism-067] (PrismMetalSchema)  ||  Stainless steel - diamond plate 3 [Prism-068]
+    (PrismMetalSchema)  ||  Stainless steel - expanded mesh thick [Prism-069] (PrismMetalSchema)  ||  Stainless
+    steel - expanded mesh thin [Prism-070] (PrismMetalSchema)  ||  Stainless steel - hexagonal
+    mesh [Prism-337] (PrismMetalSchema)  ||  Stainless steel - knurled [Prism-071] (PrismMetalSchema)  ||  Stainless
+    steel - polished [Prism-072] (PrismMetalSchema)  ||  Stainless steel - satin [Prism-073]
+    (PrismMetalSchema)  ||  Stainless steel - square alternated mesh 5mm holes [Prism-075]
+    (PrismMetalSchema)  ||  Stainless steel - square alternated small mesh 3.5mm holes [Prism-077]
+    (PrismMetalSchema)  ||  Stainless steel - square mesh 5mm holes [Prism-074] (PrismMetalSchema)  ||  Stainless
+    steel - square small mesh 3.5mm holes [Prism-076] (PrismMetalSchema)  ||  Stainless steel
+    - wire mesh [Prism-078] (PrismMetalSchema)  ||  Standing Seam - Copper Patina [Prism-1167]
+    (PrismOpaqueSchema)  ||  Standing Seam - Copper [Prism-124] (PrismMetalSchema)  ||  Standing
+    Seam - Metal - Dark Brown [Prism-1139] (PrismOpaqueSchema)  ||  Standing Seam - Metal
+    - Dark Grey [Prism-1140] (PrismOpaqueSchema)  ||  Standing Seam - Metal - Green [Prism-1141]
+    (PrismOpaqueSchema)  ||  Standing Seam - Metal - Light Brown [Prism-1142] (PrismOpaqueSchema)  ||  Standing
+    Seam - Metal - Medium Brown [Prism-1143] (PrismOpaqueSchema)  ||  Standing Seam - Metal
+    - Red [Prism-1144] (PrismOpaqueSchema)  ||  Standing Seam - Metal - Slate [Prism-1145]
+    (PrismOpaqueSchema)  ||  Standing Seam - Metal - White [Prism-1146] (PrismOpaqueSchema)  ||  Steel
+    - braided 2/2 twill [Prism-246] (PrismMetalSchema)  ||  Steel - brushed long [Prism-221]
+    (PrismMetalSchema)  ||  Steel - brushed radial stacked [Prism-223] (PrismMetalSchema)  ||  Steel
+    - brushed radial [Prism-222] (PrismMetalSchema)  ||  Steel - brushed short [Prism-224]
+    (PrismMetalSchema)  ||  Steel - cast [Prism-229] (PrismMetalSchema)  ||  Steel - diamond
+    plate 1 [Prism-079] (PrismMetalSchema)  ||  Steel - diamond plate 2 [Prism-080] (PrismMetalSchema)  ||  Steel
+    - diamond plate 3 [Prism-081] (PrismMetalSchema)  ||  Steel - expanded mesh thick [Prism-225]
+    (PrismMetalSchema)  ||  Steel - expanded mesh thin [Prism-226] (PrismMetalSchema)  ||  Steel
+    - galvanized large spangles [Prism-083] (PrismMetalSchema)  ||  Steel - galvanized small
+    spangles [Prism-082] (PrismMetalSchema)  ||  Steel - hexagonal mesh [Prism-338] (PrismMetalSchema)  ||  Steel
+    - knurled [Prism-228] (PrismMetalSchema)  ||  Steel - rough [Prism-084] (PrismMetalSchema)  ||  Steel
+    - satin [Prism-256] (PrismMetalSchema)  ||  Steel - wire mesh [Prism-227] (PrismMetalSchema)  ||  Stone
+    (StoneSchema)  ||  Stone - Blue Stone [Prism-830] (PrismOpaqueSchema)  ||  Stone - Grey
+    [Prism-1110] (PrismOpaqueSchema)  ||  Stone - Grey [TilePat-0004_base_materials_24] (PrismOpaqueSchema)  ||  Stone
+    - Grey [TilePat-0031_base_materials_66] (PrismOpaqueSchema)  ||  Stone - Pea stone - Brown
+    [Prism-829] (PrismOpaqueSchema)  ||  Stone - Pea stone - Grey [Prism-828] (PrismOpaqueSchema)  ||  Stone
+    - Red [Prism-1109] (PrismOpaqueSchema)  ||  Stone - Red [TilePat-0004_base_materials_25]
+    (PrismOpaqueSchema)  ||  Stone - Red [TilePat-0031_base_materials_67] (PrismOpaqueSchema)  ||  Stone-001
+    (StoneSchema)  ||  Stone-002 (StoneSchema)  ||  Stone-003 (StoneSchema)  ||  Stone-004
+    (StoneSchema)  ||  Stone-005 (StoneSchema)  ||  Stone-006 (StoneSchema)  ||  Stone-007
+    (StoneSchema)  ||  Stone-008 (StoneSchema)  ||  Stone-009 (StoneSchema)  ||  Stone-010
+    (StoneSchema)  ||  Stone-011 (StoneSchema)  ||  Stone-012 (StoneSchema)  ||  Stone-013
+    (StoneSchema)  ||  Stone-014 (StoneSchema)  ||  Stone-015 (StoneSchema)  ||  Stone-016
+    (StoneSchema)  ||  Stone-017 (StoneSchema)  ||  Stone-018 (StoneSchema)  ||  Stone-019
+    (StoneSchema)  ||  Stone-020 (StoneSchema)  ||  Stone-021 (StoneSchema)  ||  Stone-022
+    (StoneSchema)  ||  Stone-023 (StoneSchema)  ||  Stone-024 (StoneSchema)  ||  Stone-025
+    (StoneSchema)  ||  Stone-026 (StoneSchema)  ||  Stone-027 (StoneSchema)  ||  Thermoplastic
+    [Prism-1138] (PrismOpaqueSchema)  ||  Tile - 12x12in - Slate - Dark Green [Prism-258]
+    (PrismOpaqueSchema)  ||  Tile - 24x18in - Travertine - Running [Prism-254] (PrismOpaqueSchema)  ||  Tile
+    - 2in Hexagonal - White Marble [Prism-2025] (PrismOpaqueSchema)  ||  Tile - 2x1in Basketweave
+    - White and Black Marble [Prism-2028] (PrismOpaqueSchema)  ||  Tile - 4x1in Herringbone
+    - White Marble [Prism-2026] (PrismOpaqueSchema)  ||  Tile - 4x1in Running - Glass Mosaic
+    [Prism-2024] (PrismOpaqueSchema)  ||  Tile - 5x1in Weave - Glass and Stone [Prism-2030]
+    (PrismOpaqueSchema)  ||  Tile - 6x3in Running - Pink Marble [Prism-2029] (PrismOpaqueSchema)  ||  Tile
+    - Mix01 - Stone and Ceramic [Prism-842] (PrismOpaqueSchema)  ||  Tile - Mix02 - Stone
+    and Ceramic [Prism-2027] (PrismOpaqueSchema)  ||  Tile - Travertine - Versailles [Prism-257]
+    (PrismOpaqueSchema)  ||  TilePat-0001 (TilingPatternSchema)  ||  TilePat-0002 (TilingPatternSchema)  ||  TilePat-0003
+    (TilingPatternSchema)  ||  TilePat-0004 (TilingPatternSchema)  ||  TilePat-0005 (TilingPatternSchema)  ||  TilePat-0006
+    (TilingPatternSchema)  ||  TilePat-0007 (TilingPatternSchema)  ||  TilePat-0008 (TilingPatternSchema)  ||  TilePat-0009
+    (TilingPatternSchema)  ||  TilePat-0010 (TilingPatternSchema)  ||  TilePat-0011 (TilingPatternSchema)  ||  TilePat-0012
+    (TilingPatternSchema)  ||  TilePat-0013 (TilingPatternSchema)  ||  TilePat-0014 (TilingPatternSchema)  ||  TilePat-0015
+    (TilingPatternSchema)  ||  TilePat-0016 (TilingPatternSchema)  ||  TilePat-0017 (TilingPatternSchema)  ||  TilePat-0018
+    (TilingPatternSchema)  ||  TilePat-0019 (TilingPatternSchema)  ||  TilePat-0020 (TilingPatternSchema)  ||  TilePat-0021
+    (TilingPatternSchema)  ||  TilePat-0022 (TilingPatternSchema)  ||  TilePat-0023 (TilingPatternSchema)  ||  TilePat-0024
+    (TilingPatternSchema)  ||  TilePat-0025 (TilingPatternSchema)  ||  TilePat-0026 (TilingPatternSchema)  ||  TilePat-0027
+    (TilingPatternSchema)  ||  TilePat-0028 (TilingPatternSchema)  ||  TilePat-0029 (TilingPatternSchema)  ||  TilePat-0030
+    (TilingPatternSchema)  ||  TilePat-0031 (TilingPatternSchema)  ||  TilePat-0032 (TilingPatternSchema)  ||  Titanium
+    - polished [Prism-085] (PrismMetalSchema)  ||  Titanium - satin [Prism-086] (PrismMetalSchema)  ||  Titanium
+    Niitride [Prism-625] (PrismMetalSchema)  ||  Wall Stone [Prism-211] (PrismOpaqueSchema)  ||  Wall
+    Textures - Knockdown texture - Glossy [Prism-811] (PrismOpaqueSchema)  ||  Wall Textures
+    - Knockdown texture - Matte [Prism-260] (PrismOpaqueSchema)  ||  Wall Textures - Orange
+    peel texture - Glossy [Prism-812] (PrismOpaqueSchema)  ||  Wall Textures - Orange peel
+    texture - Matte [Prism-261] (PrismOpaqueSchema)  ||  Wall Textures - Stipple texture -
+    Glossy [Prism-813] (PrismOpaqueSchema)  ||  Wall Textures - Stipple texture - Matte [Prism-262]
+    (PrismOpaqueSchema)  ||  Wall Textures - Stucco [Prism-814] (PrismOpaqueSchema)  ||  Wall
+    Textures - Stucco, coarse [Prism-815] (PrismOpaqueSchema)  ||  WallPaint (WallPaintSchema)  ||  Walnut
+    Flooring - 5" wide [Prism-2039] (PrismOpaqueSchema)  ||  Walnut flooring semigloss [Prism-858]
+    (PrismOpaqueSchema)  ||  Walnut flooring semigloss [TilePat-0029_base_materials_20] (PrismOpaqueSchema)  ||  Water
+    (WaterSchema)  ||  Water - calm sea [Prism-198] (PrismTransparentSchema)  ||  Water -
+    calm surface [Prism-237] (PrismTransparentSchema)  ||  Water - clean [Prism-236] (PrismTransparentSchema)  ||  Water
+    - swimming pool [Prism-197] (PrismTransparentSchema)  ||  Water - weavy sea [Prism-199]
+    (PrismTransparentSchema)  ||  Water-001 (WaterSchema)  ||  Water-002 (WaterSchema)  ||  Water-003
+    (WaterSchema)  ||  Water-004 (WaterSchema)  ||  Water-005 (WaterSchema)  ||  Water-006
+    (WaterSchema)  ||  Water-007 (WaterSchema)  ||  Water-008 (WaterSchema)  ||  Wax - natural
+    [Prism-394] (PrismOpaqueSchema)  ||  Wax - red [Prism-393] (PrismOpaqueSchema)  ||  Wax
+    - white [Prism-392] (PrismOpaqueSchema)  ||  White Ash Flooring - 5" wide [Prism-2044]
+    (PrismOpaqueSchema)  ||  White Oak - Light Oil Flooring - 150mm wide [Prism-2064] (PrismOpaqueSchema)  ||  White
+    Oak - Natural Flooring - 150mm wide [Prism-2062] (PrismOpaqueSchema)  ||  White Oak -
+    White Oil Flooring - 150mm wide [Prism-2063] (PrismOpaqueSchema)  ||  Wood - bamboo dark
+    finished semigloss [Prism-323] (PrismOpaqueSchema)  ||  Wood - bamboo light finished semigloss
+    [Prism-322] (PrismOpaqueSchema)  ||  Wood - cherry finished glossy [Prism-247] (PrismOpaqueSchema)  ||  Wood
+    - cherry finished semigloss [Prism-139] (PrismOpaqueSchema)  ||  Wood - cherry [Prism-138]
+    (PrismOpaqueSchema)  ||  Wood - mahogany finished glossy [Prism-248] (PrismOpaqueSchema)  ||  Wood
+    - mahogany finished semigloss [Prism-141] (PrismOpaqueSchema)  ||  Wood - mahogany [Prism-140]
+    (PrismOpaqueSchema)  ||  Wood - oak end grain [Prism-420] (PrismOpaqueSchema)  ||  Wood
+    - oak finished glossy [Prism-249] (PrismOpaqueSchema)  ||  Wood - oak finished semigloss
+    [Prism-145] (PrismOpaqueSchema)  ||  Wood - oak [Prism-144] (PrismOpaqueSchema)  ||  Wood
+    - pine finished glossy [Prism-251] (PrismOpaqueSchema)  ||  Wood - pine finished semigloss
+    [Prism-149] (PrismOpaqueSchema)  ||  Wood - pine [Prism-148] (PrismOpaqueSchema)  ||  Wood
+    - walnut finished glossy [Prism-250] (PrismOpaqueSchema)  ||  Wood - walnut finished semigloss
+    [Prism-147] (PrismOpaqueSchema)  ||  Wood - walnut [Prism-146] (PrismOpaqueSchema)  ||  Wood
+    Shakes - Hand Split - Roofing [Prism-209] (PrismOpaqueSchema)  ||  Wood Shakes - Hand
+    Split - Siding [Prism-210] (PrismOpaqueSchema)  ||  Wood Shingles - Cut - Roofing [Prism-1163]
+    (PrismOpaqueSchema)  ||  Wood Shingles - Cut - Siding [Prism-1164] (PrismOpaqueSchema)  ||  Wood-001
+    (HardwoodSchema)  ||  Wood-002 (HardwoodSchema)  ||  Wood-003 (HardwoodSchema)  ||  Wood-004
+    (HardwoodSchema)  ||  Wood-005 (HardwoodSchema)  ||  Wood-006 (HardwoodSchema)  ||  Wood-007
+    (HardwoodSchema)  ||  Wood-008 (HardwoodSchema)  ||  Wood-009 (HardwoodSchema)  ||  Wood-010
+    (HardwoodSchema)  ||  Wood-011 (HardwoodSchema)  ||  Wood-012 (HardwoodSchema)  ||  Wood-013
+    (HardwoodSchema)  ||  Wood-014 (HardwoodSchema)  ||  Wood-015 (HardwoodSchema)  ||  Wood-016
+    (HardwoodSchema)  ||  Wood-017 (HardwoodSchema)  ||  Wood-018 (HardwoodSchema)  ||  Wood-019
+    (HardwoodSchema)  ||  Wood-020 (HardwoodSchema)  ||  Wood-021 (HardwoodSchema)  ||  Wood-022
+    (HardwoodSchema)  ||  Wood-023 (HardwoodSchema)  ||  Wood-024 (HardwoodSchema)  ||  Wood-025
+    (HardwoodSchema)  ||  Wood-026 (HardwoodSchema)  ||  Wood-027 (HardwoodSchema)  ||  Wood-028
+    (HardwoodSchema)  ||  Wood-029 (HardwoodSchema)  ||  Wood-030 (HardwoodSchema)  ||  Wood-031
+    (HardwoodSchema)  ||  Wood-032 (HardwoodSchema)  ||  Wood-033 (HardwoodSchema)  ||  Wood-034
+    (HardwoodSchema)  ||  Wood-035 (HardwoodSchema)  ||  Wood-036 (HardwoodSchema)  ||  Wood-037
+    (HardwoodSchema)  ||  Wood-038 (HardwoodSchema)  ||  Wood-039 (HardwoodSchema)  ||  Wood-040
+    (HardwoodSchema)  ||  Wood-041 (HardwoodSchema)  ||  Wood-042 (HardwoodSchema)  ||  Wood-043
+    (HardwoodSchema)  ||  Wood-044 (HardwoodSchema)  ||  Wood-045 (HardwoodSchema)  ||  Wood-046
+    (HardwoodSchema)  ||  Wood-047 (HardwoodSchema)  ||  Wood-048 (HardwoodSchema)  ||  Wood-049
+    (HardwoodSchema)  ||  Wood-050 (HardwoodSchema)  ||  Wood-051 (HardwoodSchema)  ||  Wood-052
+    (HardwoodSchema)  ||  Wood-053 (HardwoodSchema)  ||  Wood-054 (HardwoodSchema)  ||  Wood-055
+    (HardwoodSchema)  ||  Wood-056 (HardwoodSchema)  ||  Wood-057 (HardwoodSchema)  ||  Wood-058
+    (HardwoodSchema)  ||  Wood-059 (HardwoodSchema)  ||  Wood-060 (HardwoodSchema)  ||  Wood-061
+    (HardwoodSchema)  ||  Wood-062 (HardwoodSchema)  ||  Wood-063 (HardwoodSchema)  ||  Wood-064
+    (HardwoodSchema)  ||  Wood-065 (HardwoodSchema)  ||  Wood-066 (HardwoodSchema)  ||  Wood-067
+    (HardwoodSchema)  ||  Wood-068 (HardwoodSchema)  ||  Wood-069 (HardwoodSchema)  ||  Wood-070
+    (HardwoodSchema)  ||  Wood-071 (HardwoodSchema)  ||  Wood-072 (HardwoodSchema)  ||  Wood-073
+    (HardwoodSchema)  ||  Wood-074 (HardwoodSchema)  ||  Wood-075 (HardwoodSchema)  ||  Wood-076
+    (HardwoodSchema)  ||  Wood-077 (HardwoodSchema)  ||  Wood-078 (HardwoodSchema)  ||  Wood-079
+    (HardwoodSchema)  ||  Wood-080 (HardwoodSchema)  ||  Wood-081 (HardwoodSchema)  ||  Wood-082
+    (HardwoodSchema)  ||  Wood-083 (HardwoodSchema)  ||  Wood-084 (HardwoodSchema)  ||  Wood-085
+    (HardwoodSchema)  ||  Wood-086 (HardwoodSchema)  ||  Wood-087 (HardwoodSchema)  ||  Wood-088
+    (HardwoodSchema)  ||  Wood-089 (HardwoodSchema)  ||  Wood-090 (HardwoodSchema)  ||  Wood-091
+    (HardwoodSchema)  ||  Wood-092 (HardwoodSchema)  ||  Wood-093 (HardwoodSchema)  ||  Wood-094
+    (HardwoodSchema)  ||  Wood-095 (HardwoodSchema)  ||  Wood-096 (HardwoodSchema)  ||  Wood-097
+    (HardwoodSchema)  ||  Wood-098 (HardwoodSchema)  ||  Wood-099 (HardwoodSchema)  ||  Wood-100
+    (HardwoodSchema)  ||  Wood-101 (HardwoodSchema)  ||  Wood-102 (HardwoodSchema)  ||  Wood-103
+    (HardwoodSchema)  ||  Wood-104 (HardwoodSchema)  ||  Wood-105 (HardwoodSchema)  ||  Wood-106
+    (HardwoodSchema)  ||  Wood-107 (HardwoodSchema)  ||  Wood-108 (HardwoodSchema)  ||  Wood-109
+    (HardwoodSchema)  ||  Wood-110 (HardwoodSchema)  ||  Wood-111 (HardwoodSchema)  ||  Wood-112
+    (HardwoodSchema)  ||  Wood-113 (HardwoodSchema)  ||  Wood-114 (HardwoodSchema)  ||  Wood-115
+    (HardwoodSchema)  ||  Wood-116 (HardwoodSchema)  ||  Wood-117 (HardwoodSchema)  ||  Wood-118
+    (HardwoodSchema)  ||  Wood-119 (HardwoodSchema)  ||  Wood-120 (HardwoodSchema)  ||  Wood-121
+    (HardwoodSchema)  ||  Wood-122 (HardwoodSchema)  ||  Wood-123 (HardwoodSchema)  ||  Wood-124
+    (HardwoodSchema)  ||  Wood-125 (HardwoodSchema)  ||  Wood-126 (HardwoodSchema)  ||  Wood-127
+    (HardwoodSchema)  ||  Wood-128 (HardwoodSchema)  ||  Wood-129 (HardwoodSchema)  ||  Wood-130
+    (HardwoodSchema)  ||  Wood-131 (HardwoodSchema)  ||  Wood-132 (HardwoodSchema)  ||  Wood-133
+    (HardwoodSchema)  ||  Wood-134 (HardwoodSchema)  ||  Wood-135 (HardwoodSchema)  ||  Wood-136
+    (HardwoodSchema)  ||  Wood-137 (HardwoodSchema)  ||  Wood-138 (HardwoodSchema)  ||  Wood-139
+    (HardwoodSchema)  ||  Wood-140 (HardwoodSchema)  ||  Wood-141 (HardwoodSchema)  ||  Wood-142
+    (HardwoodSchema)  ||  Wood-143 (HardwoodSchema)  ||  Wood-144 (HardwoodSchema)  ||  Wood-145
+    (HardwoodSchema)  ||  Wood-146 (HardwoodSchema)  ||  Wood-147 (HardwoodSchema)  ||  Wood-148
+    (HardwoodSchema)  ||  Wood-149 (HardwoodSchema)  ||  Wood-150 (HardwoodSchema)  ||  Wood-151
+    (HardwoodSchema)  ||  Wood-152 (HardwoodSchema)  ||  Wood-153 (HardwoodSchema)  ||  Wood-154
+    (HardwoodSchema)  ||  Wood-155 (HardwoodSchema)  ||  Wood-156 (HardwoodSchema)  ||  Wood-157
+    (HardwoodSchema)  ||  Wood-158 (HardwoodSchema)  ||  Wood-159 (HardwoodSchema)  ||  Wood-160
+    (HardwoodSchema)  ||  Wood-161 (HardwoodSchema)  ||  Wood-162 (HardwoodSchema)  ||  Wood-163
+    (HardwoodSchema)  ||  Wood-164 (HardwoodSchema)  ||  Wood-165 (HardwoodSchema)  ||  Wood-166
+    (HardwoodSchema)  ||  Wood-167 (HardwoodSchema)  ||  Wood-168 (HardwoodSchema)  ||  Wood-169
+    (HardwoodSchema)  ||  Wood-170 (HardwoodSchema), materialClasses Metal 1, Unassigned 2,
+    materialCount 3, materialIds 3 item(s) [1330338, 1330329, 1330331], materialList IA Probe
+    Copper (Unassigned, id 1330338); identity cost ''0.00''; graphics shading 184,115,51 at
+    0% transparency; surface none 0,0,0 / none 0,0,0; cut none 0,0,0 / none 0,0,0; appearance
+    ''Steel - Satin'' (PrismMetalSchema), shared with 1 other material(s); thermal "Steel(2)":
+    Density 7850.00 kg/m³, Electrical Resistivity 0.0000 ohm·m, Emissivity 0.4, Porosity 0.001,
+    Specific Heat 0.4800 J/(g·°C), Thermal Conductivity 45.0000 W/(m·K), Thermal Conductivity
+    X 45.0000 W/(m·K), Thermal Conductivity Y 45.0000 W/(m·K), Thermal Conductivity Z 45.0000
+    W/(m·K), Unit weight 77.0 kN/m³  ||  IA Probe Steel (Metal, id 1330329); identity manufacturer
+    ''IA Maker'', model ''M-1'', cost ''0.00'', keynote ''05 12 00'', mark ''IA-1''; graphics
+    shading 128,128,128 at 0% transparency; surface <Solid fill> 128,128,128 / none 0,0,0;
+    cut Diagonal crosshatch 0,0,0 / none 0,0,0; appearance ''Steel - Satin'' (PrismMetalSchema),
+    shared with 1 other material(s); thermal "Steel(2)": Density 7850.00 kg/m³, Electrical
+    Resistivity 0.0000 ohm·m, Emissivity 0.4, Porosity 0.001, Specific Heat 0.4800 J/(g·°C),
+    Thermal Conductivity 45.0000 W/(m·K), Thermal Conductivity X 45.0000 W/(m·K), Thermal
+    Conductivity Y 45.0000 W/(m·K), Thermal Conductivity Z 45.0000 W/(m·K), Unit weight 77.0
+    kN/m³  ||  IA Probe Wood (Unassigned, id 1330331); identity empty; graphics shading 171,128,82
+    at 0% transparency; surface none 0,0,0 / none 0,0,0; cut none 0,0,0 / none 0,0,0; appearance
+    ''IA Probe Wood'' (Generic) colour 80,80,80, image ''C:\Program Files (x86)\Common Files\Autodesk
+    Shared\Materials\Textures\1\Mats\ceramic_wood_color.jpg'', glossiness 40, non-metallic,
+    transparency 0, withAllTabs true, withAssets false, withLibraryAppearances true. inputs
+    came withAssets not given - false (optional); withAllTabs as given; withLibraryAppearances
+    as given; namePattern as given. on Materials IA Test'
+  negative_case: 'run with withAllTabs=true, namePattern=ZZZ* instead - chosen because it
+    should not contain what this fragment reports. returned findings 2 item(s) [No material
+    matches ''ZZZ*'' in this project - ''Materials IA T..., Listed used or not - unused ones:
+    FIND_UNUSED_MATERIALS], libraryAppearances , materialClasses , materialCount 0, materialIds
+    0 item(s), materialList , withAllTabs true, withAssets false, withLibraryAppearances false.
+    inputs came withAssets not given - false (optional); withAllTabs as given; withLibraryAppearances
+    not given - false (optional); namePattern as given. on Materials IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ea0007418a1a97d7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -130,8 +130,9 @@ was: every rolled-back run first, then the save, then the kept run.
 | **EYE2** | Material Browser, `IA Probe Steel`, Identity tab: is there a **Keywords** box at all on Revit 2020? (IA2) | **Yes.** Seen by the owner 2026-10-20: Descriptive Information has Description, Class `Metal`, Comments and **Keywords** (empty). Product Information has Manufacturer `IA Maker` and Model `M-1`. Keynote is `05 12 00` and Mark `IA-1` - IA2's kept values, read by eye. Keywords is a box the browser shows and no parameter reaches. The tool's refusal says to set it there, which is right |
 | **EYE5** | `IA Probe Wood`, Appearance tab: Glossiness **40**? Reflectivity Direct **10**? The image: 1200 x 600 mm, rotation 90, offset 100 / 50 in the texture editor? (IA5) | **Glossiness 40 and Reflectivity Direct 10: YES** - seen by the owner 2026-10-20, Generic, with image `ceramic_wood_color.jpg`, Image Fade 100, Highlights Non-Metallic and Oblique 0. **The 0-100 scale the card stores as 0-1 is the browser's.** The texture editor - size, rotation, offset - was not opened: **still owed** |
 
-**For the owner's signature** - one draft each, with a kept run as its positive wherever the tool changes the
-model:
+**SIGNED 2026-10-20 by Ajmal PS - all five PROVEN.** He signed after the by-eye answers above, knowing that
+IA4, IA7, IA10 and EYE5's texture editor were not run. The proofs, each with a kept run as its positive wherever
+the tool changes the model:
 
 | Tool | Positive | Negative | Draft fingerprint |
 |---|---|---|---|

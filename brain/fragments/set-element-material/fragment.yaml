@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -92,6 +92,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,779 elements), Revit 2020, session 29012
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned alreadyAsAsked 0, findings 2 item(s) [1 parameter(s) given
+    TRG_Concrete Smooth; 0 already held it;..., A type or system type was written, so elements
+    that were not...], materialAssignReport Columns type ''M_Rectangular Column: 457 x 475mm''
+    ''Material'' <By Category> -> TRG_Concrete Smooth - a type change: all 2 placed element(s)
+    of this type changed, 2 of them handed in, refused , skippedElements 0 item(s), writtenIds
+    1 item(s) [1328933]. inputs came elements from the selection (2); material as given; materialParameter
+    not given - "any", the card''s own default (optional). on Materials IA Test'
+  negative_case: 'run with categoryName=Walls, inViewOnly=FloorPlan: 1 - Mech, material=TRG_Concrete
+    Smooth instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-category-name, set-selection with this
+    phase''s own values - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned alreadyAsAsked 0, findings 2 item(s) [0 parameter(s)
+    given TRG_Concrete Smooth; 0 already held it;..., Skipped: Walls 1330316: a Walls type
+    ''Basic Wall: Exterior -...], materialAssignReport , refused , skippedElements 2 item(s)
+    [Walls 1330316: a Walls type ''Basic Wall: Exterior - Brick on..., Walls 1330317: a Walls
+    type ''Basic Wall: Exterior - Brick on...], writtenIds 0 item(s). inputs came elements
+    from the selection (2); material as given; materialParameter not given - "any", the card''s
+    own default (optional). on Materials IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 330f01f3a3fbd93d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

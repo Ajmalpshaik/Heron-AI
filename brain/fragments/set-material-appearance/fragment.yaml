@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -131,6 +131,34 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,780 elements), Revit 2020, session 29012
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned appearanceReport IA Probe Wood: ''none'' (no appearance asset)
+    -> ''IA Probe Wood'' (Image C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures\1\Mats\ceramic_wood_color.jpg,
+    Highlights non-metallic), assetsMade 1 item(s) [IA Probe Wood], changedMaterialIds 1 item(s)
+    [1330331], findings 3 item(s) [1 material(s) given their appearance; 1 new appearance
+    asset..., A Realistic view and a rendering draw this appearance. A Sha..., An appearance
+    asset no material uses any more stays in the d...], matchShading false, refused , sharedBefore
+    . inputs came materialsNamed as given; appearance as given; appearanceValues as given;
+    matchShading not given - false (optional). on Materials IA Test'
+  negative_case: 'run with materialsNamed=IA Probe Wood, appearance=generic, appearanceValues=Image=C:\no\such\file.jpg
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    appearanceReport , assetsMade 0 item(s), changedMaterialIds 0 item(s), findings 1 item(s)
+    [Image: the file ''C:\no\such\file.jpg'' is not there - a missi...], matchShading false,
+    refused Image: the file ''C:\no\such\file.jpg'' is not there - a missing image renders
+    as plain colour. Nothing was changed, sharedBefore . inputs came materialsNamed as given;
+    appearance as given; appearanceValues as given; matchShading not given - false (optional).
+    on Materials IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: affdd751d0750c40
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
