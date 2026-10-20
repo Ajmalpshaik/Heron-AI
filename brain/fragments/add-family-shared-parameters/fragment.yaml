@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "add the office's shared parameters, from its shared paramete
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_SHARED_PARAMETERS
-version: 3
+version: 4
+# VERSION 4, 2026-10-20 - row 5b-1276, found running Group DF on Revit 2020.
+# Replacing a family parameter with the shared one OF THE SAME NAME - the
+# owner's own case, "Gas Pipe Diameter=Refrigerant: Gas Pipe Diameter" -
+# Revit refused with "Parameter replacement failed.", no formula reading it,
+# and a definition createMissing had just written stayed in the file. Renamed
+# first, the same replace took (measured, rolled back). Version 4 renames the
+# family parameter to a name the family does not have for that moment, then
+# replaces; the shared one takes the name. Nothing else changed.
 source: OFFICIAL
 # ADMIN FROM VERSION 3 (D-106): creating writes the office's shared parameter
 # file, which is outside the model and which Undo does not reach - D-106's own
@@ -196,47 +204,66 @@ contract:
 # Ajmal PS on his word - NEEDS-CHECKING DE. The adding mode of version 1 shares this
 # implementation; its own run is NEEDS-CHECKING BS (2026-10-03).
 proof:
-  date: '2026-10-12'
+  date: '2026-10-20'
   by: Ajmal PS
-  model: Family4 (1,505 elements), Revit 2020, session 25812
+  model: Heron Create Shared Test (1,504 elements), Revit 2020, session 29012
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
-    added 0 item(s), alreadyThere 0 item(s), dbNamespace Autodesk.Revit.DB, findings 3 item(s)
-    [Replaced 2 family parameter(s) with the office''s shared ones..., Formulas read back
-    with the shared names: Half Width = Unit_..., Kept as they were: Unit_Width: 1 labelled
-    dimension(s), valu...], flags BindingFlags, formulasReadBack Half Width = Unit_Width /
-    2, groupType RuntimeType, groupValue (null), groups 117 item(s) [[Route Analysis, PG_ROUTE_ANALYSIS],
-    [Geolocation, PG_GEO_LOCATION], [Structural Section Geometry, PG_STRUCTURAL_SECTION_GEOMETRY...,
-    ...], instance false, keptLinks Unit_Width: 1 labelled dimension(s), values Large 2''
-    - 11 111/256", Small 1'' - 11 159/256"; Unit_Thickness: values Large 1'' - 5 183/256",
-    Small 0'' - 11 13/16", kindLabel Func`2, names 1 item(s) [Width=Unit_Width; Depth=Unit_Thickness],
-    notAFamily false, plans 0 item(s), problems 0 item(s), refused (null), replaceExisting
-    true, replaceParameter RuntimeMethodInfo, replaced 2 item(s) [Width -> Unit_Width (Length,
-    type, under Dimensions, GUID 9f..., Depth -> Unit_Thickness (Length, type, under Dimensions,
-    GUI...], revitAssembly RuntimeAssembly, sharedFile D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt,
-    squash Func`2, swaps 2 item(s) [(Width, Autodesk.Revit.DB.ExternalDefinition), (Depth,
-    Autodesk.Revit.DB.ExternalDefinition)]. inputs came parameterNames as given (1); instance
-    as given; parameterGroup as given; replaceExisting as given. on Family4'
-  negative_case: run with instance=False, parameterGroup=, parameterNames=Width=Item_Tag,
-    replaceExisting=True instead - chosen because it should not contain what this fragment
-    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned addParameter RuntimeMethodInfo, added 0 item(s), alreadyThere 0 item(s),
-    dbNamespace Autodesk.Revit.DB, findings 1 item(s) [Nothing was replaced. 'Width' holds
-    Length and the shared 'I...], flags BindingFlags, formulasReadBack , groupType RuntimeType,
-    groupValue (null), groups 117 item(s) [[Route Analysis, PG_ROUTE_ANALYSIS], [Geolocation,
+    added 2 item(s) [Heron Suction Pipe Diameter (Pipe Size, type, GUID 1cdd6c18-..., Heron
+    Discharge Pipe Diameter (Pipe Size, type, GUID e757976...], alreadyThere 0 item(s), createMissing
+    true, created 2 item(s) [Heron Suction Pipe Diameter (Pipe Size, group Refrigerant, G...,
+    Heron Discharge Pipe Diameter (Pipe Size, group Refrigerant,...], dbNamespace Autodesk.Revit.DB,
+    describeSpec Func`2, file DefinitionFile, fileKept Func`1, findings 4 item(s) [Wrote 2
+    new definition(s) into the shared parameter file "C:..., The shared parameter file is
+    outside the model: Undo in Revi..., Added 2 shared parameter(s) from "C:\Users\ajmal\AppData\Loc...,
+    ...], flags BindingFlags, formulasReadBack , fresh Func`2, groupType RuntimeType, groupValue
+    BuiltInParameterGroup, groups 117 item(s) [[Route Analysis, PG_ROUTE_ANALYSIS], [Geolocation,
     PG_GEO_LOCATION], [Structural Section Geometry, PG_STRUCTURAL_SECTION_GEOMETRY..., ...],
-    instance false, keptLinks , kindLabel Func`2, names 1 item(s) [Width=Item_Tag], notAFamily
-    false, plans 0 item(s), problems 0 item(s), refused Nothing was replaced. 'Width' holds
-    Length and the shared 'Item_Tag' holds Text - the kinds must be the same, or every value
-    and formula reading it would mean something else., replaceExisting true, replaceParameter
-    RuntimeMethodInfo, replaced 0 item(s), revitAssembly RuntimeAssembly, sharedFile D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt,
-    squash Func`2, swaps 1 item(s) [(Width, Autodesk.Revit.DB.ExternalDefinition)]. inputs
-    came parameterNames as given (1); instance as given; parameterGroup as given; replaceExisting
-    as given. on Family4
+    instance false, keptLinks , kindLabel Func`2, names 2 item(s) [Refrigerant: Heron Suction
+    Pipe Diameter [Pipe Size], Refrigerant: Heron Discharge Pipe Diameter [Pipe Size]], notAFamily
+    false, optionsCtor RuntimeConstructorInfo, parseNew Func`2, pendingAdds 2 item(s) [Heron
+    Suction Pipe Diameter, Heron Discharge Pipe Diameter], pendingSwaps 0 item(s), plans 2
+    item(s) [(Heron Suction Pipe Diameter, Autodesk.Revit.DB.ExternalDefi..., (Heron Discharge
+    Pipe Diameter, Autodesk.Revit.DB.ExternalDe...], problems 0 item(s), refused (null), reopened
+    DefinitionFile, replaceExisting false, replaceParameter RuntimeMethodInfo, replaced 0
+    item(s), resolveSpec Func`3, revitAssembly RuntimeAssembly, sameKind Func`3, sharedFile
+    C:\Users\ajmal\AppData\Local\Temp\heron-work\df\heron-df-shared.txt, specOf Func`2, specType
+    RuntimeType, specs 134 item(s) [(Text, , Text, Text), (Integer, , Integer, Integer), (Number,
+    , Number, Number), ...], squash Func`2, swaps 0 item(s), toCreate 2 item(s) [(Refrigerant,
+    Heron Suction Pipe Diameter, (Pipe Size, , Pip..., (Refrigerant, Heron Discharge Pipe
+    Diameter, (Pipe Size, , P...], writePending Func`1, written 2 item(s) [Heron Suction Pipe
+    Diameter (Pipe Size, group Refrigerant, G..., Heron Discharge Pipe Diameter (Pipe Size,
+    group Refrigerant,...]. inputs came parameterNames as given (2); instance as given; parameterGroup
+    as given; replaceExisting not given - false (optional); createMissing as given. on Heron
+    Create Shared Test'
+  negative_case: 'run with parameterNames=Identity Data: Heron Test Tag [Length], instance=false,
+    parameterGroup=Mechanical, createMissing=true instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo, added 0 item(s),
+    alreadyThere 0 item(s), createMissing true, created 0 item(s), dbNamespace Autodesk.Revit.DB,
+    describeSpec Func`2, file DefinitionFile, fileKept Func`1, findings 1 item(s) [Nothing
+    was added. Nothing was written to the shared paramet...], flags BindingFlags, formulasReadBack
+    , fresh Func`2, groupType RuntimeType, groupValue BuiltInParameterGroup, groups 117 item(s)
+    [[Route Analysis, PG_ROUTE_ANALYSIS], [Geolocation, PG_GEO_LOCATION], [Structural Section
+    Geometry, PG_STRUCTURAL_SECTION_GEOMETRY..., ...], instance false, keptLinks , kindLabel
+    Func`2, names 1 item(s) [Identity Data: Heron Test Tag [Length]], notAFamily false, optionsCtor
+    RuntimeConstructorInfo, parseNew Func`2, pendingAdds 0 item(s), pendingSwaps 0 item(s),
+    plans 0 item(s), problems 1 item(s) ["Heron Test Tag" is already in the shared parameter
+    file, un...], refused Nothing was added. Nothing was written to the shared parameter file.
+    "Heron Test Tag" is already in the shared parameter file, under Heron Test, holding Text
+    - not Length. An existing definition is never changed, and a second one of that name would
+    be a different parameter. Use it as it is, or choose another name., reopened (null), replaceExisting
+    false, replaceParameter RuntimeMethodInfo, replaced 0 item(s), resolveSpec Func`3, revitAssembly
+    RuntimeAssembly, sameKind Func`3, sharedFile C:\Users\ajmal\AppData\Local\Temp\heron-work\df\heron-df-shared.txt,
+    specOf Func`2, specType RuntimeType, specs 134 item(s) [(Text, , Text, Text), (Integer,
+    , Integer, Integer), (Number, , Number, Number), ...], squash Func`2, swaps 0 item(s),
+    toCreate 0 item(s), writePending Func`1, written 0 item(s). inputs came parameterNames
+    as given (1); instance as given; parameterGroup as given; replaceExisting not given -
+    false (optional); createMissing as given. on Heron Create Shared Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: d9d2e24338639f6f
+  fingerprint: d61152201bfbd446
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

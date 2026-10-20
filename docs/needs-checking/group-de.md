@@ -80,7 +80,7 @@ Family4's feet-and-inches units.
 | DE4 | The workaround built on Height: Height (family) and Unit_Height (shared) side by side, Unit_Height 600 / 500, Height = Unit_Height. The replace "Height=Unit_Height" **refused** with both reasons - Unit_Height already in the family, and Height's formula names it - nothing changed. Then the formula cleared (`SET_FAMILY_FORMULA`, empty), Unit_Height deleted (`DELETE_FAMILY_PARAMETERS`) and the replace run kept: `replaced` 1, Height -> Unit_Height, values Large 1' - 11 159/256" (600 mm) and Small 1' - 7 175/256" (500 mm) kept. **This is the path the owner's split-unit family takes** |
 | DE5 | One call, no transaction: "Unit_Width=Clearance_Rear; NoSuchParameter=Clearance_Side; Half Width=Supply_Air_Width" refused by name three times - Unit_Width already SHARED (its GUID), NoSuchParameter not in the family, Half Width Length against Supply_Air_Width Duct Size. The project leg was not run |
 
-**Still owed:** DE6 (whether Revit's own dialog refuses a same-name replace while a formula reads it),
+**DE6, half answered 2026-10-20 (Revit 2020, [Group DF](group-df.md)):** with NO formula reading it, Revit's ReplaceParameter refused a same-name replace - *"Parameter replacement failed."* - where this group expected it to replace. Version 4 renames the family parameter out of the way first ([row 5b-1276](../fragment-issues/section-5b-rows-401-425.md)). **Still owed:** DE6 with a formula reading it,
 DE7 (heading and type catalogue), DE8 (Revit 2024 and 2027) and the Family Types look in DE3. DE9 is
 done: signed by Ajmal PS on his word, 2026-10-12, and the card is PROVEN. Family4 keeps Unit_Width, Unit_Thickness, Unit_Height and Half Width
 as the run left them; it is unsaved and is the owner's to close.
