@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-112
+semantic-identity: "make a rebar bar type of this diameter with these bend diameters"
+kind: action
+domain: revit.elements
+capability: CREATE_REBAR_BAR_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# EVERY VALUE IS THE MODELLER'S. A bar type is its diameter and three bend
+# diameters - standard bends, hooks, stirrups/ties - and all four are design
+# values a structural spec gives (a bending schedule standard sets them per
+# size). None is defaulted: Revit's own new bar type carries values nobody
+# chose, and a 32 mm bar bent round a 10 mm bar's former is a wrong drawing
+# that schedules as right (D-33). The name is the modeller's too - his naming
+# rules decide it, never Heron.
+#
+# TWO DIAMETERS FROM REVIT 2022. 2022 split the one bar diameter into a
+# NOMINAL one (what the spec calls the bar, what a schedule says) and a MODEL
+# one (what is drawn). `modelDiameter` left out is the nominal one. On 2020 and
+# 2021 there is only one, so a model diameter different from the nominal is
+# refused there rather than dropped.
+#
+# REVIT'S OWN LIMITS, CHECKED FIRST: every bend diameter must be larger than
+# the bar diameter (SetBarTypeDiameters' remarks, every release). A name
+# already used by a bar type is refused - the existing type is named with its
+# diameter - and nothing is made.
+#
+# READ BACK: the type's name, diameters and bend diameters after a regenerate.
+# Made and then refused by Revit, it is removed again inside the same undo.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Makes a new rebar bar type with the name, bar diameter and standard, hook
+  and stirrup bend diameters the modeller gives.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: typeName
+      type: string
+      source: request
+    # Millimetres (D-71) - the nominal diameter a spec calls the bar.
+    - name: diameter
+      type: string
+      source: request
+    - name: standardBendDiameter
+      type: string
+      source: request
+    - name: hookBendDiameter
+      type: string
+      source: request
+    - name: stirrupBendDiameter
+      type: string
+      source: request
+    # Revit 2022 and later: the diameter drawn. Left out, the nominal one.
+    - name: modelDiameter
+      type: string
+      source: request
+      optional: true
+      absent: nominal
+  provides:
+    - name: created
+      role: result
+      type: IList<ElementId>
+    - name: readBack
+      # The new type's values as Revit now holds them. A reading of what was
+      # done; empty on a refusal (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was made, in plain words. Empty when the type was made.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  RebarBarType.Create(Document), Element.Name's setter and
+  RebarBarType.SetBarTypeDiameters(BarTypeDiameterOptions) are on every
+  release 2020-2027 (read off the shipped assemblies 2026-10-19).
+  BarTypeDiameterOptions.BarDiameter is 2020-2022 and BarNominalDiameter /
+  BarModelDiameter 2022 on, so the diameters are set by #if: 2020 and 2021 one
+  diameter, 2022 on two. The options are built from the new type itself, so a
+  value the API adds later (BarMassPerUnitLength at 2027) keeps Revit's own.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "make a 16 mm bar type"                     -> here
+#   "add a T16 bar type, bends 64 / 64 / 32"    -> here
+#   "what bar types are loaded"                 -> LIST_REBAR_TYPES
+#   "copy this bar type"                        -> DUPLICATE_TYPE
+utterances:
+  - make a 16 mm rebar bar type
+  - create a new bar type for 20 mm bars
+  - add a rebar bar type with these bend diameters
+  - we need a T16 bar type in this model

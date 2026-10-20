@@ -1,0 +1,18 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one concrete structural column holding 4 vertical bars and a set of ties, and one concrete beam with no rebar
+    expect: >
+      rebarSets 2 or more, bars counted as each set's quantity, hostsWithRebar
+      1, withoutRebar 1, and `report` giving the column's bar type, count,
+      spacing and hooks exactly as Revit's Properties palette shows each set
+
+negative:
+  - given: two steel columns, or two walls of a non-structural wall type
+    expect: >
+      rebarSets 0, bars 0, systems 0 and both named in `notHosts` as not a
+      rebar host - nothing read as reinforcement
+
+second_route:
+  - select each set in Revit and read Quantity, Bar Spacing, Layout Rule and the hooks in the Properties palette
+  - a Structural Rebar schedule grouped by Host Mark and Type gives the same counts

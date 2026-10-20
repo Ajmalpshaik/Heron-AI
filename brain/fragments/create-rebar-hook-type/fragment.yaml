@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-114
+semantic-identity: "make a rebar hook type of this angle and extension"
+kind: action
+domain: revit.elements
+capability: CREATE_REBAR_HOOK_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A HOOK TYPE IS AN ANGLE, AN EXTENSION AND A STYLE - all three from the
+# spec, none defaulted (D-33):
+#   angle      degrees, more than 0 and no more than 180 (Revit's limit, read
+#              off RebarHookType.Create's remarks: 0 < angle <= pi)
+#   extension  the straight length after the bend as a MULTIPLE OF THE BAR
+#              DIAMETER - "12" for 12d - which is how Revit stores it
+#              (StraightLineMultiplier, more than 0 and no more than 99). Not
+#              millimetres: a hook length in millimetres is set per bar type,
+#              which this does not do
+#   style      "standard" for main bars or "stirrup/tie" for links. A placing
+#              tool refuses a hook whose style does not match the bar it is put
+#              on, because Revit does
+# The name is the modeller's. A name already used is refused, naming that
+# type's angle.
+#
+# READ BACK: the type's name, angle, extension and style after a regenerate.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Makes a new rebar hook type with the name, bend angle, extension and style
+  the modeller gives - for standard bars or for stirrups and ties.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: hookName
+      type: string
+      source: request
+    # Degrees, more than 0 and no more than 180.
+    - name: angle
+      type: string
+      source: request
+    # A multiple of the bar diameter - "12" for 12d.
+    - name: extension
+      type: string
+      source: request
+    # "standard" or "stirrup/tie".
+    - name: hookStyle
+      type: string
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: IList<ElementId>
+    - name: readBack
+      # The new type as Revit now holds it (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  RebarHookType.Create(Document, double angle, double multiplier), HookAngle
+  (radians), StraightLineMultiplier and Style are on every release 2020-2027,
+  one signature (read off the shipped assemblies 2026-10-19).
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "make a 135 degree stirrup hook"            -> here
+#   "what hooks are loaded"                     -> LIST_REBAR_TYPES
+utterances:
+  - make a 135 degree hook for stirrups
+  - create a 90 degree rebar hook with a 12d extension
+  - add a seismic tie hook type

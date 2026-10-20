@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a concrete column holding rebar sets, a 3D view, unobscured yes
+    expect: >
+      changed every set in the column, each read back unobscured in that view;
+      the bars visible through the concrete in the 3D view
+
+negative:
+  - given: the same column straight after, the same values
+    expect: >
+      changed 0 and alreadyAsAsked the number of sets - nothing written twice
+  - given: a concrete column with no rebar, unobscured yes
+    expect: >
+      changed 0, the column named in `skipped` as holding no reinforcement
+
+second_route:
+  - select a bar and open Properties > View Visibility States > Edit: the view's View Unobscured box
+  - one Ctrl+Z takes it back (Golden Rule 16)

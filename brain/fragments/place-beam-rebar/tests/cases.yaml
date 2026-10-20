@@ -1,0 +1,24 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one straight 300 x 600 concrete beam with no rebar; bottomBars 3 x 16mm, topBars 2 x 12mm, stirrups 8mm @ 200, stirrupHook a loaded stirrup/tie hook, cover 30
+    expect: >
+      placed 3 sets in it, read back 3 bottom bars, 2 top bars and the stirrup
+      count the beam's length gives at 200 mm or closer; in a section view the
+      bars sit 30 mm plus a stirrup inside the concrete, the stirrup hooks
+      turned into the core
+
+negative:
+  - given: the same beam straight after, the same values
+    expect: >
+      placed 0, the beam skipped as already holding rebar - nothing doubled
+  - given: a steel beam, or a column, the same values
+    expect: >
+      placed 0, skipped as not a rebar host or not structural framing
+  - given: the beam with no rebar, bottomBars 12 x 20mm
+    expect: >
+      placed 0 in it, skipped naming the bars as closer than their diameter
+
+second_route:
+  - a section through the beam, Detail Level Fine; select each set and read Quantity, Layout Rule and Bar Spacing in Properties
+  - one Ctrl+Z takes every set back (Golden Rule 16)

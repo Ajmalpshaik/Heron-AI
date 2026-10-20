@@ -612,9 +612,12 @@ def test_a_line_is_two_points_and_curves_are_pairs_of_them():
                   if any("Reference" in (need.get("type") or "") for need in found[slug].needs()))
     check(dims == [], "and no dimension fragment asks for a Reference: %s" % (dims or "none"))
 
+    # A ROLL-CALL, like the second-set one above: a fragment that starts asking
+    # for a curve list joins it by name. place-path-reinforcement joined
+    # 2026-10-19 - its `path` is the run the bars are laid across (row 5b-1257).
     freed = unblocked_by("IList<Curve>")
-    check(freed == ["place-line-based-family"],
-          "a curve list frees the line-based family and nothing else: %s"
+    check(freed == ["place-line-based-family", "place-path-reinforcement"],
+          "a curve list frees the line-based family and the path reinforcement: %s"
           % (freed or "nothing"))
 
 

@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-122
+semantic-identity: "show this rebar unobscured or as solid in this view"
+kind: action
+domain: revit.elements
+capability: SET_REBAR_VIEW_STATE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# REVIT'S OWN "VIEW STATE" DIALOG FOR REINFORCEMENT, FOR MANY BARS AT ONCE.
+# Two settings, each per bar and per view:
+#   unobscured  the bar is drawn on top of the concrete, not hidden inside it
+#   solid       a 3D view draws the bar as a solid - Revit 2020 to 2023 only.
+#               From 2024 Revit draws every bar solid in a 3D view at Fine
+#               detail and has no separate setting (SetSolidInView is obsolete
+#               at 2023 and gone at 2024); the answer says so and sets nothing
+# Each is "yes", "no" or left out (keep). At least one must be given.
+#
+# THE ELEMENTS: rebar sets, area and path reinforcement, the bars inside them,
+# and fabric sheets (Revit 2021 on) - or a concrete HOST, which stands for
+# every bar in it, so "show the bars in these columns unobscured" needs no
+# second selection. Anything else is named and left.
+#
+# NOT THE CATEGORY. Turning Structural Rebar on or off in a view is
+# SET_CATEGORY_VISIBILITY; this is the per-bar view state.
+#
+# READ BACK: each setting written is read again; only one that reads as asked
+# counts. A setting already as asked is counted, never written twice.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the rebar view state in one view - unobscured, and solid in a 3D view
+  - for reinforcement handed in or for all the reinforcement in the concrete
+  hosts handed in.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: view
+      type: View
+      source: request
+    - name: unobscured
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: solid
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: changed
+      # Reinforcement elements whose view state now reads as asked.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyAsAsked
+      role: accounting
+      type: int
+    - name: skipped
+      role: accounting
+      type: IList<string>
+    - name: report
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Read off the shipped assemblies 2020 to 2027 on 2026-10-19:
+  SetUnobscuredInView / IsUnobscuredInView on Rebar, AreaReinforcement,
+  PathReinforcement and RebarInSystem every release, on FabricSheet from 2021
+  only (#if !REVIT2020); SetSolidInView / IsSolidInView on Rebar,
+  AreaReinforcement and PathReinforcement 2020-2023 only, obsolete at 2023
+  (#if REVIT2020 || ... || REVIT2023).
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "show the rebar unobscured in this view"    -> here
+#   "view these bars as solid in 3D"            -> here
+#   "turn off the rebar in this view"           -> SET_CATEGORY_VISIBILITY
+utterances:
+  - show the rebar unobscured in this view
+  - view the bars in these columns as solid in the 3D view
+  - make the reinforcement visible through the concrete

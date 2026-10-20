@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project from a structural template, with rebar bar types, hook types, cover types and shapes loaded
+    expect: >
+      barTypes, hookTypes, coverTypes and shapes each above 0, and `listing`
+      naming every bar type with the nominal diameter Revit's own Type
+      Properties shows, to 0.1 mm
+
+negative:
+  - given: a project from an architectural template, with no rebar types loaded
+    expect: >
+      barTypes 0, hookTypes 0, coverTypes 0 and shapes 0, `listing` saying
+      "none" for each, and a finding that no bar can be placed until a bar
+      type is made or loaded - nothing invented
+
+second_route:
+  - Structure tab > Reinforcement > Rebar Cover Settings, and the Project Browser's Families > Structural Rebar, Rebar Shape and Hook nodes
+  - the count of each must match the counts this read gives

@@ -1,0 +1,127 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-115
+semantic-identity: "set the rebar cover of these concrete elements, face by face"
+kind: action
+domain: revit.elements
+capability: SET_REBAR_COVER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A HOST'S COVER IS UP TO THREE PARAMETERS, EACH POINTING AT A COVER TYPE.
+# Columns, beams, foundations and floors carry Top Face, Bottom Face and Other
+# Faces; walls carry Exterior Face, Interior Face and Other Faces. Each is set
+# by Revit's own parameter id (CLEAR_COVER_TOP, _BOTTOM, _OTHER, _EXTERIOR,
+# _INTERIOR), never by its name. Every input may be left out - left out, that
+# face keeps what it has - and at least one must be given.
+#
+# A VALUE IS A COVER TYPE BY ITS EXACT NAME, OR A DISTANCE IN MILLIMETRES
+# (D-71). A distance is matched to the ONE cover type that gives it; two that
+# give it are named and the modeller picks; none is refused, naming the loaded
+# cover types and CREATE_REBAR_COVER_TYPE. A cover type is never made here and
+# no distance is ever rounded to a near one (D-33).
+#
+# A face the host does not have - a top face asked of a wall - is skipped and
+# named, never written to another face. An element that is not a rebar host is
+# skipped and named.
+#
+# REBAR ALREADY IN THE HOST is counted and said: a bar constrained to the
+# cover moves with it, and the modeller should know before he keeps it.
+#
+# READ BACK: every face written is read again after a regenerate.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the rebar cover of concrete columns, beams, footings, slabs and walls -
+  top, bottom, other, exterior or interior face - to a cover type by its name
+  or by its distance in millimetres.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # Each a cover type's name or a distance in millimetres; left out, that
+    # face is not touched.
+    - name: coverTop
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: coverBottom
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: coverOther
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: coverExterior
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: coverInterior
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: changedIds
+      # Hosts whose cover now reads as asked on at least one face it did not
+      # hold before.
+      role: result
+      type: IList<ElementId>
+    - name: facesChanged
+      role: result
+      type: int
+    - name: alreadyAsAsked
+      # Faces that already held the cover asked - looked at, left (D-52).
+      role: accounting
+      type: int
+    - name: skipped
+      # Hosts and faces that could not take the cover, each with its reason.
+      role: accounting
+      type: IList<string>
+    - name: report
+      # Host by host: each face before and after, and rebar in the host.
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  BuiltInParameter CLEAR_COVER_TOP, CLEAR_COVER_BOTTOM, CLEAR_COVER_OTHER,
+  CLEAR_COVER_EXTERIOR and CLEAR_COVER_INTERIOR keep one value on every release
+  2020-2027 (read off the shipped assemblies 2026-10-19), as do
+  RebarHostData.IsValidHost, GetRebarsInHost and RebarCoverType.CoverDistance.
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "set the cover on these beams to 40"        -> here
+#   "40 cover to the columns, 75 to the footing bottoms" -> here
+#   "make a 40 mm cover type"                   -> CREATE_REBAR_COVER_TYPE
+#   "what cover does this slab have"            -> REPORT_HOST_REBAR
+utterances:
+  - set the rebar cover on these beams to 40
+  - change the cover of these columns to 50 mm
+  - give the footings 75 cover at the bottom
+  - set the exterior cover of these walls to 40

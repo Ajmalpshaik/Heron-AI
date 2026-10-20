@@ -1,0 +1,19 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: hookName "TEST tie 135", angle 135, extension 10, hookStyle stirrup/tie
+    expect: >
+      created 1, `readBack` 135 degrees, extension 10 x bar diameter, for
+      stirrup/tie bars, and the same in the hook's Type Properties
+
+negative:
+  - given: the same name again, angle 90
+    expect: >
+      created 0, refused naming the existing hook at 135 degrees - nothing made
+  - given: hookName "TEST hook 200", angle 200, extension 12, hookStyle standard
+    expect: >
+      created 0, refused - more than 180 degrees is not a hook Revit takes
+
+second_route:
+  - Project Browser > Families > Structural Rebar > Rebar Hook - the new type and its Type Properties
+  - one Ctrl+Z takes it back (Golden Rule 16)

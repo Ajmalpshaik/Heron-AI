@@ -908,6 +908,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hx.md`](needs-checking/group-hx.md)
 
+## Group HY - rebar: thirteen DRAFT tools that place and read reinforcement (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hy.md`](needs-checking/group-hy.md)
+
 ## Group HZ - a material, a level or a family type by name, and a type by key: the three parameter writers (2026-10-19)
 
 **Its own file:** [`needs-checking/group-hz.md`](needs-checking/group-hz.md)
