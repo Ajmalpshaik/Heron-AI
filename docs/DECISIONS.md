@@ -213,6 +213,7 @@ an edit.
 | [D-142](#d-142--anything-a-kept-change-deletes-from-the-model-is-asked-in-revit-first-in-a-box-of-its-own-whatever-ask-to-keep-says-and-never-under-a-jobs-grant) | Anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant | ✅ Accepted · 2026-10-18 |
 | [D-143](#d-143--a-credential-in-a-tracked-file-fails-the-pull-request) | A credential in a tracked file fails the pull request | ✅ Accepted · 2026-10-18 |
 | [D-144](#d-144--a-superseded-decision-says-so-under-its-own-heading-where-its-citations-land) | A superseded decision says so under its own heading, where its citations land | ✅ Accepted · 2026-10-19 |
+| [D-145](#d-145--a-card-may-let-its-caller-answer-one-named-revit-dialog-for-one-job-and-every-other-dialog-is-still-declined) | A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined | 🕐 Proposed - **owner has not read this back** |
 
 ## Format
 
@@ -1256,3 +1257,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`check-supersessions.py`](../tools/check-supersessions.py), [`test_check_supersessions.py`](../tests/test_check_supersessions.py), [`check-docs.py`](../tools/check-docs.py) (§13), [`tools/README.md`](../tools/README.md), and six notes in this log, under D-24, D-37, D-99, D-101 and D-105
 
 **Full record:** [`decisions/D-144.md`](decisions/D-144.md)
+
+## D-145 — A card may let its caller answer one named Revit dialog, for one job, and every other dialog is still declined
+
+**Status:** Proposed · **Date:** 2026-10-19 · the owner has not read this back; it is what the 2026-10-19 task asked for, written down so it can be accepted or overturned
+**Keeps:** Article 7 of the [Constitution](../HERON_CONSTITUTION.md) - Heron still answers no dialog for the owner; the caller does, in words they typed
+**Affects:** [`HeronDialogNote.cs`](../revit/Heron.Revit.Addin/HeronDialogNote.cs) (`HeronDialogRule.CallerAnswer`), [`HeronDialogWatch.cs`](../revit/Heron.Revit.Addin/HeronDialogWatch.cs) (`AnswerForJob`), [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (a need's `dialog:`), [`set-parameter-values-by-id`](../brain/fragments/set-parameter-values-by-id/fragment.yaml) version 5, [`test_dialog_note.py`](../tests/test_dialog_note.py), [row 5b-1221](fragment-issues/section-5b-rows-401-425.md), [Group HP](needs-checking/group-hp.md)
+
+**Full record:** [`decisions/D-145.md`](decisions/D-145.md)

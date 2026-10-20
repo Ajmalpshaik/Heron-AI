@@ -1,7 +1,8 @@
-// NOT STANDALONE. Assumes `doc`, `rows` and `keepFace` are in scope, and
-// leaves `written`, `resultJson`, `stale`, `refused` and `findings` behind.
-// `keepFace` is version 3's and the card reads it as "none" when it is left
-// out - see "keep a face" below.
+// NOT STANDALONE. Assumes `doc`, `rows`, `keepFace` and `renameViews` are in
+// scope, and leaves `written`, `resultJson`, `stale`, `refused` and `findings`
+// behind. `keepFace` is version 3's and the card reads it as "none" when it is
+// left out - see "keep a face" below. `renameViews` is version 5's, "none"
+// when left out - see "a level's name" below.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one: the operation's
 // TransactionGroup makes the whole Apply one entry in Revit's undo list.
@@ -307,6 +308,45 @@ Func<Element, Parameter, bool> groupLocked = (element, p) =>
         return definition == null || !definition.VariesAcrossGroups;
     }
     catch { return true; }
+};
+
+// ------------------------------------------------------------ a level's name
+// VERSION 5 (FRAGMENT-ISSUES 5b-1221, D-145). Writing a LEVEL's name makes
+// Revit ask "Would you like to rename corresponding views?" - dialog id
+// TaskDialog_Confirm_Level_Rename, measured 2026-10-19 on Revit 2020, model
+// 'Kerala house design'. Heron declines every dialog in a job, so the whole
+// run was rolled back. The question is the caller's to answer: renameViews
+// yes renames the plan and ceiling views that carry the level's name, no
+// renames the level alone. The add-in gives Revit that answer - the card's
+// `dialog:` line on the need - and nothing here touches the dialog.
+//
+// LEFT OUT ("none"), a level's name is REFUSED HERE, before anything is
+// written, saying what to send - rather than written, met by the dialog, and
+// rolled back with Revit's question as the only explanation. By id that is a
+// stale row and nothing is written; by key that row alone. Any other
+// parameter, and any element that is not a level, is version 4's run.
+//
+// THE NAME IS FOUND BY WHAT IT IS, not by the word "Name", which a Revit in
+// another language does not show: the level's built-in name parameter, or the
+// text parameter holding exactly the level's own name.
+Func<Element, Parameter, string> levelAsks = (element, p) =>
+{
+    if (!(element is Level) || p == null) return null;
+    var word = (renameViews ?? "none").Trim().ToLowerInvariant();
+    if (word == "yes" || word == "no") return null;
+    var isName = false;
+    try
+    {
+        var definition = p.Definition as InternalDefinition;
+        isName = definition != null && definition.BuiltInParameter == BuiltInParameter.DATUM_TEXT;
+        if (!isName && p.StorageType == StorageType.String)
+            isName = (p.AsString() ?? "") == (element.Name ?? "");
+    }
+    catch { }
+    if (!isName) return null;
+    return "renaming a level makes Revit ask whether to rename its views too - send renameViews=yes "
+         + "to rename the plan and ceiling views that carry the level's name as well, or renameViews=no "
+         + "to rename the level alone";
 };
 
 // ------------------------------------------------------------ keep a face
@@ -1007,6 +1047,8 @@ foreach (var raw in (keyed ? "" : (rows ?? "")).Split(';'))
             why = name + ": " + referenceByName(target, want).Item2;
         else if (groupLocked(element, target))
             why = "it is in a model group, and " + name + " would change in every copy of the group";
+        else if (levelAsks(element, target) != null)
+            why = levelAsks(element, target);
         else if (!unchanged(target, was)
                  || (wasStored.Length > 0 && target.StorageType != StorageType.String
                      && storedValue(target) != wasStored))
@@ -1331,7 +1373,7 @@ if (keyed)
         string.Join(", ", list.Take(5).Select(e => e.Id.ToString()).ToArray())
         + (list.Count > 5 ? " and " + (list.Count - 5) + " more" : "");
 
-    // The same five reasons a cell cannot be written as the id rows above,
+    // The same reasons a cell cannot be written as the id rows above,
     // in the same words.
     Func<Element, string, string, string> whyNot = (element, name, value) =>
     {
@@ -1350,7 +1392,7 @@ if (keyed)
             var named = referenceByName(target, value);
             if (named.Item1 == null) return name + ": " + named.Item2;
         }
-        return null;
+        return levelAsks(element, target);
     };
 
     var keyedPlan = new List<Tuple<string, Element, List<Tuple<string, string>>>>();

@@ -114,7 +114,28 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #
 #   Version 3's proof below no longer describes the code and is kept as a
 #   record; the card is DRAFT until NEEDS-CHECKING Group HZ proves version 4.
-version: 4
+#
+# VERSION 5 (2026-10-19, FRAGMENT-ISSUES 5b-1221, D-145): an optional
+# `renameViews` answers the one question Revit asks when a LEVEL's name is
+# written - "Would you like to rename corresponding views?", dialog id
+# TaskDialog_Confirm_Level_Rename. Measured 2026-10-19 on Revit 2020, model
+# 'Kerala house design': rows "key=Name|in=Levels;Level 1|Name=Ground Floor"
+# were rolled back, because the add-in declines every dialog in a job
+# (HeronDialogWatch). Changing a level's Elevation the same way was kept.
+#
+#   yes - the level is renamed and Revit renames the plan and ceiling views
+#         that carry its name; no - the level alone. The add-in answers that
+#         ONE dialog id with that answer for this one job, from the need's
+#         `dialog:` line; every other dialog is still declined (D-145).
+#   left out ("none") - a level's name is refused before anything is written,
+#         naming renameViews: by id the whole run, by key that row. Every other
+#         parameter and element is version 4's run, statement for statement.
+#
+#   Version 3's proof below no longer describes the code and is kept as a
+#   record; the card is DRAFT until versions 4 and 5 are proved in Revit
+#   (NEEDS-CHECKING Groups HZ and HP). Kept out of the purpose and the identity line
+#   for the reason version 3 gives: both are searched.
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -188,6 +209,18 @@ contract:
       source: request
       optional: true
       absent: none
+    # VERSION 5 (5b-1221, D-145). Only for a LEVEL's name: yes renames the
+    # level and the plan and ceiling views that carry its name, no the level
+    # alone. `dialog:` names the one Revit dialog this answers, for this job
+    # only - HeronDialogRule.CallerAnswer holds which dialogs a caller may
+    # answer and with which words; anything else is refused before the run.
+    # Left out: "none", and a level's name is refused, naming this input.
+    - name: renameViews
+      type: string
+      source: request
+      optional: true
+      absent: none
+      dialog: TaskDialog_Confirm_Level_Rename
   provides:
     # Rows written AND read back.
     - name: written

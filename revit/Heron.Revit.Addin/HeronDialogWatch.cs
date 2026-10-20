@@ -6,6 +6,7 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using System.Collections.Generic;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 
@@ -51,6 +52,14 @@ namespace Heron.Revit.Addin
     /// add-in's own TaskDialog at all is not known yet (NEEDS-CHECKING EL3);
     /// HeronAsks makes the answer not matter.
     ///
+    /// ONE DIALOG MAY BE THE CALLER'S TO ANSWER, FOR ONE JOB (D-145). A card
+    /// whose request value carries `dialog:` hands the caller's word to
+    /// AnswerForJob while the job binds its inputs; HeronDialogRule.CallerAnswer
+    /// says which dialogs a caller may answer at all, and with which words.
+    /// That answer is given to that DialogId alone, for that job alone - Arm
+    /// and Disarm both clear it - and every other dialog is still declined.
+    /// The measured case is a level's name: FRAGMENT-ISSUES 5b-1221.
+    ///
     /// REVIT'S THREAD ONLY, and so no lock. DialogBoxShowing is raised on
     /// Revit's main thread, the dispatcher arms and disarms on it inside
     /// Execute, and a write path asks Refused on it mid-job.
@@ -58,6 +67,7 @@ namespace Heron.Revit.Addin
     internal static class HeronDialogWatch
     {
         private static HeronDialogNote _armed;
+        private static Dictionary<string, int> _callerAnswers;
         private static int _heronAsking;
         private static Action<string> _log = delegate { };
 
@@ -75,12 +85,14 @@ namespace Heron.Revit.Addin
         {
             application.DialogBoxShowing -= OnDialogBoxShowing;
             _armed = null;
+            _callerAnswers = null;
         }
 
         /// <summary>A job is about to run: answer what it meets.</summary>
         internal static void Arm()
         {
             _armed = new HeronDialogNote();
+            _callerAnswers = null;
         }
 
         /// <summary>
@@ -91,7 +103,22 @@ namespace Heron.Revit.Addin
         {
             var met = _armed;
             _armed = null;
+            _callerAnswers = null;
             return met ?? new HeronDialogNote();
+        }
+
+        /// <summary>
+        /// The caller's answer to one dialog, for the job now running (D-145).
+        /// Only a code HeronDialogRule.CallerAnswer gave, and only while a job
+        /// is armed: false, and nothing kept, otherwise - so an answer can
+        /// never outlive the job it was given for.
+        /// </summary>
+        internal static bool AnswerForJob(string dialogId, int code)
+        {
+            if (_armed == null || string.IsNullOrEmpty(dialogId) || code == 0) return false;
+            if (_callerAnswers == null) _callerAnswers = new Dictionary<string, int>(StringComparer.Ordinal);
+            _callerAnswers[dialogId] = code;
+            return true;
         }
 
         /// <summary>What the running job has met so far; null when no job is armed.</summary>
@@ -160,11 +187,24 @@ namespace Heron.Revit.Addin
                 if (task != null) { kind = "task dialog"; message = task.Message; }
                 else if (box != null) { kind = "message box"; message = box.Message; }
 
-                var row = HeronDialogRule.For(id);
-                failsRun = row.FailsRun;
-                foreach (var code in row.Codes)
+                // THE CALLER'S ANSWER FIRST, for the one id it was given for
+                // (D-145). Revit refusing it leaves answered at 0, and the job
+                // stops as for any dialog Heron could not answer.
+                int chosen;
+                var callers = _callerAnswers;
+                if (callers != null && callers.TryGetValue(id, out chosen))
                 {
-                    if (e.OverrideResult(code)) { answered = code; break; }
+                    failsRun = false;
+                    if (e.OverrideResult(chosen)) answered = chosen;
+                }
+                else
+                {
+                    var row = HeronDialogRule.For(id);
+                    failsRun = row.FailsRun;
+                    foreach (var code in row.Codes)
+                    {
+                        if (e.OverrideResult(code)) { answered = code; break; }
+                    }
                 }
             }
             catch (Exception ex)
