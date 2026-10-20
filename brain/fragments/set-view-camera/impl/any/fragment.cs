@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `viewName`, `eyeMm`, `targetMm`,
-// `perspective` and `createIfMissing` are in scope; leaves `camera`,
-// `madeNew`, `readBack`, `refused` and `findings` behind.
+// `perspective`, `createIfMissing`, `levelName` and `farClipMm` are in scope;
+// leaves `camera`, `madeNew`, `readBack`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -26,6 +26,15 @@
 //
 // READ BACK: eye, target direction and perspective are read off the view
 // afterwards and printed in millimetres.
+//
+// VERSION 2 (2026-10-20), two OPTIONAL inputs - left out, version 1 exactly:
+//   levelName   the eye's and the target's heights are measured from this
+//               level - "eye 1600 above Level 1" - by the level's
+//               ProjectElevation, the height above the project's origin
+//               that model points are in. The read-back adds Revit's Eye
+//               Elevation and Target Elevation
+//   farClipMm   off, or the Far Clip Offset in millimetres with Far Clip
+//               Active on - the camera's two Properties, read back
 
 const double MmPerFoot = 304.8;
 var findings = new List<string>();
@@ -58,6 +67,39 @@ else if (target == null) refused = "\"" + targetMm + "\" is not a point - three 
     + "separated by commas. NOTHING WAS CHANGED.";
 else if (eye.DistanceTo(target) < 1.0 / MmPerFoot)
     refused = "The eye and the target are the same point, so there is nothing to look along. NOTHING WAS CHANGED.";
+
+// Version 2: heights from a level, and the far clip. "keep" or nothing is version 1.
+Func<string, bool> asked = text =>
+{
+    var t = (text ?? "").Trim();
+    return t.Length > 0 && !string.Equals(t, "keep", StringComparison.OrdinalIgnoreCase);
+};
+Level fromLevel = null;
+if (refused == null && asked(levelName))
+{
+    foreach (var candidate in new FilteredElementCollector(doc).OfClass(typeof(Level)))
+    {
+        var l = candidate as Level;
+        if (l != null && string.Equals(l.Name, levelName.Trim(), StringComparison.OrdinalIgnoreCase)) { fromLevel = l; break; }
+    }
+    if (fromLevel == null) refused = "No level is called \"" + levelName.Trim() + "\", so NOTHING WAS CHANGED.";
+    else
+    {
+        eye = new XYZ(eye.X, eye.Y, eye.Z + fromLevel.ProjectElevation);
+        target = new XYZ(target.X, target.Y, target.Z + fromLevel.ProjectElevation);
+    }
+}
+var farOff = false;
+double? farClip = null;
+if (refused == null && asked(farClipMm))
+{
+    double far;
+    if (string.Equals(farClipMm.Trim(), "off", StringComparison.OrdinalIgnoreCase)) farOff = true;
+    else if (double.TryParse(farClipMm.Trim(), System.Globalization.NumberStyles.Float,
+                 System.Globalization.CultureInfo.InvariantCulture, out far) && far > 0)
+        farClip = far / MmPerFoot;
+    else refused = "\"" + farClipMm + "\" is not a far clip - off, or millimetres from the camera. NOTHING WAS CHANGED.";
+}
 
 if (refused == null)
 {
@@ -134,6 +176,16 @@ if (refused == null && camera != null)
         refused = "Revit refused the camera: " + ex.Message + ". " + (madeNew ? "The new view was made; its camera was not set." : "NOTHING WAS CHANGED.");
     }
 
+    if (refused == null && (farOff || farClip != null))
+    {
+        try
+        {
+            camera.get_Parameter(BuiltInParameter.VIEWER_BOUND_ACTIVE_FAR).Set(farOff ? 0 : 1);
+            if (farClip != null) camera.get_Parameter(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR).Set(farClip.Value);
+        }
+        catch (Exception ex) { findings.Add("Revit refused the far clip: " + ex.Message); }
+    }
+
     doc.Regenerate();
     var o = camera.GetOrientation();
     var e = o.EyePosition;
@@ -142,6 +194,25 @@ if (refused == null && camera != null)
     Func<double, string> unit = v => Math.Round(v, 4).ToString(System.Globalization.CultureInfo.InvariantCulture);
     readBack = "eye " + mm(e.X) + "," + mm(e.Y) + "," + mm(e.Z) + " mm, looking "
         + unit(f.X) + "," + unit(f.Y) + "," + unit(f.Z) + ", " + (camera.IsPerspective ? "perspective" : "isometric");
+    Func<BuiltInParameter, Parameter> property = which => camera.get_Parameter(which);
+    if (fromLevel != null)
+    {
+        var eyeElevation = property(BuiltInParameter.VIEWER_EYE_ELEVATION);
+        var targetElevation = property(BuiltInParameter.VIEWER_TARGET_ELEVATION);
+        readBack += ", heights from \"" + fromLevel.Name + "\" - Eye Elevation "
+            + (eyeElevation != null && eyeElevation.HasValue ? mm(eyeElevation.AsDouble()) + " mm" : "not given")
+            + ", Target Elevation "
+            + (targetElevation != null && targetElevation.HasValue ? mm(targetElevation.AsDouble()) + " mm" : "not given");
+    }
+    if (farOff || farClip != null)
+    {
+        var farActive = property(BuiltInParameter.VIEWER_BOUND_ACTIVE_FAR);
+        var farOffset = property(BuiltInParameter.VIEWER_BOUND_OFFSET_FAR);
+        var isOn = farActive != null && farActive.AsInteger() == 1;
+        readBack += ", far clip " + (isOn ? "on at " + (farOffset != null ? mm(farOffset.AsDouble()) : "?") + " mm" : "off");
+        if (isOn == farOff || (farClip != null && (farOffset == null || Math.Abs(farOffset.AsDouble() - farClip.Value) > 1.0 / MmPerFoot)))
+            findings.Add("The far clip did not read back as asked - Revit holds " + (isOn ? "on" : "off") + ".");
+    }
     var aimedOff = f.AngleTo(forward) * 180.0 / Math.PI;
     if (e.DistanceTo(eye) > 1.0 / MmPerFoot || aimedOff > 0.01)
         findings.Add("The camera did not read back where it was put - Revit holds " + readBack + ".");

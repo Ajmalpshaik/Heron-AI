@@ -1,0 +1,146 @@
+# NEEDS-CHECKING Group IB - the rendering tools, DRAFT since 2026-10-20.
+#
+#     python tools/batch-prove.py tools/jobs/rendering-ib-2026-10-20.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/rendering-ib-2026-10-20.yaml
+#
+# THE MODEL is the scratch copy docs/needs-checking/group-ib.md describes - the
+# owner's Project1 (Revit 2020) holding the four duct heaters placed on
+# 2026-10-20, saved to %TEMP%\heron-work\rendering-ib, with a floor plan
+# "Level 1" the heaters show in and a schedule named "Heron Render Schedule". Never
+# a working model. Change "FloorPlan: Level 1" below if the heaters' plan has
+# another name.
+#
+# RUN IB1 FIRST, AND KEEP IT. Every job after the first names the perspective
+# view "Heron Frame - Heater", and a batch rolls every write back - so make that
+# view once with FRAME_ELEMENTS_IN_CAMERA's try-once and press Keep:
+#
+#     python mcp/client/heron_bridge_client.py try-once frame-elements-in-camera \
+#         --set "viewName=Heron Frame - Heater" --set direction=south-east
+#
+# with one heater selected. The first job below is then its negative too.
+#
+# NOT IN THIS FILE, ON PURPOSE: READ_RENDERED_IMAGES (IB8 and IB10 straddle the
+# render, which only the modeller can press - run them by name with `validate`),
+# and EXPORT_VIEW_IMAGE (IB11, a PUBLISH: no batch sends one, D-106).
+#
+# THE NEGATIVE IS A VALUE THAT MUST BE REFUSED OR A DIFFERENT VIEW, never a
+# cleared one: an isometric {3D} to frame, a level that does not exist, a
+# preset that does not exist, an intensity of 150, a schedule with no render
+# settings, a view that is not the one in front.
+
+model: Project1 scratch copy with the four duct heaters (rendering-ib), Revit 2020
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: frame-elements-in-camera
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Duct Accessories
+      inViewOnly: "FloorPlan: Level 1"
+      viewName: "Heron Frame - Heater"
+      direction: south-east
+      lookDownDeg: "30"
+    negative-set:
+      categoryName: Duct Accessories
+      inViewOnly: "FloorPlan: Level 1"
+      viewName: "{3D}"
+      direction: south-east
+      lookDownDeg: "30"
+    expect: framed
+    note: >
+      IB1. The setup selects every heater in the plan, so framed is the number
+      selected. OPEN THE VIEW AFTER THE KEPT RUN: the heaters fill it from the
+      south-east - the check no number can make. The negative is the project's
+      isometric {3D}, which must be refused and keep its camera.
+
+  - fragment: set-view-camera
+    set:
+      viewName: "Heron Frame - Heater"
+      eyeMm: "0,-10000,1600"
+      targetMm: "0,0,1600"
+      levelName: "Level 1"
+      farClipMm: "20000"
+    negative-set:
+      viewName: "Heron Frame - Heater"
+      eyeMm: "0,-10000,1600"
+      targetMm: "0,0,1600"
+      levelName: "No Such Level"
+    expect: readBack
+    note: >
+      IB2. The eye and target are any two points in front of the heaters -
+      IB1's readBack gives better ones. The negative must be refused with the
+      camera unchanged.
+
+  - fragment: set-render-settings
+    set:
+      view: "Heron Frame - Heater"
+      quality: Draft
+      output: "150 DPI"
+      lighting: "Exterior: Sun only"
+      background: "Sky: Few Clouds"
+      exposure: "value=13; white point=6500"
+    negative-set:
+      view: "Heron Render Schedule"
+      quality: Draft
+    expect: changed
+    note: >
+      IB3. Open the Rendering dialog on the view after: the same five. Say
+      whether its Quality list shows Best (Heron's word for the API's VeryHigh)
+      and which DPIs its Printer list offers.
+
+  - fragment: set-sun-settings
+    set:
+      view: "Heron Frame - Heater"
+      study: Still
+      date: "2026-06-21"
+      time: "10:00"
+      groundPlaneLevel: "Level 1"
+    negative-set:
+      preset: "No Such Preset"
+    expect: changed
+    note: >
+      IB4. The Sun Settings dialog shows 21 June 2026 at 10:00 - or 11:00 where
+      readBack says the site uses daylight saving: say which.
+
+  - fragment: set-graphic-display-options
+    set:
+      view: "Heron Frame - Heater"
+      sunIntensity: "80"
+      shadowIntensity: "40"
+      smoothLines: "yes"
+      sketchyLines: "jitter=5; extension=3"
+    negative-set:
+      sunIntensity: "150"
+    expect: changed
+    note: >
+      IB5. Graphic Display Options on the view shows the same four after.
+
+  - fragment: report-render-settings
+    write: false                       # risk READ
+    set:
+      view: "Heron Frame - Heater"
+    negative-set:
+      view: "Heron Render Schedule"
+    expect: sectionsRead
+    note: >
+      IB6. 4 sections for the camera view, 0 for the schedule. The plan's 2 is
+      the tracking row (D-53), run by hand with view "Level 1".
+
+  - fragment: open-render-dialog
+    write: false                       # risk EXECUTE, the show door
+    set:
+      viewName: active
+      command: render
+    negative-set:
+      viewName: "Level 1"
+      command: render
+    expect: posted
+    note: >
+      IB7, LAST because its positive opens Revit's Render dialog. Bring "Heron
+      Frame - Heater" to the front before the batch. The negative names a view
+      that is not in front and must be refused with no dialog.

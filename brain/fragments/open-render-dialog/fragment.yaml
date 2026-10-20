@@ -1,0 +1,121 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-146
+semantic-identity: "open Revit's Render dialog on the 3D view in front so the modeller can press Render"
+kind: action
+domain: revit.views
+capability: OPEN_RENDER_DIALOG
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: the owner asked Heron for a render of the 3D view in Project1
+# (Revit 2020). No Revit release lets an add-in run the Autodesk Raytracer
+# render: the API reference of every release 2020 to 2027 (read 2026-10-20)
+# has View3D.GetRenderingSettings and SetRenderingSettings and NO member that
+# renders. The nearest honest route is to set everything up
+# (SET_RENDER_SETTINGS, SET_SUN_SETTINGS, FRAME_ELEMENTS_IN_CAMERA), open
+# Revit's own Render dialog with this, let the modeller press Render, and read
+# back what was saved (READ_RENDERED_IMAGES).
+#
+# HOW IT BEHAVES - comments, not `purpose`.
+#
+# **IT POSTS REVIT'S OWN COMMAND**: Render (the dialog), Render in Cloud or
+# Render Gallery - PostableCommand values present on 2020 through 2027. The
+# post is queued "to be invoked when control returns from the current API
+# context", so `posted` says Revit took the request, never that the dialog is
+# open, and certainly never that anything rendered.
+#
+# **THE 3D VIEW MUST BE IN FRONT.** Revit's dialog renders the active view. A
+# view change and a posted command both wait for the API context to end, in an
+# order Revit does not document, so a view that is not in front is refused and
+# OPEN_VIEW is named to put it there first. viewName left out means the view
+# in front.
+#
+# **IT CHANGES NOTHING IN THE MODEL** and opens no transaction - EXECUTE, the
+# show door's ceiling. It declares `noTransactionOpen` (D-125).
+#
+# **Render in Cloud and the Render Gallery are Autodesk's online service.**
+# Whether the service still answers is not something Heron can see; CanPostCommand
+# says whether Revit offers the command at that moment, and a refusal says so.
+purpose: >
+  Opens Revit's own Render dialog - or Render in Cloud, or the Render Gallery -
+  on the 3D view in front, so the modeller can press Render. It changes nothing
+  in the model.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    - name: doc
+      type: Document
+    - name: noTransactionOpen
+      # NEVER USED BY THE CODE. Declaring it has the add-in run this with NO
+      # transaction open, on the show door too (D-125). Posting a command
+      # changes nothing in the model.
+      type: bool
+      source: ambient
+    # The 3D view to render, which must be the one in front; left out, the view
+    # in front.
+    - name: viewName
+      type: string
+      source: request
+      optional: true
+      absent: active
+    # Render, Render in Cloud or Render Gallery.
+    - name: command
+      type: string
+      source: request
+      optional: true
+      absent: render
+  provides:
+    - name: posted
+      # Revit took the command into its queue - not that the dialog opened.
+      role: result
+      type: bool
+    - name: activeView
+      # The view in front when it ran, filled whether or not anything was
+      # posted - evidence, never the result.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING HAS BEEN SENT TO REVIT, as one sentence; null otherwise.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read off the shipped reference
+  assemblies and RevitAPI.xml / RevitAPIUI.xml of 2020 through 2027 on
+  2026-10-20: PostableCommand.Render, RenderInCloud and RenderGallery;
+  RevitCommandId.LookupPostableCommandId; UIApplication.CanPostCommand and
+  PostCommand ("if there is a command already been posted" it throws);
+  UIDocument.ActiveView and Application - present and alike on every release.
+  No member that runs a render exists on any of them.
+
+# ROUTING - the same rows are in the render, sun, display and camera cards.
+#
+#   "render this view" / "start the render"  -> here. Revit's dialog opens; the
+#                                               modeller presses Render
+#   "open the render dialog"                 -> here
+#   "set the render quality"                 -> SET_RENDER_SETTINGS
+#   "did the render finish"                  -> READ_RENDERED_IMAGES
+#   "open the 3D view"                       -> OPEN_VIEW - this opens a
+#                                               dialog, never a view
+#   "save this view as a jpg"                -> EXPORT_VIEW_IMAGE
+
+utterances:
+  - render this 3D view
+  - bring up the render window so I can render
+  - open the rendering dialog on this camera view
+  - send this view to render in cloud

@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-147
+semantic-identity: "which renderings are saved in this project, and which rendered images are in a folder, with their pixel sizes"
+kind: action
+domain: revit.views
+capability: READ_RENDERED_IMAGES
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: no Revit release lets an add-in run the render, so Heron opens
+# Revit's Render dialog (OPEN_RENDER_DIALOG) and the modeller presses Render.
+# The owner's rule for this work: never claim a render ran unless an image was
+# read back. This is that read.
+#
+# HOW IT ANSWERS - comments, not `purpose`.
+#
+# **BOTH PLACES A RENDER IS KEPT.** Views under Renderings in the Project
+# Browser (ViewType Rendering - what Save to Project makes), with each image's
+# pixel size off Revit's own RASTER_SYMBOL_PIXELWIDTH / _PIXELHEIGHT; and, when
+# `folder` names one, every png, jpg, jpeg, bmp, tif, tiff and tga in it -
+# written in the last `sinceMinutes` minutes, or all - newest first, with the
+# pixel size read out of the file's own header (not a tif's).
+#
+# **NOTHING FOUND IS SAID IN WORDS**: "Nothing rendered was read back".
+#
+# **ONE STRING, ROWS JOINED BY "  ||  "**, as READ_VIEW_SCALE does: a list
+# reaches the chat cut to three entries.
+#
+# `purpose` HOLDS NO CHANGE VERB, for the reason READ_VIEW_SCALE's card gives:
+# a READ whose searched text names a change takes change requests from a write.
+purpose: >
+  Answers which renderings are saved in this project and which rendered images
+  sit in a folder on this PC, newest first, with the pixel size of each. It
+  only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A folder on this PC to look in, or none for the project alone.
+    - name: folder
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # Only image files written in the last N minutes; all when left out.
+    - name: sinceMinutes
+      type: string
+      source: request
+      optional: true
+      absent: all
+  provides:
+    - name: renderings
+      # Saved renderings plus image files found - a count of what it FOUND.
+      role: result
+      type: int
+    - name: report
+      # One row per rendering and per file, joined by "  ||  " - or the
+      # sentence saying nothing was found. Always filled, so evidence.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read off the shipped reference
+  assemblies and RevitAPI.xml of 2020 through 2027 on 2026-10-20:
+  ViewType.Rendering, ImageView and ImageView.ImageInstanceId, ImageInstance,
+  BuiltInParameter RASTER_SYMBOL_PIXELWIDTH and RASTER_SYMBOL_PIXELHEIGHT -
+  present on every release. ImageType's WidthInPixels and HeightInPixels exist
+  only from 2021, so the parameters are read instead. The file headers are read
+  with System.IO alone.
+
+# ROUTING - the same rows are in the render, sun, display and camera cards.
+#
+#   "did the render finish"                -> here
+#   "which renderings are saved"           -> here
+#   "open the render dialog"               -> OPEN_RENDER_DIALOG
+#   "save this view as a jpg"              -> EXPORT_VIEW_IMAGE, a write
+#   "which images are loaded in the model" -> FIND_UNUSED_IMAGES
+
+utterances:
+  - is there a saved rendering in this project
+  - list the renderings saved in the project browser
+  - check the folder for the rendered image from the last ten minutes
+  - what size is the rendered image
+  # Declared because the routing table above claims it (check-routing).
+  - did the render finish

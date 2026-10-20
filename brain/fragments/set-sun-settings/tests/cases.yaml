@@ -1,0 +1,33 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a 3D view in a scratch copy of Project1 (Revit 2020), study Still, date
+      2026-06-21, time 10:00, groundPlaneLevel Level 1
+    expect: >
+      changed 3 of 3; readBack reading Still study, 2026-06-21 10:00, ground
+      plane at Level 1 and the site Revit holds. Open Sun Settings from the View
+      Control Bar: it shows the same date, and 10:00 or 11:00 where the site
+      uses daylight saving - readBack says which
+  - given: preset "Summer Solstice" (a preset Revit's template carries)
+    expect: >
+      changed 1, readBack "preset 'Summer Solstice'" - GetMatchingPreset names it
+  - given: study Lighting, azimuthDeg 135, altitudeDeg 35
+    expect: azimuth 135° and altitude 35° read back
+
+negative:
+  - given: a schedule named as the view, study Still
+    expect: >
+      changed 0, refused "has no sun settings", NOTHING WAS CHANGED. THIS IS THE
+      FIRST CASE TO RUN
+  - given: the 3D view, preset "No Such Preset"
+    expect: >
+      changed 0, refused listing the project's presets; the view's sun unchanged
+  - given: time "25:00"
+    expect: refused - not a time - and nothing changed
+  - given: nothing asked at all
+    expect: refused, "Nothing was asked for", nothing changed
+
+second_route:
+  - the Sun Settings dialog (View Control Bar sun icon) on the same view, read before and after
+  - one Ctrl+Z takes it back (Golden Rule 16)

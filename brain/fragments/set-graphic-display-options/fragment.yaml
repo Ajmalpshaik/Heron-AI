@@ -1,0 +1,188 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-144
+semantic-identity: "set a view's graphic display options - sun intensity, shadow intensity, silhouette edges, anti-aliasing, transparency, sketchy lines, depth cueing and a gradient or image background"
+kind: action
+domain: revit.views
+capability: SET_GRAPHIC_DISPLAY_OPTIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: the owner asked for every part of rendering and the realistic
+# view, and the Graphic Display Options dialog had no tool - only the visual
+# style itself, which SET_VIEW_PROPERTIES sets and keeps.
+#
+# HOW IT BEHAVES - comments, not `purpose`.
+#
+# **WHAT THE DIALOG HOLDS FOR ONE VIEW**, each a word or keep:
+#   sunIntensity, shadowIntensity   whole numbers 0 to 100 (Lighting)
+#   silhouettes        on, off, or a line style's name - on in that style
+#   smoothLines        yes or no - Smooth lines with anti-aliasing
+#   transparency       0 to 100
+#   hiddenLines        None, By Discipline or All
+#   sketchyLines       on, off, or "jitter=5; extension=3" (0 to 10 each)
+#   depthCueing        on, off, or "start=0; end=100; fade=50" - elevations
+#                      and sections, where Revit offers it
+#   background         Sky, "gradient sky=R,G,B; horizon=R,G,B; ground=R,G,B"
+#                      or "image <file>", with backgroundImage "fit to screen;
+#                      fixed aspect ratio; tile; offset=0,0; scale=1,1"
+#
+# **WHERE REVIT'S API STOPS**, read off the API reference of every release
+# 2020 to 2027 on 2026-10-20: Cast Shadows, Show Ambient Shadows, Ambient
+# Light and Photographic Exposure have NO member - they are inputs so that
+# asking for one is answered plainly, never dropped: the answer names each as
+# the modeller's to tick in the dialog. A background cannot be set back to
+# None - Revit makes a sky, a gradient or an image and nothing else. Show Edges
+# and the style itself are the visual style: SET_VIEW_PROPERTIES. Ray Trace is
+# no tool's on any release (SET_VIEW_PROPERTIES' card has the measurement).
+#
+# **EVERY WORD IS READ FIRST**; one this cannot read refuses the call and names
+# the words it takes. **READ BACK:** every setting asked is read again, and
+# only one that reads as asked counts.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the Graphic Display Options of a view - sun and shadow intensity,
+  silhouette edges, smooth lines with anti-aliasing, transparency, hidden
+  lines, sketchy lines, depth cueing and the background - to new values.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, as the Project Browser names it.
+    - name: view
+      type: View
+      source: request
+    - name: sunIntensity
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: shadowIntensity
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: silhouettes
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: smoothLines
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: transparency
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: hiddenLines
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: sketchyLines
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: depthCueing
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: background
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: backgroundImage
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # The four below have no member in Revit's API; asking for one is
+    # answered, in words, as the modeller's to tick by hand.
+    - name: castShadows
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: ambientShadows
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: ambientLight
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: photographicExposure
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: changed
+      # Display settings that read back as asked.
+      role: result
+      type: int
+    - name: readBack
+      # The dialog as the view holds it afterwards - filled on every run that
+      # reached the view, so evidence, never the count.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read off the shipped reference
+  assemblies and RevitAPI.xml of 2020 through 2027 on 2026-10-20:
+  View.SunlightIntensity and ShadowIntensity (0-100), HasDisplayStyle,
+  CanUseDepthCueing, Get/SetViewDisplayModel, Get/SetSketchyLines,
+  Get/SetDepthCueing and Get/SetBackground; ViewDisplayModel's
+  EnableSilhouettes, SilhouetteEdgesGStyleId, SmoothEdges (anti-aliasing),
+  Transparency and ShowHiddenLines; ViewDisplaySketchyLines (jitter and
+  extension 0-10); ViewDisplayDepthCueing (SetStartEndPercentages, FadeTo);
+  ViewDisplayBackground.CreateSky, CreateGradient and CreateImage and its
+  ViewDisplayBackgroundImageFlags - present and alike on every release. No
+  member for Cast Shadows, Ambient Shadows, Ambient Light or Photographic
+  Exposure exists on any of them: the GRAPHIC_DISPLAY_OPTIONS_* parameters are
+  the dialog's own buttons, not values.
+
+# ROUTING - the same rows are in the render, sun, display and camera cards.
+#
+#   "turn on sketchy lines"                  -> here
+#   "sun intensity 80, shadows 40"           -> here
+#   "silhouette edges in wide lines"         -> here
+#   "put this view on realistic"             -> SET_VIEW_PROPERTIES, the
+#                                               visual style
+#   "set the render background to sky"       -> SET_RENDER_SETTINGS, the
+#                                               rendered image's background
+#   "set the sun to 10 am"                   -> SET_SUN_SETTINGS
+#   "what are this view's display options"   -> REPORT_RENDER_SETTINGS (D-86)
+
+utterances:
+  - switch on sketchy lines with a jitter of 5 in this view
+  - turn the sun intensity up to 80 and the shadow intensity to 40 in this view
+  - show silhouette edges in the 3D view
+  - use smooth lines with anti-aliasing in this view
+  - give this 3D view a gradient background
