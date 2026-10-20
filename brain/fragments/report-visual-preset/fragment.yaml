@@ -1,0 +1,142 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-149
+semantic-identity: "how a view's look compares with a visual preset - each of the preset's settings beside the view's own, and the materials it shows with no render appearance"
+kind: action
+domain: revit.views
+capability: REPORT_VISUAL_PRESET
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: the owner asked for a visualiser - one call that gives a view a
+# good look (APPLY_VISUAL_PRESET). A modeller should see what a look would do
+# before it is done, and a chat should know which look a view is nearest; and
+# a Realistic view of the four duct heaters in Project1 drew their materials
+# flat grey because none had a render appearance. This is the read half: what
+# a preset would do to a view, setting by setting, and which materials on what
+# it shows will draw grey whatever the preset.
+#
+# HOW IT ANSWERS - comments, not `purpose`.
+#
+# **ONE PRESET NAMED**: a line per setting - the view's value beside the
+# preset's, and whether it is already so, would differ, is one this view
+# cannot take (a floor plan has no Rendering Settings), or is the modeller's
+# to tick by hand (Cast Shadows, Show Ambient Shadows - no member on any
+# release 2020 to 2027, row 5b-1267). `wouldChange` counts the ones that
+# would differ.
+#
+# **NONE NAMED ("all")**: one line per preset, closest first - how many of
+# its settings would differ, and which. `wouldChange` is the closest's count.
+#
+# **EVERY TIME**: the materials Revit names on the model elements the view
+# shows, and those with no render appearance - they draw flat grey in a
+# Realistic view and a render whatever the preset (SET_MATERIAL_APPEARANCE
+# gives them one). A face drawn By Category is not counted.
+#
+# **THE PRESETS, AND HOW EACH SETTING IS READ, ARE THE SHARED BLOCK** of
+# impl/any/fragment.cs - the same text as APPLY_VISUAL_PRESET's,
+# tests/test_visual_presets.py holding the two together - so what this says a
+# preset would do is what that one does. The presets themselves are listed on
+# APPLY_VISUAL_PRESET's card.
+#
+# **ONE STRING, LINES JOINED BY "  ||  "**, as READ_VIEW_SCALE does.
+#
+# `purpose` HOLDS NO CHANGE VERB, for the reason READ_VIEW_SCALE's card gives:
+# a read that answered a request for a look would change nothing.
+purpose: >
+  Answers how different one view is from a visual preset - Exterior Day,
+  Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay or
+  Presentation Elevation - each part of the look in turn, or which preset it
+  is closest to, and which materials on what it shows have no render
+  appearance and will draw flat grey. It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, as the Project Browser names it.
+    - name: view
+      type: View
+      source: request
+    # One preset's name, or all of them.
+    - name: preset
+      type: string
+      source: request
+      optional: true
+      absent: all
+    # What the render would be for: check (Draft, Screen) or issue (High,
+    # 300 DPI) - the quality and output a preset is compared with.
+    - name: renderFor
+      type: string
+      source: request
+      optional: true
+      absent: check
+    # A time on the site's clock in place of a Still preset's own.
+    - name: sunTime
+      type: string
+      source: request
+      optional: true
+      absent: preset
+  provides:
+    - name: wouldChange
+      # Settings the preset would give differently - for "all", the closest
+      # preset's. Tracks the view and the preset (D-53).
+      role: result
+      type: int
+    - name: materialsWithoutAppearance
+      # Materials on what the view shows with no render appearance.
+      role: result
+      type: int
+    - name: presetsCompared
+      # How many presets were compared - one, or every one.
+      role: accounting
+      type: int
+    - name: comparison
+      # The lines, joined by "  ||  ". Filled whenever a view and a preset
+      # were read, so evidence beside the counts.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was read, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, reading only members
+  REPORT_RENDER_SETTINGS, SET_VIEW_PROPERTIES and LIST_MATERIALS already read,
+  but SunAndShadowSettings.GetSunset - read on 2026-10-20 with
+  tools/api-surface --members, present and alike on 2020 to 2027 - and
+  Element.GetMaterialIds, the same on every release. View.DisplayStyle is
+  read by name, as SET_VIEW_PROPERTIES does.
+
+# ROUTING - the same rows are in the render, sun, display and view cards.
+#
+#   "what would the exterior day preset do here"  -> here
+#   "which preset is this view closest to"        -> here
+#   "which materials in this view render grey"    -> here
+#   "make this view look good"                    -> APPLY_VISUAL_PRESET, the
+#                                                    write (D-86)
+#   "what are the render settings of this view"   -> REPORT_RENDER_SETTINGS,
+#                                                    the four dialogs as they
+#                                                    stand
+#   "list the materials with their appearance"    -> LIST_MATERIALS, every
+#                                                    material in the project
+
+utterances:
+  - what would the exterior day preset do to this view
+  - how far is this 3D view from the equipment close-up look
+  - which visual preset is this view closest to
+  - which materials in this view have no render appearance
+  - what visual presets does Heron have

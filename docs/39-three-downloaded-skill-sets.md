@@ -132,6 +132,15 @@ turning a client's adjectives into design decisions. Heron asks for every input 
 environmental data, specifications, project scheduling. The host decides what the modeller meant
 ([D-01](DECISIONS.md)); Heron does the Revit.
 
+> **As built (2026-10-20):** rendering moved off that list on the owner's word, after four Heron-built duct
+> heaters in Project1 could only be shown with flat grey materials - *"make like a visualizer ... what
+> settings we normally do for good things"*. What a Revit model holds for a picture is Revit work: every
+> tab of a material ([Group IA](needs-checking/group-ia.md)), every rendering dialog
+> ([Group IB](needs-checking/group-ib.md)), and the visualiser - the method
+> [`visualise-a-view`](../brain/skills/visualise-a-view.yaml) and the tools `APPLY_VISUAL_PRESET` and
+> `REPORT_VISUAL_PRESET` ([Group IC](needs-checking/group-ic.md)). All DRAFT, none run in Revit. Design
+> language and style stay the modeller's: a preset is a starting look, never a judgement of the design.
+
 **The one idea worth recording: grade a change by what it reaches, not by its verb.** The prompt ranks a
 change by what it touches - a level, a grid, the coordinates, an issued sheet - rather than by whether it
 reads or writes. Heron's `risk:` grades a fragment, not a call, and **the same `MODIFY` on one wall and on

@@ -179,6 +179,8 @@ compatibility-note: >
 #                                               rendered image's background
 #   "set the sun to 10 am"                   -> SET_SUN_SETTINGS
 #   "what are this view's display options"   -> REPORT_RENDER_SETTINGS (D-86)
+#   "make this view look good"               -> APPLY_VISUAL_PRESET, a whole look
+#                                               in one call
 
 utterances:
   - switch on sketchy lines with a jitter of 5 in this view
