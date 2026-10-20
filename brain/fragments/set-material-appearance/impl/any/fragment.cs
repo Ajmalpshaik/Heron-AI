@@ -137,10 +137,11 @@ var findings = new List<string>();
     // Title is empty and its UIName is Revit's code - "Prism-256",
     // "Plastic-024" - never the browser's name; only once an asset is in a
     // document does Title carry it ("Steel - Satin"). A Prism asset's
-    // description is that name in another case ("Steel - satin"); an older
-    // asset's description is a sentence its whole kind shares ("Metal.",
-    // "Generic material." on 557 of them), so it is known by its code. The
-    // code is taken as well wherever a name is matched.
+    // description is OFTEN that name in another case ("Steel - satin") and
+    // not always - Prism-152's "Glass - clear" shows as "Glass (Clear)"; an
+    // older asset's description is a sentence its whole kind shares
+    // ("Metal.", "Generic material." on 557 of them), so it is known by its
+    // code. The code is taken as well wherever a name is matched.
     Func<Asset, string> shownName = asset =>
     {
         if (!string.IsNullOrEmpty(asset.Title)) return asset.Title;
@@ -249,9 +250,23 @@ var findings = new List<string>();
         {
             var inLibrary = libraryAssets().Where(each => string.Equals(shownName(each), said0, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(each.Name, said0, StringComparison.OrdinalIgnoreCase)).ToList();
+            // THE NAME AS THE BROWSER WRITES IT (version 3, row 5b-1280). Seen
+            // 2026-10-20 on Revit 2020: the browser shows "Glass (Clear)" for
+            // the asset whose description is "Glass - clear". With no exact
+            // match, the name is matched with capitals, spaces and punctuation
+            // ignored, and the answer says which asset it was taken to mean.
+            var looselyMatched = false;
+            if (inLibrary.Count == 0 && squash(said0).Length > 0)
+            {
+                inLibrary = libraryAssets().Where(each => squash(shownName(each)) == squash(said0)).ToList();
+                looselyMatched = inLibrary.Count > 0;
+            }
             if (inLibrary.Count >= 1)
             {
                 namedLibraryAsset = inLibrary[0];
+                if (looselyMatched)
+                    notes.Add(string.Format("'{0}' was taken to mean Revit's '{1}' ({2}) - matched with capitals, spaces and punctuation ignored",
+                        said0, shownName(inLibrary[0]), inLibrary[0].Name));
                 if (inLibrary.Count > 1)
                     notes.Add(string.Format("Revit's appearance library holds {0} assets called '{1}' - the first, from '{2}', was used",
                         inLibrary.Count, said0, inLibrary[0].LibraryName));
