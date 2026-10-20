@@ -105,7 +105,8 @@ purpose: >
      necks, tapered legs), a shape carried along a path (sweep: rails, pipe
      runs, frames, rings), one shape changing along one bend (swept blend:
      reducers, elbows), every hole or notch as a void, every part that
-     repeats in a row - blades, fins, slots - as one form and a count, and
+     repeats in a row - blades, fins, slots - as one form and a count, or as
+     a nested family and a count where a size stretches it (step 10), and
      every part that is a family of its own - a motor, a handle - nested; every
      SIZE that
      describes them, marking which change between types - those become
@@ -169,8 +170,10 @@ purpose: >
      CREATE_FAMILY_EXTRUSION for any other shape pushed straight;
      CREATE_FAMILY_REVOLUTION, CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
      CREATE_FAMILY_SWEPT_BLEND for the rest. Every one gives back its form's
-     id, which every later step names it by. MANY extrusions and revolves -
-     a family of dozens of parts - go in ONE call of CREATE_FAMILY_FORMS, a
+     id, which every later step names it by. A FORM THAT WILL BE ARRAYED is
+     sketched on a plane no parameter moves; a part in a row that a size
+     stretches is a nested family instead - step 10. MANY extrusions and
+     revolves - a family of dozens of parts - go in ONE call of CREATE_FAMILY_FORMS, a
      row per form written once to a file under %TEMP%\heron-work: one undo
      entry, every id given back in the order listed. Shapes are typed in
      millimetres in the work plane's own two model coordinates. ONE
@@ -223,6 +226,26 @@ purpose: >
       its count an Integer parameter given its value in step 3; an arrayed
       void's copies are each
       combined in turn, by the ids the array gives back.
+      ARRAY ONLY A FORM SKETCHED ON A PLANE NO PARAMETER MOVES - Ref. Level,
+      a centre plane. A form sketched on a plane a parameter moves LOSES ITS
+      WORK PLANE in the array, and the row breaks at another type. Measured
+      2026-10-20 on Revit 2020, a parametric electric duct heater: legs
+      sketched on "Opening Panel Side" and bends on "Element Tip" followed
+      their length perfectly before the array; after ARRAY_FAMILY_FORMS -
+      count from an Integer formula, step Z 80 and Z -80 - REPORT_FAMILY_FORMS
+      read every arrayed form "on <not associated>", and at another type the
+      copies stayed at the old length or drifted diagonally, their Y extents
+      shifted about 40 mm at each step. The array's own trial row did not refuse it - it measures only
+      the type in front - and the modeller undid 15 steps (row 5b-1261).
+      A PART IN A ROW THAT A SIZE STRETCHES IS A NESTED FAMILY: made as step
+      11's a to g, Work Plane-Based, its own planes and labels stretching it;
+      its lengths linked to the host's formulas with LINK_NESTED_TYPE_PARAMETER;
+      placed with PLACE_NESTED_FAMILY at a FIXED point - the host's origin on
+      Ref. Level, never on a plane that moves; then ARRAY_FAMILY_FORMS on the
+      nested instance, its count an Integer formula. A row both ways from the
+      centre is two arrays: one up from Z 0, and one down from a second
+      instance on a height plane at Z -80. That rebuild held: FLEX_FAMILY at
+      4 sizes, the row reading 9, then 15, then 17 elements.
   11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
       parameters so the port follows the neck - for MEP families. Exactly one
       SOLID face may lie on the plane it is named by, so each connector face
@@ -516,5 +539,10 @@ note: >
   a 40-floor tower on Revit 2020 sat unsaved on disk for 25 minutes while
   Ctrl+S, pressed twice, went to the chat: REPORT_OPEN_DOCUMENTS version 3
   gives each file's last-written time, so step 0 checks a save on disk
-  rather than trusting it (row 5b-1218). Every step is DRAFT until it
+  rather than trusting it (row 5b-1218). Corrected on 2026-10-20 after a
+  parametric electric duct heater on Revit 2020: forms arrayed from planes a
+  parameter moves lost their work plane and the row broke at another type,
+  while the same row rebuilt as an arrayed nested family held at four sizes -
+  so steps 0, 7 and 10 send a row that a size stretches to a nested family
+  (row 5b-1261). Every step is DRAFT until it
   has been run on a real family with a negative case (D-30).
