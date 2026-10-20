@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "set a view's graphic display options - sun intensity, shadow
 kind: action
 domain: revit.views
 capability: SET_GRAPHIC_DISPLAY_OPTIONS
-version: 2
+version: 3
+# VERSION 3, 2026-10-20 - row 5b-1283. A view that takes no depth cueing was
+# refused "Revit offers it in elevations and sections" - on an elevation.
+# Measured on Revit 2020: the elevations of the Systems template, Mechanical
+# or Electrical, take it once their View Discipline is Architectural; the
+# refusal now names the discipline. Version 2's proof below no longer
+# describes the code: DRAFT until it is proved again.
 # VERSION 2, 2026-10-20 - row 5b-1279, found running Group IB's IB5 on Revit
 # 2020. On a perspective camera view, version 1's read-back called
 # GetDepthCueing whatever was asked, and Revit threw "This view cannot use

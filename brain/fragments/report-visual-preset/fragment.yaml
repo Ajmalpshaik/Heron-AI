@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,11 @@ semantic-identity: "how a view's look compares with a visual preset - each of th
 kind: action
 domain: revit.views
 capability: REPORT_VISUAL_PRESET
-version: 1
+version: 2
+# VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283: the same two repairs as
+# APPLY_VISUAL_PRESET version 2 - the sunset date handed over as UTC, and the
+# depth-cueing reason naming the view's discipline. Version 1's proof below
+# no longer describes the code: DRAFT until it is proved again.
 source: OFFICIAL
 risk: READ
 

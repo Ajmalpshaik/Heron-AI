@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "give a view a whole ready-made look in one call - a named vi
 kind: action
 domain: revit.views
 capability: APPLY_VISUAL_PRESET
-version: 1
+version: 2
+# VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283, found running Group IC on
+# Revit 2020. The dusk Sun was skipped: GetSunset refused the project-time
+# date, whose Kind was Unspecified - it is now handed over as UTC. And depth
+# cueing skipped on a Mechanical elevation said Revit offers it in
+# elevations; the reason now names the view's discipline, measured as what
+# Revit 2020 turns it on with. Version 1's proof below no longer describes
+# the code: DRAFT until it is proved again.
 source: OFFICIAL
 risk: MODIFY
 
