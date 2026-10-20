@@ -74,7 +74,7 @@ contract:
       type: string
       source: request
       optional: true
-      absent: "30"
+      absent: 30
     # Millimetres from the elements' centre to the eye, or auto.
     - name: distanceMm
       type: string
@@ -85,7 +85,7 @@ contract:
       type: string
       source: request
       optional: true
-      absent: "10"
+      absent: 10
   provides:
     - name: camera
       role: result

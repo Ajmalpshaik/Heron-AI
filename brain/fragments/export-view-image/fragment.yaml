@@ -67,7 +67,7 @@ contract:
       type: int
       source: request
       optional: true
-      absent: "0"
+      absent: 0
     # PNG, JPG, JPEG Medium, JPEG Smallest, TIFF, BMP or TGA. Version 2.
     - name: fileType
       type: string
