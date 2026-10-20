@@ -11,7 +11,19 @@ positive:
     expect: >
       its camera moved and readBack saying perspective
 
+  - given: >
+      version 2 - viewName "Heron Camera", eyeMm "0,-10000,1600", targetMm
+      "0,0,1600", levelName "Level 1", farClipMm 20000
+    expect: >
+      readBack with the eye 1600 above Level 1's elevation, Eye Elevation and
+      Target Elevation as Revit gives them, and "far clip on at 20000 mm" - the
+      camera's Properties show Far Clip Active ticked, Far Clip Offset 20000
+
 negative:
+  - given: version 2 - levelName "No Such Level"
+    expect: refused naming it, and the camera unchanged
+  - given: version 2 - farClipMm "far"
+    expect: refused - off or millimetres - and nothing changed
   - given: viewName "No Such View", createIfMissing not said
     expect: >
       refused naming it, and no view made

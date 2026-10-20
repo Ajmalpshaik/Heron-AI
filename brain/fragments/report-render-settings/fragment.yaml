@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-142
+semantic-identity: "how a view stands for rendering - its render quality, output, lighting scheme, background, exposure, sun, display options and camera"
+kind: action
+domain: revit.views
+capability: REPORT_RENDER_SETTINGS
+version: 1
+source: OFFICIAL
+risk: READ
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: the owner asked for every part of rendering. Before a render is
+# set up, the chat has to know how the view stands - four Revit dialogs
+# (Rendering, Sun Settings, Graphic Display Options and the camera's
+# Properties) - and nothing read any of them. This is the read half of
+# SET_RENDER_SETTINGS, SET_SUN_SETTINGS, SET_GRAPHIC_DISPLAY_OPTIONS and
+# FRAME_ELEMENTS_IN_CAMERA.
+#
+# HOW IT ANSWERS - comments, not `purpose`.
+#
+# **FOUR SECTIONS FOR ONE VIEW**: Rendering (a 3D view only - quality, output
+# and its DPI, lighting scheme, light groups, background, exposure, region),
+# Sun Settings (study, date and time on the site's clock, preset, ground plane,
+# site), Graphic Display (visual style, intensities, silhouettes, smooth lines,
+# transparency, hidden lines, sketchy lines, depth cueing, background) and
+# Camera (a 3D view - eye, direction, perspective, eye and target elevation,
+# far clip, crop box). A section the view does not have is said in words.
+#
+# **WHAT REVIT'S API CANNOT READ IS NAMED, NEVER GUESSED**: Cast Shadows,
+# Ambient Shadows, Ambient Light and Photographic Exposure.
+#
+# **ONE STRING, SECTIONS JOINED BY "  ||  "**, as READ_VIEW_SCALE does.
+#
+# `purpose` HOLDS NO CHANGE VERB, for the reason READ_VIEW_SCALE's card gives.
+purpose: >
+  Answers how one view stands for rendering - its render quality, output
+  resolution, lighting scheme, light groups, background and exposure, its sun
+  study and date, its graphic display options and its camera. It only reads.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, as the Project Browser names it.
+    - name: view
+      type: View
+      source: request
+  provides:
+    - name: setup
+      # The four sections, joined by "  ||  ". Filled whenever a view was
+      # named, so evidence beside the count.
+      role: accounting
+      type: string
+    - name: sectionsRead
+      # How many of the four sections the view had and were read - what it
+      # FOUND (0 for a schedule, 1 to 2 for a plan, up to 4 for a 3D view).
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Every member it reads is one
+  SET_RENDER_SETTINGS, SET_SUN_SETTINGS, SET_GRAPHIC_DISPLAY_OPTIONS and
+  FRAME_ELEMENTS_IN_CAMERA write, read off the shipped reference assemblies and
+  RevitAPI.xml of 2020 through 2027 on 2026-10-20, plus BuiltInParameter
+  VIEWER_EYE_ELEVATION and VIEWER_TARGET_ELEVATION - present and alike on every
+  release. The light groups are reached by name at run time.
+
+# ROUTING - the same rows are in the render, sun, display and camera cards.
+#
+#   "what are the render settings of this view"  -> here
+#   "which sun does this view use"               -> here
+#   "what visual style is this view in"          -> REPORT_VIEW_SETTINGS, the
+#                                                   view's detail, style and
+#                                                   phase
+#   "set the render quality to best"             -> SET_RENDER_SETTINGS
+#   "which renderings are saved"                 -> READ_RENDERED_IMAGES
+
+utterances:
+  - how is this 3D view set up for rendering
+  - what quality and lighting will this view render with
+  - which sun date and time does this view use
+  - show me the rendering setup of the camera view
+  # Declared because the routing table above claims it (check-routing).
+  - what are the render settings of this view

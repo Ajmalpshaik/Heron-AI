@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,14 +9,27 @@ semantic-identity: "save these views out as pictures"
 kind: action
 domain: revit.export
 capability: EXPORT_VIEW_IMAGE
-version: 1
+version: 2
 source: OFFICIAL
 risk: PUBLISH
 
+# VERSION 2 (2026-10-20) - the rendering tools' widening, on the owner's word
+# ("for the rendering ... all the part should be covered"). Three OPTIONAL
+# inputs, so a version 1 call runs exactly as before: `fileType` (PNG as
+# before, JPG - JPEG lossless, or JPEG Medium / Smallest - TIFF, BMP or TGA),
+# `dpi` (72, 150, 300 or 600 - Revit's ImageResolution), and `pixelWidth` is
+# now optional: with a DPI and no width the image is Revit's "Zoom to 100%" at
+# that DPI. And the files are READ BACK: what carries the prefix and was
+# written by this run is listed from the folder - name, pixel size out of the
+# file's own header, size - in `fileReport`, counted in `filesWritten`.
+# Version 1's proof no longer describes the code, so it is kept below as a
+# record and the card is DRAFT until it is proved again (D-30) - D-117 refuses
+# a kept export from it until then.
+
 purpose: >
-  Writes views and sheets out as PNG images at a chosen width - the "send them a
-  picture of this" job, done at a real resolution instead of a screenshot of
-  whatever the screen happened to show.
+  Writes views and sheets out as PNG, JPG, TIFF, BMP or TGA images at a chosen
+  width or DPI - the "send them a picture of this" job, done at a real
+  resolution instead of a screenshot of whatever the screen happened to show.
 
   **It writes files onto a disk, which is why it is PUBLISH and not MODIFY.**
   An export leaves the model alone and puts something where other people can
@@ -25,9 +38,8 @@ purpose: >
 
   **Revit names the files itself and this does not pretend otherwise.** The
   prefix given is a stem; Revit appends the view type and the view name to it.
-  So the folder and the prefix are reported and the exact filenames are not
-  invented - a list of predicted names that turned out wrong would be worse than
-  no list.
+  So the filenames are never predicted: the folder is read afterwards and the
+  files this run wrote are listed from it, with their pixel sizes.
 
   **A view that cannot be printed is not exported, and is named.** Templates,
   and some view types, cannot go to an image at all. Silently dropping them
@@ -50,16 +62,46 @@ contract:
     - name: filePrefix
       type: string
       source: request
+    # Pixels across; left out, 1920 - or, with a DPI, Revit's Zoom to 100%.
     - name: pixelWidth
       type: int
       source: request
+      optional: true
+      absent: 0
+    # PNG, JPG, JPEG Medium, JPEG Smallest, TIFF, BMP or TGA. Version 2.
+    - name: fileType
+      type: string
+      source: request
+      optional: true
+      absent: png
+    # 72, 150, 300 or 600 dots per inch. Version 2.
+    - name: dpi
+      type: string
+      source: request
+      optional: true
+      absent: keep
   provides:
     - name: exported
+      # Views sent to Revit's export - version 1's count, unchanged.
       role: result
       type: int
+    - name: filesWritten
+      # Files carrying the prefix that this run wrote, read off the folder
+      # afterwards. Version 2.
+      role: result
+      type: int
+    - name: fileReport
+      # Each file read back - name, pixel size, size - joined by "  ||  ".
+      # Evidence beside the counts.
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until the
+# rendering tools' NEEDS-CHECKING group proves version 2 (D-30). A PNG at a
+# pixel width still takes the road this proof ran.
 proof:
   date: '2026-09-13'
   by: Ajmal PS
@@ -88,12 +130,22 @@ compatibility-note: >
   One implementation for every release. `ImageExportOptions`, `ExportRange`,
   `ImageFileType`, `ZoomFitType`, `FitDirectionType`, `View.CanBePrinted` and
   `Document.ExportImage` are present 2020 through 2027, compiled at both ends.
+  Version 2 adds `ImageExportOptions.ImageResolution` and `Zoom`, `ImageResolution`
+  (DPI_72, DPI_150, DPI_300, DPI_600) and `ImageFileType`'s BMP, JPEGLossless,
+  JPEGMedium, JPEGSmallest, TARGA and TIFF - read off the shipped reference
+  assemblies of 2020 through 2027 on 2026-10-20, alike on every release. The
+  files are read back with System.IO alone.
 
 # ROUTING - repeated in EXPORT_SHEETS_TO_PDF and EXPORT_VIEWS_TO_DWG.
 #
 #   "save these views as pictures"   -> here
 #   "export a png of this sheet"     -> here
 #   "send them an image of the plan" -> here
+#   "save this view as a jpg at 300 dpi" -> here, version 2
+#   "render this view"               -> OPEN_RENDER_DIALOG. An export is the
+#                                       view as Revit draws it on screen; a
+#                                       render is the Raytracer's, and no API
+#                                       runs that
 #   "export these sheets to pdf"     -> EXPORT_SHEETS_TO_PDF - the format
 #                                       somebody issues drawings in
 #   "export to dwg"                  -> EXPORT_VIEWS_TO_DWG - the format
@@ -107,3 +159,5 @@ utterances:
   - send them an image of the plan
   - export view images
   - save this view as an image
+  - export this sheet as a jpeg at 300 dpi
+  - save these views as tiff images

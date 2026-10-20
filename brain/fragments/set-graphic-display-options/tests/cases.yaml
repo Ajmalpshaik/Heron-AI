@@ -1,0 +1,36 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a 3D view in a scratch copy of Project1 (Revit 2020) on Realistic, with
+      sunIntensity 80, shadowIntensity 40, smoothLines yes and sketchyLines
+      "jitter=5; extension=3"
+    expect: >
+      changed 4 of 4; readBack reading sun intensity 80, shadow intensity 40,
+      smooth lines on, sketchy lines on, jitter 5, extension 3. Open Graphic
+      Display Options on the view: the same values
+  - given: silhouettes "Wide Lines"
+    expect: silhouettes on (Wide Lines) read back
+  - given: background "gradient sky=135,206,235; horizon=255,255,255; ground=120,120,120"
+    expect: background Gradient with those three colours read back
+  - given: castShadows on, with sunIntensity 70
+    expect: >
+      changed 1 (the intensity) and a finding naming Cast Shadows as having no
+      API member - never counted, never silent
+
+negative:
+  - given: a schedule named as the view, sunIntensity 80
+    expect: >
+      changed 0, refused "has no Graphic Display Options", NOTHING WAS CHANGED.
+      THIS IS THE FIRST CASE TO RUN
+  - given: the 3D view, sunIntensity 150
+    expect: refused - a whole number 0 to 100 - and nothing changed
+  - given: only castShadows on
+    expect: >
+      changed 0, refused "Only settings Revit's API cannot reach were asked for"
+  - given: background None
+    expect: refused - the API cannot set a background back to None
+
+second_route:
+  - the Graphic Display Options dialog on the same view, read before and after
+  - one Ctrl+Z takes it back (Golden Rule 16)

@@ -1,0 +1,28 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      one of the four duct heaters in a scratch copy of Project1 (Revit 2020)
+      selected, viewName "Heron Frame - Heater", direction south-east,
+      lookDownDeg 30, distanceMm auto, marginPercent 10
+    expect: >
+      madeNew true, framed 1, and a perspective view that, opened, shows the
+      heater filling the view with a margin round it, seen from the south-east
+      and above. readBack gives the eye, the crop box and the far clip. LOOK AT
+      THE VIEW - that is the check the numbers cannot make
+  - given: the same, run again with direction north-west
+    expect: madeNew false - the same view re-aimed, the heater seen from the other side
+
+negative:
+  - given: the heater selected, viewName naming the project's isometric {3D} view
+    expect: >
+      refused "is an isometric 3D view", NOTHING WAS CHANGED - {3D} keeps its
+      camera. THIS IS THE FIRST CASE TO RUN
+  - given: a level selected (no geometry to frame)
+    expect: refused "has geometry to frame", nothing made
+  - given: direction "upwards"
+    expect: refused - not a direction - nothing made
+
+second_route:
+  - open the view and look: the heater fills it; in a plan view the camera's triangle points at it from the direction asked
+  - one Ctrl+Z takes it back (Golden Rule 16)

@@ -1,0 +1,36 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a perspective 3D view in a scratch copy of Project1 (Revit 2020), with
+      quality Best, output 150 DPI, lighting Interior Sun and Artificial,
+      background Sky Few Clouds and exposure value=12; white point=5500
+    expect: >
+      changed 5 of 5, and readBack reading quality Best, output Printer 150
+      DPI, lighting Interior: Sun and Artificial, background Sky: Few Clouds,
+      exposure value 12 and white point 5500. Open Revit's Rendering dialog on
+      that view: it shows the same
+  - given: customQuality "level 10" with lightingAccuracy Advanced
+    expect: >
+      quality Custom, level 10, Advanced read back - customQuality means Custom
+  - given: background "colour 255,255,255"
+    expect: background Color 255,255,255 read back
+
+negative:
+  - given: a floor plan named as the view, quality Best
+    expect: >
+      changed 0, refused "is not a 3D view" and NOTHING WAS CHANGED - only a 3D
+      view has Rendering Settings. THIS IS THE FIRST CASE TO RUN
+  - given: the 3D view, quality "Ultra"
+    expect: >
+      changed 0, refused naming Draft, Medium, High, Best and Custom; the
+      Rendering dialog unchanged
+  - given: output "333 DPI"
+    expect: >
+      the DPIs Revit offers named in findings, and the output not counted
+  - given: nothing asked at all
+    expect: refused, "Nothing was asked for", nothing changed
+
+second_route:
+  - the Rendering dialog (View Control Bar teapot) on the same view, read before and after
+  - one Ctrl+Z takes it back (Golden Rule 16)

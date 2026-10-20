@@ -1,0 +1,147 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-145
+semantic-identity: "make a perspective camera view that frames these elements, from a compass direction and a look-down angle"
+kind: action
+domain: revit.views
+capability: FRAME_ELEMENTS_IN_CAMERA
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: after four duct heaters were placed in Project1 (Revit 2020) the
+# owner wanted a render of one, and the only camera tool took an eye point and
+# a target typed in millimetres. A modeller frames a thing by looking at it;
+# this takes the selection and does the arithmetic.
+#
+# HOW IT BEHAVES - comments, not `purpose`.
+#
+# **THE ELEMENTS HANDED IN ARE FRAMED**: their box is taken, the eye stands off
+# it in the compass direction asked - north, south-east and so on, or degrees
+# clockwise from PROJECT NORTH (plan up) - looking down at lookDownDeg (30 when
+# not said), at distanceMm from the box's centre or, on auto, two and a half
+# times its half-diagonal. The crop box is then set to the elements' box seen
+# from that eye, with marginPercent (10) round it; the API reference says that
+# moves "the crop region and far clip plane to the smallest values which will
+# completely contain the 3D box".
+#
+# **ONE JOB WHETHER THE VIEW EXISTS OR IS NEW.** A perspective 3D view of that
+# name is re-aimed; with none, one is made (auto names it after the first
+# element). An isometric view of that name is refused - SET_VIEW_CAMERA turns
+# one perspective.
+#
+# **WHAT IS MEASURED AND WHAT IS NOT.** `framed` counts the elements whose box
+# lies inside the crop box Revit reads back afterwards, given in the view's own
+# frame. Revit's API has NO field-of-view value on any release 2020 to 2027,
+# and documents a perspective crop box only as "an outline encompassing the
+# crop region", so no angle is claimed: the proof row has the modeller look at
+# the view, and `readBack` carries the numbers.
+#
+# A view a template controls is refused, not half-changed.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Makes or re-aims a perspective camera view so the selected elements fill it -
+  from a compass direction, looking down at an angle, with a margin round them -
+  and reads the camera and its crop box back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The perspective view to make or re-aim; auto names it after the first
+    # element.
+    - name: viewName
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # Where the camera stands, seen from the elements: north, north-east,
+    # east ... north-west, or degrees clockwise from project north.
+    - name: direction
+      type: string
+      source: request
+      optional: true
+      absent: south-east
+    - name: lookDownDeg
+      type: string
+      source: request
+      optional: true
+      absent: 30
+    # Millimetres from the elements' centre to the eye, or auto.
+    - name: distanceMm
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    - name: marginPercent
+      type: string
+      source: request
+      optional: true
+      absent: 10
+  provides:
+    - name: camera
+      role: result
+      type: View3D
+    - name: madeNew
+      role: result
+      type: bool
+    - name: framed
+      # Elements whose box lies inside the crop box Revit reads back.
+      role: result
+      type: int
+    - name: readBack
+      # Eye, direction, crop box and far clip as the view holds them -
+      # evidence, never the count.
+      role: accounting
+      type: string
+    - name: noGeometry
+      # Elements with no box to frame - the evidence it looked (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read off the shipped reference
+  assemblies and RevitAPI.xml of 2020 through 2027 on 2026-10-20:
+  View3D.CreatePerspective, IsPerspective, IsLocked, Unlock, SetOrientation and
+  GetOrientation; View.CropBox (get and set - the set's transform is ignored),
+  CropBoxActive and ViewTemplateId; Element.get_BoundingBox(null);
+  BuiltInParameter VIEWER_BOUND_ACTIVE_FAR and VIEWER_BOUND_OFFSET_FAR - present
+  and alike on every release. No member named for a field of view exists on any
+  release. Points are millimetres divided by 304.8 (D-20).
+
+# ROUTING - the same rows are in the render, sun, display and camera cards.
+#
+#   "a close-up camera of this duct heater"     -> here
+#   "frame the selected equipment from the NE"  -> here
+#   "camera from this point to that point"      -> SET_VIEW_CAMERA, an eye and
+#                                                  a target typed in mm
+#   "box the 3D view round these"               -> SET_VIEW_SECTION_BOX - it
+#                                                  cuts the view, a camera
+#                                                  does not
+#   "make a 3D view"                            -> CREATE_3D_VIEW
+
+utterances:
+  - make a close-up perspective of this duct heater
+  - frame the selected equipment in a camera view from the north-east
+  - set up a camera looking down at these elements so they fill the view
+  - point a new perspective at the selection for a render
+  # Declared because the routing table above claims it (check-routing).
+  - a close-up camera of this duct heater
