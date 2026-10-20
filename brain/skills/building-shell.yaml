@@ -140,7 +140,9 @@ purpose: >
      a room that is not enclosed has no area, and it almost always means two
      walls do not meet. SET_ROOM_LIMITS (PROVEN) ties each room's top to the
      level above, when the rooms must reach it. Names go on in ONE
-     SET_PARAMETER_VALUES_BY_ID (PROVEN) call keyed on Number -
+     SET_PARAMETER_VALUES_BY_ID (DRAFT, version 4 - version 3 was PROVEN, and
+     until NEEDS-CHECKING Group HZ proves version 4 a kept change from it is
+     refused, D-117) call keyed on Number -
      key=Number|in=Rooms|Level=<level>;1|Name=Lift Lobby;2|Name=... - never a
      find and a write per room.
   7. CREATE_STAIRS (DRAFT, version 4 - version 3 was PROVEN, and until
