@@ -137,6 +137,14 @@ USINGS = [
     # fragment can only use what THIS LIST says it has. Adding it here is a
     # promise the executor must keep too.
     "Autodesk.Revit.DB.Analysis",
+    # Revit's appearance assets - what a Realistic view and a rendering draw a
+    # material with. Added 2026-10-20 for SET_MATERIAL_APPEARANCE and
+    # CREATE_STARTER_MATERIALS (D-146): editing an asset needs its edit scope,
+    # and creating one from Revit's library needs the asset-type enum, and
+    # neither can be reached without naming this namespace. Reading an asset
+    # by `var` (REPORT_MATERIAL_TEXTURES) was the way round it until a
+    # fragment had to WRITE one. A promise the executor must keep too.
+    "Autodesk.Revit.DB.Visual",
 ]
 
 CSPROJ = """<Project Sdk="Microsoft.NET.Sdk">

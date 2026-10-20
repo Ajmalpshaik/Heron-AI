@@ -1,5 +1,7 @@
-// NOT STANDALONE. Assumes `doc` and `withAssets` are in scope; leaves `materialCount`,
-// `materialList`, `materialClasses`, `materialIds` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `withAssets`, `withAllTabs`,
+// `withLibraryAppearances` and `namePattern` are in scope; leaves
+// `materialCount`, `materialList`, `materialClasses`, `materialIds`,
+// `libraryAppearances` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -37,17 +39,124 @@ var materialCount = 0;
 var materialList = "";
 var materialClasses = "";
 var materialIds = new List<ElementId>();
+var libraryAppearances = "";
 var findings = new List<string>();
 
 {
     var found = new List<Material>();
 
+    // ONLY THE NAMES A PATTERN MATCHES, when one is given (version 3) - "TRG_*".
+    // Left out it reads "all", and every material is listed as before.
+    var pattern = (namePattern ?? "").Trim();
+    System.Text.RegularExpressions.Regex wanted = null;
+    if (pattern.Length > 0 && !string.Equals(pattern, "all", StringComparison.OrdinalIgnoreCase))
+        wanted = new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern)
+            .Replace("\\*", ".*").Replace("\\?", ".") + "$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
     foreach (var material in new FilteredElementCollector(doc)
                                  .OfClass(typeof(Material))
                                  .Cast<Material>())
     {
-        if (material != null) found.Add(material);
+        if (material != null && (wanted == null || wanted.IsMatch(material.Name))) found.Add(material);
     }
+
+    // EVERY TAB (version 3, 2026-10-20). What each line gains, in the Material
+    // Browser's own words: the Identity fields that hold anything, the Graphics
+    // tab - shading colour, transparency, Use Render Appearance, and the four
+    // surface and cut patterns with their colours - and the Appearance tab:
+    // the asset's name, how many other materials share it, and for a Generic
+    // one its colour, image, glossiness, highlights and transparency. Physical
+    // and thermal come with them, as withAssets reads them. Read only.
+    Func<Color, string> colourText = colour =>
+        colour == null || !colour.IsValid ? "none" : colour.Red + "," + colour.Green + "," + colour.Blue;
+    Func<ElementId, string> nameOf = id =>
+    {
+        if (id == null || id == ElementId.InvalidElementId) return "none";
+        var element = doc.GetElement(id);
+        return element == null ? "none" : element.Name;
+    };
+    Func<Asset, string, double?> numberIn = (asset, name) =>
+    {
+        var property = asset.FindByName(name);
+        var d = property as AssetPropertyDouble;
+        if (d != null) return d.Value;
+        var f = property as AssetPropertyFloat;
+        return f == null ? (double?)null : f.Value;
+    };
+    Func<double?, string> percent = value => value == null ? "?" : Math.Round(value.Value * 100).ToString();
+    var appearanceUsers = new Dictionary<string, int>(StringComparer.Ordinal);
+    foreach (var each in new FilteredElementCollector(doc).OfClass(typeof(Material)).Cast<Material>())
+    {
+        if (each.AppearanceAssetId == ElementId.InvalidElementId) continue;
+        var key = each.AppearanceAssetId.ToString();
+        int users;
+        appearanceUsers.TryGetValue(key, out users);
+        appearanceUsers[key] = users + 1;
+    }
+    Func<Material, string> allTabs = material =>
+    {
+        var parts = new List<string>();
+        var identity = new List<string>();
+        foreach (var field in new[] {
+            Tuple.Create("description", BuiltInParameter.ALL_MODEL_DESCRIPTION),
+            Tuple.Create("comments", BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS),
+            Tuple.Create("manufacturer", BuiltInParameter.ALL_MODEL_MANUFACTURER),
+            Tuple.Create("model", BuiltInParameter.ALL_MODEL_MODEL),
+            Tuple.Create("cost", BuiltInParameter.ALL_MODEL_COST),
+            Tuple.Create("URL", BuiltInParameter.ALL_MODEL_URL),
+            Tuple.Create("keynote", BuiltInParameter.KEYNOTE_PARAM),
+            Tuple.Create("mark", BuiltInParameter.ALL_MODEL_MARK) })
+        {
+            var p = material.get_Parameter(field.Item2);
+            var text = p == null || !p.HasValue ? "" : p.StorageType == StorageType.String ? p.AsString() : p.AsValueString();
+            if (!string.IsNullOrEmpty(text)) identity.Add(field.Item1 + " '" + text + "'");
+        }
+        var keywords = material.LookupParameter("Keywords");
+        if (keywords != null && keywords.StorageType == StorageType.String && !string.IsNullOrEmpty(keywords.AsString()))
+            identity.Add("keywords '" + keywords.AsString() + "'");
+        parts.Add("identity " + (identity.Count == 0 ? "empty" : string.Join(", ", identity)));
+
+        parts.Add(string.Format("graphics shading {0} at {1}% transparency{2}; surface {3} {4} / {5} {6}; cut {7} {8} / {9} {10}",
+            colourText(material.Color), material.Transparency, material.UseRenderAppearanceForShading ? ", using the render appearance" : "",
+            nameOf(material.SurfaceForegroundPatternId), colourText(material.SurfaceForegroundPatternColor),
+            nameOf(material.SurfaceBackgroundPatternId), colourText(material.SurfaceBackgroundPatternColor),
+            nameOf(material.CutForegroundPatternId), colourText(material.CutForegroundPatternColor),
+            nameOf(material.CutBackgroundPatternId), colourText(material.CutBackgroundPatternColor)));
+
+        var element = doc.GetElement(material.AppearanceAssetId) as AppearanceAssetElement;
+        if (element == null) parts.Add("appearance NONE - draws flat grey in Realistic and renders");
+        else
+        {
+            int users;
+            appearanceUsers.TryGetValue(material.AppearanceAssetId.ToString(), out users);
+            var shared = users > 1 ? ", shared with " + (users - 1) + " other material(s)" : "";
+            var asset = element.GetRenderingAsset();
+            var diffuse = asset == null ? null : asset.FindByName(Generic.GenericDiffuse);
+            if (diffuse == null)
+            {
+                var schema = asset == null ? null : asset.FindByName(SchemaCommon.BaseSchema) as AssetPropertyString;
+                parts.Add(string.Format("appearance '{0}' ({1}){2}", element.Name, schema == null ? "not Generic" : schema.Value, shared));
+            }
+            else
+            {
+                var image = "none";
+                if (diffuse.NumberOfConnectedProperties > 0)
+                {
+                    var bitmap = diffuse.GetSingleConnectedAsset();
+                    var source = bitmap == null ? null : bitmap.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+                    image = source == null ? "a map" : "'" + source.Value + "'";
+                }
+                var colour = diffuse as AssetPropertyDoubleArray4d;
+                var metal = asset.FindByName(Generic.GenericIsMetal) as AssetPropertyBoolean;
+                parts.Add(string.Format("appearance '{0}' (Generic{1}) colour {2}, image {3}, glossiness {4}, {5}, transparency {6}",
+                    element.Name, shared, colour == null ? "?" : colourText(colour.GetValueAsColor()), image,
+                    percent(numberIn(asset, Generic.GenericGlossiness)),
+                    metal == null ? "?" : metal.Value ? "metallic" : "non-metallic",
+                    percent(numberIn(asset, Generic.GenericTransparency))));
+            }
+        }
+        return string.Join("; ", parts);
+    };
 
     found.Sort(delegate (Material a, Material b)
     {
@@ -72,7 +181,9 @@ var findings = new List<string>();
         // the gap fill): every number each asset holds, as Revit formats it
         // in the project's own units - no unit is converted here, so none can
         // be converted wrongly. Names are Revit's, in the language it runs in.
-        if (withAssets)
+        if (withAllTabs) row += "; " + allTabs(material);
+
+        if (withAssets || withAllTabs)
         {
             var assets = new[] { Tuple.Create("physical", material.StructuralAssetId), Tuple.Create("thermal", material.ThermalAssetId) };
             foreach (var asset in assets)
@@ -112,4 +223,24 @@ var findings = new List<string>();
         : string.Format("{0} material(s) in this {1} - '{2}'", materialCount, kind, doc.Title));
 
     findings.Add("Listed used or not - unused ones: FIND_UNUSED_MATERIALS");
+    if (wanted != null) findings.Add("Only the names matching '" + pattern + "' were listed");
+
+    // REVIT'S APPEARANCE LIBRARY, by the name its asset browser shows (version
+    // 3) - what SET_MATERIAL_APPEARANCE and CREATE_STARTER_MATERIALS take by
+    // name. What it holds depends on the PC's install, so it is read, never
+    // assumed. One line, sorted, each with its kind.
+    if (withLibraryAppearances)
+    {
+        var shown = new List<string>();
+        foreach (var asset in doc.Application.GetAssets(AssetType.Appearance) ?? new List<Asset>())
+        {
+            var ui = asset.FindByName(SchemaCommon.UIName) as AssetPropertyString;
+            var schema = asset.FindByName(SchemaCommon.BaseSchema) as AssetPropertyString;
+            var name = ui != null && !string.IsNullOrEmpty(ui.Value) ? ui.Value : !string.IsNullOrEmpty(asset.Title) ? asset.Title : asset.Name;
+            shown.Add(name + " (" + (asset.FindByName(Generic.GenericDiffuse) != null ? "Generic" : schema == null ? "?" : schema.Value) + ")");
+        }
+        shown.Sort(StringComparer.OrdinalIgnoreCase);
+        libraryAppearances = string.Join("  ||  ", shown);
+        findings.Add(shown.Count + " appearance asset(s) in Revit's appearance library on this PC");
+    }
 }

@@ -67,6 +67,11 @@ namespace Heron.Revit.Addin
             // Revit's analysis visualisation - the gradient overlay with a
             // legend that a value per element is painted with.
             "Autodesk.Revit.DB.Analysis",
+
+            // Revit's appearance assets - what a Realistic view and a
+            // rendering draw a material with (D-146). Editing one needs its
+            // edit scope, which lives nowhere else.
+            "Autodesk.Revit.DB.Visual",
         };
     }
 }

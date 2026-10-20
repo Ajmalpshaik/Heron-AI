@@ -9,7 +9,7 @@ semantic-identity: "every material this project or family holds, by name, with i
 kind: filter
 domain: revit.elements
 capability: LIST_MATERIALS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -90,6 +90,13 @@ risk: READ
 # browser lists exactly those, in this order, nobody has looked - that is
 # NEEDS-CHECKING CX5, and a difference is a finding about this card.
 
+# VERSION 3, 2026-10-20 - the owner's "all the parts should be covered" (Group
+# IA, row 5b-1263). The read report the material tools needed: one line per
+# material with every tab - withAllTabs - and the names Revit's appearance
+# library holds - withLibraryAppearances - so an appearance is chosen by a
+# name the PC has, never by one assumed. namePattern narrows the list. All
+# three are optional and absent reads as version 2 did. Version 2 was never
+# proved (Group CX), so nothing stales.
 purpose: >
   Counts and lists everything the Material Browser shows for the document
   Heron is working on - a project, or a family open in the Family Editor: how
@@ -110,6 +117,11 @@ purpose: >
   asset - density, conductivity, specific heat - as Revit formats it in the
   project's units, so no unit is converted here.
 
+  **EVERY TAB, WHEN ASKED** (version 3): `withAllTabs` reads each one's
+  identity, graphics and render appearance in one line - and which have no
+  appearance at all; `withLibraryAppearances` lists the appearance assets
+  Revit's library holds.
+
   ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
 
 contract:
@@ -121,6 +133,26 @@ contract:
       type: bool
       source: request
       optional: true
+    # Version 3. Each line gains the Identity fields that hold anything, the
+    # Graphics tab and the Appearance tab - its asset, who shares it, and a
+    # Generic one's colour, image, glossiness, highlights and transparency -
+    # with the physical and thermal assets as withAssets reads them.
+    - name: withAllTabs
+      type: bool
+      source: request
+      optional: true
+    # Version 3. Every appearance asset of Revit's appearance library on this
+    # PC, by the name its asset browser shows, in libraryAppearances.
+    - name: withLibraryAppearances
+      type: bool
+      source: request
+      optional: true
+    # Version 3. Only the names this matches - "TRG_*". Left out, every one.
+    - name: namePattern
+      type: string
+      source: request
+      optional: true
+      absent: all
   provides:
     - name: materialCount
       # How many materials the document holds. A thing it FOUND, so a result
@@ -150,6 +182,13 @@ contract:
       # READ_ELEMENT_MATERIAL provides as a dictionary of a different type.
       role: result
       type: IList<ElementId>
+    - name: libraryAppearances
+      # Version 3, withLibraryAppearances: "Name (kind)" for every asset of
+      # Revit's appearance library, sorted, on ONE line - the names
+      # SET_MATERIAL_APPEARANCE and CREATE_STARTER_MATERIALS take. Empty
+      # when not asked.
+      role: result
+      type: string
     - name: findings
       type: IList<string>
 
@@ -162,7 +201,13 @@ compatibility-note: >
   and `Element.Name` read the same 2020 to 2027 (tools/api-surface, measured
   2026-10-09). The id is printed by `ElementId.ToString()` - never
   `IntegerValue`, which is deprecated at 2024 and gone by 2026, and never a
-  constructor - so nothing meets the 2024 widening to 64-bit.
+  constructor - so nothing meets the 2024 widening to 64-bit. Version 3 adds
+  the four Surface/Cut Foreground/Background pattern ids and colours,
+  UseRenderAppearanceForShading, AppearanceAssetElement.GetRenderingAsset,
+  Application.GetAssets(AssetType.Appearance), Asset.Title, and the property
+  names on Generic, UnifiedBitmap and SchemaCommon - present 2020 to 2027,
+  read off the shipped assemblies with tools/api-surface on 2026-10-20 - and
+  names the appearance-asset namespace, supplied since D-146.
 
 # ROUTING - repeated in FIND_UNUSED_MATERIALS and
 # TRANSFER_MATERIALS_BETWEEN_DOCUMENTS, the two that were handed row 5b-376's
@@ -199,6 +244,14 @@ compatibility-note: >
 # ROUTING (2026-10-12, the gap fill)
 #
 #   "which material textures are missing"   -> REPORT_MATERIAL_TEXTURES
+#
+# ROUTING (2026-10-20, version 3 - the material tools of Group IA)
+#
+#   "show every property of the materials"  -> here, withAllTabs
+#   "which appearances does the library have" -> here, withLibraryAppearances
+#   "fill in the identity tab"              -> SET_MATERIAL_PROPERTIES
+#   "give these materials a render appearance" -> SET_MATERIAL_APPEARANCE
+#   "add a starter set of materials"        -> CREATE_STARTER_MATERIALS
 utterances:
   - list the materials in this family
   - show me all the materials in this project
@@ -210,3 +263,7 @@ utterances:
   # main reached it here and the gap-pass branch reached READ_ELEMENT_MATERIAL,
   # whose answer is per element, not the project's list.
   - how many materials are there
+  # ADDED 2026-10-20, version 3 - the read report of Group IA.
+  - list every material with its appearance and graphics settings
+  - show the appearance asset of each material
+  - list the appearance assets in the revit library

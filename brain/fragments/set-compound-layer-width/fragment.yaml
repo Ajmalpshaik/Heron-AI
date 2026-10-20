@@ -210,6 +210,9 @@ compatibility-note: >
 #   "what is in this curtain wall"  -> REPORT_CURTAIN_ELEMENTS - a curtain wall
 #                                      has no layers at all
 
+# ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
+#
+#   "make these columns concrete"  -> SET_ELEMENT_MATERIAL - which sends a layered type here
 utterances:
   - make this layer thicker
   - change the insulation layer in this wall type

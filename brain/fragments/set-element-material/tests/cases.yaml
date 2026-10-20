@@ -1,0 +1,38 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# NOT RUN - written 2026-10-20 for NEEDS-CHECKING Group IA (IA9, IA10).
+
+positive:
+  - given: >
+      the Group IA scratch project: two M_Rectangular Column instances of one
+      type whose Material is <By Category>, selected; material
+      "TRG_Concrete Smooth" (made by CREATE_STARTER_MATERIALS)
+    expect: >
+      writtenIds the one type, materialAssignReport "type ... 'Material'
+      <By Category> -> TRG_Concrete Smooth - a type change: all N placed
+      element(s) of this type changed"; Type Properties reads TRG_Concrete Smooth
+
+  - given: >
+      three ducts of one Supply Air system selected, material
+      "TRG_Duct Galvanised"
+    expect: >
+      the system type's Material written once and named in the report as
+      every element of the system type; the ducts draw galvanised in a
+      Realistic view
+
+negative:
+  - given: the same columns straight after, the same material
+    expect: writtenIds empty, alreadyAsAsked 1 - nothing written twice
+  - given: two Basic Wall instances of a layered type, material "TRG_Concrete Smooth"
+    expect: >
+      both in skippedElements naming SET_COMPOUND_LAYER_WIDTH; the wall
+      type's layers unchanged
+  - given: a single door selected, material "TRG_Wood Oak", materialParameter left out
+    expect: >
+      the door skipped naming its material parameters (frame, panel or the
+      like) and asking for materialParameter; nothing written
+  - given: the columns, material "TRG Concrete Smoth"
+    expect: refused naming TRG_Concrete Smooth among the closest; nothing changed
+
+second_route:
+  - the Properties palette and Type Properties of each element read by eye, and the system type's Material in the Project Browser
+  - one Ctrl+Z takes every write back (Golden Rule 16)
