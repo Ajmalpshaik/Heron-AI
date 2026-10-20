@@ -310,6 +310,28 @@ if (refused == null)
             if (wantSmooth != null) model.SmoothEdges = wantSmooth.Value;
             if (wantTransparency != null) model.Transparency = wantTransparency.Value;
             if (wantHidden != null) model.ShowHiddenLines = wantHidden.Value;
+            // A VIEW WITH NO SILHOUETTE LINE STYLE (version 2, row 5b-1279).
+            // Measured 2026-10-20 on Revit 2020 (Group IB, IB5): a perspective
+            // view FRAME_ELEMENTS_IN_CAMERA had just made held silhouette style
+            // id -1, and SetViewDisplayModel refused smooth lines with "The
+            // silhouette line style id is not a valid line style to apply to
+            // the view." Given a line style first, the same call took. So a view
+            // with none is given Wide Lines, Revit's own, and silhouettes are
+            // left on or off as they were - it shows nowhere while they are off.
+            if (!(doc.GetElement(model.SilhouetteEdgesGStyleId) is GraphicsStyle))
+            {
+                var lineStyles = Category.GetCategory(doc, BuiltInCategory.OST_Lines);
+                GraphicsStyle wideLines = null;
+                if (lineStyles != null)
+                    foreach (Category sub in lineStyles.SubCategories)
+                        if (sub.Name.Trim('<', '>') == "Wide Lines") wideLines = sub.GetGraphicsStyle(GraphicsStyleType.Projection);
+                if (wideLines != null)
+                {
+                    model.SilhouetteEdgesGStyleId = wideLines.Id;
+                    findings.Add("'" + view.Name + "' had no silhouette line style, and Revit takes no display change without one - "
+                        + "it was given Wide Lines; silhouettes stay " + (model.EnableSilhouettes ? "on" : "off"));
+                }
+            }
             view.SetViewDisplayModel(model);
         });
     }
@@ -345,7 +367,12 @@ if (refused == null)
     Action<bool, string> count = (ok, what) => { if (ok) changed++; else notTaken.Add(what); };
     var model = view.GetViewDisplayModel();
     var sketchy = view.GetSketchyLines();
-    var cueing = view.GetDepthCueing();
+    // DEPTH CUEING IS READ ONLY WHERE THE VIEW OFFERS IT (version 2, row
+    // 5b-1279). Measured 2026-10-20 on Revit 2020 (Group IB, IB5): on a
+    // perspective 3D view GetDepthCueing threw "This view cannot use Depth
+    // Cueing" in this read-back, though depth cueing was not asked for - every
+    // change made was rolled back with it.
+    var cueing = view.CanUseDepthCueing() ? view.GetDepthCueing() : null;
     var bg = view.GetBackground();
     var silhouetteStyle = doc.GetElement(model.SilhouetteEdgesGStyleId) as GraphicsStyle;
 
@@ -375,7 +402,8 @@ if (refused == null)
         + ", smooth lines " + (model.SmoothEdges ? "on" : "off") + ", transparency " + model.Transparency
         + ", hidden lines " + model.ShowHiddenLines
         + "; sketchy lines " + (sketchy.EnableSketchyLines ? "on, jitter " + sketchy.Jitter + ", extension " + sketchy.Extension : "off")
-        + "; depth cueing " + (cueing.EnableDepthCueing ? "on, " + cueing.StartPercentage + "-" + cueing.EndPercentage
+        + "; depth cueing " + (cueing == null ? "not offered in this view"
+            : cueing.EnableDepthCueing ? "on, " + cueing.StartPercentage + "-" + cueing.EndPercentage
             + "%, fade " + cueing.FadeTo : "off")
         + "; background " + bg.Type
         + (bg.Type == ViewDisplayBackgroundType.Gradient ? " " + showColour(bg.SkyColor) + " / " + showColour(bg.BackgroundColor)

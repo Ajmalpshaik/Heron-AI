@@ -396,8 +396,14 @@ if (refused == null)
 
     if (wantTarget != null)
     {
+        // THE PRINTER LEVEL IS READ ONLY WHEN THE OUTPUT IS ALREADY PRINTER
+        // (version 2, row 5b-1278). Measured 2026-10-20 on Revit 2020 (Group
+        // IB, IB3): on a view whose output was Screen, reading PrinterResolution
+        // threw "The resolution target is not printer." before anything was
+        // set, and the whole call came back fragment_threw.
         var targetBefore = settings.ResolutionTarget;
-        var levelBefore = settings.PrinterResolution;
+        PrinterResolution? levelBefore = null;
+        if (targetBefore == ResolutionTarget.Printer) levelBefore = settings.PrinterResolution;
         try
         {
             settings.ResolutionTarget = wantTarget.Value;
@@ -414,7 +420,7 @@ if (refused == null)
                 if (!found)
                 {
                     // Trying each level is not a change: the output goes back as it was.
-                    settings.PrinterResolution = levelBefore;
+                    if (levelBefore.HasValue) settings.PrinterResolution = levelBefore.Value;
                     settings.ResolutionTarget = targetBefore;
                     findings.Add("Revit's printer output offers " + string.Join(", ", offered) + " - not "
                         + wantDpi + " DPI, so the output was left as it was");

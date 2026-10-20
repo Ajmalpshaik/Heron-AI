@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,31 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Materials IA Test, Project2 - active was
+    Materials IA Test, Revit 2020, session 29012'
+  positive_case: run as it would normally be run. returned culture CultureInfo, files 0, findings
+    1 item(s) [1 saved rendering(s) in the project, 0 image file(s) in 'C:\...], lookInFolder
+    true, minutes 60, pixels Func`2, renderings 1, report saved rendering 'Export PNG' 3794
+    x 1715 px, rows 1 item(s) [saved rendering 'Export PNG' 3794 x 1715 px], saved 1 item(s)
+    [Export PNG], since DateTime, value Func`3, where C:\Users\ajmal\AppData\Local\Temp\heron-work\rendering-ib\out.
+    inputs came folder as given; sinceMinutes as given. on Materials IA Test
+  negative_case: 'run against ''Project2'' with folder=C:\Users\ajmal\AppData\Local\Temp\heron-work\rendering-ib\out-empty
+    instead - chosen because it should not contain what this fragment reports. returned culture
+    CultureInfo, files 0, findings 1 item(s) [0 saved rendering(s) in the project, 0 image
+    file(s) in ''C:\...], lookInFolder true, minutes 0, pixels Func`2, renderings 0, report
+    Nothing rendered was read back: no view under Renderings in this project and no image
+    file in ''C:\Users\ajmal\AppData\Local\Temp\heron-work\rendering-ib\out-empty''., rows
+    0 item(s), saved 0 item(s), since DateTime, value Func`3, where C:\Users\ajmal\AppData\Local\Temp\heron-work\rendering-ib\out-empty.
+    inputs came folder as given; sinceMinutes not given - "all", the card''s own default (optional).
+    on Project2'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 25d4d230a57945ad
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

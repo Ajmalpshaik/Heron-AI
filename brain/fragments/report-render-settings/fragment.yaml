@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -63,6 +63,42 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,790 elements), Revit 2020, session 29012
+  positive_case: 'run as it would normally be run. returned MmPerFoot 304.8, culture CultureInfo,
+    degrees Func`2, findings 1 item(s) [4 section(s) read for ''Heron Frame - Columns''],
+    mm Func`2, sections 4 item(s) [Rendering - quality Draft; output Printer 150 DPI; lighting
+    ..., Sun Settings - Still study, 2026-06-21 10:00; preset none ma..., Graphic Display
+    - visual style HLR; sun intensity 80, shadow..., ...], sectionsRead 4, setup ''Heron Frame
+    - Columns'' (ThreeD):  ||  Rendering - quality Draft; output Printer 150 DPI; lighting
+    Exterior: Sun only; background SkyFewClouds; exposure value 13, highlights 0.25, shadows
+    0.2, saturation 1, white point 6500; region off; light groups none in the project  ||  Sun
+    Settings - Still study, 2026-06-21 10:00; preset none matches; ground plane at Level 1;
+    site ''Boston, MA'', latitude 42.21°, longitude -71.03°, time zone -5  ||  Graphic Display
+    - visual style HLR; sun intensity 80, shadow intensity 40; silhouettes off, smooth lines
+    on, transparency 0, hidden lines ByDiscipline; sketchy lines on, jitter 5, extension 3;
+    background None; Cast Shadows, Ambient Shadows, Ambient Light and Photographic Exposure
+    are not readable through Revit''s API  ||  Camera - perspective, eye 9500,-8000,7000 mm,
+    looking -0.647,0.647,-0.404, eye elevation 7000 mm, target elevation 6877 mm, far clip
+    on at 20000 mm, crop box in the view''s frame X -1536 to 1536, Y -2673 to 2673 mm, show
+    Func`2, showColour Func`2. inputs came view as given. on Materials IA Test'
+  negative_case: 'run with view=Space Outdoor Air Schedule instead - chosen because it should
+    not contain what this fragment reports. returned MmPerFoot 304.8, culture CultureInfo,
+    degrees Func`2, findings 1 item(s) [0 section(s) read for ''Space Outdoor Air Schedule''],
+    mm Func`2, sections 3 item(s) [Rendering - ''Space Outdoor Air Schedule'' is not a 3D
+    view, a..., Sun Settings - ''Space Outdoor Air Schedule'' has none, Graphic Display -
+    ''Space Outdoor Air Schedule'' has no visual...], sectionsRead 0, setup ''Space Outdoor
+    Air Schedule'' (Schedule):  ||  Rendering - ''Space Outdoor Air Schedule'' is not a 3D
+    view, and only a 3D view has Rendering Settings  ||  Sun Settings - ''Space Outdoor Air
+    Schedule'' has none  ||  Graphic Display - ''Space Outdoor Air Schedule'' has no visual
+    style, show Func`2, showColour Func`2. inputs came view as given. on Materials IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5a888ac43139780a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
