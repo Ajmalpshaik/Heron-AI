@@ -3909,6 +3909,32 @@ namespace Heron.Revit.Addin
                                             reading, out problem, takesSubcategories);
                     if (problem != null) return Json.Error("bad_request_value", problem);
 
+                    // D-145: A VALUE THAT IS THE CALLER'S ANSWER TO ONE REVIT
+                    // DIALOG - `dialog:` beside it on the card. HeronDialogRule
+                    // says whether a caller may answer that dialog and what
+                    // the word means; the watch gives Revit that answer for
+                    // this job only. Left out ("none") the default stands and
+                    // the dialog is declined. Refused before anything runs.
+                    string dialogId;
+                    need.TryGetValue("dialog", out dialogId);
+                    dialogId = (dialogId ?? "").Trim();
+                    if (dialogId.Length > 0)
+                    {
+                        string dialogProblem;
+                        var answer = HeronDialogRule.CallerAnswer(dialogId, givenText, out dialogProblem);
+                        if (dialogProblem != null)
+                            return Json.Error("bad_request_value", name + ": " + dialogProblem);
+                        if (answer != 0 && !HeronDialogWatch.AnswerForJob(dialogId, answer))
+                        {
+                            return Json.Error("bad_request_value", name + ": Heron is not watching "
+                                + "Revit's dialogs for this run, so it cannot give your answer to "
+                                + dialogId + " - nothing was run.");
+                        }
+                        if (answer != 0)
+                            how.Add(name + " - Revit's " + dialogId + " is answered "
+                                    + HeronDialogNote.AnswerName(answer) + " in this job (D-145)");
+                    }
+
                     globals.__heron[name] = given;
                     bound.Add(name);
 
