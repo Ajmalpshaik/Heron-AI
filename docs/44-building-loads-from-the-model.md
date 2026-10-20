@@ -713,3 +713,162 @@ only: the tests above, the server's own Finalize against a stand-in Revit (`test
 and the take-off kept from the test, run through the fixed brain. The re-run is
 [Group CC](needs-checking/group-cc.md) rows CC8, CC11, CC13, CC22 and CC24, on a copy of Heron loads test -
 with three diffusers placed as row 5b-334 placed them, so the level-free hand-over meets what tripped it.
+
+---
+
+## 13. Air systems - the unit serving each group of Spaces (2026-10-19)
+
+**Asked 2026-10-19 by the owner.** He ran the HVAC Load Calculation on a three-room test model
+(Project4, Revit 2020, Doha) and laid its PDF beside a consultant's system sizing report from an hourly
+program, for another building. Heron's sheet stopped at the room loads; the other went on to size each
+rooftop unit - its coil, its supply air, its fresh air. He wants Heron to answer that next question
+too: *what size of AHU or packaged unit does this need*. Nothing of that report is in Heron - not its
+layout, its wording or its numbers. It showed what a modeller looks for; the method is ASHRAE's, through
+the engine Heron already has.
+
+**In Revit words.** Put the Spaces in HVAC zones in Revit, or say which Spaces each unit serves. Heron
+then works out, for each unit: how much cooling its coil must do, how much air it moves and how much of
+that is fresh air, the air going into and out of its coil, and the fresh air Space by Space. Each unit
+gets a page of its own in the load report.
+
+> **Status (2026-10-19): BUILT, NOT PROVEN.** Built and tested off Revit, in a cloud container. **It has
+> not run in Revit, nor in the Companion** - [Group CC](needs-checking/group-cc.md) row CC26. Every
+> figure is a peak estimate, not an hourly simulation like HAP, and a design aid until an engineer has
+> compared one unit with an hourly program (13.7).
+
+### 13.1 What is built
+
+| Part | What it does |
+|---|---|
+| [`brain/heron_loads_systems.py`](../brain/heron_loads_systems.py) (new) | Groups the calculated Spaces into air systems, asks what each still needs, and sizes each through the engine's own calculations. **It adds no physics** |
+| [`heron_hvac.py`](../brain/heron_hvac.py) | `coil_load` also gives the coil's **apparatus dew point** and **bypass factor**, and FAILS a process no coil gives. `psychrometrics`, `air_mixing`, `coil_load`, `ventilation` and `fan_power` carry their numbers in `data`. Two helpers, `moist_air_sensible_w` and `supply_humidity_needed` - `coil_load` and `supply_airflow` now call them, with the same arithmetic as before |
+| [`heron_psychro.py`](../brain/heron_psychro.py) | `apparatus_dew_point`: the coil's straight condition line carried on to the saturation curve, solved |
+| [`heron_building_loads.py`](../brain/heron_building_loads.py) | Each calculated Space carries its people, its 62.1 rates and its set points, with where each came from; the run carries `air_systems` and keeps `inputs.systems`; the chat's summary says what was sized and what is still asked |
+| `heron_brain.building_loads` | A `systems` input, merged per system and per key and kept with the project's runs, as profiles are - so the Companion's Recalculate keeps it |
+| [`heron_loads_report.py`](../brain/heron_loads_report.py) | An overview of the air systems, then **a page for each**; two more CSV files, `-systems.csv` (every figure with its unit and source) and `-ventilation.csv` (Space by Space) |
+| `revit_building_loads` | Its description names the `systems` input |
+
+### 13.2 How Spaces become air systems
+
+- **By Revit zone**, unless the modeller lists them: one air system per zone, named for it - the Space's
+  own Zone, as REPORT_SPACE_ENVELOPE reads it.
+- **Revit's Default zone is on no air system.** Revit puts every Space nobody has zoned there; that those
+  Spaces share one unit would be a guess (D-33). A calculated Space on no air system is named in a check.
+- **Or the modeller's list** - `"systems": {"RTU-1": {"spaces": ["101", "102"]}}`, each Space by its
+  number, else its element id. Once any system lists its Spaces, the list is the whole answer.
+- **A system is stopped, by name, never sized short:** a Space on two lists, a Space that is not in the
+  take-off, a Space the room loads refused - a unit sized without one of its Spaces would be too small.
+
+### 13.3 The inputs - asked, never filled in (D-33)
+
+| Input | For | Asked | Offered |
+|---|---|---|---|
+| `coil_outdoor_dry_bulb_c`, `coil_outdoor_wet_bulb_c` | the project, once | always | **nothing** - Heron holds no dehumidification design data |
+| `ventilation_system` - `single-zone`, `100-percent-outdoor-air` or `multiple-zone` | each system | always | - |
+| `ez` | each system | always | ASHRAE 62.1 Table 6-4 |
+| `ev_method` - `simplified` or `appendix-a` | each system | on a multiple-zone system | - |
+| `system_population` | each system | never - optional; D is 1 without it, which gives the larger intake | - |
+| `supply_dry_bulb_c` | each system | only when its Spaces' own differ - else theirs is used, and its source printed | - |
+| `return_dry_bulb_c`, `return_rh_pct` | each system | only when its Spaces' room conditions differ | - |
+| `supply_ls` | each system | never - the unit's own airflow, when it is not the Spaces' sum | - |
+| `exhaust_ls` - a table, `{"<Space>": L/s}` | each system | never - none counted unless given, and the page says so | - |
+| `fan_total_pressure_pa`, `fan_efficiency_pct`, `motor_efficiency_pct`, `drive_efficiency_pct`, `fan_position`, `motor_in_airstream` | each system | all of them, once any is given | - |
+
+**Why the coil has an outdoor design point of its own.** The room loads run on each month's peak
+dry-bulb day, and its mean coincident wet bulb is dry air: Doha's 45.7 C comes with less moisture than
+the room ([41 §4.2](41-hvac-design.md)), so the outdoor air's latent load comes out negative and the
+engine already warns that coil sizing needs the dehumidification design condition. The coil is worked
+at the dry bulb and wet bulb the modeller gives for it - a project's 46 / 29 C, say.
+
+**The room loads are never held up.** Until a system's inputs are given, the chat lists what is still
+needed - project first, then each system, each with what a standard offers - and the sheet prints the
+system as **NOT SIZED** with the same list. They are given as `"project": {"coil_outdoor_dry_bulb_c":
+..., "coil_outdoor_wet_bulb_c": ...}` and `"systems": {"<zone or unit>": {...}}` in
+`revit_building_loads`' inputs.
+
+### 13.4 The method - the engine's own, in order
+
+1. **Each Space's outdoor air** - `ventilation`, one Space at a time: Vbz = Rp x people + Ra x area,
+   Voz = Vbz / Ez, with the people and the rates the room load used.
+2. **The unit's intake Vot** - `ventilation` for the system's kind: one ventilation zone (its Spaces'
+   Rp x people and Ra x area summed), 100 % outdoor air (the Voz summed), or multiple-zone (occupant
+   diversity and Ev, simplified or Appendix A, each Space's supply air as its primary airflow).
+3. **Exhaust** - a Space that exhausts more than its own Voz adds the difference to the unit's outdoor
+   air. No air is credited as transferring from another Space; that is the engineer's call.
+4. **Supply air** - the sum of the Spaces' own supply air, each at its own peak sensible load: a
+   constant-volume fan. Or the modeller's `supply_ls`. A unit whose outdoor air is more than its supply
+   is refused, in words.
+5. **Mass** - the supply air is read as a volume at the supply temperature carrying the room's
+   moisture, the basis `supply_airflow` sized it on; the outdoor air at its own design state, as
+   `air_mixing` takes each stream.
+6. **The mix** - `air_mixing`, by dry-air mass. A 100 % outdoor-air unit's coil takes the outdoor air.
+7. **The fan, when given** - `fan_power`; its heat is the electrical input when the motor is in the air
+   stream, else the shaft power. Blow-through warms the air entering the coil; draw-through makes the
+   coil leave colder than the supply temperature by the same heat.
+8. **The air leaving the coil** - the rooms' latent load sets it: the largest hour-by-hour sum of the
+   Spaces' latent loads, taken up by the supply air, Ws = Wroom - ql / (m hfg)
+   (`supply_humidity_needed`, the line `supply_airflow` uses). Never wetter than the air entering - then
+   it is a dry coil - nor than saturation, which is warned.
+9. **The coil** - `coil_load` from the air entering and leaving: total m (h_in - h_out), sensible
+   m (1.006 + 1.86 W_in)(t_in - t_out), latent, sensible heat ratio, condensate, and the **apparatus dew
+   point** - where the straight condition line through the two states, on the dry bulb - humidity ratio
+   plane, meets the saturation curve - with the **bypass factor** (t_out - ADP) / (t_in - ADP).
+10. **Checks** - the supply air's sensible capacity in the rooms against their block sensible load; a
+    coil design point drier than the rooms; a saturated leaving state; a process no coil gives.
+
+**What each page prints, every value beside where it came from:** floor area; supply air and L/s per
+m2; outdoor air and its share of the supply; coil total in kW and TR, sensible, latent, sensible heat
+ratio; W/m2 and m2/kW; design supply temperature and coil leaving dry bulb; apparatus dew point and
+bypass factor; condensate; fan input and its heat, when given; the rooms' block load and the latent the
+supply air takes up, each with its hour; the Spaces' heating load, summed. Then the air at each point -
+outdoor, return, mixed, entering, leaving, supply, the ADP - in dry bulb, wet bulb, g/kg and RH. Then the
+outdoor air Space by Space: area, people, Rp, Ra, Vbz, Ez, Voz, exhaust, the outdoor air set, and what set
+it.
+
+### 13.5 What it does NOT compute - every page says so
+
+- **No hourly storage or time lag.** A peak estimate, not an hourly simulation like HAP; the coil is
+  worked at one design condition, not hour by hour.
+- **No VAV diversity.** The supply air is constant volume, the sum of each Space's own.
+- **No fan static pressure.** Fan heat is counted only when the fan is given; no supply duct heat gain
+  or leakage.
+- **No return-air gains** - no heat from lights into a ceiling plenum, no return duct or return fan.
+- **No heating coil** - the Spaces' heating loads are summed, nothing more - and **no safety factor**.
+- **Nothing selects a unit.** `unit_select` picks from a maker's catalogue, and is not run here.
+
+### 13.6 Where it shows
+
+- **In the chat** - one line per air system sized (coil kW and TR, sensible, SHR, supply and outdoor air,
+  entering and leaving DB / WB, ADP, bypass factor), the systems refused and why, and every question
+  still open.
+- **On the sheet** - an overview, then one printed page per air system; and the two CSV files.
+- **The Companion's Loads panel is unchanged.** It has no fields for these inputs yet: they are given in
+  the chat, and the panel's Recalculate keeps them from the run kept for the project.
+
+### 13.7 How it was checked, and what is owed
+
+- [`tests/test_hvac.py`](../tests/test_hvac.py) section 10 - outdoor 46 / 29 C and return air mixed,
+  the supply humidity 2000 W of room latent needs, and the coil's total, sensible and latent load, SHR,
+  condensate, ADP and bypass factor against a hand calculation written out in the section from ASHRAE's
+  equations, without importing Heron (25 533 W total, ADP 11.46 C, bypass factor 0.093). The engine
+  agrees within 0.001 %.
+- [`tests/test_loads_systems.py`](../tests/test_loads_systems.py) (new) - nothing sized until asked and
+  the rooms still run; a one-room unit's coil worked again from heron_psychro's primitives; grouping by
+  zone and by list; Default zone, a Space on two systems, a Space not there, a refused Space; set points
+  that differ; exhaust; a fan's heat exact, both positions; 100 % outdoor air; multiple-zone against the
+  engine's own 62.1 figure; refusals in words; the inputs kept and read back, the exhaust table intact.
+- [`tests/test_loads_report.py`](../tests/test_loads_report.py) - a page per air system, NOT SIZED with
+  its questions, an older run said to be older, and both CSVs with a source on every row.
+- **Each new check was seen to FAIL on the code before this change**, then pass.
+- A PDF printed from the sheet by headless Chromium in the container and read back: each air system on
+  a page of its own. Not Edge on the owner's PC.
+- **Owed:** [Group CC](needs-checking/group-cc.md) row CC26, in Revit and the Companion. **What would
+  make it trustworthy:** one unit run in an hourly program on the same inputs and the difference
+  explained. Expect Heron's coil larger - no storage, and a constant-volume sum of peaks.
+
+### 13.8 Found while building
+
+**The rooms' latent load is the room engine's, and its largest hour can fall in winter.** Infiltration
+latent is worked from each design day's own air, drier than the room in a Doha summer, so on the test
+fixture the Spaces' latent loads add up highest on December 21 at 14:00. The page names the hour it
+used. The room method is unchanged by this step; the coil's outdoor air is at its own design point.

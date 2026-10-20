@@ -152,6 +152,11 @@ compatibility-note: >
 #                                          points (version 2, 5b-1216). A
 #                                          wall drawn as many short straight
 #                                          ones reads as flat facets close up
+#   "line the walls of every room with  -> CREATE_FROM_ROOM_BOUNDARIES, version 2
+#    plaster"                              (row 5b-1255): a wall type there
+#                                          lines each room's walls on their
+#                                          inside face, from the room's own
+#                                          boundary - no points typed
 #   "make a floor slab over this area"  -> CREATE_FLOOR
 #   "join these walls together"         -> JOIN_GEOMETRY - nothing here joins
 #                                          anything

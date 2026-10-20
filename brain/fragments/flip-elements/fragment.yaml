@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "turn these family instances round using their own flip contr
 kind: action
 domain: revit.elements
 capability: FLIP_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -27,6 +27,13 @@ purpose: >
   Not every family can flip, and the ones that cannot are reported rather than
   attempted - a family author decides whether a flip control exists at all.
 
+  **VERSION 2: A FLIPPED DOOR'S FROM AND TO ROOM FOLLOW ITS SWING.** Revit
+  leaves From Room and To Room as they were when a door's facing is flipped, so
+  the door schedule reads backwards. After a facing flip the door's To Room is
+  swapped to the room it now swings into - only where the rooms either side
+  say so - and each door is named. `fromToRoomOnly` fixes the From and To Room
+  of doors already wrong, and flips nothing.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 
@@ -41,6 +48,24 @@ purpose: >
   A question about direction must never flip anything. Both fragments carry this
   table - written one way it only routes whoever lands on the newer file.
 
+# VERSION 2 - FRAGMENT-ISSUES 5b-1242. Seen 2026-10-19 on Revit 2020, the
+# owner's 'Kerala house design': five M_Single-Flush doors (345958, 345961,
+# 345964, 345968, 345970) placed by PLACE_HOSTED_FAMILY before any room
+# existed, then flipped with flipFacing=true to swing into their rooms. Read
+# back: FacingFlipped True and the room on the facing side right, but
+# get_ToRoom still the hall - REPORT_DOOR_ROOM_LINKS gave 5 disagreements.
+# Revit does not swap From and To on a facing flip. So after a facing flip
+# each DOOR is read on the last phase and FlipFromToRoom is called only when
+# the room a short way out along its facing (wall half-width + 300 mm, a foot
+# above it) is its From Room AND the room behind is its To Room; read back and
+# named in `roomsSwapped`. Already right, no room either side, no point
+# location, or rooms that a swap would not make agree: left and named in
+# `roomsLeft`. A window is left and named - its To Room is not tied to its
+# facing (PLACE_HOSTED_FAMILY sets it to the inside room while it faces out).
+# `fromToRoomOnly` (optional, absent = false) does the same check on every
+# door handed in and flips nothing. Absent, version 1's behaviour is
+# unchanged for everything that is not a door flipped on its facing. The
+# words above are kept short on purpose - a purpose's words move routing.
 contract:
   needs:
     - name: elements
@@ -51,6 +76,13 @@ contract:
     - name: flipFacing
       type: bool
       source: request
+    - name: fromToRoomOnly
+      # VERSION 2. Set: flip nothing, and set the From and To Room of every
+      # door handed in to the rooms either side of its swing. Absent binds
+      # false (HeronBindingNote.AbsentValue, row 5b-227), version 1's run.
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: flipped
       role: result
@@ -67,7 +99,22 @@ contract:
       # found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: roomsSwapped
+      # VERSION 2. One line per door whose From and To Room were swapped to
+      # match its swing, read back after the swap.
+      role: result
+      type: IList<string>
+    - name: roomsLeft
+      # VERSION 2. One line per door or window checked and NOT swapped, with
+      # why - already right, no room either side, the rooms do not settle it,
+      # a window. Never work it did (D-52).
+      role: accounting
+      type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group HT proves version 2 (D-30). Version 1's flip is still
+# the path every hand flip and every non-door facing flip takes.
 proof:
   date: '2026-09-10'
   by: Ajmal PS
@@ -98,6 +145,10 @@ compatibility-note: >
   One implementation for every release. `FamilyInstance.CanFlipHand`,
   `CanFlipFacing`, `flipHand()` and `flipFacing()` are unchanged 2020 to 2027.
   No geometry is computed here, so there is nothing for a units change to reach.
+  Version 2 adds `FlipFromToRoom()`, `get_FromRoom(Phase)`, `get_ToRoom(Phase)`,
+  `FacingOrientation`, `Wall.Width` and `Document.GetRoomAtPoint(XYZ, Phase)`,
+  all present and unchanged 2020 to 2027. The 300 mm reach is divided by 304.8
+  - plain arithmetic, no units API.
 
 # ROUTING - the same rows are in the fragments named here. Added 2026-10-04
 # (docs/45).
@@ -109,6 +160,10 @@ compatibility-note: >
 #                                            only reads, and keeps mirrored
 #                                            apart from flipped
 #   "mirror these to the other room"      -> MIRROR_ELEMENTS
+#   "the door schedule rooms read
+#    backwards, fix them"                 -> here with fromToRoomOnly. Version
+#                                            2. REPORT_DOOR_ROOM_LINKS only
+#                                            names which ones
 
 utterances:
   - the door opens the wrong way
@@ -117,3 +172,4 @@ utterances:
   - turn the equipment the other way
   - the handing is wrong
   - flip them
+  - fix the from and to room on these doors

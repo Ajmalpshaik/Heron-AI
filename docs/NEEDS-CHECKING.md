@@ -884,13 +884,33 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hm.md`](needs-checking/group-hm.md)
 
+## Group HN - when the file on disk was last saved: `REPORT_OPEN_DOCUMENTS` version 3 (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hn.md`](needs-checking/group-hn.md)
+
 ## Group HO - PLACE_STRUCTURAL_FAMILY v4: a beam is refused, a placement with no geometry is a failure (2026-10-19)
 
 **Its own file:** [`needs-checking/group-ho.md`](needs-checking/group-ho.md)
 
-## Group HP - SET_PARAMETER_VALUES_BY_ID v4: a level's name, and Revit's question about its views (2026-10-19)
+## Group HP - SET_PARAMETER_VALUES_BY_ID v5: a level's name, and Revit's question about its views (2026-10-19)
 
 **Its own file:** [`needs-checking/group-hp.md`](needs-checking/group-hp.md)
+
+## Group HS - CREATE_STAIRS v4: one riser more, Revit's words, side stringers, nothing left behind (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hs.md`](needs-checking/group-hs.md)
+
+## Group HT - FLIP_ELEMENTS v2: a flipped door's From and To Room follow its swing (2026-10-19)
+
+**Its own file:** [`needs-checking/group-ht.md`](needs-checking/group-ht.md)
+
+## Group HX - wall finishes by room: `CREATE_FROM_ROOM_BOUNDARIES` version 2 (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hx.md`](needs-checking/group-hx.md)
+
+## Group HZ - a material, a level or a family type by name, and a type by key: the three parameter writers (2026-10-19)
+
+**Its own file:** [`needs-checking/group-hz.md`](needs-checking/group-hz.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

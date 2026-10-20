@@ -12,7 +12,9 @@ Every Space's heating and cooling load from a model's take-off - docs/44 section
 Builds one heron_hvac input per Space from the take-off, the project's inputs
 and the Space's profile, runs the engine's own room calculations, and adds
 the answers up by zone and building - the block load hour by hour, beside the
-sum of the peaks. It adds no physics (one fact, one home: heron_hvac.py).
+sum of the peaks - then hands the Spaces to heron_loads_systems for the air
+systems serving them (docs/44 s13). It adds no physics (one fact, one home:
+heron_hvac.py).
 
 A value nobody gave is ASKED, with a standard's figure offered and named, and
 never filled in (D-33). A Space whose types carry no thermal values, or whose
@@ -32,6 +34,7 @@ import os
 import re
 
 import heron_hvac as HVAC
+import heron_loads_systems as SYSTEMS
 import heron_takeoff as TAKEOFF
 
 FORMAT = 1
@@ -444,8 +447,22 @@ def _block(spaces):
             "block_w_per_m2": block / done_area if done_area else None}
 
 
-def run(t, project, profiles, overrides=None, recorded=None):
-    """Every Space through the room engine, then zones and the building. See docs/44 s5."""
+def _said(d, k):
+    """Where one given value came from - its label, "instruction" when it carries none."""
+    v = (d or {}).get(k)
+    return v.get("source", "instruction") if isinstance(v, dict) else "instruction"
+
+
+def _where(keys, own, values, otherwise):
+    """One line saying where a Space's values for `keys` came from: its own, or `otherwise`."""
+    said = sorted(set("%s - %s" % (_said(values, k), "this Space's own" if k in own
+                                   else otherwise) for k in keys))
+    return "; ".join(said)
+
+
+def run(t, project, profiles, overrides=None, recorded=None, systems=None):
+    """Every Space through the room engine, then zones and the building, then the air
+    systems serving them (docs/44 s13). See docs/44 s5."""
     t = TAKEOFF.read(t)
     # A table of answers is kept as the page's own keys, one per element (5b-332).
     project = flat(project)
@@ -535,6 +552,22 @@ def run(t, project, profiles, overrides=None, recorded=None):
                           "components": heat["data"]["components"]}
         row["supply_ls"] = air["data"]["supply_ls"]
         row["outdoor_air_ls"] = cool_in.get("outdoor_air_ls", 0.0)
+        # What the air-system step needs of each Space (docs/44 s13): its people
+        # and 62.1 rates as the load used them, its set points, and where each
+        # came from - it adds them up, never works them out again.
+        p = _checked(profile)
+        row["air"] = {"people": cool_in["people"]["count"],
+                      "rp_ls_per_person": p["outdoor_air_ls_per_person"],
+                      "ra_ls_per_m2": p["outdoor_air_ls_per_m2"],
+                      "room_dry_bulb_c": q["room_dry_bulb_c"], "room_rh_pct": q["room_rh_pct"],
+                      "supply_dry_bulb_c": q["supply_dry_bulb_c"],
+                      "sources": {
+                          "rates": _where(("outdoor_air_ls_per_person", "outdoor_air_ls_per_m2"),
+                                          own, profile, "'%s' Spaces" % key),
+                          "room": _where(("room_dry_bulb_c", "room_rh_pct"), own,
+                                         space_project, "project"),
+                          "supply": _where(("supply_dry_bulb_c",), own, space_project,
+                                           "project")}}
         # What the page shows beside each Space - worked out here, so the
         # Companion does no arithmetic of its own (mcp/companion README rule 4).
         area = float(space["area_m2"])
@@ -563,14 +596,20 @@ def run(t, project, profiles, overrides=None, recorded=None):
         z = _block([r for r in rows if (r["zone"] or "(no zone)") == name])
         z["name"] = name
         zones.append(z)
+    # The air systems, while each Space still carries its hour-by-hour rows. They
+    # never hold the room loads up: what they still need is asked beside them.
+    air_systems = SYSTEMS.size(rows, project, systems, recorded)
     now = datetime.datetime.now()
     inputs = {"project": _labelled(project),
               "profiles": {k: _labelled(v) for k, v in profiles.items()}}
     if overrides:
         inputs["overrides"] = {k: _labelled(v) for k, v in overrides.items()}
+    if systems:
+        inputs["systems"] = SYSTEMS.labelled(systems)
     return {"format": FORMAT, "document": t.document,
             "when": now.strftime("%Y-%m-%dT%H:%M:%S"), "run_id": now.strftime("%Y%m%d-%H%M%S"),
             "qa": qa, "spaces": rows, "zones": zones, "building": _block(rows),
+            "air_systems": air_systems,
             "inputs": inputs, "units": dict(t.units), "notes": notes, "site": dict(t.site),
             "takeoff_fingerprint": fingerprint(t)}
 
@@ -632,6 +671,7 @@ def summary_text(result):
         for _status, why, labels in [g for g in groups if g[0] == status]:
             lines.append("%s - %s: %s" % ("Refused" if status == "refused" else "Waiting",
                                           ", ".join(labels), "; ".join(why) or "no reason given"))
+    lines.extend(SYSTEMS.summary_lines(result.get("air_systems")))
     lines.append("The full table is in the Heron Companion.")
     lines.append(HVAC.NOT_HAP)
     lines.append(HVAC.DISCLAIMER)

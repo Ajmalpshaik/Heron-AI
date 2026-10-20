@@ -6,7 +6,7 @@
 > reads it back into the register for every tool that reads it, so a row here is seen
 > exactly as it was seen there.
 
-## Group HP - SET_PARAMETER_VALUES_BY_ID v4: a level's name, and Revit's question about its views (2026-10-19)
+## Group HP - SET_PARAMETER_VALUES_BY_ID v5: a level's name, and Revit's question about its views (2026-10-19)
 
 From [row 5b-1221](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020, model *Kerala house
 design*, renaming `Level 1` to `Ground Floor` with `SET_PARAMETER_VALUES_BY_ID` met Revit's
@@ -14,14 +14,14 @@ design*, renaming `Level 1` to `Ground Floor` with `SET_PARAMETER_VALUES_BY_ID` 
 and the job was rolled back. Changing the level's Elevation was kept.
 
 **What changed.** [D-145](../DECISIONS.md#d-145--a-card-may-let-its-caller-answer-one-named-revit-dialog-for-one-job-and-every-other-dialog-is-still-declined):
-`set-parameter-values-by-id` version 4 takes an optional `renameViews`. `yes` - the add-in answers that
+`set-parameter-values-by-id` version 5 takes an optional `renameViews`. `yes` - the add-in answers that
 one dialog Yes for that one job; `no` - No; left out - a level's name is refused by the fragment before
 anything is written, naming `renameViews`. Every other dialog is still declined.
 
 **What is done and what is not.** It compiles for 2020 to 2027 (`tools/check-compile.py`,
 `tools/check-fragments-compile.py`), and `tests/test_dialog_note.py` checks the rule and the wiring.
 **Nothing here has run in Revit.** The card is DRAFT until HP1 to HP4 pass and the owner signs; version
-3's proof stays on the card as a record and is stale. Run on a **scratch copy** of a project with
+3's proof stays on the card as a record and is stale. Version 5 is built on version 4 ([Group HZ](group-hz.md)), which is also unproven: run HZ first or alongside, on the same scratch copy. Run on a **scratch copy** of a project with
 `Level 1` and `Level 2` and the default plan and ceiling views named after them (`Level 1` floor plan,
 `Level 1` ceiling plan) - never a working model. Rebuild and redeploy the add-in first: the change is in
 the add-in as well as the card.

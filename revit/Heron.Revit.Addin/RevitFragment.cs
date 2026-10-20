@@ -2875,6 +2875,21 @@ namespace Heron.Revit.Addin
 
                 return new HeronFailureNote.Posted(severity, text, elements);
             }
+
+            /// <summary>
+            /// WHAT REVIT REFUSED SO FAR, IN ITS OWN WORDS - row 5b-1240. An
+            /// edit-mode fragment (D-112) is handed this object as an
+            /// IFailuresPreprocessor and cannot see the note behind it, so a
+            /// transaction of its own that Revit rolled back came back as
+            /// "Revit would not keep the stair's runs" with Revit's reason
+            /// lost. object.ToString needs no new type - FamilyReload's
+            /// precedent - and the fragment quotes it. Empty when nothing has
+            /// been refused yet.
+            /// </summary>
+            public override string ToString()
+            {
+                return _said.RefusedSentence();
+            }
         }
 
         /// <summary>

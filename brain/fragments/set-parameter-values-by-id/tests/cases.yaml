@@ -99,7 +99,24 @@ negative_keep_face:
       shrinks about its LocationPoint (its outside face moves 77.75 mm in), no
       element is moved
 
-# Version 4 (5b-1221, D-145): renameViews answers Revit's level-rename
+# Version 4 (5b-1259, 5b-1260): types=yes on the key row reaches TYPES, and an
+# element reference takes a NAME. NEEDS-CHECKING Group HZ.
+positive_types:
+  - given: key=Type Name|in=Columns|types=yes;305mm Diameter|Material=<a material's exact name>
+    expect: >
+      written 1; resultJson format 2 with "types": true; readBack's value the
+      material's name and raw its id; both columns of that type show the material
+negative_types:
+  - given: the same row with no types=yes
+    expect: >
+      written 0; refused names 305mm Diameter and says a type holds it - add
+      types=yes - nothing written
+  - given: key=Type Name|in=Columns|types=yes;305mm Diameter|Material=No Such Material
+    expect: written 0; refused says no material in this model is called that; the type keeps its Material
+  - given: key=Type Name|in=Columns|types=maybe;305mm Diameter|Material=x
+    expect: written 0; findings says types='maybe' is not yes or no; nothing written
+
+# Version 5 (5b-1221, D-145): renameViews answers Revit's level-rename
 # question, TaskDialog_Confirm_Level_Rename, for that one job. NEEDS-CHECKING
 # Group HP.
 positive_level_name:
