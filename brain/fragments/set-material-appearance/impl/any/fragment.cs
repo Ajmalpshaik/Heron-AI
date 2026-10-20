@@ -20,8 +20,11 @@
 //   from <name> a copy of that material's asset - "copy the appearance from
 //               one material to many"
 //   <a name>    an appearance asset by name - one this document already holds,
-//               else one of Revit's appearance library ("Stainless Steel -
-//               Satin"), matched on the name the asset browser shows. A name
+//               else one of Revit's appearance library: a Prism asset by the
+//               name the asset browser shows ("Steel - Satin"), any asset by
+//               Revit's code ("Prism-256", "Plastic-024") - on Revit 2020 an
+//               older asset's browser name is not readable (row 5b-1272);
+//               LIST_MATERIALS withLibraryAppearances lists both. A name
 //               matching nothing refuses the call, naming the closest.
 //
 // EVERY MATERIAL GETS ITS OWN ASSET, NAMED AFTER IT, and an asset another
@@ -129,11 +132,23 @@ var findings = new List<string>();
         var p = asset == null ? null : asset.FindByName(name) as AssetPropertyString;
         return p == null ? null : p.Value;
     };
+    // THE ASSET BROWSER'S NAME, WHERE REVIT GIVES IT (version 2, row 5b-1272).
+    // Measured 2026-10-20 on Revit 2020 (Group IA, IA1): a LIBRARY asset's
+    // Title is empty and its UIName is Revit's code - "Prism-256",
+    // "Plastic-024" - never the browser's name; only once an asset is in a
+    // document does Title carry it ("Steel - Satin"). A Prism asset's
+    // description is that name in another case ("Steel - satin"); an older
+    // asset's description is a sentence its whole kind shares ("Metal.",
+    // "Generic material." on 557 of them), so it is known by its code. The
+    // code is taken as well wherever a name is matched.
     Func<Asset, string> shownName = asset =>
     {
+        if (!string.IsNullOrEmpty(asset.Title)) return asset.Title;
+        var description = textProperty(asset, SchemaCommon.Description);
+        var baseSchema = textProperty(asset, SchemaCommon.BaseSchema) ?? "";
+        if (!string.IsNullOrEmpty(description) && baseSchema.StartsWith("Prism", StringComparison.OrdinalIgnoreCase)) return description;
         var ui = textProperty(asset, SchemaCommon.UIName);
         if (!string.IsNullOrEmpty(ui)) return ui;
-        if (!string.IsNullOrEmpty(asset.Title)) return asset.Title;
         return asset.Name ?? "";
     };
     Func<Asset, bool> isGeneric = asset => asset != null && asset.FindByName(Generic.GenericDiffuse) != null;
