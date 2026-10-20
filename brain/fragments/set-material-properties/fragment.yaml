@@ -31,6 +31,10 @@ risk: MODIFY
 #             "Surface Pattern" and "Cut Pattern" - a material's fields before
 #             Revit 2019 split each in two - mean the foreground. All four are
 #             on every release 2020-2027.
+#             A cut pattern must be a DRAFTING pattern - Revit's own rule,
+#             documented for both cut fields - so a model one is refused by
+#             name; a surface pattern may be either. A pattern is compared by
+#             its id, because a drafting and a model pattern can share a name.
 #   Physical  "Physical Asset=<name>" (one the document holds, or none),
 #             "Physical: Density=7850" (a value, in the project's units)
 #   Thermal   "Thermal Asset=<name>", "Thermal: Thermal Conductivity=0.5"
@@ -44,7 +48,9 @@ risk: MODIFY
 # colour before; this card is for the tabs that had no tool at all.
 #
 # A SHARED PHYSICAL OR THERMAL ASSET IS NEVER EDITED: the material gets its own
-# copy first and the answer names who shared it. Nothing is written until
+# copy first and the answer names who shared it. Sharing is read as it stood
+# before the call, so every named material that shared one gets its own; an
+# asset is assigned before any value of it is written. Nothing is written until
 # every name and value is checked; everything written is read back after one
 # regeneration, and a field that does not read as asked fails the call.
 #

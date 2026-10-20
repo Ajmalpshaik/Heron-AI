@@ -222,6 +222,11 @@ var findings = new List<string>();
         asked.Add(Tuple.Create(field, value, (string)null));
     }
     if (asked.Count == 0 && problems.Count == 0) problems.Add("no Field=Value was given - nothing to set");
+    // WHICH ASSET BEFORE ITS VALUES: "Physical: Density=7850; Physical Asset=Steel"
+    // would otherwise write 7850 into one asset and then point the material at
+    // another. The order of everything else is kept.
+    asked = asked.Where(each => each.Item1 == "Physical Asset" || each.Item1 == "Thermal Asset")
+        .Concat(asked.Where(each => each.Item1 != "Physical Asset" && each.Item1 != "Thermal Asset")).ToList();
 
     // ---- 3. Each value checked once, before any material is touched.
     var patterns = new FilteredElementCollector(doc).OfClass(typeof(FillPatternElement))
@@ -239,8 +244,8 @@ var findings = new List<string>();
         {
             if (targets.Count != 1)
                 problems.Add("Name renames ONE material, and " + targets.Count + " were named");
-            else if (value.Length == 0 || value.IndexOfAny("{}[]|;<>:\\`~".ToCharArray()) >= 0)
-                problems.Add("'" + value + "' cannot be a material's name - blank, or a character Revit refuses ({}[]|;<>:\\`~)");
+            else if (value.Length == 0 || value.IndexOfAny("{}[]|;<>:?\\`~".ToCharArray()) >= 0)
+                problems.Add("'" + value + "' cannot be a material's name - blank, or a character Revit refuses ({}[]|;<>:?\\`~)");
             else if (!string.Equals(targets[0].Name, value, StringComparison.Ordinal)
                 && all.Any(each => each.Id != targets[0].Id && string.Equals(each.Name, value, StringComparison.OrdinalIgnoreCase)))
                 problems.Add("a material is already called '" + value + "'");
@@ -269,13 +274,27 @@ var findings = new List<string>();
             var hits = patterns.Where(each => string.Equals(each.Name, value, StringComparison.OrdinalIgnoreCase)).ToList();
             if (hits.Count == 0 && (word == "solidfill" || word == "solid"))
                 hits = patterns.Where(each => { var fill = each.GetFillPattern(); return fill != null && fill.IsSolidFill; }).ToList();
-            if (hits.Count > 1)
+            // A CUT PATTERN MUST BE A DRAFTING ONE - Revit's own rule for both cut
+            // fields, which throws on a model pattern - so a model pattern of
+            // that name is refused here, by name, rather than by Revit mid-write.
+            // A surface pattern may be either; when a drafting and a model
+            // pattern share a name, the model one is taken and the answer gives
+            // its id.
+            if (cut)
             {
-                // A drafting and a model pattern can share a name. A surface
-                // pattern is usually a model one, a cut pattern a drafting one;
-                // which was taken is said in the answer.
-                var wanted = cut ? FillPatternTarget.Drafting : FillPatternTarget.Model;
-                var preferred = hits.Where(each => each.GetFillPattern() != null && each.GetFillPattern().Target == wanted).ToList();
+                var drafting = hits.Where(each => each.GetFillPattern() != null && each.GetFillPattern().Target == FillPatternTarget.Drafting).ToList();
+                if (hits.Count > 0 && drafting.Count == 0)
+                {
+                    problems.Add(field + ": '" + value + "' is a model pattern, and a cut pattern must be a drafting one - closest drafting: "
+                        + closest(value, patterns.Where(each => each.GetFillPattern() != null
+                            && each.GetFillPattern().Target == FillPatternTarget.Drafting).Select(each => each.Name)));
+                    continue;
+                }
+                hits = drafting;
+            }
+            else if (hits.Count > 1)
+            {
+                var preferred = hits.Where(each => each.GetFillPattern() != null && each.GetFillPattern().Target == FillPatternTarget.Model).ToList();
                 if (preferred.Count > 0) hits = preferred;
             }
             if (hits.Count == 0)
@@ -343,6 +362,10 @@ var findings = new List<string>();
             var element = doc.GetElement(id);
             return element == null ? "none" : element.Name;
         };
+        // A pattern by its name AND id: a drafting and a model pattern can
+        // share a name, and the name alone would read one as the other.
+        Func<ElementId, string> patternText = id =>
+            id == null || id == ElementId.InvalidElementId || doc.GetElement(id) == null ? "none" : elementName(id) + " (id " + id + ")";
 
         // Physical and thermal asset names in use, so a copy gets a new one.
         var setNames = new HashSet<string>(sets.Select(each => each.Name), StringComparer.OrdinalIgnoreCase);
@@ -355,6 +378,19 @@ var findings = new List<string>();
         };
         var shareNotes = new List<string>();
         var ownSets = new Dictionary<string, PropertySetElement>(StringComparer.Ordinal);
+        // WHO SHARED WHAT, AS IT STOOD BEFORE THIS CALL. Counted live, the last
+        // of several named materials sharing one asset would find it no longer
+        // shared and edit it in place.
+        var usersAtStart = new Dictionary<string, List<Material>>(StringComparer.Ordinal);
+        foreach (var each in all)
+            foreach (var id in new[] { each.StructuralAssetId, each.ThermalAssetId })
+            {
+                if (id == null || id == ElementId.InvalidElementId) continue;
+                List<Material> users;
+                if (!usersAtStart.TryGetValue(id.ToString(), out users)) usersAtStart[id.ToString()] = users = new List<Material>();
+                users.Add(each);
+            }
+        var givenOwnAsset = new HashSet<string>(StringComparer.Ordinal);
         Func<Material, bool, PropertySetElement> ownSet = (material, physical) =>
         {
             var key = material.Id + (physical ? "/physical" : "/thermal");
@@ -370,19 +406,21 @@ var findings = new List<string>();
                     ? PropertySetElement.Create(doc, new StructuralAsset(name, StructuralAssetClass.Generic))
                     : PropertySetElement.Create(doc, new ThermalAsset(name, ThermalMaterialType.Solid));
                 material.SetMaterialAspectByPropertySet(aspect, set.Id);
+                givenOwnAsset.Add(material.Id.ToString());
                 shareNotes.Add(string.Format("'{0}' had no {1} asset - given a new one, '{2}'",
                     material.Name, physical ? "physical" : "thermal", name));
             }
             else
             {
-                var setId = set.Id;
-                var sharers = all.Where(each => each.Id != material.Id
-                    && (physical ? each.StructuralAssetId : each.ThermalAssetId) == setId).Select(each => each.Name).ToList();
+                List<Material> users;
+                usersAtStart.TryGetValue(set.Id.ToString(), out users);
+                var sharers = (users ?? new List<Material>()).Where(each => each.Id != material.Id).Select(each => each.Name).ToList();
                 if (sharers.Count > 0)
                 {
                     var name = freeSetName(material.Name);
                     var copy = set.Duplicate(doc, name);
                     material.SetMaterialAspectByPropertySet(aspect, copy.Id);
+                    givenOwnAsset.Add(material.Id.ToString());
                     shareNotes.Add(string.Format("'{0}': its {1} asset '{2}' was shared with {3} - given its own copy, '{4}', and '{2}' was not touched",
                         material.Name, physical ? "physical" : "thermal", set.Name,
                         string.Join(", ", sharers.Take(6).Select(each => "'" + each + "'")) + (sharers.Count > 6 ? " and " + (sharers.Count - 6) + " more" : ""),
@@ -434,9 +472,14 @@ var findings = new List<string>();
                 }
                 else if (field == "Class")
                 {
+                    // An existing class in another case is written as the
+                    // document spells it - "metal" becomes "Metal", never a
+                    // second class beside it.
+                    var spelled = all.Select(each => each.MaterialClass ?? "")
+                        .FirstOrDefault(each => string.Equals(each, value, StringComparison.OrdinalIgnoreCase)) ?? value;
                     read = () => m.MaterialClass ?? "";
-                    write = () => m.MaterialClass = value;
-                    wanted = value;
+                    write = () => m.MaterialClass = spelled;
+                    wanted = spelled;
                 }
                 else if (identityParameters.ContainsKey(field))
                 {
@@ -495,9 +538,9 @@ var findings = new List<string>();
                     else if (field == "Surface Background Pattern") { get = () => m.SurfaceBackgroundPatternId; put = x => m.SurfaceBackgroundPatternId = x; }
                     else if (field == "Cut Foreground Pattern") { get = () => m.CutForegroundPatternId; put = x => m.CutForegroundPatternId = x; }
                     else { get = () => m.CutBackgroundPatternId; put = x => m.CutBackgroundPatternId = x; }
-                    read = () => elementName(get());
+                    read = () => patternText(get());
                     write = () => put(id);
-                    wanted = elementName(id);
+                    wanted = patternText(id);
                 }
                 else if (field.EndsWith(" Colour"))
                 {
@@ -569,7 +612,10 @@ var findings = new List<string>();
                     continue;
                 }
                 write();
-                written.Add(Tuple.Create(m, label, read, wanted));
+                // A number Revit formats - a cost, an asset value - is held to
+                // what Revit took just now, so a later change to it in this call
+                // (another asset pointed at) fails the read-back.
+                written.Add(Tuple.Create(m, label, read, wanted ?? read()));
             }
         }
 
@@ -598,6 +644,11 @@ var findings = new List<string>();
         if (wrong.Count > 0)
             throw new InvalidOperationException("Not every field read back as asked: " + string.Join("; ", wrong)
                 + ". Nothing from this call was kept");
+        // A material given an asset of its own has changed, even where the
+        // value asked was already the shared asset's.
+        foreach (var material in targets)
+            if (givenOwnAsset.Contains(material.Id.ToString()) && !changedMaterialIds.Contains(material.Id))
+                changedMaterialIds.Add(material.Id);
 
         materialReport = string.Join("  ||  ", targets.Select(each => each.Name + ": " + string.Join(", ", lines[each.Id.ToString()])));
         sharedAssets = string.Join("; ", shareNotes);

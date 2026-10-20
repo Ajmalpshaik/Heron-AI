@@ -79,7 +79,9 @@ negative:
       element, type and painted face, which this does not make
 
   - given: version 3, namePattern "ZZZ*"
-    expect: materialCount 0 and materialList empty - no material is called that
+    expect: >
+      materialCount 0, materialList empty, and the first finding "No material
+      matches 'ZZZ*'" - never "No materials at all", which would be untrue
 
 second_route:
   - >

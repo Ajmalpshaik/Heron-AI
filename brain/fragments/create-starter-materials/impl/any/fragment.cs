@@ -73,8 +73,8 @@ var findings = new List<string>();
 
     // ---- 1. The prefix and which of the twelve.
     var prefix = namePrefix ?? "";
-    if (prefix.IndexOfAny("{}[]|;<>:\\`~".ToCharArray()) >= 0)
-        problems.Add("the prefix '" + prefix + "' holds a character Revit refuses in a name ({}[]|;<>:\\`~)");
+    if (prefix.IndexOfAny("{}[]|;<>:?\\`~".ToCharArray()) >= 0)
+        problems.Add("the prefix '" + prefix + "' holds a character Revit refuses in a name ({}[]|;<>:?\\`~)");
     var picked = new List<Tuple<string, string, Color, int, double[], bool>>();
     var pickText = (starterPick ?? "").Trim();
     if (squash(pickText) == "" || squash(pickText) == "all") picked.AddRange(starters);

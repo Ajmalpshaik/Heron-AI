@@ -155,8 +155,10 @@ contract:
       absent: all
   provides:
     - name: materialCount
-      # How many materials the document holds. A thing it FOUND, so a result
-      # (D-52) - and the number to compare with the Material Browser.
+      # How many materials the document holds - or, given namePattern
+      # (version 3), how many of them it matches, which the first finding
+      # says. A thing it FOUND, so a result (D-52) - and the number to compare
+      # with the Material Browser.
       role: result
       type: int
     - name: materialList

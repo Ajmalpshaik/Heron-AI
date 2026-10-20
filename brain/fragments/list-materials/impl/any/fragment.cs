@@ -218,12 +218,16 @@ var findings = new List<string>();
 
     var kind = doc.IsFamilyDocument ? "family" : "project";
 
-    findings.Add(materialCount == 0
-        ? string.Format("No materials at all in this {0} - '{1}'", kind, doc.Title)
-        : string.Format("{0} material(s) in this {1} - '{2}'", materialCount, kind, doc.Title));
+    if (wanted != null)
+        findings.Add(materialCount == 0
+            ? string.Format("No material matches '{0}' in this {1} - '{2}'", pattern, kind, doc.Title)
+            : string.Format("{0} material(s) match '{1}' in this {2} - '{3}'", materialCount, pattern, kind, doc.Title));
+    else
+        findings.Add(materialCount == 0
+            ? string.Format("No materials at all in this {0} - '{1}'", kind, doc.Title)
+            : string.Format("{0} material(s) in this {1} - '{2}'", materialCount, kind, doc.Title));
 
     findings.Add("Listed used or not - unused ones: FIND_UNUSED_MATERIALS");
-    if (wanted != null) findings.Add("Only the names matching '" + pattern + "' were listed");
 
     // REVIT'S APPEARANCE LIBRARY, by the name its asset browser shows (version
     // 3) - what SET_MATERIAL_APPEARANCE and CREATE_STARTER_MATERIALS take by

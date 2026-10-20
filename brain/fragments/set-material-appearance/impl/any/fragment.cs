@@ -421,6 +421,30 @@ var findings = new List<string>();
             return name;
         };
         var shareNotes = new List<string>();
+        // WHO SHARED WHAT, AS IT STOOD BEFORE THIS CALL. Counted live, the last
+        // of several named materials sharing one asset would find it no longer
+        // shared, edit it in place and keep an asset not named after it.
+        var usersAtStart = new Dictionary<string, List<Material>>(StringComparer.Ordinal);
+        foreach (var each in all)
+        {
+            if (each.AppearanceAssetId == ElementId.InvalidElementId) continue;
+            List<Material> users;
+            if (!usersAtStart.TryGetValue(each.AppearanceAssetId.ToString(), out users))
+                usersAtStart[each.AppearanceAssetId.ToString()] = users = new List<Material>();
+            users.Add(each);
+        }
+        // AN IMAGE'S SIZE AND OFFSET IN MILLIMETRES, read back off the asset -
+        // the same unit split as the write below.
+        Func<Asset, string, double?> millimetresOf = (bitmap, name) =>
+        {
+            var p = bitmap == null ? null : bitmap.FindByName(name) as AssetPropertyDistance;
+            if (p == null) return null;
+#if REVIT2020
+            return UnitUtils.Convert(p.Value, p.DisplayUnitType, DisplayUnitType.DUT_MILLIMETERS);
+#else
+            return UnitUtils.Convert(p.Value, p.GetUnitTypeId(), UnitTypeId.Millimeters);
+#endif
+        };
         var lines = new List<string>();
         var wrong = new List<string>();
 
@@ -459,8 +483,9 @@ var findings = new List<string>();
             AppearanceAssetElement target = null;
             if (mode == "keep" && oldElement != null)
             {
-                var oldId = oldElement.Id;
-                var sharers = all.Where(each => each.Id != m.Id && each.AppearanceAssetId == oldId).Select(each => each.Name).ToList();
+                List<Material> users;
+                usersAtStart.TryGetValue(oldElement.Id.ToString(), out users);
+                var sharers = (users ?? new List<Material>()).Where(each => each.Id != m.Id).Select(each => each.Name).ToList();
                 if (sharers.Count == 0) target = oldElement;
                 else
                 {
@@ -476,10 +501,14 @@ var findings = new List<string>();
                 target = namedDocumentAsset.Duplicate(freeAssetName(m.Name));
             else if (mode == "named")
                 target = AppearanceAssetElement.Create(doc, freeAssetName(m.Name), namedLibraryAsset);
-            else
+            var plainGeneric = false;
+            if (target == null && mode != "copy" && mode != "named")
+            {
                 target = genericBase != null
                     ? AppearanceAssetElement.Create(doc, freeAssetName(m.Name), genericBase)
                     : genericDocumentBase.Duplicate(freeAssetName(m.Name));
+                plainGeneric = true;
+            }
             if (target.Id != m.AppearanceAssetId)
             {
                 m.AppearanceAssetId = target.Id;
@@ -493,7 +522,11 @@ var findings = new List<string>();
                 if (!asked.ContainsKey("Colour") && m.Color != null && m.Color.IsValid) asked["Colour"] = new Color(m.Color.Red, m.Color.Green, m.Color.Blue);
                 if (!asked.ContainsKey("Transparency")) asked["Transparency"] = m.Transparency / 100.0;
             }
-            if (asked.Count > 0)
+            // A PLAIN GENERIC CARRIES NO IMAGE IT BORROWED: one copied from a
+            // document asset may hold another material's texture, which would
+            // draw over the colour asked for.
+            var stripImage = plainGeneric && !asked.ContainsKey("Image");
+            if (asked.Count > 0 || stripImage)
             {
                 using (var scope = new AppearanceAssetEditScope(doc))
                 {
@@ -570,6 +603,11 @@ var findings = new List<string>();
                         };
 
                         Asset diffuseImage = null;
+                        if (stripImage)
+                        {
+                            var diffuse = slot(Generic.GenericDiffuse);
+                            if (diffuse.NumberOfConnectedProperties > 0) diffuse.RemoveConnectedAsset();
+                        }
                         foreach (var pair in asked)
                         {
                             var v = pair.Value;
@@ -664,7 +702,26 @@ var findings = new List<string>();
                             break;
                         case "Image Size":
                         case "Image Offset":
+                            var image = now.FindByName(Generic.GenericDiffuse);
+                            var bitmapNow = image == null || image.NumberOfConnectedProperties == 0 ? null : image.GetSingleConnectedAsset();
+                            var pair2 = (double[])v;
+                            var x = millimetresOf(bitmapNow, pair.Key == "Image Size" ? UnifiedBitmap.TextureRealWorldScaleX : UnifiedBitmap.TextureRealWorldOffsetX);
+                            var y = millimetresOf(bitmapNow, pair.Key == "Image Size" ? UnifiedBitmap.TextureRealWorldScaleY : UnifiedBitmap.TextureRealWorldOffsetY);
+                            if (x == null || y == null || Math.Abs(x.Value - pair2[0]) > 1e-3 || Math.Abs(y.Value - pair2[1]) > 1e-3)
+                            {
+                                seen = x == null || y == null ? "?" : Math.Round(x.Value, 3) + " x " + Math.Round(y.Value, 3) + " mm";
+                                meant = pair2[0] + " x " + pair2[1] + " mm";
+                            }
+                            break;
                         case "Image Rotation":
+                            var imageSlot = now.FindByName(Generic.GenericDiffuse);
+                            var bitmapTurned = imageSlot == null || imageSlot.NumberOfConnectedProperties == 0 ? null : imageSlot.GetSingleConnectedAsset();
+                            var angleNow = bitmapTurned == null ? null : doubleOf(bitmapTurned.FindByName(UnifiedBitmap.TextureWAngle));
+                            if (angleNow == null || Math.Abs(angleNow.Value - (double)v) > 1e-4)
+                            {
+                                seen = angleNow == null ? "?" : angleNow.Value + " degrees";
+                                meant = (double)v + " degrees";
+                            }
                             break;
                         default:
                             var names = new Dictionary<string, string>
