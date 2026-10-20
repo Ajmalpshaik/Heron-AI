@@ -1,0 +1,22 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one structural concrete floor, a fabric sheet type loaded, fabricSheetType its name, majorDirection x, location bottom
+    expect: >
+      placed 1, sheets more than 0, `report` naming the sheet type and the
+      bottom face; the sheets visible in a plan at Detail Level Fine
+
+negative:
+  - given: the same floor straight after, the same values
+    expect: >
+      placed 0, skipped as already holding fabric - nothing doubled
+  - given: the floor, fabricSheetType a name no sheet type has
+    expect: >
+      placed 0, refused naming the fabric sheet types loaded
+  - given: a wall, location bottom
+    expect: >
+      placed 0, the wall skipped - its faces are exterior and interior
+
+second_route:
+  - select the fabric area and read Fabric Sheet, Location and its sheets in Properties
+  - one Ctrl+Z takes it back (Golden Rule 16)

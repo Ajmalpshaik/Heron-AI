@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: two concrete beams with Other Faces cover 25 mm, a 40 mm cover type loaded, coverOther 40, everything else left out
+    expect: >
+      facesChanged 2, changedIds both beams, and each beam's Rebar Cover -
+      Other Faces reading the 40 mm type in Properties; top and bottom unchanged
+
+negative:
+  - given: the same beams straight after, coverOther 40
+    expect: >
+      facesChanged 0 and alreadyAsAsked 2 - nothing written twice
+  - given: the same beams, coverOther 33 with no 33 mm cover type loaded
+    expect: >
+      facesChanged 0, refused naming the loaded cover types and
+      CREATE_REBAR_COVER_TYPE - no beam's cover changed
+  - given: two walls of a basic wall type, coverTop 40
+    expect: >
+      facesChanged 0, each wall named in `skipped` as having no top cover
+
+second_route:
+  - select the host and read Rebar Cover - Top Face / Bottom Face / Other Faces in the Properties palette
+  - one Ctrl+Z takes every face back (Golden Rule 16)

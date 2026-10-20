@@ -1,0 +1,20 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: coverName "TEST cover 45", distance 45
+    expect: >
+      created 1, `readBack` "'TEST cover 45' 45 mm", and the type listed at 45
+      mm in Structure > Reinforcement > Rebar Cover Settings
+
+negative:
+  - given: the same name again, distance 50
+    expect: >
+      created 0, refused naming the existing "TEST cover 45" at 45 mm - the
+      existing type still reads 45 mm
+  - given: coverName "TEST cover x", distance "forty"
+    expect: >
+      created 0, refused as not a distance - nothing made
+
+second_route:
+  - Structure tab > Reinforcement > Rebar Cover Settings lists every cover type with its distance
+  - one Ctrl+Z takes it back (Golden Rule 16)

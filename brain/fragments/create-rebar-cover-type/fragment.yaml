@@ -1,0 +1,79 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-113
+semantic-identity: "make a rebar cover type of this distance"
+kind: action
+domain: revit.elements
+capability: CREATE_REBAR_COVER_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
+# searched and long text pulls other sentences here.
+#
+# A COVER IS A TYPE IN REVIT, NOT A NUMBER ON THE HOST. A column's "Rebar
+# Cover - Other Faces" points at a Rebar Cover Type, so "40 cover" can only be
+# set when a cover type of 40 mm exists. SET_REBAR_COVER takes a distance and
+# finds the cover type that gives it; when none does it refuses and names this
+# tool. The NAME is the modeller's - his naming rules decide it.
+#
+# A name already used is refused, naming that type's distance. A cover type of
+# the same distance under another name is made, and said, because two names
+# for one distance is the modeller's choice.
+#
+# READ BACK: the type's name and distance after a regenerate.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Makes a new rebar cover type with the name and cover distance the modeller
+  gives, so a host's rebar cover can be set to it.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: coverName
+      type: string
+      source: request
+    # Millimetres (D-71).
+    - name: distance
+      type: string
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: IList<ElementId>
+    - name: readBack
+      # The new type's name and distance as Revit now holds them (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  RebarCoverType.Create(Document, string, double) and CoverDistance are on
+  every release 2020-2027, one signature (read off the shipped assemblies
+  2026-10-19). The distance arrives in millimetres and becomes feet by
+  / 304.8 (D-20).
+
+# ROUTING - the same rows are in every rebar card.
+#
+#   "make a 40 mm cover type"                   -> here
+#   "set the cover on these beams to 40"        -> SET_REBAR_COVER
+#   "what cover types are there"                -> LIST_REBAR_TYPES
+utterances:
+  - make a 40 mm rebar cover type
+  - create a cover type for 50 mm cover
+  - add a rebar cover setting of 75 mm

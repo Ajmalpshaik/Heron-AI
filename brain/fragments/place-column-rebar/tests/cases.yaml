@@ -1,0 +1,31 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: one 400 x 400 concrete column, 3000 mm high, with no rebar; mainBars 4 x 16mm, ties 8mm @ 150, tieHook a loaded stirrup/tie hook, cover 40
+    expect: >
+      placed 4 sets - two of 2 main bars and none between, so 4 bars, and one
+      set of ties - columnsReinforced 1, the tie count what 150 mm or closer
+      gives up the height less cover; in a plan the bars sit 40 mm plus a tie
+      inside the faces, the tie hooks turned into the core
+  - given: one 600 mm round concrete column with no rebar; mainBars 8 x 16mm, ties 10mm @ 200, tieHook a loaded stirrup/tie hook, cover left out
+    expect: >
+      8 single main bars evenly round the circle and one set of hoops, at the
+      column's own Rebar Cover - Other Faces
+
+negative:
+  - given: the same 400 x 400 column straight after, the same values
+    expect: >
+      placed 0, skipped as already holding rebar - nothing doubled
+  - given: a fresh 400 x 400 column, mainBars 8 x 16mm, barsPerFace left out
+    expect: >
+      placed 0 in it, skipped - 8 bars on a rectangle need a layout such as 3x3
+  - given: a steel column, the same values as the first positive
+    expect: >
+      placed 0, skipped as not a rebar host
+  - given: the first column's values with mainBars 4 x T16 and no bar type named T16
+    expect: >
+      placed 0, refused naming the loaded bar types - T16 is never read as 16 mm
+
+second_route:
+  - a plan or section at Detail Level Fine, and each set's Quantity, Layout Rule and Bar Spacing in Properties
+  - one Ctrl+Z takes every set back (Golden Rule 16)
