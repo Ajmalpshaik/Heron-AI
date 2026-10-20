@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a perspective 3D view in front in a scratch copy of Project1 (Revit 2020),
+      command Render, viewName left out
+    expect: >
+      posted true, activeView the 3D view's name, and Revit's Render dialog open
+      on that view once the answer has returned. Nothing is called rendered -
+      pressing Render is the modeller's
+
+negative:
+  - given: a floor plan in front, command Render
+    expect: >
+      posted false, refused "is not a 3D view", no dialog opens. THIS IS THE
+      FIRST CASE TO RUN
+  - given: the 3D view in front, viewName naming another 3D view
+    expect: posted false, refused naming the view in front and OPEN_VIEW
+  - given: command "raytrace now"
+    expect: posted false, refused - not a render command
+
+second_route:
+  - watch Revit: the Render dialog appears over the view once the chat has its answer

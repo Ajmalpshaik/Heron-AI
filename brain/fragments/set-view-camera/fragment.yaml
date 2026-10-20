@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,21 @@ semantic-identity: "point this 3D view's camera from here to there, or make a pe
 kind: action
 domain: revit.views
 capability: SET_VIEW_CAMERA
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-10-20) - the rendering tools' widening, on the owner's word
+# ("for the rendering ... all the part should be covered"). Two OPTIONAL
+# inputs, so a version 1 call runs exactly as before: `levelName` - the eye's
+# and the target's heights measured from a level ("eye 1600 above Level 1"),
+# with Revit's Eye Elevation and Target Elevation read back - and `farClipMm` -
+# off, or the Far Clip Offset with Far Clip Active on, read back. A field of
+# view is NOT offered: Revit's API has no field-of-view value on any release
+# 2020 to 2027, and FRAME_ELEMENTS_IN_CAMERA fits the crop to elements instead.
+# Version 1's proof no longer describes the code, so it is kept below as a
+# record and the card is DRAFT until it is proved again (D-30) - D-117 refuses
+# a kept camera from it until then.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -69,6 +81,19 @@ contract:
       type: bool
       source: request
       optional: true
+    # Version 2: the eye's and target's heights are measured from this level;
+    # keep, or not said, means from the project's origin as version 1.
+    - name: levelName
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    # Version 2: off, or the far clip in millimetres from the camera.
+    - name: farClipMm
+      type: string
+      source: request
+      optional: true
+      absent: keep
   provides:
     - name: camera
       role: result
@@ -87,6 +112,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
+# fingerprint no longer describes the code and the card is DRAFT until the
+# rendering tools' NEEDS-CHECKING group proves version 2 (D-30). A call with
+# neither new input still takes the road this proof ran.
 proof:
   date: '2026-10-18'
   by: Ajmal PS
@@ -123,12 +152,19 @@ compatibility-note: >
   IsLocked and Unlock, ViewOrientation3D(XYZ, XYZ, XYZ) and
   ViewFamily.ThreeDimensional are present 2020 through 2027 - read off
   RevitAPI.xml in the Nice3point reference packages for all eight releases on
-  2026-10-12. Points are millimetres divided by 304.8 (D-20).
+  2026-10-12. Points are millimetres divided by 304.8 (D-20). Version 2 adds
+  Level.ProjectElevation and BuiltInParameter VIEWER_EYE_ELEVATION,
+  VIEWER_TARGET_ELEVATION, VIEWER_BOUND_ACTIVE_FAR and VIEWER_BOUND_OFFSET_FAR -
+  read off the shipped reference assemblies of 2020 through 2027 on
+  2026-10-20, alike on every release.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "make a perspective from the entrance looking at the lobby" -> here
 #   "move the camera of this 3D view"         -> here
+#   "far clip this camera at 20 m"            -> here, version 2
+#   "a close-up camera of these elements"     -> FRAME_ELEMENTS_IN_CAMERA,
+#                                                which takes a selection
 #   "make a 3D view"                          -> CREATE_3D_VIEW
 #   "box the 3D view round these"             -> SET_VIEW_SECTION_BOX
 
@@ -138,3 +174,5 @@ utterances:
   - set the eye and target of this 3D view
   - make a camera view from this point to that point
   - make a perspective from the entrance looking at the lobby
+  - put the camera eye 1600 above level 1 looking at the reception desk
+  - turn the far clip of this camera on at 15000

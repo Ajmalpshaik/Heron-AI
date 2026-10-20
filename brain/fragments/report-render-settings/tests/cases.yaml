@@ -1,0 +1,22 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Its count tracks the view (D-53): a 3D view, a plan and a schedule each give
+# a different number of sections.
+
+positive:
+  - given: a perspective 3D view in a scratch copy of Project1 (Revit 2020)
+    expect: >
+      sectionsRead 4, and setup giving the Rendering, Sun Settings, Graphic
+      Display and Camera sections - each matching its dialog opened by hand
+  - given: a floor plan
+    expect: >
+      sectionsRead 2 (Sun Settings and Graphic Display), Rendering said to be
+      a 3D view's only, no Camera section
+
+negative:
+  - given: a schedule
+    expect: >
+      sectionsRead 0 and each section said in words as not on that view.
+      THIS IS THE FIRST CASE TO RUN
+
+second_route:
+  - the Rendering, Sun Settings and Graphic Display Options dialogs and the view's Properties, opened by hand

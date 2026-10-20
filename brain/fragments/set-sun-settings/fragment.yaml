@@ -1,0 +1,183 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-143
+semantic-identity: "set a view's sun settings - still, single-day, multi-day or lighting study, its date and time, a preset, the sun's angles and the ground plane"
+kind: action
+domain: revit.views
+capability: SET_SUN_SETTINGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-10-20: the owner asked for every part of rendering, and the sun - the
+# light every exterior render and shadow study takes - had no tool. Revit's
+# Sun Settings dialog is per view.
+#
+# HOW IT BEHAVES - comments, not `purpose`.
+#
+# **WHAT THE SUN SETTINGS DIALOG HOLDS FOR ONE VIEW**, each a word or keep:
+#   preset            a sun preset the project holds ("Summer Solstice",
+#                     "Sunlight from Top Right"), copied onto the view; the
+#                     read-back is Revit's GetMatchingPreset naming it
+#   study             Still, Single Day, Multi-Day or Lighting
+#   date, time        the start - or the moment, for Still - on the SITE'S
+#                     clock: "2026-06-21" or "21 June", "10:00" or "10 am"
+#   endDate, endTime  the end of a Single Day or Multi-Day study
+#   interval          15 minutes .. 1 month; 15/30/45 seconds and 1 minute
+#                     only where Revit has them (2024 on), matched by name
+#   sunriseToSunset   yes or no, a Single Day study
+#   azimuthDeg,       the Lighting study's sun, in degrees, and whether it is
+#   altitudeDeg,      relative to the view
+#   relativeToView
+#   groundPlaneLevel  a level's name, or off
+#
+# **TIMES ARE THE SITE'S CLOCK, THROUGH REVIT'S OWN CONVERSION** -
+# SiteLocation.ConvertFromProjectTime and ConvertToProjectTime, which the API
+# reference says apply no daylight saving. When the site uses it the
+# read-back says so: Revit's dialog may show the time an hour on.
+#
+# **THE SITE IS NOT SET HERE.** City, latitude, longitude and time zone are
+# SET_PROJECT_LOCATION's - an Admin change for everybody who opens the
+# project - and this only reads them back.
+#
+# **WHERE REVIT'S API STOPS**, read off the API reference of every release
+# 2020 to 2027 on 2026-10-20: turning Cast Shadows and Ambient Shadows on in a
+# view has no member at all; those are the View Control Bar's and the Graphic
+# Display Options dialog's, by hand. A new preset cannot be saved from here -
+# a preset is copied ONTO the view, never written.
+#
+# **READ BACK:** every setting asked is read again; only one that reads as
+# asked counts. `readBack` is the dialog as the view holds it afterwards.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+purpose: >
+  Sets the Sun Settings of a view - a still, single-day, multi-day or lighting
+  study, its date and time, a project preset, the lighting sun's azimuth and
+  altitude and the ground plane level - to new values.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view, as the Project Browser names it - a 3D view, plan or
+    # elevation that can show the sun.
+    - name: view
+      type: View
+      source: request
+    - name: preset
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: study
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: date
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: time
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: endDate
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: endTime
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: interval
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: sunriseToSunset
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: azimuthDeg
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: altitudeDeg
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: relativeToView
+      type: string
+      source: request
+      optional: true
+      absent: keep
+    - name: groundPlaneLevel
+      type: string
+      source: request
+      optional: true
+      absent: keep
+  provides:
+    - name: changed
+      # Sun settings that read back as asked.
+      role: result
+      type: int
+    - name: readBack
+      # The view's whole sun as it stands afterwards, with the site it uses -
+      # filled on every run that reached the view, so evidence, never the count.
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING WAS CHANGED, as one sentence; null otherwise (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. Read off the shipped reference
+  assemblies and RevitAPI.xml of 2020 through 2027 on 2026-10-20:
+  View.SunAndShadowSettings; SunAndShadowSettings' SunAndShadowType,
+  StartDateAndTime, EndDateAndTime (UTC out, local or UTC in), TimeInterval,
+  IsTimeIntervalValid, SunriseToSunset, Azimuth and Altitude (radians),
+  RelativeToView, UsesGroundPlane, GroundPlaneLevelId, IsGroundPlaneLevelValid,
+  GetMatchingPreset, ProjectLocationName, Latitude, Longitude, TimeZone and
+  UsesDST; SiteLocation.ConvertFromProjectTime and ConvertToProjectTime -
+  present and alike on every release. SunStudyTimeInterval gains Seconds15,
+  Seconds30, Seconds45 and Minute at 2024, so intervals are matched by name at
+  run time and a release without one says so.
+
+# ROUTING - the same rows are in the render, sun, display and camera cards.
+#
+#   "set the sun to 10 am on 21 June"          -> here
+#   "make a shadow study for the whole day"    -> here
+#   "use the summer solstice preset"           -> here
+#   "set the project location to Doha"         -> SET_PROJECT_LOCATION, the
+#                                                 site for the whole project
+#   "set the sun intensity to 80"              -> SET_GRAPHIC_DISPLAY_OPTIONS,
+#                                                 the view's display lighting
+#   "set the render lighting to exterior sun"  -> SET_RENDER_SETTINGS
+#   "what sun does this view use"              -> REPORT_RENDER_SETTINGS (D-86)
+
+utterances:
+  - set the sun for this view to 21 June at 10 am
+  - make a single day solar study from sunrise to sunset every hour
+  - apply the summer solstice sun preset to this 3D view
+  - put the shadow ground plane on level 1
+  - set a lighting sun at azimuth 135 and altitude 35 degrees

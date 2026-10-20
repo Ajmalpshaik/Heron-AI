@@ -916,6 +916,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hz.md`](needs-checking/group-hz.md)
 
+## Group IA - rendering: render settings, sun, display options, a framing camera, Revit's Render dialog and the read-back (2026-10-20)
+
+**Its own file:** [`needs-checking/group-ia.md`](needs-checking/group-ia.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
