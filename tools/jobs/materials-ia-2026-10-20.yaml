@@ -1,0 +1,101 @@
+# NEEDS-CHECKING Group IA - the material tools, DRAFT since 2026-10-20.
+#
+#     python tools/batch-prove.py tools/jobs/materials-ia-2026-10-20.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/materials-ia-2026-10-20.yaml
+#
+# THE ADD-IN FIRST. These fragments name Revit's appearance-asset namespace
+# (D-146), which the add-in supplies only once it is rebuilt and redeployed -
+# docs/needs-checking/group-ia.md row IA0. Run nothing below before that.
+#
+# THE MODEL is the scratch project docs/needs-checking/group-ia.md describes - a
+# new project from Revit's metric SYSTEMS template, saved to
+# %TEMP%\heron-work\materials-ia, with two columns of one type, three ducts in a
+# Supply Air system, two layered walls, a door, and the three probes
+# CREATE_MATERIAL made and KEPT: IA Probe Steel, IA Probe Copper, IA Probe Wood
+# - Steel and Copper sharing one appearance asset and one thermal asset. Never a
+# working model. The values below are this proof's own, chosen for that model -
+# never a design value Heron offers anybody (D-33).
+#
+# THE NEGATIVE IS A DIFFERENT NAME OR SELECTION THAT MUST BE REFUSED OR SKIPPED,
+# never a cleared one: a misspelt material, an appearance nobody has, a starter
+# that is not one of the twelve, and layered walls whose material is a layer's.
+# The run-twice negatives (a second run changes nothing) and the shared-asset
+# negatives are IA2 to IA9's own and are run by hand, because the second run
+# needs the first one KEPT.
+
+model: materials-ia scratch project (metric Systems template), Revit 2020
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: list-materials
+    write: false                       # risk READ
+    set:
+      withAllTabs: true
+      namePattern: "IA Probe*"
+    negative-set:
+      withAllTabs: true
+      namePattern: "ZZZ*"
+    expect: materialCount
+    note: >
+      IA1. The positive lists the three probes with every tab; the negative's
+      pattern matches no material, so materialCount must be 0.
+
+  - fragment: set-material-properties
+    set:
+      materialsNamed: "IA Probe Steel"
+      fieldValues: "Manufacturer=IA Maker; Model=M-1; Class=Metal; Mark=IA-1; Surface Pattern=<Solid fill>; Surface Pattern Colour=128,128,128"
+    negative-set:
+      materialsNamed: "IA Probe Stel"
+      fieldValues: "Mark=IA-2"
+    expect: changedMaterialIds
+    note: >
+      IA2. The negative names no material, so the call is refused and
+      changedMaterialIds is empty. Keywords and the cut pattern are IA2's
+      by-hand rows: whether Revit 2020 offers Keywords is what that row finds.
+
+  - fragment: set-material-appearance
+    set:
+      materialsNamed: "IA Probe Wood"
+      appearance: "generic"
+      appearanceValues: "Colour=171,128,82; Glossiness=40; Highlights=non-metallic"
+    negative-set:
+      materialsNamed: "IA Probe Wood"
+      appearance: "No Such Look"
+    expect: changedMaterialIds
+    note: >
+      IA5's values without the image file - a file path is the PC's own, so the
+      image half is run by hand. The negative's appearance is in neither the
+      document nor the library, so the call is refused before anything changes.
+
+  - fragment: create-starter-materials
+    set:
+      namePrefix: "IA_"
+      starterPick: "glass; copper"
+    negative-set:
+      namePrefix: "IA_"
+      starterPick: "granite"
+    expect: createdMaterialIds
+    note: >
+      IA8 on two of the twelve, under a prefix nothing else uses. Granite is
+      none of the twelve, so the negative is refused and makes nothing.
+
+  - fragment: set-element-material
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      categoryName: Columns
+      inViewOnly: "FloorPlan: Level 1"
+      material: "IA Probe Steel"
+    negative-set:
+      categoryName: Walls
+      inViewOnly: "FloorPlan: Level 1"
+      material: "IA Probe Steel"
+    expect: writtenIds
+    note: >
+      IA9. The columns' type takes the material; the walls are of a layered
+      type, so each is skipped naming SET_COMPOUND_LAYER_WIDTH and writtenIds
+      is empty.

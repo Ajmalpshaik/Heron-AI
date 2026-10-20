@@ -186,6 +186,9 @@ compatibility-note: >
 #                                       NO user at all, so it cannot say what
 #                                       is still holding on to a particular one
 
+# ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
+#
+#   "make these columns concrete"  -> SET_ELEMENT_MATERIAL - whatever they hold now, written where it lives
 utterances:
   - change the material on these
   # DECLARED BECAUSE THE TABLE ABOVE ALREADY CLAIMED IT, 2026-09-06. A routing

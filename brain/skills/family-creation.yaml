@@ -328,7 +328,14 @@ purpose: >
       (2026-10-14, Revit 2020) - then SET_FAMILY_FORM_MATERIAL once per
       material, naming
       every form id that takes it. Made before step 7, the materials can be
-      named on CREATE_FAMILY_FORMS's rows instead.
+      named on CREATE_FAMILY_FORMS's rows instead. A FAMILY THAT WILL BE
+      RENDERED, or shown in a Realistic view, gives each material an
+      appearance too: SET_MATERIAL_APPEARANCE with materialsNamed the names
+      CREATE_MATERIAL made (';' between, or the prefix and *) and
+      matchShading true - a shading colour alone draws flat dark grey there
+      (2026-10-20, Revit 2020, row 5b-1263). A better look than its own
+      colour - glass, a metal, a texture - is SET_MATERIAL_APPEARANCE's
+      appearance and values, or CREATE_STARTER_MATERIALS' ready-made set.
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
       list from step 0, before the proof. For a fixed family it is the last
       check: the number of forms and the overall extents against the plan.
@@ -465,6 +472,8 @@ needs:
   - ADD_FAMILY_MODEL_TEXT
   # A fixed family's colours, before SET_FAMILY_FORM_MATERIAL - see step 12.
   - CREATE_MATERIAL
+  # Step 12's appearance for a family that will be rendered (row 5b-1263).
+  - SET_MATERIAL_APPEARANCE
   - REPORT_FAMILY_FORMS
   # Step 13's look at what was built - the 3D view opened and zoomed to the
   # forms through revit_show, and shaded at Fine; the picture itself is the
@@ -544,5 +553,8 @@ note: >
   parameter moves lost their work plane and the row broke at another type,
   while the same row rebuilt as an arrayed nested family held at four sizes -
   so steps 0, 7 and 10 send a row that a size stretches to a nested family
-  (row 5b-1261). Every step is DRAFT until it
+  (row 5b-1261). Widened on 2026-10-20 after the same heater drew in colour
+  Shaded and flat dark grey in Realistic: step 12 gives a family that will
+  be rendered an appearance per material (row 5b-1263, Group IA). Every
+  step is DRAFT until it
   has been run on a real family with a negative case (D-30).

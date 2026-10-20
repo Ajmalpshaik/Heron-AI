@@ -99,6 +99,10 @@ compatibility-note: >
 #   "what material is this"          -> READ_ELEMENT_MATERIAL
 #   "how much concrete is in this"   -> REPORT_MATERIAL_TAKEOFF
 
+# ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
+#
+#   "add a starter set of materials"            -> CREATE_STARTER_MATERIALS - twelve, each with its own appearance
+#   "give these materials a render appearance"  -> SET_MATERIAL_APPEARANCE - what this does not touch
 utterances:
   - make a new material
   - create a material

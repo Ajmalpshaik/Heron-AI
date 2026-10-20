@@ -253,6 +253,9 @@ compatibility-note: >
 #                                           an element reference takes a name
 #                                           since version 5
 
+# ROUTING (2026-10-20, the material tools of Group IA, row 5b-1263)
+#
+#   "make these columns concrete"  -> SET_ELEMENT_MATERIAL - the material parameter found for you, on the element, its type or its system type
 utterances:
   - set the comments on these
   - set the comments to X

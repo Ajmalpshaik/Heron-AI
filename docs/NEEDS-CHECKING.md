@@ -916,6 +916,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-hz.md`](needs-checking/group-hz.md)
 
+## Group IA - materials: every tab of the Material Browser, material adding, and giving elements a material (2026-10-20)
+
+**Its own file:** [`needs-checking/group-ia.md`](needs-checking/group-ia.md)
+
 ## Group IB - rendering: render settings, sun, display options, a framing camera, Revit's Render dialog and the read-back (2026-10-20)
 
 **Its own file:** [`needs-checking/group-ib.md`](needs-checking/group-ib.md)
