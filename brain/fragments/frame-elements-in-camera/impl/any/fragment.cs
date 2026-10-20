@@ -20,10 +20,11 @@
 //
 // THE CROP BOX IS GIVEN IN THE VIEW'S OWN FRAME - the transform Revit hands back
 // with the crop box - so no assumption is made about where that frame sits.
-// `framed` counts the elements whose box lies inside the crop box Revit reads
-// back afterwards. What a perspective crop box's numbers mean on screen is
-// documented only as "an outline encompassing the crop region", so the proof
-// row has the modeller look at the view; the numbers are in `readBack`.
+// A PERSPECTIVE crop window is on Revit's near plane, millimetres in front of
+// the eye, so the elements' corners are projected onto it (version 2, row
+// 5b-1281 - version 1 set the box itself and drew the elements as a dot).
+// `framed` counts the elements whose projected corners lie inside the window
+// Revit reads back afterwards; the proof row still has the picture looked at.
 //
 // A VIEW A TEMPLATE CONTROLS is refused rather than half-changed.
 
@@ -176,22 +177,42 @@ if (refused == null && camera != null)
         camera.SetOrientation(new ViewOrientation3D(eye, up, forward));
         doc.Regenerate();
 
-        // The elements' eight corners, in the frame the crop box is given in.
+        // THE CROP WINDOW OF A PERSPECTIVE VIEW SITS ON REVIT'S OWN NEAR PLANE
+        // (version 2, row 5b-1281). Measured 2026-10-20 on Revit 2020: a new
+        // perspective view's crop box reads X -14.3 to 14.3, Y -10.7 to 10.7
+        // mm at Z -40.2 mm - a window 40 mm in front of the eye. Version 1 set
+        // the elements' box itself, metres wide and metres away; the view then
+        // drew the elements as a dot in the middle of the picture
+        // (EXPORT_VIEW_IMAGE, three views). So each corner is now projected
+        // onto that near plane - x times near over its depth - and the window
+        // is the projected corners plus the margin; the near plane is left
+        // where Revit has it. A near plane a version-1 run moved metres away is
+        // put back at 40.2 mm, a new view's.
         var frame = camera.CropBox.Transform;
         var toView = frame.Inverse;
-        XYZ lo = null, hi = null;
+        var nearPlane = -camera.CropBox.Max.Z;
+        if (nearPlane <= 0 || nearPlane > 1.0) nearPlane = 40.2 / MmPerFoot;
+        double? pxLo = null, pxHi = null, pyLo = null, pyHi = null, deepest = null;
         foreach (var x in new[] { low.X, high.X })
             foreach (var y in new[] { low.Y, high.Y })
                 foreach (var z in new[] { low.Z, high.Z })
                 {
                     var p = toView.OfPoint(new XYZ(x, y, z));
-                    lo = lo == null ? p : new XYZ(Math.Min(lo.X, p.X), Math.Min(lo.Y, p.Y), Math.Min(lo.Z, p.Z));
-                    hi = hi == null ? p : new XYZ(Math.Max(hi.X, p.X), Math.Max(hi.Y, p.Y), Math.Max(hi.Z, p.Z));
+                    var depth = Math.Max(-p.Z, nearPlane);
+                    var px = p.X * nearPlane / depth;
+                    var py = p.Y * nearPlane / depth;
+                    pxLo = pxLo == null ? px : Math.Min(pxLo.Value, px);
+                    pxHi = pxHi == null ? px : Math.Max(pxHi.Value, px);
+                    pyLo = pyLo == null ? py : Math.Min(pyLo.Value, py);
+                    pyHi = pyHi == null ? py : Math.Max(pyHi.Value, py);
+                    deepest = deepest == null ? depth : Math.Max(deepest.Value, depth);
                 }
-        var grow = (hi - lo) * (margin.Value / 200.0);
+        var growX = (pxHi.Value - pxLo.Value) * (margin.Value / 200.0);
+        var growY = (pyHi.Value - pyLo.Value) * (margin.Value / 200.0);
         var wanted = new BoundingBoxXYZ();
-        wanted.Min = new XYZ(lo.X - grow.X, lo.Y - grow.Y, lo.Z - grow.Z);
-        wanted.Max = new XYZ(hi.X + grow.X, hi.Y + grow.Y, hi.Z + grow.Z);
+        wanted.Transform = frame;
+        wanted.Min = new XYZ(pxLo.Value - growX, pyLo.Value - growY, Math.Min(camera.CropBox.Min.Z, -deepest.Value * 1.1));
+        wanted.Max = new XYZ(pxHi.Value + growX, pyHi.Value + growY, -nearPlane);
         camera.CropBoxActive = true;
         camera.CropBox = wanted;
         doc.Regenerate();
@@ -214,10 +235,17 @@ if (refused == null && camera != null)
             foreach (var y in new[] { box.Min.Y, box.Max.Y })
                 foreach (var z in new[] { box.Min.Z, box.Max.Z })
                 {
+                    // Seen through the window: the corner projected onto the
+                    // crop box's near plane, as the view draws it (version 2).
                     var p = back.OfPoint(box.Transform.OfPoint(new XYZ(x, y, z)));
-                    var tol = 1.0 / MmPerFoot;
-                    if (p.X < crop.Min.X - tol || p.X > crop.Max.X + tol || p.Y < crop.Min.Y - tol || p.Y > crop.Max.Y + tol
-                        || p.Z < crop.Min.Z - tol || p.Z > crop.Max.Z + tol) inside = false;
+                    var near = -crop.Max.Z;
+                    var depthHere = -p.Z;
+                    var tol = 0.01 / MmPerFoot;
+                    if (depthHere <= 0) { inside = false; continue; }
+                    var sx = camera.IsPerspective ? p.X * near / depthHere : p.X;
+                    var sy = camera.IsPerspective ? p.Y * near / depthHere : p.Y;
+                    if (sx < crop.Min.X - tol || sx > crop.Max.X + tol || sy < crop.Min.Y - tol || sy > crop.Max.Y + tol
+                        || p.Z < crop.Min.Z - tol) inside = false;
                 }
         if (inside) framed++;
     }

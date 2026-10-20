@@ -94,3 +94,19 @@ run was rolled back.
 `set-view-camera` v2, `set-render-settings` v2, `set-sun-settings`, `set-graphic-display-options` v2,
 `report-render-settings`, `open-render-dialog`, `read-rendered-images` and `export-view-image` v2. Each draft's
 gap is *"no second route was run"*.
+
+### The leftovers, 2026-10-20 (evening)
+
+- **IB1's look, made at last - and version 1 FAILED it ([row 5b-1281](../fragment-issues/section-5b-rows-401-425.md)).**
+  The camera views version 1 made were exported, and the elements came out as a dot in the middle of the picture.
+  The IB1 view looked right in IB11 only because IB2's `SET_VIEW_CAMERA` far clip had let Revit reset its crop.
+  **Version 2, DRAFT, unsigned:** framed 16 of 16 columns in a new view, with the crop window at Revit's own 40 mm
+  near plane (X -19 to 14, Y -16 to 10 mm), and `{3D}` refused. Its pictures fill the frame. It needs the owner's
+  look at a kept view, then his word.
+- **IB1's crop box, as asked:** *"eye 5572,-4072,5325 mm looking -0.6124,0.6124,-0.5, perspective; crop box in the
+  view's frame X -1536 to 1536, Y -2673 to 2673, Z -35720 to -4219 mm; far clip on at 35720 mm; 2 of 2 element(s)
+  inside that crop box"*. That is version 1's - the numbers looked complete and the picture was a dot.
+- **Row 5b-1268's three phrases on this PC** (`heron_lookup`, hybrid with the trained model and the re-ranker):
+  *what are the render settings of this 3D view* -> REPORT_RENDER_SETTINGS (asked as a question); *set the render
+  quality to high* -> SET_RENDER_SETTINGS; *set the sun intensity of this view to 80* -> SET_GRAPHIC_DISPLAY_OPTIONS.
+- **Still owed, by eye:** IB3's Quality words and Printer DPIs, and IB4's 10:00 or 11:00. IB12 is not run.

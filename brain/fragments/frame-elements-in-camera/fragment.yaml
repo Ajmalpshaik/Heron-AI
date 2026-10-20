@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,14 @@ semantic-identity: "make a perspective camera view that frames these elements, f
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 1
+version: 2
+# VERSION 2, 2026-10-20 - row 5b-1281. Version 1, signed the same day on
+# numbers alone (IB1's look at the view was never made), set a perspective
+# view's crop box to the elements' box metres away; Revit draws a perspective
+# crop window on its own near plane, 40 mm in front of the eye, so three
+# exported views showed the elements as a dot. The corners are now projected
+# onto that plane. Version 1's proof below no longer describes the code:
+# DRAFT until it is proved again WITH the picture looked at.
 source: OFFICIAL
 risk: MODIFY
 

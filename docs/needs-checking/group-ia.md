@@ -151,3 +151,18 @@ refusal, and each repeat is recorded above.
 **Overlap with older tools, checked 2026-10-20 at the owner's question.** Nineteen cards touch a material. None does what any of the five does, but two share a field. `SET_MATERIAL_PROPERTIES` sets `Shading Colour=` on many materials, and the PROVEN `SET_MATERIAL_COLOUR` sets one material's - the card sends one material's colour to the older tool. `SET_ELEMENT_MATERIAL` writes a material parameter, and `WRITE_ELEMENT_PARAMETERS` version 5 (DRAFT, row 5b-1259) writes one too when it is named on the element given - a type's Material when the type is given. What the newer tool adds is finding the parameter: on the element, its type or its duct system type, the layered walls and a door's two parameters named rather than guessed. Whether the two should become one is the owner's question, not decided here.
 
 **Version 3, 2026-10-20 (row 5b-1280).** EYE1's `Glass (Clear)` is now taken: `SET_MATERIAL_APPEARANCE` and `CREATE_STARTER_MATERIALS` match a library name with capitals, spaces and punctuation ignored when no name matches exactly. Both were proved again, rolled back - `Glass (Clear)` on `IA Probe Steel`, and `Glass Clear=Glass (Clear)` for a starter, `No Such Look` and `granite` refused. Both were signed again by Ajmal PS and are PROVEN at version 3. The kept runs above were version 2's.
+
+### The leftovers, 2026-10-20 (evening) - Revit 2020, the same scratch project
+
+The owner said to leave the heater (IA4) for later. The rows that can run without it:
+
+| # | Result | What was seen |
+|---|---|---|
+| IA8 | PASS - the image | Revit takes no paint on a column, a loadable family: `PAINT_FACES` answered *"no all face would take the paint"* on all twelve. So the wall `Exterior - Brick on Mtl. Stud` was copied with `COPY_ELEMENTS` (PROVEN) into sixteen walls at `x -8000..-1825`, `y 4000..19000`, each with its door. Two side walls came along with the first copy, and one copy answered Revit's own question to delete 4 elements with Delete - the scratch project only. Then `PAINT_FACES` (PROVEN) put one starter on each of twelve walls - `painted` 9 faces each. **The Realistic picture**, exported inside a rolled-back run: the glass wall **see-through**, the doors behind it showing; wood light brown, copper dark brown, the whites and the greys each their own. Glossy metal cannot be judged in a Realistic view - only a render shows it |
+| IA9 | PASS - the look | Kept with `SET_ELEMENT_MATERIAL` (PROVEN): `Duct System: Supply Air` Material <By Category> -> `TRG_Duct Galvanised`. The Realistic picture shows the duct run in galvanised grey |
+| IA10 | PASS | In the scratch family `Heron Create Shared Test`, two reference planes handed in: refused *"This is a family. In the Family Editor a form's material is SET_FAMILY_FORM_MATERIAL and a family type's Material parameter is SET_FAMILY_TYPE_VALUES - nothing was changed"*; `writtenIds` 0 |
+
+**The pictures** were taken with `EXPORT_VIEW_IMAGE` inside a rolled-back run, after `FRAME_ELEMENTS_IN_CAMERA`.
+Version 1's kept camera views showed the elements as a dot, which is
+[row 5b-1281](../fragment-issues/section-5b-rows-401-425.md). Still owed: IA4 (the heater), IA7 (Revit 2026 or
+2027), EYE1's last three names and EYE5's texture editor.
