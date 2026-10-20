@@ -186,3 +186,5 @@ New proof drafts, rolled back, not signed:
 - `apply-visual-preset` v2: Exterior Dusk on the camera view, `changed` 8, against the schedule refused.
 - `report-visual-preset` v2: Exterior Dusk read, against `Studio Glow` refused.
 - `set-graphic-display-options` v3: sun 60 / shadow 50, against `South - Mech` depth cueing refused with the new reason.
+
+**Signed 2026-10-20 by Ajmal PS** on his word (*"Sign sign"*): `apply-visual-preset` v2, `report-visual-preset` v2 and `set-graphic-display-options` v3 - PROVEN on the rolled-back records above.
