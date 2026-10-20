@@ -125,3 +125,52 @@ groups:
       - {say: list the materials with their appearance, expect: want LIST_MATERIALS}
       - {say: add the starter materials, expect: want CREATE_STARTER_MATERIALS}
 ```
+
+### Run 2026-10-20 (evening) - Revit 2020, the owner's laptop
+
+**The model.** Not a copy of Project1: the Project1 in this Revit had never been saved, so there was nothing to
+copy. The run used [Group IA](group-ia.md)'s scratch project, `Materials IA Test.rvt` in
+`%TEMP%\heron-work\materials-ia`, the model Group IB ran on. **Its names stand in for the plan's**, the same
+way every time:
+
+| The plan's name | Used here |
+|---|---|
+| `Heron Frame - Heater` | `Heron Frame - Columns`, IB1's kept perspective of the two columns |
+| `Level 1` | `1 - Mech`, the template's plan of Level 1 |
+| `Heron Render Schedule` | `Space Outdoor Air Schedule` |
+| the elevation | `South - Mech` |
+
+Rows were run from the command line (`HERON_CLIENT_ID=ajmal-pc`), each write rolled back. IC4, IC5 and IC10
+need the owner and are not run yet. **Nothing is signed.**
+
+| # | Result | What was seen |
+|---|---|---|
+| IC0 | PASS | `REPORT_RENDER_SETTINGS` on `Heron Frame - Columns`: `sectionsRead` 4. The BEFORE, kept: *Rendering - quality Draft; output Printer 150 DPI; lighting Exterior: Sun only; background SkyFewClouds; exposure value 13 ... white point 6500 / Sun Settings - Still study, 2026-06-21 10:00 ... 'Boston, MA' ... time zone -5 / Graphic Display - visual style HLR; sun intensity 80, shadow intensity 40; silhouettes off, smooth lines on ... sketchy lines on, jitter 5, extension 3 / Camera - perspective, eye 9500,-8000,7000 mm* |
+| IC1 | PASS | `Studio Glow`: refused, *"No visual preset is called 'Studio Glow'. The presets: Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation. Nothing was read."*; `wouldChange` 0, `presetsCompared` 0. The schedule, `Exterior Day`: `wouldChange` 0, *"0 setting(s) would differ, 0 already so, 13 this view cannot take, 2 by hand"*, each line skipped with *"has no Graphic Display Options"* |
+| IC2 | PASS | `Equipment Close-up`: `wouldChange` **6**, 7 already so, 0 the view cannot take, 2 by hand. Visual Style Hidden Line -> Realistic, Sketchy Lines on -> off, Display Background none -> gradient, Sun still 10:00 -> lighting 135/35 relative to view, Render Output 150 DPI -> Screen, Render Background Sky: Few Clouds -> colour 245,245,245. Each *now* matches IC0. `materialsWithoutAppearance` 0 - *"Materials 10 on what the view shows, 0 with no render appearance"*: every material in the view has one after Group IA. `all`: `presetsCompared` **7**, closest first - Clay 5, Presentation Elevation 5, Exterior Day 6, Equipment Close-up 6, Interior Day 7 ... **Dialogs by hand: owed** |
+| IC3 | PASS | The schedule, `Exterior Day`: refused *"takes none of Exterior Day's settings ... NOTHING WAS CHANGED"*. `Studio Glow`: refused naming the seven. `Clay` with renderFor `print`: refused *"'print' is not what the render is for. Say check ... or issue ..."*. `changed` 0 each time. `REPORT_RENDER_SETTINGS` afterwards: its `setup` **identical** to IC0's BEFORE |
+| IC4 | NOT RUN - owner's Keep | The one kept run (`try-once`) needs the model saved by the owner and his Keep |
+| IC5 | NOT RUN - follows IC4 | |
+| IC6 | **FAIL on the Sun line ([row 5b-1282](../fragment-issues/section-5b-rows-401-425.md))** | Rolled back, `Exterior Dusk`: `changed` 9, `alreadySo` 3, `skipped` 1. Realistic, sun 40, shadow 70, the dusk gradient, Exterior: Sun and Artificial, Sky: Very Few Clouds, exposure 11 - each *(as the preset)*. **Sun skipped:** *"Revit would not give the sunset for the site: Revit does not accept input DateTime objects if they are of kind DateTypeKind.Unspecified Parameter name: dateTime"*. Not fixed, as the run's brief says - the owner decides. The sunset comparison by hand waits for the fix |
+| IC7 | **FAIL on Depth Cueing ([row 5b-1283](../fragment-issues/section-5b-rows-401-425.md))** | Rolled back, `South - Mech`, `Presentation Elevation`: `changed` 4. Shaded with Edges, silhouettes off -> on, smooth lines off -> on, *"Sun lighting 225/35 relative to view (as the preset)"*. **Depth Cueing skipped:** *"'South - Mech' cannot use depth cueing - Revit offers it in elevations and sections"* - on an elevation. Measured with rolled-back probes: `CanUseDepthCueing` is false on every elevation of this Systems template; not changed by Far Clipping or any visual style; **true once View Discipline is Architectural** (and still true at Fine). The skip is Revit's, but the reason given is wrong |
+| IC8 | PASS | Rolled back, `1 - Mech`, `Exterior Day`: `changed` 3, `alreadySo` 3, `skipped` 6 - Render Quality, Output, Lighting, Background and Exposure *"'1 - Mech' is not a 3D view, and only a 3D view has Rendering Settings"*; Display Background *"Revit sets a display background on 3D views, sections and elevations only"* |
+| IC9 | PASS | Rolled back, `Heron Frame - Columns`, `Exterior Day`, renderFor `issue`, sunTime `15:00`: Render Quality **High**, Render Output **300 DPI** - taken, so no not-taken line - Sun **still 15:00**; `changed` 8, `alreadySo` 5, `skipped` 0 |
+| IC10 | NOT RUN - after the owner signs `apply-visual-preset` | |
+| IC11 | **Findings, recorded** | `score-routing.py --sentences` (set `9cd7d96a`, 37 sentences) on **model+rerank**, this PC: **24 of 33** wanted. Row 5b-1270 recorded lexical 28 and model 24. 1 question reached a write. Wanted, something else answered: *make this 3D view look good for a render* -> SET_RENDER_SETTINGS (wants APPLY_VISUAL_PRESET, 3rd); *do the render setup for this view* -> REPORT_RENDER_SETTINGS; *what would the clay preset do to this view* -> APPLY_VISUAL_PRESET (wants REPORT_VISUAL_PRESET, 2nd); *which materials in this view will render grey* -> SET_MATERIAL_APPEARANCE (4th); *what visual presets are there* -> APPLY_VISUAL_PRESET (2nd). **Four neighbours differ from row 5b-1270's "the neighbours held"**: *put this view on realistic* -> SET_MATERIAL_APPEARANCE; *change the visual style to hidden line* -> CREATE_LINE_PATTERN (5th); *render it* -> REPORT_RENDER_SETTINGS (2nd); *what are the render settings of this 3D view* -> SET_RENDER_SETTINGS (2nd). Question -> write: *what does the exterior day preset change* -> APPLY_VISUAL_PRESET, as 5b-1270 recorded. Asked through `heron_lookup` with the question flag, *what are the render settings of this 3D view* reached REPORT_RENDER_SETTINGS - D-128 leaves the writes out. Not tuned |
+
+**The batch** - `tools/jobs/visualiser-ic-2026-10-20.yaml` with the names above swapped in, a local copy:
+**2 PASS**. `report-visual-preset` `wouldChange` 6 against `Studio Glow` refused. `apply-visual-preset` rolled back,
+`changed` 6, against the schedule refused. Both drafts wait for the owner's word. `apply-visual-preset`'s plan
+signs it on IC4's kept run, which is not run yet.
+
+**IC4 and IC5, run once the owner was back (same evening):**
+
+| # | Result | What was seen |
+|---|---|---|
+| IC4 | PASS | `try-once`, saved model, the owner pressed **Keep**: `changed` **6** - IC2's `wouldChange` - `alreadySo` 7, `skipped` 0. readBack every setting *(as the preset)*: Realistic, sun 80, shadow 40, smooth lines, the light grey gradient, *"Sun lighting 135/35 relative to view"*, Draft on Screen, Exterior: Sun only, colour 245,245,245, exposure 13; Cast Shadows and Ambient Shadows named as by hand. **The light:** the owner did not notice. In the exported picture of the view, the columns' right faces and tops are bright and their left faces dark - **top right**. The dialogs by hand and the Ctrl+Z / Ctrl+Y look were not made |
+| IC5 | PASS | `REPORT_VISUAL_PRESET` Equipment Close-up again: `wouldChange` **0**. `apply-visual-preset --write`, rolled back: `changed` **0**, `alreadySo` **13** - IC4's 6 plus its 7 |
+
+**Signed 2026-10-20 by Ajmal PS**, on his word (*"you can sign it now"*): `report-visual-preset` (batch: Exterior Day
+`wouldChange` 6 against `Studio Glow` refused) and `apply-visual-preset` (IC4 kept, against the schedule refused),
+both PROVEN. Still owed: IC6 and IC7's repairs (rows 5b-1282 and 5b-1283, the owner's word), IC10 (the method
+end to end, his Render), and the method's own signature.

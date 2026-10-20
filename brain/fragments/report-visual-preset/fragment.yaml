@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -108,6 +108,70 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,891 elements), Revit 2020, session 43476
+  positive_case: 'run as it would normally be run. returned asked 1 item(s) [Exterior Day],
+    askedTime (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[],
+    System.String[], ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], colour Func`2,
+    compare Func`2, comparison Exterior Day on ''Heron Frame - Columns'' (ThreeD): 6 setting(s)
+    would differ, 7 already so, 0 this view cannot take, 2 by hand  ||  Visual Style Hidden
+    Line -> Realistic  ||  Sun Intensity 80 (as the preset)  ||  Shadow Intensity 40 -> 50  ||  Silhouettes
+    off (as the preset)  ||  Smooth Lines on (as the preset)  ||  Sketchy Lines on -> off  ||  Display
+    Background none -> sky  ||  Sun still 10:00 (as the preset)  ||  Render Quality Draft
+    (as the preset)  ||  Render Output 150 DPI -> Screen  ||  Render Lighting Exterior: Sun
+    only (as the preset)  ||  Render Background Sky: Few Clouds (as the preset)  ||  Exposure
+    value=13; white point=6500 -> value=14; white point=6500  ||  Cast Shadows on - by hand,
+    Revit''s API has no member for it on any release 2020 to 2027  ||  Ambient Shadows on
+    - by hand, Revit''s API has no member for it on any release 2020 to 2027  ||  Materials
+    10 on what the view shows, 0 with no render appearance, culture CultureInfo, degrees Func`2,
+    describe Func`2, duskUtc (null), findings 1 item(s) [1 preset(s) compared on ''Heron Frame
+    - Columns''; 6 setting(s...], forIssue false, hasDisplay true, inputProblem (null), lightingWord
+    Func`2, madeFor 7 entry(ies), materialsLine Materials 10 on what the view shows, 0 with
+    no render appearance, materialsRead true, materialsSeen 10 entry(ies), materialsWithoutAppearance
+    0, noAppearance 0 item(s), noDisplay ''Heron Frame - Columns'' has no Graphic Display
+    Options - Revit gives them to views with a visual style, noRender ''Heron Frame - Columns''
+    is not a 3D view, and only a 3D view has Rendering Settings, pairs Func`2, presetList
+    Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up, Clay, Presentation
+    Elevation, presetNamed Func`2, presetTable 7 item(s) [[Exterior Day, System.String[][]],
+    [Exterior Dusk, System.String[][]], [Interior Day, System.String[][]], ...], presetsCompared
+    1, purposeWord check, qualityWord Func`2, refused (null), revitStyles 8 entry(ies), settingNow
+    Func`2, settingWant Func`3, show Func`2, showColour Func`2, site SiteLocation, squash
+    Func`2, styleWord Func`2, sun SunAndShadowSettings, takesBackground true, timeWord preset,
+    toProject Func`2, toUtc Func`2, view3D View3D, viewKind 3d, wouldChange 6. inputs came
+    view as given; preset as given; renderFor not given - "check", the card''s own default
+    (optional); sunTime not given - "preset", the card''s own default (optional). on Materials
+    IA Test'
+  negative_case: 'run with preset=Studio Glow, view=Heron Frame - Columns instead - chosen
+    because it should not contain what this fragment reports. returned asked 0 item(s), askedTime
+    (null), barWord Func`2, barWords 8 item(s) [System.String[], System.String[], System.String[],
+    ...], byHandKeys 2 item(s) [Cast Shadows, Ambient Shadows], colour Func`2, compare Func`2,
+    comparison , culture CultureInfo, degrees Func`2, describe Func`2, duskUtc (null), findings
+    1 item(s) [No visual preset is called ''Studio Glow''. The presets: Exter...], forIssue
+    false, hasDisplay true, inputProblem (null), lightingWord Func`2, madeFor 7 entry(ies),
+    materialsLine Materials 10 on what the view shows, 0 with no render appearance, materialsRead
+    true, materialsSeen 10 entry(ies), materialsWithoutAppearance 0, noAppearance 0 item(s),
+    noDisplay ''Heron Frame - Columns'' has no Graphic Display Options - Revit gives them
+    to views with a visual style, noRender ''Heron Frame - Columns'' is not a 3D view, and
+    only a 3D view has Rendering Settings, pairs Func`2, presetList Exterior Day, Exterior
+    Dusk, Interior Day, Interior Night, Equipment Close-up, Clay, Presentation Elevation,
+    presetNamed Func`2, presetTable 7 item(s) [[Exterior Day, System.String[][]], [Exterior
+    Dusk, System.String[][]], [Interior Day, System.String[][]], ...], presetsCompared 0,
+    purposeWord check, qualityWord Func`2, refused No visual preset is called ''Studio Glow''.
+    The presets: Exterior Day, Exterior Dusk, Interior Day, Interior Night, Equipment Close-up,
+    Clay, Presentation Elevation. Nothing was read., revitStyles 8 entry(ies), settingNow
+    Func`2, settingWant Func`3, show Func`2, showColour Func`2, site SiteLocation, squash
+    Func`2, styleWord Func`2, sun SunAndShadowSettings, takesBackground true, timeWord preset,
+    toProject Func`2, toUtc Func`2, view3D View3D, viewKind 3d, wouldChange 0. inputs came
+    view as given; preset as given; renderFor not given - "check", the card''s own default
+    (optional); sunTime not given - "preset", the card''s own default (optional). on Materials
+    IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 412bb44050b62717
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
