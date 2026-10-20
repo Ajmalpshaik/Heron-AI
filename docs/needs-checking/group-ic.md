@@ -162,3 +162,15 @@ need the owner and are not run yet. **Nothing is signed.**
 **2 PASS**. `report-visual-preset` `wouldChange` 6 against `Studio Glow` refused. `apply-visual-preset` rolled back,
 `changed` 6, against the schedule refused. Both drafts wait for the owner's word. `apply-visual-preset`'s plan
 signs it on IC4's kept run, which is not run yet.
+
+**IC4 and IC5, run once the owner was back (same evening):**
+
+| # | Result | What was seen |
+|---|---|---|
+| IC4 | PASS | `try-once`, saved model, the owner pressed **Keep**: `changed` **6** - IC2's `wouldChange` - `alreadySo` 7, `skipped` 0. readBack every setting *(as the preset)*: Realistic, sun 80, shadow 40, smooth lines, the light grey gradient, *"Sun lighting 135/35 relative to view"*, Draft on Screen, Exterior: Sun only, colour 245,245,245, exposure 13; Cast Shadows and Ambient Shadows named as by hand. **The light:** the owner did not notice. In the exported picture of the view, the columns' right faces and tops are bright and their left faces dark - **top right**. The dialogs by hand and the Ctrl+Z / Ctrl+Y look were not made |
+| IC5 | PASS | `REPORT_VISUAL_PRESET` Equipment Close-up again: `wouldChange` **0**. `apply-visual-preset --write`, rolled back: `changed` **0**, `alreadySo` **13** - IC4's 6 plus its 7 |
+
+**Signed 2026-10-20 by Ajmal PS**, on his word (*"you can sign it now"*): `report-visual-preset` (batch: Exterior Day
+`wouldChange` 6 against `Studio Glow` refused) and `apply-visual-preset` (IC4 kept, against the schedule refused),
+both PROVEN. Still owed: IC6 and IC7's repairs (rows 5b-1282 and 5b-1283, the owner's word), IC10 (the method
+end to end, his Render), and the method's own signature.

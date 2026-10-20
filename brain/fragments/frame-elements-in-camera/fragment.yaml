@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -123,40 +123,38 @@ contract:
 proof:
   date: '2026-10-20'
   by: Ajmal PS
-  model: Materials IA Test (3,790 elements), Revit 2020, session 29012
+  model: Materials IA Test (3,901 elements), Revit 2020, session 43476
   positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
     on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
     as one undo step. returned MmPerFoot 304.8, azimuth 135, boxed 2 item(s) [457 x 475mm,
     457 x 475mm], camera View3D, compass 16 entry(ies), culture CultureInfo, d southeast,
-    distance (null), findings 1 item(s) [Made perspective view ''Heron Frame - Columns'' at
-    2 element(s...], framed 2, high XYZ, lookDown 30, low XYZ, madeNew true, margin 10, mm
-    Func`2, name Heron Frame - Columns, noGeometry 0 item(s), number Func`2, readBack ''Heron
-    Frame - Columns'': eye 5572,-4072,5325 mm looking -0.6124,0.6124,-0.5, perspective; crop
-    box in the view''s frame X -1536 to 1536, Y -2673 to 2673, Z -35720 to -4219 mm; far clip
-    on at 35720 mm; 2 of 2 element(s) inside that crop box., refused (null), squash Func`2.
-    inputs came elements from the selection (2); viewName as given; direction as given; lookDownDeg
+    distance (null), findings 1 item(s) [Made perspective view ''Heron Frame v2 Look'' at
+    2 element(s) ...], framed 2, high XYZ, lookDown 30, low XYZ, madeNew true, margin 10,
+    mm Func`2, name Heron Frame v2 Look, noGeometry 0 item(s), number Func`2, readBack ''Heron
+    Frame v2 Look'': eye 5572,-4072,5325 mm looking -0.6124,0.6124,-0.5, perspective; crop
+    box in the view''s frame X -10 to 13, Y -17 to 16, Z -40232 to -40 mm; far clip on at
+    40232 mm; 2 of 2 element(s) inside that crop box., refused (null), squash Func`2. inputs
+    came elements from the selection (2); viewName as given; direction as given; lookDownDeg
     as given; distanceMm not given - "auto", the card''s own default (optional); marginPercent
     as given. on Materials IA Test'
-  negative_case: 'run with categoryName=Columns, inViewOnly=FloorPlan: 1 - Mech, viewName={3D}
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase''s
-    own values - run inside a transaction, and Revit reported the transaction group ROLLED
-    BACK afterwards. returned MmPerFoot 304.8, azimuth 135, boxed 2 item(s) [457 x 475mm,
-    457 x 475mm], camera (null), compass 16 entry(ies), culture CultureInfo, d southeast,
-    distance (null), findings 1 item(s) [''{3D}'' is an isometric 3D view. This frames elements
-    in a pe...], framed 0, high XYZ, lookDown 30, low XYZ, madeNew false, margin 10, mm Func`2,
-    name {3D}, noGeometry 0 item(s), number Func`2, readBack , refused ''{3D}'' is an isometric
-    3D view. This frames elements in a perspective view - name a new one, or turn this one
-    perspective with SET_VIEW_CAMERA first. NOTHING WAS CHANGED., squash Func`2. inputs came
-    elements from the selection (2); viewName as given; direction not given - "south-east",
-    the card''s own default (optional); lookDownDeg not given - "30", the card''s own default
-    (optional); distanceMm not given - "auto", the card''s own default (optional); marginPercent
-    not given - "10", the card''s own default (optional). on Materials IA Test'
+  negative_case: run with minMm=-300,-300,-100, maxMm=3300,300,4100, exact=false, categories=Columns,
+    viewName={3D}, direction=south-east, lookDownDeg=30, marginPercent=10 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running select-in-region, set-selection with this phase's own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmPerFoot 304.8, azimuth 135, boxed 2 item(s) [457 x 475mm, 457 x 475mm], camera (null),
+    compass 16 entry(ies), culture CultureInfo, d southeast, distance (null), findings 1 item(s)
+    ['{3D}' is an isometric 3D view. This frames elements in a pe...], framed 0, high XYZ,
+    lookDown 30, low XYZ, madeNew false, margin 10, mm Func`2, name {3D}, noGeometry 0 item(s),
+    number Func`2, readBack , refused '{3D}' is an isometric 3D view. This frames elements
+    in a perspective view - name a new one, or turn this one perspective with SET_VIEW_CAMERA
+    first. NOTHING WAS CHANGED., squash Func`2. inputs came elements from the selection (2);
+    viewName as given; direction as given; lookDownDeg as given; distanceMm not given - "auto",
+    the card's own default (optional); marginPercent as given. on Materials IA Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 9eacfd1231601b05
-
+  fingerprint: 3a6baca91e087869
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

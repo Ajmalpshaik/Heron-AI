@@ -110,3 +110,7 @@ gap is *"no second route was run"*.
   *what are the render settings of this 3D view* -> REPORT_RENDER_SETTINGS (asked as a question); *set the render
   quality to high* -> SET_RENDER_SETTINGS; *set the sun intensity of this view to 80* -> SET_GRAPHIC_DISPLAY_OPTIONS.
 - **Still owed, by eye:** IB3's Quality words and Printer DPIs, and IB4's 10:00 or 11:00. IB12 is not run.
+- **`FRAME_ELEMENTS_IN_CAMERA` v2, the look made and signed, the same evening:** `try-once` on the saved model,
+  the two original columns selected, a new view `Heron Frame v2 Look`. The owner pressed Keep: `framed` 2, window
+  X -10 to 13, Y -17 to 16 mm at -40 mm. The exported picture shows the two columns standing over the full height
+  of the view. Negative `{3D}`, refused. **Signed by Ajmal PS on his word - PROVEN at version 2.**
