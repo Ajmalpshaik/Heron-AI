@@ -95,11 +95,20 @@ var findings = new List<string>();
         .Cast<AppearanceAssetElement>().ToList();
     IList<Asset> library = null;
     Func<IList<Asset>> libraryAssets = () => library ?? (library = doc.Application.GetAssets(AssetType.Appearance) ?? new List<Asset>());
+    // THE ASSET BROWSER'S NAME, WHERE REVIT GIVES IT (version 2, row 5b-1272),
+    // the rule SET_MATERIAL_APPEARANCE gives its reasons for: Title, else a
+    // Prism asset's description, else Revit's code ("Plastic-024") - measured
+    // 2026-10-20 on Revit 2020, where a library asset's Title is empty and its
+    // UIName is the code. The code is matched as well, below.
     Func<Asset, string> shownName = asset =>
     {
+        if (!string.IsNullOrEmpty(asset.Title)) return asset.Title;
+        var description = asset.FindByName(SchemaCommon.Description) as AssetPropertyString;
+        var baseSchema = asset.FindByName(SchemaCommon.BaseSchema) as AssetPropertyString;
+        if (description != null && !string.IsNullOrEmpty(description.Value) && baseSchema != null && baseSchema.Value != null
+            && baseSchema.Value.StartsWith("Prism", StringComparison.OrdinalIgnoreCase)) return description.Value;
         var ui = asset.FindByName(SchemaCommon.UIName) as AssetPropertyString;
         if (ui != null && !string.IsNullOrEmpty(ui.Value)) return ui.Value;
-        if (!string.IsNullOrEmpty(asset.Title)) return asset.Title;
         return asset.Name ?? "";
     };
     Func<Asset, bool> isGeneric = asset => asset != null && asset.FindByName(Generic.GenericDiffuse) != null;

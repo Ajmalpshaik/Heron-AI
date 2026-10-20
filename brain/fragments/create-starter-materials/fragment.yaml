@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "add the office starter set of twelve materials, each made re
 kind: action
 domain: revit.elements
 capability: CREATE_STARTER_MATERIALS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -38,7 +38,11 @@ risk: MODIFY
 # material's own, set from those values, unless libraryLooks names one -
 # "Wood Oak=<a name LIST_MATERIALS lists with withLibraryAppearances>". What
 # Revit's appearance library holds depends on the PC's install; a name it
-# has not got refuses the call before anything is made.
+# has not got refuses the call before anything is made. VERSION 2 (row
+# 5b-1272): a library look is matched on SET_MATERIAL_APPEARANCE's rule - a
+# Prism asset's description, most often the browser's name but not always,
+# and Revit's code ("Prism-256"), which always matches.
+# Version 1 read the UIName as the browser's name; on Revit 2020 it is the code.
 #
 # A NAME ALREADY IN USE IS LEFT AS IT IS AND REPORTED - never duplicated and
 # never changed.
@@ -95,6 +99,55 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,779 elements), Revit 2020, session 29012
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned alreadyThere 0 item(s), createdMaterialIds 12 item(s) [1330388,
+    1330390, 1330392, ...], findings 3 item(s) [12 starter material(s) made, 0 already there
+    and left as the..., Shaded views draw each shading colour; Realistic views and r..., Nothing
+    uses them yet - SET_ELEMENT_MATERIAL gives elements ...], refused , starterReport TRG_Glass
+    Clear: made - Glass, shading 176,205,214 at 80% transparency, its own Generic appearance
+    - colour 176,205,214, glossiness 95, non-metallic, transparency 90, refraction 1.52 (''TRG_Glass
+    Clear'')  ||  TRG_Steel Stainless Satin: made - Metal, shading 186,190,193, its own Generic
+    appearance - colour 186,190,193, glossiness 60, metallic (''TRG_Steel Stainless Satin'')  ||  TRG_Steel
+    Galvanised: made - Metal, shading 165,170,174, its own Generic appearance - colour 165,170,174,
+    glossiness 40, metallic (''TRG_Steel Galvanised'')  ||  TRG_Aluminium Brushed: made -
+    Metal, shading 198,201,205, its own Generic appearance - colour 198,201,205, glossiness
+    55, metallic (''TRG_Aluminium Brushed'')  ||  TRG_Concrete Smooth: made - Concrete, shading
+    190,189,182, its own Generic appearance - colour 190,189,182, glossiness 10, non-metallic
+    (''TRG_Concrete Smooth'')  ||  TRG_Plaster Paint White: made - Plaster, shading 243,242,237,
+    its own Generic appearance - colour 243,242,237, glossiness 20, non-metallic (''TRG_Plaster
+    Paint White'')  ||  TRG_Floor Tile Grey: made - Ceramic, shading 150,151,153, its own
+    Generic appearance - colour 150,151,153, glossiness 70, non-metallic (''TRG_Floor Tile
+    Grey'')  ||  TRG_Wood Oak: made - Wood, shading 171,128,82, its own Generic appearance
+    - colour 171,128,82, glossiness 35, non-metallic (''TRG_Wood Oak'')  ||  TRG_Carpet Grey:
+    made - Textile, shading 108,110,112, its own Generic appearance - colour 108,110,112,
+    glossiness 0, non-metallic (''TRG_Carpet Grey'')  ||  TRG_Ceiling Tile White: made - Generic,
+    shading 236,236,231, its own Generic appearance - colour 236,236,231, glossiness 5, non-metallic
+    (''TRG_Ceiling Tile White'')  ||  TRG_Duct Galvanised: made - Metal, shading 172,176,180,
+    its own Generic appearance - colour 172,176,180, glossiness 40, metallic (''TRG_Duct Galvanised'')  ||  TRG_Pipe
+    Copper: made - Metal, shading 184,115,51, its own Generic appearance - colour 184,115,51,
+    glossiness 65, metallic (''TRG_Pipe Copper''). inputs came namePrefix not given - "TRG_",
+    the card''s own default (optional); starterPick not given - "all", the card''s own default
+    (optional); libraryLooks not given - "none", the card''s own default (optional). on Materials
+    IA Test'
+  negative_case: run with namePrefix=IA_, starterPick=granite instead - chosen because it
+    should not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdMaterialIds
+    0 item(s), findings 1 item(s) ['granite' is none of the starter materials - Glass Clear,
+    St...], refused 'granite' is none of the starter materials - Glass Clear, Steel Stainless
+    Satin, Steel Galvanised, Aluminium Brushed, Concrete Smooth, Plaster Paint White, Floor
+    Tile Grey, Wood Oak, Carpet Grey, Ceiling Tile White, Duct Galvanised, Pipe Copper. Nothing
+    was made, starterReport . inputs came namePrefix as given; starterPick as given; libraryLooks
+    not given - "none", the card's own default (optional). on Materials IA Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 37f530e6fab754bf
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

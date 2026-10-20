@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "give materials a render appearance - a library asset, anothe
 kind: action
 domain: revit.elements
 capability: SET_MATERIAL_APPEARANCE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -29,8 +29,23 @@ risk: MODIFY
 #   from <name>  a copy of that material's asset - one material's look onto
 #                many, by name or pattern
 #   <a name>     an appearance asset by name: one the document holds, else
-#                one of Revit's appearance library, matched on the name the
-#                asset browser shows (its UIName, else its title or name)
+#                one of Revit's appearance library - by the name the asset
+#                browser shows where Revit gives it, and always by Revit's
+#                code ("Prism-256")
+#
+# VERSION 2, 2026-10-20 (row 5b-1272, Group IA, IA1). Version 1 matched a
+# library asset on its UIName, then its Title. Measured on Revit 2020: a
+# library asset's Title is empty and its UIName is Revit's code - "Prism-256",
+# "Plastic-024" - so the browser's name ("Steel - Satin") matched nothing and
+# only the code worked. Now: Title; else a Prism asset's description, most
+# often the browser's name in another case ("Copper - polished" for "Copper -
+# Polished") but not always - Prism-152's "Glass - clear" shows as "Glass
+# (Clear)", and that browser name is not matched (row 5b-1272); else the
+# code, which always matches. The comment in the source says "is that name"
+# - written before the Glass case was seen; corrected in its next version,
+# because any change to the source stales the kept run (IA5). An older
+# asset's browser name is not readable on Revit 2020 (its description is a
+# sentence its kind shares, "Metal."), so it is named by its code.
 #
 # EVERY MATERIAL GETS ITS OWN ASSET, NAMED AFTER IT; an asset another material
 # shares is never edited - this one gets its own copy and the answer names
@@ -116,6 +131,34 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,780 elements), Revit 2020, session 29012
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned appearanceReport IA Probe Wood: ''none'' (no appearance asset)
+    -> ''IA Probe Wood'' (Image C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures\1\Mats\ceramic_wood_color.jpg,
+    Highlights non-metallic), assetsMade 1 item(s) [IA Probe Wood], changedMaterialIds 1 item(s)
+    [1330331], findings 3 item(s) [1 material(s) given their appearance; 1 new appearance
+    asset..., A Realistic view and a rendering draw this appearance. A Sha..., An appearance
+    asset no material uses any more stays in the d...], matchShading false, refused , sharedBefore
+    . inputs came materialsNamed as given; appearance as given; appearanceValues as given;
+    matchShading not given - false (optional). on Materials IA Test'
+  negative_case: 'run with materialsNamed=IA Probe Wood, appearance=generic, appearanceValues=Image=C:\no\such\file.jpg
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    appearanceReport , assetsMade 0 item(s), changedMaterialIds 0 item(s), findings 1 item(s)
+    [Image: the file ''C:\no\such\file.jpg'' is not there - a missi...], matchShading false,
+    refused Image: the file ''C:\no\such\file.jpg'' is not there - a missing image renders
+    as plain colour. Nothing was changed, sharedBefore . inputs came materialsNamed as given;
+    appearance as given; appearanceValues as given; matchShading not given - false (optional).
+    on Materials IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: affdd751d0750c40
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

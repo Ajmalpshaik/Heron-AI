@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -108,6 +108,34 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-20'
+  by: Ajmal PS
+  model: Materials IA Test (3,755 elements), Revit 2020, session 29012
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-10-20; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned alreadyAsAsked 1, changedMaterialIds 1 item(s) [1330329], fieldsChanged
+    8, findings 2 item(s) [8 field(s) changed on 1 of the 1 material(s) named; 1 alread...,
+    Every element using these materials draws with them now - on...], materialReport IA Probe
+    Steel: Use Render Appearance already ''no'', Manufacturer '''' -> ''IA Maker'', Model
+    '''' -> ''M-1'', Class ''Unassigned'' -> ''Metal'', Keynote '''' -> ''05 12 00'', Mark
+    '''' -> ''IA-1'', Surface Foreground Pattern ''none'' -> ''<Solid fill> (id 3)'', Surface
+    Foreground Colour ''0,0,0'' -> ''128,128,128'', Cut Foreground Pattern ''none'' -> ''Diagonal
+    crosshatch (id 6473)'', refused , sharedAssets . inputs came materialsNamed as given;
+    fieldValues as given. on Materials IA Test'
+  negative_case: 'run with materialsNamed=IA Probe Stel, fieldValues=Mark=IA-2 instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyAsAsked 0,
+    changedMaterialIds 0 item(s), fieldsChanged 0, findings 1 item(s) [no material matches
+    ''IA Probe Stel'' in this project - closes...], materialReport , refused no material matches
+    ''IA Probe Stel'' in this project - closest: ''IA Probe Copper'', ''IA Probe Steel'',
+    ''IA Probe Wood''. LIST_MATERIALS names every one. Nothing was changed, sharedAssets .
+    inputs came materialsNamed as given; fieldValues as given. on Materials IA Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f5d8cadb4637b26c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

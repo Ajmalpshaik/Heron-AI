@@ -88,11 +88,11 @@ jobs:
       - set-selection
     set:
       categoryName: Columns
-      inViewOnly: "FloorPlan: Level 1"
+      inViewOnly: "FloorPlan: 1 - Mech"
       material: "IA Probe Steel"
     negative-set:
       categoryName: Walls
-      inViewOnly: "FloorPlan: Level 1"
+      inViewOnly: "FloorPlan: 1 - Mech"
       material: "IA Probe Steel"
     expect: writtenIds
     note: >

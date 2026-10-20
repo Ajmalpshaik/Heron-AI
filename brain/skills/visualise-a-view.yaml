@@ -30,11 +30,12 @@ purpose: >
   picture in step 6 is the judge. A look is never chosen for the modeller -
   Heron proposes the preset that fits what is being shown and asks once.
 
-  Most tools here were DRAFT on 2026-10-20 - built and compiled for Revit 2020
-  to 2027, not yet run in Revit (NEEDS-CHECKING Groups IA, IB and IC). Until
-  the owner proves them, revit_change refuses to keep their changes (D-117);
-  each may be run once through try-once, behind Revit's Keep or Discard box
-  (D-119). The list of capabilities after this method is read from the
+  The material tools of step 2 were signed PROVEN on Revit 2020 on
+  2026-10-20 (NEEDS-CHECKING Group IA). The rendering tools and this
+  method's own two were DRAFT that day - built and compiled for Revit 2020
+  to 2027, not yet run in Revit (Groups IB and IC). Until the owner proves
+  them, revit_change refuses to keep their changes (D-117); each may be run
+  once through try-once, behind Revit's Keep or Discard box (D-119). The list of capabilities after this method is read from the
   library every time it is served: where the two differ, the list is right.
 
   0. READ FIRST, CHANGE NOTHING. REPORT_VISUAL_PRESET on the view with no
@@ -81,7 +82,7 @@ purpose: >
      appearance asset, not its shading colour - a material with no
      appearance draws flat grey, measured on the duct heater on 2026-10-20.
      - REPORT_VISUAL_PRESET names the materials on what the view shows that
-       have none; LIST_MATERIALS (version 3) withAllTabs gives every tab of
+       have none; LIST_MATERIALS withAllTabs gives every tab of
        them, and withLibraryAppearances the appearance names this PC's
        library holds; READ_ELEMENT_MATERIAL reads the material of a
        selection.
